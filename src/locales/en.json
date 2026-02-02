@@ -1,0 +1,132 @@
+{
+  "app": {
+    "title": "Portfolio Rebalancer",
+    "subtitle": "Global wealth management"
+  },
+  "common": {
+    "assets": "Assets",
+    "portfolio": "Portfolio",
+    "add": "Add",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "save": "Save",
+    "settings": "Settings",
+    "search": "Search",
+    "refresh": "Refresh",
+    "edit": "Edit",
+    "close": "Close",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success"
+  },
+  "assets": {
+    "name": "Asset Name",
+    "currentValue": "Current Value",
+    "targetAllocation": "Target Allocation (%)",
+    "costBasis": "Cost Basis",
+    "purchaseDate": "Purchase Date",
+    "ticker": "Ticker Symbol",
+    "assetType": "Asset Type",
+    "liquid": "Liquid",
+    "illiquid": "Illiquid",
+    "noAssets": "No Assets Yet",
+    "addNew": "Add New Asset",
+    "deleteConfirm": "Remove {{name}} from your portfolio?",
+    "liquidHint": "Can be quickly sold (stocks, ETFs, crypto)",
+    "illiquidHint": "Takes time to sell (real estate, art)"
+  },
+  "prices": {
+    "refreshing": "Updating prices...",
+    "lastUpdated": "Last updated: {{time}}",
+    "fetchError": "Unable to fetch prices",
+    "searchAssets": "Search by ticker symbol",
+    "noResults": "No assets found for '{{query}}'",
+    "priceUnavailable": "Price unavailable",
+    "currentPrice": "Current Price",
+    "change24h": "24h Change",
+    "marketCap": "Market Cap",
+    "volume": "24h Volume",
+    "selectAsset": "Select an asset to see details",
+    "searchPlaceholder": "Enter ticker (e.g., AAPL, BTC)"
+  },
+  "localization": {
+    "language": "Language",
+    "currency": "Currency",
+    "country": "Country",
+    "autoDetected": "Auto-detected from country selection",
+    "manualPrice": "Enter Price Manually"
+  },
+  "errors": {
+    "networkError": "Network connection failed",
+    "invalidTicker": "Invalid ticker symbol",
+    "rateLimited": "Too many requests. Please try again later.",
+    "timeout": "Request timed out",
+    "notFound": "Asset not found",
+    "required": "This field is required",
+    "invalidNumber": "Please enter a valid number"
+  },
+  "validation": {
+    "enterValidName": "Please enter a valid asset name",
+    "enterValidValue": "Please enter a valid current value",
+    "enterValidAllocation": "Please enter a valid allocation between 0-100%",
+    "enterValidDate": "Please enter a valid purchase date (YYYY-MM-DD)",
+    "enterValidTicker": "Please enter a valid ticker symbol"
+  },
+  "actions": {
+    "buy": "BUY",
+    "sell": "SELL",
+    "hold": "HOLD",
+    "rebalance": "Rebalance Needed",
+    "balanced": "Balanced"
+  },
+  "portfolio": {
+    "summary": "Portfolio Summary",
+    "totalValue": "Total Value",
+    "liquidValue": "Liquid Value",
+    "illiquidValue": "Illiquid Value",
+    "targetAllocation": "Target Allocation",
+    "status": "Status",
+    "actions": "Actions",
+    "estimatedTax": "Est. Tax Impact",
+    "includeInCalculations": "Include Tax in Calculations",
+    "rebalancingActions": "Rebalancing Actions",
+    "yourAssets": "Your Assets"
+  },
+  "freemium": {
+    "limitReached": "You've reached the free limit of {{limit}} assets. Upgrade to Pro to add unlimited assets.",
+    "limitExceeded": "Free plan supports up to {{limit}} assets",
+    "upgradeRequired": "Upgrade to Pro",
+    "freeVersion": "Free Plan"
+  },
+  "diagnosis": {
+    "title": "Investment Diagnosis",
+    "subtitle": "Analyze current market stage with Kostolany's Egg Theory",
+    "interestRate": "What's the current interest rate trend?",
+    "interestRateHint": "Interest rate trend is the key to Egg analysis. Select your current situation.",
+    "peakLabel": "🔴 Peak (High Point)",
+    "peakDescription": "Interest rates have been high for a long time",
+    "fallingLabel": "📉 Falling",
+    "fallingDescription": "Interest rates are declining",
+    "bottomLabel": "🟢 Bottom (Low Point)",
+    "bottomDescription": "Interest rates have been low for a long time",
+    "risingLabel": "📈 Rising",
+    "risingDescription": "Interest rates are increasing",
+    "runDiagnosis": "Run Diagnosis →",
+    "rediagnose": "Diagnose Again",
+    "eggChart": "Kostolany's Egg 🥚",
+    "currentPhase": "📍 Current",
+    "confidence": "Confidence",
+    "nextPhase": "Expected Next",
+    "marketDrivers": "📰 Market Drivers",
+    "marketDriversSubtitle": "Top 3 factors moving markets today",
+    "affectedAssets": "Affected Assets",
+    "portfolioSnapshot": "📈 Portfolio Status",
+    "assetCount": "Asset Count",
+    "cryptoAllocation": "Crypto",
+    "cashAllocation": "Cash",
+    "impactHigh": "High",
+    "impactMedium": "Medium",
+    "impactLow": "Low",
+    "disclaimer": "💡 This information is educational mock data. Make investment decisions carefully."
+  }
+}

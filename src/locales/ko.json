@@ -1,0 +1,132 @@
+{
+  "app": {
+    "title": "포트폴리오 리밸런서",
+    "subtitle": "글로벌 자산 관리"
+  },
+  "common": {
+    "assets": "자산",
+    "portfolio": "포트폴리오",
+    "add": "추가",
+    "delete": "삭제",
+    "cancel": "취소",
+    "save": "저장",
+    "settings": "설정",
+    "search": "검색",
+    "refresh": "새로고침",
+    "edit": "편집",
+    "close": "닫기",
+    "loading": "로딩 중...",
+    "error": "오류",
+    "success": "성공"
+  },
+  "assets": {
+    "name": "자산명",
+    "currentValue": "현재 가치",
+    "targetAllocation": "목표 배분 (%)",
+    "costBasis": "취득가",
+    "purchaseDate": "구입일",
+    "ticker": "티커 심볼",
+    "assetType": "자산 유형",
+    "liquid": "유동자산",
+    "illiquid": "비유동자산",
+    "noAssets": "자산이 없습니다",
+    "addNew": "새 자산 추가",
+    "deleteConfirm": "{{name}}을(를) 포트폴리오에서 제거하시겠습니까?",
+    "liquidHint": "빠르게 팔 수 있음 (주식, ETF, 암호화폐)",
+    "illiquidHint": "판매에 시간이 걸림 (부동산, 미술품)"
+  },
+  "prices": {
+    "refreshing": "가격 업데이트 중...",
+    "lastUpdated": "마지막 업데이트: {{time}}",
+    "fetchError": "가격을 가져올 수 없습니다",
+    "searchAssets": "티커 심볼로 검색",
+    "noResults": "'{{query}}'에 대한 자산을 찾을 수 없습니다",
+    "priceUnavailable": "가격 정보 없음",
+    "currentPrice": "현재 가격",
+    "change24h": "24시간 변동",
+    "marketCap": "시가총액",
+    "volume": "24시간 거래량",
+    "selectAsset": "자산을 선택하여 세부 정보를 확인하세요",
+    "searchPlaceholder": "티커 입력 (예: AAPL, BTC)"
+  },
+  "localization": {
+    "language": "언어",
+    "currency": "통화",
+    "country": "국가",
+    "autoDetected": "국가 선택에서 자동 감지됨",
+    "manualPrice": "수동으로 가격 입력"
+  },
+  "errors": {
+    "networkError": "네트워크 연결 실패",
+    "invalidTicker": "유효하지 않은 티커 심볼",
+    "rateLimited": "요청이 너무 많습니다. 잠시 후 다시 시도하세요.",
+    "timeout": "요청 시간 초과",
+    "notFound": "자산을 찾을 수 없습니다",
+    "required": "필수 입력 항목입니다",
+    "invalidNumber": "유효한 숫자를 입력하세요"
+  },
+  "validation": {
+    "enterValidName": "유효한 자산명을 입력하세요",
+    "enterValidValue": "유효한 현재 가치를 입력하세요",
+    "enterValidAllocation": "0-100% 사이의 유효한 배분을 입력하세요",
+    "enterValidDate": "유효한 구입일을 입력하세요 (YYYY-MM-DD)",
+    "enterValidTicker": "유효한 티커 심볼을 입력하세요"
+  },
+  "actions": {
+    "buy": "매수",
+    "sell": "매도",
+    "hold": "보유",
+    "rebalance": "리밸런싱 필요",
+    "balanced": "균형잡힘"
+  },
+  "portfolio": {
+    "summary": "포트폴리오 요약",
+    "totalValue": "총 가치",
+    "liquidValue": "유동자산 가치",
+    "illiquidValue": "비유동자산 가치",
+    "targetAllocation": "목표 배분",
+    "status": "상태",
+    "actions": "조치",
+    "estimatedTax": "예상 세금 영향",
+    "includeInCalculations": "세금을 계산에 포함",
+    "rebalancingActions": "리밸런싱 조치",
+    "yourAssets": "내 자산"
+  },
+  "freemium": {
+    "limitReached": "무료 계획에서 {{limit}}개까지 자산을 추가할 수 있습니다. Pro로 업그레이드하면 무제한으로 추가할 수 있습니다.",
+    "limitExceeded": "무료 계획은 최대 {{limit}}개 자산을 지원합니다",
+    "upgradeRequired": "Pro로 업그레이드",
+    "freeVersion": "무료 계획"
+  },
+  "diagnosis": {
+    "title": "투자 진단",
+    "subtitle": "Kostolany의 Egg 이론으로 현재 시장 단계를 분석합니다",
+    "interestRate": "현재 금리 추세는?",
+    "interestRateHint": "금리 추세는 Egg 단계 분석의 핵심입니다. 현재 상황을 선택하세요.",
+    "peakLabel": "🔴 고점 (상승 정점)",
+    "peakDescription": "금리가 오랫동안 높은 상태",
+    "fallingLabel": "📉 하락 중",
+    "fallingDescription": "금리가 내려가는 중",
+    "bottomLabel": "🟢 저점 (하락 정점)",
+    "bottomDescription": "금리가 오랫동안 낮은 상태",
+    "risingLabel": "📈 상승 중",
+    "risingDescription": "금리가 올라가는 중",
+    "runDiagnosis": "진단 실행 →",
+    "rediagnose": "다시 진단하기",
+    "eggChart": "Kostolany's Egg 🥚",
+    "currentPhase": "📍 현재",
+    "confidence": "신뢰도",
+    "nextPhase": "다음 예상",
+    "marketDrivers": "📰 시장 드라이버",
+    "marketDriversSubtitle": "오늘 시장을 움직이는 Top 3 요인",
+    "affectedAssets": "영향받는 자산",
+    "portfolioSnapshot": "📈 포트폴리오 현황",
+    "assetCount": "자산 수",
+    "cryptoAllocation": "암호화폐",
+    "cashAllocation": "현금",
+    "impactHigh": "높음",
+    "impactMedium": "중간",
+    "impactLow": "낮음",
+    "disclaimer": "💡 이 정보는 교육용 Mock 데이터입니다. 실제 투자 결정은 신중하게 하세요."
+  }
+}

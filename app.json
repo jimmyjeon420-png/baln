@@ -1,0 +1,56 @@
+{
+  "expo": {
+    "name": "Smart Rebalancer",
+    "slug": "smart-rebalancer",
+    "version": "1.0.0",
+    "scheme": "smartrebalancer",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0F172A"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTabletMode": false,
+      "bundleIdentifier": "com.smartrebalancer.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0F172A"
+      },
+      "package": "com.smartrebalancer.app",
+      "versionCode": 1
+    },
+    "plugins": [
+      [
+        "expo-font",
+        {
+          "fonts": []
+        }
+      ],
+      "expo-localization"
+    ],
+    "privacy": "public",
+    "extra": {
+      "eas": {
+        "projectId": "0d967ba4-ad89-4a20-87fc-8d4cd28a5658"
+      }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/0d967ba4-ad89-4a20-87fc-8d4cd28a5658"
+    }
+  }
+}
