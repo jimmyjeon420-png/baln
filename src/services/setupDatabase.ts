@@ -59,6 +59,72 @@ ALTER TABLE chat_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE chat_messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE daily_summaries ENABLE ROW LEVEL SECURITY;
 
+-- 4. 팀 채팅 메시지 테이블 (전략 회의실용)
+CREATE TABLE IF NOT EXISTS team_messages (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  room_id VARCHAR(100) NOT NULL DEFAULT 'global-strategy', -- 채팅방 ID
+  user_id VARCHAR(255) NOT NULL, -- auth.users.id 또는 guest ID
+  user_name VARCHAR(100) NOT NULL,
+  user_avatar TEXT,
+  content TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT now()
+);
+
+-- 팀 메시지 인덱스
+CREATE INDEX IF NOT EXISTS idx_team_messages_room ON team_messages(room_id);
+CREATE INDEX IF NOT EXISTS idx_team_messages_created ON team_messages(created_at DESC);
+
+-- 팀 메시지 RLS (모든 인증된 사용자가 읽기/쓰기 가능)
+ALTER TABLE team_messages ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Anyone can view team messages"
+  ON team_messages FOR SELECT
+  USING (true);
+
+CREATE POLICY "Authenticated users can insert team messages"
+  ON team_messages FOR INSERT
+  WITH CHECK (true);
+
+-- Realtime 활성화 (중요!)
+ALTER PUBLICATION supabase_realtime ADD TABLE team_messages;
+
+-- 5. 자산 테이블 (포트폴리오)
+CREATE TABLE IF NOT EXISTS assets (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  ticker VARCHAR(50) NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  quantity FLOAT NOT NULL DEFAULT 0,
+  avg_price FLOAT NOT NULL DEFAULT 0,
+  current_price FLOAT NOT NULL DEFAULT 0,
+  asset_type VARCHAR(50) DEFAULT 'stock', -- 'stock', 'crypto', 'etf', 'bond', 'cash'
+  created_at TIMESTAMP DEFAULT now(),
+  updated_at TIMESTAMP DEFAULT now()
+);
+
+-- 자산 인덱스
+CREATE INDEX IF NOT EXISTS idx_assets_user ON assets(user_id);
+CREATE INDEX IF NOT EXISTS idx_assets_ticker ON assets(ticker);
+
+-- 자산 RLS 활성화
+ALTER TABLE assets ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view their own assets"
+  ON assets FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own assets"
+  ON assets FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own assets"
+  ON assets FOR UPDATE
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own assets"
+  ON assets FOR DELETE
+  USING (auth.uid() = user_id);
+
 -- RLS 정책: 자신의 데이터만 접근 가능
 CREATE POLICY "Users can view their own chat_sessions"
   ON chat_sessions FOR SELECT

@@ -1,13 +1,13 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
+// .env에 있는 키를 가져옵니다. (스크린샷의 ...IKAg 키인지 확인 필수)
 const API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY || '';
 const genAI = new GoogleGenerativeAI(API_KEY);
 
-// [CFO 전략 수정] 'flash' 모델 인식 오류 해결을 위해, 가장 안정적인 'pro' 모델로 교체
-// gemini-1.5-pro는 이미지와 텍스트 분석에 가장 강력하고 안정적인 모델입니다.
-const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
+// [2026-02 업데이트] gemini-1.5-flash 서비스 종료로 최신 모델로 교체
+// gemini-2.5-flash: 안정적인 프로덕션용 멀티모달 모델 (이미지 분석 지원)
+const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
-// 1. 포트폴리오 조언 (채팅용)
 export const getPortfolioAdvice = async (prompt: any) => {
   try {
     const msg = typeof prompt === 'string' ? prompt : JSON.stringify(prompt);
@@ -15,40 +15,87 @@ export const getPortfolioAdvice = async (prompt: any) => {
     return result.response.text();
   } catch (error) {
     console.error("Gemini Text Error:", error);
-    return "AI 연결 상태가 불안정합니다. 잠시 후 다시 시도해주세요.";
+    return "AI 응답 오류. 잠시 후 다시 시도해주세요.";
   }
 };
 
-// 2. 대화 요약 (저장용)
 export const summarizeChat = async (messages: any[]) => {
   try {
     const conversation = messages.map(m => `${m.user.name}: ${m.text}`).join('\n');
     const result = await model.generateContent(`Summarize this logic into 3 bullet points (Korean):\n${conversation}`);
     return result.response.text();
   } catch (error) {
-    return "요약 생성 실패";
+    return "요약 실패";
   }
 };
 
-// 3. 이미지 자산 분석 (핵심 기능)
 export const analyzeAssetImage = async (base64: string) => {
   try {
-    console.log("Gemini: 이미지 분석 시작...");
-    
-    // JSON 형식을 더 강력하게 요구하는 프롬프트
+    console.log("Gemini: 이미지 분석 요청 중... (gemini-2.5-flash)");
+
+    // [핵심] 한국 금융앱(토스, 업비트) 특화 프롬프트
     const prompt = `
-      Analyze this investment portfolio image.
-      Extract the asset list strictly in this JSON format:
-      [
-        {"ticker": "AAPL", "name": "Apple", "amount": 10, "price": 150.00},
-        {"ticker": "TSLA", "name": "Tesla", "amount": 5, "price": 200.00}
-      ]
-      RULES:
-      1. Return ONLY the Raw JSON string.
-      2. No Markdown formatting (no \`\`\`).
-      3. If uncertain, guess the ticker based on the name.
-      4. Ensure valid JSON syntax.
-    `;
+당신은 한국 금융앱 스크린샷 전문 분석기입니다.
+이 이미지는 한국 금융앱(토스 증권, 업비트, 키움증권, 삼성증권 등)의 자산 현황 스크린샷입니다.
+
+**[분석 대상 한국어 키워드]**
+- 자산명/종목명: 삼성전자, 카카오, 비트코인, 이더리움 등
+- 평가금액/현재가: 숫자 뒤에 "원" 또는 ","가 붙음
+- 보유수량: "주", "개", "코인" 등의 단위
+- 수익률: "+15.3%" 또는 "-2.1%" 형태
+- 평균단가/매입가: 구매 시 평균 가격
+
+**[티커 매핑 규칙]**
+한국 주식:
+- 삼성전자 → 005930.KS
+- 카카오 → 035720.KS
+- 네이버 → 035420.KS
+- SK하이닉스 → 000660.KS
+- LG에너지솔루션 → 373220.KS
+- 현대차 → 005380.KS
+- 셀트리온 → 068270.KS
+- POSCO홀딩스 → 005490.KS
+- 기타 한국주식 → 종목코드.KS (6자리 숫자)
+
+암호화폐 (업비트/빗썸):
+- 비트코인/Bitcoin/BTC → BTC
+- 이더리움/Ethereum/ETH → ETH
+- 리플/XRP → XRP
+- 도지코인/DOGE → DOGE
+- 솔라나/SOL → SOL
+- 에이다/ADA → ADA
+
+미국 주식:
+- 애플/Apple → AAPL
+- 테슬라/Tesla → TSLA
+- 엔비디아/NVIDIA → NVDA
+- 마이크로소프트/Microsoft → MSFT
+- 아마존/Amazon → AMZN
+- 구글/알파벳/Alphabet → GOOGL
+
+**[숫자 정제 규칙 - 매우 중요!]**
+1. 모든 쉼표(,) 제거: "1,234,567" → 1234567
+2. "원" 제거: "50,000원" → 50000
+3. "주" 제거: "10주" → 10
+4. "%" 제거 (수익률 무시)
+5. 소수점은 유지: "0.5" → 0.5
+6. 가격이 보이지 않으면 0으로 설정
+
+**[필수 출력 형식]**
+반드시 아래 JSON 배열 형태로만 응답하세요. 마크다운 코드블록(\`\`\`) 사용 금지!
+
+[
+  {"ticker": "005930.KS", "name": "삼성전자", "amount": 10, "price": 72000},
+  {"ticker": "BTC", "name": "비트코인", "amount": 0.5, "price": 85000000}
+]
+
+**[주의사항]**
+- ticker가 불확실하면 자산명 그대로 사용 (예: "UNKNOWN_삼성SDI")
+- amount(수량)이 불확실하면 1로 설정
+- price(가격)가 불확실하면 0으로 설정
+- 빈 배열 []은 허용되지 않음 - 최소 1개 이상 추출 시도
+- JSON 외 다른 텍스트 절대 포함 금지
+`;
 
     const imagePart = {
       inlineData: {
@@ -59,19 +106,43 @@ export const analyzeAssetImage = async (base64: string) => {
 
     const result = await model.generateContent([prompt, imagePart]);
     const responseText = result.response.text();
+    console.log("Gemini 원본 응답:", responseText); // 전체 응답 로그
 
-    console.log("Gemini Raw Response:", responseText);
+    // JSON 정제 (Markdown 코드블록 제거 + 앞뒤 공백 제거)
+    let cleanText = responseText
+      .replace(/```json\s*/gi, '')
+      .replace(/```\s*/g, '')
+      .trim();
 
-    // 포장지(Markdown) 제거 및 공백 정리
-    const cleanText = responseText
-      .replace(/```json/g, '') // 시작 태그 제거
-      .replace(/```/g, '')     // 끝 태그 제거
-      .trim();                 // 앞뒤 공백 제거
+    // JSON 배열 시작/끝 찾기 (혹시 앞뒤에 불필요한 텍스트가 있을 경우)
+    const jsonStart = cleanText.indexOf('[');
+    const jsonEnd = cleanText.lastIndexOf(']');
 
-    return JSON.parse(cleanText);
+    if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+      cleanText = cleanText.substring(jsonStart, jsonEnd + 1);
+    }
+
+    console.log("정제된 JSON:", cleanText);
+
+    const parsedData = JSON.parse(cleanText);
+
+    // 데이터 후처리: null/undefined 값 정제
+    if (Array.isArray(parsedData)) {
+      return parsedData.map((item: any) => ({
+        ticker: item.ticker || `UNKNOWN_${item.name || 'ASSET'}`,
+        name: item.name || '알 수 없는 자산',
+        amount: typeof item.amount === 'number' ? item.amount : parseFloat(item.amount) || 1,
+        price: typeof item.price === 'number' ? item.price : parseFloat(String(item.price).replace(/[^0-9.]/g, '')) || 0,
+        needsReview: !item.ticker || !item.price, // 사용자 확인 필요 플래그
+      }));
+    }
+
+    return parsedData;
 
   } catch (error) {
-    console.error("Gemini OCR Error:", error);
-    return { error: "이미지를 분석할 수 없습니다. 다시 시도해주세요." };
+    console.error("Gemini Analysis Error:", error);
+    // 더 상세한 에러 메시지
+    const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
+    return { error: `이미지 분석 실패: ${errorMessage}` };
   }
 };

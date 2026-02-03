@@ -23,7 +23,7 @@ export default function AddAssetScreen() {
 
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
         allowsEditing: false,
         quality: 0.5,
         base64: true,
@@ -42,52 +42,115 @@ export default function AddAssetScreen() {
   // 2. AI 분석 요청
   const handleAnalyze = async (base64: string) => {
     setLoading(true);
-    const result = await analyzeAssetImage(base64);
-    setLoading(false);
+    try {
+      const result = await analyzeAssetImage(base64);
+      setLoading(false);
 
-    if (result.error) {
-      Alert.alert("분석 실패", result.error);
-    } else {
-      if (Array.isArray(result)) {
-        setAnalyzedData(result);
-        Alert.alert("성공", "자산 목록을 추출했습니다. 내용을 확인하고 등록하세요.");
+      if (result.error) {
+        Alert.alert("분석 실패", result.error);
+        return;
+      }
+
+      if (Array.isArray(result) && result.length > 0) {
+        // 데이터 검증 및 정제
+        const validatedData = result.map((item: any, index: number) => ({
+          ticker: item.ticker || `UNKNOWN_${index}`,
+          name: item.name || `자산 ${index + 1}`,
+          amount: Number(item.amount) || 0,
+          price: Number(item.price) || 0,
+          needsReview: item.needsReview || !item.ticker || item.price === 0,
+        }));
+
+        // 검토 필요 항목 개수 확인
+        const reviewCount = validatedData.filter((item: any) => item.needsReview).length;
+
+        setAnalyzedData(validatedData);
+
+        if (reviewCount > 0) {
+          Alert.alert(
+            "확인 필요",
+            `${validatedData.length}개 자산 추출 완료.\n⚠️ ${reviewCount}개 항목은 수동 확인이 필요합니다 (가격 또는 티커 불명확).`
+          );
+        } else {
+          Alert.alert("성공", `${validatedData.length}개 자산을 추출했습니다. 내용을 확인하고 등록하세요.`);
+        }
+      } else if (Array.isArray(result) && result.length === 0) {
+        Alert.alert("분석 실패", "이미지에서 자산 정보를 찾을 수 없습니다. 다른 이미지를 시도해주세요.");
       } else {
         Alert.alert("분석 오류", "AI가 인식한 데이터 형식이 올바르지 않습니다.");
       }
+    } catch (error) {
+      setLoading(false);
+      console.error("handleAnalyze Error:", error);
+      Alert.alert("오류", "이미지 분석 중 예기치 않은 오류가 발생했습니다.");
     }
   };
 
   // 3. DB에 저장
   const saveAssets = async () => {
+    // 저장 전 유효성 검사
+    if (analyzedData.length === 0) {
+      Alert.alert("저장 불가", "저장할 자산이 없습니다.");
+      return;
+    }
+
+    // 검토 필요 항목 경고
+    const reviewItems = analyzedData.filter((item) => item.needsReview);
+    if (reviewItems.length > 0) {
+      Alert.alert(
+        "확인 필요",
+        `${reviewItems.length}개 항목의 가격/티커가 불확실합니다. 그래도 저장하시겠습니까?`,
+        [
+          { text: "취소", style: "cancel" },
+          { text: "저장", onPress: () => performSave() }
+        ]
+      );
+    } else {
+      performSave();
+    }
+  };
+
+  // 실제 저장 로직 (분리)
+  const performSave = async () => {
     try {
+      setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("로그인이 필요합니다.");
 
-      const newAssets = analyzedData.map((item) => {
-        return {
-          user_id: user.id,
-          ticker: item.ticker,
-          name: item.name,
-          quantity: item.amount || 0,
-          avg_price: item.price || 0,
-          current_price: item.price || 0,
-        };
-      });
+      const newAssets = analyzedData.map((item) => ({
+        user_id: user.id,
+        ticker: String(item.ticker || 'UNKNOWN').trim(),
+        name: String(item.name || '알 수 없는 자산').trim(),
+        quantity: Number(item.amount) || 0,
+        avg_price: Number(item.price) || 0,
+        current_price: Number(item.price) || 0,
+      }));
+
+      // 빈 티커 필터링 (안전장치)
+      const validAssets = newAssets.filter(
+        (asset) => asset.ticker && asset.ticker !== 'UNKNOWN' && asset.name
+      );
+
+      if (validAssets.length === 0) {
+        throw new Error("유효한 자산이 없습니다. 티커와 이름을 확인해주세요.");
+      }
 
       // Supabase에 저장
       const { error } = await supabase
         .from('assets')
-        .insert(newAssets);
+        .insert(validAssets);
 
       if (error) {
         throw error;
       }
 
-      Alert.alert("성공", `${newAssets.length}개의 자산이 등록되었습니다.`);
+      setLoading(false);
+      Alert.alert("성공", `${validAssets.length}개의 자산이 등록되었습니다.`);
       setAnalyzedData([]);
       setImage(null);
       router.push('/(tabs)/portfolio');
     } catch (error) {
+      setLoading(false);
       console.error("Save Assets Error:", error);
       Alert.alert("저장 실패", error instanceof Error ? error.message : "자산 저장 중 오류가 발생했습니다.");
     }
@@ -136,13 +199,27 @@ export default function AddAssetScreen() {
           <View style={styles.dataContainer}>
             <Text style={styles.dataTitle}>추출된 자산 목록</Text>
             {analyzedData.map((item, index) => (
-              <View key={index} style={styles.dataItem}>
+              <View
+                key={index}
+                style={[
+                  styles.dataItem,
+                  item.needsReview && styles.dataItemWarning
+                ]}
+              >
+                <View style={styles.dataItemHeader}>
+                  <Text style={styles.dataItemText}>
+                    {item.name} ({item.ticker})
+                  </Text>
+                  {item.needsReview && (
+                    <Ionicons name="warning" size={16} color="#CF6679" />
+                  )}
+                </View>
                 <Text style={styles.dataItemText}>
-                  {item.name} ({item.ticker})
+                  수량: {item.amount || 0}, 가격: {(item.price || 0).toLocaleString()}원
                 </Text>
-                <Text style={styles.dataItemText}>
-                  수량: {item.amount || 0}, 가격: ${item.price || 0}
-                </Text>
+                {item.needsReview && (
+                  <Text style={styles.warningText}>⚠️ 확인 필요</Text>
+                )}
               </View>
             ))}
 
@@ -235,10 +312,25 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 8,
   },
+  dataItemWarning: {
+    borderWidth: 1,
+    borderColor: '#CF6679',
+    backgroundColor: '#2A2020',
+  },
+  dataItemHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   dataItemText: {
     color: '#CCCCCC',
     fontSize: 14,
     lineHeight: 20,
+  },
+  warningText: {
+    color: '#CF6679',
+    fontSize: 12,
+    marginTop: 4,
   },
   saveButton: {
     marginTop: 16,
