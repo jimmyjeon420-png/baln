@@ -1,16 +1,45 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { useAuth } from '../../src/context/AuthContext';
 
 // 더보기(메뉴) 화면 - 설정 및 추가 기능
 export default function ProfileScreen() {
+  const router = useRouter();
+  const { user, signOut } = useAuth();
+
+  // 로그아웃 처리
+  const handleLogout = async () => {
+    Alert.alert(
+      '로그아웃',
+      '정말 로그아웃 하시겠습니까?',
+      [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '로그아웃',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await signOut();
+              router.replace('/login');
+            } catch (error) {
+              Alert.alert('오류', '로그아웃 중 오류가 발생했습니다.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  // 메뉴 항목 정의 - 각 항목에 실제 네비게이션 연결
   const menuItems = [
-    { icon: 'person-outline', label: '프로필 설정', onPress: () => {} },
-    { icon: 'notifications-outline', label: '알림 설정', onPress: () => {} },
-    { icon: 'shield-checkmark-outline', label: '보안', onPress: () => {} },
-    { icon: 'help-circle-outline', label: '도움말', onPress: () => {} },
-    { icon: 'document-text-outline', label: '이용약관', onPress: () => {} },
-    { icon: 'information-circle-outline', label: '앱 정보', onPress: () => {} },
+    { icon: 'person-outline', label: '프로필 설정', onPress: () => router.push('/settings/profile') },
+    { icon: 'notifications-outline', label: '알림 설정', onPress: () => router.push('/settings/notifications') },
+    { icon: 'shield-checkmark-outline', label: '보안', onPress: () => router.push('/settings/security') },
+    { icon: 'help-circle-outline', label: '도움말', onPress: () => router.push('/settings/help') },
+    { icon: 'document-text-outline', label: '이용약관', onPress: () => router.push('/settings/terms') },
+    { icon: 'information-circle-outline', label: '앱 정보', onPress: () => router.push('/settings/about') },
   ];
 
   return (
@@ -21,16 +50,21 @@ export default function ProfileScreen() {
 
       <ScrollView style={styles.content}>
         {/* 프로필 카드 */}
-        <View style={styles.profileCard}>
+        <TouchableOpacity
+          style={styles.profileCard}
+          onPress={() => user ? router.push('/settings/profile') : router.push('/login')}
+        >
           <View style={styles.avatar}>
             <Ionicons name="person" size={32} color="#4CAF50" />
           </View>
           <View style={styles.profileInfo}>
-            <Text style={styles.profileName}>사용자</Text>
-            <Text style={styles.profileEmail}>로그인하여 데이터를 동기화하세요</Text>
+            <Text style={styles.profileName}>{user?.email?.split('@')[0] || '사용자'}</Text>
+            <Text style={styles.profileEmail}>
+              {user ? user.email : '로그인하여 데이터를 동기화하세요'}
+            </Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color="#888888" />
-        </View>
+        </TouchableOpacity>
 
         {/* 메뉴 목록 */}
         <View style={styles.menuSection}>
@@ -46,6 +80,17 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           ))}
         </View>
+
+        {/* 로그아웃 버튼 (로그인 상태일 때만 표시) */}
+        {user && (
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+            <Ionicons name="log-out-outline" size={22} color="#CF6679" />
+            <Text style={styles.logoutText}>로그아웃</Text>
+          </TouchableOpacity>
+        )}
+
+        {/* 버전 정보 */}
+        <Text style={styles.versionText}>Smart Rebalancer v1.0.0</Text>
       </ScrollView>
     </View>
   );
@@ -118,5 +163,27 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#FFFFFF',
     marginLeft: 12,
+  },
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#1E1E1E',
+    borderRadius: 16,
+    padding: 16,
+    marginTop: 24,
+    gap: 8,
+  },
+  logoutText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#CF6679',
+  },
+  versionText: {
+    textAlign: 'center',
+    color: '#666666',
+    fontSize: 12,
+    marginTop: 24,
+    marginBottom: 40,
   },
 });

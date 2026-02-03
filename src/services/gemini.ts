@@ -1,12 +1,13 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-// .env에 있는 키를 가져옵니다. (스크린샷의 ...IKAg 키인지 확인 필수)
+// 환경변수에서 API 키와 모델명 가져오기
 const API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY || '';
+const MODEL_NAME = process.env.EXPO_PUBLIC_GEMINI_MODEL || 'gemini-2.0-flash';
+
 const genAI = new GoogleGenerativeAI(API_KEY);
 
-// [2026-02 업데이트] gemini-1.5-flash 서비스 종료로 최신 모델로 교체
-// gemini-2.5-flash: 안정적인 프로덕션용 멀티모달 모델 (이미지 분석 지원)
-const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+// 환경변수로 모델 설정 (기본값: gemini-2.0-flash)
+const model = genAI.getGenerativeModel({ model: MODEL_NAME });
 
 export const getPortfolioAdvice = async (prompt: any) => {
   try {
@@ -31,7 +32,7 @@ export const summarizeChat = async (messages: any[]) => {
 
 export const analyzeAssetImage = async (base64: string) => {
   try {
-    console.log("Gemini: 이미지 분석 요청 중... (gemini-2.5-flash)");
+    console.log(`Gemini: 이미지 분석 요청 중... (${MODEL_NAME})`);
 
     // [핵심] 한국 금융앱(토스, 업비트) 특화 프롬프트
     const prompt = `
