@@ -59,7 +59,10 @@
       "Bash(git push:*)",
       "Bash(npm ls:*)",
       "Bash(git init:*)",
-      "Bash(git config:*)"
+      "Bash(git config:*)",
+      "Bash(git pull:*)",
+      "WebFetch(domain:ai.google.dev)",
+      "Bash(ping:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
