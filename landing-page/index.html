@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="ko" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Rebalancer | AI-Powered Portfolio Navigation</title>
+    <meta name="description" content="Connect the missing 40% of your wealth. AI-powered portfolio rebalancing for global hybrid investors.">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'navy': {
+                            900: '#0a0f1a',
+                            800: '#111827',
+                            700: '#1e293b',
+                            600: '#334155',
+                        },
+                        'accent': {
+                            blue: '#3b82f6',
+                            cyan: '#06b6d4',
+                            emerald: '#10b981',
+                        }
+                    },
+                    fontFamily: {
+                        'sans': ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'gradient': 'gradient 8s ease infinite',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @keyframes gradient {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #3b82f6, #06b6d4, #10b981);
+            background-size: 200% 200%;
+            animation: gradient 8s ease infinite;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .glass-card {
+            background: rgba(30, 41, 59, 0.5);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .glow-blue {
+            box-shadow: 0 0 60px rgba(59, 130, 246, 0.3);
+        }
+
+        .glow-cyan {
+            box-shadow: 0 0 60px rgba(6, 182, 212, 0.3);
+        }
+    </style>
+</head>
+<body class="bg-navy-900 text-white font-sans antialiased">
+
+    <!-- Navigation -->
+    <nav class="fixed w-full z-50 bg-navy-900/80 backdrop-blur-lg border-b border-white/5">
+        <div class="max-w-7xl mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-accent-blue to-accent-cyan flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                        </svg>
+                    </div>
+                    <span class="text-xl font-bold">Smart Rebalancer</span>
+                </div>
+                <div class="hidden md:flex items-center gap-8">
+                    <a href="#how-it-works" class="text-gray-400 hover:text-white transition">How it Works</a>
+                    <a href="#features" class="text-gray-400 hover:text-white transition">Features</a>
+                    <a href="#security" class="text-gray-400 hover:text-white transition">Security</a>
+                    <a href="#download" class="px-6 py-2.5 bg-gradient-to-r from-accent-blue to-accent-cyan rounded-full font-semibold hover:opacity-90 transition">
+                        Get Started
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="relative min-h-screen flex items-center pt-20 overflow-hidden">
+        <!-- Background Effects -->
+        <div class="absolute inset-0">
+            <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-accent-blue/20 rounded-full blur-3xl animate-pulse-slow"></div>
+            <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent-cyan/20 rounded-full blur-3xl animate-pulse-slow" style="animation-delay: 2s;"></div>
+        </div>
+
+        <div class="max-w-7xl mx-auto px-6 py-20 relative z-10">
+            <div class="grid lg:grid-cols-2 gap-12 items-center">
+                <div>
+                    <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent-blue/10 border border-accent-blue/30 mb-6">
+                        <span class="w-2 h-2 bg-accent-emerald rounded-full animate-pulse"></span>
+                        <span class="text-sm text-accent-cyan">AI-Powered Financial Navigation</span>
+                    </div>
+
+                    <h1 class="text-5xl lg:text-6xl font-bold leading-tight mb-6">
+                        Connect the<br>
+                        <span class="gradient-text">Missing 40%</span><br>
+                        of Your Wealth
+                    </h1>
+
+                    <p class="text-xl text-gray-400 mb-8 leading-relaxed">
+                        Your portfolio is scattered across apps. <strong class="text-white">Crypto on Upbit. Stocks on Toss. Global ETFs on Interactive Brokers.</strong> We capture every hidden asset with a single screenshot.
+                    </p>
+
+                    <div class="flex flex-col sm:flex-row gap-4 mb-12">
+                        <a href="#download" class="px-8 py-4 bg-gradient-to-r from-accent-blue to-accent-cyan rounded-xl font-semibold text-lg hover:opacity-90 transition text-center">
+                            Start Free Trial
+                        </a>
+                        <a href="#how-it-works" class="px-8 py-4 glass-card rounded-xl font-semibold text-lg hover:bg-white/10 transition text-center">
+                            See How It Works
+                        </a>
+                    </div>
+
+                    <!-- Trust Badges -->
+                    <div class="flex items-center gap-6 text-sm text-gray-500">
+                        <div class="flex items-center gap-2">
+                            <svg class="w-5 h-5 text-accent-emerald" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                            <span>No Image Storage</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <svg class="w-5 h-5 text-accent-emerald" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                            <span>Bank-Level Encryption</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hero Visual -->
+                <div class="relative animate-float">
+                    <div class="glass-card rounded-3xl p-8 glow-blue">
+                        <!-- Mock App Interface -->
+                        <div class="bg-navy-900 rounded-2xl p-6 mb-4">
+                            <div class="flex justify-between items-center mb-6">
+                                <span class="text-gray-400 text-sm">Total Portfolio Value</span>
+                                <span class="text-accent-emerald text-sm">+12.4% MTD</span>
+                            </div>
+                            <div class="text-4xl font-bold mb-2">₩847,234,560</div>
+                            <div class="text-gray-500 text-sm">$634,521 USD</div>
+                        </div>
+
+                        <!-- Asset Distribution -->
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between p-3 rounded-xl bg-navy-800/50">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-full bg-orange-500/20 flex items-center justify-center">
+                                        <span class="text-orange-400 text-xs font-bold">₿</span>
+                                    </div>
+                                    <span>Bitcoin</span>
+                                </div>
+                                <span class="text-accent-emerald">32%</span>
+                            </div>
+                            <div class="flex items-center justify-between p-3 rounded-xl bg-navy-800/50">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center">
+                                        <span class="text-green-400 text-xs font-bold">N</span>
+                                    </div>
+                                    <span>NVIDIA</span>
+                                </div>
+                                <span class="text-accent-cyan">28%</span>
+                            </div>
+                            <div class="flex items-center justify-between p-3 rounded-xl bg-navy-800/50">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center">
+                                        <span class="text-blue-400 text-xs font-bold">S</span>
+                                    </div>
+                                    <span>Samsung</span>
+                                </div>
+                                <span class="text-gray-400">22%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Problem Statement -->
+    <section class="py-24 relative">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center max-w-3xl mx-auto mb-16">
+                <h2 class="text-3xl lg:text-4xl font-bold mb-6">
+                    The Problem: <span class="gradient-text">Shadow Assets</span>
+                </h2>
+                <p class="text-xl text-gray-400">
+                    The average investor has their wealth scattered across 5+ platforms. Without a unified view, you're flying blind.
+                </p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-6">
+                <div class="glass-card rounded-2xl p-8 text-center">
+                    <div class="text-5xl font-bold text-red-400 mb-2">40%</div>
+                    <p class="text-gray-400">of assets are "invisible" to traditional portfolio trackers</p>
+                </div>
+                <div class="glass-card rounded-2xl p-8 text-center">
+                    <div class="text-5xl font-bold text-amber-400 mb-2">5+</div>
+                    <p class="text-gray-400">average number of platforms per hybrid investor</p>
+                </div>
+                <div class="glass-card rounded-2xl p-8 text-center">
+                    <div class="text-5xl font-bold text-accent-cyan mb-2">73%</div>
+                    <p class="text-gray-400">make emotional decisions without complete data</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section id="how-it-works" class="py-24 bg-navy-800/30">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl lg:text-4xl font-bold mb-6">
+                    Three Steps to <span class="gradient-text">Total Visibility</span>
+                </h2>
+                <p class="text-xl text-gray-400">No API keys. No bank logins. Just screenshots.</p>
+            </div>
+
+            <div class="grid lg:grid-cols-3 gap-8">
+                <!-- Step 1 -->
+                <div class="relative">
+                    <div class="glass-card rounded-2xl p-8 h-full">
+                        <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-accent-blue to-accent-cyan flex items-center justify-center mb-6">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                        </div>
+                        <div class="text-accent-cyan text-sm font-semibold mb-2">STEP 01</div>
+                        <h3 class="text-2xl font-bold mb-4">Screenshot</h3>
+                        <p class="text-gray-400">
+                            Take a screenshot of your portfolio from any app — Toss, Upbit, Interactive Brokers, Coinbase. Any language, any format.
+                        </p>
+                    </div>
+                    <div class="hidden lg:block absolute -right-4 top-1/2 transform -translate-y-1/2 z-10">
+                        <svg class="w-8 h-8 text-accent-blue" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="relative">
+                    <div class="glass-card rounded-2xl p-8 h-full">
+                        <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-accent-cyan to-accent-emerald flex items-center justify-center mb-6">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                            </svg>
+                        </div>
+                        <div class="text-accent-emerald text-sm font-semibold mb-2">STEP 02</div>
+                        <h3 class="text-2xl font-bold mb-4">AI Scan</h3>
+                        <p class="text-gray-400">
+                            Our Gemini-powered AI extracts tickers, quantities, and values instantly. Supports Korean, English, and numeric formats.
+                        </p>
+                    </div>
+                    <div class="hidden lg:block absolute -right-4 top-1/2 transform -translate-y-1/2 z-10">
+                        <svg class="w-8 h-8 text-accent-emerald" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Step 3 -->
+                <div>
+                    <div class="glass-card rounded-2xl p-8 h-full glow-cyan">
+                        <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-accent-emerald to-accent-blue flex items-center justify-center mb-6">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                            </svg>
+                        </div>
+                        <div class="text-accent-blue text-sm font-semibold mb-2">STEP 03</div>
+                        <h3 class="text-2xl font-bold mb-4">Personalized Rebalancing</h3>
+                        <p class="text-gray-400">
+                            Get AI-driven recommendations tailored to your risk profile, tax situation, and market conditions. Execute with confidence.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Behavioral Finance Features -->
+    <section id="features" class="py-24">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl lg:text-4xl font-bold mb-6">
+                    Built for <span class="gradient-text">Rational Investors</span>
+                </h2>
+                <p class="text-xl text-gray-400">
+                    We don't just track. We protect you from your own emotions.
+                </p>
+            </div>
+
+            <div class="grid lg:grid-cols-2 gap-8">
+                <!-- Panic Shield -->
+                <div class="glass-card rounded-3xl p-10 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-64 h-64 bg-red-500/10 rounded-full blur-3xl"></div>
+                    <div class="relative">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-14 h-14 rounded-2xl bg-red-500/20 flex items-center justify-center">
+                                <svg class="w-7 h-7 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                                </svg>
+                            </div>
+                            <h3 class="text-2xl font-bold">Panic Shield™</h3>
+                        </div>
+                        <p class="text-gray-400 text-lg mb-6">
+                            When markets crash, emotions spike. Our AI detects panic-selling patterns and shows you historical recovery data before you make irreversible decisions.
+                        </p>
+                        <div class="bg-navy-900/50 rounded-xl p-4">
+                            <div class="flex items-center gap-3 text-red-400 mb-2">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                </svg>
+                                <span class="font-semibold">Volatility Alert Triggered</span>
+                            </div>
+                            <p class="text-gray-500 text-sm">
+                                "BTC dropped 15% today. Historically, selling during similar dips resulted in 23% average loss. Hold period recommendation: 14 days."
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FOMO Vaccine -->
+                <div class="glass-card rounded-3xl p-10 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl"></div>
+                    <div class="relative">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-14 h-14 rounded-2xl bg-amber-500/20 flex items-center justify-center">
+                                <svg class="w-7 h-7 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                                </svg>
+                            </div>
+                            <h3 class="text-2xl font-bold">FOMO Vaccine™</h3>
+                        </div>
+                        <p class="text-gray-400 text-lg mb-6">
+                            Seeing everyone buy the latest meme stock? We analyze whether it fits your portfolio's risk profile before you chase the hype.
+                        </p>
+                        <div class="bg-navy-900/50 rounded-xl p-4">
+                            <div class="flex items-center gap-3 text-amber-400 mb-2">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                </svg>
+                                <span class="font-semibold">Risk Mismatch Detected</span>
+                            </div>
+                            <p class="text-gray-500 text-sm">
+                                "Adding DOGE would increase portfolio volatility by 34%. Your target risk level is 'Moderate'. Consider maximum 2% allocation."
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Additional Features -->
+            <div class="grid md:grid-cols-3 gap-6 mt-8">
+                <div class="glass-card rounded-2xl p-6">
+                    <div class="w-12 h-12 rounded-xl bg-accent-blue/20 flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-accent-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <h4 class="text-lg font-bold mb-2">Tax-Loss Harvesting</h4>
+                    <p class="text-gray-400 text-sm">Automatically identify opportunities to offset gains with strategic losses.</p>
+                </div>
+
+                <div class="glass-card rounded-2xl p-6">
+                    <div class="w-12 h-12 rounded-xl bg-accent-cyan/20 flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-accent-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <h4 class="text-lg font-bold mb-2">Global Coverage</h4>
+                    <p class="text-gray-400 text-sm">Track assets across 40+ countries. KRW, USD, EUR — all unified.</p>
+                </div>
+
+                <div class="glass-card rounded-2xl p-6">
+                    <div class="w-12 h-12 rounded-xl bg-accent-emerald/20 flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-accent-emerald" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                        </svg>
+                    </div>
+                    <h4 class="text-lg font-bold mb-2">Smart Checklists</h4>
+                    <p class="text-gray-400 text-sm">AI-generated action items based on your portfolio's health score.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Security Section -->
+    <section id="security" class="py-24 bg-navy-800/30">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="grid lg:grid-cols-2 gap-16 items-center">
+                <div>
+                    <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent-emerald/10 border border-accent-emerald/30 mb-6">
+                        <svg class="w-4 h-4 text-accent-emerald" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                        </svg>
+                        <span class="text-sm text-accent-emerald font-semibold">Zero-Knowledge Architecture</span>
+                    </div>
+
+                    <h2 class="text-3xl lg:text-4xl font-bold mb-6">
+                        Your Screenshots<br>
+                        <span class="gradient-text">Never Touch Our Servers</span>
+                    </h2>
+
+                    <p class="text-xl text-gray-400 mb-8">
+                        We process images on-device using edge AI. Your financial data is extracted, encrypted locally, and the original image is immediately discarded.
+                    </p>
+
+                    <div class="space-y-4">
+                        <div class="flex items-start gap-4">
+                            <div class="w-10 h-10 rounded-lg bg-accent-emerald/20 flex items-center justify-center flex-shrink-0 mt-1">
+                                <svg class="w-5 h-5 text-accent-emerald" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h4 class="font-bold mb-1">No Image Storage</h4>
+                                <p class="text-gray-400">Screenshots are processed in real-time and deleted within milliseconds. We never store raw images.</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-4">
+                            <div class="w-10 h-10 rounded-lg bg-accent-emerald/20 flex items-center justify-center flex-shrink-0 mt-1">
+                                <svg class="w-5 h-5 text-accent-emerald" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h4 class="font-bold mb-1">End-to-End Encryption</h4>
+                                <p class="text-gray-400">All extracted data is encrypted with AES-256 before transmission. Only you hold the decryption keys.</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-4">
+                            <div class="w-10 h-10 rounded-lg bg-accent-emerald/20 flex items-center justify-center flex-shrink-0 mt-1">
+                                <svg class="w-5 h-5 text-accent-emerald" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h4 class="font-bold mb-1">SOC 2 Type II Compliant</h4>
+                                <p class="text-gray-400">Our infrastructure meets enterprise security standards. Audited annually by independent third parties.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Security Visual -->
+                <div class="relative">
+                    <div class="glass-card rounded-3xl p-8 glow-cyan">
+                        <div class="text-center mb-8">
+                            <div class="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-accent-emerald to-accent-cyan flex items-center justify-center mb-4">
+                                <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                </svg>
+                            </div>
+                            <h3 class="text-xl font-bold">Privacy-First Design</h3>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between p-4 rounded-xl bg-navy-900/50">
+                                <span class="text-gray-400">Image Storage</span>
+                                <span class="text-accent-emerald font-semibold">NEVER</span>
+                            </div>
+                            <div class="flex items-center justify-between p-4 rounded-xl bg-navy-900/50">
+                                <span class="text-gray-400">Data Encryption</span>
+                                <span class="text-accent-emerald font-semibold">AES-256</span>
+                            </div>
+                            <div class="flex items-center justify-between p-4 rounded-xl bg-navy-900/50">
+                                <span class="text-gray-400">Third-Party Sharing</span>
+                                <span class="text-accent-emerald font-semibold">NONE</span>
+                            </div>
+                            <div class="flex items-center justify-between p-4 rounded-xl bg-navy-900/50">
+                                <span class="text-gray-400">Compliance</span>
+                                <span class="text-accent-emerald font-semibold">SOC 2 / GDPR</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section id="download" class="py-24">
+        <div class="max-w-4xl mx-auto px-6 text-center">
+            <h2 class="text-4xl lg:text-5xl font-bold mb-6">
+                Ready to Dominate<br>
+                <span class="gradient-text">Your Shadow Assets?</span>
+            </h2>
+            <p class="text-xl text-gray-400 mb-10">
+                Join thousands of hybrid investors who've already connected their missing wealth.
+            </p>
+
+            <div class="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+                <a href="#" class="inline-flex items-center justify-center gap-3 px-8 py-4 bg-white text-navy-900 rounded-xl font-semibold text-lg hover:bg-gray-100 transition">
+                    <svg class="w-7 h-7" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
+                    </svg>
+                    App Store
+                </a>
+                <a href="#" class="inline-flex items-center justify-center gap-3 px-8 py-4 bg-white text-navy-900 rounded-xl font-semibold text-lg hover:bg-gray-100 transition">
+                    <svg class="w-7 h-7" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 01-.61-.92V2.734a1 1 0 01.609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-3.198l2.807 1.626a1 1 0 010 1.73l-2.808 1.626L15.206 12l2.492-2.491zM5.864 2.658L16.8 8.99l-2.302 2.302-8.634-8.634z"/>
+                    </svg>
+                    Google Play
+                </a>
+            </div>
+
+            <!-- Investor Logos -->
+            <div class="pt-12 border-t border-white/10">
+                <p class="text-gray-500 text-sm mb-6">Backed by world-class investors</p>
+                <div class="flex items-center justify-center gap-12 opacity-50">
+                    <div class="text-2xl font-bold text-gray-400">ALTOS</div>
+                    <div class="text-2xl font-bold text-gray-400">SBVA</div>
+                    <div class="text-2xl font-bold text-gray-400">Y Combinator</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-12 border-t border-white/10">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-accent-blue to-accent-cyan flex items-center justify-center">
+                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                        </svg>
+                    </div>
+                    <span class="font-bold">Smart Rebalancer</span>
+                </div>
+
+                <div class="flex items-center gap-8 text-sm text-gray-400">
+                    <a href="#" class="hover:text-white transition">Privacy Policy</a>
+                    <a href="#" class="hover:text-white transition">Terms of Service</a>
+                    <a href="#" class="hover:text-white transition">Contact</a>
+                </div>
+
+                <div class="text-sm text-gray-500">
+                    © 2026 Smart Rebalancer. All rights reserved.
+                </div>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>
