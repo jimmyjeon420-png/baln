@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../src/context/AuthContext';
@@ -34,21 +35,23 @@ export default function ProfileScreen() {
 
   // 메뉴 항목 정의 - 각 항목에 실제 네비게이션 연결
   const menuItems = [
+    { icon: 'diamond', label: 'VIP 라운지', onPress: () => router.push('/settings/lounge'), highlight: true },
     { icon: 'person-outline', label: '프로필 설정', onPress: () => router.push('/settings/profile') },
     { icon: 'notifications-outline', label: '알림 설정', onPress: () => router.push('/settings/notifications') },
     { icon: 'shield-checkmark-outline', label: '보안', onPress: () => router.push('/settings/security') },
     { icon: 'help-circle-outline', label: '도움말', onPress: () => router.push('/settings/help') },
     { icon: 'document-text-outline', label: '이용약관', onPress: () => router.push('/settings/terms') },
+    { icon: 'lock-closed-outline', label: '개인정보처리방침', onPress: () => router.push('/settings/privacy') },
     { icon: 'information-circle-outline', label: '앱 정보', onPress: () => router.push('/settings/about') },
   ];
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <Text style={styles.title}>더보기</Text>
       </View>
 
-      <ScrollView style={styles.content}>
+      <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
         {/* 프로필 카드 */}
         <TouchableOpacity
           style={styles.profileCard}
@@ -71,11 +74,30 @@ export default function ProfileScreen() {
           {menuItems.map((item, index) => (
             <TouchableOpacity
               key={index}
-              style={styles.menuItem}
+              style={[
+                styles.menuItem,
+                (item as any).highlight && styles.menuItemHighlight,
+              ]}
               onPress={item.onPress}
             >
-              <Ionicons name={item.icon as any} size={22} color="#FFFFFF" />
-              <Text style={styles.menuLabel}>{item.label}</Text>
+              <Ionicons
+                name={item.icon as any}
+                size={22}
+                color={(item as any).highlight ? '#FFC107' : '#FFFFFF'}
+              />
+              <Text
+                style={[
+                  styles.menuLabel,
+                  (item as any).highlight && styles.menuLabelHighlight,
+                ]}
+              >
+                {item.label}
+              </Text>
+              {(item as any).highlight && (
+                <View style={styles.vipBadge}>
+                  <Text style={styles.vipBadgeText}>VIP</Text>
+                </View>
+              )}
               <Ionicons name="chevron-forward" size={18} color="#888888" />
             </TouchableOpacity>
           ))}
@@ -90,9 +112,9 @@ export default function ProfileScreen() {
         )}
 
         {/* 버전 정보 */}
-        <Text style={styles.versionText}>Smart Rebalancer v1.0.0</Text>
+        <Text style={styles.versionText}>Smart Rebalancer v2.0.0</Text>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -102,9 +124,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#121212',
   },
   header: {
-    paddingTop: 60,
+    paddingTop: 20,
     paddingHorizontal: 20,
     paddingBottom: 20,
+  },
+  scrollContent: {
+    paddingBottom: 100,
   },
   title: {
     fontSize: 28,
@@ -163,6 +188,25 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#FFFFFF',
     marginLeft: 12,
+  },
+  menuItemHighlight: {
+    backgroundColor: '#2A2A1A',
+  },
+  menuLabelHighlight: {
+    color: '#FFC107',
+    fontWeight: '600',
+  },
+  vipBadge: {
+    backgroundColor: '#FFC107',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+    marginRight: 8,
+  },
+  vipBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#000000',
   },
   logoutButton: {
     flexDirection: 'row',

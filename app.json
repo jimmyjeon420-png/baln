@@ -38,7 +38,8 @@
           "fonts": []
         }
       ],
-      "expo-localization"
+      "expo-localization",
+      "expo-web-browser"
     ],
     "privacy": "public",
     "extra": {

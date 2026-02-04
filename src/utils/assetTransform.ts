@@ -77,8 +77,9 @@ export const transformAssetToDbRow = (asset: Omit<Asset, 'id' | 'createdAt'>, us
     purchase_date: asset.purchaseDate ? new Date(asset.purchaseDate).toISOString() : null,
     custom_tax_rate: asset.customTaxRate,
 
-    // 메타데이터
-    currency: asset.currency || 'USD',
+    // 메타데이터 - 기본값 KRW (화면 표시 통화 기준)
+    currency: (asset.currency as 'KRW' | 'USD' | 'EUR' | 'JPY') || 'KRW',
+    display_currency: 'KRW', // 항상 KRW (외부 환율 변환 금지)
     notes: asset.notes ?? null,
   };
 };

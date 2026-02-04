@@ -12,16 +12,16 @@ export default function AboutScreen() {
   const router = useRouter();
 
   const appInfo = [
-    { label: '버전', value: '1.0.0' },
-    { label: '빌드', value: '2026.02.03' },
+    { label: '버전', value: '2.0.0' },
+    { label: '빌드', value: '2026.02.04' },
     { label: '프레임워크', value: 'Expo SDK 54' },
     { label: 'AI 엔진', value: 'Google Gemini' },
   ];
 
   const links = [
-    { label: '개인정보처리방침', url: 'https://smartrebalancer.com/privacy' },
-    { label: '오픈소스 라이선스', url: 'https://smartrebalancer.com/licenses' },
-    { label: '공식 웹사이트', url: 'https://smartrebalancer.com' },
+    { label: '개인정보처리방침', url: null, route: '/settings/privacy' },
+    { label: '오픈소스 라이선스', url: 'https://smartrebalancer.com/licenses', route: null },
+    { label: '공식 웹사이트', url: 'https://smartrebalancer.com', route: null },
   ];
 
   return (
@@ -61,10 +61,20 @@ export default function AboutScreen() {
             <TouchableOpacity
               key={index}
               style={styles.linkItem}
-              onPress={() => Linking.openURL(item.url)}
+              onPress={() => {
+                if (item.route) {
+                  router.push(item.route as any);
+                } else if (item.url) {
+                  Linking.openURL(item.url);
+                }
+              }}
             >
               <Text style={styles.linkLabel}>{item.label}</Text>
-              <Ionicons name="open-outline" size={18} color="#4CAF50" />
+              <Ionicons
+                name={item.route ? 'chevron-forward' : 'open-outline'}
+                size={18}
+                color="#4CAF50"
+              />
             </TouchableOpacity>
           ))}
         </View>

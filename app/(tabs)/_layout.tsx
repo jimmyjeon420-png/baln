@@ -45,12 +45,14 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
               canPreventDefault: true,
             });
 
-            if (!isFocused && !event.defaultPrevented) {
+            if (!event.defaultPrevented) {
               if (isScanButton) {
                 // 스캔 버튼은 add-asset 모달로 이동
                 router.push('/add-asset');
               } else {
-                navigation.navigate(route.name);
+                // expo-router 사용하여 탭 네비게이션
+                const tabPath = route.name === 'index' ? '/(tabs)' : `/(tabs)/${route.name}`;
+                router.replace(tabPath as any);
               }
             }
           };
