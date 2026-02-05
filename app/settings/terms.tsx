@@ -72,6 +72,28 @@ export default function TermsScreen() {
           </Text>
         </View>
 
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>제6조 (VIP 라운지 모임 서비스)</Text>
+          <Text style={styles.sectionContent}>
+            1. VIP 라운지 모임은 회원 간의 자발적인 만남을 위한 매칭 플랫폼으로, 회사는 모임의 주최자가 아닙니다.{'\n\n'}
+            2. 회사는 모임 진행 중 또는 모임으로 인해 발생하는 어떠한 사고, 분쟁, 손해에 대해서도 책임을 지지 않습니다.{'\n\n'}
+            3. 모임 참가에 따른 모든 위험과 책임은 참가자 본인에게 있습니다.{'\n\n'}
+            4. 모임 중 발생할 수 있는 인적·물적 피해, 개인정보 유출, 금전적 손실 등에 대해 회사는 일체의 법적 책임을 부담하지 않습니다.{'\n\n'}
+            5. 회원은 모임 참가 전 충분한 주의를 기울여야 하며, 모임 호스트의 신원 확인은 회원 본인의 책임입니다.{'\n\n'}
+            6. 모임 참가비에는 별도의 플랫폼 수수료(10%)가 부과되며, 결제 시 사전에 안내됩니다.{'\n\n'}
+            7. 모임 취소 및 환불 정책은 각 모임의 호스트가 정한 규정을 따릅니다.
+          </Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>제7조 (수수료 및 결제)</Text>
+          <Text style={styles.sectionContent}>
+            1. 유료 모임 참가 시 참가비의 10%가 플랫폼 수수료로 부과됩니다.{'\n\n'}
+            2. 결제는 신뢰할 수 있는 결제 대행사를 통해 처리되며, 결제 정보는 회사에 저장되지 않습니다.{'\n\n'}
+            3. 환불은 모임 시작 24시간 전까지 신청 시 전액 환불이 가능하며, 이후에는 호스트의 정책에 따릅니다.
+          </Text>
+        </View>
+
         <Text style={styles.footer}>
           본 약관에 동의하지 않으실 경우 서비스 이용이 제한될 수 있습니다.
         </Text>

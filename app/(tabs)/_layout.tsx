@@ -15,7 +15,7 @@ const COLORS = {
 };
 
 // 표시할 탭 목록 (순서대로)
-const VISIBLE_TABS = ['index', 'diagnosis', 'scan', 'rebalance', 'profile'];
+const VISIBLE_TABS = ['index', 'lounge', 'scan', 'rebalance', 'profile'];
 
 // 커스텀 탭 바 컴포넌트 - 플로팅 스캔 버튼 포함
 function CustomTabBar({ state, descriptors, navigation }: any) {
@@ -107,7 +107,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
 function getIconName(routeName: string, isFocused: boolean): keyof typeof Ionicons.glyphMap {
   const icons: Record<string, { active: string; inactive: string }> = {
     index: { active: 'home', inactive: 'home-outline' },
-    diagnosis: { active: 'pulse', inactive: 'pulse-outline' },
+    lounge: { active: 'people', inactive: 'people-outline' },
     scan: { active: 'camera', inactive: 'camera-outline' },
     rebalance: { active: 'map', inactive: 'map-outline' },
     profile: { active: 'menu', inactive: 'menu-outline' },
@@ -121,7 +121,7 @@ function getIconName(routeName: string, isFocused: boolean): keyof typeof Ionico
 function getLabel(routeName: string): string {
   const labels: Record<string, string> = {
     index: '내 자산',
-    diagnosis: 'AI 진단',
+    lounge: '라운지',
     scan: '스캔',
     rebalance: '처방전',
     profile: '더보기',
@@ -145,11 +145,11 @@ export default function TabLayout() {
         }}
       />
 
-      {/* 2. AI 진단 */}
+      {/* 2. 라운지 - VIP 모임/스터디 마켓플레이스 */}
       <Tabs.Screen
-        name="diagnosis"
+        name="lounge"
         options={{
-          title: 'AI 진단',
+          title: '라운지',
         }}
       />
 
@@ -178,6 +178,7 @@ export default function TabLayout() {
       />
 
       {/* 기존 탭들 숨김 처리 */}
+      <Tabs.Screen name="diagnosis" options={{ href: null }} />
       <Tabs.Screen name="strategy" options={{ href: null }} />
       <Tabs.Screen name="journal" options={{ href: null }} />
       <Tabs.Screen name="invest" options={{ href: null }} />

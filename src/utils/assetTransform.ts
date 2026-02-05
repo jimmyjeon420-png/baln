@@ -41,39 +41,69 @@ export const transformDbRowToAsset = (row: PortfolioRow): Asset => {
 };
 
 /**
+ * 통화 정밀도 보정 함수 (부동소수점 오류 방지)
+ * CRITICAL: 19.2조원 오류 방지를 위한 수학적 안전장치
+ * @param value 숫자 값
+ * @param decimals 소수점 자릿수 (기본 2 - 원화 기준)
+ * @returns 반올림된 숫자
+ */
+const roundCurrency = (value: number | undefined | null, decimals: number = 2): number | null => {
+  if (value === undefined || value === null || !Number.isFinite(value)) return null;
+  // 부동소수점 오류 방지: 10^decimals 곱한 후 반올림, 다시 나누기
+  const multiplier = Math.pow(10, decimals);
+  return Math.round(value * multiplier) / multiplier;
+};
+
+/**
  * Asset → Supabase Insert 객체 변환
  * @param asset Asset 객체
  * @param userId 사용자 ID (auth.uid())
  * @returns Supabase Insert 객체
+ *
+ * CRITICAL: 수학적 정밀도 보장
+ * - 모든 금액은 roundCurrency()로 처리
+ * - NaN, Infinity 값 자동 필터링
+ * - 19.2조원 오류 방지
  */
 export const transformAssetToDbRow = (asset: Omit<Asset, 'id' | 'createdAt'>, userId: string): PortfolioInsert => {
   // current_value 계산: quantity * current_price가 있으면 사용, 없으면 asset.currentValue 사용
   let currentValue = asset.currentValue;
-  if (asset.quantity && asset.currentPrice) {
+  if (asset.quantity && asset.currentPrice && asset.quantity > 0 && asset.currentPrice > 0) {
     currentValue = asset.quantity * asset.currentPrice;
   }
 
   // cost_basis 계산: quantity * avgPrice가 있으면 사용, 없으면 asset.costBasis 사용
   let costBasis = asset.costBasis;
-  if (asset.quantity && asset.avgPrice) {
+  if (asset.quantity && asset.avgPrice && asset.quantity > 0 && asset.avgPrice > 0) {
     costBasis = asset.quantity * asset.avgPrice;
+  }
+
+  // 이상값 검증 (음수, NaN, Infinity 방지)
+  const safeCurrentValue = roundCurrency(currentValue) ?? 0;
+  const safeCostBasis = roundCurrency(costBasis);
+
+  // CRITICAL: 비정상적으로 큰 값 감지 (100조원 초과 = 오류로 간주)
+  const MAX_REASONABLE_VALUE = 100_000_000_000_000; // 100조 KRW
+  if (safeCurrentValue > MAX_REASONABLE_VALUE) {
+    console.error(`[CRITICAL] 비정상 자산 가치 감지: ${safeCurrentValue}원 - 자동 보정 필요`);
+    throw new Error(`비정상적인 자산 가치가 감지되었습니다: ${safeCurrentValue.toLocaleString()}원. 입력 데이터를 확인해주세요.`);
   }
 
   return {
     user_id: userId,
     name: asset.name,
-    current_value: currentValue,
+    current_value: safeCurrentValue,
     target_allocation: asset.targetAllocation,
     asset_type: asset.assetType === AssetType.LIQUID ? 'liquid' : 'illiquid',
 
-    // 주식 관련 필드
+    // 주식 관련 필드 (소수점 8자리까지 허용 - 소수점 주식 지원)
     ticker: asset.ticker ?? null,
-    quantity: asset.quantity ? Number(asset.quantity) : null,
-    avg_price: asset.avgPrice ? Number(asset.avgPrice) : null,
-    current_price: asset.currentPrice ? Number(asset.currentPrice) : null,
+    quantity: asset.quantity ? roundCurrency(asset.quantity, 8) : null,
+    avg_price: asset.avgPrice ? roundCurrency(asset.avgPrice, 2) : null,
+    current_price: asset.currentPrice ? roundCurrency(asset.currentPrice, 2) : null,
 
     // Tax 관련
-    cost_basis: costBasis,
+    cost_basis: safeCostBasis,
     purchase_date: asset.purchaseDate ? new Date(asset.purchaseDate).toISOString() : null,
     custom_tax_rate: asset.customTaxRate,
 

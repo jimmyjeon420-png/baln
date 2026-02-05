@@ -4,9 +4,14 @@ import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { analyzeAssetImage, validateAssetData } from '../src/services/gemini';
 import { verifyAsset } from '../src/services/verification';
 import supabase from '../src/services/supabase';
+
+// 진단 트리거 플래그 키
+const NEEDS_DIAGNOSIS_KEY = '@smart_rebalancer:needs_diagnosis';
+const LAST_SCAN_DATE_KEY = '@smart_rebalancer:last_scan_date';
 
 // 입력 모드 타입
 type InputMode = 'self_declared' | 'ocr_verified';
@@ -251,14 +256,38 @@ export default function AddAssetScreen() {
         throw upsertError;
       }
 
+      // 자동 진단 트리거 플래그 설정
+      const today = new Date().toISOString().split('T')[0];
+      await AsyncStorage.setItem(NEEDS_DIAGNOSIS_KEY, 'true');
+      await AsyncStorage.setItem(LAST_SCAN_DATE_KEY, today);
+
       setLoading(false);
 
-      // 결과 메시지
+      // 결과 메시지 및 진단 탭으로 이동
       const savedCount = data?.length || upsertData.length;
-      Alert.alert("성공", `${savedCount}개 자산이 저장/업데이트 되었습니다.`);
-      setAnalyzedData([]);
-      setImage(null);
-      router.push('/(tabs)/portfolio');
+      Alert.alert(
+        "✓ 등록 완료",
+        `${savedCount}개 자산이 저장되었습니다.\n\nAI가 맞춤형 처방전을 준비합니다.`,
+        [
+          {
+            text: "처방전 보기",
+            onPress: () => {
+              setAnalyzedData([]);
+              setImage(null);
+              router.push('/(tabs)/diagnosis');
+            }
+          },
+          {
+            text: "나중에",
+            style: "cancel",
+            onPress: () => {
+              setAnalyzedData([]);
+              setImage(null);
+              router.push('/(tabs)/portfolio');
+            }
+          }
+        ]
+      );
     } catch (error) {
       setLoading(false);
       console.error("Save Assets Error:", error);
@@ -280,17 +309,67 @@ export default function AddAssetScreen() {
 
         {/* 이미지 선택 영역 */}
         {!image ? (
-          <TouchableOpacity
-            style={styles.imagePlaceholder}
-            onPress={pickImage}
-            disabled={loading}
-          >
-            <Ionicons name="image" size={48} color="#4CAF50" />
-            <Text style={styles.placeholderText}>
-              {loading ? "분석 중..." : "자산 영수증 사진 선택"}
-            </Text>
-            {loading && <ActivityIndicator color="#4CAF50" size="large" />}
-          </TouchableOpacity>
+          <>
+            <TouchableOpacity
+              style={styles.imagePlaceholder}
+              onPress={pickImage}
+              disabled={loading}
+            >
+              <Ionicons name="image" size={48} color="#4CAF50" />
+              <Text style={styles.placeholderText}>
+                {loading ? "분석 중..." : "자산 영수증 사진 선택"}
+              </Text>
+              {loading && <ActivityIndicator color="#4CAF50" size="large" />}
+            </TouchableOpacity>
+
+            {/* MTS 스크린샷 캡처 가이드 */}
+            <View style={styles.guideContainer}>
+              <View style={styles.guideHeader}>
+                <Ionicons name="information-circle" size={20} color="#4CAF50" />
+                <Text style={styles.guideTitle}>스크린샷 캡처 가이드</Text>
+              </View>
+
+              <Text style={styles.guideSubtitle}>지원 앱</Text>
+              <View style={styles.supportedAppsRow}>
+                {['토스증권', '한국투자', '키움증권', '삼성증권', '업비트', '빗썸'].map((app) => (
+                  <View key={app} style={styles.appBadge}>
+                    <Text style={styles.appBadgeText}>{app}</Text>
+                  </View>
+                ))}
+              </View>
+
+              <Text style={styles.guideSubtitle}>캡처 방법</Text>
+              <View style={styles.guideSteps}>
+                <View style={styles.guideStep}>
+                  <Text style={styles.stepNumber}>1</Text>
+                  <Text style={styles.stepText}>
+                    <Text style={styles.stepHighlight}>'내 투자'</Text> 또는{' '}
+                    <Text style={styles.stepHighlight}>'포트폴리오'</Text> 화면으로 이동
+                  </Text>
+                </View>
+                <View style={styles.guideStep}>
+                  <Text style={styles.stepNumber}>2</Text>
+                  <Text style={styles.stepText}>
+                    <Text style={styles.stepHighlight}>수량</Text>과{' '}
+                    <Text style={styles.stepHighlight}>평가금액</Text>이 함께 보이는 화면 캡처
+                  </Text>
+                </View>
+                <View style={styles.guideStep}>
+                  <Text style={styles.stepNumber}>3</Text>
+                  <Text style={styles.stepText}>
+                    팝업이나 알림이 가리지 않도록 주의
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.guideTip}>
+                <Ionicons name="bulb" size={16} color="#FFD700" />
+                <Text style={styles.guideTipText}>
+                  토스증권: '내 자산' 탭에서 종목별 평가금액이 보이는 화면을 캡처하세요
+                </Text>
+              </View>
+            </View>
+          </>
         ) : (
           <View style={styles.imageContainer}>
             <Image source={{ uri: image }} style={styles.image} />
@@ -586,5 +665,93 @@ const styles = StyleSheet.create({
     marginTop: 10,
     textAlign: 'center',
     fontStyle: 'italic',
+  },
+  // 스크린샷 가이드 스타일
+  guideContainer: {
+    backgroundColor: '#1A1A1A',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: '#2A2A2A',
+  },
+  guideHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 16,
+  },
+  guideTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  guideSubtitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#888888',
+    marginBottom: 8,
+    marginTop: 12,
+  },
+  supportedAppsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  appBadge: {
+    backgroundColor: '#2A2A2A',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+  },
+  appBadgeText: {
+    fontSize: 12,
+    color: '#CCCCCC',
+  },
+  guideSteps: {
+    gap: 10,
+  },
+  guideStep: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+  },
+  stepNumber: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#4CAF50',
+    color: '#000000',
+    fontSize: 12,
+    fontWeight: '700',
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  stepText: {
+    flex: 1,
+    fontSize: 13,
+    color: '#CCCCCC',
+    lineHeight: 20,
+  },
+  stepHighlight: {
+    color: '#4CAF50',
+    fontWeight: '600',
+  },
+  guideTip: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    marginTop: 16,
+    padding: 12,
+    backgroundColor: 'rgba(255, 215, 0, 0.1)',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.2)',
+  },
+  guideTipText: {
+    flex: 1,
+    fontSize: 12,
+    color: '#FFD700',
+    lineHeight: 18,
   },
 });

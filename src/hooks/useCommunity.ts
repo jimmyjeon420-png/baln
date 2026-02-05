@@ -34,14 +34,14 @@ const formatAssetInBillion = (amount: number): string => {
 };
 
 /**
- * 티어 결정
+ * 티어 결정 (4단계 전략적 티어)
+ * CRITICAL: BRONZE 제거됨 - SILVER가 기본 티어
  */
-const determineTier = (totalAssets: number): 'BRONZE' | 'SILVER' | 'GOLD' | 'PLATINUM' | 'DIAMOND' => {
+const determineTier = (totalAssets: number): 'SILVER' | 'GOLD' | 'PLATINUM' | 'DIAMOND' => {
   if (totalAssets >= TIER_THRESHOLDS.DIAMOND) return 'DIAMOND';
   if (totalAssets >= TIER_THRESHOLDS.PLATINUM) return 'PLATINUM';
   if (totalAssets >= TIER_THRESHOLDS.GOLD) return 'GOLD';
-  if (totalAssets >= TIER_THRESHOLDS.SILVER) return 'SILVER';
-  return 'BRONZE';
+  return 'SILVER'; // 기본 티어 (1억 미만)
 };
 
 /**

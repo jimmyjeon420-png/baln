@@ -243,6 +243,21 @@ const genAI = new GoogleGenerativeAI(API_KEY);
 // 환경변수로 모델 설정 (기본값: gemini-2.0-flash)
 const model = genAI.getGenerativeModel({ model: MODEL_NAME });
 
+// ============================================================================
+// [실시간 그라운딩] Google Search 도구 설정
+// ============================================================================
+// 실시간 뉴스/시장 데이터를 위한 Google Search 도구가 포함된 모델
+// 참고: https://cloud.google.com/vertex-ai/generative-ai/docs/model-reference/gemini
+const modelWithSearch = genAI.getGenerativeModel({
+  model: MODEL_NAME,
+  tools: [
+    {
+      // @ts-ignore - Gemini 2.0 Google Search Tool (google_search_retrieval은 deprecated)
+      google_search: {},
+    },
+  ],
+});
+
 export const getPortfolioAdvice = async (prompt: any) => {
   try {
     const msg = typeof prompt === 'string' ? prompt : JSON.stringify(prompt);
@@ -425,22 +440,42 @@ ETF:
     const rawAssets: any[] = parsedData.assets || (Array.isArray(parsedData) ? parsedData : []);
 
     // 3. 기본 데이터 정제 + 티커 매핑
+    // CRITICAL: 안전한 숫자 파싱 (19.2조원 오류 방지)
     let processedAssets: ParsedAsset[] = rawAssets.map((item: any) => {
       const rawTicker = item.ticker || `UNKNOWN_${item.name || 'ASSET'}`;
       const name = item.name || '알 수 없는 자산';
-      const amount = typeof item.amount === 'number'
-        ? item.amount
-        : parseFloat(String(item.amount).replace(/[^0-9.]/g, '')) || 1;
+
+      // [CRITICAL] 수량 파싱 - 실패 시 0으로 설정 (1로 기본값 설정 금지!)
+      // amount가 1로 기본설정되면 price = totalValue가 되어 19.2조원 오류 발생 가능
+      let amount: number;
+      if (typeof item.amount === 'number' && item.amount > 0) {
+        amount = item.amount;
+      } else {
+        const parsedAmount = parseFloat(String(item.amount).replace(/[^0-9.]/g, ''));
+        amount = (parsedAmount > 0 && Number.isFinite(parsedAmount)) ? parsedAmount : 0;
+      }
 
       // 가격 처리: price가 0이고 totalValue가 있으면 계산
-      let price = typeof item.price === 'number'
-        ? item.price
-        : parseFloat(String(item.price).replace(/[^0-9.]/g, '')) || 0;
+      let price: number;
+      if (typeof item.price === 'number' && item.price > 0) {
+        price = item.price;
+      } else {
+        const parsedPrice = parseFloat(String(item.price).replace(/[^0-9.]/g, ''));
+        price = (parsedPrice > 0 && Number.isFinite(parsedPrice)) ? parsedPrice : 0;
+      }
 
       // totalValue가 있고 price가 0이면, 단가 계산
-      if (price === 0 && item.totalValue && amount > 0) {
+      // CRITICAL: amount가 0이거나 매우 작은 경우 계산하지 않음 (0으로 나누기 방지)
+      if (price === 0 && item.totalValue && amount > 0.0001) {
         price = item.totalValue / amount;
         console.log(`[단가 계산] ${name}: ${item.totalValue} / ${amount} = ${price}`);
+      }
+
+      // [SANITY CHECK] 비정상적으로 큰 가격 감지 (1억원/주 초과)
+      const MAX_REASONABLE_PRICE = 100_000_000; // 1억원/주
+      if (price > MAX_REASONABLE_PRICE && amount > 0) {
+        console.warn(`[경고] ${name}: 비정상 단가 감지 (${price.toLocaleString()}원). 평가금액 혼동 의심.`);
+        // needsReview 플래그로 표시
       }
 
       // 티커 매핑 (UNKNOWN_ 해결)
@@ -451,7 +486,8 @@ ETF:
         name,
         amount,
         price,
-        needsReview: resolvedTicker.startsWith('UNKNOWN_') || price === 0,
+        totalValue: item.totalValue, // 원본 totalValue 보존
+        needsReview: resolvedTicker.startsWith('UNKNOWN_') || price === 0 || amount === 0 || price > MAX_REASONABLE_PRICE,
       };
     });
 
@@ -570,7 +606,196 @@ export interface RiskAnalysisResult {
   };
 }
 
+// ============================================================================
+// CFO Morning Briefing - 아침 처방전
+// ============================================================================
+
+export interface MorningBriefingResult {
+  macroSummary: {
+    title: string;
+    highlights: string[];
+    interestRateProbability: string;
+    marketSentiment: 'BULLISH' | 'NEUTRAL' | 'BEARISH';
+  };
+  portfolioActions: {
+    ticker: string;
+    name: string;
+    action: 'BUY' | 'HOLD' | 'SELL' | 'WATCH';
+    reason: string;
+    priority: 'HIGH' | 'MEDIUM' | 'LOW';
+  }[];
+  realEstateInsight?: {
+    title: string;
+    analysis: string;
+    recommendation: string;
+  };
+  cfoWeather: {
+    emoji: string;
+    status: string;
+    message: string;
+  };
+  generatedAt: string;
+}
+
+/**
+ * CFO Morning Briefing 생성
+ * - 실시간 Google Search 그라운딩으로 최신 뉴스 반영
+ * - 거시경제 요약
+ * - 포트폴리오별 액션 (수익률 기반)
+ * - 부동산 인사이트
+ * - CFO 날씨
+ */
+export const generateMorningBriefing = async (
+  portfolio: PortfolioAsset[],
+  options?: {
+    includeRealEstate?: boolean;
+    realEstateContext?: string;
+  }
+): Promise<MorningBriefingResult> => {
+  try {
+    const today = new Date();
+    const dateStr = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`;
+
+    // [핵심] profit_loss_rate 계산하여 프롬프트에 주입
+    const portfolioWithProfitLoss = portfolio.map(p => {
+      const profitLossRate = p.avgPrice > 0
+        ? ((p.currentPrice - p.avgPrice) / p.avgPrice) * 100
+        : 0;
+      const totalValue = portfolio.reduce((s, a) => s + a.currentValue, 0);
+      return {
+        ticker: p.ticker,
+        name: p.name,
+        value: p.currentValue,
+        allocation: p.allocation || (totalValue > 0 ? ((p.currentValue / totalValue) * 100).toFixed(1) : '0'),
+        profit_loss_rate: profitLossRate.toFixed(2) + '%', // 손익률 추가
+        avgPrice: p.avgPrice,
+        currentPrice: p.currentPrice,
+      };
+    });
+
+    const prompt = `
+당신은 한국의 고액자산가 전담 CFO입니다. 오늘(${dateStr}) 아침 브리핑을 작성해주세요.
+
+**[중요] 실시간 정보 활용 지침:**
+- Google Search를 통해 *지난 24시간* 이내의 최신 뉴스를 반드시 검색하세요
+- 검색 키워드 예시: "오늘 나스닥 종가", "Fed 금리 전망 ${today.getMonth() + 1}월", "Kevin Warsh 연준", "S&P 500 overnight"
+- 각 종목(${portfolioWithProfitLoss.map(p => p.ticker).join(', ')})의 최신 뉴스도 검색하세요
+- 검색 결과를 바탕으로 구체적인 수치와 이벤트를 인용하세요
+
+**포트폴리오 (수익률 포함):**
+${JSON.stringify(portfolioWithProfitLoss, null, 2)}
+
+**수익률 기반 맞춤 조언 규칙:**
+각 종목의 profit_loss_rate를 확인하고:
+- +30% 이상 수익: 일부 익절 검토 권고 (FOMO 경고)
+- +10~30% 수익: 목표가 설정 권고
+- -10% 이상 손실: 손절선 재검토 권고 (Panic Shield)
+- -20% 이상 손실: 적극적 리밸런싱 검토
+
+**브리핑 작성 규칙:**
+
+1. **거시경제 요약 (macroSummary)**
+   - *오늘 실제로 발생한* 글로벌 이슈 3가지 (Google Search 결과 기반)
+   - 미국 금리 인하/동결/인상 확률 예측 (CME FedWatch 참조)
+   - 시장 심리 (BULLISH/NEUTRAL/BEARISH)
+   - 구체적 수치 포함 (예: "나스닥 전일 종가 -1.2%", "10년물 국채 4.25%")
+
+2. **포트폴리오 액션 (portfolioActions)**
+   - 각 보유 종목별 오늘의 권장 행동
+   - action: BUY(추가 매수), HOLD(보유), SELL(매도 검토), WATCH(관찰)
+   - priority: HIGH(즉시 행동), MEDIUM(이번 주), LOW(참고)
+   - **수익률 반영**: profit_loss_rate가 높은 종목은 익절, 낮은 종목은 손절 관점
+   - 최신 뉴스 기반 근거 (예: "어젯밤 NVDA 실적 발표 - 예상치 상회")
+
+3. **CFO 날씨 (cfoWeather)**
+   - emoji: 포트폴리오 상태를 나타내는 이모지 (☀️/⛅/🌧️/⛈️/❄️)
+   - status: 한 줄 상태 (예: "맑음: 안정적")
+   - message: 오늘의 한 마디 조언 (실시간 뉴스 반영)
+
+${options?.includeRealEstate ? `
+4. **부동산 인사이트 (realEstateInsight)**
+   - 컨텍스트: ${options.realEstateContext || '야탑동 매화마을1차 재건축/리모델링'}
+   - 분석: 재건축 vs 리모델링 경제성 비교
+   - 권장사항: 인테리어(6천만) vs 분담금(1.5억) 의사결정 조언
+` : ''}
+
+**출력 형식 (JSON만, 마크다운 금지):**
+{
+  "macroSummary": {
+    "title": "오늘의 시장 핵심",
+    "highlights": ["[실시간] 구체적 이슈1", "[실시간] 구체적 이슈2", "[실시간] 구체적 이슈3"],
+    "interestRateProbability": "동결 65% / 인하 30% / 인상 5%",
+    "marketSentiment": "NEUTRAL"
+  },
+  "portfolioActions": [
+    {"ticker": "NVDA", "name": "엔비디아", "action": "HOLD", "reason": "[실시간 뉴스 기반] 구체적 근거", "priority": "LOW"}
+  ],
+  "realEstateInsight": {
+    "title": "야탑동 매화마을1차 분석",
+    "analysis": "재건축 예상 분담금 1.5억 vs 리모델링 인테리어 6천만",
+    "recommendation": "현재 시점에서는..."
+  },
+  "cfoWeather": {
+    "emoji": "⛅",
+    "status": "구름 조금: 관망 필요",
+    "message": "[오늘 시장 상황 반영] 구체적 조언"
+  }
+}
+`;
+
+    // [핵심] Google Search 그라운딩이 활성화된 모델 사용
+    const result = await modelWithSearch.generateContent(prompt);
+    const responseText = result.response.text();
+
+    // JSON 정제
+    let cleanText = responseText
+      .replace(/```json\s*/gi, '')
+      .replace(/```\s*/g, '')
+      .trim();
+
+    const jsonStart = cleanText.indexOf('{');
+    const jsonEnd = cleanText.lastIndexOf('}');
+    if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+      cleanText = cleanText.substring(jsonStart, jsonEnd + 1);
+    }
+
+    const briefing = JSON.parse(cleanText);
+
+    return {
+      ...briefing,
+      generatedAt: new Date().toISOString(),
+    };
+
+  } catch (error) {
+    console.error("Morning Briefing Error:", error);
+
+    // 에러 시 기본값 반환
+    return {
+      macroSummary: {
+        title: "시장 분석 중...",
+        highlights: ["데이터를 불러오는 중입니다", "잠시 후 다시 시도해주세요"],
+        interestRateProbability: "분석 중",
+        marketSentiment: 'NEUTRAL',
+      },
+      portfolioActions: portfolio.map(p => ({
+        ticker: p.ticker,
+        name: p.name,
+        action: 'HOLD' as const,
+        reason: "분석 데이터 로딩 중",
+        priority: 'LOW' as const,
+      })),
+      cfoWeather: {
+        emoji: "🔄",
+        status: "분석 중",
+        message: "네트워크 연결을 확인해주세요",
+      },
+      generatedAt: new Date().toISOString(),
+    };
+  }
+};
+
 // 포트폴리오 리스크 분석 (Panic Shield & FOMO Vaccine)
+// [실시간 그라운딩] 최신 시장 데이터 기반 분석
 export const analyzePortfolioRisk = async (
   portfolio: PortfolioAsset[],
   userProfile?: UserProfile
@@ -584,18 +809,32 @@ export const analyzePortfolioRisk = async (
       dependents: 2,
     };
 
-    // 포트폴리오 데이터 준비
+    // 포트폴리오 데이터 준비 - profit_loss_rate 명시적 계산
     const totalValue = portfolio.reduce((sum, asset) => sum + asset.currentValue, 0);
-    const portfolioWithAllocation = portfolio.map(asset => ({
-      ...asset,
-      allocation: totalValue > 0 ? (asset.currentValue / totalValue) * 100 : 0,
-      gainLossPercent: asset.avgPrice > 0
+    const portfolioWithAllocation = portfolio.map(asset => {
+      const profitLossRate = asset.avgPrice > 0
         ? ((asset.currentPrice - asset.avgPrice) / asset.avgPrice) * 100
-        : 0,
-    }));
+        : 0;
+      return {
+        ...asset,
+        allocation: totalValue > 0 ? (asset.currentValue / totalValue) * 100 : 0,
+        profit_loss_rate: profitLossRate, // 수익률 (%)
+        gainLossPercent: profitLossRate, // 동일 값 (호환성)
+      };
+    });
+
+    const today = new Date();
+    const dateStr = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`;
 
     const prompt = `
 당신은 행동재무학 전문가입니다. 다음 포트폴리오를 분석하여 "Panic Shield"와 "FOMO Vaccine" 지표를 계산해주세요.
+
+**[중요] 실시간 시장 데이터 활용:**
+- Google Search로 각 종목의 *오늘* 시장 상황을 검색하세요
+- 검색 키워드 예시: "${portfolioWithAllocation.map(p => p.ticker).join(' 주가')}", "VIX 지수", "공포탐욕지수"
+- 실시간 뉴스를 기반으로 리스크 평가에 반영하세요
+
+**오늘 날짜:** ${dateStr}
 
 **사용자 프로필:**
 - 나이: ${profile.age}세
@@ -603,8 +842,23 @@ export const analyzePortfolioRisk = async (
 - 투자 목표: ${profile.investmentGoal}
 - 부양가족: ${profile.dependents}명
 
-**포트폴리오:**
-${JSON.stringify(portfolioWithAllocation, null, 2)}
+**포트폴리오 (수익률 포함):**
+${JSON.stringify(portfolioWithAllocation.map(p => ({
+  ticker: p.ticker,
+  name: p.name,
+  quantity: p.quantity,
+  avgPrice: p.avgPrice,
+  currentPrice: p.currentPrice,
+  currentValue: p.currentValue,
+  allocation: p.allocation.toFixed(1) + '%',
+  profit_loss_rate: p.profit_loss_rate.toFixed(2) + '%', // 손익률 명시
+})), null, 2)}
+
+**수익률 기반 분석 지침:**
+- profit_loss_rate > +30%: FOMO 고위험 (익절 검토)
+- profit_loss_rate > +50%: FOMO 최고위험 (부분 익절 강력 권고)
+- profit_loss_rate < -10%: Panic 주의 (손절선 확인)
+- profit_loss_rate < -20%: Panic 위험 (즉각 행동 필요)
 
 **분석 요청:**
 
@@ -613,24 +867,27 @@ ${JSON.stringify(portfolioWithAllocation, null, 2)}
    - 70 이상: SAFE (안전)
    - 40-69: CAUTION (주의)
    - 40 미만: DANGER (위험)
-   - 고려 요소: 분산도, 변동성 자산 비중, 손실 자산 비중
+   - 고려 요소: 분산도, 변동성 자산 비중, 손실 자산 비중, *실시간 시장 변동성*
 
 2. **손절 가이드라인**
    - 각 자산별 권장 손절선 (%)
-   - 현재 손실률과 비교하여 action 결정:
+   - 현재 손실률(profit_loss_rate)과 비교하여 action 결정:
      - HOLD: 손절선 도달 전
      - WATCH: 손절선 근접 (5% 이내)
      - CONSIDER_SELL: 손절선 초과
+   - *실시간 뉴스*가 손절 판단에 영향을 미치면 reason에 명시
 
 3. **FOMO Vaccine (고평가 경고)**
-   - 최근 급등했거나 고평가 우려가 있는 자산 식별
+   - profit_loss_rate가 높은 자산 우선 분석
+   - *최신 뉴스 기반* 고평가 여부 판단 (예: "어젯밤 실적 미달 발표")
    - overvaluationScore: 0-100
    - severity: LOW (0-30), MEDIUM (31-60), HIGH (61-100)
-   - 간단한 사유 (예: "최근 3개월 200% 상승")
+   - 구체적 사유 (예: "현재 +45% 수익 중, 최근 3개월 200% 상승")
 
 4. **맞춤 조언**
    - ${profile.age}세 ${profile.dependents > 0 ? '가장' : '투자자'}의 관점에서 3가지 핵심 조언
    - 가족 부양 책임을 고려한 실용적 조언
+   - *오늘의 시장 상황*을 반영한 타이밍 조언
 
 **출력 형식 (JSON만, 마크다운 코드블록 금지):**
 {
@@ -638,12 +895,13 @@ ${JSON.stringify(portfolioWithAllocation, null, 2)}
   "panicShieldLevel": "SAFE" | "CAUTION" | "DANGER",
   "stopLossGuidelines": [...],
   "fomoAlerts": [...],
-  "personalizedAdvice": ["조언1", "조언2", "조언3"],
+  "personalizedAdvice": ["[실시간 반영] 조언1", "조언2", "조언3"],
   "diversificationScore": number
 }
 `;
 
-    const result = await model.generateContent(prompt);
+    // [핵심] Google Search 그라운딩이 활성화된 모델 사용
+    const result = await modelWithSearch.generateContent(prompt);
     const responseText = result.response.text();
 
     // JSON 정제

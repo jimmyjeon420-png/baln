@@ -35,7 +35,8 @@ export default function ProfileScreen() {
 
   // 메뉴 항목 정의 - 각 항목에 실제 네비게이션 연결
   const menuItems = [
-    { icon: 'diamond', label: 'VIP 라운지', onPress: () => router.push('/settings/lounge'), highlight: true },
+    { icon: 'pulse', label: 'AI 진단', onPress: () => router.push('/(tabs)/diagnosis'), feature: true },
+    { icon: 'diamond', label: 'VIP 커뮤니티', onPress: () => router.push('/settings/lounge'), highlight: true },
     { icon: 'person-outline', label: '프로필 설정', onPress: () => router.push('/settings/profile') },
     { icon: 'notifications-outline', label: '알림 설정', onPress: () => router.push('/settings/notifications') },
     { icon: 'shield-checkmark-outline', label: '보안', onPress: () => router.push('/settings/security') },
@@ -77,18 +78,20 @@ export default function ProfileScreen() {
               style={[
                 styles.menuItem,
                 (item as any).highlight && styles.menuItemHighlight,
+                (item as any).feature && styles.menuItemFeature,
               ]}
               onPress={item.onPress}
             >
               <Ionicons
                 name={item.icon as any}
                 size={22}
-                color={(item as any).highlight ? '#FFC107' : '#FFFFFF'}
+                color={(item as any).highlight ? '#FFC107' : (item as any).feature ? '#4CAF50' : '#FFFFFF'}
               />
               <Text
                 style={[
                   styles.menuLabel,
                   (item as any).highlight && styles.menuLabelHighlight,
+                  (item as any).feature && styles.menuLabelFeature,
                 ]}
               >
                 {item.label}
@@ -96,6 +99,11 @@ export default function ProfileScreen() {
               {(item as any).highlight && (
                 <View style={styles.vipBadge}>
                   <Text style={styles.vipBadgeText}>VIP</Text>
+                </View>
+              )}
+              {(item as any).feature && (
+                <View style={styles.aiBadge}>
+                  <Text style={styles.aiBadgeText}>AI</Text>
                 </View>
               )}
               <Ionicons name="chevron-forward" size={18} color="#888888" />
@@ -192,9 +200,28 @@ const styles = StyleSheet.create({
   menuItemHighlight: {
     backgroundColor: '#2A2A1A',
   },
+  menuItemFeature: {
+    backgroundColor: '#1A2A1A',
+  },
   menuLabelHighlight: {
     color: '#FFC107',
     fontWeight: '600',
+  },
+  menuLabelFeature: {
+    color: '#4CAF50',
+    fontWeight: '600',
+  },
+  aiBadge: {
+    backgroundColor: '#4CAF50',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+    marginRight: 8,
+  },
+  aiBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#000000',
   },
   vipBadge: {
     backgroundColor: '#FFC107',

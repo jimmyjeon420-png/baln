@@ -62,7 +62,11 @@
       "Bash(git config:*)",
       "Bash(git pull:*)",
       "WebFetch(domain:ai.google.dev)",
-      "Bash(ping:*)"
+      "Bash(ping:*)",
+      "Bash(find:*)",
+      "Bash(xargs:*)",
+      "Bash(supabase --version:*)",
+      "Bash(npx supabase:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
