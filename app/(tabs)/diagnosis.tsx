@@ -4,14 +4,13 @@
  * 티어별 맞춤 처방 제공
  */
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   RefreshControl,
-  ActivityIndicator,
   TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -23,20 +22,21 @@ import {
   analyzePortfolioRisk,
   RiskAnalysisResult,
   PortfolioAsset,
-  generateMorningBriefing,
   MorningBriefingResult,
 } from '../../src/services/gemini';
+import { loadMorningBriefing } from '../../src/services/centralKitchen';
 
 // 진단 트리거 플래그 키
 const NEEDS_DIAGNOSIS_KEY = '@smart_rebalancer:needs_diagnosis';
 const LAST_SCAN_DATE_KEY = '@smart_rebalancer:last_scan_date';
 import PanicShieldCard from '../../src/components/PanicShieldCard';
 import FomoVaccineCard from '../../src/components/FomoVaccineCard';
+import { DiagnosisSkeletonLoader } from '../../src/components/SkeletonLoader';
+import ShareableCard from '../../src/components/ShareableCard';
+import { useHaptics } from '../../src/hooks/useHaptics';
 import {
   determineTier,
-  formatAssetInBillion,
   syncUserProfileTier,
-  TIER_COLORS,
   TIER_LABELS,
   TIER_DESCRIPTIONS,
 } from '../../src/hooks/useGatherings';
@@ -88,6 +88,7 @@ const TIER_STRATEGIES: Record<UserTier, { title: string; focus: string[]; color:
 
 export default function DiagnosisScreen() {
   const router = useRouter();
+  const { mediumTap } = useHaptics();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [portfolio, setPortfolio] = useState<PortfolioAsset[]>([]);
@@ -97,6 +98,8 @@ export default function DiagnosisScreen() {
   const [morningBriefing, setMorningBriefing] = useState<MorningBriefingResult | null>(null);
   const [isNewScan, setIsNewScan] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // [핵심] DB 조회 완료 여부 - 이 값이 true가 되기 전까지 Empty State 표시 금지
+  const [initialCheckDone, setInitialCheckDone] = useState(false);
 
   // 포트폴리오 데이터 로드 및 티어 계산
   const loadPortfolio = useCallback(async () => {
@@ -154,6 +157,7 @@ export default function DiagnosisScreen() {
   }, []);
 
   // AI 분석 실행
+  // [Central Kitchen] DB 사전 계산 데이터 우선 → 없으면 라이브 Gemini 폴백
   const runAnalysis = useCallback(async (assets: PortfolioAsset[]) => {
     if (assets.length === 0) {
       setAnalysisResult(null);
@@ -162,15 +166,22 @@ export default function DiagnosisScreen() {
     }
 
     try {
-      // Panic Shield & FOMO Vaccine 분석
-      const result = await analyzePortfolioRisk(assets);
-      setAnalysisResult(result);
-
-      // Morning Briefing 생성 (신규 스캔이거나 첫 로드 시)
-      const briefing = await generateMorningBriefing(assets, {
+      // Morning Briefing: Central Kitchen 우선 조회 (< 100ms)
+      // DB에 오늘 데이터 없으면 자동으로 라이브 Gemini 호출 (3-8초)
+      const kitchenResult = await loadMorningBriefing(assets, {
         includeRealEstate: false,
       });
-      setMorningBriefing(briefing);
+      setMorningBriefing(kitchenResult.morningBriefing);
+
+      if (kitchenResult.source === 'central-kitchen') {
+        console.log('[진단] Central Kitchen 데이터 사용 (빠른 경로)');
+      } else {
+        console.log('[진단] 라이브 Gemini 폴백 사용');
+      }
+
+      // Panic Shield & FOMO Vaccine 분석 (유저별 맞춤이므로 항상 라이브)
+      const result = await analyzePortfolioRisk(assets);
+      setAnalysisResult(result);
     } catch (err) {
       console.error('Analysis error:', err);
       setError('AI 분석 중 오류가 발생했습니다.');
@@ -211,54 +222,69 @@ export default function DiagnosisScreen() {
     setRefreshing(false);
   }, [loadPortfolio, runAnalysis]);
 
-  // 초기 로드
-  useEffect(() => {
-    checkNewScan();
-    loadAndAnalyze();
-  }, []);
-
-  // 화면 포커스 시 새로고침 (즉시 자산 확인으로 플레이스홀더 바이패스)
+  // [핵심 수정] useFocusEffect를 유일한 데이터 로드 진입점으로 사용
+  // 초기 마운트 + 탭 재진입 모두 이 하나의 로직으로 처리
   useFocusEffect(
     useCallback(() => {
-      // [핵심] 즉시 portfolios 테이블 직접 쿼리 - profile sync 대기 안함
-      const quickAssetCheckAndAnalyze = async () => {
+      let isCancelled = false;
+
+      const loadDataOnFocus = async () => {
         try {
           const { data: { user } } = await supabase.auth.getUser();
-          if (!user) return;
+          if (!user || isCancelled) {
+            if (!isCancelled) {
+              setInitialCheckDone(true);
+              setLoading(false);
+            }
+            return;
+          }
 
-          // 직접 쿼리로 빠른 총 자산 계산
-          const { data: assets } = await supabase
+          // [핵심] portfolios 테이블 직접 조회 - profiles 동기화 대기 안함
+          const { data: assetRows } = await supabase
             .from('portfolios')
             .select('current_value')
             .eq('user_id', user.id);
 
-          const realTotal = assets?.reduce(
+          if (isCancelled) return;
+
+          const realTotal = assetRows?.reduce(
             (sum, item) => sum + (item.current_value || 0),
             0
           ) || 0;
 
-          // [핵심 수정] 자산이 있으면 즉시 상태 업데이트 + 분석 강제 실행
-          if (realTotal > 0) {
-            setTotalAssets(realTotal);
-            setIsNewScan(false);
+          // [핵심] totalAssets를 즉시 반영 → Empty State 노출 차단
+          setTotalAssets(realTotal);
 
-            // morningBriefing이 없거나 portfolio가 비어있으면 즉시 전체 분석 실행
-            // 이렇게 해야 탭 진입 시에도 항상 분석 결과가 보장됨
+          if (realTotal > 0) {
+            // 자산이 있으면 무조건 전체 분석 실행
             await loadAndAnalyze(false);
           } else {
-            // 자산이 없는 경우에만 로딩 상태 해제
-            setTotalAssets(0);
+            // 자산이 없는 경우에만 빈 상태로 전환
+            setPortfolio([]);
+            setAnalysisResult(null);
+            setMorningBriefing(null);
             setLoading(false);
           }
         } catch (err) {
-          console.error('Quick asset check failed:', err);
-          // 에러 시에도 기존 로직 폴백
-          await loadAndAnalyze(false);
+          console.error('Focus data load failed:', err);
+          if (!isCancelled) {
+            // 에러 시에도 기존 로직 폴백
+            await loadAndAnalyze(false);
+          }
+        } finally {
+          if (!isCancelled) {
+            setInitialCheckDone(true);
+          }
         }
       };
 
-      quickAssetCheckAndAnalyze();
-    }, [loadAndAnalyze])
+      // 신규 스캔 확인 (비동기, 렌더링 차단 안함)
+      checkNewScan();
+      loadDataOnFocus();
+
+      // 화면 이탈 시 취소 플래그
+      return () => { isCancelled = true; };
+    }, [loadAndAnalyze, checkNewScan])
   );
 
   // Pull-to-refresh
@@ -267,33 +293,26 @@ export default function DiagnosisScreen() {
     loadAndAnalyze(false);
   }, [loadAndAnalyze]);
 
-  // [핵심 수정] 로딩 상태 - totalAssets > 0인데 분석이 없는 경우도 로딩 처리
-  // 자산이 있는 유저에게는 Empty State 대신 로딩 화면을 보여줌
-  const isAnalyzing = loading || (totalAssets > 0 && !morningBriefing && portfolio.length === 0);
+  // [핵심 수정] 로딩 판단 로직
+  // 1. initialCheckDone=false → DB 확인 전이므로 무조건 로딩 (Empty State 노출 방지)
+  // 2. loading=true → 데이터 로드 중
+  // 3. totalAssets > 0인데 morningBriefing이 없음 → AI 분석 진행 중
+  const isAnalyzing = !initialCheckDone || loading || (totalAssets > 0 && !morningBriefing);
 
   if (isAnalyzing) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#4CAF50" />
-          <Text style={styles.loadingText}>
-            {totalAssets > 0
-              ? "오늘의 시장에 맞춘 처방전 준비 중..."
-              : "포트폴리오 분석 중..."}
-          </Text>
-          {totalAssets > 0 && (
-            <Text style={styles.loadingSubtext}>
-              AI가 매크로 동향을 분석하고 있습니다
-            </Text>
-          )}
-        </View>
+        <ScrollView>
+          <DiagnosisSkeletonLoader />
+        </ScrollView>
       </SafeAreaView>
     );
   }
 
-  // [핵심 수정] 빈 포트폴리오 상태 - totalAssets 기준으로 판단
+  // [핵심 수정] 빈 포트폴리오 상태
+  // 조건: DB 확인이 완료(initialCheckDone=true)된 후 + totalAssets === 0일 때만 표시
   // totalAssets > 0이면 절대로 Empty State를 보여주지 않음
-  if (totalAssets === 0 && portfolio.length === 0) {
+  if (initialCheckDone && totalAssets === 0 && portfolio.length === 0) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.header}>
@@ -578,6 +597,61 @@ export default function DiagnosisScreen() {
             </View>
           </View>
         )}
+
+        {/* 부동산 인사이트 (Silver 유저 잠금) */}
+        <TouchableOpacity
+          style={styles.realEstateSection}
+          onPress={() => {
+            mediumTap();
+            if (userTier === 'SILVER') {
+              router.push('/subscription/paywall');
+            }
+          }}
+          activeOpacity={userTier === 'SILVER' ? 0.7 : 1}
+          disabled={userTier !== 'SILVER'}
+        >
+          <View style={styles.realEstateHeader}>
+            <Ionicons name="business" size={20} color={userTier === 'SILVER' ? '#555555' : '#4CAF50'} />
+            <Text style={[
+              styles.realEstateTitleText,
+              userTier === 'SILVER' && { color: '#555555' },
+            ]}>
+              부동산 인사이트
+            </Text>
+            {userTier === 'SILVER' && (
+              <View style={styles.lockBadge}>
+                <Ionicons name="lock-closed" size={12} color="#FFD700" />
+                <Text style={styles.lockBadgeText}>PRO</Text>
+              </View>
+            )}
+          </View>
+          {userTier === 'SILVER' ? (
+            <View style={styles.lockedContent}>
+              <Ionicons name="lock-closed" size={32} color="#333333" />
+              <Text style={styles.lockedText}>
+                Premium 구독으로 AI 부동산 분석을 이용하세요
+              </Text>
+              <View style={styles.unlockButton}>
+                <Text style={styles.unlockButtonText}>잠금 해제</Text>
+              </View>
+            </View>
+          ) : (
+            <Text style={styles.realEstateContent}>
+              {morningBriefing?.cfoWeather?.message || '부동산 시장 데이터를 분석 중입니다...'}
+            </Text>
+          )}
+        </TouchableOpacity>
+
+        {/* 인스타그램 공유 카드 */}
+        <View style={styles.shareSection}>
+          <Text style={styles.shareSectionTitle}>📱 처방전 공유</Text>
+          <ShareableCard
+            tier={userTier}
+            totalAssets={totalAssets}
+            morningBriefing={morningBriefing}
+            panicShieldIndex={analysisResult?.panicShieldIndex}
+          />
+        </View>
 
         {/* 보유 자산 리스트 */}
         <View style={styles.assetListContainer}>
@@ -1061,5 +1135,75 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
     marginTop: 2,
+  },
+  // 부동산 인사이트 잠금
+  realEstateSection: {
+    backgroundColor: '#1E1E1E',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+  },
+  realEstateHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  realEstateTitleText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    flex: 1,
+  },
+  lockBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(255, 215, 0, 0.15)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  lockBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#FFD700',
+  },
+  lockedContent: {
+    alignItems: 'center',
+    paddingVertical: 24,
+    gap: 12,
+  },
+  lockedText: {
+    fontSize: 13,
+    color: '#555555',
+    textAlign: 'center',
+  },
+  unlockButton: {
+    backgroundColor: 'rgba(76, 175, 80, 0.2)',
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginTop: 4,
+  },
+  unlockButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#4CAF50',
+  },
+  realEstateContent: {
+    fontSize: 14,
+    color: '#CCCCCC',
+    lineHeight: 22,
+  },
+  // 공유 섹션
+  shareSection: {
+    marginBottom: 16,
+  },
+  shareSectionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 12,
   },
 });

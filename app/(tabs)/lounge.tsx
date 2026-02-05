@@ -11,12 +11,12 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
-  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useLoungeEligibility } from '../../src/hooks/useCommunity';
+import { LoungeSkeleton } from '../../src/components/SkeletonLoader';
 import {
   useGatherings,
   useHostingEligibility,
@@ -249,10 +249,7 @@ export default function LoungeScreen() {
         }
       >
         {isLoading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={COLORS.primary} />
-            <Text style={styles.loadingText}>모임을 불러오는 중...</Text>
-          </View>
+          <LoungeSkeleton />
         ) : gatherings && gatherings.length > 0 ? (
           gatherings.map((gathering) => (
             <GatheringCard

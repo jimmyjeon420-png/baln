@@ -2,9 +2,16 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import { View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
+import {
+  configureNotificationHandler,
+  requestNotificationPermission,
+  scheduleMorningBriefing,
+  scheduleInactivityReminder,
+} from '../src/services/notifications';
+import * as Notifications from 'expo-notifications';
 
 // React Query 클라이언트 생성
 const queryClient = new QueryClient({
@@ -41,7 +48,49 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+// 알림 핸들러 설정 (컴포넌트 외부에서 1회 실행)
+configureNotificationHandler();
+
 export default function RootLayout() {
+  const notificationListener = useRef<Notifications.EventSubscription>();
+  const responseListener = useRef<Notifications.EventSubscription>();
+
+  useEffect(() => {
+    // 알림 권한 요청 + 스케줄링 (비동기, 실패해도 앱 크래시 안 함)
+    const setupNotifications = async () => {
+      try {
+        const granted = await requestNotificationPermission();
+        if (granted) {
+          await scheduleMorningBriefing();
+          await scheduleInactivityReminder();
+        }
+      } catch (err) {
+        console.error('Notification setup failed (non-fatal):', err);
+      }
+    };
+    setupNotifications();
+
+    // 알림 수신 리스너 (포그라운드)
+    notificationListener.current = Notifications.addNotificationReceivedListener(() => {
+      // 포그라운드 알림 수신 시 별도 처리 없음 (핸들러가 자동 표시)
+    });
+
+    // 알림 탭 리스너 (사용자가 알림을 탭했을 때)
+    responseListener.current = Notifications.addNotificationResponseReceivedListener(() => {
+      // 알림 탭 시 진단 화면으로 이동은 AuthGate 내에서 처리 가능
+      // 딥링크 처리를 위해서는 expo-router의 linking config 활용
+    });
+
+    return () => {
+      if (notificationListener.current) {
+        Notifications.removeNotificationSubscription(notificationListener.current);
+      }
+      if (responseListener.current) {
+        Notifications.removeNotificationSubscription(responseListener.current);
+      }
+    };
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <SafeAreaProvider>
@@ -58,6 +107,14 @@ export default function RootLayout() {
                 {/* add-asset 모달 화면 */}
                 <Stack.Screen
                   name="add-asset"
+                  options={{
+                    presentation: 'modal',
+                    headerShown: false,
+                  }}
+                />
+                {/* 구독/페이월 화면 */}
+                <Stack.Screen
+                  name="subscription/paywall"
                   options={{
                     presentation: 'modal',
                     headerShown: false,

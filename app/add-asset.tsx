@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Image, StyleSheet, Alert, ActivityIndicator, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, Image, StyleSheet, Alert, ActivityIndicator, ScrollView, Dimensions } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+
+const SCREEN_WIDTH = Dimensions.get('window').width;
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { analyzeAssetImage, validateAssetData } from '../src/services/gemini';
 import { verifyAsset } from '../src/services/verification';
@@ -19,6 +21,7 @@ type InputMode = 'self_declared' | 'ocr_verified';
 export default function AddAssetScreen() {
   const router = useRouter();
   const [image, setImage] = useState<string | null>(null);
+  const [imageAspectRatio, setImageAspectRatio] = useState(0.5); // 기본 비율 (세로 스크린샷)
   const [imageBase64, setImageBase64] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [verifying, setVerifying] = useState(false);
@@ -42,9 +45,16 @@ export default function AddAssetScreen() {
       });
 
       if (!result.canceled && result.assets && result.assets[0].base64) {
-        setImage(result.assets[0].uri);
-        setImageBase64(result.assets[0].base64);
-        handleAnalyze(result.assets[0].base64);
+        const asset = result.assets[0];
+        setImage(asset.uri);
+        setImageBase64(asset.base64);
+
+        // 이미지 실제 비율 계산 (스크린샷 원본 크기 유지)
+        if (asset.width && asset.height) {
+          setImageAspectRatio(asset.width / asset.height);
+        }
+
+        handleAnalyze(asset.base64);
       }
     } catch (error) {
       console.error("Image Picker Error:", error);
@@ -372,7 +382,18 @@ export default function AddAssetScreen() {
           </>
         ) : (
           <View style={styles.imageContainer}>
-            <Image source={{ uri: image }} style={styles.image} />
+            <Image
+              source={{ uri: image }}
+              style={[
+                styles.image,
+                {
+                  // 화면 너비 기준으로 이미지 실제 비율에 맞게 높이 계산
+                  width: SCREEN_WIDTH - 32,
+                  height: (SCREEN_WIDTH - 32) / imageAspectRatio,
+                },
+              ]}
+              resizeMode="contain"
+            />
             <TouchableOpacity
               style={styles.changeImageButton}
               onPress={pickImage}
@@ -541,10 +562,10 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   image: {
-    width: '100%',
-    height: 250,
     borderRadius: 12,
     marginBottom: 12,
+    alignSelf: 'center',
+    backgroundColor: '#1E1E1E',
   },
   changeImageButton: {
     paddingVertical: 10,

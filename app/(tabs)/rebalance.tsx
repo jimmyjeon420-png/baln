@@ -4,20 +4,20 @@
  * 티어별 맞춤 처방 제공
  */
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   RefreshControl,
-  ActivityIndicator,
   TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { DiagnosisSkeletonLoader } from '../../src/components/SkeletonLoader';
 import supabase from '../../src/services/supabase';
 import {
   analyzePortfolioRisk,
@@ -34,9 +34,7 @@ import PanicShieldCard from '../../src/components/PanicShieldCard';
 import FomoVaccineCard from '../../src/components/FomoVaccineCard';
 import {
   determineTier,
-  formatAssetInBillion,
   syncUserProfileTier,
-  TIER_COLORS,
   TIER_LABELS,
   TIER_DESCRIPTIONS,
 } from '../../src/hooks/useGatherings';
@@ -97,6 +95,8 @@ export default function RebalanceScreen() {
   const [morningBriefing, setMorningBriefing] = useState<MorningBriefingResult | null>(null);
   const [isNewScan, setIsNewScan] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // [핵심] DB 조회 완료 여부 - 이 값이 true가 되기 전까지 Empty State 표시 금지
+  const [initialCheckDone, setInitialCheckDone] = useState(false);
 
   // 포트폴리오 데이터 로드 및 티어 계산
   const loadPortfolio = useCallback(async () => {
@@ -211,54 +211,69 @@ export default function RebalanceScreen() {
     setRefreshing(false);
   }, [loadPortfolio, runAnalysis]);
 
-  // 초기 로드
-  useEffect(() => {
-    checkNewScan();
-    loadAndAnalyze();
-  }, []);
-
-  // 화면 포커스 시 새로고침 (즉시 자산 확인으로 플레이스홀더 바이패스)
+  // [핵심 수정] useFocusEffect를 유일한 데이터 로드 진입점으로 사용
+  // 초기 마운트 + 탭 재진입 모두 이 하나의 로직으로 처리
   useFocusEffect(
     useCallback(() => {
-      // [핵심] 즉시 portfolios 테이블 직접 쿼리 - profile sync 대기 안함
-      const quickAssetCheckAndAnalyze = async () => {
+      let isCancelled = false;
+
+      const loadDataOnFocus = async () => {
         try {
           const { data: { user } } = await supabase.auth.getUser();
-          if (!user) return;
+          if (!user || isCancelled) {
+            if (!isCancelled) {
+              setInitialCheckDone(true);
+              setLoading(false);
+            }
+            return;
+          }
 
-          // 직접 쿼리로 빠른 총 자산 계산
-          const { data: assets } = await supabase
+          // [핵심] portfolios 테이블 직접 조회 - profiles 동기화 대기 안함
+          const { data: assetRows } = await supabase
             .from('portfolios')
             .select('current_value')
             .eq('user_id', user.id);
 
-          const realTotal = assets?.reduce(
+          if (isCancelled) return;
+
+          const realTotal = assetRows?.reduce(
             (sum, item) => sum + (item.current_value || 0),
             0
           ) || 0;
 
-          // [핵심 수정] 자산이 있으면 즉시 상태 업데이트 + 분석 강제 실행
-          if (realTotal > 0) {
-            setTotalAssets(realTotal);
-            setIsNewScan(false);
+          // [핵심] totalAssets를 즉시 반영 → Empty State 노출 차단
+          setTotalAssets(realTotal);
 
-            // morningBriefing이 없거나 portfolio가 비어있으면 즉시 전체 분석 실행
-            // 이렇게 해야 탭 진입 시에도 항상 분석 결과가 보장됨
+          if (realTotal > 0) {
+            // 자산이 있으면 무조건 전체 분석 실행
             await loadAndAnalyze(false);
           } else {
-            // 자산이 없는 경우에만 로딩 상태 해제
-            setTotalAssets(0);
+            // 자산이 없는 경우에만 빈 상태로 전환
+            setPortfolio([]);
+            setAnalysisResult(null);
+            setMorningBriefing(null);
             setLoading(false);
           }
         } catch (err) {
-          console.error('Quick asset check failed:', err);
-          // 에러 시에도 기존 로직 폴백
-          await loadAndAnalyze(false);
+          console.error('Focus data load failed:', err);
+          if (!isCancelled) {
+            // 에러 시에도 기존 로직 폴백
+            await loadAndAnalyze(false);
+          }
+        } finally {
+          if (!isCancelled) {
+            setInitialCheckDone(true);
+          }
         }
       };
 
-      quickAssetCheckAndAnalyze();
-    }, [loadAndAnalyze])
+      // 신규 스캔 확인 (비동기, 렌더링 차단 안함)
+      checkNewScan();
+      loadDataOnFocus();
+
+      // 화면 이탈 시 취소 플래그
+      return () => { isCancelled = true; };
+    }, [loadAndAnalyze, checkNewScan])
   );
 
   // Pull-to-refresh
@@ -267,33 +282,26 @@ export default function RebalanceScreen() {
     loadAndAnalyze(false);
   }, [loadAndAnalyze]);
 
-  // [핵심 수정] 로딩 상태 - totalAssets > 0인데 분석이 없는 경우도 로딩 처리
-  // 자산이 있는 유저에게는 Empty State 대신 로딩 화면을 보여줌
-  const isAnalyzing = loading || (totalAssets > 0 && !morningBriefing && portfolio.length === 0);
+  // [핵심 수정] 로딩 판단 로직
+  // 1. initialCheckDone=false → DB 확인 전이므로 무조건 로딩 (Empty State 노출 방지)
+  // 2. loading=true → 데이터 로드 중
+  // 3. totalAssets > 0인데 morningBriefing이 없음 → AI 분석 진행 중
+  const isAnalyzing = !initialCheckDone || loading || (totalAssets > 0 && !morningBriefing);
 
   if (isAnalyzing) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#4CAF50" />
-          <Text style={styles.loadingText}>
-            {totalAssets > 0
-              ? "오늘의 시장에 맞춘 처방전 준비 중..."
-              : "포트폴리오 분석 중..."}
-          </Text>
-          {totalAssets > 0 && (
-            <Text style={styles.loadingSubtext}>
-              AI가 매크로 동향을 분석하고 있습니다
-            </Text>
-          )}
-        </View>
+        <ScrollView>
+          <DiagnosisSkeletonLoader />
+        </ScrollView>
       </SafeAreaView>
     );
   }
 
-  // [핵심 수정] 빈 포트폴리오 상태 - totalAssets 기준으로 판단
+  // [핵심 수정] 빈 포트폴리오 상태
+  // 조건: DB 확인이 완료(initialCheckDone=true)된 후 + totalAssets === 0일 때만 표시
   // totalAssets > 0이면 절대로 Empty State를 보여주지 않음
-  if (totalAssets === 0 && portfolio.length === 0) {
+  if (initialCheckDone && totalAssets === 0 && portfolio.length === 0) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.header}>
