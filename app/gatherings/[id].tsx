@@ -80,6 +80,7 @@ export default function GatheringDetailScreen() {
   const insets = useSafeAreaInsets();
   const [joining, setJoining] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [warningDismissed, setWarningDismissed] = useState(false);
 
   // 데이터 조회
   const { data: gathering, isLoading: gatheringLoading } = useGathering(id);
@@ -211,6 +212,25 @@ export default function GatheringDetailScreen() {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
+        {/* 사기 경고 배너 */}
+        {!warningDismissed && (
+          <View style={styles.scamWarningBanner}>
+            <Ionicons name="shield-half" size={18} color="#FF6B6B" style={{ marginTop: 1 }} />
+            <View style={styles.scamWarningContent}>
+              <Text style={styles.scamWarningTitle}>사기 주의</Text>
+              <Text style={styles.scamWarningText}>
+                카카오톡/텔레그램으로 이동 요청은 100% 사기입니다.{'\n'}즉시 신고해주세요.
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => setWarningDismissed(true)}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons name="close" size={18} color="#FF6B6B80" />
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* 카테고리 & 상태 */}
         <View style={styles.topBadges}>
           <View style={styles.categoryBadge}>
@@ -791,5 +811,31 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: COLORS.warning,
+  },
+  // 사기 경고 배너
+  scamWarningBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#3b1010',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 16,
+    gap: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 107, 107, 0.3)',
+  },
+  scamWarningContent: {
+    flex: 1,
+  },
+  scamWarningTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#FF6B6B',
+    marginBottom: 4,
+  },
+  scamWarningText: {
+    fontSize: 12,
+    color: '#FF9B9B',
+    lineHeight: 18,
   },
 });

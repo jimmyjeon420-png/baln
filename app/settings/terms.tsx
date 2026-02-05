@@ -94,6 +94,28 @@ export default function TermsScreen() {
           </Text>
         </View>
 
+        <View style={styles.section}>
+          <View style={styles.dangerSectionHeader}>
+            <Ionicons name="warning" size={18} color="#CF6679" />
+            <Text style={[styles.sectionTitle, styles.dangerSectionTitle]}>제8조 (유사투자자문업 금지)</Text>
+          </View>
+          <View style={styles.dangerBox}>
+            <Text style={styles.sectionContent}>
+              1. 회원은 본 서비스를 이용하여 다음 각 호에 해당하는 행위를 하여서는 아니 됩니다.{'\n\n'}
+              {'  '}가. <Text style={styles.dangerHighlight}>「리딩방」 운영</Text>: 불특정 다수에게 특정 종목의 매수·매도를 지시하거나 유사투자자문 행위를 하는 것{'\n\n'}
+              {'  '}나. <Text style={styles.dangerHighlight}>수익 보장 표현</Text>: "원금 보장", "확정 수익률 OO%", "100% 수익" 등 투자 결과를 보장하는 표현을 사용하는 것{'\n\n'}
+              {'  '}다. <Text style={styles.dangerHighlight}>외부 채널 유인</Text>: 카카오톡, 텔레그램, 라인 등 외부 메신저로 회원을 유도하여 투자 권유 또는 금전을 요구하는 것{'\n\n'}
+              {'  '}라. <Text style={styles.dangerHighlight}>종목 추천료 수취</Text>: 유료 또는 무료를 불문하고, 투자 자문업 등록 없이 종목 추천의 대가를 수취하는 것{'\n\n'}
+              2. 상기 행위는 「자본시장과 금융투자업에 관한 법률」 제7조(무인가·무등록 금융투자업) 위반에 해당하며, <Text style={styles.dangerHighlight}>5년 이하의 징역 또는 2억원 이하의 벌금</Text>에 처해질 수 있습니다.{'\n\n'}
+              3. 회사는 위반 행위 적발 시 다음의 조치를 즉시 시행합니다.{'\n\n'}
+              {'  '}가. 해당 회원의 <Text style={styles.dangerHighlight}>계정 영구 정지</Text> (복구 불가){'\n'}
+              {'  '}나. 관련 데이터의 보전 및 <Text style={styles.dangerHighlight}>관할 수사기관 통보</Text>{'\n'}
+              {'  '}다. 피해 회원에 대한 민사상 손해배상 청구 지원{'\n\n'}
+              4. 회원은 위반 행위를 목격한 경우 즉시 앱 내 신고 기능 또는 고객센터(support@baln.app)를 통해 신고하여야 합니다.
+            </Text>
+          </View>
+        </View>
+
         <Text style={styles.footer}>
           본 약관에 동의하지 않으실 경우 서비스 이용이 제한될 수 있습니다.
         </Text>
@@ -157,5 +179,27 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     borderTopWidth: 1,
     borderTopColor: '#2A2A2A',
+  },
+  // 유사투자자문 금지 조항 (위험 강조 스타일)
+  dangerSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  dangerSectionTitle: {
+    color: '#CF6679',
+    marginBottom: 0,
+  },
+  dangerBox: {
+    backgroundColor: '#1a0a0a',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(207, 102, 121, 0.3)',
+  },
+  dangerHighlight: {
+    color: '#CF6679',
+    fontWeight: '700',
   },
 });

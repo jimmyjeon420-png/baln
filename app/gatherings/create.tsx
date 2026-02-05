@@ -80,6 +80,7 @@ export default function CreateGatheringScreen() {
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [minTierRequired, setMinTierRequired] = useState<UserTier>('SILVER'); // 기본: 모든 티어 참가 가능
   const [submitting, setSubmitting] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false); // 불법 리딩방 금지 동의
 
   // 권한 체크
   if (eligibilityLoading) {
@@ -227,9 +228,9 @@ export default function CreateGatheringScreen() {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>모임 만들기</Text>
         <TouchableOpacity
-          style={[styles.submitButton, submitting && styles.submitButtonDisabled]}
+          style={[styles.submitButton, (submitting || !agreedToTerms) && styles.submitButtonDisabled]}
           onPress={handleSubmit}
-          disabled={submitting}
+          disabled={submitting || !agreedToTerms}
         >
           {submitting ? (
             <ActivityIndicator size="small" color="#000000" />
@@ -518,6 +519,33 @@ export default function CreateGatheringScreen() {
               textAlignVertical="top"
             />
             <Text style={styles.charCount}>{description.length}/500</Text>
+          </View>
+
+          {/* 불법 리딩방 금지 동의 (필수) */}
+          <View style={styles.disclaimerSection}>
+            <TouchableOpacity
+              style={styles.checkboxRow}
+              onPress={() => setAgreedToTerms(!agreedToTerms)}
+              activeOpacity={0.7}
+            >
+              <View style={[
+                styles.checkbox,
+                agreedToTerms && styles.checkboxChecked,
+              ]}>
+                {agreedToTerms && (
+                  <Ionicons name="checkmark" size={14} color="#000000" />
+                )}
+              </View>
+              <Text style={styles.checkboxLabel}>
+                불법 리딩방 운영 시 계정 영구 정지 및 민형사상 책임에 동의합니다.
+              </Text>
+            </TouchableOpacity>
+            <View style={styles.disclaimerWarning}>
+              <Ionicons name="warning" size={14} color="#CF6679" />
+              <Text style={styles.disclaimerWarningText}>
+                자본시장법에 따라 무등록 유사투자자문업(리딩방)은 형사처벌 대상입니다. 수익 보장, 종목 추천료 수취, 외부 메신저 유인 행위 적발 시 즉시 계정이 정지되며 관할 수사기관에 통보됩니다.
+              </Text>
+            </View>
           </View>
 
           {/* 여백 */}
@@ -866,5 +894,55 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: COLORS.textMuted,
     marginTop: 2,
+  },
+  // 불법 리딩방 금지 동의 스타일
+  disclaimerSection: {
+    marginBottom: 24,
+    backgroundColor: '#1a0a0a',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(207, 102, 121, 0.3)',
+  },
+  checkboxRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: COLORS.error,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 1,
+  },
+  checkboxChecked: {
+    backgroundColor: COLORS.error,
+    borderColor: COLORS.error,
+  },
+  checkboxLabel: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.error,
+    lineHeight: 20,
+  },
+  disclaimerWarning: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(207, 102, 121, 0.2)',
+  },
+  disclaimerWarningText: {
+    flex: 1,
+    fontSize: 11,
+    color: '#999999',
+    lineHeight: 16,
   },
 });
