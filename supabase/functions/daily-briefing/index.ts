@@ -144,7 +144,7 @@ async function analyzeMacroAndBitcoin(): Promise<{
 **[중요] Google Search로 반드시 실시간 데이터를 검색하세요:**
 1. "나스닥 종가 today", "S&P 500 today", "다우존스 today"
 2. "Trump tariff crypto news today"
-3. "Bitcoin whale alerts ETF inflows ${today.getMonth() + 1}월"
+3. "Bitcoin whale alerts ETF inflows ${today.getMonth() + 1}월", "Bitcoin hash rate today"
 4. "Fed interest rate probability CME FedWatch"
 5. "VIX index today", "Global M2 liquidity"
 
@@ -165,7 +165,15 @@ async function analyzeMacroAndBitcoin(): Promise<{
     "whaleAlerts": ["고래 동향 1", "고래 동향 2"],
     "etfInflows": "BTC ETF 순유입/유출 정보",
     "politicsImpact": "트럼프/규제 뉴스 영향",
-    "priceTarget": "단기 목표가 범위"
+    "priceTarget": "단기 목표가 범위",
+    "hashRate": "해시레이트 수치 및 추세 설명",
+    "subScores": {
+      "vixFear": 0-100,
+      "hashRateHealth": 0-100,
+      "whaleActivity": 0-100,
+      "etfFlows": 0-100,
+      "macroEnvironment": 0-100
+    }
   },
   "cfoWeather": {
     "emoji": "☀️ 또는 ⛅ 또는 🌧️ 또는 ⛈️",

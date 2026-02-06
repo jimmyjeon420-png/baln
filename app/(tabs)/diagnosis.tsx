@@ -157,6 +157,7 @@ export default function DiagnosisScreen() {
 
   // AI 분석 실행
   // [Central Kitchen] DB 사전 계산 데이터 우선 → 없으면 라이브 Gemini 폴백
+  // 타임아웃: 15초 내 응답 없으면 에러 처리 (무한 로딩 방지)
   const runAnalysis = useCallback(async (assets: PortfolioAsset[]) => {
     if (assets.length === 0) {
       setAnalysisResult(null);
@@ -164,12 +165,23 @@ export default function DiagnosisScreen() {
       return;
     }
 
+    // 타임아웃 헬퍼: 지정 시간 내 응답 없으면 자동 실패
+    const withTimeout = <T,>(promise: Promise<T>, ms: number, label: string): Promise<T> =>
+      Promise.race([
+        promise,
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error(`${label} 응답 시간 초과 (${ms / 1000}초)`)), ms)
+        ),
+      ]);
+
     try {
       // Morning Briefing: Central Kitchen 우선 조회 (< 100ms)
       // DB에 오늘 데이터 없으면 자동으로 라이브 Gemini 호출 (3-8초)
-      const kitchenResult = await loadMorningBriefing(assets, {
-        includeRealEstate: false,
-      });
+      const kitchenResult = await withTimeout(
+        loadMorningBriefing(assets, { includeRealEstate: false }),
+        15000,
+        'Morning Briefing'
+      );
       setMorningBriefing(kitchenResult.morningBriefing);
 
       if (kitchenResult.source === 'central-kitchen') {
@@ -179,11 +191,15 @@ export default function DiagnosisScreen() {
       }
 
       // Panic Shield & FOMO Vaccine 분석 (유저별 맞춤이므로 항상 라이브)
-      const result = await analyzePortfolioRisk(assets);
+      const result = await withTimeout(
+        analyzePortfolioRisk(assets),
+        15000,
+        'Panic Shield 분석'
+      );
       setAnalysisResult(result);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Analysis error:', err);
-      setError('AI 분석 중 오류가 발생했습니다.');
+      setError(err?.message || 'AI 분석 중 오류가 발생했습니다.');
     }
   }, []);
 
@@ -292,7 +308,8 @@ export default function DiagnosisScreen() {
   // 1. initialCheckDone=false → DB 확인 전이므로 무조건 로딩 (Empty State 노출 방지)
   // 2. loading=true → 데이터 로드 중
   // 3. totalAssets > 0인데 morningBriefing이 없음 → AI 분석 진행 중
-  const isAnalyzing = !initialCheckDone || loading || (totalAssets > 0 && !morningBriefing);
+  //    단, error가 발생하면 로딩을 멈추고 에러 화면으로 전환
+  const isAnalyzing = !initialCheckDone || loading || (totalAssets > 0 && !morningBriefing && !error);
 
   if (isAnalyzing) {
     return (
@@ -511,15 +528,15 @@ export default function DiagnosisScreen() {
         {/* Panic Shield 카드 */}
         {analysisResult && (
           <PanicShieldCard
-            index={analysisResult.panicShieldIndex}
-            level={analysisResult.panicShieldLevel}
-            stopLossGuidelines={analysisResult.stopLossGuidelines}
+            index={analysisResult.panicShieldIndex ?? 50}
+            level={analysisResult.panicShieldLevel ?? 'CAUTION'}
+            stopLossGuidelines={analysisResult.stopLossGuidelines ?? []}
           />
         )}
 
         {/* FOMO Vaccine 카드 */}
         {analysisResult && (
-          <FomoVaccineCard alerts={analysisResult.fomoAlerts} />
+          <FomoVaccineCard alerts={analysisResult.fomoAlerts ?? []} />
         )}
 
         {/* 맞춤 조언 섹션 */}
@@ -546,7 +563,7 @@ export default function DiagnosisScreen() {
               <View style={styles.snapshotItem}>
                 <Text style={styles.snapshotLabel}>총 자산</Text>
                 <Text style={styles.snapshotValue}>
-                  ₩{analysisResult.portfolioSnapshot.totalValue.toLocaleString()}
+                  ₩{(analysisResult.portfolioSnapshot?.totalValue ?? 0).toLocaleString()}
                 </Text>
               </View>
               <View style={styles.snapshotItem}>
@@ -556,14 +573,14 @@ export default function DiagnosisScreen() {
                     styles.snapshotValue,
                     {
                       color:
-                        analysisResult.portfolioSnapshot.totalGainLoss >= 0
+                        (analysisResult.portfolioSnapshot?.totalGainLoss ?? 0) >= 0
                           ? '#4CAF50'
                           : '#CF6679',
                     },
                   ]}
                 >
-                  {analysisResult.portfolioSnapshot.totalGainLoss >= 0 ? '+' : ''}
-                  ₩{analysisResult.portfolioSnapshot.totalGainLoss.toLocaleString()}
+                  {(analysisResult.portfolioSnapshot?.totalGainLoss ?? 0) >= 0 ? '+' : ''}
+                  ₩{(analysisResult.portfolioSnapshot?.totalGainLoss ?? 0).toLocaleString()}
                 </Text>
               </View>
               <View style={styles.snapshotItem}>
@@ -573,20 +590,20 @@ export default function DiagnosisScreen() {
                     styles.snapshotValue,
                     {
                       color:
-                        analysisResult.portfolioSnapshot.gainLossPercent >= 0
+                        (analysisResult.portfolioSnapshot?.gainLossPercent ?? 0) >= 0
                           ? '#4CAF50'
                           : '#CF6679',
                     },
                   ]}
                 >
-                  {analysisResult.portfolioSnapshot.gainLossPercent >= 0 ? '+' : ''}
-                  {analysisResult.portfolioSnapshot.gainLossPercent.toFixed(2)}%
+                  {(analysisResult.portfolioSnapshot?.gainLossPercent ?? 0) >= 0 ? '+' : ''}
+                  {(analysisResult.portfolioSnapshot?.gainLossPercent ?? 0).toFixed(2)}%
                 </Text>
               </View>
               <View style={styles.snapshotItem}>
                 <Text style={styles.snapshotLabel}>분산 점수</Text>
                 <Text style={styles.snapshotValue}>
-                  {analysisResult.portfolioSnapshot.diversificationScore}/100
+                  {analysisResult.portfolioSnapshot?.diversificationScore ?? 0}/100
                 </Text>
               </View>
             </View>

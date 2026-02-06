@@ -3,7 +3,7 @@
  */
 
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Linking } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -19,9 +19,9 @@ export default function AboutScreen() {
   ];
 
   const links = [
-    { label: '개인정보처리방침', url: null, route: '/settings/privacy' },
-    { label: '오픈소스 라이선스', url: 'https://smartrebalancer.com/licenses', route: null },
-    { label: '공식 웹사이트', url: 'https://smartrebalancer.com', route: null },
+    { label: '개인정보처리방침', route: '/settings/privacy' },
+    { label: '오픈소스 라이선스', route: '/settings/licenses' },
+    { label: '공식 웹사이트', route: '/settings/website' },
   ];
 
   return (
@@ -61,20 +61,10 @@ export default function AboutScreen() {
             <TouchableOpacity
               key={index}
               style={styles.linkItem}
-              onPress={() => {
-                if (item.route) {
-                  router.push(item.route as any);
-                } else if (item.url) {
-                  Linking.openURL(item.url);
-                }
-              }}
+              onPress={() => router.push(item.route as any)}
             >
               <Text style={styles.linkLabel}>{item.label}</Text>
-              <Ionicons
-                name={item.route ? 'chevron-forward' : 'open-outline'}
-                size={18}
-                color="#4CAF50"
-              />
+              <Ionicons name="chevron-forward" size={18} color="#4CAF50" />
             </TouchableOpacity>
           ))}
         </View>

@@ -30,10 +30,12 @@ export default function HelpScreen() {
     },
   ];
 
+  const SUPPORT_EMAIL = 'jimmyjeon420@gmail.com';
+
   const supportItems = [
-    { icon: 'mail-outline', label: '이메일 문의', action: () => Linking.openURL('mailto:support@smartrebalancer.com') },
-    { icon: 'chatbubble-outline', label: '카카오톡 문의', action: () => Linking.openURL('https://pf.kakao.com/_example') },
-    { icon: 'logo-github', label: 'GitHub', action: () => Linking.openURL('https://github.com/smart-rebalancer') },
+    { icon: 'mail-outline', label: '이메일 문의', desc: SUPPORT_EMAIL, action: () => Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=[Smart Rebalancer] 문의`) },
+    { icon: 'chatbubble-outline', label: '카카오톡 문의', desc: SUPPORT_EMAIL, action: () => Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=[Smart Rebalancer] 카카오톡 문의`) },
+    { icon: 'logo-github', label: 'GitHub 문의', desc: SUPPORT_EMAIL, action: () => Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=[Smart Rebalancer] GitHub 문의`) },
   ];
 
   return (
@@ -65,7 +67,10 @@ export default function HelpScreen() {
           {supportItems.map((item, index) => (
             <TouchableOpacity key={index} style={styles.supportItem} onPress={item.action}>
               <Ionicons name={item.icon as any} size={22} color="#4CAF50" />
-              <Text style={styles.supportLabel}>{item.label}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.supportLabel}>{item.label}</Text>
+                <Text style={styles.supportDesc}>{item.desc}</Text>
+              </View>
               <Ionicons name="chevron-forward" size={18} color="#888888" />
             </TouchableOpacity>
           ))}
@@ -133,8 +138,12 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   supportLabel: {
-    flex: 1,
     fontSize: 16,
     color: '#FFFFFF',
+  },
+  supportDesc: {
+    fontSize: 12,
+    color: '#888888',
+    marginTop: 2,
   },
 });

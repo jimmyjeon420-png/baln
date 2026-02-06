@@ -580,9 +580,26 @@ export interface UserProfile {
   dependents: number; // 부양가족 수
 }
 
+// Panic Shield 5개 하위 지표 (CNN Fear & Greed 스타일 분해)
+export interface PanicSubScores {
+  portfolioLoss: number;       // 포트폴리오 손실률 (0-100)
+  concentrationRisk: number;   // 자산 집중도 (0-100)
+  volatilityExposure: number;  // 변동성 노출 (0-100)
+  stopLossProximity: number;   // 손절선 근접도 (0-100)
+  marketSentiment: number;     // 시장 심리 (0-100)
+}
+
+// FOMO Vaccine 3개 하위 지표 (종목별 경고 근거 분해)
+export interface FomoSubScores {
+  valuationHeat: number;    // 밸류에이션 과열도 (0-100, PER/PBR 기반)
+  shortTermSurge: number;   // 단기 급등률 (0-100, 최근 1개월)
+  marketOverheat: number;   // 시장 과열 신호 (0-100, RSI/공매도)
+}
+
 export interface RiskAnalysisResult {
   panicShieldIndex: number; // 0-100 (높을수록 안전)
   panicShieldLevel: 'SAFE' | 'CAUTION' | 'DANGER';
+  panicSubScores?: PanicSubScores; // 5개 하위 지표 (점수 분해)
   stopLossGuidelines: {
     ticker: string;
     name: string;
@@ -596,6 +613,7 @@ export interface RiskAnalysisResult {
     overvaluationScore: number; // 0-100 (높을수록 고평가)
     severity: 'LOW' | 'MEDIUM' | 'HIGH';
     reason: string;
+    subScores?: FomoSubScores; // 3개 하위 지표 (경고 근거 분해)
   }[];
   personalizedAdvice: string[];
   portfolioSnapshot: {
@@ -893,8 +911,28 @@ ${JSON.stringify(portfolioWithAllocation.map(p => ({
 {
   "panicShieldIndex": number,
   "panicShieldLevel": "SAFE" | "CAUTION" | "DANGER",
+  "panicSubScores": {
+    "portfolioLoss": 0-100,
+    "concentrationRisk": 0-100,
+    "volatilityExposure": 0-100,
+    "stopLossProximity": 0-100,
+    "marketSentiment": 0-100
+  },
   "stopLossGuidelines": [...],
-  "fomoAlerts": [...],
+  "fomoAlerts": [
+    {
+      "ticker": "NVDA",
+      "name": "엔비디아",
+      "overvaluationScore": 75,
+      "severity": "HIGH",
+      "reason": "설명",
+      "subScores": {
+        "valuationHeat": 0-100,
+        "shortTermSurge": 0-100,
+        "marketOverheat": 0-100
+      }
+    }
+  ],
   "personalizedAdvice": ["[실시간 반영] 조언1", "조언2", "조언3"],
   "diversificationScore": number
 }
@@ -931,8 +969,12 @@ ${JSON.stringify(portfolioWithAllocation.map(p => ({
     return {
       panicShieldIndex: analysisResult.panicShieldIndex || 50,
       panicShieldLevel: analysisResult.panicShieldLevel || 'CAUTION',
+      panicSubScores: analysisResult.panicSubScores || undefined,
       stopLossGuidelines: analysisResult.stopLossGuidelines || [],
-      fomoAlerts: analysisResult.fomoAlerts || [],
+      fomoAlerts: (analysisResult.fomoAlerts || []).map((alert: any) => ({
+        ...alert,
+        subScores: alert.subScores || undefined,
+      })),
       personalizedAdvice: analysisResult.personalizedAdvice || [],
       portfolioSnapshot: {
         totalValue,
@@ -969,5 +1011,298 @@ ${JSON.stringify(portfolioWithAllocation.map(p => ({
         diversificationScore: 50,
       },
     };
+  }
+};
+
+// ============================================================================
+// [마켓플레이스] AI 종목 딥다이브 — 재무/기술/뉴스/AI 의견
+// ============================================================================
+
+import type {
+  DeepDiveInput,
+  DeepDiveResult,
+  WhatIfInput,
+  WhatIfResult,
+  TaxReportInput,
+  TaxReportResult,
+  CFOChatInput,
+} from '../types/marketplace';
+
+export const generateDeepDive = async (
+  input: DeepDiveInput
+): Promise<DeepDiveResult> => {
+  const prompt = `
+당신은 CFA 자격을 보유한 최고 수준의 투자 애널리스트입니다.
+다음 종목에 대한 심층 분석 리포트를 JSON 형식으로 작성하세요.
+
+[분석 대상]
+- 종목: ${input.name} (${input.ticker})
+${input.currentPrice ? `- 현재가: ₩${input.currentPrice.toLocaleString()}` : ''}
+${input.avgPrice ? `- 평균 매수가: ₩${input.avgPrice.toLocaleString()}` : ''}
+${input.quantity ? `- 보유 수량: ${input.quantity}주` : ''}
+
+[필수 분석 항목]
+1. 재무 분석 (financial): PER, PBR, ROE, 매출성장률, 영업이익률 등 핵심 지표 + 점수(0-100)
+2. 기술적 분석 (technical): RSI, MACD, 이동평균선, 볼린저밴드 등 + 점수(0-100)
+3. 뉴스/이벤트 분석 (news): 최근 주요 뉴스 + 센티먼트
+4. AI 종합 의견 (aiOpinion): 매수/매도 의견, 목표가, 강세/약세 시나리오
+
+[출력 형식] 반드시 아래 JSON 구조로 반환:
+{
+  "ticker": "${input.ticker}",
+  "name": "${input.name}",
+  "overallScore": 75,
+  "recommendation": "BUY",
+  "sections": {
+    "financial": {
+      "title": "재무 분석",
+      "score": 80,
+      "highlights": ["매출 성장 YoY 25%", "..."],
+      "metrics": [{"label": "PER", "value": "15.3", "status": "good"}, ...]
+    },
+    "technical": {
+      "title": "기술적 분석",
+      "score": 65,
+      "highlights": ["RSI 중립 구간", "..."],
+      "signals": [{"indicator": "RSI", "signal": "중립", "value": "52.3"}, ...]
+    },
+    "news": {
+      "title": "뉴스 분석",
+      "sentiment": "POSITIVE",
+      "highlights": ["신제품 발표 호재", "..."],
+      "recentNews": [{"title": "...", "impact": "긍정적", "date": "2026-02-06"}, ...]
+    },
+    "aiOpinion": {
+      "title": "AI 종합 의견",
+      "summary": "현재 가격 대비 상승 여력 존재...",
+      "bullCase": ["...", "..."],
+      "bearCase": ["...", "..."],
+      "targetPrice": "₩85,000",
+      "timeHorizon": "6개월"
+    }
+  },
+  "generatedAt": "${new Date().toISOString()}"
+}
+
+중요: 반드시 유효한 JSON만 반환하세요. 마크다운 코드블록이나 설명 텍스트 없이 JSON만 출력하세요.
+recommendation은 반드시 STRONG_BUY, BUY, HOLD, SELL, STRONG_SELL 중 하나여야 합니다.
+한국어로 작성하세요.
+`;
+
+  try {
+    const result = await modelWithSearch.generateContent(prompt);
+    const text = result.response.text();
+    const cleaned = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+    return JSON.parse(cleaned) as DeepDiveResult;
+  } catch (error) {
+    console.error('Deep Dive 생성 오류:', error);
+    throw new Error('종목 딥다이브 분석에 실패했습니다');
+  }
+};
+
+// ============================================================================
+// [마켓플레이스] What-If 시뮬레이터 — 시나리오별 포트폴리오 영향 분석
+// ============================================================================
+
+export const generateWhatIf = async (
+  input: WhatIfInput
+): Promise<WhatIfResult> => {
+  const portfolioStr = input.portfolio
+    .map(a => `${a.name}(${a.ticker}): ₩${a.currentValue.toLocaleString()} / 비중 ${a.allocation}%`)
+    .join('\n');
+
+  const prompt = `
+당신은 리스크 관리 전문가(CRM)입니다. 사용자의 포트폴리오에 다음 시나리오가 발생할 경우의 영향을 분석하세요.
+
+[시나리오]
+- 유형: ${input.scenario}
+- 상세: ${input.description}
+${input.magnitude ? `- 변동 크기: ${input.magnitude}%` : ''}
+
+[현재 포트폴리오]
+${portfolioStr}
+
+[분석 항목]
+1. 전체 영향 요약 (totalImpact)
+2. 자산별 영향 분석 (assetImpacts)
+3. 리스크 평가 + 헤지 전략 (riskAssessment)
+
+[출력 형식] 반드시 아래 JSON 구조로 반환:
+{
+  "scenario": "${input.description}",
+  "summary": "전체 요약 텍스트...",
+  "totalImpact": {
+    "currentTotal": 총현재가치,
+    "projectedTotal": 예상가치,
+    "changePercent": -5.2,
+    "changeAmount": -520000
+  },
+  "assetImpacts": [
+    {
+      "ticker": "AAPL",
+      "name": "애플",
+      "currentValue": 5000000,
+      "projectedValue": 4500000,
+      "changePercent": -10.0,
+      "impactLevel": "HIGH",
+      "explanation": "기술주 민감도 높음..."
+    }
+  ],
+  "riskAssessment": {
+    "overallRisk": "MEDIUM",
+    "vulnerabilities": ["기술주 집중 리스크", "..."],
+    "hedgingSuggestions": ["채권 ETF 5% 편입 검토", "..."]
+  },
+  "generatedAt": "${new Date().toISOString()}"
+}
+
+중요: 반드시 유효한 JSON만 반환. 금액은 숫자로, 한국어로 작성.
+`;
+
+  try {
+    const result = await modelWithSearch.generateContent(prompt);
+    const text = result.response.text();
+    const cleaned = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+    return JSON.parse(cleaned) as WhatIfResult;
+  } catch (error) {
+    console.error('What-If 시뮬레이션 오류:', error);
+    throw new Error('What-If 시뮬레이션에 실패했습니다');
+  }
+};
+
+// ============================================================================
+// [마켓플레이스] 세금 최적화 리포트 — 절세 전략 + 매도 타이밍
+// ============================================================================
+
+export const generateTaxReport = async (
+  input: TaxReportInput
+): Promise<TaxReportResult> => {
+  const portfolioStr = input.portfolio
+    .map(a =>
+      `${a.name}(${a.ticker}): 현재 ₩${a.currentValue.toLocaleString()} / ` +
+      `매수 ₩${a.costBasis.toLocaleString()} / ${a.quantity}주 / 매수일 ${a.purchaseDate}`
+    )
+    .join('\n');
+
+  const residencyLabel = input.residency === 'KR' ? '한국' : '미국';
+
+  const prompt = `
+당신은 세무 전문가(CPA/세무사)입니다. 사용자의 포트폴리오에 대한 세금 최적화 분석을 제공하세요.
+
+[사용자 정보]
+- 거주지: ${residencyLabel}
+${input.annualIncome ? `- 연 소득: ₩${input.annualIncome.toLocaleString()}` : '- 연 소득: 미입력'}
+
+[보유 포트폴리오]
+${portfolioStr}
+
+[분석 항목]
+1. 세금 요약 (예상 양도세, 종합소득세, 실효세율)
+2. 절세 전략 (우선순위별, 예상 절세 금액 포함)
+3. 종목별 매도 타이밍 권장 (SELL_NOW / HOLD_FOR_TAX / TAX_LOSS_HARVEST)
+4. 분기별 연간 플랜
+
+${input.residency === 'KR' ?
+  '[한국 세법 적용]\n- 해외주식 양도소득세: 연 250만원 공제 후 22%\n- 금융소득종합과세: 2000만원 초과 시\n- ISA/연금저축 활용 여부 검토' :
+  '[미국 세법 적용]\n- Long-term vs Short-term Capital Gains\n- Tax-Loss Harvesting\n- Wash Sale Rule 주의'}
+
+[출력 형식] 반드시 아래 JSON 구조로 반환:
+{
+  "residency": "${input.residency}",
+  "taxSummary": {
+    "estimatedCapitalGainsTax": 금액,
+    "estimatedIncomeTax": 금액,
+    "totalTaxBurden": 총금액,
+    "effectiveTaxRate": 12.5
+  },
+  "strategies": [
+    {
+      "title": "전략명",
+      "description": "설명...",
+      "potentialSaving": 절세금액,
+      "priority": "HIGH",
+      "actionItems": ["구체적 실행 항목1", "..."]
+    }
+  ],
+  "sellTimeline": [
+    {
+      "ticker": "AAPL",
+      "name": "애플",
+      "suggestedAction": "HOLD_FOR_TAX",
+      "reason": "장기보유 세율 적용까지 3개월 남음",
+      "optimalTiming": "2026년 5월 이후"
+    }
+  ],
+  "annualPlan": [
+    {"quarter": "Q1 2026", "actions": ["ISA 계좌 개설", "..."]},
+    {"quarter": "Q2 2026", "actions": ["..."]},
+    {"quarter": "Q3 2026", "actions": ["..."]},
+    {"quarter": "Q4 2026", "actions": ["연말 손실 확정 매도"]}
+  ],
+  "generatedAt": "${new Date().toISOString()}"
+}
+
+중요: 유효한 JSON만 반환. 금액은 숫자(KRW). 한국어 작성. 실제 세법 기반 정확한 계산.
+`;
+
+  try {
+    const result = await modelWithSearch.generateContent(prompt);
+    const text = result.response.text();
+    const cleaned = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+    return JSON.parse(cleaned) as TaxReportResult;
+  } catch (error) {
+    console.error('세금 리포트 생성 오류:', error);
+    throw new Error('세금 최적화 리포트 생성에 실패했습니다');
+  }
+};
+
+// ============================================================================
+// [마켓플레이스] AI CFO 1:1 채팅 — 포트폴리오 컨텍스트 포함
+// ============================================================================
+
+export const generateAICFOResponse = async (
+  input: CFOChatInput,
+  conversationHistory: { role: string; content: string }[]
+): Promise<string> => {
+  const historyStr = conversationHistory
+    .slice(-10) // 최근 10개 메시지만
+    .map(m => `${m.role === 'user' ? '사용자' : 'AI CFO'}: ${m.content}`)
+    .join('\n');
+
+  const portfolioContext = input.portfolioContext
+    ? `
+[사용자 포트폴리오 컨텍스트]
+- 총 자산: ₩${input.portfolioContext.totalAssets.toLocaleString()}
+- 투자 등급: ${input.portfolioContext.tier}
+- 주요 보유: ${input.portfolioContext.topHoldings.map(h => `${h.name}(${h.ticker}) ${h.allocation}%`).join(', ')}
+`
+    : '';
+
+  const prompt = `
+당신은 AI CFO (최고재무책임자)입니다. 사용자의 재무 상담에 친절하고 전문적으로 응답하세요.
+
+${portfolioContext}
+
+[대화 히스토리]
+${historyStr || '(첫 대화)'}
+
+[사용자 질문]
+${input.message}
+
+[응답 규칙]
+1. 한국어로 친절하게 답변
+2. 사용자의 포트폴리오 상황을 고려한 맞춤 조언
+3. 구체적 수치와 근거 제시
+4. 법적 면책: "투자 권유가 아닌 정보 제공 목적"
+5. 너무 길지 않게, 핵심 위주로 (300자 내외)
+6. 마크다운 없이 순수 텍스트로 응답
+`;
+
+  try {
+    const result = await modelWithSearch.generateContent(prompt);
+    return result.response.text();
+  } catch (error) {
+    console.error('AI CFO 응답 오류:', error);
+    throw new Error('AI CFO 응답 생성에 실패했습니다');
   }
 };

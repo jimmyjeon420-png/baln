@@ -6,6 +6,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { FomoSubScores } from '../services/gemini';
 
 interface FomoAlert {
   ticker: string;
@@ -13,7 +14,22 @@ interface FomoAlert {
   overvaluationScore: number; // 0-100
   severity: 'LOW' | 'MEDIUM' | 'HIGH';
   reason: string;
+  subScores?: FomoSubScores; // 3개 하위 지표
 }
+
+// 서브스코어 라벨 매핑
+const FOMO_SUB_LABELS: { key: keyof FomoSubScores; label: string }[] = [
+  { key: 'valuationHeat', label: '밸류에이션 과열도' },
+  { key: 'shortTermSurge', label: '단기 급등률' },
+  { key: 'marketOverheat', label: '시장 과열 신호' },
+];
+
+// 점수별 색상 (높을수록 위험 → 빨강)
+const getFomoBarColor = (score: number): string => {
+  if (score >= 70) return '#CF6679';
+  if (score >= 40) return '#FFC107';
+  return '#4CAF50';
+};
 
 interface FomoVaccineCardProps {
   alerts: FomoAlert[];
@@ -148,6 +164,32 @@ export default function FomoVaccineCard({ alerts }: FomoVaccineCardProps) {
                   {alert.overvaluationScore}점
                 </Text>
               </View>
+
+              {/* 서브스코어 분해 (3개 지표) */}
+              {alert.subScores && (
+                <View style={styles.fomoSubScoresContainer}>
+                  {FOMO_SUB_LABELS.map(({ key, label }) => {
+                    const score = alert.subScores![key] ?? 0;
+                    const barColor = getFomoBarColor(score);
+                    return (
+                      <View key={key} style={styles.fomoSubRow}>
+                        <Text style={styles.fomoSubLabel}>{label}</Text>
+                        <View style={styles.fomoSubBarBg}>
+                          <View
+                            style={[
+                              styles.fomoSubBarFill,
+                              { width: `${score}%`, backgroundColor: barColor },
+                            ]}
+                          />
+                        </View>
+                        <Text style={[styles.fomoSubValue, { color: barColor }]}>
+                          {score}
+                        </Text>
+                      </View>
+                    );
+                  })}
+                </View>
+              )}
 
               {/* 사유 */}
               <Text style={styles.reasonText}>{alert.reason}</Text>
@@ -300,5 +342,38 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#888888',
     lineHeight: 18,
+  },
+  // FOMO 서브스코어 스타일
+  fomoSubScoresContainer: {
+    marginTop: 8,
+    marginBottom: 8,
+    gap: 6,
+  },
+  fomoSubRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  fomoSubLabel: {
+    fontSize: 11,
+    color: '#999999',
+    width: 100,
+  },
+  fomoSubBarBg: {
+    flex: 1,
+    height: 4,
+    backgroundColor: '#333333',
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  fomoSubBarFill: {
+    height: '100%',
+    borderRadius: 2,
+  },
+  fomoSubValue: {
+    fontSize: 11,
+    fontWeight: '600',
+    width: 24,
+    textAlign: 'right',
   },
 });

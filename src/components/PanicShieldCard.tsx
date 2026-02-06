@@ -7,6 +7,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Circle, G, Text as SvgText } from 'react-native-svg';
+import { PanicSubScores } from '../services/gemini';
 
 interface StopLossGuideline {
   ticker: string;
@@ -20,12 +21,30 @@ interface PanicShieldCardProps {
   index: number; // 0-100 (높을수록 안전)
   level: 'SAFE' | 'CAUTION' | 'DANGER';
   stopLossGuidelines: StopLossGuideline[];
+  subScores?: PanicSubScores; // 5개 하위 지표
 }
+
+// 서브스코어 바 색상 결정 (점수가 높을수록 안전 → 초록)
+const getSubScoreColor = (score: number): string => {
+  if (score >= 70) return '#4CAF50';
+  if (score >= 40) return '#FFC107';
+  return '#CF6679';
+};
+
+// 서브스코어 라벨 매핑
+const SUB_SCORE_LABELS: { key: keyof PanicSubScores; label: string; icon: string }[] = [
+  { key: 'portfolioLoss', label: '포트폴리오 손실률', icon: '📉' },
+  { key: 'concentrationRisk', label: '자산 집중도', icon: '🎯' },
+  { key: 'volatilityExposure', label: '변동성 노출', icon: '📊' },
+  { key: 'stopLossProximity', label: '손절선 근접도', icon: '🚨' },
+  { key: 'marketSentiment', label: '시장 심리', icon: '🧠' },
+];
 
 export default function PanicShieldCard({
   index,
   level,
   stopLossGuidelines,
+  subScores,
 }: PanicShieldCardProps) {
   // 레벨별 색상 및 메시지
   const levelConfig = {
@@ -122,6 +141,36 @@ export default function PanicShieldCard({
         </Text>
       </View>
 
+      {/* 서브스코어 분해 (CNN Fear & Greed 스타일) */}
+      {subScores && (
+        <View style={styles.subScoresContainer}>
+          <Text style={styles.subScoresTitle}>📋 점수 분해</Text>
+          {SUB_SCORE_LABELS.map(({ key, label, icon }) => {
+            const score = subScores[key] ?? 0;
+            const barColor = getSubScoreColor(score);
+            return (
+              <View key={key} style={styles.subScoreRow}>
+                <View style={styles.subScoreLabelRow}>
+                  <Text style={styles.subScoreIcon}>{icon}</Text>
+                  <Text style={styles.subScoreLabel}>{label}</Text>
+                  <Text style={[styles.subScoreValue, { color: barColor }]}>
+                    {score}
+                  </Text>
+                </View>
+                <View style={styles.subScoreBarBg}>
+                  <View
+                    style={[
+                      styles.subScoreBarFill,
+                      { width: `${score}%`, backgroundColor: barColor },
+                    ]}
+                  />
+                </View>
+              </View>
+            );
+          })}
+        </View>
+      )}
+
       {/* 손절 가이드라인 */}
       {alertItems.length > 0 && (
         <View style={styles.guidelinesContainer}>
@@ -136,10 +185,10 @@ export default function PanicShieldCard({
                 <Text
                   style={[
                     styles.guidelineLoss,
-                    { color: item.currentLoss < 0 ? '#CF6679' : '#4CAF50' },
+                    { color: (item.currentLoss ?? 0) < 0 ? '#CF6679' : '#4CAF50' },
                   ]}
                 >
-                  {item.currentLoss >= 0 ? '+' : ''}{item.currentLoss.toFixed(1)}%
+                  {(item.currentLoss ?? 0) >= 0 ? '+' : ''}{(item.currentLoss ?? 0).toFixed(1)}%
                 </Text>
                 <View
                   style={[
@@ -276,5 +325,51 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
     color: '#000000',
+  },
+  // 서브스코어 스타일
+  subScoresContainer: {
+    marginTop: 20,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#333333',
+  },
+  subScoresTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#AAAAAA',
+    marginBottom: 14,
+  },
+  subScoreRow: {
+    marginBottom: 12,
+  },
+  subScoreLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  subScoreIcon: {
+    fontSize: 12,
+    marginRight: 6,
+  },
+  subScoreLabel: {
+    flex: 1,
+    fontSize: 12,
+    color: '#CCCCCC',
+  },
+  subScoreValue: {
+    fontSize: 12,
+    fontWeight: '700',
+    width: 28,
+    textAlign: 'right',
+  },
+  subScoreBarBg: {
+    height: 6,
+    backgroundColor: '#333333',
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  subScoreBarFill: {
+    height: '100%',
+    borderRadius: 3,
   },
 });

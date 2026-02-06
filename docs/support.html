@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Rebalancer - 고객지원</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: #121212;
+      color: #CCCCCC;
+      line-height: 1.7;
+      padding: 20px;
+      max-width: 720px;
+      margin: 0 auto;
+    }
+    header {
+      text-align: center;
+      padding: 40px 0 30px;
+      border-bottom: 1px solid #2A2A2A;
+      margin-bottom: 30px;
+    }
+    .logo { font-size: 32px; margin-bottom: 8px; }
+    h1 { color: #FFFFFF; font-size: 24px; margin-bottom: 6px; }
+    .subtitle { color: #4CAF50; font-size: 14px; font-weight: 600; }
+    .card {
+      background-color: #1E1E1E;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 16px;
+    }
+    .card h2 {
+      color: #FFFFFF;
+      font-size: 17px;
+      margin-bottom: 12px;
+    }
+    .card p {
+      font-size: 14px;
+      line-height: 1.8;
+      margin-bottom: 8px;
+    }
+    .card a {
+      color: #4CAF50;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .email-box {
+      background-color: #2A2A2A;
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-top: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .email-icon { font-size: 20px; }
+    .email-box a { font-size: 15px; }
+    .faq-item {
+      border-bottom: 1px solid #2A2A2A;
+      padding: 16px 0;
+    }
+    .faq-item:last-child { border-bottom: none; }
+    .faq-q {
+      color: #FFFFFF;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .faq-a {
+      font-size: 13px;
+      color: #AAAAAA;
+    }
+    footer {
+      text-align: center;
+      padding: 30px 0;
+      border-top: 1px solid #2A2A2A;
+      margin-top: 20px;
+    }
+    footer p { color: #666666; font-size: 12px; }
+    footer a { color: #4CAF50; text-decoration: none; }
+    .nav-links { margin-top: 12px; }
+    .nav-links a { color: #888888; font-size: 12px; margin: 0 8px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">&#8383;</div>
+  <h1>Smart Rebalancer</h1>
+  <p class="subtitle">고객지원 (Support)</p>
+</header>
+
+<div class="card">
+  <h2>문의하기</h2>
+  <p>서비스 이용 중 문제가 발생하거나 도움이 필요하시면 이메일로 연락해주세요. 영업일 기준 24시간 이내에 답변드리겠습니다.</p>
+  <div class="email-box">
+    <span class="email-icon">&#9993;</span>
+    <a href="mailto:support@smartrebalancer.com">support@smartrebalancer.com</a>
+  </div>
+</div>
+
+<div class="card">
+  <h2>계정 삭제 요청</h2>
+  <p>앱 내 설정 &gt; 보안 &gt; 계정 삭제에서 직접 삭제할 수 있습니다.</p>
+  <p>앱 접근이 불가능한 경우, 아래 이메일로 가입 시 사용한 이메일 주소를 보내주시면 수동으로 삭제 처리해드립니다.</p>
+  <div class="email-box">
+    <span class="email-icon">&#128465;</span>
+    <a href="mailto:delete@smartrebalancer.com">delete@smartrebalancer.com</a>
+  </div>
+</div>
+
+<div class="card">
+  <h2>개인정보 관련 문의</h2>
+  <p>개인정보 열람, 정정, 삭제 요청은 아래로 연락해주세요.</p>
+  <div class="email-box">
+    <span class="email-icon">&#128737;</span>
+    <a href="mailto:privacy@smartrebalancer.com">privacy@smartrebalancer.com</a>
+  </div>
+</div>
+
+<div class="card">
+  <h2>자주 묻는 질문</h2>
+
+  <div class="faq-item">
+    <p class="faq-q">Q. 앱에서 내 증권사 비밀번호를 수집하나요?</p>
+    <p class="faq-a">아닙니다. 스마트 리밸런서는 Zero-Knowledge 원칙을 따르며, 증권사 로그인 정보를 수집하거나 저장하지 않습니다. 포트폴리오 데이터는 스크린샷 이미지 분석 또는 직접 입력으로만 수집됩니다.</p>
+  </div>
+
+  <div class="faq-item">
+    <p class="faq-q">Q. AI 분석 결과를 믿고 투자해도 되나요?</p>
+    <p class="faq-a">AI 분석 결과는 참고 자료일 뿐, 투자 자문이 아닙니다. 투자 결정의 최종 책임은 사용자 본인에게 있습니다.</p>
+  </div>
+
+  <div class="faq-item">
+    <p class="faq-q">Q. 계정을 삭제하면 데이터가 완전히 사라지나요?</p>
+    <p class="faq-a">네. 계정 삭제 시 포트폴리오 데이터, AI 분석 기록, 채팅 이력 등 모든 개인 데이터가 영구적으로 삭제되며 복구할 수 없습니다.</p>
+  </div>
+
+  <div class="faq-item">
+    <p class="faq-q">Q. 유료 구독을 해지하려면 어떻게 하나요?</p>
+    <p class="faq-a">iPhone: 설정 &gt; Apple ID &gt; 구독 &gt; Smart Rebalancer에서 해지할 수 있습니다.<br>Android: Google Play 스토어 &gt; 구독에서 해지할 수 있습니다.</p>
+  </div>
+</div>
+
+<footer>
+  <p>&copy; 2026 Smart Rebalancer. All rights reserved.</p>
+  <div class="nav-links">
+    <a href="./index.html">홈</a>
+    <a href="./privacy.html">개인정보처리방침</a>
+    <a href="./terms.html">이용약관</a>
+  </div>
+</footer>
+
+</body>
+</html>

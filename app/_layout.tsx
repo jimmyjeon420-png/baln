@@ -1,8 +1,8 @@
 import { Stack, useRouter, useSegments } from 'expo-router';
-import { View } from 'react-native';
+import { View, AppState, AppStateStatus } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import {
@@ -12,6 +12,10 @@ import {
   scheduleInactivityReminder,
 } from '../src/services/notifications';
 import * as Notifications from 'expo-notifications';
+import BiometricLockScreen from '../src/components/BiometricLockScreen';
+import BrandSplash from '../src/components/BrandSplash';
+import { getBiometricSettings } from '../src/services/biometric';
+import { useSubscriptionBonus } from '../src/hooks/useCredits';
 
 // React Query 클라이언트 생성
 const queryClient = new QueryClient({
@@ -30,6 +34,9 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
   const segments = useSegments();
+
+  // 앱 시작 시 구독자 월 크레딧 보너스 체크 (로그인된 경우만)
+  useSubscriptionBonus();
 
   useEffect(() => {
     if (loading) return; // 로딩 중에는 아무것도 하지 않음
@@ -52,8 +59,32 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 configureNotificationHandler();
 
 export default function RootLayout() {
-  const notificationListener = useRef<Notifications.EventSubscription>();
-  const responseListener = useRef<Notifications.EventSubscription>();
+  const notificationListener = useRef<Notifications.EventSubscription>(null);
+  const responseListener = useRef<Notifications.EventSubscription>(null);
+  const [isLocked, setIsLocked] = useState(false);
+  const [showSplash, setShowSplash] = useState(true); // 브랜드 스플래시 표시 여부
+  const appState = useRef(AppState.currentState);
+
+  // AppState 변화 감지 → 백그라운드에서 복귀 시 잠금
+  useEffect(() => {
+    const handleAppStateChange = async (nextState: AppStateStatus) => {
+      // background/inactive → active 전환 시
+      if (appState.current.match(/inactive|background/) && nextState === 'active') {
+        try {
+          const settings = await getBiometricSettings();
+          if (settings.biometricEnabled && settings.autoLockEnabled) {
+            setIsLocked(true);
+          }
+        } catch {
+          // 설정 로드 실패 시 잠금 안 함 (사용자 편의 우선)
+        }
+      }
+      appState.current = nextState;
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    return () => subscription.remove();
+  }, []);
 
   useEffect(() => {
     // 알림 권한 요청 + 스케줄링 (비동기, 실패해도 앱 크래시 안 함)
@@ -125,8 +156,18 @@ export default function RootLayout() {
                 <Stack.Screen name="settings/about" options={{ headerShown: false }} />
                 <Stack.Screen name="settings/lounge" options={{ headerShown: false }} />
                 <Stack.Screen name="settings/privacy" options={{ headerShown: false }} />
+                {/* AI 프리미엄 마켓플레이스 */}
+                <Stack.Screen name="marketplace" options={{ headerShown: false }} />
               </Stack>
             </AuthGate>
+            {/* 브랜드 스플래시 (앱 시작 시 'baln.logic' 표시) */}
+            {showSplash && (
+              <BrandSplash onFinish={() => setShowSplash(false)} />
+            )}
+            {/* 생체인증 잠금 화면 (AuthGate 바깥, 최상위 오버레이) */}
+            {isLocked && (
+              <BiometricLockScreen onUnlock={() => setIsLocked(false)} />
+            )}
           </View>
         </AuthProvider>
       </SafeAreaProvider>

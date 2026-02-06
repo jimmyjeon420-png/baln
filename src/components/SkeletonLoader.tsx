@@ -146,6 +146,67 @@ export function LoungeSkeleton() {
   );
 }
 
+/** 홈(Portfolio Pulse) 화면 전용 스켈레톤 */
+export function HomeSkeletonLoader() {
+  return (
+    <View style={styles.container}>
+      {/* Section 1: 인사 + 시장 날씨 */}
+      <View style={styles.headerSkeleton}>
+        <View style={{ gap: 6 }}>
+          <SkeletonBlock width={160} height={24} />
+          <SkeletonBlock width={100} height={14} />
+        </View>
+        <SkeletonBlock width={80} height={28} borderRadius={14} />
+      </View>
+
+      {/* Section 2: Pulse Hero 카드 */}
+      <View style={[styles.cardSkeleton, { height: 180 }]}>
+        <SkeletonBlock width={80} height={14} style={{ marginBottom: 12 }} />
+        <SkeletonBlock width={200} height={36} style={{ marginBottom: 8 }} />
+        <SkeletonBlock width={150} height={16} style={{ marginBottom: 20 }} />
+        <View style={{ flexDirection: 'row', gap: 12 }}>
+          <SkeletonBlock width="48%" height={44} borderRadius={12} />
+          <SkeletonBlock width="48%" height={44} borderRadius={12} />
+        </View>
+      </View>
+
+      {/* Section 3: 오늘의 시그널 */}
+      <View style={[styles.cardSkeleton, { height: 160 }]}>
+        <SkeletonBlock width={180} height={16} style={{ marginBottom: 16 }} />
+        {[1, 2, 3].map((i) => (
+          <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+            <SkeletonBlock width={50} height={14} />
+            <SkeletonBlock width={50} height={22} borderRadius={6} />
+            <SkeletonBlock width="50%" height={14} />
+          </View>
+        ))}
+      </View>
+
+      {/* Section 4: 활성 자산 리스트 */}
+      <SkeletonBlock width={100} height={16} style={{ marginBottom: 12 }} />
+      {[1, 2, 3].map((i) => (
+        <View key={i} style={[styles.cardSkeleton, { height: 64, flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 10 }]}>
+          <SkeletonBlock width={40} height={40} borderRadius={20} />
+          <View style={{ flex: 1, gap: 6 }}>
+            <SkeletonBlock width={80} height={14} />
+            <SkeletonBlock width={120} height={12} />
+          </View>
+          <View style={{ alignItems: 'flex-end', gap: 6 }}>
+            <SkeletonBlock width={90} height={14} />
+            <SkeletonBlock width={60} height={12} />
+          </View>
+        </View>
+      ))}
+
+      {/* Section 5: 리밸런싱 배너 */}
+      <View style={[styles.cardSkeleton, { height: 70 }]}>
+        <SkeletonBlock width={160} height={14} style={{ marginBottom: 8 }} />
+        <SkeletonBlock width="80%" height={14} />
+      </View>
+    </View>
+  );
+}
+
 export { SkeletonBlock };
 export default DiagnosisSkeletonLoader;
 

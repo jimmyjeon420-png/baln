@@ -306,6 +306,136 @@ export interface Database {
           updated_at?: string;
         };
       };
+      // ============================================================================
+      // AI 프리미엄 마켓플레이스 테이블
+      // ============================================================================
+
+      // 사용자 크레딧 잔액
+      user_credits: {
+        Row: {
+          user_id: string;
+          balance: number;
+          lifetime_purchased: number;
+          lifetime_spent: number;
+          last_bonus_at: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          balance?: number;
+          lifetime_purchased?: number;
+          lifetime_spent?: number;
+          last_bonus_at?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          balance?: number;
+          lifetime_purchased?: number;
+          lifetime_spent?: number;
+          last_bonus_at?: string | null;
+          updated_at?: string;
+        };
+      };
+      // 크레딧 거래 원장
+      credit_transactions: {
+        Row: {
+          id: string;
+          user_id: string;
+          type: 'purchase' | 'spend' | 'refund' | 'bonus' | 'subscription_bonus';
+          amount: number;
+          balance_after: number;
+          feature_type: 'deep_dive' | 'what_if' | 'tax_report' | 'ai_cfo_chat' | null;
+          feature_ref_id: string | null;
+          metadata: Record<string, any> | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          type: 'purchase' | 'spend' | 'refund' | 'bonus' | 'subscription_bonus';
+          amount: number;
+          balance_after: number;
+          feature_type?: 'deep_dive' | 'what_if' | 'tax_report' | 'ai_cfo_chat' | null;
+          feature_ref_id?: string | null;
+          metadata?: Record<string, any> | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          type?: 'purchase' | 'spend' | 'refund' | 'bonus' | 'subscription_bonus';
+          amount?: number;
+          balance_after?: number;
+          feature_type?: 'deep_dive' | 'what_if' | 'tax_report' | 'ai_cfo_chat' | null;
+          feature_ref_id?: string | null;
+          metadata?: Record<string, any> | null;
+          created_at?: string;
+        };
+      };
+      // AI 분석 결과 캐시 (24시간)
+      ai_feature_results: {
+        Row: {
+          id: string;
+          user_id: string;
+          feature_type: 'deep_dive' | 'what_if' | 'tax_report';
+          input_hash: string;
+          result: Record<string, any>;
+          credits_charged: number;
+          expires_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          feature_type: 'deep_dive' | 'what_if' | 'tax_report';
+          input_hash: string;
+          result: Record<string, any>;
+          credits_charged: number;
+          expires_at?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          feature_type?: 'deep_dive' | 'what_if' | 'tax_report';
+          input_hash?: string;
+          result?: Record<string, any>;
+          credits_charged?: number;
+          expires_at?: string;
+          created_at?: string;
+        };
+      };
+      // AI CFO 채팅 히스토리
+      ai_chat_messages: {
+        Row: {
+          id: string;
+          session_id: string;
+          user_id: string;
+          role: 'user' | 'assistant';
+          content: string;
+          credits_charged: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          session_id: string;
+          user_id: string;
+          role: 'user' | 'assistant';
+          content: string;
+          credits_charged?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          session_id?: string;
+          user_id?: string;
+          role?: 'user' | 'assistant';
+          content?: string;
+          credits_charged?: number;
+          created_at?: string;
+        };
+      };
       // 커뮤니티 게시물 테이블 (VIP 라운지)
       community_posts: {
         Row: {
@@ -365,6 +495,12 @@ export const GATHERING_CATEGORY_LABELS: Record<Gathering['category'], string> = 
   networking: '네트워킹',
   workshop: '워크샵',
 };
+
+// 마켓플레이스 편의 타입
+export type UserCreditsRow = Database['public']['Tables']['user_credits']['Row'];
+export type CreditTransactionRow = Database['public']['Tables']['credit_transactions']['Row'];
+export type AIFeatureResultRow = Database['public']['Tables']['ai_feature_results']['Row'];
+export type AIChatMessageRow = Database['public']['Tables']['ai_chat_messages']['Row'];
 
 // 티어 타입 (4단계 전략적 티어)
 export type UserTier = 'SILVER' | 'GOLD' | 'PLATINUM' | 'DIAMOND';

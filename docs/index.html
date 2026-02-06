@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Rebalancer - AI 포트폴리오 최적화</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: #121212;
+      color: #CCCCCC;
+      line-height: 1.7;
+      padding: 20px;
+      max-width: 720px;
+      margin: 0 auto;
+    }
+    header {
+      text-align: center;
+      padding: 60px 0 40px;
+    }
+    .logo {
+      font-size: 56px;
+      margin-bottom: 16px;
+    }
+    h1 {
+      color: #FFFFFF;
+      font-size: 28px;
+      margin-bottom: 8px;
+    }
+    .tagline {
+      color: #4CAF50;
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 24px;
+    }
+    .description {
+      color: #AAAAAA;
+      font-size: 15px;
+      line-height: 1.8;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+    .features {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: 40px 0;
+    }
+    @media (max-width: 480px) {
+      .features { grid-template-columns: 1fr; }
+    }
+    .feature {
+      background-color: #1E1E1E;
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .feature-icon {
+      font-size: 28px;
+      margin-bottom: 10px;
+    }
+    .feature h3 {
+      color: #FFFFFF;
+      font-size: 14px;
+      margin-bottom: 6px;
+    }
+    .feature p {
+      color: #AAAAAA;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    .cta-section {
+      text-align: center;
+      padding: 30px 0;
+      border-top: 1px solid #2A2A2A;
+      border-bottom: 1px solid #2A2A2A;
+      margin: 20px 0;
+    }
+    .cta-section p {
+      color: #888888;
+      font-size: 14px;
+      margin-bottom: 16px;
+    }
+    .store-badge {
+      display: inline-block;
+      background-color: #4CAF50;
+      color: #000000;
+      font-weight: 700;
+      font-size: 15px;
+      padding: 14px 32px;
+      border-radius: 12px;
+      text-decoration: none;
+      margin: 4px;
+    }
+    .store-badge:hover {
+      background-color: #66BB6A;
+    }
+    .links {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      margin: 30px 0;
+    }
+    .links a {
+      color: #4CAF50;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      padding: 10px 16px;
+      border: 1px solid #333333;
+      border-radius: 8px;
+      transition: border-color 0.2s;
+    }
+    .links a:hover {
+      border-color: #4CAF50;
+    }
+    footer {
+      text-align: center;
+      padding: 30px 0;
+    }
+    footer p {
+      color: #666666;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">&#8383;</div>
+  <h1>Smart Rebalancer</h1>
+  <p class="tagline">AI 포트폴리오 최적화</p>
+  <p class="description">
+    AI가 당신의 포트폴리오를 진단하고, 맞춤형 리밸런싱 전략을 제안합니다.
+    공포와 탐욕을 넘어 데이터 기반의 현명한 투자를 시작하세요.
+  </p>
+</header>
+
+<div class="features">
+  <div class="feature">
+    <div class="feature-icon">&#128202;</div>
+    <h3>AI 포트폴리오 진단</h3>
+    <p>스크린샷 한 장으로 보유 자산을 자동 인식하고 종합 분석합니다</p>
+  </div>
+  <div class="feature">
+    <div class="feature-icon">&#128737;</div>
+    <h3>Panic Shield</h3>
+    <p>행동재무학 기반 공포 지수로 감정적 매도를 방지합니다</p>
+  </div>
+  <div class="feature">
+    <div class="feature-icon">&#128138;</div>
+    <h3>FOMO Vaccine</h3>
+    <p>과열 종목 경보로 충동적 추격매수를 예방합니다</p>
+  </div>
+  <div class="feature">
+    <div class="feature-icon">&#8383;</div>
+    <h3>Bitcoin Conviction</h3>
+    <p>5가지 데이터 소스 기반 비트코인 확신 지수를 제공합니다</p>
+  </div>
+  <div class="feature">
+    <div class="feature-icon">&#9728;</div>
+    <h3>CFO 모닝 브리핑</h3>
+    <p>매일 아침 거시경제 요약과 포트폴리오 액션을 제안합니다</p>
+  </div>
+  <div class="feature">
+    <div class="feature-icon">&#128176;</div>
+    <h3>티어별 맞춤 전략</h3>
+    <p>자산 규모에 따라 SILVER~DIAMOND 맞춤 투자 전략을 제공합니다</p>
+  </div>
+</div>
+
+<div class="cta-section">
+  <p>지금 무료로 시작하세요</p>
+  <a class="store-badge" href="#">App Store</a>
+  <a class="store-badge" href="#">Google Play</a>
+</div>
+
+<div class="links">
+  <a href="./privacy.html">개인정보처리방침</a>
+  <a href="./terms.html">이용약관</a>
+  <a href="./support.html">고객지원</a>
+</div>
+
+<footer>
+  <p>&copy; 2026 Smart Rebalancer. All rights reserved.</p>
+</footer>
+
+</body>
+</html>
