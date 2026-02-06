@@ -96,7 +96,6 @@ export default function DiagnosisScreen() {
   const [userTier, setUserTier] = useState<UserTier>('SILVER');
   const [analysisResult, setAnalysisResult] = useState<RiskAnalysisResult | null>(null);
   const [morningBriefing, setMorningBriefing] = useState<MorningBriefingResult | null>(null);
-  const [isNewScan, setIsNewScan] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // [핵심] DB 조회 완료 여부 - 이 값이 true가 되기 전까지 Empty State 표시 금지
   const [initialCheckDone, setInitialCheckDone] = useState(false);
@@ -188,7 +187,7 @@ export default function DiagnosisScreen() {
     }
   }, []);
 
-  // 신규 스캔 확인
+  // 신규 스캔 확인 (AsyncStorage 플래그 클리어 부수효과)
   const checkNewScan = useCallback(async () => {
     try {
       const needsDiagnosis = await AsyncStorage.getItem(NEEDS_DIAGNOSIS_KEY);
@@ -196,11 +195,7 @@ export default function DiagnosisScreen() {
       const today = new Date().toISOString().split('T')[0];
 
       if (needsDiagnosis === 'true' && lastScanDate === today) {
-        setIsNewScan(true);
-        // 플래그 초기화
         await AsyncStorage.removeItem(NEEDS_DIAGNOSIS_KEY);
-      } else {
-        setIsNewScan(false);
       }
     } catch (err) {
       console.error('Check new scan error:', err);
@@ -706,21 +701,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 16,
     paddingBottom: 100,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    fontSize: 14,
-    color: '#888888',
-    marginTop: 12,
-  },
-  loadingSubtext: {
-    fontSize: 12,
-    color: '#666666',
-    marginTop: 6,
   },
   header: {
     marginBottom: 20,
