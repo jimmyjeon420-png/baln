@@ -209,6 +209,8 @@ export default function RootLayout() {
                 <Stack.Screen name="community/[id]" options={{ headerShown: false }} />
                 {/* 투자 DNA - 등급별 포트폴리오 비중 비교 */}
                 <Stack.Screen name="settings/tier-insights" options={{ headerShown: false }} />
+                {/* 게임 (투자 예측 등) */}
+                <Stack.Screen name="games" options={{ headerShown: false }} />
               </Stack>
             </AuthGate>
             {/* 브랜드 스플래시 (앱 시작 시 'baln.logic' 표시) */}

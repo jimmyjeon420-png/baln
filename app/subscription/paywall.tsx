@@ -23,6 +23,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useHaptics } from '../../src/hooks/useHaptics';
 import { useSubscriptionStatus, useActivateTrial } from '../../src/hooks/useSubscription';
+import { isFreePeriod, getFreePeriodDaysLeft } from '../../src/config/freePeriod';
 
 // 가격 정보
 const PRICING = {
@@ -124,6 +125,90 @@ export default function PaywallScreen() {
         <View style={styles.loadingWrap}>
           <ActivityIndicator size="large" color="#4CAF50" />
         </View>
+      </SafeAreaView>
+    );
+  }
+
+  // ─── 무료 기간 축하 모드 ───
+  if (isFreePeriod()) {
+    const daysLeft = getFreePeriodDaysLeft();
+    return (
+      <SafeAreaView style={styles.container}>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          {/* 닫기 버튼 */}
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={() => {
+              mediumTap();
+              router.back();
+            }}
+          >
+            <Ionicons name="close" size={24} color="#888888" />
+          </TouchableOpacity>
+
+          {/* 축하 히어로 */}
+          <View style={styles.heroSection}>
+            <LinearGradient
+              colors={['rgba(76, 175, 80, 0.3)', 'rgba(76, 175, 80, 0)']}
+              style={styles.heroGlow}
+            />
+            <Text style={styles.heroEmoji}>{'🎉'}</Text>
+            <Text style={styles.heroTitle}>지금 모든 기능이 무료!</Text>
+            <Text style={styles.heroSubtitle}>
+              D-{daysLeft} 남음 · 5/31까지 전 기능 무료 개방
+            </Text>
+          </View>
+
+          {/* 크레딧 적립 안내 */}
+          <View style={styles.creditInfo}>
+            <Text style={styles.creditInfoTitle}>지금 크레딧을 적립하세요!</Text>
+            <Text style={styles.creditInfoDesc}>
+              매일 출석 +2 크레딧 · 공유 +3 크레딧{'\n'}
+              적립한 크레딧은 6월 이후에도 사용 가능합니다
+            </Text>
+          </View>
+
+          {/* 혜택 목록 (어떤 기능이 있는지 보여줌) */}
+          <View style={styles.benefitsSection}>
+            <Text style={styles.sectionTitle}>이용 가능한 기능</Text>
+            {BENEFITS.map((benefit, idx) => (
+              <View key={idx} style={styles.benefitItem}>
+                <View style={styles.benefitIconWrap}>
+                  <Ionicons name={benefit.icon} size={20} color="#4CAF50" />
+                </View>
+                <View style={styles.benefitText}>
+                  <Text style={styles.benefitTitle}>{benefit.title}</Text>
+                  <Text style={styles.benefitDesc}>{benefit.desc}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+
+          {/* CTA: 무료로 이용하기 */}
+          <TouchableOpacity
+            style={styles.ctaButton}
+            onPress={() => {
+              heavyTap();
+              router.back();
+            }}
+            activeOpacity={0.8}
+          >
+            <LinearGradient
+              colors={['#4CAF50', '#2E7D32']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.ctaGradient}
+            >
+              <Text style={styles.ctaText}>무료로 이용하기</Text>
+              <Text style={styles.ctaSubtext}>모든 AI 기능이 무료로 열려있습니다</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+
+          <Text style={styles.legalText}>
+            2026년 5월 31일까지 무료 기간입니다.{'\n'}
+            6월부터 구독 또는 크레딧으로 이용 가능합니다.
+          </Text>
+        </ScrollView>
       </SafeAreaView>
     );
   }

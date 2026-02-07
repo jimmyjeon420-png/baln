@@ -13,6 +13,7 @@ import supabase from '../services/supabase';
 import { spendCredits } from '../services/creditService';
 import { FEATURE_COSTS, TIER_DISCOUNTS } from '../types/marketplace';
 import type { UserTier } from '../types/database';
+import { isFreePeriod } from '../config/freePeriod';
 
 // ============================================================================
 // 타입 정의
@@ -113,6 +114,11 @@ export const useUnlockTierInsights = () => {
 
   return useMutation({
     mutationFn: async (userTier: UserTier) => {
+      // 무료 기간: 크레딧 차감 없이 즉시 해제
+      if (isFreePeriod()) {
+        return { cost: 0, newBalance: 0 };
+      }
+
       const discountPercent = TIER_DISCOUNTS[userTier] || 0;
       const originalCost = FEATURE_COSTS.tier_insights;
       const cost = Math.round(originalCost * (1 - discountPercent / 100));

@@ -35,6 +35,8 @@ import { useSharedPortfolio } from '../../src/hooks/useSharedPortfolio';
 import { useSharedAnalysis } from '../../src/hooks/useSharedAnalysis';
 import { usePeerPanicScore, getAssetBracket } from '../../src/hooks/usePortfolioSnapshots';
 import { TIER_STRATEGIES } from '../../src/constants/tierStrategy';
+import FreePeriodBanner from '../../src/components/FreePeriodBanner';
+import { isFreePeriod } from '../../src/config/freePeriod';
 
 export default function DiagnosisScreen() {
   const router = useRouter();
@@ -54,7 +56,8 @@ export default function DiagnosisScreen() {
     checkIn().then((result) => {
       if (result.success) {
         const streakText = result.newStreak > 1 ? ` (${result.newStreak}일 연속!)` : '';
-        setCheckInToast(`출석 완료! +${result.creditsEarned} 크레딧${streakText}`);
+        const freeNote = isFreePeriod() ? ' → 6월 이후 사용 가능' : '';
+        setCheckInToast(`출석 완료! +${result.creditsEarned} 크레딧${streakText}${freeNote}`);
         // 페이드인 → 3초 후 페이드아웃
         Animated.sequence([
           Animated.timing(toastOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
@@ -181,6 +184,9 @@ export default function DiagnosisScreen() {
           />
         }
       >
+        {/* 무료 기간 프로모션 배너 */}
+        <FreePeriodBanner compact={false} />
+
         {/* 헤더 - 티어 정보 포함 */}
         <View style={styles.header}>
           <View style={styles.headerTop}>
@@ -434,34 +440,34 @@ export default function DiagnosisScreen() {
           </View>
         )}
 
-        {/* 부동산 인사이트 (Silver 유저 잠금) */}
+        {/* 부동산 인사이트 (Silver 유저 잠금 - 무료 기간에는 해제) */}
         <TouchableOpacity
           style={styles.realEstateSection}
           onPress={() => {
             mediumTap();
-            if (userTier === 'SILVER') {
+            if (userTier === 'SILVER' && !isFreePeriod()) {
               router.push('/subscription/paywall');
             }
           }}
-          activeOpacity={userTier === 'SILVER' ? 0.7 : 1}
-          disabled={userTier !== 'SILVER'}
+          activeOpacity={userTier === 'SILVER' && !isFreePeriod() ? 0.7 : 1}
+          disabled={!(userTier === 'SILVER' && !isFreePeriod())}
         >
           <View style={styles.realEstateHeader}>
-            <Ionicons name="business" size={20} color={userTier === 'SILVER' ? '#555555' : '#4CAF50'} />
+            <Ionicons name="business" size={20} color={userTier === 'SILVER' && !isFreePeriod() ? '#555555' : '#4CAF50'} />
             <Text style={[
               styles.realEstateTitleText,
-              userTier === 'SILVER' && { color: '#555555' },
+              userTier === 'SILVER' && !isFreePeriod() && { color: '#555555' },
             ]}>
               부동산 인사이트
             </Text>
-            {userTier === 'SILVER' && (
+            {userTier === 'SILVER' && !isFreePeriod() && (
               <View style={styles.lockBadge}>
                 <Ionicons name="lock-closed" size={12} color="#FFD700" />
                 <Text style={styles.lockBadgeText}>PRO</Text>
               </View>
             )}
           </View>
-          {userTier === 'SILVER' ? (
+          {userTier === 'SILVER' && !isFreePeriod() ? (
             <View style={styles.lockedContent}>
               <Ionicons name="lock-closed" size={32} color="#333333" />
               <Text style={styles.lockedText}>

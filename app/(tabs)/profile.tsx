@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../src/context/AuthContext';
+import FreePeriodBanner from '../../src/components/FreePeriodBanner';
 
 // 더보기(메뉴) 화면 - 설정 및 추가 기능
 export default function ProfileScreen() {
@@ -36,9 +37,11 @@ export default function ProfileScreen() {
   // 메뉴 항목 정의 - 각 항목에 실제 네비게이션 연결
   const menuItems = [
     { icon: 'pulse', label: 'AI 진단', onPress: () => router.push('/(tabs)/diagnosis'), feature: true },
-    { icon: 'diamond', label: 'VIP 커뮤니티', onPress: () => router.push('/settings/lounge'), highlight: true },
+    { icon: 'diamond', label: '크레딧 충전', onPress: () => router.push('/marketplace/credits'), credit: true },
+    { icon: 'people', label: 'VIP 커뮤니티', onPress: () => router.push('/settings/lounge'), highlight: true },
     { icon: 'telescope', label: '투자 거장 인사이트', onPress: () => router.push('/settings/gurus'), feature: true },
     { icon: 'bar-chart', label: '투자 DNA', onPress: () => router.push('/settings/tier-insights'), feature: true },
+    { icon: 'game-controller', label: '투자 예측 게임', onPress: () => router.push('/games/predictions'), feature: true },
     { icon: 'person-outline', label: '프로필 설정', onPress: () => router.push('/settings/profile') },
     { icon: 'notifications-outline', label: '알림 설정', onPress: () => router.push('/settings/notifications') },
     { icon: 'shield-checkmark-outline', label: '보안', onPress: () => router.push('/settings/security') },
@@ -72,6 +75,11 @@ export default function ProfileScreen() {
           <Ionicons name="chevron-forward" size={20} color="#888888" />
         </TouchableOpacity>
 
+        {/* 무료 기간 프로모션 배너 */}
+        <View style={{ marginBottom: 12 }}>
+          <FreePeriodBanner compact={true} />
+        </View>
+
         {/* 메뉴 목록 */}
         <View style={styles.menuSection}>
           {menuItems.map((item, index) => (
@@ -79,6 +87,7 @@ export default function ProfileScreen() {
               key={index}
               style={[
                 styles.menuItem,
+                (item as any).credit && styles.menuItemCredit,
                 (item as any).highlight && styles.menuItemHighlight,
                 (item as any).feature && styles.menuItemFeature,
               ]}
@@ -87,17 +96,23 @@ export default function ProfileScreen() {
               <Ionicons
                 name={item.icon as any}
                 size={22}
-                color={(item as any).highlight ? '#FFC107' : (item as any).feature ? '#4CAF50' : '#FFFFFF'}
+                color={(item as any).credit ? '#7C4DFF' : (item as any).highlight ? '#FFC107' : (item as any).feature ? '#4CAF50' : '#FFFFFF'}
               />
               <Text
                 style={[
                   styles.menuLabel,
+                  (item as any).credit && styles.menuLabelCredit,
                   (item as any).highlight && styles.menuLabelHighlight,
                   (item as any).feature && styles.menuLabelFeature,
                 ]}
               >
                 {item.label}
               </Text>
+              {(item as any).credit && (
+                <View style={styles.creditBadge}>
+                  <Text style={styles.creditBadgeText}>충전</Text>
+                </View>
+              )}
               {(item as any).highlight && (
                 <View style={styles.vipBadge}>
                   <Text style={styles.vipBadgeText}>VIP</Text>
@@ -122,7 +137,7 @@ export default function ProfileScreen() {
         )}
 
         {/* 버전 정보 */}
-        <Text style={styles.versionText}>Smart Rebalancer v2.0.0</Text>
+        <Text style={styles.versionText}>Smart Rebalancer v3.0.0</Text>
       </ScrollView>
     </SafeAreaView>
   );
@@ -205,6 +220,9 @@ const styles = StyleSheet.create({
   menuItemFeature: {
     backgroundColor: '#1A2A1A',
   },
+  menuItemCredit: {
+    backgroundColor: '#1E1A2E',
+  },
   menuLabelHighlight: {
     color: '#FFC107',
     fontWeight: '600',
@@ -212,6 +230,22 @@ const styles = StyleSheet.create({
   menuLabelFeature: {
     color: '#4CAF50',
     fontWeight: '600',
+  },
+  menuLabelCredit: {
+    color: '#7C4DFF',
+    fontWeight: '600',
+  },
+  creditBadge: {
+    backgroundColor: '#7C4DFF',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+    marginRight: 8,
+  },
+  creditBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   aiBadge: {
     backgroundColor: '#4CAF50',

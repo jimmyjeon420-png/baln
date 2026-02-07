@@ -6,6 +6,7 @@
 
 import supabase from './supabase';
 import { spendCredits, refundCredits, getDiscountedCost } from './creditService';
+import { isFreePeriod } from '../config/freePeriod';
 import {
   generateDeepDive,
   generateWhatIf,
@@ -106,11 +107,14 @@ export async function executeDeepDive(
   const cached = await getCachedResult<DeepDiveResult>(user.id, 'deep_dive', inputHash);
   if (cached) return cached;
 
-  // 2. 크레딧 차감
+  // 2. 크레딧 차감 (무료 기간엔 스킵)
+  const freePeriodActive = isFreePeriod();
   const { discountedCost } = getDiscountedCost('deep_dive', userTier);
-  const spendResult = await spendCredits(discountedCost, 'deep_dive');
-  if (!spendResult.success) {
-    throw new Error(spendResult.errorMessage || '크레딧이 부족합니다');
+  if (!freePeriodActive) {
+    const spendResult = await spendCredits(discountedCost, 'deep_dive');
+    if (!spendResult.success) {
+      throw new Error(spendResult.errorMessage || '크레딧이 부족합니다');
+    }
   }
 
   // 3. AI 호출
@@ -118,12 +122,14 @@ export async function executeDeepDive(
     const result = await generateDeepDive(input);
 
     // 4. 결과 저장
-    await saveResult(user.id, 'deep_dive', inputHash, result, discountedCost);
+    await saveResult(user.id, 'deep_dive', inputHash, result, freePeriodActive ? 0 : discountedCost);
 
     return result;
   } catch (error) {
-    // AI 실패 → 자동 환불
-    await refundCredits(discountedCost, 'deep_dive', 'AI 분석 실패');
+    // AI 실패 → 자동 환불 (무료 기간엔 불필요)
+    if (!freePeriodActive) {
+      await refundCredits(discountedCost, 'deep_dive', 'AI 분석 실패');
+    }
     throw error;
   }
 }
@@ -150,20 +156,25 @@ export async function executeWhatIf(
   const cached = await getCachedResult<WhatIfResult>(user.id, 'what_if', inputHash);
   if (cached) return cached;
 
-  // 2. 크레딧 차감
+  // 2. 크레딧 차감 (무료 기간엔 스킵)
+  const freePeriodActive = isFreePeriod();
   const { discountedCost } = getDiscountedCost('what_if', userTier);
-  const spendResult = await spendCredits(discountedCost, 'what_if');
-  if (!spendResult.success) {
-    throw new Error(spendResult.errorMessage || '크레딧이 부족합니다');
+  if (!freePeriodActive) {
+    const spendResult = await spendCredits(discountedCost, 'what_if');
+    if (!spendResult.success) {
+      throw new Error(spendResult.errorMessage || '크레딧이 부족합니다');
+    }
   }
 
   // 3. AI 호출
   try {
     const result = await generateWhatIf(input);
-    await saveResult(user.id, 'what_if', inputHash, result, discountedCost);
+    await saveResult(user.id, 'what_if', inputHash, result, freePeriodActive ? 0 : discountedCost);
     return result;
   } catch (error) {
-    await refundCredits(discountedCost, 'what_if', 'AI 분석 실패');
+    if (!freePeriodActive) {
+      await refundCredits(discountedCost, 'what_if', 'AI 분석 실패');
+    }
     throw error;
   }
 }
@@ -190,20 +201,25 @@ export async function executeTaxReport(
   const cached = await getCachedResult<TaxReportResult>(user.id, 'tax_report', inputHash);
   if (cached) return cached;
 
-  // 2. 크레딧 차감
+  // 2. 크레딧 차감 (무료 기간엔 스킵)
+  const freePeriodActive = isFreePeriod();
   const { discountedCost } = getDiscountedCost('tax_report', userTier);
-  const spendResult = await spendCredits(discountedCost, 'tax_report');
-  if (!spendResult.success) {
-    throw new Error(spendResult.errorMessage || '크레딧이 부족합니다');
+  if (!freePeriodActive) {
+    const spendResult = await spendCredits(discountedCost, 'tax_report');
+    if (!spendResult.success) {
+      throw new Error(spendResult.errorMessage || '크레딧이 부족합니다');
+    }
   }
 
   // 3. AI 호출
   try {
     const result = await generateTaxReport(input);
-    await saveResult(user.id, 'tax_report', inputHash, result, discountedCost);
+    await saveResult(user.id, 'tax_report', inputHash, result, freePeriodActive ? 0 : discountedCost);
     return result;
   } catch (error) {
-    await refundCredits(discountedCost, 'tax_report', 'AI 분석 실패');
+    if (!freePeriodActive) {
+      await refundCredits(discountedCost, 'tax_report', 'AI 분석 실패');
+    }
     throw error;
   }
 }
@@ -219,11 +235,14 @@ export async function sendCFOMessage(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('로그인이 필요합니다');
 
-  // 1. 크레딧 차감 (메시지당 10 크레딧)
+  // 1. 크레딧 차감 (무료 기간엔 스킵)
+  const freePeriodActive = isFreePeriod();
   const { discountedCost } = getDiscountedCost('ai_cfo_chat', userTier);
-  const spendResult = await spendCredits(discountedCost, 'ai_cfo_chat');
-  if (!spendResult.success) {
-    throw new Error(spendResult.errorMessage || '크레딧이 부족합니다');
+  if (!freePeriodActive) {
+    const spendResult = await spendCredits(discountedCost, 'ai_cfo_chat');
+    if (!spendResult.success) {
+      throw new Error(spendResult.errorMessage || '크레딧이 부족합니다');
+    }
   }
 
   // 2. 대화 히스토리 조회
@@ -241,7 +260,7 @@ export async function sendCFOMessage(
     user_id: user.id,
     role: 'user',
     content: input.message,
-    credits_charged: discountedCost,
+    credits_charged: freePeriodActive ? 0 : discountedCost,
   });
 
   // 4. AI 응답 생성
@@ -262,8 +281,10 @@ export async function sendCFOMessage(
 
     return { userMessage: input.message, assistantMessage: response };
   } catch (error) {
-    // AI 실패 → 자동 환불
-    await refundCredits(discountedCost, 'ai_cfo_chat', 'AI 응답 실패');
+    // AI 실패 → 자동 환불 (무료 기간엔 불필요)
+    if (!freePeriodActive) {
+      await refundCredits(discountedCost, 'ai_cfo_chat', 'AI 응답 실패');
+    }
     throw error;
   }
 }

@@ -11,6 +11,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import supabase from './supabase';
 import { DAILY_FREE_ANALYSIS } from '../types/marketplace';
+import { isFreePeriod } from '../config/freePeriod';
 
 // 구독 상태 타입
 export interface SubscriptionStatus {
@@ -88,6 +89,18 @@ export async function activateFreeTrial(userId: string): Promise<{ success: bool
  * - 만료되었으면 자동으로 'free'로 다운그레이드
  */
 export async function getSubscriptionStatus(userId: string): Promise<SubscriptionStatus> {
+  // 무료 기간: 모든 유저를 프리미엄으로 취급
+  if (isFreePeriod()) {
+    return {
+      isPremium: true,
+      isTrialActive: true,
+      isTrialExpired: false,
+      trialDaysLeft: 999,
+      expiresAt: null,
+      planType: 'premium',
+    };
+  }
+
   try {
     const { data: profile, error } = await supabase
       .from('profiles')
@@ -187,6 +200,11 @@ export async function getDailyFreeStatus(isPremium: boolean): Promise<{
   limit: number;
   remaining: number;
 }> {
+  // 무료 기간: 무제한 진단
+  if (isFreePeriod()) {
+    return { used: 0, limit: 999, remaining: 999 };
+  }
+
   const limit = isPremium ? DAILY_FREE_ANALYSIS.subscriber : DAILY_FREE_ANALYSIS.free;
 
   try {

@@ -37,6 +37,8 @@ import { useSharedPortfolio } from '../../src/hooks/useSharedPortfolio';
 import { useSharedAnalysis, useSharedBitcoin } from '../../src/hooks/useSharedAnalysis';
 import { usePeerPanicScore, getAssetBracket } from '../../src/hooks/usePortfolioSnapshots';
 import { TIER_STRATEGIES } from '../../src/constants/tierStrategy';
+import FreePeriodBanner from '../../src/components/FreePeriodBanner';
+import { isFreePeriod } from '../../src/config/freePeriod';
 
 // 요일 이름
 const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
@@ -185,6 +187,11 @@ export default function RebalanceScreen() {
         contentContainerStyle={s.scroll}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4CAF50" />}
       >
+
+        {/* 무료 기간 미니 배너 */}
+        <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
+          <FreePeriodBanner compact={true} />
+        </View>
 
         {/* ─── 1. 히어로: 내 자산 현황 ─── */}
         <View style={s.hero}>
@@ -711,7 +718,9 @@ export default function RebalanceScreen() {
           <View style={s.marketplaceBannerLeft}>
             <Ionicons name="sparkles" size={20} color="#7C4DFF" />
             <View>
-              <Text style={s.marketplaceBannerTitle}>AI 프리미엄 마켓</Text>
+              <Text style={s.marketplaceBannerTitle}>
+                {isFreePeriod() ? 'AI 프리미엄 마켓 \u00B7 지금 무료!' : 'AI 프리미엄 마켓'}
+              </Text>
               <Text style={s.marketplaceBannerDesc}>종목 딥다이브 · What-If · 세금 리포트 · AI CFO</Text>
             </View>
           </View>

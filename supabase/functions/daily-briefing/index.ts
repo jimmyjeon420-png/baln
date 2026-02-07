@@ -864,6 +864,249 @@ async function takePortfolioSnapshots(): Promise<{
 }
 
 // ============================================================================
+// Task E: 투자 예측 게임 (Prediction Polls)
+// E-1: 새로운 예측 질문 3개 생성 (Gemini + Google Search)
+// E-2: 만료된 투표 정답 판정 (Gemini)
+// ============================================================================
+
+interface PredictionQuestion {
+  question: string;
+  description: string;
+  category: string;
+  yes_label: string;
+  no_label: string;
+  deadline_hours: number;  // 마감까지 시간
+}
+
+/**
+ * Task E-1: 오늘의 예측 질문 3개 생성
+ * - 카테고리 배분: stocks 1개, crypto 1개, macro/event 1개
+ * - 이미 오늘 생성된 질문이 있으면 스킵
+ */
+async function generatePredictionPolls(): Promise<{
+  created: number;
+  skipped: boolean;
+}> {
+  const today = new Date().toISOString().split('T')[0];
+
+  // 중복 생성 방지: 오늘 이미 생성된 투표 확인
+  const { data: existing } = await supabase
+    .from('prediction_polls')
+    .select('id')
+    .gte('created_at', `${today}T00:00:00Z`)
+    .lt('created_at', `${today}T23:59:59Z`);
+
+  if (existing && existing.length >= 3) {
+    console.log(`[Task E-1] 오늘(${today}) 이미 ${existing.length}개 질문 존재 — 스킵`);
+    return { created: 0, skipped: true };
+  }
+
+  const todayDate = new Date();
+  const dateStr = `${todayDate.getFullYear()}년 ${todayDate.getMonth() + 1}월 ${todayDate.getDate()}일`;
+
+  const prompt = `
+당신은 투자 예측 게임 MC입니다. 오늘(${dateStr}) 투자/경제 예측 질문 3개를 만드세요.
+
+**[중요] Google Search로 최신 시장 뉴스를 검색하세요:**
+- "stock market news today ${todayDate.getMonth() + 1}월"
+- "cryptocurrency price today"
+- "경제 뉴스 오늘 ${dateStr}"
+
+**질문 규칙:**
+1. YES/NO로 명확히 답할 수 있는 질문만 (애매한 질문 금지)
+2. 24~48시간 내 결과 확인 가능한 단기 예측
+3. 카테고리 배분: stocks 1개, crypto 1개, macro 또는 event 1개
+4. 구체적 수치/기준 포함 (예: "나스닥이 오늘 종가 기준 1% 이상 상승할까?")
+5. 한국어로 작성
+
+**출력 형식 (JSON만, 마크다운 금지):**
+{
+  "questions": [
+    {
+      "question": "오늘 S&P 500이 전일 종가 대비 상승 마감할까요?",
+      "description": "어제 미국 고용지표가 예상을 상회하며 시장 낙관론이 확산",
+      "category": "stocks",
+      "yes_label": "상승 마감",
+      "no_label": "하락 마감",
+      "deadline_hours": 24
+    },
+    {
+      "question": "비트코인이 내일까지 $100,000를 돌파할까요?",
+      "description": "BTC ETF 순유입이 3일 연속 증가하며 매수세 강화",
+      "category": "crypto",
+      "yes_label": "돌파한다",
+      "no_label": "못한다",
+      "deadline_hours": 48
+    },
+    {
+      "question": "이번 주 원/달러 환율이 1,400원 아래로 내려갈까요?",
+      "description": "한은 개입 가능성과 달러 약세 흐름 주목",
+      "category": "macro",
+      "yes_label": "내려간다",
+      "no_label": "유지/상승",
+      "deadline_hours": 48
+    }
+  ]
+}
+`;
+
+  console.log('[Task E-1] 예측 질문 생성 시작...');
+  const responseText = await callGeminiWithSearch(prompt);
+  const cleanJson = cleanJsonResponse(responseText);
+  const parsed = JSON.parse(cleanJson);
+
+  const questions: PredictionQuestion[] = parsed.questions || [];
+  let created = 0;
+
+  for (const q of questions.slice(0, 3)) {
+    const deadline = new Date();
+    deadline.setHours(deadline.getHours() + (q.deadline_hours || 24));
+
+    const { error } = await supabase
+      .from('prediction_polls')
+      .insert({
+        question: q.question,
+        description: q.description || null,
+        category: q.category || 'macro',
+        yes_label: q.yes_label || '네',
+        no_label: q.no_label || '아니오',
+        deadline: deadline.toISOString(),
+        status: 'active',
+        reward_credits: 2,
+      });
+
+    if (error) {
+      console.error(`[Task E-1] 질문 삽입 실패:`, error);
+    } else {
+      created++;
+    }
+  }
+
+  console.log(`[Task E-1] 예측 질문 ${created}개 생성 완료`);
+  return { created, skipped: false };
+}
+
+/**
+ * Task E-2: 만료된 투표 정답 판정
+ * - deadline이 지난 active/closed 투표 → Gemini로 정답 판정
+ * - confidence 60+ 시만 판정, 미만이면 다음 배치로 보류
+ */
+async function resolvePredictionPolls(): Promise<{
+  resolved: number;
+  deferred: number;
+}> {
+  // 마감 지난 미판정 투표 조회
+  const { data: expiredPolls, error } = await supabase
+    .from('prediction_polls')
+    .select('*')
+    .in('status', ['active', 'closed'])
+    .lt('deadline', new Date().toISOString())
+    .order('deadline', { ascending: true })
+    .limit(10);
+
+  if (error || !expiredPolls || expiredPolls.length === 0) {
+    console.log('[Task E-2] 판정 대상 투표 없음');
+    return { resolved: 0, deferred: 0 };
+  }
+
+  console.log(`[Task E-2] ${expiredPolls.length}개 투표 정답 판정 시작...`);
+
+  let resolved = 0;
+  let deferred = 0;
+
+  for (const poll of expiredPolls) {
+    try {
+      const judgmentPrompt = `
+당신은 투자 예측 판정관입니다. 다음 예측 질문의 정답을 판정하세요.
+
+**질문:** ${poll.question}
+**설명:** ${poll.description || '없음'}
+**카테고리:** ${poll.category}
+**마감 시간:** ${poll.deadline}
+
+**[중요] Google Search로 최신 데이터를 검색하여 정답을 확인하세요.**
+
+**출력 형식 (JSON만):**
+{
+  "answer": "YES" 또는 "NO",
+  "confidence": 0-100,
+  "source": "판정 근거 출처 (뉴스 사이트명, 데이터 출처)",
+  "reasoning": "판정 이유 한 줄"
+}
+`;
+
+      const responseText = await callGeminiWithSearch(judgmentPrompt);
+      const cleanJson = cleanJsonResponse(responseText);
+      const judgment = JSON.parse(cleanJson);
+
+      // confidence 60 미만이면 보류
+      if (!judgment.confidence || judgment.confidence < 60) {
+        console.log(`[Task E-2] "${poll.question}" confidence ${judgment.confidence} → 보류`);
+        // 상태를 closed로 변경 (다음 배치에서 재시도)
+        await supabase
+          .from('prediction_polls')
+          .update({ status: 'closed' })
+          .eq('id', poll.id);
+        deferred++;
+        continue;
+      }
+
+      // 정답 판정: resolve_poll RPC 호출
+      const correctAnswer = judgment.answer === 'YES' ? 'YES' : 'NO';
+      const source = `${judgment.source || ''}${judgment.reasoning ? ' — ' + judgment.reasoning : ''}`;
+
+      const { data: resolveResult, error: resolveError } = await supabase.rpc('resolve_poll', {
+        p_poll_id: poll.id,
+        p_correct_answer: correctAnswer,
+        p_source: source,
+      });
+
+      if (resolveError) {
+        console.error(`[Task E-2] resolve_poll 실패:`, resolveError);
+      } else {
+        const result = resolveResult?.[0];
+        console.log(`[Task E-2] "${poll.question}" → ${correctAnswer} (${result?.voters_rewarded || 0}명 보상, ${result?.total_credits || 0}C)`);
+        resolved++;
+      }
+    } catch (pollError) {
+      console.error(`[Task E-2] 개별 투표 판정 실패:`, pollError);
+      deferred++;
+    }
+
+    // Rate limit 방지
+    await new Promise(resolve => setTimeout(resolve, 1000));
+  }
+
+  console.log(`[Task E-2] 판정 완료: ${resolved}건 해결, ${deferred}건 보류`);
+  return { resolved, deferred };
+}
+
+/**
+ * Task E 통합 실행: E-1(질문 생성) + E-2(정답 판정) 순차 실행
+ */
+async function runPredictionPolls(): Promise<{
+  questionsCreated: number;
+  questionsSkipped: boolean;
+  pollsResolved: number;
+  pollsDeferred: number;
+}> {
+  console.log('[Task E] 투자 예측 게임 배치 시작...');
+
+  // E-1: 질문 생성
+  const genResult = await generatePredictionPolls();
+
+  // E-2: 정답 판정
+  const resolveResult = await resolvePredictionPolls();
+
+  return {
+    questionsCreated: genResult.created,
+    questionsSkipped: genResult.skipped,
+    pollsResolved: resolveResult.resolved,
+    pollsDeferred: resolveResult.deferred,
+  };
+}
+
+// ============================================================================
 // DB UPSERT (기존 Task A/B)
 // ============================================================================
 
@@ -963,12 +1206,13 @@ serve(async (req: Request) => {
     console.log(`[Central Kitchen] 일일 배치 시작: ${new Date().toISOString()}`);
     console.log('========================================');
 
-    // Task A, B, C, D를 병렬 실행 (독립적이므로 동시에 처리)
-    const [macroResult, stockResults, guruResult, snapshotResult] = await Promise.allSettled([
+    // Task A, B, C, D, E를 병렬 실행 (독립적이므로 동시에 처리)
+    const [macroResult, stockResults, guruResult, snapshotResult, predictionResult] = await Promise.allSettled([
       analyzeMacroAndBitcoin(),
       analyzeAllStocks(),
       analyzeGuruInsights(),
       takePortfolioSnapshots(),
+      runPredictionPolls(),
     ]);
 
     // Task A 결과 처리
@@ -1025,6 +1269,14 @@ serve(async (req: Request) => {
       console.error('[Task D 실패]', snapshotResult.reason);
     }
 
+    // Task E 결과 처리 (투자 예측 게임)
+    if (predictionResult.status === 'fulfilled') {
+      const pr = predictionResult.value;
+      console.log(`[Task E] 성공: 질문 ${pr.questionsCreated}개 생성${pr.questionsSkipped ? ' (스킵)' : ''}, 판정 ${pr.pollsResolved}건, 보류 ${pr.pollsDeferred}건`);
+    } else {
+      console.error('[Task E 실패]', predictionResult.reason);
+    }
+
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
     const macroStatus = macroResult.status === 'fulfilled' ? 'SUCCESS' : 'FAILED';
     const stockCount = stockResults.status === 'fulfilled' ? stockResults.value.length : 0;
@@ -1032,6 +1284,9 @@ serve(async (req: Request) => {
     const guruCount = guruResult.status === 'fulfilled' ? guruResult.value.insights.length : 0;
     const snapshotStatus = snapshotResult.status === 'fulfilled' ? 'SUCCESS' : 'FAILED';
     const snapshotCount = snapshotResult.status === 'fulfilled' ? snapshotResult.value.snapshotsCreated : 0;
+    const predictionStatus = predictionResult.status === 'fulfilled' ? 'SUCCESS' : 'FAILED';
+    const predictionCreated = predictionResult.status === 'fulfilled' ? predictionResult.value.questionsCreated : 0;
+    const predictionResolved = predictionResult.status === 'fulfilled' ? predictionResult.value.pollsResolved : 0;
 
     console.log('========================================');
     console.log(`[Central Kitchen] 배치 완료: ${elapsed}초`);
@@ -1039,6 +1294,7 @@ serve(async (req: Request) => {
     console.log(`  - 종목 분석: ${stockCount}/${STOCK_LIST.length}건`);
     console.log(`  - 거장 인사이트: ${guruStatus} (${guruCount}명)`);
     console.log(`  - 포트폴리오 스냅샷: ${snapshotStatus} (${snapshotCount}명)`);
+    console.log(`  - 예측 게임: ${predictionStatus} (생성 ${predictionCreated}, 판정 ${predictionResolved})`);
     console.log('========================================');
 
     return new Response(
@@ -1049,6 +1305,7 @@ serve(async (req: Request) => {
         stocks: `${stockCount}/${STOCK_LIST.length}`,
         gurus: `${guruStatus} (${guruCount}/10)`,
         snapshots: `${snapshotStatus} (${snapshotCount}명)`,
+        predictions: `${predictionStatus} (생성 ${predictionCreated}, 판정 ${predictionResolved})`,
         timestamp: new Date().toISOString(),
       }),
       {
