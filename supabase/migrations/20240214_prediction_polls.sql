@@ -34,9 +34,9 @@ CREATE POLICY "prediction_polls_select_authenticated"
 CREATE INDEX idx_prediction_polls_status_deadline
   ON prediction_polls (status, deadline DESC);
 
--- 인덱스: 날짜별 조회 (중복 생성 방지용)
-CREATE INDEX idx_prediction_polls_created_date
-  ON prediction_polls (DATE(created_at));
+-- 인덱스: 날짜별 조회 (created_at 직접 인덱스, IMMUTABLE 이슈 해결)
+CREATE INDEX idx_prediction_polls_created_at
+  ON prediction_polls (created_at DESC);
 
 -- 2. 유저별 투표 기록 테이블
 CREATE TABLE IF NOT EXISTS prediction_votes (
