@@ -41,8 +41,7 @@
       "expo-localization",
       "expo-web-browser",
       "@react-native-community/datetimepicker",
-      "expo-secure-store",
-      "react-native-maps"
+      "expo-secure-store"
     ],
     "privacy": "public",
     "extra": {
