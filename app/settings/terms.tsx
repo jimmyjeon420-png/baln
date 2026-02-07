@@ -45,12 +45,19 @@ export default function TermsScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>제3조 (면책조항)</Text>
+          <Text style={styles.sectionTitle}>제3조 (면책조항 및 투자 위험 고지)</Text>
+          <View style={styles.warningBox}>
+            <Text style={styles.warningText}>
+              ⚠️ 원금 손실 위험 경고: 투자 원금의 일부 또는 전부를 잃을 수 있습니다.
+            </Text>
+          </View>
           <Text style={styles.sectionContent}>
-            1. 본 서비스는 투자 자문 서비스가 아닙니다.{'\n'}
-            2. 서비스에서 제공하는 정보는 참고용이며, 투자 결정에 대한 책임은 이용자에게 있습니다.{'\n'}
-            3. 회사는 서비스 이용으로 인한 투자 손실에 대해 책임지지 않습니다.{'\n'}
-            4. AI 분석 결과의 정확성을 100% 보장하지 않습니다.
+            1. 본 서비스는 「자본시장과 금융투자업에 관한 법률」(이하 "자본시장법") 제6조에 따른 금융투자업(투자자문업, 투자일임업, 집합투자업 등)에 해당하지 않으며, 금융위원회에 등록된 투자자문·일임 서비스가 아닙니다.{'\n\n'}
+            2. 서비스에서 제공하는 모든 정보(AI 분석, 리밸런싱 제안, 세금 계산, 종목 분석 등)는 일반적인 정보 제공 목적이며, 특정 금융상품에 대한 매수·매도 권유가 아닙니다. 투자 결정에 대한 모든 책임은 이용자 본인에게 있습니다.{'\n\n'}
+            3. 회사는 서비스 이용으로 인한 직접적·간접적 투자 손실에 대해 어떠한 법적 책임도 부담하지 않습니다.{'\n\n'}
+            4. AI 분석 결과는 과거 데이터 및 통계적 모델에 기반하며, 미래 수익을 보장하지 않습니다. 시장 상황에 따라 분석 결과와 실제 결과가 크게 다를 수 있습니다.{'\n\n'}
+            5. 본 서비스는 「예금자보호법」에 따른 예금보험 대상이 아니며, 투자 원금이 보장되지 않습니다.{'\n\n'}
+            6. 세금 관련 정보는 참고용이며, 정확한 세무 처리를 위해 세무사 또는 공인 전문가와 상담하시기 바랍니다. 세법은 수시로 변경될 수 있습니다.
           </Text>
         </View>
 
@@ -116,8 +123,32 @@ export default function TermsScreen() {
           </View>
         </View>
 
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>제9조 (크레딧 및 환불 정책)</Text>
+          <Text style={styles.sectionContent}>
+            1. 크레딧은 서비스 내 AI 프리미엄 기능을 이용하기 위한 선불 결제 수단입니다.{'\n\n'}
+            2. 크레딧 구매 후 미사용 크레딧에 대해 「전자상거래 등에서의 소비자보호에 관한 법률」 제17조에 따라 구매일로부터 7일 이내 청약철회가 가능합니다.{'\n\n'}
+            3. 단, 이미 사용(차감)된 크레딧은 환불 대상에서 제외됩니다.{'\n\n'}
+            4. 구독 보너스 크레딧 및 프로모션 크레딧은 환불 대상이 아닙니다.{'\n\n'}
+            5. AI 분석 실행 중 기술적 오류로 결과를 제공하지 못한 경우, 차감된 크레딧은 자동으로 환불됩니다.{'\n\n'}
+            6. 크레딧의 유효기간은 마지막 충전일로부터 5년이며, 유효기간 만료 30일 전 앱 내 알림으로 안내합니다.{'\n\n'}
+            7. 환불 신청: support@baln.app 또는 앱 내 고객센터를 통해 접수합니다.
+          </Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>제10조 (AI 자동화 의사결정 및 프로파일링)</Text>
+          <Text style={styles.sectionContent}>
+            1. 회사는 이용자의 포트폴리오 데이터를 기반으로 AI 자동 분석(리스크 평가, 리밸런싱 제안, 세금 계산 등)을 수행합니다.{'\n\n'}
+            2. 이용자는 「개인정보 보호법」 제37조의2에 따라 완전히 자동화된 의사결정에 대해 거부할 권리가 있으며, 설정 메뉴에서 AI 자동 분석 기능을 비활성화할 수 있습니다.{'\n\n'}
+            3. AI 분석은 투자 결정을 자동으로 실행하지 않으며, 최종 투자 판단은 항상 이용자 본인이 직접 수행합니다.{'\n\n'}
+            4. 이용자의 투자 성향, 자산 규모 등에 기반한 등급(티어) 분류가 이루어지며, 이에 따라 서비스 접근 범위가 달라질 수 있습니다.
+          </Text>
+        </View>
+
         <Text style={styles.footer}>
-          본 약관에 동의하지 않으실 경우 서비스 이용이 제한될 수 있습니다.
+          본 약관에 동의하지 않으실 경우 서비스 이용이 제한될 수 있습니다.{'\n'}
+          본 약관은 대한민국 법률에 따라 해석되며, 관할 법원은 서울중앙지방법원으로 합니다.
         </Text>
       </ScrollView>
     </SafeAreaView>
@@ -201,5 +232,21 @@ const styles = StyleSheet.create({
   dangerHighlight: {
     color: '#CF6679',
     fontWeight: '700',
+  },
+  // 원금 손실 경고 박스
+  warningBox: {
+    backgroundColor: 'rgba(207, 102, 121, 0.15)',
+    borderRadius: 10,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(207, 102, 121, 0.3)',
+  },
+  warningText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#CF6679',
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });

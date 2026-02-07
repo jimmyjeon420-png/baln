@@ -170,7 +170,7 @@ export default function LocationSearchInput({
         <View style={styles.apiHint}>
           <Ionicons name="information-circle-outline" size={14} color={COLORS.textMuted} />
           <Text style={styles.apiHintText}>
-            장소 자동완성을 사용하려면 카카오 API 키가 필요합니다. 직접 입력도 가능합니다.
+            장소 자동완성이 작동하지 않습니다. Expo 개발 서버를 재시작(npx expo start --clear)하거나, 카카오 개발자 콘솔에서 REST API 키 설정을 확인해주세요. 직접 입력도 가능합니다.
           </Text>
         </View>
       )}

@@ -312,6 +312,30 @@ export async function getQuickMarketSentiment(): Promise<{
   };
 }
 
+// ============================================================================
+// Panic Shield 점수 저장 (스냅샷에 기록)
+// ============================================================================
+
+/**
+ * Gemini가 계산한 Panic Shield 점수를 오늘 스냅샷에 저장
+ * fire-and-forget 패턴: 실패해도 앱 동작에 영향 없음
+ * @param score - 0~100 (높을수록 안전)
+ */
+export async function savePanicScoreToSnapshot(score: number): Promise<void> {
+  // 점수 범위 검증 (0~100 클램프)
+  const clampedScore = Math.round(Math.max(0, Math.min(100, score)));
+
+  const { error } = await supabase.rpc('save_panic_shield_score', {
+    p_score: clampedScore,
+  });
+
+  if (error) {
+    console.warn('[Panic Score] 스냅샷 저장 실패 (기능 영향 없음):', error.message);
+  } else {
+    console.log(`[Panic Score] 스냅샷 저장 완료 (${clampedScore}점)`);
+  }
+}
+
 /**
  * 특정 종목의 퀀트 신호 빠른 조회 (카드/배지용)
  */
@@ -334,6 +358,105 @@ export async function getQuickStockSignal(
     score: data.valuation_score,
     analysis: data.analysis,
   };
+}
+
+// ============================================================================
+// 유저별 일일 처방전 캐시 (하루 한 번 처방전)
+// ============================================================================
+
+/** user_daily_prescriptions 테이블 결과 */
+export interface UserDailyPrescription {
+  user_id: string;
+  date: string;
+  morning_briefing: MorningBriefingResult | null;
+  risk_analysis: RiskAnalysisResult | null;
+  portfolio_hash: string;
+  source: string;
+  created_at: string;
+}
+
+/**
+ * 포트폴리오 해시 계산
+ * 종목 구성이 바뀌면 해시가 달라짐 → 캐시 무효화
+ * @param portfolioAssets - 유저 포트폴리오 자산 배열
+ * @returns 정렬된 "티커:수량" 문자열 (예: "AAPL:10,NVDA:5,TSLA:3")
+ */
+export function computePortfolioHash(portfolioAssets: PortfolioAsset[]): string {
+  return portfolioAssets
+    .map(a => `${a.ticker}:${a.quantity}`)
+    .sort()
+    .join(',');
+}
+
+/**
+ * 오늘의 처방전 캐시 조회
+ * 같은 날 + 같은 포트폴리오 해시면 캐시된 결과 반환
+ * @returns { morningBriefing, riskAnalysis, source } 또는 null
+ */
+export async function getTodayPrescription(
+  userId: string,
+  portfolioHash: string
+): Promise<{ morningBriefing: MorningBriefingResult | null; riskAnalysis: RiskAnalysisResult | null; source: string } | null> {
+  const today = new Date().toISOString().split('T')[0];
+
+  const { data, error } = await supabase
+    .from('user_daily_prescriptions')
+    .select('morning_briefing, risk_analysis, portfolio_hash, source')
+    .eq('user_id', userId)
+    .eq('date', today)
+    .single();
+
+  if (error || !data) {
+    console.log('[처방전 캐시] 오늘 캐시 없음 → Gemini 생성 필요');
+    return null;
+  }
+
+  // 포트폴리오 구성이 바뀌었으면 캐시 무효화
+  if (data.portfolio_hash !== portfolioHash) {
+    console.log('[처방전 캐시] 포트폴리오 변경 감지 → 재생성 필요');
+    return null;
+  }
+
+  console.log('[처방전 캐시] DB 캐시 히트 (빠른 경로)');
+  return {
+    morningBriefing: data.morning_briefing as MorningBriefingResult | null,
+    riskAnalysis: data.risk_analysis as RiskAnalysisResult | null,
+    source: data.source as string,
+  };
+}
+
+/**
+ * 처방전 결과를 DB에 저장 (UPSERT)
+ * 같은 날 재생성 시 덮어쓰기 (포트폴리오 변경 등)
+ */
+export async function savePrescription(
+  userId: string,
+  portfolioHash: string,
+  morningBriefing: MorningBriefingResult | null,
+  riskAnalysis: RiskAnalysisResult | null,
+  source: string
+): Promise<void> {
+  const today = new Date().toISOString().split('T')[0];
+
+  const { error } = await supabase
+    .from('user_daily_prescriptions')
+    .upsert(
+      {
+        user_id: userId,
+        date: today,
+        morning_briefing: morningBriefing,
+        risk_analysis: riskAnalysis,
+        portfolio_hash: portfolioHash,
+        source,
+      },
+      { onConflict: 'user_id,date' }
+    );
+
+  if (error) {
+    console.warn('[처방전 캐시] 저장 실패 (기능 영향 없음):', error.message);
+  } else {
+    console.log('[처방전 캐시] DB 저장 완료');
+  }
 }
 
 // ============================================================================

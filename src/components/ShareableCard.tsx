@@ -1,6 +1,7 @@
 /**
  * ShareableCard - 인스타그램 스토리 공유용 프리미엄 카드
- * BALN 로고 + 티어 배지 + CFO 날씨 이모지
+ * "baln.logic" 브랜딩 + 티어 배지 + CFO 날씨 이모지
+ * 공유 성공 시 3크레딧 보상 지급 (1일 1회)
  *
  * 네이티브: react-native-view-shot → expo-sharing
  * 웹: html-to-image → Web Share API / 이미지 다운로드
@@ -12,9 +13,11 @@ import { Ionicons } from '@expo/vector-icons';
 import ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { useHaptics } from '../hooks/useHaptics';
+import { useShareReward } from '../hooks/useRewards';
 import { TIER_LABELS } from '../hooks/useGatherings';
 import { UserTier } from '../types/database';
 import { MorningBriefingResult } from '../services/gemini';
+import { REWARD_AMOUNTS } from '../services/rewardService';
 
 interface ShareableCardProps {
   tier: UserTier;
@@ -38,45 +41,53 @@ export default function ShareableCard({
   panicShieldIndex,
 }: ShareableCardProps) {
   const viewShotRef = useRef<ViewShot>(null);
-  // 웹 캡처용 ref (DOM 엘리먼트 직접 접근)
   const webCaptureRef = useRef<View>(null);
   const [sharing, setSharing] = useState(false);
+  const [rewardMessage, setRewardMessage] = useState<string | null>(null);
   const { heavyTap, success, error: errorHaptic } = useHaptics();
+  const { rewarded, claimReward } = useShareReward();
 
   const tierStyle = TIER_GRADIENT[tier];
   const weatherEmoji = morningBriefing?.cfoWeather?.emoji || '📊';
   const sentiment = morningBriefing?.macroSummary?.marketSentiment || 'NEUTRAL';
 
+  /** 공유 성공 후 크레딧 보상 지급 */
+  const handleRewardAfterShare = useCallback(async () => {
+    try {
+      const result = await claimReward();
+      if (result.success) {
+        setRewardMessage(`+${result.creditsEarned} 크레딧 획득!`);
+        setTimeout(() => setRewardMessage(null), 3000);
+      }
+    } catch {
+      // 보상 실패해도 공유 자체는 성공이므로 무시
+    }
+  }, [claimReward]);
+
   /** 웹 전용: html-to-image로 캡처 → Web Share API 또는 다운로드 */
   const handleWebShare = useCallback(async () => {
-    // html-to-image 동적 로드 (네이티브 빌드에 영향 안 줌)
     const { toPng } = await import('html-to-image');
 
-    // React Native Web에서 View ref = DOM 엘리먼트
     const element = webCaptureRef.current as unknown as HTMLElement;
     if (!element) throw new Error('캡처 영역을 찾을 수 없습니다.');
 
-    // DOM → PNG data URL 변환 (고해상도 2x)
     const dataUrl = await toPng(element, {
       quality: 1.0,
       pixelRatio: 2,
     });
 
-    // data URL → Blob 변환
     const res = await fetch(dataUrl);
     const blob = await res.blob();
-    const fileName = `BALN_처방전_${new Date().toISOString().split('T')[0]}.png`;
+    const fileName = `baln_logic_${new Date().toISOString().split('T')[0]}.png`;
 
-    // Web Share API 지원 시 (모바일 웹 등)
     if (typeof navigator !== 'undefined' && navigator.share && navigator.canShare) {
       const file = new File([blob], fileName, { type: 'image/png' });
       if (navigator.canShare({ files: [file] })) {
-        await navigator.share({ title: 'BALN AI 처방전', files: [file] });
+        await navigator.share({ title: 'baln.logic AI 처방전', files: [file] });
         return;
       }
     }
 
-    // 폴백: 이미지 다운로드 (데스크톱 웹)
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -102,12 +113,12 @@ export default function ShareableCard({
     const uri = await viewShotRef.current.capture();
     await Sharing.shareAsync(uri, {
       mimeType: 'image/png',
-      dialogTitle: 'BALN 처방전 공유',
+      dialogTitle: 'baln.logic 처방전 공유',
       UTI: 'public.png',
     });
   }, []);
 
-  /** 카드 캡처 → 공유 (플랫폼별 분기) */
+  /** 카드 캡처 → 공유 → 보상 지급 */
   const handleShare = useCallback(async () => {
     if (!morningBriefing) {
       Alert.alert('잠시만요', '분석이 완료된 후 공유할 수 있습니다.');
@@ -124,6 +135,9 @@ export default function ShareableCard({
         await handleNativeShare();
       }
       success();
+
+      // 공유 성공 → 크레딧 보상 지급
+      await handleRewardAfterShare();
     } catch (err) {
       console.error('Share error:', err);
       errorHaptic();
@@ -131,16 +145,19 @@ export default function ShareableCard({
     } finally {
       setSharing(false);
     }
-  }, [morningBriefing, heavyTap, success, errorHaptic, handleWebShare, handleNativeShare]);
+  }, [morningBriefing, heavyTap, success, errorHaptic, handleWebShare, handleNativeShare, handleRewardAfterShare]);
 
   // 카드 콘텐츠 (캡처 대상 영역)
   const cardContent = (
     <>
-      {/* 상단: 로고 + 날짜 */}
+      {/* 상단: baln.logic 로고 + 날짜 */}
       <View style={styles.topRow}>
         <View style={styles.logoArea}>
-          <Text style={[styles.logoText, { color: '#4CAF50' }]}>BALN</Text>
-          <Text style={styles.logoSubtext}>Smart Rebalancer</Text>
+          <View style={styles.logoRow}>
+            <Text style={styles.logoBaln}>baln</Text>
+            <Text style={styles.logoDot}>.logic</Text>
+          </View>
+          <Text style={styles.logoSubtext}>AI Portfolio Optimizer</Text>
         </View>
         <Text style={styles.dateText}>
           {new Date().toLocaleDateString('ko-KR', {
@@ -212,14 +229,19 @@ export default function ShareableCard({
         )}
       </View>
 
-      {/* 워터마크 */}
-      <Text style={styles.watermark}>baln.app</Text>
+      {/* 워터마크: baln.logic 브랜딩 */}
+      <View style={styles.watermarkRow}>
+        <View style={styles.watermarkLine} />
+        <Text style={styles.watermarkBaln}>baln</Text>
+        <Text style={styles.watermarkDot}>.logic</Text>
+        <View style={styles.watermarkLine} />
+      </View>
     </>
   );
 
   return (
     <View>
-      {/* 캡처 영역: 웹은 View ref, 네이티브는 ViewShot ref 사용 */}
+      {/* 캡처 영역 */}
       {Platform.OS === 'web' ? (
         <View
           ref={webCaptureRef}
@@ -237,7 +259,15 @@ export default function ShareableCard({
         </ViewShot>
       )}
 
-      {/* 공유 버튼 */}
+      {/* 보상 토스트 메시지 */}
+      {rewardMessage && (
+        <View style={styles.rewardToast}>
+          <Ionicons name="gift" size={14} color="#4CAF50" />
+          <Text style={styles.rewardToastText}>{rewardMessage}</Text>
+        </View>
+      )}
+
+      {/* 공유 버튼 + 보상 힌트 */}
       <TouchableOpacity
         style={[styles.shareButton, !morningBriefing && styles.shareButtonDisabled]}
         onPress={handleShare}
@@ -259,6 +289,12 @@ export default function ShareableCard({
             ? '처방전 이미지 저장'
             : '인스타그램 공유'}
         </Text>
+        {/* 보상 힌트 (아직 오늘 보상 안 받았으면 표시) */}
+        {morningBriefing && !rewarded && (
+          <View style={styles.rewardHint}>
+            <Text style={styles.rewardHintText}>+{REWARD_AMOUNTS.shareCard}</Text>
+          </View>
+        )}
       </TouchableOpacity>
     </View>
   );
@@ -279,16 +315,28 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   logoArea: {},
-  logoText: {
-    fontSize: 22,
+  logoRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+  },
+  logoBaln: {
+    fontSize: 26,
     fontWeight: '900',
-    letterSpacing: 3,
+    color: '#FFFFFF',
+    letterSpacing: 1,
+  },
+  logoDot: {
+    fontSize: 26,
+    fontWeight: '900',
+    color: '#4CAF50',
+    letterSpacing: 1,
   },
   logoSubtext: {
-    fontSize: 10,
+    fontSize: 9,
     color: '#666666',
-    letterSpacing: 1,
+    letterSpacing: 2,
     marginTop: 2,
+    textTransform: 'uppercase',
   },
   dateText: {
     fontSize: 11,
@@ -358,13 +406,49 @@ const styles = StyleSheet.create({
     color: '#4CAF50',
     fontWeight: '600',
   },
-  watermark: {
-    textAlign: 'center',
-    fontSize: 10,
-    color: '#444444',
+  // 워터마크: baln.logic 브랜딩 (라인 + 텍스트)
+  watermarkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginTop: 16,
-    letterSpacing: 2,
+    gap: 8,
   },
+  watermarkLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+  },
+  watermarkBaln: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#555555',
+    letterSpacing: 1,
+  },
+  watermarkDot: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#3A7D3E',
+    letterSpacing: 1,
+  },
+  // 보상 토스트
+  rewardToast: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: 'rgba(76, 175, 80, 0.15)',
+    borderRadius: 20,
+  },
+  rewardToastText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#4CAF50',
+  },
+  // 공유 버튼
   shareButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -385,5 +469,18 @@ const styles = StyleSheet.create({
   },
   shareButtonTextDisabled: {
     color: '#666666',
+  },
+  // 보상 힌트 배지 (공유 버튼 옆 "+3" 표시)
+  rewardHint: {
+    backgroundColor: '#FFD700',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    marginLeft: 4,
+  },
+  rewardHintText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#1A1A1A',
   },
 });

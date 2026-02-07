@@ -185,8 +185,7 @@ export default function GuruInsightsScreen() {
             <View style={styles.disclaimer}>
               <Ionicons name="warning-outline" size={14} color="#666666" />
               <Text style={styles.disclaimerText}>
-                본 정보는 AI가 공개 데이터를 기반으로 분석한 것이며, 투자 조언이 아닙니다.
-                투자 결정은 본인의 판단과 전문가 상담에 따라 이루어져야 합니다.
+                본 정보는 AI가 공개 데이터를 기반으로 생성한 가상의 분석이며, 실제 투자 거장의 공식 의견이 아닙니다. 「자본시장법」상 투자자문에 해당하지 않으며, 특정 금융상품의 매수·매도 권유가 아닙니다. 전망성 정보(Forward-looking statements)는 실제 결과와 다를 수 있습니다. 투자 결정은 본인의 판단과 전문가 상담에 따라 이루어져야 합니다.
               </Text>
             </View>
           </>

@@ -7,7 +7,7 @@
  * → 탭 전환 시 0ms (TanStack Query 캐시), Gemini 병렬 호출
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -16,6 +16,7 @@ import {
   RefreshControl,
   TouchableOpacity,
   ActivityIndicator,
+  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -25,18 +26,44 @@ import FomoVaccineCard from '../../src/components/FomoVaccineCard';
 import { DiagnosisSkeletonLoader } from '../../src/components/SkeletonLoader';
 import ShareableCard from '../../src/components/ShareableCard';
 import { useHaptics } from '../../src/hooks/useHaptics';
+import { useDailyCheckIn } from '../../src/hooks/useRewards';
 import {
   TIER_LABELS,
   TIER_DESCRIPTIONS,
 } from '../../src/hooks/useGatherings';
 import { useSharedPortfolio } from '../../src/hooks/useSharedPortfolio';
 import { useSharedAnalysis } from '../../src/hooks/useSharedAnalysis';
+import { usePeerPanicScore, getAssetBracket } from '../../src/hooks/usePortfolioSnapshots';
 import { TIER_STRATEGIES } from '../../src/constants/tierStrategy';
 
 export default function DiagnosisScreen() {
   const router = useRouter();
   const { mediumTap } = useHaptics();
   const [refreshing, setRefreshing] = useState(false);
+
+  // 매일 출석 체크 (진단 탭 진입 시 자동 실행)
+  const { checkedIn, streak, checkIn } = useDailyCheckIn();
+  const [checkInToast, setCheckInToast] = useState<string | null>(null);
+  const toastOpacity = useRef(new Animated.Value(0)).current;
+  const checkInTriggered = useRef(false);
+
+  useEffect(() => {
+    if (checkedIn || checkInTriggered.current) return;
+    checkInTriggered.current = true;
+
+    checkIn().then((result) => {
+      if (result.success) {
+        const streakText = result.newStreak > 1 ? ` (${result.newStreak}일 연속!)` : '';
+        setCheckInToast(`출석 완료! +${result.creditsEarned} 크레딧${streakText}`);
+        // 페이드인 → 3초 후 페이드아웃
+        Animated.sequence([
+          Animated.timing(toastOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+          Animated.delay(3000),
+          Animated.timing(toastOpacity, { toValue: 0, duration: 300, useNativeDriver: true }),
+        ]).start(() => setCheckInToast(null));
+      }
+    });
+  }, [checkedIn]);
 
   // [성능 최적화] 공유 훅: 3개 탭이 같은 캐시 사용 → 탭 전환 시 0ms
   const {
@@ -56,6 +83,10 @@ export default function DiagnosisScreen() {
     isFetched: analysisReady,
     refresh: refreshAnalysis,
   } = useSharedAnalysis(portfolio);
+
+  // 또래 비교: 내 자산 구간의 Panic Shield 평균 점수
+  const myBracket = getAssetBracket(totalAssets);
+  const { data: peerPanicData } = usePeerPanicScore(myBracket);
 
   // Pull-to-refresh
   const onRefresh = async () => {
@@ -132,6 +163,14 @@ export default function DiagnosisScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      {/* 출석 체크 토스트 */}
+      {checkInToast && (
+        <Animated.View style={[styles.checkInToast, { opacity: toastOpacity }]}>
+          <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
+          <Text style={styles.checkInToastText}>{checkInToast}</Text>
+        </Animated.View>
+      )}
+
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         refreshControl={
@@ -315,6 +354,7 @@ export default function DiagnosisScreen() {
             index={analysisResult.panicShieldIndex ?? 50}
             level={analysisResult.panicShieldLevel ?? 'CAUTION'}
             stopLossGuidelines={analysisResult.stopLossGuidelines ?? []}
+            peerComparison={peerPanicData}
           />
         )}
 
@@ -489,6 +529,13 @@ export default function DiagnosisScreen() {
             );
           })}
         </View>
+
+        {/* 면책 문구 */}
+        <View style={styles.disclaimerBox}>
+          <Text style={styles.disclaimerText}>
+            본 서비스는 금융위원회에 등록된 투자자문업이 아닙니다. AI 분석 결과는 과거 데이터 기반의 참고 정보이며, 미래 수익을 보장하지 않습니다. 투자 원금의 일부 또는 전부를 잃을 수 있으며, 최종 투자 결정은 본인의 판단과 책임 하에 이루어져야 합니다. 본 서비스는 예금자보호법에 따른 보호 대상이 아닙니다.
+          </Text>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -498,6 +545,26 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#121212',
+  },
+  // 출석 체크 토스트
+  checkInToast: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginHorizontal: 16,
+    marginTop: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    backgroundColor: 'rgba(76, 175, 80, 0.15)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(76, 175, 80, 0.3)',
+  },
+  checkInToastText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#4CAF50',
   },
   scrollContent: {
     padding: 16,
@@ -990,6 +1057,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#CCCCCC',
     lineHeight: 22,
+  },
+  // 면책 문구
+  disclaimerBox: {
+    marginTop: 20,
+    marginBottom: 8,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderRadius: 10,
+    padding: 14,
+    borderWidth: 0.5,
+    borderColor: 'rgba(255,255,255,0.06)',
+  },
+  disclaimerText: {
+    fontSize: 10,
+    color: '#555555',
+    textAlign: 'center',
+    lineHeight: 16,
   },
   // 공유 섹션
   shareSection: {

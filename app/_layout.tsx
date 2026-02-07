@@ -17,6 +17,7 @@ import BiometricLockScreen from '../src/components/BiometricLockScreen';
 import BrandSplash from '../src/components/BrandSplash';
 import { getBiometricSettings } from '../src/services/biometric';
 import { useSubscriptionBonus } from '../src/hooks/useCredits';
+import { useWelcomeBonus } from '../src/hooks/useRewards';
 
 // React Query 클라이언트 생성
 const queryClient = new QueryClient({
@@ -36,8 +37,9 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const segments = useSegments();
 
-  // 앱 시작 시 구독자 월 크레딧 보너스 체크 (로그인된 경우만)
-  useSubscriptionBonus();
+  // 앱 시작 시 자동 보상 체크 (로그인된 경우만)
+  useSubscriptionBonus();  // 구독자 월 30크레딧 보너스
+  useWelcomeBonus();       // 신규 가입 10크레딧 웰컴 보너스
 
   useEffect(() => {
     if (loading) return; // 로딩 중에는 아무것도 하지 않음
@@ -203,6 +205,10 @@ export default function RootLayout() {
                 <Stack.Screen name="marketplace" options={{ headerShown: false }} />
                 {/* 티어 맞춤 전략 상세 */}
                 <Stack.Screen name="tier-strategy" options={{ headerShown: false }} />
+                {/* 커뮤니티 게시물 상세 + 댓글 */}
+                <Stack.Screen name="community/[id]" options={{ headerShown: false }} />
+                {/* 투자 DNA - 등급별 포트폴리오 비중 비교 */}
+                <Stack.Screen name="settings/tier-insights" options={{ headerShown: false }} />
               </Stack>
             </AuthGate>
             {/* 브랜드 스플래시 (앱 시작 시 'baln.logic' 표시) */}

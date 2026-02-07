@@ -3,10 +3,15 @@
  * 과열된 자산에 대한 경고 표시
  */
 
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, LayoutAnimation, Platform, UIManager } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { FomoSubScores } from '../services/gemini';
+
+// Android 레이아웃 애니메이션 활성화
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 interface FomoAlert {
   ticker: string;
@@ -31,8 +36,134 @@ const getFomoBarColor = (score: number): string => {
   return '#4CAF50';
 };
 
+// 서브스코어별 PO 설명 (비개발자용)
+const FOMO_SUB_DESCRIPTIONS: Record<keyof FomoSubScores, string> = {
+  valuationHeat: '해당 종목의 PER, PBR 등 기업가치 대비 현재 주가가 얼마나 비싼지를 측정합니다. 높을수록 고평가 상태입니다.',
+  shortTermSurge: '최근 1개월간 주가 상승폭입니다. 단기간에 급등한 종목은 조정 가능성이 높습니다.',
+  marketOverheat: 'RSI(상대강도지수), 거래량 등으로 시장 과열 여부를 판단합니다. 높을수록 과열 상태입니다.',
+};
+
 interface FomoVaccineCardProps {
   alerts: FomoAlert[];
+}
+
+// 가이드 섹션 컴포넌트 (경고 유무와 관계없이 동일)
+function FomoGuideSection() {
+  const [showGuide, setShowGuide] = useState(false);
+
+  const toggleGuide = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setShowGuide(!showGuide);
+  };
+
+  return (
+    <>
+      <TouchableOpacity
+        style={styles.guideToggle}
+        onPress={toggleGuide}
+        activeOpacity={0.7}
+      >
+        <Ionicons name="help-circle-outline" size={16} color="#888888" />
+        <Text style={styles.guideToggleText}>
+          이 점수는 무엇인가요?
+        </Text>
+        <Ionicons
+          name={showGuide ? 'chevron-up' : 'chevron-down'}
+          size={14}
+          color="#888888"
+        />
+      </TouchableOpacity>
+
+      {showGuide && (
+        <View style={styles.guideContainer}>
+          {/* 개념 설명 + 학술 근거 */}
+          <View style={styles.guideSection}>
+            <Text style={styles.guideSectionTitle}>FOMO Vaccine이란?</Text>
+            <Text style={styles.guideText}>
+              행동재무학에서 FOMO는{' '}
+              <Text style={styles.guideSource}>희소성 편향(Scarcity Bias)</Text>의 일종입니다.
+              "남들은 다 벌고 있는데 나만 빠지면 어쩌지?"라는 불안감이
+              이미 고점인 종목을 추격 매수하게 만듭니다.
+            </Text>
+            <Text style={[styles.guideText, { marginTop: 8 }]}>
+              <Text style={styles.guideSource}>Morningstar(2024)</Text> 연구에 따르면,
+              FOMO에 휩쓸린 투자자는 그렇지 않은 투자자 대비{' '}
+              <Text style={styles.guideBold}>위험조정 수익률(Sharpe Ratio)이 평균 4% 낮았습니다</Text>.
+              FOMO Vaccine은 이런 충동적 매수를 예방하기 위해
+              보유 종목의 고평가 위험도를 실시간으로 분석합니다.
+            </Text>
+          </View>
+
+          {/* 점수 해석 */}
+          <View style={styles.guideSection}>
+            <Text style={styles.guideSectionTitle}>고평가 점수 읽는 법</Text>
+            <Text style={styles.guideText}>
+              각 종목별로 0~100점의 고평가 점수가 부여됩니다.
+              점수가 높을수록 현재 가격이 적정가치(PER, PBR 등) 대비 비싸다는 의미입니다.
+            </Text>
+            <View style={{ marginTop: 8 }}>
+              <View style={styles.guideScoreRow}>
+                <View style={[styles.guideScoreDot, { backgroundColor: '#4CAF50' }]} />
+                <Text style={styles.guideScoreText}>
+                  <Text style={[styles.guideBold, { color: '#4CAF50' }]}>0~30 낮음</Text> — 적정 가격 수준, 추가 매수 가능
+                </Text>
+              </View>
+              <View style={styles.guideScoreRow}>
+                <View style={[styles.guideScoreDot, { backgroundColor: '#FFC107' }]} />
+                <Text style={styles.guideScoreText}>
+                  <Text style={[styles.guideBold, { color: '#FFC107' }]}>31~60 중간</Text> — 추가 매수 자제, 관망 권장
+                </Text>
+              </View>
+              <View style={styles.guideScoreRow}>
+                <View style={[styles.guideScoreDot, { backgroundColor: '#CF6679' }]} />
+                <Text style={styles.guideScoreText}>
+                  <Text style={[styles.guideBold, { color: '#CF6679' }]}>61~100 높음</Text> — 고평가 상태, 분할 매도 검토
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* 3개 하위 지표 설명 */}
+          <View style={styles.guideSection}>
+            <Text style={styles.guideSectionTitle}>3가지 세부 지표</Text>
+            <Text style={[styles.guideText, { marginBottom: 10 }]}>
+              닷컴 버블(2000), 금융위기(2008)에서 FOMO에 빠진 투자자들은
+              고평가 자산에 진입해 큰 손실을 입었습니다.
+              다음 3가지 관점에서 과열 여부를 진단합니다:
+            </Text>
+            {FOMO_SUB_LABELS.map(({ key, label }) => (
+              <View key={key} style={styles.guideItemRow}>
+                <View style={[styles.guideScoreDot, { backgroundColor: '#FFC107', marginTop: 5 }]} />
+                <View style={styles.guideItemContent}>
+                  <Text style={styles.guideItemLabel}>{label}</Text>
+                  <Text style={styles.guideItemDesc}>
+                    {FOMO_SUB_DESCRIPTIONS[key]}
+                  </Text>
+                </View>
+              </View>
+            ))}
+          </View>
+
+          {/* 출처 표시 */}
+          <View style={[styles.guideSection, { borderBottomWidth: 0, paddingBottom: 0 }]}>
+            <Text style={styles.guideSectionTitle}>참고 자료</Text>
+            <Text style={styles.guideSourceItem}>
+              {'\u2022'} Nirun & Asgarli, "FoMO in Investment: A Critical Literature Review" (SSRN, 2025)
+            </Text>
+            <Text style={styles.guideSourceItem}>
+              {'\u2022'} Morningstar — "FOMO Can Lead to Lower Returns" (2024)
+            </Text>
+            <Text style={styles.guideSourceItem}>
+              {'\u2022'} MDPI Finance (2025) — FOMO, Loss Aversion & Herd Behavior in Investment
+            </Text>
+            <Text style={styles.guideSourceItem}>
+              {'\u2022'} ResearchGate — "The Effects of FOMO on Investment Behavior in the Stock Market"
+            </Text>
+          </View>
+        </View>
+      )}
+    </>
+  );
 }
 
 export default function FomoVaccineCard({ alerts }: FomoVaccineCardProps) {
@@ -75,6 +206,7 @@ export default function FomoVaccineCard({ alerts }: FomoVaccineCardProps) {
             현재 포트폴리오에 과열 우려 자산이 없습니다
           </Text>
         </View>
+        <FomoGuideSection />
       </View>
     );
   }
@@ -197,6 +329,9 @@ export default function FomoVaccineCard({ alerts }: FomoVaccineCardProps) {
           );
         })}
       </View>
+
+      {/* PO 가이드 */}
+      <FomoGuideSection />
 
       {/* 하단 팁 */}
       <View style={styles.tipContainer}>
@@ -375,5 +510,97 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     width: 24,
     textAlign: 'right',
+  },
+  // PO 가이드 스타일
+  guideToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+  },
+  guideToggleText: {
+    fontSize: 12,
+    color: '#888888',
+  },
+  guideContainer: {
+    marginTop: 12,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#2A2A2A',
+  },
+  guideSection: {
+    paddingBottom: 14,
+    marginBottom: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#2A2A2A',
+  },
+  guideSectionTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#CCCCCC',
+    marginBottom: 8,
+  },
+  guideText: {
+    fontSize: 12,
+    color: '#999999',
+    lineHeight: 20,
+  },
+  guideBold: {
+    fontWeight: '700',
+    color: '#CCCCCC',
+  },
+  guideScoreRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    marginBottom: 6,
+  },
+  guideScoreDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginTop: 5,
+  },
+  guideScoreText: {
+    flex: 1,
+    fontSize: 12,
+    color: '#999999',
+    lineHeight: 18,
+  },
+  guideItemRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 10,
+  },
+  guideItemContent: {
+    flex: 1,
+  },
+  guideItemLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#CCCCCC',
+    marginBottom: 2,
+  },
+  guideItemDesc: {
+    fontSize: 11,
+    color: '#888888',
+    lineHeight: 17,
+  },
+  guideSource: {
+    fontSize: 12,
+    fontStyle: 'italic',
+    color: '#7B9EBF',
+  },
+  guideSourceItem: {
+    fontSize: 11,
+    color: '#777777',
+    lineHeight: 18,
+    marginBottom: 4,
   },
 });

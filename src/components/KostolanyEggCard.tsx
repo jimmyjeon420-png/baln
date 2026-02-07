@@ -243,6 +243,7 @@ const KostolanyEggCard: React.FC<KostolanyEggCardProps> = ({
   interestRateText,
 }) => {
   const [expanded, setExpanded] = useState(false);
+  const [guideExpanded, setGuideExpanded] = useState(false);
 
   const phaseInfo = EGG_CYCLE_PHASES[analysis.currentPhase];
   const actionStyle = ACTION_STYLE[analysis.action];
@@ -361,6 +362,74 @@ const KostolanyEggCard: React.FC<KostolanyEggCardProps> = ({
           </View>
         </View>
       </View>
+
+      {/* ─── 코스톨라니 달걀 가이드 (펼치기) ─── */}
+      <TouchableOpacity
+        style={styles.guideToggle}
+        onPress={() => setGuideExpanded(!guideExpanded)}
+        activeOpacity={0.7}
+      >
+        <Ionicons name="help-circle-outline" size={14} color="#666" />
+        <Text style={styles.guideToggleText}>코스톨라니 달걀이란?</Text>
+        <Ionicons
+          name={guideExpanded ? 'chevron-up' : 'chevron-down'}
+          size={12}
+          color="#555"
+        />
+      </TouchableOpacity>
+
+      {guideExpanded && (
+        <View style={styles.guideBody}>
+          <Text style={styles.guideIntro}>
+            앙드레 코스톨라니(1906-1999)는 유럽의 전설적 투자자로,{'\n'}
+            금리와 주식시장의 관계를 <Text style={styles.guideBold}>달걀 형태의 순환 모형</Text>으로 설명했습니다.
+          </Text>
+
+          {/* 핵심 원리 */}
+          <View style={styles.guideSection}>
+            <Text style={styles.guideSectionTitle}>핵심 원리</Text>
+            <Text style={styles.guideText}>
+              금리가 오르면 주식이 하락하고, 금리가 내리면 주식이 상승하는 사이클이 달걀(타원) 위를 시계방향으로 돌며 반복됩니다.
+            </Text>
+          </View>
+
+          {/* 6단계 설명 */}
+          <View style={styles.guideSection}>
+            <Text style={styles.guideSectionTitle}>6단계 순환</Text>
+            <View style={styles.guideCycleRow}>
+              <View style={[styles.guideCycleBadge, { backgroundColor: 'rgba(76,175,80,0.12)' }]}>
+                <Text style={[styles.guideCycleBadgeText, { color: '#4CAF50' }]}>A 상승장</Text>
+              </View>
+              <Text style={styles.guideCycleDesc}>금리 하락 → 주식 상승</Text>
+            </View>
+            <View style={styles.guideSteps}>
+              <Text style={styles.guideStepText}>
+                <Text style={{ color: '#4CAF50' }}>A1</Text> 조정(매수 기회) → <Text style={{ color: '#66BB6A' }}>A2</Text> 파도타기(보유) → <Text style={{ color: '#FFC107' }}>A3</Text> 과열(매도 신호)
+              </Text>
+            </View>
+
+            <View style={[styles.guideCycleRow, { marginTop: 8 }]}>
+              <View style={[styles.guideCycleBadge, { backgroundColor: 'rgba(207,102,121,0.12)' }]}>
+                <Text style={[styles.guideCycleBadgeText, { color: '#CF6679' }]}>B 하락장</Text>
+              </View>
+              <Text style={styles.guideCycleDesc}>금리 상승 → 주식 하락</Text>
+            </View>
+            <View style={styles.guideSteps}>
+              <Text style={styles.guideStepText}>
+                <Text style={{ color: '#CF6679' }}>B1</Text> 조정(익절) → <Text style={{ color: '#EF5350' }}>B2</Text> 하강(방어) → <Text style={{ color: '#C62828' }}>B3</Text> 과도하락(바닥)
+              </Text>
+            </View>
+          </View>
+
+          {/* 한줄 명언 */}
+          <View style={styles.guideQuote}>
+            <Text style={styles.guideQuoteText}>
+              "모두가 팔 때 사고, 모두가 살 때 팔아라"
+            </Text>
+            <Text style={styles.guideQuoteAuthor}>— 앙드레 코스톨라니</Text>
+          </View>
+        </View>
+      )}
 
       {/* ─── 상세 뷰 (펼침) ─── */}
       {expanded && (
@@ -680,6 +749,98 @@ const styles = StyleSheet.create({
     color: '#444',
     lineHeight: 15,
     textAlign: 'center',
+  },
+
+  // ── 코스톨라니 가이드 ──
+  guideToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 5,
+    marginTop: 10,
+    paddingVertical: 4,
+  },
+  guideToggleText: {
+    fontSize: 12,
+    color: '#666',
+  },
+  guideBody: {
+    backgroundColor: '#1A1A1A',
+    borderRadius: 12,
+    padding: 14,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: '#252525',
+  },
+  guideIntro: {
+    fontSize: 12,
+    color: '#AAA',
+    lineHeight: 20,
+    marginBottom: 12,
+  },
+  guideBold: {
+    color: '#DDD',
+    fontWeight: '700',
+  },
+  guideSection: {
+    marginBottom: 12,
+  },
+  guideSectionTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#DDD',
+    marginBottom: 6,
+  },
+  guideText: {
+    fontSize: 12,
+    color: '#999',
+    lineHeight: 19,
+  },
+  guideCycleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  guideCycleBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  guideCycleBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  guideCycleDesc: {
+    fontSize: 11,
+    color: '#888',
+  },
+  guideSteps: {
+    marginTop: 4,
+    marginLeft: 4,
+  },
+  guideStepText: {
+    fontSize: 11,
+    color: '#777',
+    lineHeight: 18,
+  },
+  guideQuote: {
+    backgroundColor: 'rgba(255,193,7,0.06)',
+    borderRadius: 8,
+    padding: 10,
+    borderLeftWidth: 3,
+    borderLeftColor: '#FFC107',
+  },
+  guideQuoteText: {
+    fontSize: 12,
+    color: '#FFC107',
+    fontStyle: 'italic',
+    fontWeight: '600',
+    lineHeight: 18,
+  },
+  guideQuoteAuthor: {
+    fontSize: 10,
+    color: '#888',
+    marginTop: 4,
   },
 });
 

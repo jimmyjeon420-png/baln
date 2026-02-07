@@ -1,22 +1,91 @@
 /**
  * Community Types - VIP 라운지 커뮤니티 타입 정의
+ *
+ * 접근 등급 (3단계):
+ *   열람: 100만원+ (자산인증 필수)
+ *   댓글: 1,000만원+
+ *   글쓰기: 1.5억+
  */
+
+// ================================================================
+// 접근제어 상수
+// ================================================================
+
+/** 커뮤니티 열람 최소 자산 (100만원) */
+export const LOUNGE_VIEW_THRESHOLD = 1000000;
+
+/** 댓글 작성 최소 자산 (1,000만원) */
+export const LOUNGE_COMMENT_THRESHOLD = 10000000;
+
+/** 글 작성 최소 자산 (1.5억) */
+export const LOUNGE_POST_THRESHOLD = 150000000;
+
+// ================================================================
+// 카테고리
+// ================================================================
+
+// 커뮤니티 카테고리 타입 (all은 필터 전용, DB에는 저장 안 됨)
+export type CommunityCategory = 'stocks' | 'crypto' | 'realestate';
+export type CommunityCategoryFilter = CommunityCategory | 'all';
+
+// 카테고리 정보 상수
+export const CATEGORY_INFO: Record<CommunityCategoryFilter, {
+  label: string;
+  icon: string;
+  color: string;
+}> = {
+  all: { label: '전체', icon: 'apps', color: '#4CAF50' },
+  stocks: { label: '주식방', icon: 'trending-up', color: '#4CAF50' },
+  crypto: { label: '코인방', icon: 'logo-bitcoin', color: '#F7931A' },
+  realestate: { label: '부동산방', icon: 'home', color: '#2196F3' },
+};
+
+// ================================================================
+// 보유종목 스냅샷
+// ================================================================
+
+/** 작성 시점의 보유종목 (top N개) */
+export interface HoldingSnapshot {
+  ticker: string;        // "AAPL"
+  name: string;          // "애플"
+  type: 'stock' | 'crypto' | 'realestate' | 'other';
+  value: number;         // 보유 가치 (KRW)
+}
+
+// ================================================================
+// 게시물 / 댓글
+// ================================================================
 
 // 커뮤니티 게시물 타입
 export interface CommunityPost {
   id: string;
   user_id: string;
-  display_tag: string;       // "[자산: 1.2억 / 수익: 0.3억]"
-  asset_mix: string;         // "Tech 70%, Crypto 30%"
+  display_tag: string;       // "[자산: 1.2억]"
+  asset_mix: string;         // "주식 70%, 코인 30%"
   content: string;
+  category: CommunityCategory;
   likes_count: number;
+  comments_count: number;
   total_assets_at_post: number;
+  top_holdings: HoldingSnapshot[];  // 작성자 상위 보유종목
+  created_at: string;
+}
+
+// 커뮤니티 댓글 타입
+export interface CommunityComment {
+  id: string;
+  post_id: string;
+  user_id: string;
+  content: string;
+  display_tag: string;
+  total_assets_at_comment: number;
   created_at: string;
 }
 
 // 게시물 작성용 입력 타입
 export interface CreatePostInput {
   content: string;
+  category: CommunityCategory;
 }
 
 // 자산 믹스 아이템
@@ -25,21 +94,25 @@ export interface AssetMixItem {
   percentage: number;
 }
 
-// 라운지 자격 상태
-export interface LoungeEligibility {
-  isEligible: boolean;          // 최종 입장 가능 여부
-  totalAssets: number;          // 총 자산
-  requiredAssets: number;       // 필요 자산 (1억)
-  shortfall: number;            // 부족 금액
+// ================================================================
+// 라운지 자격 (3단계 접근)
+// ================================================================
 
-  // 검증 상태 (CRITICAL: 라운지 입장 필수 조건)
-  hasVerifiedAssets: boolean;   // OCR 검증된 자산 보유 여부
-  verifiedAssetsTotal: number;  // 검증된 자산 총액
-  isVerificationRequired: boolean; // 검증 필요 여부 (자산 1억 이상이지만 미검증)
+export interface LoungeEligibility {
+  isEligible: boolean;          // 열람 가능 여부 (100만원+)
+  canComment: boolean;          // 댓글 가능 여부 (1,000만원+)
+  canPost: boolean;             // 글쓰기 가능 여부 (1.5억+)
+  totalAssets: number;          // 총 자산
+  requiredAssets: number;       // 열람 최소 자산 (100만원)
+  shortfall: number;            // 열람까지 부족 금액
+
+  // 검증 상태
+  hasVerifiedAssets: boolean;
+  verifiedAssetsTotal: number;
+  isVerificationRequired: boolean;
 }
 
 // 사용자 프로필 표시 정보
-// CRITICAL: 4단계 티어 시스템 (BRONZE 제거됨)
 export interface UserDisplayInfo {
   displayTag: string;
   assetMix: string;
@@ -47,11 +120,10 @@ export interface UserDisplayInfo {
   tierLabel: string;
 }
 
-// 전략적 4단계 티어 정의 (자산 기준 - KRW)
-// TIER_1 (Silver): < 1억
-// TIER_2 (Gold): 1억 ~ 5억
-// TIER_3 (Platinum): 5억 ~ 10억
-// TIER_4 (Diamond): 10억+
+// ================================================================
+// 티어 시스템
+// ================================================================
+
 export const TIER_THRESHOLDS = {
   SILVER: 0,              // 1억 미만 (기본 티어)
   GOLD: 100000000,        // 1억 이상
@@ -59,7 +131,6 @@ export const TIER_THRESHOLDS = {
   DIAMOND: 1000000000,    // 10억 이상
 };
 
-// 티어 숫자 레벨 (접근 제어용)
 export const TIER_LEVELS: { [key: string]: number } = {
   SILVER: 1,
   GOLD: 2,
@@ -67,7 +138,6 @@ export const TIER_LEVELS: { [key: string]: number } = {
   DIAMOND: 4,
 };
 
-// 티어 라벨
 export const TIER_LABELS: { [key: string]: string } = {
   SILVER: '실버',
   GOLD: '골드',
@@ -75,7 +145,6 @@ export const TIER_LABELS: { [key: string]: string } = {
   DIAMOND: '다이아몬드',
 };
 
-// 티어별 설명
 export const TIER_DESCRIPTIONS: { [key: string]: string } = {
   SILVER: '1억 미만',
   GOLD: '1억 ~ 5억',
@@ -83,7 +152,6 @@ export const TIER_DESCRIPTIONS: { [key: string]: string } = {
   DIAMOND: '10억 이상',
 };
 
-// 티어 색상
 export const TIER_COLORS: { [key: string]: string } = {
   SILVER: '#C0C0C0',
   GOLD: '#FFD700',
@@ -91,7 +159,6 @@ export const TIER_COLORS: { [key: string]: string } = {
   DIAMOND: '#B9F2FF',
 };
 
-// 티어 아이콘
 export const TIER_ICONS: { [key: string]: string } = {
   SILVER: 'medal',
   GOLD: 'trophy',

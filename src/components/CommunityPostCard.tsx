@@ -1,24 +1,38 @@
 /**
  * Community Post Card - VIP 라운지 게시물 카드
+ *
+ * 기능:
+ * - 작성자 티어 배지 + 자산 태그
+ * - 보유종목 칩 (상위 5개)
+ * - 좋아요 토글 (하트 색상 변경)
+ * - 작성자 아바타 탭 → 프로필 페이지
  */
 
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { CommunityPost, TIER_COLORS } from '../types/community';
+import {
+  CommunityPost,
+  HoldingSnapshot,
+  TIER_COLORS,
+  CATEGORY_INFO,
+} from '../types/community';
 
 interface CommunityPostCardProps {
   post: CommunityPost;
+  isLiked?: boolean;
   onLike?: (postId: string) => void;
+  onPress?: (postId: string) => void;
+  onAuthorPress?: (userId: string) => void;
 }
 
 // 자산 금액에 따른 티어 결정
-const getTierFromAssets = (assets: number): 'BRONZE' | 'SILVER' | 'GOLD' | 'PLATINUM' | 'DIAMOND' => {
-  if (assets >= 5000000000) return 'DIAMOND';
-  if (assets >= 1000000000) return 'PLATINUM';
-  if (assets >= 500000000) return 'GOLD';
-  if (assets >= 100000000) return 'SILVER';
-  return 'BRONZE';
+const getTierFromAssets = (assets: number): string => {
+  if (assets >= 1000000000) return 'DIAMOND';
+  if (assets >= 500000000) return 'PLATINUM';
+  if (assets >= 150000000) return 'GOLD';
+  if (assets >= 10000000) return 'SILVER';
+  return 'SILVER';
 };
 
 // 티어 아이콘
@@ -30,6 +44,14 @@ const getTierIcon = (tier: string): keyof typeof Ionicons.glyphMap => {
     case 'SILVER': return 'medal';
     default: return 'ribbon';
   }
+};
+
+// 보유종목 타입별 색상
+const HOLDING_TYPE_COLORS: Record<string, string> = {
+  stock: '#4CAF50',
+  crypto: '#F7931A',
+  realestate: '#2196F3',
+  other: '#888888',
 };
 
 // 상대적 시간 표시
@@ -48,23 +70,63 @@ const getRelativeTime = (dateString: string): string => {
   return date.toLocaleDateString('ko-KR');
 };
 
-export default function CommunityPostCard({ post, onLike }: CommunityPostCardProps) {
+export default function CommunityPostCard({
+  post,
+  isLiked = false,
+  onLike,
+  onPress,
+  onAuthorPress,
+}: CommunityPostCardProps) {
   const tier = getTierFromAssets(post.total_assets_at_post);
-  const tierColor = TIER_COLORS[tier];
+  const tierColor = TIER_COLORS[tier] || '#C0C0C0';
   const tierIcon = getTierIcon(tier);
+  const categoryInfo = post.category ? CATEGORY_INFO[post.category] : null;
+  const holdings = (post.top_holdings || []).slice(0, 5);
 
   return (
-    <View style={styles.container}>
-      {/* 헤더: 티어 아이콘 + 디스플레이 태그 */}
+    <TouchableOpacity
+      style={styles.container}
+      activeOpacity={0.7}
+      onPress={() => onPress?.(post.id)}
+    >
+      {/* 헤더: 티어 아이콘 + 디스플레이 태그 + 카테고리 */}
       <View style={styles.header}>
         <View style={styles.userInfo}>
-          <View style={[styles.tierBadge, { backgroundColor: tierColor }]}>
+          {/* 아바타 (탭하면 프로필 이동) */}
+          <TouchableOpacity
+            style={[styles.tierBadge, { backgroundColor: tierColor }]}
+            onPress={(e) => {
+              e.stopPropagation?.();
+              onAuthorPress?.(post.user_id);
+            }}
+          >
             <Ionicons name={tierIcon} size={14} color="#000000" />
-          </View>
-          <View>
-            <Text style={[styles.displayTag, { color: tierColor }]}>
-              {post.display_tag}
-            </Text>
+          </TouchableOpacity>
+          <View style={{ flex: 1 }}>
+            <View style={styles.tagRow}>
+              <TouchableOpacity
+                onPress={(e) => {
+                  e.stopPropagation?.();
+                  onAuthorPress?.(post.user_id);
+                }}
+              >
+                <Text style={[styles.displayTag, { color: tierColor }]}>
+                  {post.display_tag}
+                </Text>
+              </TouchableOpacity>
+              {categoryInfo && (
+                <View style={[styles.categoryBadge, { backgroundColor: categoryInfo.color + '20' }]}>
+                  <Ionicons
+                    name={categoryInfo.icon as any}
+                    size={10}
+                    color={categoryInfo.color}
+                  />
+                  <Text style={[styles.categoryLabel, { color: categoryInfo.color }]}>
+                    {categoryInfo.label}
+                  </Text>
+                </View>
+              )}
+            </View>
             {post.asset_mix && (
               <Text style={styles.assetMix}>{post.asset_mix}</Text>
             )}
@@ -73,20 +135,55 @@ export default function CommunityPostCard({ post, onLike }: CommunityPostCardPro
         <Text style={styles.timeText}>{getRelativeTime(post.created_at)}</Text>
       </View>
 
-      {/* 본문 */}
-      <Text style={styles.content}>{post.content}</Text>
+      {/* 보유종목 칩 */}
+      {holdings.length > 0 && (
+        <View style={styles.holdingsRow}>
+          {holdings.map((h: HoldingSnapshot, idx: number) => (
+            <View
+              key={`${h.ticker}-${idx}`}
+              style={[
+                styles.holdingChip,
+                { borderColor: (HOLDING_TYPE_COLORS[h.type] || '#888') + '40' },
+              ]}
+            >
+              <View style={[
+                styles.holdingDot,
+                { backgroundColor: HOLDING_TYPE_COLORS[h.type] || '#888' },
+              ]} />
+              <Text style={styles.holdingTicker}>{h.ticker}</Text>
+            </View>
+          ))}
+        </View>
+      )}
 
-      {/* 푸터: 좋아요 버튼 */}
+      {/* 본문 */}
+      <Text style={styles.content} numberOfLines={5}>{post.content}</Text>
+
+      {/* 푸터: 좋아요 토글 + 댓글 수 */}
       <View style={styles.footer}>
         <TouchableOpacity
           style={styles.likeButton}
-          onPress={() => onLike?.(post.id)}
+          onPress={(e) => {
+            e.stopPropagation?.();
+            onLike?.(post.id);
+          }}
         >
-          <Ionicons name="heart-outline" size={18} color="#888888" />
-          <Text style={styles.likeCount}>{post.likes_count || 0}</Text>
+          <Ionicons
+            name={isLiked ? 'heart' : 'heart-outline'}
+            size={18}
+            color={isLiked ? '#CF6679' : '#888888'}
+          />
+          <Text style={[styles.likeCount, isLiked && { color: '#CF6679' }]}>
+            {post.likes_count || 0}
+          </Text>
         </TouchableOpacity>
+
+        <View style={styles.commentCount}>
+          <Ionicons name="chatbubble-outline" size={16} color="#888888" />
+          <Text style={styles.likeCount}>{post.comments_count || 0}</Text>
+        </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -101,7 +198,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   userInfo: {
     flexDirection: 'row',
@@ -129,6 +226,54 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#666666',
   },
+  tagRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flexWrap: 'wrap',
+  },
+  categoryBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  categoryLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+  },
+
+  // ── 보유종목 칩 ──
+  holdingsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginBottom: 10,
+  },
+  holdingChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+    borderWidth: 1,
+    backgroundColor: '#161616',
+  },
+  holdingDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+  },
+  holdingTicker: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#AAA',
+  },
+
+  // ── 본문 + 푸터 ──
   content: {
     fontSize: 15,
     color: '#FFFFFF',
@@ -152,5 +297,12 @@ const styles = StyleSheet.create({
   likeCount: {
     fontSize: 13,
     color: '#888888',
+  },
+  commentCount: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
   },
 });

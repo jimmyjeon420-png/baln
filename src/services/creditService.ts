@@ -108,7 +108,7 @@ interface PurchaseResult {
   totalCredits: number; // 패키지 크레딧 + 보너스
 }
 
-/** 크레딧 패키지 구매 (현재: 시뮬레이션, 향후: RevenueCat IAP 연동) */
+/** 크레딧 패키지 구매 (Apple IAP 결제 후 호출 — transactionId를 iapReceiptId로 전달) */
 export async function purchaseCredits(
   packageId: string,
   iapReceiptId?: string

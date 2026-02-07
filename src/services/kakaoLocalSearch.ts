@@ -37,6 +37,7 @@ const BASE_URL = 'https://dapi.kakao.com/v2/local/search/keyword.json';
 export async function searchPlaces(query: string, size: number = 5): Promise<ParsedPlace[]> {
   // API 키가 없거나 플레이스홀더면 빈 배열 반환 (수동 입력 가능)
   if (!KAKAO_API_KEY || KAKAO_API_KEY === '여기에_카카오_REST_API_키_입력') {
+    console.log('[KakaoSearch] API 키 미설정. EXPO_PUBLIC_KAKAO_REST_API_KEY를 .env에 설정하세요.');
     return [];
   }
 
@@ -66,8 +67,14 @@ export async function searchPlaces(query: string, size: number = 5): Promise<Par
       longitude: parseFloat(doc.x),
       category: doc.category_group_name || '',
     }));
-  } catch {
-    // API 실패 시 빈 배열 → 사용자는 수동 입력 가능
+  } catch (error: any) {
+    // API 실패 시 원인 로깅 → 사용자는 수동 입력 가능
+    const status = error?.response?.status;
+    if (status === 401) {
+      console.warn('[KakaoSearch] 인증 실패 (401). 카카오 개발자 콘솔에서 REST API 키와 플랫폼 등록을 확인하세요.');
+    } else {
+      console.warn('[KakaoSearch] API 호출 실패:', status || error?.message);
+    }
     return [];
   }
 }

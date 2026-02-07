@@ -35,6 +35,7 @@ import { KostolanyLogic } from '../../src/services/KostolanyLogic';
 import { TIER_LABELS } from '../../src/hooks/useGatherings';
 import { useSharedPortfolio } from '../../src/hooks/useSharedPortfolio';
 import { useSharedAnalysis, useSharedBitcoin } from '../../src/hooks/useSharedAnalysis';
+import { usePeerPanicScore, getAssetBracket } from '../../src/hooks/usePortfolioSnapshots';
 import { TIER_STRATEGIES } from '../../src/constants/tierStrategy';
 
 // 요일 이름
@@ -82,6 +83,10 @@ export default function RebalanceScreen() {
 
   // 비트코인 인텔리전스 (선택적, 별도 쿼리)
   const { data: bitcoinIntelligence } = useSharedBitcoin();
+
+  // 또래 비교: 내 자산 구간의 Panic Shield 평균 점수
+  const myBracket = getAssetBracket(totalAssets);
+  const { data: peerPanicData } = usePeerPanicScore(myBracket);
 
   // Pull-to-refresh
   const onRefresh = async () => {
@@ -576,6 +581,7 @@ export default function RebalanceScreen() {
                   level={analysisResult.panicShieldLevel}
                   stopLossGuidelines={analysisResult.stopLossGuidelines}
                   subScores={analysisResult.panicSubScores}
+                  peerComparison={peerPanicData}
                 />
                 <FomoVaccineCard alerts={analysisResult.fomoAlerts} />
               </View>
@@ -713,9 +719,11 @@ export default function RebalanceScreen() {
         </TouchableOpacity>
 
         {/* ─── 면책 문구 ─── */}
-        <Text style={s.disclaimer}>
-          이 정보는 투자 자문이 아닙니다. 투자 결정은 전적으로 본인의 판단 하에 이루어져야 합니다.
-        </Text>
+        <View style={s.disclaimerBox}>
+          <Text style={s.disclaimer}>
+            본 서비스는 금융위원회에 등록된 투자자문업·투자일임업이 아니며, 제공되는 정보는 투자 권유가 아닙니다. AI 분석 결과는 과거 데이터 기반이며 미래 수익을 보장하지 않습니다. 투자 원금의 일부 또는 전부를 잃을 수 있으며, 투자 결정은 전적으로 본인의 판단과 책임 하에 이루어져야 합니다. 본 서비스는 예금자보호법에 따른 보호 대상이 아닙니다.
+          </Text>
+        </View>
 
       </ScrollView>
     </SafeAreaView>
@@ -1479,14 +1487,21 @@ const s = StyleSheet.create({
   },
 
   // ── 면책 ──
+  disclaimerBox: {
+    marginHorizontal: 20,
+    marginTop: 20,
+    marginBottom: 8,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderRadius: 10,
+    padding: 14,
+    borderWidth: 0.5,
+    borderColor: 'rgba(255,255,255,0.06)',
+  },
   disclaimer: {
     fontSize: 10,
-    color: '#444',
+    color: '#555',
     textAlign: 'center',
-    paddingHorizontal: 20,
-    lineHeight: 15,
-    marginTop: 16,
-    marginBottom: 8,
+    lineHeight: 16,
   },
 
   // ── AI 프리미엄 마켓플레이스 배너 ──

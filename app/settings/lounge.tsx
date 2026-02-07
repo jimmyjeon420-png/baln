@@ -1,5 +1,9 @@
 /**
- * VIP 라운지 - 1억 이상 회원 전용 커뮤니티
+ * VIP 라운지 - 자산 기반 3단계 접근 커뮤니티
+ *
+ * 열람: 100만원+ (자산인증 필수)
+ * 댓글: 1,000만원+
+ * 글쓰기: 1.5억+
  */
 
 import React, { useState, useCallback } from 'react';
@@ -24,15 +28,26 @@ import {
   useCommunityPosts,
   useCreatePost,
   useLikePost,
+  useMyLikes,
   generateAssetMix,
 } from '../../src/hooks/useCommunity';
 import CommunityPostCard from '../../src/components/CommunityPostCard';
-import { TIER_COLORS } from '../../src/types/community';
+import {
+  TIER_COLORS,
+  CATEGORY_INFO,
+  CommunityCategory,
+  CommunityCategoryFilter,
+  LOUNGE_VIEW_THRESHOLD,
+  LOUNGE_COMMENT_THRESHOLD,
+  LOUNGE_POST_THRESHOLD,
+} from '../../src/types/community';
 
 export default function LoungeScreen() {
   const router = useRouter();
   const [newPostContent, setNewPostContent] = useState('');
   const [isComposing, setIsComposing] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<CommunityCategoryFilter>('all');
+  const [postCategory, setPostCategory] = useState<CommunityCategory>('stocks');
 
   // 라운지 자격 확인
   const { eligibility, loading: eligibilityLoading, refetch: refetchEligibility } = useLoungeEligibility();
@@ -42,7 +57,10 @@ export default function LoungeScreen() {
     data: posts,
     isLoading: postsLoading,
     refetch: refetchPosts,
-  } = useCommunityPosts();
+  } = useCommunityPosts(selectedCategory);
+
+  // 좋아요 상태
+  const { data: myLikes } = useMyLikes();
 
   // 게시물 작성
   const createPost = useCreatePost();
@@ -71,17 +89,18 @@ export default function LoungeScreen() {
     }
 
     try {
-      // 자산 믹스 계산 (간단하게 처리)
-      const assetMix = '주식 70%, 현금 30%'; // 실제로는 포트폴리오에서 계산
+      const assetMix = '주식 70%, 현금 30%';
 
       await createPost.mutateAsync({
         content: newPostContent.trim(),
+        category: postCategory,
         displayTag: `[자산: ${(eligibility.totalAssets / 100000000).toFixed(1)}억]`,
         assetMix,
         totalAssets: eligibility.totalAssets,
       });
 
       setNewPostContent('');
+      setPostCategory('stocks');
       setIsComposing(false);
       Alert.alert('성공', '게시물이 등록되었습니다.');
     } catch (error) {
@@ -95,9 +114,33 @@ export default function LoungeScreen() {
     likePost.mutate(postId);
   };
 
-  // 자산을 억 단위로 포맷
-  const formatInBillion = (amount: number) => {
-    return (amount / 100000000).toFixed(1);
+  // 게시물 클릭 → 상세 페이지
+  const handlePostPress = (postId: string) => {
+    router.push(`/community/${postId}` as any);
+  };
+
+  // 작성자 프로필 클릭
+  const handleAuthorPress = (userId: string) => {
+    router.push(`/community/author/${userId}` as any);
+  };
+
+  // 자산을 억/만 단위로 포맷
+  const formatAmount = (amount: number) => {
+    if (amount >= 100000000) return `${(amount / 100000000).toFixed(1)}억`;
+    return `${(amount / 10000).toFixed(0)}만원`;
+  };
+
+  // 글쓰기 버튼 클릭 시 자격 확인
+  const handleComposePress = () => {
+    if (!eligibility.canPost) {
+      Alert.alert(
+        '글쓰기 제한',
+        `게시물 작성은 자산 1.5억 이상 회원만 가능합니다.\n\n현재 자산: ${formatAmount(eligibility.totalAssets)}\n필요 자산: 1.5억`,
+        [{ text: '확인' }]
+      );
+      return;
+    }
+    setIsComposing(true);
   };
 
   // 로딩 상태
@@ -112,11 +155,10 @@ export default function LoungeScreen() {
     );
   }
 
-  // 자격 미달 (1억 미만 또는 미검증)
+  // ══════════════════════════════════════════
+  // 잠금 화면: 100만원 미만 또는 자산 미등록
+  // ══════════════════════════════════════════
   if (!eligibility.isEligible) {
-    // 자산은 충분하지만 검증이 필요한 경우
-    const needsVerification = eligibility.isVerificationRequired;
-
     return (
       <SafeAreaView style={styles.container}>
         {/* 헤더 */}
@@ -131,57 +173,65 @@ export default function LoungeScreen() {
         {/* 잠금 화면 */}
         <View style={styles.lockedContainer}>
           <View style={styles.lockIconContainer}>
-            <Ionicons
-              name={needsVerification ? 'shield-checkmark' : 'lock-closed'}
-              size={64}
-              color={needsVerification ? '#4CAF50' : '#FFC107'}
-            />
+            <Ionicons name="lock-closed" size={64} color="#FFC107" />
           </View>
 
-          <Text style={styles.lockedTitle}>
-            {needsVerification ? '자산 검증이 필요합니다' : 'VIP 전용 공간입니다'}
-          </Text>
+          <Text style={styles.lockedTitle}>VIP 전용 공간입니다</Text>
           <Text style={styles.lockedSubtitle}>
-            {needsVerification
-              ? 'OCR 인증으로 자산을 검증해주세요'
-              : '검증된 자산 1억 이상 회원만 입장 가능합니다'}
+            자산 인증 후 100만원 이상의 자산을 보유한{'\n'}
+            회원만 입장할 수 있습니다
           </Text>
 
-          {/* 조건 체크리스트 */}
-          <View style={styles.requirementsList}>
-            <View style={styles.requirementItem}>
+          {/* 등급 안내 */}
+          <View style={styles.accessGuide}>
+            <Text style={styles.accessGuideTitle}>접근 등급 안내</Text>
+
+            <View style={styles.accessTier}>
+              <View style={[styles.accessDot, { backgroundColor: '#4CAF50' }]} />
+              <View style={styles.accessTierContent}>
+                <Text style={styles.accessTierLabel}>열람 가능</Text>
+                <Text style={styles.accessTierReq}>자산 100만원 이상</Text>
+              </View>
               <Ionicons
-                name={eligibility.totalAssets >= eligibility.requiredAssets ? 'checkmark-circle' : 'ellipse-outline'}
-                size={20}
-                color={eligibility.totalAssets >= eligibility.requiredAssets ? '#4CAF50' : '#666666'}
+                name={eligibility.totalAssets >= LOUNGE_VIEW_THRESHOLD ? 'checkmark-circle' : 'ellipse-outline'}
+                size={18}
+                color={eligibility.totalAssets >= LOUNGE_VIEW_THRESHOLD ? '#4CAF50' : '#555'}
               />
-              <Text style={[
-                styles.requirementText,
-                eligibility.totalAssets >= eligibility.requiredAssets && styles.requirementMet
-              ]}>
-                총 자산 1억 이상 ({formatInBillion(eligibility.totalAssets)}억)
-              </Text>
             </View>
-            <View style={styles.requirementItem}>
+
+            <View style={styles.accessTier}>
+              <View style={[styles.accessDot, { backgroundColor: '#2196F3' }]} />
+              <View style={styles.accessTierContent}>
+                <Text style={styles.accessTierLabel}>댓글 작성</Text>
+                <Text style={styles.accessTierReq}>자산 1,000만원 이상</Text>
+              </View>
               <Ionicons
-                name={eligibility.hasVerifiedAssets && eligibility.verifiedAssetsTotal >= eligibility.requiredAssets ? 'checkmark-circle' : 'ellipse-outline'}
-                size={20}
-                color={eligibility.hasVerifiedAssets && eligibility.verifiedAssetsTotal >= eligibility.requiredAssets ? '#4CAF50' : '#666666'}
+                name={eligibility.totalAssets >= LOUNGE_COMMENT_THRESHOLD ? 'checkmark-circle' : 'ellipse-outline'}
+                size={18}
+                color={eligibility.totalAssets >= LOUNGE_COMMENT_THRESHOLD ? '#4CAF50' : '#555'}
               />
-              <Text style={[
-                styles.requirementText,
-                eligibility.hasVerifiedAssets && eligibility.verifiedAssetsTotal >= eligibility.requiredAssets && styles.requirementMet
-              ]}>
-                OCR 검증 완료 ({formatInBillion(eligibility.verifiedAssetsTotal)}억 인증됨)
-              </Text>
+            </View>
+
+            <View style={styles.accessTier}>
+              <View style={[styles.accessDot, { backgroundColor: '#FFD700' }]} />
+              <View style={styles.accessTierContent}>
+                <Text style={styles.accessTierLabel}>게시물 작성</Text>
+                <Text style={styles.accessTierReq}>자산 1.5억 이상</Text>
+              </View>
+              <Ionicons
+                name={eligibility.totalAssets >= LOUNGE_POST_THRESHOLD ? 'checkmark-circle' : 'ellipse-outline'}
+                size={18}
+                color={eligibility.totalAssets >= LOUNGE_POST_THRESHOLD ? '#4CAF50' : '#555'}
+              />
             </View>
           </View>
 
+          {/* 현재 자산 */}
           <View style={styles.progressSection}>
             <View style={styles.progressHeader}>
-              <Text style={styles.progressLabel}>검증된 자산</Text>
+              <Text style={styles.progressLabel}>현재 자산</Text>
               <Text style={styles.progressValue}>
-                {formatInBillion(eligibility.verifiedAssetsTotal)}억
+                {formatAmount(eligibility.totalAssets)}
               </Text>
             </View>
 
@@ -190,48 +240,38 @@ export default function LoungeScreen() {
                 style={[
                   styles.progressBarFill,
                   {
-                    width: `${Math.min((eligibility.verifiedAssetsTotal / eligibility.requiredAssets) * 100, 100)}%`,
+                    width: `${Math.min((eligibility.totalAssets / LOUNGE_VIEW_THRESHOLD) * 100, 100)}%`,
                   },
                 ]}
               />
             </View>
 
-            <View style={styles.progressFooter}>
-              <Text style={styles.progressShortfall}>
-                {eligibility.shortfall > 0 ? `${formatInBillion(eligibility.shortfall)}억 더 필요` : '조건 충족!'}
-              </Text>
-              <Text style={styles.progressTarget}>목표: 검증 1억</Text>
-            </View>
+            <Text style={styles.progressShortfall}>
+              {eligibility.shortfall > 0
+                ? `입장까지 ${formatAmount(eligibility.shortfall)} 더 필요`
+                : '조건 충족!'}
+            </Text>
           </View>
 
-          {needsVerification ? (
-            <TouchableOpacity
-              style={[styles.investButton, { backgroundColor: '#4CAF50' }]}
-              onPress={() => router.push('/add-asset')}
-            >
-              <Ionicons name="camera" size={20} color="#FFFFFF" />
-              <Text style={styles.investButtonText}>자산 OCR 인증하기</Text>
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity
-              style={styles.investButton}
-              onPress={() => router.push('/add-asset')}
-            >
-              <Ionicons name="add-circle" size={20} color="#FFFFFF" />
-              <Text style={styles.investButtonText}>자산 추가하기</Text>
-            </TouchableOpacity>
-          )}
+          <TouchableOpacity
+            style={styles.investButton}
+            onPress={() => router.push('/add-asset')}
+          >
+            <Ionicons name="add-circle" size={20} color="#FFFFFF" />
+            <Text style={styles.investButtonText}>자산 등록하기</Text>
+          </TouchableOpacity>
 
-          {/* 안내 문구 */}
           <Text style={styles.verificationNote}>
-            * 수동 입력 자산은 라운지 입장 조건에 포함되지 않습니다
+            * 자산을 등록하면 자동으로 등급이 부여됩니다
           </Text>
         </View>
       </SafeAreaView>
     );
   }
 
-  // VIP 라운지 (자격 충족)
+  // ══════════════════════════════════════════
+  // VIP 라운지 (100만원 이상 — 입장 완료)
+  // ══════════════════════════════════════════
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
@@ -250,12 +290,47 @@ export default function LoungeScreen() {
               <Text style={styles.vipBadgeText}>VIP</Text>
             </View>
           </View>
-          <TouchableOpacity onPress={() => setIsComposing(true)}>
-            <Ionicons name="create-outline" size={24} color="#4CAF50" />
+          {/* 글쓰기 버튼: 1.5억 미만이면 잠금 아이콘 */}
+          <TouchableOpacity onPress={handleComposePress}>
+            <Ionicons
+              name={eligibility.canPost ? 'create-outline' : 'lock-closed-outline'}
+              size={24}
+              color={eligibility.canPost ? '#4CAF50' : '#666'}
+            />
           </TouchableOpacity>
         </View>
 
-        {/* 게시물 작성 영역 */}
+        {/* 카테고리 탭 */}
+        <View style={styles.categoryTabContainer}>
+          {(Object.keys(CATEGORY_INFO) as CommunityCategoryFilter[]).map((key) => {
+            const info = CATEGORY_INFO[key];
+            const isActive = selectedCategory === key;
+            return (
+              <TouchableOpacity
+                key={key}
+                style={[
+                  styles.categoryTab,
+                  isActive && { backgroundColor: info.color + '20', borderColor: info.color },
+                ]}
+                onPress={() => setSelectedCategory(key)}
+              >
+                <Ionicons
+                  name={info.icon as any}
+                  size={14}
+                  color={isActive ? info.color : '#888888'}
+                />
+                <Text style={[
+                  styles.categoryTabText,
+                  isActive && { color: info.color, fontWeight: '700' },
+                ]}>
+                  {info.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        {/* 게시물 작성 영역 (1.5억+ 전용) */}
         {isComposing && (
           <View style={styles.composeContainer}>
             <View style={styles.composeHeader}>
@@ -264,6 +339,37 @@ export default function LoungeScreen() {
                 <Ionicons name="close" size={24} color="#888888" />
               </TouchableOpacity>
             </View>
+
+            {/* 카테고리 선택 */}
+            <View style={styles.composeCategoryRow}>
+              {(['stocks', 'crypto', 'realestate'] as CommunityCategory[]).map((key) => {
+                const info = CATEGORY_INFO[key];
+                const isActive = postCategory === key;
+                return (
+                  <TouchableOpacity
+                    key={key}
+                    style={[
+                      styles.composeCategoryChip,
+                      isActive && { backgroundColor: info.color + '20', borderColor: info.color },
+                    ]}
+                    onPress={() => setPostCategory(key)}
+                  >
+                    <Ionicons
+                      name={info.icon as any}
+                      size={12}
+                      color={isActive ? info.color : '#888888'}
+                    />
+                    <Text style={[
+                      styles.composeCategoryText,
+                      isActive && { color: info.color },
+                    ]}>
+                      {info.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
             <TextInput
               style={styles.composeInput}
               placeholder="투자 인사이트를 공유해주세요..."
@@ -292,6 +398,11 @@ export default function LoungeScreen() {
                 )}
               </TouchableOpacity>
             </View>
+
+            {/* 보유종목 공개 안내 */}
+            <Text style={styles.holdingsNotice}>
+              게시물에 상위 보유종목이 자동으로 공개됩니다
+            </Text>
           </View>
         )}
 
@@ -306,14 +417,56 @@ export default function LoungeScreen() {
             />
           }
         >
-          {/* 환영 배너 */}
+          {/* 환영 배너 + 등급 안내 */}
           <View style={styles.welcomeBanner}>
-            <Text style={styles.welcomeIcon}>🎉</Text>
-            <View>
-              <Text style={styles.welcomeText}>VIP 회원님, 환영합니다!</Text>
-              <Text style={styles.welcomeSubtext}>
-                현재 자산: {formatInBillion(eligibility.totalAssets)}억
-              </Text>
+            <View style={styles.welcomeTop}>
+              <Text style={styles.welcomeIcon}>🏦</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.welcomeText}>VIP 회원님, 환영합니다!</Text>
+                <Text style={styles.welcomeSubtext}>
+                  현재 자산: {formatAmount(eligibility.totalAssets)}
+                </Text>
+              </View>
+            </View>
+
+            {/* 접근 등급 표시 */}
+            <View style={styles.accessBadgeRow}>
+              <View style={[styles.accessBadgeItem, { backgroundColor: 'rgba(76,175,80,0.15)' }]}>
+                <Ionicons name="eye" size={12} color="#4CAF50" />
+                <Text style={[styles.accessBadgeLabel, { color: '#4CAF50' }]}>열람</Text>
+              </View>
+              <View style={[
+                styles.accessBadgeItem,
+                { backgroundColor: eligibility.canComment ? 'rgba(33,150,243,0.15)' : 'rgba(100,100,100,0.15)' },
+              ]}>
+                <Ionicons
+                  name={eligibility.canComment ? 'chatbubble' : 'lock-closed'}
+                  size={12}
+                  color={eligibility.canComment ? '#2196F3' : '#666'}
+                />
+                <Text style={[
+                  styles.accessBadgeLabel,
+                  { color: eligibility.canComment ? '#2196F3' : '#666' },
+                ]}>
+                  댓글 {eligibility.canComment ? '' : '(1,000만+)'}
+                </Text>
+              </View>
+              <View style={[
+                styles.accessBadgeItem,
+                { backgroundColor: eligibility.canPost ? 'rgba(255,215,0,0.15)' : 'rgba(100,100,100,0.15)' },
+              ]}>
+                <Ionicons
+                  name={eligibility.canPost ? 'create' : 'lock-closed'}
+                  size={12}
+                  color={eligibility.canPost ? '#FFD700' : '#666'}
+                />
+                <Text style={[
+                  styles.accessBadgeLabel,
+                  { color: eligibility.canPost ? '#FFD700' : '#666' },
+                ]}>
+                  글쓰기 {eligibility.canPost ? '' : '(1.5억+)'}
+                </Text>
+              </View>
             </View>
           </View>
 
@@ -327,7 +480,10 @@ export default function LoungeScreen() {
               <CommunityPostCard
                 key={post.id}
                 post={post}
+                isLiked={myLikes?.has(post.id) ?? false}
                 onLike={handleLike}
+                onPress={handlePostPress}
+                onAuthorPress={handleAuthorPress}
               />
             ))
           ) : (
@@ -337,7 +493,9 @@ export default function LoungeScreen() {
                 아직 게시물이 없습니다
               </Text>
               <Text style={styles.emptyPostsSubtext}>
-                첫 번째 게시물을 작성해보세요!
+                {eligibility.canPost
+                  ? '첫 번째 게시물을 작성해보세요!'
+                  : '자산 1.5억 이상 회원이 게시물을 작성할 수 있습니다'}
               </Text>
             </View>
           )}
@@ -399,7 +557,7 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
 
-  // 잠금 화면 스타일
+  // ── 잠금 화면 ──
   lockedContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -425,8 +583,50 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#888888',
     textAlign: 'center',
-    marginBottom: 32,
+    marginBottom: 24,
+    lineHeight: 21,
   },
+
+  // ── 접근 등급 안내 ──
+  accessGuide: {
+    width: '100%',
+    backgroundColor: '#1E1E1E',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+  },
+  accessGuideTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 14,
+  },
+  accessTier: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 12,
+  },
+  accessDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  accessTierContent: {
+    flex: 1,
+  },
+  accessTierLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#DDD',
+  },
+  accessTierReq: {
+    fontSize: 11,
+    color: '#888',
+    marginTop: 1,
+  },
+
+  // ── 프로그레스 ──
   progressSection: {
     width: '100%',
     backgroundColor: '#1E1E1E',
@@ -461,18 +661,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#4CAF50',
     borderRadius: 4,
   },
-  progressFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
   progressShortfall: {
     fontSize: 13,
     color: '#FFC107',
   },
-  progressTarget: {
-    fontSize: 13,
-    color: '#888888',
-  },
+
   investButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -487,27 +680,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FFFFFF',
   },
-  requirementsList: {
-    width: '100%',
-    backgroundColor: '#1E1E1E',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    gap: 12,
-  },
-  requirementItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  requirementText: {
-    fontSize: 14,
-    color: '#888888',
-  },
-  requirementMet: {
-    color: '#4CAF50',
-    fontWeight: '600',
-  },
   verificationNote: {
     fontSize: 12,
     color: '#666666',
@@ -516,15 +688,18 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
 
-  // 환영 배너
+  // ── 환영 배너 ──
   welcomeBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
     backgroundColor: '#1A2E1A',
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
+  },
+  welcomeTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 12,
   },
   welcomeIcon: {
     fontSize: 32,
@@ -539,8 +714,24 @@ const styles = StyleSheet.create({
     color: '#888888',
     marginTop: 2,
   },
+  accessBadgeRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  accessBadgeItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  accessBadgeLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
 
-  // 게시물 작성
+  // ── 게시물 작성 ──
   composeContainer: {
     backgroundColor: '#1E1E1E',
     padding: 16,
@@ -588,8 +779,15 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FFFFFF',
   },
+  holdingsNotice: {
+    fontSize: 11,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 8,
+    fontStyle: 'italic',
+  },
 
-  // 게시물 목록
+  // ── 게시물 목록 ──
   postsLoading: {
     paddingVertical: 40,
     alignItems: 'center',
@@ -608,5 +806,51 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#888888',
     marginTop: 4,
+    textAlign: 'center',
+  },
+
+  // ── 카테고리 탭 ──
+  categoryTabContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    gap: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#2A2A2A',
+  },
+  categoryTab: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#333333',
+    backgroundColor: '#1E1E1E',
+  },
+  categoryTabText: {
+    fontSize: 12,
+    color: '#888888',
+  },
+  composeCategoryRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 12,
+  },
+  composeCategoryChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#333333',
+    backgroundColor: '#1E1E1E',
+  },
+  composeCategoryText: {
+    fontSize: 12,
+    color: '#888888',
   },
 });

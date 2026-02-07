@@ -176,6 +176,19 @@ export default function TaxReportScreen() {
 
         {/* 결과 */}
         {result && <TaxReportCard result={result} />}
+
+        {/* 세금 면책 문구 */}
+        <View style={styles.taxDisclaimer}>
+          <Text style={styles.taxDisclaimerTitle}>세금 관련 유의사항</Text>
+          <Text style={styles.taxDisclaimerText}>
+            • 본 리포트는 참고용 정보이며, 법적 효력이 있는 세무 자문이 아닙니다.{'\n'}
+            • 정확한 세무 처리를 위해 반드시 세무사 또는 공인 세무 전문가와 상담하시기 바랍니다.{'\n'}
+            • 세율 및 과세 기준은 관련 법령 개정에 따라 수시로 변경될 수 있습니다.{'\n'}
+            • 가상자산 양도소득세는 2027년 1월 1일 이후 양도분부터 시행 예정이며, 시행 시점이 변경될 수 있습니다.{'\n'}
+            • 해외주식 양도소득: 연간 250만원 기본공제 적용, 22% 세율(지방소득세 포함).{'\n'}
+            • 금융소득종합과세: 연 2,000만원 초과 시 종합소득에 합산 과세됩니다.
+          </Text>
+        </View>
       </ScrollView>
 
       <CreditGate
@@ -250,4 +263,23 @@ const styles = StyleSheet.create({
   },
   analyzeText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
   disabledButton: { opacity: 0.4 },
+  taxDisclaimer: {
+    marginTop: 20,
+    backgroundColor: 'rgba(102, 187, 106, 0.06)',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 0.5,
+    borderColor: 'rgba(102, 187, 106, 0.15)',
+  },
+  taxDisclaimerTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#66BB6A',
+    marginBottom: 10,
+  },
+  taxDisclaimerText: {
+    fontSize: 11,
+    color: '#888888',
+    lineHeight: 18,
+  },
 });

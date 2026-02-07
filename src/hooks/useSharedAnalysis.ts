@@ -20,6 +20,10 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   loadMorningBriefing,
+  computePortfolioHash,
+  getTodayPrescription,
+  savePrescription,
+  savePanicScoreToSnapshot,
   type CentralKitchenResult,
 } from '../services/centralKitchen';
 import {
@@ -39,6 +43,7 @@ import {
   type StockQuantReport,
   type GuruInsightsData,
 } from '../services/centralKitchen';
+import supabase from '../services/supabase';
 
 // 쿼리 키 (외부에서 invalidate 할 때 사용)
 export const AI_ANALYSIS_KEY = ['shared-ai-analysis'];
@@ -57,7 +62,15 @@ interface AIAnalysisData {
   source: string;
 }
 
-/** Morning Briefing + Risk Analysis 병렬 실행 */
+/**
+ * Morning Briefing + Risk Analysis (하루 한 번 처방전)
+ *
+ * [흐름]
+ * 1. 현재 유저 ID + 포트폴리오 해시 계산
+ * 2. DB에서 오늘 캐시 조회 (같은 날 + 같은 해시)
+ * 3-A. 캐시 히트 → 즉시 반환 (< 100ms, 새로고침해도 동일)
+ * 3-B. 캐시 미스 → Gemini 병렬 호출 → DB 저장 → 반환
+ */
 async function fetchAIAnalysis(
   portfolioAssets: PortfolioAsset[]
 ): Promise<AIAnalysisData> {
@@ -65,7 +78,31 @@ async function fetchAIAnalysis(
     return { morningBriefing: null, riskAnalysis: null, source: '' };
   }
 
-  // [핵심 최적화] 두 API를 병렬 실행 → 기존 직렬 대비 시간 절반
+  // 1) 유저 ID 가져오기
+  const { data: { user } } = await supabase.auth.getUser();
+  const userId = user?.id;
+
+  // 2) 포트폴리오 해시 계산
+  const portfolioHash = computePortfolioHash(portfolioAssets);
+
+  // 3) DB 캐시 조회 (유저 로그인 상태일 때만)
+  if (userId) {
+    try {
+      const cached = await getTodayPrescription(userId, portfolioHash);
+      if (cached) {
+        // 캐시 히트 → 즉시 반환 (새로고침해도 같은 내용)
+        return {
+          morningBriefing: cached.morningBriefing,
+          riskAnalysis: cached.riskAnalysis,
+          source: cached.source,
+        };
+      }
+    } catch (err) {
+      console.warn('[공유분석] 처방전 캐시 조회 실패, 라이브 진행:', err);
+    }
+  }
+
+  // 4) 캐시 미스 → Gemini 병렬 호출 (기존 로직 유지)
   const [kitchenResult, riskResult] = await Promise.all([
     loadMorningBriefing(portfolioAssets, { includeRealEstate: false })
       .catch((err) => {
@@ -79,11 +116,31 @@ async function fetchAIAnalysis(
       }),
   ]);
 
-  return {
+  const result: AIAnalysisData = {
     morningBriefing: kitchenResult?.morningBriefing ?? null,
     riskAnalysis: riskResult,
     source: kitchenResult?.source ?? 'failed',
   };
+
+  // 5) 결과를 DB에 저장 (백그라운드, 실패해도 무시)
+  if (userId && (result.morningBriefing || result.riskAnalysis)) {
+    savePrescription(
+      userId,
+      portfolioHash,
+      result.morningBriefing,
+      result.riskAnalysis,
+      result.source
+    ).catch(err => console.warn('[공유분석] 처방전 저장 실패:', err));
+  }
+
+  // 6) Panic Shield 점수를 오늘 스냅샷에 저장 (백그라운드, fire-and-forget)
+  // 캐시 히트 경로에서는 호출 안 함 (위에서 이미 return됨)
+  if (riskResult?.panicShieldIndex != null) {
+    savePanicScoreToSnapshot(riskResult.panicShieldIndex)
+      .catch(err => console.warn('[공유분석] Panic Score 저장 실패:', err));
+  }
+
+  return result;
 }
 
 /**

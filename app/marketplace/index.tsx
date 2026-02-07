@@ -410,10 +410,11 @@ export default function MarketplaceScreen() {
         )}
 
         {/* ── 8. 면책 문구 ── */}
-        <Text style={s.footerNote}>
-          AI 분석 결과는 투자 자문이 아닙니다.{'\n'}
-          투자 결정은 본인의 판단 하에 이루어져야 합니다.
-        </Text>
+        <View style={s.footerBox}>
+          <Text style={s.footerNote}>
+            본 서비스는 「자본시장과 금융투자업에 관한 법률」에 따른 투자자문업·투자일임업이 아니며, 금융위원회에 등록되지 않았습니다. AI 분석 결과는 일반적인 정보 제공 목적이며, 특정 금융상품의 매수·매도 권유가 아닙니다. 투자 원금의 일부 또는 전부를 잃을 수 있으며, 예금자보호법에 따른 보호 대상이 아닙니다. 크레딧 환불은 전자상거래법에 따라 구매 7일 이내 미사용분에 한해 가능합니다.
+          </Text>
+        </View>
 
       </ScrollView>
     </SafeAreaView>
@@ -744,13 +745,20 @@ const s = StyleSheet.create({
   },
 
   // ── 푸터 면책 ──
-  footerNote: {
-    color: '#333',
-    fontSize: 11,
-    textAlign: 'center',
-    lineHeight: 17,
-    paddingHorizontal: 20,
+  footerBox: {
+    marginHorizontal: 20,
     marginTop: 28,
     marginBottom: 8,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderRadius: 10,
+    padding: 14,
+    borderWidth: 0.5,
+    borderColor: 'rgba(255,255,255,0.06)',
+  },
+  footerNote: {
+    color: '#444',
+    fontSize: 10,
+    textAlign: 'center',
+    lineHeight: 16,
   },
 });
