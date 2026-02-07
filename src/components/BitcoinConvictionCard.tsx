@@ -30,7 +30,6 @@ const getSubScoreColor = (score: number): string => {
 // 점수 수준별 맥락 메시지 (고객이 "이 점수가 나한테 어떤 의미인지" 알 수 있도록)
 function getScoreContext(key: keyof BitcoinSubScores, score: number): string {
   if (key === 'fearGreed') {
-    // Fear & Greed는 역방향 해석: 공포(낮음) = 매수 기회, 탐욕(높음) = 주의
     if (score >= 70) return '시장이 과열 상태예요. 신중한 접근이 필요합니다';
     if (score >= 40) return '시장 분위기가 평온합니다';
     return '시장이 공포 상태예요. 역사적으로 매수 기회일 수 있습니다';
@@ -44,6 +43,11 @@ function getScoreContext(key: keyof BitcoinSubScores, score: number): string {
     if (score >= 70) return '중기 상승 추세가 견고해요';
     if (score >= 40) return '중기적으로 방향성을 탐색 중이에요';
     return '중기 하락 추세예요. 반등 시점 주시';
+  }
+  if (key === 'hashrate') {
+    if (score >= 70) return '네트워크 매우 건강 → 채굴자들의 장기 투자 확신 강함';
+    if (score >= 40) return '네트워크 안정적 → 채굴 인프라 정상 가동 중';
+    return '해시레이트 하락 → 채굴자 이탈 신호, 네트워크 주의 필요';
   }
   if (key === 'dominance') {
     if (score >= 70) return '비트코인 집중 현상 → 안전자산 선호 강함';
@@ -80,7 +84,7 @@ function getCompositeInterpretation(score: number): { title: string; message: st
   };
 }
 
-// 5개 팩터: 쉬운 이름 + 한 줄 설명
+// 6개 팩터: 쉬운 이름 + 한 줄 설명
 const SUB_SCORE_CONFIG: {
   key: keyof BitcoinSubScores;
   label: string;
@@ -93,20 +97,27 @@ const SUB_SCORE_CONFIG: {
     label: '시장 심리 온도',
     desc: '전 세계 투자자들이 지금 공포를 느끼는지, 탐욕을 느끼는지',
     icon: '🌡️',
-    weight: '25%',
+    weight: '20%',
   },
   {
     key: 'momentum7d',
     label: '최근 1주일 흐름',
     desc: '지난 7일간 비트코인 가격이 어느 방향으로 움직였는지',
     icon: '📈',
-    weight: '15%',
+    weight: '10%',
   },
   {
     key: 'momentum30d',
     label: '최근 1개월 추세',
     desc: '지난 30일간 중기 가격 흐름이 상승인지 하락인지',
     icon: '📊',
+    weight: '10%',
+  },
+  {
+    key: 'hashrate',
+    label: '해시레이트 건강도',
+    desc: '비트코인 채굴에 투입되는 전 세계 컴퓨팅 파워. 높을수록 네트워크가 안전하고, 채굴자들이 비트코인의 장기 가치를 믿고 투자하고 있다는 신호',
+    icon: '⛏️',
     weight: '15%',
   },
   {
@@ -118,8 +129,8 @@ const SUB_SCORE_CONFIG: {
   },
   {
     key: 'aiAnalysis',
-    label: 'AI 투자 매력도',
-    desc: 'AI가 해시레이트·규제·경제 상황을 종합 분석한 점수',
+    label: 'AI 종합 투자 매력도',
+    desc: 'AI가 규제·경제 상황·시장 전반을 종합 분석한 점수',
     icon: '🤖',
     weight: '30%',
   },

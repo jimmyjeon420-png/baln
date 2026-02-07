@@ -30,6 +30,12 @@ Thumbs.db
 .env.local
 .env.*.local
 
+# Apple credentials
+apple login/
+
+# Claude Code local settings
+.claude/settings.local.json
+
 # Build
 build/
 dist/

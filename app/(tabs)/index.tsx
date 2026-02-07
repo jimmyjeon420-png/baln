@@ -154,13 +154,20 @@ export default function HomeScreen() {
   const driftScore = useMemo(() => calculateDriftScore(allAssets, totalAssets), [allAssets, totalAssets]);
   const rebalanceScore = useMemo(() => calculateRebalanceScore(driftScore), [driftScore]);
 
-  // 보유 종목과 매칭된 시그널 목록
+  // [최적화] 리포트를 ticker로 인덱싱 (O(1) 조회 → 기존 O(n) find 제거)
+  const reportsByTicker = useMemo(() => {
+    const map = new Map<string, StockQuantReport>();
+    for (const report of stockReports) {
+      map.set(report.ticker, report);
+    }
+    return map;
+  }, [stockReports]);
+
+  // 보유 종목과 매칭된 시그널 목록 (O(n) — 기존 O(n×m))
   const matchedSignals = useMemo(() => {
-    if (stockReports.length === 0) return [];
-    return stockReports.map(report => {
-      const asset = liquidAssets.find(a => a.ticker === report.ticker);
-      return { ...report, asset };
-    }).filter(r => r.asset);
+    if (stockReports.length === 0 || liquidAssets.length === 0) return [];
+    const tickerSet = new Set(liquidAssets.map(a => a.ticker));
+    return stockReports.filter(r => tickerSet.has(r.ticker));
   }, [stockReports, liquidAssets]);
 
   // ======== 네비게이션 핸들러 ========
@@ -339,7 +346,8 @@ export default function HomeScreen() {
                 const costBasis = asset.costBasis || asset.currentValue;
                 const gainLoss = currentValue - costBasis;
                 const gainLossPercent = costBasis > 0 ? (gainLoss / costBasis) * 100 : 0;
-                const report = stockReports.find(r => r.ticker === asset.ticker);
+                // [최적화] Map.get O(1) 조회 (기존: find O(n))
+                const report = reportsByTicker.get(asset.ticker ?? '');
                 const signalDisplay = report ? getSignalDisplay(report.signal) : null;
 
                 return (

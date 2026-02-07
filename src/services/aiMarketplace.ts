@@ -276,23 +276,31 @@ export async function getFeatureHistory(
   featureType?: AIFeatureType,
   limit: number = 10
 ) {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return [];
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return [];
 
-  let query = supabase
-    .from('ai_feature_results')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-    .limit(limit);
+    let query = supabase
+      .from('ai_feature_results')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(limit);
 
-  if (featureType) {
-    query = query.eq('feature_type', featureType);
+    if (featureType) {
+      query = query.eq('feature_type', featureType);
+    }
+
+    const { data, error } = await query;
+    if (error) {
+      console.warn('[Marketplace] 히스토리 조회 실패 (빈 배열 반환):', error.message);
+      return [];
+    }
+    return data || [];
+  } catch (err) {
+    console.warn('[Marketplace] 히스토리 조회 실패 (빈 배열 반환):', err);
+    return [];
   }
-
-  const { data, error } = await query;
-  if (error) throw error;
-  return data || [];
 }
 
 // ============================================================================

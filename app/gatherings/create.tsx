@@ -178,7 +178,7 @@ export default function CreateGatheringScreen() {
     try {
       const gathering = await createMutation.mutateAsync({
         title: title.trim(),
-        description: description.trim() || null,
+        description: description.trim() || '',
         category,
         entry_fee: fee,
         max_capacity: maxCap,
@@ -188,14 +188,28 @@ export default function CreateGatheringScreen() {
         min_tier_required: minTierRequired,
       });
 
-      Alert.alert('완료', '모임이 생성되었습니다.', [
+      Alert.alert('완료', '모임이 생성되었습니다!', [
         {
           text: '확인',
-          onPress: () => router.replace(`/gatherings/${gathering.id}`),
+          onPress: () => router.back(),
         },
       ]);
     } catch (error: any) {
-      Alert.alert('오류', error.message || '모임 생성에 실패했습니다.');
+      // Supabase 에러 코드별 안내
+      const msg = error?.message || '';
+      const code = error?.code || '';
+
+      let userMessage = '모임 생성에 실패했습니다.';
+      if (code === '42501' || msg.includes('policy')) {
+        userMessage = 'DB 권한 설정이 필요합니다. Supabase 대시보드에서 gatherings 테이블의 RLS 정책을 확인해주세요.';
+      } else if (code === '42P01' || msg.includes('does not exist')) {
+        userMessage = 'gatherings 테이블이 없습니다. Supabase에서 마이그레이션을 실행해주세요.';
+      } else if (msg) {
+        userMessage = msg;
+      }
+
+      Alert.alert('모임 생성 오류', userMessage);
+      console.error('[CreateGathering] 에러:', code, msg, error);
     } finally {
       setSubmitting(false);
     }

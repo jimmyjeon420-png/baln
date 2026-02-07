@@ -19,21 +19,38 @@ import { UserTier } from '../types/database';
 // 잔액 조회
 // ============================================================================
 
-/** 내 크레딧 잔액 조회 */
+/** 내 크레딧 잔액 조회 (에러 시 기본값 반환 — 화면 로딩 차단 방지) */
 export async function getMyCredits(): Promise<UserCredits | null> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
 
-  const { data, error } = await supabase
-    .from('user_credits')
-    .select('*')
-    .eq('user_id', user.id)
-    .single();
+    const { data, error } = await supabase
+      .from('user_credits')
+      .select('*')
+      .eq('user_id', user.id)
+      .single();
 
-  if (error && error.code === 'PGRST116') {
-    // 레코드 없음 → 기본값 반환
+    // 레코드 없음 또는 테이블 미존재 → 기본값 반환
+    if (error) {
+      if (error.code !== 'PGRST116') {
+        console.warn('[Credits] 조회 실패 (기본값 사용):', error.message);
+      }
+      return {
+        user_id: user.id,
+        balance: 0,
+        lifetime_purchased: 0,
+        lifetime_spent: 0,
+        last_bonus_at: null,
+        updated_at: new Date().toISOString(),
+      };
+    }
+
+    return data as UserCredits;
+  } catch (err) {
+    console.warn('[Credits] 조회 실패 (기본값 사용):', err);
     return {
-      user_id: user.id,
+      user_id: 'unknown',
       balance: 0,
       lifetime_purchased: 0,
       lifetime_spent: 0,
@@ -41,9 +58,6 @@ export async function getMyCredits(): Promise<UserCredits | null> {
       updated_at: new Date().toISOString(),
     };
   }
-
-  if (error) throw error;
-  return data as UserCredits;
 }
 
 // ============================================================================

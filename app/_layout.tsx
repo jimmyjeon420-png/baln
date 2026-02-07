@@ -1,5 +1,5 @@
 import { Stack, useRouter, useSegments } from 'expo-router';
-import { View, AppState, AppStateStatus } from 'react-native';
+import { View, AppState, AppStateStatus, Alert } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useEffect, useRef, useState } from 'react';
@@ -12,6 +12,7 @@ import {
   syncNotificationSchedule,
 } from '../src/services/notifications';
 import * as Notifications from 'expo-notifications';
+import * as Updates from 'expo-updates';
 import BiometricLockScreen from '../src/components/BiometricLockScreen';
 import BrandSplash from '../src/components/BrandSplash';
 import { getBiometricSettings } from '../src/services/biometric';
@@ -100,14 +101,41 @@ export default function RootLayout() {
     return () => subscription.remove();
   }, []);
 
+  // OTA 업데이트 자동 확인 & 적용
   useEffect(() => {
-    // 알림 권한 요청 + 저장된 설정에 맞게 스케줄링
+    const checkForOTAUpdate = async () => {
+      try {
+        if (!Updates.isEnabled) return; // 개발 모드에서는 스킵
+        const update = await Updates.checkForUpdateAsync();
+        if (update.isAvailable) {
+          await Updates.fetchUpdateAsync();
+          // 업데이트 다운로드 완료 → 앱 재시작하여 적용
+          Alert.alert(
+            '업데이트 완료',
+            '새로운 버전이 준비되었습니다. 지금 적용할까요?',
+            [
+              { text: '나중에', style: 'cancel' },
+              { text: '적용', onPress: () => Updates.reloadAsync() },
+            ]
+          );
+        }
+      } catch (err) {
+        // 업데이트 체크 실패 시 무시 (네트워크 오류 등)
+        console.warn('[Updates] OTA 업데이트 확인 실패 (무시):', err);
+      }
+    };
+    checkForOTAUpdate();
+  }, []);
+
+  useEffect(() => {
+    // 알림 권한 + 설정 로드를 병렬 실행 (직렬 대비 ~200ms 단축)
     const setupNotifications = async () => {
       try {
-        const granted = await requestNotificationPermission();
+        const [granted, settings] = await Promise.all([
+          requestNotificationPermission(),
+          loadNotificationSettings(),
+        ]);
         if (granted) {
-          // 사용자가 저장한 알림 설정을 불러와서 스케줄 동기화
-          const settings = await loadNotificationSettings();
           await syncNotificationSchedule(settings);
         }
       } catch (err) {
@@ -173,6 +201,8 @@ export default function RootLayout() {
                 <Stack.Screen name="settings/privacy" options={{ headerShown: false }} />
                 {/* AI 프리미엄 마켓플레이스 */}
                 <Stack.Screen name="marketplace" options={{ headerShown: false }} />
+                {/* 티어 맞춤 전략 상세 */}
+                <Stack.Screen name="tier-strategy" options={{ headerShown: false }} />
               </Stack>
             </AuthGate>
             {/* 브랜드 스플래시 (앱 시작 시 'baln.logic' 표시) */}

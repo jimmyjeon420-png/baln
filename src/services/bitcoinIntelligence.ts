@@ -31,11 +31,12 @@ export const ZONE_CONFIG: Record<ScoreZone, { label: string; color: string; bgCo
   EXTREME_GREED: { label: '극도의 탐욕', color: '#4CAF50', bgColor: '#1A2E1A' },
 };
 
-/** 5개 팩터 점수 */
+/** 6개 팩터 점수 */
 export interface BitcoinSubScores {
-  fearGreed: number;       // Fear & Greed 지수 (25%)
-  momentum7d: number;      // 7일 가격 모멘텀 (15%)
-  momentum30d: number;     // 30일 가격 모멘텀 (15%)
+  fearGreed: number;       // Fear & Greed 지수 (20%)
+  momentum7d: number;      // 7일 가격 모멘텀 (10%)
+  momentum30d: number;     // 30일 가격 모멘텀 (10%)
+  hashrate: number;        // 해시레이트 네트워크 건강도 (15%)
   dominance: number;       // BTC 시장 지배율 (15%)
   aiAnalysis: number;      // AI 분석 (30%)
 }
@@ -43,6 +44,7 @@ export interface BitcoinSubScores {
 /** Gemini AI 인사이트 */
 export interface GeminiInsight {
   score: number;           // 0-100
+  hashrateScore: number;   // 해시레이트 건강도 점수 (0-100)
   hashrateTrend: string;   // 해시레이트 동향 요약
   politicsImpact: string;  // 정치/규제 영향 요약
   macroOutlook: string;    // 매크로 환경 요약
@@ -169,6 +171,7 @@ async function fetchMarketDominance(): Promise<number> {
 async function analyzeBitcoinWithGemini(): Promise<GeminiInsight> {
   const defaultInsight: GeminiInsight = {
     score: 50,
+    hashrateScore: 50,
     hashrateTrend: '데이터 없음',
     politicsImpact: '데이터 없음',
     macroOutlook: '데이터 없음',
@@ -193,15 +196,17 @@ async function analyzeBitcoinWithGemini(): Promise<GeminiInsight> {
 당신은 Goldman Sachs 디지털 자산 리서치팀 수석 분석가입니다.
 현재 비트코인(BTC)의 투자 매력도를 0-100 점수로 평가해주세요.
 
-다음 3가지 팩터를 반드시 분석하세요:
-1. **해시레이트 동향**: 비트코인 해시레이트의 최근 추세와 네트워크 보안 수준
+다음 4가지 팩터를 반드시 분석하세요:
+1. **해시레이트 건강도**: 비트코인 해시레이트의 최근 추세, 전월 대비 증감률, 네트워크 보안 수준. 해시레이트가 높을수록 채굴자들이 비트코인 네트워크에 장기 투자하고 있다는 신호입니다.
 2. **정치/규제 영향**: 미국, EU, 아시아 주요국의 최신 암호화폐 규제 동향 및 정치적 지지/반대
 3. **매크로 환경**: 미 연준 금리 전망, 달러 인덱스(DXY), 글로벌 유동성이 비트코인에 미치는 영향
+4. **종합 투자 매력도**: 위 3가지를 종합한 전체 평가
 
 반드시 아래 JSON 형식으로만 응답하세요 (다른 텍스트 없이):
 {
-  "score": (0-100 정수, 높을수록 강세),
-  "hashrateTrend": "(해시레이트 동향 1줄 요약, 한국어)",
+  "score": (0-100 정수, 종합 투자 매력도),
+  "hashrateScore": (0-100 정수, 해시레이트 건강도. 역대 최고치 대비 현재 수준 + 추세 반영. 높을수록 네트워크가 건강),
+  "hashrateTrend": "(해시레이트 동향 2줄 요약, 한국어. 수치와 추세 포함)",
   "politicsImpact": "(정치/규제 영향 1줄 요약, 한국어)",
   "macroOutlook": "(매크로 환경 1줄 요약, 한국어)",
   "keyEvents": ["(핵심 이벤트 1)", "(핵심 이벤트 2)", "(핵심 이벤트 3)"]
@@ -217,6 +222,7 @@ async function analyzeBitcoinWithGemini(): Promise<GeminiInsight> {
     const parsed = JSON.parse(jsonMatch[0]);
     return {
       score: Math.max(0, Math.min(100, parsed.score ?? 50)),
+      hashrateScore: Math.max(0, Math.min(100, parsed.hashrateScore ?? 50)),
       hashrateTrend: parsed.hashrateTrend || '데이터 없음',
       politicsImpact: parsed.politicsImpact || '데이터 없음',
       macroOutlook: parsed.macroOutlook || '데이터 없음',
@@ -246,6 +252,7 @@ export async function loadBitcoinIntelligence(): Promise<BitcoinIntelligenceResu
       fearGreed: 50,
       momentum7d: 50,
       momentum30d: 50,
+      hashrate: 50,
       dominance: 50,
       aiAnalysis: 50,
     },
@@ -272,6 +279,7 @@ export async function loadBitcoinIntelligence(): Promise<BitcoinIntelligenceResu
           fearGreed: 50,    // DB에는 개별 팩터가 없으므로 기본값
           momentum7d: 50,
           momentum30d: 50,
+          hashrate: 50,
           dominance: 50,
           aiAnalysis: score,
         },
@@ -279,6 +287,7 @@ export async function loadBitcoinIntelligence(): Promise<BitcoinIntelligenceResu
         priceChange24h: 0,
         aiInsight: {
           score,
+          hashrateScore: 50,
           hashrateTrend: '사전 분석 데이터',
           politicsImpact: ba.politicsImpact || '데이터 없음',
           macroOutlook: '사전 분석 데이터',
@@ -313,22 +322,25 @@ export async function loadBitcoinIntelligence(): Promise<BitcoinIntelligenceResu
     const momentum30dScore = normalizeMomentum(marketData.change30d);
     const dominanceScore = normalizeDominance(dominanceRaw);
     const aiScore = geminiInsight?.score ?? 50;
+    const hashrateScore = geminiInsight?.hashrateScore ?? 50;
 
     const subScores: BitcoinSubScores = {
       fearGreed,
       momentum7d: momentum7dScore,
       momentum30d: momentum30dScore,
+      hashrate: hashrateScore,
       dominance: dominanceScore,
       aiAnalysis: aiScore,
     };
 
     // ========================================================================
-    // 가중 평균 산출
+    // 가중 평균 산출 (6개 팩터, 합계 100%)
     // ========================================================================
     const compositeScore = Math.round(
-      subScores.fearGreed * 0.25 +
-      subScores.momentum7d * 0.15 +
-      subScores.momentum30d * 0.15 +
+      subScores.fearGreed * 0.20 +
+      subScores.momentum7d * 0.10 +
+      subScores.momentum30d * 0.10 +
+      subScores.hashrate * 0.15 +
       subScores.dominance * 0.15 +
       subScores.aiAnalysis * 0.30
     );

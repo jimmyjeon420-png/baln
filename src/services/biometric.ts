@@ -11,6 +11,9 @@ import * as SecureStore from 'expo-secure-store';
 const BIOMETRIC_ENABLED_KEY = 'biometric_enabled';
 const AUTO_LOCK_ENABLED_KEY = 'biometric_auto_lock';
 
+// 메모리 캐시 (앱 실행 중 1회 로드 후 재사용 → 포그라운드 복귀 시 0ms)
+let _cachedSettings: BiometricSettings | null = null;
+
 export interface BiometricSettings {
   biometricEnabled: boolean;
   autoLockEnabled: boolean;
@@ -68,29 +71,41 @@ export async function authenticateWithBiometric(): Promise<boolean> {
 }
 
 /**
- * SecureStore에서 저장된 설정 로드
+ * SecureStore에서 저장된 설정 로드 (메모리 캐시 우선)
+ * 포그라운드 복귀 시 SecureStore 접근 없이 즉시 반환 (0ms)
  */
 export async function getBiometricSettings(): Promise<BiometricSettings> {
-  try {
-    const biometricRaw = await SecureStore.getItemAsync(BIOMETRIC_ENABLED_KEY);
-    const autoLockRaw = await SecureStore.getItemAsync(AUTO_LOCK_ENABLED_KEY);
+  // 캐시 히트: SecureStore 접근 없이 즉시 반환
+  if (_cachedSettings) return _cachedSettings;
 
-    return {
+  try {
+    const [biometricRaw, autoLockRaw] = await Promise.all([
+      SecureStore.getItemAsync(BIOMETRIC_ENABLED_KEY),
+      SecureStore.getItemAsync(AUTO_LOCK_ENABLED_KEY),
+    ]);
+
+    _cachedSettings = {
       biometricEnabled: biometricRaw === 'true',
       autoLockEnabled: autoLockRaw !== 'false', // 기본값 true
     };
+    return _cachedSettings;
   } catch {
     return { biometricEnabled: false, autoLockEnabled: true };
   }
 }
 
 /**
- * SecureStore에 설정 저장
+ * SecureStore에 설정 저장 + 메모리 캐시 동기화
  */
 export async function saveBiometricSettings(settings: BiometricSettings): Promise<void> {
   try {
-    await SecureStore.setItemAsync(BIOMETRIC_ENABLED_KEY, String(settings.biometricEnabled));
-    await SecureStore.setItemAsync(AUTO_LOCK_ENABLED_KEY, String(settings.autoLockEnabled));
+    // 캐시 즉시 업데이트 (다음 getBiometricSettings 호출 시 SecureStore 접근 불필요)
+    _cachedSettings = { ...settings };
+
+    await Promise.all([
+      SecureStore.setItemAsync(BIOMETRIC_ENABLED_KEY, String(settings.biometricEnabled)),
+      SecureStore.setItemAsync(AUTO_LOCK_ENABLED_KEY, String(settings.autoLockEnabled)),
+    ]);
   } catch (err) {
     console.error('생체인증 설정 저장 실패:', err);
   }

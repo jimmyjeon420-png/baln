@@ -15,6 +15,7 @@ import {
   ScrollView,
   RefreshControl,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -28,53 +29,9 @@ import {
   TIER_LABELS,
   TIER_DESCRIPTIONS,
 } from '../../src/hooks/useGatherings';
-import { UserTier } from '../../src/types/database';
 import { useSharedPortfolio } from '../../src/hooks/useSharedPortfolio';
 import { useSharedAnalysis } from '../../src/hooks/useSharedAnalysis';
-
-// 티어별 맞춤 전략
-const TIER_STRATEGIES: Record<UserTier, { title: string; focus: string[]; color: string }> = {
-  SILVER: {
-    title: '공격적 시드머니 확대 전략',
-    focus: [
-      '고성장 ETF 중심 포트폴리오 구성',
-      '월급의 30% 이상 적극적 저축',
-      '분산 투자보다 집중 투자 고려',
-      '소액으로 시작하는 우량주 적립식 매수',
-    ],
-    color: '#C0C0C0',
-  },
-  GOLD: {
-    title: '포트폴리오 리밸런싱 & 세금 전략',
-    focus: [
-      '자산 배분 최적화 (주식 60% / 채권 30% / 현금 10%)',
-      '양도세 절세를 위한 손익통산 전략',
-      'ISA, 연금저축 한도 활용 극대화',
-      '분기별 정기 리밸런싱 실행',
-    ],
-    color: '#FFD700',
-  },
-  PLATINUM: {
-    title: '자산 보존 & 현금흐름 최적화',
-    focus: [
-      '배당주 중심 안정적 현금흐름 구축',
-      '부동산 간접투자(REITs) 편입 검토',
-      '채권 비중 확대로 변동성 관리',
-      '세대 간 자산 이전 전략 수립',
-    ],
-    color: '#E5E4E2',
-  },
-  DIAMOND: {
-    title: '패밀리 오피스 수준 자산 관리',
-    focus: [
-      '대체투자 (PE, VC, 헤지펀드) 편입',
-      '해외 자산 분산으로 환 리스크 관리',
-      '가족 재단/신탁 설립 검토',
-      '전문 자산관리사 위임 검토',
-    ],
-    color: '#B9F2FF',
-  },
-};
+import { TIER_STRATEGIES } from '../../src/constants/tierStrategy';
 
 export default function DiagnosisScreen() {
   const router = useRouter();
@@ -107,11 +64,12 @@ export default function DiagnosisScreen() {
     setRefreshing(false);
   };
 
-  // 로딩 판단: DB 미확인 or 포트폴리오 로딩 or 분석 미완료
+  // [점진적 로딩] 포트폴리오만 기다림 (100ms), AI 분석(3-8초)은 인라인 로딩
   const analysisFailed = analysisReady && hasAssets && !morningBriefing && !analysisResult;
-  const isAnalyzing = !initialCheckDone || portfolioLoading || (hasAssets && !analysisReady);
+  const isAILoading = hasAssets && !analysisReady;
 
-  if (isAnalyzing) {
+  // Phase 1: 포트폴리오 DB 확인 전 → 전체 스켈레톤 (100ms 이내)
+  if (!initialCheckDone || portfolioLoading) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <ScrollView>
@@ -120,6 +78,7 @@ export default function DiagnosisScreen() {
       </SafeAreaView>
     );
   }
+  // Phase 2: 포트폴리오 로드됨 → 헤더+전략 즉시 표시, AI 섹션은 인라인 로딩
 
   // 빈 포트폴리오 상태
   if (initialCheckDone && totalAssets === 0 && portfolio.length === 0) {
@@ -202,6 +161,19 @@ export default function DiagnosisScreen() {
             {TIER_DESCRIPTIONS[userTier]} 회원 맞춤 처방
           </Text>
         </View>
+
+        {/* AI 분석 인라인 로딩 (포트폴리오는 이미 표시, AI만 대기) */}
+        {isAILoading && (
+          <View style={styles.aiLoadingBanner}>
+            <ActivityIndicator size="small" color="#4CAF50" />
+            <View style={styles.aiLoadingTextWrap}>
+              <Text style={styles.aiLoadingTitle}>AI가 포트폴리오를 분석하고 있어요</Text>
+              <Text style={styles.aiLoadingDesc}>
+                시장 데이터를 수집하고 맞춤 처방전을 준비 중입니다...
+              </Text>
+            </View>
+          </View>
+        )}
 
         {/* Morning Briefing 카드 */}
         {morningBriefing && (
@@ -302,8 +274,15 @@ export default function DiagnosisScreen() {
           </View>
         )}
 
-        {/* 티어별 맞춤 전략 카드 */}
-        <View style={[styles.strategyCard, { borderColor: tierStrategy.color + '50' }]}>
+        {/* 티어별 맞춤 전략 카드 (탭 → 상세 페이지) */}
+        <TouchableOpacity
+          style={[styles.strategyCard, { borderColor: tierStrategy.color + '50' }]}
+          onPress={() => {
+            mediumTap();
+            router.push('/tier-strategy');
+          }}
+          activeOpacity={0.7}
+        >
           <View style={styles.strategyHeader}>
             <Ionicons name="bulb" size={24} color={tierStrategy.color} />
             <View style={styles.strategyHeaderText}>
@@ -321,7 +300,14 @@ export default function DiagnosisScreen() {
               </View>
             ))}
           </View>
-        </View>
+          {/* 전략 상세 보기 링크 */}
+          <View style={styles.strategyDetailLink}>
+            <Text style={[styles.strategyDetailText, { color: tierStrategy.color }]}>
+              전략 상세 보기
+            </Text>
+            <Ionicons name="chevron-forward" size={14} color={tierStrategy.color} />
+          </View>
+        </TouchableOpacity>
 
         {/* Panic Shield 카드 */}
         {analysisResult && (
@@ -593,6 +579,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#CCCCCC',
     lineHeight: 20,
+  },
+  strategyDetailLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 14,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: '#2A2A2A',
+    gap: 4,
+  },
+  strategyDetailText: {
+    fontSize: 13,
+    fontWeight: '600',
   },
   // Morning Briefing 스타일
   briefingCard: {
@@ -1000,5 +1000,30 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#FFFFFF',
     marginBottom: 12,
+  },
+  // AI 인라인 로딩 배너
+  aiLoadingBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(76, 175, 80, 0.08)',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    gap: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(76, 175, 80, 0.2)',
+  },
+  aiLoadingTextWrap: {
+    flex: 1,
+  },
+  aiLoadingTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  aiLoadingDesc: {
+    fontSize: 12,
+    color: '#888888',
+    marginTop: 2,
   },
 });

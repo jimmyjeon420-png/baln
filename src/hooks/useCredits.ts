@@ -22,7 +22,7 @@ export function useMyCredits() {
   return useQuery({
     queryKey: CREDITS_KEY,
     queryFn: getMyCredits,
-    staleTime: 1000 * 30, // 30초 (크레딧은 자주 변동)
+    staleTime: 1000 * 60 * 5, // 5분 (충전/차감 시 invalidate로 즉시 갱신)
   });
 }
 
@@ -72,7 +72,7 @@ export function useCreditHistory(limit: number = 20) {
   return useQuery({
     queryKey: [...CREDIT_HISTORY_KEY, limit],
     queryFn: () => getCreditHistory(limit),
-    staleTime: 1000 * 60, // 1분
+    staleTime: 1000 * 60 * 10, // 10분 (거래 내역은 자주 바뀌지 않음)
   });
 }
 

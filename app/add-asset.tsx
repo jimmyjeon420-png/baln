@@ -6,9 +6,11 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
+// 이미지 최대 높이 제한 (스크롤 편의성 + 메모리 절약)
+const MAX_IMAGE_HEIGHT = 500;
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { analyzeAssetImage, validateAssetData } from '../src/services/gemini';
-import { verifyAsset } from '../src/services/verification';
 import supabase from '../src/services/supabase';
 
 // 진단 트리거 플래그 키
@@ -18,10 +20,20 @@ const LAST_SCAN_DATE_KEY = '@smart_rebalancer:last_scan_date';
 // 입력 모드 타입
 type InputMode = 'self_declared' | 'ocr_verified';
 
+/** 타임아웃 래퍼: Promise/PromiseLike가 지정 시간 내 완료되지 않으면 reject */
+function withTimeout<T>(promise: PromiseLike<T>, ms: number, message: string): Promise<T> {
+  return Promise.race([
+    Promise.resolve(promise),
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error(message)), ms)
+    ),
+  ]);
+}
+
 export default function AddAssetScreen() {
   const router = useRouter();
   const [image, setImage] = useState<string | null>(null);
-  const [imageAspectRatio, setImageAspectRatio] = useState(0.5); // 기본 비율 (세로 스크린샷)
+  const [imageAspectRatio, setImageAspectRatio] = useState(0.5);
   const [imageBase64, setImageBase64] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [verifying, setVerifying] = useState(false);
@@ -44,17 +56,24 @@ export default function AddAssetScreen() {
         base64: true,
       });
 
-      if (!result.canceled && result.assets && result.assets[0].base64) {
+      if (!result.canceled && result.assets && result.assets[0]) {
         const asset = result.assets[0];
-        setImage(asset.uri);
-        setImageBase64(asset.base64);
+        const base64 = asset.base64;
 
-        // 이미지 실제 비율 계산 (스크린샷 원본 크기 유지)
+        // base64가 없으면 분석 불가
+        if (!base64) {
+          Alert.alert("오류", "이미지 데이터를 읽을 수 없습니다. 다른 이미지를 선택해주세요.");
+          return;
+        }
+
+        setImage(asset.uri);
+        setImageBase64(base64);
+
         if (asset.width && asset.height) {
           setImageAspectRatio(asset.width / asset.height);
         }
 
-        handleAnalyze(asset.base64);
+        handleAnalyze(base64);
       }
     } catch (error) {
       console.error("Image Picker Error:", error);
@@ -62,24 +81,25 @@ export default function AddAssetScreen() {
     }
   };
 
-  // 2. AI 분석 요청 (새로운 반환 형식 지원)
+  // 2. AI 분석 요청
   const handleAnalyze = async (base64: string) => {
     setLoading(true);
     try {
-      const result = await analyzeAssetImage(base64);
+      const result = await withTimeout(
+        analyzeAssetImage(base64),
+        60000, // 60초 타임아웃
+        'AI 분석 시간이 초과되었습니다. 다시 시도해주세요.'
+      );
       setLoading(false);
 
-      // 에러 체크
       if (result.error) {
         Alert.alert("분석 실패", result.error);
         return;
       }
 
-      // 새 형식: { assets, totalValueFromScreen, validation }
       const assets = result.assets || [];
 
       if (assets.length > 0) {
-        // 데이터 정제 (이미 gemini.ts에서 처리되었지만 안전을 위해)
         const validatedData = assets.map((item: any, index: number) => ({
           ticker: item.ticker || `UNKNOWN_${index}`,
           name: item.name || `자산 ${index + 1}`,
@@ -90,11 +110,9 @@ export default function AddAssetScreen() {
 
         setAnalyzedData(validatedData);
 
-        // 무결성 검증 결과 확인
         const validation = result.validation;
         const reviewCount = validatedData.filter((item: any) => item.needsReview).length;
 
-        // 검증 실패 시 경고 메시지
         if (validation && !validation.isValid) {
           Alert.alert(
             "⚠️ 데이터 인식 오류",
@@ -109,7 +127,6 @@ export default function AddAssetScreen() {
             `${validatedData.length}개 자산 추출 완료.\n⚠️ ${reviewCount}개 항목은 수동 확인이 필요합니다 (가격 또는 티커 불명확).`
           );
         } else {
-          // 검증 통과
           const totalValue = validatedData.reduce(
             (sum: number, item: any) => sum + (item.amount * item.price), 0
           );
@@ -124,19 +141,17 @@ export default function AddAssetScreen() {
     } catch (error) {
       setLoading(false);
       console.error("handleAnalyze Error:", error);
-      Alert.alert("오류", "이미지 분석 중 예기치 않은 오류가 발생했습니다.");
+      Alert.alert("오류", error instanceof Error ? error.message : "이미지 분석 중 예기치 않은 오류가 발생했습니다.");
     }
   };
 
   // 3. DB에 저장
   const saveAssets = async () => {
-    // 저장 전 유효성 검사
     if (analyzedData.length === 0) {
       Alert.alert("저장 불가", "저장할 자산이 없습니다.");
       return;
     }
 
-    // 검토 필요 항목 경고
     const reviewItems = analyzedData.filter((item) => item.needsReview);
     if (reviewItems.length > 0) {
       Alert.alert(
@@ -153,12 +168,12 @@ export default function AddAssetScreen() {
   };
 
   /**
-   * OCR 검증 실행 (개선된 무결성 검증)
-   * AI가 스크린샷 분석 → 가격 보정 → 5% 오차 이내 검증 → 검증 상태 결정
+   * OCR 검증 실행
+   * AI가 스크린샷 분석 → 가격 보정 → 5% 오차 이내 검증
    */
   const handleVerification = async () => {
     if (!imageBase64) {
-      Alert.alert('오류', '검증할 이미지가 없습니다.');
+      Alert.alert('오류', '검증할 이미지가 없습니다. 이미지를 다시 선택해주세요.');
       return;
     }
 
@@ -170,21 +185,30 @@ export default function AddAssetScreen() {
     setVerifying(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('로그인이 필요합니다.');
+      // 인증 상태 확인 (10초 타임아웃 — 네트워크 문제 시 무한 대기 방지)
+      const { data } = await withTimeout(
+        supabase.auth.getUser(),
+        10000,
+        '서버 연결 시간이 초과되었습니다. 네트워크를 확인해주세요.'
+      );
+
+      if (!data?.user) {
+        throw new Error('로그인이 필요합니다. 앱을 다시 시작해주세요.');
+      }
 
       // OCR 추출 총액 계산
       const calculatedTotal = analyzedData.reduce((sum, item) => {
         return sum + ((item.amount || 0) * (item.price || 0));
       }, 0);
 
+      if (calculatedTotal <= 0) {
+        throw new Error('자산 총액이 0원입니다. 가격을 확인해주세요.');
+      }
+
       // 무결성 검증 수행 (5% 오차 허용)
-      // NOTE: 사용자가 화면 총액을 입력하면 더 정확한 검증 가능
-      // 현재는 계산된 총액 기준으로 검증 (항상 통과)
       const validation = validateAssetData(analyzedData, calculatedTotal, 0.05);
 
       if (!validation.isValid) {
-        // 검증 실패 - 가격 보정 후 재확인 요청
         Alert.alert(
           '검증 실패',
           `${validation.errorMessage}\n\n계산 총액: ${validation.totalCalculated.toLocaleString()}원\n\n가격을 수동으로 확인해주세요.`,
@@ -194,7 +218,7 @@ export default function AddAssetScreen() {
       }
 
       // 검증 성공 - 보정된 데이터로 업데이트
-      if (validation.correctedAssets.length > 0) {
+      if (validation.correctedAssets && validation.correctedAssets.length > 0) {
         setAnalyzedData(validation.correctedAssets);
       }
 
@@ -207,21 +231,30 @@ export default function AddAssetScreen() {
       );
     } catch (error: any) {
       console.error('검증 실패:', error);
-      Alert.alert('검증 실패', error.message || '검증 중 오류가 발생했습니다.');
+      Alert.alert(
+        '검증 실패',
+        error.message || '검증 중 오류가 발생했습니다.\n\n네트워크 연결을 확인하고 다시 시도해주세요.',
+        [{ text: '확인' }]
+      );
     } finally {
+      // 항상 로딩 상태 해제 (무한 스피너 방지)
       setVerifying(false);
     }
   };
 
-  // 실제 저장 로직 (분리) - portfolios 테이블에 UPSERT
-  // CRITICAL: onConflict: 'user_id,name' 으로 중복 방지
+  // 실제 저장 로직 — portfolios 테이블에 UPSERT
   const performSave = async () => {
     try {
       setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("로그인이 필요합니다.");
 
-      // 유효한 자산만 필터링
+      const { data } = await withTimeout(
+        supabase.auth.getUser(),
+        10000,
+        '서버 연결 시간이 초과되었습니다.'
+      );
+
+      if (!data?.user) throw new Error("로그인이 필요합니다.");
+
       const validAssets = analyzedData.filter(
         (item) => item.ticker && item.ticker !== 'UNKNOWN' && item.name
       );
@@ -230,7 +263,6 @@ export default function AddAssetScreen() {
         throw new Error("유효한 자산이 없습니다. 티커와 이름을 확인해주세요.");
       }
 
-      // UPSERT할 데이터 배열 준비
       const upsertData = validAssets.map((item) => {
         const ticker = String(item.ticker).trim();
         const name = String(item.name || '알 수 없는 자산').trim();
@@ -238,7 +270,7 @@ export default function AddAssetScreen() {
         const price = Number(item.price) || 0;
 
         return {
-          user_id: user.id,
+          user_id: data.user.id,
           ticker: ticker,
           name: name,
           quantity: quantity,
@@ -251,30 +283,30 @@ export default function AddAssetScreen() {
         };
       });
 
-      // Supabase UPSERT 실행 (user_id + name 기준 중복 체크)
-      // NOTE: DB에 (user_id, name) UNIQUE 제약조건이 필요함
-      const { data, error: upsertError } = await supabase
-        .from('portfolios')
-        .upsert(upsertData, {
-          onConflict: 'user_id,name',
-          ignoreDuplicates: false,
-        })
-        .select();
+      const { data: savedData, error: upsertError } = await withTimeout(
+        supabase
+          .from('portfolios')
+          .upsert(upsertData, {
+            onConflict: 'user_id,name',
+            ignoreDuplicates: false,
+          })
+          .select(),
+        15000,
+        'DB 저장 시간이 초과되었습니다.'
+      );
 
       if (upsertError) {
         console.error("Upsert Error:", upsertError);
         throw upsertError;
       }
 
-      // 자동 진단 트리거 플래그 설정
       const today = new Date().toISOString().split('T')[0];
       await AsyncStorage.setItem(NEEDS_DIAGNOSIS_KEY, 'true');
       await AsyncStorage.setItem(LAST_SCAN_DATE_KEY, today);
 
       setLoading(false);
 
-      // 결과 메시지 및 진단 탭으로 이동
-      const savedCount = data?.length || upsertData.length;
+      const savedCount = savedData?.length || upsertData.length;
       Alert.alert(
         "✓ 등록 완료",
         `${savedCount}개 자산이 저장되었습니다.\n\nAI가 맞춤형 처방전을 준비합니다.`,
@@ -293,7 +325,7 @@ export default function AddAssetScreen() {
             onPress: () => {
               setAnalyzedData([]);
               setImage(null);
-              router.push('/(tabs)/portfolio');
+              router.back();
             }
           }
         ]
@@ -301,9 +333,18 @@ export default function AddAssetScreen() {
     } catch (error) {
       setLoading(false);
       console.error("Save Assets Error:", error);
-      Alert.alert("저장 실패", error instanceof Error ? error.message : "자산 저장 중 오류가 발생했습니다.");
+      Alert.alert(
+        "저장 실패",
+        error instanceof Error ? error.message : "자산 저장 중 오류가 발생했습니다.",
+        [{ text: '확인' }]
+      );
     }
   };
+
+  // 이미지 높이 계산 (최대 높이 제한)
+  const imageWidth = SCREEN_WIDTH - 32;
+  const rawHeight = imageWidth / imageAspectRatio;
+  const imageHeight = Math.min(rawHeight, MAX_IMAGE_HEIGHT);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -388,16 +429,13 @@ export default function AddAssetScreen() {
                 style={[
                   styles.image,
                   {
-                    // 화면 너비 기준으로 이미지 실제 비율에 맞게 높이 계산
-                    width: SCREEN_WIDTH - 32,
-                    height: (SCREEN_WIDTH - 32) / imageAspectRatio,
+                    width: imageWidth,
+                    height: imageHeight,
                   },
-                  // 분석 중일 때 이미지 약간 어둡게
                   loading && { opacity: 0.4 },
                 ]}
                 resizeMode="contain"
               />
-              {/* AI 분석 중 로딩 오버레이 */}
               {loading && (
                 <View style={styles.analysisOverlay}>
                   <ActivityIndicator size="large" color="#4CAF50" />
@@ -476,10 +514,13 @@ export default function AddAssetScreen() {
                     inputMode === 'ocr_verified' && styles.modeButtonVerified
                   ]}
                   onPress={() => handleVerification()}
-                  disabled={verifying || !imageBase64}
+                  disabled={verifying}
                 >
                   {verifying ? (
-                    <ActivityIndicator size="small" color="#4CAF50" />
+                    <>
+                      <ActivityIndicator size="small" color="#4CAF50" />
+                      <Text style={[styles.modeButtonText, { color: '#4CAF50' }]}>검증 중...</Text>
+                    </>
                   ) : (
                     <>
                       <Ionicons
@@ -520,14 +561,20 @@ export default function AddAssetScreen() {
               onPress={saveAssets}
               disabled={loading}
             >
-              <Ionicons
-                name={inputMode === 'ocr_verified' ? 'shield-checkmark' : 'save'}
-                size={20}
-                color="#FFFFFF"
-              />
-              <Text style={styles.saveButtonText}>
-                {inputMode === 'ocr_verified' ? '검증된 자산 등록' : '자산 등록 (수동)'}
-              </Text>
+              {loading ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <>
+                  <Ionicons
+                    name={inputMode === 'ocr_verified' ? 'shield-checkmark' : 'save'}
+                    size={20}
+                    color="#FFFFFF"
+                  />
+                  <Text style={styles.saveButtonText}>
+                    {inputMode === 'ocr_verified' ? '검증된 자산 등록' : '자산 등록 (수동)'}
+                  </Text>
+                </>
+              )}
             </TouchableOpacity>
           </View>
         )}
@@ -579,7 +626,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    bottom: 12, // image의 marginBottom 보정
+    bottom: 12,
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',

@@ -183,6 +183,73 @@ export class KostolanyLogic {
   }
 
   /**
+   * morningBriefing의 금리 확률 문자열을 파싱하여 InterestRateTrend 판별
+   * 예: "동결 65% / 인하 30% / 인상 5%" → FALLING (인하 확률이 높으면)
+   */
+  public deriveInterestRateTrend(interestRateProbability: string): InterestRateTrend {
+    if (!interestRateProbability) return InterestRateTrend.UNKNOWN;
+
+    const text = interestRateProbability.toLowerCase();
+    // 각 확률 추출 (한국어/영어 모두 지원)
+    const cutMatch = text.match(/(인하|cut|lower)\s*(\d+)/);
+    const holdMatch = text.match(/(동결|hold|pause|maintain)\s*(\d+)/);
+    const hikeMatch = text.match(/(인상|hike|raise|higher)\s*(\d+)/);
+
+    const cutProb = cutMatch ? parseInt(cutMatch[2], 10) : 0;
+    const holdProb = holdMatch ? parseInt(holdMatch[2], 10) : 0;
+    const hikeProb = hikeMatch ? parseInt(hikeMatch[2], 10) : 0;
+
+    // 가장 높은 확률 기반 판별
+    if (cutProb > holdProb && cutProb > hikeProb) {
+      return InterestRateTrend.FALLING;   // 인하 우세 → 금리 하락 중
+    }
+    if (hikeProb > holdProb && hikeProb > cutProb) {
+      return InterestRateTrend.RISING;    // 인상 우세 → 금리 상승 중
+    }
+    // 동결 우세: 이전 추세에 따라 PEAK 또는 BOTTOM 판별
+    // 금리가 이미 높은 수준이면 PEAK, 낮으면 BOTTOM
+    // 간단히: 인하 > 인상이면 PEAK (곧 내릴 예정), 인상 > 인하면 BOTTOM (곧 올릴 예정)
+    if (cutProb > hikeProb) {
+      return InterestRateTrend.PEAK;      // 동결 우세지만 인하 기대 → 고점
+    }
+    if (hikeProb > cutProb) {
+      return InterestRateTrend.BOTTOM;    // 동결 우세지만 인상 기대 → 저점
+    }
+    return InterestRateTrend.UNKNOWN;
+  }
+
+  /**
+   * morningBriefing 센티먼트 문자열 → MarketSentiment 매핑
+   */
+  public deriveMarketSentiment(marketSentiment: string): MarketSentiment {
+    if (!marketSentiment) return MarketSentiment.UNKNOWN;
+
+    const upper = marketSentiment.toUpperCase();
+    if (upper.includes('BULLISH') || upper.includes('낙관')) return MarketSentiment.OPTIMISTIC;
+    if (upper.includes('BEARISH') || upper.includes('비관')) return MarketSentiment.FEAR;
+    if (upper.includes('GREED') || upper.includes('탐욕')) return MarketSentiment.GREED;
+    if (upper.includes('CAUTIOUS') || upper.includes('조심') || upper.includes('주의')) return MarketSentiment.CAUTIOUS;
+    return MarketSentiment.NEUTRAL;
+  }
+
+  /**
+   * morningBriefing 데이터로 자동 Egg 분석
+   * 금리 확률 + 센티먼트 → 현재 사이클 단계 + 투자 액션
+   */
+  public analyzeFromBriefing(briefing: {
+    interestRateProbability: string;
+    marketSentiment: string;
+  }): EggCycleAnalysis {
+    const trend = this.deriveInterestRateTrend(briefing.interestRateProbability);
+    const sentiment = this.deriveMarketSentiment(briefing.marketSentiment);
+
+    return this.analyzePhase({
+      interestRateTrend: trend,
+      sentiment,
+    });
+  }
+
+  /**
    * 분석 결과 객체 생성 헬퍼
    */
   private createAnalysis(

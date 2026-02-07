@@ -24,14 +24,14 @@ import { COLORS, SIZES } from '../src/styles/theme';
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { signIn, signUp, signInWithOAuth } = useAuth();
+  const { signIn, signUp, signInWithOAuth, signInWithApple } = useAuth();
 
   // 상태
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSignUpMode, setIsSignUpMode] = useState(false);
-  const [loadingProvider, setLoadingProvider] = useState<OAuthProvider | null>(null);
+  const [loadingProvider, setLoadingProvider] = useState<OAuthProvider | 'apple' | null>(null);
 
   /**
    * 이메일 로그인/회원가입 처리
@@ -107,14 +107,34 @@ export default function LoginScreen() {
   };
 
   /**
-   * Apple 로그인 플레이스홀더 (준비 중)
+   * Apple 네이티브 로그인 처리 (iOS 전용)
    */
-  const handleAppleLogin = () => {
-    Alert.alert(
-      'Apple 로그인',
-      'Apple 로그인은 현재 준비 중입니다.\n곧 지원될 예정입니다.',
-      [{ text: '확인' }]
-    );
+  const handleAppleLogin = async () => {
+    setLoadingProvider('apple');
+
+    try {
+      await signInWithApple();
+      router.replace('/(tabs)');
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Apple 로그인 실패';
+
+      // 사용자 취소는 무시 (한국어/영어 모두 감지)
+      if (errorMessage.includes('cancel') || errorMessage.includes('취소')) {
+        return;
+      }
+
+      // 에러 메시지 매핑 (사용자 친화적)
+      let displayMessage = errorMessage;
+      if (errorMessage.includes('업데이트')) {
+        displayMessage = '현재 빌드에서 Apple 로그인을 사용할 수 없습니다.\n앱을 최신 버전으로 업데이트해주세요.';
+      } else if (errorMessage.includes('활성화')) {
+        displayMessage = 'Apple 로그인이 아직 준비 중입니다.\n다른 로그인 방법을 이용해주세요.';
+      }
+
+      Alert.alert('Apple 로그인 오류', displayMessage);
+    } finally {
+      setLoadingProvider(null);
+    }
   };
 
   const isAnyLoading = isLoading || loadingProvider !== null;
@@ -171,15 +191,21 @@ export default function LoginScreen() {
               )}
             </TouchableOpacity>
 
-            {/* Apple 로그인 (iOS에서만 표시, 플레이스홀더) */}
+            {/* Apple 로그인 (iOS에서만 표시) */}
             {Platform.OS === 'ios' && (
               <TouchableOpacity
                 style={[styles.socialButton, styles.appleButton]}
                 onPress={handleAppleLogin}
                 disabled={isAnyLoading}
               >
-                <Text style={styles.appleIcon}></Text>
-                <Text style={styles.appleButtonText}>Apple로 시작하기</Text>
+                {loadingProvider === 'apple' ? (
+                  <ActivityIndicator color="#FFFFFF" size="small" />
+                ) : (
+                  <>
+                    <Text style={styles.appleIcon}></Text>
+                    <Text style={styles.appleButtonText}>Apple로 시작하기</Text>
+                  </>
+                )}
               </TouchableOpacity>
             )}
           </View>

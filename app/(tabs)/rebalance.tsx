@@ -14,7 +14,7 @@
  * → 탭 전환 시 0ms (TanStack Query 캐시), Gemini 병렬 호출
  */
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -30,54 +30,12 @@ import { DiagnosisSkeletonLoader, SkeletonBlock } from '../../src/components/Ske
 import PanicShieldCard from '../../src/components/PanicShieldCard';
 import FomoVaccineCard from '../../src/components/FomoVaccineCard';
 import BitcoinConvictionCard from '../../src/components/BitcoinConvictionCard';
+import KostolanyEggCard from '../../src/components/KostolanyEggCard';
+import { KostolanyLogic } from '../../src/services/KostolanyLogic';
 import { TIER_LABELS } from '../../src/hooks/useGatherings';
-import { UserTier } from '../../src/types/database';
 import { useSharedPortfolio } from '../../src/hooks/useSharedPortfolio';
 import { useSharedAnalysis, useSharedBitcoin } from '../../src/hooks/useSharedAnalysis';
-
-// 티어별 맞춤 전략
-const TIER_STRATEGIES: Record<UserTier, { title: string; focus: string[]; color: string }> = {
-  SILVER: {
-    title: '공격적 시드머니 확대 전략',
-    focus: [
-      '고성장 ETF 중심 포트폴리오 구성',
-      '월급의 30% 이상 적극적 저축',
-      '분산 투자보다 집중 투자 고려',
-      '소액으로 시작하는 우량주 적립식 매수',
-    ],
-    color: '#C0C0C0',
-  },
-  GOLD: {
-    title: '포트폴리오 리밸런싱 & 세금 전략',
-    focus: [
-      '자산 배분 최적화 (주식 60% / 채권 30% / 현금 10%)',
-      '양도세 절세를 위한 손익통산 전략',
-      'ISA, 연금저축 한도 활용 극대화',
-      '분기별 정기 리밸런싱 실행',
-    ],
-    color: '#FFD700',
-  },
-  PLATINUM: {
-    title: '자산 보존 & 현금흐름 최적화',
-    focus: [
-      '배당주 중심 안정적 현금흐름 구축',
-      '부동산 간접투자(REITs) 편입 검토',
-      '채권 비중 확대로 변동성 관리',
-      '세대 간 자산 이전 전략 수립',
-    ],
-    color: '#E5E4E2',
-  },
-  DIAMOND: {
-    title: '패밀리 오피스 수준 자산 관리',
-    focus: [
-      '대체투자 (PE, VC, 헤지펀드) 편입',
-      '해외 자산 분산으로 환 리스크 관리',
-      '가족 재단/신탁 설립 검토',
-      '전문 자산관리사 위임 검토',
-    ],
-    color: '#B9F2FF',
-  },
-};
+import { TIER_STRATEGIES } from '../../src/constants/tierStrategy';
 
 // 요일 이름
 const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
@@ -95,10 +53,13 @@ export default function RebalanceScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   // 접기/펼치기 상태
+  const [showMarketDetail, setShowMarketDetail] = useState(false);
   const [showRiskDetail, setShowRiskDetail] = useState(false);
   const [showAssets, setShowAssets] = useState(false);
-  const [showStrategy, setShowStrategy] = useState(false);
   const [showAdvice, setShowAdvice] = useState(false);
+
+  // 오늘의 액션: 확장된 항목 인덱스 (null = 모두 접힘)
+  const [expandedActionIdx, setExpandedActionIdx] = useState<number | null>(null);
 
   // [성능 최적화] 공유 훅: 3개 탭이 같은 캐시 사용 → 탭 전환 시 0ms
   const {
@@ -194,6 +155,16 @@ export default function RebalanceScreen() {
     return (actionOrder[a.action] ?? 3) - (actionOrder[b.action] ?? 3);
   });
 
+  // 코스톨라니 달걀 분석 (morningBriefing 금리 데이터 기반)
+  const eggAnalysis = useMemo(() => {
+    if (!morningBriefing) return null;
+    const logic = KostolanyLogic.getInstance();
+    return logic.analyzeFromBriefing({
+      interestRateProbability: morningBriefing.macroSummary.interestRateProbability,
+      marketSentiment: morningBriefing.macroSummary.marketSentiment,
+    });
+  }, [morningBriefing]);
+
   // FOMO 경고 중 HIGH 개수
   const highFomoCount = analysisResult?.fomoAlerts.filter(a => a.severity === 'HIGH').length ?? 0;
   const panicLevel = analysisResult?.panicShieldLevel ?? 'SAFE';
@@ -273,28 +244,94 @@ export default function RebalanceScreen() {
                 <Text style={s.cardLabel}>시장 날씨</Text>
                 <Text style={s.cardLabelEn}>Market Sentiment</Text>
               </View>
-              <View style={[s.sentimentChip, { backgroundColor: sentimentColor + '20' }]}>
-                <View style={[s.sentimentDot, { backgroundColor: sentimentColor }]} />
-                <Text style={[s.sentimentText, { color: sentimentColor }]}>{sentimentLabel}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <View style={[s.sentimentChip, { backgroundColor: sentimentColor + '20' }]}>
+                  <View style={[s.sentimentDot, { backgroundColor: sentimentColor }]} />
+                  <Text style={[s.sentimentText, { color: sentimentColor }]}>{sentimentLabel}</Text>
+                </View>
+                <TouchableOpacity
+                  style={s.expandButton}
+                  onPress={() => setShowMarketDetail(!showMarketDetail)}
+                >
+                  <Text style={s.expandButtonText}>{showMarketDetail ? '접기' : '상세'}</Text>
+                  <Ionicons name={showMarketDetail ? 'chevron-up' : 'chevron-down'} size={14} color="#888" />
+                </TouchableOpacity>
               </View>
             </View>
 
-            {/* 매크로 하이라이트 (최대 3개) */}
+            {/* 매크로 요약 제목 */}
+            {morningBriefing.macroSummary.title && (
+              <Text style={s.marketTitle}>{morningBriefing.macroSummary.title}</Text>
+            )}
+
+            {/* 매크로 하이라이트 (접힌 상태: 3개, 펼친 상태: 전체) */}
             <View style={s.highlights}>
-              {morningBriefing.macroSummary.highlights.slice(0, 3).map((h, i) => (
+              {(showMarketDetail
+                ? morningBriefing.macroSummary.highlights
+                : morningBriefing.macroSummary.highlights.slice(0, 3)
+              ).map((h, i) => (
                 <View key={i} style={s.highlightRow}>
                   <Text style={s.highlightDot}>•</Text>
-                  <Text style={s.highlightText} numberOfLines={2}>{h}</Text>
+                  <Text style={s.highlightText} numberOfLines={showMarketDetail ? undefined : 2}>{h}</Text>
                 </View>
               ))}
             </View>
 
-            {/* 금리 전망 (콤팩트) */}
+            {/* 금리 전망 */}
             {morningBriefing.macroSummary.interestRateProbability && (
               <View style={s.rateBadge}>
                 <Ionicons name="trending-up" size={12} color="#FFC107" />
-                <Text style={s.rateText}>{morningBriefing.macroSummary.interestRateProbability}</Text>
+                <Text style={s.rateText} numberOfLines={showMarketDetail ? undefined : 1}>
+                  {morningBriefing.macroSummary.interestRateProbability}
+                </Text>
               </View>
+            )}
+
+            {/* ─── 상세 펼침 영역 ─── */}
+            {showMarketDetail && (
+              <View style={s.marketDetailContainer}>
+                {/* 부동산 인사이트 (있으면 표시) */}
+                {morningBriefing.realEstateInsight && (
+                  <View style={s.realEstateSection}>
+                    <View style={s.realEstateHeader}>
+                      <Ionicons name="home" size={14} color="#64B5F6" />
+                      <Text style={s.realEstateTitle}>{morningBriefing.realEstateInsight.title}</Text>
+                    </View>
+                    <Text style={s.realEstateAnalysis}>{morningBriefing.realEstateInsight.analysis}</Text>
+                    <View style={s.realEstateRecBadge}>
+                      <Ionicons name="bulb" size={12} color="#4CAF50" />
+                      <Text style={s.realEstateRecText}>{morningBriefing.realEstateInsight.recommendation}</Text>
+                    </View>
+                  </View>
+                )}
+
+                {/* CFO 날씨 상세 */}
+                <View style={s.cfoDetailSection}>
+                  <View style={s.cfoDetailHeader}>
+                    <Text style={s.cfoDetailEmoji}>{morningBriefing.cfoWeather.emoji}</Text>
+                    <Text style={s.cfoDetailStatus}>{morningBriefing.cfoWeather.status}</Text>
+                  </View>
+                  <Text style={s.cfoDetailMessage}>{morningBriefing.cfoWeather.message}</Text>
+                </View>
+
+                {/* 생성 시간 */}
+                <Text style={s.marketDetailTime}>
+                  분석 시간: {new Date(morningBriefing.generatedAt).toLocaleString('ko-KR', { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}
+                </Text>
+              </View>
+            )}
+
+            {/* 접힌 상태에서 "더보기" 힌트 */}
+            {!showMarketDetail && morningBriefing.macroSummary.highlights.length > 3 && (
+              <TouchableOpacity
+                style={s.showMoreHint}
+                onPress={() => setShowMarketDetail(true)}
+              >
+                <Text style={s.showMoreHintText}>
+                  +{morningBriefing.macroSummary.highlights.length - 3}개 항목 더보기
+                </Text>
+                <Ionicons name="chevron-down" size={12} color="#4CAF50" />
+              </TouchableOpacity>
             )}
           </View>
         )}
@@ -307,6 +344,29 @@ export default function RebalanceScreen() {
               <SkeletonBlock width="90%" height={14} />
               <SkeletonBlock width="75%" height={14} />
               <SkeletonBlock width="80%" height={14} />
+            </View>
+          </View>
+        )}
+
+        {/* ─── 2.5. 금리 사이클 나침반 (코스톨라니 달걀) ─── */}
+        {eggAnalysis && (
+          <KostolanyEggCard
+            analysis={eggAnalysis}
+            interestRateText={morningBriefing?.macroSummary.interestRateProbability}
+          />
+        )}
+
+        {/* AI 로딩 중 달걀 스켈레톤 */}
+        {isAILoading && !eggAnalysis && (
+          <View style={s.card}>
+            <SkeletonBlock width={140} height={16} />
+            <View style={{ marginTop: 14, flexDirection: 'row', gap: 12 }}>
+              <SkeletonBlock width={150} height={120} style={{ borderRadius: 12 }} />
+              <View style={{ flex: 1, gap: 8, justifyContent: 'center' }}>
+                <SkeletonBlock width={80} height={14} />
+                <SkeletonBlock width="100%" height={14} />
+                <SkeletonBlock width={100} height={28} style={{ borderRadius: 8 }} />
+              </View>
             </View>
           </View>
         )}
@@ -327,14 +387,39 @@ export default function RebalanceScreen() {
             {sortedActions.slice(0, 5).map((action, idx) => {
               const ac = ACTION_COLORS[action.action] || ACTION_COLORS.HOLD;
               const isHighPriority = action.priority === 'HIGH';
+              const isExpanded = expandedActionIdx === idx;
+
+              // 포트폴리오에서 해당 종목 찾기 (보유 현황 표시용)
+              const matchedAsset = portfolio.find(
+                a => a.ticker.toUpperCase() === action.ticker.toUpperCase()
+              );
+              const assetGl = matchedAsset && matchedAsset.avgPrice > 0
+                ? ((matchedAsset.currentPrice - matchedAsset.avgPrice) / matchedAsset.avgPrice) * 100
+                : null;
+              const assetWeight = matchedAsset && totalAssets > 0
+                ? ((matchedAsset.currentValue / totalAssets) * 100).toFixed(1)
+                : null;
+
+              // 우선순위 라벨 & 색상
+              const priorityConfig: Record<string, { label: string; color: string; bg: string }> = {
+                HIGH:   { label: '긴급', color: '#CF6679', bg: 'rgba(207,102,121,0.12)' },
+                MEDIUM: { label: '보통', color: '#FFC107', bg: 'rgba(255,193,7,0.12)' },
+                LOW:    { label: '참고', color: '#888888', bg: 'rgba(136,136,136,0.12)' },
+              };
+              const pc = priorityConfig[action.priority] || priorityConfig.LOW;
+
               return (
-                <View
+                <TouchableOpacity
                   key={idx}
+                  activeOpacity={0.7}
+                  onPress={() => setExpandedActionIdx(isExpanded ? null : idx)}
                   style={[
                     s.actionItem,
                     isHighPriority && { borderLeftWidth: 3, borderLeftColor: ac.text },
+                    isExpanded && s.actionItemExpanded,
                   ]}
                 >
+                  {/* 상단: 액션 뱃지 + 종목명 + 펼침 화살표 */}
                   <View style={s.actionTop}>
                     <View style={[s.actionBadge, { backgroundColor: ac.bg }]}>
                       <Text style={[s.actionBadgeText, { color: ac.text }]}>{ac.label}</Text>
@@ -346,9 +431,81 @@ export default function RebalanceScreen() {
                         <Text style={s.urgentDotText}>!</Text>
                       </View>
                     )}
+                    <Ionicons
+                      name={isExpanded ? 'chevron-up' : 'chevron-down'}
+                      size={14}
+                      color="#555"
+                    />
                   </View>
-                  <Text style={s.actionReason} numberOfLines={2}>{action.reason}</Text>
-                </View>
+
+                  {/* 접힌 상태: 사유 2줄 미리보기 */}
+                  {!isExpanded && (
+                    <Text style={s.actionReason} numberOfLines={2}>{action.reason}</Text>
+                  )}
+
+                  {/* ─── 펼친 상태: 상세 정보 ─── */}
+                  {isExpanded && (
+                    <View style={s.actionDetail}>
+                      {/* 우선순위 뱃지 */}
+                      <View style={[s.actionPriorityBadge, { backgroundColor: pc.bg }]}>
+                        <View style={[s.actionPriorityDot, { backgroundColor: pc.color }]} />
+                        <Text style={[s.actionPriorityText, { color: pc.color }]}>
+                          우선순위: {pc.label}
+                        </Text>
+                      </View>
+
+                      {/* 전체 사유 (줄수 제한 없음) */}
+                      <View style={s.actionReasonFull}>
+                        <Ionicons name="chatbubble-outline" size={13} color="#666" />
+                        <Text style={s.actionReasonFullText}>{action.reason}</Text>
+                      </View>
+
+                      {/* 내 보유 현황 (해당 종목이 포트폴리오에 있을 때만) */}
+                      {matchedAsset && (
+                        <View style={s.actionPortfolioInfo}>
+                          <Text style={s.actionPortfolioTitle}>내 보유 현황</Text>
+                          <View style={s.actionPortfolioRow}>
+                            <View style={s.actionPortfolioItem}>
+                              <Text style={s.actionPortfolioLabel}>현재가</Text>
+                              <Text style={s.actionPortfolioValue}>
+                                ₩{matchedAsset.currentPrice.toLocaleString()}
+                              </Text>
+                            </View>
+                            <View style={s.actionPortfolioDivider} />
+                            <View style={s.actionPortfolioItem}>
+                              <Text style={s.actionPortfolioLabel}>수익률</Text>
+                              <Text style={[
+                                s.actionPortfolioValue,
+                                { color: (assetGl ?? 0) >= 0 ? '#4CAF50' : '#CF6679' },
+                              ]}>
+                                {(assetGl ?? 0) >= 0 ? '+' : ''}{(assetGl ?? 0).toFixed(1)}%
+                              </Text>
+                            </View>
+                            <View style={s.actionPortfolioDivider} />
+                            <View style={s.actionPortfolioItem}>
+                              <Text style={s.actionPortfolioLabel}>비중</Text>
+                              <Text style={s.actionPortfolioValue}>{assetWeight}%</Text>
+                            </View>
+                          </View>
+                        </View>
+                      )}
+
+                      {/* AI 딥다이브 바로가기 */}
+                      <TouchableOpacity
+                        style={s.actionDeepDiveBtn}
+                        activeOpacity={0.7}
+                        onPress={() => router.push({
+                          pathname: '/marketplace',
+                          params: { ticker: action.ticker, feature: 'deep_dive' },
+                        })}
+                      >
+                        <Ionicons name="sparkles" size={14} color="#7C4DFF" />
+                        <Text style={s.actionDeepDiveText}>AI 딥다이브 분석 보기</Text>
+                        <Ionicons name="chevron-forward" size={14} color="#7C4DFF" />
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </TouchableOpacity>
               );
             })}
           </View>
@@ -492,30 +649,21 @@ export default function RebalanceScreen() {
           </View>
         )}
 
-        {/* ─── 7. 맞춤 전략 (접기/펼치기) ─── */}
+        {/* ─── 7. 맞춤 전략 (배너 카드 → 상세 페이지) ─── */}
         <TouchableOpacity
-          style={s.collapsibleHeader}
-          onPress={() => setShowStrategy(!showStrategy)}
+          style={[s.strategyBanner, { borderColor: tierStrategy.color + '30' }]}
+          onPress={() => router.push('/tier-strategy')}
           activeOpacity={0.7}
         >
-          <View style={s.collapsibleLeft}>
-            <Ionicons name="bulb-outline" size={16} color={tierStrategy.color} />
-            <Text style={s.collapsibleTitle}>{TIER_LABELS[userTier]} 맞춤 전략</Text>
+          <View style={[s.strategyBannerIcon, { backgroundColor: tierStrategy.color + '15' }]}>
+            <Ionicons name="bulb" size={20} color={tierStrategy.color} />
           </View>
-          <Ionicons name={showStrategy ? 'chevron-up' : 'chevron-down'} size={16} color="#888" />
+          <View style={s.strategyBannerText}>
+            <Text style={s.strategyBannerLabel}>{TIER_LABELS[userTier]} 맞춤 전략</Text>
+            <Text style={[s.strategyBannerTitle, { color: tierStrategy.color }]}>{tierStrategy.title}</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color="#666" />
         </TouchableOpacity>
-
-        {showStrategy && (
-          <View style={s.collapsibleBody}>
-            <Text style={[s.strategyTitle, { color: tierStrategy.color }]}>{tierStrategy.title}</Text>
-            {tierStrategy.focus.map((item, idx) => (
-              <View key={idx} style={s.strategyItem}>
-                <View style={[s.strategyBullet, { backgroundColor: tierStrategy.color }]} />
-                <Text style={s.strategyText}>{item}</Text>
-              </View>
-            ))}
-          </View>
-        )}
 
         {/* ─── 8. AI 맞춤 조언 (접기/펼치기) ─── */}
         {analysisResult && analysisResult.personalizedAdvice.length > 0 && (
@@ -751,6 +899,104 @@ const s = StyleSheet.create({
     fontSize: 12,
     color: '#FFC107',
     fontWeight: '500',
+    flex: 1,
+  },
+  // ── 시장 날씨 상세 ──
+  marketTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#DDD',
+    marginBottom: 10,
+  },
+  marketDetailContainer: {
+    marginTop: 14,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: '#222',
+    gap: 14,
+  },
+  realEstateSection: {
+    backgroundColor: 'rgba(100,181,246,0.06)',
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(100,181,246,0.1)',
+  },
+  realEstateHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 8,
+  },
+  realEstateTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#64B5F6',
+  },
+  realEstateAnalysis: {
+    fontSize: 13,
+    color: '#BBB',
+    lineHeight: 20,
+    marginBottom: 10,
+  },
+  realEstateRecBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(76,175,80,0.08)',
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 8,
+    gap: 6,
+  },
+  realEstateRecText: {
+    flex: 1,
+    fontSize: 12,
+    color: '#4CAF50',
+    fontWeight: '500',
+    lineHeight: 18,
+  },
+  cfoDetailSection: {
+    backgroundColor: 'rgba(76,175,80,0.06)',
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(76,175,80,0.08)',
+  },
+  cfoDetailHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 6,
+  },
+  cfoDetailEmoji: {
+    fontSize: 20,
+  },
+  cfoDetailStatus: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#4CAF50',
+  },
+  cfoDetailMessage: {
+    fontSize: 13,
+    color: '#CCC',
+    lineHeight: 20,
+  },
+  marketDetailTime: {
+    fontSize: 11,
+    color: '#555',
+    textAlign: 'right',
+  },
+  showMoreHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 10,
+    gap: 4,
+  },
+  showMoreHintText: {
+    fontSize: 12,
+    color: '#4CAF50',
+    fontWeight: '500',
   },
 
   // ── 오늘의 액션 ──
@@ -813,6 +1059,104 @@ const s = StyleSheet.create({
     fontSize: 12,
     color: '#999',
     lineHeight: 18,
+  },
+
+  // ── 액션 상세 (펼침) ──
+  actionItemExpanded: {
+    backgroundColor: '#1E1E1E',
+    borderWidth: 1,
+    borderColor: 'rgba(76,175,80,0.2)',
+  },
+  actionDetail: {
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#2A2A2A',
+    gap: 10,
+  },
+  actionPriorityBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    gap: 6,
+  },
+  actionPriorityDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  actionPriorityText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  actionReasonFull: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    padding: 12,
+    borderRadius: 10,
+  },
+  actionReasonFullText: {
+    flex: 1,
+    fontSize: 13,
+    color: '#CCC',
+    lineHeight: 20,
+  },
+  actionPortfolioInfo: {
+    backgroundColor: 'rgba(76,175,80,0.06)',
+    borderRadius: 10,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(76,175,80,0.1)',
+  },
+  actionPortfolioTitle: {
+    fontSize: 11,
+    color: '#888',
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  actionPortfolioRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  actionPortfolioItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  actionPortfolioDivider: {
+    width: 1,
+    height: 28,
+    backgroundColor: 'rgba(76,175,80,0.15)',
+  },
+  actionPortfolioLabel: {
+    fontSize: 10,
+    color: '#666',
+    marginBottom: 3,
+  },
+  actionPortfolioValue: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#FFF',
+  },
+  actionDeepDiveBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(124,77,255,0.08)',
+    paddingVertical: 10,
+    borderRadius: 10,
+    gap: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(124,77,255,0.15)',
+  },
+  actionDeepDiveText: {
+    fontSize: 12,
+    color: '#7C4DFF',
+    fontWeight: '600',
   },
 
   // ── 리스크 대시보드 ──
@@ -972,29 +1316,39 @@ const s = StyleSheet.create({
     marginTop: 2,
   },
 
-  // ── 맞춤 전략 ──
-  strategyTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    marginBottom: 12,
-  },
-  strategyItem: {
+  // ── 맞춤 전략 배너 ──
+  strategyBanner: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
-    marginBottom: 10,
+    alignItems: 'center',
+    marginHorizontal: 16,
+    marginBottom: 8,
+    padding: 16,
+    backgroundColor: '#141414',
+    borderRadius: 14,
+    borderWidth: 1,
+    gap: 12,
   },
-  strategyBullet: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
-    marginTop: 7,
+  strategyBannerIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  strategyText: {
+  strategyBannerText: {
     flex: 1,
-    fontSize: 13,
-    color: '#BBB',
-    lineHeight: 20,
+  },
+  strategyBannerLabel: {
+    fontSize: 11,
+    color: '#888',
+    fontWeight: '500',
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+  },
+  strategyBannerTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    marginTop: 2,
   },
 
   // ── AI 조언 ──

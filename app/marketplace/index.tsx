@@ -175,7 +175,7 @@ function getRecommendation(portfolio: any[]): Recommendation {
 export default function MarketplaceScreen() {
   const router = useRouter();
   const { mediumTap } = useHaptics();
-  const { data: credits, isLoading: creditsLoading, refetch: refetchCredits } = useMyCredits();
+  const { data: credits, refetch: refetchCredits } = useMyCredits();
   const { data: history } = useFeatureHistory(undefined, 5);
 
   const [userTier, setUserTier] = useState<UserTier>('SILVER');
@@ -219,8 +219,8 @@ export default function MarketplaceScreen() {
     router.push(`/marketplace/${route}` as any);
   };
 
-  // ── 로딩 상태 ──
-  if (!initialLoaded || (creditsLoading && !credits)) {
+  // ── 로딩 상태 (포트폴리오/티어 로드만 대기, 크레딧은 인라인 로딩) ──
+  if (!initialLoaded) {
     return (
       <SafeAreaView style={s.container}>
         <MarketplaceMainSkeleton />

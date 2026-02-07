@@ -366,23 +366,34 @@ export const useCreateGathering = () => {
         throw new Error('최소 입장 조건은 본인 등급 이하로만 설정할 수 있습니다.');
       }
 
-      const { data, error } = await supabase
+      const insertPayload = {
+        ...input,
+        host_id: user.id,
+        host_display_name: hostDisplayName,
+        host_verified_assets: totalAssets,
+        host_tier: hostTier,
+        min_tier_required: minTierRequired,
+        current_capacity: 0,
+        status: 'open',
+      };
+
+      // insert만 실행 (.select().single() 제거 → 스키마 캐시 불일치 방지)
+      const { error } = await supabase
         .from('gatherings')
-        .insert({
-          ...input,
-          host_id: user.id,
-          host_display_name: hostDisplayName,
-          host_verified_assets: totalAssets,
-          host_tier: hostTier,
-          min_tier_required: minTierRequired,
-          current_capacity: 0,
-          status: 'open',
-        })
-        .select()
-        .single();
+        .insert(insertPayload);
 
       if (error) throw error;
-      return data as Gathering;
+
+      // 생성된 모임을 별도 조회
+      const { data: created } = await supabase
+        .from('gatherings')
+        .select('*')
+        .eq('host_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      return (created || { id: 'new', ...insertPayload }) as Gathering;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['gatherings'] });

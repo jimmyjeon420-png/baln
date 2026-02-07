@@ -3,6 +3,14 @@ import { Session, User, Provider } from '@supabase/supabase-js';
 import { Platform, Alert } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
+// Optional import: 패키지 미설치 시에도 앱 크래시 방지
+let AppleAuthentication: any = null;
+try {
+  AppleAuthentication = require('expo-apple-authentication');
+} catch {
+  // expo-apple-authentication 미설치 → Apple 로그인 비활성화
+}
+import * as Crypto from 'expo-crypto';
 import supabase from '../services/supabase';
 
 // OAuth 세션 완료 처리 (웹 브라우저 팝업 자동 닫기)
@@ -29,6 +37,9 @@ interface AuthContextType {
 
   // OAuth 인증 함수
   signInWithOAuth: (provider: OAuthProvider) => Promise<void>;
+
+  // Apple 네이티브 인증
+  signInWithApple: () => Promise<void>;
 }
 
 /**
@@ -281,6 +292,78 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  /**
+   * Apple 네이티브 로그인
+   * iOS 전용: expo-apple-authentication SDK → Supabase signInWithIdToken
+   */
+  const signInWithApple = async () => {
+    try {
+      // 0. Apple 인증 네이티브 모듈 가용성 체크
+      if (!AppleAuthentication) {
+        throw new Error('현재 빌드에서 Apple 로그인을 사용할 수 없습니다');
+      }
+      const isAvailable = await AppleAuthentication.isAvailableAsync();
+      if (!isAvailable) {
+        throw new Error('앱을 최신 버전으로 업데이트해주세요');
+      }
+
+      // 1. 랜덤 nonce 생성 (보안용 1회성 토큰)
+      const rawNonce = Array.from(
+        { length: 32 },
+        () => Math.random().toString(36)[2] || '0'
+      ).join('');
+
+      // 2. SHA-256 해시 (Apple에 전달할 해시된 nonce)
+      const hashedNonce = await Crypto.digestStringAsync(
+        Crypto.CryptoDigestAlgorithm.SHA256,
+        rawNonce
+      );
+
+      // 3. Apple 네이티브 로그인 다이얼로그 호출
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+        nonce: hashedNonce,
+      });
+
+      if (!credential.identityToken) {
+        throw new Error('Apple에서 인증 토큰을 받지 못했습니다');
+      }
+
+      // 4. Supabase에 Apple ID 토큰으로 로그인
+      const { error } = await supabase.auth.signInWithIdToken({
+        provider: 'apple',
+        token: credential.identityToken,
+        nonce: rawNonce,
+      });
+
+      if (error) {
+        // Supabase에서 Apple provider 미활성화 에러
+        if (error.message?.includes('provider is not enabled')) {
+          throw new Error('서버에서 Apple 로그인이 아직 활성화되지 않았습니다');
+        }
+        throw new Error(error.message);
+      }
+
+      console.log('Apple 로그인 성공');
+    } catch (error: any) {
+      // 사용자가 취소한 경우 (Apple 고유 에러코드)
+      if (error.code === 'ERR_REQUEST_CANCELED') {
+        console.log('사용자가 Apple 로그인을 취소했습니다');
+        return;
+      }
+      // 네이티브 모듈 미설치 시 (안전장치)
+      if (error.code === 'ERR_UNAVAILABLE') {
+        console.error('Apple 인증 네이티브 모듈 없음');
+        throw new Error('앱을 최신 버전으로 업데이트해주세요');
+      }
+      console.error('Apple 로그인 실패:', error);
+      throw error;
+    }
+  };
+
   const value: AuthContextType = {
     session,
     user,
@@ -289,6 +372,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signUp,
     signOut,
     signInWithOAuth,
+    signInWithApple,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
