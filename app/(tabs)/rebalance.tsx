@@ -26,7 +26,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { DiagnosisSkeletonLoader } from '../../src/components/SkeletonLoader';
+import { DiagnosisSkeletonLoader, SkeletonBlock } from '../../src/components/SkeletonLoader';
 import PanicShieldCard from '../../src/components/PanicShieldCard';
 import FomoVaccineCard from '../../src/components/FomoVaccineCard';
 import BitcoinConvictionCard from '../../src/components/BitcoinConvictionCard';
@@ -134,9 +134,11 @@ export default function RebalanceScreen() {
   // ══════════════════════════════════════════
 
   const analysisFailed = analysisReady && hasAssets && !morningBriefing && !analysisResult;
-  const isAnalyzing = !initialCheckDone || portfolioLoading || (hasAssets && !analysisReady);
+  // 포트폴리오만 기다림 (AI 분석은 기다리지 않음 → 점진적 로딩)
+  const isPortfolioLoading = !initialCheckDone || portfolioLoading;
+  const isAILoading = hasAssets && !analysisReady;
 
-  if (isAnalyzing) {
+  if (isPortfolioLoading) {
     return (
       <SafeAreaView style={s.container} edges={['top']}>
         <ScrollView><DiagnosisSkeletonLoader /></ScrollView>
@@ -159,20 +161,6 @@ export default function RebalanceScreen() {
           <TouchableOpacity style={s.emptyButton} onPress={() => router.push('/add-asset')}>
             <Ionicons name="add-circle" size={20} color="#000" />
             <Text style={s.emptyButtonText}>자산 등록하기</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  if (analysisFailed) {
-    return (
-      <SafeAreaView style={s.container} edges={['top']}>
-        <View style={s.emptyContainer}>
-          <Ionicons name="alert-circle" size={48} color="#CF6679" />
-          <Text style={[s.emptyTitle, { color: '#CF6679' }]}>AI 분석 중 오류가 발생했습니다.</Text>
-          <TouchableOpacity style={s.emptyButton} onPress={onRefresh}>
-            <Text style={s.emptyButtonText}>다시 시도</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -258,6 +246,25 @@ export default function RebalanceScreen() {
           )}
         </View>
 
+        {/* ─── AI 분석 로딩 인디케이터 ─── */}
+        {isAILoading && (
+          <View style={s.aiLoadingBanner}>
+            <View style={s.aiLoadingDot} />
+            <Text style={s.aiLoadingText}>AI가 시장을 분석하고 있습니다...</Text>
+          </View>
+        )}
+
+        {/* ─── AI 분석 실패 ─── */}
+        {analysisFailed && (
+          <View style={s.aiErrorBanner}>
+            <Ionicons name="alert-circle" size={16} color="#CF6679" />
+            <Text style={s.aiErrorText}>AI 분석 실패</Text>
+            <TouchableOpacity onPress={onRefresh} style={s.aiRetryButton}>
+              <Text style={s.aiRetryText}>재시도</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* ─── 2. 시장 날씨 ─── */}
         {morningBriefing && (
           <View style={s.card}>
@@ -289,6 +296,18 @@ export default function RebalanceScreen() {
                 <Text style={s.rateText}>{morningBriefing.macroSummary.interestRateProbability}</Text>
               </View>
             )}
+          </View>
+        )}
+
+        {/* AI 로딩 중 시장 날씨 스켈레톤 */}
+        {isAILoading && !morningBriefing && (
+          <View style={s.card}>
+            <SkeletonBlock width={100} height={16} />
+            <View style={{ marginTop: 12, gap: 8 }}>
+              <SkeletonBlock width="90%" height={14} />
+              <SkeletonBlock width="75%" height={14} />
+              <SkeletonBlock width="80%" height={14} />
+            </View>
           </View>
         )}
 
@@ -332,6 +351,21 @@ export default function RebalanceScreen() {
                 </View>
               );
             })}
+          </View>
+        )}
+
+        {/* AI 로딩 중 액션 스켈레톤 */}
+        {isAILoading && sortedActions.length === 0 && (
+          <View style={s.card}>
+            <SkeletonBlock width={120} height={16} />
+            <View style={{ marginTop: 12, gap: 8 }}>
+              {[1, 2, 3].map(i => (
+                <View key={i} style={{ backgroundColor: '#1A1A1A', borderRadius: 12, padding: 14 }}>
+                  <SkeletonBlock width={60} height={14} style={{ marginBottom: 6 }} />
+                  <SkeletonBlock width="85%" height={12} />
+                </View>
+              ))}
+            </View>
           </View>
         )}
 
@@ -1032,6 +1066,62 @@ const s = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     color: '#000',
+  },
+
+  // ── AI 로딩 배너 ──
+  aiLoadingBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(76,175,80,0.06)',
+    marginHorizontal: 16,
+    marginBottom: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    gap: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(76,175,80,0.1)',
+  },
+  aiLoadingDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#4CAF50',
+  },
+  aiLoadingText: {
+    fontSize: 13,
+    color: '#4CAF50',
+    fontWeight: '500',
+  },
+  aiErrorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(207,102,121,0.06)',
+    marginHorizontal: 16,
+    marginBottom: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    gap: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(207,102,121,0.1)',
+  },
+  aiErrorText: {
+    flex: 1,
+    fontSize: 13,
+    color: '#CF6679',
+    fontWeight: '500',
+  },
+  aiRetryButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: 'rgba(207,102,121,0.15)',
+  },
+  aiRetryText: {
+    fontSize: 12,
+    color: '#CF6679',
+    fontWeight: '600',
   },
 
   // ── 면책 ──
