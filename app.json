@@ -16,7 +16,7 @@
       "**/*"
     ],
     "ios": {
-      "supportsTabletMode": false,
+      "supportsTablet": false,
       "bundleIdentifier": "com.smartrebalancer.app",
       "buildNumber": "1",
       "infoPlist": {
@@ -42,9 +42,23 @@
       "expo-web-browser",
       "@react-native-community/datetimepicker",
       "expo-secure-store",
-      "react-native-iap"
+      [
+        "react-native-iap",
+        {
+          "ios": {
+            "with-folly-no-coroutines": true
+          }
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "kotlinVersion": "2.2.0"
+          }
+        }
+      ]
     ],
-    "privacy": "public",
     "extra": {
       "eas": {
         "projectId": "0d967ba4-ad89-4a20-87fc-8d4cd28a5658"
