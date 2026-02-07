@@ -36,20 +36,24 @@ export default function DeepDiveScreen() {
   const [result, setResult] = useState<DeepDiveResult | null>(null);
   const [portfolio, setPortfolio] = useState<any[]>([]);
 
-  // 포트폴리오 & 티어 로드
+  // 포트폴리오 & 티어 로드 (에러 시에도 화면 렌더링 보장)
   useFocusEffect(
     useCallback(() => {
       const load = async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) return;
 
-        const [profileRes, portfolioRes] = await Promise.all([
-          supabase.from('profiles').select('tier').eq('id', user.id).single(),
-          supabase.from('portfolios').select('*').eq('user_id', user.id),
-        ]);
+          const [profileRes, portfolioRes] = await Promise.all([
+            supabase.from('profiles').select('tier').eq('id', user.id).single(),
+            supabase.from('portfolios').select('*').eq('user_id', user.id),
+          ]);
 
-        if (profileRes.data?.tier) setUserTier(profileRes.data.tier as UserTier);
-        if (portfolioRes.data) setPortfolio(portfolioRes.data);
+          if (profileRes.data?.tier) setUserTier(profileRes.data.tier as UserTier);
+          if (portfolioRes.data) setPortfolio(portfolioRes.data);
+        } catch (err) {
+          console.warn('[DeepDive] 데이터 로드 실패:', err);
+        }
       };
       load();
     }, [])

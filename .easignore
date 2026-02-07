@@ -1,0 +1,45 @@
+# EAS Build 전용 ignore 파일
+# .gitignore와 동일하지만 .env는 포함시킴 (빌드 시 환경변수 필요)
+
+# Expo
+.expo/
+.expo-shared/
+dist/
+npm-debug.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+web-build/
+
+# Node
+node_modules/
+package-lock.json
+yarn.lock
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# .env는 EAS 빌드에 포함 (Supabase, Gemini 등 환경변수 필요)
+# .env         ← 의도적으로 제외하지 않음
+.env.local
+.env.*.local
+
+# Build
+build/
+dist/
+.next/
+
+# Testing
+coverage/
+.nyc_output/
+
+nul

@@ -382,24 +382,37 @@ export default function AddAssetScreen() {
           </>
         ) : (
           <View style={styles.imageContainer}>
-            <Image
-              source={{ uri: image }}
-              style={[
-                styles.image,
-                {
-                  // 화면 너비 기준으로 이미지 실제 비율에 맞게 높이 계산
-                  width: SCREEN_WIDTH - 32,
-                  height: (SCREEN_WIDTH - 32) / imageAspectRatio,
-                },
-              ]}
-              resizeMode="contain"
-            />
+            <View style={{ position: 'relative' }}>
+              <Image
+                source={{ uri: image }}
+                style={[
+                  styles.image,
+                  {
+                    // 화면 너비 기준으로 이미지 실제 비율에 맞게 높이 계산
+                    width: SCREEN_WIDTH - 32,
+                    height: (SCREEN_WIDTH - 32) / imageAspectRatio,
+                  },
+                  // 분석 중일 때 이미지 약간 어둡게
+                  loading && { opacity: 0.4 },
+                ]}
+                resizeMode="contain"
+              />
+              {/* AI 분석 중 로딩 오버레이 */}
+              {loading && (
+                <View style={styles.analysisOverlay}>
+                  <ActivityIndicator size="large" color="#4CAF50" />
+                  <Text style={styles.analysisOverlayText}>AI가 자산을 분석하고 있어요...</Text>
+                </View>
+              )}
+            </View>
             <TouchableOpacity
               style={styles.changeImageButton}
               onPress={pickImage}
               disabled={loading}
             >
-              <Text style={styles.changeImageText}>다른 이미지 선택</Text>
+              <Text style={styles.changeImageText}>
+                {loading ? '분석 중...' : '다른 이미지 선택'}
+              </Text>
             </TouchableOpacity>
           </View>
         )}
@@ -560,6 +573,22 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     marginBottom: 24,
+  },
+  analysisOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 12, // image의 marginBottom 보정
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 12,
+  },
+  analysisOverlayText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '600',
   },
   image: {
     borderRadius: 12,

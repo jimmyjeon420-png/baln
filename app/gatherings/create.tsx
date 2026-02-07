@@ -30,6 +30,7 @@ import {
   getAvailableMinTiers,
 } from '../../src/hooks/useGatherings';
 import { Gathering, GATHERING_CATEGORY_LABELS, UserTier } from '../../src/types/database';
+import LocationSearchInput from '../../src/components/LocationSearchInput';
 
 // 컬러 팔레트
 const COLORS = {
@@ -340,22 +341,26 @@ export default function CreateGatheringScreen() {
           </View>
 
           {/* 장소/링크 */}
-          <View style={styles.formGroup}>
+          <View style={[styles.formGroup, locationType === 'offline' && { zIndex: 10 }]}>
             <Text style={styles.label}>
               {locationType === 'online' ? '미팅 링크' : '장소'} *
             </Text>
-            <TextInput
-              style={styles.input}
-              placeholder={
-                locationType === 'online'
-                  ? '예: https://zoom.us/j/123456'
-                  : '예: 강남역 스타벅스 리저브'
-              }
-              placeholderTextColor={COLORS.textMuted}
-              value={location}
-              onChangeText={setLocation}
-              autoCapitalize="none"
-            />
+            {locationType === 'offline' ? (
+              <LocationSearchInput
+                value={location}
+                onChangeText={setLocation}
+                placeholder="예: 강남역 스타벅스 리저브"
+              />
+            ) : (
+              <TextInput
+                style={styles.input}
+                placeholder="예: https://zoom.us/j/123456"
+                placeholderTextColor={COLORS.textMuted}
+                value={location}
+                onChangeText={setLocation}
+                autoCapitalize="none"
+              />
+            )}
           </View>
 
           {/* 일시 */}

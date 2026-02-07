@@ -9,9 +9,12 @@
  * 5. 비트코인 확신점수 (보유 시)
  * 6. 보유 자산 (접기 가능)
  * 7. 맞춤 전략 & 조언 (접기 가능)
+ *
+ * [성능 최적화] useSharedPortfolio + useSharedAnalysis + useSharedBitcoin 공유 훅 사용
+ * → 탭 전환 시 0ms (TanStack Query 캐시), Gemini 병렬 호출
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -21,34 +24,16 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DiagnosisSkeletonLoader } from '../../src/components/SkeletonLoader';
-import supabase from '../../src/services/supabase';
-import {
-  analyzePortfolioRisk,
-  RiskAnalysisResult,
-  PortfolioAsset,
-  generateMorningBriefing,
-  MorningBriefingResult,
-} from '../../src/services/gemini';
-
-const NEEDS_DIAGNOSIS_KEY = '@smart_rebalancer:needs_diagnosis';
-const LAST_SCAN_DATE_KEY = '@smart_rebalancer:last_scan_date';
 import PanicShieldCard from '../../src/components/PanicShieldCard';
 import FomoVaccineCard from '../../src/components/FomoVaccineCard';
 import BitcoinConvictionCard from '../../src/components/BitcoinConvictionCard';
-import {
-  loadBitcoinIntelligence,
-  BitcoinIntelligenceResult,
-} from '../../src/services/bitcoinIntelligence';
-import {
-  determineTier,
-  syncUserProfileTier,
-  TIER_LABELS,
-} from '../../src/hooks/useGatherings';
+import { TIER_LABELS } from '../../src/hooks/useGatherings';
 import { UserTier } from '../../src/types/database';
+import { useSharedPortfolio } from '../../src/hooks/useSharedPortfolio';
+import { useSharedAnalysis, useSharedBitcoin } from '../../src/hooks/useSharedAnalysis';
 
 // 티어별 맞춤 전략
 const TIER_STRATEGIES: Record<UserTier, { title: string; focus: string[]; color: string }> = {
@@ -107,16 +92,7 @@ const ACTION_COLORS: Record<string, { bg: string; text: string; label: string }>
 
 export default function RebalanceScreen() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [portfolio, setPortfolio] = useState<PortfolioAsset[]>([]);
-  const [totalAssets, setTotalAssets] = useState(0);
-  const [userTier, setUserTier] = useState<UserTier>('SILVER');
-  const [analysisResult, setAnalysisResult] = useState<RiskAnalysisResult | null>(null);
-  const [morningBriefing, setMorningBriefing] = useState<MorningBriefingResult | null>(null);
-  const [bitcoinIntelligence, setBitcoinIntelligence] = useState<BitcoinIntelligenceResult | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [initialCheckDone, setInitialCheckDone] = useState(false);
 
   // 접기/펼치기 상태
   const [showRiskDetail, setShowRiskDetail] = useState(false);
@@ -124,157 +100,41 @@ export default function RebalanceScreen() {
   const [showStrategy, setShowStrategy] = useState(false);
   const [showAdvice, setShowAdvice] = useState(false);
 
-  // ══════════════════════════════════════════
-  // 데이터 로딩 로직 (기존과 동일)
-  // ══════════════════════════════════════════
+  // [성능 최적화] 공유 훅: 3개 탭이 같은 캐시 사용 → 탭 전환 시 0ms
+  const {
+    portfolioAssets: portfolio,
+    totalAssets,
+    userTier,
+    isLoading: portfolioLoading,
+    isFetched: initialCheckDone,
+    hasAssets,
+    refresh: refreshPortfolio,
+  } = useSharedPortfolio();
 
-  const loadPortfolio = useCallback(async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setError('로그인이 필요합니다.');
-        return [];
-      }
+  // [성능 최적화] AI 분석 공유: Morning Briefing + Risk Analysis 병렬 실행
+  const {
+    morningBriefing,
+    riskAnalysis: analysisResult,
+    isFetched: analysisReady,
+    refresh: refreshAnalysis,
+  } = useSharedAnalysis(portfolio);
 
-      const { data, error: fetchError } = await supabase
-        .from('portfolios')
-        .select('*')
-        .eq('user_id', user.id);
+  // 비트코인 인텔리전스 (선택적, 별도 쿼리)
+  const { data: bitcoinIntelligence } = useSharedBitcoin();
 
-      if (fetchError) {
-        setError('포트폴리오 데이터를 불러올 수 없습니다.');
-        return [];
-      }
-
-      if (!data || data.length === 0) {
-        setTotalAssets(0);
-        setUserTier('SILVER');
-        setError(null);
-        return [];
-      }
-
-      const assets: PortfolioAsset[] = data.map((item: any) => ({
-        ticker: item.ticker || 'UNKNOWN',
-        name: item.name || '알 수 없는 자산',
-        quantity: item.quantity || 0,
-        avgPrice: item.avg_price || 0,
-        currentPrice: item.current_price || item.avg_price || 0,
-        currentValue: item.current_value || (item.quantity * (item.current_price || item.avg_price)) || 0,
-      }));
-
-      const total = assets.reduce((sum, a) => sum + a.currentValue, 0);
-      const tier = determineTier(total);
-      setTotalAssets(total);
-      setUserTier(tier);
-      syncUserProfileTier(user.id).catch(console.error);
-      setError(null);
-      return assets;
-    } catch (err) {
-      setError('데이터 로드 중 오류가 발생했습니다.');
-      return [];
-    }
-  }, []);
-
-  const runAnalysis = useCallback(async (assets: PortfolioAsset[]) => {
-    if (assets.length === 0) {
-      setAnalysisResult(null);
-      setMorningBriefing(null);
-      setBitcoinIntelligence(null);
-      return;
-    }
-
-    try {
-      const result = await analyzePortfolioRisk(assets);
-      setAnalysisResult(result);
-
-      const briefing = await generateMorningBriefing(assets, { includeRealEstate: false });
-      setMorningBriefing(briefing);
-
-      loadBitcoinIntelligence()
-        .then(setBitcoinIntelligence)
-        .catch((err) => console.warn('[Bitcoin] 로드 실패 (무시):', err));
-    } catch (err) {
-      setError('AI 분석 중 오류가 발생했습니다.');
-    }
-  }, []);
-
-  const checkNewScan = useCallback(async () => {
-    try {
-      const needsDiagnosis = await AsyncStorage.getItem(NEEDS_DIAGNOSIS_KEY);
-      const lastScanDate = await AsyncStorage.getItem(LAST_SCAN_DATE_KEY);
-      const today = new Date().toISOString().split('T')[0];
-      if (needsDiagnosis === 'true' && lastScanDate === today) {
-        await AsyncStorage.removeItem(NEEDS_DIAGNOSIS_KEY);
-      }
-    } catch (err) {}
-  }, []);
-
-  const loadAndAnalyze = useCallback(async (showLoading = true) => {
-    if (showLoading) setLoading(true);
-    const assets = await loadPortfolio();
-    setPortfolio(assets);
-    if (assets.length > 0) await runAnalysis(assets);
-    setLoading(false);
-    setRefreshing(false);
-  }, [loadPortfolio, runAnalysis]);
-
-  useFocusEffect(
-    useCallback(() => {
-      let isCancelled = false;
-
-      const loadDataOnFocus = async () => {
-        try {
-          const { data: { user } } = await supabase.auth.getUser();
-          if (!user || isCancelled) {
-            if (!isCancelled) { setInitialCheckDone(true); setLoading(false); }
-            return;
-          }
-
-          const { data: assetRows } = await supabase
-            .from('portfolios')
-            .select('current_value')
-            .eq('user_id', user.id);
-
-          if (isCancelled) return;
-
-          const realTotal = assetRows?.reduce(
-            (sum, item) => sum + (item.current_value || 0), 0
-          ) || 0;
-
-          setTotalAssets(realTotal);
-
-          if (realTotal > 0) {
-            await loadAndAnalyze(false);
-          } else {
-            setPortfolio([]);
-            setAnalysisResult(null);
-            setMorningBriefing(null);
-            setBitcoinIntelligence(null);
-            setLoading(false);
-          }
-        } catch (err) {
-          if (!isCancelled) await loadAndAnalyze(false);
-        } finally {
-          if (!isCancelled) setInitialCheckDone(true);
-        }
-      };
-
-      checkNewScan();
-      loadDataOnFocus();
-      return () => { isCancelled = true; };
-    }, [loadAndAnalyze, checkNewScan])
-  );
-
-  const onRefresh = useCallback(() => {
+  // Pull-to-refresh
+  const onRefresh = async () => {
     setRefreshing(true);
-    loadAndAnalyze(false);
-  }, [loadAndAnalyze]);
+    await Promise.all([refreshPortfolio(), refreshAnalysis()]);
+    setRefreshing(false);
+  };
 
   // ══════════════════════════════════════════
-  // 로딩 / 빈 상태 / 에러 (기존과 동일)
+  // 로딩 / 빈 상태 / 에러
   // ══════════════════════════════════════════
 
-  const isAnalyzing = !initialCheckDone || loading || (totalAssets > 0 && !morningBriefing);
+  const analysisFailed = analysisReady && hasAssets && !morningBriefing && !analysisResult;
+  const isAnalyzing = !initialCheckDone || portfolioLoading || (hasAssets && !analysisReady);
 
   if (isAnalyzing) {
     return (
@@ -305,13 +165,13 @@ export default function RebalanceScreen() {
     );
   }
 
-  if (error && !analysisResult) {
+  if (analysisFailed) {
     return (
       <SafeAreaView style={s.container} edges={['top']}>
         <View style={s.emptyContainer}>
           <Ionicons name="alert-circle" size={48} color="#CF6679" />
-          <Text style={[s.emptyTitle, { color: '#CF6679' }]}>{error}</Text>
-          <TouchableOpacity style={s.emptyButton} onPress={() => loadAndAnalyze()}>
+          <Text style={[s.emptyTitle, { color: '#CF6679' }]}>AI 분석 중 오류가 발생했습니다.</Text>
+          <TouchableOpacity style={s.emptyButton} onPress={onRefresh}>
             <Text style={s.emptyButtonText}>다시 시도</Text>
           </TouchableOpacity>
         </View>

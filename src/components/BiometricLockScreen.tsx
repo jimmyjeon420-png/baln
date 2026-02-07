@@ -4,7 +4,7 @@
  * - 생체인증 성공 시 해제
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { authenticateWithBiometric, getBiometricTypeName } from '../services/biometric';
@@ -16,22 +16,29 @@ interface BiometricLockScreenProps {
 export default function BiometricLockScreen({ onUnlock }: BiometricLockScreenProps) {
   const [biometricName, setBiometricName] = useState('생체 인증');
   const [authFailed, setAuthFailed] = useState(false);
+  const isAuthenticating = useRef(false); // 중복 인증 방지 가드
 
   useEffect(() => {
     getBiometricTypeName().then(setBiometricName);
-    // 마운트 시 자동으로 인증 시도
+    // 마운트 시 자동으로 인증 시도 (1회만)
     handleAuthenticate();
   }, []);
 
-  const handleAuthenticate = async () => {
+  const handleAuthenticate = useCallback(async () => {
+    // 이미 Face ID 진행 중이면 무시 (무한 루프 방지)
+    if (isAuthenticating.current) return;
+    isAuthenticating.current = true;
+
     setAuthFailed(false);
     const success = await authenticateWithBiometric();
+    isAuthenticating.current = false;
+
     if (success) {
       onUnlock();
     } else {
       setAuthFailed(true);
     }
-  };
+  }, [onUnlock]);
 
   return (
     <View style={styles.overlay}>

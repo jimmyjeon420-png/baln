@@ -285,10 +285,10 @@ const LICENSE_DATA: LicenseCategory[] = [
         description: '국제화(i18n) 텍스트 번역 엔진',
       },
       {
-        name: 'React Native Worklets Core',
-        version: '1.6.2',
+        name: 'React Native Worklets',
+        version: '0.5.1',
         license: 'MIT',
-        url: 'https://github.com/margelo/react-native-worklets-core',
+        url: 'https://github.com/software-mansion/react-native-worklets',
         description: 'UI 스레드 작업 처리 엔진',
       },
       {

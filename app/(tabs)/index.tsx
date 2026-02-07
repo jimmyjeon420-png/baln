@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,19 +8,15 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect, useRouter } from 'expo-router';
-import supabase from '../../src/services/supabase';
+import { useRouter } from 'expo-router';
 import { Asset, AssetType } from '../../src/types/asset';
-import { transformDbRowToAsset } from '../../src/utils/assetTransform';
 import { COLORS, SIZES } from '../../src/styles/theme';
 import RollingNumber from '../../src/components/RollingNumber';
 import { HomeSkeletonLoader, SkeletonBlock } from '../../src/components/SkeletonLoader';
 import { useHaptics } from '../../src/hooks/useHaptics';
-import {
-  getQuickMarketSentiment,
-  getTodayStockReports,
-  type StockQuantReport,
-} from '../../src/services/centralKitchen';
+import { useSharedPortfolio } from '../../src/hooks/useSharedPortfolio';
+import { useSharedMarketData } from '../../src/hooks/useSharedAnalysis';
+import type { StockQuantReport } from '../../src/services/centralKitchen';
 
 // ============================================================================
 // 유틸리티 함수
@@ -114,18 +110,21 @@ export default function HomeScreen() {
   const router = useRouter();
   const haptics = useHaptics();
 
-  // 포트폴리오 상태
-  const [isLoading, setIsLoading] = useState(true);
-  const [initialCheckDone, setInitialCheckDone] = useState(false);
-  const [totalAssets, setTotalAssets] = useState(0);
-  const [allAssets, setAllAssets] = useState<Asset[]>([]);
+  // [최적화] 공유 캐시 훅 — 포트폴리오 DB 조회 1회, 3분간 캐시
+  const {
+    assets: allAssets,
+    totalAssets,
+    liquidTickers,
+    isLoading: portfolioLoading,
+    isFetched: initialCheckDone,
+  } = useSharedPortfolio();
 
-  // Central Kitchen 상태
-  const [marketSentiment, setMarketSentiment] = useState<{
-    sentiment: 'BULLISH' | 'BEARISH' | 'NEUTRAL';
-    cfoWeather: { emoji: string; status: string; message: string } | null;
-  } | null>(null);
-  const [stockReports, setStockReports] = useState<StockQuantReport[]>([]);
+  // [최적화] 시장 데이터도 공유 캐시 — Central Kitchen DB 조회
+  const { data: marketData } = useSharedMarketData(liquidTickers);
+  const marketSentiment = marketData?.sentiment ?? null;
+  const stockReports: StockQuantReport[] = marketData?.stockReports ?? [];
+
+  const isLoading = portfolioLoading && !initialCheckDone;
 
   // 파생 데이터: 유동 자산만 필터 (주식/코인/ETF)
   const liquidAssets = useMemo(
@@ -163,79 +162,6 @@ export default function HomeScreen() {
       return { ...report, asset };
     }).filter(r => r.asset);
   }, [stockReports, liquidAssets]);
-
-  // ======== 데이터 로딩 ========
-  const loadAllData = useCallback(async () => {
-    try {
-      setIsLoading(true);
-
-      // 1) 유저 인증 확인
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) {
-        setTotalAssets(0);
-        setAllAssets([]);
-        setMarketSentiment(null);
-        setStockReports([]);
-        return;
-      }
-
-      // 2) 포트폴리오 로드
-      const { data, error } = await supabase
-        .from('portfolios')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('current_value', { ascending: false });
-
-      if (error) {
-        console.error('포트폴리오 데이터 로드 오류:', error);
-        setTotalAssets(0);
-        setAllAssets([]);
-        return;
-      }
-
-      let assets: Asset[] = [];
-      let total = 0;
-
-      if (data && data.length > 0) {
-        assets = data.map(transformDbRowToAsset);
-        total = assets.reduce((sum, asset) => {
-          if (asset.quantity && asset.currentPrice) {
-            return sum + (asset.quantity * asset.currentPrice);
-          }
-          return sum + asset.currentValue;
-        }, 0);
-      }
-
-      setTotalAssets(total);
-      setAllAssets(assets);
-
-      // 3) Central Kitchen 데이터 병렬 로드
-      const tickers = assets
-        .filter(a => a.assetType === AssetType.LIQUID && a.ticker)
-        .map(a => a.ticker!);
-
-      const [sentimentResult, reportsResult] = await Promise.all([
-        getQuickMarketSentiment().catch(() => null),
-        tickers.length > 0 ? getTodayStockReports(tickers).catch(() => []) : Promise.resolve([]),
-      ]);
-
-      setMarketSentiment(sentimentResult);
-      setStockReports(reportsResult);
-    } catch (err) {
-      console.error('홈 화면 데이터 로드 오류:', err);
-      setTotalAssets(0);
-      setAllAssets([]);
-    } finally {
-      setIsLoading(false);
-      setInitialCheckDone(true);
-    }
-  }, []);
-
-  useFocusEffect(
-    useCallback(() => {
-      loadAllData();
-    }, [loadAllData])
-  );
 
   // ======== 네비게이션 핸들러 ========
   const handleOCR = () => {

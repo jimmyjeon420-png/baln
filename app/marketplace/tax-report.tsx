@@ -39,16 +39,20 @@ export default function TaxReportScreen() {
   useFocusEffect(
     useCallback(() => {
       const load = async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) return;
 
-        const [profileRes, portfolioRes] = await Promise.all([
-          supabase.from('profiles').select('tier').eq('id', user.id).single(),
-          supabase.from('portfolios').select('*').eq('user_id', user.id),
-        ]);
+          const [profileRes, portfolioRes] = await Promise.all([
+            supabase.from('profiles').select('tier').eq('id', user.id).single(),
+            supabase.from('portfolios').select('*').eq('user_id', user.id),
+          ]);
 
-        if (profileRes.data?.tier) setUserTier(profileRes.data.tier as UserTier);
-        if (portfolioRes.data) setPortfolio(portfolioRes.data);
+          if (profileRes.data?.tier) setUserTier(profileRes.data.tier as UserTier);
+          if (portfolioRes.data) setPortfolio(portfolioRes.data);
+        } catch (err) {
+          console.warn('[TaxReport] 데이터 로드 실패:', err);
+        }
       };
       load();
     }, [])

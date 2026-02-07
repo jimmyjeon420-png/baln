@@ -61,6 +61,28 @@ export interface StockQuantReport {
   sector: string;
 }
 
+/** 투자 거장 개별 인사이트 */
+export interface GuruInsight {
+  guruName: string;          // "워렌 버핏"
+  guruNameEn: string;        // "Warren Buffett"
+  organization: string;      // "Berkshire Hathaway"
+  emoji: string;             // "🦉"
+  topic: string;             // "미국 대형 가치주"
+  recentAction: string;      // 최근 포트폴리오 변동/행동
+  quote: string;             // 공개 발언 인용
+  sentiment: 'BULLISH' | 'BEARISH' | 'NEUTRAL' | 'CAUTIOUS';
+  reasoning: string;         // AI 분석 2-3문장
+  relevantAssets: string[];  // 관련 티커
+  source: string;            // 뉴스 출처
+}
+
+/** guru_insights 테이블 행 */
+export interface GuruInsightsData {
+  date: string;
+  insights: GuruInsight[];
+  market_context: string | null;
+}
+
 /** Central Kitchen 통합 결과 (Morning Briefing에 퀀트 데이터 병합) */
 export interface CentralKitchenResult {
   /** Central Kitchen에서 가져왔는지 여부 */
@@ -312,4 +334,30 @@ export async function getQuickStockSignal(
     score: data.valuation_score,
     analysis: data.analysis,
   };
+}
+
+// ============================================================================
+// 투자 거장 인사이트 조회
+// ============================================================================
+
+/**
+ * 오늘의 투자 거장 인사이트 조회
+ * 글로벌 공유 데이터이므로 라이브 폴백 없음 (DB only)
+ * @returns GuruInsightsData 또는 null (데이터 없음)
+ */
+export async function getTodayGuruInsights(): Promise<GuruInsightsData | null> {
+  const today = new Date().toISOString().split('T')[0];
+
+  const { data, error } = await supabase
+    .from('guru_insights')
+    .select('*')
+    .eq('date', today)
+    .single();
+
+  if (error || !data) {
+    console.log('[Central Kitchen] 오늘의 거장 인사이트 없음');
+    return null;
+  }
+
+  return data as GuruInsightsData;
 }

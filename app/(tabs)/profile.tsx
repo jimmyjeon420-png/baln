@@ -37,6 +37,7 @@ export default function ProfileScreen() {
   const menuItems = [
     { icon: 'pulse', label: 'AI 진단', onPress: () => router.push('/(tabs)/diagnosis'), feature: true },
     { icon: 'diamond', label: 'VIP 커뮤니티', onPress: () => router.push('/settings/lounge'), highlight: true },
+    { icon: 'telescope', label: '투자 거장 인사이트', onPress: () => router.push('/settings/gurus'), feature: true },
     { icon: 'person-outline', label: '프로필 설정', onPress: () => router.push('/settings/profile') },
     { icon: 'notifications-outline', label: '알림 설정', onPress: () => router.push('/settings/notifications') },
     { icon: 'shield-checkmark-outline', label: '보안', onPress: () => router.push('/settings/security') },

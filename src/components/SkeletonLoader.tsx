@@ -207,6 +207,55 @@ export function HomeSkeletonLoader() {
   );
 }
 
+/** 투자 거장 인사이트 화면 전용 스켈레톤 */
+export function GuruInsightsSkeleton() {
+  return (
+    <View style={styles.container}>
+      {/* 시장 맥락 배너 */}
+      <View style={[styles.cardSkeleton, { height: 80 }]}>
+        <SkeletonBlock width={180} height={16} style={{ marginBottom: 10 }} />
+        <SkeletonBlock width="90%" height={14} />
+      </View>
+
+      {/* 필터 칩 */}
+      <View style={{ flexDirection: 'row', gap: 8, marginBottom: 4 }}>
+        {[60, 50, 50, 50, 50].map((w, i) => (
+          <SkeletonBlock key={i} width={w} height={32} borderRadius={16} />
+        ))}
+      </View>
+
+      {/* 거장 카드 3장 */}
+      {[1, 2, 3].map((i) => (
+        <View key={i} style={[styles.cardSkeleton, { height: 220 }]}>
+          {/* 거장 헤더 */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+            <SkeletonBlock width={40} height={40} borderRadius={20} />
+            <View style={{ flex: 1, gap: 4 }}>
+              <SkeletonBlock width={120} height={16} />
+              <SkeletonBlock width={160} height={12} />
+            </View>
+            <SkeletonBlock width={56} height={24} borderRadius={12} />
+          </View>
+          {/* 최근 행동 */}
+          <SkeletonBlock width={80} height={12} style={{ marginBottom: 6 }} />
+          <SkeletonBlock width="95%" height={14} style={{ marginBottom: 12 }} />
+          {/* 인용 */}
+          <SkeletonBlock width="85%" height={14} style={{ marginBottom: 12 }} />
+          {/* 분석 */}
+          <SkeletonBlock width="90%" height={14} style={{ marginBottom: 6 }} />
+          <SkeletonBlock width="70%" height={14} style={{ marginBottom: 12 }} />
+          {/* 관련 티커 */}
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <SkeletonBlock width={50} height={24} borderRadius={12} />
+            <SkeletonBlock width={50} height={24} borderRadius={12} />
+            <SkeletonBlock width={50} height={24} borderRadius={12} />
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+}
+
 export { SkeletonBlock };
 export default DiagnosisSkeletonLoader;
 

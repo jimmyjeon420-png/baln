@@ -8,8 +8,8 @@ import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import {
   configureNotificationHandler,
   requestNotificationPermission,
-  scheduleMorningBriefing,
-  scheduleInactivityReminder,
+  loadNotificationSettings,
+  syncNotificationSchedule,
 } from '../src/services/notifications';
 import * as Notifications from 'expo-notifications';
 import BiometricLockScreen from '../src/components/BiometricLockScreen';
@@ -62,14 +62,28 @@ export default function RootLayout() {
   const notificationListener = useRef<Notifications.EventSubscription>(null);
   const responseListener = useRef<Notifications.EventSubscription>(null);
   const [isLocked, setIsLocked] = useState(false);
+  const isLockedRef = useRef(false); // 클로저 내부에서 최신 상태 접근용
   const [showSplash, setShowSplash] = useState(true); // 브랜드 스플래시 표시 여부
   const appState = useRef(AppState.currentState);
 
+  // isLocked 변경 시 ref 동기화
+  useEffect(() => {
+    isLockedRef.current = isLocked;
+  }, [isLocked]);
+
   // AppState 변화 감지 → 백그라운드에서 복귀 시 잠금
+  // [핵심] background → active만 감지 (inactive → active는 무시)
+  // Face ID 팝업이 뜨면 iOS가 앱을 inactive로 바꾸는데,
+  // 이를 감지하면 Face ID 해제 직후 다시 잠금이 걸려 무한 루프 발생
   useEffect(() => {
     const handleAppStateChange = async (nextState: AppStateStatus) => {
-      // background/inactive → active 전환 시
-      if (appState.current.match(/inactive|background/) && nextState === 'active') {
+      // background → active 전환 시에만 잠금 (inactive는 무시)
+      if (appState.current === 'background' && nextState === 'active') {
+        // 이미 잠겨있으면 중복 트리거 방지
+        if (isLockedRef.current) {
+          appState.current = nextState;
+          return;
+        }
         try {
           const settings = await getBiometricSettings();
           if (settings.biometricEnabled && settings.autoLockEnabled) {
@@ -87,13 +101,14 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
-    // 알림 권한 요청 + 스케줄링 (비동기, 실패해도 앱 크래시 안 함)
+    // 알림 권한 요청 + 저장된 설정에 맞게 스케줄링
     const setupNotifications = async () => {
       try {
         const granted = await requestNotificationPermission();
         if (granted) {
-          await scheduleMorningBriefing();
-          await scheduleInactivityReminder();
+          // 사용자가 저장한 알림 설정을 불러와서 스케줄 동기화
+          const settings = await loadNotificationSettings();
+          await syncNotificationSchedule(settings);
         }
       } catch (err) {
         console.error('Notification setup failed (non-fatal):', err);

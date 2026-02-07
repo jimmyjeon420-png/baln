@@ -2,9 +2,12 @@
  * AI 진단 화면 - Panic Shield & FOMO Vaccine
  * 행동재무학 기반 포트폴리오 리스크 분석
  * 티어별 맞춤 처방 제공
+ *
+ * [성능 최적화] useSharedPortfolio + useSharedAnalysis 공유 훅 사용
+ * → 탭 전환 시 0ms (TanStack Query 캐시), Gemini 병렬 호출
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -14,33 +17,20 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import supabase from '../../src/services/supabase';
-import {
-  analyzePortfolioRisk,
-  RiskAnalysisResult,
-  PortfolioAsset,
-  MorningBriefingResult,
-} from '../../src/services/gemini';
-import { loadMorningBriefing } from '../../src/services/centralKitchen';
-
-// 진단 트리거 플래그 키
-const NEEDS_DIAGNOSIS_KEY = '@smart_rebalancer:needs_diagnosis';
-const LAST_SCAN_DATE_KEY = '@smart_rebalancer:last_scan_date';
 import PanicShieldCard from '../../src/components/PanicShieldCard';
 import FomoVaccineCard from '../../src/components/FomoVaccineCard';
 import { DiagnosisSkeletonLoader } from '../../src/components/SkeletonLoader';
 import ShareableCard from '../../src/components/ShareableCard';
 import { useHaptics } from '../../src/hooks/useHaptics';
 import {
-  determineTier,
-  syncUserProfileTier,
   TIER_LABELS,
   TIER_DESCRIPTIONS,
 } from '../../src/hooks/useGatherings';
 import { UserTier } from '../../src/types/database';
+import { useSharedPortfolio } from '../../src/hooks/useSharedPortfolio';
+import { useSharedAnalysis } from '../../src/hooks/useSharedAnalysis';
 
 // 티어별 맞춤 전략
 const TIER_STRATEGIES: Record<UserTier, { title: string; focus: string[]; color: string }> = {
@@ -89,227 +79,37 @@ const TIER_STRATEGIES: Record<UserTier, { title: string; focus: string[]; color:
 export default function DiagnosisScreen() {
   const router = useRouter();
   const { mediumTap } = useHaptics();
-  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [portfolio, setPortfolio] = useState<PortfolioAsset[]>([]);
-  const [totalAssets, setTotalAssets] = useState(0);
-  const [userTier, setUserTier] = useState<UserTier>('SILVER');
-  const [analysisResult, setAnalysisResult] = useState<RiskAnalysisResult | null>(null);
-  const [morningBriefing, setMorningBriefing] = useState<MorningBriefingResult | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  // [핵심] DB 조회 완료 여부 - 이 값이 true가 되기 전까지 Empty State 표시 금지
-  const [initialCheckDone, setInitialCheckDone] = useState(false);
 
-  // 포트폴리오 데이터 로드 및 티어 계산
-  const loadPortfolio = useCallback(async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setError('로그인이 필요합니다.');
-        return [];
-      }
+  // [성능 최적화] 공유 훅: 3개 탭이 같은 캐시 사용 → 탭 전환 시 0ms
+  const {
+    portfolioAssets: portfolio,
+    totalAssets,
+    userTier,
+    isLoading: portfolioLoading,
+    isFetched: initialCheckDone,
+    hasAssets,
+    refresh: refreshPortfolio,
+  } = useSharedPortfolio();
 
-      const { data, error: fetchError } = await supabase
-        .from('portfolios')
-        .select('*')
-        .eq('user_id', user.id);
-
-      if (fetchError) {
-        console.error('Portfolio fetch error:', fetchError);
-        setError('포트폴리오 데이터를 불러올 수 없습니다.');
-        return [];
-      }
-
-      if (!data || data.length === 0) {
-        setTotalAssets(0);
-        setUserTier('SILVER');
-        setError(null);
-        return [];
-      }
-
-      // DB 데이터를 PortfolioAsset 형태로 변환
-      const assets: PortfolioAsset[] = data.map((item: any) => ({
-        ticker: item.ticker || 'UNKNOWN',
-        name: item.name || '알 수 없는 자산',
-        quantity: item.quantity || 0,
-        avgPrice: item.avg_price || 0,
-        currentPrice: item.current_price || item.avg_price || 0,
-        currentValue: item.current_value || (item.quantity * (item.current_price || item.avg_price)) || 0,
-      }));
-
-      // 총 자산 및 티어 계산
-      const total = assets.reduce((sum, a) => sum + a.currentValue, 0);
-      const tier = determineTier(total);
-      setTotalAssets(total);
-      setUserTier(tier);
-
-      // 프로필 티어 동기화 (백그라운드)
-      syncUserProfileTier(user.id).catch(console.error);
-
-      setError(null);
-      return assets;
-    } catch (err) {
-      console.error('Load portfolio error:', err);
-      setError('데이터 로드 중 오류가 발생했습니다.');
-      return [];
-    }
-  }, []);
-
-  // AI 분석 실행
-  // [Central Kitchen] DB 사전 계산 데이터 우선 → 없으면 라이브 Gemini 폴백
-  // 타임아웃: 15초 내 응답 없으면 에러 처리 (무한 로딩 방지)
-  const runAnalysis = useCallback(async (assets: PortfolioAsset[]) => {
-    if (assets.length === 0) {
-      setAnalysisResult(null);
-      setMorningBriefing(null);
-      return;
-    }
-
-    // 타임아웃 헬퍼: 지정 시간 내 응답 없으면 자동 실패
-    const withTimeout = <T,>(promise: Promise<T>, ms: number, label: string): Promise<T> =>
-      Promise.race([
-        promise,
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error(`${label} 응답 시간 초과 (${ms / 1000}초)`)), ms)
-        ),
-      ]);
-
-    try {
-      // Morning Briefing: Central Kitchen 우선 조회 (< 100ms)
-      // DB에 오늘 데이터 없으면 자동으로 라이브 Gemini 호출 (3-8초)
-      const kitchenResult = await withTimeout(
-        loadMorningBriefing(assets, { includeRealEstate: false }),
-        15000,
-        'Morning Briefing'
-      );
-      setMorningBriefing(kitchenResult.morningBriefing);
-
-      if (kitchenResult.source === 'central-kitchen') {
-        console.log('[진단] Central Kitchen 데이터 사용 (빠른 경로)');
-      } else {
-        console.log('[진단] 라이브 Gemini 폴백 사용');
-      }
-
-      // Panic Shield & FOMO Vaccine 분석 (유저별 맞춤이므로 항상 라이브)
-      const result = await withTimeout(
-        analyzePortfolioRisk(assets),
-        15000,
-        'Panic Shield 분석'
-      );
-      setAnalysisResult(result);
-    } catch (err: any) {
-      console.error('Analysis error:', err);
-      setError(err?.message || 'AI 분석 중 오류가 발생했습니다.');
-    }
-  }, []);
-
-  // 신규 스캔 확인 (AsyncStorage 플래그 클리어 부수효과)
-  const checkNewScan = useCallback(async () => {
-    try {
-      const needsDiagnosis = await AsyncStorage.getItem(NEEDS_DIAGNOSIS_KEY);
-      const lastScanDate = await AsyncStorage.getItem(LAST_SCAN_DATE_KEY);
-      const today = new Date().toISOString().split('T')[0];
-
-      if (needsDiagnosis === 'true' && lastScanDate === today) {
-        await AsyncStorage.removeItem(NEEDS_DIAGNOSIS_KEY);
-      }
-    } catch (err) {
-      console.error('Check new scan error:', err);
-    }
-  }, []);
-
-  // 데이터 로드 및 분석
-  const loadAndAnalyze = useCallback(async (showLoading = true) => {
-    if (showLoading) setLoading(true);
-
-    const assets = await loadPortfolio();
-    setPortfolio(assets);
-
-    if (assets.length > 0) {
-      await runAnalysis(assets);
-    }
-
-    setLoading(false);
-    setRefreshing(false);
-  }, [loadPortfolio, runAnalysis]);
-
-  // [핵심 수정] useFocusEffect를 유일한 데이터 로드 진입점으로 사용
-  // 초기 마운트 + 탭 재진입 모두 이 하나의 로직으로 처리
-  useFocusEffect(
-    useCallback(() => {
-      let isCancelled = false;
-
-      const loadDataOnFocus = async () => {
-        try {
-          const { data: { user } } = await supabase.auth.getUser();
-          if (!user || isCancelled) {
-            if (!isCancelled) {
-              setInitialCheckDone(true);
-              setLoading(false);
-            }
-            return;
-          }
-
-          // [핵심] portfolios 테이블 직접 조회 - profiles 동기화 대기 안함
-          const { data: assetRows } = await supabase
-            .from('portfolios')
-            .select('current_value')
-            .eq('user_id', user.id);
-
-          if (isCancelled) return;
-
-          const realTotal = assetRows?.reduce(
-            (sum, item) => sum + (item.current_value || 0),
-            0
-          ) || 0;
-
-          // [핵심] totalAssets를 즉시 반영 → Empty State 노출 차단
-          setTotalAssets(realTotal);
-
-          if (realTotal > 0) {
-            // 자산이 있으면 무조건 전체 분석 실행
-            await loadAndAnalyze(false);
-          } else {
-            // 자산이 없는 경우에만 빈 상태로 전환
-            setPortfolio([]);
-            setAnalysisResult(null);
-            setMorningBriefing(null);
-            setLoading(false);
-          }
-        } catch (err) {
-          console.error('Focus data load failed:', err);
-          if (!isCancelled) {
-            // 에러 시에도 기존 로직 폴백
-            await loadAndAnalyze(false);
-          }
-        } finally {
-          if (!isCancelled) {
-            setInitialCheckDone(true);
-          }
-        }
-      };
-
-      // 신규 스캔 확인 (비동기, 렌더링 차단 안함)
-      checkNewScan();
-      loadDataOnFocus();
-
-      // 화면 이탈 시 취소 플래그
-      return () => { isCancelled = true; };
-    }, [loadAndAnalyze, checkNewScan])
-  );
+  // [성능 최적화] AI 분석 공유: Morning Briefing + Risk Analysis 병렬 실행
+  const {
+    morningBriefing,
+    riskAnalysis: analysisResult,
+    isFetched: analysisReady,
+    refresh: refreshAnalysis,
+  } = useSharedAnalysis(portfolio);
 
   // Pull-to-refresh
-  const onRefresh = useCallback(() => {
+  const onRefresh = async () => {
     setRefreshing(true);
-    loadAndAnalyze(false);
-  }, [loadAndAnalyze]);
+    await Promise.all([refreshPortfolio(), refreshAnalysis()]);
+    setRefreshing(false);
+  };
 
-  // [핵심 수정] 로딩 판단 로직
-  // 1. initialCheckDone=false → DB 확인 전이므로 무조건 로딩 (Empty State 노출 방지)
-  // 2. loading=true → 데이터 로드 중
-  // 3. totalAssets > 0인데 morningBriefing이 없음 → AI 분석 진행 중
-  //    단, error가 발생하면 로딩을 멈추고 에러 화면으로 전환
-  const isAnalyzing = !initialCheckDone || loading || (totalAssets > 0 && !morningBriefing && !error);
+  // 로딩 판단: DB 미확인 or 포트폴리오 로딩 or 분석 미완료
+  const analysisFailed = analysisReady && hasAssets && !morningBriefing && !analysisResult;
+  const isAnalyzing = !initialCheckDone || portfolioLoading || (hasAssets && !analysisReady);
 
   if (isAnalyzing) {
     return (
@@ -321,9 +121,7 @@ export default function DiagnosisScreen() {
     );
   }
 
-  // [핵심 수정] 빈 포트폴리오 상태
-  // 조건: DB 확인이 완료(initialCheckDone=true)된 후 + totalAssets === 0일 때만 표시
-  // totalAssets > 0이면 절대로 Empty State를 보여주지 않음
+  // 빈 포트폴리오 상태
   if (initialCheckDone && totalAssets === 0 && portfolio.length === 0) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
@@ -353,8 +151,8 @@ export default function DiagnosisScreen() {
     );
   }
 
-  // 에러 상태
-  if (error && !analysisResult) {
+  // 에러 상태: 분석 완료되었지만 결과 없음
+  if (analysisFailed) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.header}>
@@ -362,8 +160,8 @@ export default function DiagnosisScreen() {
         </View>
         <View style={styles.errorContainer}>
           <Ionicons name="alert-circle" size={48} color="#CF6679" />
-          <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={() => loadAndAnalyze()}>
+          <Text style={styles.errorText}>AI 분석 중 오류가 발생했습니다.</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={onRefresh}>
             <Text style={styles.retryText}>다시 시도</Text>
           </TouchableOpacity>
         </View>
