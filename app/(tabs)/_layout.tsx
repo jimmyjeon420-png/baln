@@ -12,8 +12,8 @@ const COLORS = {
   inactive: '#6B7280',
 };
 
-// 표시할 탭 목록 (순서대로)
-const VISIBLE_TABS = ['index', 'lounge', 'rebalance', 'insights', 'profile'];
+// 표시할 탭 목록 (3탭 구조: 오늘/분석/전체)
+const VISIBLE_TABS = ['index', 'rebalance', 'profile'];
 
 // 커스텀 탭 바 컴포넌트 - 플로팅 스캔 버튼 포함
 function CustomTabBar({ state, descriptors, navigation }: any) {
@@ -76,28 +76,24 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
   );
 }
 
-// 탭별 아이콘 이름 반환
+// 탭별 아이콘 이름 반환 (3탭: 오늘/분석/전체)
 function getIconName(routeName: string, isFocused: boolean): keyof typeof Ionicons.glyphMap {
   const icons: Record<string, { active: string; inactive: string }> = {
-    index: { active: 'home', inactive: 'home-outline' },
-    lounge: { active: 'people', inactive: 'people-outline' },
-    rebalance: { active: 'map', inactive: 'map-outline' },
-    insights: { active: 'bulb', inactive: 'bulb-outline' },
-    profile: { active: 'menu', inactive: 'menu-outline' },
+    index: { active: 'today', inactive: 'today-outline' },
+    rebalance: { active: 'analytics', inactive: 'analytics-outline' },
+    profile: { active: 'grid', inactive: 'grid-outline' },
   };
 
   const icon = icons[routeName] || { active: 'help', inactive: 'help-outline' };
   return (isFocused ? icon.active : icon.inactive) as keyof typeof Ionicons.glyphMap;
 }
 
-// 탭별 라벨 반환
+// 탭별 라벨 반환 (3탭: 오늘/분석/전체)
 function getLabel(routeName: string): string {
   const labels: Record<string, string> = {
-    index: '내 자산',
-    lounge: '라운지',
-    rebalance: '처방전',
-    insights: '인사이트',
-    profile: '더보기',
+    index: '오늘',
+    rebalance: '분석',
+    profile: '전체',
   };
   return labels[routeName] || routeName;
 }
@@ -110,47 +106,35 @@ export default function TabLayout() {
         headerShown: false,
       }}
     >
-      {/* 1. 홈 - 내 자산 */}
+      {/* ═══ 3탭 구조: 오늘 / 분석 / 전체 ═══ */}
+
+      {/* 1. 오늘 (Today) — 맥락 카드 + 예측 + 스트릭 + 위기 배너 */}
       <Tabs.Screen
         name="index"
         options={{
-          title: '내 자산',
+          title: '오늘',
         }}
       />
 
-      {/* 2. 라운지 - VIP 모임/스터디 마켓플레이스 */}
-      <Tabs.Screen
-        name="lounge"
-        options={{
-          title: '라운지',
-        }}
-      />
-
-      {/* 3. 처방전 - 리밸런싱 */}
+      {/* 2. 분석 (Checkup) — 건강 점수 + 배분 이탈 + AI 심화 CTA */}
       <Tabs.Screen
         name="rebalance"
         options={{
-          title: '처방전',
+          title: '분석',
         }}
       />
 
-      {/* 4. 인사이트 - AI 인사이트 허브 */}
-      <Tabs.Screen
-        name="insights"
-        options={{
-          title: '인사이트',
-        }}
-      />
-
-      {/* 5. 더보기 - 프로필/메뉴 */}
+      {/* 3. 전체 (More) — 프로필 + 커뮤니티/인사이트 미리보기 + 설정 */}
       <Tabs.Screen
         name="profile"
         options={{
-          title: '더보기',
+          title: '전체',
         }}
       />
 
-      {/* 기존 탭들 숨김 처리 */}
+      {/* ═══ 숨김 탭들 (URL 직접 접근만 가능) ═══ */}
+      <Tabs.Screen name="lounge" options={{ href: null }} />
+      <Tabs.Screen name="insights" options={{ href: null }} />
       <Tabs.Screen name="scan" options={{ href: null }} />
       <Tabs.Screen name="diagnosis" options={{ href: null }} />
       <Tabs.Screen name="strategy" options={{ href: null }} />
