@@ -227,15 +227,17 @@ export default function AddRealEstateScreen() {
                     <Text style={styles.resultName}>{item.complexName}</Text>
                     <Text style={styles.resultAddress}>{item.address}</Text>
                     <View style={styles.resultMeta}>
-                      {item.totalUnits && (
+                      {item.totalUnits ? (
                         <Text style={styles.metaText}>{item.totalUnits.toLocaleString()}세대</Text>
-                      )}
-                      {item.buildYear && (
+                      ) : null}
+                      {item.buildYear ? (
                         <Text style={styles.metaText}>{item.buildYear}년 준공</Text>
-                      )}
-                      <Text style={styles.metaText}>
-                        {item.areas.map(a => `${Math.round(sqmToPyeong(a))}평`).join(' / ')}
-                      </Text>
+                      ) : null}
+                      {item.areas.length > 0 ? (
+                        <Text style={styles.metaText}>
+                          {item.areas.map(a => `${Math.round(sqmToPyeong(a))}평`).join(' / ')}
+                        </Text>
+                      ) : null}
                     </View>
                   </View>
                   <Ionicons name="chevron-forward" size={20} color="#888" />
@@ -261,27 +263,35 @@ export default function AddRealEstateScreen() {
             <Text style={styles.stepDesc}>{selectedComplex.address}</Text>
 
             <Text style={styles.sectionLabel}>전용면적 선택</Text>
-            <View style={styles.areaChips}>
-              {selectedComplex.areas.map((area) => (
-                <TouchableOpacity
-                  key={area}
-                  style={[
-                    styles.areaChip,
-                    selectedArea === area && styles.areaChipActive,
-                  ]}
-                  onPress={() => handleSelectArea(area)}
-                >
-                  <Text
+            {/* 면적: complex.areas(Mock) 또는 priceData(실제 API)에서 추출 */}
+            {loadingPrice && selectedComplex.areas.length === 0 ? (
+              <ActivityIndicator color="#4CAF50" style={{ marginTop: 12, marginBottom: 12 }} />
+            ) : (
+              <View style={styles.areaChips}>
+                {(selectedComplex.areas.length > 0
+                  ? selectedComplex.areas
+                  : (priceData?.priceSummary ?? []).map((s: AreaPriceSummary) => s.area)
+                ).map((area: number) => (
+                  <TouchableOpacity
+                    key={area}
                     style={[
-                      styles.areaChipText,
-                      selectedArea === area && styles.areaChipTextActive,
+                      styles.areaChip,
+                      selectedArea === area && styles.areaChipActive,
                     ]}
+                    onPress={() => handleSelectArea(area)}
                   >
-                    {area}㎡ ({Math.round(sqmToPyeong(area))}평)
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+                    <Text
+                      style={[
+                        styles.areaChipText,
+                        selectedArea === area && styles.areaChipTextActive,
+                      ]}
+                    >
+                      {area}㎡ ({Math.round(sqmToPyeong(area))}평)
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
 
             <Text style={styles.sectionLabel}>직접 입력</Text>
             <View style={styles.customAreaRow}>

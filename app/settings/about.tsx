@@ -41,8 +41,8 @@ export default function AboutScreen() {
           <View style={styles.logoContainer}>
             <Ionicons name="analytics" size={48} color="#4CAF50" />
           </View>
-          <Text style={styles.appName}>Smart Rebalancer</Text>
-          <Text style={styles.appTagline}>AI 포트폴리오 최적화</Text>
+          <Text style={styles.appName}>baln</Text>
+          <Text style={styles.appTagline}>올바른 투자의 시작</Text>
         </View>
 
         {/* 앱 정보 */}
@@ -71,7 +71,7 @@ export default function AboutScreen() {
 
         {/* 저작권 */}
         <Text style={styles.copyright}>
-          © 2026 Smart Rebalancer. All rights reserved.
+          © 2026 발른 주식회사. All rights reserved.
         </Text>
       </View>
     </SafeAreaView>

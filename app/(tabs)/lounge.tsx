@@ -6,12 +6,13 @@
  *   모임: 스터디/정기모임/네트워킹/워크샵 (100만+ 열람, 1억+ 모임 생성)
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
+  FlatList,
   TextInput,
   TouchableOpacity,
   RefreshControl,
@@ -29,6 +30,7 @@ import {
   useCreatePost,
   useLikePost,
   useMyLikes,
+  PostSortBy,
 } from '../../src/hooks/useCommunity';
 import {
   useGatherings,
@@ -47,6 +49,7 @@ import {
   LOUNGE_COMMENT_THRESHOLD,
   LOUNGE_POST_THRESHOLD,
 } from '../../src/types/community';
+import { formatAssetAmount } from '../../src/utils/communityUtils';
 import { Gathering, GATHERING_CATEGORY_LABELS } from '../../src/types/database';
 
 // ══════════════════════════════════════════
@@ -66,6 +69,13 @@ const COLORS = {
 };
 
 type Segment = 'community' | 'gatherings';
+
+// 커뮤니티 정렬 옵션
+const SORT_OPTIONS: { key: PostSortBy; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+  { key: 'latest', label: '최신', icon: 'time-outline' },
+  { key: 'popular', label: '인기', icon: 'heart-outline' },
+  { key: 'hot', label: '댓글순', icon: 'chatbubble-outline' },
+];
 
 // 모임 카테고리 필터
 const GATHERING_CATEGORY_FILTERS: { key: Gathering['category'] | 'all'; label: string }[] = [
@@ -89,6 +99,7 @@ export default function LoungeScreen() {
 
   // 커뮤니티 상태
   const [communityCategory, setCommunityCategory] = useState<CommunityCategoryFilter>('all');
+  const [sortBy, setSortBy] = useState<PostSortBy>('latest');
   const [newPostContent, setNewPostContent] = useState('');
   const [isComposing, setIsComposing] = useState(false);
   const [postCategory, setPostCategory] = useState<CommunityCategory>('stocks');
@@ -101,13 +112,26 @@ export default function LoungeScreen() {
 
   // ── 훅 ──
   const { eligibility, loading: eligibilityLoading, refetch: refetchEligibility } = useLoungeEligibility();
-  const { data: posts, isLoading: postsLoading, refetch: refetchPosts } = useCommunityPosts(communityCategory);
+  const {
+    data: postsData,
+    isLoading: postsLoading,
+    refetch: refetchPosts,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useCommunityPosts(communityCategory, sortBy);
   const { data: myLikes } = useMyLikes();
   const createPost = useCreatePost();
   const likePost = useLikePost();
   const { data: hostingEligibility } = useHostingEligibility();
   const { data: gatherings, isLoading: gatheringsLoading, refetch: refetchGatherings } = useGatherings(
     gatheringCategory === 'all' ? undefined : gatheringCategory
+  );
+
+  // 무한 스크롤 페이지 플래트닝
+  const posts = useMemo(
+    () => postsData?.pages?.flat() ?? [],
+    [postsData],
   );
 
   // ── 새로고침 (세그먼트별 분기) ──
@@ -157,7 +181,7 @@ export default function LoungeScreen() {
     if (!eligibility.canPost) {
       Alert.alert(
         '글쓰기 제한',
-        `게시물 작성은 자산 1.5억 이상 회원만 가능합니다.\n\n현재 자산: ${formatAmount(eligibility.totalAssets)}\n필요 자산: 1.5억`,
+        `게시물 작성은 자산 1.5억 이상 회원만 가능합니다.\n\n현재 자산: ${formatAssetAmount(eligibility.totalAssets)}\n필요 자산: 1.5억`,
         [{ text: '확인' }]
       );
       return;
@@ -169,11 +193,7 @@ export default function LoungeScreen() {
   const handleGatheringPress = (gathering: Gathering) => router.push(`/gatherings/${gathering.id}`);
   const handleCreateGathering = () => router.push('/gatherings/create');
 
-  // ── 유틸 ──
-  const formatAmount = (amount: number) => {
-    if (amount >= 100000000) return `${(amount / 100000000).toFixed(1)}억`;
-    return `${(amount / 10000).toFixed(0)}만원`;
-  };
+  // formatAssetAmount는 communityUtils에서 import
 
   // ══════════════════════════════════════════
   // 로딩 상태
@@ -276,7 +296,7 @@ export default function LoungeScreen() {
             <View style={styles.progressHeader}>
               <Text style={styles.progressLabel}>현재 자산</Text>
               <Text style={styles.progressValue}>
-                {formatAmount(eligibility.totalAssets)}
+                {formatAssetAmount(eligibility.totalAssets)}
               </Text>
             </View>
             <View style={styles.progressBarBg}>
@@ -289,7 +309,7 @@ export default function LoungeScreen() {
             </View>
             <Text style={styles.progressShortfall}>
               {eligibility.shortfall > 0
-                ? `입장까지 ${formatAmount(eligibility.shortfall)} 더 필요`
+                ? `입장까지 ${formatAssetAmount(eligibility.shortfall)} 더 필요`
                 : '조건 충족!'}
             </Text>
           </View>
@@ -412,6 +432,32 @@ export default function LoungeScreen() {
               })}
             </View>
 
+            {/* 정렬 칩 */}
+            <View style={styles.sortChipContainer}>
+              {SORT_OPTIONS.map((opt) => (
+                <TouchableOpacity
+                  key={opt.key}
+                  style={[
+                    styles.sortChip,
+                    sortBy === opt.key && styles.sortChipActive,
+                  ]}
+                  onPress={() => setSortBy(opt.key)}
+                >
+                  <Ionicons
+                    name={opt.icon}
+                    size={12}
+                    color={sortBy === opt.key ? '#000' : COLORS.textMuted}
+                  />
+                  <Text style={[
+                    styles.sortChipText,
+                    sortBy === opt.key && styles.sortChipTextActive,
+                  ]}>
+                    {opt.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
             {/* 글쓰기 영역 */}
             {isComposing && (
               <View style={styles.composeContainer}>
@@ -473,9 +519,96 @@ export default function LoungeScreen() {
               </View>
             )}
 
-            {/* 게시물 목록 */}
-            <ScrollView
-              style={{ flex: 1 }}
+            {/* 게시물 목록 (FlatList + 무한 스크롤) */}
+            <FlatList
+              data={posts}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <CommunityPostCard
+                  post={item}
+                  isLiked={myLikes?.has(item.id) ?? false}
+                  onLike={handleLike}
+                  onPress={handlePostPress}
+                  onAuthorPress={handleAuthorPress}
+                />
+              )}
+              ListHeaderComponent={
+                <View style={styles.welcomeBanner}>
+                  <View style={styles.welcomeTop}>
+                    <Text style={styles.welcomeIcon}>{'🏦'}</Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.welcomeText}>VIP 회원님, 환영합니다!</Text>
+                      <Text style={styles.welcomeSubtext}>
+                        현재 자산: {formatAssetAmount(eligibility.totalAssets)}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={styles.accessBadgeRow}>
+                    <View style={[styles.accessBadgeItem, { backgroundColor: 'rgba(76,175,80,0.15)' }]}>
+                      <Ionicons name="eye" size={12} color="#4CAF50" />
+                      <Text style={[styles.accessBadgeLabel, { color: '#4CAF50' }]}>열람</Text>
+                    </View>
+                    <View style={[
+                      styles.accessBadgeItem,
+                      { backgroundColor: eligibility.canComment ? 'rgba(33,150,243,0.15)' : 'rgba(100,100,100,0.15)' },
+                    ]}>
+                      <Ionicons
+                        name={eligibility.canComment ? 'chatbubble' : 'lock-closed'}
+                        size={12}
+                        color={eligibility.canComment ? '#2196F3' : '#666'}
+                      />
+                      <Text style={[
+                        styles.accessBadgeLabel,
+                        { color: eligibility.canComment ? '#2196F3' : '#666' },
+                      ]}>
+                        댓글 {eligibility.canComment ? '' : '(1,000만+)'}
+                      </Text>
+                    </View>
+                    <View style={[
+                      styles.accessBadgeItem,
+                      { backgroundColor: eligibility.canPost ? 'rgba(255,215,0,0.15)' : 'rgba(100,100,100,0.15)' },
+                    ]}>
+                      <Ionicons
+                        name={eligibility.canPost ? 'create' : 'lock-closed'}
+                        size={12}
+                        color={eligibility.canPost ? '#FFD700' : '#666'}
+                      />
+                      <Text style={[
+                        styles.accessBadgeLabel,
+                        { color: eligibility.canPost ? '#FFD700' : '#666' },
+                      ]}>
+                        글쓰기 {eligibility.canPost ? '' : '(1.5억+)'}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              }
+              ListEmptyComponent={
+                postsLoading ? (
+                  <View style={styles.postsLoading}>
+                    <ActivityIndicator size="large" color={COLORS.primary} />
+                  </View>
+                ) : (
+                  <View style={styles.emptyContainer}>
+                    <Ionicons name="chatbubbles-outline" size={48} color={COLORS.textMuted} />
+                    <Text style={styles.emptyTitle}>아직 게시물이 없습니다</Text>
+                    <Text style={styles.emptyDescription}>
+                      {eligibility.canPost
+                        ? '첫 번째 게시물을 작성해보세요!'
+                        : '자산 1.5억 이상 회원이 게시물을 작성할 수 있습니다'}
+                    </Text>
+                  </View>
+                )
+              }
+              ListFooterComponent={
+                isFetchingNextPage ? (
+                  <View style={styles.postsLoading}>
+                    <ActivityIndicator size="small" color={COLORS.primary} />
+                  </View>
+                ) : <View style={{ height: 100 }} />
+              }
+              onEndReached={() => { if (hasNextPage) fetchNextPage(); }}
+              onEndReachedThreshold={0.5}
               contentContainerStyle={styles.scrollContent}
               refreshControl={
                 <RefreshControl
@@ -485,88 +618,7 @@ export default function LoungeScreen() {
                   colors={[COLORS.primary]}
                 />
               }
-            >
-              {/* 환영 배너 + 접근 등급 배지 */}
-              <View style={styles.welcomeBanner}>
-                <View style={styles.welcomeTop}>
-                  <Text style={styles.welcomeIcon}>{'🏦'}</Text>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.welcomeText}>VIP 회원님, 환영합니다!</Text>
-                    <Text style={styles.welcomeSubtext}>
-                      현재 자산: {formatAmount(eligibility.totalAssets)}
-                    </Text>
-                  </View>
-                </View>
-                <View style={styles.accessBadgeRow}>
-                  <View style={[styles.accessBadgeItem, { backgroundColor: 'rgba(76,175,80,0.15)' }]}>
-                    <Ionicons name="eye" size={12} color="#4CAF50" />
-                    <Text style={[styles.accessBadgeLabel, { color: '#4CAF50' }]}>열람</Text>
-                  </View>
-                  <View style={[
-                    styles.accessBadgeItem,
-                    { backgroundColor: eligibility.canComment ? 'rgba(33,150,243,0.15)' : 'rgba(100,100,100,0.15)' },
-                  ]}>
-                    <Ionicons
-                      name={eligibility.canComment ? 'chatbubble' : 'lock-closed'}
-                      size={12}
-                      color={eligibility.canComment ? '#2196F3' : '#666'}
-                    />
-                    <Text style={[
-                      styles.accessBadgeLabel,
-                      { color: eligibility.canComment ? '#2196F3' : '#666' },
-                    ]}>
-                      댓글 {eligibility.canComment ? '' : '(1,000만+)'}
-                    </Text>
-                  </View>
-                  <View style={[
-                    styles.accessBadgeItem,
-                    { backgroundColor: eligibility.canPost ? 'rgba(255,215,0,0.15)' : 'rgba(100,100,100,0.15)' },
-                  ]}>
-                    <Ionicons
-                      name={eligibility.canPost ? 'create' : 'lock-closed'}
-                      size={12}
-                      color={eligibility.canPost ? '#FFD700' : '#666'}
-                    />
-                    <Text style={[
-                      styles.accessBadgeLabel,
-                      { color: eligibility.canPost ? '#FFD700' : '#666' },
-                    ]}>
-                      글쓰기 {eligibility.canPost ? '' : '(1.5억+)'}
-                    </Text>
-                  </View>
-                </View>
-              </View>
-
-              {/* 게시물 리스트 */}
-              {postsLoading ? (
-                <View style={styles.postsLoading}>
-                  <ActivityIndicator size="large" color={COLORS.primary} />
-                </View>
-              ) : posts && posts.length > 0 ? (
-                posts.map((post) => (
-                  <CommunityPostCard
-                    key={post.id}
-                    post={post}
-                    isLiked={myLikes?.has(post.id) ?? false}
-                    onLike={handleLike}
-                    onPress={handlePostPress}
-                    onAuthorPress={handleAuthorPress}
-                  />
-                ))
-              ) : (
-                <View style={styles.emptyContainer}>
-                  <Ionicons name="chatbubbles-outline" size={48} color={COLORS.textMuted} />
-                  <Text style={styles.emptyTitle}>아직 게시물이 없습니다</Text>
-                  <Text style={styles.emptyDescription}>
-                    {eligibility.canPost
-                      ? '첫 번째 게시물을 작성해보세요!'
-                      : '자산 1.5억 이상 회원이 게시물을 작성할 수 있습니다'}
-                  </Text>
-                </View>
-              )}
-
-              <View style={{ height: 100 }} />
-            </ScrollView>
+            />
 
             {/* 글쓰기 FAB (1.5억+ 전용) */}
             {eligibility.canPost && !isComposing && (
@@ -613,9 +665,59 @@ export default function LoungeScreen() {
               ))}
             </ScrollView>
 
-            {/* 모임 목록 */}
-            <ScrollView
-              style={{ flex: 1 }}
+            {/* 모임 목록 (FlatList) */}
+            <FlatList
+              data={gatherings ?? []}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <GatheringCard
+                  gathering={item}
+                  onPress={() => handleGatheringPress(item)}
+                  userTier={hostingEligibility?.tier}
+                />
+              )}
+              ListHeaderComponent={
+                <View style={styles.gatheringWelcome}>
+                  <View style={styles.gatheringWelcomeContent}>
+                    <Text style={styles.gatheringWelcomeTitle}>안녕하세요, VIP 멤버님 {'👑'}</Text>
+                    <Text style={styles.gatheringWelcomeSubtitle}>
+                      인증된 자산가들과 함께하는 프라이빗 모임에 참여하세요.
+                    </Text>
+                  </View>
+                  {hostingEligibility?.tier && (
+                    <View style={[
+                      styles.tierIndicator,
+                      { backgroundColor: TIER_COLORS[hostingEligibility.tier as keyof typeof TIER_COLORS] + '30' },
+                    ]}>
+                      <Ionicons
+                        name="shield-checkmark"
+                        size={16}
+                        color={TIER_COLORS[hostingEligibility.tier as keyof typeof TIER_COLORS]}
+                      />
+                      <Text style={[
+                        styles.tierText,
+                        { color: TIER_COLORS[hostingEligibility.tier as keyof typeof TIER_COLORS] },
+                      ]}>
+                        {formatAssetInBillion(hostingEligibility.verifiedAssets)} 인증
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              }
+              ListEmptyComponent={
+                gatheringsLoading ? (
+                  <LoungeSkeleton />
+                ) : (
+                  <View style={styles.emptyContainer}>
+                    <Ionicons name="calendar-outline" size={64} color={COLORS.textMuted} />
+                    <Text style={styles.emptyTitle}>아직 등록된 모임이 없습니다</Text>
+                    <Text style={styles.emptyDescription}>
+                      첫 번째 모임을 만들어보세요!
+                    </Text>
+                  </View>
+                )
+              }
+              ListFooterComponent={<View style={{ height: 100 }} />}
               contentContainerStyle={styles.gatheringsContent}
               refreshControl={
                 <RefreshControl
@@ -625,58 +727,7 @@ export default function LoungeScreen() {
                   colors={[COLORS.primary]}
                 />
               }
-            >
-              {/* 환영 배너 + 티어 인디케이터 */}
-              <View style={styles.gatheringWelcome}>
-                <View style={styles.gatheringWelcomeContent}>
-                  <Text style={styles.gatheringWelcomeTitle}>안녕하세요, VIP 멤버님 {'👑'}</Text>
-                  <Text style={styles.gatheringWelcomeSubtitle}>
-                    인증된 자산가들과 함께하는 프라이빗 모임에 참여하세요.
-                  </Text>
-                </View>
-                {hostingEligibility?.tier && (
-                  <View style={[
-                    styles.tierIndicator,
-                    { backgroundColor: TIER_COLORS[hostingEligibility.tier as keyof typeof TIER_COLORS] + '30' },
-                  ]}>
-                    <Ionicons
-                      name="shield-checkmark"
-                      size={16}
-                      color={TIER_COLORS[hostingEligibility.tier as keyof typeof TIER_COLORS]}
-                    />
-                    <Text style={[
-                      styles.tierText,
-                      { color: TIER_COLORS[hostingEligibility.tier as keyof typeof TIER_COLORS] },
-                    ]}>
-                      {formatAssetInBillion(hostingEligibility.verifiedAssets)} 인증
-                    </Text>
-                  </View>
-                )}
-              </View>
-
-              {gatheringsLoading ? (
-                <LoungeSkeleton />
-              ) : gatherings && gatherings.length > 0 ? (
-                gatherings.map((gathering) => (
-                  <GatheringCard
-                    key={gathering.id}
-                    gathering={gathering}
-                    onPress={() => handleGatheringPress(gathering)}
-                    userTier={hostingEligibility?.tier}
-                  />
-                ))
-              ) : (
-                <View style={styles.emptyContainer}>
-                  <Ionicons name="calendar-outline" size={64} color={COLORS.textMuted} />
-                  <Text style={styles.emptyTitle}>아직 등록된 모임이 없습니다</Text>
-                  <Text style={styles.emptyDescription}>
-                    첫 번째 모임을 만들어보세요!
-                  </Text>
-                </View>
-              )}
-
-              <View style={{ height: 100 }} />
-            </ScrollView>
+            />
 
             {/* 모임 만들기 FAB (1억+ 전용) */}
             {hostingEligibility?.canHost && (
@@ -932,6 +983,37 @@ const styles = StyleSheet.create({
   categoryTabText: {
     fontSize: 12,
     color: COLORS.textMuted,
+  },
+
+  // ── 커뮤니티: 정렬 칩 ──
+  sortChipContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    gap: 8,
+  },
+  sortChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 14,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  sortChipActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  sortChipText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: COLORS.textMuted,
+  },
+  sortChipTextActive: {
+    color: '#000',
   },
 
   // ── 커뮤니티: 환영 배너 ──

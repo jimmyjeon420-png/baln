@@ -17,6 +17,12 @@ import {
   TIER_COLORS,
   CATEGORY_INFO,
 } from '../types/community';
+import {
+  getTierFromAssets,
+  getTierIcon,
+  HOLDING_TYPE_COLORS,
+  getRelativeTime,
+} from '../utils/communityUtils';
 
 interface CommunityPostCardProps {
   post: CommunityPost;
@@ -25,50 +31,6 @@ interface CommunityPostCardProps {
   onPress?: (postId: string) => void;
   onAuthorPress?: (userId: string) => void;
 }
-
-// 자산 금액에 따른 티어 결정
-const getTierFromAssets = (assets: number): string => {
-  if (assets >= 1000000000) return 'DIAMOND';
-  if (assets >= 500000000) return 'PLATINUM';
-  if (assets >= 150000000) return 'GOLD';
-  if (assets >= 10000000) return 'SILVER';
-  return 'SILVER';
-};
-
-// 티어 아이콘
-const getTierIcon = (tier: string): keyof typeof Ionicons.glyphMap => {
-  switch (tier) {
-    case 'DIAMOND': return 'diamond';
-    case 'PLATINUM': return 'star';
-    case 'GOLD': return 'trophy';
-    case 'SILVER': return 'medal';
-    default: return 'ribbon';
-  }
-};
-
-// 보유종목 타입별 색상
-const HOLDING_TYPE_COLORS: Record<string, string> = {
-  stock: '#4CAF50',
-  crypto: '#F7931A',
-  realestate: '#2196F3',
-  other: '#888888',
-};
-
-// 상대적 시간 표시
-const getRelativeTime = (dateString: string): string => {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
-
-  if (diffMins < 1) return '방금 전';
-  if (diffMins < 60) return `${diffMins}분 전`;
-  if (diffHours < 24) return `${diffHours}시간 전`;
-  if (diffDays < 7) return `${diffDays}일 전`;
-  return date.toLocaleDateString('ko-KR');
-};
 
 export default function CommunityPostCard({
   post,

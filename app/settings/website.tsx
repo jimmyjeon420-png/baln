@@ -77,7 +77,7 @@ export default function WebsiteScreen() {
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={28} color="#4CAF50" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Smart Rebalancer</Text>
+        <Text style={styles.headerTitle}>baln</Text>
         <View style={{ width: 28 }} />
       </View>
 
@@ -87,8 +87,8 @@ export default function WebsiteScreen() {
           <View style={styles.heroLogo}>
             <Ionicons name="analytics" size={56} color="#4CAF50" />
           </View>
-          <Text style={styles.heroTitle}>Smart Rebalancer</Text>
-          <Text style={styles.heroSubtitle}>AI 포트폴리오 최적화 플랫폼</Text>
+          <Text style={styles.heroTitle}>baln</Text>
+          <Text style={styles.heroSubtitle}>올바른 투자의 시작</Text>
           <Text style={styles.heroTagline}>
             "당신의 포트폴리오를 상위 20%로 끌어올리세요"
           </Text>
@@ -101,7 +101,7 @@ export default function WebsiteScreen() {
             모든 투자자에게{'\n'}기관급 포트폴리오 관리를
           </Text>
           <Text style={styles.missionDesc}>
-            Smart Rebalancer는 개인 투자자가 기관 수준의 자산 배분 전략을
+            baln은 개인 투자자가 기관 수준의 자산 배분 전략을
             손쉽게 실행할 수 있도록 돕습니다. AI 기술과 퀀트 분석을 결합하여,
             복잡한 리밸런싱을 스크린샷 한 장으로 해결합니다.
           </Text>
@@ -191,7 +191,7 @@ export default function WebsiteScreen() {
               <Ionicons name="person" size={32} color="#4CAF50" />
             </View>
             <View style={styles.teamInfo}>
-              <Text style={styles.teamName}>Smart Rebalancer Team</Text>
+              <Text style={styles.teamName}>baln team</Text>
               <Text style={styles.teamRole}>Seoul, South Korea</Text>
               <Text style={styles.teamBio}>
                 금융 전문가와 AI 엔지니어가 함께 만듭니다.{'\n'}
@@ -208,7 +208,7 @@ export default function WebsiteScreen() {
             style={styles.contactItem}
             onPress={() =>
               Linking.openURL(
-                'mailto:jimmyjeon420@gmail.com?subject=[Smart Rebalancer] 문의'
+                'mailto:jimmyjeon420@gmail.com?subject=[baln] 문의'
               )
             }
           >
@@ -225,7 +225,7 @@ export default function WebsiteScreen() {
         <View style={styles.disclaimerSection}>
           <Text style={styles.disclaimerTitle}>투자 유의사항</Text>
           <Text style={styles.disclaimerText}>
-            Smart Rebalancer는 투자 참고 정보를 제공하며, 투자 권유나 종목 추천이
+            baln은 투자 참고 정보를 제공하며, 투자 권유나 종목 추천이
             아닙니다. 모든 투자 판단과 책임은 사용자 본인에게 있습니다.
             본 서비스는 금융위원회에 등록된 투자자문업이 아니며,
             제공하는 정보의 정확성을 보증하지 않습니다.
@@ -234,7 +234,7 @@ export default function WebsiteScreen() {
 
         {/* 하단 */}
         <Text style={styles.footerText}>
-          © 2026 Smart Rebalancer. All rights reserved.{'\n'}
+          © 2026 발른 주식회사. All rights reserved.{'\n'}
           Made with 💚 in Seoul
         </Text>
       </ScrollView>

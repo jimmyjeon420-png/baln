@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../src/context/AuthContext';
 import FreePeriodBanner from '../../src/components/FreePeriodBanner';
+import InvestorLevelCard from '../../src/components/InvestorLevelCard';
 
 // 더보기(메뉴) 화면 - 설정 및 추가 기능
 export default function ProfileScreen() {
@@ -38,6 +39,8 @@ export default function ProfileScreen() {
   const menuItems = [
     { icon: 'diamond', label: '크레딧 충전', onPress: () => router.push('/marketplace/credits'), credit: true },
     { icon: 'home-outline', label: '부동산 자산 추가', onPress: () => router.push('/add-realestate'), feature: true },
+    { icon: 'trophy-outline', label: '투자 레벨', onPress: () => router.push('/settings/investor-level'), highlight: true },
+    { icon: 'help-outline', label: '오늘의 퀴즈', onPress: () => router.push('/settings/daily-quiz'), feature: true },
 
     { icon: 'person-outline', label: '프로필 설정', onPress: () => router.push('/settings/profile') },
     { icon: 'notifications-outline', label: '알림 설정', onPress: () => router.push('/settings/notifications') },
@@ -71,6 +74,9 @@ export default function ProfileScreen() {
           </View>
           <Ionicons name="chevron-forward" size={20} color="#888888" />
         </TouchableOpacity>
+
+        {/* 투자 레벨 카드 (컴팩트) */}
+        {user && <InvestorLevelCard />}
 
         {/* 무료 기간 프로모션 배너 */}
         <View style={{ marginBottom: 12 }}>
@@ -134,7 +140,7 @@ export default function ProfileScreen() {
         )}
 
         {/* 버전 정보 */}
-        <Text style={styles.versionText}>Smart Rebalancer v3.0.0</Text>
+        <Text style={styles.versionText}>baln v3.0.0</Text>
       </ScrollView>
     </SafeAreaView>
   );

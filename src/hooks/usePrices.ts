@@ -1,22 +1,28 @@
 /**
- * Custom Hook: Real-Time Price Fetching
- * Manages price data fetching, caching, and auto-refresh
+ * usePrices — 실시간 가격 조회 훅 (TanStack Query 기반)
+ *
+ * [개선 이력]
+ * 이전: useState + setInterval → 탭 간 캐시 미공유, 장외시간 불필요 API 호출
+ * 현재: TanStack Query → 캐시 공유, 시장 개장 시간 인식, 선택적 리렌더링
+ *
+ * [시장 시간 인식]
+ * - 한국 주식: 평일 09:00~15:30 KST → 개장 중 2분마다, 장외 10분
+ * - 미국 주식: 평일 23:30~06:00 KST → 개장 중 2분마다, 장외 10분
+ * - 암호화폐: 24시간 → 항상 5분마다
+ * - 주말: 주식은 10분, 암호화폐는 5분
  */
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMemo } from 'react';
 import { PriceData, AssetClass } from '../types/price';
 import { Asset } from '../types/asset';
 import { priceService } from '../services/PriceService';
 
-/**
- * 티커 심볼에서 자산 클래스 자동 추론
- *
- * 판별 순서:
- * 1. 한국 주식: 6자리 숫자 또는 .KS/.KQ 접미사 → STOCK
- * 2. 암호화폐: BTC, ETH 등 키워드 → CRYPTO
- * 3. ETF: VTI, VOO 등 키워드 → ETF
- * 4. 기본값: STOCK (미국 주식 등)
- */
+// ── 쿼리 키 (외부에서 invalidate 할 때 사용) ──
+export const LIVE_PRICES_KEY = ['live-prices'];
+
+// ── 티커 → 자산 클래스 추론 ──
+
 const inferAssetClass = (ticker: string): AssetClass => {
   const upperTicker = ticker.toUpperCase();
 
@@ -32,7 +38,6 @@ const inferAssetClass = (ticker: string): AssetClass => {
     'BNB', 'MATIC', 'LTC', 'BCH', 'XLM',
     'ATOM', 'UNI', 'AAVE', 'SUSHI',
   ];
-
   if (cryptoKeywords.some((kw) => upperTicker.includes(kw))) {
     return AssetClass.CRYPTO;
   }
@@ -43,229 +48,149 @@ const inferAssetClass = (ticker: string): AssetClass => {
     return AssetClass.ETF;
   }
 
-  // 기본값: 주식 (미국 등)
   return AssetClass.STOCK;
 };
 
+// ── 시장 개장 시간 판별 ──
+
+/** 한국 시간(KST) 기준 현재 시각 반환 */
+function getKSTDate(): Date {
+  const now = new Date();
+  // UTC + 9시간
+  return new Date(now.getTime() + (9 * 60 - now.getTimezoneOffset()) * 60 * 1000);
+}
+
+/** 자산 유형별 갱신 주기 계산 (ms) */
+function getRefreshInterval(tickers: string[]): number {
+  if (tickers.length === 0) return 0;
+
+  const hasCrypto = tickers.some(t => inferAssetClass(t) === AssetClass.CRYPTO);
+  const hasStock = tickers.some(t => {
+    const cls = inferAssetClass(t);
+    return cls === AssetClass.STOCK || cls === AssetClass.ETF;
+  });
+
+  const kst = getKSTDate();
+  const day = kst.getDay(); // 0=일, 6=토
+  const hour = kst.getHours();
+  const minute = kst.getMinutes();
+  const timeInMinutes = hour * 60 + minute;
+  const isWeekday = day >= 1 && day <= 5;
+
+  // 한국 주식 개장: 평일 09:00~15:30 (540~930분)
+  const krMarketOpen = isWeekday && timeInMinutes >= 540 && timeInMinutes <= 930;
+  // 미국 주식 개장: 평일 23:30~06:00 KST 다음날 (1410~360분, 자정 걸침)
+  const usMarketOpen = isWeekday && (timeInMinutes >= 1410 || timeInMinutes <= 360);
+
+  const stockMarketOpen = krMarketOpen || usMarketOpen;
+
+  if (hasStock && stockMarketOpen) {
+    // 장중: 2분마다 (빠른 갱신)
+    return 2 * 60 * 1000;
+  }
+
+  if (hasCrypto) {
+    // 암호화폐: 항상 5분
+    return 5 * 60 * 1000;
+  }
+
+  // 장외/주말: 10분
+  return 10 * 60 * 1000;
+}
+
+// ── 가격 일괄 조회 함수 ──
+
+async function fetchPricesForTickers(
+  tickers: string[],
+  currency: string,
+): Promise<Record<string, PriceData>> {
+  if (tickers.length === 0) return {};
+
+  const results = await Promise.allSettled(
+    tickers.map(async (ticker) => {
+      try {
+        const assetClass = inferAssetClass(ticker);
+        return await priceService.fetchPrice(ticker, assetClass, currency);
+      } catch (err) {
+        console.warn(`[usePrices] 가격 조회 실패 ${ticker}:`, err instanceof Error ? err.message : String(err));
+        return null;
+      }
+    })
+  );
+
+  const priceMap: Record<string, PriceData> = {};
+  results.forEach((result) => {
+    if (result.status === 'fulfilled' && result.value) {
+      priceMap[result.value.ticker] = result.value;
+    }
+  });
+
+  return priceMap;
+}
+
+// ── 훅 인터페이스 (기존 호환) ──
+
 interface UsePricesOptions {
-  currency?: string;          // Target currency (e.g., 'USD')
-  autoRefreshMs?: number;     // Auto-refresh interval in ms (0 to disable)
-  enableCache?: boolean;      // Use cached prices
-  onError?: (error: Error) => void; // Error callback
+  currency?: string;
+  autoRefreshMs?: number;  // 사용하지 않음 (시장 시간 자동 감지로 대체)
+  enableCache?: boolean;
+  onError?: (error: Error) => void;
 }
 
 interface UsePricesReturn {
-  prices: Record<string, PriceData>;   // Map of ticker -> price data
-  isLoading: boolean;                   // Loading state
-  error: string | null;                 // Error message if any
-  refresh: (ticker?: string) => Promise<void>; // Manual refresh function
-  lastRefreshTime: number | null;       // Timestamp of last successful refresh
-  isRefreshing: boolean;                // Currently refreshing
+  prices: Record<string, PriceData>;
+  isLoading: boolean;
+  error: string | null;
+  refresh: () => Promise<void>;
+  lastRefreshTime: number | null;
+  isRefreshing: boolean;
 }
 
 /**
- * Hook for fetching and managing real-time asset prices
- * Automatically detects asset class (crypto, stock, etf)
- * Handles caching and auto-refresh intervals
+ * 실시간 가격 조회 훅 (TanStack Query 기반)
+ *
+ * 기존 인터페이스 호환: { prices, isLoading, error, refresh, lastRefreshTime, isRefreshing }
+ * 개선: 탭 간 캐시 공유, 시장 개장 시간 인식, 불필요한 리렌더링 방지
  */
 export const usePrices = (
   assets: Asset[],
   options: UsePricesOptions = {}
 ): UsePricesReturn => {
-  const {
-    currency = 'USD',
-    autoRefreshMs = 300000, // 5 minutes default
-    enableCache = true,
-    onError,
-  } = options;
+  const { currency = 'USD' } = options;
+  const queryClient = useQueryClient();
 
-  const [prices, setPrices] = useState<Record<string, PriceData>>({});
-  const [isLoading, setIsLoading] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [lastRefreshTime, setLastRefreshTime] = useState<number | null>(null);
+  // 티커 목록을 안정적 키로 변환 (배열 참조 변경에 무관하게 동작)
+  const tickers = useMemo(() =>
+    assets.filter(a => a.ticker).map(a => a.ticker!).sort(),
+  [assets]);
 
-  // Keep track of in-flight requests to avoid duplicates
-  const requestsInFlightRef = useRef<Set<string>>(new Set());
-  // Keep track of auto-refresh interval
-  const autoRefreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const tickerKey = tickers.join(',');
 
-  /**
-   * Main function to fetch prices
-   * Separates assets by class and fetches from appropriate providers
-   */
-  const fetchPrices = useCallback(
-    async (tickerOverride?: string) => {
-      // Validate inputs
-      const assetsToFetch = assets.filter(
-        (a) => a.ticker && (tickerOverride ? a.ticker === tickerOverride : true)
-      );
+  // 시장 시간 기반 갱신 주기
+  const refetchInterval = useMemo(() => getRefreshInterval(tickers), [tickerKey]);
 
-      if (assetsToFetch.length === 0) {
-        setIsLoading(false);
-        return;
-      }
+  const query = useQuery({
+    queryKey: [...LIVE_PRICES_KEY, tickerKey, currency],
+    queryFn: () => fetchPricesForTickers(tickers, currency),
+    enabled: tickers.length > 0,
+    staleTime: 60 * 1000,           // 1분: 최소 신선도
+    gcTime: 10 * 60 * 1000,         // 10분: 가비지 컬렉션
+    refetchInterval,                 // 시장 시간에 따라 2분/5분/10분
+    refetchIntervalInBackground: false, // 백그라운드에서는 갱신 안 함
+    retry: 1,
+  });
 
-      if (!tickerOverride) {
-        setIsLoading(true);
-        setError(null);
-      } else {
-        setIsRefreshing(true);
-      }
-
-      try {
-        // Get all assets with tickers (both liquid and illiquid)
-        const assetsWithTickers = assetsToFetch.filter((a) => a.ticker);
-        const allPrices: PriceData[] = [];
-
-        // Fetch prices for each asset (grouped by inferred asset class)
-        if (assetsWithTickers.length > 0) {
-          // Try to fetch prices for all assets
-          // Asset class is inferred from ticker patterns
-          const priceResults = await Promise.allSettled(
-            assetsWithTickers.map(async (asset) => {
-              try {
-                // Infer asset class from ticker or use CRYPTO as default
-                // TODO: Enhance ticker analysis to detect stocks/ETFs
-                const assetClass = inferAssetClass(asset.ticker!);
-
-                const price = await priceService.fetchPrice(
-                  asset.ticker!,
-                  assetClass,
-                  currency
-                );
-                return price;
-              } catch (err) {
-                console.warn(
-                  `[usePrices] Price fetch failed for ${asset.ticker}:`,
-                  err instanceof Error ? err.message : String(err)
-                );
-                return null;
-              }
-            })
-          );
-
-          // Collect successful results
-          priceResults.forEach((result) => {
-            if (result.status === 'fulfilled' && result.value) {
-              allPrices.push(result.value);
-            }
-          });
-        }
-
-        // Create price map
-        const priceMap = allPrices.reduce(
-          (acc, priceData) => {
-            acc[priceData.ticker] = priceData;
-            return acc;
-          },
-          {} as Record<string, PriceData>
-        );
-
-        setPrices(priceMap);
-        setLastRefreshTime(Date.now());
-        setError(null);
-      } catch (err) {
-        const errorMsg = err instanceof Error ? err.message : 'Unknown error';
-        setError(errorMsg);
-        if (onError && err instanceof Error) {
-          onError(err);
-        }
-        console.error('[usePrices] Fetch error:', err);
-      } finally {
-        setIsLoading(false);
-        setIsRefreshing(false);
-      }
-    },
-    [assets, currency, onError]
-  );
-
-  /**
-   * Initial fetch on component mount
-   */
-  useEffect(() => {
-    if (assets.length > 0) {
-      fetchPrices();
-    }
-    // fetchPrices is memoized with useCallback, but we exclude it from dependencies
-    // to avoid unnecessary re-triggers when fetchPrices identity changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [assets.length, currency]);
-
-  /**
-   * Set up auto-refresh interval
-   */
-  useEffect(() => {
-    if (autoRefreshMs <= 0 || assets.length === 0) {
-      return;
-    }
-
-    // Clear existing interval
-    if (autoRefreshIntervalRef.current) {
-      clearInterval(autoRefreshIntervalRef.current);
-    }
-
-    // Set new interval
-    autoRefreshIntervalRef.current = setInterval(() => {
-      fetchPrices();
-    }, autoRefreshMs);
-
-    return () => {
-      if (autoRefreshIntervalRef.current) {
-        clearInterval(autoRefreshIntervalRef.current);
-      }
-    };
-  }, [autoRefreshMs, assets, fetchPrices]);
-
-  /**
-   * Wrapped refresh function for manual refreshing
-   */
-  const refresh = useCallback(
-    async (ticker?: string) => {
-      // Avoid duplicate requests
-      if (ticker && requestsInFlightRef.current.has(ticker)) {
-        return;
-      }
-
-      if (ticker) {
-        requestsInFlightRef.current.add(ticker);
-      }
-
-      try {
-        // Clear cache for this ticker before refetching
-        if (ticker) {
-          priceService.clearCache(ticker);
-        } else {
-          priceService.clearCache(); // Clear all cache
-        }
-
-        await fetchPrices(ticker);
-      } finally {
-        if (ticker) {
-          requestsInFlightRef.current.delete(ticker);
-        }
-      }
-    },
-    [fetchPrices]
-  );
-
-  /**
-   * Cleanup on unmount
-   */
-  useEffect(() => {
-    return () => {
-      if (autoRefreshIntervalRef.current) {
-        clearInterval(autoRefreshIntervalRef.current);
-      }
-    };
-  }, []);
+  const refresh = async () => {
+    priceService.clearCache();
+    await queryClient.invalidateQueries({ queryKey: LIVE_PRICES_KEY });
+  };
 
   return {
-    prices,
-    isLoading,
-    isRefreshing,
-    error,
+    prices: query.data ?? {},
+    isLoading: query.isLoading,
+    isRefreshing: query.isFetching && !query.isLoading,
+    error: query.error ? (query.error instanceof Error ? query.error.message : 'Unknown error') : null,
     refresh,
-    lastRefreshTime,
+    lastRefreshTime: query.dataUpdatedAt || null,
   };
 };

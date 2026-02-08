@@ -32,45 +32,12 @@ import {
   TIER_COLORS,
   TIER_LABELS,
 } from '../../../src/types/community';
-
-// 자산 → 티어
-const getTierFromAssets = (assets: number): string => {
-  if (assets >= 1000000000) return 'DIAMOND';
-  if (assets >= 500000000) return 'PLATINUM';
-  if (assets >= 150000000) return 'GOLD';
-  if (assets >= 10000000) return 'SILVER';
-  return 'SILVER';
-};
-
-const getTierIcon = (tier: string): keyof typeof Ionicons.glyphMap => {
-  switch (tier) {
-    case 'DIAMOND': return 'diamond';
-    case 'PLATINUM': return 'star';
-    case 'GOLD': return 'trophy';
-    case 'SILVER': return 'medal';
-    default: return 'ribbon';
-  }
-};
-
-const HOLDING_TYPE_COLORS: Record<string, string> = {
-  stock: '#4CAF50',
-  crypto: '#F7931A',
-  realestate: '#2196F3',
-  other: '#888888',
-};
-
-const HOLDING_TYPE_LABELS: Record<string, string> = {
-  stock: '주식',
-  crypto: '암호화폐',
-  realestate: '부동산',
-  other: '기타',
-};
-
-const formatAmount = (amount: number) => {
-  if (amount >= 100000000) return `${(amount / 100000000).toFixed(1)}억`;
-  if (amount >= 10000) return `${(amount / 10000).toFixed(0)}만원`;
-  return `${amount.toLocaleString()}원`;
-};
+import {
+  getTierFromAssets,
+  getTierIcon,
+  HOLDING_TYPE_COLORS,
+  formatAssetAmount,
+} from '../../../src/utils/communityUtils';
 
 export default function AuthorProfileScreen() {
   const { userId } = useLocalSearchParams<{ userId: string }>();

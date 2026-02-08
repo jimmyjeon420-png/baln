@@ -250,7 +250,7 @@ export default function NotificationsScreen() {
             <Ionicons name="information-circle-outline" size={18} color="#888888" />
             <Text style={styles.infoText}>
               알림은 휴대폰의 알림 권한이 허용되어 있어야 동작합니다.
-              기기 설정에서 Smart Rebalancer의 알림이 켜져 있는지 확인해주세요.
+              기기 설정에서 baln의 알림이 켜져 있는지 확인해주세요.
             </Text>
           </View>
           <View style={[styles.infoRow, { marginTop: 8 }]}>

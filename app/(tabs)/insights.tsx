@@ -1,6 +1,7 @@
 /**
  * 인사이트 허브 - 투자 예측 게임 / 투자 DNA / 거장 인사이트 통합 탭
  * 토스 "혜택" 탭처럼 매일 방문할 이유를 주는 MAU 허브 역할
+ *
  */
 
 import React, { useState, useCallback } from 'react';

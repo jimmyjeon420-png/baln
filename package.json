@@ -1,5 +1,5 @@
 {
-  "name": "smart-rebalancer",
+  "name": "baln",
   "version": "1.0.0",
   "description": "Privacy-focused portfolio rebalancing calculator for global investors",
   "main": "expo-router/entry",

@@ -335,7 +335,7 @@ export default function LicensesScreen() {
         <View style={styles.introSection}>
           <Ionicons name="heart" size={20} color="#CF6679" />
           <Text style={styles.introText}>
-            Smart Rebalancer는 {totalPackages}개의 오픈소스 프로젝트 위에
+            baln은 {totalPackages}개의 오픈소스 프로젝트 위에
             만들어졌습니다. 오픈소스 커뮤니티에 깊은 감사를 드립니다.
           </Text>
         </View>
@@ -470,7 +470,7 @@ export default function LicensesScreen() {
         </View>
 
         <Text style={styles.footerText}>
-          © 2026 Smart Rebalancer{'\n'}
+          © 2026 발른 주식회사{'\n'}
           오픈소스 라이선스 정보는 앱 버전에 따라 변경될 수 있습니다.
         </Text>
       </ScrollView>

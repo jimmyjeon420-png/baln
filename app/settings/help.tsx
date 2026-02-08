@@ -33,9 +33,9 @@ export default function HelpScreen() {
   const SUPPORT_EMAIL = 'jimmyjeon420@gmail.com';
 
   const supportItems = [
-    { icon: 'mail-outline', label: '이메일 문의', desc: SUPPORT_EMAIL, action: () => Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=[Smart Rebalancer] 문의`) },
-    { icon: 'chatbubble-outline', label: '카카오톡 문의', desc: SUPPORT_EMAIL, action: () => Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=[Smart Rebalancer] 카카오톡 문의`) },
-    { icon: 'logo-github', label: 'GitHub 문의', desc: SUPPORT_EMAIL, action: () => Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=[Smart Rebalancer] GitHub 문의`) },
+    { icon: 'mail-outline', label: '이메일 문의', desc: SUPPORT_EMAIL, action: () => Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=[baln] 문의`) },
+    { icon: 'chatbubble-outline', label: '카카오톡 문의', desc: SUPPORT_EMAIL, action: () => Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=[baln] 카카오톡 문의`) },
+    { icon: 'logo-github', label: 'GitHub 문의', desc: SUPPORT_EMAIL, action: () => Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=[baln] GitHub 문의`) },
   ];
 
   return (

@@ -1,0 +1,55 @@
+[
+  {
+    "id": "517f95a2-2039-4308-928d-2a46f3521d5f",
+    "status": "ERRORED",
+    "platform": "ANDROID",
+    "error": {
+      "errorCode": "EAS_BUILD_UNKNOWN_GRADLE_ERROR",
+      "message": "Gradle build failed with unknown error. See logs for the \"Run gradlew\" phase for more information."
+    },
+    "artifacts": {},
+    "fingerprint": {
+      "id": "019c3b2d-fd58-74fa-bb12-e290013e6a77",
+      "hash": "7303bf48908f94129809a01fc7138e26ea12069d"
+    },
+    "initiatingActor": {
+      "id": "0c7f8a78-5ca7-4f8e-b664-c694272d1afb",
+      "displayName": "jimmyj"
+    },
+    "logFiles": [
+      "https://job-logs.eascdn.net/production/517f95a2-2039-4308-928d-2a46f3521d5f/1770519396185-03141849-e8f9-4365-b112-56117ebcfea6.txt?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=www-production%40exponentjs.iam.gserviceaccount.com%2F20260208%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260208T031732Z&X-Goog-Expires=900&X-Goog-SignedHeaders=host&X-Goog-Signature=008df9ed6a5903e02949fba875abd5382978ad3483a439ab04ef77f02d90fb5d2367f0ca62505e1c6491e182fe38ebc17f97895dd1fa290a23f8f415fb8da4867a2785ccca021e756a66259fff00f91b058f77727239e08962c31677af82b42bccbb371e3e0d7d437cd35b8c2f171732335c83fa5aa5844b97d7f9503bc53809dd976b37bf993f6744af14c42778d3df402635bc2854e37b4ebd75d2423198044cc40a0ae6d73a8729c3d62a9ba846ecf46af0c1c38de6b57c3ef12a213297baa263f6e66ffbd0fe5dd387fc9e10549ceefb705bf548a99d85346082d9b999cc7d165ed2384807b7b5967a9df4b514483d9741daa6f191798899ed3a5d1a197f",
+      "https://job-logs.eascdn.net/production/517f95a2-2039-4308-928d-2a46f3521d5f/1770519399003-3c87f066-c51d-46be-94e7-2a471ea789aa.txt?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=www-production%40exponentjs.iam.gserviceaccount.com%2F20260208%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260208T031732Z&X-Goog-Expires=900&X-Goog-SignedHeaders=host&X-Goog-Signature=8d5b467aa57651bb8bfb4819e542fe26685f1614d91016cd97f8fbf60b15c6340d260153add0d980fe8a13ece35c06ede3b24e6918d5c93e4eac95f6893bbe1e4cd611d775f4d76a069c0e70e201f8f4b7467afeef136913394250fb95c9de38ac8188ebd20a607db7145a1cc143278eaa4fa1e169224eb000f2ad3f7793d4e36dfaafa8ce911b711f3ffe25ae82f74040899fb897aef72e8a25e6c5fa5e0e6982f3955fb378caaca80b140b7fe019140a1ff8790ab7718efb2873f1905c0477202cf69ea25f0b16908967a0a79840424a2f459ef3a4f64653e52bf74d1ab89768ace98dadfbd6e3c920b4628a19984f21831b94f24eee6a6bd44a92c58980f0",
+      "https://job-logs.eascdn.net/production/517f95a2-2039-4308-928d-2a46f3521d5f/1770519399243-e340eadf-81f4-46c8-a52f-45e7ddb519e3.txt?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=www-production%40exponentjs.iam.gserviceaccount.com%2F20260208%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260208T031732Z&X-Goog-Expires=900&X-Goog-SignedHeaders=host&X-Goog-Signature=69cf37182dfb5dd9aaea187ba9e63fa7e194337fa9c38a6156ef4abea53d068d9f334a083594c7d49b3d77bad72ee8875802917e01e7edf002bbe93da4fcfe58a21a114c5f27e55de4c78b29add019b291dcfff9b62ffc8548c5cd97a93d50be9d0eecbd13edb9a0a9b6df6636d498455cd06d926ebe822e20c39c6296dc7071d5b803b5e983724e79a80976a2b669578ea0e5bc8f185fe9900708cddf9508e196e015a0bc5a19db6345c073ae085c4821e24367b293a90db9c6bd9ad1b197fcf3e34d4a6b775772cb57a90852a484308c3eb2d644ff7df8fb20b08cd9a67e4ef00dd74ec9121ec58009a997a26a833143bc59e17381ab119116351f979f098f",
+      "https://job-logs.eascdn.net/production/517f95a2-2039-4308-928d-2a46f3521d5f/1770519399426-327e03df-8a0d-4b18-8c85-ddbea5a072a9.txt?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=www-production%40exponentjs.iam.gserviceaccount.com%2F20260208%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260208T031732Z&X-Goog-Expires=900&X-Goog-SignedHeaders=host&X-Goog-Signature=37920e9839c67b712fdd909da7900d252ee1003b0fcf9810c86edf47c3402656f066447f6ec7443c002fe4eb164f1bca1a005e4232b38d7b9df33792a9aa596ab3cf3953ed812e27676a7b3d93bdc7fb852154185f5ba0537b80bf3a84484a526b6182c3ab24f8471dbadf37cd039e08b19806892617a7d10eb16082467330e6dbd972cb488726d35cb868c697567144cd6b791b3b2969c137ec9b9742f0ee05f287eb3c7591f923f6c823cf412539546a0f0534f5be2e894cbca501df22cd62fc1f1541828fbfc5274cbb0ed8daf07baf86c5f026dfc6cabd9a7a96cfae1148dfd5ef9996000a7e7ec9d4934c2730bc377494efe9470b21081f1b7821174de5"
+    ],
+    "project": {
+      "id": "0d967ba4-ad89-4a20-87fc-8d4cd28a5658",
+      "name": "smart-rebalancer",
+      "slug": "smart-rebalancer",
+      "ownerAccount": {
+        "id": "6299237c-44b8-4368-bd6a-1713e1311d65",
+        "name": "jimmyj"
+      }
+    },
+    "channel": "preview",
+    "distribution": "INTERNAL",
+    "buildProfile": "preview",
+    "sdkVersion": "54.0.0",
+    "appVersion": "1.0.0",
+    "appBuildVersion": "1",
+    "runtimeVersion": "1.0.0",
+    "gitCommitHash": "478f7c3b027b2baa161c0cb1666fe610eb6cd06c",
+    "gitCommitMessage": "fix: eas.json 복원 + .npmrc 추가\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>",
+    "priority": "NORMAL",
+    "createdAt": "2026-02-08T02:56:35.625Z",
+    "updatedAt": "2026-02-08T03:08:36.351Z",
+    "completedAt": "2026-02-08T03:08:28.170Z",
+    "expirationDate": "2026-02-22T02:56:35.662Z",
+    "isForIosSimulator": false,
+    "metrics": {
+      "buildWaitTime": 411,
+      "buildQueueTime": 41896,
+      "buildDuration": 669907
+    }
+  }
+]

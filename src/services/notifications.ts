@@ -19,9 +19,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // ============================================================================
 // 스토리지 키
 // ============================================================================
-const NOTIFICATION_PERMISSION_KEY = '@smart_rebalancer:notification_permission';
-const LAST_SCAN_DATE_KEY = '@smart_rebalancer:last_scan_date';
-const NOTIFICATION_SETTINGS_KEY = '@smart_rebalancer:notification_settings';
+const NOTIFICATION_PERMISSION_KEY = '@baln:notification_permission';
+const LAST_SCAN_DATE_KEY = '@baln:last_scan_date';
+const NOTIFICATION_SETTINGS_KEY = '@baln:notification_settings';
 
 // ============================================================================
 // 알림 설정 타입 & 기본값
@@ -115,7 +115,7 @@ export async function requestNotificationPermission(): Promise<boolean> {
     if (status !== 'granted') {
       Alert.alert(
         '알림 권한 안내',
-        '아침 브리핑 알림을 받으려면 설정에서 알림을 허용해주세요.\n\n설정 > 앱 > Smart Rebalancer > 알림',
+        '아침 브리핑 알림을 받으려면 설정에서 알림을 허용해주세요.\n\n설정 > 앱 > baln > 알림',
         [{ text: '확인' }]
       );
       return false;

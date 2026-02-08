@@ -1,162 +1,220 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   ScrollView,
+  RefreshControl,
+  TouchableOpacity,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { AssetType } from '../../src/types/asset';
 import { COLORS, SIZES } from '../../src/styles/theme';
-import RollingNumber from '../../src/components/RollingNumber';
 import { HomeSkeletonLoader } from '../../src/components/SkeletonLoader';
 import { useHaptics } from '../../src/hooks/useHaptics';
 import { useSharedPortfolio } from '../../src/hooks/useSharedPortfolio';
 import { useSharedMarketData } from '../../src/hooks/useSharedAnalysis';
-import type { StockQuantReport } from '../../src/services/centralKitchen';
-import { calculateHealthScore } from '../../src/services/rebalanceScore';
-import HealthScoreDetail from '../../src/components/HealthScoreDetail';
+import { calculateHealthScore, classifyAsset } from '../../src/services/rebalanceScore';
+
+// 홈 탭 전용 컴포넌트 (각 부서)
+import HeroCard from '../../src/components/home/HeroCard';
+import DailyBriefingCard from '../../src/components/home/DailyBriefingCard';
+import ActionAlertsCard from '../../src/components/home/ActionAlertsCard';
+import type { AlertItem } from '../../src/components/home/ActionAlertsCard';
+import AssetDonutCard from '../../src/components/home/AssetDonutCard';
+import type { DonutSlice } from '../../src/components/home/AssetDonutCard';
+import TopMoversCard from '../../src/components/home/TopMoversCard';
+import type { MoverItem } from '../../src/components/home/TopMoversCard';
+import QuickActionsBar from '../../src/components/home/QuickActionsBar';
+import MarketTicker from '../../src/components/insights/MarketTicker';
 
 // ============================================================================
-// 유틸리티 함수
+// 자산 카테고리별 색상 맵
 // ============================================================================
 
-/** 시간대별 인사말 */
-function getGreeting(): string {
-  const hour = new Date().getHours();
-  if (hour < 12) return '좋은 아침이에요';
-  if (hour < 18) return '좋은 오후예요';
-  return '좋은 저녁이에요';
-}
-
-/** 오늘 날짜 포맷 (예: 2월 6일 목요일) */
-function getTodayDateString(): string {
-  const now = new Date();
-  const month = now.getMonth() + 1;
-  const day = now.getDate();
-  const weekdays = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
-  return `${month}월 ${day}일 ${weekdays[now.getDay()]}`;
-}
-
-/** 시장 심리 → 한국어 라벨 + 색상 */
-function getSentimentDisplay(sentiment: 'BULLISH' | 'BEARISH' | 'NEUTRAL') {
-  switch (sentiment) {
-    case 'BULLISH':
-      return { label: '강세', color: COLORS.primary, bgColor: 'rgba(76,175,80,0.15)' };
-    case 'BEARISH':
-      return { label: '약세', color: COLORS.error, bgColor: 'rgba(207,102,121,0.15)' };
-    default:
-      return { label: '보합', color: COLORS.neutral, bgColor: 'rgba(158,158,158,0.15)' };
-  }
-}
-
-/** 퀀트 신호 → 한국어 라벨 + 색상 */
-function getSignalDisplay(signal: string) {
-  switch (signal) {
-    case 'STRONG_BUY':
-      return { label: 'STRONG BUY', color: '#FFFFFF', bgColor: COLORS.primary };
-    case 'BUY':
-      return { label: 'BUY', color: '#FFFFFF', bgColor: COLORS.primary };
-    case 'SELL':
-      return { label: 'SELL', color: '#FFFFFF', bgColor: COLORS.error };
-    case 'STRONG_SELL':
-      return { label: 'STRONG SELL', color: '#FFFFFF', bgColor: COLORS.error };
-    case 'WATCH':
-      return { label: 'WATCH', color: '#FFFFFF', bgColor: COLORS.warning };
-    default:
-      return { label: 'HOLD', color: '#FFFFFF', bgColor: '#555555' };
-  }
-}
-
-/* 기존 단일 drift 점수 → 6팩터 건강 점수로 교체 (rebalanceScore.ts) */
+const CATEGORY_CONFIG: Record<string, { label: string; color: string }> = {
+  large_cap: { label: '주식', color: '#4CAF50' },
+  bond:      { label: '채권', color: '#2196F3' },
+  realestate:{ label: '부동산', color: '#FF9800' },
+  bitcoin:   { label: '비트코인', color: '#F7931A' },
+  altcoin:   { label: '알트코인', color: '#9C27B0' },
+  cash:      { label: '현금', color: '#607D8B' },
+};
 
 // ============================================================================
-// 메인 컴포넌트
+// 메인: 홈 탭 오케스트레이터
 // ============================================================================
 
 export default function HomeScreen() {
   const router = useRouter();
   const haptics = useHaptics();
 
-  // [최적화] 공유 캐시 훅 — 포트폴리오 DB 조회 1회, 3분간 캐시
+  // ── 데이터 소스 (기존 훅 재사용, 수정 없음) ──
   const {
     assets: allAssets,
     totalAssets,
+    totalRealEstate,
     liquidTickers,
     isFetched: initialCheckDone,
+    refresh: refreshPortfolio,
   } = useSharedPortfolio();
 
-  // [최적화] 시장 데이터도 공유 캐시 — Central Kitchen DB 조회
-  const { data: marketData } = useSharedMarketData(liquidTickers);
+  const { data: marketData, isLoading: marketLoading } = useSharedMarketData(liquidTickers);
   const marketSentiment = marketData?.sentiment ?? null;
-  const stockReports: StockQuantReport[] = marketData?.stockReports ?? [];
+  const stockReports = marketData?.stockReports ?? [];
 
-  // 파생 데이터: 유동 자산만 필터 (주식/코인/ETF)
+  // ── 유동 자산 필터 ──
   const liquidAssets = useMemo(
     () => allAssets.filter(a => a.assetType === AssetType.LIQUID),
     [allAssets]
   );
 
-  // P&L 계산 (costBasis 기반 총 손익)
-  const totalPnL = useMemo(() => {
-    return liquidAssets.reduce((sum, asset) => {
-      const currentValue = asset.quantity && asset.currentPrice
+  // ── P&L 계산 ──
+  const { totalPnL, totalPnLPercent } = useMemo(() => {
+    let pnl = 0;
+    let cost = 0;
+    for (const asset of liquidAssets) {
+      const cv = asset.quantity && asset.currentPrice
         ? asset.quantity * asset.currentPrice
         : asset.currentValue;
-      const costBasis = asset.costBasis || asset.currentValue;
-      return sum + (currentValue - costBasis);
-    }, 0);
+      const cb = asset.costBasis || asset.currentValue;
+      pnl += cv - cb;
+      cost += cb;
+    }
+    return { totalPnL: pnl, totalPnLPercent: cost > 0 ? (pnl / cost) * 100 : 0 };
   }, [liquidAssets]);
 
-  const totalPnLPercent = useMemo(() => {
-    const totalCost = liquidAssets.reduce((sum, asset) => {
-      return sum + (asset.costBasis || asset.currentValue);
-    }, 0);
-    return totalCost > 0 ? (totalPnL / totalCost) * 100 : 0;
-  }, [liquidAssets, totalPnL]);
+  // ── 건강 점수 ──
+  const healthScore = useMemo(
+    () => calculateHealthScore(allAssets, totalAssets),
+    [allAssets, totalAssets]
+  );
 
-  // [6팩터] 건강 점수 엔진 — 기존 단일 drift 대체
-  const healthScore = useMemo(() => calculateHealthScore(allAssets, totalAssets), [allAssets, totalAssets]);
+  // ── 파생: alerts (최대 3개) ──
+  const alerts = useMemo<AlertItem[]>(() => {
+    const items: AlertItem[] = [];
 
-  // 건강 점수 상세 펼침/접힘
-  const [showHealthDetail, setShowHealthDetail] = useState(false);
-
-  // [최적화] 리포트를 ticker로 인덱싱 (O(1) 조회 → 기존 O(n) find 제거)
-  const reportsByTicker = useMemo(() => {
-    const map = new Map<string, StockQuantReport>();
-    for (const report of stockReports) {
-      map.set(report.ticker, report);
+    // 1) SELL/STRONG_SELL 종목 → danger
+    for (const r of stockReports) {
+      if (items.length >= 3) break;
+      if (r.signal === 'SELL' || r.signal === 'STRONG_SELL') {
+        items.push({
+          type: 'danger',
+          icon: '🔴',
+          title: `${r.ticker} 매도 시그널`,
+          subtitle: `밸류에이션 ${r.valuation_score}점`,
+        });
+      }
     }
-    return map;
-  }, [stockReports]);
 
-  // 보유 종목과 매칭된 시그널 목록 (O(n) — 기존 O(n×m))
-  const matchedSignals = useMemo(() => {
-    if (stockReports.length === 0 || liquidAssets.length === 0) return [];
-    const tickerSet = new Set(liquidAssets.map(a => a.ticker));
-    return stockReports.filter(r => tickerSet.has(r.ticker));
-  }, [stockReports, liquidAssets]);
+    // 2) 건강 점수 팩터 중 40점 미만 → warning
+    for (const f of healthScore.factors) {
+      if (items.length >= 3) break;
+      if (f.score < 40) {
+        items.push({
+          type: 'warning',
+          icon: '🟡',
+          title: `${f.label} 점검 필요`,
+          subtitle: f.comment,
+        });
+      }
+    }
 
-  // ======== 네비게이션 핸들러 ========
-  const handleOCR = () => {
-    haptics.lightTap();
-    router.push('/add-asset');
-  };
+    // 3) BUY/STRONG_BUY 종목 → opportunity
+    for (const r of stockReports) {
+      if (items.length >= 3) break;
+      if (r.signal === 'BUY' || r.signal === 'STRONG_BUY') {
+        items.push({
+          type: 'opportunity',
+          icon: '🟢',
+          title: `${r.ticker} 매수 기회`,
+          subtitle: `밸류에이션 ${r.valuation_score}점`,
+        });
+      }
+    }
 
-  const handleDiagnosis = () => {
+    return items.slice(0, 3);
+  }, [stockReports, healthScore.factors]);
+
+  // ── 파생: donutData ──
+  const donutData = useMemo<DonutSlice[]>(() => {
+    if (allAssets.length === 0 || totalAssets === 0) return [];
+    const buckets: Record<string, number> = {};
+    for (const asset of allAssets) {
+      const cat = classifyAsset(asset);
+      buckets[cat] = (buckets[cat] || 0) + asset.currentValue;
+    }
+    return Object.entries(buckets)
+      .map(([cat, value]) => ({
+        category: cat,
+        label: CATEGORY_CONFIG[cat]?.label ?? cat,
+        value,
+        color: CATEGORY_CONFIG[cat]?.color ?? '#666',
+        percent: (value / totalAssets) * 100,
+      }))
+      .sort((a, b) => b.percent - a.percent);
+  }, [allAssets, totalAssets]);
+
+  // ── 파생: topMovers ──
+  const { gainers, losers } = useMemo<{ gainers: MoverItem[]; losers: MoverItem[] }>(() => {
+    if (liquidAssets.length === 0) return { gainers: [], losers: [] };
+
+    const withPnl = liquidAssets.map(a => {
+      const cv = a.quantity && a.currentPrice ? a.quantity * a.currentPrice : a.currentValue;
+      const cb = a.costBasis || a.currentValue;
+      const pct = cb > 0 ? ((cv - cb) / cb) * 100 : 0;
+      return {
+        ticker: a.ticker || a.name,
+        name: a.name,
+        gainLossPercent: pct,
+        currentValue: cv,
+      };
+    });
+
+    const sorted = [...withPnl].sort((a, b) => b.gainLossPercent - a.gainLossPercent);
+    return {
+      gainers: sorted.filter(m => m.gainLossPercent > 0).slice(0, 3),
+      losers: sorted.filter(m => m.gainLossPercent < 0).slice(-3).reverse(),
+    };
+  }, [liquidAssets]);
+
+  // ── Pull-to-Refresh ──
+  const [refreshing, setRefreshing] = React.useState(false);
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refreshPortfolio();
+    setRefreshing(false);
+  }, [refreshPortfolio]);
+
+  // ── 네비게이션 ──
+  const handleDiagnosis = useCallback(() => {
     haptics.lightTap();
     router.push('/(tabs)/diagnosis');
-  };
+  }, [haptics, router]);
 
-  const handleRebalance = () => {
+  const handleRebalance = useCallback(() => {
     haptics.lightTap();
     router.push('/(tabs)/rebalance');
-  };
+  }, [haptics, router]);
 
-  // ======== 로딩 중: 스켈레톤 표시 ========
+  const handleAddAsset = useCallback(() => {
+    haptics.lightTap();
+    router.push('/add-asset');
+  }, [haptics, router]);
+
+  const handleRealEstate = useCallback(() => {
+    haptics.lightTap();
+    router.push('/add-realestate');
+  }, [haptics, router]);
+
+  const handlePrediction = useCallback(() => {
+    haptics.lightTap();
+    router.push('/games/predictions');
+  }, [haptics, router]);
+
+  // ── 로딩 중: 스켈레톤 ──
   if (!initialCheckDone) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
@@ -166,249 +224,84 @@ export default function HomeScreen() {
   }
 
   const hasAssets = allAssets.length > 0;
-  const weatherEmoji = marketSentiment?.cfoWeather?.emoji || '📊';
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      {/* 시장 현황 전광판 (KOSPI·NASDAQ·BTC 등 실시간) */}
+      <MarketTicker />
 
-        {/* ====== Section 1: 인사 + 시장 날씨 ====== */}
-        <View style={styles.greetingSection}>
-          <View>
-            <Text style={styles.greetingText}>
-              {getGreeting()} {weatherEmoji}
-            </Text>
-            <Text style={styles.dateText}>{getTodayDateString()}</Text>
-          </View>
-          {marketSentiment ? (
-            <View style={[
-              styles.sentimentBadge,
-              { backgroundColor: getSentimentDisplay(marketSentiment.sentiment).bgColor },
-            ]}>
-              <View style={[
-                styles.sentimentDot,
-                { backgroundColor: getSentimentDisplay(marketSentiment.sentiment).color },
-              ]} />
-              <Text style={[
-                styles.sentimentText,
-                { color: getSentimentDisplay(marketSentiment.sentiment).color },
-              ]}>
-                시장: {getSentimentDisplay(marketSentiment.sentiment).label}
-              </Text>
-            </View>
-          ) : (
-            <TouchableOpacity onPress={handleOCR} style={styles.cameraButton}>
-              <Ionicons name="camera-outline" size={20} color={COLORS.textPrimary} />
-              <Text style={styles.cameraText}>캡처</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={COLORS.primary}
+            colors={[COLORS.primary]}
+          />
+        }
+      >
         {hasAssets ? (
           <>
-            {/* ====== Section 2: 포트폴리오 Pulse 카드 (Hero) ====== */}
-            <View style={styles.pulseCard}>
-              <Text style={styles.pulseLabel}>총 평가금액</Text>
-              <RollingNumber
-                value={totalAssets}
-                format="currency"
-                prefix="₩"
-                style={styles.pulseValue}
-                duration={1000}
-              />
-              <View style={styles.pnlRow}>
-                <Text style={[
-                  styles.pnlText,
-                  { color: totalPnL >= 0 ? COLORS.primary : COLORS.error },
-                ]}>
-                  {totalPnL >= 0 ? '+' : ''}₩{Math.abs(Math.round(totalPnL)).toLocaleString('ko-KR')}
-                  {' '}({totalPnL >= 0 ? '+' : ''}{totalPnLPercent.toFixed(2)}%)
-                  {' '}{totalPnL >= 0 ? '▲' : '▼'}
-                </Text>
-              </View>
+            {/* ① 총자산 히어로 */}
+            <HeroCard
+              totalAssets={totalAssets}
+              totalPnL={totalPnL}
+              totalPnLPercent={totalPnLPercent}
+              totalRealEstate={totalRealEstate}
+              healthGrade={healthScore.grade}
+              healthGradeColor={healthScore.gradeColor}
+              healthGradeBgColor={healthScore.gradeBgColor}
+              healthGradeLabel={healthScore.gradeLabel}
+              healthScore={healthScore.totalScore}
+              onDiagnosisPress={handleDiagnosis}
+              onRealEstatePress={handleRealEstate}
+            />
 
-              <View style={styles.pulseActions}>
-                <TouchableOpacity
-                  style={styles.pulseActionBtn}
-                  onPress={() => {
-                    haptics.lightTap();
-                    setShowHealthDetail(prev => !prev);
-                  }}
-                >
-                  <Text style={styles.pulseActionLabel}>건강 점수</Text>
-                  <View style={styles.pulseScoreRow}>
-                    <Text style={[styles.pulseScore, { color: healthScore.gradeColor }]}>
-                      {healthScore.totalScore}점
-                    </Text>
-                    <View style={[styles.scoreGradeBadge, { backgroundColor: healthScore.gradeBgColor }]}>
-                      <Text style={[styles.scoreGradeText, { color: healthScore.gradeColor }]}>
-                        {healthScore.gradeLabel}
-                      </Text>
-                    </View>
-                  </View>
-                </TouchableOpacity>
+            {/* ② 오늘의 브리핑 */}
+            <DailyBriefingCard
+              cfoWeather={marketSentiment?.cfoWeather ?? null}
+              sentiment={marketSentiment?.sentiment ?? null}
+              isLoading={marketLoading}
+            />
 
-                <TouchableOpacity
-                  style={[styles.pulseActionBtn, styles.diagnosisBtn]}
-                  onPress={handleDiagnosis}
-                >
-                  <Text style={styles.pulseActionLabel}>AI 진단</Text>
-                  <View style={styles.diagnosisArrow}>
-                    <Ionicons name="analytics-outline" size={20} color={COLORS.primary} />
-                    <Ionicons name="chevron-forward" size={16} color={COLORS.textSecondary} />
-                  </View>
-                </TouchableOpacity>
-              </View>
-            </View>
+            {/* ③ 핵심 알림 */}
+            <ActionAlertsCard
+              alerts={alerts}
+              onPressCTA={handleRebalance}
+              isLoading={marketLoading}
+            />
 
-            {/* ====== 건강 점수 상세 (토글) ====== */}
-            {showHealthDetail && <HealthScoreDetail result={healthScore} />}
+            {/* ④ 자산 배분 도넛 */}
+            <AssetDonutCard
+              slices={donutData}
+              totalAssets={totalAssets}
+            />
 
-            {/* ====== Section 3: 오늘의 시그널 ====== */}
-            {matchedSignals.length > 0 && (
-              <View style={styles.signalCard}>
-                <View style={styles.signalHeader}>
-                  <Text style={styles.signalTitle}>📡 오늘의 시그널</Text>
-                  <Text style={styles.signalCount}>
-                    {matchedSignals.length}개 종목 분석
-                  </Text>
-                </View>
+            {/* ⑤ 등락률 Top/Bottom */}
+            <TopMoversCard
+              gainers={gainers}
+              losers={losers}
+            />
 
-                {matchedSignals.map((report) => {
-                  const signalDisplay = getSignalDisplay(report.signal);
-                  const signal = report.signal as string;
-                  const desc = signal === 'BUY' || signal === 'STRONG_BUY'
-                    ? `밸류에이션 ${report.valuation_score}점`
-                    : signal === 'SELL' || signal === 'STRONG_SELL'
-                    ? `밸류에이션 ${report.valuation_score}점`
-                    : signal === 'WATCH'
-                    ? report.analysis?.slice(0, 20) || '주시 필요'
-                    : report.analysis?.slice(0, 20) || '유지';
-
-                  return (
-                    <TouchableOpacity
-                      key={report.ticker}
-                      style={styles.signalRow}
-                      onPress={handleDiagnosis}
-                    >
-                      <Text style={styles.signalTicker}>{report.ticker}</Text>
-                      <View style={[styles.signalBadge, { backgroundColor: signalDisplay.bgColor }]}>
-                        <Text style={[styles.signalBadgeText, { color: signalDisplay.color }]}>
-                          {signalDisplay.label}
-                        </Text>
-                      </View>
-                      <Text style={styles.signalDesc} numberOfLines={1}>
-                        {desc}
-                      </Text>
-                      <Ionicons name="chevron-forward" size={14} color={COLORS.textTertiary} />
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            )}
-
-            {/* ====== Section 4: 내 활성 자산 ====== */}
-            <View style={styles.holdingsSection}>
-              <View style={styles.holdingsHeader}>
-                <Text style={styles.holdingsTitle}>내 활성 자산</Text>
-                <Text style={styles.holdingsCount}>{liquidAssets.length}개</Text>
-              </View>
-
-              {liquidAssets.map((asset) => {
-                const currentValue = asset.quantity && asset.currentPrice
-                  ? asset.quantity * asset.currentPrice
-                  : asset.currentValue;
-                const costBasis = asset.costBasis || asset.currentValue;
-                const gainLoss = currentValue - costBasis;
-                const gainLossPercent = costBasis > 0 ? (gainLoss / costBasis) * 100 : 0;
-                // [최적화] Map.get O(1) 조회 (기존: find O(n))
-                const report = reportsByTicker.get(asset.ticker ?? '');
-                const signalDisplay = report ? getSignalDisplay(report.signal) : null;
-
-                return (
-                  <TouchableOpacity
-                    key={asset.id}
-                    style={styles.holdingItem}
-                    onPress={handleDiagnosis}
-                    activeOpacity={0.7}
-                  >
-                    <View style={styles.holdingIcon}>
-                      <Text style={styles.holdingIconText}>
-                        {asset.ticker ? asset.ticker[0] : asset.name[0]}
-                      </Text>
-                    </View>
-
-                    <View style={styles.holdingInfo}>
-                      <Text style={styles.holdingTicker}>
-                        {asset.ticker || asset.name}
-                      </Text>
-                      <Text style={styles.holdingQuantity}>
-                        {asset.quantity
-                          ? `${asset.quantity % 1 === 0 ? asset.quantity : asset.quantity.toFixed(2)}주`
-                          : asset.name
-                        }
-                      </Text>
-                    </View>
-
-                    <View style={styles.holdingRight}>
-                      <Text style={styles.holdingValue}>
-                        ₩{currentValue.toLocaleString('ko-KR', {
-                          minimumFractionDigits: 0,
-                          maximumFractionDigits: 0,
-                        })}
-                      </Text>
-                      <View style={styles.holdingPnlRow}>
-                        <Text style={[
-                          styles.holdingPnl,
-                          { color: gainLoss >= 0 ? COLORS.primary : COLORS.error },
-                        ]}>
-                          {gainLoss >= 0 ? '+' : ''}{gainLossPercent.toFixed(1)}%
-                        </Text>
-                        {signalDisplay && (
-                          <View style={[styles.miniSignalBadge, { backgroundColor: signalDisplay.bgColor }]}>
-                            <Text style={[styles.miniSignalText, { color: signalDisplay.color }]}>
-                              {signalDisplay.label}
-                            </Text>
-                          </View>
-                        )}
-                      </View>
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-
-            {/* ====== Section 5: 리밸런싱 알림 배너 ====== */}
-            <TouchableOpacity
-              style={[styles.rebalanceBanner, { borderColor: healthScore.driftStatus.color + '40' }]}
-              onPress={handleRebalance}
-              activeOpacity={0.8}
-            >
-              <View style={styles.bannerLeft}>
-                <Text style={styles.bannerIcon}>⚖️</Text>
-                <View>
-                  <Text style={styles.bannerTitle}>포트폴리오 균형 상태</Text>
-                  <Text style={styles.bannerDesc}>
-                    {healthScore.summary}
-                  </Text>
-                </View>
-              </View>
-              <View style={[styles.bannerBtn, { backgroundColor: healthScore.driftStatus.bgColor }]}>
-                <Text style={[styles.bannerBtnText, { color: healthScore.driftStatus.color }]}>처방전</Text>
-              </View>
-            </TouchableOpacity>
+            {/* ⑥ 퀵 액션 */}
+            <QuickActionsBar
+              onAddAsset={handleAddAsset}
+              onRealEstate={handleRealEstate}
+              onPrediction={handlePrediction}
+            />
           </>
         ) : (
-          /* ====== Section 6: Empty State ====== */
+          /* Empty State */
           <View style={styles.emptyState}>
             <View style={styles.emptyIconWrap}>
               <Ionicons name="pie-chart-outline" size={56} color={COLORS.primary} />
             </View>
-            <Text style={styles.emptyTitle}>포트폴리오를 시작하세요</Text>
+            <Text style={styles.emptyTitle}>자산 브리핑을 시작하세요</Text>
             <Text style={styles.emptyDesc}>
-              증권사 앱 스크린샷을 캡처하면{'\n'}AI가 자동으로 자산을 등록해요
+              증권사 앱 스크린샷을 캡처하면{'\n'}AI가 매일 아침 자산 현황을 분석해요
             </Text>
-            <TouchableOpacity style={styles.emptyBtn} onPress={handleOCR}>
+            <TouchableOpacity style={styles.emptyBtn} onPress={handleAddAsset}>
               <Ionicons name="camera-outline" size={20} color="#FFFFFF" />
               <Text style={styles.emptyBtnText}>자산 추가하기</Text>
             </TouchableOpacity>
@@ -427,293 +320,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   scrollContent: { padding: SIZES.lg, paddingBottom: 100 },
 
-  // Section 1: 인사 + 시장 날씨
-  greetingSection: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: SIZES.xl,
-  },
-  greetingText: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-  },
-  dateText: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    marginTop: 4,
-  },
-  sentimentBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    gap: 6,
-  },
-  sentimentDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  sentimentText: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  cameraButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.surface,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: SIZES.rMd,
-    gap: 4,
-  },
-  cameraText: {
-    color: COLORS.textPrimary,
-    fontWeight: '600',
-    fontSize: 13,
-  },
-
-  // Section 2: Pulse Hero 카드
-  pulseCard: {
-    backgroundColor: COLORS.surface,
-    borderRadius: SIZES.rXl,
-    padding: SIZES.xl,
-    marginBottom: SIZES.lg,
-  },
-  pulseLabel: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    marginBottom: 4,
-  },
-  pulseValue: {
-    fontSize: 32,
-    fontWeight: '800',
-    color: COLORS.textPrimary,
-  },
-  pnlRow: {
-    marginTop: 4,
-    marginBottom: SIZES.lg,
-  },
-  pnlText: {
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  pulseActions: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  pulseActionBtn: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-    borderRadius: 12,
-    padding: 12,
-  },
-  diagnosisBtn: {},
-  pulseActionLabel: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-    marginBottom: 6,
-  },
-  pulseScoreRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  pulseScore: {
-    fontSize: 20,
-    fontWeight: '800',
-  },
-  scoreGradeBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
-  },
-  scoreGradeText: {
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  diagnosisArrow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-
-  // Section 3: 오늘의 시그널
-  signalCard: {
-    backgroundColor: COLORS.surface,
-    borderRadius: SIZES.rXl,
-    padding: SIZES.xl,
-    marginBottom: SIZES.lg,
-  },
-  signalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 14,
-  },
-  signalTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-  },
-  signalCount: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-  },
-  signalRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.borderLight,
-    gap: 10,
-  },
-  signalTicker: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-    width: 55,
-  },
-  signalBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  signalBadgeText: {
-    fontSize: 11,
-    fontWeight: '800',
-  },
-  signalDesc: {
-    flex: 1,
-    fontSize: 13,
-    color: COLORS.textSecondary,
-  },
-
-  // Section 4: 활성 자산
-  holdingsSection: {
-    marginBottom: SIZES.lg,
-  },
-  holdingsHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  holdingsTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-  },
-  holdingsCount: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-  },
-  holdingItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.surface,
-    padding: 14,
-    borderRadius: SIZES.rLg,
-    marginBottom: 8,
-  },
-  holdingIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#2A2A2A',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  holdingIconText: {
-    fontWeight: '700',
-    color: COLORS.primary,
-    fontSize: 16,
-  },
-  holdingInfo: {
-    flex: 1,
-  },
-  holdingTicker: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
-  },
-  holdingQuantity: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-    marginTop: 2,
-  },
-  holdingRight: {
-    alignItems: 'flex-end',
-  },
-  holdingValue: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-  },
-  holdingPnlRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 2,
-  },
-  holdingPnl: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  miniSignalBadge: {
-    paddingHorizontal: 5,
-    paddingVertical: 1,
-    borderRadius: 4,
-  },
-  miniSignalText: {
-    fontSize: 9,
-    fontWeight: '800',
-  },
-
-  // Section 5: 리밸런싱 배너
-  rebalanceBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: COLORS.surface,
-    borderRadius: SIZES.rXl,
-    padding: SIZES.lg,
-    borderWidth: 1,
-  },
-  bannerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    flex: 1,
-  },
-  bannerIcon: {
-    fontSize: 24,
-  },
-  bannerTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-  },
-  bannerDesc: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-    marginTop: 2,
-  },
-  bannerBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  bannerBtnText: {
-    fontSize: 13,
-    fontWeight: '700',
-  },
-
-  // Section 6: Empty State
+  // Empty State
   emptyState: {
     backgroundColor: COLORS.surface,
     borderRadius: SIZES.rXl,

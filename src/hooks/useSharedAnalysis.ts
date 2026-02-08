@@ -48,6 +48,7 @@ import {
   type RateCycleEvidence,
 } from '../services/centralKitchen';
 import supabase from '../services/supabase';
+import { validateAndCorrectRiskAnalysis, validatePortfolioActions } from '../utils/aiResponseValidator';
 
 // 쿼리 키 (외부에서 invalidate 할 때 사용)
 export const AI_ANALYSIS_KEY = ['shared-ai-analysis'];
@@ -122,9 +123,29 @@ async function fetchAIAnalysis(
       }),
   ]);
 
+  // 4-B) AI 응답 검증 및 보정 (감사 부서 역할)
+  let validatedRisk = riskResult;
+  if (riskResult) {
+    const clientTotal = portfolioAssets.reduce((sum, a) => sum + (a.currentPrice * a.quantity), 0);
+    const { corrected, validation } = validateAndCorrectRiskAnalysis(riskResult, clientTotal);
+    if (validation.warnings.length > 0) {
+      console.warn('[AI검증] 보정 항목:', validation.warnings);
+    }
+    validatedRisk = corrected;
+  }
+
+  // 4-C) 포트폴리오 액션 검증 (중복/무효 제거)
+  let validatedBriefing = kitchenResult?.morningBriefing ?? null;
+  if (validatedBriefing?.portfolioActions) {
+    validatedBriefing = {
+      ...validatedBriefing,
+      portfolioActions: validatePortfolioActions(validatedBriefing.portfolioActions),
+    };
+  }
+
   const result: AIAnalysisData = {
-    morningBriefing: kitchenResult?.morningBriefing ?? null,
-    riskAnalysis: riskResult,
+    morningBriefing: validatedBriefing,
+    riskAnalysis: validatedRisk,
     source: kitchenResult?.source ?? 'failed',
   };
 

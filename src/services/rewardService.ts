@@ -92,15 +92,20 @@ export async function getDailyCheckInStatus(): Promise<{
   }
 }
 
-/** 출석 체크 실행 → 크레딧 지급 */
+/** 출석 체크 실행 → daily_checkin_v2 RPC (에스컬레이팅 보상 + XP) */
 export async function performDailyCheckIn(): Promise<{
   success: boolean;
   creditsEarned: number;
   newStreak: number;
   newBalance: number;
+  // V2 추가 필드 (optional — 기존 호출자 하위 호환)
+  xpEarned?: number;
+  bonusXp?: number;
+  newLevel?: number;
+  levelUp?: boolean;
 }> {
   try {
-    // 이미 체크인 했는지 확인
+    // 로컬 캐시로 빠른 중복 체크
     const { checkedIn } = await getDailyCheckInStatus();
     if (checkedIn) {
       return { success: false, creditsEarned: 0, newStreak: 0, newBalance: 0 };
@@ -109,34 +114,40 @@ export async function performDailyCheckIn(): Promise<{
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, creditsEarned: 0, newStreak: 0, newBalance: 0 };
 
-    // 연속 출석 계산
-    const prevDate = await AsyncStorage.getItem(KEYS.dailyCheckIn);
-    const prevStreak = await AsyncStorage.getItem(KEYS.checkInStreak);
-    let streak = prevStreak ? parseInt(prevStreak, 10) : 0;
-
-    if (prevDate === getYesterdayKey()) {
-      streak += 1; // 어제 체크인 → 연속 +1
-    } else {
-      streak = 1; // 처음이거나 연속 끊김
-    }
-
-    // 크레딧 지급
-    const result = await grantRewardCredits(user.id, REWARD_AMOUNTS.dailyCheckIn, 'daily_checkin', {
-      streak,
-      date: getTodayKey(),
+    // daily_checkin_v2 RPC 호출 (원자적 스트릭 + 에스컬레이팅 보상 + XP)
+    const { data, error } = await supabase.rpc('daily_checkin_v2', {
+      p_user_id: user.id,
     });
 
-    if (result.success) {
-      // AsyncStorage 업데이트
-      await AsyncStorage.setItem(KEYS.dailyCheckIn, getTodayKey());
-      await AsyncStorage.setItem(KEYS.checkInStreak, streak.toString());
+    if (error) {
+      console.error('[Reward] 체크인 V2 RPC 실패:', error);
+      return { success: false, creditsEarned: 0, newStreak: 0, newBalance: 0 };
     }
 
+    const result = data as any;
+
+    if (!result?.success) {
+      // 이미 체크인 한 경우 로컬 캐시도 동기화
+      if (result?.reason === 'already_checked_in') {
+        await AsyncStorage.setItem(KEYS.dailyCheckIn, getTodayKey());
+        await AsyncStorage.setItem(KEYS.checkInStreak, (result.current_streak || 0).toString());
+      }
+      return { success: false, creditsEarned: 0, newStreak: result?.current_streak || 0, newBalance: 0 };
+    }
+
+    // AsyncStorage 로컬 캐시 업데이트 (기존 호환)
+    await AsyncStorage.setItem(KEYS.dailyCheckIn, getTodayKey());
+    await AsyncStorage.setItem(KEYS.checkInStreak, (result.new_streak || 1).toString());
+
     return {
-      success: result.success,
-      creditsEarned: result.success ? REWARD_AMOUNTS.dailyCheckIn : 0,
-      newStreak: streak,
-      newBalance: result.newBalance,
+      success: true,
+      creditsEarned: result.credits_earned || REWARD_AMOUNTS.dailyCheckIn,
+      newStreak: result.new_streak || 1,
+      newBalance: 0, // V2에서는 별도 잔액 반환 안함
+      xpEarned: result.xp_earned,
+      bonusXp: result.bonus_xp,
+      newLevel: result.new_level,
+      levelUp: result.level_up,
     };
   } catch (err) {
     console.error('[Reward] 출석 체크 실패:', err);

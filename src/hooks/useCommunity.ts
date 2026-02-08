@@ -7,10 +7,10 @@
  *   글쓰기: 1.5억+ → 게시물 작성 가능
  */
 
-import { useState, useCallback, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import supabase from '../services/supabase';
 import { isFreePeriod } from '../config/freePeriod';
+import { useSharedPortfolio } from './useSharedPortfolio';
 import {
   CommunityPost,
   CommunityComment,
@@ -62,96 +62,39 @@ const normalizeHoldingType = (assetType: string | null): HoldingSnapshot['type']
 };
 
 // ================================================================
-// 라운지 자격 확인 훅
+// 라운지 자격 확인 (순수 계산 — useSharedPortfolio 캐시 활용)
 // ================================================================
 
-export const useLoungeEligibility = () => {
-  const [eligibility, setEligibility] = useState<LoungeEligibility>({
-    isEligible: false,
-    canComment: false,
-    canPost: false,
-    totalAssets: 0,
+/** 순수 함수: 총 자산과 보유 여부 → LoungeEligibility 계산 */
+const computeEligibility = (totalAssets: number, hasAssets: boolean): LoungeEligibility => {
+  const free = isFreePeriod();
+  const isEligible = free || totalAssets >= LOUNGE_VIEW_THRESHOLD;
+  const canComment = free || totalAssets >= LOUNGE_COMMENT_THRESHOLD;
+  const canPost = free || totalAssets >= LOUNGE_POST_THRESHOLD;
+  const shortfall = isEligible ? 0 : LOUNGE_VIEW_THRESHOLD - totalAssets;
+
+  return {
+    isEligible,
+    canComment,
+    canPost,
+    totalAssets,
     requiredAssets: LOUNGE_VIEW_THRESHOLD,
-    shortfall: LOUNGE_VIEW_THRESHOLD,
-    hasVerifiedAssets: false,
-    verifiedAssetsTotal: 0,
+    shortfall,
+    hasVerifiedAssets: hasAssets,
+    verifiedAssetsTotal: totalAssets,
     isVerificationRequired: false,
-  });
-  const [loading, setLoading] = useState(true);
+  };
+};
 
-  const checkEligibility = useCallback(async () => {
-    try {
-      setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setEligibility({
-          isEligible: false,
-          canComment: false,
-          canPost: false,
-          totalAssets: 0,
-          requiredAssets: LOUNGE_VIEW_THRESHOLD,
-          shortfall: LOUNGE_VIEW_THRESHOLD,
-          hasVerifiedAssets: false,
-          verifiedAssetsTotal: 0,
-          isVerificationRequired: false,
-        });
-        return;
-      }
+/** useSharedPortfolio 캐시 기반 자격 확인 (독립 Supabase 쿼리 제거) */
+export const useLoungeEligibility = () => {
+  const { totalAssets, hasAssets, isLoading, refresh } = useSharedPortfolio();
 
-      // 포트폴리오에서 총 자산 계산
-      const { data, error } = await supabase
-        .from('portfolios')
-        .select('id, quantity, current_price, current_value')
-        .eq('user_id', user.id);
-
-      if (error) {
-        console.error('Portfolio fetch error:', error);
-        return;
-      }
-
-      const totalAssets = (data || []).reduce((sum, item) => {
-        const value = item.quantity && item.current_price
-          ? item.quantity * item.current_price
-          : item.current_value || 0;
-        return sum + value;
-      }, 0);
-
-      const verifiedAssetsTotal = totalAssets;
-      const hasVerifiedAssets = (data || []).length > 0;
-
-      // 3단계 접근 등급 판단 (무료 기간에는 전체 개방)
-      const free = isFreePeriod();
-      const isEligible = free || totalAssets >= LOUNGE_VIEW_THRESHOLD;
-      const canComment = free || totalAssets >= LOUNGE_COMMENT_THRESHOLD;
-      const canPost = free || totalAssets >= LOUNGE_POST_THRESHOLD;
-
-      const shortfall = isEligible
-        ? 0
-        : LOUNGE_VIEW_THRESHOLD - totalAssets;
-
-      setEligibility({
-        isEligible,
-        canComment,
-        canPost,
-        totalAssets,
-        requiredAssets: LOUNGE_VIEW_THRESHOLD,
-        shortfall,
-        hasVerifiedAssets,
-        verifiedAssetsTotal,
-        isVerificationRequired: false,
-      });
-    } catch (error) {
-      console.error('Eligibility check error:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    checkEligibility();
-  }, [checkEligibility]);
-
-  return { eligibility, loading, refetch: checkEligibility };
+  return {
+    eligibility: computeEligibility(totalAssets, hasAssets),
+    loading: isLoading,
+    refetch: refresh,
+  };
 };
 
 // ================================================================
@@ -186,31 +129,54 @@ export const generateAssetMix = (portfolio: { category: string; percentage: numb
 };
 
 // ================================================================
-// 게시물 목록 조회
+// 게시물 목록 조회 (무한 스크롤)
 // ================================================================
 
-export const useCommunityPosts = (category: CommunityCategoryFilter = 'all') => {
-  return useQuery({
-    queryKey: ['communityPosts', category],
-    queryFn: async () => {
+/** 정렬 옵션 */
+export type PostSortBy = 'latest' | 'popular' | 'hot';
+
+const PAGE_SIZE = 20;
+
+export const useCommunityPosts = (
+  category: CommunityCategoryFilter = 'all',
+  sortBy: PostSortBy = 'latest',
+) => {
+  return useInfiniteQuery({
+    queryKey: ['communityPosts', category, sortBy],
+    queryFn: async ({ pageParam = 0 }) => {
       let query = supabase
         .from('community_posts')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(50);
+        .select('*');
 
       if (category !== 'all') {
         query = query.eq('category', category);
       }
 
+      // 정렬 기준
+      if (sortBy === 'popular') {
+        query = query.order('likes_count', { ascending: false });
+      } else if (sortBy === 'hot') {
+        query = query.order('comments_count', { ascending: false });
+      } else {
+        query = query.order('created_at', { ascending: false });
+      }
+
+      // 오프셋 기반 페이지네이션
+      query = query.range(pageParam, pageParam + PAGE_SIZE - 1);
+
       const { data, error } = await query;
       if (error) throw error;
 
-      // top_holdings JSON 파싱 보장
       return (data || []).map(post => ({
         ...post,
         top_holdings: Array.isArray(post.top_holdings) ? post.top_holdings : [],
       })) as CommunityPost[];
+    },
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) => {
+      // 마지막 페이지가 PAGE_SIZE 미만이면 더 이상 없음
+      if (lastPage.length < PAGE_SIZE) return undefined;
+      return allPages.length * PAGE_SIZE;
     },
     staleTime: 60000,
   });
@@ -297,7 +263,7 @@ export const useMyLikes = () => {
   });
 };
 
-/** 좋아요 토글 (RPC 사용) */
+/** 좋아요 토글 (RPC + 낙관적 업데이트) */
 export const useLikePost = () => {
   const queryClient = useQueryClient();
 
@@ -326,7 +292,72 @@ export const useLikePost = () => {
 
       return data as boolean; // true=좋아요, false=취소
     },
-    onSuccess: () => {
+
+    // 낙관적 업데이트: 탭 → 즉시 UI 반영
+    onMutate: async (postId: string) => {
+      // 진행 중 쿼리 취소
+      await queryClient.cancelQueries({ queryKey: ['communityPosts'] });
+      await queryClient.cancelQueries({ queryKey: ['myLikes'] });
+      await queryClient.cancelQueries({ queryKey: ['communityPost'] });
+
+      // 캐시 스냅샷 저장 (롤백용)
+      const prevMyLikes = queryClient.getQueryData<Set<string>>(['myLikes']);
+      const prevPostsQueries = queryClient.getQueriesData({ queryKey: ['communityPosts'] });
+
+      // myLikes 토글
+      const currentLikes = new Set(prevMyLikes ?? []);
+      const isCurrentlyLiked = currentLikes.has(postId);
+      if (isCurrentlyLiked) {
+        currentLikes.delete(postId);
+      } else {
+        currentLikes.add(postId);
+      }
+      queryClient.setQueryData(['myLikes'], currentLikes);
+
+      // communityPosts (useInfiniteQuery pages[][] 구조) 업데이트
+      queryClient.setQueriesData(
+        { queryKey: ['communityPosts'] },
+        (oldData: any) => {
+          if (!oldData?.pages) return oldData;
+          return {
+            ...oldData,
+            pages: oldData.pages.map((page: CommunityPost[]) =>
+              page.map((post: CommunityPost) =>
+                post.id === postId
+                  ? { ...post, likes_count: (post.likes_count || 0) + (isCurrentlyLiked ? -1 : 1) }
+                  : post
+              )
+            ),
+          };
+        },
+      );
+
+      // communityPost (단일) 업데이트
+      queryClient.setQueriesData(
+        { queryKey: ['communityPost'] },
+        (oldData: any) => {
+          if (!oldData || oldData.id !== postId) return oldData;
+          return { ...oldData, likes_count: (oldData.likes_count || 0) + (isCurrentlyLiked ? -1 : 1) };
+        },
+      );
+
+      return { prevMyLikes, prevPostsQueries };
+    },
+
+    // 에러 시 롤백
+    onError: (_err, _postId, context) => {
+      if (context?.prevMyLikes) {
+        queryClient.setQueryData(['myLikes'], context.prevMyLikes);
+      }
+      if (context?.prevPostsQueries) {
+        for (const [queryKey, data] of context.prevPostsQueries) {
+          queryClient.setQueryData(queryKey, data);
+        }
+      }
+    },
+
+    // 서버 진실성 확보
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['communityPosts'] });
       queryClient.invalidateQueries({ queryKey: ['myLikes'] });
       queryClient.invalidateQueries({ queryKey: ['communityPost'] });

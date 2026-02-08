@@ -1,0 +1,55 @@
+[
+  {
+    "id": "68c14a2d-e9d0-41a1-a4a9-c2cd78a4a3fe",
+    "status": "ERRORED",
+    "platform": "ANDROID",
+    "error": {
+      "errorCode": "EAS_BUILD_UNKNOWN_GRADLE_ERROR",
+      "message": "Gradle build failed with unknown error. See logs for the \"Run gradlew\" phase for more information."
+    },
+    "artifacts": {},
+    "fingerprint": {
+      "id": "019c3b44-845b-7fa7-9a66-ed75b219cb1f",
+      "hash": "66ff1fc285df3a939c0f40a5baf559b71910f001"
+    },
+    "initiatingActor": {
+      "id": "0c7f8a78-5ca7-4f8e-b664-c694272d1afb",
+      "displayName": "jimmyj"
+    },
+    "logFiles": [
+      "https://job-logs.eascdn.net/production/68c14a2d-e9d0-41a1-a4a9-c2cd78a4a3fe/1770520872299-8e8ccdb4-c060-40b4-9e3e-7eb49e52307c.txt?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=www-production%40exponentjs.iam.gserviceaccount.com%2F20260208%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260208T033416Z&X-Goog-Expires=900&X-Goog-SignedHeaders=host&X-Goog-Signature=9100b6a77cff573721582a929a199dd6ed86eb4758df37577d58d14dba40d6318659698f00c704487876584f89ac3980ae313827c59ac22a537dc3bf46d0c391dfec8d0fd587bbf2bd81a9e462da1965dc11a155f62465d5acd92df676c29aa5bf5c1ad39bbf878ee04d4ce32fe6147c3f3bd5057016de8aeb40e8fff8c0f2f4dbce482745bd76a82a1f78cc17ad0463fb5309c6613ec06314100c13a58815840cf58d1cc129f5565df566a26ef2f01e3b86e289e66161f03ad624d59261b86befb7b58bd3bb885134523adfc8c546f5871e979643a44466578b4a15edc686f854fd6816eba7f33f6a7dd97916d0b4413e236855f6d7ae7e728d9d54e4f15c33",
+      "https://job-logs.eascdn.net/production/68c14a2d-e9d0-41a1-a4a9-c2cd78a4a3fe/1770520877424-6cd41e09-b6de-4b9b-8d6a-e434c7d68a52.txt?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=www-production%40exponentjs.iam.gserviceaccount.com%2F20260208%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260208T033416Z&X-Goog-Expires=900&X-Goog-SignedHeaders=host&X-Goog-Signature=7c9bdce94e4780b1a88f998776ebb3e41c4aa872cadc6bed67e3ee6ca0a0fbb2473f34f5754aa93d9e47a4a9f6aaf40a1cfb20e8a0839e0d473d590fb547615a8b5f9468b9b07b0e2e723ef04fed5b12550044b473701fe9fc5b464dd32fdc3426b4549b5e6bb39fefc1852e9f4ae9cd98663bc6f5247c87dcacbe10d31b2f6373a58fd4f91d7f43f71fa97e1020bddd4dad4f2cff76ed51c27f05c5480d01d6b24ae264739cb8d6bba4a5fd901cb2d5902e2da1c5702f63dccc423b03887bf4e59d7e3d997af6be3d8dc27adb19a62edaf06b38c25d8ff7814674b3f78d3a06ff2b811dff78682d411df5de455302c9e33b1f7d73cf289394dfbd5fffd7e592",
+      "https://job-logs.eascdn.net/production/68c14a2d-e9d0-41a1-a4a9-c2cd78a4a3fe/1770520877682-521c2058-d273-45b3-93fd-a87b74a704f4.txt?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=www-production%40exponentjs.iam.gserviceaccount.com%2F20260208%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260208T033416Z&X-Goog-Expires=900&X-Goog-SignedHeaders=host&X-Goog-Signature=854049665a85916bc0009d9031d245c8e401ce866e8e642d2a272518c3418178af39b19890b906ffb832b01c6b29ab1717b4dacd939115c8f18eb39cd8cee08f4208f07690a7e21ff8d66f6b5d1d7dde4ab9b06fca836294d9879864d073cabb6e62183592aa5b7cc2272385924699ee1a41fddfbb94dc0b980972ee09be17379cbe89f5005c19ed7a14bb36735c0ae7ddd41c88d107a02cf77ec13ba375fd6f2a104d677c2a97c9044a2833f7d60b38236897fb81efbe3e837ccafcc3cff457de76a313dbff52508da4e3945d39586b638260fa1c1fcf0aa31130c765d55469da7495a2a4eda864f4fb596435789b27129efbcdadd3de0e87b127f8e13f61a3",
+      "https://job-logs.eascdn.net/production/68c14a2d-e9d0-41a1-a4a9-c2cd78a4a3fe/1770520877860-c9f14090-c28c-4b93-94ce-b27d2f85265b.txt?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=www-production%40exponentjs.iam.gserviceaccount.com%2F20260208%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260208T033416Z&X-Goog-Expires=900&X-Goog-SignedHeaders=host&X-Goog-Signature=a8624f6d7b8730acd1fac9929b4d95164caba60e18dc2edb71d6fd71f14d9850b1b058eabeca3e1987d319db3b3e96c519db514b19a62350c4f9e9769867cd2f9bc5e70dbf1724030faf6c7c8482f130a7a951a8052d3d32a7e376d8e74ba89ce56f5fe3201130625beee651cc44e32a2be1bb20d8b39ef3386db685b140ee57484c2d0559339eed6c69d4348bf6af5f8d71083ea24888efd206c55f2128a536d0b3dfd01399b3ef310586aed5fc9c408e695af2a10e6e31a7649b14682fb042690ae51b85f058ce67efc3097939a2c9cfa9ed18afdaecbeaf231815cf9157bf13d1932373f6095314159e5bf86f404f4238ca78823bc56f12f64a55ab14ebfc"
+    ],
+    "project": {
+      "id": "0d967ba4-ad89-4a20-87fc-8d4cd28a5658",
+      "name": "smart-rebalancer",
+      "slug": "smart-rebalancer",
+      "ownerAccount": {
+        "id": "6299237c-44b8-4368-bd6a-1713e1311d65",
+        "name": "jimmyj"
+      }
+    },
+    "channel": "preview",
+    "distribution": "INTERNAL",
+    "buildProfile": "preview",
+    "sdkVersion": "54.0.0",
+    "appVersion": "1.0.0",
+    "appBuildVersion": "1",
+    "runtimeVersion": "1.0.0",
+    "gitCommitHash": "9fbc3aa9404b675ae01b55e6873339840325cf55",
+    "gitCommitMessage": "fix: Kotlin 버전 다운그레이드 (2.2.0 → 1.9.25) Gradle 빌드 호환성\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>",
+    "priority": "NORMAL",
+    "createdAt": "2026-02-08T03:21:11.973Z",
+    "updatedAt": "2026-02-08T03:25:32.567Z",
+    "completedAt": "2026-02-08T03:25:23.577Z",
+    "expirationDate": "2026-02-22T03:21:12.015Z",
+    "isForIosSimulator": false,
+    "metrics": {
+      "buildWaitTime": 180,
+      "buildQueueTime": 43553,
+      "buildDuration": 207383
+    }
+  }
+]
