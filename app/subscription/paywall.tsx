@@ -24,6 +24,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useHaptics } from '../../src/hooks/useHaptics';
 import { useSubscriptionStatus, useActivateTrial } from '../../src/hooks/useSubscription';
 import { isFreePeriod, getFreePeriodDaysLeft } from '../../src/config/freePeriod';
+import { useStreakData } from '../../src/hooks/useStreak';
 
 // 가격 정보
 const PRICING = {
@@ -36,6 +37,16 @@ const BENEFITS = [
     icon: 'today' as const,
     title: '매일 AI 진단 3회 무료',
     desc: '무료 유저 1회 → 구독자 3회. 매일 포트폴리오 체크',
+  },
+  {
+    icon: 'stats-chart' as const,
+    title: '맥락 카드 전체 4겹 분석',
+    desc: '시장 변동의 "왜"를 이해 (역사/거시경제/기관행동/내 포트폴리오)',
+  },
+  {
+    icon: 'flame' as const,
+    title: '연속 기록으로 투자 습관 형성',
+    desc: '매일 방문 스트릭 + 마일스톤 보상 + 패닉셀 방지',
   },
   {
     icon: 'diamond' as const,
@@ -80,6 +91,7 @@ export default function PaywallScreen() {
     isLoading,
   } = useSubscriptionStatus();
   const activateTrial = useActivateTrial();
+  const { currentStreak } = useStreakData();
 
   // 무료 체험 시작 핸들러
   const handleActivateTrial = () => {
@@ -412,6 +424,20 @@ export default function PaywallScreen() {
           </Text>
         </View>
 
+        {/* 해지 방지 메시지 (손실 회피) */}
+        {(isTrialActive || isPremium) && currentStreak >= 7 && (
+          <View style={styles.streakWarning}>
+            <View style={styles.streakWarningHeader}>
+              <Ionicons name="warning" size={18} color="#FFC107" />
+              <Text style={styles.streakWarningTitle}>해지 시 주의사항</Text>
+            </View>
+            <Text style={styles.streakWarningText}>
+              구독을 해지하면 <Text style={styles.streakWarningHighlight}>{currentStreak}일 연속 기록</Text>이
+              초기화되며, 투자 습관 형성에 지장이 생길 수 있습니다.
+            </Text>
+          </View>
+        )}
+
         {/* 하단 안내 */}
         <Text style={styles.legalText}>
           체험 기간 종료 후 자동 결제되지 않습니다.{'\n'}
@@ -644,5 +670,34 @@ const styles = StyleSheet.create({
     color: '#555555',
     textAlign: 'center',
     lineHeight: 16,
+  },
+  // 해지 방지 메시지
+  streakWarning: {
+    backgroundColor: 'rgba(255, 193, 7, 0.08)',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 193, 7, 0.2)',
+  },
+  streakWarningHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  streakWarningTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#FFC107',
+  },
+  streakWarningText: {
+    fontSize: 12,
+    color: '#CCCCCC',
+    lineHeight: 18,
+  },
+  streakWarningHighlight: {
+    fontWeight: '700',
+    color: '#FFC107',
   },
 });

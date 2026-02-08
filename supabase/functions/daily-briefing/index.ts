@@ -1317,6 +1317,250 @@ async function updateRealEstatePrices(): Promise<{
 }
 
 // ============================================================================
+// Task G: 맥락 카드 생성 (Killing Feature)
+// G-1: Gemini로 4겹 맥락 분석 (역사/거시경제/기관행동/시장분위기)
+// G-2: 사용자별 포트폴리오 영향도 계산 (DB only, 비용 0원)
+// ============================================================================
+
+interface ContextCardData {
+  headline: string;
+  historical_context: string;
+  macro_chain: string[];
+  institutional_behavior: string;
+  sentiment: 'calm' | 'caution' | 'alert';
+}
+
+/**
+ * Task G-1: 오늘의 맥락 카드 생성
+ * Gemini + Google Search로 시장 맥락 4겹 분석
+ */
+async function generateContextCard(): Promise<{
+  contextCardId: string;
+  cardData: ContextCardData;
+}> {
+  const today = new Date();
+  const dateStr = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`;
+
+  const prompt = `
+당신은 한국 투자자를 위한 시장 분석가입니다. 오늘(${dateStr}) 시장 상황을 아래 4가지 관점으로 분석해주세요.
+
+**[중요] Google Search로 최신 시장 데이터를 검색하세요:**
+- "S&P 500 today", "나스닥 종가 today"
+- "외국인 순매수 순매도 today", "기관 투자자 동향"
+- "VIX 공포지수 today", "미국 국채 금리"
+- "경제 뉴스 오늘 한국", "미국 경제지표 발표"
+
+**분석 4겹 레이어:**
+
+1. **역사적 맥락 (Historical Context)**
+   - 과거 비슷한 패턴이 있었는지, 그때 어떻게 됐는지
+   - 예: "2008년 금융위기 때도 이런 패턴이 있었고, 6개월 후 회복했습니다"
+   - 구체적 사례와 기간 포함
+
+2. **거시경제 체인 (Macro Chain)**
+   - 오늘 시장을 움직인 이벤트를 인과관계 화살표(→)로 연결
+   - 예: ["미국 CPI 발표", "금리 인상 우려", "기술주 하락", "삼성전자 연동 하락"]
+   - 배열 형태로 4~6단계 체인
+
+3. **기관 행동 (Institutional Behavior)**
+   - 외국인/기관 투자자의 최근 움직임과 그 의미
+   - 예: "외국인 3일 연속 순매도 중 (패닉이 아니라 연말 리밸런싱 시즌)"
+   - 실제 데이터 + 해석 포함
+
+4. **시장 분위기 (Sentiment)**
+   - calm (평온): VIX 15 이하, 시장 안정
+   - caution (주의): VIX 15~25, 변동성 증가
+   - alert (경계): VIX 25+, 고위험 구간
+
+**출력 형식 (JSON만, 마크다운 금지):**
+{
+  "headline": "오늘의 한 줄 핵심 (20자 이내)",
+  "historical_context": "역사적 맥락 설명 (2-3문장)",
+  "macro_chain": ["이벤트1", "이벤트2", "이벤트3", "이벤트4"],
+  "institutional_behavior": "기관 행동 분석 (2-3문장)",
+  "sentiment": "calm" 또는 "caution" 또는 "alert"
+}
+`;
+
+  console.log('[Task G-1] 맥락 카드 생성 시작...');
+  const responseText = await callGeminiWithSearch(prompt);
+  const cleanJson = cleanJsonResponse(responseText);
+  const parsed: ContextCardData = JSON.parse(cleanJson);
+
+  // context_cards 테이블에 UPSERT (date가 Primary Key)
+  const todayDate = new Date().toISOString().split('T')[0];
+
+  const { data: insertedCard, error: upsertError } = await supabase
+    .from('context_cards')
+    .upsert(
+      {
+        date: todayDate,
+        headline: parsed.headline || '오늘의 시장 분석',
+        historical_context: parsed.historical_context || '',
+        macro_chain: parsed.macro_chain || [],
+        institutional_behavior: parsed.institutional_behavior || '',
+        sentiment: parsed.sentiment || 'calm',
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'date' }
+    )
+    .select('id')
+    .single();
+
+  if (upsertError) {
+    console.error('[Task G-1] context_cards UPSERT 실패:', upsertError);
+    throw upsertError;
+  }
+
+  const contextCardId = insertedCard?.id || '';
+  console.log(`[Task G-1] 맥락 카드 생성 완료 (ID: ${contextCardId})`);
+
+  return {
+    contextCardId,
+    cardData: parsed,
+  };
+}
+
+/**
+ * Task G-2: 사용자별 포트폴리오 영향도 계산
+ * Gemini 미사용 — DB 읽기/쓰기만 (비용 0원)
+ *
+ * 로직:
+ * 1. 모든 유저의 portfolios 조회
+ * 2. stock_quant_reports에서 오늘 종목별 변동 데이터 참조
+ * 3. 유저별 가중평균 영향도 계산 (-10% ~ +10%)
+ * 4. user_context_impacts 테이블에 UPSERT
+ */
+async function calculateUserImpacts(contextCardId: string): Promise<{
+  usersCalculated: number;
+  avgImpact: number;
+}> {
+  console.log('[Task G-2] 사용자별 영향도 계산 시작...');
+  const today = new Date().toISOString().split('T')[0];
+
+  // 1. 모든 포트폴리오 조회
+  const { data: allPortfolios, error: portError } = await supabase
+    .from('portfolios')
+    .select('user_id, ticker, quantity, current_value, asset_type');
+
+  if (portError || !allPortfolios || allPortfolios.length === 0) {
+    console.log('[Task G-2] 포트폴리오 데이터 없음 — 스킵');
+    return { usersCalculated: 0, avgImpact: 0 };
+  }
+
+  // 2. 오늘의 종목별 변동 데이터 조회 (stock_quant_reports)
+  // Task B가 병렬 실행 중이므로 데이터가 없을 수 있음 → 없으면 0% 영향도로 처리
+  const { data: stockReports } = await supabase
+    .from('stock_quant_reports')
+    .select('ticker, valuation_score, signal')
+    .eq('date', today);
+
+  const tickerImpactMap = new Map<string, number>();
+
+  if (stockReports && stockReports.length > 0) {
+    // valuation_score 기반 영향도 계산
+    // score 0~100 → 영향도 -10% ~ +10%
+    // score 50(중립) → 0%, score 0(최악) → -10%, score 100(최고) → +10%
+    for (const report of stockReports) {
+      const score = report.valuation_score ?? 50;
+      const impact = ((score - 50) / 50) * 10; // -10 ~ +10
+      tickerImpactMap.set(report.ticker, impact);
+    }
+    console.log(`[Task G-2] 종목 변동 데이터 ${stockReports.length}건 참조`);
+  } else {
+    console.log('[Task G-2] stock_quant_reports 데이터 없음 → 영향도 0%로 계산');
+  }
+
+  // 3. 유저별 가중평균 영향도 계산
+  const userImpactMap = new Map<string, { totalValue: number; weightedImpact: number }>();
+
+  for (const item of allPortfolios) {
+    const value = item.current_value || 0;
+    if (value <= 0) continue;
+
+    // 부동산 등 RE_ 자산은 제외 (주식/ETF만 영향도 계산)
+    if (item.ticker?.startsWith('RE_')) continue;
+
+    const impact = tickerImpactMap.get(item.ticker) || 0;
+
+    if (!userImpactMap.has(item.user_id)) {
+      userImpactMap.set(item.user_id, { totalValue: 0, weightedImpact: 0 });
+    }
+
+    const userData = userImpactMap.get(item.user_id)!;
+    userData.totalValue += value;
+    userData.weightedImpact += value * impact;
+  }
+
+  // 4. user_context_impacts UPSERT (배치)
+  const impactRows = [];
+  let totalImpact = 0;
+
+  for (const [userId, data] of userImpactMap) {
+    const avgImpact = data.totalValue > 0 ? data.weightedImpact / data.totalValue : 0;
+    // 영향도 클램프 (-10 ~ +10)
+    const clampedImpact = Math.max(-10, Math.min(10, avgImpact));
+
+    impactRows.push({
+      user_id: userId,
+      context_card_id: contextCardId,
+      portfolio_impact_pct: Math.round(clampedImpact * 100) / 100,
+      calculated_at: new Date().toISOString(),
+    });
+
+    totalImpact += clampedImpact;
+  }
+
+  const BATCH_SIZE = 50;
+  for (let i = 0; i < impactRows.length; i += BATCH_SIZE) {
+    const batch = impactRows.slice(i, i + BATCH_SIZE);
+    const { error: upsertError } = await supabase
+      .from('user_context_impacts')
+      .upsert(batch, { onConflict: 'user_id,context_card_id' });
+
+    if (upsertError) {
+      console.error(`[Task G-2] user_context_impacts UPSERT 실패 (batch ${i}):`, upsertError);
+    }
+  }
+
+  const avgImpact = impactRows.length > 0
+    ? Math.round((totalImpact / impactRows.length) * 100) / 100
+    : 0;
+
+  console.log(`[Task G-2] 영향도 계산 완료: ${impactRows.length}명, 평균 ${avgImpact}%`);
+
+  return {
+    usersCalculated: impactRows.length,
+    avgImpact,
+  };
+}
+
+/**
+ * Task G 통합 실행: G-1(맥락 카드) → G-2(영향도 계산) 순차 실행
+ */
+async function runContextCardGeneration(): Promise<{
+  contextCardId: string;
+  sentiment: string;
+  usersCalculated: number;
+  avgImpact: number;
+}> {
+  console.log('[Task G] 맥락 카드 생성 배치 시작...');
+
+  // G-1: 맥락 카드 생성
+  const cardResult = await generateContextCard();
+
+  // G-2: 사용자별 영향도 계산
+  const impactResult = await calculateUserImpacts(cardResult.contextCardId);
+
+  return {
+    contextCardId: cardResult.contextCardId,
+    sentiment: cardResult.cardData.sentiment,
+    usersCalculated: impactResult.usersCalculated,
+    avgImpact: impactResult.avgImpact,
+  };
+}
+
+// ============================================================================
 // DB UPSERT (기존 Task A/B)
 // ============================================================================
 
@@ -1421,14 +1665,15 @@ serve(async (req: Request) => {
     console.log(`[Central Kitchen] 일일 배치 시작: ${new Date().toISOString()}`);
     console.log('========================================');
 
-    // Task A, B, C, D, E, F를 병렬 실행 (독립적이므로 동시에 처리)
-    const [macroResult, stockResults, guruResult, snapshotResult, predictionResult, realEstateResult] = await Promise.allSettled([
+    // Task A, B, C, D, E, F, G를 병렬 실행 (독립적이므로 동시에 처리)
+    const [macroResult, stockResults, guruResult, snapshotResult, predictionResult, realEstateResult, contextCardResult] = await Promise.allSettled([
       analyzeMacroAndBitcoin(),
       analyzeAllStocks(),
       analyzeGuruInsights(),
       takePortfolioSnapshots(),
       runPredictionPolls(),
       updateRealEstatePrices(),
+      runContextCardGeneration(),
     ]);
 
     // Task A 결과 처리
@@ -1501,6 +1746,14 @@ serve(async (req: Request) => {
       console.error('[Task F 실패]', realEstateResult.reason);
     }
 
+    // Task G 결과 처리 (맥락 카드 생성)
+    if (contextCardResult.status === 'fulfilled') {
+      const cc = contextCardResult.value;
+      console.log(`[Task G] 성공: 맥락 카드 생성 (${cc.sentiment}), ${cc.usersCalculated}명 영향도 계산 (평균 ${cc.avgImpact}%)`);
+    } else {
+      console.error('[Task G 실패]', contextCardResult.reason);
+    }
+
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
     const macroStatus = macroResult.status === 'fulfilled' ? 'SUCCESS' : 'FAILED';
     const stockCount = stockResults.status === 'fulfilled' ? stockResults.value.length : 0;
@@ -1515,6 +1768,9 @@ serve(async (req: Request) => {
       ? (realEstateResult.value.skipped ? 'SKIPPED' : 'SUCCESS')
       : 'FAILED';
     const realEstateUpdated = realEstateResult.status === 'fulfilled' ? realEstateResult.value.assetsUpdated : 0;
+    const contextCardStatus = contextCardResult.status === 'fulfilled' ? 'SUCCESS' : 'FAILED';
+    const contextCardSentiment = contextCardResult.status === 'fulfilled' ? contextCardResult.value.sentiment : 'N/A';
+    const contextCardUsers = contextCardResult.status === 'fulfilled' ? contextCardResult.value.usersCalculated : 0;
 
     console.log('========================================');
     console.log(`[Central Kitchen] 배치 완료: ${elapsed}초`);
@@ -1524,6 +1780,7 @@ serve(async (req: Request) => {
     console.log(`  - 포트폴리오 스냅샷: ${snapshotStatus} (${snapshotCount}명)`);
     console.log(`  - 예측 게임: ${predictionStatus} (생성 ${predictionCreated}, 판정 ${predictionResolved})`);
     console.log(`  - 부동산 시세: ${realEstateStatus} (${realEstateUpdated}건 업데이트)`);
+    console.log(`  - 맥락 카드: ${contextCardStatus} (${contextCardSentiment}, ${contextCardUsers}명 영향도)`);
     console.log('========================================');
 
     return new Response(
@@ -1536,6 +1793,7 @@ serve(async (req: Request) => {
         snapshots: `${snapshotStatus} (${snapshotCount}명)`,
         predictions: `${predictionStatus} (생성 ${predictionCreated}, 판정 ${predictionResolved})`,
         realEstate: `${realEstateStatus} (${realEstateUpdated}건)`,
+        contextCard: `${contextCardStatus} (${contextCardSentiment}, ${contextCardUsers}명)`,
         timestamp: new Date().toISOString(),
       }),
       {

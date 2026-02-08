@@ -19,6 +19,7 @@ import { useSharedMarketData } from '../../src/hooks/useSharedAnalysis';
 import { calculateHealthScore, classifyAsset } from '../../src/services/rebalanceScore';
 
 // 홈 탭 전용 컴포넌트 (각 부서)
+import TodayPulse from '../../src/components/home/TodayPulse';
 import HeroCard from '../../src/components/home/HeroCard';
 import DailyBriefingCard from '../../src/components/home/DailyBriefingCard';
 import ActionAlertsCard from '../../src/components/home/ActionAlertsCard';
@@ -29,6 +30,29 @@ import TopMoversCard from '../../src/components/home/TopMoversCard';
 import type { MoverItem } from '../../src/components/home/TopMoversCard';
 import QuickActionsBar from '../../src/components/home/QuickActionsBar';
 import MarketTicker from '../../src/components/insights/MarketTicker';
+
+// 다른 Claude가 만드는 컴포넌트 — 조건부 import (파일 없어도 에러 안 남)
+let ContextCard: any = null;
+let PredictionPreview: any = null;
+let StreakBanner: any = null;
+
+try {
+  ContextCard = require('../../src/components/home/ContextCard').default;
+} catch (e) {
+  // 파일이 아직 없음 — 정상 상황
+}
+
+try {
+  PredictionPreview = require('../../src/components/home/PredictionPreview').default;
+} catch (e) {
+  // 파일이 아직 없음 — 정상 상황
+}
+
+try {
+  StreakBanner = require('../../src/components/home/StreakBanner').default;
+} catch (e) {
+  // 파일이 아직 없음 — 정상 상황
+}
 
 // ============================================================================
 // 자산 카테고리별 색상 맵
@@ -243,7 +267,30 @@ export default function HomeScreen() {
       >
         {hasAssets ? (
           <>
-            {/* ① 총자산 히어로 */}
+            {/* ═══════════════════════════════════════════════════════════ */}
+            {/* 오늘 (Today) 탭 — 습관 루프의 시작 */}
+            {/* ═══════════════════════════════════════════════════════════ */}
+
+            {/* ① TodayPulse: 한 줄 요약 계기판 */}
+            <TodayPulse
+              totalAssets={totalAssets}
+              yesterdayChange={0} // TODO: 스냅샷 시스템 연동 후 실제 값으로 교체
+            />
+
+            {/* ② 맥락 카드 (다른 Claude가 만드는 중) */}
+            {ContextCard && <ContextCard isPremium={false} />}
+
+            {/* ③ 예측 투표 미리보기 (다른 Claude가 만드는 중) */}
+            {PredictionPreview && <PredictionPreview />}
+
+            {/* ④ 연속 기록 배너 (다른 Claude가 만드는 중) */}
+            {StreakBanner && <StreakBanner />}
+
+            {/* ═══════════════════════════════════════════════════════════ */}
+            {/* 기존 홈 탭 컴포넌트들 (아래쪽 유지) */}
+            {/* ═══════════════════════════════════════════════════════════ */}
+
+            {/* ⑤ 총자산 히어로 */}
             <HeroCard
               totalAssets={totalAssets}
               totalPnL={totalPnL}
@@ -258,33 +305,33 @@ export default function HomeScreen() {
               onRealEstatePress={handleRealEstate}
             />
 
-            {/* ② 오늘의 브리핑 */}
+            {/* ⑥ 오늘의 브리핑 */}
             <DailyBriefingCard
               cfoWeather={marketSentiment?.cfoWeather ?? null}
               sentiment={marketSentiment?.sentiment ?? null}
               isLoading={marketLoading}
             />
 
-            {/* ③ 핵심 알림 */}
+            {/* ⑦ 핵심 알림 */}
             <ActionAlertsCard
               alerts={alerts}
               onPressCTA={handleRebalance}
               isLoading={marketLoading}
             />
 
-            {/* ④ 자산 배분 도넛 */}
+            {/* ⑧ 자산 배분 도넛 */}
             <AssetDonutCard
               slices={donutData}
               totalAssets={totalAssets}
             />
 
-            {/* ⑤ 등락률 Top/Bottom */}
+            {/* ⑨ 등락률 Top/Bottom */}
             <TopMoversCard
               gainers={gainers}
               losers={losers}
             />
 
-            {/* ⑥ 퀵 액션 */}
+            {/* ⑩ 퀵 액션 */}
             <QuickActionsBar
               onAddAsset={handleAddAsset}
               onRealEstate={handleRealEstate}

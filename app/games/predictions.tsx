@@ -22,12 +22,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import PollCard from '../../src/components/PollCard';
+import ReviewCard from '../../src/components/games/ReviewCard';
 import {
   usePollsWithMyVotes,
   useResolvedPollsWithMyVotes,
   useSubmitVote,
   useLeaderboard,
   useMyPredictionStats,
+  useYesterdayReview,
   PREDICTION_KEYS,
 } from '../../src/hooks/usePredictions';
 import {
@@ -47,6 +49,7 @@ export default function PredictionsScreen() {
   const { data: resolvedPolls, isLoading: resolvedLoading } = useResolvedPollsWithMyVotes(10);
   const { data: leaderboard } = useLeaderboard();
   const { data: myStats } = useMyPredictionStats();
+  const { data: yesterdayPolls, summary: yesterdaySummary } = useYesterdayReview();
   const submitVote = useSubmitVote();
 
   // 새로고침
@@ -133,6 +136,47 @@ export default function PredictionsScreen() {
                 </Text>
               </View>
             )}
+          </View>
+        )}
+
+        {/* 어제의 결과 복기 (습관 루프) */}
+        {yesterdayPolls && yesterdayPolls.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>📝 어제의 결과</Text>
+
+            {/* 요약 배너 */}
+            <View style={styles.yesterdaySummary}>
+              <View style={styles.summaryLeft}>
+                <Text style={styles.summaryEmoji}>
+                  {yesterdaySummary.accuracyRate >= 60 ? '🎉' : '💪'}
+                </Text>
+                <View>
+                  <Text style={styles.summaryTitle}>
+                    {yesterdaySummary.totalVoted}개 중 {yesterdaySummary.totalCorrect}개 적중
+                  </Text>
+                  <Text style={styles.summarySubtitle}>
+                    적중률 {yesterdaySummary.accuracyRate}%
+                  </Text>
+                </View>
+              </View>
+              {myStats && myStats.current_streak >= 3 && (
+                <View style={styles.summaryStreak}>
+                  <Text style={styles.summaryStreakText}>
+                    🔥 {myStats.current_streak}연속
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            {/* 복기 카드 리스트 */}
+            {yesterdayPolls.map((poll) => (
+              <ReviewCard
+                key={poll.id}
+                poll={poll}
+                isCorrect={poll.myIsCorrect === true}
+                currentStreak={myStats?.current_streak}
+              />
+            ))}
           </View>
         )}
 
@@ -592,6 +636,49 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#FFFFFF',
     fontWeight: '600',
+  },
+
+  // 어제의 결과 요약 배너
+  yesterdaySummary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#1E1E1E',
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#2A2A2A',
+  },
+  summaryLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  summaryEmoji: {
+    fontSize: 32,
+  },
+  summaryTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 3,
+  },
+  summarySubtitle: {
+    fontSize: 13,
+    color: '#888888',
+  },
+  summaryStreak: {
+    backgroundColor: '#2A1A1A',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+  },
+  summaryStreakText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#FF9800',
   },
 
   // 면책 조항

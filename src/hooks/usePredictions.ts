@@ -286,6 +286,55 @@ export const useResolvedPollsWithMyVotes = (limit: number = 10) => {
 };
 
 // ============================================================================
+// 어제의 복기 (Yesterday Review) - 습관 루프 강화
+// ============================================================================
+
+export const useYesterdayReview = () => {
+  const { data: resolvedPolls, isLoading: resolvedLoading } = useResolvedPolls(20);
+  const pollIds = (resolvedPolls || []).map(p => p.id);
+  const { data: myVotes, isLoading: votesLoading } = useMyVotes(pollIds);
+
+  // 어제 날짜 계산 (로컬 타임존)
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayDateString = yesterday.toISOString().split('T')[0]; // "YYYY-MM-DD"
+
+  // 어제 resolved + 내가 투표한 것만 필터링
+  const yesterdayPolls: PollWithMyVote[] = (resolvedPolls || [])
+    .filter(poll => {
+      // resolved_at이 어제인지 확인
+      if (!poll.resolved_at) return false;
+      const resolvedDate = new Date(poll.resolved_at).toISOString().split('T')[0];
+      return resolvedDate === yesterdayDateString;
+    })
+    .map(poll => {
+      const vote = (myVotes || []).find(v => v.poll_id === poll.id);
+      return {
+        ...poll,
+        myVote: vote?.vote || null,
+        myIsCorrect: vote?.is_correct ?? null,
+        myCreditsEarned: vote?.credits_earned || 0,
+      };
+    })
+    .filter(poll => poll.myVote !== null); // 내가 투표한 것만
+
+  // 통계 계산
+  const totalVoted = yesterdayPolls.length;
+  const totalCorrect = yesterdayPolls.filter(p => p.myIsCorrect === true).length;
+  const accuracyRate = totalVoted > 0 ? Math.round((totalCorrect / totalVoted) * 100) : 0;
+
+  return {
+    data: yesterdayPolls,
+    isLoading: resolvedLoading || votesLoading,
+    summary: {
+      totalVoted,
+      totalCorrect,
+      accuracyRate,
+    },
+  };
+};
+
+// ============================================================================
 // 유틸리티
 // ============================================================================
 
