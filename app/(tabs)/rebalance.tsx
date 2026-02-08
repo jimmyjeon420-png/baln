@@ -193,7 +193,7 @@ export default function CheckupScreen() {
   const healthScore = useMemo(() => calculateHealthScore(allAssets, totalAssets), [allAssets, totalAssets]);
 
   // Panic Shield 점수
-  const panicScore = analysisResult?.panicShieldScore;
+  const panicScore = analysisResult?.panicShieldIndex;
 
   // 액션 정렬: HIGH → MEDIUM → LOW, SELL/WATCH → BUY → HOLD
   const sortedActions = useMemo(() =>

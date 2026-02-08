@@ -13,11 +13,11 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { HealthScore } from '../../services/rebalanceScore';
+import { HealthScoreResultResult } from '../../services/rebalanceScore';
 
 interface CheckupHeaderProps {
   /** 건강 점수 (6팩터) */
-  healthScore: HealthScore;
+  healthScore: HealthScoreResult;
   /** Panic Shield 점수 (0-100) */
   panicScore?: number;
   /** 총 자산 */
@@ -49,17 +49,16 @@ const GRADE_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
 /**
  * 건강 등급별 한 줄 요약 생성
  */
-function generateSummary(healthScore: HealthScore): string {
-  const { grade, score } = healthScore;
+function generateSummary(healthScore: HealthScoreResult): string {
+  // summary가 이미 있으면 그대로 사용 (rebalanceScore에서 계산됨)
+  if (healthScore.summary) return healthScore.summary;
+
+  const { grade } = healthScore;
 
   // 주의가 필요한 팩터 (60점 미만)
-  const warnings: string[] = [];
-  if (healthScore.factors.allocation < 60) warnings.push('배분 이탈');
-  if (healthScore.factors.concentration < 60) warnings.push('집중도');
-  if (healthScore.factors.correlation < 60) warnings.push('상관관계');
-  if (healthScore.factors.volatility < 60) warnings.push('변동성');
-  if (healthScore.factors.downside < 60) warnings.push('하방리스크');
-  if (healthScore.factors.tax < 60) warnings.push('세금효율');
+  const warnings = healthScore.factors
+    .filter(f => f.score < 60)
+    .map(f => f.label);
 
   if (warnings.length === 0) {
     return `포트폴리오 건강 ${grade}등급, 모든 지표 양호`;
@@ -77,7 +76,7 @@ export default function CheckupHeader({
   panicScore,
   totalAssets,
 }: CheckupHeaderProps) {
-  const gradeColor = GRADE_COLORS[healthScore.grade];
+  const gradeColor = healthScore.gradeColor || GRADE_COLORS[healthScore.grade];
   const gradeIcon = GRADE_ICONS[healthScore.grade];
   const summary = generateSummary(healthScore);
 
@@ -105,7 +104,7 @@ export default function CheckupHeader({
           </Text>
         </View>
         <View style={styles.gradeInfo}>
-          <Text style={styles.scoreText}>{Math.round(healthScore.score)}점</Text>
+          <Text style={styles.scoreText}>{Math.round(healthScore.totalScore)}점</Text>
           <Text style={styles.totalAssetsText}>{formatAssets(totalAssets)}</Text>
         </View>
       </View>

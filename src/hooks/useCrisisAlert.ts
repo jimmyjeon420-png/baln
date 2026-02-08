@@ -20,7 +20,7 @@
 import { useEffect, useState } from 'react';
 import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useSharedBitcoinPrice } from './useSharedAnalysis';
+import { useSharedBitcoin } from './useSharedAnalysis';
 import {
   detectCrisis,
   type CrisisLevel,
@@ -77,7 +77,7 @@ export function useCrisisAlert(): CrisisAlertState {
   });
 
   // 비트코인 가격 데이터 구독 (24시간 변동률 포함)
-  const { data: btcPrice, isLoading: btcLoading } = useSharedBitcoinPrice();
+  const { data: btcPrice, isLoading: btcLoading } = useSharedBitcoin();
 
   useEffect(() => {
     if (btcLoading) return;
