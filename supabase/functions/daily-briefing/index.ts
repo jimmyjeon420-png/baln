@@ -13,6 +13,7 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')!;
 const GEMINI_MODEL = 'gemini-2.0-flash';
+const MOLIT_API_KEY = Deno.env.get('MOLIT_API_KEY') || ''; // 국토부 API 키 (없으면 Task F 스킵)
 
 // Service Role 클라이언트 (RLS 우회하여 쓰기 가능)
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -134,6 +135,7 @@ async function analyzeMacroAndBitcoin(): Promise<{
   cfoWeather: Record<string, unknown>;
   vixLevel: number | null;
   globalLiquidity: string;
+  rateCycleEvidence: Record<string, unknown> | null;
 }> {
   const today = new Date();
   const dateStr = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`;
@@ -147,6 +149,8 @@ async function analyzeMacroAndBitcoin(): Promise<{
 3. "Bitcoin whale alerts ETF inflows ${today.getMonth() + 1}월", "Bitcoin hash rate today"
 4. "Fed interest rate probability CME FedWatch"
 5. "VIX index today", "Global M2 liquidity"
+6. "Fed governor speech today", "CPI latest data", "PCE core inflation"
+7. "Treasury yield curve spread 10Y-2Y", "unemployment rate latest"
 
 **출력 형식 (JSON만, 마크다운 금지):**
 {
@@ -181,7 +185,56 @@ async function analyzeMacroAndBitcoin(): Promise<{
     "message": "오늘의 핵심 한 마디"
   },
   "vixLevel": 15.5,
-  "globalLiquidity": "M2 증감 설명 (한글)"
+  "globalLiquidity": "M2 증감 설명 (한글)",
+  "rateCycleEvidence": {
+    "keyEvidence": [
+      {
+        "headline": "Fed 파월 의장, 추가 인하 신중론 재확인",
+        "source": "Reuters",
+        "date": "${dateStr}",
+        "stance": "hawkish",
+        "impact": "high"
+      },
+      {
+        "headline": "1월 CPI 3.0% — 시장 예상 상회",
+        "source": "Bloomberg",
+        "date": "${dateStr}",
+        "stance": "hawkish",
+        "impact": "high"
+      },
+      {
+        "headline": "고용시장 둔화 조짐, 실업수당 청구 증가",
+        "source": "CNBC",
+        "date": "${dateStr}",
+        "stance": "dovish",
+        "impact": "medium"
+      }
+    ],
+    "economicIndicators": {
+      "fedRate": { "name": "Fed 기준금리", "value": "현재 값", "previous": "이전 값", "trend": "stable", "nextRelease": "다음 FOMC 날짜" },
+      "cpi": { "name": "CPI (전년 대비)", "value": "현재 값", "previous": "이전 값", "trend": "rising 또는 falling 또는 stable" },
+      "unemployment": { "name": "실업률", "value": "현재 값", "previous": "이전 값", "trend": "rising 또는 falling 또는 stable" },
+      "yieldCurveSpread": { "name": "10Y-2Y 스프레드", "value": "현재 값 (bp)", "previous": "이전 값", "trend": "rising 또는 falling 또는 stable" },
+      "pceCore": { "name": "PCE 코어", "value": "현재 값", "previous": "이전 값", "trend": "rising 또는 falling 또는 stable" }
+    },
+    "expertPerspectives": {
+      "ratio": 55,
+      "hawkishArgs": ["인플레이션이 목표치 2%에 도달하지 못함", "고용시장 여전히 견고"],
+      "dovishArgs": ["경기 둔화 신호 확산", "글로벌 수요 위축"],
+      "hawkishFigures": ["크리스토퍼 월러 (Fed 이사)", "닐 카시카리 (미니애폴리스 연은 총재)"],
+      "dovishFigures": ["오스탄 굴스비 (시카고 연은 총재)", "라파엘 보스틱 (애틀랜타 연은 총재)"]
+    },
+    "confidenceFactors": {
+      "overall": 72,
+      "factors": [
+        { "factor": "CME FedWatch 금리 동결 확률 80%+", "type": "supporting", "weight": "strong" },
+        { "factor": "CPI 하락 추세 유지", "type": "supporting", "weight": "medium" },
+        { "factor": "관세 정책 불확실성", "type": "opposing", "weight": "medium" },
+        { "factor": "고용 지표 혼조", "type": "opposing", "weight": "weak" }
+      ]
+    },
+    "generatedAt": "${today.toISOString()}"
+  }
 }
 `;
 
@@ -190,6 +243,17 @@ async function analyzeMacroAndBitcoin(): Promise<{
   const cleanJson = cleanJsonResponse(responseText);
   const parsed = JSON.parse(cleanJson);
 
+  // 금리 사이클 증거 파싱 (실패 시 null — 기존 데이터에 영향 없음)
+  let rateCycleEvidence: Record<string, unknown> | null = null;
+  try {
+    if (parsed.rateCycleEvidence && parsed.rateCycleEvidence.keyEvidence) {
+      rateCycleEvidence = parsed.rateCycleEvidence;
+      console.log(`[Task A] 금리 사이클 증거 파싱 성공 (증거 ${parsed.rateCycleEvidence.keyEvidence?.length || 0}건)`);
+    }
+  } catch (evidenceError) {
+    console.warn('[Task A] 금리 사이클 증거 파싱 실패 (무시):', evidenceError);
+  }
+
   return {
     macroSummary: parsed.macroSummary || {},
     bitcoinAnalysis: parsed.bitcoinAnalysis || {},
@@ -197,6 +261,7 @@ async function analyzeMacroAndBitcoin(): Promise<{
     cfoWeather: parsed.cfoWeather || {},
     vixLevel: parsed.vixLevel ?? null,
     globalLiquidity: parsed.globalLiquidity || '',
+    rateCycleEvidence,
   };
 }
 
@@ -1107,6 +1172,151 @@ async function runPredictionPolls(): Promise<{
 }
 
 // ============================================================================
+// Task F: 부동산 시세 업데이트
+// Gemini 미사용 — 국토부 API only (API 키 없으면 graceful skip)
+// ============================================================================
+
+/**
+ * 보유 부동산 자산의 실거래가 캐시 업데이트
+ * 1. 유저 보유 RE_ 자산 조회
+ * 2. 법정동코드별 국토부 API 호출 (또는 스킵)
+ * 3. realestate_price_cache UPSERT
+ * 4. portfolios current_value 업데이트
+ */
+async function updateRealEstatePrices(): Promise<{
+  skipped: boolean;
+  assetsUpdated: number;
+  cacheUpdated: number;
+}> {
+  // API 키 없으면 스킵 (Mock 환경)
+  if (!MOLIT_API_KEY) {
+    console.log('[Task F] 국토부 API 키 미설정 → 부동산 시세 업데이트 스킵');
+    return { skipped: true, assetsUpdated: 0, cacheUpdated: 0 };
+  }
+
+  console.log('[Task F] 부동산 시세 업데이트 시작...');
+
+  // 1. RE_ 티커를 가진 모든 포트폴리오 조회
+  const { data: realEstateAssets, error: queryError } = await supabase
+    .from('portfolios')
+    .select('id, user_id, ticker, lawd_cd, complex_name, unit_area, current_value')
+    .like('ticker', 'RE_%')
+    .not('lawd_cd', 'is', null);
+
+  if (queryError || !realEstateAssets || realEstateAssets.length === 0) {
+    console.log('[Task F] 부동산 자산 없음 또는 조회 실패');
+    return { skipped: false, assetsUpdated: 0, cacheUpdated: 0 };
+  }
+
+  console.log(`[Task F] 부동산 자산 ${realEstateAssets.length}건 발견`);
+
+  // 2. 법정동코드별 그룹핑 (API 호출 최소화)
+  const lawdGroups = new Map<string, typeof realEstateAssets>();
+  for (const asset of realEstateAssets) {
+    if (!asset.lawd_cd) continue;
+    if (!lawdGroups.has(asset.lawd_cd)) {
+      lawdGroups.set(asset.lawd_cd, []);
+    }
+    lawdGroups.get(asset.lawd_cd)!.push(asset);
+  }
+
+  let cacheUpdated = 0;
+  let assetsUpdated = 0;
+  const today = new Date();
+  const yearMonth = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}`;
+
+  // 3. 법정동코드별 국토부 API 호출
+  for (const [lawdCd, assets] of lawdGroups) {
+    try {
+      const apiUrl = `https://apis.data.go.kr/1613000/RTMSDataSvcAptTradeDev/getRTMSDataSvcAptTradeDev?serviceKey=${MOLIT_API_KEY}&LAWD_CD=${lawdCd}&DEAL_YMD=${yearMonth}&pageNo=1&numOfRows=100&type=json`;
+
+      const response = await fetch(apiUrl);
+      if (!response.ok) {
+        console.warn(`[Task F] API 호출 실패 (${lawdCd}): ${response.status}`);
+        continue;
+      }
+
+      const data = await response.json();
+      const items = data?.response?.body?.items?.item || [];
+
+      if (items.length === 0) {
+        console.log(`[Task F] ${lawdCd}: 거래 데이터 없음`);
+        continue;
+      }
+
+      // 4. 단지별 매칭 및 캐시 업데이트
+      for (const asset of assets) {
+        if (!asset.complex_name || !asset.unit_area) continue;
+
+        // 단지명 + 면적 매칭
+        const matchingTx = items
+          .filter((item: any) =>
+            item.aptNm?.includes(asset.complex_name) &&
+            Math.abs(Number(item.excluUseAr || 0) - asset.unit_area) <= 3
+          )
+          .sort((a: any, b: any) => {
+            const dateA = `${a.dealYear}-${String(a.dealMonth).padStart(2, '0')}-${String(a.dealDay).padStart(2, '0')}`;
+            const dateB = `${b.dealYear}-${String(b.dealMonth).padStart(2, '0')}-${String(b.dealDay).padStart(2, '0')}`;
+            return dateB.localeCompare(dateA);
+          })
+          .slice(0, 5);
+
+        if (matchingTx.length === 0) continue;
+
+        // 최근 3건 평균가 계산
+        const recent3 = matchingTx.slice(0, 3);
+        const latestPrice = Number(String(matchingTx[0].dealAmount || '0').replace(/,/g, '')) * 10000;
+        const avg3 = Math.round(
+          recent3.reduce((s: number, t: any) => {
+            return s + Number(String(t.dealAmount || '0').replace(/,/g, '')) * 10000;
+          }, 0) / recent3.length
+        );
+
+        // realestate_price_cache UPSERT
+        const { error: cacheError } = await supabase
+          .from('realestate_price_cache')
+          .upsert(
+            {
+              lawd_cd: lawdCd,
+              complex_name: asset.complex_name,
+              unit_area: asset.unit_area,
+              latest_price: latestPrice,
+              avg_price_3: avg3,
+              last_transaction_date: `${matchingTx[0].dealYear}-${String(matchingTx[0].dealMonth).padStart(2, '0')}-${String(matchingTx[0].dealDay).padStart(2, '0')}`,
+              transaction_count: matchingTx.length,
+              raw_transactions: matchingTx.slice(0, 5),
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'lawd_cd,complex_name,unit_area' }
+          );
+
+        if (!cacheError) cacheUpdated++;
+
+        // portfolios current_value 업데이트
+        const { error: updateError } = await supabase
+          .from('portfolios')
+          .update({
+            current_value: avg3,
+            current_price: avg3,
+            last_price_updated_at: new Date().toISOString(),
+          })
+          .eq('id', asset.id);
+
+        if (!updateError) assetsUpdated++;
+      }
+
+      // Rate limit 방지
+      await new Promise(resolve => setTimeout(resolve, 500));
+    } catch (err) {
+      console.error(`[Task F] 법정동 ${lawdCd} 처리 실패:`, err);
+    }
+  }
+
+  console.log(`[Task F] 완료: 캐시 ${cacheUpdated}건, 포트폴리오 ${assetsUpdated}건 업데이트`);
+  return { skipped: false, assetsUpdated, cacheUpdated };
+}
+
+// ============================================================================
 // DB UPSERT (기존 Task A/B)
 // ============================================================================
 
@@ -1120,24 +1330,29 @@ async function upsertMarketInsights(data: {
   cfoWeather: Record<string, unknown>;
   vixLevel: number | null;
   globalLiquidity: string;
+  rateCycleEvidence?: Record<string, unknown> | null;
 }) {
   const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
 
+  const upsertData: Record<string, unknown> = {
+    date: today,
+    macro_summary: data.macroSummary,
+    bitcoin_analysis: data.bitcoinAnalysis,
+    market_sentiment: data.marketSentiment,
+    cfo_weather: data.cfoWeather,
+    vix_level: data.vixLevel,
+    global_liquidity: data.globalLiquidity,
+    updated_at: new Date().toISOString(),
+  };
+
+  // 금리 사이클 증거가 있으면 포함 (null이면 기존 값 유지)
+  if (data.rateCycleEvidence) {
+    upsertData.rate_cycle_evidence = data.rateCycleEvidence;
+  }
+
   const { error } = await supabase
     .from('daily_market_insights')
-    .upsert(
-      {
-        date: today,
-        macro_summary: data.macroSummary,
-        bitcoin_analysis: data.bitcoinAnalysis,
-        market_sentiment: data.marketSentiment,
-        cfo_weather: data.cfoWeather,
-        vix_level: data.vixLevel,
-        global_liquidity: data.globalLiquidity,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: 'date' }
-    );
+    .upsert(upsertData, { onConflict: 'date' });
 
   if (error) {
     console.error('[Task C] daily_market_insights UPSERT 실패:', error);
@@ -1206,13 +1421,14 @@ serve(async (req: Request) => {
     console.log(`[Central Kitchen] 일일 배치 시작: ${new Date().toISOString()}`);
     console.log('========================================');
 
-    // Task A, B, C, D, E를 병렬 실행 (독립적이므로 동시에 처리)
-    const [macroResult, stockResults, guruResult, snapshotResult, predictionResult] = await Promise.allSettled([
+    // Task A, B, C, D, E, F를 병렬 실행 (독립적이므로 동시에 처리)
+    const [macroResult, stockResults, guruResult, snapshotResult, predictionResult, realEstateResult] = await Promise.allSettled([
       analyzeMacroAndBitcoin(),
       analyzeAllStocks(),
       analyzeGuruInsights(),
       takePortfolioSnapshots(),
       runPredictionPolls(),
+      updateRealEstatePrices(),
     ]);
 
     // Task A 결과 처리
@@ -1277,6 +1493,14 @@ serve(async (req: Request) => {
       console.error('[Task E 실패]', predictionResult.reason);
     }
 
+    // Task F 결과 처리 (부동산 시세 업데이트)
+    if (realEstateResult.status === 'fulfilled') {
+      const re = realEstateResult.value;
+      console.log(`[Task F] ${re.skipped ? '스킵 (API 키 미설정)' : `성공: 캐시 ${re.cacheUpdated}건, 포트폴리오 ${re.assetsUpdated}건`}`);
+    } else {
+      console.error('[Task F 실패]', realEstateResult.reason);
+    }
+
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
     const macroStatus = macroResult.status === 'fulfilled' ? 'SUCCESS' : 'FAILED';
     const stockCount = stockResults.status === 'fulfilled' ? stockResults.value.length : 0;
@@ -1287,6 +1511,10 @@ serve(async (req: Request) => {
     const predictionStatus = predictionResult.status === 'fulfilled' ? 'SUCCESS' : 'FAILED';
     const predictionCreated = predictionResult.status === 'fulfilled' ? predictionResult.value.questionsCreated : 0;
     const predictionResolved = predictionResult.status === 'fulfilled' ? predictionResult.value.pollsResolved : 0;
+    const realEstateStatus = realEstateResult.status === 'fulfilled'
+      ? (realEstateResult.value.skipped ? 'SKIPPED' : 'SUCCESS')
+      : 'FAILED';
+    const realEstateUpdated = realEstateResult.status === 'fulfilled' ? realEstateResult.value.assetsUpdated : 0;
 
     console.log('========================================');
     console.log(`[Central Kitchen] 배치 완료: ${elapsed}초`);
@@ -1295,6 +1523,7 @@ serve(async (req: Request) => {
     console.log(`  - 거장 인사이트: ${guruStatus} (${guruCount}명)`);
     console.log(`  - 포트폴리오 스냅샷: ${snapshotStatus} (${snapshotCount}명)`);
     console.log(`  - 예측 게임: ${predictionStatus} (생성 ${predictionCreated}, 판정 ${predictionResolved})`);
+    console.log(`  - 부동산 시세: ${realEstateStatus} (${realEstateUpdated}건 업데이트)`);
     console.log('========================================');
 
     return new Response(
@@ -1306,6 +1535,7 @@ serve(async (req: Request) => {
         gurus: `${guruStatus} (${guruCount}/10)`,
         snapshots: `${snapshotStatus} (${snapshotCount}명)`,
         predictions: `${predictionStatus} (생성 ${predictionCreated}, 판정 ${predictionResolved})`,
+        realEstate: `${realEstateStatus} (${realEstateUpdated}건)`,
         timestamp: new Date().toISOString(),
       }),
       {

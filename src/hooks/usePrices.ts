@@ -9,33 +9,41 @@ import { Asset } from '../types/asset';
 import { priceService } from '../services/PriceService';
 
 /**
- * Infer asset class from ticker symbol
- * Heuristics:
- * - Bitcoin, Ethereum, crypto-related symbols -> CRYPTO
- * - Otherwise -> STOCK (will fall back to mock data if not found)
+ * 티커 심볼에서 자산 클래스 자동 추론
+ *
+ * 판별 순서:
+ * 1. 한국 주식: 6자리 숫자 또는 .KS/.KQ 접미사 → STOCK
+ * 2. 암호화폐: BTC, ETH 등 키워드 → CRYPTO
+ * 3. ETF: VTI, VOO 등 키워드 → ETF
+ * 4. 기본값: STOCK (미국 주식 등)
  */
 const inferAssetClass = (ticker: string): AssetClass => {
   const upperTicker = ticker.toUpperCase();
 
-  // Crypto keywords
+  // 한국 주식: 005930.KS, 035720.KQ, 또는 순수 6자리 숫자
+  if (/^\d{6}(\.KS|\.KQ)?$/i.test(upperTicker) || upperTicker.endsWith('.KS') || upperTicker.endsWith('.KQ')) {
+    return AssetClass.STOCK;
+  }
+
+  // 암호화폐 키워드
   const cryptoKeywords = [
-    'BTC',
-    'ETH',
-    'USDC',
-    'SOL',
-    'XRP',
-    'DOGE',
-    'ADA',
-    'AVAX',
-    'DOT',
-    'LINK',
+    'BTC', 'ETH', 'USDC', 'USDT', 'SOL', 'XRP',
+    'DOGE', 'ADA', 'AVAX', 'DOT', 'LINK',
+    'BNB', 'MATIC', 'LTC', 'BCH', 'XLM',
+    'ATOM', 'UNI', 'AAVE', 'SUSHI',
   ];
 
   if (cryptoKeywords.some((kw) => upperTicker.includes(kw))) {
     return AssetClass.CRYPTO;
   }
 
-  // Default to stock for unknown tickers
+  // ETF 키워드
+  const etfKeywords = ['VTI', 'VOO', 'QQQ', 'AGG', 'SPY', 'IVV', 'ARKK'];
+  if (etfKeywords.some((kw) => upperTicker === kw)) {
+    return AssetClass.ETF;
+  }
+
+  // 기본값: 주식 (미국 등)
   return AssetClass.STOCK;
 };
 

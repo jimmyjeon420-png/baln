@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -9,14 +9,16 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Asset, AssetType } from '../../src/types/asset';
+import { AssetType } from '../../src/types/asset';
 import { COLORS, SIZES } from '../../src/styles/theme';
 import RollingNumber from '../../src/components/RollingNumber';
-import { HomeSkeletonLoader, SkeletonBlock } from '../../src/components/SkeletonLoader';
+import { HomeSkeletonLoader } from '../../src/components/SkeletonLoader';
 import { useHaptics } from '../../src/hooks/useHaptics';
 import { useSharedPortfolio } from '../../src/hooks/useSharedPortfolio';
 import { useSharedMarketData } from '../../src/hooks/useSharedAnalysis';
 import type { StockQuantReport } from '../../src/services/centralKitchen';
+import { calculateHealthScore } from '../../src/services/rebalanceScore';
+import HealthScoreDetail from '../../src/components/HealthScoreDetail';
 
 // ============================================================================
 // 유틸리티 함수
@@ -69,38 +71,7 @@ function getSignalDisplay(signal: string) {
   }
 }
 
-/** 리밸런싱 이탈도 계산 (각 자산의 |실제비중 - 목표비중| 합 / 2) */
-function calculateDriftScore(assets: Asset[], total: number): number {
-  if (total === 0) return 0;
-  return assets.reduce((sum, asset) => {
-    const currentValue = asset.quantity && asset.currentPrice
-      ? asset.quantity * asset.currentPrice
-      : asset.currentValue;
-    const actualPct = (currentValue / total) * 100;
-    const targetPct = asset.targetAllocation || 0;
-    return sum + Math.abs(actualPct - targetPct);
-  }, 0) / 2;
-}
-
-/** 이탈도 → 상태 (균형/주의/조정 필요) */
-function getDriftStatus(drift: number) {
-  if (drift < 5) return { label: '균형', color: COLORS.primary, bgColor: 'rgba(76,175,80,0.15)' };
-  if (drift <= 15) return { label: '주의', color: COLORS.warning, bgColor: 'rgba(255,183,77,0.15)' };
-  return { label: '조정 필요', color: COLORS.error, bgColor: 'rgba(207,102,121,0.15)' };
-}
-
-/** 리밸런싱 점수 계산 (100 - drift, 최소 0점) */
-function calculateRebalanceScore(drift: number): number {
-  return Math.max(0, Math.round(100 - drift * 2));
-}
-
-/** 점수 → 등급 라벨 */
-function getScoreGrade(score: number): string {
-  if (score >= 90) return '최적';
-  if (score >= 70) return '양호';
-  if (score >= 50) return '보통';
-  return '개선 필요';
-}
+/* 기존 단일 drift 점수 → 6팩터 건강 점수로 교체 (rebalanceScore.ts) */
 
 // ============================================================================
 // 메인 컴포넌트
@@ -115,7 +86,6 @@ export default function HomeScreen() {
     assets: allAssets,
     totalAssets,
     liquidTickers,
-    isLoading: portfolioLoading,
     isFetched: initialCheckDone,
   } = useSharedPortfolio();
 
@@ -123,8 +93,6 @@ export default function HomeScreen() {
   const { data: marketData } = useSharedMarketData(liquidTickers);
   const marketSentiment = marketData?.sentiment ?? null;
   const stockReports: StockQuantReport[] = marketData?.stockReports ?? [];
-
-  const isLoading = portfolioLoading && !initialCheckDone;
 
   // 파생 데이터: 유동 자산만 필터 (주식/코인/ETF)
   const liquidAssets = useMemo(
@@ -150,9 +118,11 @@ export default function HomeScreen() {
     return totalCost > 0 ? (totalPnL / totalCost) * 100 : 0;
   }, [liquidAssets, totalPnL]);
 
-  // 이탈도 & 리밸런싱 점수
-  const driftScore = useMemo(() => calculateDriftScore(allAssets, totalAssets), [allAssets, totalAssets]);
-  const rebalanceScore = useMemo(() => calculateRebalanceScore(driftScore), [driftScore]);
+  // [6팩터] 건강 점수 엔진 — 기존 단일 drift 대체
+  const healthScore = useMemo(() => calculateHealthScore(allAssets, totalAssets), [allAssets, totalAssets]);
+
+  // 건강 점수 상세 펼침/접힘
+  const [showHealthDetail, setShowHealthDetail] = useState(false);
 
   // [최적화] 리포트를 ticker로 인덱싱 (O(1) 조회 → 기존 O(n) find 제거)
   const reportsByTicker = useMemo(() => {
@@ -196,7 +166,6 @@ export default function HomeScreen() {
   }
 
   const hasAssets = allAssets.length > 0;
-  const driftStatus = getDriftStatus(driftScore);
   const weatherEmoji = marketSentiment?.cfoWeather?.emoji || '📊';
 
   return (
@@ -261,16 +230,19 @@ export default function HomeScreen() {
               <View style={styles.pulseActions}>
                 <TouchableOpacity
                   style={styles.pulseActionBtn}
-                  onPress={handleRebalance}
+                  onPress={() => {
+                    haptics.lightTap();
+                    setShowHealthDetail(prev => !prev);
+                  }}
                 >
-                  <Text style={styles.pulseActionLabel}>리밸런싱 점수</Text>
+                  <Text style={styles.pulseActionLabel}>건강 점수</Text>
                   <View style={styles.pulseScoreRow}>
-                    <Text style={[styles.pulseScore, { color: driftStatus.color }]}>
-                      {rebalanceScore}점
+                    <Text style={[styles.pulseScore, { color: healthScore.gradeColor }]}>
+                      {healthScore.totalScore}점
                     </Text>
-                    <View style={[styles.scoreGradeBadge, { backgroundColor: driftStatus.bgColor }]}>
-                      <Text style={[styles.scoreGradeText, { color: driftStatus.color }]}>
-                        {getScoreGrade(rebalanceScore)}
+                    <View style={[styles.scoreGradeBadge, { backgroundColor: healthScore.gradeBgColor }]}>
+                      <Text style={[styles.scoreGradeText, { color: healthScore.gradeColor }]}>
+                        {healthScore.gradeLabel}
                       </Text>
                     </View>
                   </View>
@@ -288,6 +260,9 @@ export default function HomeScreen() {
                 </TouchableOpacity>
               </View>
             </View>
+
+            {/* ====== 건강 점수 상세 (토글) ====== */}
+            {showHealthDetail && <HealthScoreDetail result={healthScore} />}
 
             {/* ====== Section 3: 오늘의 시그널 ====== */}
             {matchedSignals.length > 0 && (
@@ -405,7 +380,7 @@ export default function HomeScreen() {
 
             {/* ====== Section 5: 리밸런싱 알림 배너 ====== */}
             <TouchableOpacity
-              style={[styles.rebalanceBanner, { borderColor: driftStatus.color + '40' }]}
+              style={[styles.rebalanceBanner, { borderColor: healthScore.driftStatus.color + '40' }]}
               onPress={handleRebalance}
               activeOpacity={0.8}
             >
@@ -414,15 +389,12 @@ export default function HomeScreen() {
                 <View>
                   <Text style={styles.bannerTitle}>포트폴리오 균형 상태</Text>
                   <Text style={styles.bannerDesc}>
-                    {driftScore < 5
-                      ? '목표 배분과 잘 맞고 있어요!'
-                      : `목표 배분에서 ${Math.round(driftScore)}% 이탈 → ${driftStatus.label}`
-                    }
+                    {healthScore.summary}
                   </Text>
                 </View>
               </View>
-              <View style={[styles.bannerBtn, { backgroundColor: driftStatus.bgColor }]}>
-                <Text style={[styles.bannerBtnText, { color: driftStatus.color }]}>처방전</Text>
+              <View style={[styles.bannerBtn, { backgroundColor: healthScore.driftStatus.bgColor }]}>
+                <Text style={[styles.bannerBtnText, { color: healthScore.driftStatus.color }]}>처방전</Text>
               </View>
             </TouchableOpacity>
           </>

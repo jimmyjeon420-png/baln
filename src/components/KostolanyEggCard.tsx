@@ -14,11 +14,14 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import Svg, { Path, Circle, G, Defs, RadialGradient, Stop } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { EggPhase, EggCycleAnalysis, InvestmentAction } from '../types/kostolany';
 import { EGG_CYCLE_PHASES, PHASE_TRANSITIONS } from '../constants/eggCycleData';
+import { useRateCycleEvidence } from '../hooks/useSharedAnalysis';
+import type { RateCycleEvidence, EvidenceItem, EconIndicator, ConfidenceFactor } from '../services/centralKitchen';
 
 // ══════════════════════════════════════════
 // Props
@@ -238,12 +241,235 @@ const MiniEggDiagram: React.FC<{ currentPhase: EggPhase }> = ({ currentPhase }) 
 // 메인 카드 컴포넌트
 // ══════════════════════════════════════════
 
+// ══════════════════════════════════════════
+// 증거 딥다이브 하위 컴포넌트들
+// ══════════════════════════════════════════
+
+/** 스탠스(매파/비둘기파) 배지 색상 */
+const STANCE_COLORS: Record<string, { bg: string; text: string; label: string }> = {
+  hawkish: { bg: 'rgba(207,102,121,0.15)', text: '#CF6679', label: '매파' },
+  dovish:  { bg: 'rgba(76,175,80,0.15)',  text: '#4CAF50', label: '비둘기파' },
+  neutral: { bg: 'rgba(136,136,136,0.15)', text: '#888',    label: '중립' },
+};
+
+/** 영향도 배지 */
+const IMPACT_LABELS: Record<string, string> = {
+  high: '높음',
+  medium: '보통',
+  low: '낮음',
+};
+
+/** A. 핵심 뉴스 증거 섹션 */
+const EvidenceSection: React.FC<{ items: EvidenceItem[] }> = ({ items }) => (
+  <View style={evidStyles.section}>
+    <View style={evidStyles.sectionHeader}>
+      <Ionicons name="newspaper-outline" size={14} color="#FFC107" />
+      <Text style={evidStyles.sectionTitle}>핵심 뉴스 증거</Text>
+    </View>
+    {items.map((item, idx) => {
+      const stanceStyle = STANCE_COLORS[item.stance] || STANCE_COLORS.neutral;
+      return (
+        <View key={idx} style={evidStyles.evidenceItem}>
+          <View style={evidStyles.evidenceRow}>
+            <Text style={evidStyles.evidenceHeadline} numberOfLines={2}>
+              {item.headline}
+            </Text>
+          </View>
+          <View style={evidStyles.evidenceMetaRow}>
+            <Text style={evidStyles.evidenceSource}>{item.source}</Text>
+            <View style={[evidStyles.stanceBadge, { backgroundColor: stanceStyle.bg }]}>
+              <Text style={[evidStyles.stanceBadgeText, { color: stanceStyle.text }]}>
+                {stanceStyle.label}
+              </Text>
+            </View>
+            {item.impact && (
+              <Text style={evidStyles.impactText}>
+                영향: {IMPACT_LABELS[item.impact] || item.impact}
+              </Text>
+            )}
+          </View>
+        </View>
+      );
+    })}
+  </View>
+);
+
+/** B. 경제 지표 대시보드 섹션 */
+const IndicatorCard: React.FC<{ indicator: EconIndicator; fullWidth?: boolean }> = ({
+  indicator,
+  fullWidth,
+}) => {
+  const trendIcon = indicator.trend === 'rising' ? 'trending-up' :
+                    indicator.trend === 'falling' ? 'trending-down' : 'remove';
+  const trendColor = indicator.trend === 'rising' ? '#CF6679' :
+                     indicator.trend === 'falling' ? '#4CAF50' : '#888';
+
+  return (
+    <View style={[evidStyles.indicatorCard, fullWidth && { width: '100%' }]}>
+      <Text style={evidStyles.indicatorName}>{indicator.name}</Text>
+      <View style={evidStyles.indicatorValueRow}>
+        <Text style={evidStyles.indicatorValue}>{indicator.value}</Text>
+        <Ionicons name={trendIcon as any} size={12} color={trendColor} />
+      </View>
+      <Text style={evidStyles.indicatorPrev}>이전: {indicator.previous}</Text>
+      {indicator.nextRelease && (
+        <Text style={evidStyles.indicatorNext}>다음: {indicator.nextRelease}</Text>
+      )}
+    </View>
+  );
+};
+
+const IndicatorsSection: React.FC<{ indicators: RateCycleEvidence['economicIndicators'] }> = ({
+  indicators,
+}) => (
+  <View style={evidStyles.section}>
+    <View style={evidStyles.sectionHeader}>
+      <Ionicons name="stats-chart-outline" size={14} color="#64B5F6" />
+      <Text style={evidStyles.sectionTitle}>경제 지표 대시보드</Text>
+    </View>
+    {/* Fed 기준금리 — 풀와이드 */}
+    <IndicatorCard indicator={indicators.fedRate} fullWidth />
+    {/* 2x2 그리드: CPI, 실업률, 수익률곡선, PCE코어 */}
+    <View style={evidStyles.indicatorGrid}>
+      <IndicatorCard indicator={indicators.cpi} />
+      <IndicatorCard indicator={indicators.unemployment} />
+      <IndicatorCard indicator={indicators.yieldCurveSpread} />
+      <IndicatorCard indicator={indicators.pceCore} />
+    </View>
+  </View>
+);
+
+/** C. 매파 vs 비둘기파 섹션 */
+const ExpertSection: React.FC<{ perspectives: RateCycleEvidence['expertPerspectives'] }> = ({
+  perspectives,
+}) => {
+  const hawkishRatio = perspectives.ratio;
+  const dovishRatio = 100 - hawkishRatio;
+
+  return (
+    <View style={evidStyles.section}>
+      <View style={evidStyles.sectionHeader}>
+        <Ionicons name="people-outline" size={14} color="#CE93D8" />
+        <Text style={evidStyles.sectionTitle}>매파 vs 비둘기파</Text>
+      </View>
+
+      {/* 비율 바 */}
+      <View style={evidStyles.ratioBar}>
+        <View style={[evidStyles.ratioFill, { width: `${hawkishRatio}%`, backgroundColor: '#CF6679' }]}>
+          {hawkishRatio >= 20 && (
+            <Text style={evidStyles.ratioText}>매파 {hawkishRatio}%</Text>
+          )}
+        </View>
+        <View style={[evidStyles.ratioFill, { width: `${dovishRatio}%`, backgroundColor: '#4CAF50' }]}>
+          {dovishRatio >= 20 && (
+            <Text style={evidStyles.ratioText}>비둘기파 {dovishRatio}%</Text>
+          )}
+        </View>
+      </View>
+
+      {/* 매파 진영 */}
+      <View style={evidStyles.campBox}>
+        <View style={evidStyles.campHeader}>
+          <Ionicons name="arrow-up-circle" size={12} color="#CF6679" />
+          <Text style={[evidStyles.campTitle, { color: '#CF6679' }]}>매파 (긴축 선호)</Text>
+        </View>
+        {perspectives.hawkishArgs.map((arg, i) => (
+          <View key={i} style={evidStyles.argRow}>
+            <View style={[evidStyles.argBullet, { backgroundColor: '#CF6679' }]} />
+            <Text style={evidStyles.argText}>{arg}</Text>
+          </View>
+        ))}
+        {perspectives.hawkishFigures.length > 0 && (
+          <Text style={evidStyles.figuresText}>
+            대표: {perspectives.hawkishFigures.join(', ')}
+          </Text>
+        )}
+      </View>
+
+      {/* 비둘기파 진영 */}
+      <View style={[evidStyles.campBox, { marginTop: 8 }]}>
+        <View style={evidStyles.campHeader}>
+          <Ionicons name="arrow-down-circle" size={12} color="#4CAF50" />
+          <Text style={[evidStyles.campTitle, { color: '#4CAF50' }]}>비둘기파 (완화 선호)</Text>
+        </View>
+        {perspectives.dovishArgs.map((arg, i) => (
+          <View key={i} style={evidStyles.argRow}>
+            <View style={[evidStyles.argBullet, { backgroundColor: '#4CAF50' }]} />
+            <Text style={evidStyles.argText}>{arg}</Text>
+          </View>
+        ))}
+        {perspectives.dovishFigures.length > 0 && (
+          <Text style={evidStyles.figuresText}>
+            대표: {perspectives.dovishFigures.join(', ')}
+          </Text>
+        )}
+      </View>
+    </View>
+  );
+};
+
+/** D. 판단 신뢰도 섹션 */
+const ConfidenceSection: React.FC<{
+  overall: number;
+  factors: ConfidenceFactor[];
+}> = ({ overall, factors }) => {
+  const barColor = overall >= 70 ? '#4CAF50' : overall >= 40 ? '#FFC107' : '#CF6679';
+  const WEIGHT_LABELS: Record<string, string> = { strong: '강', medium: '중', weak: '약' };
+
+  return (
+    <View style={evidStyles.section}>
+      <View style={evidStyles.sectionHeader}>
+        <Ionicons name="shield-checkmark-outline" size={14} color="#4CAF50" />
+        <Text style={evidStyles.sectionTitle}>판단 신뢰도</Text>
+      </View>
+
+      {/* 프로그레스 바 */}
+      <View style={evidStyles.progressContainer}>
+        <View style={evidStyles.progressBar}>
+          <View style={[evidStyles.progressFill, { width: `${overall}%`, backgroundColor: barColor }]} />
+        </View>
+        <Text style={[evidStyles.progressLabel, { color: barColor }]}>{overall}%</Text>
+      </View>
+
+      {/* 지지/반론 요인 */}
+      {factors.map((f, i) => (
+        <View key={i} style={evidStyles.factorRow}>
+          <Ionicons
+            name={f.type === 'supporting' ? 'checkmark-circle' : 'alert-circle'}
+            size={12}
+            color={f.type === 'supporting' ? '#4CAF50' : '#CF6679'}
+          />
+          <Text style={evidStyles.factorText}>{f.factor}</Text>
+          <View style={[
+            evidStyles.weightBadge,
+            { backgroundColor: f.weight === 'strong' ? 'rgba(255,255,255,0.12)' :
+                               f.weight === 'medium' ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.03)' }
+          ]}>
+            <Text style={evidStyles.weightText}>{WEIGHT_LABELS[f.weight] || f.weight}</Text>
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+};
+
+// ══════════════════════════════════════════
+// 메인 카드 컴포넌트
+// ══════════════════════════════════════════
+
 const KostolanyEggCard: React.FC<KostolanyEggCardProps> = ({
   analysis,
   interestRateText,
 }) => {
   const [expanded, setExpanded] = useState(false);
   const [guideExpanded, setGuideExpanded] = useState(false);
+  const [evidenceExpanded, setEvidenceExpanded] = useState(false);
+
+  // 2차 확장 시에만 DB 조회 (lazy loading)
+  const {
+    data: evidence,
+    isLoading: evidenceLoading,
+  } = useRateCycleEvidence(evidenceExpanded);
 
   const phaseInfo = EGG_CYCLE_PHASES[analysis.currentPhase];
   const actionStyle = ACTION_STYLE[analysis.action];
@@ -500,6 +726,72 @@ const KostolanyEggCard: React.FC<KostolanyEggCardProps> = ({
             </View>
           </View>
 
+          {/* ─── "왜 이 판단인가?" 2차 확장 버튼 ─── */}
+          <TouchableOpacity
+            style={styles.evidenceToggle}
+            onPress={() => setEvidenceExpanded(!evidenceExpanded)}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="search-outline" size={14} color="#64B5F6" />
+            <Text style={styles.evidenceToggleText}>왜 이 판단인가?</Text>
+            <Ionicons
+              name={evidenceExpanded ? 'chevron-up' : 'chevron-down'}
+              size={12}
+              color="#64B5F6"
+            />
+          </TouchableOpacity>
+
+          {/* ─── 2차 확장: 증거 딥다이브 ─── */}
+          {evidenceExpanded && (
+            <View style={styles.evidenceBody}>
+              {evidenceLoading ? (
+                <View style={styles.evidenceLoading}>
+                  <ActivityIndicator size="small" color="#64B5F6" />
+                  <Text style={styles.evidenceLoadingText}>증거 데이터 로딩 중...</Text>
+                </View>
+              ) : evidence ? (
+                <>
+                  {/* A. 핵심 뉴스 증거 */}
+                  {evidence.keyEvidence?.length > 0 && (
+                    <EvidenceSection items={evidence.keyEvidence} />
+                  )}
+
+                  {/* B. 경제 지표 대시보드 */}
+                  {evidence.economicIndicators && (
+                    <IndicatorsSection indicators={evidence.economicIndicators} />
+                  )}
+
+                  {/* C. 매파 vs 비둘기파 */}
+                  {evidence.expertPerspectives && (
+                    <ExpertSection perspectives={evidence.expertPerspectives} />
+                  )}
+
+                  {/* D. 판단 신뢰도 */}
+                  {evidence.confidenceFactors && (
+                    <ConfidenceSection
+                      overall={evidence.confidenceFactors.overall}
+                      factors={evidence.confidenceFactors.factors}
+                    />
+                  )}
+
+                  {/* 생성 시각 */}
+                  {evidence.generatedAt && (
+                    <Text style={styles.evidenceTimestamp}>
+                      데이터 기준: {new Date(evidence.generatedAt).toLocaleString('ko-KR')}
+                    </Text>
+                  )}
+                </>
+              ) : (
+                <View style={styles.evidenceEmpty}>
+                  <Ionicons name="time-outline" size={20} color="#555" />
+                  <Text style={styles.evidenceEmptyText}>
+                    데이터 준비 중{'\n'}매일 오전 7시에 업데이트됩니다
+                  </Text>
+                </View>
+              )}
+            </View>
+          )}
+
           {/* ─── 면책 ─── */}
           <Text style={styles.disclaimer}>
             코스톨라니 모형은 참고 지표이며 투자 결정의 근거가 아닙니다.
@@ -743,6 +1035,55 @@ const styles = StyleSheet.create({
     lineHeight: 17,
   },
 
+  // ── 2차 확장 (증거 딥다이브) ──
+  evidenceToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    backgroundColor: 'rgba(100,181,246,0.08)',
+    borderRadius: 10,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(100,181,246,0.15)',
+  },
+  evidenceToggleText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#64B5F6',
+  },
+  evidenceBody: {
+    marginBottom: 14,
+  },
+  evidenceLoading: {
+    alignItems: 'center',
+    paddingVertical: 24,
+    gap: 8,
+  },
+  evidenceLoadingText: {
+    fontSize: 12,
+    color: '#666',
+  },
+  evidenceEmpty: {
+    alignItems: 'center',
+    paddingVertical: 24,
+    gap: 8,
+  },
+  evidenceEmptyText: {
+    fontSize: 12,
+    color: '#555',
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+  evidenceTimestamp: {
+    fontSize: 10,
+    color: '#444',
+    textAlign: 'right',
+    marginTop: 8,
+  },
+
   // ── 면책 ──
   disclaimer: {
     fontSize: 10,
@@ -841,6 +1182,215 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: '#888',
     marginTop: 4,
+  },
+});
+
+// ══════════════════════════════════════════
+// 증거 딥다이브 섹션 전용 스타일
+// ══════════════════════════════════════════
+
+const evidStyles = StyleSheet.create({
+  // ── 공통 섹션 ──
+  section: {
+    backgroundColor: '#1A1A1A',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 10,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 10,
+  },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#DDD',
+  },
+
+  // ── A. 핵심 뉴스 증거 ──
+  evidenceItem: {
+    backgroundColor: '#222',
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 6,
+  },
+  evidenceRow: {
+    marginBottom: 6,
+  },
+  evidenceHeadline: {
+    fontSize: 12,
+    color: '#CCC',
+    lineHeight: 18,
+    fontWeight: '500',
+  },
+  evidenceMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  evidenceSource: {
+    fontSize: 10,
+    color: '#666',
+  },
+  stanceBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  stanceBadgeText: {
+    fontSize: 9,
+    fontWeight: '700',
+  },
+  impactText: {
+    fontSize: 9,
+    color: '#555',
+  },
+
+  // ── B. 경제 지표 ──
+  indicatorGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 6,
+  },
+  indicatorCard: {
+    backgroundColor: '#222',
+    borderRadius: 8,
+    padding: 10,
+    width: '48.5%',
+    marginBottom: 0,
+  },
+  indicatorName: {
+    fontSize: 10,
+    color: '#888',
+    marginBottom: 4,
+  },
+  indicatorValueRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 2,
+  },
+  indicatorValue: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#FFF',
+  },
+  indicatorPrev: {
+    fontSize: 9,
+    color: '#555',
+  },
+  indicatorNext: {
+    fontSize: 9,
+    color: '#FFC107',
+    marginTop: 2,
+  },
+
+  // ── C. 매파 vs 비둘기파 ──
+  ratioBar: {
+    flexDirection: 'row',
+    height: 28,
+    borderRadius: 6,
+    overflow: 'hidden',
+    marginBottom: 10,
+  },
+  ratioFill: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  ratioText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#FFF',
+  },
+  campBox: {
+    backgroundColor: '#222',
+    borderRadius: 8,
+    padding: 10,
+  },
+  campHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginBottom: 6,
+  },
+  campTitle: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  argRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 6,
+    marginBottom: 4,
+  },
+  argBullet: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    marginTop: 5,
+  },
+  argText: {
+    flex: 1,
+    fontSize: 11,
+    color: '#AAA',
+    lineHeight: 17,
+  },
+  figuresText: {
+    fontSize: 10,
+    color: '#666',
+    marginTop: 6,
+    fontStyle: 'italic',
+  },
+
+  // ── D. 판단 신뢰도 ──
+  progressContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 10,
+  },
+  progressBar: {
+    flex: 1,
+    height: 8,
+    backgroundColor: '#222',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  progressLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+    width: 40,
+    textAlign: 'right',
+  },
+  factorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
+    paddingVertical: 2,
+  },
+  factorText: {
+    flex: 1,
+    fontSize: 11,
+    color: '#AAA',
+    lineHeight: 16,
+  },
+  weightBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  weightText: {
+    fontSize: 9,
+    color: '#888',
+    fontWeight: '600',
   },
 });
 

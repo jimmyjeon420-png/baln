@@ -83,6 +83,62 @@ export interface GuruInsightsData {
   market_context: string | null;
 }
 
+// ============================================================================
+// 금리 사이클 증거 타입 정의
+// ============================================================================
+
+/** 개별 뉴스/이벤트 증거 */
+export interface EvidenceItem {
+  headline: string;       // 뉴스 헤드라인
+  source: string;         // 출처 (Bloomberg, Reuters 등)
+  date: string;           // 날짜
+  stance: 'hawkish' | 'dovish' | 'neutral';  // 매파/비둘기파/중립
+  impact: 'high' | 'medium' | 'low';         // 영향도
+}
+
+/** 경제 지표 */
+export interface EconIndicator {
+  name: string;           // 지표명 (Fed 기준금리, CPI 등)
+  value: string;          // 현재 값 (예: "5.25-5.50%")
+  previous: string;       // 이전 값
+  trend: 'rising' | 'falling' | 'stable';    // 추세
+  nextRelease?: string;   // 다음 발표일
+}
+
+/** 전문가 진영 */
+export interface ExpertCamp {
+  ratio: number;          // 비율 (0-100, 매파 비율)
+  hawkishArgs: string[];  // 매파 논거
+  dovishArgs: string[];   // 비둘기파 논거
+  hawkishFigures: string[];  // 매파 대표 인물
+  dovishFigures: string[];   // 비둘기파 대표 인물
+}
+
+/** 신뢰도 요인 */
+export interface ConfidenceFactor {
+  factor: string;         // 요인 설명
+  type: 'supporting' | 'opposing';  // 지지/반론
+  weight: 'strong' | 'medium' | 'weak';  // 가중치
+}
+
+/** 금리 사이클 증거 전체 구조 */
+export interface RateCycleEvidence {
+  keyEvidence: EvidenceItem[];           // 핵심 뉴스 증거
+  economicIndicators: {
+    fedRate: EconIndicator;              // Fed 기준금리
+    cpi: EconIndicator;                  // 소비자물가지수
+    unemployment: EconIndicator;         // 실업률
+    yieldCurveSpread: EconIndicator;     // 수익률곡선 스프레드
+    pceCore: EconIndicator;              // PCE 코어
+  };
+  expertPerspectives: ExpertCamp;        // 매파 vs 비둘기파
+  confidenceFactors: {
+    overall: number;                     // 전체 신뢰도 (0-100)
+    factors: ConfidenceFactor[];         // 개별 요인
+  };
+  generatedAt: string;                   // 생성 시각
+}
+
 /** Central Kitchen 통합 결과 (Morning Briefing에 퀀트 데이터 병합) */
 export interface CentralKitchenResult {
   /** Central Kitchen에서 가져왔는지 여부 */
@@ -464,6 +520,28 @@ export async function savePrescription(
 // ============================================================================
 
 /**
+ * 오늘의 금리 사이클 증거 데이터 조회
+ * DB only (< 50ms), 라이브 폴백 없음
+ * @returns RateCycleEvidence 또는 null (데이터 없음 또는 07:00 이전)
+ */
+export async function getTodayRateCycleEvidence(): Promise<RateCycleEvidence | null> {
+  const today = new Date().toISOString().split('T')[0];
+
+  const { data, error } = await supabase
+    .from('daily_market_insights')
+    .select('rate_cycle_evidence')
+    .eq('date', today)
+    .single();
+
+  if (error || !data || !data.rate_cycle_evidence) {
+    console.log('[Central Kitchen] 오늘의 금리 사이클 증거 없음');
+    return null;
+  }
+
+  return data.rate_cycle_evidence as RateCycleEvidence;
+}
+
+/**
  * 오늘의 투자 거장 인사이트 조회
  * 글로벌 공유 데이터이므로 라이브 폴백 없음 (DB only)
  * @returns GuruInsightsData 또는 null (데이터 없음)
@@ -483,4 +561,58 @@ export async function getTodayGuruInsights(): Promise<GuruInsightsData | null> {
   }
 
   return data as GuruInsightsData;
+}
+
+// ============================================================================
+// 부동산 시세 캐시 조회
+// ============================================================================
+
+/** 부동산 시세 캐시 결과 */
+export interface RealEstatePriceCacheResult {
+  latestPrice: number;       // 최근 거래가 (원)
+  avgPrice3: number;         // 최근 3건 평균 (원)
+  priceChangeRate: number;   // 변동률 (%)
+  lastTransactionDate: string | null;
+  transactionCount: number;
+  updatedAt: string;
+}
+
+/**
+ * 부동산 시세 캐시 조회 (DB only, < 50ms)
+ * Central Kitchen 패턴: Task F에서 사전 갱신된 데이터 조회
+ *
+ * @param lawdCd - 법정동코드
+ * @param complexName - 단지명
+ * @param unitArea - 전용면적 (㎡)
+ * @returns 캐시된 시세 정보 또는 null
+ */
+export async function getRealEstatePrice(
+  lawdCd: string,
+  complexName: string,
+  unitArea: number,
+): Promise<RealEstatePriceCacheResult | null> {
+  const { data, error } = await supabase
+    .from('realestate_price_cache')
+    .select('latest_price, avg_price_3, price_change_rate, last_transaction_date, transaction_count, updated_at')
+    .eq('lawd_cd', lawdCd)
+    .eq('complex_name', complexName)
+    .gte('unit_area', unitArea - 2)
+    .lte('unit_area', unitArea + 2)
+    .order('updated_at', { ascending: false })
+    .limit(1)
+    .single();
+
+  if (error || !data) {
+    console.log('[Central Kitchen] 부동산 시세 캐시 없음');
+    return null;
+  }
+
+  return {
+    latestPrice: data.latest_price,
+    avgPrice3: data.avg_price_3,
+    priceChangeRate: data.price_change_rate || 0,
+    lastTransactionDate: data.last_transaction_date,
+    transactionCount: data.transaction_count,
+    updatedAt: data.updated_at,
+  };
 }

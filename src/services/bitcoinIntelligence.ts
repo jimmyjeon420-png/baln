@@ -235,6 +235,46 @@ async function analyzeBitcoinWithGemini(): Promise<GeminiInsight> {
 }
 
 // ============================================================================
+// 실시간 BTC 가격 조회 (경량 — "시세 전광판 부서")
+// 확신 점수와 별도로 30초마다 가격만 빠르게 갱신
+// ============================================================================
+
+export interface BitcoinLivePrice {
+  currentPrice: number;     // BTC 현재 가격 (USD)
+  priceChange24h: number;   // 24시간 변동률 (%)
+  updatedAt: string;
+}
+
+/**
+ * BTC 실시간 가격만 조회 (CoinGecko simple/price — 경량 API)
+ * 확신 점수 계산 없이 가격+24h 변동률만 반환
+ */
+export async function fetchBitcoinLivePrice(): Promise<BitcoinLivePrice> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
+
+  try {
+    const res = await fetch(
+      'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true',
+      { signal: controller.signal }
+    );
+    const json = await res.json();
+    const btc = json?.bitcoin;
+
+    return {
+      currentPrice: btc?.usd ?? 0,
+      priceChange24h: btc?.usd_24h_change ?? 0,
+      updatedAt: new Date().toISOString(),
+    };
+  } catch (err) {
+    console.warn('[Bitcoin] 실시간 가격 조회 실패:', err);
+    return { currentPrice: 0, priceChange24h: 0, updatedAt: new Date().toISOString() };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+// ============================================================================
 // 메인 진입점: 비트코인 인텔리전스 로드
 // ============================================================================
 

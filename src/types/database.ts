@@ -86,6 +86,13 @@ export interface Database {
           verified_at: string | null;
           verified_value: number | null; // 검증 당시 KRW 가치
           input_type: 'self_declared' | 'ocr_verified';
+          // 부동산 메타데이터 (ticker가 RE_로 시작하는 자산)
+          lawd_cd: string | null;
+          complex_name: string | null;
+          unit_area: number | null;
+          unit_detail: string | null;
+          purchase_price_krw: number | null;
+          last_price_updated_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -110,6 +117,13 @@ export interface Database {
           verified_at?: string | null;
           verified_value?: number | null;
           input_type?: 'self_declared' | 'ocr_verified';
+          // 부동산 메타데이터
+          lawd_cd?: string | null;
+          complex_name?: string | null;
+          unit_area?: number | null;
+          unit_detail?: string | null;
+          purchase_price_krw?: number | null;
+          last_price_updated_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -134,6 +148,13 @@ export interface Database {
           verified_at?: string | null;
           verified_value?: number | null;
           input_type?: 'self_declared' | 'ocr_verified';
+          // 부동산 메타데이터
+          lawd_cd?: string | null;
+          complex_name?: string | null;
+          unit_area?: number | null;
+          unit_detail?: string | null;
+          purchase_price_krw?: number | null;
+          last_price_updated_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };

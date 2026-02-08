@@ -10,12 +10,10 @@ const COLORS = {
   tabBar: '#1A1F2C',
   active: '#FFFFFF',
   inactive: '#6B7280',
-  scanButton: '#4CAF50',
-  scanButtonShadow: 'rgba(76, 175, 80, 0.4)',
 };
 
 // 표시할 탭 목록 (순서대로)
-const VISIBLE_TABS = ['index', 'lounge', 'scan', 'rebalance', 'profile'];
+const VISIBLE_TABS = ['index', 'lounge', 'rebalance', 'insights', 'profile'];
 
 // 커스텀 탭 바 컴포넌트 - 플로팅 스캔 버튼 포함
 function CustomTabBar({ state, descriptors, navigation }: any) {
@@ -35,9 +33,6 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
           const routeIndex = state.routes.findIndex((r: any) => r.key === route.key);
           const isFocused = state.index === routeIndex;
 
-          // 스캔 버튼 (가운데) - 특별 처리
-          const isScanButton = route.name === 'scan';
-
           const onPress = () => {
             const event = navigation.emit({
               type: 'tabPress',
@@ -46,34 +41,12 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
             });
 
             if (!event.defaultPrevented) {
-              if (isScanButton) {
-                // 스캔 버튼은 add-asset 모달로 이동
-                router.push('/add-asset');
-              } else {
-                // expo-router 사용하여 탭 네비게이션
-                const tabPath = route.name === 'index' ? '/(tabs)' : `/(tabs)/${route.name}`;
-                router.replace(tabPath as any);
-              }
+              const tabPath = route.name === 'index' ? '/(tabs)' : `/(tabs)/${route.name}`;
+              router.replace(tabPath as any);
             }
           };
 
-          // 스캔 버튼 렌더링
-          if (isScanButton) {
-            return (
-              <TouchableOpacity
-                key={route.key}
-                style={styles.scanButtonWrapper}
-                onPress={onPress}
-                activeOpacity={0.8}
-              >
-                <View style={styles.scanButton}>
-                  <Ionicons name="camera" size={28} color="#FFFFFF" />
-                </View>
-              </TouchableOpacity>
-            );
-          }
-
-          // 일반 탭 아이콘 렌더링
+          // 탭 아이콘 렌더링
           const iconName = getIconName(route.name, isFocused);
           const label = getLabel(route.name);
 
@@ -108,8 +81,8 @@ function getIconName(routeName: string, isFocused: boolean): keyof typeof Ionico
   const icons: Record<string, { active: string; inactive: string }> = {
     index: { active: 'home', inactive: 'home-outline' },
     lounge: { active: 'people', inactive: 'people-outline' },
-    scan: { active: 'camera', inactive: 'camera-outline' },
     rebalance: { active: 'map', inactive: 'map-outline' },
+    insights: { active: 'bulb', inactive: 'bulb-outline' },
     profile: { active: 'menu', inactive: 'menu-outline' },
   };
 
@@ -122,8 +95,8 @@ function getLabel(routeName: string): string {
   const labels: Record<string, string> = {
     index: '내 자산',
     lounge: '라운지',
-    scan: '스캔',
     rebalance: '처방전',
+    insights: '인사이트',
     profile: '더보기',
   };
   return labels[routeName] || routeName;
@@ -153,19 +126,19 @@ export default function TabLayout() {
         }}
       />
 
-      {/* 3. 스캔 (중앙 플로팅 버튼) */}
-      <Tabs.Screen
-        name="scan"
-        options={{
-          title: '스캔',
-        }}
-      />
-
-      {/* 4. 처방전 - 리밸런싱 */}
+      {/* 3. 처방전 - 리밸런싱 */}
       <Tabs.Screen
         name="rebalance"
         options={{
           title: '처방전',
+        }}
+      />
+
+      {/* 4. 인사이트 - AI 인사이트 허브 */}
+      <Tabs.Screen
+        name="insights"
+        options={{
+          title: '인사이트',
         }}
       />
 
@@ -178,6 +151,7 @@ export default function TabLayout() {
       />
 
       {/* 기존 탭들 숨김 처리 */}
+      <Tabs.Screen name="scan" options={{ href: null }} />
       <Tabs.Screen name="diagnosis" options={{ href: null }} />
       <Tabs.Screen name="strategy" options={{ href: null }} />
       <Tabs.Screen name="journal" options={{ href: null }} />
@@ -226,30 +200,5 @@ const styles = StyleSheet.create({
     height: 4,
     borderRadius: 2,
     marginTop: 4,
-  },
-  scanButtonWrapper: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: -30, // 버튼을 탭바 위로 올림
-  },
-  scanButton: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: COLORS.scanButton,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...Platform.select({
-      ios: {
-        shadowColor: COLORS.scanButtonShadow,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 1,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 8,
-      },
-    }),
   },
 });

@@ -13,11 +13,14 @@ import Svg, { Circle, G } from 'react-native-svg';
 import {
   BitcoinIntelligenceResult,
   BitcoinSubScores,
+  BitcoinLivePrice,
   ZONE_CONFIG,
 } from '../services/bitcoinIntelligence';
 
 interface BitcoinConvictionCardProps {
   data: BitcoinIntelligenceResult;
+  /** 실시간 BTC 가격 (30초마다 갱신, 확신 점수와 별도) */
+  livePrice?: BitcoinLivePrice | null;
 }
 
 // 서브스코어 바 색상 결정
@@ -136,7 +139,7 @@ const SUB_SCORE_CONFIG: {
   },
 ];
 
-export default function BitcoinConvictionCard({ data }: BitcoinConvictionCardProps) {
+export default function BitcoinConvictionCard({ data, livePrice }: BitcoinConvictionCardProps) {
   const [insightExpanded, setInsightExpanded] = useState(false);
   const [factorHelpOpen, setFactorHelpOpen] = useState(false);
 
@@ -150,9 +153,17 @@ export default function BitcoinConvictionCard({ data }: BitcoinConvictionCardPro
   const circumference = radius * 2 * Math.PI;
   const progress = (data.compositeScore / 100) * circumference;
 
-  // BTC 가격 포맷
-  const formattedPrice = data.currentPrice > 0
-    ? `$${data.currentPrice.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+  // BTC 가격: 실시간 가격 우선, 없으면 확신 점수 데이터의 가격 사용
+  const displayPrice = (livePrice?.currentPrice && livePrice.currentPrice > 0)
+    ? livePrice.currentPrice
+    : data.currentPrice;
+  const displayChange = (livePrice?.currentPrice && livePrice.currentPrice > 0)
+    ? livePrice.priceChange24h
+    : data.priceChange24h;
+  const isLivePrice = !!(livePrice?.currentPrice && livePrice.currentPrice > 0);
+
+  const formattedPrice = displayPrice > 0
+    ? `$${displayPrice.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
     : null;
 
   return (
@@ -220,16 +231,17 @@ export default function BitcoinConvictionCard({ data }: BitcoinConvictionCardPro
         </View>
         {formattedPrice && (
           <View style={styles.priceContainer}>
+            {isLivePrice && <View style={styles.liveDot} />}
             <Text style={styles.priceLabel}>BTC</Text>
             <Text style={styles.priceValue}>{formattedPrice}</Text>
             <Text
               style={[
                 styles.priceChange,
-                { color: data.priceChange24h >= 0 ? '#4CAF50' : '#CF6679' },
+                { color: displayChange >= 0 ? '#4CAF50' : '#CF6679' },
               ]}
             >
-              {data.priceChange24h >= 0 ? '+' : ''}
-              {data.priceChange24h.toFixed(1)}%
+              {displayChange >= 0 ? '+' : ''}
+              {displayChange.toFixed(1)}%
             </Text>
           </View>
         )}
@@ -458,6 +470,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+  },
+  liveDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#4CAF50',
   },
   priceLabel: {
     fontSize: 12,

@@ -7,6 +7,7 @@
 import { PriceData, AssetClass, PriceServiceError } from '../types/price';
 import { priceCache } from './priceCache';
 import { coinGeckoProvider } from './priceProviders/CoinGeckoProvider';
+import { yahooFinanceProvider } from './priceProviders/YahooFinanceProvider';
 import { getPrice as getMockPrice } from './mockMarketData';
 
 /**
@@ -47,10 +48,19 @@ export class PriceService {
       }
     }
 
-    // Stocks/ETFs: Use mock market data or manual input
+    // Stocks/ETFs: Yahoo Finance 실시간 → Mock 폴백
     if (assetClass === AssetClass.STOCK || assetClass === AssetClass.ETF) {
+      // 1순위: Yahoo Finance 실시간 가격
       try {
-        // Try to get mock price data
+        const price = await yahooFinanceProvider.fetchPrice(ticker, currency);
+        priceCache.set(ticker, price, 300); // 5분 캐시
+        return price;
+      } catch (yahooError) {
+        console.warn(`[PriceService] Yahoo Finance 실패 (${ticker}), Mock 폴백 시도...`);
+      }
+
+      // 2순위: Mock 가격 (개발/테스트용 폴백)
+      try {
         const mockPrice = getMockPrice(ticker);
         if (mockPrice) {
           const priceData: PriceData = {
@@ -61,7 +71,7 @@ export class PriceService {
             lastUpdated: Date.now(),
             source: 'stock-api',
           };
-          priceCache.set(ticker, priceData, 3600); // 1-hour cache for mock data
+          priceCache.set(ticker, priceData, 3600); // 1시간 캐시 (Mock)
           return priceData;
         }
       } catch (error) {
@@ -133,9 +143,18 @@ export class PriceService {
             .map((result) => (result as PromiseFulfilledResult<PriceData>).value);
         }
       } else if (assetClass === AssetClass.STOCK || assetClass === AssetClass.ETF) {
-        // Try mock data for stocks/ETFs
+        // 1순위: Yahoo Finance 배치 조회
         try {
-          for (const ticker of uncached) {
+          const yahooPrices = await yahooFinanceProvider.fetchPrices(uncached, currency);
+          const yahooTickers = new Set(yahooPrices.map(p => p.ticker));
+          yahooPrices.forEach(price => {
+            fetched.push(price);
+            priceCache.set(price.ticker, price, 300);
+          });
+
+          // Yahoo에서 못 가져온 종목만 Mock 폴백
+          const remaining = uncached.filter(t => !yahooTickers.has(t));
+          for (const ticker of remaining) {
             const mockPrice = getMockPrice(ticker);
             if (mockPrice) {
               const priceData: PriceData = {
@@ -151,7 +170,19 @@ export class PriceService {
             }
           }
         } catch (error) {
-          console.warn('[PriceService] Mock data fetch failed:', error);
+          console.warn('[PriceService] Yahoo Finance 배치 실패, Mock 폴백:', error);
+          // 전체 폴백: Mock 데이터
+          for (const ticker of uncached) {
+            const mockPrice = getMockPrice(ticker);
+            if (mockPrice) {
+              const priceData: PriceData = {
+                ticker, assetClass, currentPrice: mockPrice,
+                currency, lastUpdated: Date.now(), source: 'stock-api',
+              };
+              fetched.push(priceData);
+              priceCache.set(ticker, priceData, 3600);
+            }
+          }
         }
       } else {
         throw new Error(
@@ -208,9 +239,15 @@ export class PriceService {
    */
   async getProviderStatus(): Promise<{
     coingecko: boolean;
+    yahooFinance: boolean;
   }> {
+    const [coingecko, yahooFinance] = await Promise.allSettled([
+      coinGeckoProvider.isAvailable(),
+      yahooFinanceProvider.isAvailable(),
+    ]);
     return {
-      coingecko: await coinGeckoProvider.isAvailable(),
+      coingecko: coingecko.status === 'fulfilled' && coingecko.value,
+      yahooFinance: yahooFinance.status === 'fulfilled' && yahooFinance.value,
     };
   }
 

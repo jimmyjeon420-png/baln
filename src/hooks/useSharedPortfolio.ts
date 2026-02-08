@@ -34,13 +34,17 @@ interface SharedPortfolioData {
   userTier: UserTier;
   /** 유동 자산 티커 목록 (Central Kitchen 조회용) */
   liquidTickers: string[];
+  /** 부동산 자산 (RE_ 티커 필터링) */
+  realEstateAssets: Asset[];
+  /** 부동산 총 자산 (KRW) */
+  totalRealEstate: number;
 }
 
 /** Supabase에서 포트폴리오 조회 + 두 가지 형식으로 변환 */
 async function fetchSharedPortfolio(): Promise<SharedPortfolioData> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
-    return { assets: [], portfolioAssets: [], totalAssets: 0, userTier: 'SILVER', liquidTickers: [] };
+    return { assets: [], portfolioAssets: [], totalAssets: 0, userTier: 'SILVER', liquidTickers: [], realEstateAssets: [], totalRealEstate: 0 };
   }
 
   const { data, error } = await supabase
@@ -50,14 +54,20 @@ async function fetchSharedPortfolio(): Promise<SharedPortfolioData> {
     .order('current_value', { ascending: false });
 
   if (error || !data || data.length === 0) {
-    return { assets: [], portfolioAssets: [], totalAssets: 0, userTier: 'SILVER', liquidTickers: [] };
+    return { assets: [], portfolioAssets: [], totalAssets: 0, userTier: 'SILVER', liquidTickers: [], realEstateAssets: [], totalRealEstate: 0 };
   }
 
   // 홈 탭용 Asset 배열
   const assets = data.map(transformDbRowToAsset);
 
-  // 진단/처방전용 PortfolioAsset 배열
-  const portfolioAssets: PortfolioAsset[] = data.map((item: any) => ({
+  // 부동산 자산 필터링 (RE_ 티커)
+  const realEstateAssets = assets.filter(a => a.ticker?.startsWith('RE_'));
+  const totalRealEstate = realEstateAssets.reduce((sum, a) => sum + a.currentValue, 0);
+
+  // 진단/처방전용 PortfolioAsset 배열 (부동산 제외 — Gemini에 전달하지 않음)
+  const portfolioAssets: PortfolioAsset[] = data
+    .filter((item: any) => !item.ticker?.startsWith('RE_'))
+    .map((item: any) => ({
     ticker: item.ticker || 'UNKNOWN',
     name: item.name || '알 수 없는 자산',
     quantity: item.quantity || 0,
@@ -84,7 +94,7 @@ async function fetchSharedPortfolio(): Promise<SharedPortfolioData> {
   // 프로필 티어 동기화 (백그라운드, 실패 무시)
   syncUserProfileTier(user.id).catch(() => {});
 
-  return { assets, portfolioAssets, totalAssets, userTier, liquidTickers };
+  return { assets, portfolioAssets, totalAssets, userTier, liquidTickers, realEstateAssets, totalRealEstate };
 }
 
 // ============================================================================
@@ -115,6 +125,8 @@ export function useSharedPortfolio() {
     totalAssets: query.data?.totalAssets ?? 0,
     userTier: (query.data?.userTier ?? 'SILVER') as UserTier,
     liquidTickers: query.data?.liquidTickers ?? [],
+    realEstateAssets: query.data?.realEstateAssets ?? [],
+    totalRealEstate: query.data?.totalRealEstate ?? 0,
     hasAssets: (query.data?.totalAssets ?? 0) > 0,
   };
 }

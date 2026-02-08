@@ -34,11 +34,13 @@ import KostolanyEggCard from '../../src/components/KostolanyEggCard';
 import { KostolanyLogic } from '../../src/services/KostolanyLogic';
 import { TIER_LABELS } from '../../src/hooks/useGatherings';
 import { useSharedPortfolio } from '../../src/hooks/useSharedPortfolio';
-import { useSharedAnalysis, useSharedBitcoin } from '../../src/hooks/useSharedAnalysis';
+import { useSharedAnalysis, useSharedBitcoin, useBitcoinPrice } from '../../src/hooks/useSharedAnalysis';
 import { usePeerPanicScore, getAssetBracket } from '../../src/hooks/usePortfolioSnapshots';
 import { TIER_STRATEGIES } from '../../src/constants/tierStrategy';
 import FreePeriodBanner from '../../src/components/FreePeriodBanner';
 import { isFreePeriod } from '../../src/config/freePeriod';
+import { usePrices } from '../../src/hooks/usePrices';
+import { AssetType } from '../../src/types/asset';
 
 // 요일 이름
 const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
@@ -85,6 +87,9 @@ export default function RebalanceScreen() {
 
   // 비트코인 인텔리전스 (선택적, 별도 쿼리)
   const { data: bitcoinIntelligence } = useSharedBitcoin();
+
+  // BTC 실시간 가격 (30초마다 갱신 — 확신 점수와 별도)
+  const { data: btcLivePrice } = useBitcoinPrice();
 
   // 또래 비교: 내 자산 구간의 Panic Shield 평균 점수
   const myBracket = getAssetBracket(totalAssets);
@@ -171,6 +176,33 @@ export default function RebalanceScreen() {
       marketSentiment: morningBriefing.macroSummary.marketSentiment,
     });
   }, [morningBriefing]);
+
+  // 오늘의 액션 종목: 실시간 가격 조회 (PriceService 경유 → 암호화폐 CoinGecko, 주식 Mock/DB)
+  const priceTargets = useMemo(() => {
+    if (sortedActions.length === 0) return [];
+    const seen = new Set<string>();
+    return sortedActions
+      .filter(a => {
+        if (!a.ticker || seen.has(a.ticker)) return false;
+        seen.add(a.ticker);
+        return true;
+      })
+      .map(a => ({
+        id: a.ticker,
+        name: a.name || a.ticker,
+        ticker: a.ticker,
+        currentValue: 0,
+        targetAllocation: 0,
+        createdAt: Date.now(),
+        assetType: AssetType.LIQUID,
+      }));
+  }, [sortedActions]);
+
+  // 실시간 가격 훅: 5분마다 자동 갱신
+  const { prices: livePrices } = usePrices(priceTargets, {
+    currency: 'KRW',
+    autoRefreshMs: 300000,
+  });
 
   // FOMO 경고 중 HIGH 개수
   const highFomoCount = analysisResult?.fomoAlerts.filter(a => a.severity === 'HIGH').length ?? 0;
@@ -405,8 +437,14 @@ export default function RebalanceScreen() {
               const matchedAsset = portfolio.find(
                 a => a.ticker.toUpperCase() === action.ticker.toUpperCase()
               );
-              const assetGl = matchedAsset && matchedAsset.avgPrice > 0
-                ? ((matchedAsset.currentPrice - matchedAsset.avgPrice) / matchedAsset.avgPrice) * 100
+
+              // 실시간 가격 (live 우선 → DB 폴백)
+              const liveData = livePrices[action.ticker];
+              const displayPrice = liveData?.currentPrice || matchedAsset?.currentPrice || 0;
+              const isLive = !!liveData?.currentPrice;
+
+              const assetGl = matchedAsset && matchedAsset.avgPrice > 0 && displayPrice > 0
+                ? ((displayPrice - matchedAsset.avgPrice) / matchedAsset.avgPrice) * 100
                 : null;
               const assetWeight = matchedAsset && totalAssets > 0
                 ? ((matchedAsset.currentValue / totalAssets) * 100).toFixed(1)
@@ -450,6 +488,26 @@ export default function RebalanceScreen() {
                     />
                   </View>
 
+                  {/* 현재가 + 등락률 (접힌 상태) */}
+                  {!isExpanded && displayPrice > 0 && (
+                    <View style={s.actionPriceRow}>
+                      <Text style={s.actionPriceText}>
+                        ₩{displayPrice.toLocaleString()}
+                      </Text>
+                      {assetGl !== null && (
+                        <Text style={[s.actionChangeText, { color: (assetGl ?? 0) >= 0 ? '#4CAF50' : '#CF6679' }]}>
+                          {(assetGl ?? 0) >= 0 ? '+' : ''}{(assetGl ?? 0).toFixed(1)}%
+                        </Text>
+                      )}
+                      {isLive && (
+                        <View style={s.liveIndicator}>
+                          <View style={s.liveDotSmall} />
+                          <Text style={s.liveLabel}>LIVE</Text>
+                        </View>
+                      )}
+                    </View>
+                  )}
+
                   {/* 접힌 상태: 사유 2줄 미리보기 */}
                   {!isExpanded && (
                     <Text style={s.actionReason} numberOfLines={2}>{action.reason}</Text>
@@ -478,9 +536,9 @@ export default function RebalanceScreen() {
                           <Text style={s.actionPortfolioTitle}>내 보유 현황</Text>
                           <View style={s.actionPortfolioRow}>
                             <View style={s.actionPortfolioItem}>
-                              <Text style={s.actionPortfolioLabel}>현재가</Text>
+                              <Text style={s.actionPortfolioLabel}>현재가{isLive ? ' (실시간)' : ''}</Text>
                               <Text style={s.actionPortfolioValue}>
-                                ₩{matchedAsset.currentPrice.toLocaleString()}
+                                ₩{displayPrice.toLocaleString()}
                               </Text>
                             </View>
                             <View style={s.actionPortfolioDivider} />
@@ -598,7 +656,7 @@ export default function RebalanceScreen() {
 
         {/* ─── 5. Bitcoin Conviction Score ─── */}
         {bitcoinIntelligence && (
-          <BitcoinConvictionCard data={bitcoinIntelligence} />
+          <BitcoinConvictionCard data={bitcoinIntelligence} livePrice={btcLivePrice} />
         )}
 
         {/* ─── 6. 보유 자산 (접기/펼치기) ─── */}
@@ -1076,6 +1134,41 @@ const s = StyleSheet.create({
     fontSize: 12,
     color: '#999',
     lineHeight: 18,
+  },
+
+  // ── 실시간 가격 표시 ──
+  actionPriceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 6,
+  },
+  actionPriceText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  actionChangeText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  liveIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    marginLeft: 'auto',
+  },
+  liveDotSmall: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: '#4CAF50',
+  },
+  liveLabel: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#4CAF50',
+    letterSpacing: 0.5,
   },
 
   // ── 액션 상세 (펼침) ──

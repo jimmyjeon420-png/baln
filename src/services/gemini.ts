@@ -674,18 +674,21 @@ export const generateMorningBriefing = async (
     const today = new Date();
     const dateStr = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`;
 
-    // [핵심] profit_loss_rate 계산하여 프롬프트에 주입
-    const portfolioWithProfitLoss = portfolio.map(p => {
+    // [핵심] 부동산 자산(RE_) 필터링 → Gemini에 개인 부동산 정보 노출 방지
+    const filteredPortfolio = portfolio.filter(p => !p.ticker?.startsWith('RE_'));
+
+    // profit_loss_rate 계산하여 프롬프트에 주입
+    const totalValue = filteredPortfolio.reduce((s, a) => s + a.currentValue, 0);
+    const portfolioWithProfitLoss = filteredPortfolio.map(p => {
       const profitLossRate = p.avgPrice > 0
         ? ((p.currentPrice - p.avgPrice) / p.avgPrice) * 100
         : 0;
-      const totalValue = portfolio.reduce((s, a) => s + a.currentValue, 0);
       return {
         ticker: p.ticker,
         name: p.name,
         value: p.currentValue,
         allocation: p.allocation || (totalValue > 0 ? ((p.currentValue / totalValue) * 100).toFixed(1) : '0'),
-        profit_loss_rate: profitLossRate.toFixed(2) + '%', // 손익률 추가
+        profit_loss_rate: profitLossRate.toFixed(2) + '%',
         avgPrice: p.avgPrice,
         currentPrice: p.currentPrice,
       };
@@ -730,12 +733,14 @@ ${JSON.stringify(portfolioWithProfitLoss, null, 2)}
    - status: 한 줄 상태 (예: "맑음: 안정적")
    - message: 오늘의 한 마디 조언 (실시간 뉴스 반영)
 
-${options?.includeRealEstate ? `
+${(options?.includeRealEstate && options?.realEstateContext) ? `
 4. **부동산 인사이트 (realEstateInsight)**
-   - 컨텍스트: ${options.realEstateContext || '야탑동 매화마을1차 재건축/리모델링'}
-   - 분석: 재건축 vs 리모델링 경제성 비교
-   - 권장사항: 인테리어(6천만) vs 분담금(1.5억) 의사결정 조언
-` : ''}
+   - 컨텍스트: ${options.realEstateContext}
+   - 분석: 해당 부동산의 시세 동향 및 투자 관점 분석
+   - 권장사항: 보유/매도/추가매수 관점 조언
+` : `
+**[금지] realEstateInsight 필드를 절대 생성하지 마세요. 포트폴리오에 부동산 자산이 있더라도 무시하세요.**
+`}
 
 **출력 형식 (JSON만, 마크다운 금지):**
 {
@@ -748,11 +753,7 @@ ${options?.includeRealEstate ? `
   "portfolioActions": [
     {"ticker": "NVDA", "name": "엔비디아", "action": "HOLD", "reason": "[실시간 뉴스 기반] 구체적 근거", "priority": "LOW"}
   ],
-  "realEstateInsight": {
-    "title": "야탑동 매화마을1차 분석",
-    "analysis": "재건축 예상 분담금 1.5억 vs 리모델링 인테리어 6천만",
-    "recommendation": "현재 시점에서는..."
-  },
+  "realEstateInsight": null,
   "cfoWeather": {
     "emoji": "⛅",
     "status": "구름 조금: 관망 필요",
@@ -778,6 +779,11 @@ ${options?.includeRealEstate ? `
     }
 
     const briefing = JSON.parse(cleanText);
+
+    // [방어] includeRealEstate 옵션 없으면 부동산 인사이트 강제 제거
+    if (!options?.includeRealEstate || !options?.realEstateContext) {
+      delete briefing.realEstateInsight;
+    }
 
     return {
       ...briefing,

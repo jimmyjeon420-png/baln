@@ -1,6 +1,9 @@
 /**
- * VIP 라운지 - 모임/스터디 마켓플레이스
- * 1억+ 인증 사용자 전용 프라이빗 커뮤니티
+ * VIP 라운지 - 커뮤니티 + 모임 통합 화면
+ *
+ * 세그먼트 컨트롤로 두 섹션 전환:
+ *   커뮤니티(기본): 게시글/댓글/좋아요 (100만+ 열람, 1000만+ 댓글, 1.5억+ 글쓰기)
+ *   모임: 스터디/정기모임/네트워킹/워크샵 (100만+ 열람, 1억+ 모임 생성)
  */
 
 import React, { useState, useCallback } from 'react';
@@ -9,24 +12,47 @@ import {
   Text,
   StyleSheet,
   ScrollView,
+  TextInput,
   TouchableOpacity,
   RefreshControl,
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useLoungeEligibility } from '../../src/hooks/useCommunity';
-import { LoungeSkeleton } from '../../src/components/SkeletonLoader';
+import {
+  useLoungeEligibility,
+  useCommunityPosts,
+  useCreatePost,
+  useLikePost,
+  useMyLikes,
+} from '../../src/hooks/useCommunity';
 import {
   useGatherings,
   useHostingEligibility,
   formatAssetInBillion,
   TIER_COLORS,
 } from '../../src/hooks/useGatherings';
-import { Gathering, GATHERING_CATEGORY_LABELS } from '../../src/types/database';
+import CommunityPostCard from '../../src/components/CommunityPostCard';
 import GatheringCard from '../../src/components/GatheringCard';
+import { LoungeSkeleton } from '../../src/components/SkeletonLoader';
+import {
+  CATEGORY_INFO,
+  CommunityCategory,
+  CommunityCategoryFilter,
+  LOUNGE_VIEW_THRESHOLD,
+  LOUNGE_COMMENT_THRESHOLD,
+  LOUNGE_POST_THRESHOLD,
+} from '../../src/types/community';
+import { Gathering, GATHERING_CATEGORY_LABELS } from '../../src/types/database';
 
-// 컬러 팔레트
+// ══════════════════════════════════════════
+// 상수
+// ══════════════════════════════════════════
+
 const COLORS = {
   background: '#121212',
   surface: '#1E1E1E',
@@ -39,8 +65,10 @@ const COLORS = {
   border: '#333333',
 };
 
-// 카테고리 필터 옵션
-const CATEGORY_FILTERS: { key: Gathering['category'] | 'all'; label: string }[] = [
+type Segment = 'community' | 'gatherings';
+
+// 모임 카테고리 필터
+const GATHERING_CATEGORY_FILTERS: { key: Gathering['category'] | 'all'; label: string }[] = [
   { key: 'all', label: '전체' },
   { key: 'study', label: '스터디' },
   { key: 'meeting', label: '정기 모임' },
@@ -48,251 +76,637 @@ const CATEGORY_FILTERS: { key: Gathering['category'] | 'all'; label: string }[] 
   { key: 'workshop', label: '워크샵' },
 ];
 
+// ══════════════════════════════════════════
+// 메인 컴포넌트
+// ══════════════════════════════════════════
+
 export default function LoungeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [selectedCategory, setSelectedCategory] = useState<Gathering['category'] | 'all'>('all');
+
+  // 세그먼트 상태
+  const [activeSegment, setActiveSegment] = useState<Segment>('community');
+
+  // 커뮤니티 상태
+  const [communityCategory, setCommunityCategory] = useState<CommunityCategoryFilter>('all');
+  const [newPostContent, setNewPostContent] = useState('');
+  const [isComposing, setIsComposing] = useState(false);
+  const [postCategory, setPostCategory] = useState<CommunityCategory>('stocks');
+
+  // 모임 상태
+  const [gatheringCategory, setGatheringCategory] = useState<Gathering['category'] | 'all'>('all');
+
+  // 공통 상태
   const [refreshing, setRefreshing] = useState(false);
 
-  // 라운지 자격 확인
+  // ── 훅 ──
   const { eligibility, loading: eligibilityLoading, refetch: refetchEligibility } = useLoungeEligibility();
+  const { data: posts, isLoading: postsLoading, refetch: refetchPosts } = useCommunityPosts(communityCategory);
+  const { data: myLikes } = useMyLikes();
+  const createPost = useCreatePost();
+  const likePost = useLikePost();
+  const { data: hostingEligibility } = useHostingEligibility();
+  const { data: gatherings, isLoading: gatheringsLoading, refetch: refetchGatherings } = useGatherings(
+    gatheringCategory === 'all' ? undefined : gatheringCategory
+  );
 
-  // 호스팅 자격 확인 (1억+ 인증 사용자만)
-  const { data: hostingEligibility, isLoading: hostingLoading } = useHostingEligibility();
-
-  // 모임 목록 조회
-  const {
-    data: gatherings,
-    isLoading: gatheringsLoading,
-    refetch: refetchGatherings,
-  } = useGatherings(selectedCategory === 'all' ? undefined : selectedCategory);
-
-  // 새로고침
+  // ── 새로고침 (세그먼트별 분기) ──
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([refetchEligibility(), refetchGatherings()]);
+    if (activeSegment === 'community') {
+      await Promise.all([refetchEligibility(), refetchPosts()]);
+    } else {
+      await Promise.all([refetchEligibility(), refetchGatherings()]);
+    }
     setRefreshing(false);
-  }, [refetchEligibility, refetchGatherings]);
+  }, [activeSegment, refetchEligibility, refetchPosts, refetchGatherings]);
 
-  // 모임 상세 페이지로 이동
-  const handleGatheringPress = (gathering: Gathering) => {
-    router.push(`/gatherings/${gathering.id}`);
+  // ── 핸들러: 커뮤니티 ──
+  const handleSubmitPost = async () => {
+    if (!newPostContent.trim()) {
+      Alert.alert('알림', '내용을 입력해주세요.');
+      return;
+    }
+    if (newPostContent.length > 500) {
+      Alert.alert('알림', '500자 이내로 작성해주세요.');
+      return;
+    }
+    try {
+      await createPost.mutateAsync({
+        content: newPostContent.trim(),
+        category: postCategory,
+        displayTag: `[자산: ${(eligibility.totalAssets / 100000000).toFixed(1)}억]`,
+        assetMix: '주식 70%, 현금 30%',
+        totalAssets: eligibility.totalAssets,
+      });
+      setNewPostContent('');
+      setPostCategory('stocks');
+      setIsComposing(false);
+      Alert.alert('성공', '게시물이 등록되었습니다.');
+    } catch (error: any) {
+      const msg = error?.message || '알 수 없는 오류';
+      Alert.alert('게시물 등록 실패', `사유: ${msg}`);
+    }
   };
 
-  // 모임 생성 페이지로 이동
-  const handleCreateGathering = () => {
-    router.push('/gatherings/create');
+  const handleLike = (postId: string) => likePost.mutate(postId);
+  const handlePostPress = (postId: string) => router.push(`/community/${postId}` as any);
+  const handleAuthorPress = (userId: string) => router.push(`/community/author/${userId}` as any);
+
+  const handleComposePress = () => {
+    if (!eligibility.canPost) {
+      Alert.alert(
+        '글쓰기 제한',
+        `게시물 작성은 자산 1.5억 이상 회원만 가능합니다.\n\n현재 자산: ${formatAmount(eligibility.totalAssets)}\n필요 자산: 1.5억`,
+        [{ text: '확인' }]
+      );
+      return;
+    }
+    setIsComposing(true);
   };
 
-  const isLoading = eligibilityLoading || gatheringsLoading;
+  // ── 핸들러: 모임 ──
+  const handleGatheringPress = (gathering: Gathering) => router.push(`/gatherings/${gathering.id}`);
+  const handleCreateGathering = () => router.push('/gatherings/create');
 
-  // 자격 미달 화면
-  if (!eligibilityLoading && !eligibility.isEligible) {
+  // ── 유틸 ──
+  const formatAmount = (amount: number) => {
+    if (amount >= 100000000) return `${(amount / 100000000).toFixed(1)}억`;
+    return `${(amount / 10000).toFixed(0)}만원`;
+  };
+
+  // ══════════════════════════════════════════
+  // 로딩 상태
+  // ══════════════════════════════════════════
+  if (eligibilityLoading) {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>VIP 라운지</Text>
-          <View style={styles.vipBadge}>
-            <Ionicons name="diamond" size={14} color="#B9F2FF" />
-            <Text style={styles.vipBadgeText}>PRIVATE</Text>
+          <View style={styles.headerLeft}>
+            <Text style={styles.headerTitle}>VIP 라운지</Text>
+            <View style={styles.vipBadge}>
+              <Ionicons name="diamond" size={14} color="#B9F2FF" />
+              <Text style={styles.vipBadgeText}>PRIVATE</Text>
+            </View>
+          </View>
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+          <Text style={styles.loadingText}>자격 확인 중...</Text>
+        </View>
+      </View>
+    );
+  }
+
+  // ══════════════════════════════════════════
+  // 잠금 화면: 100만원 미만
+  // ══════════════════════════════════════════
+  if (!eligibility.isEligible) {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        {/* 헤더 */}
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
+            <Text style={styles.headerTitle}>VIP 라운지</Text>
+            <View style={styles.vipBadge}>
+              <Ionicons name="diamond" size={14} color="#B9F2FF" />
+              <Text style={styles.vipBadgeText}>PRIVATE</Text>
+            </View>
           </View>
         </View>
 
+        {/* 잠금 본문 */}
         <View style={styles.lockedContainer}>
           <View style={styles.lockIconContainer}>
-            <Ionicons name="lock-closed" size={48} color={COLORS.textMuted} />
+            <Ionicons name="lock-closed" size={64} color="#FFC107" />
           </View>
 
-          <Text style={styles.lockedTitle}>프라이빗 클럽</Text>
-          <Text style={styles.lockedDescription}>
-            1억 이상 자산 인증 사용자만{'\n'}입장할 수 있는 특별한 공간입니다.
+          <Text style={styles.lockedTitle}>VIP 전용 공간입니다</Text>
+          <Text style={styles.lockedSubtitle}>
+            자산 인증 후 100만원 이상의 자산을 보유한{'\n'}
+            회원만 입장할 수 있습니다
           </Text>
 
-          {/* 진행률 */}
-          <View style={styles.progressContainer}>
+          {/* 등급 안내 */}
+          <View style={styles.accessGuide}>
+            <Text style={styles.accessGuideTitle}>접근 등급 안내</Text>
+
+            <View style={styles.accessTier}>
+              <View style={[styles.accessDot, { backgroundColor: '#4CAF50' }]} />
+              <View style={styles.accessTierContent}>
+                <Text style={styles.accessTierLabel}>열람 가능</Text>
+                <Text style={styles.accessTierReq}>자산 100만원 이상</Text>
+              </View>
+              <Ionicons
+                name={eligibility.totalAssets >= LOUNGE_VIEW_THRESHOLD ? 'checkmark-circle' : 'ellipse-outline'}
+                size={18}
+                color={eligibility.totalAssets >= LOUNGE_VIEW_THRESHOLD ? '#4CAF50' : '#555'}
+              />
+            </View>
+
+            <View style={styles.accessTier}>
+              <View style={[styles.accessDot, { backgroundColor: '#2196F3' }]} />
+              <View style={styles.accessTierContent}>
+                <Text style={styles.accessTierLabel}>댓글 작성</Text>
+                <Text style={styles.accessTierReq}>자산 1,000만원 이상</Text>
+              </View>
+              <Ionicons
+                name={eligibility.totalAssets >= LOUNGE_COMMENT_THRESHOLD ? 'checkmark-circle' : 'ellipse-outline'}
+                size={18}
+                color={eligibility.totalAssets >= LOUNGE_COMMENT_THRESHOLD ? '#4CAF50' : '#555'}
+              />
+            </View>
+
+            <View style={styles.accessTier}>
+              <View style={[styles.accessDot, { backgroundColor: '#FFD700' }]} />
+              <View style={styles.accessTierContent}>
+                <Text style={styles.accessTierLabel}>게시물 작성</Text>
+                <Text style={styles.accessTierReq}>자산 1.5억 이상</Text>
+              </View>
+              <Ionicons
+                name={eligibility.totalAssets >= LOUNGE_POST_THRESHOLD ? 'checkmark-circle' : 'ellipse-outline'}
+                size={18}
+                color={eligibility.totalAssets >= LOUNGE_POST_THRESHOLD ? '#4CAF50' : '#555'}
+              />
+            </View>
+          </View>
+
+          {/* 현재 자산 진행률 */}
+          <View style={styles.progressSection}>
             <View style={styles.progressHeader}>
-              <Text style={styles.progressLabel}>나의 인증 자산</Text>
+              <Text style={styles.progressLabel}>현재 자산</Text>
               <Text style={styles.progressValue}>
-                {formatAssetInBillion(eligibility.verifiedAssetsTotal)} / 1억
+                {formatAmount(eligibility.totalAssets)}
               </Text>
             </View>
-            <View style={styles.progressBar}>
+            <View style={styles.progressBarBg}>
               <View
                 style={[
-                  styles.progressFill,
-                  {
-                    width: `${Math.min(
-                      (eligibility.verifiedAssetsTotal / 100000000) * 100,
-                      100
-                    )}%`,
-                  },
+                  styles.progressBarFill,
+                  { width: `${Math.min((eligibility.totalAssets / LOUNGE_VIEW_THRESHOLD) * 100, 100)}%` },
                 ]}
               />
             </View>
+            <Text style={styles.progressShortfall}>
+              {eligibility.shortfall > 0
+                ? `입장까지 ${formatAmount(eligibility.shortfall)} 더 필요`
+                : '조건 충족!'}
+            </Text>
           </View>
 
-          {/* 조건 체크리스트 */}
-          <View style={styles.checklist}>
-            <View style={styles.checkItem}>
-              <Ionicons
-                name={eligibility.totalAssets >= 100000000 ? 'checkmark-circle' : 'close-circle'}
-                size={20}
-                color={eligibility.totalAssets >= 100000000 ? COLORS.primary : COLORS.error}
-              />
-              <Text style={styles.checkText}>총 자산 1억 이상</Text>
-            </View>
-            <View style={styles.checkItem}>
-              <Ionicons
-                name={eligibility.hasVerifiedAssets ? 'checkmark-circle' : 'close-circle'}
-                size={20}
-                color={eligibility.hasVerifiedAssets ? COLORS.primary : COLORS.error}
-              />
-              <Text style={styles.checkText}>OCR 자산 인증 완료</Text>
-            </View>
-          </View>
-
-          {/* 인증하기 버튼 */}
           <TouchableOpacity
-            style={styles.verifyButton}
+            style={styles.investButton}
             onPress={() => router.push('/add-asset')}
           >
-            <Ionicons name="camera" size={20} color="#000000" />
-            <Text style={styles.verifyButtonText}>자산 OCR 인증하기</Text>
+            <Ionicons name="add-circle" size={20} color="#FFFFFF" />
+            <Text style={styles.investButtonText}>자산 등록하기</Text>
           </TouchableOpacity>
 
-          <Text style={styles.disclaimer}>
-            *수동 입력 자산은 라운지 입장 조건에 포함되지 않습니다
+          <Text style={styles.verificationNote}>
+            * 자산을 등록하면 자동으로 등급이 부여됩니다
           </Text>
         </View>
       </View>
     );
   }
 
+  // ══════════════════════════════════════════
+  // 메인 화면 (100만원 이상 — 입장 완료)
+  // ══════════════════════════════════════════
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* 헤더 */}
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <Text style={styles.headerTitle}>VIP 라운지</Text>
-          <View style={styles.vipBadge}>
-            <Ionicons name="diamond" size={14} color="#B9F2FF" />
-            <Text style={styles.vipBadgeText}>PRIVATE</Text>
-          </View>
-        </View>
-        {hostingEligibility?.canHost && (
-          <TouchableOpacity
-            style={styles.myGatheringsButton}
-            onPress={() => router.push('/settings/lounge')}
-          >
-            <Ionicons name="chatbubbles-outline" size={22} color={COLORS.text} />
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {/* 환영 배너 */}
-      <View style={styles.welcomeBanner}>
-        <View style={styles.welcomeContent}>
-          <Text style={styles.welcomeTitle}>안녕하세요, VIP 멤버님 👑</Text>
-          <Text style={styles.welcomeSubtitle}>
-            인증된 자산가들과 함께하는 프라이빗 모임에 참여하세요.
-          </Text>
-        </View>
-        {hostingEligibility && hostingEligibility.tier && (
-          <View style={[styles.tierIndicator, { backgroundColor: TIER_COLORS[hostingEligibility.tier as keyof typeof TIER_COLORS] + '30' }]}>
-            <Ionicons name="shield-checkmark" size={16} color={TIER_COLORS[hostingEligibility.tier as keyof typeof TIER_COLORS]} />
-            <Text style={[styles.tierText, { color: TIER_COLORS[hostingEligibility.tier as keyof typeof TIER_COLORS] }]}>
-              {formatAssetInBillion(hostingEligibility.verifiedAssets)} 인증
-            </Text>
-          </View>
-        )}
-      </View>
-
-      {/* 카테고리 필터 */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.categoryScroll}
-        contentContainerStyle={styles.categoryContainer}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        {CATEGORY_FILTERS.map((filter) => (
-          <TouchableOpacity
-            key={filter.key}
-            style={[
-              styles.categoryChip,
-              selectedCategory === filter.key && styles.categoryChipActive,
-            ]}
-            onPress={() => setSelectedCategory(filter.key)}
-          >
-            <Text
+        {/* 헤더 */}
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
+            <Text style={styles.headerTitle}>VIP 라운지</Text>
+            <View style={styles.vipBadge}>
+              <Ionicons name="diamond" size={14} color="#B9F2FF" />
+              <Text style={styles.vipBadgeText}>PRIVATE</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* 세그먼트 컨트롤 (토스 스타일 pill) */}
+        <View style={styles.segmentContainer}>
+          <View style={styles.segmentControl}>
+            <TouchableOpacity
               style={[
-                styles.categoryChipText,
-                selectedCategory === filter.key && styles.categoryChipTextActive,
+                styles.segmentButton,
+                activeSegment === 'community' && styles.segmentButtonActive,
               ]}
+              onPress={() => setActiveSegment('community')}
             >
-              {filter.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+              <Ionicons
+                name="chatbubbles"
+                size={14}
+                color={activeSegment === 'community' ? '#000' : COLORS.textMuted}
+              />
+              <Text
+                style={[
+                  styles.segmentText,
+                  activeSegment === 'community' && styles.segmentTextActive,
+                ]}
+              >
+                커뮤니티
+              </Text>
+            </TouchableOpacity>
 
-      {/* 모임 목록 */}
-      <ScrollView
-        style={styles.gatheringsList}
-        contentContainerStyle={styles.gatheringsContent}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={COLORS.primary}
-            colors={[COLORS.primary]}
-          />
-        }
-      >
-        {isLoading ? (
-          <LoungeSkeleton />
-        ) : gatherings && gatherings.length > 0 ? (
-          gatherings.map((gathering) => (
-            <GatheringCard
-              key={gathering.id}
-              gathering={gathering}
-              onPress={() => handleGatheringPress(gathering)}
-              userTier={hostingEligibility?.tier}
-            />
-          ))
-        ) : (
-          <View style={styles.emptyContainer}>
-            <Ionicons name="calendar-outline" size={64} color={COLORS.textMuted} />
-            <Text style={styles.emptyTitle}>아직 등록된 모임이 없습니다</Text>
-            <Text style={styles.emptyDescription}>
-              첫 번째 모임을 만들어보세요!
-            </Text>
+            <TouchableOpacity
+              style={[
+                styles.segmentButton,
+                activeSegment === 'gatherings' && styles.segmentButtonActive,
+              ]}
+              onPress={() => setActiveSegment('gatherings')}
+            >
+              <Ionicons
+                name="calendar"
+                size={14}
+                color={activeSegment === 'gatherings' ? '#000' : COLORS.textMuted}
+              />
+              <Text
+                style={[
+                  styles.segmentText,
+                  activeSegment === 'gatherings' && styles.segmentTextActive,
+                ]}
+              >
+                모임
+              </Text>
+            </TouchableOpacity>
           </View>
+        </View>
+
+        {/* ════════════ 커뮤니티 세그먼트 ════════════ */}
+        {activeSegment === 'community' && (
+          <>
+            {/* 카테고리 필터 */}
+            <View style={styles.categoryTabContainer}>
+              {(Object.keys(CATEGORY_INFO) as CommunityCategoryFilter[]).map((key) => {
+                const info = CATEGORY_INFO[key];
+                const isActive = communityCategory === key;
+                return (
+                  <TouchableOpacity
+                    key={key}
+                    style={[
+                      styles.categoryTab,
+                      isActive && { backgroundColor: info.color + '20', borderColor: info.color },
+                    ]}
+                    onPress={() => setCommunityCategory(key)}
+                  >
+                    <Ionicons
+                      name={info.icon as any}
+                      size={14}
+                      color={isActive ? info.color : COLORS.textMuted}
+                    />
+                    <Text style={[
+                      styles.categoryTabText,
+                      isActive && { color: info.color, fontWeight: '700' },
+                    ]}>
+                      {info.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            {/* 글쓰기 영역 */}
+            {isComposing && (
+              <View style={styles.composeContainer}>
+                <View style={styles.composeHeader}>
+                  <Text style={styles.composeTitle}>새 게시물</Text>
+                  <TouchableOpacity onPress={() => setIsComposing(false)}>
+                    <Ionicons name="close" size={24} color={COLORS.textMuted} />
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.composeCategoryRow}>
+                  {(['stocks', 'crypto', 'realestate'] as CommunityCategory[]).map((key) => {
+                    const info = CATEGORY_INFO[key];
+                    const isActive = postCategory === key;
+                    return (
+                      <TouchableOpacity
+                        key={key}
+                        style={[
+                          styles.composeCategoryChip,
+                          isActive && { backgroundColor: info.color + '20', borderColor: info.color },
+                        ]}
+                        onPress={() => setPostCategory(key)}
+                      >
+                        <Ionicons name={info.icon as any} size={12} color={isActive ? info.color : COLORS.textMuted} />
+                        <Text style={[styles.composeCategoryText, isActive && { color: info.color }]}>
+                          {info.label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+
+                <TextInput
+                  style={styles.composeInput}
+                  placeholder="투자 인사이트를 공유해주세요..."
+                  placeholderTextColor="#666666"
+                  multiline
+                  maxLength={500}
+                  value={newPostContent}
+                  onChangeText={setNewPostContent}
+                />
+                <View style={styles.composeFooter}>
+                  <Text style={styles.charCount}>{newPostContent.length}/500</Text>
+                  <TouchableOpacity
+                    style={[styles.submitButton, { opacity: newPostContent.trim() ? 1 : 0.5 }]}
+                    onPress={handleSubmitPost}
+                    disabled={!newPostContent.trim() || createPost.isPending}
+                  >
+                    {createPost.isPending ? (
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                    ) : (
+                      <Text style={styles.submitButtonText}>게시</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+                <Text style={styles.holdingsNotice}>
+                  게시물에 상위 보유종목이 자동으로 공개됩니다
+                </Text>
+              </View>
+            )}
+
+            {/* 게시물 목록 */}
+            <ScrollView
+              style={{ flex: 1 }}
+              contentContainerStyle={styles.scrollContent}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={onRefresh}
+                  tintColor={COLORS.primary}
+                  colors={[COLORS.primary]}
+                />
+              }
+            >
+              {/* 환영 배너 + 접근 등급 배지 */}
+              <View style={styles.welcomeBanner}>
+                <View style={styles.welcomeTop}>
+                  <Text style={styles.welcomeIcon}>{'🏦'}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.welcomeText}>VIP 회원님, 환영합니다!</Text>
+                    <Text style={styles.welcomeSubtext}>
+                      현재 자산: {formatAmount(eligibility.totalAssets)}
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.accessBadgeRow}>
+                  <View style={[styles.accessBadgeItem, { backgroundColor: 'rgba(76,175,80,0.15)' }]}>
+                    <Ionicons name="eye" size={12} color="#4CAF50" />
+                    <Text style={[styles.accessBadgeLabel, { color: '#4CAF50' }]}>열람</Text>
+                  </View>
+                  <View style={[
+                    styles.accessBadgeItem,
+                    { backgroundColor: eligibility.canComment ? 'rgba(33,150,243,0.15)' : 'rgba(100,100,100,0.15)' },
+                  ]}>
+                    <Ionicons
+                      name={eligibility.canComment ? 'chatbubble' : 'lock-closed'}
+                      size={12}
+                      color={eligibility.canComment ? '#2196F3' : '#666'}
+                    />
+                    <Text style={[
+                      styles.accessBadgeLabel,
+                      { color: eligibility.canComment ? '#2196F3' : '#666' },
+                    ]}>
+                      댓글 {eligibility.canComment ? '' : '(1,000만+)'}
+                    </Text>
+                  </View>
+                  <View style={[
+                    styles.accessBadgeItem,
+                    { backgroundColor: eligibility.canPost ? 'rgba(255,215,0,0.15)' : 'rgba(100,100,100,0.15)' },
+                  ]}>
+                    <Ionicons
+                      name={eligibility.canPost ? 'create' : 'lock-closed'}
+                      size={12}
+                      color={eligibility.canPost ? '#FFD700' : '#666'}
+                    />
+                    <Text style={[
+                      styles.accessBadgeLabel,
+                      { color: eligibility.canPost ? '#FFD700' : '#666' },
+                    ]}>
+                      글쓰기 {eligibility.canPost ? '' : '(1.5억+)'}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+
+              {/* 게시물 리스트 */}
+              {postsLoading ? (
+                <View style={styles.postsLoading}>
+                  <ActivityIndicator size="large" color={COLORS.primary} />
+                </View>
+              ) : posts && posts.length > 0 ? (
+                posts.map((post) => (
+                  <CommunityPostCard
+                    key={post.id}
+                    post={post}
+                    isLiked={myLikes?.has(post.id) ?? false}
+                    onLike={handleLike}
+                    onPress={handlePostPress}
+                    onAuthorPress={handleAuthorPress}
+                  />
+                ))
+              ) : (
+                <View style={styles.emptyContainer}>
+                  <Ionicons name="chatbubbles-outline" size={48} color={COLORS.textMuted} />
+                  <Text style={styles.emptyTitle}>아직 게시물이 없습니다</Text>
+                  <Text style={styles.emptyDescription}>
+                    {eligibility.canPost
+                      ? '첫 번째 게시물을 작성해보세요!'
+                      : '자산 1.5억 이상 회원이 게시물을 작성할 수 있습니다'}
+                  </Text>
+                </View>
+              )}
+
+              <View style={{ height: 100 }} />
+            </ScrollView>
+
+            {/* 글쓰기 FAB (1.5억+ 전용) */}
+            {eligibility.canPost && !isComposing && (
+              <TouchableOpacity
+                style={[styles.fab, { bottom: insets.bottom + 80 }]}
+                onPress={handleComposePress}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="create" size={22} color="#000000" />
+                <Text style={styles.fabText}>글쓰기</Text>
+              </TouchableOpacity>
+            )}
+          </>
         )}
 
-        {/* 스크롤 여백 (FAB 가림 방지) */}
-        <View style={{ height: 100 }} />
-      </ScrollView>
+        {/* ════════════ 모임 세그먼트 ════════════ */}
+        {activeSegment === 'gatherings' && (
+          <>
+            {/* 카테고리 필터 */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.categoryScroll}
+              contentContainerStyle={styles.categoryScrollContent}
+            >
+              {GATHERING_CATEGORY_FILTERS.map((filter) => (
+                <TouchableOpacity
+                  key={filter.key}
+                  style={[
+                    styles.categoryChip,
+                    gatheringCategory === filter.key && styles.categoryChipActive,
+                  ]}
+                  onPress={() => setGatheringCategory(filter.key)}
+                >
+                  <Text
+                    style={[
+                      styles.categoryChipText,
+                      gatheringCategory === filter.key && styles.categoryChipTextActive,
+                    ]}
+                  >
+                    {filter.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
 
-      {/* 플로팅 버튼 - 인증된 사용자만 표시 */}
-      {hostingEligibility?.canHost && (
-        <TouchableOpacity
-          style={[styles.fab, { bottom: insets.bottom + 80 }]}
-          onPress={handleCreateGathering}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="add" size={28} color="#000000" />
-          <Text style={styles.fabText}>모임 만들기</Text>
-        </TouchableOpacity>
-      )}
+            {/* 모임 목록 */}
+            <ScrollView
+              style={{ flex: 1 }}
+              contentContainerStyle={styles.gatheringsContent}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={onRefresh}
+                  tintColor={COLORS.primary}
+                  colors={[COLORS.primary]}
+                />
+              }
+            >
+              {/* 환영 배너 + 티어 인디케이터 */}
+              <View style={styles.gatheringWelcome}>
+                <View style={styles.gatheringWelcomeContent}>
+                  <Text style={styles.gatheringWelcomeTitle}>안녕하세요, VIP 멤버님 {'👑'}</Text>
+                  <Text style={styles.gatheringWelcomeSubtitle}>
+                    인증된 자산가들과 함께하는 프라이빗 모임에 참여하세요.
+                  </Text>
+                </View>
+                {hostingEligibility?.tier && (
+                  <View style={[
+                    styles.tierIndicator,
+                    { backgroundColor: TIER_COLORS[hostingEligibility.tier as keyof typeof TIER_COLORS] + '30' },
+                  ]}>
+                    <Ionicons
+                      name="shield-checkmark"
+                      size={16}
+                      color={TIER_COLORS[hostingEligibility.tier as keyof typeof TIER_COLORS]}
+                    />
+                    <Text style={[
+                      styles.tierText,
+                      { color: TIER_COLORS[hostingEligibility.tier as keyof typeof TIER_COLORS] },
+                    ]}>
+                      {formatAssetInBillion(hostingEligibility.verifiedAssets)} 인증
+                    </Text>
+                  </View>
+                )}
+              </View>
+
+              {gatheringsLoading ? (
+                <LoungeSkeleton />
+              ) : gatherings && gatherings.length > 0 ? (
+                gatherings.map((gathering) => (
+                  <GatheringCard
+                    key={gathering.id}
+                    gathering={gathering}
+                    onPress={() => handleGatheringPress(gathering)}
+                    userTier={hostingEligibility?.tier}
+                  />
+                ))
+              ) : (
+                <View style={styles.emptyContainer}>
+                  <Ionicons name="calendar-outline" size={64} color={COLORS.textMuted} />
+                  <Text style={styles.emptyTitle}>아직 등록된 모임이 없습니다</Text>
+                  <Text style={styles.emptyDescription}>
+                    첫 번째 모임을 만들어보세요!
+                  </Text>
+                </View>
+              )}
+
+              <View style={{ height: 100 }} />
+            </ScrollView>
+
+            {/* 모임 만들기 FAB (1억+ 전용) */}
+            {hostingEligibility?.canHost && (
+              <TouchableOpacity
+                style={[styles.fab, { bottom: insets.bottom + 80 }]}
+                onPress={handleCreateGathering}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="add" size={28} color="#000000" />
+                <Text style={styles.fabText}>모임 만들기</Text>
+              </TouchableOpacity>
+            )}
+          </>
+        )}
+      </KeyboardAvoidingView>
     </View>
   );
 }
+
+// ══════════════════════════════════════════
+// 스타일
+// ══════════════════════════════════════════
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
   },
+
+  // ── 헤더 ──
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -324,54 +738,336 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#B9F2FF',
   },
-  myGatheringsButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+
+  // ── 세그먼트 컨트롤 (토스 pill) ──
+  segmentContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: 12,
+  },
+  segmentControl: {
+    flexDirection: 'row',
     backgroundColor: COLORS.surface,
+    borderRadius: 18,
+    padding: 3,
+    height: 36,
+  },
+  segmentButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 15,
+    gap: 6,
+  },
+  segmentButtonActive: {
+    backgroundColor: COLORS.primary,
+  },
+  segmentText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.textMuted,
+  },
+  segmentTextActive: {
+    color: '#000',
+  },
+
+  // ── 로딩 ──
+  loadingContainer: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  welcomeBanner: {
-    marginHorizontal: 20,
-    marginBottom: 16,
-    padding: 16,
-    backgroundColor: COLORS.surface,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(76, 175, 80, 0.3)',
+  loadingText: {
+    fontSize: 14,
+    color: COLORS.textMuted,
+    marginTop: 12,
   },
-  welcomeContent: {
-    marginBottom: 12,
+
+  // ── 잠금 화면 ──
+  lockedContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
   },
-  welcomeTitle: {
-    fontSize: 17,
+  lockIconContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: '#2A2A1A',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  lockedTitle: {
+    fontSize: 22,
     fontWeight: '700',
     color: COLORS.text,
-    marginBottom: 4,
+    marginBottom: 8,
   },
-  welcomeSubtitle: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    lineHeight: 18,
+  lockedSubtitle: {
+    fontSize: 14,
+    color: COLORS.textMuted,
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 21,
   },
-  tierIndicator: {
+  accessGuide: {
+    width: '100%',
+    backgroundColor: COLORS.surface,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+  },
+  accessGuideTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.text,
+    marginBottom: 14,
+  },
+  accessTier: {
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'flex-start',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    gap: 6,
+    gap: 10,
+    marginBottom: 12,
   },
-  tierText: {
+  accessDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  accessTierContent: {
+    flex: 1,
+  },
+  accessTierLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#DDD',
+  },
+  accessTierReq: {
+    fontSize: 11,
+    color: COLORS.textMuted,
+    marginTop: 1,
+  },
+  progressSection: {
+    width: '100%',
+    backgroundColor: COLORS.surface,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 24,
+  },
+  progressHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  progressLabel: {
+    fontSize: 14,
+    color: COLORS.textMuted,
+  },
+  progressValue: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: COLORS.primary,
+  },
+  progressBarBg: {
+    height: 8,
+    backgroundColor: COLORS.border,
+    borderRadius: 4,
+    overflow: 'hidden',
+    marginBottom: 12,
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: COLORS.primary,
+    borderRadius: 4,
+  },
+  progressShortfall: {
+    fontSize: 13,
+    color: '#FFC107',
+  },
+  investButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 12,
+  },
+  investButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  verificationNote: {
     fontSize: 12,
+    color: '#666666',
+    textAlign: 'center',
+    marginTop: 16,
+    fontStyle: 'italic',
+  },
+
+  // ── 커뮤니티: 카테고리 탭 ──
+  categoryTabContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    gap: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.surfaceLight,
+  },
+  categoryTab: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.surface,
+  },
+  categoryTabText: {
+    fontSize: 12,
+    color: COLORS.textMuted,
+  },
+
+  // ── 커뮤니티: 환영 배너 ──
+  welcomeBanner: {
+    backgroundColor: '#1A2E1A',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+  },
+  welcomeTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 12,
+  },
+  welcomeIcon: {
+    fontSize: 32,
+  },
+  welcomeText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.primary,
+  },
+  welcomeSubtext: {
+    fontSize: 13,
+    color: COLORS.textMuted,
+    marginTop: 2,
+  },
+  accessBadgeRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  accessBadgeItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  accessBadgeLabel: {
+    fontSize: 11,
     fontWeight: '600',
   },
+
+  // ── 커뮤니티: 글쓰기 ──
+  composeContainer: {
+    backgroundColor: COLORS.surface,
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.surfaceLight,
+  },
+  composeHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  composeTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+  composeCategoryRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 12,
+  },
+  composeCategoryChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.surface,
+  },
+  composeCategoryText: {
+    fontSize: 12,
+    color: COLORS.textMuted,
+  },
+  composeInput: {
+    backgroundColor: COLORS.surfaceLight,
+    borderRadius: 12,
+    padding: 14,
+    fontSize: 15,
+    color: COLORS.text,
+    minHeight: 100,
+    textAlignVertical: 'top',
+  },
+  composeFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 12,
+  },
+  charCount: {
+    fontSize: 13,
+    color: '#666666',
+  },
+  submitButton: {
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  submitButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  holdingsNotice: {
+    fontSize: 11,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 8,
+    fontStyle: 'italic',
+  },
+
+  // ── 커뮤니티: 게시물 로딩 / 비어있음 ──
+  postsLoading: {
+    paddingVertical: 40,
+    alignItems: 'center',
+  },
+  scrollContent: {
+    padding: 16,
+    paddingBottom: 100,
+  },
+
+  // ── 모임: 카테고리 ──
   categoryScroll: {
     maxHeight: 50,
   },
-  categoryContainer: {
+  categoryScrollContent: {
     paddingHorizontal: 20,
     gap: 8,
     paddingBottom: 8,
@@ -396,23 +1092,49 @@ const styles = StyleSheet.create({
   categoryChipTextActive: {
     color: '#000000',
   },
-  gatheringsList: {
-    flex: 1,
+
+  // ── 모임: 환영 배너 ──
+  gatheringWelcome: {
+    marginBottom: 16,
+    padding: 16,
+    backgroundColor: COLORS.surface,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(76, 175, 80, 0.3)',
+  },
+  gatheringWelcomeContent: {
+    marginBottom: 12,
+  },
+  gatheringWelcomeTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: COLORS.text,
+    marginBottom: 4,
+  },
+  gatheringWelcomeSubtitle: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    lineHeight: 18,
+  },
+  tierIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    gap: 6,
+  },
+  tierText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   gatheringsContent: {
     padding: 20,
     paddingTop: 8,
   },
-  loadingContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 14,
-    color: COLORS.textMuted,
-  },
+
+  // ── 공통: 빈 상태 ──
   emptyContainer: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -430,6 +1152,8 @@ const styles = StyleSheet.create({
     color: COLORS.textMuted,
     textAlign: 'center',
   },
+
+  // ── 공통: FAB ──
   fab: {
     position: 'absolute',
     right: 20,
@@ -450,97 +1174,5 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     color: '#000000',
-  },
-  // 자격 미달 화면 스타일
-  lockedContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 40,
-  },
-  lockIconContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: COLORS.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 24,
-  },
-  lockedTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: COLORS.text,
-    marginBottom: 12,
-  },
-  lockedDescription: {
-    fontSize: 15,
-    color: COLORS.textSecondary,
-    textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: 32,
-  },
-  progressContainer: {
-    width: '100%',
-    marginBottom: 24,
-  },
-  progressHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  progressLabel: {
-    fontSize: 13,
-    color: COLORS.textMuted,
-  },
-  progressValue: {
-    fontSize: 13,
-    color: COLORS.text,
-    fontWeight: '600',
-  },
-  progressBar: {
-    height: 8,
-    backgroundColor: COLORS.surface,
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: COLORS.primary,
-    borderRadius: 4,
-  },
-  checklist: {
-    width: '100%',
-    gap: 12,
-    marginBottom: 32,
-  },
-  checkItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  checkText: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-  },
-  verifyButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: 24,
-    paddingVertical: 14,
-    borderRadius: 12,
-    gap: 8,
-    marginBottom: 16,
-  },
-  verifyButtonText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#000000',
-  },
-  disclaimer: {
-    fontSize: 11,
-    color: COLORS.textMuted,
-    textAlign: 'center',
   },
 });

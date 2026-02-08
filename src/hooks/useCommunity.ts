@@ -10,6 +10,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import supabase from '../services/supabase';
+import { isFreePeriod } from '../config/freePeriod';
 import {
   CommunityPost,
   CommunityComment,
@@ -118,10 +119,11 @@ export const useLoungeEligibility = () => {
       const verifiedAssetsTotal = totalAssets;
       const hasVerifiedAssets = (data || []).length > 0;
 
-      // 3단계 접근 등급 판단
-      const isEligible = totalAssets >= LOUNGE_VIEW_THRESHOLD;
-      const canComment = totalAssets >= LOUNGE_COMMENT_THRESHOLD;
-      const canPost = totalAssets >= LOUNGE_POST_THRESHOLD;
+      // 3단계 접근 등급 판단 (무료 기간에는 전체 개방)
+      const free = isFreePeriod();
+      const isEligible = free || totalAssets >= LOUNGE_VIEW_THRESHOLD;
+      const canComment = free || totalAssets >= LOUNGE_COMMENT_THRESHOLD;
+      const canPost = free || totalAssets >= LOUNGE_POST_THRESHOLD;
 
       const shortfall = isEligible
         ? 0
@@ -226,8 +228,8 @@ export const useCreatePost = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('로그인이 필요합니다.');
 
-      // 자산 1.5억 미만이면 차단
-      if (input.totalAssets < LOUNGE_POST_THRESHOLD) {
+      // 자산 1.5억 미만이면 차단 (무료 기간에는 스킵)
+      if (!isFreePeriod() && input.totalAssets < LOUNGE_POST_THRESHOLD) {
         throw new Error('글 작성은 자산 1.5억 이상 회원만 가능합니다.');
       }
 

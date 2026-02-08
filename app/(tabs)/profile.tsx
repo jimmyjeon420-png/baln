@@ -36,12 +36,9 @@ export default function ProfileScreen() {
 
   // 메뉴 항목 정의 - 각 항목에 실제 네비게이션 연결
   const menuItems = [
-    { icon: 'pulse', label: 'AI 진단', onPress: () => router.push('/(tabs)/diagnosis'), feature: true },
     { icon: 'diamond', label: '크레딧 충전', onPress: () => router.push('/marketplace/credits'), credit: true },
-    { icon: 'people', label: 'VIP 커뮤니티', onPress: () => router.push('/settings/lounge'), highlight: true },
-    { icon: 'telescope', label: '투자 거장 인사이트', onPress: () => router.push('/settings/gurus'), feature: true },
-    { icon: 'bar-chart', label: '투자 DNA', onPress: () => router.push('/settings/tier-insights'), feature: true },
-    { icon: 'game-controller', label: '투자 예측 게임', onPress: () => router.push('/games/predictions'), feature: true },
+    { icon: 'home-outline', label: '부동산 자산 추가', onPress: () => router.push('/add-realestate'), feature: true },
+
     { icon: 'person-outline', label: '프로필 설정', onPress: () => router.push('/settings/profile') },
     { icon: 'notifications-outline', label: '알림 설정', onPress: () => router.push('/settings/notifications') },
     { icon: 'shield-checkmark-outline', label: '보안', onPress: () => router.push('/settings/security') },

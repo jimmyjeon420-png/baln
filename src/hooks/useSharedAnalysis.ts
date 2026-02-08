@@ -34,14 +34,18 @@ import {
 } from '../services/gemini';
 import {
   loadBitcoinIntelligence,
+  fetchBitcoinLivePrice,
   type BitcoinIntelligenceResult,
+  type BitcoinLivePrice,
 } from '../services/bitcoinIntelligence';
 import {
   getQuickMarketSentiment,
   getTodayStockReports,
   getTodayGuruInsights,
+  getTodayRateCycleEvidence,
   type StockQuantReport,
   type GuruInsightsData,
+  type RateCycleEvidence,
 } from '../services/centralKitchen';
 import supabase from '../services/supabase';
 
@@ -49,7 +53,9 @@ import supabase from '../services/supabase';
 export const AI_ANALYSIS_KEY = ['shared-ai-analysis'];
 export const MARKET_DATA_KEY = ['shared-market-data'];
 export const BITCOIN_KEY = ['shared-bitcoin'];
+export const BITCOIN_PRICE_KEY = ['shared-bitcoin-price'];
 export const GURU_INSIGHTS_KEY = ['shared-guru-insights'];
+export const RATE_CYCLE_EVIDENCE_KEY = ['shared-rate-cycle-evidence'];
 
 // ============================================================================
 // AI 분석 결과 (진단 + 처방전 공유)
@@ -228,6 +234,22 @@ export function useSharedBitcoin() {
 }
 
 // ============================================================================
+// BTC 실시간 가격 (30초마다 갱신 — "시세 전광판")
+// 확신 점수(5분 캐시)와 별도로 가격만 자주 업데이트
+// ============================================================================
+
+export function useBitcoinPrice() {
+  return useQuery({
+    queryKey: BITCOIN_PRICE_KEY,
+    queryFn: () => fetchBitcoinLivePrice(),
+    staleTime: 1000 * 30,        // 30초: 가격은 자주 갱신
+    gcTime: 1000 * 60 * 5,       // 5분: 가비지 컬렉션
+    refetchInterval: 1000 * 30,  // 30초마다 자동 재조회
+    retry: false,
+  });
+}
+
+// ============================================================================
 // 투자 거장 인사이트 (글로벌 공유 데이터, DB only)
 // ============================================================================
 
@@ -241,6 +263,27 @@ export function useGuruInsights() {
     queryFn: () => getTodayGuruInsights(),
     staleTime: 1000 * 60 * 5,   // 5분
     gcTime: 1000 * 60 * 15,     // 15분
+    retry: 1,
+  });
+}
+
+// ============================================================================
+// 금리 사이클 증거 (KostolanyEggCard 2차 확장에서 사용)
+// Lazy loading: 카드 확장(enabled=true) 시에만 쿼리 실행
+// ============================================================================
+
+/**
+ * 금리 사이클 판단 근거 훅
+ * 카드가 확장될 때만 DB 조회 (< 50ms)
+ * @param enabled - 카드 2차 확장 여부 (true일 때만 쿼리 실행)
+ */
+export function useRateCycleEvidence(enabled: boolean) {
+  return useQuery({
+    queryKey: RATE_CYCLE_EVIDENCE_KEY,
+    queryFn: () => getTodayRateCycleEvidence(),
+    enabled,                       // lazy loading: 확장 시에만 실행
+    staleTime: 1000 * 60 * 5,     // 5분
+    gcTime: 1000 * 60 * 15,       // 15분
     retry: 1,
   });
 }

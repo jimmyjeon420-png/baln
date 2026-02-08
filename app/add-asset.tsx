@@ -358,6 +358,21 @@ export default function AddAssetScreen() {
           <View style={{ width: 28 }} />
         </View>
 
+        {/* 부동산 등록 바로가기 */}
+        <TouchableOpacity
+          style={styles.realEstateShortcut}
+          onPress={() => router.push('/add-realestate')}
+        >
+          <View style={styles.realEstateIcon}>
+            <Ionicons name="home" size={22} color="#4CAF50" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.realEstateTitle}>부동산 자산 등록</Text>
+            <Text style={styles.realEstateDesc}>아파트 검색 → 시세 확인 → 포트폴리오 추가</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="#888" />
+        </TouchableOpacity>
+
         {/* 이미지 선택 영역 */}
         {!image ? (
           <>
@@ -850,5 +865,35 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#FFD700',
     lineHeight: 18,
+  },
+  // 부동산 바로가기
+  realEstateShortcut: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1A2A1A',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 16,
+    gap: 12,
+    borderWidth: 1,
+    borderColor: '#2A3A2A',
+  },
+  realEstateIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#1E3E1E',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  realEstateTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#4CAF50',
+  },
+  realEstateDesc: {
+    fontSize: 12,
+    color: '#888',
+    marginTop: 2,
   },
 });
