@@ -17,6 +17,10 @@ import { useHaptics } from '../../src/hooks/useHaptics';
 import { useSharedPortfolio } from '../../src/hooks/useSharedPortfolio';
 import { useSharedMarketData } from '../../src/hooks/useSharedAnalysis';
 import { calculateHealthScore, classifyAsset } from '../../src/services/rebalanceScore';
+import { useContextCard, invalidateContextCardCache } from '../../src/hooks/useContextCard';
+import { useSubscriptionStatus } from '../../src/hooks/useSubscription';
+import { useQueryClient } from '@tanstack/react-query';
+import type { ContextCardData } from '../../src/types/contextCard';
 
 // 홈 탭 전용 컴포넌트 (각 부서)
 import TodayPulse from '../../src/components/home/TodayPulse';
@@ -31,16 +35,12 @@ import type { MoverItem } from '../../src/components/home/TopMoversCard';
 import QuickActionsBar from '../../src/components/home/QuickActionsBar';
 import MarketTicker from '../../src/components/insights/MarketTicker';
 
+// 홈 탭 신규 컴포넌트 (정식 import)
+import ContextCard from '../../src/components/home/ContextCard';
+
 // 다른 Claude가 만드는 컴포넌트 — 조건부 import (파일 없어도 에러 안 남)
-let ContextCard: any = null;
 let PredictionPreview: any = null;
 let StreakBanner: any = null;
-
-try {
-  ContextCard = require('../../src/components/home/ContextCard').default;
-} catch (e) {
-  // 파일이 아직 없음 — 정상 상황
-}
 
 try {
   PredictionPreview = require('../../src/components/home/PredictionPreview').default;
@@ -74,6 +74,7 @@ const CATEGORY_CONFIG: Record<string, { label: string; color: string }> = {
 export default function HomeScreen() {
   const router = useRouter();
   const haptics = useHaptics();
+  const queryClient = useQueryClient();
 
   // ── 데이터 소스 (기존 훅 재사용, 수정 없음) ──
   const {
@@ -89,11 +90,37 @@ export default function HomeScreen() {
   const marketSentiment = marketData?.sentiment ?? null;
   const stockReports = marketData?.stockReports ?? [];
 
+  // ── 맥락 카드 데이터 (실데이터 연동) ──
+  const { data: contextData, isLoading: contextLoading } = useContextCard();
+  const { isPremium } = useSubscriptionStatus();
+
   // ── 유동 자산 필터 ──
   const liquidAssets = useMemo(
     () => allAssets.filter(a => a.assetType === AssetType.LIQUID),
     [allAssets]
   );
+
+  // ── 맥락 카드 데이터 변환 (DB → UI 형식) ──
+  const contextCardData = useMemo<ContextCardData | null>(() => {
+    if (!contextData) return null;
+
+    const { card, userImpact } = contextData;
+
+    return {
+      date: card.date,
+      headline: card.headline,
+      historicalContext: card.historical_context || '역사적 맥락 데이터를 준비 중입니다.',
+      macroChain: card.macro_chain || [],
+      institutionalBehavior: card.institutional_behavior || '기관 행동 데이터를 분석 중입니다.',
+      portfolioImpact: {
+        percentChange: userImpact?.percent_change ?? 0,
+        healthScoreChange: userImpact?.health_score_change ?? 0,
+        message: userImpact?.impact_message || '포트폴리오 영향도를 계산 중입니다.',
+      },
+      sentiment: card.sentiment as 'calm' | 'caution' | 'alert',
+      isPremiumContent: card.is_premium_only,
+    };
+  }, [contextData]);
 
   // ── P&L 계산 ──
   const { totalPnL, totalPnLPercent } = useMemo(() => {
@@ -204,13 +231,16 @@ export default function HomeScreen() {
     };
   }, [liquidAssets]);
 
-  // ── Pull-to-Refresh ──
+  // ── Pull-to-Refresh (맥락 카드 캐시 무효화 추가) ──
   const [refreshing, setRefreshing] = React.useState(false);
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await refreshPortfolio();
+    await Promise.all([
+      refreshPortfolio(),
+      invalidateContextCardCache(queryClient), // 맥락 카드 캐시 갱신
+    ]);
     setRefreshing(false);
-  }, [refreshPortfolio]);
+  }, [refreshPortfolio, queryClient]);
 
   // ── 네비게이션 ──
   const handleDiagnosis = useCallback(() => {
@@ -277,8 +307,26 @@ export default function HomeScreen() {
               yesterdayChange={0} // TODO: 스냅샷 시스템 연동 후 실제 값으로 교체
             />
 
-            {/* ② 맥락 카드 (다른 Claude가 만드는 중) */}
-            {ContextCard && <ContextCard isPremium={false} />}
+            {/* ② 맥락 카드 (실데이터 연동) */}
+            {contextLoading ? (
+              <View style={{ padding: 16, backgroundColor: COLORS.surface, borderRadius: 12, marginBottom: 16 }}>
+                <Text style={{ color: COLORS.textSecondary, textAlign: 'center' }}>
+                  맥락 분석 중...
+                </Text>
+              </View>
+            ) : contextCardData ? (
+              <ContextCard
+                data={contextCardData}
+                isPremium={isPremium}
+                onPressPremium={() => router.push('/subscription/paywall')}
+              />
+            ) : (
+              // 맥락 카드 데이터 없음 (Edge Function 실행 전) → Mock 사용
+              <ContextCard
+                isPremium={isPremium}
+                onPressPremium={() => router.push('/subscription/paywall')}
+              />
+            )}
 
             {/* ③ 예측 투표 미리보기 (다른 Claude가 만드는 중) */}
             {PredictionPreview && <PredictionPreview />}

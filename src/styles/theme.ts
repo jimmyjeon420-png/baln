@@ -36,6 +36,27 @@ export const COLORS = {
   // 비활성화
   disabled: '#424242',
   disabledText: '#757575',
+
+  // 센티먼트 (맥락 카드용)
+  sentiment: {
+    calm: '#4CAF50', // 안정적 (그린)
+    caution: '#FFB74D', // 주의 (오렌지)
+    alert: '#CF6679', // 경고 (레드)
+  },
+
+  // 스트릭 (연속 기록)
+  streak: {
+    active: '#4CAF50', // 활성 그린
+    glow: '#66BB6A', // 그라데이션용 밝은 그린
+    background: '#1E3A1E', // 그린 배경
+  },
+
+  // 프리미엄
+  premium: {
+    gold: '#FFC107', // 프리미엄 골드
+    purple: '#7C4DFF', // 프리미엄 퍼플
+    gradient: ['#FFC107', '#7C4DFF'], // 그라데이션
+  },
 };
 
 export const SIZES = {
@@ -71,6 +92,18 @@ export const SIZES = {
   iconSmall: 16,
   iconMedium: 24,
   iconLarge: 32,
+
+  // Card (카드 공통 스타일)
+  card: {
+    borderRadius: 16, // 카드 모서리
+    padding: 16, // 카드 내부 여백
+  },
+
+  // Banner (배너 공통 스타일)
+  banner: {
+    height: 40, // 배너 높이
+    borderRadius: 8, // 배너 모서리
+  },
 };
 
 export const SHADOWS = {

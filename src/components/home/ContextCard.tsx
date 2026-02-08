@@ -31,6 +31,7 @@ import {
   SENTIMENT_ICONS,
   SENTIMENT_LABELS,
 } from '../../types/contextCard';
+import ContextShareCard from './ContextShareCard';
 
 // Mock 데이터 (props 없을 때 사용)
 const MOCK_DATA: ContextCardData = {
@@ -71,12 +72,18 @@ export default function ContextCard({
   onPressPremium,
 }: ContextCardProps) {
   const [expanded, setExpanded] = useState(false);
+  const [shareModalVisible, setShareModalVisible] = useState(false);
   const rotation = useSharedValue(0);
 
   // 토글 핸들러
   const handleToggle = () => {
     setExpanded(!expanded);
     rotation.value = withTiming(expanded ? 0 : 180, { duration: 300 });
+  };
+
+  // 공유 버튼 핸들러
+  const handleShare = () => {
+    setShareModalVisible(true);
   };
 
   // 화살표 회전 애니메이션
@@ -101,13 +108,13 @@ export default function ContextCard({
 
       {/* 카드 본체 */}
       <View style={styles.card}>
-        {/* 헤더 - 헤드라인 + 토글 */}
-        <TouchableOpacity
-          style={styles.header}
-          onPress={handleToggle}
-          activeOpacity={0.7}
-        >
-          <View style={styles.headerLeft}>
+        {/* 헤더 - 헤드라인 + 공유 + 토글 */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.headerLeft}
+            onPress={handleToggle}
+            activeOpacity={0.7}
+          >
             <View style={styles.sentimentBadge}>
               <Ionicons name={sentimentIcon} size={16} color={sentimentColor} />
               <Text style={[styles.sentimentText, { color: sentimentColor }]}>
@@ -116,11 +123,28 @@ export default function ContextCard({
             </View>
             <Text style={styles.headline}>{data.headline}</Text>
             <Text style={styles.date}>{formatDate(data.date)}</Text>
+          </TouchableOpacity>
+
+          {/* 우측: 공유 버튼 + 토글 버튼 */}
+          <View style={styles.headerRight}>
+            <TouchableOpacity
+              style={styles.shareButton}
+              onPress={handleShare}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="share-outline" size={22} color="#4CAF50" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.toggleButton}
+              onPress={handleToggle}
+              activeOpacity={0.7}
+            >
+              <Animated.View style={animatedIconStyle}>
+                <Ionicons name="chevron-down" size={24} color="#9E9E9E" />
+              </Animated.View>
+            </TouchableOpacity>
           </View>
-          <Animated.View style={animatedIconStyle}>
-            <Ionicons name="chevron-down" size={24} color="#9E9E9E" />
-          </Animated.View>
-        </TouchableOpacity>
+        </View>
 
         {/* 펼쳐진 내용 - 4겹 레이어 */}
         {expanded && (
@@ -214,6 +238,13 @@ export default function ContextCard({
           </View>
         )}
       </View>
+
+      {/* 공유 모달 */}
+      <ContextShareCard
+        data={data}
+        visible={shareModalVisible}
+        onClose={() => setShareModalVisible(false)}
+      />
     </View>
   );
 }
@@ -296,6 +327,17 @@ const styles = StyleSheet.create({
   headerLeft: {
     flex: 1,
     marginRight: 8,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  shareButton: {
+    padding: 4,
+  },
+  toggleButton: {
+    padding: 4,
   },
   sentimentBadge: {
     flexDirection: 'row',

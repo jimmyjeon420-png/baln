@@ -7,7 +7,11 @@ import { useAuth } from '../../src/context/AuthContext';
 import FreePeriodBanner from '../../src/components/FreePeriodBanner';
 import InvestorLevelCard from '../../src/components/InvestorLevelCard';
 
-// 더보기(메뉴) 화면 - 설정 및 추가 기능
+// 전체(More) 탭 전용 컴포넌트
+import CommunityPreview from '../../src/components/more/CommunityPreview';
+import InsightPreview from '../../src/components/more/InsightPreview';
+
+// 전체(More) 화면 - 커뮤니티 + 인사이트 + 설정 통합
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, signOut } = useAuth();
@@ -54,7 +58,7 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <Text style={styles.title}>더보기</Text>
+        <Text style={styles.title}>전체</Text>
       </View>
 
       <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
@@ -82,6 +86,20 @@ export default function ProfileScreen() {
         <View style={{ marginBottom: 12 }}>
           <FreePeriodBanner compact={true} />
         </View>
+
+        {/* ═══════════════════════════════════════════════════════════ */}
+        {/* 전체 탭 통합 섹션 (3-Tab 전략) */}
+        {/* ═══════════════════════════════════════════════════════════ */}
+
+        {/* ① 커뮤니티 미리보기 — VIP 라운지 인기글 */}
+        {user && <CommunityPreview />}
+
+        {/* ② AI 인사이트 미리보기 — 오늘의 시장 한 줄 요약 */}
+        <InsightPreview />
+
+        {/* ═══════════════════════════════════════════════════════════ */}
+        {/* 기존 메뉴 섹션 */}
+        {/* ═══════════════════════════════════════════════════════════ */}
 
         {/* 메뉴 목록 */}
         <View style={styles.menuSection}>

@@ -1,0 +1,201 @@
+/**
+ * AI 심화 분석 유도 CTA 컴포넌트
+ *
+ * 역할: 분석 탭 하단에서 AI 마켓플레이스로 연결
+ * 비유: 백화점 1층에서 "명품관은 5층입니다" 안내판
+ *
+ * 유도 항목:
+ * - 종목 딥다이브 (Deep Dive)
+ * - What-If 시뮬레이션
+ * - 세금 리포트
+ * - AI CFO 채팅
+ */
+
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { isFreePeriod } from '../../config/freePeriod';
+
+/**
+ * AI 기능 항목
+ */
+interface AIFeatureItem {
+  icon: keyof typeof Ionicons.glyphMap;
+  title: string;
+  description: string;
+  color: string;
+  route: string;
+}
+
+const AI_FEATURES: AIFeatureItem[] = [
+  {
+    icon: 'telescope-outline',
+    title: '종목 딥다이브',
+    description: '보유 종목 심층 분석',
+    color: '#2196F3',
+    route: '/marketplace?feature=deep_dive',
+  },
+  {
+    icon: 'git-branch-outline',
+    title: 'What-If 시뮬',
+    description: '매도 후 시나리오 예측',
+    color: '#FF9800',
+    route: '/marketplace?feature=what_if',
+  },
+  {
+    icon: 'calculator-outline',
+    title: '세금 리포트',
+    description: '양도세·증여세 계산',
+    color: '#9C27B0',
+    route: '/marketplace?feature=tax_report',
+  },
+  {
+    icon: 'chatbubbles-outline',
+    title: 'AI CFO 채팅',
+    description: '실시간 투자 상담',
+    color: '#4CAF50',
+    route: '/marketplace?feature=ai_cfo_chat',
+  },
+];
+
+export default function AIAnalysisCTA() {
+  const router = useRouter();
+
+  return (
+    <View style={styles.container}>
+      {/* 헤더 */}
+      <View style={styles.header}>
+        <Ionicons name="sparkles" size={24} color="#7C4DFF" />
+        <Text style={styles.headerTitle}>AI 심화 분석</Text>
+        {isFreePeriod() && (
+          <View style={styles.freeBadge}>
+            <Text style={styles.freeBadgeText}>지금 무료!</Text>
+          </View>
+        )}
+      </View>
+
+      <Text style={styles.headerDesc}>
+        더 깊이 있는 분석이 필요하신가요?
+      </Text>
+
+      {/* AI 기능 그리드 (2x2) */}
+      <View style={styles.grid}>
+        {AI_FEATURES.map((feature, index) => (
+          <TouchableOpacity
+            key={index}
+            style={styles.featureCard}
+            onPress={() => router.push(feature.route as any)}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.featureIcon, { backgroundColor: feature.color + '20' }]}>
+              <Ionicons name={feature.icon} size={24} color={feature.color} />
+            </View>
+            <Text style={styles.featureTitle}>{feature.title}</Text>
+            <Text style={styles.featureDesc}>{feature.description}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {/* 마켓플레이스 전체 보기 버튼 */}
+      <TouchableOpacity
+        style={styles.marketplaceButton}
+        onPress={() => router.push('/marketplace')}
+        activeOpacity={0.7}
+      >
+        <Text style={styles.marketplaceButtonText}>
+          AI 마켓플레이스 전체 보기
+        </Text>
+        <Ionicons name="chevron-forward" size={18} color="#7C4DFF" />
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    marginHorizontal: 16,
+    marginVertical: 12,
+    padding: 20,
+    backgroundColor: '#1E1E1E',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(124, 77, 255, 0.2)',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginLeft: 8,
+    flex: 1,
+  },
+  freeBadge: {
+    backgroundColor: '#FF6B6B',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  freeBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  headerDesc: {
+    fontSize: 14,
+    color: '#9E9E9E',
+    marginBottom: 20,
+  },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginBottom: 16,
+  },
+  featureCard: {
+    width: '48%',
+    backgroundColor: '#121212',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.06)',
+  },
+  featureIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  featureTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#E0E0E0',
+    marginBottom: 4,
+  },
+  featureDesc: {
+    fontSize: 12,
+    color: '#9E9E9E',
+    lineHeight: 16,
+  },
+  marketplaceButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    backgroundColor: 'rgba(124, 77, 255, 0.15)',
+    borderRadius: 12,
+    marginTop: 8,
+  },
+  marketplaceButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#7C4DFF',
+    marginRight: 6,
+  },
+});
