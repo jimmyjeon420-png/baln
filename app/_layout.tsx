@@ -18,6 +18,7 @@ import BrandSplash from '../src/components/BrandSplash';
 import { getBiometricSettings } from '../src/services/biometric';
 import { useSubscriptionBonus } from '../src/hooks/useCredits';
 import { useWelcomeBonus } from '../src/hooks/useRewards';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // React Query 클라이언트 생성
 const queryClient = new QueryClient({
@@ -45,13 +46,27 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     if (loading) return; // 로딩 중에는 아무것도 하지 않음
 
     const inAuthGroup = segments[0] === 'login';
+    const inOnboarding = segments[0] === 'onboarding';
 
     if (!user && !inAuthGroup) {
       // 로그인되지 않았고, 로그인 페이지가 아니면 로그인으로 리다이렉트
       router.replace('/login');
     } else if (user && inAuthGroup) {
-      // 로그인되었고, 로그인 페이지에 있으면 메인으로 리다이렉트
-      router.replace('/(tabs)');
+      // 로그인되었고, 로그인 페이지에 있으면 → 온보딩 체크 후 리다이렉트
+      AsyncStorage.getItem('@baln:onboarding_completed').then((completed) => {
+        if (completed === 'true') {
+          router.replace('/(tabs)');
+        } else {
+          router.replace('/onboarding');
+        }
+      });
+    } else if (user && inOnboarding) {
+      // 온보딩 중인데 이미 완료했으면 메인으로
+      AsyncStorage.getItem('@baln:onboarding_completed').then((completed) => {
+        if (completed === 'true') {
+          router.replace('/(tabs)');
+        }
+      });
     }
   }, [user, loading, segments]);
 
@@ -211,6 +226,8 @@ export default function RootLayout() {
                 <Stack.Screen name="settings/tier-insights" options={{ headerShown: false }} />
                 {/* 게임 (투자 예측 등) */}
                 <Stack.Screen name="games" options={{ headerShown: false }} />
+                {/* 온보딩 플로우 (신규 유저) */}
+                <Stack.Screen name="onboarding" options={{ headerShown: false }} />
               </Stack>
             </AuthGate>
             {/* 브랜드 스플래시 (앱 시작 시 'baln.logic' 표시) */}
