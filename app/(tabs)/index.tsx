@@ -253,9 +253,7 @@ export default function HomeScreen() {
         <HealthSignalCard {...healthSignalProps} />
 
         {/* 카드 2: 맥락 브리핑 */}
-        <View ref={contextCardRef} style={{ flex: 1 }}>
-          <ContextBriefCard {...contextBriefProps} />
-        </View>
+        <ContextBriefCard ref={contextCardRef} {...contextBriefProps} />
 
         {/* 카드 3: 예측 투표 */}
         <PredictionVoteCard {...predictionVoteProps} />

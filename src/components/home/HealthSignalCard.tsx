@@ -13,7 +13,7 @@
  * - 보험 BM: 신호등은 무료, 상세 분석은 프리미엄
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -21,6 +21,7 @@ import {
   StyleSheet,
   Dimensions,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { COLORS, SIZES } from '../../styles/theme';
 
@@ -107,6 +108,7 @@ export default function HealthSignalCard({
   isLoading,
   onAddAssets,
 }: HealthSignalCardProps) {
+  const [showDetail, setShowDetail] = useState(false);
   const signalColor = getSignalColor(healthScore);
   const signalEmoji = getSignalEmoji(healthScore);
 
@@ -157,7 +159,7 @@ export default function HealthSignalCard({
       <Text style={styles.dateText}>{formatDate()}</Text>
 
       {/* 중앙: 거대 신호등 */}
-      <View style={styles.centerArea}>
+      <TouchableOpacity style={styles.centerArea} onPress={() => setShowDetail(true)} activeOpacity={0.7}>
         <Text style={styles.signalEmoji}>{signalEmoji}</Text>
         <Text style={[styles.gradeLabel, { color: signalColor }]}>
           {gradeLabel} ({healthGrade}등급)
@@ -169,7 +171,7 @@ export default function HealthSignalCard({
           <Text style={styles.scoreDivider}>/</Text>
           <Text style={styles.scoreMax}>100</Text>
         </View>
-      </View>
+      </TouchableOpacity>
 
       {/* 하단: 관심자산 미니 신호등 */}
       {assetSignals.length > 0 && (
@@ -186,6 +188,33 @@ export default function HealthSignalCard({
           </View>
         </View>
       )}
+
+      {/* 상세 모달 */}
+      <Modal
+        visible={showDetail}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowDetail(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>건강 점수 상세</Text>
+            <Text style={styles.modalSubtitle}>
+              6팩터 기반 복합 점수입니다
+            </Text>
+            <View style={styles.modalScoreBox}>
+              <Text style={styles.modalScore}>{healthScore}</Text>
+              <Text style={styles.modalGrade}>{gradeLabel} ({healthGrade}등급)</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.modalCloseButton}
+              onPress={() => setShowDetail(false)}
+            >
+              <Text style={styles.modalCloseText}>닫기</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -301,5 +330,54 @@ const styles = StyleSheet.create({
   },
   assetSignal: {
     fontSize: 16,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: '85%',
+    backgroundColor: COLORS.surface,
+    borderRadius: 20,
+    padding: 24,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+    marginBottom: 8,
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    marginBottom: 20,
+  },
+  modalScoreBox: {
+    alignItems: 'center',
+    paddingVertical: 20,
+    marginBottom: 20,
+  },
+  modalScore: {
+    fontSize: 48,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+  },
+  modalGrade: {
+    fontSize: 16,
+    color: COLORS.textSecondary,
+    marginTop: 8,
+  },
+  modalCloseButton: {
+    paddingVertical: 12,
+    backgroundColor: COLORS.primary,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  modalCloseText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
   },
 });

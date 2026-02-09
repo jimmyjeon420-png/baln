@@ -2,6 +2,10 @@
  * 인사이트 허브 - 투자 예측 게임 / 투자 DNA / 거장 인사이트 통합 탭
  * 토스 "혜택" 탭처럼 매일 방문할 이유를 주는 MAU 허브 역할
  *
+ * Anti-Toss 적용 (Phase 5):
+ * - Gateway: 3개 섹션 (예측 게임 / DNA / 거장 인사이트)
+ * - 빼기 전략: 불필요한 차트 제거, 핵심 정보만
+ * - One Page One Card: ScrollView이지만 각 섹션 독립
  */
 
 import React, { useState, useCallback } from 'react';

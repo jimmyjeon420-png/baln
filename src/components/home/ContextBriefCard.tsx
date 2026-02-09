@@ -112,7 +112,7 @@ function SkeletonBar({ width }: { width: number | `${number}%` }) {
 // 메인 컴포넌트
 // ============================================================================
 
-export default function ContextBriefCard({
+export default React.forwardRef<View, ContextBriefCardProps>(function ContextBriefCard({
   fact,
   mechanism,
   impact,
@@ -123,7 +123,7 @@ export default function ContextBriefCard({
   isPremium,
   onShare,
   isLoading,
-}: ContextBriefCardProps) {
+}: ContextBriefCardProps, ref) {
   const sentimentColor = SENTIMENT_COLORS[sentiment];
 
   // ──────────────────────────────────────────────────────────────────────
@@ -174,7 +174,7 @@ export default function ContextBriefCard({
   // 데이터 상태 (3줄 브리핑 표시)
   // ──────────────────────────────────────────────────────────────────────
   return (
-    <View style={styles.card}>
+    <View ref={ref} style={styles.card}>
       {/* 상단: 센티먼트 배지 */}
       <View style={[styles.sentimentBadge, { backgroundColor: sentimentColor }]}>
         <Text style={styles.sentimentEmoji}>
@@ -239,7 +239,7 @@ export default function ContextBriefCard({
       </View>
     </View>
   );
-}
+});
 
 // ============================================================================
 // 스타일

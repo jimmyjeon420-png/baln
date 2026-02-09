@@ -43,6 +43,7 @@ export default function ProfileScreen() {
   const menuItems = [
     { icon: 'diamond', label: '크레딧 충전', onPress: () => router.push('/marketplace/credits'), credit: true },
     { icon: 'home-outline', label: '부동산 자산 추가', onPress: () => router.push('/add-realestate'), feature: true },
+    { icon: 'heart', label: 'Heart 자산 관리', onPress: () => router.push('/settings/manage-hearts'), feature: true },
     { icon: 'trophy-outline', label: '투자 레벨', onPress: () => router.push('/settings/investor-level'), highlight: true },
     { icon: 'help-outline', label: '오늘의 퀴즈', onPress: () => router.push('/settings/daily-quiz'), feature: true },
 

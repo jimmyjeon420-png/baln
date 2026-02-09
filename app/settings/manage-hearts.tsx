@@ -18,7 +18,7 @@ import { COLORS } from '../../src/styles/theme';
 
 export default function ManageHeartsScreen() {
   const router = useRouter();
-  const { heartAssets, removeHeart, isLoading } = useHeartAssets();
+  const { heartAssets, removeHeartAsset, isLoading } = useHeartAssets();
 
   const handleDelete = (ticker: string, name: string) => {
     Alert.alert(
@@ -29,9 +29,30 @@ export default function ManageHeartsScreen() {
         {
           text: '삭제',
           style: 'destructive',
-          onPress: () => removeHeart(ticker),
+          onPress: () => removeHeartAsset(ticker),
         },
       ]
+    );
+  };
+
+  const handleEdit = (item: any) => {
+    Alert.prompt(
+      'Heart 이름 변경',
+      `${item.name}의 새 이름을 입력하세요`,
+      [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '변경',
+          onPress: (newName?: string) => {
+            if (newName && newName.trim()) {
+              // TODO: useHeartAssets에 updateHeartAsset 추가 필요
+              console.log('Update:', item.ticker, newName);
+            }
+          },
+        },
+      ],
+      'plain-text',
+      item.name
     );
   };
 
@@ -70,12 +91,21 @@ export default function ManageHeartsScreen() {
                 <Text style={styles.itemName}>{item.name}</Text>
                 <Text style={styles.itemTicker}>{item.ticker}</Text>
               </View>
-              <TouchableOpacity
-                onPress={() => handleDelete(item.ticker, item.name)}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              >
-                <Ionicons name="trash-outline" size={20} color={COLORS.error} />
-              </TouchableOpacity>
+              <View style={styles.itemActions}>
+                <TouchableOpacity
+                  onPress={() => handleEdit(item)}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  style={{ marginRight: 12 }}
+                >
+                  <Ionicons name="pencil-outline" size={20} color={COLORS.textSecondary} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => handleDelete(item.ticker, item.name)}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <Ionicons name="trash-outline" size={20} color={COLORS.error} />
+                </TouchableOpacity>
+              </View>
             </View>
           )}
         />
@@ -151,5 +181,9 @@ const styles = StyleSheet.create({
   itemTicker: {
     fontSize: 14,
     color: COLORS.textSecondary,
+  },
+  itemActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 });
