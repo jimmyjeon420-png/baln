@@ -550,10 +550,18 @@ export const useLikeComment = (postId: string) => {
           .eq('id', existing.id);
 
         // 좋아요 수 감소
-        await supabase
+        const { data: comment } = await supabase
           .from('community_comments')
-          .update({ likes_count: supabase.raw('GREATEST(likes_count - 1, 0)') })
-          .eq('id', commentId);
+          .select('likes_count')
+          .eq('id', commentId)
+          .single();
+
+        if (comment) {
+          await supabase
+            .from('community_comments')
+            .update({ likes_count: Math.max((comment.likes_count || 0) - 1, 0) })
+            .eq('id', commentId);
+        }
 
         return false;
       } else {
@@ -563,10 +571,18 @@ export const useLikeComment = (postId: string) => {
           .insert({ user_id: user.id, comment_id: commentId });
 
         // 좋아요 수 증가
-        await supabase
+        const { data: comment } = await supabase
           .from('community_comments')
-          .update({ likes_count: supabase.raw('likes_count + 1') })
-          .eq('id', commentId);
+          .select('likes_count')
+          .eq('id', commentId)
+          .single();
+
+        if (comment) {
+          await supabase
+            .from('community_comments')
+            .update({ likes_count: (comment.likes_count || 0) + 1 })
+            .eq('id', commentId);
+        }
 
         return true;
       }

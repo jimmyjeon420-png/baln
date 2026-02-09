@@ -54,7 +54,7 @@ export default function CreatePostScreen() {
   const { eligibility, loading: eligibilityLoading } = useLoungeEligibility();
 
   // 포트폴리오 정보 (자산 믹스 계산용)
-  const { totalAssets, portfolioAssets } = useSharedPortfolio();
+  const { totalAssets, assets } = useSharedPortfolio();
 
   // 게시글 작성 mutation
   const createPost = useCreatePost();
@@ -74,9 +74,9 @@ export default function CreatePostScreen() {
 
     // 포트폴리오에서 카테고리별 합산
     const byCategory: Record<string, number> = {};
-    portfolioAssets.forEach((asset) => {
-      const cat = asset.asset_type || 'other';
-      byCategory[cat] = (byCategory[cat] || 0) + asset.current_value;
+    assets.forEach((asset) => {
+      const cat = asset.assetType || 'other';
+      byCategory[cat] = (byCategory[cat] || 0) + asset.currentValue;
     });
 
     // 비율 계산
@@ -88,7 +88,7 @@ export default function CreatePostScreen() {
     });
 
     return generateAssetMix(categories);
-  }, [portfolioAssets, totalAssets]);
+  }, [assets, totalAssets]);
 
   // 작성 버튼 핸들러
   const handleSubmit = async () => {

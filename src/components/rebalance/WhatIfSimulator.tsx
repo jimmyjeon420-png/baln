@@ -35,7 +35,7 @@ export default function WhatIfSimulator({ assets, totalAssets, currentHealthScor
   // 시뮬레이션된 포트폴리오 (비중 조정 적용)
   const simulatedAssets = useMemo(() => {
     return assets.map(asset => {
-      const adjustment = adjustments[asset.ticker] || 0;
+      const adjustment = adjustments[asset.ticker || ''] || 0;
       const adjustedValue = asset.currentValue * (1 + adjustment / 100);
       return {
         ...asset,
@@ -149,16 +149,17 @@ export default function WhatIfSimulator({ assets, totalAssets, currentHealthScor
           {/* 자산별 슬라이더 */}
           <ScrollView style={s.assetsScroll} nestedScrollEnabled>
             {assets.slice(0, 5).map(asset => {
+              const ticker = asset.ticker || 'unknown';
               const currentWeight = totalAssets > 0 ? (asset.currentValue / totalAssets) * 100 : 0;
-              const adjustment = adjustments[asset.ticker] || 0;
+              const adjustment = adjustments[ticker] || 0;
               const simulatedWeight = simulatedTotal > 0
                 ? ((asset.currentValue * (1 + adjustment / 100)) / simulatedTotal) * 100
                 : 0;
 
               return (
-                <View key={asset.ticker} style={s.assetRow}>
+                <View key={ticker} style={s.assetRow}>
                   <View style={s.assetHeader}>
-                    <Text style={s.assetTicker}>{asset.ticker}</Text>
+                    <Text style={s.assetTicker}>{ticker}</Text>
                     <Text style={s.assetWeight}>
                       {currentWeight.toFixed(1)}% → {simulatedWeight.toFixed(1)}%
                     </Text>
@@ -171,7 +172,7 @@ export default function WhatIfSimulator({ assets, totalAssets, currentHealthScor
                       maximumValue={100}
                       step={5}
                       value={adjustment}
-                      onValueChange={(val) => setAdjustments(prev => ({ ...prev, [asset.ticker]: val }))}
+                      onValueChange={(val) => setAdjustments(prev => ({ ...prev, [ticker]: val }))}
                       minimumTrackTintColor="#7C4DFF"
                       maximumTrackTintColor="#333"
                       thumbTintColor="#7C4DFF"

@@ -69,6 +69,8 @@ export default function CardSwipeContainer({
   onSettingsPress,
   initialIndex = 0,
   onCardChange,
+  onRefresh,
+  refreshing,
 }: CardSwipeContainerProps) {
   const insets = useSafeAreaInsets();
   const [currentPage, setCurrentPage] = useState(initialIndex);

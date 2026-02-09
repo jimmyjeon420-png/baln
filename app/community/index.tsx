@@ -42,7 +42,7 @@ import {
 } from '../../src/types/community';
 import { COLORS, SIZES } from '../../src/styles/theme';
 
-type SortMode = 'popular' | 'recent';
+type SortMode = 'popular' | 'latest';
 
 export default function CommunityMainScreen() {
   const router = useRouter();
@@ -162,18 +162,18 @@ export default function CommunityMainScreen() {
         </Text>
       </TouchableOpacity>
       <TouchableOpacity
-        style={[styles.sortButton, sortMode === 'recent' && styles.sortButtonActive]}
-        onPress={() => setSortMode('recent')}
+        style={[styles.sortButton, sortMode === 'latest' && styles.sortButtonActive]}
+        onPress={() => setSortMode('latest')}
       >
         <Ionicons
           name="time"
           size={14}
-          color={sortMode === 'recent' ? COLORS.primary : COLORS.textSecondary}
+          color={sortMode === 'latest' ? COLORS.primary : COLORS.textSecondary}
         />
         <Text
           style={[
             styles.sortLabel,
-            sortMode === 'recent' && { color: COLORS.primary, fontWeight: '700' },
+            sortMode === 'latest' && { color: COLORS.primary, fontWeight: '700' },
           ]}
         >
           최신순

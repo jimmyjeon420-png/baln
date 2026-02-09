@@ -148,14 +148,7 @@ export default function HomeScreen() {
   // ──────────────────────────────────────────────────────────────────────
   const { data: contextData, isLoading: contextLoading } = useContextCard();
   const { isPremium } = useSubscriptionStatus();
-  const { mutate: shareContext } = useShareContextCard({
-    onSuccess: () => {
-      showToast('맥락 카드를 공유했습니다! 📤', 'success');
-    },
-    onError: () => {
-      showToast('공유에 실패했습니다. 다시 시도해주세요.', 'error');
-    },
-  });
+  const { mutate: shareContext } = useShareContextCard();
 
   const contextBriefProps = React.useMemo(() => {
     if (!contextData) {
@@ -190,24 +183,29 @@ export default function HomeScreen() {
       date: new Date().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' }),
       onLearnMore: () => setContextModalVisible(true), // 모달 열기
       isPremium: isPremium || false,
-      onShare: () => shareContext({ viewRef: contextCardRef }),
+      onShare: () => {
+        shareContext(
+          { viewRef: contextCardRef },
+          {
+            onSuccess: () => {
+              showToast('맥락 카드를 공유했습니다! 📤', 'success');
+            },
+            onError: () => {
+              showToast('공유에 실패했습니다. 다시 시도해주세요.', 'error');
+            },
+          }
+        );
+      },
       isLoading: contextLoading,
     };
-  }, [contextData, contextLoading, isPremium, router]);
+  }, [contextData, contextLoading, isPremium, router, shareContext, showToast]);
 
   // ──────────────────────────────────────────────────────────────────────
   // 3. 예측 투표 카드 데이터
   // ──────────────────────────────────────────────────────────────────────
   const { data: activePolls = [] } = useActivePolls();
   const { data: resolvedPolls = [] } = useResolvedPolls(10);
-  const { mutate: submitVote, isPending: isVoting } = useSubmitVote({
-    onSuccess: () => {
-      showToast('투표 완료! 내일 결과를 확인하세요 🎯', 'success');
-    },
-    onError: (error: any) => {
-      showToast(error?.message || '투표에 실패했습니다. 다시 시도해주세요.', 'error');
-    },
-  });
+  const { mutate: submitVote, isPending: isVoting } = useSubmitVote();
   const { data: myStats } = useMyPredictionStats();
 
   // 오늘의 투표 (1개만)
@@ -281,13 +279,23 @@ export default function HomeScreen() {
       accuracyRate: myStats?.accuracy_rate ?? null,
       onVote: (choice: 'YES' | 'NO') => {
         if (!currentPoll) return;
-        submitVote({ pollId: currentPoll.id, vote: choice });
+        submitVote(
+          { pollId: currentPoll.id, vote: choice },
+          {
+            onSuccess: () => {
+              showToast('투표 완료! 내일 결과를 확인하세요 🎯', 'success');
+            },
+            onError: (error: any) => {
+              showToast(error?.message || '투표에 실패했습니다. 다시 시도해주세요.', 'error');
+            },
+          }
+        );
       },
       onViewHistory: () => router.push('/games/predictions'),
       isLoading: false,
       isVoting,
     };
-  }, [currentPoll, myVote, recentResults, router]);
+  }, [currentPoll, myVote, recentResults, router, submitVote, showToast]);
 
   // ──────────────────────────────────────────────────────────────────────
   // 맥락 카드 전체 데이터 (모달용)

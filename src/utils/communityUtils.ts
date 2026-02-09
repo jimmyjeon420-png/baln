@@ -36,6 +36,22 @@ export const getTierIcon = (tier: string): keyof typeof Ionicons.glyphMap => {
   }
 };
 
+/** 티어별 색상 */
+export const TIER_COLORS: Record<string, string> = {
+  DIAMOND: '#B9F2FF',
+  PLATINUM: '#E5E4E2',
+  GOLD: '#FFD700',
+  SILVER: '#C0C0C0',
+};
+
+/** 티어별 라벨 */
+export const TIER_LABELS: Record<string, string> = {
+  DIAMOND: '다이아몬드',
+  PLATINUM: '플래티넘',
+  GOLD: '골드',
+  SILVER: '실버',
+};
+
 /** 보유종목 타입별 색상 맵 */
 export const HOLDING_TYPE_COLORS: Record<string, string> = {
   stock: '#4CAF50',
