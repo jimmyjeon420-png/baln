@@ -14,6 +14,7 @@ import {
   CREDIT_PACKAGES,
 } from '../types/marketplace';
 import { UserTier } from '../types/database';
+import { isFreePeriod } from '../config/freePeriod';
 
 // ============================================================================
 // 잔액 조회
@@ -70,6 +71,14 @@ export interface SpendResult {
   errorMessage?: string;
 }
 
+/**
+ * 무료 기간 중인지 판별 → 과금 스킵 여부
+ * 5/31까지 모든 AI 기능 무료 → spendCredits 호출 시 실제 차감하지 않음
+ */
+export function shouldChargeCredits(): boolean {
+  return !isFreePeriod();
+}
+
 /** 크레딧 차감 (RPC 호출 → FOR UPDATE 락) */
 export async function spendCredits(
   amount: number,
@@ -78,6 +87,17 @@ export async function spendCredits(
 ): Promise<SpendResult> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('로그인이 필요합니다');
+
+  // 무료 기간: 크레딧 차감 없이 바로 성공 반환
+  if (!shouldChargeCredits()) {
+    console.log(`[Credits] 무료 기간 — ${featureType} 크레딧 차감 스킵 (${amount}C)`);
+    // 현재 잔액 조회만 해서 반환
+    const credits = await getMyCredits();
+    return {
+      success: true,
+      newBalance: credits?.balance ?? 0,
+    };
+  }
 
   const { data, error } = await supabase.rpc('spend_credits', {
     p_user_id: user.id,
@@ -108,15 +128,30 @@ export interface PurchaseResult {
   totalCredits: number; // 패키지 크레딧 + 보너스
 }
 
-/** 크레딧 패키지 구매 (Apple IAP 결제 후 호출 — transactionId를 iapReceiptId로 전달) */
+/**
+ * 크레딧 패키지 구매 (Apple IAP 결제 후 호출)
+ *
+ * [비활성화] 2026-05-31까지 크레딧 = 보상 전용 (출석, 적중, 공유로만 획득)
+ * 6월 유료 전환 시 주석 해제하여 결제 시스템 활성화
+ */
 export async function purchaseCredits(
-  packageId: string,
-  iapReceiptId?: string
+  _packageId: string,
+  _iapReceiptId?: string
 ): Promise<PurchaseResult> {
+  // 무료 기간: 결제 비활성화
+  if (!shouldChargeCredits()) {
+    return {
+      success: false,
+      newBalance: 0,
+      totalCredits: 0,
+    };
+  }
+
+  // --- 아래는 6월 유료 전환 시 활성화 ---
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('로그인이 필요합니다');
 
-  const pkg = CREDIT_PACKAGES.find(p => p.id === packageId);
+  const pkg = CREDIT_PACKAGES.find(p => p.id === _packageId);
   if (!pkg) throw new Error('유효하지 않은 패키지입니다');
 
   const totalCredits = pkg.credits + pkg.bonus;
@@ -126,12 +161,12 @@ export async function purchaseCredits(
     p_amount: totalCredits,
     p_type: 'purchase',
     p_metadata: {
-      package_id: packageId,
+      package_id: _packageId,
       package_name: pkg.name,
       credits: pkg.credits,
       bonus: pkg.bonus,
       price: pkg.price,
-      iap_receipt_id: iapReceiptId || null,
+      iap_receipt_id: _iapReceiptId || null,
     },
   });
 
@@ -171,16 +206,22 @@ export async function getCreditHistory(
 // 티어 할인 계산
 // ============================================================================
 
-/** 티어 할인이 적용된 기능 비용 계산 */
+/** 티어 할인이 적용된 기능 비용 계산 (무료 기간: 0원 반환) */
 export function getDiscountedCost(
   featureType: AIFeatureType,
   userTier: UserTier
-): { originalCost: number; discountedCost: number; discountPercent: number } {
+): { originalCost: number; discountedCost: number; discountPercent: number; isFree: boolean } {
   const originalCost = FEATURE_COSTS[featureType];
+
+  // 무료 기간: 모든 AI 기능 0원
+  if (!shouldChargeCredits()) {
+    return { originalCost, discountedCost: 0, discountPercent: 100, isFree: true };
+  }
+
   const discountPercent = TIER_DISCOUNTS[userTier];
   const discountedCost = Math.round(originalCost * (1 - discountPercent / 100));
 
-  return { originalCost, discountedCost, discountPercent };
+  return { originalCost, discountedCost, discountPercent, isFree: false };
 }
 
 // ============================================================================

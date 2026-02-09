@@ -18,6 +18,7 @@
 // ============================================================================
 
 import {
+  supabase,
   STOCK_LIST,
   callGeminiWithSearch,
   cleanJsonResponse,
@@ -79,7 +80,11 @@ async function analyzeStockBatch(
 3. analysis: 한글 2-3문장 분석 (최신 뉴스 반영)
 4. metrics: { pegRatio, rsi, earningsRevision, priceToFairValue, shortInterest }
 
-**출력 형식 (JSON 배열만, 마크다운 금지):**
+**출력 형식 (CRITICAL: RAW JSON ONLY):**
+- ❌ 사족 금지: "알겠습니다", "분석 결과입니다" 같은 설명 절대 금지
+- ❌ 마크다운 금지: \`\`\`json 같은 코드 블록 금지
+- ✅ 순수 JSON만 출력: { 부터 } 까지만
+
 {
   "reports": [
     {
@@ -173,15 +178,43 @@ export async function analyzeAllStocks(): Promise<StockQuantResult[]> {
         });
       }
 
-      // Rate limit 방지: 배치 간 1.5초 대기
+      // Rate limit 방지: 배치 간 2.5초 대기 (429 에러 방지)
       if (i + BATCH_SIZE < STOCK_LIST.length) {
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        console.log(`[Task B] 다음 배치까지 2.5초 대기...`);
+        await new Promise(resolve => setTimeout(resolve, 2500));
       }
     }
+
+    // ── DB 저장: stock_quant_reports UPSERT ──
+    const todayDate = new Date().toISOString().split('T')[0];
+    let savedCount = 0;
+
+    for (const result of allResults) {
+      const { error: upsertError } = await supabase
+        .from('stock_quant_reports')
+        .upsert({
+          date: todayDate,
+          ticker: result.ticker,
+          valuation_score: result.valuationScore,
+          signal: result.signal,
+          analysis: result.analysis,
+          metrics: result.metrics,
+          sector: result.sector,
+        }, { onConflict: 'date,ticker' });
+
+      if (upsertError) {
+        console.warn(`[Task B] ${result.ticker} UPSERT 실패:`, upsertError.message);
+      } else {
+        savedCount++;
+      }
+    }
+
+    console.log(`[Task B] stock_quant_reports ${savedCount}/${allResults.length}개 저장 완료 (${todayDate})`);
 
     const elapsed = Date.now() - startTime;
     await logTaskResult('stocks', 'SUCCESS', elapsed, {
       count: allResults.length,
+      saved: savedCount,
       total: STOCK_LIST.length,
     });
 

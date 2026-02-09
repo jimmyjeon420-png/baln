@@ -97,34 +97,72 @@ export interface GeminiResponse {
 // ============================================================================
 
 /**
- * Gemini 응답에서 순수 JSON만 추출
+ * Gemini 응답에서 순수 JSON만 추출 (강화 버전)
  * - "알겠습니다..." 같은 사족 제거
  * - ```json ``` 코드 블록 제거
- * - { } 사이의 JSON만 파싱
+ * - { } 또는 [ ] 사이의 JSON만 파싱
  */
 export function cleanJsonResponse(text: string): string {
+  if (!text || typeof text !== 'string') {
+    throw new Error('[JSON Clean] 빈 응답 또는 비문자열');
+  }
+
   try {
-    // 1. 코드 블록 제거 (```json ... ``` 또는 ``` ... ```)
-    let cleaned = text.replace(/```json\s*/g, '').replace(/```\s*/g, '');
+    // 1. 모든 백틱 코드 블록 제거 (강화)
+    let cleaned = text
+      .replace(/```json\s*/gi, '')  // ```json 제거
+      .replace(/```javascript\s*/gi, '')  // ```javascript 제거
+      .replace(/```\s*/g, '')  // 나머지 ``` 제거
+      .trim();
 
-    // 2. { 부터 마지막 } 까지만 추출
-    const startIdx = cleaned.indexOf('{');
-    const endIdx = cleaned.lastIndexOf('}');
+    // 2. { } 또는 [ ] 찾기 (배열 지원)
+    let jsonStart = -1;
+    let jsonEnd = -1;
+    let isArray = false;
 
-    if (startIdx === -1 || endIdx === -1) {
-      console.warn('[JSON Clean] JSON 객체를 찾을 수 없음, 원본 반환');
-      return text;
+    // 객체 { } 찾기
+    const objStart = cleaned.indexOf('{');
+    const objEnd = cleaned.lastIndexOf('}');
+
+    // 배열 [ ] 찾기
+    const arrStart = cleaned.indexOf('[');
+    const arrEnd = cleaned.lastIndexOf(']');
+
+    // 먼저 나오는 것 선택
+    if (objStart !== -1 && (arrStart === -1 || objStart < arrStart)) {
+      jsonStart = objStart;
+      jsonEnd = objEnd;
+      isArray = false;
+    } else if (arrStart !== -1) {
+      jsonStart = arrStart;
+      jsonEnd = arrEnd;
+      isArray = true;
     }
 
-    cleaned = cleaned.substring(startIdx, endIdx + 1);
+    if (jsonStart === -1 || jsonEnd === -1 || jsonEnd <= jsonStart) {
+      throw new Error('JSON 객체/배열을 찾을 수 없음');
+    }
 
-    // 3. 유효성 검증 (파싱 시도)
-    JSON.parse(cleaned);
+    // 3. JSON 부분만 추출
+    cleaned = cleaned.substring(jsonStart, jsonEnd + 1);
 
-    return cleaned;
+    // 4. 유효성 검증 (파싱 시도)
+    const parsed = JSON.parse(cleaned);
+
+    // 5. 성공적으로 파싱되면 반환
+    return JSON.stringify(parsed);  // 재직렬화하여 포맷 정리
+
   } catch (error) {
-    console.error('[JSON Clean] 정제 실패, 원본 반환:', error);
-    return text;
+    console.error('[JSON Clean] 정제 실패:', error);
+    console.error('[JSON Clean] 원본 텍스트 (처음 500자):', text.substring(0, 500));
+
+    // 마지막 시도: 원본 그대로 파싱
+    try {
+      JSON.parse(text);
+      return text;  // 원본이 이미 valid JSON이면 반환
+    } catch {
+      throw new Error(`JSON 파싱 불가능: ${error}`);
+    }
   }
 }
 

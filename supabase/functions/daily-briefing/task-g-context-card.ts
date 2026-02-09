@@ -60,10 +60,38 @@ async function generateContextCard(): Promise<{
 }> {
   const today = new Date();
   const dateStr = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`;
+  const todayDate = today.toISOString().split('T')[0];
+
+  // Task A 결과 참조 (이미 실행 완료 → DB에 저장됨)
+  let macroContext = '';
+  try {
+    const { data: macroData } = await supabase
+      .from('daily_market_insights')
+      .select('macro_summary, bitcoin_analysis, cfo_weather, vix_level, market_sentiment')
+      .eq('date', todayDate)
+      .single();
+
+    if (macroData) {
+      const highlights = macroData.macro_summary?.highlights || [];
+      const vix = macroData.vix_level;
+      const btcScore = macroData.bitcoin_analysis?.score;
+      macroContext = `
+**[참고: Task A 거시경제 분석 결과 (이미 수집된 데이터)]**
+- 시장 센티먼트: ${macroData.market_sentiment || 'N/A'}
+- VIX: ${vix || 'N/A'}
+- 비트코인 점수: ${btcScore || 'N/A'}/100
+- 주요 이슈: ${highlights.slice(0, 3).join(' / ') || '없음'}
+→ 이 데이터를 참고하여 더 정확한 맥락 카드를 작성하세요.
+`;
+      console.log(`[Task G-1] Task A 결과 참조 성공 (VIX: ${vix}, Sentiment: ${macroData.market_sentiment})`);
+    }
+  } catch (e) {
+    console.log('[Task G-1] Task A 결과 참조 실패 (무시) — Google Search로 직접 검색');
+  }
 
   const prompt = `
 당신은 한국 투자자를 위한 시장 분석가입니다. 오늘(${dateStr}) 시장 상황을 아래 4가지 관점으로 분석해주세요.
-
+${macroContext}
 **[중요] Google Search로 최신 시장 데이터를 검색하세요:**
 - "S&P 500 today", "나스닥 종가 today"
 - "외국인 순매수 순매도 today", "기관 투자자 동향"

@@ -14,6 +14,7 @@
 // ============================================================================
 
 import {
+  supabase,
   callGeminiWithSearch,
   cleanJsonResponse,
   logTaskResult,
@@ -175,6 +176,59 @@ export async function analyzeMacroAndBitcoin(): Promise<MacroAnalysisResult> {
       }
     } catch (evidenceError) {
       console.warn('[Task A] 금리 사이클 증거 파싱 실패 (무시):', evidenceError);
+    }
+
+    // ── DB 저장: daily_market_insights UPSERT ──
+    const todayDate = today.toISOString().split('T')[0];
+    const { error: upsertError } = await supabase
+      .from('daily_market_insights')
+      .upsert({
+        date: todayDate,
+        macro_summary: parsed.macroSummary || {},
+        bitcoin_analysis: parsed.bitcoinAnalysis || {},
+        cfo_weather: parsed.cfoWeather || {},
+        market_sentiment: parsed.macroSummary?.marketSentiment || 'NEUTRAL',
+        vix_level: parsed.vixLevel ?? null,
+        global_liquidity: parsed.globalLiquidity || '',
+        rate_cycle_evidence: rateCycleEvidence,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'date' });
+
+    if (upsertError) {
+      console.error('[Task A] daily_market_insights UPSERT 실패:', upsertError);
+    } else {
+      console.log(`[Task A] daily_market_insights UPSERT 성공 (${todayDate})`);
+    }
+
+    // ── 섹터별 센티먼트 저장 (macroSummary에서 추출 가능하면) ──
+    try {
+      const sectors = [
+        { sector: 'technology', name: '기술' },
+        { sector: 'finance', name: '금융' },
+        { sector: 'energy', name: '에너지' },
+        { sector: 'healthcare', name: '헬스케어' },
+        { sector: 'consumer', name: '소비재' },
+      ];
+      const baseSentiment = parsed.macroSummary?.marketSentiment || 'NEUTRAL';
+      const sectorRows = sectors.map(s => ({
+        date: todayDate,
+        sector: s.sector,
+        sentiment: baseSentiment,
+        score: parsed.bitcoinAnalysis?.score ? Math.round(parsed.bitcoinAnalysis.score) : 50,
+        reasoning: `${s.name} 섹터 — ${dateStr} 기준 시장 전반 센티먼트 반영`,
+      }));
+
+      const { error: sectorError } = await supabase
+        .from('sector_sentiments')
+        .upsert(sectorRows, { onConflict: 'date,sector' });
+
+      if (sectorError) {
+        console.warn('[Task A] sector_sentiments UPSERT 실패 (무시):', sectorError);
+      } else {
+        console.log(`[Task A] sector_sentiments ${sectorRows.length}개 섹터 저장`);
+      }
+    } catch (sectorErr) {
+      console.warn('[Task A] 섹터 센티먼트 저장 실패 (무시):', sectorErr);
     }
 
     const elapsed = Date.now() - startTime;

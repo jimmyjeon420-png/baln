@@ -1,3 +1,10 @@
+-- [긴급 수정] likes_count 컬럼이 없으면 강제로 추가
+ALTER TABLE IF EXISTS community_posts 
+ADD COLUMN IF NOT EXISTS likes_count INTEGER DEFAULT 0;
+
+-- [긴급 수정] view_count 컬럼도 없을 수 있으니 미리 추가 (안전장치)
+ALTER TABLE IF EXISTS community_posts 
+ADD COLUMN IF NOT EXISTS view_count INTEGER DEFAULT 0;
 -- ================================================================
 -- ULTRA-DEEP SECURITY MIGRATION
 -- 1. community_posts 테이블 생성 (PGRST205 에러 해결)

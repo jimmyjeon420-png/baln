@@ -29,7 +29,7 @@ export default function AIFeatureCard({
   userTier,
   onPress,
 }: AIFeatureCardProps) {
-  const { originalCost, discountedCost, discountPercent } = getDiscountedCost(featureType, userTier);
+  const { originalCost, discountedCost, discountPercent, isFree } = getDiscountedCost(featureType, userTier);
 
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
@@ -43,15 +43,28 @@ export default function AIFeatureCard({
       </View>
 
       <View style={styles.costContainer}>
-        {discountPercent > 0 && (
-          <Text style={styles.originalCost}>{originalCost}</Text>
-        )}
-        <View style={styles.costRow}>
-          <Ionicons name="diamond" size={12} color="#7C4DFF" />
-          <Text style={styles.cost}>{discountedCost}</Text>
-        </View>
-        {discountPercent > 0 && (
-          <Text style={styles.discountLabel}>-{discountPercent}%</Text>
+        {isFree ? (
+          // 무료 기간: FREE 뱃지
+          <>
+            <Text style={styles.originalCost}>{originalCost}</Text>
+            <View style={styles.freeBadge}>
+              <Text style={styles.freeBadgeText}>FREE</Text>
+            </View>
+          </>
+        ) : (
+          // 유료 기간: 기존 크레딧 표시
+          <>
+            {discountPercent > 0 && (
+              <Text style={styles.originalCost}>{originalCost}</Text>
+            )}
+            <View style={styles.costRow}>
+              <Ionicons name="diamond" size={12} color="#7C4DFF" />
+              <Text style={styles.cost}>{discountedCost}</Text>
+            </View>
+            {discountPercent > 0 && (
+              <Text style={styles.discountLabel}>-{discountPercent}%</Text>
+            )}
+          </>
         )}
       </View>
 
@@ -115,5 +128,16 @@ const styles = StyleSheet.create({
     color: '#4CAF50',
     fontSize: 10,
     fontWeight: '700',
+  },
+  freeBadge: {
+    backgroundColor: '#4CAF50',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  freeBadgeText: {
+    color: '#000',
+    fontSize: 11,
+    fontWeight: '800',
   },
 });

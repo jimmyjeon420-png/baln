@@ -2,12 +2,12 @@
  * 투자 예측 게임 (Prediction Polls) 메인 화면 - 3탭 구조
  *
  * 역할: "투자 예측 경기장"
- * - 진행중 탭: 활성 투표 + 내 통계 + 어제 복기
- * - 종료됨 탭: 정답 판정 완료 투표
- * - 리더보드 탭: 상위 10명 + 내 순위 + 보상 안내
+ * - 투표하기 탭: 오늘의 3개 질문 카드 + 투표 완료 메시지
+ * - 내 기록 탭: 이번 달 적중률 + 연속 적중 + 최근 기록 리스트
+ * - 리더보드 탭: TOP 10 + 내 순위 + 보상 안내
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -24,10 +24,10 @@ import { useQueryClient } from '@tanstack/react-query';
 import PollCard from '../../src/components/predictions/PollCard';
 import ReviewCard from '../../src/components/predictions/ReviewCard';
 import LeaderboardSection from '../../src/components/predictions/LeaderboardSection';
-import StreakBadge from '../../src/components/predictions/StreakBadge';
 import MyStatsSection from '../../src/components/predictions/MyStatsSection';
 import ShareCard from '../../src/components/predictions/ShareCard';
 import StatsChart from '../../src/components/predictions/StatsChart';
+import StreakBadge from '../../src/components/predictions/StreakBadge';
 import {
   usePollsWithMyVotes,
   useResolvedPollsWithMyVotes,
@@ -42,18 +42,28 @@ import {
   PREDICTION_DISCLAIMER,
   PREDICTION_REWARDS,
 } from '../../src/types/prediction';
+import { COLORS } from '../../src/styles/theme';
 
-type TabType = 'active' | 'resolved' | 'leaderboard';
+// 3탭: 투표하기 / 내 기록 / 리더보드
+type TabType = 'vote' | 'history' | 'leaderboard';
+
+// 카테고리별 색상 매핑 (작업 요구사항)
+const CATEGORY_COLORS: Record<string, string> = {
+  stocks: '#2196F3',  // 파랑
+  crypto: '#FF9800',  // 주황
+  macro: '#9C27B0',   // 보라
+  event: '#FFC107',   // 금색
+};
 
 export default function PredictionsScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<TabType>('active');
+  const [activeTab, setActiveTab] = useState<TabType>('vote');
   const [categoryFilter, setCategoryFilter] = useState<PollCategoryFilter>('all');
 
   // 데이터 훅
   const { data: activePolls, isLoading: activeLoading, isRefetching } = usePollsWithMyVotes();
-  const { data: resolvedPolls, isLoading: resolvedLoading } = useResolvedPollsWithMyVotes(20);
+  const { data: resolvedPolls, isLoading: resolvedLoading } = useResolvedPollsWithMyVotes(50);
   const { data: leaderboard, isLoading: leaderboardLoading } = useLeaderboard();
   const { data: myStats } = useMyPredictionStats();
   const { data: yesterdayPolls, summary: yesterdaySummary } = useYesterdayReview();
@@ -76,13 +86,30 @@ export default function PredictionsScreen() {
     );
   }, [submitVote]);
 
+  // 투표하기 탭: 모두 투표 완료 여부 확인
+  const allVoted = useMemo(() => {
+    if (!activePolls || activePolls.length === 0) return false;
+    return activePolls.every(p => p.myVote !== null);
+  }, [activePolls]);
+
+  // 내 기록 탭: 이번 달 필터링
+  const thisMonthRecords = useMemo(() => {
+    if (!resolvedPolls) return [];
+    const now = new Date();
+    const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    return resolvedPolls.filter(p => {
+      if (!p.resolved_at) return false;
+      return p.resolved_at.startsWith(thisMonth);
+    });
+  }, [resolvedPolls]);
+
   // 탭별 컨텐츠 렌더링
   const renderTabContent = () => {
     switch (activeTab) {
-      case 'active':
-        return renderActiveTab();
-      case 'resolved':
-        return renderResolvedTab();
+      case 'vote':
+        return renderVoteTab();
+      case 'history':
+        return renderHistoryTab();
       case 'leaderboard':
         return renderLeaderboardTab();
       default:
@@ -91,49 +118,19 @@ export default function PredictionsScreen() {
   };
 
   // ============================================================================
-  // 진행중 탭 렌더링
+  // 투표하기 탭
   // ============================================================================
-  function renderActiveTab() {
+  function renderVoteTab() {
     const filteredActive = (activePolls || []).filter(
       p => categoryFilter === 'all' || p.category === categoryFilter,
     );
 
     return (
       <>
-        {/* 내 통계 카드 */}
-        {myStats && <MyStatsSection stats={myStats} />}
-
-        {/* 통계 차트 (최소 3회 투표 시 표시) */}
-        {myStats && myStats.total_votes >= 3 && (
-          <View style={{ marginBottom: 16 }}>
-            <StatsChart />
-          </View>
-        )}
-
-        {/* 인스타그램 공유 버튼 (최소 5회 투표 시 표시) */}
-        {myStats && myStats.total_votes >= 5 && (
-          <ShareCard
-            accuracyRate={Number(myStats.accuracy_rate.toFixed(0))}
-            totalVotes={myStats.total_votes}
-            currentStreak={myStats.current_streak}
-            onShare={() => {
-              // 공유 보상 추가 가능 (향후)
-              console.log('투자 예측 적중률 공유 완료');
-            }}
-          />
-        )}
-
-        {/* 연속 적중 배지 (3연속 이상) */}
-        {myStats && myStats.current_streak >= 3 && (
-          <View style={{ marginBottom: 16 }}>
-            <StreakBadge currentStreak={myStats.current_streak} />
-          </View>
-        )}
-
-        {/* 어제의 결과 복기 (습관 루프) */}
+        {/* 어제의 결과 복기 (습관 루프 강화) */}
         {yesterdayPolls && yesterdayPolls.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>📝 어제의 결과</Text>
+            <Text style={styles.sectionTitle}>{'📝 어제의 결과'}</Text>
 
             {/* 요약 배너 */}
             <View style={styles.yesterdaySummary}>
@@ -153,7 +150,7 @@ export default function PredictionsScreen() {
               {myStats && myStats.current_streak >= 3 && (
                 <View style={styles.summaryStreak}>
                   <Text style={styles.summaryStreakText}>
-                    🔥 {myStats.current_streak}연속
+                    {'🔥'} {myStats.current_streak}연속
                   </Text>
                 </View>
               )}
@@ -204,30 +201,57 @@ export default function PredictionsScreen() {
           })}
         </ScrollView>
 
-        {/* 오늘의 투표 */}
+        {/* 오늘의 투표 카드 */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>🎯 오늘의 예측</Text>
+          <Text style={styles.sectionTitle}>{'🎯 오늘의 예측'}</Text>
           {activeLoading ? (
             <View style={styles.loadingState}>
               <Text style={styles.loadingText}>투표를 불러오는 중...</Text>
             </View>
           ) : filteredActive.length === 0 ? (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyEmoji}>🔮</Text>
+              <Text style={styles.emptyEmoji}>{'🔮'}</Text>
               <Text style={styles.emptyTitle}>아직 예측 질문이 없습니다</Text>
               <Text style={styles.emptyDescription}>
-                매일 아침 7시에 새로운 투자 예측 질문이{'\n'}자동으로 생성됩니다.
+                {'매일 아침 7시에 새로운 투자 예측 질문이\n자동으로 생성됩니다.'}
               </Text>
             </View>
           ) : (
-            filteredActive.map((poll) => (
-              <PollCard
-                key={poll.id}
-                poll={poll}
-                onVote={handleVote}
-                isVoting={submitVote.isPending}
-              />
-            ))
+            <>
+              {filteredActive.map((poll) => (
+                <View key={poll.id}>
+                  {/* 카테고리 뱃지 (카드 위) */}
+                  <View style={styles.pollCategoryBadge}>
+                    <View style={[
+                      styles.categoryDot,
+                      { backgroundColor: CATEGORY_COLORS[poll.category] || COLORS.primary },
+                    ]} />
+                    <Text style={[
+                      styles.categoryBadgeText,
+                      { color: CATEGORY_COLORS[poll.category] || COLORS.primary },
+                    ]}>
+                      {POLL_CATEGORY_INFO[poll.category as PollCategoryFilter]?.label || poll.category}
+                    </Text>
+                  </View>
+                  <PollCard
+                    poll={poll}
+                    onVote={handleVote}
+                    isVoting={submitVote.isPending}
+                  />
+                </View>
+              ))}
+
+              {/* 모두 투표 완료 시 안내 메시지 */}
+              {allVoted && (
+                <View style={styles.allVotedBanner}>
+                  <Text style={styles.allVotedEmoji}>{'🎯'}</Text>
+                  <Text style={styles.allVotedTitle}>모든 투표 완료!</Text>
+                  <Text style={styles.allVotedDesc}>
+                    내일 아침 결과를 확인하세요.{'\n'}적중하면 크레딧 보상이 지급됩니다!
+                  </Text>
+                </View>
+              )}
+            </>
           )}
         </View>
       </>
@@ -235,71 +259,128 @@ export default function PredictionsScreen() {
   }
 
   // ============================================================================
-  // 종료됨 탭 렌더링
+  // 내 기록 탭
   // ============================================================================
-  function renderResolvedTab() {
-    const filteredResolved = (resolvedPolls || []).filter(
-      p => categoryFilter === 'all' || p.category === categoryFilter,
-    );
+  function renderHistoryTab() {
+    // 이번 달 통계 계산
+    const monthCorrect = thisMonthRecords.filter(p => p.myIsCorrect === true).length;
+    const monthTotal = thisMonthRecords.filter(p => p.myVote !== null).length;
+    const monthAccuracy = monthTotal > 0 ? Math.round((monthCorrect / monthTotal) * 100) : 0;
 
     return (
       <>
-        {/* 카테고리 필터 칩 */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.filterRow}
-          contentContainerStyle={styles.filterContent}
-        >
-          {(Object.keys(POLL_CATEGORY_INFO) as PollCategoryFilter[]).map((key) => {
-            const info = POLL_CATEGORY_INFO[key];
-            const isActive = categoryFilter === key;
-            return (
-              <TouchableOpacity
-                key={key}
-                style={[
-                  styles.filterChip,
-                  isActive && { backgroundColor: info.color, borderColor: info.color },
-                ]}
-                onPress={() => setCategoryFilter(key)}
-              >
-                <Text style={styles.filterEmoji}>{info.emoji}</Text>
-                <Text
-                  style={[
-                    styles.filterChipText,
-                    isActive && { color: '#000000', fontWeight: '700' },
-                  ]}
-                >
-                  {info.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
+        {/* 내 통계 카드 (원형 차트 포함) */}
+        {myStats && <MyStatsSection stats={myStats} />}
 
-        {/* 최근 결과 */}
+        {/* 통계 차트 (최소 3회 투표 시 표시) */}
+        {myStats && myStats.total_votes >= 3 && (
+          <View style={{ marginBottom: 16 }}>
+            <StatsChart />
+          </View>
+        )}
+
+        {/* 이번 달 적중률 요약 카드 */}
+        <View style={styles.monthSummaryCard}>
+          <Text style={styles.monthSummaryTitle}>{'📅 이번 달 기록'}</Text>
+          <View style={styles.monthStatsRow}>
+            <View style={styles.monthStatItem}>
+              <Text style={styles.monthStatValue}>{monthAccuracy}%</Text>
+              <Text style={styles.monthStatLabel}>적중률</Text>
+            </View>
+            <View style={styles.monthStatDivider} />
+            <View style={styles.monthStatItem}>
+              <Text style={styles.monthStatValue}>{monthCorrect}/{monthTotal}</Text>
+              <Text style={styles.monthStatLabel}>적중/투표</Text>
+            </View>
+            <View style={styles.monthStatDivider} />
+            <View style={styles.monthStatItem}>
+              <Text style={[
+                styles.monthStatValue,
+                { color: myStats?.current_streak && myStats.current_streak >= 3 ? '#FF9800' : COLORS.textPrimary },
+              ]}>
+                {myStats?.current_streak || 0}회
+              </Text>
+              <Text style={styles.monthStatLabel}>연속 적중</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* 연속 적중 배지 (3연속 이상) */}
+        {myStats && myStats.current_streak >= 3 && (
+          <View style={{ marginBottom: 16 }}>
+            <StreakBadge currentStreak={myStats.current_streak} />
+          </View>
+        )}
+
+        {/* 인스타그램 공유 (5회 이상 투표 시) */}
+        {myStats && myStats.total_votes >= 5 && (
+          <ShareCard
+            accuracyRate={Number(myStats.accuracy_rate.toFixed(0))}
+            totalVotes={myStats.total_votes}
+            currentStreak={myStats.current_streak}
+            onShare={() => {
+              console.log('투자 예측 적중률 공유 완료');
+            }}
+          />
+        )}
+
+        {/* 최근 기록 리스트 */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📊 최근 결과</Text>
+          <Text style={styles.sectionTitle}>{'📊 최근 기록'}</Text>
           {resolvedLoading ? (
             <View style={styles.loadingState}>
-              <Text style={styles.loadingText}>결과를 불러오는 중...</Text>
+              <Text style={styles.loadingText}>기록을 불러오는 중...</Text>
             </View>
-          ) : filteredResolved.length === 0 ? (
+          ) : !resolvedPolls || resolvedPolls.length === 0 ? (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyEmoji}>📋</Text>
-              <Text style={styles.emptyTitle}>종료된 예측이 없습니다</Text>
+              <Text style={styles.emptyEmoji}>{'📋'}</Text>
+              <Text style={styles.emptyTitle}>아직 기록이 없습니다</Text>
               <Text style={styles.emptyDescription}>
-                예측이 마감되면 여기에 표시됩니다.
+                예측에 참여하면 여기에 기록이 쌓입니다.
               </Text>
             </View>
           ) : (
-            filteredResolved.map((poll) => (
-              <PollCard
-                key={poll.id}
-                poll={poll}
-                onVote={handleVote}
-              />
-            ))
+            resolvedPolls
+              .filter(p => p.myVote !== null) // 내가 투표한 것만
+              .slice(0, 20) // 최근 20개
+              .map((poll) => (
+                <View key={poll.id} style={styles.historyItem}>
+                  <View style={styles.historyLeft}>
+                    {/* 날짜 */}
+                    <Text style={styles.historyDate}>
+                      {poll.resolved_at
+                        ? new Date(poll.resolved_at).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' })
+                        : '-'}
+                    </Text>
+                    {/* 카테고리 점 */}
+                    <View style={[
+                      styles.historyDot,
+                      { backgroundColor: CATEGORY_COLORS[poll.category] || '#888' },
+                    ]} />
+                  </View>
+                  {/* 질문 */}
+                  <View style={styles.historyCenter}>
+                    <Text style={styles.historyQuestion} numberOfLines={1}>
+                      {poll.question}
+                    </Text>
+                  </View>
+                  {/* 결과 */}
+                  <View style={styles.historyRight}>
+                    {poll.myIsCorrect === true ? (
+                      <View style={styles.historyCorrectBadge}>
+                        <Text style={styles.historyCorrectText}>{'🎯'} 적중</Text>
+                      </View>
+                    ) : (
+                      <View style={styles.historyWrongBadge}>
+                        <Text style={styles.historyWrongText}>오답</Text>
+                      </View>
+                    )}
+                    {poll.myCreditsEarned > 0 && (
+                      <Text style={styles.historyCreditText}>+{poll.myCreditsEarned}C</Text>
+                    )}
+                  </View>
+                </View>
+              ))
           )}
         </View>
       </>
@@ -307,7 +388,7 @@ export default function PredictionsScreen() {
   }
 
   // ============================================================================
-  // 리더보드 탭 렌더링
+  // 리더보드 탭
   // ============================================================================
   function renderLeaderboardTab() {
     return (
@@ -320,7 +401,9 @@ export default function PredictionsScreen() {
           <Text style={styles.rewardInfoTitle}>보상 안내</Text>
           <View style={styles.rewardRow}>
             <Text style={styles.rewardLabel}>적중 시</Text>
-            <Text style={styles.rewardValue}>+{PREDICTION_REWARDS.correct} 크레딧 (구독자 {PREDICTION_REWARDS.correct * PREDICTION_REWARDS.subscriberMultiplier})</Text>
+            <Text style={styles.rewardValue}>
+              +{PREDICTION_REWARDS.correct} 크레딧 (구독자 {PREDICTION_REWARDS.correct * PREDICTION_REWARDS.subscriberMultiplier})
+            </Text>
           </View>
           <View style={styles.rewardRow}>
             <Text style={styles.rewardLabel}>5연속 적중</Text>
@@ -332,7 +415,7 @@ export default function PredictionsScreen() {
           </View>
           <View style={styles.rewardRow}>
             <Text style={styles.rewardLabel}>참여 비용</Text>
-            <Text style={[styles.rewardValue, { color: '#4CAF50' }]}>무료</Text>
+            <Text style={[styles.rewardValue, { color: COLORS.primary }]}>무료</Text>
           </View>
         </View>
       </>
@@ -359,14 +442,19 @@ export default function PredictionsScreen() {
         )}
       </View>
 
-      {/* 탭 헤더 */}
+      {/* 3탭 헤더: 투표하기 / 내 기록 / 리더보드 */}
       <View style={styles.tabHeader}>
         <TouchableOpacity
-          style={[styles.tabButton, activeTab === 'active' && styles.tabButtonActive]}
-          onPress={() => setActiveTab('active')}
+          style={[styles.tabButton, activeTab === 'vote' && styles.tabButtonActive]}
+          onPress={() => setActiveTab('vote')}
         >
-          <Text style={[styles.tabText, activeTab === 'active' && styles.tabTextActive]}>
-            진행중
+          <Ionicons
+            name="hand-left-outline"
+            size={16}
+            color={activeTab === 'vote' ? COLORS.primary : '#888888'}
+          />
+          <Text style={[styles.tabText, activeTab === 'vote' && styles.tabTextActive]}>
+            투표하기
           </Text>
           {activePolls && activePolls.length > 0 && (
             <View style={styles.tabBadge}>
@@ -376,11 +464,16 @@ export default function PredictionsScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.tabButton, activeTab === 'resolved' && styles.tabButtonActive]}
-          onPress={() => setActiveTab('resolved')}
+          style={[styles.tabButton, activeTab === 'history' && styles.tabButtonActive]}
+          onPress={() => setActiveTab('history')}
         >
-          <Text style={[styles.tabText, activeTab === 'resolved' && styles.tabTextActive]}>
-            종료됨
+          <Ionicons
+            name="time-outline"
+            size={16}
+            color={activeTab === 'history' ? COLORS.primary : '#888888'}
+          />
+          <Text style={[styles.tabText, activeTab === 'history' && styles.tabTextActive]}>
+            내 기록
           </Text>
         </TouchableOpacity>
 
@@ -388,6 +481,11 @@ export default function PredictionsScreen() {
           style={[styles.tabButton, activeTab === 'leaderboard' && styles.tabButtonActive]}
           onPress={() => setActiveTab('leaderboard')}
         >
+          <Ionicons
+            name="trophy-outline"
+            size={16}
+            color={activeTab === 'leaderboard' ? COLORS.primary : '#888888'}
+          />
           <Text style={[styles.tabText, activeTab === 'leaderboard' && styles.tabTextActive]}>
             리더보드
           </Text>
@@ -401,7 +499,7 @@ export default function PredictionsScreen() {
           <RefreshControl
             refreshing={isRefetching}
             onRefresh={onRefresh}
-            tintColor="#4CAF50"
+            tintColor={COLORS.primary}
           />
         }
       >
@@ -419,36 +517,13 @@ export default function PredictionsScreen() {
 }
 
 // ============================================================================
-// 통계 아이템 컴포넌트
-// ============================================================================
-
-function StatItem({
-  label,
-  value,
-  highlight,
-}: {
-  label: string;
-  value: string;
-  highlight?: boolean;
-}) {
-  return (
-    <View style={styles.statItem}>
-      <Text style={styles.statLabel}>{label}</Text>
-      <Text style={[styles.statValue, highlight && styles.statValueHighlight]}>
-        {value}
-      </Text>
-    </View>
-  );
-}
-
-// ============================================================================
 // 스타일
 // ============================================================================
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
+    backgroundColor: COLORS.background,
   },
   header: {
     flexDirection: 'row',
@@ -464,10 +539,10 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#FFFFFF',
+    color: COLORS.textPrimary,
   },
   accuracyBadge: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: COLORS.primary,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 10,
@@ -478,7 +553,7 @@ const styles = StyleSheet.create({
     color: '#000000',
   },
 
-  // 탭 헤더
+  // 탭 헤더 (3탭: 투표하기 / 내 기록 / 리더보드)
   tabHeader: {
     flexDirection: 'row',
     paddingHorizontal: 16,
@@ -486,13 +561,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#1A1A1A',
     borderBottomWidth: 1,
     borderBottomColor: '#2A2A2A',
+    gap: 6,
   },
   tabButton: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
+    gap: 5,
     paddingVertical: 10,
     borderRadius: 8,
   },
@@ -500,16 +576,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#2A2A2A',
   },
   tabText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
     color: '#888888',
   },
   tabTextActive: {
-    color: '#4CAF50',
+    color: COLORS.primary,
     fontWeight: '700',
   },
   tabBadge: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: COLORS.primary,
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 8,
@@ -530,62 +606,153 @@ const styles = StyleSheet.create({
     paddingBottom: 80,
   },
 
-  // 통계 카드
-  statsCard: {
-    backgroundColor: '#1E1E1E',
+  // 카테고리 뱃지 (투표하기 탭 카드 위)
+  pollCategoryBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
+    marginLeft: 4,
+  },
+  categoryDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  categoryBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+
+  // 모두 투표 완료 배너
+  allVotedBanner: {
+    alignItems: 'center',
+    backgroundColor: '#1A2A1A',
+    borderRadius: 16,
+    padding: 24,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: COLORS.primary + '40',
+  },
+  allVotedEmoji: {
+    fontSize: 40,
+    marginBottom: 12,
+  },
+  allVotedTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: COLORS.primary,
+    marginBottom: 8,
+  },
+  allVotedDesc: {
+    fontSize: 14,
+    color: '#AAAAAA',
+    textAlign: 'center',
+    lineHeight: 21,
+  },
+
+  // 이번 달 기록 요약
+  monthSummaryCard: {
+    backgroundColor: COLORS.surface,
     borderRadius: 16,
     padding: 18,
     marginBottom: 16,
   },
-  statsTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#AAAAAA',
-    marginBottom: 14,
+  monthSummaryTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+    marginBottom: 16,
   },
-  statsGrid: {
+  monthStatsRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  statItem: {
-    flex: 1,
-    minWidth: '45%',
-    backgroundColor: '#252525',
-    borderRadius: 12,
-    padding: 12,
     alignItems: 'center',
   },
-  statLabel: {
-    fontSize: 11,
-    color: '#666666',
+  monthStatItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  monthStatDivider: {
+    width: 1,
+    height: 32,
+    backgroundColor: '#333333',
+  },
+  monthStatValue: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
     marginBottom: 4,
   },
-  statValue: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#FFFFFF',
+  monthStatLabel: {
+    fontSize: 11,
+    color: '#888888',
   },
-  statValueHighlight: {
-    color: '#4CAF50',
-  },
-  streakBanner: {
+
+  // 내 기록 리스트 아이템
+  historyItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    backgroundColor: '#2A1A1A',
-    borderRadius: 10,
-    padding: 10,
-    marginTop: 12,
+    backgroundColor: COLORS.surface,
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 8,
   },
-  streakEmoji: {
-    fontSize: 16,
+  historyLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginRight: 12,
+    minWidth: 50,
   },
-  streakText: {
+  historyDate: {
     fontSize: 12,
-    color: '#FF9800',
-    fontWeight: '600',
+    color: '#888888',
+    fontWeight: '500',
+  },
+  historyDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  historyCenter: {
     flex: 1,
+    marginRight: 10,
+  },
+  historyQuestion: {
+    fontSize: 14,
+    color: COLORS.textPrimary,
+    fontWeight: '500',
+  },
+  historyRight: {
+    alignItems: 'flex-end',
+    gap: 4,
+  },
+  historyCorrectBadge: {
+    backgroundColor: '#4CAF5020',
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  historyCorrectText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.primary,
+  },
+  historyWrongBadge: {
+    backgroundColor: '#CF667920',
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  historyWrongText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.error,
+  },
+  historyCreditText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: COLORS.primary,
   },
 
   // 필터 칩
@@ -604,7 +771,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
     borderColor: '#333333',
-    backgroundColor: '#1E1E1E',
+    backgroundColor: COLORS.surface,
   },
   filterEmoji: {
     fontSize: 12,
@@ -622,7 +789,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: COLORS.textPrimary,
     marginBottom: 12,
   },
 
@@ -646,7 +813,7 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: COLORS.textPrimary,
     marginBottom: 8,
   },
   emptyDescription: {
@@ -656,132 +823,12 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
 
-  // 리더보드
-  leaderboardCard: {
-    backgroundColor: '#1E1E1E',
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
-  leaderboardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    backgroundColor: '#252525',
-  },
-  lbHeaderRank: {
-    width: 32,
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#666666',
-  },
-  lbHeaderName: {
-    flex: 1,
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#666666',
-  },
-  lbHeaderAccuracy: {
-    width: 60,
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#666666',
-    textAlign: 'right',
-  },
-  lbHeaderStreak: {
-    width: 50,
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#666666',
-    textAlign: 'right',
-  },
-  leaderboardRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#2A2A2A',
-  },
-  leaderboardRowMe: {
-    backgroundColor: '#1A2A1A',
-  },
-  lbRank: {
-    width: 32,
-    fontSize: 14,
-    color: '#AAAAAA',
-    fontWeight: '600',
-  },
-  lbRankTop: {
-    fontSize: 18,
-  },
-  lbNameCol: {
-    flex: 1,
-  },
-  lbName: {
-    fontSize: 14,
-    color: '#FFFFFF',
-    fontWeight: '500',
-  },
-  lbNameMe: {
-    color: '#4CAF50',
-    fontWeight: '700',
-  },
-  lbVotes: {
-    fontSize: 11,
-    color: '#666666',
-    marginTop: 2,
-  },
-  lbAccuracy: {
-    width: 60,
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    textAlign: 'right',
-  },
-  lbStreak: {
-    width: 50,
-    fontSize: 13,
-    color: '#FF9800',
-    textAlign: 'right',
-  },
-
-  // 보상 안내
-  rewardInfo: {
-    backgroundColor: '#1A2A1A',
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#2A3A2A',
-  },
-  rewardInfoTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#4CAF50',
-    marginBottom: 12,
-  },
-  rewardRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 6,
-  },
-  rewardLabel: {
-    fontSize: 13,
-    color: '#AAAAAA',
-  },
-  rewardValue: {
-    fontSize: 13,
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
-
   // 어제의 결과 요약 배너
   yesterdaySummary: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#1E1E1E',
+    backgroundColor: COLORS.surface,
     borderRadius: 14,
     padding: 16,
     marginBottom: 12,
@@ -800,7 +847,7 @@ const styles = StyleSheet.create({
   summaryTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: COLORS.textPrimary,
     marginBottom: 3,
   },
   summarySubtitle: {
@@ -817,6 +864,36 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     color: '#FF9800',
+  },
+
+  // 보상 안내
+  rewardInfo: {
+    backgroundColor: '#1A2A1A',
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#2A3A2A',
+  },
+  rewardInfoTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.primary,
+    marginBottom: 12,
+  },
+  rewardRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 6,
+  },
+  rewardLabel: {
+    fontSize: 13,
+    color: '#AAAAAA',
+  },
+  rewardValue: {
+    fontSize: 13,
+    color: COLORS.textPrimary,
+    fontWeight: '600',
   },
 
   // 면책 조항

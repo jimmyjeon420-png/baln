@@ -1,26 +1,71 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Image, StyleSheet, Alert, ActivityIndicator, ScrollView, Dimensions } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
+/**
+ * add-asset.tsx — 자산 추가 화면 (30초 등록 UX)
+ *
+ * 역할: "자산 등록 창구"
+ * - OCR 제거, 수동 입력 극도로 편리하게 설계
+ * - 종목 검색 자동완성 (한글/영문/티커 모두 지원)
+ * - 현재가 자동 로드 (Yahoo Finance + CoinGecko)
+ * - 최근 추가 종목 빠른 재추가
+ * - 보유 자산 수정/삭제
+ *
+ * 이승건(토스 CEO): "OCR이 1번이라도 틀리면 앱 전체 신뢰를 잃는다"
+ * → 결론: 수동 입력을 극도로 편하게 만든다
+ */
+
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+  ActivityIndicator,
+  ScrollView,
+  TextInput,
+  FlatList,
+  Keyboard,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-
-const SCREEN_WIDTH = Dimensions.get('window').width;
-// 이미지 최대 높이 제한 (스크롤 편의성 + 메모리 절약)
-const MAX_IMAGE_HEIGHT = 500;
-
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { analyzeAssetImage, validateAssetData } from '../src/services/gemini';
+import { useQueryClient } from '@tanstack/react-query';
+
 import supabase from '../src/services/supabase';
+import { COLORS } from '../src/styles/theme';
+import { searchStocks, StockItem, getCategoryLabel, getCategoryColor } from '../src/data/stockList';
+import { priceService } from '../src/services/PriceService';
+import { AssetClass, PriceData } from '../src/types/price';
+import { SHARED_PORTFOLIO_KEY } from '../src/hooks/useSharedPortfolio';
+
+// ── 상수 ──
 
 // 진단 트리거 플래그 키
 const NEEDS_DIAGNOSIS_KEY = '@smart_rebalancer:needs_diagnosis';
 const LAST_SCAN_DATE_KEY = '@smart_rebalancer:last_scan_date';
+// 최근 추가 종목 저장 키
+const RECENT_ASSETS_KEY = '@baln:recent_assets';
 
-// 입력 모드 타입
-type InputMode = 'self_declared' | 'ocr_verified';
+// ── 타입 ──
 
-/** 타임아웃 래퍼: Promise/PromiseLike가 지정 시간 내 완료되지 않으면 reject */
+interface RecentAsset {
+  ticker: string;
+  name: string;
+  category: StockItem['category'];
+}
+
+interface ExistingAsset {
+  id: string;
+  ticker: string;
+  name: string;
+  quantity: number;
+  avg_price: number;
+  current_value: number;
+}
+
+// ── 유틸리티 ──
+
+/** 타임아웃 래퍼 */
 function withTimeout<T>(promise: PromiseLike<T>, ms: number, message: string): Promise<T> {
   return Promise.race([
     Promise.resolve(promise),
@@ -30,258 +75,284 @@ function withTimeout<T>(promise: PromiseLike<T>, ms: number, message: string): P
   ]);
 }
 
+/** 티커에서 자산 클래스 추론 */
+function inferAssetClassFromTicker(ticker: string): AssetClass {
+  const upper = ticker.toUpperCase();
+  if (/^\d{6}(\.KS|\.KQ)?$/i.test(upper) || upper.endsWith('.KS') || upper.endsWith('.KQ')) {
+    return AssetClass.STOCK;
+  }
+  const cryptoKeywords = ['BTC', 'ETH', 'USDC', 'USDT', 'SOL', 'XRP', 'DOGE', 'ADA', 'AVAX', 'DOT', 'LINK', 'BNB', 'MATIC', 'LTC', 'BCH', 'XLM', 'ATOM', 'UNI', 'AAVE', 'SUSHI', 'NEAR', 'SHIB'];
+  if (cryptoKeywords.some(kw => upper.includes(kw))) return AssetClass.CRYPTO;
+  const etfKeywords = ['VTI', 'VOO', 'QQQ', 'AGG', 'SPY', 'IVV', 'ARKK', 'GLD', 'VNQ', 'SCHD', 'JEPI', 'SOXL', 'TQQQ', 'VGT', 'EEM', 'TLT', 'SHY', 'BND'];
+  if (etfKeywords.some(kw => upper === kw)) return AssetClass.ETF;
+  return AssetClass.STOCK;
+}
+
+/** 금액 포맷 (한국원) */
+function formatKRW(value: number): string {
+  if (value >= 100000000) return `${(value / 100000000).toFixed(1)}억`;
+  if (value >= 10000) return `${Math.floor(value / 10000).toLocaleString()}만`;
+  return `${value.toLocaleString()}`;
+}
+
+/** 통화 심볼 추론 */
+function getCurrencySymbol(ticker: string): string {
+  const upper = ticker.toUpperCase();
+  if (/^\d{6}(\.KS|\.KQ)?$/i.test(upper) || upper.endsWith('.KS') || upper.endsWith('.KQ')) {
+    return '₩';
+  }
+  return '$';
+}
+
+// ── 메인 컴포넌트 ──
+
 export default function AddAssetScreen() {
   const router = useRouter();
-  const [image, setImage] = useState<string | null>(null);
-  const [imageAspectRatio, setImageAspectRatio] = useState(0.5);
-  const [imageBase64, setImageBase64] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [verifying, setVerifying] = useState(false);
-  const [analyzedData, setAnalyzedData] = useState<any[]>([]);
-  const [inputMode, setInputMode] = useState<InputMode>('self_declared');
+  const queryClient = useQueryClient();
 
-  // 1. 갤러리에서 이미지 선택
-  const pickImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert("권한 필요", "갤러리 접근 권한이 필요합니다.");
-      return;
-    }
+  // --- 검색 상태 ---
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<StockItem[]>([]);
+  const [showDropdown, setShowDropdown] = useState(false);
 
+  // --- 선택된 종목 상태 ---
+  const [selectedStock, setSelectedStock] = useState<StockItem | null>(null);
+  const [quantity, setQuantity] = useState('');
+  const [price, setPrice] = useState('');
+  const [priceLoading, setPriceLoading] = useState(false);
+  const [priceAuto, setPriceAuto] = useState(false); // 자동 로드된 가격인지
+
+  // --- 저장 상태 ---
+  const [saving, setSaving] = useState(false);
+
+  // --- 최근 추가 종목 ---
+  const [recentAssets, setRecentAssets] = useState<RecentAsset[]>([]);
+
+  // --- 보유 자산 ---
+  const [existingAssets, setExistingAssets] = useState<ExistingAsset[]>([]);
+  const [loadingAssets, setLoadingAssets] = useState(true);
+
+  // --- 수정 모드 ---
+  const [editingAsset, setEditingAsset] = useState<ExistingAsset | null>(null);
+
+  // ─── 초기 로드 ───
+
+  useEffect(() => {
+    loadRecentAssets();
+    loadExistingAssets();
+  }, []);
+
+  // 최근 추가 종목 로드
+  const loadRecentAssets = async () => {
     try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
-        allowsEditing: false,
-        quality: 0.5,
-        base64: true,
-      });
+      const stored = await AsyncStorage.getItem(RECENT_ASSETS_KEY);
+      if (stored) setRecentAssets(JSON.parse(stored));
+    } catch {}
+  };
 
-      if (!result.canceled && result.assets && result.assets[0]) {
-        const asset = result.assets[0];
-        const base64 = asset.base64;
+  // 최근 추가 종목 저장
+  const saveRecentAsset = async (stock: StockItem) => {
+    try {
+      const newRecent: RecentAsset = {
+        ticker: stock.ticker,
+        name: stock.name,
+        category: stock.category,
+      };
+      // 중복 제거 후 앞에 추가, 최대 5개
+      const updated = [newRecent, ...recentAssets.filter(r => r.ticker !== stock.ticker)].slice(0, 5);
+      setRecentAssets(updated);
+      await AsyncStorage.setItem(RECENT_ASSETS_KEY, JSON.stringify(updated));
+    } catch {}
+  };
 
-        // base64가 없으면 분석 불가
-        if (!base64) {
-          Alert.alert("오류", "이미지 데이터를 읽을 수 없습니다. 다른 이미지를 선택해주세요.");
-          return;
-        }
+  // 보유 자산 로드
+  const loadExistingAssets = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setLoadingAssets(false); return; }
 
-        setImage(asset.uri);
-        setImageBase64(base64);
+      const { data, error } = await supabase
+        .from('portfolios')
+        .select('id, ticker, name, quantity, avg_price, current_value')
+        .eq('user_id', user.id)
+        .not('ticker', 'like', 'RE_%')  // 부동산 제외
+        .order('current_value', { ascending: false });
 
-        if (asset.width && asset.height) {
-          setImageAspectRatio(asset.width / asset.height);
-        }
-
-        handleAnalyze(base64);
+      if (!error && data) {
+        setExistingAssets(data);
       }
-    } catch (error) {
-      console.error("Image Picker Error:", error);
-      Alert.alert("오류", "갤러리를 여는 중 문제가 발생했습니다.");
+    } catch {} finally {
+      setLoadingAssets(false);
     }
   };
 
-  // 2. AI 분석 요청
-  const handleAnalyze = async (base64: string) => {
-    setLoading(true);
+  // ─── 검색 로직 ───
+
+  useEffect(() => {
+    if (searchQuery.trim().length === 0) {
+      setSearchResults([]);
+      setShowDropdown(false);
+      return;
+    }
+    const results = searchStocks(searchQuery);
+    setSearchResults(results);
+    setShowDropdown(results.length > 0);
+  }, [searchQuery]);
+
+  // ─── 종목 선택 ───
+
+  const selectStock = useCallback(async (stock: StockItem) => {
+    setSelectedStock(stock);
+    setSearchQuery(stock.name);
+    setShowDropdown(false);
+    Keyboard.dismiss();
+
+    // 현재가 자동 로드
+    setPriceLoading(true);
+    setPriceAuto(false);
     try {
-      const result = await withTimeout(
-        analyzeAssetImage(base64),
-        60000, // 60초 타임아웃
-        'AI 분석 시간이 초과되었습니다. 다시 시도해주세요.'
-      );
-      setLoading(false);
-
-      if (result.error) {
-        Alert.alert("분석 실패", result.error);
-        return;
-      }
-
-      const assets = result.assets || [];
-
-      if (assets.length > 0) {
-        const validatedData = assets.map((item: any, index: number) => ({
-          ticker: item.ticker || `UNKNOWN_${index}`,
-          name: item.name || `자산 ${index + 1}`,
-          amount: Number(item.amount) || 0,
-          price: Number(item.price) || 0,
-          needsReview: item.needsReview || !item.ticker || item.price === 0,
-        }));
-
-        setAnalyzedData(validatedData);
-
-        const validation = result.validation;
-        const reviewCount = validatedData.filter((item: any) => item.needsReview).length;
-
-        if (validation && !validation.isValid) {
-          Alert.alert(
-            "⚠️ 데이터 인식 오류",
-            `${validation.errorMessage}\n\n` +
-            `화면 총액: ${(result.totalValueFromScreen || 0).toLocaleString()}원\n` +
-            `계산 총액: ${(validation.totalCalculated || 0).toLocaleString()}원\n\n` +
-            `${validatedData.length}개 자산이 추출되었습니다. 가격을 확인해주세요.`
-          );
-        } else if (reviewCount > 0) {
-          Alert.alert(
-            "확인 필요",
-            `${validatedData.length}개 자산 추출 완료.\n⚠️ ${reviewCount}개 항목은 수동 확인이 필요합니다 (가격 또는 티커 불명확).`
-          );
-        } else {
-          const totalValue = validatedData.reduce(
-            (sum: number, item: any) => sum + (item.amount * item.price), 0
-          );
-          Alert.alert(
-            "✓ 분석 완료",
-            `${validatedData.length}개 자산 (총 ${totalValue.toLocaleString()}원)\n\n내용을 확인하고 등록하세요.`
-          );
-        }
-      } else {
-        Alert.alert("분석 실패", "이미지에서 자산 정보를 찾을 수 없습니다. 다른 이미지를 시도해주세요.");
-      }
-    } catch (error) {
-      setLoading(false);
-      console.error("handleAnalyze Error:", error);
-      Alert.alert("오류", error instanceof Error ? error.message : "이미지 분석 중 예기치 않은 오류가 발생했습니다.");
-    }
-  };
-
-  // 3. DB에 저장
-  const saveAssets = async () => {
-    if (analyzedData.length === 0) {
-      Alert.alert("저장 불가", "저장할 자산이 없습니다.");
-      return;
-    }
-
-    const reviewItems = analyzedData.filter((item) => item.needsReview);
-    if (reviewItems.length > 0) {
-      Alert.alert(
-        "확인 필요",
-        `${reviewItems.length}개 항목의 가격/티커가 불확실합니다. 그래도 저장하시겠습니까?`,
-        [
-          { text: "취소", style: "cancel" },
-          { text: "저장", onPress: () => performSave() }
-        ]
-      );
-    } else {
-      performSave();
-    }
-  };
-
-  /**
-   * OCR 검증 실행
-   * AI가 스크린샷 분석 → 가격 보정 → 5% 오차 이내 검증
-   */
-  const handleVerification = async () => {
-    if (!imageBase64) {
-      Alert.alert('오류', '검증할 이미지가 없습니다. 이미지를 다시 선택해주세요.');
-      return;
-    }
-
-    if (analyzedData.length === 0) {
-      Alert.alert('오류', '먼저 이미지를 분석해주세요.');
-      return;
-    }
-
-    setVerifying(true);
-
-    try {
-      // 인증 상태 확인 (10초 타임아웃 — 네트워크 문제 시 무한 대기 방지)
-      const { data } = await withTimeout(
-        supabase.auth.getUser(),
+      const assetClass = inferAssetClassFromTicker(stock.ticker);
+      const currency = stock.ticker.endsWith('.KS') || stock.ticker.endsWith('.KQ') ? 'KRW' : 'USD';
+      const priceData = await withTimeout(
+        priceService.fetchPrice(stock.ticker, assetClass, currency),
         10000,
-        '서버 연결 시간이 초과되었습니다. 네트워크를 확인해주세요.'
+        '가격 조회 시간 초과'
       );
-
-      if (!data?.user) {
-        throw new Error('로그인이 필요합니다. 앱을 다시 시작해주세요.');
+      if (priceData && priceData.currentPrice > 0) {
+        setPrice(String(priceData.currentPrice));
+        setPriceAuto(true);
       }
-
-      // OCR 추출 총액 계산
-      const calculatedTotal = analyzedData.reduce((sum, item) => {
-        return sum + ((item.amount || 0) * (item.price || 0));
-      }, 0);
-
-      if (calculatedTotal <= 0) {
-        throw new Error('자산 총액이 0원입니다. 가격을 확인해주세요.');
-      }
-
-      // 무결성 검증 수행 (5% 오차 허용)
-      const validation = validateAssetData(analyzedData, calculatedTotal, 0.05);
-
-      if (!validation.isValid) {
-        Alert.alert(
-          '검증 실패',
-          `${validation.errorMessage}\n\n계산 총액: ${validation.totalCalculated.toLocaleString()}원\n\n가격을 수동으로 확인해주세요.`,
-          [{ text: '확인' }]
-        );
-        return;
-      }
-
-      // 검증 성공 - 보정된 데이터로 업데이트
-      if (validation.correctedAssets && validation.correctedAssets.length > 0) {
-        setAnalyzedData(validation.correctedAssets);
-      }
-
-      setInputMode('ocr_verified');
-
-      Alert.alert(
-        '✓ 검증 완료',
-        `총 ${calculatedTotal.toLocaleString()}원의 자산이 검증되었습니다.\n\n이 자산은 VIP 라운지 입장 조건에 포함됩니다.`,
-        [{ text: '확인' }]
-      );
-    } catch (error: any) {
-      console.error('검증 실패:', error);
-      Alert.alert(
-        '검증 실패',
-        error.message || '검증 중 오류가 발생했습니다.\n\n네트워크 연결을 확인하고 다시 시도해주세요.',
-        [{ text: '확인' }]
-      );
+    } catch (err) {
+      console.warn('[AddAsset] 현재가 자동 로드 실패:', err);
+      // 실패해도 사용자가 직접 입력 가능
     } finally {
-      // 항상 로딩 상태 해제 (무한 스피너 방지)
-      setVerifying(false);
+      setPriceLoading(false);
     }
-  };
+  }, []);
 
-  // 실제 저장 로직 — portfolios 테이블에 UPSERT
-  const performSave = async () => {
+  // 최근 종목 탭으로 자동 입력
+  const selectRecentAsset = useCallback((recent: RecentAsset) => {
+    const stock: StockItem = {
+      ticker: recent.ticker,
+      name: recent.name,
+      nameEn: '',
+      category: recent.category,
+    };
+    selectStock(stock);
+  }, [selectStock]);
+
+  // ─── 기존 자산 수정 모드 ───
+
+  const startEditAsset = useCallback((asset: ExistingAsset) => {
+    // 검색 데이터에서 찾기
+    const found = searchStocks(asset.ticker)[0] || searchStocks(asset.name)[0];
+    setSelectedStock(found || {
+      ticker: asset.ticker,
+      name: asset.name,
+      nameEn: '',
+      category: 'kr_stock' as const,
+    });
+    setSearchQuery(asset.name);
+    setQuantity(String(asset.quantity || 0));
+    setPrice(String(asset.avg_price || 0));
+    setEditingAsset(asset);
+  }, []);
+
+  // ─── 자산 삭제 ───
+
+  const deleteAsset = useCallback(async (asset: ExistingAsset) => {
+    Alert.alert(
+      '자산 삭제',
+      `"${asset.name}" (${asset.ticker})을(를) 삭제하시겠습니까?`,
+      [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '삭제',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const { error } = await supabase
+                .from('portfolios')
+                .delete()
+                .eq('id', asset.id);
+
+              if (error) throw error;
+
+              setExistingAssets(prev => prev.filter(a => a.id !== asset.id));
+              // 캐시 무효화
+              queryClient.invalidateQueries({ queryKey: SHARED_PORTFOLIO_KEY });
+            } catch (err) {
+              Alert.alert('삭제 실패', '자산을 삭제할 수 없습니다. 다시 시도해주세요.');
+            }
+          },
+        },
+      ],
+    );
+  }, [queryClient]);
+
+  // ─── 평가금액 계산 ───
+
+  const totalValue = useMemo(() => {
+    const q = parseFloat(quantity) || 0;
+    const p = parseFloat(price) || 0;
+    return q * p;
+  }, [quantity, price]);
+
+  const currencySymbol = useMemo(
+    () => selectedStock ? getCurrencySymbol(selectedStock.ticker) : '₩',
+    [selectedStock],
+  );
+
+  // ─── 등록 버튼 ───
+
+  const handleSave = async () => {
+    if (!selectedStock) {
+      Alert.alert('종목 선택', '등록할 종목을 먼저 선택해주세요.');
+      return;
+    }
+
+    const q = parseFloat(quantity);
+    const p = parseFloat(price);
+
+    if (!q || q <= 0) {
+      Alert.alert('수량 입력', '보유 수량을 입력해주세요.');
+      return;
+    }
+
+    if (!p || p <= 0) {
+      Alert.alert('가격 입력', '매수 단가를 입력해주세요.');
+      return;
+    }
+
+    setSaving(true);
     try {
-      setLoading(true);
-
-      const { data } = await withTimeout(
+      const { data: { user } } = await withTimeout(
         supabase.auth.getUser(),
         10000,
-        '서버 연결 시간이 초과되었습니다.'
+        '서버 연결 시간이 초과되었습니다.',
       );
 
-      if (!data?.user) throw new Error("로그인이 필요합니다.");
+      if (!user) throw new Error('로그인이 필요합니다.');
 
-      const validAssets = analyzedData.filter(
-        (item) => item.ticker && item.ticker !== 'UNKNOWN' && item.name
-      );
+      const ticker = selectedStock.ticker.trim();
+      const name = selectedStock.name.trim();
+      const currentValue = q * p;
 
-      if (validAssets.length === 0) {
-        throw new Error("유효한 자산이 없습니다. 티커와 이름을 확인해주세요.");
-      }
+      // 한국주식: KRW, 그 외: USD
+      const currency = (ticker.endsWith('.KS') || ticker.endsWith('.KQ')) ? 'KRW' : 'USD';
 
-      const upsertData = validAssets.map((item) => {
-        const ticker = String(item.ticker).trim();
-        const name = String(item.name || '알 수 없는 자산').trim();
-        const quantity = Number(item.amount) || 0;
-        const price = Number(item.price) || 0;
-
-        return {
-          user_id: data.user.id,
-          ticker: ticker,
-          name: name,
-          quantity: quantity,
-          avg_price: price,
-          current_price: price,
-          current_value: quantity * price,
-          target_allocation: 0,
-          asset_type: 'liquid',
-          currency: 'KRW',
-        };
-      });
+      const upsertData = {
+        user_id: user.id,
+        ticker,
+        name,
+        quantity: q,
+        avg_price: p,
+        current_price: p,
+        current_value: currentValue,
+        target_allocation: 0,
+        asset_type: 'liquid',
+        currency,
+      };
 
       const { data: savedData, error: upsertError } = await withTimeout(
         supabase
@@ -292,67 +363,75 @@ export default function AddAssetScreen() {
           })
           .select(),
         15000,
-        'DB 저장 시간이 초과되었습니다.'
+        'DB 저장 시간이 초과되었습니다.',
       );
 
-      if (upsertError) {
-        console.error("Upsert Error:", upsertError);
-        throw upsertError;
-      }
+      if (upsertError) throw upsertError;
 
+      // 진단 트리거 설정
       const today = new Date().toISOString().split('T')[0];
       await AsyncStorage.setItem(NEEDS_DIAGNOSIS_KEY, 'true');
       await AsyncStorage.setItem(LAST_SCAN_DATE_KEY, today);
 
-      setLoading(false);
+      // 최근 종목 저장
+      await saveRecentAsset(selectedStock);
 
-      const savedCount = savedData?.length || upsertData.length;
+      // 캐시 무효화
+      queryClient.invalidateQueries({ queryKey: SHARED_PORTFOLIO_KEY });
+
+      // 상태 초기화
+      resetForm();
+
+      // 보유 자산 다시 로드
+      await loadExistingAssets();
+
       Alert.alert(
-        "✓ 등록 완료",
-        `${savedCount}개 자산이 저장되었습니다.\n\nAI가 맞춤형 처방전을 준비합니다.`,
+        '등록 완료',
+        `${name} ${q}${selectedStock.category === 'crypto' ? '개' : '주'} (${currencySymbol}${currentValue.toLocaleString()})이(가) 등록되었습니다.`,
         [
           {
-            text: "처방전 보기",
-            onPress: () => {
-              setAnalyzedData([]);
-              setImage(null);
-              router.push('/(tabs)/diagnosis');
-            }
+            text: '처방전 보기',
+            onPress: () => router.push('/(tabs)/rebalance'),
           },
           {
-            text: "나중에",
-            style: "cancel",
-            onPress: () => {
-              setAnalyzedData([]);
-              setImage(null);
-              router.back();
-            }
-          }
-        ]
+            text: '더 추가하기',
+            style: 'cancel',
+          },
+        ],
       );
     } catch (error) {
-      setLoading(false);
-      console.error("Save Assets Error:", error);
+      console.error('[AddAsset] 저장 실패:', error);
       Alert.alert(
-        "저장 실패",
-        error instanceof Error ? error.message : "자산 저장 중 오류가 발생했습니다.",
-        [{ text: '확인' }]
+        '저장 실패',
+        error instanceof Error ? error.message : '자산 저장 중 오류가 발생했습니다.',
       );
+    } finally {
+      setSaving(false);
     }
   };
 
-  // 이미지 높이 계산 (최대 높이 제한)
-  const imageWidth = SCREEN_WIDTH - 32;
-  const rawHeight = imageWidth / imageAspectRatio;
-  const imageHeight = Math.min(rawHeight, MAX_IMAGE_HEIGHT);
+  // 폼 초기화
+  const resetForm = () => {
+    setSelectedStock(null);
+    setSearchQuery('');
+    setQuantity('');
+    setPrice('');
+    setPriceAuto(false);
+    setEditingAsset(null);
+  };
+
+  // ─── 렌더링 ───
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
         {/* 헤더 */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons name="chevron-back" size={28} color="#4CAF50" />
+            <Ionicons name="chevron-back" size={28} color={COLORS.primary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>자산 추가</Text>
           <View style={{ width: 28 }} />
@@ -364,7 +443,7 @@ export default function AddAssetScreen() {
           onPress={() => router.push('/add-realestate')}
         >
           <View style={styles.realEstateIcon}>
-            <Ionicons name="home" size={22} color="#4CAF50" />
+            <Ionicons name="home" size={22} color={COLORS.primary} />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.realEstateTitle}>부동산 자산 등록</Text>
@@ -373,499 +452,291 @@ export default function AddAssetScreen() {
           <Ionicons name="chevron-forward" size={20} color="#888" />
         </TouchableOpacity>
 
-        {/* 이미지 선택 영역 */}
-        {!image ? (
-          <>
-            <TouchableOpacity
-              style={styles.imagePlaceholder}
-              onPress={pickImage}
-              disabled={loading}
-            >
-              <Ionicons name="image" size={48} color="#4CAF50" />
-              <Text style={styles.placeholderText}>
-                {loading ? "분석 중..." : "자산 영수증 사진 선택"}
-              </Text>
-              {loading && <ActivityIndicator color="#4CAF50" size="large" />}
-            </TouchableOpacity>
+        {/* ─── 빠른 추가 섹션 ─── */}
+        <View style={styles.sectionCard}>
+          <Text style={styles.sectionTitle}>
+            {editingAsset ? '자산 수정' : '빠른 추가'}
+          </Text>
+          <Text style={styles.sectionSubtitle}>
+            {editingAsset ? '수량과 가격을 수정하세요' : '종목 검색 → 수량 입력 → 등록 (30초)'}
+          </Text>
 
-            {/* MTS 스크린샷 캡처 가이드 */}
-            <View style={styles.guideContainer}>
-              <View style={styles.guideHeader}>
-                <Ionicons name="information-circle" size={20} color="#4CAF50" />
-                <Text style={styles.guideTitle}>스크린샷 캡처 가이드</Text>
-              </View>
+          {/* 1. 종목 검색 */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>종목 검색</Text>
+            <View style={styles.searchContainer}>
+              <Ionicons name="search" size={18} color="#888" style={styles.searchIcon} />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="삼성전자, NVDA, 비트코인..."
+                placeholderTextColor="#555"
+                value={searchQuery}
+                onChangeText={(text) => {
+                  setSearchQuery(text);
+                  if (selectedStock && text !== selectedStock.name) {
+                    // 사용자가 텍스트를 변경하면 선택 해제
+                    setSelectedStock(null);
+                    setPrice('');
+                    setPriceAuto(false);
+                  }
+                }}
+                onFocus={() => {
+                  if (searchResults.length > 0) setShowDropdown(true);
+                }}
+                returnKeyType="search"
+              />
+              {searchQuery.length > 0 && (
+                <TouchableOpacity
+                  onPress={() => {
+                    setSearchQuery('');
+                    setSelectedStock(null);
+                    setPrice('');
+                    setPriceAuto(false);
+                  }}
+                  style={styles.clearButton}
+                >
+                  <Ionicons name="close-circle" size={18} color="#666" />
+                </TouchableOpacity>
+              )}
+            </View>
 
-              <Text style={styles.guideSubtitle}>지원 앱</Text>
-              <View style={styles.supportedAppsRow}>
-                {['토스증권', '한국투자', '키움증권', '삼성증권', '업비트', '빗썸'].map((app) => (
-                  <View key={app} style={styles.appBadge}>
-                    <Text style={styles.appBadgeText}>{app}</Text>
-                  </View>
+            {/* 검색 드롭다운 */}
+            {showDropdown && (
+              <View style={styles.dropdown}>
+                {searchResults.map((item) => (
+                  <TouchableOpacity
+                    key={item.ticker}
+                    style={styles.dropdownItem}
+                    onPress={() => selectStock(item)}
+                  >
+                    <View style={[styles.categoryBadge, { backgroundColor: getCategoryColor(item.category) + '20' }]}>
+                      <Text style={[styles.categoryBadgeText, { color: getCategoryColor(item.category) }]}>
+                        {getCategoryLabel(item.category)}
+                      </Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.dropdownName}>{item.name}</Text>
+                      <Text style={styles.dropdownTicker}>{item.ticker}</Text>
+                    </View>
+                  </TouchableOpacity>
                 ))}
               </View>
+            )}
+          </View>
 
-              <Text style={styles.guideSubtitle}>캡처 방법</Text>
-              <View style={styles.guideSteps}>
-                <View style={styles.guideStep}>
-                  <Text style={styles.stepNumber}>1</Text>
-                  <Text style={styles.stepText}>
-                    <Text style={styles.stepHighlight}>'내 투자'</Text> 또는{' '}
-                    <Text style={styles.stepHighlight}>'포트폴리오'</Text> 화면으로 이동
-                  </Text>
-                </View>
-                <View style={styles.guideStep}>
-                  <Text style={styles.stepNumber}>2</Text>
-                  <Text style={styles.stepText}>
-                    <Text style={styles.stepHighlight}>수량</Text>과{' '}
-                    <Text style={styles.stepHighlight}>평가금액</Text>이 함께 보이는 화면 캡처
-                  </Text>
-                </View>
-                <View style={styles.guideStep}>
-                  <Text style={styles.stepNumber}>3</Text>
-                  <Text style={styles.stepText}>
-                    팝업이나 알림이 가리지 않도록 주의
-                  </Text>
-                </View>
-              </View>
-
-              <View style={styles.guideTip}>
-                <Ionicons name="bulb" size={16} color="#FFD700" />
-                <Text style={styles.guideTipText}>
-                  토스증권: '내 자산' 탭에서 종목별 평가금액이 보이는 화면을 캡처하세요
-                </Text>
-              </View>
+          {/* 선택된 종목 정보 뱃지 */}
+          {selectedStock && (
+            <View style={styles.selectedBadge}>
+              <View style={[styles.selectedBadgeDot, { backgroundColor: getCategoryColor(selectedStock.category) }]} />
+              <Text style={styles.selectedBadgeName}>{selectedStock.name}</Text>
+              <Text style={styles.selectedBadgeTicker}>({selectedStock.ticker})</Text>
             </View>
-          </>
-        ) : (
-          <View style={styles.imageContainer}>
-            <View style={{ position: 'relative' }}>
-              <Image
-                source={{ uri: image }}
-                style={[
-                  styles.image,
-                  {
-                    width: imageWidth,
-                    height: imageHeight,
-                  },
-                  loading && { opacity: 0.4 },
-                ]}
-                resizeMode="contain"
+          )}
+
+          {/* 2. 수량 입력 */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>보유 수량</Text>
+            <TextInput
+              style={styles.numberInput}
+              placeholder="예: 100"
+              placeholderTextColor="#555"
+              value={quantity}
+              onChangeText={(text) => setQuantity(text.replace(/[^0-9.]/g, ''))}
+              keyboardType="decimal-pad"
+              selectTextOnFocus
+            />
+          </View>
+
+          {/* 3. 현재가 */}
+          <View style={styles.inputGroup}>
+            <View style={styles.priceLabelRow}>
+              <Text style={styles.inputLabel}>매수 단가</Text>
+              {priceLoading && (
+                <View style={styles.priceLoadingRow}>
+                  <ActivityIndicator size="small" color={COLORS.primary} />
+                  <Text style={styles.priceLoadingText}>현재가 조회 중...</Text>
+                </View>
+              )}
+              {priceAuto && !priceLoading && (
+                <View style={styles.autoTag}>
+                  <Text style={styles.autoTagText}>자동</Text>
+                </View>
+              )}
+            </View>
+            <View style={styles.priceInputRow}>
+              <Text style={styles.currencySymbol}>{currencySymbol}</Text>
+              <TextInput
+                style={styles.priceInput}
+                placeholder="0"
+                placeholderTextColor="#555"
+                value={price}
+                onChangeText={(text) => {
+                  setPrice(text.replace(/[^0-9.]/g, ''));
+                  setPriceAuto(false);
+                }}
+                keyboardType="decimal-pad"
+                selectTextOnFocus
               />
-              {loading && (
-                <View style={styles.analysisOverlay}>
-                  <ActivityIndicator size="large" color="#4CAF50" />
-                  <Text style={styles.analysisOverlayText}>AI가 자산을 분석하고 있어요...</Text>
-                </View>
-              )}
             </View>
-            <TouchableOpacity
-              style={styles.changeImageButton}
-              onPress={pickImage}
-              disabled={loading}
-            >
-              <Text style={styles.changeImageText}>
-                {loading ? '분석 중...' : '다른 이미지 선택'}
+            {!priceLoading && !priceAuto && selectedStock && (
+              <Text style={styles.priceHint}>
+                현재가를 가져올 수 없습니다. 직접 입력해주세요.
               </Text>
-            </TouchableOpacity>
+            )}
           </View>
-        )}
 
-        {/* 분석된 데이터 표시 */}
-        {analyzedData.length > 0 && (
-          <View style={styles.dataContainer}>
-            <Text style={styles.dataTitle}>추출된 자산 목록</Text>
-            {analyzedData.map((item, index) => (
-              <View
-                key={index}
-                style={[
-                  styles.dataItem,
-                  item.needsReview && styles.dataItemWarning
-                ]}
-              >
-                <View style={styles.dataItemHeader}>
-                  <Text style={styles.dataItemText}>
-                    {item.name} ({item.ticker})
-                  </Text>
-                  {item.needsReview && (
-                    <Ionicons name="warning" size={16} color="#CF6679" />
-                  )}
-                </View>
-                <Text style={styles.dataItemText}>
-                  수량: {item.amount || 0}, 가격: {(item.price || 0).toLocaleString()}원
-                </Text>
-                {item.needsReview && (
-                  <Text style={styles.warningText}>⚠️ 확인 필요</Text>
-                )}
-              </View>
-            ))}
-
-            {/* 입력 모드 선택 */}
-            <View style={styles.inputModeSection}>
-              <Text style={styles.inputModeTitle}>등록 방식</Text>
-              <View style={styles.inputModeButtons}>
-                <TouchableOpacity
-                  style={[
-                    styles.modeButton,
-                    inputMode === 'self_declared' && styles.modeButtonActive
-                  ]}
-                  onPress={() => setInputMode('self_declared')}
-                >
-                  <Ionicons
-                    name="create-outline"
-                    size={18}
-                    color={inputMode === 'self_declared' ? '#FFFFFF' : '#888888'}
-                  />
-                  <Text style={[
-                    styles.modeButtonText,
-                    inputMode === 'self_declared' && styles.modeButtonTextActive
-                  ]}>
-                    수동 입력
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[
-                    styles.modeButton,
-                    inputMode === 'ocr_verified' && styles.modeButtonVerified
-                  ]}
-                  onPress={() => handleVerification()}
-                  disabled={verifying}
-                >
-                  {verifying ? (
-                    <>
-                      <ActivityIndicator size="small" color="#4CAF50" />
-                      <Text style={[styles.modeButtonText, { color: '#4CAF50' }]}>검증 중...</Text>
-                    </>
-                  ) : (
-                    <>
-                      <Ionicons
-                        name="shield-checkmark"
-                        size={18}
-                        color={inputMode === 'ocr_verified' ? '#FFFFFF' : '#4CAF50'}
-                      />
-                      <Text style={[
-                        styles.modeButtonText,
-                        inputMode === 'ocr_verified' && styles.modeButtonTextActive,
-                        inputMode !== 'ocr_verified' && { color: '#4CAF50' }
-                      ]}>
-                        {inputMode === 'ocr_verified' ? '검증됨' : 'OCR 검증'}
-                      </Text>
-                    </>
-                  )}
-                </TouchableOpacity>
-              </View>
-
-              {inputMode === 'self_declared' && (
-                <Text style={styles.modeNote}>
-                  * 수동 입력은 VIP 라운지 입장 조건에 포함되지 않습니다
-                </Text>
-              )}
-              {inputMode === 'ocr_verified' && (
-                <Text style={[styles.modeNote, { color: '#4CAF50' }]}>
-                  ✓ OCR 검증 완료! VIP 라운지 입장 조건에 포함됩니다
-                </Text>
-              )}
+          {/* 4. 평가금액 */}
+          {totalValue > 0 && (
+            <View style={styles.totalRow}>
+              <Text style={styles.totalLabel}>평가금액</Text>
+              <Text style={styles.totalValue}>
+                {currencySymbol}{totalValue.toLocaleString()}
+              </Text>
             </View>
+          )}
 
-            {/* 저장 버튼 */}
+          {/* 5. 등록 버튼 */}
+          <TouchableOpacity
+            style={[
+              styles.saveButton,
+              (!selectedStock || !quantity || !price) && styles.saveButtonDisabled,
+            ]}
+            onPress={handleSave}
+            disabled={saving || !selectedStock || !quantity || !price}
+          >
+            {saving ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <>
+                <Ionicons name={editingAsset ? 'checkmark-circle' : 'add-circle'} size={20} color="#FFFFFF" />
+                <Text style={styles.saveButtonText}>
+                  {editingAsset ? '수정 완료' : '등록'}
+                </Text>
+              </>
+            )}
+          </TouchableOpacity>
+
+          {/* 수정 모드: 취소 버튼 */}
+          {editingAsset && (
             <TouchableOpacity
-              style={[
-                styles.saveButton,
-                inputMode === 'ocr_verified' && styles.saveButtonVerified
-              ]}
-              onPress={saveAssets}
-              disabled={loading}
+              style={styles.cancelEditButton}
+              onPress={resetForm}
             >
-              {loading ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                <>
-                  <Ionicons
-                    name={inputMode === 'ocr_verified' ? 'shield-checkmark' : 'save'}
-                    size={20}
-                    color="#FFFFFF"
-                  />
-                  <Text style={styles.saveButtonText}>
-                    {inputMode === 'ocr_verified' ? '검증된 자산 등록' : '자산 등록 (수동)'}
-                  </Text>
-                </>
-              )}
+              <Text style={styles.cancelEditText}>수정 취소</Text>
             </TouchableOpacity>
+          )}
+        </View>
+
+        {/* ─── 최근 추가 종목 ─── */}
+        {recentAssets.length > 0 && !editingAsset && (
+          <View style={styles.sectionCard}>
+            <Text style={styles.sectionTitle}>최근 추가 종목</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.recentScroll}>
+              {recentAssets.map((recent) => (
+                <TouchableOpacity
+                  key={recent.ticker}
+                  style={styles.recentChip}
+                  onPress={() => selectRecentAsset(recent)}
+                >
+                  <View style={[styles.recentDot, { backgroundColor: getCategoryColor(recent.category) }]} />
+                  <Text style={styles.recentChipText}>{recent.name}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
           </View>
         )}
+
+        {/* ─── 보유 자산 목록 ─── */}
+        <View style={styles.sectionCard}>
+          <View style={styles.existingHeader}>
+            <Text style={styles.sectionTitle}>보유 자산</Text>
+            {existingAssets.length > 0 && (
+              <Text style={styles.assetCount}>{existingAssets.length}개</Text>
+            )}
+          </View>
+
+          {loadingAssets ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color={COLORS.primary} />
+              <Text style={styles.loadingText}>자산 불러오는 중...</Text>
+            </View>
+          ) : existingAssets.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Ionicons name="wallet-outline" size={40} color="#444" />
+              <Text style={styles.emptyText}>등록된 자산이 없습니다</Text>
+              <Text style={styles.emptySubtext}>위에서 종목을 검색하여 추가하세요</Text>
+            </View>
+          ) : (
+            existingAssets.map((asset) => (
+              <View key={asset.id} style={styles.assetRow}>
+                <TouchableOpacity
+                  style={styles.assetInfo}
+                  onPress={() => startEditAsset(asset)}
+                  activeOpacity={0.7}
+                >
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.assetName}>{asset.name}</Text>
+                    <Text style={styles.assetTicker}>{asset.ticker}</Text>
+                  </View>
+                  <View style={styles.assetValues}>
+                    <Text style={styles.assetValue}>
+                      {formatKRW(asset.current_value)}
+                    </Text>
+                    <Text style={styles.assetQuantity}>
+                      {asset.quantity}주 / {getCurrencySymbol(asset.ticker)}{(asset.avg_price || 0).toLocaleString()}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+                <View style={styles.assetActions}>
+                  <TouchableOpacity
+                    style={styles.editBtn}
+                    onPress={() => startEditAsset(asset)}
+                  >
+                    <Ionicons name="create-outline" size={16} color="#888" />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.deleteBtn}
+                    onPress={() => deleteAsset(asset)}
+                  >
+                    <Ionicons name="trash-outline" size={16} color="#CF6679" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))
+          )}
+        </View>
+
+        {/* 하단 여백 */}
+        <View style={{ height: 40 }} />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
+// ── 스타일 ──
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
+    backgroundColor: COLORS.background,
   },
   scrollContent: {
     padding: 16,
   },
+
+  // 헤더
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 20,
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: '700',
     color: '#FFFFFF',
   },
-  imagePlaceholder: {
-    height: 250,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#4CAF50',
-    borderStyle: 'dashed',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 24,
-    backgroundColor: '#1E1E1E',
-  },
-  placeholderText: {
-    marginTop: 12,
-    fontSize: 16,
-    color: '#AAAAAA',
-  },
-  imageContainer: {
-    marginBottom: 24,
-  },
-  analysisOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 12,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 12,
-  },
-  analysisOverlayText: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  image: {
-    borderRadius: 12,
-    marginBottom: 12,
-    alignSelf: 'center',
-    backgroundColor: '#1E1E1E',
-  },
-  changeImageButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    backgroundColor: '#4CAF50',
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  changeImageText: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  dataContainer: {
-    backgroundColor: '#1E1E1E',
-    borderRadius: 12,
-    padding: 16,
-  },
-  dataTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    marginBottom: 12,
-  },
-  dataItem: {
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    backgroundColor: '#2A2A2A',
-    borderRadius: 8,
-    marginBottom: 8,
-  },
-  dataItemWarning: {
-    borderWidth: 1,
-    borderColor: '#CF6679',
-    backgroundColor: '#2A2020',
-  },
-  dataItemHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  dataItemText: {
-    color: '#CCCCCC',
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  warningText: {
-    color: '#CF6679',
-    fontSize: 12,
-    marginTop: 4,
-  },
-  saveButton: {
-    marginTop: 16,
-    paddingVertical: 14,
-    backgroundColor: '#666666',
-    borderRadius: 8,
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  saveButtonVerified: {
-    backgroundColor: '#4CAF50',
-  },
-  saveButtonText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 16,
-  },
-  // 입력 모드 섹션
-  inputModeSection: {
-    marginTop: 16,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#333333',
-  },
-  inputModeTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#AAAAAA',
-    marginBottom: 12,
-  },
-  inputModeButtons: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  modeButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 12,
-    backgroundColor: '#2A2A2A',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#333333',
-  },
-  modeButtonActive: {
-    backgroundColor: '#555555',
-    borderColor: '#666666',
-  },
-  modeButtonVerified: {
-    backgroundColor: '#1B4D1B',
-    borderColor: '#4CAF50',
-  },
-  modeButtonText: {
-    fontSize: 14,
-    color: '#888888',
-  },
-  modeButtonTextActive: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
-  modeNote: {
-    fontSize: 12,
-    color: '#888888',
-    marginTop: 10,
-    textAlign: 'center',
-    fontStyle: 'italic',
-  },
-  // 스크린샷 가이드 스타일
-  guideContainer: {
-    backgroundColor: '#1A1A1A',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: '#2A2A2A',
-  },
-  guideHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 16,
-  },
-  guideTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  guideSubtitle: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#888888',
-    marginBottom: 8,
-    marginTop: 12,
-  },
-  supportedAppsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  appBadge: {
-    backgroundColor: '#2A2A2A',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 12,
-  },
-  appBadgeText: {
-    fontSize: 12,
-    color: '#CCCCCC',
-  },
-  guideSteps: {
-    gap: 10,
-  },
-  guideStep: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
-  },
-  stepNumber: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: '#4CAF50',
-    color: '#000000',
-    fontSize: 12,
-    fontWeight: '700',
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-  stepText: {
-    flex: 1,
-    fontSize: 13,
-    color: '#CCCCCC',
-    lineHeight: 20,
-  },
-  stepHighlight: {
-    color: '#4CAF50',
-    fontWeight: '600',
-  },
-  guideTip: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 8,
-    marginTop: 16,
-    padding: 12,
-    backgroundColor: 'rgba(255, 215, 0, 0.1)',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 215, 0, 0.2)',
-  },
-  guideTipText: {
-    flex: 1,
-    fontSize: 12,
-    color: '#FFD700',
-    lineHeight: 18,
-  },
+
   // 부동산 바로가기
   realEstateShortcut: {
     flexDirection: 'row',
@@ -889,11 +760,377 @@ const styles = StyleSheet.create({
   realEstateTitle: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#4CAF50',
+    color: COLORS.primary,
   },
   realEstateDesc: {
     fontSize: 12,
     color: '#888',
     marginTop: 2,
+  },
+
+  // 섹션 카드
+  sectionCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 16,
+    padding: 18,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: '#252525',
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 4,
+  },
+  sectionSubtitle: {
+    fontSize: 12,
+    color: '#888',
+    marginBottom: 16,
+  },
+
+  // 입력 그룹
+  inputGroup: {
+    marginBottom: 14,
+    zIndex: 1,
+  },
+  inputLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#AAA',
+    marginBottom: 6,
+  },
+
+  // 검색 인풋
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#2A2A2A',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  searchIcon: {
+    marginLeft: 12,
+  },
+  searchInput: {
+    flex: 1,
+    height: 44,
+    paddingHorizontal: 10,
+    fontSize: 15,
+    color: '#FFFFFF',
+  },
+  clearButton: {
+    padding: 10,
+  },
+
+  // 드롭다운
+  dropdown: {
+    backgroundColor: '#252525',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#333',
+    marginTop: 4,
+    maxHeight: 240,
+    overflow: 'hidden',
+  },
+  dropdownItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#2A2A2A',
+    gap: 10,
+  },
+  categoryBadge: {
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  categoryBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  dropdownName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFF',
+  },
+  dropdownTicker: {
+    fontSize: 11,
+    color: '#888',
+    marginTop: 1,
+  },
+
+  // 선택된 종목 뱃지
+  selectedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(76, 175, 80, 0.08)',
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    marginBottom: 14,
+    gap: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(76, 175, 80, 0.2)',
+  },
+  selectedBadgeDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  selectedBadgeName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFF',
+  },
+  selectedBadgeTicker: {
+    fontSize: 12,
+    color: '#888',
+  },
+
+  // 수량 입력
+  numberInput: {
+    height: 44,
+    backgroundColor: '#2A2A2A',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#333',
+    paddingHorizontal: 14,
+    fontSize: 15,
+    color: '#FFFFFF',
+  },
+
+  // 가격 입력
+  priceLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  priceLoadingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  priceLoadingText: {
+    fontSize: 11,
+    color: COLORS.primary,
+  },
+  autoTag: {
+    backgroundColor: 'rgba(76, 175, 80, 0.12)',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  autoTagText: {
+    fontSize: 10,
+    color: COLORS.primary,
+    fontWeight: '700',
+  },
+  priceInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#2A2A2A',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  currencySymbol: {
+    fontSize: 15,
+    color: '#888',
+    paddingLeft: 14,
+    fontWeight: '600',
+  },
+  priceInput: {
+    flex: 1,
+    height: 44,
+    paddingHorizontal: 8,
+    fontSize: 15,
+    color: '#FFFFFF',
+  },
+  priceHint: {
+    fontSize: 11,
+    color: '#888',
+    marginTop: 4,
+    fontStyle: 'italic',
+  },
+
+  // 평가금액
+  totalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: 'rgba(76, 175, 80, 0.06)',
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(76, 175, 80, 0.12)',
+  },
+  totalLabel: {
+    fontSize: 13,
+    color: '#AAA',
+    fontWeight: '600',
+  },
+  totalValue: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: COLORS.primary,
+  },
+
+  // 저장 버튼
+  saveButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: COLORS.primary,
+    paddingVertical: 14,
+    borderRadius: 12,
+  },
+  saveButtonDisabled: {
+    backgroundColor: '#444',
+    opacity: 0.6,
+  },
+  saveButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+
+  // 수정 취소
+  cancelEditButton: {
+    alignItems: 'center',
+    paddingVertical: 10,
+    marginTop: 8,
+  },
+  cancelEditText: {
+    fontSize: 13,
+    color: '#888',
+  },
+
+  // 최근 종목
+  recentScroll: {
+    marginTop: 8,
+  },
+  recentChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#2A2A2A',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginRight: 8,
+    gap: 6,
+  },
+  recentDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  recentChipText: {
+    fontSize: 13,
+    color: '#CCC',
+    fontWeight: '500',
+  },
+
+  // 보유 자산 목록
+  existingHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  assetCount: {
+    fontSize: 12,
+    color: '#888',
+    fontWeight: '600',
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 20,
+    gap: 8,
+  },
+  loadingText: {
+    fontSize: 13,
+    color: '#888',
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    paddingVertical: 30,
+    gap: 8,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: '#888',
+    fontWeight: '600',
+  },
+  emptySubtext: {
+    fontSize: 12,
+    color: '#555',
+  },
+
+  // 자산 행
+  assetRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#252525',
+  },
+  assetInfo: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  assetName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFF',
+  },
+  assetTicker: {
+    fontSize: 11,
+    color: '#888',
+    marginTop: 2,
+  },
+  assetValues: {
+    alignItems: 'flex-end',
+    marginRight: 8,
+  },
+  assetValue: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#FFF',
+  },
+  assetQuantity: {
+    fontSize: 11,
+    color: '#888',
+    marginTop: 2,
+  },
+  assetActions: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  editBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: '#2A2A2A',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  deleteBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: 'rgba(207, 102, 121, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

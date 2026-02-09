@@ -1,9 +1,11 @@
 /**
- * 배분 이탈도 섹션 — 목표 vs 현재 배분 비교 + 이탈도 바 차트
+ * 배분 이탈도 섹션 — 목표 vs 현재 배분 비교 + 이탈도 바 차트 + 파이 차트
  *
  * 역할: 리밸런싱의 핵심 가치 — "어디서 얼마나 벗어났는지"를 시각화
  * 데이터: rebalanceScore.ts의 classifyAsset으로 현재 배분 계산
  *         AsyncStorage에서 목표 배분 로드 (설정 안 했으면 기본값)
+ *
+ * [개선] 텍스트(바 차트) + 파이 차트 토글 뷰 추가
  */
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -19,6 +21,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { Asset } from '../../types/asset';
 import { classifyAsset, AssetCategory } from '../../services/rebalanceScore';
+import AllocationPieChart, { PieSlice } from '../charts/AllocationPieChart';
 
 // ── 카테고리 설정 ──
 
@@ -93,12 +96,16 @@ interface AllocationDriftSectionProps {
   totalAssets: number;
 }
 
+// ── 뷰 모드: 텍스트(바 차트) vs 파이 차트 ──
+type ViewMode = 'bar' | 'pie';
+
 export default function AllocationDriftSection({
   assets,
   totalAssets,
 }: AllocationDriftSectionProps) {
   const [showDetail, setShowDetail] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>('bar');
   const [target, setTarget] = useState<Record<AssetCategory, number>>(DEFAULT_TARGET);
   const [editValues, setEditValues] = useState<Record<AssetCategory, string>>({} as any);
 
@@ -125,6 +132,28 @@ export default function AllocationDriftSection({
 
   const driftColor = totalDrift <= 5 ? '#4CAF50' : totalDrift <= 15 ? '#FFC107' : '#CF6679';
   const driftLabel = totalDrift <= 5 ? '균형' : totalDrift <= 15 ? '소폭 이탈' : '조정 필요';
+
+  // 파이 차트 슬라이스 데이터 (현재 배분 기준)
+  const pieSlices: PieSlice[] = useMemo(() => {
+    // 현재 배분 금액 계산
+    const currentMap: Record<AssetCategory, number> = {
+      cash: 0, bond: 0, large_cap: 0, realestate: 0, bitcoin: 0, altcoin: 0,
+    };
+    assets.forEach(asset => {
+      const cat = classifyAsset(asset);
+      currentMap[cat] += asset.currentValue;
+    });
+
+    return CATEGORIES
+      .filter(cat => currentMap[cat.key] > 0)
+      .map(cat => ({
+        key: cat.key,
+        label: cat.label,
+        value: currentMap[cat.key],
+        color: cat.color,
+        icon: cat.icon,
+      }));
+  }, [assets]);
 
   // 편집 모드 시작
   const startEditing = useCallback(() => {
@@ -187,47 +216,84 @@ export default function AllocationDriftSection({
         </View>
       </TouchableOpacity>
 
-      {/* 이탈도 바 차트 (항상 표시) */}
-      <View style={s.driftChart}>
-        {driftItems.map((item) => {
-          // 0%인 카테고리는 표시하지 않음 (현재도 목표도 0)
-          if (item.currentPct === 0 && item.targetPct === 0) return null;
-          const maxPct = Math.max(item.currentPct, item.targetPct, 1);
-          const currentWidth = Math.min((item.currentPct / maxPct) * 100, 100);
-          const targetWidth = Math.min((item.targetPct / maxPct) * 100, 100);
+      {/* 뷰 모드 토글 */}
+      <View style={s.viewToggle}>
+        <TouchableOpacity
+          style={[s.toggleBtn, viewMode === 'bar' && s.toggleBtnActive]}
+          onPress={() => setViewMode('bar')}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="bar-chart-outline" size={14} color={viewMode === 'bar' ? '#FFF' : '#888'} />
+          <Text style={[s.toggleText, viewMode === 'bar' && s.toggleTextActive]}>바 차트</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[s.toggleBtn, viewMode === 'pie' && s.toggleBtnActive]}
+          onPress={() => setViewMode('pie')}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="pie-chart-outline" size={14} color={viewMode === 'pie' ? '#FFF' : '#888'} />
+          <Text style={[s.toggleText, viewMode === 'pie' && s.toggleTextActive]}>파이 차트</Text>
+        </TouchableOpacity>
+      </View>
 
-          return (
-            <View key={item.category.key} style={s.driftRow}>
-              <Text style={s.driftIcon}>{item.category.icon}</Text>
-              <View style={s.driftBarContainer}>
-                {/* 목표 바 (배경) */}
-                <View style={[s.driftBarTarget, { width: `${targetWidth}%`, borderColor: item.category.color + '40' }]} />
-                {/* 현재 바 (전경) */}
-                <View style={[s.driftBarCurrent, { width: `${currentWidth}%`, backgroundColor: item.category.color }]} />
-              </View>
-              <View style={s.driftNumbers}>
-                <Text style={[s.driftCurrent, { color: item.category.color }]}>
-                  {item.currentPct.toFixed(0)}%
-                </Text>
-                <Text style={s.driftSeparator}>/</Text>
-                <Text style={s.driftTargetNum}>{item.targetPct}%</Text>
-              </View>
+      {/* 파이 차트 모드 */}
+      {viewMode === 'pie' && (
+        <View style={s.pieContainer}>
+          <AllocationPieChart
+            slices={pieSlices}
+            totalValue={totalAssets}
+            size={180}
+            strokeWidth={28}
+            showLegend={true}
+          />
+        </View>
+      )}
+
+      {/* 이탈도 바 차트 (바 모드에서만 표시) */}
+      {viewMode === 'bar' && (
+        <>
+          <View style={s.driftChart}>
+            {driftItems.map((item) => {
+              // 0%인 카테고리는 표시하지 않음 (현재도 목표도 0)
+              if (item.currentPct === 0 && item.targetPct === 0) return null;
+              const maxPct = Math.max(item.currentPct, item.targetPct, 1);
+              const currentWidth = Math.min((item.currentPct / maxPct) * 100, 100);
+              const targetWidth = Math.min((item.targetPct / maxPct) * 100, 100);
+
+              return (
+                <View key={item.category.key} style={s.driftRow}>
+                  <Text style={s.driftIcon}>{item.category.icon}</Text>
+                  <View style={s.driftBarContainer}>
+                    {/* 목표 바 (배경) */}
+                    <View style={[s.driftBarTarget, { width: `${targetWidth}%`, borderColor: item.category.color + '40' }]} />
+                    {/* 현재 바 (전경) */}
+                    <View style={[s.driftBarCurrent, { width: `${currentWidth}%`, backgroundColor: item.category.color }]} />
+                  </View>
+                  <View style={s.driftNumbers}>
+                    <Text style={[s.driftCurrent, { color: item.category.color }]}>
+                      {item.currentPct.toFixed(0)}%
+                    </Text>
+                    <Text style={s.driftSeparator}>/</Text>
+                    <Text style={s.driftTargetNum}>{item.targetPct}%</Text>
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+
+          {/* 범례 */}
+          <View style={s.legend}>
+            <View style={s.legendItem}>
+              <View style={[s.legendBar, { backgroundColor: '#4CAF50' }]} />
+              <Text style={s.legendText}>현재</Text>
             </View>
-          );
-        })}
-      </View>
-
-      {/* 범례 */}
-      <View style={s.legend}>
-        <View style={s.legendItem}>
-          <View style={[s.legendBar, { backgroundColor: '#4CAF50' }]} />
-          <Text style={s.legendText}>현재</Text>
-        </View>
-        <View style={s.legendItem}>
-          <View style={[s.legendBar, { backgroundColor: 'transparent', borderWidth: 1, borderColor: '#666' }]} />
-          <Text style={s.legendText}>목표</Text>
-        </View>
-      </View>
+            <View style={s.legendItem}>
+              <View style={[s.legendBar, { backgroundColor: 'transparent', borderWidth: 1, borderColor: '#666' }]} />
+              <Text style={s.legendText}>목표</Text>
+            </View>
+          </View>
+        </>
+      )}
 
       {/* 상세 (펼침) */}
       {showDetail && !isEditing && (
@@ -375,4 +441,14 @@ const s = StyleSheet.create({
   editCancelText: { fontSize: 12, color: '#888', fontWeight: '600' },
   editSave: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, backgroundColor: 'rgba(76,175,80,0.15)' },
   editSaveText: { fontSize: 12, color: '#4CAF50', fontWeight: '700' },
+
+  // 뷰 모드 토글
+  viewToggle: { flexDirection: 'row', justifyContent: 'center', gap: 6, marginBottom: 14 },
+  toggleBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.04)' },
+  toggleBtnActive: { backgroundColor: 'rgba(76,175,80,0.15)' },
+  toggleText: { fontSize: 11, color: '#888', fontWeight: '600' },
+  toggleTextActive: { color: '#FFF' },
+
+  // 파이 차트 컨테이너
+  pieContainer: { alignItems: 'center', paddingVertical: 8 },
 });

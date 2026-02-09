@@ -29,6 +29,25 @@ import { COLORS } from '../../styles/theme';
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 // ============================================================================
+// 무료 체험 기간 상수
+// ============================================================================
+
+/** 무료 체험 종료일 (5월 31일) */
+const FREE_TRIAL_END = new Date('2026-05-31T23:59:59');
+
+/** 무료 체험 기간 중인지 확인 */
+function isFreeTrial(): boolean {
+  return new Date() <= FREE_TRIAL_END;
+}
+
+/** 남은 일수 계산 (D-xxx) */
+function getDaysRemaining(): number {
+  const now = new Date();
+  const diff = FREE_TRIAL_END.getTime() - now.getTime();
+  return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+}
+
+// ============================================================================
 // Props 인터페이스
 // ============================================================================
 
@@ -125,6 +144,11 @@ export default React.forwardRef<View, ContextBriefCardProps>(function ContextBri
   isLoading,
 }: ContextBriefCardProps, ref) {
   const sentimentColor = SENTIMENT_COLORS[sentiment];
+  const freeTrial = isFreeTrial();
+  const daysRemaining = getDaysRemaining();
+
+  // 무료 체험 기간에는 프리미엄처럼 취급
+  const effectivePremium = isPremium || freeTrial;
 
   // ──────────────────────────────────────────────────────────────────────
   // 로딩 상태
@@ -175,6 +199,18 @@ export default React.forwardRef<View, ContextBriefCardProps>(function ContextBri
   // ──────────────────────────────────────────────────────────────────────
   return (
     <View ref={ref} style={styles.card}>
+      {/* 무료 체험 배너 (5/31까지) */}
+      {freeTrial && (
+        <View style={styles.freeTrialBanner}>
+          <Text style={styles.freeTrialText}>
+            5월 31일까지 모든 기능 무료!
+          </Text>
+          <View style={styles.freeTrialCountdown}>
+            <Text style={styles.freeTrialDday}>D-{daysRemaining}</Text>
+          </View>
+        </View>
+      )}
+
       {/* 상단: 센티먼트 배지 */}
       <View style={[styles.sentimentBadge, { backgroundColor: sentimentColor }]}>
         <Text style={styles.sentimentEmoji}>
@@ -212,13 +248,13 @@ export default React.forwardRef<View, ContextBriefCardProps>(function ContextBri
 
       {/* 하단: 프리미엄 게이트 + 공유 */}
       <View style={styles.footer}>
-        {/* [더 알아보기] 버튼 */}
+        {/* [더 알아보기] 버튼 — 무료 체험 기간에는 잠금 해제 */}
         {onLearnMore && (
           <TouchableOpacity style={styles.learnMoreButton} onPress={onLearnMore}>
             <Text style={styles.learnMoreText}>
-              {isPremium ? '더 알아보기' : '🔒 프리미엄'}
+              {effectivePremium ? '더 알아보기' : '🔒 프리미엄'}
             </Text>
-            {isPremium ? (
+            {effectivePremium ? (
               <Ionicons name="arrow-forward" size={18} color={COLORS.primary} />
             ) : (
               <Text style={styles.premiumPrice}>월 ₩2,900</Text>
@@ -362,5 +398,36 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.surfaceLight,
     borderRadius: 4,
     marginVertical: 4,
+  },
+  // 무료 체험 배너 스타일
+  freeTrialBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(76, 175, 80, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(76, 175, 80, 0.3)',
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    marginBottom: 8,
+  },
+  freeTrialText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.primary,
+    flex: 1,
+  },
+  freeTrialCountdown: {
+    backgroundColor: COLORS.primary,
+    borderRadius: 8,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    marginLeft: 8,
+  },
+  freeTrialDday: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
 });

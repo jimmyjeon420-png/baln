@@ -26,6 +26,9 @@ export type VoteChoice = 'YES' | 'NO';
 // DB 테이블 인터페이스
 // ============================================================================
 
+/** 난이도 레벨 */
+export type PollDifficulty = 'easy' | 'medium' | 'hard';
+
 /** prediction_polls 테이블 */
 export interface PredictionPoll {
   id: string;
@@ -43,6 +46,9 @@ export interface PredictionPoll {
   source: string | null;
   created_at: string;
   resolved_at: string | null;
+  difficulty?: PollDifficulty;      // 난이도 (easy/medium/hard)
+  context_hint?: string | null;     // 복기 시 학습 포인트 힌트
+  related_ticker?: string | null;   // 관련 종목 티커
 }
 
 /** prediction_votes 테이블 */
@@ -107,6 +113,17 @@ export const POLL_CATEGORY_INFO: Record<PollCategoryFilter, {
   crypto:  { label: '코인',     emoji: '₿',  color: '#F7931A' },
   macro:   { label: '거시경제', emoji: '🌍', color: '#2196F3' },
   event:   { label: '이벤트',   emoji: '⚡', color: '#FF9800' },
+};
+
+/** 난이도별 UI 정보 */
+export const POLL_DIFFICULTY_INFO: Record<PollDifficulty, {
+  label: string;
+  emoji: string;
+  color: string;
+}> = {
+  easy:   { label: '쉬움', emoji: '🟢', color: '#4CAF50' },
+  medium: { label: '보통', emoji: '🟡', color: '#FF9800' },
+  hard:   { label: '어려움', emoji: '🔴', color: '#F44336' },
 };
 
 // ============================================================================

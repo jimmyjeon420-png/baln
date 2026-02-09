@@ -62,6 +62,12 @@ interface HealthSignalCardProps {
     score: number;
     weight: number; // 0~100 (가중치 %)
   }>;
+
+  /** 총 자산 금액 (원, optional) */
+  totalAssets?: number;
+
+  /** 전일 대비 수익률 (%, optional) */
+  dailyChangeRate?: number | null;
 }
 
 // ============================================================================
@@ -103,6 +109,24 @@ function formatDate(): string {
 }
 
 // ============================================================================
+// 금액 포맷 유틸 (억/만 단위)
+// ============================================================================
+
+function formatAssetAmount(amount: number): string {
+  if (amount >= 100000000) {
+    // 1억 이상: "1.2억"
+    const eok = amount / 100000000;
+    return eok >= 10 ? `${Math.round(eok)}억` : `${eok.toFixed(1)}억`;
+  }
+  if (amount >= 10000) {
+    // 1만 이상: "5,000만"
+    const man = Math.round(amount / 10000);
+    return `${man.toLocaleString()}만`;
+  }
+  return `${amount.toLocaleString()}`;
+}
+
+// ============================================================================
 // 메인 컴포넌트
 // ============================================================================
 
@@ -115,6 +139,8 @@ export default function HealthSignalCard({
   isLoading,
   onAddAssets,
   healthFactors,
+  totalAssets,
+  dailyChangeRate,
 }: HealthSignalCardProps) {
   const [showDetail, setShowDetail] = useState(false);
   const signalColor = getSignalColor(healthScore);
@@ -180,6 +206,28 @@ export default function HealthSignalCard({
           <Text style={styles.scoreMax}>100</Text>
         </View>
       </TouchableOpacity>
+
+      {/* 총 자산 요약 한 줄 (Pulse) */}
+      {totalAssets != null && totalAssets > 0 && (
+        <View style={styles.assetPulseRow}>
+          <Text style={styles.assetPulseText}>
+            총 자산 {formatAssetAmount(totalAssets)}
+          </Text>
+          {dailyChangeRate != null && (
+            <>
+              <Text style={styles.assetPulseDivider}> | </Text>
+              <Text
+                style={[
+                  styles.assetPulseChange,
+                  { color: dailyChangeRate >= 0 ? '#4CAF50' : '#CF6679' },
+                ]}
+              >
+                어제 대비 {dailyChangeRate >= 0 ? '+' : ''}{dailyChangeRate.toFixed(1)}%
+              </Text>
+            </>
+          )}
+        </View>
+      )}
 
       {/* 하단: 관심자산 미니 신호등 */}
       {assetSignals.length > 0 && (
@@ -335,8 +383,32 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: COLORS.textPrimary,
   },
+  // 총 자산 Pulse 행
+  assetPulseRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    backgroundColor: COLORS.surfaceLight,
+    borderRadius: 12,
+    marginTop: 16,
+  },
+  assetPulseText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+  },
+  assetPulseDivider: {
+    fontSize: 14,
+    color: COLORS.textTertiary,
+  },
+  assetPulseChange: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
   assetsArea: {
-    marginTop: 20,
+    marginTop: 12,
   },
   assetsList: {
     flexDirection: 'row',

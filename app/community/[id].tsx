@@ -55,8 +55,10 @@ import {
   getRelativeTime,
 } from '../../src/utils/communityUtils';
 import CommentItem from '../../src/components/community/CommentItem';
+import ReplySection from '../../src/components/community/ReplySection';
 import ReportModal from '../../src/components/community/ReportModal';
 import { useAuth } from '../../src/context/AuthContext';
+import { useMyBookmarks, useToggleBookmark } from '../../src/hooks/useBookmarks';
 import { validateContent, getViolationMessage } from '../../src/services/contentFilter';
 
 export default function PostDetailScreen() {
@@ -92,6 +94,11 @@ export default function PostDetailScreen() {
   const likePost = useLikePost();
   const { data: myLikes } = useMyLikes();
   const isLiked = myLikes?.has(id || '') ?? false;
+
+  // 북마크
+  const { data: myBookmarks } = useMyBookmarks();
+  const toggleBookmark = useToggleBookmark();
+  const isBookmarked = myBookmarks?.has(id || '') ?? false;
 
   // 새로고침
   const [refreshing, setRefreshing] = useState(false);
@@ -185,7 +192,7 @@ export default function PostDetailScreen() {
     likeComment.mutate(commentId);
   };
 
-  // ── 댓글 아이템 (최상위 + 대댓글) ──
+  // ── 댓글 아이템 (최상위 + 답글 섹션) ──
   const renderComment = ({ item }: { item: CommunityComment }) => {
     const replies = comments?.filter((c) => c.parent_id === item.id) || [];
 
@@ -206,23 +213,20 @@ export default function PostDetailScreen() {
           isDeleting={deleteComment.isPending}
         />
 
-        {/* 대댓글 */}
-        {replies.map((reply) => (
-          <CommentItem
-            key={reply.id}
-            comment={reply}
-            currentUserId={user?.id}
-            isLiked={myCommentLikes?.has(reply.id) ?? false}
-            onLike={handleLikeComment}
-            onDelete={handleDeleteComment}
-            onUpdate={handleUpdateComment}
-            onReply={handleReply}
-            onAuthorPress={handleAuthorPress}
-            onReport={(commentId) => handleReport('comment', commentId)}
-            isUpdating={updateComment.isPending}
-            isDeleting={deleteComment.isPending}
-          />
-        ))}
+        {/* 답글 섹션 (접기/펼치기 + 초록 바 디자인) */}
+        <ReplySection
+          replies={replies}
+          currentUserId={user?.id}
+          myCommentLikes={myCommentLikes ?? new Set()}
+          onLike={handleLikeComment}
+          onDelete={handleDeleteComment}
+          onUpdate={handleUpdateComment}
+          onReply={handleReply}
+          onAuthorPress={handleAuthorPress}
+          onReport={(commentId) => handleReport('comment', commentId)}
+          isUpdating={updateComment.isPending}
+          isDeleting={deleteComment.isPending}
+        />
       </>
     );
   };
@@ -375,6 +379,21 @@ export default function PostDetailScreen() {
             <Ionicons name="chatbubble-outline" size={18} color="#888888" />
             <Text style={styles.postActionText}>{post.comments_count || 0}</Text>
           </View>
+
+          {/* 북마크 */}
+          <TouchableOpacity
+            style={styles.postActionButton}
+            onPress={() => toggleBookmark.mutate(post.id)}
+          >
+            <Ionicons
+              name={isBookmarked ? 'bookmark' : 'bookmark-outline'}
+              size={18}
+              color={isBookmarked ? '#4CAF50' : '#888888'}
+            />
+            <Text style={[styles.postActionText, isBookmarked && { color: '#4CAF50' }]}>
+              {isBookmarked ? '저장됨' : '저장'}
+            </Text>
+          </TouchableOpacity>
 
           {/* 프로필 보기 */}
           <TouchableOpacity

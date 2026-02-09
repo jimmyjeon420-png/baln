@@ -36,7 +36,7 @@ import { updateRealEstatePrices } from './task-f-realestate.ts';
 import { runContextCardGeneration } from './task-g-context-card.ts';
 
 // 공통 유틸 import
-import { supabase, STOCK_LIST, GURU_LIST } from './_shared.ts';
+import { supabase, STOCK_LIST, GURU_LIST, sleep } from './_shared.ts';
 
 // ============================================================================
 // 메인 핸들러
@@ -69,27 +69,72 @@ serve(async (req: Request) => {
     console.log('========================================');
 
     // ========================================================================
-    // Task A~G 병렬 실행 (독립적이므로 동시에 처리)
+    // Task A~G 순차 실행 (Rate Limit 방지: 각 Task 간 2초 지연)
     // ========================================================================
-    const [
-      macroResult,
-      stocksResult,
-      gurusResult,
-      snapshotsResult,
-      predictionsResult,
-      resolveResult,
-      realEstateResult,
-      contextCardResult,
-    ] = await Promise.allSettled([
-      analyzeMacroAndBitcoin(),      // Task A: 거시경제 & 비트코인
-      analyzeAllStocks(),            // Task B: 종목별 퀀트 분석
-      runGuruInsightsAnalysis(),     // Task C: 투자 거장 인사이트
-      takePortfolioSnapshots(),      // Task D: 포트폴리오 스냅샷
-      generatePredictionPolls(),     // Task E-1: 예측 질문 생성
-      resolvePredictionPolls(),      // Task E-2: 예측 정답 판정
-      updateRealEstatePrices(),      // Task F: 부동산 시세 업데이트
-      runContextCardGeneration(),    // Task G: 맥락 카드 생성
-    ]);
+    console.log('[순차 실행] Rate Limit 방지를 위해 Task 간 2초 지연');
+
+    // Task D: 포트폴리오 스냅샷 (Gemini 미사용, DB only - 먼저 실행)
+    console.log('[Task D] 시작: 포트폴리오 스냅샷...');
+    const snapshotsResult = await takePortfolioSnapshots().then(
+      value => ({ status: 'fulfilled' as const, value }),
+      reason => ({ status: 'rejected' as const, reason })
+    );
+    await sleep(2000);
+
+    // Task A: 거시경제 & 비트코인 (Gemini + Search)
+    console.log('[Task A] 시작: 거시경제 & 비트코인...');
+    const macroResult = await analyzeMacroAndBitcoin().then(
+      value => ({ status: 'fulfilled' as const, value }),
+      reason => ({ status: 'rejected' as const, reason })
+    );
+    await sleep(2000);
+
+    // Task B: 종목별 퀀트 분석 (Gemini, 배치 5개씩 - 가장 무거움)
+    console.log('[Task B] 시작: 종목 분석 (35개)...');
+    const stocksResult = await analyzeAllStocks().then(
+      value => ({ status: 'fulfilled' as const, value }),
+      reason => ({ status: 'rejected' as const, reason })
+    );
+    await sleep(2000);
+
+    // Task C: 투자 거장 인사이트 (Gemini)
+    console.log('[Task C] 시작: 투자 거장 인사이트...');
+    const gurusResult = await runGuruInsightsAnalysis().then(
+      value => ({ status: 'fulfilled' as const, value }),
+      reason => ({ status: 'rejected' as const, reason })
+    );
+    await sleep(2000);
+
+    // Task E-1: 예측 질문 생성 (Gemini)
+    console.log('[Task E-1] 시작: 예측 질문 생성...');
+    const predictionsResult = await generatePredictionPolls().then(
+      value => ({ status: 'fulfilled' as const, value }),
+      reason => ({ status: 'rejected' as const, reason })
+    );
+    await sleep(2000);
+
+    // Task E-2: 예측 정답 판정 (Gemini)
+    console.log('[Task E-2] 시작: 예측 정답 판정...');
+    const resolveResult = await resolvePredictionPolls().then(
+      value => ({ status: 'fulfilled' as const, value }),
+      reason => ({ status: 'rejected' as const, reason })
+    );
+    await sleep(2000);
+
+    // Task G: 맥락 카드 생성 (Gemini)
+    console.log('[Task G] 시작: 맥락 카드 생성...');
+    const contextCardResult = await runContextCardGeneration().then(
+      value => ({ status: 'fulfilled' as const, value }),
+      reason => ({ status: 'rejected' as const, reason })
+    );
+    await sleep(1000);
+
+    // Task F: 부동산 시세 업데이트 (국토부 API, 옵셔널)
+    console.log('[Task F] 시작: 부동산 시세...');
+    const realEstateResult = await updateRealEstatePrices().then(
+      value => ({ status: 'fulfilled' as const, value }),
+      reason => ({ status: 'rejected' as const, reason })
+    );
 
     // ========================================================================
     // 결과 로깅 및 통계 집계

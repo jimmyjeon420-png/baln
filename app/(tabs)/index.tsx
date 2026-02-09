@@ -1,30 +1,32 @@
 /**
- * index.tsx - 홈 탭 (Anti-Toss 리디자인)
+ * index.tsx - 홈 탭 (습관 루프 강화 Phase 3)
  *
  * 역할: "투자 신호등 메인 화면"
- * - 기존 10개 카드 제거 → 3개 카드 스와이프로 교체
- * - 가격 표시 없음, 건강 점수 중심
- * - 30초 안에 모든 정보 확인 (Gateway 원칙)
+ * - 3개 카드 스와이프 (건강/맥락/예측)
+ * - 어제 예측 복기 카드 (습관 루프 핵심)
+ * - 총 자산 Pulse + 전일 대비 변동
+ * - 3개 예측 질문 수평 스크롤
  *
  * Anti-Toss 5원칙:
  * 1. Gateway: 3장 스와이프 → 30초 → 퇴장
  * 2. Heart/Like: 가격 없음, 건강 점수만
- * 3. 빼기 전략: ScrollView 제거, 탭바 제거
+ * 3. 빼기 전략: 핵심 정보만 노출
  * 4. One Page One Card: 한 화면에 카드 1장
  * 5. 보험 BM: 신호등 무료, 상세 프리미엄
  */
 
 import React from 'react';
-import { View, StyleSheet, Modal, RefreshControl, ScrollView } from 'react-native';
+import { View, StyleSheet, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 
-// 새 3카드 시스템
+// 3카드 시스템
 import CardSwipeContainer from '../../src/components/home/CardSwipeContainer';
 import HealthSignalCard from '../../src/components/home/HealthSignalCard';
 import ContextBriefCard from '../../src/components/home/ContextBriefCard';
 import PredictionVoteCard from '../../src/components/home/PredictionVoteCard';
 import StreakBanner from '../../src/components/home/StreakBanner';
+import YesterdayReviewCard from '../../src/components/home/YesterdayReviewCard';
 import { ErrorBoundary, Toast, ToastType } from '../../src/components/common';
 
 // 맥락 카드 전체 모달
@@ -39,15 +41,15 @@ import {
   useResolvedPolls,
   useSubmitVote,
   useMyPredictionStats,
+  useYesterdayReview,
 } from '../../src/hooks/usePredictions';
 import { useSubscriptionStatus } from '../../src/hooks/useSubscription';
+import { useSharedPortfolio } from '../../src/hooks/useSharedPortfolio';
+import { useMySnapshots } from '../../src/hooks/usePortfolioSnapshots';
 
 // 신호등 변환 서비스
 import {
-  getTrafficLight,
-  getAssetSignals,
   convertContextToBriefing,
-  getEmptyTrafficLight,
 } from '../../src/services/trafficLightScore';
 import { convertToContextCardData } from '../../src/services/contextCardService';
 import { COLORS } from '../../src/styles/theme';
@@ -91,6 +93,22 @@ export default function HomeScreen() {
   }, []);
 
   // ──────────────────────────────────────────────────────────────────────
+  // 0. 포트폴리오 데이터 (총자산 Pulse용)
+  // ──────────────────────────────────────────────────────────────────────
+  const { totalAssets } = useSharedPortfolio();
+  const { data: snapshots } = useMySnapshots(2); // 최근 2일 스냅샷
+
+  // 전일 대비 수익률 계산
+  const dailyChangeRate = React.useMemo(() => {
+    if (!snapshots || snapshots.length < 2) return null;
+    const yesterday = snapshots[snapshots.length - 2];
+    const today = snapshots[snapshots.length - 1];
+    if (!yesterday || !today || yesterday.total_assets <= 0) return null;
+    const deposit = today.net_deposit_since_last || 0;
+    return ((today.total_assets - yesterday.total_assets - deposit) / yesterday.total_assets) * 100;
+  }, [snapshots]);
+
+  // ──────────────────────────────────────────────────────────────────────
   // 1. 건강 신호등 카드 데이터
   // ──────────────────────────────────────────────────────────────────────
   const {
@@ -103,7 +121,7 @@ export default function HomeScreen() {
     isLoading: heartLoading,
   } = useHeartAssets();
 
-  // 건강 점수 → 신호등 변환
+  // 건강 점수 → 신호등 변환 + 총자산 Pulse
   const healthSignalProps = React.useMemo(() => {
     if (!hasAssets || portfolioHealthScore === null) {
       // Empty 상태
@@ -115,6 +133,8 @@ export default function HomeScreen() {
         hasAssets: false,
         isLoading: heartLoading,
         onAddAssets: () => router.push('/add-asset'),
+        totalAssets: 0,
+        dailyChangeRate: null,
       };
     }
 
@@ -132,6 +152,8 @@ export default function HomeScreen() {
       hasAssets: true,
       isLoading: heartLoading,
       onAddAssets: () => router.push('/add-asset'),
+      totalAssets,
+      dailyChangeRate,
     };
   }, [
     hasAssets,
@@ -141,6 +163,8 @@ export default function HomeScreen() {
     heartAssetsWithSignal,
     heartLoading,
     router,
+    totalAssets,
+    dailyChangeRate,
   ]);
 
   // ──────────────────────────────────────────────────────────────────────
@@ -188,7 +212,7 @@ export default function HomeScreen() {
           { viewRef: contextCardRef },
           {
             onSuccess: () => {
-              showToast('맥락 카드를 공유했습니다! 📤', 'success');
+              showToast('맥락 카드를 공유했습니다!', 'success');
             },
             onError: () => {
               showToast('공유에 실패했습니다. 다시 시도해주세요.', 'error');
@@ -201,19 +225,22 @@ export default function HomeScreen() {
   }, [contextData, contextLoading, isPremium, router, shareContext, showToast]);
 
   // ──────────────────────────────────────────────────────────────────────
-  // 3. 예측 투표 카드 데이터
+  // 3. 예측 투표 카드 데이터 (3개 질문 지원)
   // ──────────────────────────────────────────────────────────────────────
   const { data: activePolls = [] } = useActivePolls();
   const { data: resolvedPolls = [] } = useResolvedPolls(10);
   const { mutate: submitVote, isPending: isVoting } = useSubmitVote();
   const { data: myStats } = useMyPredictionStats();
 
-  // 오늘의 투표 (1개만)
-  const currentPoll = activePolls.length > 0 ? activePolls[0] : null;
+  // 오늘의 투표 (최대 3개)
+  const todayPolls = activePolls.slice(0, 3);
 
-  // 내 투표 조회
+  // 하위호환: 첫 번째 질문
+  const currentPoll = todayPolls.length > 0 ? todayPolls[0] : null;
+
+  // 내 투표 조회 (활성 + 종료 모두)
   const allPollIds = [
-    ...(currentPoll ? [currentPoll.id] : []),
+    ...todayPolls.map(p => p.id),
     ...resolvedPolls.map(p => p.id),
   ];
   const { data: myVotesArray = [] } = useMyVotes(allPollIds);
@@ -223,6 +250,15 @@ export default function HomeScreen() {
     const map: Record<string, any> = {};
     myVotesArray.forEach(vote => {
       map[vote.poll_id] = vote;
+    });
+    return map;
+  }, [myVotesArray]);
+
+  // 다중 질문용 myVotesMap (pollId → 'YES'|'NO')
+  const myVotesChoiceMap = React.useMemo(() => {
+    const map: Record<string, 'YES' | 'NO'> = {};
+    myVotesArray.forEach(vote => {
+      map[vote.poll_id] = vote.vote;
     });
     return map;
   }, [myVotesArray]);
@@ -246,14 +282,30 @@ export default function HomeScreen() {
         correctAnswer: poll.correct_answer || 'YES',
         isCorrect,
         reward,
-        description: poll.description || undefined, // 배경 설명 (null → undefined)
-        source: poll.source || undefined, // 정답 근거 (null → undefined)
+        description: poll.description || undefined,
+        source: poll.source || undefined,
       };
     });
   }, [resolvedPolls, myVotesMap, isPremium]);
 
+  // 3개 질문 → PollItem 배열로 변환
+  const pollsForCard = React.useMemo(() => {
+    return todayPolls.map(poll => {
+      const total = poll.yes_count + poll.no_count;
+      return {
+        id: poll.id,
+        question: poll.question,
+        category: poll.category,
+        yesPercentage: total > 0 ? (poll.yes_count / total) * 100 : 0,
+        noPercentage: total > 0 ? (poll.no_count / total) * 100 : 0,
+        totalVotes: total,
+        deadline: poll.deadline,
+      };
+    });
+  }, [todayPolls]);
+
   const predictionVoteProps = React.useMemo(() => {
-    // yes/no 비율 계산
+    // 하위호환용 첫 번째 질문 비율
     const totalVotes = currentPoll
       ? (currentPoll.yes_count + currentPoll.no_count)
       : 0;
@@ -274,19 +326,37 @@ export default function HomeScreen() {
         totalVotes,
         deadline: currentPoll.deadline,
       } : null,
+      // 다중 질문 지원
+      polls: pollsForCard.length > 0 ? pollsForCard : undefined,
       myVote,
+      myVotesMap: myVotesChoiceMap,
       recentResults,
       accuracyRate: myStats?.accuracy_rate ?? null,
+      // 하위호환 단일 투표
       onVote: (choice: 'YES' | 'NO') => {
         if (!currentPoll) return;
         submitVote(
           { pollId: currentPoll.id, vote: choice },
           {
             onSuccess: () => {
-              showToast('투표 완료! 내일 결과를 확인하세요 🎯', 'success');
+              showToast('투표 완료! 내일 결과를 확인하세요', 'success');
             },
             onError: (error: any) => {
               showToast(error?.message || '투표에 실패했습니다. 다시 시도해주세요.', 'error');
+            },
+          }
+        );
+      },
+      // 다중 질문 투표
+      onVotePoll: (pollId: string, choice: 'YES' | 'NO') => {
+        submitVote(
+          { pollId, vote: choice },
+          {
+            onSuccess: () => {
+              showToast('투표 완료!', 'success');
+            },
+            onError: (error: any) => {
+              showToast(error?.message || '투표에 실패했습니다.', 'error');
             },
           }
         );
@@ -295,7 +365,34 @@ export default function HomeScreen() {
       isLoading: false,
       isVoting,
     };
-  }, [currentPoll, myVote, recentResults, router, submitVote, showToast]);
+  }, [currentPoll, pollsForCard, myVote, myVotesChoiceMap, recentResults, myStats, router, submitVote, showToast, isVoting]);
+
+  // ──────────────────────────────────────────────────────────────────────
+  // 4. 어제 예측 복기 데이터 (YesterdayReviewCard)
+  // ──────────────────────────────────────────────────────────────────────
+  const {
+    data: yesterdayPolls,
+    isLoading: yesterdayLoading,
+    summary: yesterdaySummary,
+  } = useYesterdayReview();
+
+  // 어제 복기 결과 변환
+  const yesterdayResults = React.useMemo(() => {
+    if (!yesterdayPolls || yesterdayPolls.length === 0) return [];
+
+    return yesterdayPolls.map(poll => {
+      const reward = poll.myIsCorrect ? (isPremium ? 4 : 2) : 0;
+      return {
+        question: poll.question,
+        myVote: (poll.myVote || 'YES') as 'YES' | 'NO',
+        correctAnswer: (poll.correct_answer || 'YES') as 'YES' | 'NO',
+        isCorrect: poll.myIsCorrect === true,
+        reward,
+        description: poll.description || undefined,
+        source: poll.source || undefined,
+      };
+    });
+  }, [yesterdayPolls, isPremium]);
 
   // ──────────────────────────────────────────────────────────────────────
   // 맥락 카드 전체 데이터 (모달용)
@@ -316,6 +413,10 @@ export default function HomeScreen() {
     console.log('[CardSwipe] 카드 전환:', index);
   }, []);
 
+  const handleViewHistory = React.useCallback(() => {
+    router.push('/games/predictions');
+  }, [router]);
+
   // ──────────────────────────────────────────────────────────────────────
   // 렌더링
   // ──────────────────────────────────────────────────────────────────────
@@ -334,7 +435,7 @@ export default function HomeScreen() {
         onRefresh={handleRefresh}
         refreshing={refreshing}
       >
-        {/* 카드 1: 건강 신호등 */}
+        {/* 카드 1: 건강 신호등 + 총자산 Pulse */}
         <ErrorBoundary>
           <HealthSignalCard {...healthSignalProps} />
         </ErrorBoundary>
@@ -344,11 +445,22 @@ export default function HomeScreen() {
           <ContextBriefCard ref={contextCardRef} {...contextBriefProps} />
         </ErrorBoundary>
 
-        {/* 카드 3: 예측 투표 */}
+        {/* 카드 3: 예측 투표 (3개 질문 수평 스크롤) */}
         <ErrorBoundary>
           <PredictionVoteCard {...predictionVoteProps} />
         </ErrorBoundary>
       </CardSwipeContainer>
+
+      {/* 어제 예측 복기 카드 (스와이프 아래 배치, 데이터 있을 때만) */}
+      {yesterdayResults.length > 0 && (
+        <View style={styles.reviewSection}>
+          <YesterdayReviewCard
+            results={yesterdayResults}
+            accuracyRate={myStats?.accuracy_rate ?? null}
+            onViewHistory={handleViewHistory}
+          />
+        </View>
+      )}
 
       {/* 맥락 카드 전체 모달 (4겹 레이어) */}
       <Modal
@@ -396,6 +508,11 @@ const styles = StyleSheet.create({
   streakContainer: {
     paddingHorizontal: 16,
     paddingTop: 16,
+  },
+  reviewSection: {
+    // 복기 카드는 CardSwipeContainer 바로 아래에 배치
+    // 카드 스와이프와 겹치지 않도록 absolute가 아닌 일반 flow
+    paddingBottom: 16,
   },
   modalContainer: {
     flex: 1,

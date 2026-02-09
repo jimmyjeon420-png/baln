@@ -1,10 +1,11 @@
 /**
- * FreePeriodBanner - 무료 기간 프로모션 배너
+ * FreePeriodBanner - 창립 멤버 무료 기간 프로모션 배너
  *
  * 역할: "마케팅 홍보 전광판"
  * - compact={true}: 1줄 미니 배너 (처방전, 프로필 탭)
- * - compact={false}: 상세 배너 (진단 탭)
+ * - compact={false}: 상세 배너 + 혜택 목록 (진단 탭)
  * - 무료 기간이 아니면 자동으로 숨김 (null 반환)
+ * - 남은 일수 자동 계산
  */
 
 import React from 'react';
@@ -28,7 +29,7 @@ export default function FreePeriodBanner({ compact = false }: FreePeriodBannerPr
       <View style={styles.compactBanner}>
         <Ionicons name="gift" size={14} color="#4CAF50" />
         <Text style={styles.compactText}>
-          5/31까지 전 기능 무료
+          창립 멤버 혜택 — 5/31까지 모든 기능 무료!
         </Text>
         <View style={styles.dDayBadge}>
           <Text style={styles.dDayText}>D-{daysLeft}</Text>
@@ -42,15 +43,36 @@ export default function FreePeriodBanner({ compact = false }: FreePeriodBannerPr
     <View style={styles.fullBanner}>
       <View style={styles.fullHeader}>
         <Ionicons name="gift" size={20} color="#4CAF50" />
-        <Text style={styles.fullTitle}>전 기능 무료 개방 중!</Text>
+        <Text style={styles.fullTitle}>창립 멤버 혜택</Text>
         <View style={styles.dDayBadge}>
           <Text style={styles.dDayText}>D-{daysLeft}</Text>
         </View>
       </View>
-      <Text style={styles.fullDesc}>
-        5/31까지 AI 딥다이브, What-If 시뮬레이션, 세금 리포트, AI CFO 상담 등{'\n'}
-        모든 프리미엄 기능을 무료로 이용하세요!
+
+      <Text style={styles.fullSubtitle}>
+        5/31까지 모든 기능 무료!
       </Text>
+
+      {/* 혜택 목록 */}
+      <View style={styles.benefitList}>
+        <View style={styles.benefitRow}>
+          <Ionicons name="checkmark-circle" size={14} color="#4CAF50" />
+          <Text style={styles.benefitText}>AI 딥다이브 분석 무제한</Text>
+        </View>
+        <View style={styles.benefitRow}>
+          <Ionicons name="checkmark-circle" size={14} color="#4CAF50" />
+          <Text style={styles.benefitText}>What-If 시뮬레이션 무제한</Text>
+        </View>
+        <View style={styles.benefitRow}>
+          <Ionicons name="checkmark-circle" size={14} color="#4CAF50" />
+          <Text style={styles.benefitText}>세금 리포트 / AI CFO 상담</Text>
+        </View>
+        <View style={styles.benefitRow}>
+          <Ionicons name="checkmark-circle" size={14} color="#4CAF50" />
+          <Text style={styles.benefitText}>예측 게임 해설 + 복기</Text>
+        </View>
+      </View>
+
       <View style={styles.creditHint}>
         <Ionicons name="diamond" size={12} color="#7C4DFF" />
         <Text style={styles.creditHintText}>
@@ -79,6 +101,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: '#4CAF50',
+    flex: 1,
   },
   dDayBadge: {
     backgroundColor: '#4CAF50',
@@ -104,7 +127,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginBottom: 10,
+    marginBottom: 4,
   },
   fullTitle: {
     flex: 1,
@@ -112,12 +135,30 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#4CAF50',
   },
-  fullDesc: {
-    fontSize: 13,
+  fullSubtitle: {
+    fontSize: 14,
+    fontWeight: '600',
     color: '#CCCCCC',
-    lineHeight: 20,
-    marginBottom: 10,
+    marginBottom: 12,
+    marginLeft: 28,
   },
+  // 혜택 목록
+  benefitList: {
+    gap: 6,
+    marginBottom: 12,
+    marginLeft: 4,
+  },
+  benefitRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  benefitText: {
+    fontSize: 13,
+    color: '#CCC',
+    fontWeight: '500',
+  },
+  // 크레딧 힌트
   creditHint: {
     flexDirection: 'row',
     alignItems: 'center',

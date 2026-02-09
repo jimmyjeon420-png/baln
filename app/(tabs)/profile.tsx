@@ -6,15 +6,18 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '../../src/context/AuthContext';
 import FreePeriodBanner from '../../src/components/FreePeriodBanner';
 import InvestorLevelCard from '../../src/components/InvestorLevelCard';
+import { useAchievementCount } from '../../src/hooks/useAchievements';
 
 // 전체(More) 탭 전용 컴포넌트
 import CommunityPreview from '../../src/components/more/CommunityPreview';
 import InsightPreview from '../../src/components/more/InsightPreview';
+import RealEstatePreview from '../../src/components/more/RealEstatePreview';
 
 // 전체(More) 화면 - 커뮤니티 + 인사이트 + 설정 통합
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, signOut } = useAuth();
+  const { unlockedCount, totalCount } = useAchievementCount();
 
   // 로그아웃 처리
   const handleLogout = async () => {
@@ -43,9 +46,12 @@ export default function ProfileScreen() {
   const menuItems = [
     { icon: 'diamond', label: '크레딧 충전', onPress: () => router.push('/marketplace/credits'), credit: true },
     { icon: 'people', label: 'VIP 라운지', onPress: () => router.push('/community'), community: true },
+    { icon: 'bookmark-outline', label: '내 북마크', onPress: () => router.push('/community/bookmarks'), community: true },
+    { icon: 'notifications-outline', label: '알림 센터', onPress: () => router.push('/notifications'), feature: true },
     { icon: 'home-outline', label: '부동산 자산 추가', onPress: () => router.push('/add-realestate'), feature: true },
     { icon: 'heart', label: 'Heart 자산 관리', onPress: () => router.push('/settings/manage-hearts'), feature: true },
     { icon: 'trophy-outline', label: '투자 레벨', onPress: () => router.push('/settings/investor-level'), highlight: true },
+    { icon: 'medal-outline', label: `나의 성취 (${unlockedCount}/${totalCount})`, onPress: () => router.push('/achievements'), feature: true },
     { icon: 'help-outline', label: '오늘의 퀴즈', onPress: () => router.push('/settings/daily-quiz'), feature: true },
 
     { icon: 'person-outline', label: '프로필 설정', onPress: () => router.push('/settings/profile') },
@@ -101,6 +107,9 @@ export default function ProfileScreen() {
 
         {/* ② AI 인사이트 미리보기 — 오늘의 시장 한 줄 요약 */}
         <InsightPreview />
+
+        {/* ③ 부동산 자산 미리보기 — 보유 건수 + 총 시세 */}
+        {user && <RealEstatePreview />}
 
         {/* ═══════════════════════════════════════════════════════════ */}
         {/* 기존 메뉴 섹션 */}
