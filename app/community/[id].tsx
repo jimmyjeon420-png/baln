@@ -30,6 +30,10 @@ import {
   useCommunityPost,
   usePostComments,
   useCreateComment,
+  useUpdateComment,
+  useDeleteComment,
+  useLikeComment,
+  useMyCommentLikes,
   useLikePost,
   useMyLikes,
   useLoungeEligibility,
@@ -47,11 +51,19 @@ import {
   HOLDING_TYPE_COLORS,
   getRelativeTime,
 } from '../../src/utils/communityUtils';
+import CommentItem from '../../src/components/community/CommentItem';
+import ReportModal from '../../src/components/community/ReportModal';
+import { useAuth } from '../../src/context/AuthContext';
+import { validateContent, getViolationMessage } from '../../src/services/contentFilter';
 
 export default function PostDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { user } = useAuth();
   const [commentText, setCommentText] = useState('');
+  const [replyToId, setReplyToId] = useState<string | null>(null);
+  const [reportModalVisible, setReportModalVisible] = useState(false);
+  const [reportTarget, setReportTarget] = useState<{ type: 'post' | 'comment'; id: string } | null>(null);
 
   // 자격 확인 (댓글 가능 여부)
   const { eligibility } = useLoungeEligibility();
@@ -65,7 +77,15 @@ export default function PostDetailScreen() {
   // 댓글 작성
   const createComment = useCreateComment(id || '');
 
-  // 좋아요
+  // 댓글 수정/삭제
+  const updateComment = useUpdateComment(id || '');
+  const deleteComment = useDeleteComment(id || '');
+
+  // 댓글 좋아요
+  const likeComment = useLikeComment(id || '');
+  const { data: myCommentLikes } = useMyCommentLikes();
+
+  // 게시글 좋아요
   const likePost = useLikePost();
   const { data: myLikes } = useMyLikes();
   const isLiked = myLikes?.has(id || '') ?? false;
@@ -83,11 +103,43 @@ export default function PostDetailScreen() {
     router.push(`/community/author/${userId}` as any);
   };
 
+  // 신고 버튼
+  const handleReport = (type: 'post' | 'comment', targetId: string) => {
+    setReportTarget({ type, id: targetId });
+    setReportModalVisible(true);
+  };
+
+  // 대댓글 모드로 전환
+  const handleReply = (parentId: string) => {
+    setReplyToId(parentId);
+    const parentComment = comments?.find((c) => c.id === parentId);
+    if (parentComment) {
+      const tier = getTierFromAssets(parentComment.total_assets_at_comment);
+      setCommentText(`@${tier} 회원 `);
+    }
+  };
+
+  // 대댓글 모드 취소
+  const handleCancelReply = () => {
+    setReplyToId(null);
+    setCommentText('');
+  };
+
   // 댓글 작성 핸들러
   const handleSubmitComment = async () => {
     if (!commentText.trim()) return;
     if (commentText.length > 300) {
       Alert.alert('알림', '댓글은 300자 이내로 작성해주세요.');
+      return;
+    }
+
+    // 콘텐츠 필터링
+    const filterResult = validateContent(commentText.trim());
+    if (!filterResult.isValid) {
+      Alert.alert(
+        '부적절한 콘텐츠 감지',
+        getViolationMessage(filterResult),
+      );
       return;
     }
 
@@ -105,40 +157,70 @@ export default function PostDetailScreen() {
         content: commentText.trim(),
         displayTag: `${commentTier} 회원`,
         totalAssets: eligibility.totalAssets,
+        parentId: replyToId || undefined,
       });
       setCommentText('');
+      setReplyToId(null);
     } catch (error) {
       console.error('Comment creation error:', error);
       Alert.alert('오류', '댓글 등록에 실패했습니다.');
     }
   };
 
-  // ── 댓글 아이템 ──
+  // 댓글 수정 핸들러
+  const handleUpdateComment = (commentId: string, content: string) => {
+    updateComment.mutate({ commentId, content });
+  };
+
+  // 댓글 삭제 핸들러
+  const handleDeleteComment = (commentId: string) => {
+    deleteComment.mutate(commentId);
+  };
+
+  // 댓글 좋아요 핸들러
+  const handleLikeComment = (commentId: string) => {
+    likeComment.mutate(commentId);
+  };
+
+  // ── 댓글 아이템 (최상위 + 대댓글) ──
   const renderComment = ({ item }: { item: CommunityComment }) => {
-    const tier = getTierFromAssets(item.total_assets_at_comment);
-    const tierColor = TIER_COLORS[tier] || '#C0C0C0';
-    const tierIcon = getTierIcon(tier);
+    const replies = comments?.filter((c) => c.parent_id === item.id) || [];
 
     return (
-      <View style={styles.commentItem}>
-        <TouchableOpacity
-          style={[styles.commentTierBadge, { backgroundColor: tierColor }]}
-          onPress={() => handleAuthorPress(item.user_id)}
-        >
-          <Ionicons name={tierIcon} size={10} color="#000000" />
-        </TouchableOpacity>
-        <View style={styles.commentContent}>
-          <View style={styles.commentHeader}>
-            <TouchableOpacity onPress={() => handleAuthorPress(item.user_id)}>
-              <Text style={[styles.commentDisplayTag, { color: tierColor }]}>
-                {item.display_tag}
-              </Text>
-            </TouchableOpacity>
-            <Text style={styles.commentTime}>{getRelativeTime(item.created_at)}</Text>
-          </View>
-          <Text style={styles.commentText}>{item.content}</Text>
-        </View>
-      </View>
+      <>
+        {/* 최상위 댓글 */}
+        <CommentItem
+          comment={item}
+          currentUserId={user?.id}
+          isLiked={myCommentLikes?.has(item.id) ?? false}
+          onLike={handleLikeComment}
+          onDelete={handleDeleteComment}
+          onUpdate={handleUpdateComment}
+          onReply={handleReply}
+          onAuthorPress={handleAuthorPress}
+          onReport={(commentId) => handleReport('comment', commentId)}
+          isUpdating={updateComment.isPending}
+          isDeleting={deleteComment.isPending}
+        />
+
+        {/* 대댓글 */}
+        {replies.map((reply) => (
+          <CommentItem
+            key={reply.id}
+            comment={reply}
+            currentUserId={user?.id}
+            isLiked={myCommentLikes?.has(reply.id) ?? false}
+            onLike={handleLikeComment}
+            onDelete={handleDeleteComment}
+            onUpdate={handleUpdateComment}
+            onReply={handleReply}
+            onAuthorPress={handleAuthorPress}
+            onReport={(commentId) => handleReport('comment', commentId)}
+            isUpdating={updateComment.isPending}
+            isDeleting={deleteComment.isPending}
+          />
+        ))}
+      </>
     );
   };
 
@@ -309,12 +391,17 @@ export default function PostDetailScreen() {
             <Ionicons name="chevron-back" size={28} color="#4CAF50" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>게시물</Text>
-          <View style={{ width: 28 }} />
+          {post && (
+            <TouchableOpacity onPress={() => handleReport('post', post.id)}>
+              <Ionicons name="ellipsis-vertical" size={24} color="#888888" />
+            </TouchableOpacity>
+          )}
+          {!post && <View style={{ width: 28 }} />}
         </View>
 
-        {/* 댓글 목록 */}
+        {/* 댓글 목록 (최상위 댓글만 — 대댓글은 각 아이템 내에서 렌더링) */}
         <FlatList
-          data={comments || []}
+          data={comments?.filter((c) => !c.parent_id) || []}
           keyExtractor={(item) => item.id}
           renderItem={renderComment}
           ListHeaderComponent={renderHeader}
@@ -331,29 +418,41 @@ export default function PostDetailScreen() {
         {/* 하단: 댓글 입력 or 제한 안내 */}
         {eligibility.canComment ? (
           <View style={styles.commentInputContainer}>
-            <TextInput
-              style={styles.commentInput}
-              placeholder="댓글을 입력하세요..."
-              placeholderTextColor="#666666"
-              maxLength={300}
-              value={commentText}
-              onChangeText={setCommentText}
-              multiline
-            />
-            <TouchableOpacity
-              style={[
-                styles.commentSendButton,
-                { opacity: commentText.trim() ? 1 : 0.4 },
-              ]}
-              onPress={handleSubmitComment}
-              disabled={!commentText.trim() || createComment.isPending}
-            >
-              {createComment.isPending ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                <Ionicons name="send" size={18} color="#FFFFFF" />
-              )}
-            </TouchableOpacity>
+            {/* 대댓글 모드 헤더 */}
+            {replyToId && (
+              <View style={styles.replyModeHeader}>
+                <Ionicons name="return-down-forward" size={14} color="#4CAF50" />
+                <Text style={styles.replyModeText}>답글 작성 중</Text>
+                <TouchableOpacity onPress={handleCancelReply} style={styles.replyModeCancel}>
+                  <Ionicons name="close" size={16} color="#888888" />
+                </TouchableOpacity>
+              </View>
+            )}
+            <View style={styles.commentInputRow}>
+              <TextInput
+                style={styles.commentInput}
+                placeholder={replyToId ? "답글을 입력하세요..." : "댓글을 입력하세요..."}
+                placeholderTextColor="#666666"
+                maxLength={300}
+                value={commentText}
+                onChangeText={setCommentText}
+                multiline
+              />
+              <TouchableOpacity
+                style={[
+                  styles.commentSendButton,
+                  { opacity: commentText.trim() ? 1 : 0.4 },
+                ]}
+                onPress={handleSubmitComment}
+                disabled={!commentText.trim() || createComment.isPending}
+              >
+                {createComment.isPending ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Ionicons name="send" size={18} color="#FFFFFF" />
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
         ) : (
           <View style={styles.commentLockedBar}>
@@ -364,6 +463,22 @@ export default function PostDetailScreen() {
           </View>
         )}
       </KeyboardAvoidingView>
+
+      {/* 신고 모달 */}
+      {reportTarget && (
+        <ReportModal
+          visible={reportModalVisible}
+          targetType={reportTarget.type}
+          targetId={reportTarget.id}
+          onClose={() => {
+            setReportModalVisible(false);
+            setReportTarget(null);
+          }}
+          onSuccess={() => {
+            // 신고 완료 시 추가 작업 (선택)
+          }}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -551,55 +666,33 @@ const styles = StyleSheet.create({
     color: '#666666',
   },
 
-  // ── 댓글 아이템 ──
-  commentItem: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    gap: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#1E1E1E',
-  },
-  commentTierBadge: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 2,
-  },
-  commentContent: {
-    flex: 1,
-  },
-  commentHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  commentDisplayTag: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  commentTime: {
-    fontSize: 10,
-    color: '#666666',
-  },
-  commentText: {
-    fontSize: 14,
-    color: '#E0E0E0',
-    lineHeight: 20,
-  },
 
   // ── 댓글 입력 ──
   commentInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderTopWidth: 1,
     borderTopColor: '#2A2A2A',
     backgroundColor: '#1E1E1E',
+  },
+  replyModeHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingBottom: 8,
+  },
+  replyModeText: {
+    flex: 1,
+    fontSize: 12,
+    color: '#4CAF50',
+    fontWeight: '600',
+  },
+  replyModeCancel: {
+    padding: 4,
+  },
+  commentInputRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
     gap: 10,
   },
   commentInput: {

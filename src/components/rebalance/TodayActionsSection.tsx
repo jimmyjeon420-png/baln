@@ -2,14 +2,90 @@
  * 오늘의 액션 섹션 — BUY/SELL/WATCH 종목별 액션 + 실시간 가격 + AI 딥다이브
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Animated as RNAnimated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Haptics from 'expo-haptics';
 import { SkeletonBlock } from '../SkeletonLoader';
 import { estimateTax } from '../../utils/taxEstimator';
 import type { PortfolioAction, RebalancePortfolioAsset, LivePriceData } from '../../types/rebalanceTypes';
+
+// ── 완료 축하 배너 ──
+
+function CompletionBanner({ visible }: { visible: boolean }) {
+  const opacity = useRef(new RNAnimated.Value(0)).current;
+  const scale = useRef(new RNAnimated.Value(0.9)).current;
+
+  useEffect(() => {
+    if (visible) {
+      RNAnimated.parallel([
+        RNAnimated.timing(opacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+        RNAnimated.spring(scale, { toValue: 1, tension: 50, friction: 7, useNativeDriver: true }),
+      ]).start();
+
+      // 3초 후 페이드아웃
+      setTimeout(() => {
+        RNAnimated.parallel([
+          RNAnimated.timing(opacity, { toValue: 0, duration: 400, useNativeDriver: true }),
+          RNAnimated.timing(scale, { toValue: 0.9, duration: 400, useNativeDriver: true }),
+        ]).start();
+      }, 3000);
+    }
+  }, [visible]);
+
+  if (!visible) return null;
+
+  return (
+    <RNAnimated.View style={[completionStyles.container, { opacity, transform: [{ scale }] }]}>
+      <View style={completionStyles.iconCircle}>
+        <Ionicons name="checkmark-circle" size={28} color="#4CAF50" />
+      </View>
+      <View style={completionStyles.textContainer}>
+        <Text style={completionStyles.title}>모든 액션 완료! 🎉</Text>
+        <Text style={completionStyles.subtitle}>오늘도 성실한 투자자네요</Text>
+      </View>
+    </RNAnimated.View>
+  );
+}
+
+const completionStyles = StyleSheet.create({
+  container: {
+    marginTop: 12,
+    marginBottom: 8,
+    backgroundColor: 'rgba(76,175,80,0.12)',
+    borderRadius: 16,
+    padding: 18,
+    borderWidth: 2,
+    borderColor: 'rgba(76,175,80,0.3)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+  },
+  iconCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(76,175,80,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  textContainer: {
+    flex: 1,
+  },
+  title: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#4CAF50',
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: 13,
+    color: '#81C784',
+    fontWeight: '500',
+  },
+});
 
 // ── 액션 체크리스트 (오늘 날짜 기준 AsyncStorage) ──
 
@@ -39,14 +115,26 @@ function useActionChecklist() {
   }, []);
 
   const toggle = useCallback(async (ticker: string) => {
-    setChecked(prev => {
-      const next = { ...prev, [ticker]: !prev[ticker] };
-      AsyncStorage.setItem(CHECKLIST_KEY, JSON.stringify({
-        date: getTodayKey(),
-        items: next,
-      })).catch(() => {});
-      return next;
-    });
+    // 햅틱 피드백 (성공/에러 구분)
+    try {
+      setChecked(prev => {
+        const willBeChecked = !prev[ticker];
+        // 체크 시: 성공 햅틱, 해제 시: 경고 햅틱
+        Haptics.impactAsync(
+          willBeChecked ? Haptics.ImpactFeedbackStyle.Medium : Haptics.ImpactFeedbackStyle.Light
+        ).catch(() => {}); // 미지원 디바이스 대응
+
+        const next = { ...prev, [ticker]: willBeChecked };
+        AsyncStorage.setItem(CHECKLIST_KEY, JSON.stringify({
+          date: getTodayKey(),
+          items: next,
+        })).catch(() => {});
+        return next;
+      });
+    } catch (e) {
+      // 햅틱 실패해도 체크 동작은 정상 진행
+      console.warn('Haptic feedback failed:', e);
+    }
   }, []);
 
   return { checked, toggle };
@@ -77,10 +165,27 @@ export default function TodayActionsSection({
 }: TodayActionsSectionProps) {
   const router = useRouter();
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
+  const [showCompletionBanner, setShowCompletionBanner] = useState(false);
+  const [completionBannerKey, setCompletionBannerKey] = useState(0);
   const { checked, toggle } = useActionChecklist();
 
   // 완료 카운트
   const completedCount = sortedActions.filter(a => checked[a.ticker]).length;
+  const isAllCompleted = completedCount === sortedActions.length && sortedActions.length > 0;
+
+  // 전체 완료 시 축하 배너 표시 (한 번만)
+  useEffect(() => {
+    if (isAllCompleted && !showCompletionBanner) {
+      setShowCompletionBanner(true);
+      setCompletionBannerKey(prev => prev + 1);
+      // 4초 후 배너 숨김 (애니메이션 종료 대기)
+      setTimeout(() => setShowCompletionBanner(false), 4000);
+    }
+    // 완료 해제 시 배너 리셋
+    if (!isAllCompleted && showCompletionBanner) {
+      setShowCompletionBanner(false);
+    }
+  }, [isAllCompleted]);
 
   // AI 로딩 중 스켈레톤
   if (isAILoading && sortedActions.length === 0) {
@@ -120,6 +225,9 @@ export default function TodayActionsSection({
           </View>
         </View>
       </View>
+
+      {/* 전체 완료 축하 배너 */}
+      <CompletionBanner key={completionBannerKey} visible={showCompletionBanner} />
 
       {sortedActions.slice(0, 5).map((action, idx) => {
         const ac = ACTION_COLORS[action.action] || ACTION_COLORS.HOLD;

@@ -79,7 +79,10 @@ export interface CommunityComment {
   content: string;
   display_tag: string;
   total_assets_at_comment: number;
+  parent_id: string | null;      // 대댓글: 부모 댓글 ID (NULL = 최상위 댓글)
+  likes_count: number;           // 댓글 좋아요 수
   created_at: string;
+  updated_at: string | null;     // 수정 시각
 }
 
 // 게시물 작성용 입력 타입

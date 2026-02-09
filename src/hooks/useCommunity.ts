@@ -391,16 +391,16 @@ export const useCreateComment = (postId: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (input: { content: string; displayTag: string; totalAssets: number }) => {
+    mutationFn: async (input: { content: string; displayTag: string; totalAssets: number; parentId?: string }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('로그인이 필요합니다.');
 
-      // 자산 1,000만원 미만이면 차단
-      if (input.totalAssets < LOUNGE_COMMENT_THRESHOLD) {
+      // 자산 1,000만원 미만이면 차단 (무료 기간 제외)
+      if (!isFreePeriod() && input.totalAssets < LOUNGE_COMMENT_THRESHOLD) {
         throw new Error('댓글 작성은 자산 1,000만원 이상 회원만 가능합니다.');
       }
 
-      // 댓글 저장
+      // 댓글 저장 (parent_id 포함 = 대댓글)
       const { data, error } = await supabase
         .from('community_comments')
         .insert({
@@ -409,13 +409,14 @@ export const useCreateComment = (postId: string) => {
           content: input.content,
           display_tag: input.displayTag,
           total_assets_at_comment: input.totalAssets,
+          parent_id: input.parentId || null,
         })
         .select()
         .single();
 
       if (error) throw error;
 
-      // 댓글 수 원자적 증가
+      // 댓글 수 원자적 증가 (대댓글도 카운트)
       await supabase.rpc('increment_comment_count', { p_post_id: postId });
 
       return data;
@@ -424,6 +425,179 @@ export const useCreateComment = (postId: string) => {
       queryClient.invalidateQueries({ queryKey: ['communityComments', postId] });
       queryClient.invalidateQueries({ queryKey: ['communityPosts'] });
       queryClient.invalidateQueries({ queryKey: ['communityPost', postId] });
+    },
+  });
+};
+
+/** 댓글 수정 (본인 것만) */
+export const useUpdateComment = (postId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ commentId, content }: { commentId: string; content: string }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('로그인이 필요합니다.');
+
+      // 본인 댓글인지 확인
+      const { data: comment } = await supabase
+        .from('community_comments')
+        .select('user_id')
+        .eq('id', commentId)
+        .single();
+
+      if (comment?.user_id !== user.id) {
+        throw new Error('본인의 댓글만 수정할 수 있습니다.');
+      }
+
+      // 수정
+      const { data, error } = await supabase
+        .from('community_comments')
+        .update({ content, updated_at: new Date().toISOString() })
+        .eq('id', commentId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['communityComments', postId] });
+    },
+  });
+};
+
+/** 댓글 삭제 (본인 것만) */
+export const useDeleteComment = (postId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (commentId: string) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('로그인이 필요합니다.');
+
+      // 본인 댓글인지 확인
+      const { data: comment } = await supabase
+        .from('community_comments')
+        .select('user_id')
+        .eq('id', commentId)
+        .single();
+
+      if (comment?.user_id !== user.id) {
+        throw new Error('본인의 댓글만 삭제할 수 있습니다.');
+      }
+
+      // 삭제
+      const { error } = await supabase
+        .from('community_comments')
+        .delete()
+        .eq('id', commentId);
+
+      if (error) throw error;
+
+      // 댓글 수 감소
+      await supabase.rpc('increment_comment_count', { p_post_id: postId, p_delta: -1 });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['communityComments', postId] });
+      queryClient.invalidateQueries({ queryKey: ['communityPosts'] });
+      queryClient.invalidateQueries({ queryKey: ['communityPost', postId] });
+    },
+  });
+};
+
+/** 댓글 좋아요 (내가 좋아요한 댓글 ID 목록) */
+export const useMyCommentLikes = () => {
+  return useQuery({
+    queryKey: ['myCommentLikes'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return new Set<string>();
+
+      const { data, error } = await supabase
+        .from('community_comment_likes')
+        .select('comment_id')
+        .eq('user_id', user.id);
+
+      if (error) return new Set<string>();
+      return new Set((data || []).map(d => d.comment_id));
+    },
+    staleTime: 60000,
+  });
+};
+
+/** 댓글 좋아요 토글 */
+export const useLikeComment = (postId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (commentId: string) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('로그인이 필요합니다.');
+
+      // 기존 좋아요 확인
+      const { data: existing } = await supabase
+        .from('community_comment_likes')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('comment_id', commentId)
+        .single();
+
+      if (existing) {
+        // 좋아요 취소
+        await supabase
+          .from('community_comment_likes')
+          .delete()
+          .eq('id', existing.id);
+
+        // 좋아요 수 감소
+        await supabase
+          .from('community_comments')
+          .update({ likes_count: supabase.raw('GREATEST(likes_count - 1, 0)') })
+          .eq('id', commentId);
+
+        return false;
+      } else {
+        // 좋아요 추가
+        await supabase
+          .from('community_comment_likes')
+          .insert({ user_id: user.id, comment_id: commentId });
+
+        // 좋아요 수 증가
+        await supabase
+          .from('community_comments')
+          .update({ likes_count: supabase.raw('likes_count + 1') })
+          .eq('id', commentId);
+
+        return true;
+      }
+    },
+    onMutate: async (commentId: string) => {
+      // 낙관적 업데이트
+      await queryClient.cancelQueries({ queryKey: ['communityComments', postId] });
+      await queryClient.cancelQueries({ queryKey: ['myCommentLikes'] });
+
+      const prevLikes = queryClient.getQueryData<Set<string>>(['myCommentLikes']);
+      const currentLikes = new Set(prevLikes ?? []);
+      const isLiked = currentLikes.has(commentId);
+
+      if (isLiked) {
+        currentLikes.delete(commentId);
+      } else {
+        currentLikes.add(commentId);
+      }
+
+      queryClient.setQueryData(['myCommentLikes'], currentLikes);
+
+      return { prevLikes };
+    },
+    onError: (_err, _commentId, context) => {
+      if (context?.prevLikes) {
+        queryClient.setQueryData(['myCommentLikes'], context.prevLikes);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['communityComments', postId] });
+      queryClient.invalidateQueries({ queryKey: ['myCommentLikes'] });
     },
   });
 };

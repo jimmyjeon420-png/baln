@@ -42,6 +42,7 @@ export default function ProfileScreen() {
   // 메뉴 항목 정의 - 각 항목에 실제 네비게이션 연결
   const menuItems = [
     { icon: 'diamond', label: '크레딧 충전', onPress: () => router.push('/marketplace/credits'), credit: true },
+    { icon: 'people', label: 'VIP 라운지', onPress: () => router.push('/community'), community: true },
     { icon: 'home-outline', label: '부동산 자산 추가', onPress: () => router.push('/add-realestate'), feature: true },
     { icon: 'heart', label: 'Heart 자산 관리', onPress: () => router.push('/settings/manage-hearts'), feature: true },
     { icon: 'trophy-outline', label: '투자 레벨', onPress: () => router.push('/settings/investor-level'), highlight: true },
@@ -112,13 +113,14 @@ export default function ProfileScreen() {
                 (item as any).credit && styles.menuItemCredit,
                 (item as any).highlight && styles.menuItemHighlight,
                 (item as any).feature && styles.menuItemFeature,
+                (item as any).community && styles.menuItemCommunity,
               ]}
               onPress={item.onPress}
             >
               <Ionicons
                 name={item.icon as any}
                 size={22}
-                color={(item as any).credit ? '#7C4DFF' : (item as any).highlight ? '#FFC107' : (item as any).feature ? '#4CAF50' : '#FFFFFF'}
+                color={(item as any).credit ? '#7C4DFF' : (item as any).highlight ? '#FFC107' : (item as any).feature ? '#4CAF50' : (item as any).community ? '#FF69B4' : '#FFFFFF'}
               />
               <Text
                 style={[
@@ -126,6 +128,7 @@ export default function ProfileScreen() {
                   (item as any).credit && styles.menuLabelCredit,
                   (item as any).highlight && styles.menuLabelHighlight,
                   (item as any).feature && styles.menuLabelFeature,
+                  (item as any).community && styles.menuLabelCommunity,
                 ]}
               >
                 {item.label}
@@ -143,6 +146,11 @@ export default function ProfileScreen() {
               {(item as any).feature && (
                 <View style={styles.aiBadge}>
                   <Text style={styles.aiBadgeText}>AI</Text>
+                </View>
+              )}
+              {(item as any).community && (
+                <View style={styles.communityBadge}>
+                  <Text style={styles.communityBadgeText}>HOT</Text>
                 </View>
               )}
               <Ionicons name="chevron-forward" size={18} color="#888888" />
@@ -245,6 +253,9 @@ const styles = StyleSheet.create({
   menuItemCredit: {
     backgroundColor: '#1E1A2E',
   },
+  menuItemCommunity: {
+    backgroundColor: '#2E1A2E',
+  },
   menuLabelHighlight: {
     color: '#FFC107',
     fontWeight: '600',
@@ -255,6 +266,10 @@ const styles = StyleSheet.create({
   },
   menuLabelCredit: {
     color: '#7C4DFF',
+    fontWeight: '600',
+  },
+  menuLabelCommunity: {
+    color: '#FF69B4',
     fontWeight: '600',
   },
   creditBadge: {
@@ -292,6 +307,18 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
     color: '#000000',
+  },
+  communityBadge: {
+    backgroundColor: '#FF69B4',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+    marginRight: 8,
+  },
+  communityBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   logoutButton: {
     flexDirection: 'row',

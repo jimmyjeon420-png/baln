@@ -36,16 +36,20 @@ import { Ionicons } from '@expo/vector-icons';
 import { DiagnosisSkeletonLoader } from '../../src/components/SkeletonLoader';
 import { useSharedPortfolio } from '../../src/hooks/useSharedPortfolio';
 import { useSharedAnalysis } from '../../src/hooks/useSharedAnalysis';
-import { usePeerPanicScore, getAssetBracket } from '../../src/hooks/usePortfolioSnapshots';
+import { usePeerPanicScore, getAssetBracket, useMySnapshots } from '../../src/hooks/usePortfolioSnapshots';
 import { calculateHealthScore } from '../../src/services/rebalanceScore';
 import FreePeriodBanner from '../../src/components/FreePeriodBanner';
 import { usePrices } from '../../src/hooks/usePrices';
 import { AssetType } from '../../src/types/asset';
 
 // ── 섹션 컴포넌트 ──
+import HeroSection from '../../src/components/rebalance/HeroSection';
 import CheckupHeader from '../../src/components/checkup/CheckupHeader';
 import HealthScoreSection from '../../src/components/rebalance/HealthScoreSection';
 import AllocationDriftSection from '../../src/components/rebalance/AllocationDriftSection';
+import WhatIfSimulator from '../../src/components/rebalance/WhatIfSimulator';
+import AssetTrendSection from '../../src/components/rebalance/AssetTrendSection';
+import CorrelationHeatmapSection from '../../src/components/rebalance/CorrelationHeatmapSection';
 import TodayActionsSection from '../../src/components/rebalance/TodayActionsSection';
 import RiskDashboardSection from '../../src/components/rebalance/RiskDashboardSection';
 import AIAnalysisCTA from '../../src/components/checkup/AIAnalysisCTA';
@@ -96,6 +100,25 @@ const toastStyles = StyleSheet.create({
 // 포그라운드 복귀 자동 갱신 최소 간격 (5분)
 const AUTO_REFRESH_THRESHOLD = 5 * 60 * 1000;
 
+// ── 티어 계산 ──
+function getTierInfo(totalAssets: number): { label: string; color: string } {
+  const assets = totalAssets / 100000000; // 억 단위 변환
+  if (assets >= 3) return { label: 'DIAMOND', color: '#64B5F6' };
+  if (assets >= 1.5) return { label: 'PLATINUM', color: '#9E9E9E' };
+  if (assets >= 1) return { label: 'GOLD', color: '#FFC107' };
+  return { label: 'SILVER', color: '#B0BEC5' };
+}
+
+// ── 날짜 포맷팅 ──
+function formatTodayDate(): string {
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+  const weekday = weekdays[now.getDay()];
+  return `${month}월 ${day}일 ${weekday}요일`;
+}
+
 export default function CheckupScreen() {
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
@@ -126,6 +149,20 @@ export default function CheckupScreen() {
 
   const myBracket = getAssetBracket(totalAssets);
   const { data: peerPanicData } = usePeerPanicScore(myBracket);
+
+  // 전일 대비 변동 계산 (최근 2일 스냅샷 비교)
+  const { data: recentSnapshots } = useMySnapshots(2);
+  const yesterdaySnapshot = recentSnapshots && recentSnapshots.length > 0
+    ? recentSnapshots[recentSnapshots.length - 1]
+    : null;
+
+  const totalGainLoss = yesterdaySnapshot
+    ? totalAssets - yesterdaySnapshot.total_assets
+    : 0;
+
+  const gainPercent = yesterdaySnapshot && yesterdaySnapshot.total_assets > 0
+    ? ((totalAssets - yesterdaySnapshot.total_assets) / yesterdaySnapshot.total_assets) * 100
+    : 0;
 
   const onRefresh = useCallback(async (showRefreshToast = true) => {
     setRefreshing(true);
@@ -200,6 +237,11 @@ export default function CheckupScreen() {
   // Panic Shield 점수
   const panicScore = analysisResult?.panicShieldIndex;
 
+  // 히어로 섹션 데이터
+  const tierInfo = getTierInfo(totalAssets);
+  const dateString = formatTodayDate();
+  const cfoWeather = morningBriefing?.cfoWeather || null;
+
   // 액션 정렬: HIGH → MEDIUM → LOW, SELL/WATCH → BUY → HOLD
   const sortedActions = useMemo(() =>
     [...(morningBriefing?.portfolioActions ?? [])].sort((a, b) => {
@@ -256,7 +298,20 @@ export default function CheckupScreen() {
           <FreePeriodBanner compact={true} />
         </View>
 
-        {/* 1. 진단 요약 헤더 */}
+        {/* 1. 히어로 섹션 — 총자산 + 전일 변동 + 티어 */}
+        {hasAssets && (
+          <HeroSection
+            dateString={dateString}
+            tierLabel={tierInfo.label}
+            tierColor={tierInfo.color}
+            totalAssets={totalAssets}
+            totalGainLoss={totalGainLoss}
+            gainPercent={gainPercent}
+            cfoWeather={cfoWeather}
+          />
+        )}
+
+        {/* 2. 진단 요약 헤더 (건강 점수 + 패닉 점수) */}
         {hasAssets && (
           <CheckupHeader
             healthScore={healthScore}
@@ -284,13 +339,34 @@ export default function CheckupScreen() {
           </View>
         )}
 
-        {/* 2. 건강 점수 (6팩터, AI 없이 즉시 표시) */}
+        {/* 3. 자산 추이 차트 (최근 30일) */}
+        {hasAssets && (
+          <AssetTrendSection
+            snapshots={recentSnapshots || []}
+            isLoading={!recentSnapshots}
+            currentTotal={totalAssets}
+          />
+        )}
+
+        {/* 4. 건강 점수 (6팩터, AI 없이 즉시 표시) */}
         {hasAssets && <HealthScoreSection healthScore={healthScore} />}
 
-        {/* 3. 배분 이탈도 (목표 vs 현재) */}
+        {/* 5. 배분 이탈도 (목표 vs 현재) */}
         {hasAssets && <AllocationDriftSection assets={allAssets} totalAssets={totalAssets} />}
 
-        {/* 4. 오늘의 액션 (처방전) */}
+        {/* 6. What-if 시뮬레이터 (비중 조정 시뮬레이션) */}
+        {hasAssets && (
+          <WhatIfSimulator
+            assets={allAssets}
+            totalAssets={totalAssets}
+            currentHealthScore={healthScore.totalScore}
+          />
+        )}
+
+        {/* 7. 상관관계 히트맵 (분산 효과 분석) */}
+        {hasAssets && <CorrelationHeatmapSection assets={allAssets} totalAssets={totalAssets} />}
+
+        {/* 8. 오늘의 액션 (처방전) */}
         <TodayActionsSection
           sortedActions={sortedActions}
           portfolio={portfolio}
@@ -299,14 +375,14 @@ export default function CheckupScreen() {
           isAILoading={isAILoading}
         />
 
-        {/* 5. 리스크 대시보드 (Panic Shield + FOMO Vaccine) */}
+        {/* 9. 리스크 대시보드 (Panic Shield + FOMO Vaccine) */}
         <RiskDashboardSection
           analysisResult={analysisResult}
           peerPanicData={peerPanicData}
           isAILoading={isAILoading}
         />
 
-        {/* 6. AI 심화 분석 유도 CTA */}
+        {/* 10. AI 심화 분석 유도 CTA */}
         <AIAnalysisCTA />
 
         {/* 면책 문구 */}
