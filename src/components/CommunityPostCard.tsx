@@ -9,7 +9,7 @@
  */
 
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
   CommunityPost,
@@ -120,6 +120,25 @@ export default function CommunityPostCard({
 
       {/* 본문 */}
       <Text style={styles.content} numberOfLines={5}>{post.content}</Text>
+
+      {/* 첨부 이미지 썸네일 (최대 3장 가로 스크롤) */}
+      {post.image_urls && post.image_urls.length > 0 && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.imageGallery}
+          contentContainerStyle={styles.imageGalleryContent}
+        >
+          {post.image_urls.map((url, index) => (
+            <Image
+              key={index}
+              source={{ uri: url }}
+              style={styles.thumbnailImage}
+              resizeMode="cover"
+            />
+          ))}
+        </ScrollView>
+      )}
 
       {/* 푸터: 좋아요 토글 + 댓글 수 */}
       <View style={styles.footer}>
@@ -241,6 +260,22 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     lineHeight: 24,
     marginBottom: 12,
+  },
+  // ── 이미지 갤러리 (썸네일) ──
+  imageGallery: {
+    marginBottom: 12,
+    marginHorizontal: -16, // 카드 패딩 무시
+  },
+  imageGalleryContent: {
+    paddingHorizontal: 16,
+    gap: 8,
+  },
+  thumbnailImage: {
+    width: 120,
+    height: 120,
+    borderRadius: 8,
+    backgroundColor: '#1E1E1E',
+    marginRight: 8,
   },
   footer: {
     flexDirection: 'row',

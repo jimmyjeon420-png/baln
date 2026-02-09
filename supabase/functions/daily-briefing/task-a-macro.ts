@@ -16,6 +16,7 @@
 import {
   callGeminiWithSearch,
   cleanJsonResponse,
+  logTaskResult,
 } from './_shared.ts';
 
 // ============================================================================
@@ -57,6 +58,7 @@ export interface MacroAnalysisResult {
  * @returns MacroAnalysisResult
  */
 export async function analyzeMacroAndBitcoin(): Promise<MacroAnalysisResult> {
+  const startTime = Date.now();
   const today = new Date();
   const dateStr = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`;
 
@@ -158,29 +160,42 @@ export async function analyzeMacroAndBitcoin(): Promise<MacroAnalysisResult> {
 }
 `;
 
-  console.log('[Task A] 거시경제 & 비트코인 분석 시작...');
-  const responseText = await callGeminiWithSearch(prompt);
-  const cleanJson = cleanJsonResponse(responseText);
-  const parsed = JSON.parse(cleanJson);
-
-  // 금리 사이클 증거 파싱 (실패 시 null — 기존 데이터에 영향 없음)
-  let rateCycleEvidence: Record<string, unknown> | null = null;
   try {
-    if (parsed.rateCycleEvidence && parsed.rateCycleEvidence.keyEvidence) {
-      rateCycleEvidence = parsed.rateCycleEvidence;
-      console.log(`[Task A] 금리 사이클 증거 파싱 성공 (증거 ${parsed.rateCycleEvidence.keyEvidence?.length || 0}건)`);
-    }
-  } catch (evidenceError) {
-    console.warn('[Task A] 금리 사이클 증거 파싱 실패 (무시):', evidenceError);
-  }
+    console.log('[Task A] 거시경제 & 비트코인 분석 시작...');
+    const responseText = await callGeminiWithSearch(prompt);
+    const cleanJson = cleanJsonResponse(responseText);
+    const parsed = JSON.parse(cleanJson);
 
-  return {
-    macroSummary: parsed.macroSummary || {},
-    bitcoinAnalysis: parsed.bitcoinAnalysis || {},
-    marketSentiment: parsed.macroSummary?.marketSentiment || 'NEUTRAL',
-    cfoWeather: parsed.cfoWeather || {},
-    vixLevel: parsed.vixLevel ?? null,
-    globalLiquidity: parsed.globalLiquidity || '',
-    rateCycleEvidence,
-  };
+    // 금리 사이클 증거 파싱 (실패 시 null — 기존 데이터에 영향 없음)
+    let rateCycleEvidence: Record<string, unknown> | null = null;
+    try {
+      if (parsed.rateCycleEvidence && parsed.rateCycleEvidence.keyEvidence) {
+        rateCycleEvidence = parsed.rateCycleEvidence;
+        console.log(`[Task A] 금리 사이클 증거 파싱 성공 (증거 ${parsed.rateCycleEvidence.keyEvidence?.length || 0}건)`);
+      }
+    } catch (evidenceError) {
+      console.warn('[Task A] 금리 사이클 증거 파싱 실패 (무시):', evidenceError);
+    }
+
+    const elapsed = Date.now() - startTime;
+    await logTaskResult('macro', 'SUCCESS', elapsed, {
+      vixLevel: parsed.vixLevel,
+      sentiment: parsed.macroSummary?.marketSentiment,
+      btcScore: parsed.bitcoinAnalysis?.score,
+    });
+
+    return {
+      macroSummary: parsed.macroSummary || {},
+      bitcoinAnalysis: parsed.bitcoinAnalysis || {},
+      marketSentiment: parsed.macroSummary?.marketSentiment || 'NEUTRAL',
+      cfoWeather: parsed.cfoWeather || {},
+      vixLevel: parsed.vixLevel ?? null,
+      globalLiquidity: parsed.globalLiquidity || '',
+      rateCycleEvidence,
+    };
+  } catch (error) {
+    const elapsed = Date.now() - startTime;
+    await logTaskResult('macro', 'FAILED', elapsed, null, error.message);
+    throw error;
+  }
 }

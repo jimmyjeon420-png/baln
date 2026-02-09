@@ -20,7 +20,7 @@
 // - Rate limit 방지: 법정동코드 간 500ms 딜레이
 // ============================================================================
 
-import { supabase } from './_shared.ts';
+import { supabase, logTaskResult } from './_shared.ts';
 
 // ============================================================================
 // 타입 정의
@@ -59,14 +59,19 @@ export interface RealEstateUpdateResult {
  * @returns { skipped, assetsUpdated, cacheUpdated }
  */
 export async function updateRealEstatePrices(): Promise<RealEstateUpdateResult> {
-  // 환경변수에서 API 키 가져오기
-  const MOLIT_API_KEY = Deno.env.get('MOLIT_API_KEY');
+  const startTime = Date.now();
 
-  // API 키 없으면 스킵 (Mock 환경)
-  if (!MOLIT_API_KEY) {
-    console.log('[Task F] 국토부 API 키 미설정 → 부동산 시세 업데이트 스킵');
-    return { skipped: true, assetsUpdated: 0, cacheUpdated: 0 };
-  }
+  try {
+    // 환경변수에서 API 키 가져오기
+    const MOLIT_API_KEY = Deno.env.get('MOLIT_API_KEY');
+
+    // API 키 없으면 스킵 (Mock 환경)
+    if (!MOLIT_API_KEY) {
+      console.log('[Task F] 국토부 API 키 미설정 → 부동산 시세 업데이트 스킵');
+      const elapsed = Date.now() - startTime;
+      await logTaskResult('realestate', 'SKIPPED', elapsed, { reason: 'API_KEY_MISSING' });
+      return { skipped: true, assetsUpdated: 0, cacheUpdated: 0 };
+    }
 
   console.log('[Task F] 부동산 시세 업데이트 시작...');
 
@@ -187,5 +192,14 @@ export async function updateRealEstatePrices(): Promise<RealEstateUpdateResult> 
   }
 
   console.log(`[Task F] 완료: 캐시 ${cacheUpdated}건, 포트폴리오 ${assetsUpdated}건 업데이트`);
+
+  const elapsed = Date.now() - startTime;
+  await logTaskResult('realestate', 'SUCCESS', elapsed, { assetsUpdated, cacheUpdated });
+
   return { skipped: false, assetsUpdated, cacheUpdated };
+  } catch (error) {
+    const elapsed = Date.now() - startTime;
+    await logTaskResult('realestate', 'FAILED', elapsed, null, error.message);
+    throw error;
+  }
 }

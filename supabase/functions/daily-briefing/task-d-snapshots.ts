@@ -31,6 +31,7 @@ import {
   supabase,
   getAssetBracket,
   getTier,
+  logTaskResult,
 } from './_shared.ts';
 
 // ============================================================================
@@ -69,10 +70,12 @@ export interface SnapshotResult {
  * @returns { totalUsers, snapshotsCreated, bracketsUpdated }
  */
 export async function takePortfolioSnapshots(): Promise<SnapshotResult> {
+  const startTime = Date.now();
   const today = new Date().toISOString().split('T')[0];
   const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
 
-  console.log('[Task D] 포트폴리오 스냅샷 시작...');
+  try {
+    console.log('[Task D] 포트폴리오 스냅샷 시작...');
 
   // 1. 모든 포트폴리오 데이터 조회 (Service Role로 RLS 우회)
   const { data: allPortfolios, error: portError } = await supabase
@@ -386,9 +389,21 @@ export async function takePortfolioSnapshots(): Promise<SnapshotResult> {
 
   console.log(`[Task D] 등급별 배분 통계 ${tierAllocRows.length}개 등급 저장 완료`);
 
+  const elapsed = Date.now() - startTime;
+  await logTaskResult('snapshots', 'SUCCESS', elapsed, {
+    users: userMap.size,
+    snapshots: snapshotsCreated,
+    brackets: bracketRows.length,
+  });
+
   return {
     totalUsers: userMap.size,
     snapshotsCreated,
     bracketsUpdated: bracketRows.length,
   };
+  } catch (error) {
+    const elapsed = Date.now() - startTime;
+    await logTaskResult('snapshots', 'FAILED', elapsed, null, error.message);
+    throw error;
+  }
 }

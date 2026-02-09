@@ -22,6 +22,9 @@ import {
   KeyboardAvoidingView,
   Platform,
   RefreshControl,
+  Image,
+  ScrollView,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -325,6 +328,33 @@ export default function PostDetailScreen() {
         {/* 본문 */}
         <Text style={styles.postContent}>{post.content}</Text>
 
+        {/* 첨부 이미지 갤러리 */}
+        {post.image_urls && post.image_urls.length > 0 && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.imageGallery}
+            contentContainerStyle={styles.imageGalleryContent}
+          >
+            {post.image_urls.map((url, index) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.imageItem}
+                onPress={() => {
+                  // TODO: 이미지 확대 모달 (향후 구현)
+                  Alert.alert('이미지', `이미지 ${index + 1}/${post.image_urls!.length}`);
+                }}
+              >
+                <Image
+                  source={{ uri: url }}
+                  style={styles.postImage}
+                  resizeMode="cover"
+                />
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        )}
+
         {/* 좋아요 + 댓글 수 */}
         <View style={styles.postFooter}>
           <TouchableOpacity
@@ -406,6 +436,19 @@ export default function PostDetailScreen() {
           renderItem={renderComment}
           ListHeaderComponent={renderHeader}
           contentContainerStyle={styles.listContent}
+
+          // ━━━ 성능 최적화: 100개+ 댓글 게시물에서 부드러운 스크롤 ━━━
+          // windowSize: 화면 밖 렌더링 범위 (10배)
+          // maxToRenderPerBatch: 한 번에 렌더링할 최대 개수
+          // updateCellsBatchingPeriod: 배치 업데이트 주기 (ms)
+          // removeClippedSubviews: 화면 밖 뷰 제거 (Android 메모리 절약)
+          // initialNumToRender: 초기 렌더링 수
+          windowSize={10}
+          maxToRenderPerBatch={5}
+          updateCellsBatchingPeriod={50}
+          removeClippedSubviews={true}
+          initialNumToRender={10}
+
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -621,6 +664,24 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     lineHeight: 26,
     marginBottom: 16,
+  },
+  // ── 이미지 갤러리 ──
+  imageGallery: {
+    marginBottom: 16,
+    marginHorizontal: -16, // 컨테이너 패딩 무시
+  },
+  imageGalleryContent: {
+    paddingHorizontal: 16,
+    gap: 10,
+  },
+  imageItem: {
+    marginRight: 10,
+  },
+  postImage: {
+    width: Dimensions.get('window').width * 0.7, // 화면 너비의 70%
+    height: 240,
+    borderRadius: 12,
+    backgroundColor: '#1E1E1E',
   },
   postFooter: {
     flexDirection: 'row',

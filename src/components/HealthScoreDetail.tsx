@@ -3,6 +3,9 @@
  * ─────────────────────────────────
  * PanicShieldCard 패턴 기반
  * 6팩터별 점수 + 프로그레스 바 + 토글 설명
+ *
+ * UX 개선 (2026-02-09):
+ * - SVG 막대 그래프 추가 (70점 기준선)
  */
 
 import React, { useState } from 'react';
@@ -16,6 +19,7 @@ import {
   UIManager,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import Svg, { Rect, Line, Text as SvgText } from 'react-native-svg';
 import type { HealthScoreResult } from '../services/rebalanceScore';
 
 // Android 레이아웃 애니메이션 활성화
@@ -74,31 +78,103 @@ export default function HealthScoreDetail({ result }: HealthScoreDetailProps) {
         </Text>
       </View>
 
-      {/* ====== 6개 팩터 프로그레스 바 ====== */}
-      <View style={styles.factorsContainer}>
-        {result.factors.map((factor, idx) => {
-          const barColor = getBarColor(factor.score);
-          return (
-            <View key={idx} style={styles.factorRow}>
-              <View style={styles.factorLabelRow}>
-                <Text style={styles.factorIcon}>{factor.icon}</Text>
-                <Text style={styles.factorLabel}>{factor.label}</Text>
-                <Text style={[styles.factorScore, { color: barColor }]}>
-                  {factor.score}
-                </Text>
+      {/* ====== SVG 막대 그래프 (펼치기 전 표시) ====== */}
+      {!showGuide && (
+        <View style={styles.chartContainer}>
+          <Svg width="100%" height="260">
+            {/* 70점 기준선 (점선) */}
+            <Line
+              x1="0"
+              y1={260 - (70 * 2.4)}
+              x2="100%"
+              y2={260 - (70 * 2.4)}
+              stroke="#666"
+              strokeWidth="1"
+              strokeDasharray="4,4"
+            />
+            <SvgText
+              x="4"
+              y={260 - (70 * 2.4) - 4}
+              fontSize="10"
+              fill="#888"
+            >
+              70점 (기준)
+            </SvgText>
+
+            {/* 6개 막대 */}
+            {result.factors.map((factor, idx) => {
+              const barColor = getBarColor(factor.score);
+              const barWidth = 40;
+              const spacing = 12;
+              const x = idx * (barWidth + spacing) + 10;
+              const barHeight = Math.max(5, factor.score * 2.4); // 100점 → 240px
+              const y = 260 - barHeight;
+
+              return (
+                <React.Fragment key={idx}>
+                  {/* 막대 */}
+                  <Rect
+                    x={x}
+                    y={y}
+                    width={barWidth}
+                    height={barHeight}
+                    fill={barColor}
+                    rx="4"
+                  />
+                  {/* 점수 라벨 */}
+                  <SvgText
+                    x={x + barWidth / 2}
+                    y={y - 6}
+                    fontSize="12"
+                    fill={barColor}
+                    fontWeight="700"
+                    textAnchor="middle"
+                  >
+                    {factor.score}
+                  </SvgText>
+                  {/* 아이콘 라벨 */}
+                  <SvgText
+                    x={x + barWidth / 2}
+                    y={255}
+                    fontSize="16"
+                    textAnchor="middle"
+                  >
+                    {factor.icon}
+                  </SvgText>
+                </React.Fragment>
+              );
+            })}
+          </Svg>
+        </View>
+      )}
+
+      {/* ====== 6개 팩터 프로그레스 바 (펼친 후 표시) ====== */}
+      {showGuide && (
+        <View style={styles.factorsContainer}>
+          {result.factors.map((factor, idx) => {
+            const barColor = getBarColor(factor.score);
+            return (
+              <View key={idx} style={styles.factorRow}>
+                <View style={styles.factorLabelRow}>
+                  <Text style={styles.factorIcon}>{factor.icon}</Text>
+                  <Text style={styles.factorLabel}>{factor.label}</Text>
+                  <Text style={[styles.factorScore, { color: barColor }]}>
+                    {factor.score}
+                  </Text>
+                </View>
+                <View style={styles.barBg}>
+                  <View
+                    style={[
+                      styles.barFill,
+                      { width: `${Math.max(2, factor.score)}%`, backgroundColor: barColor },
+                    ]}
+                  />
+                </View>
               </View>
-              <View style={styles.barBg}>
-                <View
-                  style={[
-                    styles.barFill,
-                    { width: `${Math.max(2, factor.score)}%`, backgroundColor: barColor },
-                  ]}
-                />
-              </View>
-            </View>
-          );
-        })}
-      </View>
+            );
+          })}
+        </View>
+      )}
 
       {/* ====== 토글: "이 점수는 무엇인가요?" ====== */}
       <TouchableOpacity
@@ -219,9 +295,16 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
+  // SVG 차트 컨테이너
+  chartContainer: {
+    marginBottom: 16,
+    paddingVertical: 8,
+  },
+
   // 팩터 목록
   factorsContainer: {
     gap: 10,
+    marginBottom: 12,
   },
   factorRow: {},
   factorLabelRow: {

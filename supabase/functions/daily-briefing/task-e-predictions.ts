@@ -17,6 +17,7 @@ import {
   supabase,
   callGeminiWithSearch,
   cleanJsonResponse,
+  logTaskResult,
 } from './_shared.ts';
 
 // ============================================================================
@@ -67,19 +68,23 @@ export interface PredictionGenerationResult {
  * @returns { created, skipped }
  */
 export async function generatePredictionPolls(): Promise<PredictionGenerationResult> {
+  const startTime = Date.now();
   const today = new Date().toISOString().split('T')[0];
 
-  // 중복 생성 방지: 오늘 이미 생성된 투표 확인
-  const { data: existing } = await supabase
-    .from('prediction_polls')
-    .select('id')
-    .gte('created_at', `${today}T00:00:00Z`)
-    .lt('created_at', `${today}T23:59:59Z`);
+  try {
+    // 중복 생성 방지: 오늘 이미 생성된 투표 확인
+    const { data: existing } = await supabase
+      .from('prediction_polls')
+      .select('id')
+      .gte('created_at', `${today}T00:00:00Z`)
+      .lt('created_at', `${today}T23:59:59Z`);
 
-  if (existing && existing.length >= 3) {
-    console.log(`[Task E-1] 오늘(${today}) 이미 ${existing.length}개 질문 존재 — 스킵`);
-    return { created: 0, skipped: true };
-  }
+    if (existing && existing.length >= 3) {
+      console.log(`[Task E-1] 오늘(${today}) 이미 ${existing.length}개 질문 존재 — 스킵`);
+      const elapsed = Date.now() - startTime;
+      await logTaskResult('predictions', 'SKIPPED', elapsed, { existing: existing.length });
+      return { created: 0, skipped: true };
+    }
 
   const todayDate = new Date();
   const dateStr = `${todayDate.getFullYear()}년 ${todayDate.getMonth() + 1}월 ${todayDate.getDate()}일`;
@@ -163,5 +168,14 @@ export async function generatePredictionPolls(): Promise<PredictionGenerationRes
   }
 
   console.log(`[Task E-1] 예측 질문 ${created}개 생성 완료`);
+
+  const elapsed = Date.now() - startTime;
+  await logTaskResult('predictions', 'SUCCESS', elapsed, { created });
+
   return { created, skipped: false };
+  } catch (error) {
+    const elapsed = Date.now() - startTime;
+    await logTaskResult('predictions', 'FAILED', elapsed, null, error.message);
+    throw error;
+  }
 }

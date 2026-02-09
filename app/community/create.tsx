@@ -25,6 +25,7 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -44,6 +45,15 @@ import {
 import { COLORS, SIZES } from '../../src/styles/theme';
 import { getTierFromAssets, TIER_COLORS, TIER_LABELS } from '../../src/utils/communityUtils';
 import { validateContent, getViolationMessage } from '../../src/services/contentFilter';
+import {
+  pickImages,
+  validateImages,
+  uploadMultipleImages,
+  formatFileSize,
+  MAX_IMAGES,
+  PickedImage,
+} from '../../src/services/imageUpload';
+import supabase from '../../src/services/supabase';
 
 const MAX_CONTENT_LENGTH = 500;
 
@@ -62,6 +72,8 @@ export default function CreatePostScreen() {
   // 상태
   const [category, setCategory] = useState<CommunityCategory | null>(null);
   const [content, setContent] = useState('');
+  const [selectedImages, setSelectedImages] = useState<PickedImage[]>([]);
+  const [isUploadingImages, setIsUploadingImages] = useState(false);
 
   // 사용자 표시 정보
   const displayInfo = useUserDisplayInfo(eligibility.totalAssets, 0);
@@ -89,6 +101,33 @@ export default function CreatePostScreen() {
 
     return generateAssetMix(categories);
   }, [assets, totalAssets]);
+
+  // 이미지 선택 핸들러
+  const handlePickImages = async () => {
+    try {
+      const images = await pickImages(MAX_IMAGES - selectedImages.length);
+
+      if (images.length === 0) {
+        return; // 취소됨
+      }
+
+      // 유효성 검사
+      const validation = validateImages([...selectedImages, ...images]);
+      if (!validation.isValid) {
+        Alert.alert('이미지 선택 실패', validation.error);
+        return;
+      }
+
+      setSelectedImages([...selectedImages, ...images]);
+    } catch (error: any) {
+      Alert.alert('이미지 선택 실패', error.message || '이미지를 선택할 수 없습니다.');
+    }
+  };
+
+  // 이미지 삭제 핸들러
+  const handleRemoveImage = (index: number) => {
+    setSelectedImages((prev) => prev.filter((_, i) => i !== index));
+  };
 
   // 작성 버튼 핸들러
   const handleSubmit = async () => {
@@ -127,12 +166,36 @@ export default function CreatePostScreen() {
     }
 
     try {
+      setIsUploadingImages(true);
+
+      // 1. 이미지 업로드 (있는 경우)
+      let imageUrls: string[] = [];
+      if (selectedImages.length > 0) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          throw new Error('로그인이 필요합니다.');
+        }
+
+        // 임시 postId 생성 (실제 게시글 ID는 생성 후에 알 수 있음)
+        const tempPostId = Date.now().toString();
+
+        imageUrls = await uploadMultipleImages(selectedImages, user.id, tempPostId);
+
+        if (imageUrls.length === 0) {
+          throw new Error('이미지 업로드에 실패했습니다.');
+        }
+      }
+
+      setIsUploadingImages(false);
+
+      // 2. 게시글 생성 (이미지 URL 포함)
       await createPost.mutateAsync({
         content: content.trim(),
         category,
         displayTag: displayInfo.displayTag,
         assetMix: assetMix || '다양한 자산',
         totalAssets: eligibility.totalAssets,
+        imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
       });
 
       Alert.alert('작성 완료', '게시글이 성공적으로 작성되었습니다.', [
@@ -143,6 +206,7 @@ export default function CreatePostScreen() {
       ]);
     } catch (error) {
       console.error('Post creation error:', error);
+      setIsUploadingImages(false);
       Alert.alert('오류', '게시글 작성에 실패했습니다. 다시 시도해주세요.');
     }
   };
@@ -327,6 +391,59 @@ export default function CreatePostScreen() {
               onChangeText={setContent}
               textAlignVertical="top"
             />
+          </View>
+
+          {/* 이미지 첨부 */}
+          <View style={styles.section}>
+            <View style={styles.labelRow}>
+              <Text style={styles.sectionLabel}>이미지 첨부 (선택)</Text>
+              <Text style={styles.charCount}>
+                {selectedImages.length} / {MAX_IMAGES}
+              </Text>
+            </View>
+
+            {/* 이미지 선택 버튼 */}
+            {selectedImages.length < MAX_IMAGES && (
+              <TouchableOpacity
+                style={styles.imagePickButton}
+                onPress={handlePickImages}
+                disabled={isUploadingImages}
+              >
+                <Ionicons name="camera" size={24} color={COLORS.primary} />
+                <Text style={styles.imagePickButtonText}>
+                  이미지 선택 (최대 {MAX_IMAGES}장, 각 5MB 이하)
+                </Text>
+              </TouchableOpacity>
+            )}
+
+            {/* 선택된 이미지 썸네일 */}
+            {selectedImages.length > 0 && (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imagePreviewContainer}>
+                {selectedImages.map((image, index) => (
+                  <View key={index} style={styles.imagePreviewItem}>
+                    <Image source={{ uri: image.uri }} style={styles.imagePreview} />
+                    <TouchableOpacity
+                      style={styles.imageRemoveButton}
+                      onPress={() => handleRemoveImage(index)}
+                      disabled={isUploadingImages}
+                    >
+                      <Ionicons name="close-circle" size={24} color={COLORS.error} />
+                    </TouchableOpacity>
+                    {image.fileSize && (
+                      <Text style={styles.imageFileSize}>{formatFileSize(image.fileSize)}</Text>
+                    )}
+                  </View>
+                ))}
+              </ScrollView>
+            )}
+
+            {/* 업로드 진행 표시 */}
+            {isUploadingImages && (
+              <View style={styles.uploadingIndicator}>
+                <ActivityIndicator size="small" color={COLORS.primary} />
+                <Text style={styles.uploadingText}>이미지 업로드 중...</Text>
+              </View>
+            )}
           </View>
 
           {/* 안내 문구 */}
@@ -589,5 +706,66 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#FFC107',
     lineHeight: 18,
+  },
+
+  // ── 이미지 첨부 ──
+  imagePickButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    backgroundColor: COLORS.surface,
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderStyle: 'dashed',
+  },
+  imagePickButtonText: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+  },
+  imagePreviewContainer: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 8,
+  },
+  imagePreviewItem: {
+    position: 'relative',
+    marginRight: 10,
+  },
+  imagePreview: {
+    width: 100,
+    height: 100,
+    borderRadius: 12,
+    backgroundColor: COLORS.surface,
+  },
+  imageRemoveButton: {
+    position: 'absolute',
+    top: -8,
+    right: -8,
+    backgroundColor: COLORS.background,
+    borderRadius: 12,
+  },
+  imageFileSize: {
+    fontSize: 10,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    marginTop: 4,
+  },
+  uploadingIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    backgroundColor: COLORS.primary + '15',
+    borderRadius: 12,
+    padding: 12,
+    marginTop: 8,
+  },
+  uploadingText: {
+    fontSize: 13,
+    color: COLORS.primary,
+    fontWeight: '600',
   },
 });

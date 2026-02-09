@@ -17,6 +17,7 @@ import {
   supabase,
   callGeminiWithSearch,
   cleanJsonResponse,
+  logTaskResult,
 } from './_shared.ts';
 
 // ============================================================================
@@ -282,18 +283,33 @@ async function calculateUserImpacts(contextCardId: string): Promise<{
  * @returns { contextCardId, sentiment, usersCalculated, avgImpact }
  */
 export async function runContextCardGeneration(): Promise<ContextCardResult> {
-  console.log('[Task G] 맥락 카드 생성 배치 시작...');
+  const startTime = Date.now();
 
-  // G-1: 맥락 카드 생성
-  const cardResult = await generateContextCard();
+  try {
+    console.log('[Task G] 맥락 카드 생성 배치 시작...');
 
-  // G-2: 사용자별 영향도 계산
-  const impactResult = await calculateUserImpacts(cardResult.contextCardId);
+    // G-1: 맥락 카드 생성
+    const cardResult = await generateContextCard();
 
-  return {
-    contextCardId: cardResult.contextCardId,
-    sentiment: cardResult.cardData.sentiment,
-    usersCalculated: impactResult.usersCalculated,
-    avgImpact: impactResult.avgImpact,
-  };
+    // G-2: 사용자별 영향도 계산
+    const impactResult = await calculateUserImpacts(cardResult.contextCardId);
+
+    const elapsed = Date.now() - startTime;
+    await logTaskResult('context_card', 'SUCCESS', elapsed, {
+      sentiment: cardResult.cardData.sentiment,
+      users: impactResult.usersCalculated,
+      avgImpact: impactResult.avgImpact,
+    });
+
+    return {
+      contextCardId: cardResult.contextCardId,
+      sentiment: cardResult.cardData.sentiment,
+      usersCalculated: impactResult.usersCalculated,
+      avgImpact: impactResult.avgImpact,
+    };
+  } catch (error) {
+    const elapsed = Date.now() - startTime;
+    await logTaskResult('context_card', 'FAILED', elapsed, null, error.message);
+    throw error;
+  }
 }

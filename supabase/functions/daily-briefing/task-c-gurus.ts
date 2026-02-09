@@ -31,6 +31,7 @@ import {
   GURU_LIST,
   callGeminiWithSearch,
   cleanJsonResponse,
+  logTaskResult,
 } from './_shared.ts';
 
 // ============================================================================
@@ -234,13 +235,27 @@ export async function runGuruInsightsAnalysis(): Promise<{
   count: number;
   marketContext: string;
 }> {
-  console.log('[Task C] 투자 거장 인사이트 배치 시작...');
+  const startTime = Date.now();
 
-  const result = await analyzeGuruInsights();
-  await upsertGuruInsights(result);
+  try {
+    console.log('[Task C] 투자 거장 인사이트 배치 시작...');
 
-  return {
-    count: result.insights.length,
-    marketContext: result.marketContext,
-  };
+    const result = await analyzeGuruInsights();
+    await upsertGuruInsights(result);
+
+    const elapsed = Date.now() - startTime;
+    await logTaskResult('gurus', 'SUCCESS', elapsed, {
+      count: result.insights.length,
+      total: GURU_LIST.length,
+    });
+
+    return {
+      count: result.insights.length,
+      marketContext: result.marketContext,
+    };
+  } catch (error) {
+    const elapsed = Date.now() - startTime;
+    await logTaskResult('gurus', 'FAILED', elapsed, null, error.message);
+    throw error;
+  }
 }

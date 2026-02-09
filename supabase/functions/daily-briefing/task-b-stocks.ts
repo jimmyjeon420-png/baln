@@ -21,6 +21,7 @@ import {
   STOCK_LIST,
   callGeminiWithSearch,
   cleanJsonResponse,
+  logTaskResult,
 } from './_shared.ts';
 
 // ============================================================================
@@ -142,39 +143,52 @@ async function analyzeStockBatch(
  * @returns StockQuantResult[] (전체 35개 종목)
  */
 export async function analyzeAllStocks(): Promise<StockQuantResult[]> {
+  const startTime = Date.now();
   const BATCH_SIZE = 5;
   const allResults: StockQuantResult[] = [];
 
-  for (let i = 0; i < STOCK_LIST.length; i += BATCH_SIZE) {
-    const batch = STOCK_LIST.slice(i, i + BATCH_SIZE);
-    const batchNum = Math.floor(i / BATCH_SIZE) + 1;
-    const totalBatches = Math.ceil(STOCK_LIST.length / BATCH_SIZE);
+  try {
+    for (let i = 0; i < STOCK_LIST.length; i += BATCH_SIZE) {
+      const batch = STOCK_LIST.slice(i, i + BATCH_SIZE);
+      const batchNum = Math.floor(i / BATCH_SIZE) + 1;
+      const totalBatches = Math.ceil(STOCK_LIST.length / BATCH_SIZE);
 
-    console.log(`[Task B] 배치 ${batchNum}/${totalBatches}: ${batch.map(s => s.ticker).join(', ')}`);
+      console.log(`[Task B] 배치 ${batchNum}/${totalBatches}: ${batch.map(s => s.ticker).join(', ')}`);
 
-    try {
-      const results = await analyzeStockBatch(batch);
-      allResults.push(...results);
-    } catch (error) {
-      console.error(`[Task B] 배치 ${batchNum} 실패:`, error);
-      // 실패한 종목은 기본값으로 채움
-      batch.forEach(stock => {
-        allResults.push({
-          ticker: stock.ticker,
-          valuationScore: 50,
-          signal: 'HOLD',
-          analysis: '분석 데이터를 불러오지 못했습니다.',
-          metrics: {},
-          sector: stock.sector,
+      try {
+        const results = await analyzeStockBatch(batch);
+        allResults.push(...results);
+      } catch (error) {
+        console.error(`[Task B] 배치 ${batchNum} 실패:`, error);
+        // 실패한 종목은 기본값으로 채움
+        batch.forEach(stock => {
+          allResults.push({
+            ticker: stock.ticker,
+            valuationScore: 50,
+            signal: 'HOLD',
+            analysis: '분석 데이터를 불러오지 못했습니다.',
+            metrics: {},
+            sector: stock.sector,
+          });
         });
-      });
+      }
+
+      // Rate limit 방지: 배치 간 1.5초 대기
+      if (i + BATCH_SIZE < STOCK_LIST.length) {
+        await new Promise(resolve => setTimeout(resolve, 1500));
+      }
     }
 
-    // Rate limit 방지: 배치 간 1.5초 대기
-    if (i + BATCH_SIZE < STOCK_LIST.length) {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-    }
+    const elapsed = Date.now() - startTime;
+    await logTaskResult('stocks', 'SUCCESS', elapsed, {
+      count: allResults.length,
+      total: STOCK_LIST.length,
+    });
+
+    return allResults;
+  } catch (error) {
+    const elapsed = Date.now() - startTime;
+    await logTaskResult('stocks', 'FAILED', elapsed, { count: allResults.length }, error.message);
+    throw error;
   }
-
-  return allResults;
 }

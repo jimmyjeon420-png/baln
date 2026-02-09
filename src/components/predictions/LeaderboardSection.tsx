@@ -1,17 +1,27 @@
 /**
- * LeaderboardSection.tsx - 투자 예측 리더보드 섹션
+ * LeaderboardSection.tsx - 투자 예측 리더보드 섹션 (게임형 UI)
  *
  * 역할: "명예의 전당"
- * - Top 10 유저 표시
- * - 순위 배지 (🥇🥈🥉)
- * - 적중률 + 투표 횟수
- * - 내 순위 하이라이트
- * - 최소 5회 투표 필터
+ * - Top 10 유저 카드 (1~3등 그라데이션 배경)
+ * - 순위 배지 (🥇🥈🥉) + 메달 색상
+ * - 프로필 아바타 (색상 원)
+ * - 적중률 + 투표 횟수 + 연속 스트릭
+ * - 내 순위 하이라이트 (TOP 10 밖이면 하단 고정)
+ * - 순차 페이드인 애니메이션
  */
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withSpring,
+  withRepeat,
+  withSequence,
+  Easing,
+} from 'react-native-reanimated';
 import { LeaderboardEntry } from '../../types/prediction';
 
 interface LeaderboardSectionProps {
@@ -20,6 +30,12 @@ interface LeaderboardSectionProps {
 }
 
 export default function LeaderboardSection({ leaderboard, isLoading }: LeaderboardSectionProps) {
+  // 내 순위가 TOP 10 밖인지 확인
+  const myEntry = leaderboard?.find(entry => entry.isMe);
+  const isMyRankOutsideTop10 = myEntry && myEntry.rank > 10;
+  const top10 = leaderboard?.slice(0, 10) || [];
+  const remainingToTop10 = isMyRankOutsideTop10 ? myEntry.rank - 10 : 0;
+
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>🏆 주간 리더보드</Text>
@@ -36,42 +52,217 @@ export default function LeaderboardSection({ leaderboard, isLoading }: Leaderboa
           </Text>
         </View>
       ) : (
-        <View style={styles.leaderboardCard}>
-          <View style={styles.leaderboardHeader}>
-            <Text style={styles.lbHeaderRank}>#</Text>
-            <Text style={styles.lbHeaderName}>유저</Text>
-            <Text style={styles.lbHeaderAccuracy}>적중률</Text>
-            <Text style={styles.lbHeaderStreak}>연속</Text>
+        <>
+          {/* TOP 10 카드 */}
+          <View style={styles.leaderboardContainer}>
+            {top10.map((entry, index) => (
+              <LeaderboardCard
+                key={entry.user_id}
+                entry={entry}
+                index={index}
+              />
+            ))}
           </View>
-          {leaderboard.map((entry) => (
-            <View
-              key={entry.user_id}
-              style={[
-                styles.leaderboardRow,
-                entry.isMe && styles.leaderboardRowMe,
-              ]}
-            >
-              <Text style={[styles.lbRank, entry.rank <= 3 && styles.lbRankTop]}>
-                {entry.rank <= 3 ? ['🥇', '🥈', '🥉'][entry.rank - 1] : entry.rank}
-              </Text>
-              <View style={styles.lbNameCol}>
-                <Text style={[styles.lbName, entry.isMe && styles.lbNameMe]}>
-                  {entry.isMe ? '나' : entry.display_name}
-                </Text>
-                <Text style={styles.lbVotes}>{entry.total_votes}회 투표</Text>
-              </View>
-              <Text style={styles.lbAccuracy}>
-                {Number(entry.accuracy_rate).toFixed(1)}%
-              </Text>
-              <Text style={styles.lbStreak}>
-                {entry.best_streak > 0 ? `${entry.best_streak}🔥` : '-'}
-              </Text>
-            </View>
-          ))}
-        </View>
+
+          {/* 내 순위 (TOP 10 밖) */}
+          {isMyRankOutsideTop10 && (
+            <MyRankCard
+              entry={myEntry}
+              remainingToTop10={remainingToTop10}
+            />
+          )}
+        </>
       )}
     </View>
   );
+}
+
+// ============================================================================
+// 리더보드 카드 컴포넌트 (애니메이션 적용)
+// ============================================================================
+
+interface LeaderboardCardProps {
+  entry: LeaderboardEntry;
+  index: number;
+}
+
+function LeaderboardCard({ entry, index }: LeaderboardCardProps) {
+  const opacity = useSharedValue(0);
+  const translateY = useSharedValue(20);
+
+  useEffect(() => {
+    // 순차 페이드인 (각 항목 100ms 딜레이)
+    opacity.value = withDelay(index * 100, withSpring(1, { damping: 15 }));
+    translateY.value = withDelay(index * 100, withSpring(0, { damping: 15 }));
+  }, [index]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ translateY: translateY.value }],
+  }));
+
+  const isTop3 = entry.rank <= 3;
+  const isMe = entry.isMe;
+
+  // 1~3등 그라데이션 색상
+  const gradientColors = isTop3
+    ? entry.rank === 1
+      ? ['#FFD700', '#FFA500'] as const // 금색
+      : entry.rank === 2
+      ? ['#C0C0C0', '#A9A9A9'] as const // 은색
+      : ['#CD7F32', '#8B4513'] as const // 동색
+    : ['#1E1E1E', '#1E1E1E'] as const; // 일반
+
+  return (
+    <Animated.View style={[styles.cardWrapper, animatedStyle]}>
+      <LinearGradient
+        colors={gradientColors}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[
+          styles.card,
+          isMe && !isTop3 && styles.cardMe,
+        ]}
+      >
+        {/* 순위 배지 */}
+        <View style={styles.rankBadge}>
+          {isTop3 ? (
+            <Text style={styles.medalEmoji}>
+              {['🥇', '🥈', '🥉'][entry.rank - 1]}
+            </Text>
+          ) : (
+            <Text style={[styles.rankNumber, isTop3 && styles.rankNumberTop]}>
+              {entry.rank}
+            </Text>
+          )}
+        </View>
+
+        {/* 프로필 아바타 */}
+        <View style={[styles.avatar, { backgroundColor: getAvatarColor(entry.user_id) }]}>
+          <Text style={styles.avatarText}>
+            {(entry.isMe ? '나' : entry.display_name).charAt(0).toUpperCase()}
+          </Text>
+        </View>
+
+        {/* 유저 정보 */}
+        <View style={styles.userInfo}>
+          <Text style={[styles.userName, isTop3 && styles.userNameTop]}>
+            {entry.isMe ? '나' : entry.display_name}
+          </Text>
+          <Text style={[styles.userVotes, isTop3 && styles.userVotesTop]}>
+            {entry.total_votes}회 투표
+          </Text>
+        </View>
+
+        {/* 적중률 */}
+        <View style={styles.accuracySection}>
+          <Text style={[styles.accuracyValue, isTop3 && styles.accuracyValueTop]}>
+            {Number(entry.accuracy_rate).toFixed(1)}%
+          </Text>
+          <Text style={[styles.accuracyLabel, isTop3 && styles.accuracyLabelTop]}>
+            적중률
+          </Text>
+        </View>
+
+        {/* 연속 스트릭 */}
+        {entry.best_streak > 0 && (
+          <View style={styles.streakBadge}>
+            <Text style={[styles.streakText, isTop3 && styles.streakTextTop]}>
+              {entry.best_streak}🔥
+            </Text>
+          </View>
+        )}
+      </LinearGradient>
+    </Animated.View>
+  );
+}
+
+// ============================================================================
+// 내 순위 카드 (TOP 10 밖 - 펄스 애니메이션)
+// ============================================================================
+
+interface MyRankCardProps {
+  entry: LeaderboardEntry;
+  remainingToTop10: number;
+}
+
+function MyRankCard({ entry, remainingToTop10 }: MyRankCardProps) {
+  const scale = useSharedValue(1);
+
+  useEffect(() => {
+    // 펄스 애니메이션 (1.0 -> 1.05 -> 1.0 반복)
+    scale.value = withRepeat(
+      withSequence(
+        withSpring(1.05, { damping: 2 }),
+        withSpring(1.0, { damping: 2 })
+      ),
+      -1, // 무한 반복
+      false
+    );
+  }, []);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  return (
+    <Animated.View style={[styles.myRankContainer, animatedStyle]}>
+      <View style={styles.myRankHeader}>
+        <Text style={styles.myRankTitle}>내 순위</Text>
+        <Text style={styles.myRankSubtitle}>
+          TOP 10 진입까지 {remainingToTop10}명 남음
+        </Text>
+      </View>
+
+      <View style={styles.myRankCard}>
+        {/* 순위 배지 */}
+        <View style={styles.rankBadge}>
+          <Text style={styles.rankNumber}>{entry.rank}</Text>
+        </View>
+
+        {/* 프로필 아바타 */}
+        <View style={[styles.avatar, { backgroundColor: getAvatarColor(entry.user_id) }]}>
+          <Text style={styles.avatarText}>나</Text>
+        </View>
+
+        {/* 유저 정보 */}
+        <View style={styles.userInfo}>
+          <Text style={[styles.userName, styles.userNameMe]}>나</Text>
+          <Text style={styles.userVotes}>{entry.total_votes}회 투표</Text>
+        </View>
+
+        {/* 적중률 */}
+        <View style={styles.accuracySection}>
+          <Text style={styles.accuracyValue}>
+            {Number(entry.accuracy_rate).toFixed(1)}%
+          </Text>
+          <Text style={styles.accuracyLabel}>적중률</Text>
+        </View>
+
+        {/* 연속 스트릭 */}
+        {entry.best_streak > 0 && (
+          <View style={styles.streakBadge}>
+            <Text style={styles.streakText}>{entry.best_streak}🔥</Text>
+          </View>
+        )}
+      </View>
+    </Animated.View>
+  );
+}
+
+// ============================================================================
+// 유틸리티 함수
+// ============================================================================
+
+// 유저 ID 기반 아바타 색상 생성
+function getAvatarColor(userId: string): string {
+  const colors = [
+    '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A',
+    '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2',
+    '#F8B500', '#E74C3C', '#3498DB', '#2ECC71',
+  ];
+  const hash = userId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  return colors[hash % colors.length];
 }
 
 // ============================================================================
@@ -121,93 +312,175 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
 
-  // 리더보드 카드
-  leaderboardCard: {
+  // 리더보드 컨테이너
+  leaderboardContainer: {
+    gap: 10,
+  },
+
+  // 카드 래퍼 (애니메이션용)
+  cardWrapper: {
+    marginBottom: 2,
+  },
+
+  // 카드 스타일
+  card: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    borderRadius: 14,
     backgroundColor: '#1E1E1E',
-    borderRadius: 16,
-    overflow: 'hidden',
+    // 그림자 효과
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
-  leaderboardHeader: {
-    flexDirection: 'row',
+  cardMe: {
+    borderWidth: 2,
+    borderColor: '#4CAF50',
+  },
+
+  // 순위 배지
+  rankBadge: {
+    width: 36,
+    height: 36,
+    justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    backgroundColor: '#252525',
+    marginRight: 12,
   },
-  lbHeaderRank: {
-    width: 32,
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#666666',
+  medalEmoji: {
+    fontSize: 28,
   },
-  lbHeaderName: {
-    flex: 1,
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#666666',
-  },
-  lbHeaderAccuracy: {
-    width: 60,
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#666666',
-    textAlign: 'right',
-  },
-  lbHeaderStreak: {
-    width: 50,
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#666666',
-    textAlign: 'right',
-  },
-  leaderboardRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#2A2A2A',
-  },
-  leaderboardRowMe: {
-    backgroundColor: '#1A2A1A',
-  },
-  lbRank: {
-    width: 32,
-    fontSize: 14,
-    color: '#AAAAAA',
-    fontWeight: '600',
-  },
-  lbRankTop: {
+  rankNumber: {
     fontSize: 18,
+    fontWeight: '800',
+    color: '#AAAAAA',
   },
-  lbNameCol: {
+  rankNumberTop: {
+    fontSize: 20,
+    color: '#FFFFFF',
+  },
+
+  // 프로필 아바타
+  avatar: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  avatarText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+
+  // 유저 정보
+  userInfo: {
     flex: 1,
+    justifyContent: 'center',
   },
-  lbName: {
-    fontSize: 14,
+  userName: {
+    fontSize: 15,
+    fontWeight: '600',
     color: '#FFFFFF',
-    fontWeight: '500',
+    marginBottom: 3,
   },
-  lbNameMe: {
+  userNameTop: {
+    color: '#000000',
+    fontWeight: '800',
+  },
+  userNameMe: {
     color: '#4CAF50',
-    fontWeight: '700',
+    fontWeight: '800',
   },
-  lbVotes: {
+  userVotes: {
     fontSize: 11,
-    color: '#666666',
-    marginTop: 2,
+    color: '#888888',
   },
-  lbAccuracy: {
-    width: 60,
+  userVotesTop: {
+    color: '#000000',
+    opacity: 0.7,
+  },
+
+  // 적중률 섹션
+  accuracySection: {
+    alignItems: 'flex-end',
+    marginRight: 12,
+  },
+  accuracyValue: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    marginBottom: 2,
+  },
+  accuracyValueTop: {
+    color: '#000000',
+  },
+  accuracyLabel: {
+    fontSize: 10,
+    color: '#888888',
+  },
+  accuracyLabelTop: {
+    color: '#000000',
+    opacity: 0.6,
+  },
+
+  // 연속 스트릭 배지
+  streakBadge: {
+    backgroundColor: 'rgba(255, 152, 0, 0.2)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  streakText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#FF9800',
+  },
+  streakTextTop: {
+    color: '#000000',
+    backgroundColor: 'rgba(0, 0, 0, 0.15)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+
+  // 내 순위 카드 (TOP 10 밖)
+  myRankContainer: {
+    marginTop: 20,
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#2A2A2A',
+  },
+  myRankHeader: {
+    marginBottom: 10,
+  },
+  myRankTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#FFFFFF',
-    textAlign: 'right',
+    color: '#4CAF50',
+    marginBottom: 4,
   },
-  lbStreak: {
-    width: 50,
-    fontSize: 13,
-    color: '#FF9800',
-    textAlign: 'right',
+  myRankSubtitle: {
+    fontSize: 12,
+    color: '#888888',
+  },
+  myRankCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    borderRadius: 14,
+    backgroundColor: '#1A2A1A',
+    borderWidth: 2,
+    borderColor: '#4CAF50',
+    // 그림자 효과
+    shadowColor: '#4CAF50',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
 });

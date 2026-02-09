@@ -285,7 +285,8 @@ export default function CommunityMainScreen() {
           )}
           contentContainerStyle={styles.listContent}
           onEndReached={handleLoadMore}
-          onEndReachedThreshold={0.5}
+          // 성능 최적화: 페이지당 5개씩 로드 (더 빠른 트리거)
+          onEndReachedThreshold={0.3}
           ListFooterComponent={
             isFetchingNextPage ? (
               <View style={styles.footerLoader}>

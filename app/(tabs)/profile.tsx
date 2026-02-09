@@ -55,6 +55,9 @@ export default function ProfileScreen() {
     { icon: 'document-text-outline', label: '이용약관', onPress: () => router.push('/settings/terms') },
     { icon: 'lock-closed-outline', label: '개인정보처리방침', onPress: () => router.push('/settings/privacy') },
     { icon: 'information-circle-outline', label: '앱 정보', onPress: () => router.push('/settings/about') },
+
+    // 개발 모드 - 관리자 메뉴 (추후 관리자 권한 체크 추가)
+    { icon: 'shield', label: '[DEV] 관리자 신고 처리', onPress: () => router.push('/admin/reports'), dev: true },
   ];
 
   return (
@@ -114,13 +117,14 @@ export default function ProfileScreen() {
                 (item as any).highlight && styles.menuItemHighlight,
                 (item as any).feature && styles.menuItemFeature,
                 (item as any).community && styles.menuItemCommunity,
+                (item as any).dev && styles.menuItemDev,
               ]}
               onPress={item.onPress}
             >
               <Ionicons
                 name={item.icon as any}
                 size={22}
-                color={(item as any).credit ? '#7C4DFF' : (item as any).highlight ? '#FFC107' : (item as any).feature ? '#4CAF50' : (item as any).community ? '#FF69B4' : '#FFFFFF'}
+                color={(item as any).credit ? '#7C4DFF' : (item as any).highlight ? '#FFC107' : (item as any).feature ? '#4CAF50' : (item as any).community ? '#FF69B4' : (item as any).dev ? '#FF5722' : '#FFFFFF'}
               />
               <Text
                 style={[
@@ -129,6 +133,7 @@ export default function ProfileScreen() {
                   (item as any).highlight && styles.menuLabelHighlight,
                   (item as any).feature && styles.menuLabelFeature,
                   (item as any).community && styles.menuLabelCommunity,
+                  (item as any).dev && styles.menuLabelDev,
                 ]}
               >
                 {item.label}
@@ -151,6 +156,11 @@ export default function ProfileScreen() {
               {(item as any).community && (
                 <View style={styles.communityBadge}>
                   <Text style={styles.communityBadgeText}>HOT</Text>
+                </View>
+              )}
+              {(item as any).dev && (
+                <View style={styles.devBadge}>
+                  <Text style={styles.devBadgeText}>DEV</Text>
                 </View>
               )}
               <Ionicons name="chevron-forward" size={18} color="#888888" />
@@ -256,6 +266,9 @@ const styles = StyleSheet.create({
   menuItemCommunity: {
     backgroundColor: '#2E1A2E',
   },
+  menuItemDev: {
+    backgroundColor: '#2A1A1A',
+  },
   menuLabelHighlight: {
     color: '#FFC107',
     fontWeight: '600',
@@ -270,6 +283,10 @@ const styles = StyleSheet.create({
   },
   menuLabelCommunity: {
     color: '#FF69B4',
+    fontWeight: '600',
+  },
+  menuLabelDev: {
+    color: '#FF5722',
     fontWeight: '600',
   },
   creditBadge: {
@@ -316,6 +333,18 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   communityBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  devBadge: {
+    backgroundColor: '#FF5722',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+    marginRight: 8,
+  },
+  devBadgeText: {
     fontSize: 10,
     fontWeight: '700',
     color: '#FFFFFF',

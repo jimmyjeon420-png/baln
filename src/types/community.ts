@@ -68,6 +68,7 @@ export interface CommunityPost {
   comments_count: number;
   total_assets_at_post: number;
   top_holdings: HoldingSnapshot[];  // 작성자 상위 보유종목
+  image_urls?: string[];     // 첨부 이미지 URL 배열 (최대 3장)
   created_at: string;
 }
 
@@ -168,3 +169,52 @@ export const TIER_ICONS: { [key: string]: string } = {
   PLATINUM: 'star',
   DIAMOND: 'diamond',
 };
+
+// ================================================================
+// 신고 시스템
+// ================================================================
+
+/** 신고 대상 타입 */
+export type ReportTargetType = 'post' | 'comment';
+
+/** 신고 상태 */
+export type ReportStatus = 'pending' | 'resolved' | 'rejected';
+
+/** 신고 사유 */
+export type ReportReason =
+  | 'spam'           // 스팸/도배
+  | 'inappropriate'  // 부적절한 내용
+  | 'misleading'     // 허위/과장 정보
+  | 'illegal'        // 불법 리딩방
+  | 'harassment'     // 욕설/비방
+  | 'other';         // 기타
+
+/** 신고 사유 라벨 */
+export const REPORT_REASON_LABELS: Record<ReportReason, string> = {
+  spam: '스팸/도배',
+  inappropriate: '부적절한 내용',
+  misleading: '허위/과장 정보',
+  illegal: '불법 리딩방',
+  harassment: '욕설/비방',
+  other: '기타',
+};
+
+/** 신고 데이터 (DB community_reports 테이블) */
+export interface CommunityReport {
+  id: string;
+  reporter_id: string;
+  target_type: ReportTargetType;
+  target_id: string;
+  reason: ReportReason;
+  description: string;
+  status: ReportStatus;
+  created_at: string;
+  updated_at: string | null;
+}
+
+/** 신고 + 대상 콘텐츠 (조인된 데이터) */
+export interface ReportWithContent extends CommunityReport {
+  target_content?: CommunityPost | CommunityComment; // 대상 게시글/댓글
+  reporter_display_tag?: string;                     // 신고자 표시명
+  duplicate_count?: number;                          // 같은 대상 중복 신고 수
+}

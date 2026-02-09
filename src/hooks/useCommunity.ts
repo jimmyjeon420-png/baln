@@ -135,7 +135,8 @@ export const generateAssetMix = (portfolio: { category: string; percentage: numb
 /** 정렬 옵션 */
 export type PostSortBy = 'latest' | 'popular' | 'hot';
 
-const PAGE_SIZE = 20;
+// 성능 최적화: 페이지당 5개씩 로드
+const PAGE_SIZE = 5;
 
 export const useCommunityPosts = (
   category: CommunityCategoryFilter = 'all',
@@ -190,7 +191,7 @@ export const useCreatePost = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (input: CreatePostInput & { displayTag: string; assetMix: string; totalAssets: number }) => {
+    mutationFn: async (input: CreatePostInput & { displayTag: string; assetMix: string; totalAssets: number; imageUrls?: string[] }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('로그인이 필요합니다.');
 
@@ -226,6 +227,7 @@ export const useCreatePost = () => {
           category: input.category,
           total_assets_at_post: input.totalAssets,
           top_holdings: topHoldings,
+          image_urls: input.imageUrls || null, // 이미지 URL 배열 추가
         })
         .select()
         .single();

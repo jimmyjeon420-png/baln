@@ -12,10 +12,11 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import Slider from '@react-native-community/slider';
+import * as Haptics from 'expo-haptics';
 import { Asset } from '../../types/asset';
 import { calculateHealthScore } from '../../services/rebalanceScore';
 
@@ -28,6 +29,7 @@ interface WhatIfSimulatorProps {
 export default function WhatIfSimulator({ assets, totalAssets, currentHealthScore }: WhatIfSimulatorProps) {
   const router = useRouter();
   const [showSimulator, setShowSimulator] = useState(false);
+  const [isOptimizing, setIsOptimizing] = useState(false); // 추천 조정 계산 중
 
   // 자산별 비중 조정 (퍼센트) — 초기값 0% (변화 없음)
   const [adjustments, setAdjustments] = useState<Record<string, number>>({});
@@ -58,6 +60,9 @@ export default function WhatIfSimulator({ assets, totalAssets, currentHealthScor
   // 건강 점수 변화
   const healthDelta = simulatedHealthScore - currentHealthScore;
 
+  // 총자산 변화량
+  const totalDelta = simulatedTotal - totalAssets;
+
   // 조정이 있는지 확인
   const hasAdjustments = Object.values(adjustments).some(v => v !== 0);
 
@@ -75,6 +80,67 @@ export default function WhatIfSimulator({ assets, totalAssets, currentHealthScor
         adjustments: JSON.stringify(adjustments),
       },
     });
+  };
+
+  // 추천 조정 (최적 배분 자동 계산)
+  const handleRecommendedAdjustment = async () => {
+    try {
+      // 햅틱 피드백
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      setIsOptimizing(true);
+
+      // 1. 현재 건강 점수를 baseline으로 설정
+      let bestScore = currentHealthScore;
+      let bestAdjustments: Record<string, number> = {};
+
+      // 2. 각 자산별로 -50% ~ +100% 범위에서 5% 단위로 시뮬레이션
+      // (상위 5개 자산만 대상, 계산량 제한)
+      const topAssets = assets.slice(0, 5);
+
+      // 단일 자산 조정 시뮬레이션 (가장 효과적인 단일 조정 찾기)
+      for (const asset of topAssets) {
+        const ticker = asset.ticker || 'unknown';
+
+        for (let adj = -50; adj <= 100; adj += 5) {
+          if (adj === 0) continue; // 현재 상태는 skip
+
+          // 이 자산만 조정한 임시 포트폴리오
+          const testAdjustments = { [ticker]: adj };
+          const testAssets = assets.map(a => {
+            const testAdj = testAdjustments[a.ticker || ''] || 0;
+            return {
+              ...a,
+              currentValue: a.currentValue * (1 + testAdj / 100),
+            };
+          });
+          const testTotal = testAssets.reduce((sum, a) => sum + a.currentValue, 0);
+
+          if (testTotal === 0) continue;
+
+          const testScore = calculateHealthScore(testAssets, testTotal).totalScore;
+
+          if (testScore > bestScore) {
+            bestScore = testScore;
+            bestAdjustments = testAdjustments;
+          }
+        }
+      }
+
+      // 3. 최적 조정을 찾았으면 적용
+      if (Object.keys(bestAdjustments).length > 0) {
+        setAdjustments(bestAdjustments);
+        // 성공 햅틱
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } else {
+        // 개선 여지가 없으면 가벼운 햅틱
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
+    } catch (error) {
+      console.error('추천 조정 계산 실패:', error);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    } finally {
+      setIsOptimizing(false);
+    }
   };
 
   // 자산 없으면 표시 안 함
@@ -121,7 +187,22 @@ export default function WhatIfSimulator({ assets, totalAssets, currentHealthScor
               <Text style={s.healthLabel}>현재</Text>
               <Text style={[s.healthValue, { color: '#888' }]}>{currentHealthScore}</Text>
             </View>
-            <Ionicons name="arrow-forward" size={16} color="#666" />
+
+            {/* 동적 화살표: ⬆️ 개선 / ⬇️ 악화 / ➡️ 동일 */}
+            <Ionicons
+              name={
+                healthDelta > 2 ? 'arrow-up' :
+                healthDelta < -2 ? 'arrow-down' :
+                'arrow-forward'
+              }
+              size={20}
+              color={
+                healthDelta > 2 ? '#4CAF50' :
+                healthDelta < -2 ? '#CF6679' :
+                '#666'
+              }
+            />
+
             <View style={s.healthItem}>
               <Text style={s.healthLabel}>예상</Text>
               <Text style={[
@@ -131,6 +212,8 @@ export default function WhatIfSimulator({ assets, totalAssets, currentHealthScor
                 {simulatedHealthScore}
               </Text>
             </View>
+
+            {/* 점수 변화 + 개선/악화 텍스트 */}
             {healthDelta !== 0 && (
               <View style={[
                 s.healthDelta,
@@ -140,11 +223,40 @@ export default function WhatIfSimulator({ assets, totalAssets, currentHealthScor
                   s.healthDeltaText,
                   { color: healthDelta > 0 ? '#4CAF50' : '#CF6679' },
                 ]}>
-                  {healthDelta > 0 ? '+' : ''}{healthDelta.toFixed(0)}
+                  {healthDelta > 0 ? '+' : ''}{healthDelta.toFixed(0)}점 {healthDelta > 0 ? '개선' : '악화'}
                 </Text>
               </View>
             )}
           </View>
+
+          {/* 총자산 변화량 표시 */}
+          {hasAdjustments && totalDelta !== 0 && (
+            <View style={s.totalDeltaRow}>
+              <Ionicons name="cash-outline" size={14} color="#888" />
+              <Text style={s.totalDeltaText}>
+                총자산 {totalDelta > 0 ? '+' : ''}
+                {totalDelta.toLocaleString('ko-KR', { style: 'currency', currency: 'KRW', maximumFractionDigits: 0 })}{' '}
+                {totalDelta > 0 ? '증가' : '감소'} 예상
+              </Text>
+            </View>
+          )}
+
+          {/* 추천 조정 버튼 */}
+          <TouchableOpacity
+            style={s.recommendButton}
+            onPress={handleRecommendedAdjustment}
+            activeOpacity={0.7}
+            disabled={isOptimizing}
+          >
+            {isOptimizing ? (
+              <ActivityIndicator size="small" color="#FFF" />
+            ) : (
+              <>
+                <Ionicons name="sparkles-outline" size={16} color="#FFF" />
+                <Text style={s.recommendButtonText}>✨ 추천 조정 적용</Text>
+              </>
+            )}
+          </TouchableOpacity>
 
           {/* 자산별 슬라이더 */}
           <ScrollView style={s.assetsScroll} nestedScrollEnabled>
@@ -172,16 +284,29 @@ export default function WhatIfSimulator({ assets, totalAssets, currentHealthScor
                       maximumValue={100}
                       step={5}
                       value={adjustment}
-                      onValueChange={(val) => setAdjustments(prev => ({ ...prev, [ticker]: val }))}
+                      onValueChange={(val) => {
+                        // 햅틱 피드백 (5% 단위로 터치할 때마다)
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        setAdjustments(prev => ({ ...prev, [ticker]: val }));
+                      }}
                       minimumTrackTintColor="#7C4DFF"
                       maximumTrackTintColor="#333"
                       thumbTintColor="#7C4DFF"
                     />
                     <Text style={s.sliderLabel}>+100%</Text>
                   </View>
-                  <Text style={s.adjustmentValue}>
-                    {adjustment > 0 ? '+' : ''}{adjustment.toFixed(0)}%
-                  </Text>
+                  {/* 조정값 + 금액 변화 */}
+                  <View style={s.adjustmentRow}>
+                    <Text style={s.adjustmentValue}>
+                      {adjustment > 0 ? '+' : ''}{adjustment.toFixed(0)}%
+                    </Text>
+                    {adjustment !== 0 && (
+                      <Text style={s.adjustmentAmount}>
+                        ({adjustment > 0 ? '+' : ''}
+                        {(asset.currentValue * adjustment / 100).toLocaleString('ko-KR', { maximumFractionDigits: 0 })}원)
+                      </Text>
+                    )}
+                  </View>
                 </View>
               );
             })}
@@ -257,7 +382,31 @@ const s = StyleSheet.create({
   healthLabel: { fontSize: 10, color: '#666', marginBottom: 4 },
   healthValue: { fontSize: 22, fontWeight: '800' },
   healthDelta: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 },
-  healthDeltaText: { fontSize: 13, fontWeight: '700' },
+  healthDeltaText: { fontSize: 12, fontWeight: '700' },
+
+  // 총자산 변화량
+  totalDeltaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 8,
+    backgroundColor: '#1A1A1A',
+    borderRadius: 8,
+  },
+  totalDeltaText: { fontSize: 12, color: '#888', fontWeight: '600' },
+
+  // 추천 조정 버튼
+  recommendButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#4CAF50',
+    paddingVertical: 14,
+    borderRadius: 12,
+    gap: 8,
+  },
+  recommendButtonText: { fontSize: 14, color: '#FFF', fontWeight: '700' },
 
   // 자산 리스트
   assetsScroll: { maxHeight: 300 },
@@ -268,7 +417,9 @@ const s = StyleSheet.create({
   sliderRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   sliderLabel: { fontSize: 10, color: '#555', width: 36, textAlign: 'center' },
   slider: { flex: 1, height: 32 },
-  adjustmentValue: { fontSize: 12, color: '#7C4DFF', textAlign: 'center', marginTop: 4, fontWeight: '600' },
+  adjustmentRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 6, gap: 6 },
+  adjustmentValue: { fontSize: 13, color: '#7C4DFF', fontWeight: '700' },
+  adjustmentAmount: { fontSize: 11, color: '#666', fontWeight: '500' },
 
   // 버튼
   buttonGroup: { flexDirection: 'row', gap: 8 },

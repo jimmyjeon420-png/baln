@@ -170,3 +170,44 @@ export function getTier(total: number): string {
   if (total >= 100000000) return 'GOLD';
   return 'SILVER';
 }
+
+// ============================================================================
+// 로그 기록 함수 (모니터링)
+// ============================================================================
+
+/**
+ * Edge Function Task 실행 로그 기록
+ *
+ * @param taskName Task 이름 (macro, stocks, gurus, snapshots, predictions, resolve, realestate, context_card)
+ * @param status 실행 상태 (SUCCESS, FAILED, SKIPPED)
+ * @param elapsed 실행 시간 (밀리초)
+ * @param summary 결과 요약 (JSON 객체, 예: {count: 35, sentiment: "BULLISH"})
+ * @param error 에러 메시지 (실패 시)
+ */
+export async function logTaskResult(
+  taskName: string,
+  status: 'SUCCESS' | 'FAILED' | 'SKIPPED',
+  elapsed: number,
+  summary?: Record<string, unknown>,
+  error?: string
+): Promise<void> {
+  try {
+    const { error: insertError } = await supabase
+      .from('edge_function_logs')
+      .insert({
+        function_name: 'daily-briefing',
+        task_name: taskName,
+        status,
+        elapsed_ms: elapsed,
+        result_summary: summary || {},
+        error_message: error || null,
+      });
+
+    if (insertError) {
+      console.warn(`[로그 기록 실패] Task ${taskName}:`, insertError);
+    }
+  } catch (e) {
+    // 로그 기록 실패는 Task 실행에 영향 없음 (무시)
+    console.warn(`[로그 기록 예외] Task ${taskName}:`, e);
+  }
+}

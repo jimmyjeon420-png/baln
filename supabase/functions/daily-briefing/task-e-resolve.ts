@@ -20,6 +20,7 @@ import {
   supabase,
   callGeminiWithSearch,
   cleanJsonResponse,
+  logTaskResult,
 } from './_shared.ts';
 
 // ============================================================================
@@ -62,19 +63,24 @@ export interface PredictionResolutionResult {
  * @returns { resolved, deferred }
  */
 export async function resolvePredictionPolls(): Promise<PredictionResolutionResult> {
-  // 마감 지난 미판정 투표 조회
-  const { data: expiredPolls, error } = await supabase
-    .from('prediction_polls')
-    .select('*')
-    .in('status', ['active', 'closed'])
-    .lt('deadline', new Date().toISOString())
-    .order('deadline', { ascending: true })
-    .limit(10);
+  const startTime = Date.now();
 
-  if (error || !expiredPolls || expiredPolls.length === 0) {
-    console.log('[Task E-2] 판정 대상 투표 없음');
-    return { resolved: 0, deferred: 0 };
-  }
+  try {
+    // 마감 지난 미판정 투표 조회
+    const { data: expiredPolls, error } = await supabase
+      .from('prediction_polls')
+      .select('*')
+      .in('status', ['active', 'closed'])
+      .lt('deadline', new Date().toISOString())
+      .order('deadline', { ascending: true })
+      .limit(10);
+
+    if (error || !expiredPolls || expiredPolls.length === 0) {
+      console.log('[Task E-2] 판정 대상 투표 없음');
+      const elapsed = Date.now() - startTime;
+      await logTaskResult('resolve', 'SUCCESS', elapsed, { resolved: 0, deferred: 0 });
+      return { resolved: 0, deferred: 0 };
+    }
 
   console.log(`[Task E-2] ${expiredPolls.length}개 투표 정답 판정 시작...`);
 
@@ -145,5 +151,14 @@ export async function resolvePredictionPolls(): Promise<PredictionResolutionResu
   }
 
   console.log(`[Task E-2] 판정 완료: ${resolved}건 해결, ${deferred}건 보류`);
+
+  const elapsed = Date.now() - startTime;
+  await logTaskResult('resolve', 'SUCCESS', elapsed, { resolved, deferred });
+
   return { resolved, deferred };
+  } catch (error) {
+    const elapsed = Date.now() - startTime;
+    await logTaskResult('resolve', 'FAILED', elapsed, null, error.message);
+    throw error;
+  }
 }
