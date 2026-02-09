@@ -27,7 +27,7 @@ export default function CommunityPreview() {
 
   // 전체 보기 버튼
   const handleViewAll = () => {
-    router.push('/(tabs)/lounge');
+    router.push('/community');
   };
 
   // 게시물 상세 페이지로 이동
