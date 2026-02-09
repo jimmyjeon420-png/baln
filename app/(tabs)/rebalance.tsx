@@ -41,6 +41,7 @@ import { calculateHealthScore } from '../../src/services/rebalanceScore';
 import FreePeriodBanner from '../../src/components/FreePeriodBanner';
 import { usePrices } from '../../src/hooks/usePrices';
 import { AssetType } from '../../src/types/asset';
+import { useScreenTracking } from '../../src/hooks/useAnalytics';
 
 // ── 섹션 컴포넌트 ──
 import HeroSection from '../../src/components/rebalance/HeroSection';
@@ -120,6 +121,7 @@ function formatTodayDate(): string {
 }
 
 export default function CheckupScreen() {
+  useScreenTracking('checkup');
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
   const [showToast, setShowToast] = useState(false);

@@ -27,7 +27,7 @@ import ContextBriefCard from '../../src/components/home/ContextBriefCard';
 import PredictionVoteCard from '../../src/components/home/PredictionVoteCard';
 import StreakBanner from '../../src/components/home/StreakBanner';
 import YesterdayReviewCard from '../../src/components/home/YesterdayReviewCard';
-import { ErrorBoundary, Toast, ToastType } from '../../src/components/common';
+import { ErrorBoundary, Toast, ToastType, OfflineBanner } from '../../src/components/common';
 
 // 맥락 카드 전체 모달
 import ContextCard from '../../src/components/home/ContextCard';
@@ -53,12 +53,18 @@ import {
 } from '../../src/services/trafficLightScore';
 import { convertToContextCardData } from '../../src/services/contextCardService';
 import { COLORS } from '../../src/styles/theme';
+import { useScreenTracking } from '../../src/hooks/useAnalytics';
+import { usePushSetup } from '../../src/hooks/usePushSetup';
 
 // ============================================================================
 // 메인 컴포넌트
 // ============================================================================
 
 export default function HomeScreen() {
+  // 화면 진입 추적 + Push 알림 초기화
+  useScreenTracking('today');
+  usePushSetup();
+
   const router = useRouter();
   const queryClient = useQueryClient();
   const contextCardRef = React.useRef(null);
@@ -422,6 +428,9 @@ export default function HomeScreen() {
   // ──────────────────────────────────────────────────────────────────────
   return (
     <View style={styles.container}>
+      {/* 네트워크 끊김 감지 배너 (최상단) */}
+      <OfflineBanner />
+
       {/* 연속 방문 배너 (상단 고정) */}
       <View style={styles.streakContainer}>
         <StreakBanner />

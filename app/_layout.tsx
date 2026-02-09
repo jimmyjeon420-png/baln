@@ -20,6 +20,8 @@ import { useSubscriptionBonus } from '../src/hooks/useCredits';
 import { useWelcomeBonus } from '../src/hooks/useRewards';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ErrorBoundary from '../src/components/common/ErrorBoundary';
+import { useDeepLink } from '../src/hooks/useDeepLink';
+import { useAnalyticsInit } from '../src/hooks/useAnalytics';
 
 // React Query 클라이언트 생성
 const queryClient = new QueryClient({
@@ -42,6 +44,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   // 앱 시작 시 자동 보상 체크 (로그인된 경우만)
   useSubscriptionBonus();  // 구독자 월 30크레딧 보너스
   useWelcomeBonus();       // 신규 가입 10크레딧 웰컴 보너스
+  useDeepLink();           // 딥링크 처리 (알림 탭, 외부 링크 등)
 
   useEffect(() => {
     if (loading) return; // 로딩 중에는 아무것도 하지 않음
@@ -78,6 +81,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 configureNotificationHandler();
 
 export default function RootLayout() {
+  useAnalyticsInit();  // Analytics 초기화 (앱 실행 시 1회)
   const notificationListener = useRef<Notifications.EventSubscription>(null);
   const responseListener = useRef<Notifications.EventSubscription>(null);
   const [isLocked, setIsLocked] = useState(false);

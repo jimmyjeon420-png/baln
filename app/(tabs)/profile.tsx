@@ -7,6 +7,7 @@ import { useAuth } from '../../src/context/AuthContext';
 import FreePeriodBanner from '../../src/components/FreePeriodBanner';
 import InvestorLevelCard from '../../src/components/InvestorLevelCard';
 import { useAchievementCount } from '../../src/hooks/useAchievements';
+import { useScreenTracking } from '../../src/hooks/useAnalytics';
 
 // 전체(More) 탭 전용 컴포넌트
 import CommunityPreview from '../../src/components/more/CommunityPreview';
@@ -15,6 +16,7 @@ import RealEstatePreview from '../../src/components/more/RealEstatePreview';
 
 // 전체(More) 화면 - 커뮤니티 + 인사이트 + 설정 통합
 export default function ProfileScreen() {
+  useScreenTracking('more');
   const router = useRouter();
   const { user, signOut } = useAuth();
   const { unlockedCount, totalCount } = useAchievementCount();
