@@ -62,44 +62,28 @@ export interface GuruAnalysisResult {
 // ============================================================================
 
 /**
- * Task C: 10명의 투자 거장 인사이트 분석
+ * 단일 거장 인사이트 분석 (429 에러 방지를 위한 개별 호출)
  *
  * [Gemini Prompt]
- * - Google Search로 각 거장의 최신 포트폴리오 변동, 발언, 뉴스 검색
- * - 단일 API 호출로 10명 전부 분석 (배치 분할 불필요)
- * - 시장 맥락 (marketContext) 함께 생성
+ * - Google Search로 해당 거장의 최신 포트폴리오 변동, 발언, 뉴스 검색
+ * - 단일 거장만 분석하여 응답 크기 최소화
  *
- * [폴백 로직]
- * - Gemini가 누락한 거장은 GURU_LIST 기반 기본값으로 채움
- * - 모든 거장이 최소 1개 인사이트를 보장
- *
- * @returns { insights, marketContext }
+ * @param guru - GURU_LIST의 단일 거장 정보
+ * @returns GuruInsightResult 또는 null (에러 시)
  */
-async function analyzeGuruInsights(): Promise<GuruAnalysisResult> {
+async function analyzeGuruInsight(guru: typeof GURU_LIST[0]): Promise<GuruInsightResult | null> {
   const today = new Date();
   const dateStr = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`;
 
-  const guruNames = GURU_LIST.map(g => `${g.nameEn}(${g.name})`).join(', ');
-
   const prompt = `
 당신은 Bloomberg 수석 글로벌 투자 전략가입니다.
-오늘(${dateStr}) 다음 10명의 투자 거장들의 최근 동향을 분석하세요.
+오늘(${dateStr}) **${guru.nameEn}(${guru.name})** 투자 거장의 최근 동향을 분석하세요.
 
-**거장 리스트:** ${guruNames}
+**[중요] Google Search로 최신 정보를 검색하세요:**
+- "${guru.nameEn} portfolio changes 2026"
+- "${guru.nameEn} recent news investment"
 
-**[중요] Google Search로 각 거장의 최신 정보를 검색하세요:**
-- "Warren Buffett portfolio changes 2026"
-- "Ray Dalio all weather portfolio news"
-- "Cathie Wood ARK Invest trades today"
-- "Michael Saylor Bitcoin MicroStrategy"
-- "Jamie Dimon JPMorgan market outlook"
-- "Larry Fink BlackRock ETF news"
-- "Elon Musk Tesla stock crypto"
-- "Peter Lynch investing principles"
-- "Howard Marks Oaktree memo"
-- "Jim Rogers commodities gold silver"
-
-**각 거장에 대해:**
+**분석 항목:**
 1. recentAction: 최근 포트폴리오 변동, 거래, 또는 주목할 행동 (한글, 구체적 수치 포함)
 2. quote: 최근 공개 발언이나 유명 인용구 (한글)
 3. sentiment: BULLISH / BEARISH / NEUTRAL / CAUTIOUS (현재 시장에 대한 입장)
@@ -109,75 +93,96 @@ async function analyzeGuruInsights(): Promise<GuruAnalysisResult> {
 
 **출력 형식 (JSON만, 마크다운 금지):**
 {
-  "marketContext": "오늘의 시장 상황 요약 1-2문장 (한글)",
-  "insights": [
-    {
-      "guruName": "워렌 버핏",
-      "guruNameEn": "Warren Buffett",
-      "recentAction": "Apple 주식 25% 매도, 현금 보유고 $334B 도달",
-      "quote": "좋은 거래를 찾기 어려운 시기다",
-      "sentiment": "CAUTIOUS",
-      "reasoning": "버핏은 현재 시장 고평가를 우려하며...",
-      "relevantAssets": ["AAPL", "BRK.B", "OXY"],
-      "source": "Bloomberg"
-    }
-  ]
+  "guruName": "${guru.name}",
+  "guruNameEn": "${guru.nameEn}",
+  "recentAction": "Apple 주식 25% 매도, 현금 보유고 $334B 도달",
+  "quote": "좋은 거래를 찾기 어려운 시기다",
+  "sentiment": "CAUTIOUS",
+  "reasoning": "버핏은 현재 시장 고평가를 우려하며...",
+  "relevantAssets": ["AAPL", "BRK.B", "OXY"],
+  "source": "Bloomberg"
 }
 `;
 
-  console.log('[Task C] 투자 거장 인사이트 분석 시작...');
-  const responseText = await callGeminiWithSearch(prompt);
-  const cleanJson = cleanJsonResponse(responseText);
-  const parsed = JSON.parse(cleanJson);
+  try {
+    console.log(`[Task C] ${guru.name} 분석 시작...`);
+    const responseText = await callGeminiWithSearch(prompt);
+    const cleanJson = cleanJsonResponse(responseText);
+    const parsed = JSON.parse(cleanJson);
 
-  // GURU_LIST 기반 폴백 보강 (Gemini가 누락한 거장 채우기)
-  const returnedNames = new Set(
-    (parsed.insights || []).map((g: { guruNameEn: string }) => g.guruNameEn)
-  );
+    return {
+      guruName: String(parsed.guruName || guru.name),
+      guruNameEn: String(parsed.guruNameEn || guru.nameEn),
+      organization: String(parsed.organization || guru.org),
+      emoji: String(parsed.emoji || guru.emoji),
+      topic: String(parsed.topic || guru.topic),
+      recentAction: String(parsed.recentAction || '최신 데이터 없음'),
+      quote: String(parsed.quote || ''),
+      sentiment: String(parsed.sentiment || 'NEUTRAL'),
+      reasoning: String(parsed.reasoning || '분석 데이터를 불러오지 못했습니다.'),
+      relevantAssets: Array.isArray(parsed.relevantAssets) ? parsed.relevantAssets.map(String) : [],
+      source: String(parsed.source || ''),
+    };
+  } catch (error) {
+    console.error(`[Task C] ${guru.name} 분석 실패:`, error.message);
+    // 실패 시 기본값 반환
+    return {
+      guruName: guru.name,
+      guruNameEn: guru.nameEn,
+      organization: guru.org,
+      emoji: guru.emoji,
+      topic: guru.topic,
+      recentAction: '최신 데이터를 불러오지 못했습니다.',
+      quote: '',
+      sentiment: 'NEUTRAL',
+      reasoning: '분석 데이터가 아직 준비되지 않았습니다.',
+      relevantAssets: [],
+      source: '',
+    };
+  }
+}
 
-  const insights: GuruInsightResult[] = (parsed.insights || []).map(
-    (g: Record<string, unknown>) => {
-      const guruMeta = GURU_LIST.find(
-        (m) => m.nameEn === g.guruNameEn || m.name === g.guruName
-      );
-      return {
-        guruName: String(g.guruName || guruMeta?.name || ''),
-        guruNameEn: String(g.guruNameEn || guruMeta?.nameEn || ''),
-        organization: String(g.organization || guruMeta?.org || ''),
-        emoji: String(g.emoji || guruMeta?.emoji || '📊'),
-        topic: String(g.topic || guruMeta?.topic || ''),
-        recentAction: String(g.recentAction || '최신 데이터 없음'),
-        quote: String(g.quote || ''),
-        sentiment: String(g.sentiment || 'NEUTRAL'),
-        reasoning: String(g.reasoning || '분석 데이터를 불러오지 못했습니다.'),
-        relevantAssets: Array.isArray(g.relevantAssets) ? g.relevantAssets.map(String) : [],
-        source: String(g.source || ''),
-      };
+/**
+ * Task C: 10명의 투자 거장 인사이트 순차 분석 (429 에러 방지)
+ *
+ * [변경사항]
+ * - 단일 API 호출 (10명 동시) → 10개 개별 호출 (순차 실행)
+ * - 각 호출 후 2초 대기 (Rate Limit 방지)
+ * - 개별 에러 처리 (한 명 실패해도 계속 진행)
+ *
+ * [폴백 로직]
+ * - 각 거장 분석 실패 시 기본값으로 대체
+ * - 모든 거장이 최소 1개 인사이트를 보장
+ *
+ * @returns { insights, marketContext }
+ */
+async function analyzeGuruInsights(): Promise<GuruAnalysisResult> {
+  const today = new Date();
+  const dateStr = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`;
+
+  console.log('[Task C] 투자 거장 인사이트 순차 분석 시작...');
+
+  const insights: GuruInsightResult[] = [];
+
+  // 순차 실행 (for loop + await)
+  for (const guru of GURU_LIST) {
+    const insight = await analyzeGuruInsight(guru);
+    if (insight) {
+      insights.push(insight);
     }
-  );
 
-  // 누락된 거장 기본값으로 추가
-  GURU_LIST.forEach((guru) => {
-    if (!returnedNames.has(guru.nameEn)) {
-      insights.push({
-        guruName: guru.name,
-        guruNameEn: guru.nameEn,
-        organization: guru.org,
-        emoji: guru.emoji,
-        topic: guru.topic,
-        recentAction: '최신 데이터를 불러오지 못했습니다.',
-        quote: '',
-        sentiment: 'NEUTRAL',
-        reasoning: '분석 데이터가 아직 준비되지 않았습니다.',
-        relevantAssets: [],
-        source: '',
-      });
-    }
-  });
+    // 2초 대기 (Rate Limit 방지)
+    await new Promise(resolve => setTimeout(resolve, 2000));
+  }
+
+  // 시장 맥락은 별도로 생성 (단순 요약)
+  const marketContext = `${dateStr} 기준, ${insights.length}명의 투자 거장 인사이트가 분석되었습니다.`;
+
+  console.log(`[Task C] 분석 완료: ${insights.length}/${GURU_LIST.length}명`);
 
   return {
     insights,
-    marketContext: String(parsed.marketContext || ''),
+    marketContext,
   };
 }
 

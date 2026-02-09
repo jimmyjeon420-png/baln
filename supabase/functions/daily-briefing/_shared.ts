@@ -97,10 +97,51 @@ export interface GeminiResponse {
 // ============================================================================
 
 /**
- * Gemini API 직접 호출 (Deno 환경에서는 npm SDK 대신 REST API 사용)
- * Google Search 그라운딩 활성화
+ * Gemini 응답에서 순수 JSON만 추출
+ * - "알겠습니다..." 같은 사족 제거
+ * - ```json ``` 코드 블록 제거
+ * - { } 사이의 JSON만 파싱
+ */
+export function cleanJsonResponse(text: string): string {
+  try {
+    // 1. 코드 블록 제거 (```json ... ``` 또는 ``` ... ```)
+    let cleaned = text.replace(/```json\s*/g, '').replace(/```\s*/g, '');
+
+    // 2. { 부터 마지막 } 까지만 추출
+    const startIdx = cleaned.indexOf('{');
+    const endIdx = cleaned.lastIndexOf('}');
+
+    if (startIdx === -1 || endIdx === -1) {
+      console.warn('[JSON Clean] JSON 객체를 찾을 수 없음, 원본 반환');
+      return text;
+    }
+
+    cleaned = cleaned.substring(startIdx, endIdx + 1);
+
+    // 3. 유효성 검증 (파싱 시도)
+    JSON.parse(cleaned);
+
+    return cleaned;
+  } catch (error) {
+    console.error('[JSON Clean] 정제 실패, 원본 반환:', error);
+    return text;
+  }
+}
+
+/**
+ * 지연 함수 (Rate Limit 방지용)
+ */
+export async function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * Gemini API 직접 호출 (Google Search 그라운딩 활성화)
+ * - Rate Limit 방지: 호출 전 자동 1초 대기
  */
 export async function callGeminiWithSearch(prompt: string): Promise<string> {
+  // Rate Limit 방지: 호출 전 1초 대기
+  await sleep(1000);
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
 
   const body = {
@@ -124,25 +165,12 @@ export async function callGeminiWithSearch(prompt: string): Promise<string> {
   }
 
   const data: GeminiResponse = await response.json();
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-  return text;
-}
+  const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
-/**
- * JSON 응답 정제 (마크다운 코드블록 제거)
- */
-export function cleanJsonResponse(text: string): string {
-  let clean = text
-    .replace(/```json\s*/gi, '')
-    .replace(/```\s*/g, '')
-    .trim();
+  // JSON 정제 (사족 제거)
+  const cleanedText = cleanJsonResponse(rawText);
 
-  const start = clean.indexOf('{');
-  const end = clean.lastIndexOf('}');
-  if (start !== -1 && end !== -1 && end > start) {
-    clean = clean.substring(start, end + 1);
-  }
-  return clean;
+  return cleanedText;
 }
 
 // ============================================================================
