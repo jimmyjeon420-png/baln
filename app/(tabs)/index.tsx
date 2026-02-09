@@ -15,8 +15,9 @@
  */
 
 import React from 'react';
-import { View, StyleSheet, Modal } from 'react-native';
+import { View, StyleSheet, Modal, RefreshControl, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useQueryClient } from '@tanstack/react-query';
 
 // 새 3카드 시스템
 import CardSwipeContainer from '../../src/components/home/CardSwipeContainer';
@@ -24,6 +25,7 @@ import HealthSignalCard from '../../src/components/home/HealthSignalCard';
 import ContextBriefCard from '../../src/components/home/ContextBriefCard';
 import PredictionVoteCard from '../../src/components/home/PredictionVoteCard';
 import StreakBanner from '../../src/components/home/StreakBanner';
+import ErrorBoundary from '../../src/components/common/ErrorBoundary';
 
 // 맥락 카드 전체 모달
 import ContextCard from '../../src/components/home/ContextCard';
@@ -56,10 +58,25 @@ import { COLORS } from '../../src/styles/theme';
 
 export default function HomeScreen() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const contextCardRef = React.useRef(null);
 
   // 맥락 카드 전체 모달 상태
   const [contextModalVisible, setContextModalVisible] = React.useState(false);
+
+  // Pull-to-refresh 상태
+  const [refreshing, setRefreshing] = React.useState(false);
+
+  // Pull-to-refresh 핸들러
+  const handleRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    try {
+      // 모든 쿼리 무효화 (전체 데이터 새로고침)
+      await queryClient.invalidateQueries();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [queryClient]);
 
   // ──────────────────────────────────────────────────────────────────────
   // 1. 건강 신호등 카드 데이터
@@ -255,6 +272,17 @@ export default function HomeScreen() {
   }, [contextData]);
 
   // ──────────────────────────────────────────────────────────────────────
+  // 메모이제이션된 콜백
+  // ──────────────────────────────────────────────────────────────────────
+  const handleSettingsPress = React.useCallback(() => {
+    router.push('/settings/profile');
+  }, [router]);
+
+  const handleCardChange = React.useCallback((index: number) => {
+    console.log('[CardSwipe] 카드 전환:', index);
+  }, []);
+
+  // ──────────────────────────────────────────────────────────────────────
   // 렌더링
   // ──────────────────────────────────────────────────────────────────────
   return (
@@ -266,20 +294,24 @@ export default function HomeScreen() {
 
       <CardSwipeContainer
         labels={['건강', '맥락', '예측']}
-        onSettingsPress={() => router.push('/settings/profile')}
+        onSettingsPress={handleSettingsPress}
         initialIndex={0}
-        onCardChange={(index) => {
-          console.log('[CardSwipe] 카드 전환:', index);
-        }}
+        onCardChange={handleCardChange}
       >
         {/* 카드 1: 건강 신호등 */}
-        <HealthSignalCard {...healthSignalProps} />
+        <ErrorBoundary>
+          <HealthSignalCard {...healthSignalProps} />
+        </ErrorBoundary>
 
         {/* 카드 2: 맥락 브리핑 */}
-        <ContextBriefCard ref={contextCardRef} {...contextBriefProps} />
+        <ErrorBoundary>
+          <ContextBriefCard ref={contextCardRef} {...contextBriefProps} />
+        </ErrorBoundary>
 
         {/* 카드 3: 예측 투표 */}
-        <PredictionVoteCard {...predictionVoteProps} />
+        <ErrorBoundary>
+          <PredictionVoteCard {...predictionVoteProps} />
+        </ErrorBoundary>
       </CardSwipeContainer>
 
       {/* 맥락 카드 전체 모달 (4겹 레이어) */}

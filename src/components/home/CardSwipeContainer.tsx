@@ -27,6 +27,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '../../styles/theme';
+import { selection } from '../../services/hapticService';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -49,6 +50,12 @@ interface CardSwipeContainerProps {
 
   /** 카드 전환 콜백 (analytics 등) */
   onCardChange?: (index: number) => void;
+
+  /** Pull-to-refresh 콜백 */
+  onRefresh?: () => Promise<void>;
+
+  /** 새로고침 중 여부 */
+  refreshing?: boolean;
 }
 
 // ============================================================================
@@ -71,6 +78,7 @@ export default function CardSwipeContainer({
     const page = Math.round(offsetX / SCREEN_WIDTH);
     if (page !== currentPage) {
       setCurrentPage(page);
+      selection(); // 햅틱 피드백
       onCardChange?.(page);
     }
   };
@@ -80,7 +88,7 @@ export default function CardSwipeContainer({
       {/* 상단 헤더 */}
       <View style={styles.header}>
         {/* 좌측: baln 로고 */}
-        <Text style={styles.logo}>baln</Text>
+        <Text style={styles.logo} accessibilityRole="header">baln</Text>
 
         {/* 우측: ⚙️ 설정 아이콘 */}
         {onSettingsPress && (
@@ -88,6 +96,10 @@ export default function CardSwipeContainer({
             style={styles.settingsButton}
             onPress={onSettingsPress}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel="설정"
+            accessibilityHint="설정 화면으로 이동합니다"
           >
             <Ionicons
               name="settings-outline"
