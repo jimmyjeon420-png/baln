@@ -323,6 +323,8 @@ export default function HomeScreen() {
         onSettingsPress={handleSettingsPress}
         initialIndex={0}
         onCardChange={handleCardChange}
+        onRefresh={handleRefresh}
+        refreshing={refreshing}
       >
         {/* 카드 1: 건강 신호등 */}
         <ErrorBoundary>

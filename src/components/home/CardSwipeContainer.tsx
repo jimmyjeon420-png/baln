@@ -23,6 +23,7 @@ import {
   Dimensions,
   NativeSyntheticEvent,
   NativeScrollEvent,
+  RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -122,6 +123,16 @@ export default function CardSwipeContainer({
         decelerationRate="fast"
         snapToInterval={SCREEN_WIDTH}
         snapToAlignment="center"
+        refreshControl={
+          onRefresh ? (
+            <RefreshControl
+              refreshing={refreshing || false}
+              onRefresh={onRefresh}
+              tintColor={COLORS.textSecondary}
+              colors={[COLORS.primary]}
+            />
+          ) : undefined
+        }
       >
         {children.map((child, index) => (
           <View key={index} style={styles.cardWrapper}>
