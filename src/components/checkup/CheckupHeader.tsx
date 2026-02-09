@@ -13,7 +13,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { HealthScoreResultResult } from '../../services/rebalanceScore';
+import { HealthScoreResult } from '../../services/rebalanceScore';
 
 interface CheckupHeaderProps {
   /** 건강 점수 (6팩터) */
@@ -57,8 +57,8 @@ function generateSummary(healthScore: HealthScoreResult): string {
 
   // 주의가 필요한 팩터 (60점 미만)
   const warnings = healthScore.factors
-    .filter(f => f.score < 60)
-    .map(f => f.label);
+    .filter((f: any) => f.score < 60)
+    .map((f: any) => f.label);
 
   if (warnings.length === 0) {
     return `포트폴리오 건강 ${grade}등급, 모든 지표 양호`;

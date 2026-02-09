@@ -42,8 +42,8 @@ export default function StreakBanner() {
 
   // 배경 색상 (마일스톤이면 그라데이션)
   const gradientColors = isMilestone
-    ? ['rgba(76, 175, 80, 0.25)', 'rgba(76, 175, 80, 0.05)']
-    : ['rgba(76, 175, 80, 0.15)', 'rgba(76, 175, 80, 0)'];
+    ? ['rgba(76, 175, 80, 0.25)', 'rgba(76, 175, 80, 0.05)'] as const
+    : ['rgba(76, 175, 80, 0.15)', 'rgba(76, 175, 80, 0)'] as const;
 
   return (
     <>

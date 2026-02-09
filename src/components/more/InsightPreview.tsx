@@ -34,7 +34,7 @@ export default function InsightPreview() {
       return { emoji: '⚪', label: '분석 중', color: COLORS.textSecondary, bgColor: '#2A2A2A' };
     }
 
-    const s = sentiment.toLowerCase();
+    const s = (typeof sentiment === 'string' ? sentiment : (sentiment as any).sentiment || '').toLowerCase();
     if (s.includes('bullish') || s.includes('긍정') || s.includes('상승')) {
       return { emoji: '🟢', label: '긍정적', color: COLORS.primary, bgColor: 'rgba(76, 175, 80, 0.15)' };
     } else if (s.includes('bearish') || s.includes('부정') || s.includes('하락')) {
@@ -101,7 +101,7 @@ export default function InsightPreview() {
         <View style={styles.weatherBox}>
           <Ionicons name="partly-sunny" size={16} color={COLORS.textSecondary} />
           <Text style={styles.weatherText} numberOfLines={2}>
-            {marketData.sentiment.cfoWeather}
+            {(marketData.sentiment.cfoWeather as any)?.message || ''}
           </Text>
         </View>
       )}

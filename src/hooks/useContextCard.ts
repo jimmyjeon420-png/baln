@@ -14,7 +14,7 @@
  * - 예측 게임: 복기 시 어제/그저께 맥락 카드 표시
  */
 
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import supabase from '../services/supabase';
 import {
   getTodayContextCard,
@@ -23,6 +23,8 @@ import {
   type ContextCardWithImpact,
   type ContextCardSentiment,
 } from '../services/contextCardService';
+import * as Sharing from 'expo-sharing';
+import { captureRef } from 'react-native-view-shot';
 
 // ============================================================================
 // 쿼리 키 (외부에서 invalidate 할 때 사용)
@@ -158,4 +160,62 @@ export function invalidateContextCardCache(queryClient: any) {
     queryClient.invalidateQueries({ queryKey: ['contextCards'] }), // recent 포함
     queryClient.invalidateQueries({ queryKey: CONTEXT_SENTIMENT_KEY }),
   ]);
+}
+
+// ============================================================================
+// 훅: 맥락 카드 공유 (인스타/SNS)
+// ============================================================================
+
+/**
+ * 맥락 카드 공유 mutation
+ *
+ * [역할]
+ * - 맥락 카드 컴포넌트를 스크린샷으로 캡처
+ * - 인스타그램/SNS 공유 다이얼로그 실행
+ * - MAU 성장 보상 시스템과 연동
+ *
+ * [사용법]
+ * ```tsx
+ * const shareCard = useShareContextCard();
+ * const cardRef = useRef(null);
+ *
+ * <View ref={cardRef}>
+ *   <ContextCard ... />
+ * </View>
+ *
+ * <Button onPress={() => shareCard.mutate({ viewRef: cardRef.current })} />
+ * ```
+ *
+ * @returns {
+ *   mutate: (params: { viewRef: any }) => void,
+ *   isLoading: boolean,
+ *   isError: boolean,
+ *   error: Error | null
+ * }
+ */
+export function useShareContextCard() {
+  return useMutation({
+    mutationFn: async ({ viewRef }: { viewRef: any }) => {
+      if (!viewRef) throw new Error('뷰 참조가 없습니다');
+
+      // 1. 스크린샷 캡처
+      const uri = await captureRef(viewRef, {
+        format: 'png',
+        quality: 1.0,
+      });
+
+      // 2. 공유 다이얼로그
+      const isAvailable = await Sharing.isAvailableAsync();
+      if (!isAvailable) {
+        throw new Error('공유 기능을 사용할 수 없습니다');
+      }
+
+      await Sharing.shareAsync(uri, {
+        mimeType: 'image/png',
+        dialogTitle: 'baln 맥락 카드 공유',
+      });
+
+      return { success: true };
+    },
+  });
 }

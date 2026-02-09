@@ -26,8 +26,14 @@ import PredictionVoteCard from '../../src/components/home/PredictionVoteCard';
 
 // 데이터 훅
 import { useHeartAssets } from '../../src/hooks/useHeartAssets';
-import { useContextCard } from '../../src/hooks/useContextCard';
-import { useActivePolls, useMyVotes, useResolvedPolls } from '../../src/hooks/usePredictions';
+import { useContextCard, useShareContextCard } from '../../src/hooks/useContextCard';
+import {
+  useActivePolls,
+  useMyVotes,
+  useResolvedPolls,
+  useSubmitVote,
+  useMyPredictionStats,
+} from '../../src/hooks/usePredictions';
 import { useSubscriptionStatus } from '../../src/hooks/useSubscription';
 
 // 신호등 변환 서비스
@@ -45,6 +51,7 @@ import { COLORS } from '../../src/styles/theme';
 
 export default function HomeScreen() {
   const router = useRouter();
+  const contextCardRef = React.useRef(null);
 
   // ──────────────────────────────────────────────────────────────────────
   // 1. 건강 신호등 카드 데이터
@@ -104,6 +111,7 @@ export default function HomeScreen() {
   // ──────────────────────────────────────────────────────────────────────
   const { data: contextData, isLoading: contextLoading } = useContextCard();
   const { isPremium } = useSubscriptionStatus();
+  const { mutate: shareContext } = useShareContextCard();
 
   const contextBriefProps = React.useMemo(() => {
     if (!contextData) {
@@ -138,7 +146,7 @@ export default function HomeScreen() {
       date: new Date().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' }),
       onLearnMore: () => router.push('/marketplace'),
       isPremium: isPremium || false,
-      onShare: undefined, // TODO: 공유 기능 연결
+      onShare: () => shareContext({ viewRef: contextCardRef }),
       isLoading: contextLoading,
     };
   }, [contextData, contextLoading, isPremium, router]);
@@ -148,6 +156,8 @@ export default function HomeScreen() {
   // ──────────────────────────────────────────────────────────────────────
   const { data: activePolls = [] } = useActivePolls();
   const { data: resolvedPolls = [] } = useResolvedPolls(10);
+  const { mutate: submitVote, isPending: isVoting } = useSubmitVote();
+  const { data: myStats } = useMyPredictionStats();
 
   // 오늘의 투표 (1개만)
   const currentPoll = activePolls.length > 0 ? activePolls[0] : null;
@@ -215,14 +225,14 @@ export default function HomeScreen() {
       } : null,
       myVote,
       recentResults,
-      accuracyRate: null, // TODO: useMyStats 추가 후 연결
+      accuracyRate: myStats?.accuracy_rate ?? null,
       onVote: (choice: 'YES' | 'NO') => {
-        // TODO: 투표 mutation 연결
-        console.log('Vote:', choice);
+        if (!currentPoll) return;
+        submitVote({ pollId: currentPoll.id, vote: choice });
       },
       onViewHistory: () => router.push('/games/predictions'),
       isLoading: false,
-      isVoting: false,
+      isVoting,
     };
   }, [currentPoll, myVote, recentResults, router]);
 
@@ -243,7 +253,9 @@ export default function HomeScreen() {
         <HealthSignalCard {...healthSignalProps} />
 
         {/* 카드 2: 맥락 브리핑 */}
-        <ContextBriefCard {...contextBriefProps} />
+        <View ref={contextCardRef} style={{ flex: 1 }}>
+          <ContextBriefCard {...contextBriefProps} />
+        </View>
 
         {/* 카드 3: 예측 투표 */}
         <PredictionVoteCard {...predictionVoteProps} />

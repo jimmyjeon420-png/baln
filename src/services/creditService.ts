@@ -64,7 +64,7 @@ export async function getMyCredits(): Promise<UserCredits | null> {
 // 크레딧 차감 (원자적 - Supabase RPC)
 // ============================================================================
 
-interface SpendResult {
+export interface SpendResult {
   success: boolean;
   newBalance: number;
   errorMessage?: string;
@@ -102,7 +102,7 @@ export async function spendCredits(
 // 크레딧 충전
 // ============================================================================
 
-interface PurchaseResult {
+export interface PurchaseResult {
   success: boolean;
   newBalance: number;
   totalCredits: number; // 패키지 크레딧 + 보너스

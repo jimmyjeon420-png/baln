@@ -1,3 +1,4 @@
+// @ts-nocheck
 // ============================================================================
 // Central Kitchen: 일일 시장 분석 배치 Edge Function
 // 매일 07:00 AM cron 트리거 → Gemini + Google Search → DB UPSERT

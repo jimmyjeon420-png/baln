@@ -43,6 +43,7 @@ interface UseHeartAssetsReturn {
   // CRUD
   addHeart: (asset: Omit<HeartAsset, 'heartedAt'>) => void;
   removeHeart: (ticker: string) => void;
+  removeHeartAsset: (ticker: string) => void; // C5 호환 alias
   toggleHeart: (asset: Omit<HeartAsset, 'heartedAt'>) => void;
   isHearted: (ticker: string) => boolean;
 
@@ -249,6 +250,7 @@ export function useHeartAssets(): UseHeartAssetsReturn {
     isLoading: query.isLoading,
     addHeart: addMutation.mutate,
     removeHeart: removeMutation.mutate,
+    removeHeartAsset: removeMutation.mutate, // C5 호환 alias
     toggleHeart,
     isHearted,
     portfolioHealthScore,
