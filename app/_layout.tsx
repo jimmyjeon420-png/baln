@@ -19,6 +19,7 @@ import { getBiometricSettings } from '../src/services/biometric';
 import { useSubscriptionBonus } from '../src/hooks/useCredits';
 import { useWelcomeBonus } from '../src/hooks/useRewards';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import ErrorBoundary from '../src/components/common/ErrorBoundary';
 
 // React Query 클라이언트 생성
 const queryClient = new QueryClient({
@@ -185,6 +186,7 @@ export default function RootLayout() {
           {/* 다크 모드 배경 (#121212) - Fintech 스타일 */}
           <View style={{ flex: 1, backgroundColor: '#121212' }}>
             <StatusBar style="light" />
+            <ErrorBoundary>
             <AuthGate>
               <Stack screenOptions={{ headerShown: false }}>
                 {/* 로그인 화면 */}
@@ -228,8 +230,35 @@ export default function RootLayout() {
                 <Stack.Screen name="games" options={{ headerShown: false }} />
                 {/* 온보딩 플로우 (신규 유저) */}
                 <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+                {/* 업적 배지 화면 */}
+                <Stack.Screen name="achievements" options={{ headerShown: false }} />
+                {/* 알림 센터 화면 */}
+                <Stack.Screen name="notifications" options={{ headerShown: false }} />
+                {/* 커뮤니티 즐겨찾기 */}
+                <Stack.Screen name="community/bookmarks" options={{ headerShown: false }} />
+                {/* 부동산 상세 화면 */}
+                <Stack.Screen name="realestate/[id]" options={{ headerShown: false }} />
+                {/* 부동산 추가 화면 */}
+                <Stack.Screen
+                  name="add-realestate"
+                  options={{
+                    presentation: 'modal',
+                    headerShown: false,
+                  }}
+                />
+                {/* 계정 삭제 화면 */}
+                <Stack.Screen name="settings/delete-account" options={{ headerShown: false }} />
+                {/* 투자 거장 인사이트 화면 */}
+                <Stack.Screen name="settings/gurus" options={{ headerShown: false }} />
+                {/* 작성자 프로필 화면 */}
+                <Stack.Screen name="community/author/[userId]" options={{ headerShown: false }} />
+                {/* 리밸런싱 히스토리 화면 */}
+                <Stack.Screen name="rebalance-history" options={{ headerShown: false }} />
+                {/* 거래 기록 화면 */}
+                <Stack.Screen name="log-trade" options={{ headerShown: false }} />
               </Stack>
             </AuthGate>
+            </ErrorBoundary>
             {/* 브랜드 스플래시 (앱 시작 시 'baln.logic' 표시) */}
             {showSplash && (
               <BrandSplash onFinish={() => setShowSplash(false)} />

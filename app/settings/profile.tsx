@@ -77,6 +77,22 @@ export default function ProfileSettingsScreen() {
             <Text style={styles.saveButtonText}>저장</Text>
           )}
         </TouchableOpacity>
+
+        {/* 구분선 */}
+        <View style={styles.divider} />
+
+        {/* 계정 삭제 (Apple App Store 필수 요건) */}
+        <TouchableOpacity
+          style={styles.deleteAccountButton}
+          onPress={() => router.push('/settings/delete-account')}
+        >
+          <Ionicons name="trash-outline" size={20} color="#CF6679" />
+          <Text style={styles.deleteAccountText}>계정 삭제</Text>
+          <Ionicons name="chevron-forward" size={18} color="#666666" />
+        </TouchableOpacity>
+        <Text style={styles.deleteAccountHint}>
+          계정과 모든 데이터가 영구적으로 삭제됩니다
+        </Text>
       </View>
     </SafeAreaView>
   );
@@ -146,5 +162,32 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: '#121212',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#2A2A2A',
+    marginVertical: 32,
+  },
+  deleteAccountButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1E1E1E',
+    borderRadius: 12,
+    padding: 16,
+    gap: 12,
+    borderWidth: 1,
+    borderColor: '#2A2A2A',
+  },
+  deleteAccountText: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#CF6679',
+  },
+  deleteAccountHint: {
+    fontSize: 12,
+    color: '#666666',
+    marginTop: 8,
+    marginLeft: 4,
   },
 });

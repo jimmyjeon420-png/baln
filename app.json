@@ -3,14 +3,14 @@
     "name": "baln",
     "slug": "smart-rebalancer",
     "version": "1.0.0",
-    "scheme": "smartrebalancer",
+    "scheme": "baln",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0F172A"
+      "backgroundColor": "#121212"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -20,13 +20,24 @@
       "bundleIdentifier": "com.smartrebalancer.app",
       "buildNumber": "1",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSFaceIDUsageDescription": "생체인증으로 앱을 보호합니다",
+        "NSPhotoLibraryUsageDescription": "공유 카드를 저장합니다",
+        "NSCameraUsageDescription": "프로필 사진을 촬영합니다"
+      },
+      "privacyManifests": {
+        "NSPrivacyAccessedAPITypes": [
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+            "NSPrivacyAccessedAPITypeReasons": ["CA92.1"]
+          }
+        ]
       }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#0F172A"
+        "backgroundColor": "#121212"
       },
       "package": "com.smartrebalancer.app",
       "versionCode": 1
@@ -50,7 +61,14 @@
             "kotlinVersion": "2.1.20"
           }
         }
-      ]
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#4CAF50"
+        }
+      ],
+      "expo-updates"
     ],
     "extra": {
       "eas": {

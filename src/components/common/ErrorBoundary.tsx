@@ -66,8 +66,22 @@ export default class ErrorBoundary extends React.Component<
           <Ionicons name="alert-circle-outline" size={64} color={COLORS.error} />
           <Text style={styles.title}>문제가 발생했습니다</Text>
           <Text style={styles.message}>
-            {this.state.error?.message || '알 수 없는 오류'}
+            잠시 후 다시 시도해 주세요.
           </Text>
+          {/* 개발 모드에서만 에러 상세 정보 표시 */}
+          {__DEV__ && this.state.error && (
+            <View style={styles.devErrorBox}>
+              <Text style={styles.devErrorTitle}>개발 모드 에러 정보:</Text>
+              <Text style={styles.devErrorText}>
+                {this.state.error.message}
+              </Text>
+              {this.state.error.stack && (
+                <Text style={styles.devErrorStack} numberOfLines={10}>
+                  {this.state.error.stack}
+                </Text>
+              )}
+            </View>
+          )}
           <TouchableOpacity style={styles.button} onPress={this.handleReset}>
             <Text style={styles.buttonText}>다시 시도</Text>
           </TouchableOpacity>
@@ -110,5 +124,30 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: COLORS.textPrimary,
+  },
+  devErrorBox: {
+    width: '100%',
+    backgroundColor: '#1E1E1E',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  devErrorTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.error,
+    marginBottom: 4,
+  },
+  devErrorText: {
+    fontSize: 12,
+    color: '#FF8A80',
+    marginBottom: 4,
+  },
+  devErrorStack: {
+    fontSize: 10,
+    color: '#888',
+    fontFamily: 'monospace',
   },
 });
