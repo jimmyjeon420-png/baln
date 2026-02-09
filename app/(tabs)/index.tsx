@@ -23,6 +23,7 @@ import CardSwipeContainer from '../../src/components/home/CardSwipeContainer';
 import HealthSignalCard from '../../src/components/home/HealthSignalCard';
 import ContextBriefCard from '../../src/components/home/ContextBriefCard';
 import PredictionVoteCard from '../../src/components/home/PredictionVoteCard';
+import StreakBanner from '../../src/components/home/StreakBanner';
 
 // 맥락 카드 전체 모달
 import ContextCard from '../../src/components/home/ContextCard';
@@ -258,6 +259,11 @@ export default function HomeScreen() {
   // ──────────────────────────────────────────────────────────────────────
   return (
     <View style={styles.container}>
+      {/* 연속 방문 배너 (상단 고정) */}
+      <View style={styles.streakContainer}>
+        <StreakBanner />
+      </View>
+
       <CardSwipeContainer
         labels={['건강', '맥락', '예측']}
         onSettingsPress={() => router.push('/settings/profile')}
@@ -309,6 +315,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
+  },
+  streakContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
   },
   modalContainer: {
     flex: 1,
