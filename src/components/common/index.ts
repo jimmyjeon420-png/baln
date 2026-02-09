@@ -13,3 +13,4 @@ export { default as ErrorBoundary } from './ErrorBoundary';
 export { default as Toast } from './Toast';
 export type { ToastType } from './Toast';
 export { default as OfflineBanner } from './OfflineBanner';
+export { default as Skeleton } from './Skeleton';
