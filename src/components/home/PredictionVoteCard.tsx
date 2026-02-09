@@ -70,6 +70,12 @@ interface PredictionVoteCardProps {
 
   /** 투표 제출 중 로딩 */
   isVoting: boolean;
+
+  /** 선택된 카테고리 */
+  selectedCategory?: 'stocks' | 'crypto' | 'macro' | 'event' | 'all';
+
+  /** 카테고리 변경 콜백 */
+  onCategoryChange?: (category: string) => void;
 }
 
 // ============================================================================
@@ -85,6 +91,8 @@ export default function PredictionVoteCard({
   onViewHistory,
   isLoading,
   isVoting,
+  selectedCategory = 'all',
+  onCategoryChange,
 }: PredictionVoteCardProps) {
   // ──────────────────────────────────────────────────────────────────────
   // 로딩 상태
@@ -128,6 +136,32 @@ export default function PredictionVoteCard({
         <Text style={styles.headerEmoji}>🎯</Text>
         <Text style={styles.headerText}>오늘의 예측</Text>
       </View>
+
+      {/* 카테고리 필터 */}
+      {onCategoryChange && (
+        <View style={styles.categoryFilter}>
+          {['all', 'stocks', 'crypto', 'macro', 'event'].map(cat => (
+            <TouchableOpacity
+              key={cat}
+              style={[
+                styles.categoryChip,
+                selectedCategory === cat && styles.categoryChipActive,
+              ]}
+              onPress={() => onCategoryChange(cat)}
+            >
+              <Text style={[
+                styles.categoryText,
+                selectedCategory === cat && styles.categoryTextActive,
+              ]}>
+                {cat === 'all' ? '전체' :
+                 cat === 'stocks' ? '주식' :
+                 cat === 'crypto' ? '코인' :
+                 cat === 'macro' ? '거시경제' : '이벤트'}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
 
       {/* 질문 */}
       <View style={styles.questionArea}>
@@ -230,7 +264,7 @@ export default function PredictionVoteCard({
       {/* 하단: [전체 기록 보기] 프리미엄 게이트 */}
       {onViewHistory && (
         <TouchableOpacity style={styles.historyButton} onPress={onViewHistory}>
-          <Text style={styles.historyText}>🔒 전체 기록 보기</Text>
+          <Text style={styles.historyText}>📊 상세 통계 보기</Text>
           <Ionicons name="arrow-forward" size={18} color={COLORS.textSecondary} />
         </TouchableOpacity>
       )}
@@ -399,5 +433,31 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: COLORS.textSecondary,
     textAlign: 'center',
+  },
+  categoryFilter: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingVertical: 12,
+    flexWrap: 'wrap',
+  },
+  categoryChip: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    backgroundColor: COLORS.surfaceLight,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  categoryChipActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  categoryText: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+  },
+  categoryTextActive: {
+    color: COLORS.textPrimary,
+    fontWeight: '600',
   },
 });

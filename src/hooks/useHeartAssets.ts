@@ -21,6 +21,7 @@ import {
   type HealthScoreResult,
   type HealthGrade,
 } from '../services/rebalanceScore';
+import supabase from '../services/supabase';
 
 // ============================================================================
 // 상수
@@ -44,6 +45,7 @@ interface UseHeartAssetsReturn {
   addHeart: (asset: Omit<HeartAsset, 'heartedAt'>) => void;
   removeHeart: (ticker: string) => void;
   removeHeartAsset: (ticker: string) => void; // C5 호환 alias
+  updateHeartAsset: (params: { ticker: string; newName: string }) => void;
   toggleHeart: (asset: Omit<HeartAsset, 'heartedAt'>) => void;
   isHearted: (ticker: string) => boolean;
 
@@ -182,10 +184,25 @@ export function useHeartAssets(): UseHeartAssetsReturn {
       };
       const updated = [...current, newAsset];
       await AsyncStorage.setItem(HEART_ASSETS_KEY, JSON.stringify(updated));
+
+      // ★ 포트폴리오 DB에도 추가 (초기 수량 0)
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from('portfolios').insert({
+          user_id: user.id,
+          ticker: asset.ticker,
+          quantity: 0,
+          asset_type: asset.type === 'stock' ? 'stock' :
+                      asset.type === 'crypto' ? 'crypto' : 'other',
+          name: asset.name,
+        });
+      }
+
       return updated;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: HEART_ASSETS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ['shared-portfolio'] }); // 포트폴리오 캐시 무효화
     },
   });
 
@@ -194,6 +211,32 @@ export function useHeartAssets(): UseHeartAssetsReturn {
     mutationFn: async (ticker: string) => {
       const current = query.data || [];
       const updated = current.filter(a => a.ticker !== ticker);
+      await AsyncStorage.setItem(HEART_ASSETS_KEY, JSON.stringify(updated));
+
+      // ★ 포트폴리오 DB에서도 삭제
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from('portfolios')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('ticker', ticker);
+      }
+
+      return updated;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: HEART_ASSETS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ['shared-portfolio'] }); // 포트폴리오 캐시 무효화
+    },
+  });
+
+  // 하트 자산 이름 변경 mutation
+  const updateMutation = useMutation({
+    mutationFn: async ({ ticker, newName }: { ticker: string; newName: string }) => {
+      const current = query.data || [];
+      const updated = current.map(a =>
+        a.ticker === ticker ? { ...a, name: newName } : a
+      );
       await AsyncStorage.setItem(HEART_ASSETS_KEY, JSON.stringify(updated));
       return updated;
     },
@@ -251,6 +294,7 @@ export function useHeartAssets(): UseHeartAssetsReturn {
     addHeart: addMutation.mutate,
     removeHeart: removeMutation.mutate,
     removeHeartAsset: removeMutation.mutate, // C5 호환 alias
+    updateHeartAsset: updateMutation.mutate,
     toggleHeart,
     isHearted,
     portfolioHealthScore,

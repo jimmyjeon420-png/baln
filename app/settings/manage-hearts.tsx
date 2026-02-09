@@ -18,7 +18,7 @@ import { COLORS } from '../../src/styles/theme';
 
 export default function ManageHeartsScreen() {
   const router = useRouter();
-  const { heartAssets, removeHeartAsset, isLoading } = useHeartAssets();
+  const { heartAssets, removeHeartAsset, updateHeartAsset, isLoading } = useHeartAssets();
 
   const handleDelete = (ticker: string, name: string) => {
     Alert.alert(
@@ -43,10 +43,14 @@ export default function ManageHeartsScreen() {
         { text: '취소', style: 'cancel' },
         {
           text: '변경',
-          onPress: (newName?: string) => {
+          onPress: async (newName?: string) => {
             if (newName && newName.trim()) {
-              // TODO: useHeartAssets에 updateHeartAsset 추가 필요
-              console.log('Update:', item.ticker, newName);
+              try {
+                updateHeartAsset({ ticker: item.ticker, newName: newName.trim() });
+                Alert.alert('완료', '이름이 변경되었습니다.');
+              } catch (error) {
+                Alert.alert('오류', '이름 변경에 실패했습니다.');
+              }
             }
           },
         },

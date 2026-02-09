@@ -55,6 +55,13 @@ interface HealthSignalCardProps {
 
   /** 자산 추가 버튼 콜백 */
   onAddAssets?: () => void;
+
+  /** 6팩터 상세 데이터 (optional) */
+  healthFactors?: Array<{
+    label: string;
+    score: number;
+    weight: number; // 0~100 (가중치 %)
+  }>;
 }
 
 // ============================================================================
@@ -107,6 +114,7 @@ export default function HealthSignalCard({
   hasAssets,
   isLoading,
   onAddAssets,
+  healthFactors,
 }: HealthSignalCardProps) {
   const [showDetail, setShowDetail] = useState(false);
   const signalColor = getSignalColor(healthScore);
@@ -206,6 +214,28 @@ export default function HealthSignalCard({
               <Text style={styles.modalScore}>{healthScore}</Text>
               <Text style={styles.modalGrade}>{gradeLabel} ({healthGrade}등급)</Text>
             </View>
+
+            {/* 6팩터 상세 */}
+            {healthFactors && healthFactors.length > 0 && (
+              <View style={styles.factorsContainer}>
+                <Text style={styles.factorsTitle}>6팩터 상세</Text>
+                {healthFactors.map((factor, index) => (
+                  <View key={index} style={styles.factorRow}>
+                    <View style={styles.factorLeft}>
+                      <Text style={styles.factorLabel}>{factor.label}</Text>
+                      <Text style={styles.factorWeight}>가중치 {factor.weight}%</Text>
+                    </View>
+                    <Text style={[
+                      styles.factorScore,
+                      { color: factor.score >= 70 ? '#4CAF50' : factor.score >= 50 ? '#FFB74D' : '#CF6679' }
+                    ]}>
+                      {factor.score}점
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            )}
+
             <TouchableOpacity
               style={styles.modalCloseButton}
               onPress={() => setShowDetail(false)}
@@ -379,5 +409,39 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: COLORS.textPrimary,
+  },
+  factorsContainer: {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
+  factorsTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+    marginBottom: 12,
+  },
+  factorRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  factorLeft: {
+    flex: 1,
+  },
+  factorLabel: {
+    fontSize: 14,
+    color: COLORS.textPrimary,
+    marginBottom: 2,
+  },
+  factorWeight: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+  },
+  factorScore: {
+    fontSize: 18,
+    fontWeight: '700',
   },
 });

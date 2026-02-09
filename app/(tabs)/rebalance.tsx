@@ -1,5 +1,10 @@
 /**
- * 분석(Checkup) 탭 — "진단 + 처방전 원스톱"
+ * rebalance.tsx - 처방전 탭
+ *
+ * Anti-Toss 적용 (Phase 6):
+ * - Gateway: 건강 점수 + 오늘의 액션 + AI 제안 (핵심 3개)
+ * - 빼기 전략: 복잡한 차트/표 제거, 텍스트 중심
+ * - One Page One Card: 각 섹션 접을 수 있도록
  *
  * [아키텍처] 3탭 구조 전환
  * 기존 diagnosis.tsx + rebalance.tsx 통합 → 한 화면에서 진단+처방+실행
