@@ -9,44 +9,20 @@
 // ============================================================================
 
 import supabase from './supabase';
+import type {
+  ContextCard,
+  ContextCardSentiment,
+  ContextCardWithImpact,
+  UserContextImpact,
+} from '../types/contextCard';
 
-// ============================================================================
-// 타입 정의 (src/types/contextCard.ts가 생성되기 전 임시)
-// ============================================================================
-
-/** 맥락 카드 감정 상태 */
-export type ContextCardSentiment = 'calm' | 'caution' | 'alert';
-
-/** 맥락 카드 (context_cards 테이블) */
-export interface ContextCard {
-  id: string;
-  date: string;                         // YYYY-MM-DD
-  headline: string;                     // "오늘 당신의 자산이 -1.2% 빠진 이유"
-  historical_context: string | null;    // 역사적 맥락 (레이어 1)
-  macro_chain: string[];                // 거시경제 체인 (레이어 2)
-  institutional_behavior: string | null; // 기관 행동 (레이어 3, Premium)
-  sentiment: ContextCardSentiment;      // 심리 상태
-  is_premium_only: boolean;             // 프리미엄 잠금 여부
-  market_data: Record<string, any>;     // 추가 시장 데이터
-  created_at: string;
-}
-
-/** 유저별 영향도 (user_context_impacts 테이블) */
-export interface UserContextImpact {
-  id: string;
-  user_id: string;
-  context_card_id: string;
-  percent_change: number | null;        // 수익률 변화 (예: -1.2)
-  health_score_change: number | null;   // 건강 점수 변화 (예: -5.0)
-  impact_message: string | null;        // "당신의 포트폴리오는 -1.2% 영향"
-  created_at: string;
-}
-
-/** 맥락 카드 + 유저 영향도 통합 결과 */
-export interface ContextCardWithImpact {
-  card: ContextCard;
-  userImpact: UserContextImpact | null; // 영향도 없으면 null
-}
+// Re-export types for convenience
+export type {
+  ContextCard,
+  ContextCardSentiment,
+  ContextCardWithImpact,
+  UserContextImpact,
+};
 
 // ============================================================================
 // 핵심 함수: 맥락 카드 조회
@@ -248,5 +224,52 @@ export async function getQuickContextSentiment(): Promise<{
   return {
     sentiment: data.sentiment as ContextCardSentiment,
     headline: data.headline,
+  };
+}
+
+// ============================================================================
+// 유틸: DB 데이터 → UI 컴포넌트 데이터 변환
+// ============================================================================
+
+/**
+ * DB 맥락 카드 → UI 컴포넌트 props 변환
+ *
+ * snake_case (DB) → camelCase (UI) 변환
+ * null 처리 및 기본값 설정
+ *
+ * @param data - DB에서 조회한 ContextCardWithImpact
+ * @returns ContextCardData (ContextCard.tsx prop)
+ */
+export function convertToContextCardData(
+  data: ContextCardWithImpact
+): {
+  date: string;
+  headline: string;
+  historicalContext: string;
+  macroChain: string[];
+  institutionalBehavior: string;
+  portfolioImpact: {
+    percentChange: number;
+    healthScoreChange: number;
+    message: string;
+  };
+  sentiment: ContextCardSentiment;
+  isPremiumContent: boolean;
+} {
+  const { card, userImpact } = data;
+
+  return {
+    date: card.date,
+    headline: card.headline,
+    historicalContext: card.historical_context || '역사적 맥락 데이터가 없습니다.',
+    macroChain: card.macro_chain || [],
+    institutionalBehavior: card.institutional_behavior || '기관 행동 데이터가 없습니다.',
+    portfolioImpact: {
+      percentChange: userImpact?.percent_change ?? 0,
+      healthScoreChange: userImpact?.health_score_change ?? 0,
+      message: userImpact?.impact_message || '영향도 데이터가 아직 계산되지 않았습니다.',
+    },
+    sentiment: card.sentiment,
+    isPremiumContent: card.is_premium_only,
   };
 }

@@ -15,7 +15,7 @@
  */
 
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
 
 // 새 3카드 시스템
@@ -23,6 +23,9 @@ import CardSwipeContainer from '../../src/components/home/CardSwipeContainer';
 import HealthSignalCard from '../../src/components/home/HealthSignalCard';
 import ContextBriefCard from '../../src/components/home/ContextBriefCard';
 import PredictionVoteCard from '../../src/components/home/PredictionVoteCard';
+
+// 맥락 카드 전체 모달
+import ContextCard from '../../src/components/home/ContextCard';
 
 // 데이터 훅
 import { useHeartAssets } from '../../src/hooks/useHeartAssets';
@@ -43,6 +46,7 @@ import {
   convertContextToBriefing,
   getEmptyTrafficLight,
 } from '../../src/services/trafficLightScore';
+import { convertToContextCardData } from '../../src/services/contextCardService';
 import { COLORS } from '../../src/styles/theme';
 
 // ============================================================================
@@ -52,6 +56,9 @@ import { COLORS } from '../../src/styles/theme';
 export default function HomeScreen() {
   const router = useRouter();
   const contextCardRef = React.useRef(null);
+
+  // 맥락 카드 전체 모달 상태
+  const [contextModalVisible, setContextModalVisible] = React.useState(false);
 
   // ──────────────────────────────────────────────────────────────────────
   // 1. 건강 신호등 카드 데이터
@@ -144,7 +151,7 @@ export default function HomeScreen() {
       sentiment: briefing.sentiment,
       sentimentLabel: briefing.sentimentLabel,
       date: new Date().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' }),
-      onLearnMore: () => router.push('/marketplace'),
+      onLearnMore: () => setContextModalVisible(true), // 모달 열기
       isPremium: isPremium || false,
       onShare: () => shareContext({ viewRef: contextCardRef }),
       isLoading: contextLoading,
@@ -182,7 +189,7 @@ export default function HomeScreen() {
     ? myVotesMap[currentPoll.id].vote
     : null;
 
-  // 지난주 복기 (최대 3개)
+  // 지난주 복기 (최대 3개) + 해설 데이터
   const recentResults = React.useMemo(() => {
     if (!resolvedPolls || resolvedPolls.length === 0) return [];
 
@@ -197,6 +204,8 @@ export default function HomeScreen() {
         correctAnswer: poll.correct_answer || 'YES',
         isCorrect,
         reward,
+        description: poll.description || undefined, // 배경 설명 (null → undefined)
+        source: poll.source || undefined, // 정답 근거 (null → undefined)
       };
     });
   }, [resolvedPolls, myVotesMap, isPremium]);
@@ -237,6 +246,14 @@ export default function HomeScreen() {
   }, [currentPoll, myVote, recentResults, router]);
 
   // ──────────────────────────────────────────────────────────────────────
+  // 맥락 카드 전체 데이터 (모달용)
+  // ──────────────────────────────────────────────────────────────────────
+  const fullContextCardData = React.useMemo(() => {
+    if (!contextData) return null;
+    return convertToContextCardData(contextData);
+  }, [contextData]);
+
+  // ──────────────────────────────────────────────────────────────────────
   // 렌더링
   // ──────────────────────────────────────────────────────────────────────
   return (
@@ -258,6 +275,28 @@ export default function HomeScreen() {
         {/* 카드 3: 예측 투표 */}
         <PredictionVoteCard {...predictionVoteProps} />
       </CardSwipeContainer>
+
+      {/* 맥락 카드 전체 모달 (4겹 레이어) */}
+      <Modal
+        visible={contextModalVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setContextModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          {fullContextCardData && (
+            <ContextCard
+              data={fullContextCardData}
+              isPremium={isPremium || false}
+              onPressPremium={() => {
+                setContextModalVisible(false);
+                router.push('/paywall');
+              }}
+              onClose={() => setContextModalVisible(false)}
+            />
+          )}
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -270,5 +309,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+    paddingTop: 60, // Safe area
   },
 });

@@ -5,6 +5,41 @@
  * 비유: 일기예보처럼 "오늘 왜 이렇게 더운지" 설명하는 정보 패키지
  */
 
+/** 센티먼트 타입 (시장 분위기) */
+export type ContextCardSentiment = 'calm' | 'caution' | 'alert';
+
+/** DB 맥락 카드 (context_cards 테이블) */
+export interface ContextCard {
+  id: string;
+  date: string;                         // YYYY-MM-DD
+  headline: string;                     // "오늘 당신의 자산이 -1.2% 빠진 이유"
+  historical_context: string | null;    // 역사적 맥락 (레이어 1)
+  macro_chain: string[];                // 거시경제 체인 (레이어 2)
+  institutional_behavior: string | null; // 기관 행동 (레이어 3, Premium)
+  sentiment: ContextCardSentiment;      // 심리 상태
+  is_premium_only: boolean;             // 프리미엄 잠금 여부
+  market_data: Record<string, any>;     // 추가 시장 데이터
+  created_at: string;
+}
+
+/** 유저별 영향도 (user_context_impacts 테이블) */
+export interface UserContextImpact {
+  id: string;
+  user_id: string;
+  context_card_id: string;
+  percent_change: number | null;        // 수익률 변화 (예: -1.2)
+  health_score_change: number | null;   // 건강 점수 변화 (예: -5.0)
+  impact_message: string | null;        // "당신의 포트폴리오는 -1.2% 영향"
+  created_at: string;
+}
+
+/** 맥락 카드 + 유저 영향도 통합 결과 */
+export interface ContextCardWithImpact {
+  card: ContextCard;
+  userImpact: UserContextImpact | null; // 영향도 없으면 null
+}
+
+/** UI 컴포넌트용 맥락 카드 데이터 (ContextCard.tsx prop) */
 export interface ContextCardData {
   /** 날짜 (ISO 형식: '2026-02-08') */
   date: string;
@@ -29,7 +64,7 @@ export interface ContextCardData {
   };
 
   /** 시장 분위기 (카드 상단 색상 결정) */
-  sentiment: 'calm' | 'caution' | 'alert';
+  sentiment: ContextCardSentiment;
 
   /** Premium 콘텐츠 여부 (3-4번 레이어 잠금) */
   isPremiumContent: boolean;

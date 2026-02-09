@@ -54,6 +54,8 @@ interface PredictionVoteCardProps {
     correctAnswer: 'YES' | 'NO';
     isCorrect: boolean;
     reward: number; // 크레딧 보상
+    description?: string; // 배경 설명
+    source?: string; // 정답 근거
   }>;
 
   /** 적중률 (0~100, null이면 투표 이력 없음) */
@@ -94,6 +96,8 @@ export default function PredictionVoteCard({
   selectedCategory = 'all',
   onCategoryChange,
 }: PredictionVoteCardProps) {
+  // 복기 해설 토글 상태 (인덱스별 펼침/접힘)
+  const [expandedReviewIndex, setExpandedReviewIndex] = React.useState<number | null>(null);
   // ──────────────────────────────────────────────────────────────────────
   // 로딩 상태
   // ──────────────────────────────────────────────────────────────────────
@@ -233,19 +237,64 @@ export default function PredictionVoteCard({
       {recentResults.length > 0 && (
         <View style={styles.reviewArea}>
           <Text style={styles.reviewTitle}>─── 지난주 복기 ───</Text>
-          {recentResults.slice(0, 3).map((result, index) => (
-            <View key={index} style={styles.reviewItem}>
-              <Text style={styles.reviewEmoji}>
-                {result.isCorrect ? '✅' : '❌'}
-              </Text>
-              <Text style={styles.reviewQuestion} numberOfLines={1}>
-                {result.question}
-              </Text>
-              {result.isCorrect && (
-                <Text style={styles.reviewReward}>+{result.reward}C</Text>
-              )}
-            </View>
-          ))}
+          {recentResults.slice(0, 3).map((result, index) => {
+            const isExpanded = expandedReviewIndex === index;
+            const hasExplanation = result.description || result.source;
+
+            return (
+              <View key={index}>
+                {/* 복기 헤더 (클릭 가능) */}
+                <TouchableOpacity
+                  style={styles.reviewItem}
+                  onPress={() => {
+                    if (hasExplanation) {
+                      setExpandedReviewIndex(isExpanded ? null : index);
+                    }
+                  }}
+                  disabled={!hasExplanation}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.reviewEmoji}>
+                    {result.isCorrect ? '✅' : '❌'}
+                  </Text>
+                  <Text style={styles.reviewQuestion} numberOfLines={isExpanded ? undefined : 1}>
+                    {result.question}
+                  </Text>
+                  {result.isCorrect && (
+                    <Text style={styles.reviewReward}>+{result.reward}C</Text>
+                  )}
+                  {hasExplanation && (
+                    <Ionicons
+                      name={isExpanded ? 'chevron-up' : 'chevron-down'}
+                      size={16}
+                      color={COLORS.textTertiary}
+                      style={{ marginLeft: 4 }}
+                    />
+                  )}
+                </TouchableOpacity>
+
+                {/* 해설 (펼쳐진 상태) */}
+                {isExpanded && hasExplanation && (
+                  <View style={styles.explanationBox}>
+                    {result.description && (
+                      <View style={styles.explanationSection}>
+                        <Text style={styles.explanationLabel}>💡 배경</Text>
+                        <Text style={styles.explanationText}>{result.description}</Text>
+                      </View>
+                    )}
+                    {result.source && (
+                      <View style={styles.explanationSection}>
+                        <Text style={styles.explanationLabel}>
+                          {result.isCorrect ? '🎯 정답 근거' : '📌 정답 근거'}
+                        </Text>
+                        <Text style={styles.explanationText}>{result.source}</Text>
+                      </View>
+                    )}
+                  </View>
+                )}
+              </View>
+            );
+          })}
 
           {/* 적중률 */}
           {accuracyRate !== null && accuracyRate >= 0 && (
@@ -390,6 +439,27 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: COLORS.primary,
+  },
+  explanationBox: {
+    marginTop: 8,
+    marginLeft: 28,
+    paddingLeft: 12,
+    borderLeftWidth: 2,
+    borderLeftColor: COLORS.primary,
+    gap: 12,
+  },
+  explanationSection: {
+    gap: 4,
+  },
+  explanationLabel: {
+    fontSize: 12,
+    color: COLORS.textTertiary,
+    fontWeight: '600',
+  },
+  explanationText: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    lineHeight: 20,
   },
   accuracyText: {
     fontSize: 14,

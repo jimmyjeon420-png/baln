@@ -64,12 +64,15 @@ interface ContextCardProps {
   isPremium?: boolean;
   /** Premium 구매 버튼 클릭 핸들러 */
   onPressPremium?: () => void;
+  /** 닫기 버튼 핸들러 (모달에서 사용) */
+  onClose?: () => void;
 }
 
 export default function ContextCard({
   data = MOCK_DATA,
   isPremium = false,
   onPressPremium,
+  onClose,
 }: ContextCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [shareModalVisible, setShareModalVisible] = useState(false);
@@ -103,6 +106,19 @@ export default function ContextCard({
 
   return (
     <View style={styles.container}>
+      {/* 닫기 버튼 (모달 전용) */}
+      {onClose && (
+        <View style={styles.closeButtonContainer}>
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={onClose}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="close" size={28} color="#E0E0E0" />
+          </TouchableOpacity>
+        </View>
+      )}
+
       {/* Sentiment 색상 바 */}
       <View style={[styles.sentimentBar, { backgroundColor: sentimentColor }]} />
 
@@ -312,6 +328,20 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     overflow: 'hidden',
     backgroundColor: '#1E1E1E',
+  },
+  closeButtonContainer: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    zIndex: 100,
+  },
+  closeButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(30, 30, 30, 0.9)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   sentimentBar: {
     height: 4,
