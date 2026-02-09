@@ -25,7 +25,7 @@ import HealthSignalCard from '../../src/components/home/HealthSignalCard';
 import ContextBriefCard from '../../src/components/home/ContextBriefCard';
 import PredictionVoteCard from '../../src/components/home/PredictionVoteCard';
 import StreakBanner from '../../src/components/home/StreakBanner';
-import ErrorBoundary from '../../src/components/common/ErrorBoundary';
+import { ErrorBoundary, Toast, ToastType } from '../../src/components/common';
 
 // 맥락 카드 전체 모달
 import ContextCard from '../../src/components/home/ContextCard';
@@ -67,6 +67,11 @@ export default function HomeScreen() {
   // Pull-to-refresh 상태
   const [refreshing, setRefreshing] = React.useState(false);
 
+  // Toast 상태
+  const [toastVisible, setToastVisible] = React.useState(false);
+  const [toastMessage, setToastMessage] = React.useState('');
+  const [toastType, setToastType] = React.useState<ToastType>('info');
+
   // Pull-to-refresh 핸들러
   const handleRefresh = React.useCallback(async () => {
     setRefreshing(true);
@@ -77,6 +82,13 @@ export default function HomeScreen() {
       setRefreshing(false);
     }
   }, [queryClient]);
+
+  // Toast 표시 함수
+  const showToast = React.useCallback((message: string, type: ToastType = 'info') => {
+    setToastMessage(message);
+    setToastType(type);
+    setToastVisible(true);
+  }, []);
 
   // ──────────────────────────────────────────────────────────────────────
   // 1. 건강 신호등 카드 데이터
@@ -136,7 +148,14 @@ export default function HomeScreen() {
   // ──────────────────────────────────────────────────────────────────────
   const { data: contextData, isLoading: contextLoading } = useContextCard();
   const { isPremium } = useSubscriptionStatus();
-  const { mutate: shareContext } = useShareContextCard();
+  const { mutate: shareContext } = useShareContextCard({
+    onSuccess: () => {
+      showToast('맥락 카드를 공유했습니다! 📤', 'success');
+    },
+    onError: () => {
+      showToast('공유에 실패했습니다. 다시 시도해주세요.', 'error');
+    },
+  });
 
   const contextBriefProps = React.useMemo(() => {
     if (!contextData) {
@@ -181,7 +200,14 @@ export default function HomeScreen() {
   // ──────────────────────────────────────────────────────────────────────
   const { data: activePolls = [] } = useActivePolls();
   const { data: resolvedPolls = [] } = useResolvedPolls(10);
-  const { mutate: submitVote, isPending: isVoting } = useSubmitVote();
+  const { mutate: submitVote, isPending: isVoting } = useSubmitVote({
+    onSuccess: () => {
+      showToast('투표 완료! 내일 결과를 확인하세요 🎯', 'success');
+    },
+    onError: (error: any) => {
+      showToast(error?.message || '투표에 실패했습니다. 다시 시도해주세요.', 'error');
+    },
+  });
   const { data: myStats } = useMyPredictionStats();
 
   // 오늘의 투표 (1개만)
@@ -335,6 +361,15 @@ export default function HomeScreen() {
           )}
         </View>
       </Modal>
+
+      {/* Toast 알림 */}
+      <Toast
+        visible={toastVisible}
+        message={toastMessage}
+        type={toastType}
+        duration={3000}
+        onHide={() => setToastVisible(false)}
+      />
     </View>
   );
 }

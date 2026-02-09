@@ -9,3 +9,7 @@
 export { SectionHeader } from './SectionHeader';
 export { StatusBadge } from './StatusBadge';
 export type { BadgeType } from './StatusBadge';
+export { default as ErrorBoundary } from './ErrorBoundary';
+export { default as Toast } from './Toast';
+export type { ToastType } from './Toast';
+export { default as OfflineBanner } from './OfflineBanner';
