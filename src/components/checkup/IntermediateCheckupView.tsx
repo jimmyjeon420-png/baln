@@ -43,7 +43,10 @@ interface IntermediateCheckupViewProps {
   totalGainLoss?: number;
   cfoWeather?: { emoji: string; status: string; message: string } | null;
   todayEmotion?: string | null;
+  todayMemo?: string;
   onEmotionSelect?: (emotion: string) => void;
+  onMemoChange?: (memo: string) => void;
+  onEmotionSave?: () => void;
   onLevelChange: (level: InvestorLevel) => void;
 }
 
@@ -71,7 +74,10 @@ export default function IntermediateCheckupView({
   totalGainLoss,
   cfoWeather,
   todayEmotion,
+  todayMemo,
   onEmotionSelect,
+  onMemoChange,
+  onEmotionSave,
   onLevelChange,
 }: IntermediateCheckupViewProps) {
   // 취약 팩터 Top 3 (점수 오름차순)
@@ -147,8 +153,14 @@ export default function IntermediateCheckupView({
       />
 
       {/* 8. 감정 체크 */}
-      {onEmotionSelect && (
-        <EmotionCheck todayEmotion={todayEmotion ?? null} onSelect={onEmotionSelect} />
+      {onEmotionSelect && onMemoChange && onEmotionSave && (
+        <EmotionCheck
+          todayEmotion={todayEmotion ?? null}
+          onSelect={onEmotionSelect}
+          memo={todayMemo ?? ''}
+          onMemoChange={onMemoChange}
+          onSave={onEmotionSave}
+        />
       )}
 
       {/* 9. 레벨 전환 */}

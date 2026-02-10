@@ -151,7 +151,13 @@ export default function CheckupScreen() {
   // ── 레벨별 뷰 (초급/중급/고급) ──
   const { level, isLoading: levelLoading, setLevel } = useCheckupLevel();
   const { label: holdingLabel } = useHoldingPeriod();
-  const { todayEmotion, setEmotion } = useEmotionCheck();
+  const {
+    todayEmotion,
+    todayMemo,
+    setEmotion,
+    setMemo,
+    saveEmotionWithMemo,
+  } = useEmotionCheck();
 
   const myBracket = getAssetBracket(totalAssets);
   const { data: peerPanicData } = usePeerPanicScore(myBracket);
@@ -346,7 +352,10 @@ export default function CheckupScreen() {
             isAILoading={isAILoading}
             allAssets={allAssets}
             todayEmotion={todayEmotion}
+            todayMemo={todayMemo}
             onEmotionSelect={setEmotion}
+            onMemoChange={setMemo}
+            onEmotionSave={saveEmotionWithMemo}
             onLevelChange={setLevel}
           />
         )}
@@ -366,7 +375,10 @@ export default function CheckupScreen() {
             totalGainLoss={totalGainLoss}
             cfoWeather={cfoWeather}
             todayEmotion={todayEmotion}
+            todayMemo={todayMemo}
             onEmotionSelect={setEmotion}
+            onMemoChange={setMemo}
+            onEmotionSave={saveEmotionWithMemo}
             onLevelChange={setLevel}
           />
         )}
@@ -392,7 +404,10 @@ export default function CheckupScreen() {
             panicScore={panicScore}
             holdingLabel={holdingLabel}
             todayEmotion={todayEmotion}
+            todayMemo={todayMemo}
             onEmotionSelect={setEmotion}
+            onMemoChange={setMemo}
+            onEmotionSave={saveEmotionWithMemo}
             onLevelChange={setLevel}
           />
         )}

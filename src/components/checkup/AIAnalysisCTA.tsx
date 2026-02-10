@@ -27,6 +27,8 @@ interface AIFeatureItem {
   description: string;
   color: string;
   route: string;
+  comingSoon?: boolean; // 준비 중 표시
+  comingSoonDate?: string; // 출시 예정일
 }
 
 const AI_FEATURES: AIFeatureItem[] = [
@@ -36,6 +38,8 @@ const AI_FEATURES: AIFeatureItem[] = [
     description: '보유 종목 심층 분석',
     color: '#2196F3',
     route: '/marketplace?feature=deep_dive',
+    comingSoon: true,
+    comingSoonDate: '2월 말',
   },
   {
     icon: 'git-branch-outline',
@@ -43,6 +47,7 @@ const AI_FEATURES: AIFeatureItem[] = [
     description: '매도 후 시나리오 예측',
     color: '#FF9800',
     route: '/marketplace?feature=what_if',
+    // 활성화됨 - comingSoon 없음
   },
   {
     icon: 'calculator-outline',
@@ -50,6 +55,8 @@ const AI_FEATURES: AIFeatureItem[] = [
     description: '양도세·증여세 계산',
     color: '#9C27B0',
     route: '/marketplace?feature=tax_report',
+    comingSoon: true,
+    comingSoonDate: '2월 말',
   },
   {
     icon: 'chatbubbles-outline',
@@ -57,6 +64,8 @@ const AI_FEATURES: AIFeatureItem[] = [
     description: '실시간 투자 상담',
     color: '#4CAF50',
     route: '/marketplace?feature=ai_cfo_chat',
+    comingSoon: true,
+    comingSoonDate: '2월 말',
   },
 ];
 
@@ -86,15 +95,42 @@ export default function AIAnalysisCTA() {
         {AI_FEATURES.map((feature, index) => (
           <TouchableOpacity
             key={index}
-            style={[styles.featureCard, { backgroundColor: colors.inverseSurface, borderColor: colors.border }]}
-            onPress={() => router.push(feature.route as any)}
-            activeOpacity={0.7}
+            style={[
+              styles.featureCard,
+              { backgroundColor: colors.inverseSurface, borderColor: colors.border },
+              feature.comingSoon && styles.disabledCard,
+            ]}
+            onPress={() => {
+              if (!feature.comingSoon) {
+                router.push(feature.route as any);
+              }
+            }}
+            activeOpacity={feature.comingSoon ? 1 : 0.7}
+            disabled={feature.comingSoon}
           >
             <View style={[styles.featureIcon, { backgroundColor: feature.color + '20' }]}>
-              <Ionicons name={feature.icon} size={24} color={feature.color} />
+              <Ionicons
+                name={feature.icon}
+                size={24}
+                color={feature.comingSoon ? colors.textTertiary : feature.color}
+              />
             </View>
-            <Text style={[styles.featureTitle, { color: colors.textPrimary }]}>{feature.title}</Text>
-            <Text style={[styles.featureDesc, { color: colors.textTertiary }]}>{feature.description}</Text>
+            <View style={styles.featureTitleRow}>
+              <Text style={[
+                styles.featureTitle,
+                { color: feature.comingSoon ? colors.textTertiary : colors.textPrimary },
+              ]}>
+                {feature.title}
+              </Text>
+              {feature.comingSoon && (
+                <View style={styles.comingSoonBadge}>
+                  <Text style={styles.comingSoonText}>준비 중</Text>
+                </View>
+              )}
+            </View>
+            <Text style={[styles.featureDesc, { color: colors.textTertiary }]}>
+              {feature.comingSoon ? `${feature.comingSoonDate} 공개` : feature.description}
+            </Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -166,6 +202,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     // borderColor는 동적으로 적용됨
   },
+  disabledCard: {
+    opacity: 0.5,
+  },
   featureIcon: {
     width: 48,
     height: 48,
@@ -174,11 +213,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
+  featureTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+    gap: 6,
+  },
   featureTitle: {
     fontSize: 14,
     fontWeight: '600',
     // color는 동적으로 적용됨
-    marginBottom: 4,
+  },
+  comingSoonBadge: {
+    backgroundColor: '#666',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  comingSoonText: {
+    fontSize: 9,
+    color: '#FFFFFF',
+    fontWeight: '700',
   },
   featureDesc: {
     fontSize: 12,

@@ -599,6 +599,7 @@ export interface FomoSubScores {
 export interface RiskAnalysisResult {
   panicShieldIndex: number; // 0-100 (높을수록 안전)
   panicShieldLevel: 'SAFE' | 'CAUTION' | 'DANGER';
+  panicShieldReason?: string; // [NEW] 왜 이런 점수인지 한 줄 설명 (예: "현금 20%로 안정적")
   panicSubScores?: PanicSubScores; // 5개 하위 지표 (점수 분해)
   stopLossGuidelines: {
     ticker: string;
@@ -917,6 +918,7 @@ ${JSON.stringify(portfolioWithAllocation.map(p => ({
 {
   "panicShieldIndex": number,
   "panicShieldLevel": "SAFE" | "CAUTION" | "DANGER",
+  "panicShieldReason": "왜 이런 점수인지 한 줄로 설명 (예: 현금 비중 20%로 안정적 / 손실 종목이 많아 위험 / 분산이 잘 되어 있음)",
   "panicSubScores": {
     "portfolioLoss": 0-100,
     "concentrationRisk": 0-100,
@@ -975,6 +977,7 @@ ${JSON.stringify(portfolioWithAllocation.map(p => ({
     return {
       panicShieldIndex: analysisResult.panicShieldIndex || 50,
       panicShieldLevel: analysisResult.panicShieldLevel || 'CAUTION',
+      panicShieldReason: analysisResult.panicShieldReason || undefined,
       panicSubScores: analysisResult.panicSubScores || undefined,
       stopLossGuidelines: analysisResult.stopLossGuidelines || [],
       fomoAlerts: (analysisResult.fomoAlerts || []).map((alert: any) => ({
@@ -1017,6 +1020,123 @@ ${JSON.stringify(portfolioWithAllocation.map(p => ({
         diversificationScore: 50,
       },
     };
+  }
+};
+
+// ============================================================================
+// [배분 최적화] AI 기반 포트폴리오 최적 배분 제안
+// ============================================================================
+
+/**
+ * AI 배분 최적화 입력 인터페이스
+ */
+export interface OptimalAllocationInput {
+  assets: PortfolioAsset[];
+  currentHealthScore: number;
+  targetAllocation?: Record<string, number>; // 목표 배분 (optional)
+}
+
+/**
+ * AI 배분 최적화 결과 인터페이스
+ */
+export interface OptimalAllocationResult {
+  summary: string; // 전체 요약
+  recommendations: {
+    ticker: string;
+    name: string;
+    currentAllocation: number; // 현재 비중 (%)
+    suggestedAllocation: number; // 제안 비중 (%)
+    adjustmentPercent: number; // 조정률 (-50% ~ +100%)
+    reason: string; // 조정 이유
+  }[];
+  expectedHealthScore: number; // 예상 건강 점수
+  expectedImprovement: number; // 예상 개선 점수
+  generatedAt: string;
+}
+
+/**
+ * AI 기반 포트폴리오 최적 배분 계산
+ *
+ * 목표: 건강 점수를 최대화하는 자산 배분 제안
+ * 제약: 500 토큰 이하 (비용 절감)
+ */
+export const generateOptimalAllocation = async (
+  input: OptimalAllocationInput
+): Promise<OptimalAllocationResult> => {
+  try {
+    const totalValue = input.assets.reduce((s, a) => s + a.currentValue, 0);
+
+    // 자산 정보 요약 (상위 5개만, 토큰 절약)
+    const assetsSummary = input.assets.slice(0, 5).map(a => ({
+      ticker: a.ticker,
+      name: a.name,
+      allocation: totalValue > 0 ? ((a.currentValue / totalValue) * 100).toFixed(1) : '0',
+      value: a.currentValue,
+    }));
+
+    const prompt = `
+당신은 포트폴리오 최적화 전문가입니다. 다음 포트폴리오의 건강 점수를 최대화하는 배분을 제안하세요.
+
+**현재 포트폴리오 (상위 5개):**
+${JSON.stringify(assetsSummary, null, 2)}
+
+**현재 건강 점수:** ${input.currentHealthScore}점
+
+**최적화 목표:**
+1. 건강 점수 최대화 (목표: 80점 이상)
+2. 배분 이탈도 최소화 (균형 잡힌 포트폴리오)
+3. 리스크 분산 (단일 자산 과도 집중 방지)
+
+**제안 규칙:**
+- 각 자산의 조정률: -50% ~ +100%
+- 최소 2개, 최대 5개 자산만 조정
+- 조정 이유는 구체적으로 (예: "집중도 완화", "목표 배분 회귀")
+
+**출력 형식 (JSON만):**
+{
+  "summary": "전체 요약 1-2문장",
+  "recommendations": [
+    {
+      "ticker": "NVDA",
+      "name": "엔비디아",
+      "currentAllocation": 25.0,
+      "suggestedAllocation": 20.0,
+      "adjustmentPercent": -20,
+      "reason": "집중도 완화로 리스크 분산"
+    }
+  ],
+  "expectedHealthScore": 90,
+  "expectedImprovement": 10
+}
+
+중요: 유효한 JSON만 반환. 마크다운 금지. 한국어 작성.
+`;
+
+    const result = await model.generateContent(prompt);
+    const text = result.response.text();
+
+    // JSON 정제
+    let cleanText = text
+      .replace(/```json\s*/gi, '')
+      .replace(/```\s*/g, '')
+      .trim();
+
+    const jsonStart = cleanText.indexOf('{');
+    const jsonEnd = cleanText.lastIndexOf('}');
+    if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+      cleanText = cleanText.substring(jsonStart, jsonEnd + 1);
+    }
+
+    const optimizationResult = JSON.parse(cleanText);
+
+    return {
+      ...optimizationResult,
+      generatedAt: new Date().toISOString(),
+    };
+
+  } catch (error) {
+    console.error('배분 최적화 생성 오류:', error);
+    throw new Error('배분 최적화 분석에 실패했습니다');
   }
 };
 

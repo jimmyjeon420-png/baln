@@ -3,12 +3,15 @@
  *
  * 건강 점수 요인 중 가장 낮은 점수를 쉬운 한국어로 보여줌.
  * 초보자가 "무엇을 가장 먼저 개선해야 하는지" 한눈에 파악.
+ * Wave 4: 클릭 시 상세 설명 모달 표시 + 역사적 맥락 추가
  */
 
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import type { FactorResult } from '../../../services/rebalanceScore';
 import type { Asset } from '../../../types/asset';
+import FactorExplanationModal from '../FactorExplanationModal';
+import { getFactorType, FACTOR_EXPLANATIONS } from '../../../data/factorExplanations';
 
 interface WorstFactorCardProps {
   factors: FactorResult[];
@@ -67,6 +70,8 @@ function getScoreColor(score: number): string {
 }
 
 export default function WorstFactorCard({ factors, allAssets }: WorstFactorCardProps) {
+  const [modalVisible, setModalVisible] = useState(false);
+
   if (!factors || factors.length === 0) return null;
 
   const worst = factors.reduce((prev, curr) =>
@@ -75,9 +80,16 @@ export default function WorstFactorCard({ factors, allAssets }: WorstFactorCardP
 
   const simplifiedLabel = LABEL_MAP[worst.label] || worst.label;
   const barColor = getScoreColor(worst.score);
+  const factorType = getFactorType(worst.label);
+  const historicalContext = factorType ? FACTOR_EXPLANATIONS[factorType].historicalContext : null;
 
   return (
-    <View style={s.card}>
+    <>
+      <TouchableOpacity
+        style={s.card}
+        activeOpacity={0.7}
+        onPress={() => setModalVisible(true)}
+      >
       <Text style={s.cardTitle}>주의할 점</Text>
 
       <View style={s.factorRow}>
@@ -105,7 +117,29 @@ export default function WorstFactorCard({ factors, allAssets }: WorstFactorCardP
       </View>
 
       <Text style={s.comment}>{getStoryMessage(worst, allAssets) ?? worst.comment}</Text>
-    </View>
+
+      {/* 역사적 맥락 */}
+      {historicalContext && (
+        <View style={s.contextContainer}>
+          <Text style={s.contextIcon}>📚</Text>
+          <Text style={s.contextText}>{historicalContext}</Text>
+        </View>
+      )}
+
+      {/* 탭해서 자세히 보기 힌트 */}
+      <View style={s.tapHint}>
+        <Text style={s.tapHintText}>탭해서 자세히 알아보기</Text>
+        <Text style={s.tapHintIcon}>→</Text>
+      </View>
+    </TouchableOpacity>
+
+    {/* 설명 모달 */}
+    <FactorExplanationModal
+      visible={modalVisible}
+      factorType={factorType}
+      onClose={() => setModalVisible(false)}
+    />
+  </>
   );
 }
 
@@ -163,5 +197,44 @@ const s = StyleSheet.create({
     fontSize: 15,
     color: '#B0B0B0',
     lineHeight: 22,
+    marginBottom: 12,
+  },
+  contextContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    backgroundColor: 'rgba(255,183,77,0.1)',
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 12,
+  },
+  contextIcon: {
+    fontSize: 16,
+    marginTop: 2,
+  },
+  contextText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#FFB74D',
+    lineHeight: 20,
+  },
+  tapHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#2A2A2A',
+  },
+  tapHintText: {
+    fontSize: 14,
+    color: '#4CAF50',
+    fontWeight: '600',
+  },
+  tapHintIcon: {
+    fontSize: 14,
+    color: '#4CAF50',
   },
 });

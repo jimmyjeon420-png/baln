@@ -44,7 +44,10 @@ interface AdvancedCheckupViewProps {
   panicScore: number | undefined;
   holdingLabel?: string;
   todayEmotion?: string | null;
+  todayMemo?: string;
   onEmotionSelect?: (emotion: string) => void;
+  onMemoChange?: (memo: string) => void;
+  onEmotionSave?: () => void;
   onLevelChange: (level: InvestorLevel) => void;
 }
 
@@ -68,7 +71,10 @@ export default function AdvancedCheckupView({
   panicScore,
   holdingLabel,
   todayEmotion,
+  todayMemo,
   onEmotionSelect,
+  onMemoChange,
+  onEmotionSave,
   onLevelChange,
 }: AdvancedCheckupViewProps) {
   return (
@@ -134,8 +140,14 @@ export default function AdvancedCheckupView({
       <AIAnalysisCTA />
 
       {/* 11. 감정 체크 */}
-      {onEmotionSelect && (
-        <EmotionCheck todayEmotion={todayEmotion ?? null} onSelect={onEmotionSelect} />
+      {onEmotionSelect && onMemoChange && onEmotionSave && (
+        <EmotionCheck
+          todayEmotion={todayEmotion ?? null}
+          onSelect={onEmotionSelect}
+          memo={todayMemo ?? ''}
+          onMemoChange={onMemoChange}
+          onSave={onEmotionSave}
+        />
       )}
 
       {/* 12. Level switcher */}

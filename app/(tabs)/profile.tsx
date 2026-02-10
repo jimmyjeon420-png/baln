@@ -103,6 +103,13 @@ export default function ProfileScreen() {
           badgeColor: COLORS.primary,
         },
         {
+          icon: 'heart-outline',
+          label: '투자 감정 히스토리',
+          onPress: () => router.push('/journal/emotion-history'),
+          badge: 'NEW',
+          badgeColor: COLORS.primary,
+        },
+        {
           icon: 'bookmark-outline',
           label: '내 북마크',
           onPress: () => router.push('/community/bookmarks'),

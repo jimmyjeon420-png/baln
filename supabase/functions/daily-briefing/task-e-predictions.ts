@@ -34,6 +34,8 @@ export interface PredictionQuestion {
   difficulty?: string;     // easy / medium / hard
   context_hint?: string;   // 복기 시 보여줄 맥락 힌트
   related_ticker?: string; // 관련 종목 티커
+  up_reason?: string;      // [NEW] 오를 근거 (뉴스 기반)
+  down_reason?: string;    // [NEW] 내릴 근거 (뉴스 기반)
 }
 
 export interface PredictionGenerationResult {
@@ -110,6 +112,9 @@ export async function generatePredictionPolls(): Promise<PredictionGenerationRes
 6. **난이도 배분**: easy 1개(초보자도 판단 가능), medium 1개, hard 1개(전문가도 고민)
 7. **맥락 힌트**: 복기(review) 시 학습 포인트가 되는 배경 설명 추가
 8. **관련 종목**: 질문과 가장 관련 있는 대표 종목 티커 1개
+9. **[NEW] 오를/내릴 근거**: 각 질문마다 YES(오를) 근거와 NO(내릴) 근거를 뉴스 기반으로 한 줄씩 작성
+   - 예: "up_reason": "CPI 3개월 연속 상승 (블룸버그)"
+   - 예: "down_reason": "실업률 4.2% → 경기 둔화 우려 (WSJ)"
 
 **출력 형식 (JSON만, 마크다운 금지):**
 {
@@ -123,7 +128,9 @@ export async function generatePredictionPolls(): Promise<PredictionGenerationRes
       "deadline_hours": 24,
       "difficulty": "easy",
       "context_hint": "고용지표가 좋으면 단기적으로 주가가 상승하지만, 금리 인상 우려로 이어질 수 있어요. 이런 '좋은 뉴스가 나쁜 뉴스'인 상황이 2024년 자주 반복됐습니다.",
-      "related_ticker": "SPY"
+      "related_ticker": "SPY",
+      "up_reason": "고용지표 호조로 경기 낙관론 확산 (블룸버그)",
+      "down_reason": "금리 인상 우려로 기술주 매도 압력 (WSJ)"
     },
     {
       "question": "비트코인이 내일까지 $100,000를 돌파할까요?",
@@ -134,7 +141,9 @@ export async function generatePredictionPolls(): Promise<PredictionGenerationRes
       "deadline_hours": 48,
       "difficulty": "medium",
       "context_hint": "ETF 유입은 기관 매수 신호이지만, 심리적 저항선($100K)에서는 차익 실현 매물이 쏟아지는 경우가 많아요. 2024년에도 $70K 돌파 시 3번 실패 후 성공했습니다.",
-      "related_ticker": "BTC"
+      "related_ticker": "BTC",
+      "up_reason": "BTC ETF 3일 연속 순유입, 기관 매수세 (코인데스크)",
+      "down_reason": "심리적 저항선 $100K에서 차익 실현 우려 (블룸버그)"
     },
     {
       "question": "이번 주 원/달러 환율이 1,400원 아래로 내려갈까요?",
@@ -145,7 +154,9 @@ export async function generatePredictionPolls(): Promise<PredictionGenerationRes
       "deadline_hours": 48,
       "difficulty": "hard",
       "context_hint": "환율은 금리차, 경상수지, 자본흐름이 복합적으로 작용합니다. 한국 수출이 호조면 경상수지 흑자로 원화 강세, 반대로 미국 금리가 높으면 자본 유출로 원화 약세가 됩니다.",
-      "related_ticker": "KRW=X"
+      "related_ticker": "KRW=X",
+      "up_reason": "미 국채 금리 하락, 원화 강세 요인 (연합뉴스)",
+      "down_reason": "미중 무역 갈등 심화, 달러 수요 증가 (WSJ)"
     }
   ]
 }
@@ -177,6 +188,8 @@ export async function generatePredictionPolls(): Promise<PredictionGenerationRes
         difficulty: q.difficulty || 'medium',
         context_hint: q.context_hint || null,
         related_ticker: q.related_ticker || null,
+        up_reason: q.up_reason || null,
+        down_reason: q.down_reason || null,
       });
 
     if (error) {

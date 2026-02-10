@@ -36,7 +36,10 @@ interface BeginnerCheckupViewProps {
   isAILoading: boolean;
   allAssets?: Asset[];
   todayEmotion: string | null;
+  todayMemo: string;
   onEmotionSelect: (emotion: string) => void;
+  onMemoChange: (memo: string) => void;
+  onEmotionSave: () => void;
   onLevelChange: (level: InvestorLevel) => void;
 }
 
@@ -69,7 +72,10 @@ export default function BeginnerCheckupView({
   isAILoading,
   allAssets,
   todayEmotion,
+  todayMemo,
   onEmotionSelect,
+  onMemoChange,
+  onEmotionSave,
   onLevelChange,
 }: BeginnerCheckupViewProps) {
   const topAction = getTopAction(morningBriefing);
@@ -94,7 +100,13 @@ export default function BeginnerCheckupView({
       <TodayOneAction action={topAction} isAILoading={isAILoading} />
 
       {/* 4. 감정 체크 */}
-      <EmotionCheck todayEmotion={todayEmotion} onSelect={onEmotionSelect} />
+      <EmotionCheck
+        todayEmotion={todayEmotion}
+        onSelect={onEmotionSelect}
+        memo={todayMemo}
+        onMemoChange={onMemoChange}
+        onSave={onEmotionSave}
+      />
 
       {/* 5. 레벨 전환 */}
       <LevelSwitcher currentLevel="beginner" onLevelChange={onLevelChange} />

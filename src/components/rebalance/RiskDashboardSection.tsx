@@ -77,13 +77,19 @@ export default function RiskDashboardSection({
           <Ionicons name="shield" size={18} color={
             panicLevel === 'DANGER' ? '#CF6679' : panicLevel === 'CAUTION' ? '#FFC107' : '#4CAF50'
           } />
-          <View>
+          <View style={{ flex: 1 }}>
             <Text style={s.summaryLabel}>Panic Shield</Text>
             <Text style={[s.summaryValue, {
               color: panicLevel === 'DANGER' ? '#CF6679' : panicLevel === 'CAUTION' ? '#FFC107' : '#4CAF50'
             }]}>
               {panicIndex}/100 {panicLevel === 'SAFE' ? '안전' : panicLevel === 'CAUTION' ? '주의' : '위험'}
             </Text>
+            {/* [NEW] 패닉 실드 점수 이유 */}
+            {analysisResult.panicShieldReason && (
+              <Text style={s.reasonText} numberOfLines={2}>
+                {analysisResult.panicShieldReason}
+              </Text>
+            )}
           </View>
         </View>
 
@@ -149,5 +155,11 @@ const s = StyleSheet.create({
   },
   summaryLabel: { fontSize: 11, color: '#888', marginBottom: 2 },
   summaryValue: { fontSize: 13, fontWeight: '700' },
+  reasonText: {
+    fontSize: 11,
+    color: '#888',
+    marginTop: 4,
+    lineHeight: 15,
+  },
   detailContainer: { marginTop: 14, paddingTop: 14, borderTopWidth: 1, borderTopColor: '#222' },
 });

@@ -19,6 +19,7 @@ import Slider from '@react-native-community/slider';
 import * as Haptics from 'expo-haptics';
 import { Asset } from '../../types/asset';
 import { calculateHealthScore } from '../../services/rebalanceScore';
+import { generateOptimalAllocation, type PortfolioAsset } from '../../services/gemini';
 
 interface WhatIfSimulatorProps {
   assets: Asset[];
@@ -94,58 +95,47 @@ export default function WhatIfSimulator({ assets, totalAssets, currentHealthScor
     });
   };
 
-  // 추천 조정 (최적 배분 자동 계산 — UI 블록 방지를 위해 비동기 처리)
+  // 추천 조정 (AI 기반 최적 배분 계산)
   const handleRecommendedAdjustment = async () => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       setIsOptimizing(true);
 
-      // UI 렌더 완료 후 무거운 계산 시작
+      // UI 렌더 완료 후 AI 계산 시작
       await new Promise<void>(resolve => {
         InteractionManager.runAfterInteractions(() => resolve());
       });
 
-      let bestScore = currentHealthScore;
-      let bestAdjustments: Record<string, number> = {};
+      // Asset[] → PortfolioAsset[] 변환
+      const portfolioAssets: PortfolioAsset[] = assets.map(a => ({
+        ticker: a.ticker || 'UNKNOWN',
+        name: a.name || 'Unknown Asset',
+        quantity: a.quantity || 1,
+        avgPrice: a.avgPrice || 0,
+        currentPrice: (a.currentPrice as number) || 0,
+        currentValue: a.currentValue || 0,
+        allocation: totalAssets > 0 ? ((a.currentValue || 0) / totalAssets) * 100 : 0,
+      }));
 
-      const topAssets = assets.slice(0, 5);
+      // Gemini AI 호출
+      const result = await generateOptimalAllocation({
+        assets: portfolioAssets,
+        currentHealthScore,
+      });
 
-      for (const asset of topAssets) {
-        const key = asset.ticker || asset.id;
-
-        for (let adj = -50; adj <= 100; adj += 5) {
-          if (adj === 0) continue;
-
-          const testAdjustments = { [key]: adj };
-          const testAssets = assets.map(a => {
-            const aKey = a.ticker || a.id;
-            const testAdj = testAdjustments[aKey] || 0;
-            const mult = 1 + testAdj / 100;
-            const adjustedPrice = (a.currentPrice ?? 0) > 0
-              ? (a.currentPrice as number) * mult
-              : undefined;
-            return {
-              ...a,
-              currentValue: (a.currentValue || 0) * mult,
-              ...(adjustedPrice !== undefined && { currentPrice: adjustedPrice }),
-            };
-          });
-          const testTotal = testAssets.reduce((sum, a) => sum + (a.currentValue || 0), 0);
-
-          if (testTotal === 0) continue;
-
-          const testScore = calculateHealthScore(testAssets, testTotal).totalScore;
-
-          if (testScore > bestScore) {
-            bestScore = testScore;
-            bestAdjustments = testAdjustments;
-          }
+      // AI 제안을 adjustments로 변환
+      const aiAdjustments: Record<string, number> = {};
+      for (const rec of result.recommendations) {
+        const asset = assets.find(a => a.ticker === rec.ticker || a.name === rec.name);
+        if (asset) {
+          const key = asset.ticker || asset.id;
+          aiAdjustments[key] = rec.adjustmentPercent;
         }
       }
 
-      // 3. 최적 조정을 찾았으면 적용
-      if (Object.keys(bestAdjustments).length > 0) {
-        setAdjustments(bestAdjustments);
+      // 조정 적용
+      if (Object.keys(aiAdjustments).length > 0) {
+        setAdjustments(aiAdjustments);
         // 성공 햅틱
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       } else {
@@ -153,8 +143,9 @@ export default function WhatIfSimulator({ assets, totalAssets, currentHealthScor
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }
     } catch (error) {
-      console.error('추천 조정 계산 실패:', error);
+      console.error('AI 배분 최적화 실패:', error);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      // 에러 발생 시 기존 로직으로 폴백 (옵션)
     } finally {
       setIsOptimizing(false);
     }
@@ -270,7 +261,7 @@ export default function WhatIfSimulator({ assets, totalAssets, currentHealthScor
             ) : (
               <>
                 <Ionicons name="sparkles-outline" size={16} color="#FFF" />
-                <Text style={s.recommendButtonText}>✨ 추천 조정 적용</Text>
+                <Text style={s.recommendButtonText}>✨ AI 배분 최적화</Text>
               </>
             )}
           </TouchableOpacity>
@@ -352,7 +343,7 @@ export default function WhatIfSimulator({ assets, totalAssets, currentHealthScor
 
           {/* 안내 */}
           <Text style={s.hint}>
-            💡 슬라이더로 비중을 조정하면 건강 점수가 어떻게 변할지 미리 확인할 수 있습니다
+            💡 AI 배분 최적화 버튼을 누르면 건강 점수를 최대화하는 배분을 자동으로 제안합니다
           </Text>
         </View>
       )}

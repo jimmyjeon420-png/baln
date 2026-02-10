@@ -58,6 +58,8 @@ interface PollItem {
   noPercentage: number; // 0~100
   totalVotes: number;
   deadline: string; // ISO date
+  upReason?: string; // [NEW] 오를 근거
+  downReason?: string; // [NEW] 내릴 근거
 }
 
 interface PredictionVoteCardProps {
@@ -249,6 +251,30 @@ export default function PredictionVoteCard({
             {item.question}
           </Text>
         </View>
+
+        {/* [NEW] 오를/내릴 근거 박스 */}
+        {(item.upReason || item.downReason) && (
+          <View style={styles.reasonsContainer}>
+            {item.upReason && (
+              <View style={styles.reasonBox}>
+                <Text style={styles.reasonIcon}>📰</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.reasonLabel}>오를 근거</Text>
+                  <Text style={styles.reasonText}>{item.upReason}</Text>
+                </View>
+              </View>
+            )}
+            {item.downReason && (
+              <View style={styles.reasonBox}>
+                <Text style={styles.reasonIcon}>📰</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.reasonLabel}>내릴 근거</Text>
+                  <Text style={styles.reasonText}>{item.downReason}</Text>
+                </View>
+              </View>
+            )}
+          </View>
+        )}
 
         {/* 투표 버튼 */}
         <View style={styles.voteArea}>
@@ -557,6 +583,36 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
     lineHeight: 32,
     textAlign: 'center',
+  },
+  // [NEW] 근거 박스 스타일
+  reasonsContainer: {
+    gap: 10,
+    marginVertical: 12,
+  },
+  reasonBox: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    backgroundColor: 'rgba(176,176,176,0.06)',
+    borderRadius: 10,
+    padding: 12,
+    borderLeftWidth: 2,
+    borderLeftColor: COLORS.textSecondary,
+  },
+  reasonIcon: {
+    fontSize: 16,
+    marginTop: 2,
+  },
+  reasonLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: COLORS.textSecondary,
+    marginBottom: 3,
+  },
+  reasonText: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    lineHeight: 18,
   },
   voteArea: {
     marginVertical: 12,

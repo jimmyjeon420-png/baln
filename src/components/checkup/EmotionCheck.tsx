@@ -1,16 +1,20 @@
 /**
- * EmotionCheck - 오늘의 투자 감정
+ * EmotionCheck - 오늘의 투자 감정 (메모 포함)
  *
  * 코스톨라니: "투자 심리 관리" — 매일 감정을 터치로 기록.
  * 자기 감정을 인식하는 것만으로도 충동적 투자 결정을 줄일 수 있다.
+ * Wave 3: 메모 입력 추가 (최대 30자)
  */
 
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
 
 interface EmotionCheckProps {
   todayEmotion: string | null;
   onSelect: (emotion: string) => void;
+  memo: string;
+  onMemoChange: (memo: string) => void;
+  onSave: () => void;
 }
 
 const EMOTIONS = [
@@ -21,8 +25,14 @@ const EMOTIONS = [
   { key: 'confident', emoji: '🤑', label: '확신' },
 ] as const;
 
-export default function EmotionCheck({ todayEmotion, onSelect }: EmotionCheckProps) {
-  const isChecked = todayEmotion !== null;
+export default function EmotionCheck({
+  todayEmotion,
+  onSelect,
+  memo,
+  onMemoChange,
+  onSave,
+}: EmotionCheckProps) {
+  const isChecked = todayEmotion !== null && memo.length > 0;
   const selectedItem = EMOTIONS.find(e => e.key === todayEmotion);
 
   return (
@@ -60,6 +70,34 @@ export default function EmotionCheck({ todayEmotion, onSelect }: EmotionCheckPro
           );
         })}
       </View>
+
+      {/* 메모 입력 (감정 선택 시에만 표시) */}
+      {todayEmotion && (
+        <View style={s.memoSection}>
+          <Text style={s.memoLabel}>오늘 왜 이런 감정이었나요?</Text>
+          <TextInput
+            style={s.memoInput}
+            placeholder="30자 이내로 입력해주세요"
+            placeholderTextColor="#757575"
+            maxLength={30}
+            value={memo}
+            onChangeText={onMemoChange}
+            multiline
+            numberOfLines={2}
+          />
+          <View style={s.memoFooter}>
+            <Text style={s.charCount}>{memo.length}/30</Text>
+            <TouchableOpacity
+              style={[s.saveButton, !todayEmotion && s.saveButtonDisabled]}
+              onPress={onSave}
+              disabled={!todayEmotion}
+              activeOpacity={0.7}
+            >
+              <Text style={s.saveButtonText}>기록하기</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
 
       {/* 선택된 감정 피드백 */}
       {isChecked && selectedItem && (
@@ -159,5 +197,53 @@ const s = StyleSheet.create({
     fontSize: 13,
     color: '#B0B0B0',
     lineHeight: 20,
+  },
+  // 메모 섹션
+  memoSection: {
+    marginTop: 16,
+    backgroundColor: '#1A1A1A',
+    borderRadius: 12,
+    padding: 14,
+  },
+  memoLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginBottom: 8,
+  },
+  memoInput: {
+    fontSize: 14,
+    color: '#FFFFFF',
+    backgroundColor: '#0A0A0A',
+    borderRadius: 8,
+    padding: 12,
+    minHeight: 60,
+    textAlignVertical: 'top',
+    borderWidth: 1,
+    borderColor: '#2A2A2A',
+  },
+  memoFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  charCount: {
+    fontSize: 12,
+    color: '#757575',
+  },
+  saveButton: {
+    backgroundColor: '#4CAF50',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  saveButtonDisabled: {
+    backgroundColor: '#424242',
+  },
+  saveButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
 });
