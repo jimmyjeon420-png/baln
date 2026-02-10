@@ -24,6 +24,7 @@ import { useMyCredits, usePurchaseCredits, useCreditHistory } from '../../src/ho
 import { useHaptics } from '../../src/hooks/useHaptics';
 import { CREDIT_PACKAGES } from '../../src/types/marketplace';
 import type { CreditTransaction } from '../../src/types/marketplace';
+import { formatCredits, CREDIT_TO_KRW } from '../../src/utils/formatters';
 import {
   connectToStore,
   disconnectFromStore,
@@ -284,7 +285,10 @@ export default function CreditsScreen() {
           <Ionicons name="diamond" size={32} color="#7C4DFF" />
           <Text style={styles.balanceLabel}>보유 크레딧</Text>
           <Text style={styles.balanceValue}>
-            {creditsLoading ? '...' : (credits?.balance ?? 0).toLocaleString()}
+            {creditsLoading ? '...' : (credits?.balance ?? 0).toLocaleString()}C
+          </Text>
+          <Text style={styles.balanceKRW}>
+            {creditsLoading ? '' : `₩${((credits?.balance ?? 0) * CREDIT_TO_KRW).toLocaleString()} 상당`}
           </Text>
         </View>
 
@@ -449,6 +453,7 @@ const styles = StyleSheet.create({
   },
   balanceLabel: { color: '#888', fontSize: 14, marginTop: 8 },
   balanceValue: { color: '#FFF', fontSize: 36, fontWeight: '800', marginTop: 4 },
+  balanceKRW: { color: '#888', fontSize: 13, marginTop: 4 },
 
   // 섹션
   sectionTitle: { color: '#FFF', fontSize: 16, fontWeight: '700', marginBottom: 12 },

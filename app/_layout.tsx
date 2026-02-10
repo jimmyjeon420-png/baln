@@ -22,6 +22,7 @@ import { useSubscriptionBonus } from '../src/hooks/useCredits';
 import { useWelcomeBonus } from '../src/hooks/useRewards';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ErrorBoundary from '../src/components/common/ErrorBoundary';
+import WelcomeBonusModal from '../src/components/WelcomeBonusModal';
 import { useDeepLink } from '../src/hooks/useDeepLink';
 import { useAnalyticsInit } from '../src/hooks/useAnalytics';
 import { usePrefetchCheckup } from '../src/hooks/usePrefetchCheckup';
@@ -50,12 +51,22 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
   const segments = useSegments();
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+  const [welcomeCredits, setWelcomeCredits] = useState(10);
 
   // 앱 시작 시 자동 보상 체크 (로그인된 경우만)
   useSubscriptionBonus();  // 구독자 월 30크레딧 보너스
-  useWelcomeBonus();       // 신규 가입 10크레딧 웰컴 보너스
+  const welcomeBonus = useWelcomeBonus();       // 신규 가입 10크레딧 웰컴 보너스
   useDeepLink();           // 딥링크 처리 (알림 탭, 외부 링크 등)
   usePrefetchCheckup();    // 분석 탭 데이터 미리 로드 (이승건: "보기 전에 준비")
+
+  // 웰컴 보너스 지급 시 축하 모달 표시
+  useEffect(() => {
+    if (welcomeBonus.data?.granted && welcomeBonus.data?.creditsEarned) {
+      setWelcomeCredits(welcomeBonus.data.creditsEarned);
+      setShowWelcomeModal(true);
+    }
+  }, [welcomeBonus.data?.granted]);
 
   useEffect(() => {
     if (loading) return; // 로딩 중에는 아무것도 하지 않음
@@ -85,7 +96,16 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     }
   }, [user, loading, segments]);
 
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      <WelcomeBonusModal
+        visible={showWelcomeModal}
+        creditsEarned={welcomeCredits}
+        onDismiss={() => setShowWelcomeModal(false)}
+      />
+    </>
+  );
 }
 
 // 알림 핸들러 설정 (컴포넌트 외부에서 1회 실행)

@@ -57,13 +57,8 @@ export default function LoginScreen() {
     try {
       if (isSignUpMode) {
         await signUp(email, password);
-        Alert.alert(
-          '성공',
-          '회원가입되었습니다. 로그인해주세요.',
-          [{ text: '확인', onPress: () => setIsSignUpMode(false) }]
-        );
-        setEmail('');
-        setPassword('');
+        // 가입 성공 → 즉시 자동 로그인 (AuthGate가 온보딩으로 라우팅)
+        await signIn(email, password);
       } else {
         await signIn(email, password);
         router.replace('/(tabs)');
