@@ -32,9 +32,12 @@
   "submit": {
     "production": {
       "ios": {
-        "appleId": "PLACEHOLDER_APPLE_ID",
-        "ascAppId": "PLACEHOLDER_ASC_APP_ID",
-        "appleTeamId": "PLACEHOLDER_TEAM_ID"
+        "appleId": "jimmyjeon420@gmail.com",
+        "ascAppId": "6758968658",
+        "appleTeamId": "52GH89WGBV",
+        "ascApiKeyPath": "/Users/nicenoodle/Downloads/AuthKey_QBG63HQX6Q.p8",
+        "ascApiKeyId": "QBG63HQX6Q",
+        "ascApiKeyIssuerId": "b6788657-8426-4f5c-8780-1baf54f7ab17"
       }
     }
   }
