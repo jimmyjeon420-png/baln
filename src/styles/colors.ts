@@ -72,19 +72,21 @@ export interface ThemeColors {
 }
 
 // =============================================================================
-// 다크 모드 색상 (기존 디자인 유지)
+// 다크 모드 색상 (프리미엄 다크 스타일)
 // =============================================================================
 
 export const DARK_COLORS: ThemeColors = {
-  // 배경 레이어 (3단계) - 더 세련된 다크 블루 그레이
-  background: '#0F1419',        // 페이지 배경 (매우 어두운 블루 그레이)
-  surface: '#1A1F29',           // 카드 배경
-  surfaceElevated: '#242B36',   // 강조 카드
-  surfaceLight: '#2C2C2C',      // 하위 호환
+  // ========================================
+  // 배경 레이어 (모두 어두운색 - 다크 모드 핵심 원칙)
+  // ========================================
+  background: '#0A0A0A',        // 페이지 배경 (매우 어두운 검정)
+  surface: '#1A1A1A',           // 카드 배경 (어두운 회색)
+  surfaceElevated: '#252525',   // 강조 카드 (약간 밝은 회색)
+  surfaceLight: '#1F1F1F',      // 하위 호환
 
-  // 인버스 섹션
-  inverseSurface: '#1E2530',    // 약간 밝은 회색 섹션
-  inverseText: '#E5E7EB',       // 인버스 섹션의 텍스트
+  // 인버스 섹션 (다크 모드에서도 어두운 배경 유지)
+  inverseSurface: '#1F1F1F',    // 어두운 회색 배경
+  inverseText: '#FAFAFA',       // 밝은 텍스트 (다크 모드 = 밝은 텍스트)
 
   primary: '#4CAF50',
   primaryLight: '#66BB6A',
@@ -94,24 +96,28 @@ export const DARK_COLORS: ThemeColors = {
   neutral: '#9E9E9E',
   hold: '#4CAF50',
 
-  // 텍스트 (4단계)
-  textPrimary: '#F9FAFB',       // 거의 순백
-  textSecondary: '#9FA6B2',     // 중간 회색
-  textTertiary: '#6B7684',      // 연한 회색
-  textQuaternary: '#4B5563',    // 매우 연한 회색
+  // ========================================
+  // 텍스트 계층 (모두 밝은색 - 다크 모드 핵심 원칙)
+  // ========================================
+  textPrimary: '#FAFAFA',       // 주요 텍스트 (거의 흰색)
+  textSecondary: '#B8B8B8',     // 보조 텍스트 (밝은 회색)
+  textTertiary: '#8A8A8A',      // 비활성 텍스트 (중간 회색)
+  textQuaternary: '#5C5C5C',    // 매우 어두운 텍스트
 
   success: '#4CAF50',
   error: '#CF6679',
   warning: '#FFB74D',
   info: '#29B6F6',
 
-  // 테두리 (3단계)
-  border: '#2D3748',            // 기본
-  borderLight: '#252D37',       // 연한
-  borderStrong: '#374151',      // 강한
+  // ========================================
+  // 구분선 & 테두리 (어두운 회색 - 배경과 조화)
+  // ========================================
+  border: '#2A2A2A',            // 일반 구분선 (어두운 회색)
+  borderLight: '#222222',       // 매우 어두운 구분선
+  borderStrong: '#3A3A3A',      // 강한 구분선 (밝은 회색)
 
-  disabled: '#424242',
-  disabledText: '#6B7684',
+  disabled: '#2A2A2A',          // 비활성 배경
+  disabledText: '#5C5C5C',      // 비활성 텍스트
 
   sentiment: {
     calm: '#4CAF50',
@@ -133,19 +139,21 @@ export const DARK_COLORS: ThemeColors = {
 };
 
 // =============================================================================
-// 라이트 모드 색상 (새로 추가)
+// 라이트 모드 색상 (Apple/Stripe 프리미엄 스타일)
 // =============================================================================
 
 export const LIGHT_COLORS: ThemeColors = {
-  // 배경 레이어 (3단계) - 프리미엄 라이트 모드
-  background: '#F8F9FA',        // 페이지 배경 (아주 연한 회색, 따뜻한 톤)
+  // ========================================
+  // 배경 레이어 (모두 밝은색 - 라이트 모드 핵심 원칙)
+  // ========================================
+  background: '#FAFAFA',        // 페이지 배경 (아주 밝은 회색, Apple 스타일)
   surface: '#FFFFFF',           // 카드 배경 (순백)
   surfaceElevated: '#FFFFFF',   // 강조 카드 (순백 + 그림자로 구분)
-  surfaceLight: '#FAFAFA',      // 하위 호환
+  surfaceLight: '#F8F9FA',      // 하위 호환 (약간 밝은 회색)
 
-  // 인버스 섹션 (검정 대신 사용)
-  inverseSurface: '#F3F4F6',    // 연한 회색 (검정 섹션 대체용)
-  inverseText: '#1F2937',       // 인버스 섹션의 텍스트 (진한 회색)
+  // 인버스 섹션 (라이트 모드에서도 밝은 배경 유지)
+  inverseSurface: '#F5F5F5',    // 연한 회색 배경 (밝음)
+  inverseText: '#1A1A1A',       // 어두운 텍스트 (라이트 모드 = 어두운 텍스트)
 
   primary: '#4CAF50',
   primaryLight: '#66BB6A',
@@ -155,24 +163,28 @@ export const LIGHT_COLORS: ThemeColors = {
   neutral: '#9E9E9E',
   hold: '#4CAF50',
 
-  // 텍스트 계층 (4단계) - WCAG AA 이상
-  textPrimary: '#111827',       // 주요 텍스트 (거의 검정)
-  textSecondary: '#6B7280',     // 보조 텍스트
-  textTertiary: '#9CA3AF',      // 비활성 텍스트
-  textQuaternary: '#D1D5DB',    // 매우 연한 텍스트
+  // ========================================
+  // 텍스트 계층 (모두 어두운색 - 라이트 모드 핵심 원칙)
+  // ========================================
+  textPrimary: '#1A1A1A',       // 주요 텍스트 (거의 검정, 18:1 대비)
+  textSecondary: '#4A4A4A',     // 보조 텍스트 (진한 회색)
+  textTertiary: '#767676',      // 비활성 텍스트 (중간 회색)
+  textQuaternary: '#A8A8A8',    // 매우 연한 텍스트 (연한 회색)
 
   success: '#4CAF50',
   error: '#E53935',
   warning: '#FF9800',
   info: '#2196F3',
 
-  // 구분선 & 테두리 (3단계)
-  border: '#E5E7EB',            // 일반 구분선
-  borderLight: '#F3F4F6',       // 연한 구분선
-  borderStrong: '#D1D5DB',      // 강한 구분선
+  // ========================================
+  // 구분선 & 테두리 (밝은 회색 - 배경과 조화)
+  // ========================================
+  border: '#E8E8E8',            // 일반 구분선 (연한 회색)
+  borderLight: '#F0F0F0',       // 매우 연한 구분선
+  borderStrong: '#D0D0D0',      // 강한 구분선 (중간 회색)
 
-  disabled: '#E0E0E0',
-  disabledText: '#9CA3AF',
+  disabled: '#E8E8E8',          // 비활성 배경 (연한 회색)
+  disabledText: '#A8A8A8',      // 비활성 텍스트 (연한 회색)
 
   sentiment: {
     calm: '#4CAF50',

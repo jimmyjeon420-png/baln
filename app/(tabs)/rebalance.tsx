@@ -232,7 +232,7 @@ export default function CheckupScreen() {
           <View style={s.emptyIcon}>
             <Ionicons name="analytics-outline" size={48} color="#4CAF50" />
           </View>
-          <Text style={s.emptyTitle}>포트폴리오를 등록해주세요</Text>
+          <Text style={[s.emptyTitle, { color: colors.textPrimary }]}>포트폴리오를 등록해주세요</Text>
           <Text style={s.emptyDesc}>
             보유 자산을 등록하시면{'\n'}
             <Text style={{ color: '#4CAF50', fontWeight: '700' }}>AI 진단 + 맞춤 처방전</Text>을 받아보실 수 있습니다
@@ -441,7 +441,7 @@ const s = StyleSheet.create({
   emptyTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#FFFFFF',
+    // color는 동적으로 적용됨 (라이트: 어두운 텍스트, 다크: 밝은 텍스트)
     marginBottom: 12,
   },
   emptyDesc: {
