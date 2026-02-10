@@ -12,7 +12,7 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, InteractionManager } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import Slider from '@react-native-community/slider';
@@ -35,26 +35,38 @@ export default function WhatIfSimulator({ assets, totalAssets, currentHealthScor
   const [adjustments, setAdjustments] = useState<Record<string, number>>({});
 
   // 시뮬레이션된 포트폴리오 (비중 조정 적용)
+  // currentValue + currentPrice 모두 조정해야 calculateHealthScore의 getAssetValue()가 반영
   const simulatedAssets = useMemo(() => {
     return assets.map(asset => {
-      const adjustment = adjustments[asset.ticker || ''] || 0;
-      const adjustedValue = asset.currentValue * (1 + adjustment / 100);
+      const key = asset.ticker || asset.id;
+      const adjustment = adjustments[key] || 0;
+      const multiplier = 1 + adjustment / 100;
+      const adjustedValue = (asset.currentValue || 0) * multiplier;
+      const adjustedPrice = (asset.currentPrice ?? 0) > 0
+        ? (asset.currentPrice as number) * multiplier
+        : undefined;
       return {
         ...asset,
         currentValue: adjustedValue,
+        ...(adjustedPrice !== undefined && { currentPrice: adjustedPrice }),
       };
     });
   }, [assets, adjustments]);
 
-  // 시뮬레이션된 총자산
+  // 시뮬레이션된 총자산 (NaN 방어)
   const simulatedTotal = useMemo(() => {
-    return simulatedAssets.reduce((sum, a) => sum + a.currentValue, 0);
+    const total = simulatedAssets.reduce((sum, a) => sum + (a.currentValue || 0), 0);
+    return Number.isFinite(total) ? total : 0;
   }, [simulatedAssets]);
 
-  // 시뮬레이션된 건강 점수
+  // 시뮬레이션된 건강 점수 (에러 방어)
   const simulatedHealthScore = useMemo(() => {
     if (simulatedTotal === 0) return currentHealthScore;
-    return calculateHealthScore(simulatedAssets, simulatedTotal).totalScore;
+    try {
+      return calculateHealthScore(simulatedAssets, simulatedTotal).totalScore;
+    } catch {
+      return currentHealthScore;
+    }
   }, [simulatedAssets, simulatedTotal, currentHealthScore]);
 
   // 건강 점수 변화
@@ -82,38 +94,43 @@ export default function WhatIfSimulator({ assets, totalAssets, currentHealthScor
     });
   };
 
-  // 추천 조정 (최적 배분 자동 계산)
+  // 추천 조정 (최적 배분 자동 계산 — UI 블록 방지를 위해 비동기 처리)
   const handleRecommendedAdjustment = async () => {
     try {
-      // 햅틱 피드백
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       setIsOptimizing(true);
 
-      // 1. 현재 건강 점수를 baseline으로 설정
+      // UI 렌더 완료 후 무거운 계산 시작
+      await new Promise<void>(resolve => {
+        InteractionManager.runAfterInteractions(() => resolve());
+      });
+
       let bestScore = currentHealthScore;
       let bestAdjustments: Record<string, number> = {};
 
-      // 2. 각 자산별로 -50% ~ +100% 범위에서 5% 단위로 시뮬레이션
-      // (상위 5개 자산만 대상, 계산량 제한)
       const topAssets = assets.slice(0, 5);
 
-      // 단일 자산 조정 시뮬레이션 (가장 효과적인 단일 조정 찾기)
       for (const asset of topAssets) {
-        const ticker = asset.ticker || 'unknown';
+        const key = asset.ticker || asset.id;
 
         for (let adj = -50; adj <= 100; adj += 5) {
-          if (adj === 0) continue; // 현재 상태는 skip
+          if (adj === 0) continue;
 
-          // 이 자산만 조정한 임시 포트폴리오
-          const testAdjustments = { [ticker]: adj };
+          const testAdjustments = { [key]: adj };
           const testAssets = assets.map(a => {
-            const testAdj = testAdjustments[a.ticker || ''] || 0;
+            const aKey = a.ticker || a.id;
+            const testAdj = testAdjustments[aKey] || 0;
+            const mult = 1 + testAdj / 100;
+            const adjustedPrice = (a.currentPrice ?? 0) > 0
+              ? (a.currentPrice as number) * mult
+              : undefined;
             return {
               ...a,
-              currentValue: a.currentValue * (1 + testAdj / 100),
+              currentValue: (a.currentValue || 0) * mult,
+              ...(adjustedPrice !== undefined && { currentPrice: adjustedPrice }),
             };
           });
-          const testTotal = testAssets.reduce((sum, a) => sum + a.currentValue, 0);
+          const testTotal = testAssets.reduce((sum, a) => sum + (a.currentValue || 0), 0);
 
           if (testTotal === 0) continue;
 
@@ -261,17 +278,18 @@ export default function WhatIfSimulator({ assets, totalAssets, currentHealthScor
           {/* 자산별 슬라이더 */}
           <ScrollView style={s.assetsScroll} nestedScrollEnabled>
             {assets.slice(0, 5).map(asset => {
-              const ticker = asset.ticker || 'unknown';
-              const currentWeight = totalAssets > 0 ? (asset.currentValue / totalAssets) * 100 : 0;
-              const adjustment = adjustments[ticker] || 0;
+              const key = asset.ticker || asset.id;
+              const displayName = asset.ticker || asset.name || 'unknown';
+              const currentWeight = totalAssets > 0 ? ((asset.currentValue || 0) / totalAssets) * 100 : 0;
+              const adjustment = adjustments[key] || 0;
               const simulatedWeight = simulatedTotal > 0
-                ? ((asset.currentValue * (1 + adjustment / 100)) / simulatedTotal) * 100
+                ? (((asset.currentValue || 0) * (1 + adjustment / 100)) / simulatedTotal) * 100
                 : 0;
 
               return (
-                <View key={ticker} style={s.assetRow}>
+                <View key={asset.id} style={s.assetRow}>
                   <View style={s.assetHeader}>
-                    <Text style={s.assetTicker}>{ticker}</Text>
+                    <Text style={s.assetTicker}>{displayName}</Text>
                     <Text style={s.assetWeight}>
                       {currentWeight.toFixed(1)}% → {simulatedWeight.toFixed(1)}%
                     </Text>
@@ -285,9 +303,8 @@ export default function WhatIfSimulator({ assets, totalAssets, currentHealthScor
                       step={5}
                       value={adjustment}
                       onValueChange={(val) => {
-                        // 햅틱 피드백 (5% 단위로 터치할 때마다)
                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        setAdjustments(prev => ({ ...prev, [ticker]: val }));
+                        setAdjustments(prev => ({ ...prev, [key]: val }));
                       }}
                       minimumTrackTintColor="#7C4DFF"
                       maximumTrackTintColor="#333"
