@@ -12,9 +12,10 @@
  * - 보험 BM: 건강 점수는 무료, 상세 분석은 프리미엄
  */
 
+import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { HeartAsset, HeartAssetWithSignal } from '../types/heartAsset';
+import type { HeartAsset, HeartAssetWithSignal, HeartAssetType } from '../types/heartAsset';
 import { useSharedPortfolio } from './useSharedPortfolio';
 import {
   calculateHealthScore,
@@ -168,7 +169,34 @@ export function useHeartAssets(): UseHeartAssetsReturn {
     staleTime: Infinity, // AsyncStorage 데이터는 변경 시에만 갱신
   });
 
-  const heartAssets = query.data || [];
+  const heartAssetsFromStorage = query.data || [];
+
+  // ★ 포트폴리오 자산을 HeartAsset 형식으로 변환하여 병합
+  // "자산 추가하기"로 등록한 자산도 자동으로 하트 목록에 포함
+  const heartAssets = React.useMemo(() => {
+    const merged = [...heartAssetsFromStorage];
+
+    for (const asset of assets) {
+      // 부동산 제외, 티커가 있는 자산만
+      if (!asset.ticker || asset.ticker.startsWith('RE_')) continue;
+      // 이미 하트 목록에 있으면 스킵
+      if (merged.some(h => h.ticker === asset.ticker)) continue;
+
+      const upper = asset.ticker.toUpperCase();
+      const cryptoKeywords = ['BTC', 'ETH', 'SOL', 'XRP', 'DOGE', 'ADA', 'AVAX', 'DOT', 'LINK', 'BNB', 'MATIC'];
+      let type: HeartAssetType = 'stock';
+      if (cryptoKeywords.some(kw => upper.includes(kw))) type = 'crypto';
+
+      merged.push({
+        name: asset.name,
+        ticker: asset.ticker,
+        type,
+        heartedAt: new Date(asset.createdAt).toISOString(),
+      });
+    }
+
+    return merged;
+  }, [heartAssetsFromStorage, assets]);
 
   // 하트 추가 mutation
   const addMutation = useMutation({

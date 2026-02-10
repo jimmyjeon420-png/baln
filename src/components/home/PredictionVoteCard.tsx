@@ -23,7 +23,7 @@ import {
   StyleSheet,
   Dimensions,
   ActivityIndicator,
-  FlatList,
+  ScrollView,
   Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -128,15 +128,8 @@ export default function PredictionVoteCard({
   selectedCategory = 'all',
   onCategoryChange,
 }: PredictionVoteCardProps) {
-  const flatListRef = React.useRef<FlatList>(null);
+  const scrollRef = React.useRef<ScrollView>(null);
   const [currentIndex, setCurrentIndex] = React.useState(0);
-
-  // FlatList 스크롤 끝 핸들러 (Hook 규칙: 조건문 전에 선언 필수)
-  const onViewableItemsChanged = React.useRef(({ viewableItems }: any) => {
-    if (viewableItems.length > 0) {
-      setCurrentIndex(viewableItems[0].index ?? 0);
-    }
-  }).current;
 
   // 복기 해설 토글 상태 (인덱스별 펼침/접힘)
   const [expandedReviewIndex, setExpandedReviewIndex] = React.useState<number | null>(null);
@@ -194,7 +187,7 @@ export default function PredictionVoteCard({
     setTimeout(() => {
       const nextIndex = currentIndex + 1;
       if (nextIndex < allPolls.length) {
-        flatListRef.current?.scrollToIndex({ index: nextIndex, animated: true });
+        scrollRef.current?.scrollTo({ x: POLL_SLIDE_WIDTH * nextIndex, animated: true });
         setCurrentIndex(nextIndex);
       }
     }, 300);
@@ -350,27 +343,27 @@ export default function PredictionVoteCard({
         )}
       </View>
 
-      {/* 수평 스크롤 질문 리스트 */}
-      <FlatList
-        ref={flatListRef}
-        data={allPolls}
-        renderItem={renderPollSlide}
-        keyExtractor={(item) => item.id}
+      {/* 수평 스크롤 질문 리스트 (ScrollView + map으로 중첩 에러 방지) */}
+      <ScrollView
+        ref={scrollRef}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
         snapToInterval={POLL_SLIDE_WIDTH}
         decelerationRate="fast"
-        onViewableItemsChanged={onViewableItemsChanged}
-        viewabilityConfig={{ itemVisiblePercentThreshold: 50 }}
+        onMomentumScrollEnd={(e) => {
+          const page = Math.round(e.nativeEvent.contentOffset.x / POLL_SLIDE_WIDTH);
+          setCurrentIndex(page);
+        }}
         style={styles.pollFlatList}
         contentContainerStyle={styles.pollFlatListContent}
-        getItemLayout={(_, index) => ({
-          length: POLL_SLIDE_WIDTH,
-          offset: POLL_SLIDE_WIDTH * index,
-          index,
-        })}
-      />
+      >
+        {allPolls.map((item, index) => (
+          <React.Fragment key={item.id}>
+            {renderPollSlide({ item, index })}
+          </React.Fragment>
+        ))}
+      </ScrollView>
 
       {/* 모두 투표 완료 메시지 */}
       {allVoted && (
