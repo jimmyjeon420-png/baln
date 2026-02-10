@@ -32,6 +32,7 @@ import {
   SENTIMENT_LABELS,
 } from '../../types/contextCard';
 import ContextShareCard from './ContextShareCard';
+import { useTheme } from '../../hooks/useTheme';
 
 // Mock 데이터 (props 없을 때 사용)
 const MOCK_DATA: ContextCardData = {
@@ -74,6 +75,7 @@ export default function ContextCard({
   onPressPremium,
   onClose,
 }: ContextCardProps) {
+  const { colors, shadows } = useTheme();
   const [expanded, setExpanded] = useState(false);
   const [shareModalVisible, setShareModalVisible] = useState(false);
   const rotation = useSharedValue(0);
@@ -105,16 +107,16 @@ export default function ContextCard({
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.surface }, shadows.md]}>
       {/* 닫기 버튼 (모달 전용) */}
       {onClose && (
         <View style={styles.closeButtonContainer}>
           <TouchableOpacity
-            style={styles.closeButton}
+            style={[styles.closeButton, { backgroundColor: colors.surface + 'E6' }]}
             onPress={onClose}
             activeOpacity={0.7}
           >
-            <Ionicons name="close" size={28} color="#E0E0E0" />
+            <Ionicons name="close" size={28} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
       )}
@@ -137,8 +139,8 @@ export default function ContextCard({
                 {sentimentLabel}
               </Text>
             </View>
-            <Text style={styles.headline}>{data.headline}</Text>
-            <Text style={styles.date}>{formatDate(data.date)}</Text>
+            <Text style={[styles.headline, { color: colors.textPrimary }]}>{data.headline}</Text>
+            <Text style={[styles.date, { color: colors.textTertiary }]}>{formatDate(data.date)}</Text>
           </TouchableOpacity>
 
           {/* 우측: 공유 버튼 + 토글 버튼 */}
@@ -170,8 +172,9 @@ export default function ContextCard({
               icon="time-outline"
               title="역사적 맥락"
               color="#4CAF50"
+              colors={colors}
             >
-              <Text style={styles.layerText}>{data.historicalContext}</Text>
+              <Text style={[styles.layerText, { color: colors.textSecondary }]}>{data.historicalContext}</Text>
             </LayerSection>
 
             {/* 2번 레이어: 거시경제 체인 (무료) */}
@@ -179,13 +182,14 @@ export default function ContextCard({
               icon="git-network-outline"
               title="거시경제 체인"
               color="#2196F3"
+              colors={colors}
             >
               <View style={styles.chainContainer}>
                 {data.macroChain.map((step, index) => (
                   <View key={index}>
                     <View style={styles.chainStep}>
                       <View style={styles.chainDot} />
-                      <Text style={styles.chainText}>{step}</Text>
+                      <Text style={[styles.chainText, { color: colors.textSecondary }]}>{step}</Text>
                     </View>
                     {index < data.macroChain.length - 1 && (
                       <View style={styles.chainArrow}>
@@ -208,8 +212,9 @@ export default function ContextCard({
               color="#FF9800"
               isPremiumLocked={data.isPremiumContent && !isPremium}
               onPressPremium={onPressPremium}
+              colors={colors}
             >
-              <Text style={styles.layerText}>{data.institutionalBehavior}</Text>
+              <Text style={[styles.layerText, { color: colors.textSecondary }]}>{data.institutionalBehavior}</Text>
             </LayerSection>
 
             {/* 4번 레이어: 포트폴리오 영향 (Premium) */}
@@ -219,18 +224,19 @@ export default function ContextCard({
               color="#9C27B0"
               isPremiumLocked={data.isPremiumContent && !isPremium}
               onPressPremium={onPressPremium}
+              colors={colors}
             >
               <View style={styles.impactContainer}>
                 <View style={styles.impactRow}>
-                  <Text style={styles.impactLabel}>변동률</Text>
+                  <Text style={[styles.impactLabel, { color: colors.textTertiary }]}>변동률</Text>
                   <Text
                     style={[
                       styles.impactValue,
                       {
                         color:
                           data.portfolioImpact.percentChange >= 0
-                            ? '#4CAF50'
-                            : '#CF6679',
+                            ? colors.success
+                            : colors.error,
                       },
                     ]}
                   >
@@ -239,14 +245,14 @@ export default function ContextCard({
                   </Text>
                 </View>
                 <View style={styles.impactRow}>
-                  <Text style={styles.impactLabel}>건강 점수</Text>
-                  <Text style={styles.impactValue}>
+                  <Text style={[styles.impactLabel, { color: colors.textTertiary }]}>건강 점수</Text>
+                  <Text style={[styles.impactValue, { color: colors.textSecondary }]}>
                     {data.portfolioImpact.healthScoreChange === 0
                       ? '변동 없음'
                       : `${data.portfolioImpact.healthScoreChange > 0 ? '+' : ''}${data.portfolioImpact.healthScoreChange}`}
                   </Text>
                 </View>
-                <Text style={styles.impactMessage}>
+                <Text style={[styles.impactMessage, { color: colors.textSecondary }]}>
                   {data.portfolioImpact.message}
                 </Text>
               </View>
@@ -275,6 +281,7 @@ interface LayerSectionProps {
   children: React.ReactNode;
   isPremiumLocked?: boolean;
   onPressPremium?: () => void;
+  colors: any; // ThemeColors
 }
 
 function LayerSection({
@@ -284,13 +291,14 @@ function LayerSection({
   children,
   isPremiumLocked = false,
   onPressPremium,
+  colors,
 }: LayerSectionProps) {
   return (
     <View style={styles.layer}>
       {/* 레이어 헤더 */}
       <View style={styles.layerHeader}>
         <Ionicons name={icon} size={20} color={color} />
-        <Text style={styles.layerTitle}>{title}</Text>
+        <Text style={[styles.layerTitle, { color: colors.textPrimary }]}>{title}</Text>
         {isPremiumLocked && (
           <View style={styles.lockBadge}>
             <Ionicons name="lock-closed" size={12} color="#FFC107" />
@@ -305,7 +313,7 @@ function LayerSection({
           onPress={onPressPremium}
         >
           <View style={styles.blurredContent}>
-            <Text style={styles.blurredText}>
+            <Text style={[styles.blurredText, { color: colors.textTertiary }]}>
               {typeof children === 'string' ? children : '프리미엄 콘텐츠'}
             </Text>
           </View>
@@ -327,7 +335,7 @@ const styles = StyleSheet.create({
     marginVertical: 8,
     borderRadius: 16,
     overflow: 'hidden',
-    backgroundColor: '#1E1E1E',
+    // backgroundColor는 동적으로 적용됨
   },
   closeButtonContainer: {
     position: 'absolute',
@@ -339,7 +347,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(30, 30, 30, 0.9)',
+    // backgroundColor는 동적으로 적용됨
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -382,13 +390,13 @@ const styles = StyleSheet.create({
   headline: {
     fontSize: 17,
     fontWeight: '700',
-    color: '#FFFFFF',
+    // color는 동적으로 적용됨
     marginBottom: 6,
     lineHeight: 24,
   },
   date: {
     fontSize: 13,
-    color: '#9E9E9E',
+    // color는 동적으로 적용됨
   },
   content: {
     marginTop: 20,
@@ -404,7 +412,7 @@ const styles = StyleSheet.create({
   layerTitle: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#E0E0E0',
+    // color는 동적으로 적용됨
     marginLeft: 8,
     flex: 1,
   },
@@ -418,7 +426,7 @@ const styles = StyleSheet.create({
   },
   layerText: {
     fontSize: 14,
-    color: '#BDBDBD',
+    // color는 동적으로 적용됨
     lineHeight: 22,
   },
   chainContainer: {
@@ -438,7 +446,7 @@ const styles = StyleSheet.create({
   },
   chainText: {
     fontSize: 14,
-    color: '#BDBDBD',
+    // color는 동적으로 적용됨
     flex: 1,
     lineHeight: 20,
   },
@@ -458,16 +466,16 @@ const styles = StyleSheet.create({
   },
   impactLabel: {
     fontSize: 14,
-    color: '#9E9E9E',
+    // color는 동적으로 적용됨
   },
   impactValue: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#E0E0E0',
+    // color는 동적으로 적용됨
   },
   impactMessage: {
     fontSize: 14,
-    color: '#BDBDBD',
+    // color는 동적으로 적용됨
     lineHeight: 22,
     marginTop: 8,
   },
@@ -481,7 +489,7 @@ const styles = StyleSheet.create({
   },
   blurredText: {
     fontSize: 14,
-    color: '#BDBDBD',
+    // color는 동적으로 적용됨
     lineHeight: 22,
   },
   premiumCTA: {

@@ -15,6 +15,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { Appearance, ColorSchemeName } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DARK_COLORS, LIGHT_COLORS, ThemeColors } from '../styles/colors';
+import { DARK_SHADOWS, LIGHT_SHADOWS, ShadowStyles } from '../styles/shadows';
 
 // =============================================================================
 // 타입 정의
@@ -36,6 +37,9 @@ interface ThemeContextValue {
 
   /** 현재 테마의 색상 팔레트 */
   colors: ThemeColors;
+
+  /** 현재 테마의 그림자 스타일 */
+  shadows: ShadowStyles;
 
   /** 테마 모드 변경 함수 */
   setThemeMode: (mode: ThemeMode) => Promise<void>;
@@ -89,6 +93,13 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   // ---------------------------------------------------------------------------
   const colors: ThemeColors = React.useMemo(() => {
     return theme === 'light' ? LIGHT_COLORS : DARK_COLORS;
+  }, [theme]);
+
+  // ---------------------------------------------------------------------------
+  // 현재 테마의 그림자 스타일
+  // ---------------------------------------------------------------------------
+  const shadows: ShadowStyles = React.useMemo(() => {
+    return theme === 'light' ? LIGHT_SHADOWS : DARK_SHADOWS;
   }, [theme]);
 
   // ---------------------------------------------------------------------------
@@ -146,9 +157,10 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     themeMode,
     theme,
     colors,
+    shadows,
     setThemeMode,
     isLoading,
-  }), [themeMode, theme, colors, setThemeMode, isLoading]);
+  }), [themeMode, theme, colors, shadows, setThemeMode, isLoading]);
 
   return (
     <ThemeContext.Provider value={value}>
@@ -166,10 +178,13 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
  *
  * 사용 예시:
  * ```tsx
- * const { theme, colors, setThemeMode } = useTheme();
+ * const { theme, colors, shadows, setThemeMode } = useTheme();
  *
  * // 배경색 적용
  * <View style={{ backgroundColor: colors.background }}>
+ *
+ * // 그림자 적용 (라이트 모드에서 입체감)
+ * <View style={[styles.card, shadows.md]}>
  *
  * // 테마 변경
  * setThemeMode('light');

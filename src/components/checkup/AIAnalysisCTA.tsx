@@ -16,6 +16,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { isFreePeriod } from '../../config/freePeriod';
+import { useTheme } from '../../hooks/useTheme';
 
 /**
  * AI 기능 항목
@@ -61,13 +62,14 @@ const AI_FEATURES: AIFeatureItem[] = [
 
 export default function AIAnalysisCTA() {
   const router = useRouter();
+  const { colors, shadows } = useTheme();
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.surface, borderColor: colors.premium.purple + '33' }, shadows.md]}>
       {/* 헤더 */}
       <View style={styles.header}>
-        <Ionicons name="sparkles" size={24} color="#7C4DFF" />
-        <Text style={styles.headerTitle}>AI 심화 분석</Text>
+        <Ionicons name="sparkles" size={24} color={colors.premium.purple} />
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>AI 심화 분석</Text>
         {isFreePeriod() && (
           <View style={styles.freeBadge}>
             <Text style={styles.freeBadgeText}>지금 무료!</Text>
@@ -75,7 +77,7 @@ export default function AIAnalysisCTA() {
         )}
       </View>
 
-      <Text style={styles.headerDesc}>
+      <Text style={[styles.headerDesc, { color: colors.textTertiary }]}>
         더 깊이 있는 분석이 필요하신가요?
       </Text>
 
@@ -84,29 +86,29 @@ export default function AIAnalysisCTA() {
         {AI_FEATURES.map((feature, index) => (
           <TouchableOpacity
             key={index}
-            style={styles.featureCard}
+            style={[styles.featureCard, { backgroundColor: colors.inverseSurface, borderColor: colors.border }]}
             onPress={() => router.push(feature.route as any)}
             activeOpacity={0.7}
           >
             <View style={[styles.featureIcon, { backgroundColor: feature.color + '20' }]}>
               <Ionicons name={feature.icon} size={24} color={feature.color} />
             </View>
-            <Text style={styles.featureTitle}>{feature.title}</Text>
-            <Text style={styles.featureDesc}>{feature.description}</Text>
+            <Text style={[styles.featureTitle, { color: colors.textPrimary }]}>{feature.title}</Text>
+            <Text style={[styles.featureDesc, { color: colors.textTertiary }]}>{feature.description}</Text>
           </TouchableOpacity>
         ))}
       </View>
 
       {/* 마켓플레이스 전체 보기 버튼 */}
       <TouchableOpacity
-        style={styles.marketplaceButton}
+        style={[styles.marketplaceButton, { backgroundColor: colors.premium.purple + '26' }]}
         onPress={() => router.push('/marketplace')}
         activeOpacity={0.7}
       >
-        <Text style={styles.marketplaceButtonText}>
+        <Text style={[styles.marketplaceButtonText, { color: colors.premium.purple }]}>
           AI 마켓플레이스 전체 보기
         </Text>
-        <Ionicons name="chevron-forward" size={18} color="#7C4DFF" />
+        <Ionicons name="chevron-forward" size={18} color={colors.premium.purple} />
       </TouchableOpacity>
     </View>
   );
@@ -117,10 +119,10 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginVertical: 12,
     padding: 20,
-    backgroundColor: '#1E1E1E',
+    // backgroundColor는 동적으로 적용됨
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(124, 77, 255, 0.2)',
+    // borderColor는 동적으로 적용됨
   },
   header: {
     flexDirection: 'row',
@@ -130,7 +132,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#FFFFFF',
+    // color는 동적으로 적용됨
     marginLeft: 8,
     flex: 1,
   },
@@ -147,7 +149,7 @@ const styles = StyleSheet.create({
   },
   headerDesc: {
     fontSize: 14,
-    color: '#9E9E9E',
+    // color는 동적으로 적용됨
     marginBottom: 20,
   },
   grid: {
@@ -158,11 +160,11 @@ const styles = StyleSheet.create({
   },
   featureCard: {
     width: '48%',
-    backgroundColor: '#121212',
+    // backgroundColor는 동적으로 적용됨
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    // borderColor는 동적으로 적용됨
   },
   featureIcon: {
     width: 48,
@@ -175,12 +177,12 @@ const styles = StyleSheet.create({
   featureTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#E0E0E0',
+    // color는 동적으로 적용됨
     marginBottom: 4,
   },
   featureDesc: {
     fontSize: 12,
-    color: '#9E9E9E',
+    // color는 동적으로 적용됨
     lineHeight: 16,
   },
   marketplaceButton: {
@@ -188,14 +190,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 14,
-    backgroundColor: 'rgba(124, 77, 255, 0.15)',
+    // backgroundColor는 동적으로 적용됨
     borderRadius: 12,
     marginTop: 8,
   },
   marketplaceButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#7C4DFF',
+    // color는 동적으로 적용됨
     marginRight: 6,
   },
 });
