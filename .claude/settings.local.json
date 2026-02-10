@@ -165,7 +165,11 @@
       "Bash(git reset:*)",
       "Bash(git diff:*)",
       "Bash(npm run type-check:*)",
-      "Bash(rd:*)"
+      "Bash(rd:*)",
+      "Bash(npx eas:*)",
+      "Bash(defaults read:*)",
+      "Bash(osascript:*)",
+      "Bash(brew install:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
