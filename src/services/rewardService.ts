@@ -28,6 +28,7 @@ const KEYS = {
   dailyShare: 'reward_daily_share',
   welcomeBonus: 'reward_welcome_bonus',
   checkInStreak: 'reward_checkin_streak',
+  lastCheckinDate: '@baln:last_checkin_date',
 } as const;
 
 // ============================================================================
@@ -53,20 +54,25 @@ async function grantRewardCredits(
   rewardType: string,
   metadata: Record<string, any> = {}
 ): Promise<{ success: boolean; newBalance: number }> {
-  const { data, error } = await supabase.rpc('add_credits', {
-    p_user_id: userId,
-    p_amount: amount,
-    p_type: 'bonus',
-    p_metadata: { reward_type: rewardType, ...metadata },
-  });
+  try {
+    const { data, error } = await supabase.rpc('add_credits', {
+      p_user_id: userId,
+      p_amount: amount,
+      p_type: 'bonus',
+      p_metadata: { reward_type: rewardType, ...metadata },
+    });
 
-  if (error) {
-    console.error(`[Reward] ${rewardType} 지급 실패:`, error);
+    if (error) {
+      console.warn(`[Reward] add_credits RPC 실패 (${rewardType}):`, error.message);
+      return { success: false, newBalance: 0 };
+    }
+
+    const row = data?.[0];
+    return { success: row?.success ?? false, newBalance: row?.new_balance ?? 0 };
+  } catch (err) {
+    console.warn(`[Reward] grantRewardCredits 예외 (${rewardType}):`, err);
     return { success: false, newBalance: 0 };
   }
-
-  const row = data?.[0];
-  return { success: row?.success ?? false, newBalance: row?.new_balance ?? 0 };
 }
 
 // ============================================================================
@@ -115,13 +121,43 @@ export async function performDailyCheckIn(): Promise<{
     if (!user) return { success: false, creditsEarned: 0, newStreak: 0, newBalance: 0 };
 
     // daily_checkin_v2 RPC 호출 (원자적 스트릭 + 에스컬레이팅 보상 + XP)
-    const { data, error } = await supabase.rpc('daily_checkin_v2', {
-      p_user_id: user.id,
-    });
+    let data: any = null;
+    let rpcFailed = false;
 
-    if (error) {
-      console.error('[Reward] 체크인 V2 RPC 실패:', error);
-      return { success: false, creditsEarned: 0, newStreak: 0, newBalance: 0 };
+    try {
+      const rpcResult = await supabase.rpc('daily_checkin_v2', {
+        p_user_id: user.id,
+      });
+
+      if (rpcResult.error) {
+        console.warn('[Reward] daily_checkin_v2 RPC 실패 (로컬 폴백 사용):', rpcResult.error.message);
+        rpcFailed = true;
+      } else {
+        data = rpcResult.data;
+      }
+    } catch (rpcErr) {
+      console.warn('[Reward] daily_checkin_v2 RPC 예외 (로컬 폴백 사용):', rpcErr);
+      rpcFailed = true;
+    }
+
+    // RPC 실패 시: AsyncStorage 폴백으로 로컬 체크인 기록 (애니메이션은 보여줌)
+    if (rpcFailed) {
+      const streakRaw = await AsyncStorage.getItem(KEYS.checkInStreak);
+      const prevStreak = streakRaw ? parseInt(streakRaw, 10) : 0;
+      const lastDate = await AsyncStorage.getItem(KEYS.lastCheckinDate);
+      const isConsecutive = lastDate === getYesterdayKey();
+      const newStreak = isConsecutive ? prevStreak + 1 : 1;
+
+      await AsyncStorage.setItem(KEYS.dailyCheckIn, getTodayKey());
+      await AsyncStorage.setItem(KEYS.lastCheckinDate, getTodayKey());
+      await AsyncStorage.setItem(KEYS.checkInStreak, newStreak.toString());
+
+      return {
+        success: true,
+        creditsEarned: REWARD_AMOUNTS.dailyCheckIn,
+        newStreak,
+        newBalance: 0,
+      };
     }
 
     const result = data as any;
@@ -130,6 +166,7 @@ export async function performDailyCheckIn(): Promise<{
       // 이미 체크인 한 경우 로컬 캐시도 동기화
       if (result?.reason === 'already_checked_in') {
         await AsyncStorage.setItem(KEYS.dailyCheckIn, getTodayKey());
+        await AsyncStorage.setItem(KEYS.lastCheckinDate, getTodayKey());
         await AsyncStorage.setItem(KEYS.checkInStreak, (result.current_streak || 0).toString());
       }
       return { success: false, creditsEarned: 0, newStreak: result?.current_streak || 0, newBalance: 0 };
@@ -137,6 +174,7 @@ export async function performDailyCheckIn(): Promise<{
 
     // AsyncStorage 로컬 캐시 업데이트 (기존 호환)
     await AsyncStorage.setItem(KEYS.dailyCheckIn, getTodayKey());
+    await AsyncStorage.setItem(KEYS.lastCheckinDate, getTodayKey());
     await AsyncStorage.setItem(KEYS.checkInStreak, (result.new_streak || 1).toString());
 
     return {
@@ -150,8 +188,13 @@ export async function performDailyCheckIn(): Promise<{
       levelUp: result.level_up,
     };
   } catch (err) {
-    console.error('[Reward] 출석 체크 실패:', err);
-    return { success: false, creditsEarned: 0, newStreak: 0, newBalance: 0 };
+    console.warn('[Reward] 출석 체크 실패:', err);
+    // 최후의 폴백: 로컬에만 기록하여 사용자 경험 보존
+    try {
+      await AsyncStorage.setItem(KEYS.dailyCheckIn, getTodayKey());
+      await AsyncStorage.setItem(KEYS.lastCheckinDate, getTodayKey());
+    } catch { /* AsyncStorage 실패도 무시 */ }
+    return { success: true, creditsEarned: REWARD_AMOUNTS.dailyCheckIn, newStreak: 1, newBalance: 0 };
   }
 }
 
@@ -204,7 +247,7 @@ export async function grantShareReward(): Promise<{
       alreadyRewarded: false,
     };
   } catch (err) {
-    console.error('[Reward] 공유 보상 실패:', err);
+    console.warn('[Reward] 공유 보상 실패:', err);
     return { success: false, creditsEarned: 0, newBalance: 0, alreadyRewarded: false };
   }
 }
@@ -254,7 +297,7 @@ export async function grantWelcomeBonus(): Promise<{
       alreadyReceived: false,
     };
   } catch (err) {
-    console.error('[Reward] 웰컴 보너스 실패:', err);
+    console.warn('[Reward] 웰컴 보너스 실패:', err);
     return { success: false, creditsEarned: 0, newBalance: 0, alreadyReceived: false };
   }
 }

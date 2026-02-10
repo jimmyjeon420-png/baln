@@ -89,7 +89,7 @@ export async function spendCredits(
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError) {
-      console.error('[Credits] 인증 조회 실패:', authError.message);
+      console.warn('[Credits] 인증 조회 실패:', authError.message);
       return { success: false, newBalance: 0, errorMessage: '네트워크 연결을 확인해주세요.' };
     }
 
@@ -116,7 +116,7 @@ export async function spendCredits(
     });
 
     if (error) {
-      console.error('[Credits] RPC 차감 실패:', error.message);
+      console.warn('[Credits] spend_credits RPC 실패 (기본값 반환):', error.message);
       return { success: false, newBalance: 0, errorMessage: error.message };
     }
 
@@ -131,7 +131,7 @@ export async function spendCredits(
       errorMessage: row.error_message || undefined,
     };
   } catch (err) {
-    console.error('[Credits] 크레딧 차감 중 예외:', err);
+    console.warn('[Credits] 크레딧 차감 중 예외:', err);
     return {
       success: false,
       newBalance: 0,
@@ -160,46 +160,60 @@ export async function purchaseCredits(
   _packageId: string,
   _iapReceiptId?: string
 ): Promise<PurchaseResult> {
-  // 무료 기간: 결제 비활성화
-  if (!shouldChargeCredits()) {
+  try {
+    // 무료 기간: 결제 비활성화
+    if (!shouldChargeCredits()) {
+      return {
+        success: false,
+        newBalance: 0,
+        totalCredits: 0,
+      };
+    }
+
+    // --- 아래는 6월 유료 전환 시 활성화 ---
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      console.warn('[Credits] purchaseCredits: 로그인 필요');
+      return { success: false, newBalance: 0, totalCredits: 0 };
+    }
+
+    const pkg = CREDIT_PACKAGES.find(p => p.id === _packageId);
+    if (!pkg) {
+      console.warn('[Credits] purchaseCredits: 유효하지 않은 패키지:', _packageId);
+      return { success: false, newBalance: 0, totalCredits: 0 };
+    }
+
+    const totalCredits = pkg.credits + pkg.bonus;
+
+    const { data, error } = await supabase.rpc('add_credits', {
+      p_user_id: user.id,
+      p_amount: totalCredits,
+      p_type: 'purchase',
+      p_metadata: {
+        package_id: _packageId,
+        package_name: pkg.name,
+        credits: pkg.credits,
+        bonus: pkg.bonus,
+        price: pkg.price,
+        iap_receipt_id: _iapReceiptId || null,
+      },
+    });
+
+    if (error) {
+      console.warn('[Credits] add_credits RPC 실패 (purchaseCredits):', error.message);
+      return { success: false, newBalance: 0, totalCredits };
+    }
+
+    const row = data?.[0];
     return {
-      success: false,
-      newBalance: 0,
-      totalCredits: 0,
+      success: row?.success ?? false,
+      newBalance: row?.new_balance ?? 0,
+      totalCredits,
     };
+  } catch (err) {
+    console.warn('[Credits] purchaseCredits 예외:', err);
+    return { success: false, newBalance: 0, totalCredits: 0 };
   }
-
-  // --- 아래는 6월 유료 전환 시 활성화 ---
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('로그인이 필요합니다');
-
-  const pkg = CREDIT_PACKAGES.find(p => p.id === _packageId);
-  if (!pkg) throw new Error('유효하지 않은 패키지입니다');
-
-  const totalCredits = pkg.credits + pkg.bonus;
-
-  const { data, error } = await supabase.rpc('add_credits', {
-    p_user_id: user.id,
-    p_amount: totalCredits,
-    p_type: 'purchase',
-    p_metadata: {
-      package_id: _packageId,
-      package_name: pkg.name,
-      credits: pkg.credits,
-      bonus: pkg.bonus,
-      price: pkg.price,
-      iap_receipt_id: _iapReceiptId || null,
-    },
-  });
-
-  if (error) throw error;
-
-  const row = data?.[0];
-  return {
-    success: row?.success ?? false,
-    newBalance: row?.new_balance ?? 0,
-    totalCredits,
-  };
 }
 
 // ============================================================================
@@ -210,18 +224,26 @@ export async function purchaseCredits(
 export async function getCreditHistory(
   limit: number = 20
 ): Promise<CreditTransaction[]> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return [];
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return [];
 
-  const { data, error } = await supabase
-    .from('credit_transactions')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-    .limit(limit);
+    const { data, error } = await supabase
+      .from('credit_transactions')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(limit);
 
-  if (error) throw error;
-  return (data || []) as CreditTransaction[];
+    if (error) {
+      console.warn('[Credits] 거래 내역 조회 실패 (빈 배열 반환):', error.message);
+      return [];
+    }
+    return (data || []) as CreditTransaction[];
+  } catch (err) {
+    console.warn('[Credits] getCreditHistory 예외:', err);
+    return [];
+  }
 }
 
 // ============================================================================
@@ -256,67 +278,72 @@ export async function checkAndGrantSubscriptionBonus(): Promise<{
   amount: number;
   newBalance: number;
 }> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { granted: false, amount: 0, newBalance: 0 };
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { granted: false, amount: 0, newBalance: 0 };
 
-  // 프로필에서 구독 상태 확인
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('plan_type, premium_expires_at')
-    .eq('id', user.id)
-    .single();
+    // 프로필에서 구독 상태 확인
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('plan_type, premium_expires_at')
+      .eq('id', user.id)
+      .single();
 
-  // 무료 사용자는 보너스 없음
-  if (!profile || profile.plan_type === 'free') {
-    return { granted: false, amount: 0, newBalance: 0 };
-  }
-
-  // 구독 만료 체크
-  if (profile.premium_expires_at && new Date(profile.premium_expires_at) < new Date()) {
-    return { granted: false, amount: 0, newBalance: 0 };
-  }
-
-  // 이번 달 이미 지급했는지 체크
-  const { data: credits } = await supabase
-    .from('user_credits')
-    .select('last_bonus_at')
-    .eq('user_id', user.id)
-    .single();
-
-  if (credits?.last_bonus_at) {
-    const lastBonus = new Date(credits.last_bonus_at);
-    const now = new Date();
-    // 같은 달이면 이미 지급됨
-    if (
-      lastBonus.getFullYear() === now.getFullYear() &&
-      lastBonus.getMonth() === now.getMonth()
-    ) {
+    // 무료 사용자는 보너스 없음
+    if (!profile || profile.plan_type === 'free') {
       return { granted: false, amount: 0, newBalance: 0 };
     }
-  }
 
-  // 보너스 지급
-  const { data, error } = await supabase.rpc('add_credits', {
-    p_user_id: user.id,
-    p_amount: SUBSCRIPTION_MONTHLY_BONUS,
-    p_type: 'subscription_bonus',
-    p_metadata: {
-      month: new Date().toISOString().slice(0, 7), // "2026-02"
-      plan_type: profile.plan_type,
-    },
-  });
+    // 구독 만료 체크
+    if (profile.premium_expires_at && new Date(profile.premium_expires_at) < new Date()) {
+      return { granted: false, amount: 0, newBalance: 0 };
+    }
 
-  if (error) {
-    console.error('구독 보너스 지급 실패:', error);
+    // 이번 달 이미 지급했는지 체크
+    const { data: credits } = await supabase
+      .from('user_credits')
+      .select('last_bonus_at')
+      .eq('user_id', user.id)
+      .single();
+
+    if (credits?.last_bonus_at) {
+      const lastBonus = new Date(credits.last_bonus_at);
+      const now = new Date();
+      // 같은 달이면 이미 지급됨
+      if (
+        lastBonus.getFullYear() === now.getFullYear() &&
+        lastBonus.getMonth() === now.getMonth()
+      ) {
+        return { granted: false, amount: 0, newBalance: 0 };
+      }
+    }
+
+    // 보너스 지급
+    const { data, error } = await supabase.rpc('add_credits', {
+      p_user_id: user.id,
+      p_amount: SUBSCRIPTION_MONTHLY_BONUS,
+      p_type: 'subscription_bonus',
+      p_metadata: {
+        month: new Date().toISOString().slice(0, 7), // "2026-02"
+        plan_type: profile.plan_type,
+      },
+    });
+
+    if (error) {
+      console.warn('[Credits] add_credits RPC 실패 (구독 보너스):', error.message);
+      return { granted: false, amount: 0, newBalance: 0 };
+    }
+
+    const row = data?.[0];
+    return {
+      granted: true,
+      amount: SUBSCRIPTION_MONTHLY_BONUS,
+      newBalance: row?.new_balance ?? 0,
+    };
+  } catch (err) {
+    console.warn('[Credits] checkAndGrantSubscriptionBonus 예외:', err);
     return { granted: false, amount: 0, newBalance: 0 };
   }
-
-  const row = data?.[0];
-  return {
-    granted: true,
-    amount: SUBSCRIPTION_MONTHLY_BONUS,
-    newBalance: row?.new_balance ?? 0,
-  };
 }
 
 // ============================================================================
@@ -329,24 +356,35 @@ export async function refundCredits(
   featureType: AIFeatureType,
   reason?: string
 ): Promise<{ success: boolean; newBalance: number }> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('로그인이 필요합니다');
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      console.warn('[Credits] refundCredits: 로그인 필요');
+      return { success: false, newBalance: 0 };
+    }
 
-  const { data, error } = await supabase.rpc('add_credits', {
-    p_user_id: user.id,
-    p_amount: amount,
-    p_type: 'refund',
-    p_metadata: {
-      feature_type: featureType,
-      reason: reason || 'AI 분석 실패',
-    },
-  });
+    const { data, error } = await supabase.rpc('add_credits', {
+      p_user_id: user.id,
+      p_amount: amount,
+      p_type: 'refund',
+      p_metadata: {
+        feature_type: featureType,
+        reason: reason || 'AI 분석 실패',
+      },
+    });
 
-  if (error) throw error;
+    if (error) {
+      console.warn('[Credits] add_credits RPC 실패 (refundCredits):', error.message);
+      return { success: false, newBalance: 0 };
+    }
 
-  const row = data?.[0];
-  return {
-    success: row?.success ?? false,
-    newBalance: row?.new_balance ?? 0,
-  };
+    const row = data?.[0];
+    return {
+      success: row?.success ?? false,
+      newBalance: row?.new_balance ?? 0,
+    };
+  } catch (err) {
+    console.warn('[Credits] refundCredits 예외:', err);
+    return { success: false, newBalance: 0 };
+  }
 }

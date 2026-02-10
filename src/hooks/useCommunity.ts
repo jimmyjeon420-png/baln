@@ -145,33 +145,41 @@ export const useCommunityPosts = (
   return useInfiniteQuery({
     queryKey: ['communityPosts', category, sortBy],
     queryFn: async ({ pageParam = 0 }) => {
-      let query = supabase
-        .from('community_posts')
-        .select('*');
+      try {
+        let query = supabase
+          .from('community_posts')
+          .select('*');
 
-      if (category !== 'all') {
-        query = query.eq('category', category);
+        if (category !== 'all') {
+          query = query.eq('category', category);
+        }
+
+        // 정렬 기준
+        if (sortBy === 'popular') {
+          query = query.order('likes_count', { ascending: false });
+        } else if (sortBy === 'hot') {
+          query = query.order('comments_count', { ascending: false });
+        } else {
+          query = query.order('created_at', { ascending: false });
+        }
+
+        // 오프셋 기반 페이지네이션
+        query = query.range(pageParam, pageParam + PAGE_SIZE - 1);
+
+        const { data, error } = await query;
+        if (error) {
+          console.warn('[Community] 게시물 조회 실패 (빈 배열 반환):', error.message);
+          return [] as CommunityPost[];
+        }
+
+        return (data || []).map(post => ({
+          ...post,
+          top_holdings: Array.isArray(post.top_holdings) ? post.top_holdings : [],
+        })) as CommunityPost[];
+      } catch (err) {
+        console.warn('[Community] 게시물 조회 예외:', err);
+        return [] as CommunityPost[];
       }
-
-      // 정렬 기준
-      if (sortBy === 'popular') {
-        query = query.order('likes_count', { ascending: false });
-      } else if (sortBy === 'hot') {
-        query = query.order('comments_count', { ascending: false });
-      } else {
-        query = query.order('created_at', { ascending: false });
-      }
-
-      // 오프셋 기반 페이지네이션
-      query = query.range(pageParam, pageParam + PAGE_SIZE - 1);
-
-      const { data, error } = await query;
-      if (error) throw error;
-
-      return (data || []).map(post => ({
-        ...post,
-        top_holdings: Array.isArray(post.top_holdings) ? post.top_holdings : [],
-      })) as CommunityPost[];
     },
     initialPageParam: 0,
     getNextPageParam: (lastPage, allPages) => {
@@ -375,14 +383,22 @@ export const usePostComments = (postId: string) => {
   return useQuery({
     queryKey: ['communityComments', postId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('community_comments')
-        .select('*')
-        .eq('post_id', postId)
-        .order('created_at', { ascending: true });
+      try {
+        const { data, error } = await supabase
+          .from('community_comments')
+          .select('*')
+          .eq('post_id', postId)
+          .order('created_at', { ascending: true });
 
-      if (error) throw error;
-      return data as CommunityComment[];
+        if (error) {
+          console.warn('[Community] 댓글 조회 실패 (빈 배열 반환):', error.message);
+          return [] as CommunityComment[];
+        }
+        return data as CommunityComment[];
+      } catch (err) {
+        console.warn('[Community] 댓글 조회 예외:', err);
+        return [] as CommunityComment[];
+      }
     },
     enabled: !!postId,
     staleTime: 60000,
@@ -418,8 +434,12 @@ export const useCreateComment = (postId: string) => {
 
       if (error) throw error;
 
-      // 댓글 수 원자적 증가 (대댓글도 카운트)
-      await supabase.rpc('increment_comment_count', { p_post_id: postId });
+      // 댓글 수 원자적 증가 (대댓글도 카운트) — RPC 실패 시 무시 (댓글은 이미 저장됨)
+      try {
+        await supabase.rpc('increment_comment_count', { p_post_id: postId });
+      } catch {
+        console.warn('[Community] increment_comment_count RPC 실패 (무시)');
+      }
 
       return data;
     },
@@ -496,8 +516,12 @@ export const useDeleteComment = (postId: string) => {
 
       if (error) throw error;
 
-      // 댓글 수 감소
-      await supabase.rpc('increment_comment_count', { p_post_id: postId, p_delta: -1 });
+      // 댓글 수 감소 — RPC 실패 시 무시 (댓글은 이미 삭제됨)
+      try {
+        await supabase.rpc('increment_comment_count', { p_post_id: postId, p_delta: -1 });
+      } catch {
+        console.warn('[Community] increment_comment_count (감소) RPC 실패 (무시)');
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['communityComments', postId] });
@@ -628,17 +652,25 @@ export const useCommunityPost = (postId: string) => {
   return useQuery({
     queryKey: ['communityPost', postId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('community_posts')
-        .select('*')
-        .eq('id', postId)
-        .single();
+      try {
+        const { data, error } = await supabase
+          .from('community_posts')
+          .select('*')
+          .eq('id', postId)
+          .single();
 
-      if (error) throw error;
-      return {
-        ...data,
-        top_holdings: Array.isArray(data.top_holdings) ? data.top_holdings : [],
-      } as CommunityPost;
+        if (error) {
+          console.warn('[Community] 게시물 상세 조회 실패:', error.message);
+          return null;
+        }
+        return {
+          ...data,
+          top_holdings: Array.isArray(data.top_holdings) ? data.top_holdings : [],
+        } as CommunityPost;
+      } catch (err) {
+        console.warn('[Community] 게시물 상세 조회 예외:', err);
+        return null;
+      }
     },
     enabled: !!postId,
     staleTime: 60000,
@@ -654,18 +686,26 @@ export const useAuthorPosts = (userId: string) => {
   return useQuery({
     queryKey: ['authorPosts', userId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('community_posts')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(30);
+      try {
+        const { data, error } = await supabase
+          .from('community_posts')
+          .select('*')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false })
+          .limit(30);
 
-      if (error) throw error;
-      return (data || []).map(post => ({
-        ...post,
-        top_holdings: Array.isArray(post.top_holdings) ? post.top_holdings : [],
-      })) as CommunityPost[];
+        if (error) {
+          console.warn('[Community] 작성자 게시물 조회 실패:', error.message);
+          return [] as CommunityPost[];
+        }
+        return (data || []).map(post => ({
+          ...post,
+          top_holdings: Array.isArray(post.top_holdings) ? post.top_holdings : [],
+        })) as CommunityPost[];
+      } catch (err) {
+        console.warn('[Community] 작성자 게시물 조회 예외:', err);
+        return [] as CommunityPost[];
+      }
     },
     enabled: !!userId,
     staleTime: 60000,

@@ -83,20 +83,28 @@ export const useGatherings = (category?: Gathering['category']) => {
   return useQuery({
     queryKey: ['gatherings', category],
     queryFn: async () => {
-      let query = supabase
-        .from('gatherings')
-        .select('*')
-        .in('status', ['open', 'closed']) // 취소/완료 제외
-        .order('event_date', { ascending: true });
+      try {
+        let query = supabase
+          .from('gatherings')
+          .select('*')
+          .in('status', ['open', 'closed']) // 취소/완료 제외
+          .order('event_date', { ascending: true });
 
-      if (category) {
-        query = query.eq('category', category);
+        if (category) {
+          query = query.eq('category', category);
+        }
+
+        const { data, error } = await query;
+
+        if (error) {
+          console.warn('[Gatherings] 모임 목록 조회 실패 (빈 배열 반환):', error.message);
+          return [] as Gathering[];
+        }
+        return data as Gathering[];
+      } catch (err) {
+        console.warn('[Gatherings] 모임 목록 조회 예외:', err);
+        return [] as Gathering[];
       }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-      return data as Gathering[];
     },
     staleTime: 30000, // 30초 캐시
   });
@@ -111,14 +119,22 @@ export const useGathering = (gatheringId: string | undefined) => {
     queryFn: async () => {
       if (!gatheringId) return null;
 
-      const { data, error } = await supabase
-        .from('gatherings')
-        .select('*')
-        .eq('id', gatheringId)
-        .single();
+      try {
+        const { data, error } = await supabase
+          .from('gatherings')
+          .select('*')
+          .eq('id', gatheringId)
+          .single();
 
-      if (error) throw error;
-      return data as Gathering;
+        if (error) {
+          console.warn('[Gatherings] 모임 상세 조회 실패:', error.message);
+          return null;
+        }
+        return data as Gathering;
+      } catch (err) {
+        console.warn('[Gatherings] 모임 상세 조회 예외:', err);
+        return null;
+      }
     },
     enabled: !!gatheringId,
   });
@@ -133,15 +149,23 @@ export const useGatheringParticipants = (gatheringId: string | undefined) => {
     queryFn: async () => {
       if (!gatheringId) return [];
 
-      const { data, error } = await supabase
-        .from('gathering_participants')
-        .select('*')
-        .eq('gathering_id', gatheringId)
-        .in('status', ['pending', 'approved'])
-        .order('applied_at', { ascending: true });
+      try {
+        const { data, error } = await supabase
+          .from('gathering_participants')
+          .select('*')
+          .eq('gathering_id', gatheringId)
+          .in('status', ['pending', 'approved'])
+          .order('applied_at', { ascending: true });
 
-      if (error) throw error;
-      return data as GatheringParticipant[];
+        if (error) {
+          console.warn('[Gatherings] 참가자 목록 조회 실패:', error.message);
+          return [] as GatheringParticipant[];
+        }
+        return data as GatheringParticipant[];
+      } catch (err) {
+        console.warn('[Gatherings] 참가자 목록 조회 예외:', err);
+        return [] as GatheringParticipant[];
+      }
     },
     enabled: !!gatheringId,
   });
@@ -156,18 +180,26 @@ export const useMyParticipation = (gatheringId: string | undefined) => {
     queryFn: async () => {
       if (!gatheringId) return null;
 
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return null;
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return null;
 
-      const { data, error } = await supabase
-        .from('gathering_participants')
-        .select('*')
-        .eq('gathering_id', gatheringId)
-        .eq('user_id', user.id)
-        .maybeSingle();
+        const { data, error } = await supabase
+          .from('gathering_participants')
+          .select('*')
+          .eq('gathering_id', gatheringId)
+          .eq('user_id', user.id)
+          .maybeSingle();
 
-      if (error) throw error;
-      return data as GatheringParticipant | null;
+        if (error) {
+          console.warn('[Gatherings] 참가 여부 조회 실패:', error.message);
+          return null;
+        }
+        return data as GatheringParticipant | null;
+      } catch (err) {
+        console.warn('[Gatherings] 참가 여부 조회 예외:', err);
+        return null;
+      }
     },
     enabled: !!gatheringId,
   });
@@ -628,17 +660,25 @@ export const useMyHostedGatherings = () => {
   return useQuery({
     queryKey: ['myHostedGatherings'],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return [];
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return [];
 
-      const { data, error } = await supabase
-        .from('gatherings')
-        .select('*')
-        .eq('host_id', user.id)
-        .order('event_date', { ascending: true });
+        const { data, error } = await supabase
+          .from('gatherings')
+          .select('*')
+          .eq('host_id', user.id)
+          .order('event_date', { ascending: true });
 
-      if (error) throw error;
-      return data as Gathering[];
+        if (error) {
+          console.warn('[Gatherings] 내 모임 조회 실패:', error.message);
+          return [] as Gathering[];
+        }
+        return data as Gathering[];
+      } catch (err) {
+        console.warn('[Gatherings] 내 모임 조회 예외:', err);
+        return [] as Gathering[];
+      }
     },
   });
 };
@@ -650,28 +690,39 @@ export const useMyJoinedGatherings = () => {
   return useQuery({
     queryKey: ['myJoinedGatherings'],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return [];
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return [];
 
-      const { data: participations, error } = await supabase
-        .from('gathering_participants')
-        .select('gathering_id')
-        .eq('user_id', user.id)
-        .in('status', ['pending', 'approved']);
+        const { data: participations, error } = await supabase
+          .from('gathering_participants')
+          .select('gathering_id')
+          .eq('user_id', user.id)
+          .in('status', ['pending', 'approved']);
 
-      if (error) throw error;
-      if (!participations || participations.length === 0) return [];
+        if (error) {
+          console.warn('[Gatherings] 참가 모임 조회 실패:', error.message);
+          return [] as Gathering[];
+        }
+        if (!participations || participations.length === 0) return [];
 
-      const gatheringIds = participations.map(p => p.gathering_id);
+        const gatheringIds = participations.map(p => p.gathering_id);
 
-      const { data: gatherings, error: gatheringsError } = await supabase
-        .from('gatherings')
-        .select('*')
-        .in('id', gatheringIds)
-        .order('event_date', { ascending: true });
+        const { data: gatherings, error: gatheringsError } = await supabase
+          .from('gatherings')
+          .select('*')
+          .in('id', gatheringIds)
+          .order('event_date', { ascending: true });
 
-      if (gatheringsError) throw gatheringsError;
-      return gatherings as Gathering[];
+        if (gatheringsError) {
+          console.warn('[Gatherings] 참가 모임 상세 조회 실패:', gatheringsError.message);
+          return [] as Gathering[];
+        }
+        return gatherings as Gathering[];
+      } catch (err) {
+        console.warn('[Gatherings] 참가 모임 조회 예외:', err);
+        return [] as Gathering[];
+      }
     },
   });
 };
