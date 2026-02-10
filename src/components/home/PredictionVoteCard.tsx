@@ -131,6 +131,13 @@ export default function PredictionVoteCard({
   const flatListRef = React.useRef<FlatList>(null);
   const [currentIndex, setCurrentIndex] = React.useState(0);
 
+  // FlatList 스크롤 끝 핸들러 (Hook 규칙: 조건문 전에 선언 필수)
+  const onViewableItemsChanged = React.useRef(({ viewableItems }: any) => {
+    if (viewableItems.length > 0) {
+      setCurrentIndex(viewableItems[0].index ?? 0);
+    }
+  }).current;
+
   // 복기 해설 토글 상태 (인덱스별 펼침/접힘)
   const [expandedReviewIndex, setExpandedReviewIndex] = React.useState<number | null>(null);
 
@@ -311,13 +318,6 @@ export default function PredictionVoteCard({
       </View>
     );
   };
-
-  // FlatList 스크롤 끝 핸들러
-  const onViewableItemsChanged = React.useRef(({ viewableItems }: any) => {
-    if (viewableItems.length > 0) {
-      setCurrentIndex(viewableItems[0].index ?? 0);
-    }
-  }).current;
 
   // ──────────────────────────────────────────────────────────────────────
   // 데이터 상태 (질문 + 투표 + 복기)

@@ -75,9 +75,7 @@
         "projectId": "0d967ba4-ad89-4a20-87fc-8d4cd28a5658"
       }
     },
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
+    "runtimeVersion": "1.0.0",
     "updates": {
       "enabled": true,
       "fallbackToCacheTimeout": 3000,
