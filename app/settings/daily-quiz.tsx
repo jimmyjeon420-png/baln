@@ -55,6 +55,18 @@ export default function DailyQuizScreen() {
   }, []);
 
   const handleSubmit = async (quizId: number, selectedOption: string) => {
+    // 로컬 퀴즈 (DB 미연결) → RPC 없이 즉시 정답 체크
+    if (quizId === -1 && quiz) {
+      const isCorrect = selectedOption === quiz.correct_option;
+      return {
+        success: true,
+        is_correct: isCorrect,
+        correct_option: quiz.correct_option,
+        explanation: quiz.explanation,
+        credits_earned: isCorrect ? 1 : 0,
+        xp_earned: isCorrect ? 20 : 5,
+      };
+    }
     const result = await submitQuiz.mutateAsync({ quizId, selectedOption });
     return result;
   };

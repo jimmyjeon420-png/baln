@@ -28,27 +28,31 @@ function getTodayDate(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-/** 오늘의 퀴즈 조회 (DB 우선 → Gemini 생성) */
+/** 오늘의 퀴즈 조회 (DB 우선 → Gemini 생성 → 폴백) */
 export async function getTodayQuiz(): Promise<DailyQuiz | null> {
   const today = getTodayDate();
 
   // 1단계: DB에서 오늘 퀴즈 조회
-  const { data, error } = await supabase
-    .from('daily_quizzes')
-    .select('*')
-    .eq('quiz_date', today)
-    .single();
+  try {
+    const { data, error } = await supabase
+      .from('daily_quizzes')
+      .select('*')
+      .eq('quiz_date', today)
+      .single();
 
-  if (data && !error) {
-    return data as DailyQuiz;
+    if (data && !error) {
+      return data as DailyQuiz;
+    }
+  } catch (dbErr) {
+    console.warn('[Quiz] DB 조회 실패 (테이블 미존재 가능):', dbErr);
   }
 
-  // 2단계: DB에 없으면 Gemini로 생성
-  try {
-    const generated = await generateQuizWithGemini();
-    if (!generated) return null;
+  // 2단계: Gemini 또는 폴백으로 퀴즈 생성
+  const generated = await generateQuizWithGemini();
+  if (!generated) return null;
 
-    // 3단계: DB에 저장 (ON CONFLICT → 동시 생성 방지)
+  // 3단계: DB 저장 시도 (실패해도 퀴즈는 반환)
+  try {
     const { data: insertResult } = await supabase.rpc('insert_daily_quiz', {
       p_quiz_date: today,
       p_category: generated.category,
@@ -59,18 +63,30 @@ export async function getTodayQuiz(): Promise<DailyQuiz | null> {
       p_difficulty: generated.difficulty,
     });
 
-    // 저장 후 다시 조회 (GENERATED 필드 포함)
+    // 저장 성공 → DB에서 다시 조회 (id 포함)
     const { data: saved } = await supabase
       .from('daily_quizzes')
       .select('*')
       .eq('quiz_date', today)
       .single();
 
-    return saved as DailyQuiz;
-  } catch (err) {
-    console.error('[Quiz] 퀴즈 생성 실패:', err);
-    return null;
+    if (saved) return saved as DailyQuiz;
+  } catch (saveErr) {
+    console.warn('[Quiz] DB 저장 실패 (RPC 미존재 가능), 로컬 퀴즈로 진행:', saveErr);
   }
+
+  // 4단계: DB 저장 실패해도 로컬 퀴즈 반환 (표시는 가능, 제출은 불가)
+  return {
+    id: -1,
+    quiz_date: today,
+    category: generated.category,
+    question: generated.question,
+    options: generated.options,
+    correct_option: generated.correct_option,
+    explanation: generated.explanation,
+    difficulty: generated.difficulty,
+    created_at: new Date().toISOString(),
+  } as DailyQuiz;
 }
 
 // ============================================================================
