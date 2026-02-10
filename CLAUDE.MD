@@ -5,6 +5,48 @@
 
 ---
 
+## ★★ 현재 배포 상태 (2026-02-10) — 새 Claude 인스턴스 필독
+
+### 완료된 작업 (Phase 1~6)
+- **Phase 1+2**: 맥락 카드, 습관 루프, 3탭 구조, 위기 감지, 온보딩
+- **Phase 3**: DB 버그 수정(Task A/B), 예측 고도화, 커뮤니티 확장, 업적 시스템
+- **Phase 4**: 계정 삭제(Apple 필수), ErrorBoundary, 누락 라우트 10개, 앱스토어 설정
+- **Phase 5**: 딥링크(baln://), 푸시 알림(07:30), 자체 Analytics, 공유 URL
+- **Phase 6**: 3탭 훅 통합(OfflineBanner, 화면추적, 딥링크 수신)
+- **TypeScript**: tsc --noEmit 에러 0개 달성
+
+### 배포 진행 상황
+- [x] Supabase SQL 실행 (12테이블 + analytics_events)
+- [x] Edge Function 배포 (daily-briefing, Task A~G)
+- [x] Git 모든 코드 push 완료 (main 브랜치)
+- [ ] iOS 빌드 (EAS 클라우드 대기 중 OR MacBook 로컬 빌드)
+- [ ] TestFlight 제출
+- [ ] App Store 심사 제출
+
+### 개발 환경
+- **MacBook Pro M5** (메인): 빌드, 테스트, 배포, Xcode 설치됨
+- **Windows** (서브): Claude Code 코드 개발
+- **양쪽 모두 git clone 완료**, SSH 키 등록됨
+
+### 로컬 빌드 명령어 (MacBook에서)
+```bash
+cd ~/smart-rebalancer
+git pull origin main
+npx eas build --platform ios --profile production --local
+# 완료 후:
+npx eas submit --platform ios --path ./build-xxxxx.ipa
+```
+
+### 핵심 파일 구조 요약
+- `app/(tabs)/`: index(오늘)/rebalance(분석)/profile(전체) — 3탭
+- `app/_layout.tsx`: AuthGate + ErrorBoundary + 딥링크 + Analytics
+- `app/settings/delete-account.tsx`: 계정 삭제 (Apple 필수)
+- `src/hooks/`: 33개 훅 (useSharedPortfolio, useDeepLink, usePushSetup 등)
+- `src/services/`: 20개 서비스 (centralKitchen, analyticsService, shareService 등)
+- `supabase/functions/daily-briefing/`: Edge Function (Task A~G)
+
+---
+
 ## ★ 1차 GOAL — 모든 Claude 인스턴스 필독 (CRITICAL)
 
 > 이 섹션은 앱의 존재 이유이자 개발 방향의 최상위 지침입니다.
