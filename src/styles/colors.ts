@@ -69,8 +69,9 @@ export interface ThemeColors {
 // =============================================================================
 
 export const DARK_COLORS: ThemeColors = {
-  background: '#121212',
-  surface: '#1E1E1E',
+  // 토스 다크 배경 (순검이 아닌 다크 블루 그레이)
+  background: '#191F28',
+  surface: '#212B36',
   surfaceLight: '#2C2C2C',
 
   primary: '#4CAF50',
@@ -81,20 +82,22 @@ export const DARK_COLORS: ThemeColors = {
   neutral: '#9E9E9E',
   hold: '#4CAF50',
 
-  textPrimary: '#FFFFFF',
-  textSecondary: '#B0B0B0',
-  textTertiary: '#757575',
+  // 토스 다크 텍스트 (순백이 아닌 밝은 회색)
+  textPrimary: '#F9FAFB',
+  textSecondary: '#9FA6B2',
+  textTertiary: '#6B7684',
 
   success: '#4CAF50',
   error: '#CF6679',
   warning: '#FFB74D',
   info: '#29B6F6',
 
-  border: '#3A3A3A',
-  borderLight: '#2A2A2A',
+  // 토스 다크 구분선 (부드러운 다크 그레이)
+  border: '#2D3748',
+  borderLight: '#252D37',
 
   disabled: '#424242',
-  disabledText: '#757575',
+  disabledText: '#6B7684',
 
   sentiment: {
     calm: '#4CAF50',
@@ -120,8 +123,9 @@ export const DARK_COLORS: ThemeColors = {
 // =============================================================================
 
 export const LIGHT_COLORS: ThemeColors = {
-  background: '#FFFFFF',
-  surface: '#F5F5F5',
+  // 토스 라이트 배경 (순백이 아닌 연한 회색, 눈 편함)
+  background: '#F9FAFB',
+  surface: '#FFFFFF',
   surfaceLight: '#FAFAFA',
 
   primary: '#4CAF50',
@@ -132,20 +136,22 @@ export const LIGHT_COLORS: ThemeColors = {
   neutral: '#9E9E9E',
   hold: '#4CAF50',
 
-  textPrimary: '#000000',
-  textSecondary: '#666666',
-  textTertiary: '#9E9E9E',
+  // 토스 라이트 텍스트 (순검이 아닌 다크 그레이, 눈 편함)
+  textPrimary: '#191F28',
+  textSecondary: '#4E5968',
+  textTertiary: '#8B95A1',
 
   success: '#4CAF50',
   error: '#E53935',
   warning: '#FF9800',
   info: '#2196F3',
 
-  border: '#E0E0E0',
-  borderLight: '#F0F0F0',
+  // 토스 라이트 구분선 (부드러운 회색)
+  border: '#E5E8EB',
+  borderLight: '#F2F4F6',
 
   disabled: '#E0E0E0',
-  disabledText: '#9E9E9E',
+  disabledText: '#8B95A1',
 
   sentiment: {
     calm: '#4CAF50',
