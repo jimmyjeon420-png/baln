@@ -1,8 +1,14 @@
 /**
  * 오늘의 액션 섹션 — BUY/SELL/WATCH 종목별 액션 + 실시간 가격 + AI 딥다이브
+ *
+ * UX 개선 (2026-02-10):
+ * - "왜 이 액션들이 나왔는가" 전체 요약 (헤더 하단, 액션 목록 상단)
+ * - "어떤 순서로 실행하면 좋은가" 우선순위 가이드
+ * - 각 액션 아이템에 "이 액션을 하면 어떤 효과가 있는가" 미니 설명
+ * - COLORS.textSecondary 기반 설명 텍스트 레이어
  */
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated as RNAnimated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -10,6 +16,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { SkeletonBlock } from '../SkeletonLoader';
 import { estimateTax } from '../../utils/taxEstimator';
+import { COLORS } from '../../styles/theme';
 import type { PortfolioAction, RebalancePortfolioAsset, LivePriceData } from '../../types/rebalanceTypes';
 
 // ── 완료 축하 배너 ──
@@ -43,7 +50,7 @@ function CompletionBanner({ visible }: { visible: boolean }) {
         <Ionicons name="checkmark-circle" size={28} color="#4CAF50" />
       </View>
       <View style={completionStyles.textContainer}>
-        <Text style={completionStyles.title}>모든 액션 완료! 🎉</Text>
+        <Text style={completionStyles.title}>모든 액션 완료!</Text>
         <Text style={completionStyles.subtitle}>오늘도 성실한 투자자네요</Text>
       </View>
     </RNAnimated.View>
@@ -148,6 +155,86 @@ const ACTION_COLORS: Record<string, { bg: string; text: string; label: string }>
   WATCH: { bg: 'rgba(255,193,7,0.15)',   text: '#FFC107', label: '주시' },
 };
 
+/**
+ * "왜 이 액션들이 나왔는가" 전체 요약 생성
+ *
+ * 액션의 종류별 개수와 우선순위를 분석해 한 줄 요약을 만든다.
+ * 예: "배분 조정을 위한 매도 2건, 저평가 종목 매수 1건이 제안되었어요."
+ */
+function generateActionsSummary(actions: PortfolioAction[]): string {
+  if (actions.length === 0) return '';
+
+  const buyCount = actions.filter(a => a.action === 'BUY').length;
+  const sellCount = actions.filter(a => a.action === 'SELL').length;
+  const watchCount = actions.filter(a => a.action === 'WATCH').length;
+  const holdCount = actions.filter(a => a.action === 'HOLD').length;
+  const highPriorityCount = actions.filter(a => a.priority === 'HIGH').length;
+
+  const parts: string[] = [];
+
+  if (sellCount > 0) parts.push(`비중 조정을 위한 매도 ${sellCount}건`);
+  if (buyCount > 0) parts.push(`포트폴리오 보강을 위한 매수 ${buyCount}건`);
+  if (watchCount > 0) parts.push(`모니터링 대상 ${watchCount}건`);
+  if (holdCount > 0) parts.push(`현상 유지 ${holdCount}건`);
+
+  let summary = parts.join(', ') + '이 제안되었어요.';
+
+  if (highPriorityCount > 0) {
+    summary += ` 이 중 ${highPriorityCount}건은 긴급(HIGH) 우선순위입니다.`;
+  }
+
+  return summary;
+}
+
+/**
+ * "어떤 순서로 실행하면 좋은가" 가이드 생성
+ */
+function generatePriorityGuidance(actions: PortfolioAction[]): string | null {
+  if (actions.length <= 1) return null;
+
+  const highActions = actions.filter(a => a.priority === 'HIGH');
+  const sellFirst = actions.filter(a => a.action === 'SELL' && a.priority !== 'LOW');
+  const buyActions = actions.filter(a => a.action === 'BUY');
+
+  if (highActions.length > 0 && (sellFirst.length > 0 || buyActions.length > 0)) {
+    if (sellFirst.length > 0 && buyActions.length > 0) {
+      return '매도를 먼저 실행해 현금을 확보한 후, 매수를 진행하면 추가 입금 없이 리밸런싱할 수 있어요.';
+    }
+    return `긴급 표시(!)된 ${highActions.length}건을 먼저 처리하는 것을 추천합니다.`;
+  }
+
+  if (sellFirst.length > 0 && buyActions.length > 0) {
+    return '매도 후 매수 순서로 진행하면 자금 효율이 좋아요.';
+  }
+
+  return null;
+}
+
+/**
+ * 각 액션의 "이 액션을 하면 어떤 효과가 있는가" 미니 설명 생성
+ */
+function generateActionEffect(action: PortfolioAction, assetWeight: string | null): string {
+  const { action: act, priority } = action;
+
+  if (act === 'SELL') {
+    if (assetWeight && parseFloat(assetWeight) > 20) {
+      return `현재 비중(${assetWeight}%)이 높아 매도 시 집중도 위험이 줄어듭니다.`;
+    }
+    return '매도하면 포트폴리오 균형이 개선되고, 다른 자산 매수 여력이 생겨요.';
+  }
+
+  if (act === 'BUY') {
+    return '매수하면 부족한 비중이 채워져 목표 배분에 가까워져요.';
+  }
+
+  if (act === 'WATCH') {
+    return '지금은 관망하되, 가격 변동에 따라 매매 타이밍을 잡아보세요.';
+  }
+
+  // HOLD
+  return '현재 적정 비중이므로 유지하는 것이 좋습니다.';
+}
+
 interface TodayActionsSectionProps {
   sortedActions: PortfolioAction[];
   portfolio: RebalancePortfolioAsset[];
@@ -172,6 +259,10 @@ export default function TodayActionsSection({
   // 완료 카운트
   const completedCount = sortedActions.filter(a => checked[a.ticker]).length;
   const isAllCompleted = completedCount === sortedActions.length && sortedActions.length > 0;
+
+  // [NEW] 전체 요약 + 우선순위 가이드 계산
+  const actionsSummary = useMemo(() => generateActionsSummary(sortedActions), [sortedActions]);
+  const priorityGuidance = useMemo(() => generatePriorityGuidance(sortedActions), [sortedActions]);
 
   // 전체 완료 시 축하 배너 표시 (한 번만)
   useEffect(() => {
@@ -226,6 +317,26 @@ export default function TodayActionsSection({
         </View>
       </View>
 
+      {/* [NEW] "왜 이 액션들이 나왔는가" 전체 요약 */}
+      <View style={s.whySection}>
+        <View style={s.whyRow}>
+          <Ionicons name="help-circle-outline" size={14} color={COLORS.textSecondary} />
+          <Text style={s.whyLabel}>왜 이 액션들이 나왔나요?</Text>
+        </View>
+        <Text style={s.whyText}>{actionsSummary}</Text>
+      </View>
+
+      {/* [NEW] "어떤 순서로 실행할까" 우선순위 가이드 */}
+      {priorityGuidance && (
+        <View style={s.actionGuideSection}>
+          <View style={s.actionGuideRow}>
+            <Ionicons name="arrow-forward-circle-outline" size={14} color={COLORS.primary} />
+            <Text style={s.actionGuideLabel}>실행 순서 가이드</Text>
+          </View>
+          <Text style={s.actionGuideText}>{priorityGuidance}</Text>
+        </View>
+      )}
+
       {/* 전체 완료 축하 배너 */}
       <CompletionBanner key={completionBannerKey} visible={showCompletionBanner} />
 
@@ -259,6 +370,9 @@ export default function TodayActionsSection({
           LOW:    { label: '참고', color: '#888888', bg: 'rgba(136,136,136,0.12)' },
         };
         const pc = priorityConfig[action.priority] || priorityConfig.LOW;
+
+        // [NEW] 이 액션의 기대 효과
+        const actionEffect = generateActionEffect(action, assetWeight);
 
         return (
           <TouchableOpacity
@@ -301,7 +415,7 @@ export default function TodayActionsSection({
             {/* 현재가 + 등락률 (접힌 상태) */}
             {!isExpanded && displayPrice > 0 && (
               <View style={s.priceRow}>
-                <Text style={s.priceText}>₩{displayPrice.toLocaleString()}</Text>
+                <Text style={s.priceText}>{'\u20A9'}{displayPrice.toLocaleString()}</Text>
                 {assetGl !== null && (
                   <Text style={[s.changeText, { color: (assetGl ?? 0) >= 0 ? '#4CAF50' : '#CF6679' }]}>
                     {(assetGl ?? 0) >= 0 ? '+' : ''}{(assetGl ?? 0).toFixed(1)}%
@@ -321,6 +435,11 @@ export default function TodayActionsSection({
               <Text style={s.actionReason} numberOfLines={2}>{action.reason}</Text>
             )}
 
+            {/* [NEW] 접힌 상태: 기대 효과 미니 설명 */}
+            {!isExpanded && (
+              <Text style={s.actionEffectMini}>{actionEffect}</Text>
+            )}
+
             {/* 펼친 상태: 상세 정보 */}
             {isExpanded && (
               <View style={s.detail}>
@@ -336,6 +455,15 @@ export default function TodayActionsSection({
                   <Text style={s.reasonFullText}>{action.reason}</Text>
                 </View>
 
+                {/* [NEW] 기대 효과 (펼친 상태에서 더 잘 보이도록) */}
+                <View style={s.actionEffectExpanded}>
+                  <View style={s.actionEffectRow}>
+                    <Ionicons name="trending-up-outline" size={13} color={COLORS.primary} />
+                    <Text style={s.actionEffectLabel}>이 액션의 기대 효과</Text>
+                  </View>
+                  <Text style={s.actionEffectText}>{actionEffect}</Text>
+                </View>
+
                 {/* 내 보유 현황 */}
                 {matchedAsset && (
                   <View style={s.portfolioInfo}>
@@ -343,7 +471,7 @@ export default function TodayActionsSection({
                     <View style={s.portfolioRow}>
                       <View style={s.portfolioItem}>
                         <Text style={s.portfolioLabel}>현재가{isLive ? ' (실시간)' : ''}</Text>
-                        <Text style={s.portfolioValue}>₩{displayPrice.toLocaleString()}</Text>
+                        <Text style={s.portfolioValue}>{'\u20A9'}{displayPrice.toLocaleString()}</Text>
                       </View>
                       <View style={s.portfolioDivider} />
                       <View style={s.portfolioItem}>
@@ -367,7 +495,7 @@ export default function TodayActionsSection({
                     <Ionicons name="calculator-outline" size={13} color="#FFC107" />
                     <Text style={s.suggestText}>
                       {action.action === 'BUY'
-                        ? `제안: ${displayPrice > 0 ? Math.floor(totalAssets * 0.02 / displayPrice) : 0}주 (₩${Math.floor(totalAssets * 0.02).toLocaleString()}, 총자산 2%)`
+                        ? `제안: ${displayPrice > 0 ? Math.floor(totalAssets * 0.02 / displayPrice) : 0}주 (${'\u20A9'}${Math.floor(totalAssets * 0.02).toLocaleString()}, 총자산 2%)`
                         : matchedAsset
                           ? `보유 ${matchedAsset.quantity ?? 0}주 중 일부 매도 검토`
                           : '매도 수량은 보유량에 따라 결정'
@@ -393,22 +521,22 @@ export default function TodayActionsSection({
                         {tax.transactionTax > 0 && (
                           <View style={s.taxRow}>
                             <Text style={s.taxLabel}>거래세</Text>
-                            <Text style={s.taxValue}>₩{tax.transactionTax.toLocaleString()}</Text>
+                            <Text style={s.taxValue}>{'\u20A9'}{tax.transactionTax.toLocaleString()}</Text>
                           </View>
                         )}
                         <View style={s.taxRow}>
                           <Text style={s.taxLabel}>수수료</Text>
-                          <Text style={s.taxValue}>₩{tax.brokerageFee.toLocaleString()}</Text>
+                          <Text style={s.taxValue}>{'\u20A9'}{tax.brokerageFee.toLocaleString()}</Text>
                         </View>
                         {tax.capitalGainsTax > 0 && (
                           <View style={s.taxRow}>
                             <Text style={s.taxLabel}>양도소득세</Text>
-                            <Text style={[s.taxValue, { color: '#CF6679' }]}>₩{tax.capitalGainsTax.toLocaleString()}</Text>
+                            <Text style={[s.taxValue, { color: '#CF6679' }]}>{'\u20A9'}{tax.capitalGainsTax.toLocaleString()}</Text>
                           </View>
                         )}
                         <View style={[s.taxRow, s.taxTotalRow]}>
                           <Text style={s.taxTotalLabel}>실수령 예상</Text>
-                          <Text style={s.taxTotalValue}>₩{tax.netProceeds.toLocaleString()}</Text>
+                          <Text style={s.taxTotalValue}>{'\u20A9'}{tax.netProceeds.toLocaleString()}</Text>
                         </View>
                       </View>
                       {tax.note ? <Text style={s.taxNote}>{tax.note}</Text> : null}
@@ -482,8 +610,93 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 14,
+    marginBottom: 10,
   },
+
+  // [NEW] "왜 이 액션들이 나왔는가" 섹션
+  whySection: {
+    backgroundColor: 'rgba(176,176,176,0.06)',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 8,
+  },
+  whyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginBottom: 4,
+  },
+  whyLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: COLORS.textSecondary,
+  },
+  whyText: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    lineHeight: 18,
+  },
+
+  // [NEW] "어떤 순서로 실행할까" 가이드 섹션
+  actionGuideSection: {
+    backgroundColor: 'rgba(76,175,80,0.06)',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 14,
+    borderLeftWidth: 2,
+    borderLeftColor: 'rgba(76,175,80,0.3)',
+  },
+  actionGuideRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginBottom: 4,
+  },
+  actionGuideLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: COLORS.primary,
+  },
+  actionGuideText: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    lineHeight: 18,
+  },
+
+  // [NEW] 접힌 상태의 기대 효과 미니 설명
+  actionEffectMini: {
+    fontSize: 11,
+    color: COLORS.textSecondary,
+    lineHeight: 16,
+    marginTop: 4,
+    fontStyle: 'italic',
+  },
+
+  // [NEW] 펼친 상태의 기대 효과 섹션
+  actionEffectExpanded: {
+    backgroundColor: 'rgba(76,175,80,0.06)',
+    borderRadius: 8,
+    padding: 10,
+    borderLeftWidth: 2,
+    borderLeftColor: 'rgba(76,175,80,0.25)',
+  },
+  actionEffectRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginBottom: 3,
+  },
+  actionEffectLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: COLORS.primary,
+  },
+  actionEffectText: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    lineHeight: 17,
+  },
+
   actionCount: { backgroundColor: 'rgba(76,175,80,0.1)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
   actionCountText: { fontSize: 11, color: '#4CAF50', fontWeight: '600' },
   completedCount: { flexDirection: 'row', alignItems: 'center', gap: 3 },

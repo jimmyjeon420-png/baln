@@ -5,18 +5,24 @@
  * 데이터: rebalanceScore.ts의 calculateHealthScore (순수 함수, AI 미사용)
  *
  * UX 개선 (2026-02-09):
- * - 팩터별 툴팁 (ℹ️ 아이콘 터치 시 설명)
+ * - 팩터별 툴팁 (정보 아이콘 터치 시 설명)
  * - 취약 팩터 개선 제안 (40점 미만)
  * - 등급별 해석 강화
  * - 햅틱 피드백 추가
+ *
+ * UX 개선 (2026-02-10):
+ * - "왜 이 점수인가" 요약 (가장 취약한 팩터 기반 1-2줄 설명)
+ * - "지금 할 수 있는 것" 액션 가이드 (등급별 맞춤 조언)
+ * - COLORS.textSecondary 기반 설명 텍스트 레이어
  */
 
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, Modal, ScrollView } from 'react-native';
+import React, { useState, useMemo } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import HealthScoreDetail from '../HealthScoreDetail';
-import type { HealthScoreResult } from '../../services/rebalanceScore';
+import type { HealthScoreResult, FactorResult } from '../../services/rebalanceScore';
+import { COLORS } from '../../styles/theme';
 
 interface HealthScoreSectionProps {
   healthScore: HealthScoreResult;
@@ -34,27 +40,104 @@ const FACTOR_DESCRIPTIONS: Record<string, string> = {
 
 /** 팩터별 개선 제안 (40점 미만 시) */
 const FACTOR_SUGGESTIONS: Record<string, string> = {
-  '배분 이탈도': '⚠️ 목표 배분 대비 이탈이 큽니다.\n\n아래 "오늘의 액션"을 참고해 리밸런싱을 해보세요.',
-  '자산 집중도': '⚠️ 특정 자산에 쏠려 있습니다.\n\n분산 투자를 고려해보세요. 채권이나 현금 비중을 늘리면 안정성이 높아져요.',
-  '상관관계': '⚠️ 자산들이 비슷하게 움직입니다.\n\n상관관계가 낮은 자산(채권, 현금, 비트코인 등)을 추가하면 분산 효과가 커져요.',
-  '변동성': '⚠️ 포트폴리오 변동성이 높습니다.\n\n안정적인 자산(채권, 현금)의 비중을 늘리면 변동폭을 줄일 수 있어요.',
-  '하방 리스크': '⚠️ 손실 중인 종목이 많습니다.\n\n손절 또는 평단 낮추기를 고려해보세요. 아래 AI 분석을 확인해보세요.',
-  '세금 효율': '⚠️ 절세 기회를 활용하지 못하고 있어요.\n\n5% 이상 손실 종목을 매도 후 유사 종목으로 갈아타면 세금을 절약할 수 있어요.',
+  '배분 이탈도': '목표 배분 대비 이탈이 큽니다.\n\n아래 "오늘의 액션"을 참고해 리밸런싱을 해보세요.',
+  '자산 집중도': '특정 자산에 쏠려 있습니다.\n\n분산 투자를 고려해보세요. 채권이나 현금 비중을 늘리면 안정성이 높아져요.',
+  '상관관계': '자산들이 비슷하게 움직입니다.\n\n상관관계가 낮은 자산(채권, 현금, 비트코인 등)을 추가하면 분산 효과가 커져요.',
+  '변동성': '포트폴리오 변동성이 높습니다.\n\n안정적인 자산(채권, 현금)의 비중을 늘리면 변동폭을 줄일 수 있어요.',
+  '하방 리스크': '손실 중인 종목이 많습니다.\n\n손절 또는 평단 낮추기를 고려해보세요. 아래 AI 분석을 확인해보세요.',
+  '세금 효율': '절세 기회를 활용하지 못하고 있어요.\n\n5% 이상 손실 종목을 매도 후 유사 종목으로 갈아타면 세금을 절약할 수 있어요.',
 };
 
 /** 등급별 상세 해석 */
 const GRADE_INTERPRETATIONS: Record<string, string> = {
-  'S': '🎉 완벽한 포트폴리오입니다!\n\n현재 상태를 유지하시면 장기적으로 안정적인 수익을 기대할 수 있어요.',
-  'A': '✅ 우수한 포트폴리오입니다.\n\n소폭 조정만 하면 더욱 최적화할 수 있어요.',
-  'B': '⚠️ 일부 개선이 필요합니다.\n\n아래 취약한 팩터를 중심으로 조정해보세요.',
-  'C': '🔴 리밸런싱을 권장합니다.\n\n현재 상태로는 위험이 높을 수 있어요. 오늘의 액션을 꼭 확인해주세요.',
-  'D': '🚨 긴급 조정이 필요합니다!\n\n포트폴리오가 매우 불안정한 상태예요. 즉시 리밸런싱을 실행해주세요.',
+  'S': '완벽한 포트폴리오입니다!\n\n현재 상태를 유지하시면 장기적으로 안정적인 수익을 기대할 수 있어요.',
+  'A': '우수한 포트폴리오입니다.\n\n소폭 조정만 하면 더욱 최적화할 수 있어요.',
+  'B': '일부 개선이 필요합니다.\n\n아래 취약한 팩터를 중심으로 조정해보세요.',
+  'C': '리밸런싱을 권장합니다.\n\n현재 상태로는 위험이 높을 수 있어요. 오늘의 액션을 꼭 확인해주세요.',
+  'D': '긴급 조정이 필요합니다!\n\n포트폴리오가 매우 불안정한 상태예요. 즉시 리밸런싱을 실행해주세요.',
 };
+
+/** 등급별 아이콘 */
+const GRADE_ICONS: Record<string, string> = {
+  'S': '🏆',
+  'A': '✅',
+  'B': '⚠️',
+  'C': '🔴',
+  'D': '🚨',
+};
+
+/**
+ * "왜 이 점수인가" 요약 생성
+ *
+ * 가장 취약한 팩터(들)를 기반으로 사용자가 이해할 수 있는 1-2줄의 이유를 만든다.
+ * 예: "자산 집중도와 변동성이 낮아서 전체 점수가 내려갔어요."
+ * 예: "모든 팩터가 양호합니다. 현재 전략을 유지하세요."
+ */
+function generateWhyExplanation(healthScore: HealthScoreResult): string {
+  const { factors, totalScore, grade } = healthScore;
+
+  // 모든 팩터가 70점 이상이면 → 긍정 메시지
+  const weakFactors = factors.filter((f: FactorResult) => f.score < 70);
+  if (weakFactors.length === 0) {
+    return '모든 지표가 고르게 양호합니다. 현재 투자 전략이 잘 작동하고 있어요.';
+  }
+
+  // 가장 취약한 순으로 정렬 (점수 낮은 순)
+  const sorted = [...weakFactors].sort((a, b) => a.score - b.score);
+
+  // 가장 낮은 팩터
+  const worst = sorted[0];
+  const worstScore = worst.score;
+
+  if (sorted.length === 1) {
+    return `${worst.label} 점수가 ${worstScore}점으로 전체 점수를 끌어내리고 있어요.`;
+  }
+
+  // 2개 이상 취약
+  const secondWorst = sorted[1];
+  if (sorted.length === 2) {
+    return `${worst.label}(${worstScore}점)과 ${secondWorst.label}(${secondWorst.score}점)이 전체 점수를 낮추는 주요 원인이에요.`;
+  }
+
+  // 3개 이상 취약
+  return `${worst.label}(${worstScore}점) 외 ${sorted.length - 1}개 지표가 부진해 전체 점수가 ${totalScore}점이에요.`;
+}
+
+/**
+ * "지금 할 수 있는 것" 액션 가이드 생성
+ *
+ * 등급 + 가장 취약한 팩터에 맞는 구체적 행동을 제안한다.
+ */
+function generateActionGuidance(healthScore: HealthScoreResult): string | null {
+  const { grade, factors } = healthScore;
+
+  // S등급이면 특별한 액션 불필요
+  if (grade === 'S') return null;
+
+  // 가장 취약한 팩터를 기반으로 구체적 액션 제안
+  const sorted = [...factors].sort((a, b) => a.score - b.score);
+  const worst = sorted[0];
+
+  const ACTION_MAP: Record<string, string> = {
+    '배분 이탈도': '아래 "오늘의 액션"에서 매매 제안을 확인하고, 목표 비율에 맞춰 조정해보세요.',
+    '자산 집중도': '가장 비중이 높은 자산을 일부 줄이고, 다른 자산군으로 분산하는 것을 고려해보세요.',
+    '상관관계': '현재 보유 자산과 움직임이 다른 자산(채권, 원자재 등)을 추가해보세요.',
+    '변동성': '변동성이 큰 종목의 비중을 줄이거나, 채권/현금 비중을 늘려 안정성을 높여보세요.',
+    '하방 리스크': '손실 중인 종목의 손절 또는 추가 매수 여부를 검토해보세요.',
+    '세금 효율': '손실 종목 매도 후 유사 종목 매수(절세 매도)를 검토해보세요.',
+  };
+
+  return ACTION_MAP[worst.label] || '아래 상세 내역을 펼쳐서 각 팩터별 개선점을 확인해보세요.';
+}
 
 export default function HealthScoreSection({ healthScore }: HealthScoreSectionProps) {
   const [showDetail, setShowDetail] = useState(false);
   const [tooltipVisible, setTooltipVisible] = useState(false);
   const [tooltipContent, setTooltipContent] = useState({ title: '', description: '' });
+
+  // "왜 이 점수인가" + "지금 할 수 있는 것" 계산
+  const whyExplanation = useMemo(() => generateWhyExplanation(healthScore), [healthScore]);
+  const actionGuidance = useMemo(() => generateActionGuidance(healthScore), [healthScore]);
 
   /** 툴팁 표시 함수 */
   const showTooltip = (factorLabel: string) => {
@@ -111,8 +194,28 @@ export default function HealthScoreSection({ healthScore }: HealthScoreSectionPr
 
       {/* 등급별 상세 해석 */}
       <Text style={[s.summary, { color: healthScore.gradeColor }]}>
-        {GRADE_INTERPRETATIONS[healthScore.grade]}
+        {GRADE_ICONS[healthScore.grade]} {GRADE_INTERPRETATIONS[healthScore.grade]}
       </Text>
+
+      {/* [NEW] "왜 이 점수인가" 요약 — 어떤 팩터가 점수를 끌어내렸는지 설명 */}
+      <View style={s.whySection}>
+        <View style={s.whyRow}>
+          <Ionicons name="help-circle-outline" size={14} color={COLORS.textSecondary} />
+          <Text style={s.whyLabel}>왜 이 점수인가요?</Text>
+        </View>
+        <Text style={s.whyText}>{whyExplanation}</Text>
+      </View>
+
+      {/* [NEW] "지금 할 수 있는 것" 액션 가이드 — S등급이면 표시 안 함 */}
+      {actionGuidance && (
+        <View style={s.actionGuideSection}>
+          <View style={s.actionGuideRow}>
+            <Ionicons name="arrow-forward-circle-outline" size={14} color={COLORS.primary} />
+            <Text style={s.actionGuideLabel}>지금 할 수 있는 것</Text>
+          </View>
+          <Text style={s.actionGuideText}>{actionGuidance}</Text>
+        </View>
+      )}
 
       {/* 6팩터 미니 바 (접힌 상태) — 툴팁 추가 */}
       {!showDetail && (
@@ -149,7 +252,7 @@ export default function HealthScoreSection({ healthScore }: HealthScoreSectionPr
           {/* 팩터별 개선 제안 (40점 미만) */}
           {healthScore.factors.some(f => f.score < 40) && (
             <View style={s.suggestionsSection}>
-              <Text style={s.suggestionsTitle}>💡 개선 제안</Text>
+              <Text style={s.suggestionsTitle}>개선 제안</Text>
               {healthScore.factors.map((factor, idx) => (
                 <View key={idx}>
                   {renderSuggestion(factor)}
@@ -242,8 +345,59 @@ const s = StyleSheet.create({
     fontSize: 13,
     fontWeight: '500',
     lineHeight: 20,
-    marginBottom: 12,
+    marginBottom: 8,
   },
+
+  // [NEW] "왜 이 점수인가" 섹션
+  whySection: {
+    backgroundColor: 'rgba(176,176,176,0.06)',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 8,
+  },
+  whyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginBottom: 4,
+  },
+  whyLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: COLORS.textSecondary,
+  },
+  whyText: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    lineHeight: 18,
+  },
+
+  // [NEW] "지금 할 수 있는 것" 액션 가이드 섹션
+  actionGuideSection: {
+    backgroundColor: 'rgba(76,175,80,0.06)',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 12,
+    borderLeftWidth: 2,
+    borderLeftColor: 'rgba(76,175,80,0.3)',
+  },
+  actionGuideRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginBottom: 4,
+  },
+  actionGuideLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: COLORS.primary,
+  },
+  actionGuideText: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    lineHeight: 18,
+  },
+
   // 미니 팩터 바 (접힌 상태)
   miniFactors: {
     gap: 6,

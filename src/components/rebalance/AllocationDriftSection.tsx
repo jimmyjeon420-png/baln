@@ -6,6 +6,11 @@
  *         AsyncStorage에서 목표 배분 로드 (설정 안 했으면 기본값)
  *
  * [개선] 텍스트(바 차트) + 파이 차트 토글 뷰 추가
+ *
+ * UX 개선 (2026-02-10):
+ * - "왜 이탈이 생겼는가" 요약 (가장 큰 이탈 카테고리 기반 설명)
+ * - "어떻게 해야 하는가" 액션 가이드 (구체적 매매 방향 제시)
+ * - COLORS.textSecondary 기반 설명 텍스트 레이어
  */
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -22,6 +27,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Asset } from '../../types/asset';
 import { classifyAsset, AssetCategory } from '../../services/rebalanceScore';
 import AllocationPieChart, { PieSlice } from '../charts/AllocationPieChart';
+import { COLORS } from '../../styles/theme';
 
 // ── 카테고리 설정 ──
 
@@ -99,6 +105,77 @@ interface AllocationDriftSectionProps {
 // ── 뷰 모드: 텍스트(바 차트) vs 파이 차트 ──
 type ViewMode = 'bar' | 'pie';
 
+/**
+ * "왜 이탈이 생겼는가" 요약 생성
+ *
+ * 가장 크게 이탈한 카테고리를 기반으로 사용자가 이해할 수 있는 설명을 만든다.
+ * 예: "주식 비중이 목표 대비 12%p 초과해 전체 이탈도가 높아졌어요. 시장 상승으로 주식 가치가 커진 것이 원인일 수 있습니다."
+ */
+function generateDriftWhyExplanation(driftItems: DriftItem[], totalDrift: number): string {
+  if (totalDrift <= 3) {
+    return '목표 배분과 거의 일치합니다. 현재 균형이 잘 유지되고 있어요.';
+  }
+
+  // 이탈 절대값 기준으로 정렬 (가장 큰 이탈 먼저)
+  const sorted = [...driftItems]
+    .filter(d => d.currentPct > 0 || d.targetPct > 0)
+    .sort((a, b) => Math.abs(b.drift) - Math.abs(a.drift));
+
+  const biggest = sorted[0];
+  if (!biggest) return '';
+
+  const isOver = biggest.drift > 0;
+  const driftAbs = Math.abs(biggest.drift).toFixed(1);
+  const direction = isOver ? '초과' : '부족';
+
+  // 초과인 경우: 시장 상승 가능성 언급 / 부족인 경우: 다른 자산 비중 증가 언급
+  if (isOver) {
+    if (sorted.length >= 2 && Math.abs(sorted[1].drift) > 5) {
+      const second = sorted[1];
+      const secondDir = second.drift > 0 ? '초과' : '부족';
+      return `${biggest.category.label} 비중이 목표 대비 ${driftAbs}%p ${direction}하고, ${second.category.label}이(가) ${Math.abs(second.drift).toFixed(1)}%p ${secondDir}한 상태예요.`;
+    }
+    return `${biggest.category.label} 비중이 목표 대비 ${driftAbs}%p ${direction}한 상태예요. 해당 자산의 가치 상승이 원인일 수 있습니다.`;
+  } else {
+    return `${biggest.category.label} 비중이 목표 대비 ${driftAbs}%p ${direction}해요. 다른 자산이 상대적으로 많이 늘어난 것이 원인일 수 있습니다.`;
+  }
+}
+
+/**
+ * "어떻게 해야 하는가" 액션 가이드 생성
+ *
+ * 이탈도 수준에 따라 구체적인 매매 방향을 제시한다.
+ */
+function generateDriftActionGuidance(driftItems: DriftItem[], totalDrift: number): string | null {
+  if (totalDrift <= 3) return null; // 균형 상태면 액션 불필요
+
+  // 초과/부족 항목 분리
+  const overItems = driftItems
+    .filter(d => d.drift > 5)
+    .sort((a, b) => b.drift - a.drift);
+  const underItems = driftItems
+    .filter(d => d.drift < -5)
+    .sort((a, b) => a.drift - b.drift);
+
+  const parts: string[] = [];
+
+  if (overItems.length > 0) {
+    const names = overItems.slice(0, 2).map(d => d.category.label).join(', ');
+    parts.push(`${names} 비중을 줄이고`);
+  }
+
+  if (underItems.length > 0) {
+    const names = underItems.slice(0, 2).map(d => d.category.label).join(', ');
+    parts.push(`${names} 비중을 늘리는 것`);
+  }
+
+  if (parts.length === 0) {
+    return '소폭 이탈이므로 급하지 않지만, 다음 매매 시 목표 배분을 참고해보세요.';
+  }
+
+  return `${parts.join(' ')}을 고려해보세요. 아래 "오늘의 액션"에서 구체적인 매매 제안을 확인할 수 있어요.`;
+}
+
 export default function AllocationDriftSection({
   assets,
   totalAssets,
@@ -132,6 +209,16 @@ export default function AllocationDriftSection({
 
   const driftColor = totalDrift <= 5 ? '#4CAF50' : totalDrift <= 15 ? '#FFC107' : '#CF6679';
   const driftLabel = totalDrift <= 5 ? '균형' : totalDrift <= 15 ? '소폭 이탈' : '조정 필요';
+
+  // [NEW] "왜" + "어떻게" 설명 계산
+  const whyExplanation = useMemo(
+    () => generateDriftWhyExplanation(driftItems, totalDrift),
+    [driftItems, totalDrift],
+  );
+  const actionGuidance = useMemo(
+    () => generateDriftActionGuidance(driftItems, totalDrift),
+    [driftItems, totalDrift],
+  );
 
   // 파이 차트 슬라이스 데이터 (현재 배분 기준)
   const pieSlices: PieSlice[] = useMemo(() => {
@@ -215,6 +302,26 @@ export default function AllocationDriftSection({
           <Ionicons name={showDetail ? 'chevron-up' : 'chevron-down'} size={14} color="#888" />
         </View>
       </TouchableOpacity>
+
+      {/* [NEW] "왜 이탈이 생겼는가" 설명 */}
+      <View style={s.whySection}>
+        <View style={s.whyRow}>
+          <Ionicons name="help-circle-outline" size={14} color={COLORS.textSecondary} />
+          <Text style={s.whyLabel}>왜 이탈이 생겼나요?</Text>
+        </View>
+        <Text style={s.whyText}>{whyExplanation}</Text>
+      </View>
+
+      {/* [NEW] "어떻게 해야 하는가" 액션 가이드 */}
+      {actionGuidance && (
+        <View style={s.actionGuideSection}>
+          <View style={s.actionGuideRow}>
+            <Ionicons name="arrow-forward-circle-outline" size={14} color={COLORS.primary} />
+            <Text style={s.actionGuideLabel}>어떻게 조정하나요?</Text>
+          </View>
+          <Text style={s.actionGuideText}>{actionGuidance}</Text>
+        </View>
+      )}
 
       {/* 뷰 모드 토글 */}
       <View style={s.viewToggle}>
@@ -385,7 +492,7 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 14,
+    marginBottom: 10,
   },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   cardLabel: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
@@ -393,6 +500,56 @@ const s = StyleSheet.create({
   driftBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10, gap: 6 },
   driftDot: { width: 6, height: 6, borderRadius: 3 },
   driftText: { fontSize: 12, fontWeight: '700' },
+
+  // [NEW] "왜 이탈이 생겼는가" 섹션
+  whySection: {
+    backgroundColor: 'rgba(176,176,176,0.06)',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 8,
+  },
+  whyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginBottom: 4,
+  },
+  whyLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: COLORS.textSecondary,
+  },
+  whyText: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    lineHeight: 18,
+  },
+
+  // [NEW] "어떻게 해야 하는가" 액션 가이드 섹션
+  actionGuideSection: {
+    backgroundColor: 'rgba(76,175,80,0.06)',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 14,
+    borderLeftWidth: 2,
+    borderLeftColor: 'rgba(76,175,80,0.3)',
+  },
+  actionGuideRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginBottom: 4,
+  },
+  actionGuideLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: COLORS.primary,
+  },
+  actionGuideText: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    lineHeight: 18,
+  },
 
   // 이탈도 바 차트
   driftChart: { gap: 8 },

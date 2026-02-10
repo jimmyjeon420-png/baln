@@ -53,8 +53,57 @@ export async function getTodayContextCard(
       .single();
 
     if (cardError || !cardData) {
-      console.log('[맥락 카드] 오늘의 카드 없음 (Edge Function 실행 전 또는 생성 실패)');
-      return null;
+      console.log('[맥락 카드] 오늘의 카드 없음 → 최근 카드로 폴백');
+
+      // 폴백: 가장 최근 맥락 카드 조회 (어제 또는 그 이전)
+      const { data: latestCard, error: latestError } = await supabase
+        .from('context_cards')
+        .select('*')
+        .lt('date', today)
+        .order('date', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (latestError || !latestCard) {
+        console.log('[맥락 카드] 최근 카드도 없음');
+        return null;
+      }
+
+      // 최근 카드의 유저 영향도 조회
+      const { data: latestImpact } = await supabase
+        .from('user_context_impacts')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('context_card_id', latestCard.id)
+        .maybeSingle();
+
+      const fallbackCard: ContextCard = {
+        id: latestCard.id,
+        date: latestCard.date,
+        headline: latestCard.headline,
+        historical_context: latestCard.historical_context,
+        macro_chain: latestCard.macro_chain || [],
+        institutional_behavior: latestCard.institutional_behavior,
+        sentiment: latestCard.sentiment as ContextCardSentiment,
+        is_premium_only: latestCard.is_premium_only,
+        market_data: latestCard.market_data || {},
+        created_at: latestCard.created_at,
+      };
+
+      const fallbackImpact: UserContextImpact | null = latestImpact
+        ? {
+            id: latestImpact.id,
+            user_id: latestImpact.user_id,
+            context_card_id: latestImpact.context_card_id,
+            percent_change: latestImpact.percent_change,
+            health_score_change: latestImpact.health_score_change,
+            impact_message: latestImpact.impact_message,
+            created_at: latestImpact.created_at,
+          }
+        : null;
+
+      console.log(`[맥락 카드] 최근 카드 폴백 성공 (${latestCard.date})`);
+      return { card: fallbackCard, userImpact: fallbackImpact };
     }
 
     // 2단계: 유저별 영향도 조회

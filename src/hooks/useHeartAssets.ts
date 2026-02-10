@@ -289,7 +289,7 @@ export function useHeartAssets(): UseHeartAssetsReturn {
   return {
     heartAssets,
     heartAssetsWithSignal,
-    hasAssets: heartAssets.length > 0,
+    hasAssets: heartAssets.length > 0 || assets.length > 0,
     isLoading: query.isLoading,
     addHeart: addMutation.mutate,
     removeHeart: removeMutation.mutate,
