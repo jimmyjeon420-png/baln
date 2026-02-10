@@ -15,7 +15,6 @@ import CheckupHeader from './CheckupHeader';
 import HealthScoreSection from '../rebalance/HealthScoreSection';
 import AllocationDriftSection from '../rebalance/AllocationDriftSection';
 import WhatIfSimulator from '../rebalance/WhatIfSimulator';
-import AssetTrendSection from '../rebalance/AssetTrendSection';
 import CorrelationHeatmapSection from '../rebalance/CorrelationHeatmapSection';
 import TodayActionsSection from '../rebalance/TodayActionsSection';
 import RiskDashboardSection from '../rebalance/RiskDashboardSection';
@@ -33,8 +32,6 @@ interface AdvancedCheckupViewProps {
   livePrices: Record<string, any>;
   isAILoading: boolean;
   peerPanicData?: PeerComparison | null;
-  snapshots: any[];
-  currentTotal: number;
   dateString: string;
   tierLabel: string;
   tierColor: string;
@@ -55,8 +52,6 @@ export default function AdvancedCheckupView({
   livePrices,
   isAILoading,
   peerPanicData,
-  snapshots,
-  currentTotal,
   dateString,
   tierLabel,
   tierColor,
@@ -68,7 +63,7 @@ export default function AdvancedCheckupView({
 }: AdvancedCheckupViewProps) {
   return (
     <>
-      {/* 1. Hero — total assets + daily change + tier */}
+      {/* 1. Hero — total assets + cost-basis P&L + daily change + tier */}
       <HeroSection
         dateString={dateString}
         tierLabel={tierLabel}
@@ -86,14 +81,7 @@ export default function AdvancedCheckupView({
         totalAssets={totalAssets}
       />
 
-      {/* 3. Asset trend chart */}
-      <AssetTrendSection
-        snapshots={snapshots}
-        isLoading={!snapshots || snapshots.length === 0}
-        currentTotal={currentTotal}
-      />
-
-      {/* 4. Six-factor health score breakdown */}
+      {/* 3. Six-factor health score breakdown */}
       <HealthScoreSection healthScore={healthScore} />
 
       {/* 5. Target vs current allocation drift */}

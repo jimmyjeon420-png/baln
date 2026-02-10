@@ -1,5 +1,7 @@
 /**
- * 처방전 히어로 섹션 — 총자산 + 전일 변동 + CFO 한줄 코멘트
+ * 처방전 히어로 섹션 — 총자산 + 투자원금 대비 수익 + CFO 한줄 코멘트
+ *
+ * [주 지표] 투자원금(평단가×수량) 대비 평가 손익 — 펀드매니저 기준
  */
 
 import React from 'react';
@@ -13,7 +15,9 @@ interface HeroSectionProps {
   tierLabel: string;
   tierColor: string;
   totalAssets: number;
+  /** 투자원금 대비 총 손익 (현재 평가금액 - 투자원금) */
   totalGainLoss: number;
+  /** 투자원금 대비 수익률 (%) */
   gainPercent: number;
   cfoWeather?: CfoWeather | null;
 }
@@ -40,6 +44,7 @@ export default function HeroSection({
 
       <Text style={s.heroAmount}>₩{Math.floor(totalAssets).toLocaleString()}</Text>
 
+      {/* 주 지표: 투자원금 대비 수익 */}
       <View style={s.heroChangeRow}>
         <View style={[s.heroChangeBadge, { backgroundColor: isPositive ? 'rgba(76,175,80,0.12)' : 'rgba(207,102,121,0.12)' }]}>
           <Ionicons

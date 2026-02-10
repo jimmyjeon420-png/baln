@@ -36,7 +36,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { DiagnosisSkeletonLoader } from '../../src/components/SkeletonLoader';
 import { useSharedPortfolio } from '../../src/hooks/useSharedPortfolio';
 import { useSharedAnalysis } from '../../src/hooks/useSharedAnalysis';
-import { usePeerPanicScore, getAssetBracket, useMySnapshots } from '../../src/hooks/usePortfolioSnapshots';
+import { usePeerPanicScore, getAssetBracket } from '../../src/hooks/usePortfolioSnapshots';
 import { calculateHealthScore } from '../../src/services/rebalanceScore';
 import FreePeriodBanner from '../../src/components/FreePeriodBanner';
 import { usePrices } from '../../src/hooks/usePrices';
@@ -49,17 +49,6 @@ import BeginnerCheckupView from '../../src/components/checkup/BeginnerCheckupVie
 import IntermediateCheckupView from '../../src/components/checkup/IntermediateCheckupView';
 import AdvancedCheckupView from '../../src/components/checkup/AdvancedCheckupView';
 
-// ── 섹션 컴포넌트 ──
-import HeroSection from '../../src/components/rebalance/HeroSection';
-import CheckupHeader from '../../src/components/checkup/CheckupHeader';
-import HealthScoreSection from '../../src/components/rebalance/HealthScoreSection';
-import AllocationDriftSection from '../../src/components/rebalance/AllocationDriftSection';
-import WhatIfSimulator from '../../src/components/rebalance/WhatIfSimulator';
-import AssetTrendSection from '../../src/components/rebalance/AssetTrendSection';
-import CorrelationHeatmapSection from '../../src/components/rebalance/CorrelationHeatmapSection';
-import TodayActionsSection from '../../src/components/rebalance/TodayActionsSection';
-import RiskDashboardSection from '../../src/components/rebalance/RiskDashboardSection';
-import AIAnalysisCTA from '../../src/components/checkup/AIAnalysisCTA';
 
 // 새로고침 완료 토스트 (페이드인/아웃)
 function RefreshToast({ visible }: { visible: boolean }) {
@@ -161,19 +150,29 @@ export default function CheckupScreen() {
   const myBracket = getAssetBracket(totalAssets);
   const { data: peerPanicData } = usePeerPanicScore(myBracket);
 
-  // 전일 대비 변동 계산 (최근 2일 스냅샷 비교)
-  const { data: recentSnapshots } = useMySnapshots(2);
-  const yesterdaySnapshot = recentSnapshots && recentSnapshots.length > 0
-    ? recentSnapshots[recentSnapshots.length - 1]
-    : null;
+  // ── 투자원금 대비 총 수익 (주 지표) ──
+  // 평단가 × 수량 = 원금, 현재가 × 수량 = 평가금액
+  const { totalCostBasis, totalGainLoss, gainPercent } = useMemo(() => {
+    let costBasis = 0;
+    let marketValue = 0;
+    for (const asset of allAssets) {
+      const qty = asset.quantity ?? 0;
+      const avg = asset.avgPrice ?? 0;
+      const cur = asset.currentPrice ?? 0;
+      if (qty > 0 && avg > 0) {
+        costBasis += qty * avg;
+        marketValue += qty * cur;
+      } else {
+        // 평단가 없는 자산 (부동산 등) → 수익률 계산 불가, 중립 처리
+        costBasis += asset.currentValue;
+        marketValue += asset.currentValue;
+      }
+    }
+    const gl = marketValue - costBasis;
+    const pct = costBasis > 0 ? (gl / costBasis) * 100 : 0;
+    return { totalCostBasis: costBasis, totalGainLoss: gl, gainPercent: pct };
+  }, [allAssets]);
 
-  const totalGainLoss = yesterdaySnapshot
-    ? totalAssets - yesterdaySnapshot.total_assets
-    : 0;
-
-  const gainPercent = yesterdaySnapshot && yesterdaySnapshot.total_assets > 0
-    ? ((totalAssets - yesterdaySnapshot.total_assets) / yesterdaySnapshot.total_assets) * 100
-    : 0;
 
   const onRefresh = useCallback(async (showRefreshToast = true) => {
     setRefreshing(true);
@@ -352,8 +351,6 @@ export default function CheckupScreen() {
             livePrices={livePrices}
             isAILoading={isAILoading}
             peerPanicData={peerPanicData}
-            snapshots={recentSnapshots || []}
-            currentTotal={totalAssets}
             onLevelChange={setLevel}
           />
         )}
@@ -370,8 +367,6 @@ export default function CheckupScreen() {
             livePrices={livePrices}
             isAILoading={isAILoading}
             peerPanicData={peerPanicData}
-            snapshots={recentSnapshots || []}
-            currentTotal={totalAssets}
             dateString={dateString}
             tierLabel={tierInfo.label}
             tierColor={tierInfo.color}

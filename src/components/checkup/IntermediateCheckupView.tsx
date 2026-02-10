@@ -12,7 +12,6 @@ import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
 import HealthScoreSection from '../rebalance/HealthScoreSection';
-import AssetTrendSection from '../rebalance/AssetTrendSection';
 import WhatIfSimulator from '../rebalance/WhatIfSimulator';
 import TodayActionsSection from '../rebalance/TodayActionsSection';
 import RiskDashboardSection from '../rebalance/RiskDashboardSection';
@@ -38,8 +37,6 @@ interface IntermediateCheckupViewProps {
   livePrices: Record<string, any>;
   isAILoading: boolean;
   peerPanicData?: PeerComparison | null;
-  snapshots: any[];
-  currentTotal: number;
   onLevelChange: (level: InvestorLevel) => void;
 }
 
@@ -64,8 +61,6 @@ export default function IntermediateCheckupView({
   livePrices,
   isAILoading,
   peerPanicData,
-  snapshots,
-  currentTotal,
   onLevelChange,
 }: IntermediateCheckupViewProps) {
   // 취약 팩터 Top 3 (점수 오름차순)
@@ -80,14 +75,7 @@ export default function IntermediateCheckupView({
       {/* 1. 섹션 제목 */}
       <Text style={s.sectionTitle}>{'\uD83D\uDCCA'} 분석 리포트</Text>
 
-      {/* 2. 자산 추이 (30일 차트) */}
-      <AssetTrendSection
-        snapshots={snapshots}
-        isLoading={!snapshots || snapshots.length === 0}
-        currentTotal={currentTotal}
-      />
-
-      {/* 3. 6팩터 건강 점수 */}
+      {/* 2. 6팩터 건강 점수 */}
       <HealthScoreSection healthScore={healthScore} />
 
       {/* 4. 취약 팩터 Top 3 (인라인 렌더링) */}
