@@ -10,6 +10,9 @@ import type { Asset } from '../../types/asset';
 import type { InvestorLevel } from '../../hooks/useCheckupLevel';
 import type { PeerComparison } from '../../types/rebalanceTypes';
 
+import ReassuranceBanner from './ReassuranceBanner';
+import MarketTemperature from './MarketTemperature';
+import EmotionCheck from './EmotionCheck';
 import HeroSection from '../rebalance/HeroSection';
 import CheckupHeader from './CheckupHeader';
 import HealthScoreSection from '../rebalance/HealthScoreSection';
@@ -39,6 +42,9 @@ interface AdvancedCheckupViewProps {
   gainPercent: number;
   cfoWeather: { emoji: string; status: string; message: string } | null;
   panicScore: number | undefined;
+  holdingLabel?: string;
+  todayEmotion?: string | null;
+  onEmotionSelect?: (emotion: string) => void;
   onLevelChange: (level: InvestorLevel) => void;
 }
 
@@ -46,6 +52,7 @@ export default function AdvancedCheckupView({
   healthScore,
   allAssets,
   totalAssets,
+  morningBriefing,
   analysisResult,
   sortedActions,
   portfolio,
@@ -59,10 +66,16 @@ export default function AdvancedCheckupView({
   gainPercent,
   cfoWeather,
   panicScore,
+  holdingLabel,
+  todayEmotion,
+  onEmotionSelect,
   onLevelChange,
 }: AdvancedCheckupViewProps) {
   return (
     <>
+      {/* 0. 안심 배너 (최상단) */}
+      <ReassuranceBanner totalGainLoss={totalGainLoss} cfoWeather={cfoWeather} />
+
       {/* 1. Hero — total assets + cost-basis P&L + daily change + tier */}
       <HeroSection
         dateString={dateString}
@@ -72,7 +85,11 @@ export default function AdvancedCheckupView({
         totalGainLoss={totalGainLoss}
         gainPercent={gainPercent}
         cfoWeather={cfoWeather}
+        holdingLabel={holdingLabel}
       />
+
+      {/* 1.5 시장 온도계 */}
+      <MarketTemperature morningBriefing={morningBriefing ?? null} isAILoading={isAILoading} />
 
       {/* 2. Checkup header — health score grade + panic score */}
       <CheckupHeader
@@ -116,7 +133,12 @@ export default function AdvancedCheckupView({
       {/* 10. AI marketplace CTA */}
       <AIAnalysisCTA />
 
-      {/* 11. Level switcher */}
+      {/* 11. 감정 체크 */}
+      {onEmotionSelect && (
+        <EmotionCheck todayEmotion={todayEmotion ?? null} onSelect={onEmotionSelect} />
+      )}
+
+      {/* 12. Level switcher */}
       <LevelSwitcher currentLevel="advanced" onLevelChange={onLevelChange} />
     </>
   );

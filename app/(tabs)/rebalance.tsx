@@ -43,6 +43,8 @@ import { usePrices } from '../../src/hooks/usePrices';
 import { AssetType } from '../../src/types/asset';
 import { useScreenTracking } from '../../src/hooks/useAnalytics';
 import { useCheckupLevel } from '../../src/hooks/useCheckupLevel';
+import { useHoldingPeriod } from '../../src/hooks/useHoldingPeriod';
+import { useEmotionCheck } from '../../src/hooks/useEmotionCheck';
 
 // ── 레벨별 뷰 컴포넌트 ──
 import BeginnerCheckupView from '../../src/components/checkup/BeginnerCheckupView';
@@ -146,6 +148,8 @@ export default function CheckupScreen() {
 
   // ── 레벨별 뷰 (초급/중급/고급) ──
   const { level, isLoading: levelLoading, setLevel } = useCheckupLevel();
+  const { label: holdingLabel } = useHoldingPeriod();
+  const { todayEmotion, setEmotion } = useEmotionCheck();
 
   const myBracket = getAssetBracket(totalAssets);
   const { data: peerPanicData } = usePeerPanicScore(myBracket);
@@ -338,6 +342,9 @@ export default function CheckupScreen() {
             totalGainLoss={totalGainLoss}
             cfoWeather={cfoWeather}
             isAILoading={isAILoading}
+            allAssets={allAssets}
+            todayEmotion={todayEmotion}
+            onEmotionSelect={setEmotion}
             onLevelChange={setLevel}
           />
         )}
@@ -354,6 +361,10 @@ export default function CheckupScreen() {
             livePrices={livePrices}
             isAILoading={isAILoading}
             peerPanicData={peerPanicData}
+            totalGainLoss={totalGainLoss}
+            cfoWeather={cfoWeather}
+            todayEmotion={todayEmotion}
+            onEmotionSelect={setEmotion}
             onLevelChange={setLevel}
           />
         )}
@@ -377,6 +388,9 @@ export default function CheckupScreen() {
             gainPercent={gainPercent}
             cfoWeather={cfoWeather}
             panicScore={panicScore}
+            holdingLabel={holdingLabel}
+            todayEmotion={todayEmotion}
+            onEmotionSelect={setEmotion}
             onLevelChange={setLevel}
           />
         )}

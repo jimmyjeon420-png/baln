@@ -60,7 +60,7 @@ function PulsingDot() {
 export default function TodayOneAction({ action, isAILoading }: TodayOneActionProps) {
   return (
     <View style={s.card}>
-      <Text style={s.cardTitle}>{'오늘 할 일'}</Text>
+      <Text style={s.cardTitle}>{'이번 달 처방전'}</Text>
 
       {isAILoading && (
         <View style={s.loadingRow}>
@@ -71,7 +71,7 @@ export default function TodayOneAction({ action, isAILoading }: TodayOneActionPr
 
       {!isAILoading && !action && (
         <Text style={s.emptyText}>
-          {'오늘은 특별히 할 일이 없어요 \uD83D\uDC4D'}
+          {'이번 달은 특별히 할 일이 없어요 \uD83D\uDC4D'}
         </Text>
       )}
 

@@ -20,6 +20,7 @@ interface HeroSectionProps {
   /** 투자원금 대비 수익률 (%) */
   gainPercent: number;
   cfoWeather?: CfoWeather | null;
+  holdingLabel?: string;
 }
 
 export default function HeroSection({
@@ -30,6 +31,7 @@ export default function HeroSection({
   totalGainLoss,
   gainPercent,
   cfoWeather,
+  holdingLabel,
 }: HeroSectionProps) {
   const isPositive = totalGainLoss >= 0;
 
@@ -37,8 +39,15 @@ export default function HeroSection({
     <View style={s.hero}>
       <View style={s.heroTop}>
         <Text style={s.heroDate}>{dateString}</Text>
-        <View style={[s.tierChip, { backgroundColor: tierColor + '20' }]}>
-          <Text style={[s.tierChipText, { color: tierColor }]}>{tierLabel}</Text>
+        <View style={{ flexDirection: 'row', gap: 6 }}>
+          <View style={[s.tierChip, { backgroundColor: tierColor + '20' }]}>
+            <Text style={[s.tierChipText, { color: tierColor }]}>{tierLabel}</Text>
+          </View>
+          {holdingLabel && (
+            <View style={[s.tierChip, { backgroundColor: '#7C4DFF20' }]}>
+              <Text style={[s.tierChipText, { color: '#7C4DFF' }]}>{holdingLabel}</Text>
+            </View>
+          )}
         </View>
       </View>
 

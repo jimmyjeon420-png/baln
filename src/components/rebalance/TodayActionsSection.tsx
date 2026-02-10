@@ -100,7 +100,7 @@ const CHECKLIST_KEY = '@action_checklist';
 
 function getTodayKey(): string {
   const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
 function useActionChecklist() {
@@ -301,8 +301,8 @@ export default function TodayActionsSection({
     <View style={s.card}>
       <View style={s.headerRow}>
         <View>
-          <Text style={s.cardLabel}>오늘의 액션</Text>
-          <Text style={s.cardLabelEn}>Today's Actions</Text>
+          <Text style={s.cardLabel}>이번 달 처방전</Text>
+          <Text style={s.cardLabelEn}>Monthly Prescription</Text>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
           {completedCount > 0 && (

@@ -11,6 +11,9 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
+import ReassuranceBanner from './ReassuranceBanner';
+import MarketTemperature from './MarketTemperature';
+import EmotionCheck from './EmotionCheck';
 import HealthScoreSection from '../rebalance/HealthScoreSection';
 import WhatIfSimulator from '../rebalance/WhatIfSimulator';
 import TodayActionsSection from '../rebalance/TodayActionsSection';
@@ -37,6 +40,10 @@ interface IntermediateCheckupViewProps {
   livePrices: Record<string, any>;
   isAILoading: boolean;
   peerPanicData?: PeerComparison | null;
+  totalGainLoss?: number;
+  cfoWeather?: { emoji: string; status: string; message: string } | null;
+  todayEmotion?: string | null;
+  onEmotionSelect?: (emotion: string) => void;
   onLevelChange: (level: InvestorLevel) => void;
 }
 
@@ -61,6 +68,10 @@ export default function IntermediateCheckupView({
   livePrices,
   isAILoading,
   peerPanicData,
+  totalGainLoss,
+  cfoWeather,
+  todayEmotion,
+  onEmotionSelect,
   onLevelChange,
 }: IntermediateCheckupViewProps) {
   // 취약 팩터 Top 3 (점수 오름차순)
@@ -72,7 +83,13 @@ export default function IntermediateCheckupView({
 
   return (
     <View style={s.container}>
-      {/* 1. 섹션 제목 */}
+      {/* 0. 안심 배너 (최상단) */}
+      <ReassuranceBanner totalGainLoss={totalGainLoss ?? 0} cfoWeather={cfoWeather ?? null} />
+
+      {/* 1. 시장 온도계 */}
+      <MarketTemperature morningBriefing={morningBriefing} isAILoading={isAILoading} />
+
+      {/* 섹션 제목 */}
       <Text style={s.sectionTitle}>{'\uD83D\uDCCA'} 분석 리포트</Text>
 
       {/* 2. 6팩터 건강 점수 */}
@@ -129,7 +146,12 @@ export default function IntermediateCheckupView({
         isAILoading={isAILoading}
       />
 
-      {/* 8. 레벨 전환 */}
+      {/* 8. 감정 체크 */}
+      {onEmotionSelect && (
+        <EmotionCheck todayEmotion={todayEmotion ?? null} onSelect={onEmotionSelect} />
+      )}
+
+      {/* 9. 레벨 전환 */}
       <LevelSwitcher
         currentLevel="intermediate"
         onLevelChange={onLevelChange}

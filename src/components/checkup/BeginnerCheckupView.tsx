@@ -5,24 +5,27 @@
  * 복잡한 수치 대신 직관적인 이모지, 한 줄 진단, 안심 메시지로 구성.
  *
  * 구성 카드 (위→아래):
+ * 0. ReassuranceBanner — 안심 배너 (최상단)
  * 1. OneLinerDiagnosis — 한 줄 컨디션 진단
- * 2. WorstFactorCard  — 가장 취약한 요인 1개
+ * 2. WorstFactorCard  — 가장 취약한 요인 1개 (스토리텔링)
  * 3. TodayOneAction   — AI 추천 액션 1개
- * 4. ReassuranceCard  — 안심 한마디
+ * 4. EmotionCheck     — 감정 체크
  * 5. LevelSwitcher    — 레벨 전환 UI
  */
 
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 
+import ReassuranceBanner from './ReassuranceBanner';
 import OneLinerDiagnosis from './beginner/OneLinerDiagnosis';
 import WorstFactorCard from './beginner/WorstFactorCard';
 import TodayOneAction from './beginner/TodayOneAction';
-import ReassuranceCard from './beginner/ReassuranceCard';
+import EmotionCheck from './EmotionCheck';
 import LevelSwitcher from './LevelSwitcher';
 
 import type { HealthScoreResult } from '../../services/rebalanceScore';
 import type { MorningBriefingResult } from '../../services/gemini';
+import type { Asset } from '../../types/asset';
 import type { InvestorLevel } from '../../hooks/useCheckupLevel';
 
 interface BeginnerCheckupViewProps {
@@ -31,6 +34,9 @@ interface BeginnerCheckupViewProps {
   totalGainLoss: number;
   cfoWeather: { emoji: string; status: string; message: string } | null;
   isAILoading: boolean;
+  allAssets?: Asset[];
+  todayEmotion: string | null;
+  onEmotionSelect: (emotion: string) => void;
   onLevelChange: (level: InvestorLevel) => void;
 }
 
@@ -61,12 +67,18 @@ export default function BeginnerCheckupView({
   totalGainLoss,
   cfoWeather,
   isAILoading,
+  allAssets,
+  todayEmotion,
+  onEmotionSelect,
   onLevelChange,
 }: BeginnerCheckupViewProps) {
   const topAction = getTopAction(morningBriefing);
 
   return (
     <View style={s.container}>
+      {/* 0. 안심 배너 (최상단) */}
+      <ReassuranceBanner totalGainLoss={totalGainLoss} cfoWeather={cfoWeather} />
+
       {/* Section title */}
       <Text style={s.sectionTitle}>
         {'\uD83C\uDF31 분석 리포트'}
@@ -75,14 +87,14 @@ export default function BeginnerCheckupView({
       {/* 1. 한 줄 진단 */}
       <OneLinerDiagnosis healthScore={healthScore} />
 
-      {/* 2. 가장 취약한 요인 */}
-      <WorstFactorCard factors={healthScore.factors} />
+      {/* 2. 가장 취약한 요인 (스토리텔링) */}
+      <WorstFactorCard factors={healthScore.factors} allAssets={allAssets} />
 
-      {/* 3. 오늘 할 일 */}
+      {/* 3. 이번 달 처방전 */}
       <TodayOneAction action={topAction} isAILoading={isAILoading} />
 
-      {/* 4. 안심 한마디 */}
-      <ReassuranceCard totalGainLoss={totalGainLoss} cfoWeather={cfoWeather} />
+      {/* 4. 감정 체크 */}
+      <EmotionCheck todayEmotion={todayEmotion} onSelect={onEmotionSelect} />
 
       {/* 5. 레벨 전환 */}
       <LevelSwitcher currentLevel="beginner" onLevelChange={onLevelChange} />
