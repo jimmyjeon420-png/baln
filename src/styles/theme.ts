@@ -1,9 +1,19 @@
 /**
- * Theme and color definitions - Dark Mode (Premium Fintech)
+ * Theme and color definitions
+ *
+ * NOTE: 이 파일은 하위 호환성을 위해 유지됩니다.
+ * 새 코드에서는 useTheme() 훅을 사용하여 colors를 가져오세요.
+ *
+ * 사용 예시:
+ * ```tsx
+ * import { useTheme } from '@/hooks/useTheme';
+ * const { colors } = useTheme();
+ * <View style={{ backgroundColor: colors.background }} />
+ * ```
  */
 
 export const COLORS = {
-  // 다크 모드 배경
+  // 다크 모드 배경 (기본값 - 하위 호환성)
   background: '#121212', // 매우 다크 배경
   surface: '#1E1E1E', // 카드 배경
   surfaceLight: '#2C2C2C', // 약간 밝은 서피스

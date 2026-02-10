@@ -45,6 +45,7 @@ import { useScreenTracking } from '../../src/hooks/useAnalytics';
 import { useCheckupLevel } from '../../src/hooks/useCheckupLevel';
 import { useHoldingPeriod } from '../../src/hooks/useHoldingPeriod';
 import { useEmotionCheck } from '../../src/hooks/useEmotionCheck';
+import { useTheme } from '../../src/hooks/useTheme';
 
 // ── 레벨별 뷰 컴포넌트 ──
 import BeginnerCheckupView from '../../src/components/checkup/BeginnerCheckupView';
@@ -120,6 +121,7 @@ function formatTodayDate(): string {
 export default function CheckupScreen() {
   useScreenTracking('checkup');
   const router = useRouter();
+  const { colors } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const lastRefreshRef = useRef(Date.now());
@@ -217,7 +219,7 @@ export default function CheckupScreen() {
 
   if (isPortfolioLoading) {
     return (
-      <SafeAreaView style={s.container} edges={['top']}>
+      <SafeAreaView style={[s.container, { backgroundColor: colors.background }]} edges={['top']}>
         <ScrollView><DiagnosisSkeletonLoader /></ScrollView>
       </SafeAreaView>
     );
@@ -301,7 +303,7 @@ export default function CheckupScreen() {
   // ══════════════════════════════════════════
 
   return (
-    <SafeAreaView style={s.container} edges={['top']}>
+    <SafeAreaView style={[s.container, { backgroundColor: colors.background }]} edges={['top']}>
       {/* 새로고침 완료 토스트 */}
       <RefreshToast key={toastKeyRef.current} visible={showToast} />
 
@@ -415,7 +417,7 @@ export default function CheckupScreen() {
 const s = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
+    // backgroundColor는 동적으로 적용됨
   },
   scroll: {
     paddingBottom: 20,

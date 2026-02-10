@@ -15,6 +15,7 @@ import { useAchievementCount } from '../../src/hooks/useAchievements';
 import { useScreenTracking } from '../../src/hooks/useAnalytics';
 import { COLORS, SIZES } from '../../src/styles/theme';
 import RealEstatePreview from '../../src/components/more/RealEstatePreview';
+import { useTheme, ThemeMode } from '../../src/hooks/useTheme';
 
 // =============================================================================
 // 타입 정의
@@ -46,6 +47,7 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { user, signOut } = useAuth();
   const { unlockedCount, totalCount } = useAchievementCount();
+  const { themeMode, setThemeMode, colors } = useTheme();
 
   // ---------------------------------------------------------------------------
   // 로그아웃 처리
@@ -70,6 +72,13 @@ export default function ProfileScreen() {
         },
       ]
     );
+  };
+
+  // ---------------------------------------------------------------------------
+  // 테마 변경 핸들러
+  // ---------------------------------------------------------------------------
+  const handleThemeChange = async (mode: ThemeMode) => {
+    await setThemeMode(mode);
   };
 
   // ---------------------------------------------------------------------------
@@ -179,6 +188,36 @@ export default function ProfileScreen() {
   ];
 
   // ---------------------------------------------------------------------------
+  // 테마 섹션 정의 (별도 섹션)
+  // ---------------------------------------------------------------------------
+  const themeSection: MenuSection = {
+    title: '테마 설정',
+    items: [
+      {
+        icon: 'sunny-outline',
+        label: '라이트 모드',
+        onPress: () => handleThemeChange('light'),
+        badge: themeMode === 'light' ? '✓' : undefined,
+        badgeColor: colors.primary,
+      },
+      {
+        icon: 'moon-outline',
+        label: '다크 모드',
+        onPress: () => handleThemeChange('dark'),
+        badge: themeMode === 'dark' ? '✓' : undefined,
+        badgeColor: colors.primary,
+      },
+      {
+        icon: 'phone-portrait-outline',
+        label: '시스템 설정 따름',
+        onPress: () => handleThemeChange('system'),
+        badge: themeMode === 'system' ? '✓' : undefined,
+        badgeColor: colors.primary,
+      },
+    ],
+  };
+
+  // ---------------------------------------------------------------------------
   // DEV 전용 섹션 (개발 모드에서만 노출)
   // ---------------------------------------------------------------------------
   const devSection: MenuSection = {
@@ -198,20 +237,24 @@ export default function ProfileScreen() {
   const renderMenuItem = (item: MenuItem, index: number, isLast: boolean) => (
     <TouchableOpacity
       key={`${item.label}-${index}`}
-      style={[styles.menuItem, isLast && styles.menuItemLast]}
+      style={[
+        styles.menuItem,
+        isLast && styles.menuItemLast,
+        { borderBottomColor: isLast ? 'transparent' : colors.borderLight }
+      ]}
       onPress={item.onPress}
       activeOpacity={0.6}
     >
-      <View style={styles.menuIconWrap}>
-        <Ionicons name={item.icon} size={20} color={COLORS.textSecondary} />
+      <View style={[styles.menuIconWrap, { backgroundColor: colors.surfaceLight }]}>
+        <Ionicons name={item.icon} size={20} color={colors.textSecondary} />
       </View>
-      <Text style={styles.menuLabel}>{item.label}</Text>
+      <Text style={[styles.menuLabel, { color: colors.textPrimary }]}>{item.label}</Text>
       {item.badge && (
-        <View style={[styles.badge, { backgroundColor: item.badgeColor || COLORS.primary }]}>
-          <Text style={styles.badgeText}>{item.badge}</Text>
+        <View style={[styles.badge, { backgroundColor: item.badgeColor || colors.primary }]}>
+          <Text style={[styles.badgeText, { color: colors.textPrimary }]}>{item.badge}</Text>
         </View>
       )}
-      <Ionicons name="chevron-forward" size={16} color={COLORS.textTertiary} />
+      <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
     </TouchableOpacity>
   );
 
@@ -220,8 +263,8 @@ export default function ProfileScreen() {
   // ---------------------------------------------------------------------------
   const renderSection = (section: MenuSection, sectionIndex: number) => (
     <View key={`section-${sectionIndex}`} style={styles.section}>
-      <Text style={styles.sectionTitle}>{section.title}</Text>
-      <View style={styles.sectionCard}>
+      <Text style={[styles.sectionTitle, { color: colors.textTertiary }]}>{section.title}</Text>
+      <View style={[styles.sectionCard, { backgroundColor: colors.surface }]}>
         {section.items.map((item, idx) =>
           renderMenuItem(item, idx, idx === section.items.length - 1)
         )}
@@ -233,10 +276,10 @@ export default function ProfileScreen() {
   // 메인 렌더
   // ---------------------------------------------------------------------------
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
       {/* 헤더 */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>전체</Text>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>전체</Text>
       </View>
 
       <ScrollView
@@ -246,26 +289,29 @@ export default function ProfileScreen() {
       >
         {/* ── 프로필 카드 ── */}
         <TouchableOpacity
-          style={styles.profileCard}
+          style={[styles.profileCard, { backgroundColor: colors.surface }]}
           onPress={() => (user ? router.push('/settings/profile') : router.push('/login'))}
           activeOpacity={0.7}
         >
-          <View style={styles.avatar}>
-            <Ionicons name="person" size={28} color={COLORS.primary} />
+          <View style={[styles.avatar, { backgroundColor: colors.surfaceLight }]}>
+            <Ionicons name="person" size={28} color={colors.primary} />
           </View>
           <View style={styles.profileInfo}>
-            <Text style={styles.profileName} numberOfLines={1}>
+            <Text style={[styles.profileName, { color: colors.textPrimary }]} numberOfLines={1}>
               {user?.email?.split('@')[0] || '사용자'}
             </Text>
-            <Text style={styles.profileEmail} numberOfLines={1}>
+            <Text style={[styles.profileEmail, { color: colors.textSecondary }]} numberOfLines={1}>
               {user ? user.email : '로그인하여 데이터를 동기화하세요'}
             </Text>
           </View>
-          <Ionicons name="chevron-forward" size={18} color={COLORS.textTertiary} />
+          <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
         </TouchableOpacity>
 
         {/* ── 부동산 보유 현황 (있을 때만 표시) ── */}
         {user && <RealEstatePreview />}
+
+        {/* ── 테마 설정 섹션 ── */}
+        {renderSection(themeSection, -1)}
 
         {/* ── 3개 메뉴 섹션 ── */}
         {sections.map((section, idx) => renderSection(section, idx))}
@@ -276,17 +322,17 @@ export default function ProfileScreen() {
         {/* ── 로그아웃 버튼 ── */}
         {user && (
           <TouchableOpacity
-            style={styles.logoutButton}
+            style={[styles.logoutButton, { backgroundColor: colors.surface }]}
             onPress={handleLogout}
             activeOpacity={0.6}
           >
-            <Ionicons name="log-out-outline" size={20} color={COLORS.error} />
-            <Text style={styles.logoutText}>로그아웃</Text>
+            <Ionicons name="log-out-outline" size={20} color={colors.error} />
+            <Text style={[styles.logoutText, { color: colors.error }]}>로그아웃</Text>
           </TouchableOpacity>
         )}
 
         {/* ── 버전 정보 ── */}
-        <Text style={styles.versionText}>baln v3.0.0</Text>
+        <Text style={[styles.versionText, { color: colors.textTertiary }]}>baln v3.0.0</Text>
       </ScrollView>
     </SafeAreaView>
   );

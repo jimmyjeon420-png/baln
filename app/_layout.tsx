@@ -7,6 +7,8 @@ import { QueryClient } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
+import { ThemeProvider } from '../src/contexts/ThemeContext';
+import { useTheme } from '../src/hooks/useTheme';
 import {
   configureNotificationHandler,
   requestNotificationPermission,
@@ -43,6 +45,21 @@ const asyncStoragePersister = createAsyncStoragePersister({
   storage: AsyncStorage,
   key: 'BALN_QUERY_CACHE',
 });
+
+/**
+ * 테마 배경 래퍼 - useTheme 훅을 사용하기 위해 분리
+ */
+function ThemedAppContainer({ children }: { children: React.ReactNode }) {
+  const { colors, theme } = useTheme();
+
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      {/* StatusBar 스타일도 테마에 따라 변경 */}
+      <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
+      {children}
+    </View>
+  );
+}
 
 /**
  * 인증 상태에 따른 라우팅 보호
@@ -228,11 +245,11 @@ export default function RootLayout() {
     >
       <SafeAreaProvider>
         <AuthProvider>
-          {/* 다크 모드 배경 (#121212) - Fintech 스타일 */}
-          <View style={{ flex: 1, backgroundColor: '#121212' }}>
-            <StatusBar style="light" />
-            <ErrorBoundary>
-            <AuthGate>
+          <ThemeProvider>
+            {/* 테마 적용 배경 (다크/라이트 모드 자동 전환) */}
+            <ThemedAppContainer>
+              <ErrorBoundary>
+                <AuthGate>
               <Stack screenOptions={{ headerShown: false }}>
                 {/* 로그인 화면 */}
                 <Stack.Screen name="login" options={{ headerShown: false }} />
@@ -302,17 +319,18 @@ export default function RootLayout() {
                 {/* 거래 기록 화면 */}
                 <Stack.Screen name="log-trade" options={{ headerShown: false }} />
               </Stack>
-            </AuthGate>
-            </ErrorBoundary>
-            {/* 브랜드 스플래시 (앱 시작 시 'baln.logic' 표시) */}
-            {showSplash && (
-              <BrandSplash onFinish={() => setShowSplash(false)} />
-            )}
-            {/* 생체인증 잠금 화면 (AuthGate 바깥, 최상위 오버레이) */}
-            {isLocked && (
-              <BiometricLockScreen onUnlock={() => setIsLocked(false)} />
-            )}
-          </View>
+                </AuthGate>
+              </ErrorBoundary>
+              {/* 브랜드 스플래시 (앱 시작 시 'baln.logic' 표시) */}
+              {showSplash && (
+                <BrandSplash onFinish={() => setShowSplash(false)} />
+              )}
+              {/* 생체인증 잠금 화면 (AuthGate 바깥, 최상위 오버레이) */}
+              {isLocked && (
+                <BiometricLockScreen onUnlock={() => setIsLocked(false)} />
+              )}
+            </ThemedAppContainer>
+          </ThemeProvider>
         </AuthProvider>
       </SafeAreaProvider>
     </PersistQueryClientProvider>

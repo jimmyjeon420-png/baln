@@ -52,9 +52,9 @@ import {
   convertContextToBriefing,
 } from '../../src/services/trafficLightScore';
 import { convertToContextCardData } from '../../src/services/contextCardService';
-import { COLORS } from '../../src/styles/theme';
 import { useScreenTracking } from '../../src/hooks/useAnalytics';
 import { usePushSetup } from '../../src/hooks/usePushSetup';
+import { useTheme } from '../../src/hooks/useTheme';
 
 // ============================================================================
 // 메인 컴포넌트
@@ -68,6 +68,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const contextCardRef = React.useRef(null);
+  const { colors } = useTheme();
 
   // 맥락 카드 전체 모달 상태
   const [contextModalVisible, setContextModalVisible] = React.useState(false);
@@ -436,7 +437,7 @@ export default function HomeScreen() {
   // 렌더링
   // ──────────────────────────────────────────────────────────────────────
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* 네트워크 끊김 감지 배너 (최상단) */}
       <OfflineBanner />
 
@@ -487,7 +488,7 @@ export default function HomeScreen() {
         presentationStyle="pageSheet"
         onRequestClose={() => setContextModalVisible(false)}
       >
-        <View style={styles.modalContainer}>
+        <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
           {fullContextCardData && (
             <ContextCard
               data={fullContextCardData}
@@ -521,7 +522,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    // backgroundColor는 동적으로 적용됨
   },
   streakContainer: {
     paddingHorizontal: 16,
@@ -534,7 +535,7 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    // backgroundColor는 동적으로 적용됨
     paddingTop: 60, // Safe area
   },
 });
