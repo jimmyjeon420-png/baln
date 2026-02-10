@@ -144,11 +144,14 @@ export default function HomeScreen() {
       };
     }
 
-    // 데이터 상태
-    const assetSignals = heartAssetsWithSignal.slice(0, 5).map(a => ({
-      name: a.name,
-      signal: a.signal,
-    }));
+    // 데이터 상태 (null 안전 필터링)
+    const assetSignals = (heartAssetsWithSignal || [])
+      .filter(a => a?.name)
+      .slice(0, 5)
+      .map(a => ({
+        name: a.name ?? 'Unknown',
+        signal: a.signal ?? 'neutral',
+      }));
 
     return {
       healthScore: portfolioHealthScore,
@@ -196,12 +199,18 @@ export default function HomeScreen() {
       };
     }
 
-    // 4겹 맥락카드 → 3줄 브리핑 변환
+    // 4겹 맥락카드 → 3줄 브리핑 변환 (타입 안전 캐스팅)
+    const typedContext = contextData as {
+      headline?: string;
+      macroChain?: string[];
+      portfolioImpact?: { message?: string };
+      sentiment?: 'calm' | 'caution' | 'alert';
+    } | null;
     const briefing = convertContextToBriefing({
-      headline: (contextData as any).headline,
-      macroChain: (contextData as any).macroChain,
-      portfolioImpact: (contextData as any).portfolioImpact,
-      sentiment: (contextData as any).sentiment || 'calm',
+      headline: typedContext?.headline || '오늘의 시장 분석',
+      macroChain: typedContext?.macroChain || [],
+      portfolioImpact: typedContext?.portfolioImpact || { message: '' },
+      sentiment: typedContext?.sentiment || 'calm',
     });
 
     return {

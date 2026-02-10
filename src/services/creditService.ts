@@ -85,37 +85,59 @@ export async function spendCredits(
   featureType: AIFeatureType,
   featureRefId?: string
 ): Promise<SpendResult> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('로그인이 필요합니다');
+  try {
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-  // 무료 기간: 크레딧 차감 없이 바로 성공 반환
-  if (!shouldChargeCredits()) {
-    console.log(`[Credits] 무료 기간 — ${featureType} 크레딧 차감 스킵 (${amount}C)`);
-    // 현재 잔액 조회만 해서 반환
-    const credits = await getMyCredits();
+    if (authError) {
+      console.error('[Credits] 인증 조회 실패:', authError.message);
+      return { success: false, newBalance: 0, errorMessage: '네트워크 연결을 확인해주세요.' };
+    }
+
+    if (!user) {
+      return { success: false, newBalance: 0, errorMessage: '로그인이 필요합니다.' };
+    }
+
+    // 무료 기간: 크레딧 차감 없이 바로 성공 반환
+    if (!shouldChargeCredits()) {
+      console.log(`[Credits] 무료 기간 — ${featureType} 크레딧 차감 스킵 (${amount}C)`);
+      // 현재 잔액 조회만 해서 반환
+      const credits = await getMyCredits();
+      return {
+        success: true,
+        newBalance: credits?.balance ?? 0,
+      };
+    }
+
+    const { data, error } = await supabase.rpc('spend_credits', {
+      p_user_id: user.id,
+      p_amount: amount,
+      p_feature_type: featureType,
+      p_feature_ref_id: featureRefId || null,
+    });
+
+    if (error) {
+      console.error('[Credits] RPC 차감 실패:', error.message);
+      return { success: false, newBalance: 0, errorMessage: error.message };
+    }
+
+    const row = data?.[0];
+    if (!row) {
+      return { success: false, newBalance: 0, errorMessage: '크레딧 차감 실패' };
+    }
+
     return {
-      success: true,
-      newBalance: credits?.balance ?? 0,
+      success: row.success,
+      newBalance: row.new_balance,
+      errorMessage: row.error_message || undefined,
+    };
+  } catch (err) {
+    console.error('[Credits] 크레딧 차감 중 예외:', err);
+    return {
+      success: false,
+      newBalance: 0,
+      errorMessage: err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.',
     };
   }
-
-  const { data, error } = await supabase.rpc('spend_credits', {
-    p_user_id: user.id,
-    p_amount: amount,
-    p_feature_type: featureType,
-    p_feature_ref_id: featureRefId || null,
-  });
-
-  if (error) throw error;
-
-  const row = data?.[0];
-  if (!row) throw new Error('크레딧 차감 실패');
-
-  return {
-    success: row.success,
-    newBalance: row.new_balance,
-    errorMessage: row.error_message || undefined,
-  };
 }
 
 // ============================================================================

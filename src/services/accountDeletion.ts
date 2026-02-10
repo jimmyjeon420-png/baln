@@ -59,6 +59,11 @@ interface ExportedData {
  * 유저 데이터가 있는 테이블 목록
  * 순서가 중요! 자식 테이블 → 부모 테이블 순으로 삭제해야 외래키 에러 방지
  */
+// 핵심 테이블 목록 (이것들이 실패하면 삭제 프로세스 즉시 중단)
+// 포트폴리오, 크레딧, 프로필은 유저의 핵심 자산 데이터이므로
+// 삭제 실패 시 부분 삭제 상태로 방치하면 안 됨
+const CRITICAL_TABLES = ['portfolios', 'user_credits', 'profiles'];
+
 const USER_TABLES_IN_DELETE_ORDER = [
   // 1단계: 자식 테이블 (다른 테이블 참조)
   'community_likes',
@@ -197,15 +202,36 @@ export async function deleteUserAccount(userId: string): Promise<DeletionResult>
         .eq(table === 'profiles' ? 'id' : 'user_id', userId);
 
       if (error) {
-        // 테이블이 존재하지 않거나 권한 문제 → 스킵 (치명적 에러 아님)
         console.warn(`[계정삭제] ${table} 삭제 실패:`, error.message);
         failedTables.push(table);
+
+        // 핵심 테이블 실패 시 즉시 중단 — 부분 삭제 상태 방지
+        if (CRITICAL_TABLES.includes(table)) {
+          console.error(`[계정삭제] 핵심 테이블(${table}) 삭제 실패 — 프로세스 중단`);
+          return {
+            success: false,
+            error: `핵심 데이터(${table}) 삭제에 실패했습니다. 다시 시도해주세요.`,
+            deletedTables,
+            failedTables,
+          };
+        }
       } else {
         deletedTables.push(table);
       }
     } catch (err) {
       console.warn(`[계정삭제] ${table} 삭제 중 예외:`, err);
       failedTables.push(table);
+
+      // 핵심 테이블 예외 시에도 즉시 중단
+      if (CRITICAL_TABLES.includes(table)) {
+        console.error(`[계정삭제] 핵심 테이블(${table}) 삭제 중 예외 — 프로세스 중단`);
+        return {
+          success: false,
+          error: `핵심 데이터(${table}) 삭제에 실패했습니다. 다시 시도해주세요.`,
+          deletedTables,
+          failedTables,
+        };
+      }
     }
   }
 
