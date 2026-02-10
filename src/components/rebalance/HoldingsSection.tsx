@@ -50,7 +50,7 @@ export default function HoldingsSection({
               <View style={s.snapshotItem}>
                 <Text style={s.snapshotLabel}>총 손익</Text>
                 <Text style={[s.snapshotValue, { color: isPositive ? '#4CAF50' : '#CF6679' }]}>
-                  {isPositive ? '+' : ''}₩{(snapshot.totalGainLoss ?? 0).toLocaleString()}
+                  {isPositive ? '+' : ''}₩{Math.floor(Math.abs(snapshot.totalGainLoss ?? 0)).toLocaleString()}
                 </Text>
               </View>
               <View style={s.snapshotDivider} />

@@ -61,7 +61,7 @@ export default function LogTradeScreen() {
     // 확인 모달
     Alert.alert(
       '실행 기록 저장',
-      `${params.name} (${params.ticker})\n${params.action === 'BUY' ? '매수' : '매도'} ${qty}주 @ ₩${price.toLocaleString()}\n\n본 앱은 실제 매매를 대행하지 않습니다. 직접 증권사에서 실행한 내역을 기록용으로 저장하시겠습니까?`,
+      `${params.name} (${params.ticker})\n${params.action === 'BUY' ? '매수' : '매도'} ${qty}주 @ ₩${Math.floor(price).toLocaleString()}\n\n본 앱은 실제 매매를 대행하지 않습니다. 직접 증권사에서 실행한 내역을 기록용으로 저장하시겠습니까?`,
       [
         { text: '취소', style: 'cancel' },
         {
@@ -129,7 +129,7 @@ export default function LogTradeScreen() {
             <View style={s.suggestionBox}>
               <Ionicons name="information-circle-outline" size={16} color="#64B5F6" />
               <Text style={s.suggestionText}>
-                AI 제안 시점: ₩{parseFloat(params.suggestedPrice).toLocaleString()} × {params.suggestedQty || 0}주
+                AI 제안 시점: ₩{Math.floor(parseFloat(params.suggestedPrice)).toLocaleString()} × {params.suggestedQty || 0}주
               </Text>
             </View>
           )}

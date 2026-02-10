@@ -37,14 +37,14 @@ export default function WhatIfResultCard({ result }: Props) {
           <View style={styles.impactItem}>
             <Text style={styles.impactLabel}>현재</Text>
             <Text style={styles.impactValue}>
-              ₩{result.totalImpact.currentTotal.toLocaleString()}
+              ₩{Math.floor(result.totalImpact.currentTotal).toLocaleString()}
             </Text>
           </View>
           <Ionicons name="arrow-forward" size={20} color="#555" />
           <View style={styles.impactItem}>
             <Text style={styles.impactLabel}>예상</Text>
             <Text style={[styles.impactValue, { color: impactColor }]}>
-              ₩{result.totalImpact.projectedTotal.toLocaleString()}
+              ₩{Math.floor(result.totalImpact.projectedTotal).toLocaleString()}
             </Text>
           </View>
         </View>
@@ -52,7 +52,7 @@ export default function WhatIfResultCard({ result }: Props) {
           <Text style={[styles.changeText, { color: impactColor }]}>
             {isNegative ? '' : '+'}
             {result.totalImpact.changePercent.toFixed(1)}%
-            ({isNegative ? '' : '+'}₩{result.totalImpact.changeAmount.toLocaleString()})
+            ({isNegative ? '' : '+'}₩{Math.floor(Math.abs(result.totalImpact.changeAmount)).toLocaleString()})
           </Text>
         </View>
       </View>

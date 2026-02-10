@@ -166,7 +166,7 @@ export default function RebalanceHistoryScreen() {
                       <View style={s.executionInfo}>
                         <Text style={s.executionTicker}>{exec.action_ticker}</Text>
                         <Text style={s.executionDetail}>
-                          {exec.executed_qty}주 @ ₩{exec.executed_price.toLocaleString()}
+                          {exec.executed_qty}주 @ ₩{Math.floor(exec.executed_price).toLocaleString()}
                         </Text>
                       </View>
                       {hasResult && (

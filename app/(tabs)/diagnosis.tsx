@@ -393,7 +393,7 @@ export default function DiagnosisScreen() {
               <View style={styles.snapshotItem}>
                 <Text style={styles.snapshotLabel}>총 자산</Text>
                 <Text style={styles.snapshotValue}>
-                  ₩{(analysisResult.portfolioSnapshot?.totalValue ?? 0).toLocaleString()}
+                  ₩{Math.floor(analysisResult.portfolioSnapshot?.totalValue ?? 0).toLocaleString()}
                 </Text>
               </View>
               <View style={styles.snapshotItem}>
@@ -410,7 +410,7 @@ export default function DiagnosisScreen() {
                   ]}
                 >
                   {(analysisResult.portfolioSnapshot?.totalGainLoss ?? 0) >= 0 ? '+' : ''}
-                  ₩{(analysisResult.portfolioSnapshot?.totalGainLoss ?? 0).toLocaleString()}
+                  ₩{Math.floor(Math.abs(analysisResult.portfolioSnapshot?.totalGainLoss ?? 0)).toLocaleString()}
                 </Text>
               </View>
               <View style={styles.snapshotItem}>
@@ -519,7 +519,7 @@ export default function DiagnosisScreen() {
                 </View>
                 <View style={styles.assetRight}>
                   <Text style={styles.assetValue}>
-                    ₩{asset.currentValue.toLocaleString()}
+                    ₩{Math.floor(asset.currentValue).toLocaleString()}
                   </Text>
                   <Text
                     style={[

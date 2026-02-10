@@ -22,14 +22,18 @@ export const formatCurrency = (
   }
 
   try {
+    // KRW 등 소수점 없는 통화는 정수 표시
+    const isZeroDecimalCurrency = localization.currency === 'KRW' || localization.currency === 'JPY';
+    const fractionDigits = isZeroDecimalCurrency ? 0 : 2;
+
     const formatter = new Intl.NumberFormat(localization.locale, {
       style: 'currency',
       currency: localization.currency,
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
+      minimumFractionDigits: fractionDigits,
+      maximumFractionDigits: fractionDigits,
     });
 
-    return formatter.format(value);
+    return formatter.format(isZeroDecimalCurrency ? Math.floor(value) : value);
   } catch (error) {
     // Fallback formatting if Intl fails
     console.warn('Currency formatting failed, using fallback:', error);

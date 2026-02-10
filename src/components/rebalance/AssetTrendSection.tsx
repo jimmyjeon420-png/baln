@@ -201,16 +201,16 @@ export default function AssetTrendSection({
       <View style={s.summaryRow}>
         <View style={s.summaryItem}>
           <Text style={s.summaryLabel}>{selectedDays}일 전</Text>
-          <Text style={s.summaryValue}>₩{chartValues[0]?.toLocaleString()}</Text>
+          <Text style={s.summaryValue}>₩{chartValues[0] != null ? Math.floor(chartValues[0]).toLocaleString() : '0'}</Text>
         </View>
         <View style={s.summaryItem}>
           <Text style={s.summaryLabel}>현재</Text>
-          <Text style={[s.summaryValue, { color: lineColor }]}>₩{currentTotal.toLocaleString()}</Text>
+          <Text style={[s.summaryValue, { color: lineColor }]}>₩{Math.floor(currentTotal).toLocaleString()}</Text>
         </View>
         <View style={s.summaryItem}>
           <Text style={s.summaryLabel}>변동</Text>
           <Text style={[s.summaryValue, { color: lineColor }]}>
-            {isPositive ? '+' : ''}₩{Math.abs(periodChange.amount).toLocaleString()}
+            {isPositive ? '+' : ''}₩{Math.floor(Math.abs(periodChange.amount)).toLocaleString()}
           </Text>
         </View>
       </View>

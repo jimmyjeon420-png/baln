@@ -83,7 +83,7 @@ const SummaryCard: React.FC<{ summary: DailySummary }> = ({ summary }) => (
     <View style={styles.cardBody}>
       <View style={styles.statRow}>
         <Text style={styles.label}>포트폴리오 가치</Text>
-        <Text style={styles.value}>₩{summary.portfolioValue.toLocaleString()}</Text>
+        <Text style={styles.value}>₩{Math.floor(summary.portfolioValue).toLocaleString()}</Text>
       </View>
       <View style={styles.statRow}>
         <Text style={styles.label}>일일 변화</Text>

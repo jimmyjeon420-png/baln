@@ -415,7 +415,7 @@ export default function TodayActionsSection({
             {/* 현재가 + 등락률 (접힌 상태) */}
             {!isExpanded && displayPrice > 0 && (
               <View style={s.priceRow}>
-                <Text style={s.priceText}>{'\u20A9'}{displayPrice.toLocaleString()}</Text>
+                <Text style={s.priceText}>{'\u20A9'}{displayPrice.toLocaleString(undefined, { maximumFractionDigits: 2 })}</Text>
                 {assetGl !== null && (
                   <Text style={[s.changeText, { color: (assetGl ?? 0) >= 0 ? '#4CAF50' : '#CF6679' }]}>
                     {(assetGl ?? 0) >= 0 ? '+' : ''}{(assetGl ?? 0).toFixed(1)}%
@@ -471,7 +471,7 @@ export default function TodayActionsSection({
                     <View style={s.portfolioRow}>
                       <View style={s.portfolioItem}>
                         <Text style={s.portfolioLabel}>현재가{isLive ? ' (실시간)' : ''}</Text>
-                        <Text style={s.portfolioValue}>{'\u20A9'}{displayPrice.toLocaleString()}</Text>
+                        <Text style={s.portfolioValue}>{'\u20A9'}{displayPrice.toLocaleString(undefined, { maximumFractionDigits: 2 })}</Text>
                       </View>
                       <View style={s.portfolioDivider} />
                       <View style={s.portfolioItem}>
@@ -521,22 +521,22 @@ export default function TodayActionsSection({
                         {tax.transactionTax > 0 && (
                           <View style={s.taxRow}>
                             <Text style={s.taxLabel}>거래세</Text>
-                            <Text style={s.taxValue}>{'\u20A9'}{tax.transactionTax.toLocaleString()}</Text>
+                            <Text style={s.taxValue}>{'\u20A9'}{Math.floor(tax.transactionTax).toLocaleString()}</Text>
                           </View>
                         )}
                         <View style={s.taxRow}>
                           <Text style={s.taxLabel}>수수료</Text>
-                          <Text style={s.taxValue}>{'\u20A9'}{tax.brokerageFee.toLocaleString()}</Text>
+                          <Text style={s.taxValue}>{'\u20A9'}{Math.floor(tax.brokerageFee).toLocaleString()}</Text>
                         </View>
                         {tax.capitalGainsTax > 0 && (
                           <View style={s.taxRow}>
                             <Text style={s.taxLabel}>양도소득세</Text>
-                            <Text style={[s.taxValue, { color: '#CF6679' }]}>{'\u20A9'}{tax.capitalGainsTax.toLocaleString()}</Text>
+                            <Text style={[s.taxValue, { color: '#CF6679' }]}>{'\u20A9'}{Math.floor(tax.capitalGainsTax).toLocaleString()}</Text>
                           </View>
                         )}
                         <View style={[s.taxRow, s.taxTotalRow]}>
                           <Text style={s.taxTotalLabel}>실수령 예상</Text>
-                          <Text style={s.taxTotalValue}>{'\u20A9'}{tax.netProceeds.toLocaleString()}</Text>
+                          <Text style={s.taxTotalValue}>{'\u20A9'}{Math.floor(tax.netProceeds).toLocaleString()}</Text>
                         </View>
                       </View>
                       {tax.note ? <Text style={s.taxNote}>{tax.note}</Text> : null}

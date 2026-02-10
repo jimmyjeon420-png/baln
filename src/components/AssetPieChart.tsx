@@ -117,7 +117,7 @@ export default function AssetPieChart({ data, totalValue }: AssetPieChartProps) 
               </View>
               <View style={styles.legendRight}>
                 <Text style={styles.legendValue}>
-                  ₩{item.value.toLocaleString()}
+                  ₩{Math.floor(item.value).toLocaleString()}
                 </Text>
                 <Text style={[styles.legendPercent, { color: item.color }]}>
                   {percentage}%
@@ -131,7 +131,7 @@ export default function AssetPieChart({ data, totalValue }: AssetPieChartProps) 
       {/* 총 자산 표시 */}
       <View style={styles.totalContainer}>
         <Text style={styles.totalLabel}>총 자산</Text>
-        <Text style={styles.totalValue}>₩{totalValue.toLocaleString()}</Text>
+        <Text style={styles.totalValue}>₩{Math.floor(totalValue).toLocaleString()}</Text>
       </View>
     </View>
   );

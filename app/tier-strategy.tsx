@@ -173,7 +173,7 @@ export default function TierStrategyScreen() {
           <Text style={s.heroSubtitle}>{tierDetail.hero.subtitle}</Text>
 
           {/* 총 자산 + 손익 뱃지 */}
-          <Text style={s.heroAmount}>₩{totalAssets.toLocaleString()}</Text>
+          <Text style={s.heroAmount}>₩{Math.floor(totalAssets).toLocaleString()}</Text>
           {snapshot && (
             <View style={[s.heroBadge, {
               backgroundColor: isPositive ? 'rgba(76,175,80,0.12)' : 'rgba(207,102,121,0.12)',
@@ -184,8 +184,8 @@ export default function TierStrategyScreen() {
                 color={isPositive ? '#4CAF50' : '#CF6679'}
               />
               <Text style={[s.heroBadgeText, { color: isPositive ? '#4CAF50' : '#CF6679' }]}>
-                {isPositive ? '+' : ''}₩{Math.abs(totalGainLoss).toLocaleString()}
-                {' '}({isPositive ? '+' : ''}{gainPercent.toFixed(2)}%)
+                {isPositive ? '+' : ''}₩{Math.floor(Math.abs(totalGainLoss)).toLocaleString()}
+                {' '}({isPositive ? '+' : ''}{gainPercent.toFixed(1)}%)
               </Text>
             </View>
           )}
@@ -381,7 +381,7 @@ export default function TierStrategyScreen() {
                     {nextTier.tierName} 등급
                   </Text>
                   <Text style={s.nextTierRequired}>
-                    ₩{nextTier.requiredAssets.toLocaleString()} 이상
+                    ₩{Math.floor(nextTier.requiredAssets).toLocaleString()} 이상
                   </Text>
                 </View>
               </View>
@@ -410,7 +410,7 @@ export default function TierStrategyScreen() {
               {/* 남은 금액 */}
               {totalAssets < nextTier.requiredAssets && (
                 <Text style={s.nextTierRemaining}>
-                  ₩{(nextTier.requiredAssets - totalAssets).toLocaleString()} 더 필요합니다
+                  ₩{Math.floor(nextTier.requiredAssets - totalAssets).toLocaleString()} 더 필요합니다
                 </Text>
               )}
             </View>

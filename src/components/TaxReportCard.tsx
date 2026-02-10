@@ -27,13 +27,13 @@ export default function TaxReportCard({ result }: Props) {
           <View style={styles.taxItem}>
             <Text style={styles.taxLabel}>양도소득세</Text>
             <Text style={styles.taxValue}>
-              ₩{result.taxSummary.estimatedCapitalGainsTax.toLocaleString()}
+              ₩{Math.floor(result.taxSummary.estimatedCapitalGainsTax).toLocaleString()}
             </Text>
           </View>
           <View style={styles.taxItem}>
             <Text style={styles.taxLabel}>소득세</Text>
             <Text style={styles.taxValue}>
-              ₩{result.taxSummary.estimatedIncomeTax.toLocaleString()}
+              ₩{Math.floor(result.taxSummary.estimatedIncomeTax).toLocaleString()}
             </Text>
           </View>
         </View>
@@ -41,7 +41,7 @@ export default function TaxReportCard({ result }: Props) {
         <View style={styles.totalRow}>
           <Text style={styles.totalLabel}>총 세금 부담</Text>
           <Text style={styles.totalValue}>
-            ₩{result.taxSummary.totalTaxBurden.toLocaleString()}
+            ₩{Math.floor(result.taxSummary.totalTaxBurden).toLocaleString()}
           </Text>
         </View>
         <View style={styles.effectiveRateRow}>
@@ -76,7 +76,7 @@ export default function TaxReportCard({ result }: Props) {
               <View style={styles.savingRow}>
                 <Ionicons name="cash" size={14} color="#4CAF50" />
                 <Text style={styles.savingText}>
-                  예상 절세: ₩{strategy.potentialSaving.toLocaleString()}
+                  예상 절세: ₩{Math.floor(strategy.potentialSaving).toLocaleString()}
                 </Text>
               </View>
               {strategy.actionItems.map((action, j) => (

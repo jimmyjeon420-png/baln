@@ -38,7 +38,7 @@ export default function HeroSection({
         </View>
       </View>
 
-      <Text style={s.heroAmount}>₩{totalAssets.toLocaleString()}</Text>
+      <Text style={s.heroAmount}>₩{Math.floor(totalAssets).toLocaleString()}</Text>
 
       <View style={s.heroChangeRow}>
         <View style={[s.heroChangeBadge, { backgroundColor: isPositive ? 'rgba(76,175,80,0.12)' : 'rgba(207,102,121,0.12)' }]}>
@@ -48,10 +48,10 @@ export default function HeroSection({
             color={isPositive ? '#4CAF50' : '#CF6679'}
           />
           <Text style={[s.heroChangeText, { color: isPositive ? '#4CAF50' : '#CF6679' }]}>
-            {isPositive ? '+' : ''}₩{Math.abs(totalGainLoss).toLocaleString()}
+            {isPositive ? '+' : ''}₩{Math.floor(Math.abs(totalGainLoss)).toLocaleString()}
           </Text>
           <Text style={[s.heroChangePercent, { color: isPositive ? '#4CAF50' : '#CF6679' }]}>
-            ({isPositive ? '+' : ''}{gainPercent.toFixed(2)}%)
+            ({isPositive ? '+' : ''}{gainPercent.toFixed(1)}%)
           </Text>
         </View>
         {/* 벤치마크 비교 칩 (KOSPI/S&P500 대비) */}
