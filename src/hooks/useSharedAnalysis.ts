@@ -17,7 +17,7 @@
  * - Bitcoin Intelligence는 별도 비동기 (선택적)
  */
 
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import {
   loadMorningBriefing,
   computePortfolioHash,
@@ -78,7 +78,7 @@ interface AIAnalysisData {
  * 3-A. 캐시 히트 → 즉시 반환 (< 100ms, 새로고침해도 동일)
  * 3-B. 캐시 미스 → Gemini 병렬 호출 → DB 저장 → 반환
  */
-async function fetchAIAnalysis(
+export async function fetchAIAnalysis(
   portfolioAssets: PortfolioAsset[]
 ): Promise<AIAnalysisData> {
   if (portfolioAssets.length === 0) {
@@ -183,8 +183,9 @@ export function useSharedAnalysis(portfolioAssets: PortfolioAsset[]) {
     queryFn: () => fetchAIAnalysis(portfolioAssets),
     enabled: hasAssets,                // 자산 없으면 실행 안 함
     staleTime: 1000 * 60 * 5,         // 5분: Gemini 결과는 자주 바뀌지 않음
-    gcTime: 1000 * 60 * 15,           // 15분: 가비지 컬렉션
+    gcTime: 1000 * 60 * 60 * 24,     // 24시간: 영속 캐시와 수명 동기화
     retry: 1,                          // 1회 재시도
+    placeholderData: keepPreviousData, // 갱신 중에도 이전 데이터 유지
   });
 
   const refresh = () => {

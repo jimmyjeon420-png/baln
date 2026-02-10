@@ -204,7 +204,10 @@ export default function CheckupScreen() {
   // 로딩 / 빈 상태
   // ══════════════════════════════════════════
 
-  const isPortfolioLoading = !initialCheckDone || portfolioLoading;
+  // [이승건 원칙] "스켈레톤은 첫 방문만"
+  // 영속 캐시에 데이터가 있으면 스켈레톤 스킵 → 이전 데이터 즉시 표시
+  const hasCachedData = allAssets.length > 0 || totalAssets > 0;
+  const isPortfolioLoading = !initialCheckDone || (portfolioLoading && !hasCachedData);
   const isAILoading = hasAssets && !analysisReady;
   const analysisFailed = analysisReady && hasAssets && !morningBriefing && !analysisResult;
 

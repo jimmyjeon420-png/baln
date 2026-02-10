@@ -12,7 +12,7 @@
  * - Pull-to-refresh 시에만 강제 갱신
  */
 
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import supabase from '../services/supabase';
 import { Asset, AssetType } from '../types/asset';
 import { transformDbRowToAsset } from '../utils/assetTransform';
@@ -107,8 +107,9 @@ export function useSharedPortfolio() {
   const query = useQuery({
     queryKey: SHARED_PORTFOLIO_KEY,
     queryFn: fetchSharedPortfolio,
-    staleTime: 1000 * 60 * 3,   // 3분: 탭 전환 시 재요청 안 함
-    gcTime: 1000 * 60 * 10,     // 10분: 가비지 컬렉션
+    staleTime: 1000 * 60 * 3,        // 3분: 탭 전환 시 재요청 안 함
+    gcTime: 1000 * 60 * 60 * 24,    // 24시간: 영속 캐시와 수명 동기화
+    placeholderData: keepPreviousData, // 갱신 중에도 이전 데이터 유지
   });
 
   /** Pull-to-refresh 시 호출 — 캐시 즉시 무효화 + 재조회 */

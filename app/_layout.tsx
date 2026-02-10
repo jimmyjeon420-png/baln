@@ -3,7 +3,9 @@ import { View, AppState, AppStateStatus, Alert } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useEffect, useRef, useState } from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient } from '@tanstack/react-query';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
+import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import {
   configureNotificationHandler,
@@ -22,15 +24,23 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import ErrorBoundary from '../src/components/common/ErrorBoundary';
 import { useDeepLink } from '../src/hooks/useDeepLink';
 import { useAnalyticsInit } from '../src/hooks/useAnalytics';
+import { usePrefetchCheckup } from '../src/hooks/usePrefetchCheckup';
 
-// React Query 클라이언트 생성
+// React Query 클라이언트 — gcTime을 24시간으로 설정 (영속 캐시와 동기화)
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5, // 5분
+      staleTime: 1000 * 60 * 5,          // 5분: 이 시간 내 재요청 안 함
+      gcTime: 1000 * 60 * 60 * 24,       // 24시간: 영속 캐시와 수명 동기화
       retry: 2,
     },
   },
+});
+
+// AsyncStorage 기반 영속 캐시 — 앱 재시작 시에도 데이터 즉시 표시
+const asyncStoragePersister = createAsyncStoragePersister({
+  storage: AsyncStorage,
+  key: 'BALN_QUERY_CACHE',
 });
 
 /**
@@ -45,6 +55,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   useSubscriptionBonus();  // 구독자 월 30크레딧 보너스
   useWelcomeBonus();       // 신규 가입 10크레딧 웰컴 보너스
   useDeepLink();           // 딥링크 처리 (알림 탭, 외부 링크 등)
+  usePrefetchCheckup();    // 분석 탭 데이터 미리 로드 (이승건: "보기 전에 준비")
 
   useEffect(() => {
     if (loading) return; // 로딩 중에는 아무것도 하지 않음
@@ -184,7 +195,17 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={{
+        persister: asyncStoragePersister,
+        maxAge: 1000 * 60 * 60 * 24,   // 24시간: 하루 지나면 캐시 만료
+        dehydrateOptions: {
+          shouldDehydrateQuery: (query) =>
+            query.state.status === 'success', // 성공한 쿼리만 저장
+        },
+      }}
+    >
       <SafeAreaProvider>
         <AuthProvider>
           {/* 다크 모드 배경 (#121212) - Fintech 스타일 */}
@@ -274,6 +295,6 @@ export default function RootLayout() {
           </View>
         </AuthProvider>
       </SafeAreaProvider>
-    </QueryClientProvider>
+    </PersistQueryClientProvider>
   );
 }
