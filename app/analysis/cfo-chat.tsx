@@ -16,10 +16,12 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
-import { Stack } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../src/hooks/useTheme';
+import supabase from '../../src/services/supabase';
 
 interface Message {
   id: string;
@@ -47,7 +49,7 @@ export default function CFOChatScreen() {
     const welcomeMessage: Message = {
       id: 'welcome',
       role: 'assistant',
-      text: '안녕하세요! 저는 당신의 AI CFO입니다. 투자 관련 질문이 있으시면 편하게 물어보세요. 📊',
+      text: '안녕하세요! 저는 AI 워렌 버핏입니다. 투자 관련 질문이 있으시면 편하게 물어보세요. 📊',
       timestamp: new Date(),
     };
     setMessages([welcomeMessage]);
@@ -67,31 +69,48 @@ export default function CFOChatScreen() {
     setInputText('');
     setIsLoading(true);
 
-    // TODO: Gemini API 호출
-    setTimeout(() => {
+    try {
+      // 실제 Gemini API 호출 (Edge Function 사용)
+      console.log('[AI 워렌 버핏] 질문:', messageText);
+      const { data, error } = await supabase.functions.invoke('gemini-proxy', {
+        body: {
+          type: 'cfo-chat',
+          data: {
+            question: messageText,
+            conversationHistory: messages.slice(-10), // 최근 10개 대화만 전달 (컨텍스트)
+          },
+        },
+      });
+
+      if (error) {
+        throw new Error(`AI 응답 실패: ${error.message}`);
+      }
+
+      const aiResponse = data?.data?.answer || '죄송합니다. 응답을 생성하지 못했습니다.';
+      console.log('[AI 워렌 버핏] 응답:', aiResponse);
+
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        text: getAIResponse(messageText),
+        text: aiResponse,
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, aiMessage]);
-      setIsLoading(false);
-    }, 1500);
-  };
+    } catch (err: any) {
+      console.error('[AI 워렌 버핏] 에러:', err);
+      Alert.alert('오류', err.message || '알 수 없는 오류가 발생했습니다');
 
-  // Mock AI 응답 (실제로는 Gemini API 호출)
-  const getAIResponse = (question: string): string => {
-    if (question.includes('삼성전자')) {
-      return '현재 삼성전자는 AI 반도체 수요로 실적 개선이 예상됩니다. 다만 단기 변동성이 있을 수 있으니 분할 매수를 권장합니다. 현재 PER 12.5배는 역사적으로 저평가 구간입니다.';
+      // 에러 메시지도 대화에 추가
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        text: '죄송합니다. 일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
     }
-    if (question.includes('비트코인')) {
-      return '비트코인은 고위험 자산입니다. 전체 포트폴리오의 5% 이내로 제한하고, 잃어도 괜찮은 금액만 투자하세요. 현재 ETF 승인으로 제도권 진입 중이지만 변동성은 여전히 높습니다.';
-    }
-    if (question.includes('리밸런싱')) {
-      return '당신의 현재 주식 비중이 70%로 높습니다. 시장 급락에 대비해 채권 비중을 25%까지 늘리는 것을 추천합니다. 리밸런싱은 분기별 1회가 적정합니다.';
-    }
-    return '좋은 질문입니다! 투자는 장기적 관점에서 접근하세요. 더 구체적인 질문을 해주시면 더 정확한 답변을 드릴 수 있습니다.';
   };
 
   const handleQuickQuestion = (question: string) => {
@@ -130,9 +149,17 @@ export default function CFOChatScreen() {
     <>
       <Stack.Screen
         options={{
-          title: 'AI CFO',
+          title: 'AI 워렌 버핏',
           headerStyle: { backgroundColor: colors.background },
           headerTintColor: colors.textPrimary,
+          headerLeft: () => (
+            <TouchableOpacity
+              onPress={() => router.back()}
+              style={{ marginLeft: 8, padding: 8 }}
+            >
+              <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
+            </TouchableOpacity>
+          ),
         }}
       />
       <KeyboardAvoidingView
@@ -184,7 +211,7 @@ export default function CFOChatScreen() {
           <TextInput
             value={inputText}
             onChangeText={setInputText}
-            placeholder="AI CFO에게 물어보세요..."
+            placeholder="AI 워렌 버핏에게 물어보세요..."
             placeholderTextColor={colors.textTertiary}
             style={[s.input, { color: colors.textPrimary }]}
             multiline

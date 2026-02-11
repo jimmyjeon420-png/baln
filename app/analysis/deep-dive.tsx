@@ -14,10 +14,14 @@ import {
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
-import { Stack } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../src/hooks/useTheme';
+import { PriceService } from '../../src/services/PriceService';
+import { AssetClass } from '../../src/types/price';
+import supabase from '../../src/services/supabase';
 
 interface AnalysisResult {
   name: string;
@@ -37,29 +41,58 @@ export default function DeepDiveScreen() {
   const [ticker, setTicker] = useState('');
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const priceService = new PriceService();
 
   const handleAnalyze = async () => {
     if (!ticker.trim()) return;
 
     setIsLoading(true);
+    setError(null);
+    setResult(null);
+
     try {
-      // TODO: Gemini API 호출 (src/services/gemini.ts 활용)
-      // 임시 Mock 데이터
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      setResult({
-        name: '삼성전자',
-        ticker: '005930',
-        currentPrice: 75000,
-        change: -2.3,
-        overview: '글로벌 반도체 및 전자제품 제조업체',
-        marketCap: '450조원',
-        per: 12.5,
-        pbr: 1.2,
-        recommendation: 'BUY',
-        reason: 'AI 반도체 수요 증가로 실적 개선 예상. 다만 단기 변동성이 있을 수 있으니 분할 매수를 권장합니다.',
+      // 1단계: Yahoo Finance로 실시간 가격 조회
+      console.log(`[DeepDive] 가격 조회 시작: ${ticker}`);
+      let priceData;
+      try {
+        priceData = await priceService.fetchPrice(ticker, AssetClass.STOCK, 'KRW');
+        console.log(`[DeepDive] 가격 조회 성공:`, priceData);
+      } catch (priceError) {
+        console.warn(`[DeepDive] 가격 조회 실패, AI만으로 분석:`, priceError);
+        // 가격 조회 실패해도 AI 분석은 시도 (Gemini가 Google Search로 찾음)
+      }
+
+      // 2단계: Gemini AI로 종목 분석
+      console.log(`[DeepDive] AI 분석 시작: ${ticker}`);
+      const { data, error: geminiError } = await supabase.functions.invoke('gemini-proxy', {
+        body: {
+          type: 'deep-dive',
+          data: {
+            ticker,
+            currentPrice: priceData?.currentPrice,
+            previousPrice: priceData?.previousPrice,
+            percentChange: priceData?.percentChange24h,
+          },
+        },
       });
-    } catch (error) {
-      console.error('[DeepDive] 분석 실패:', error);
+
+      if (geminiError) {
+        throw new Error(`AI 분석 실패: ${geminiError.message}`);
+      }
+
+      if (!data?.data) {
+        throw new Error('AI 응답이 비어있습니다');
+      }
+
+      console.log(`[DeepDive] AI 분석 완료:`, data.data);
+      setResult(data.data);
+
+    } catch (err: any) {
+      console.error('[DeepDive] 분석 실패:', err);
+      const errorMsg = err.message || '알 수 없는 오류가 발생했습니다';
+      setError(errorMsg);
+      Alert.alert('분석 실패', errorMsg);
     } finally {
       setIsLoading(false);
     }
@@ -94,6 +127,14 @@ export default function DeepDiveScreen() {
           title: '종목 딥다이브',
           headerStyle: { backgroundColor: colors.background },
           headerTintColor: colors.textPrimary,
+          headerLeft: () => (
+            <TouchableOpacity
+              onPress={() => router.back()}
+              style={{ marginLeft: 8, padding: 8 }}
+            >
+              <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
+            </TouchableOpacity>
+          ),
         }}
       />
       <ScrollView
@@ -126,11 +167,22 @@ export default function DeepDiveScreen() {
           activeOpacity={0.7}
         >
           {isLoading ? (
-            <ActivityIndicator color="#FFFFFF" />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <ActivityIndicator color="#FFFFFF" />
+              <Text style={s.analyzeButtonText}>분석 중...</Text>
+            </View>
           ) : (
-            <Text style={s.analyzeButtonText}>AI 분석 시작</Text>
+            <Text style={s.analyzeButtonText}>🔍 AI 분석 시작</Text>
           )}
         </TouchableOpacity>
+
+        {/* 에러 메시지 */}
+        {error && !isLoading && (
+          <View style={[s.errorCard, { backgroundColor: colors.surface }]}>
+            <Ionicons name="warning" size={20} color="#CF6679" />
+            <Text style={[s.errorText, { color: '#CF6679' }]}>{error}</Text>
+          </View>
+        )}
 
         {/* 결과 */}
         {result && !isLoading && (
@@ -300,5 +352,18 @@ const s = StyleSheet.create({
   reason: {
     fontSize: 15,
     lineHeight: 22,
+  },
+  errorCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+    gap: 12,
+  },
+  errorText: {
+    flex: 1,
+    fontSize: 14,
+    lineHeight: 20,
   },
 });

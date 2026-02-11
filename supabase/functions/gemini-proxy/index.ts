@@ -39,12 +39,24 @@ interface DeepDiveRequest {
   type: 'deep-dive';
   data: {
     ticker: string;
-    name: string;
-    // 추가 필드는 나중에 확장
+    currentPrice?: number;
+    previousPrice?: number;
+    percentChange?: number;
   };
 }
 
-type GeminiProxyRequest = MorningBriefingRequest | DeepDiveRequest;
+interface CFOChatRequest {
+  type: 'cfo-chat';
+  data: {
+    question: string;
+    conversationHistory?: Array<{
+      role: 'user' | 'assistant';
+      text: string;
+    }>;
+  };
+}
+
+type GeminiProxyRequest = MorningBriefingRequest | DeepDiveRequest | CFOChatRequest;
 
 // ============================================================================
 // 유틸리티 함수
@@ -222,6 +234,126 @@ ${(options?.includeRealEstate && options?.realEstateContext) ? `
 }
 
 // ============================================================================
+// Deep Dive: 개별 종목 AI 분석
+// ============================================================================
+
+async function generateDeepDive(reqData: DeepDiveRequest['data']) {
+  const { ticker, currentPrice, previousPrice, percentChange } = reqData;
+
+  // 가격 정보가 있으면 포함, 없으면 Gemini가 Google Search로 찾도록
+  const priceInfo = currentPrice
+    ? `현재 가격: ${currentPrice.toLocaleString()}원/달러 (어제 대비 ${percentChange?.toFixed(2)}%)`
+    : '최신 가격 정보를 Google Search로 찾아주세요.';
+
+  const prompt = `당신은 전문 투자 분석가입니다. 다음 종목을 Google Search로 최신 정보를 찾아 분석하고, JSON 형식으로 응답하세요.
+
+**종목: ${ticker}**
+${priceInfo}
+
+Google Search로 찾아야 할 정보:
+1. 종목 정식 명칭 (한글/영문)
+2. 현재 주가 (최신)
+3. 시가총액
+4. PER (주가수익비율)
+5. PBR (주가순자산비율)
+6. 최근 실적 및 뉴스
+7. 업종 및 주요 사업
+
+분석 후 다음 JSON 형식으로 응답:
+
+\`\`\`json
+{
+  "name": "종목 정식 명칭",
+  "ticker": "${ticker}",
+  "currentPrice": 현재가 (숫자),
+  "change": 전일 대비 등락률 (%, 숫자),
+  "overview": "회사 개요 및 주요 사업 (1-2문장)",
+  "marketCap": "시가총액 (예: 450조원, $2.8T)",
+  "per": PER 수치 (숫자, 적자면 음수),
+  "pbr": PBR 수치 (숫자),
+  "recommendation": "BUY" 또는 "SELL" 또는 "HOLD",
+  "reason": "추천 이유 (2-3문장, 최근 실적/뉴스 반영)"
+}
+\`\`\`
+
+**중요:**
+- 모든 답변은 한국어로 작성
+- recommendation은 반드시 "BUY", "SELL", "HOLD" 중 하나
+- 최신 뉴스와 실적을 반영한 현실적인 분석
+- reason은 구체적이고 근거 있게 작성
+`;
+
+  // Gemini API 호출
+  const responseText = await callGeminiWithSearch(prompt);
+
+  // JSON 정제 및 파싱
+  const analysis = cleanJsonResponse(responseText);
+
+  return {
+    ...analysis,
+    generatedAt: new Date().toISOString(),
+  };
+}
+
+// ============================================================================
+// Warren Buffett Chat: 대화형 투자 조언
+// ============================================================================
+
+async function generateCFOChat(reqData: CFOChatRequest['data']) {
+  const { question, conversationHistory = [] } = reqData;
+
+  // 대화 기록을 프롬프트에 포함
+  let conversationContext = '';
+  if (conversationHistory.length > 0) {
+    conversationContext = '\n\n**이전 대화:**\n';
+    conversationHistory.forEach(msg => {
+      conversationContext += `${msg.role === 'user' ? '사용자' : 'AI 워렌 버핏'}: ${msg.text}\n`;
+    });
+  }
+
+  const prompt = `당신은 워렌 버핏의 투자 철학을 따르는 AI 투자 조언자입니다. 사용자의 투자 질문에 **구체적이고 실용적인** 조언을 제공하세요.
+
+**워렌 버핏의 핵심 투자 원칙:**
+1. 가치 투자: 내재가치보다 낮은 가격에 매수
+2. 장기 투자: 10년 이상 보유할 수 있는 기업만 매수
+3. 이해 가능한 사업: 복잡한 비즈니스 모델 피하기
+4. 경쟁 우위(Moat): 진입 장벽이 높은 기업 선호
+5. 경영진의 정직성: 주주 친화적 경영진
+
+${conversationContext}
+
+**현재 질문: ${question}**
+
+**답변 가이드:**
+1. **구체적 숫자와 근거**: "분할 매수 권장"이 아니라 "3회로 나눠서, 각 30% 비중으로 매수"처럼 구체적으로
+2. **최신 정보 반영**: Google Search로 최신 뉴스, 실적, 시장 상황을 찾아서 반영
+3. **리스크 명확히**: 장점만 말하지 말고, 단점과 리스크도 균형있게 설명
+4. **실행 가능한 조언**: "장기 투자 하세요"가 아니라 "최소 3년 이상 보유, 분기별 실적 확인" 같은 구체적 가이드
+5. **한국어 자연스럽게**: 3-5문장으로 간결하게, 존댓말 사용
+
+**중요**: 단편적인 답변 금지! "좋은 질문입니다"같은 일반론 피하고, 실제 투자 결정에 도움되는 내용만.
+
+답변을 JSON 형식으로:
+\`\`\`json
+{
+  "answer": "구체적이고 실용적인 투자 조언 (3-5문장)"
+}
+\`\`\`
+`;
+
+  // Gemini API 호출
+  const responseText = await callGeminiWithSearch(prompt);
+
+  // JSON 정제 및 파싱
+  const chatResponse = cleanJsonResponse(responseText);
+
+  return {
+    ...chatResponse,
+    generatedAt: new Date().toISOString(),
+  };
+}
+
+// ============================================================================
 // 메인 핸들러
 // ============================================================================
 
@@ -259,8 +391,12 @@ serve(async (req: Request) => {
         break;
 
       case 'deep-dive':
-        // TODO: Deep Dive 구현
-        throw new Error('Deep Dive not implemented yet');
+        result = await generateDeepDive(body.data);
+        break;
+
+      case 'cfo-chat':
+        result = await generateCFOChat(body.data);
+        break;
 
       default:
         throw new Error(`Unknown request type: ${(body as any).type}`);
