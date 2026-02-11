@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import supabase from './supabase';
 
 // ============================================================================
 // [마켓플레이스] AI 종목 딥다이브 — 재무/기술/뉴스/AI 의견
@@ -20,6 +21,17 @@ import type {
 //    절대 API 키를 소스 코드에 하드코딩하지 마세요. 반드시 .env 파일을 통해 주입하세요.
 const API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY || '';
 const MODEL_NAME = process.env.EXPO_PUBLIC_GEMINI_MODEL || 'gemini-2.0-flash';
+
+// 🔍 디버그: API 키 로드 확인
+if (!API_KEY) {
+  console.error('❌ Gemini API 키가 로드되지 않았습니다!');
+  console.error('  1. .env 파일 확인');
+  console.error('  2. npx expo start --clear 실행');
+  console.error('  3. 앱 완전히 재시작');
+} else {
+  console.log('✅ Gemini API 키 로드됨:', API_KEY.substring(0, 8) + '...');
+  console.log('✅ 사용 모델:', MODEL_NAME);
+}
 
 // ============================================================================
 // [핵심] 한국어 → 티커 매핑 테이블 (UNKNOWN_ 이슈 해결)
@@ -265,15 +277,24 @@ const model = genAI.getGenerativeModel({ model: MODEL_NAME });
 // ============================================================================
 // 실시간 뉴스/시장 데이터를 위한 Google Search 도구가 포함된 모델
 // 참고: https://cloud.google.com/vertex-ai/generative-ai/docs/model-reference/gemini
-const modelWithSearch = genAI.getGenerativeModel({
-  model: MODEL_NAME,
-  tools: [
-    {
-      // @ts-ignore - Gemini 2.0 Google Search Tool (google_search_retrieval은 deprecated)
-      google_search: {},
-    },
-  ],
-});
+
+// ⚠️ TEMPORARY FIX: google_search 도구가 네트워크 에러를 일으키면 임시로 제거
+// TODO: Gemini 2.0-flash의 올바른 google_search 형식 확인 후 재활성화
+const USE_GOOGLE_SEARCH = true; // true로 변경하면 google_search 활성화
+
+const modelWithSearch = genAI.getGenerativeModel(
+  USE_GOOGLE_SEARCH
+    ? {
+        model: MODEL_NAME,
+        tools: [
+          {
+            // @ts-ignore - Gemini 2.0 Google Search Tool (google_search_retrieval은 deprecated)
+            google_search: {},
+          },
+        ],
+      }
+    : { model: MODEL_NAME } // google_search 비활성화 시 일반 모델 사용
+);
 
 export const getPortfolioAdvice = async (prompt: any) => {
   try {
@@ -689,124 +710,41 @@ export const generateMorningBriefing = async (
   }
 ): Promise<MorningBriefingResult> => {
   try {
-    const today = new Date();
-    const dateStr = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`;
-
-    // [핵심] 부동산 자산(RE_) 필터링 → Gemini에 개인 부동산 정보 노출 방지
-    const filteredPortfolio = portfolio.filter(p => !p.ticker?.startsWith('RE_'));
-
-    // profit_loss_rate 계산하여 프롬프트에 주입
-    const totalValue = filteredPortfolio.reduce((s, a) => s + a.currentValue, 0);
-    const portfolioWithProfitLoss = filteredPortfolio.map(p => {
-      const profitLossRate = p.avgPrice > 0
-        ? ((p.currentPrice - p.avgPrice) / p.avgPrice) * 100
-        : 0;
-      return {
-        ticker: p.ticker,
-        name: p.name,
-        value: p.currentValue,
-        allocation: p.allocation || (totalValue > 0 ? ((p.currentValue / totalValue) * 100).toFixed(1) : '0'),
-        profit_loss_rate: profitLossRate.toFixed(2) + '%',
-        avgPrice: p.avgPrice,
-        currentPrice: p.currentPrice,
-      };
+    // [핵심] Supabase Edge Function으로 Gemini API 프록시 호출
+    // 이유: 클라이언트 측 네트워크 제한 우회 + API 키 보안 강화
+    const { data, error } = await supabase.functions.invoke('gemini-proxy', {
+      body: {
+        type: 'morning-briefing',
+        data: {
+          portfolio: portfolio.map(p => ({
+            ticker: p.ticker,
+            name: p.name,
+            currentValue: p.currentValue,
+            avgPrice: p.avgPrice,
+            currentPrice: p.currentPrice,
+            allocation: p.allocation,
+          })),
+          options,
+        },
+      },
     });
 
-    const prompt = `
-당신은 한국의 고액자산가 전담 CFO입니다. 오늘(${dateStr}) 아침 브리핑을 작성해주세요.
-
-**[중요] 실시간 정보 활용 지침:**
-- Google Search를 통해 *지난 24시간* 이내의 최신 뉴스를 반드시 검색하세요
-- 검색 키워드 예시: "오늘 나스닥 종가", "Fed 금리 전망 ${today.getMonth() + 1}월", "Kevin Warsh 연준", "S&P 500 overnight"
-- 각 종목(${portfolioWithProfitLoss.map(p => p.ticker).join(', ')})의 최신 뉴스도 검색하세요
-- 검색 결과를 바탕으로 구체적인 수치와 이벤트를 인용하세요
-
-**포트폴리오 (수익률 포함):**
-${JSON.stringify(portfolioWithProfitLoss, null, 2)}
-
-**수익률 기반 맞춤 조언 규칙:**
-각 종목의 profit_loss_rate를 확인하고:
-- +30% 이상 수익: 일부 익절 검토 권고 (FOMO 경고)
-- +10~30% 수익: 목표가 설정 권고
-- -10% 이상 손실: 손절선 재검토 권고 (Panic Shield)
-- -20% 이상 손실: 적극적 리밸런싱 검토
-
-**브리핑 작성 규칙:**
-
-1. **거시경제 요약 (macroSummary)**
-   - *오늘 실제로 발생한* 글로벌 이슈 3가지 (Google Search 결과 기반)
-   - 미국 금리 인하/동결/인상 확률 예측 (CME FedWatch 참조)
-   - 시장 심리 (BULLISH/NEUTRAL/BEARISH)
-   - 구체적 수치 포함 (예: "나스닥 전일 종가 -1.2%", "10년물 국채 4.25%")
-
-2. **포트폴리오 액션 (portfolioActions)**
-   - 각 보유 종목별 오늘의 권장 행동
-   - action: BUY(추가 매수), HOLD(보유), SELL(매도 검토), WATCH(관찰)
-   - priority: HIGH(즉시 행동), MEDIUM(이번 주), LOW(참고)
-   - **수익률 반영**: profit_loss_rate가 높은 종목은 익절, 낮은 종목은 손절 관점
-   - 최신 뉴스 기반 근거 (예: "어젯밤 NVDA 실적 발표 - 예상치 상회")
-
-3. **CFO 날씨 (cfoWeather)**
-   - emoji: 포트폴리오 상태를 나타내는 이모지 (☀️/⛅/🌧️/⛈️/❄️)
-   - status: 한 줄 상태 (예: "맑음: 안정적")
-   - message: 오늘의 한 마디 조언 (실시간 뉴스 반영)
-
-${(options?.includeRealEstate && options?.realEstateContext) ? `
-4. **부동산 인사이트 (realEstateInsight)**
-   - 컨텍스트: ${options.realEstateContext}
-   - 분석: 해당 부동산의 시세 동향 및 투자 관점 분석
-   - 권장사항: 보유/매도/추가매수 관점 조언
-` : `
-**[금지] realEstateInsight 필드를 절대 생성하지 마세요. 포트폴리오에 부동산 자산이 있더라도 무시하세요.**
-`}
-
-**출력 형식 (JSON만, 마크다운 금지):**
-{
-  "macroSummary": {
-    "title": "오늘의 시장 핵심",
-    "highlights": ["[실시간] 구체적 이슈1", "[실시간] 구체적 이슈2", "[실시간] 구체적 이슈3"],
-    "interestRateProbability": "동결 65% / 인하 30% / 인상 5%",
-    "marketSentiment": "NEUTRAL"
-  },
-  "portfolioActions": [
-    {"ticker": "NVDA", "name": "엔비디아", "action": "HOLD", "reason": "[실시간 뉴스 기반] 구체적 근거", "priority": "LOW"}
-  ],
-  "realEstateInsight": null,
-  "cfoWeather": {
-    "emoji": "⛅",
-    "status": "구름 조금: 관망 필요",
-    "message": "[오늘 시장 상황 반영] 구체적 조언"
-  }
-}
-`;
-
-    // [핵심] Google Search 그라운딩이 활성화된 모델 사용
-    const result = await modelWithSearch.generateContent(prompt);
-    const responseText = result.response.text();
-
-    // JSON 정제
-    let cleanText = responseText
-      .replace(/```json\s*/gi, '')
-      .replace(/```\s*/g, '')
-      .trim();
-
-    const jsonStart = cleanText.indexOf('{');
-    const jsonEnd = cleanText.lastIndexOf('}');
-    if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
-      cleanText = cleanText.substring(jsonStart, jsonEnd + 1);
+    if (error) {
+      console.error('[Edge Function] Error object:', JSON.stringify(error, null, 2));
+      throw new Error(`Edge Function Error: ${error.message || JSON.stringify(error)}`);
     }
 
-    const briefing = JSON.parse(cleanText);
-
-    // [방어] includeRealEstate 옵션 없으면 부동산 인사이트 강제 제거
-    if (!options?.includeRealEstate || !options?.realEstateContext) {
-      delete briefing.realEstateInsight;
+    if (!data) {
+      console.error('[Edge Function] No data returned');
+      throw new Error('Edge Function returned no data');
     }
 
-    return {
-      ...briefing,
-      generatedAt: new Date().toISOString(),
-    };
+    if (!data.success) {
+      console.error('[Edge Function] Unsuccessful response:', JSON.stringify(data, null, 2));
+      throw new Error(`Edge Function Error: ${data.error || 'Unknown error'}`);
+    }
+
+    return data.data as MorningBriefingResult;
 
   } catch (error) {
     console.error("Morning Briefing Error:", error);
@@ -1013,6 +951,17 @@ ${JSON.stringify(portfolioWithAllocation.map(p => ({
   } catch (error) {
     console.error("Portfolio Risk Analysis Error:", error);
 
+    // 🔍 상세 에러 로그 (디버깅용)
+    if (error instanceof Error) {
+      console.error('에러 메시지:', error.message);
+      console.error('에러 스택:', error.stack);
+    }
+
+    // API 키 확인
+    if (!API_KEY) {
+      console.error('❌ API 키가 없습니다. .env 파일을 확인하고 앱을 재시작하세요.');
+    }
+
     // 에러 시 기본값 반환
     const totalValue = portfolio.reduce((sum, asset) => sum + asset.currentValue, 0);
     const totalCostBasis = portfolio.reduce(
@@ -1020,16 +969,36 @@ ${JSON.stringify(portfolioWithAllocation.map(p => ({
       0
     );
 
+    // 에러 종류에 따른 맞춤 메시지
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const isNetworkError = errorMessage.includes('Network request failed');
+    const isAPIKeyError = errorMessage.includes('API_KEY_INVALID') || !API_KEY;
+
+    let adviceMessages = [
+      '포트폴리오 분석 중 오류가 발생했습니다.',
+      '잠시 후 다시 시도해주세요.',
+    ];
+
+    if (isNetworkError) {
+      adviceMessages = [
+        '⚠️ 네트워크 연결 오류',
+        'Wi-Fi 또는 모바일 데이터 연결을 확인해주세요.',
+        '앱을 완전히 종료 후 재시작해보세요.',
+      ];
+    } else if (isAPIKeyError) {
+      adviceMessages = [
+        '⚠️ API 설정 오류',
+        '앱을 재시작해주세요. (설정 → 앱 강제 종료)',
+        '문제가 지속되면 개발자에게 문의해주세요.',
+      ];
+    }
+
     return {
       panicShieldIndex: 50,
       panicShieldLevel: 'CAUTION',
       stopLossGuidelines: [],
       fomoAlerts: [],
-      personalizedAdvice: [
-        '포트폴리오 분석 중 오류가 발생했습니다.',
-        '잠시 후 다시 시도해주세요.',
-        '네트워크 연결을 확인해주세요.',
-      ],
+      personalizedAdvice: adviceMessages,
       portfolioSnapshot: {
         totalValue,
         totalGainLoss: totalValue - totalCostBasis,

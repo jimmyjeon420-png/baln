@@ -146,6 +146,7 @@ const SENTIMENT_BG_COLORS = {
 // ============================================================================
 
 function SkeletonBar({ width }: { width: number | `${number}%` }) {
+  const { colors } = useTheme();
   const opacity = React.useRef(new Animated.Value(0.3)).current;
 
   React.useEffect(() => {
@@ -168,7 +169,12 @@ function SkeletonBar({ width }: { width: number | `${number}%` }) {
   return (
     <Animated.View
       style={[
-        styles.skeletonBar,
+        {
+          height: 14,
+          backgroundColor: colors.surfaceLight,
+          borderRadius: 4,
+          marginVertical: 4,
+        },
         { width: typeof width === 'number' ? width : width, opacity },
       ]}
     />
@@ -200,6 +206,10 @@ interface LayerSectionProps {
   onPressPremium?: () => void;
   /** 자식 콘텐츠 */
   children: React.ReactNode;
+  /** 스타일 객체 */
+  styles: any;
+  /** 색상 객체 */
+  COLORS: any;
 }
 
 function LayerSection({
@@ -213,6 +223,8 @@ function LayerSection({
   isLocked = false,
   onPressPremium,
   children,
+  styles,
+  COLORS,
 }: LayerSectionProps) {
   return (
     <View style={styles.layerContainer}>
@@ -288,6 +300,9 @@ function LayerSection({
 // ============================================================================
 
 function MacroChainVisual({ chain }: { chain: string[] }) {
+  const { colors } = useTheme();
+  const styles = React.useMemo(() => createStyles(colors), [colors]);
+
   if (!chain || chain.length === 0) return null;
 
   return (
@@ -303,8 +318,8 @@ function MacroChainVisual({ chain }: { chain: string[] }) {
                     index === 0
                       ? LAYER_COLORS.macro
                       : index === chain.length - 1
-                        ? COLORS.sell
-                        : COLORS.textTertiary,
+                        ? colors.sell
+                        : colors.textTertiary,
                 },
               ]}
             />
@@ -321,7 +336,7 @@ function MacroChainVisual({ chain }: { chain: string[] }) {
           {index < chain.length - 1 && (
             <View style={styles.chainArrowContainer}>
               <View style={styles.chainLine} />
-              <Ionicons name="chevron-down" size={14} color={COLORS.textTertiary} />
+              <Ionicons name="chevron-down" size={14} color={colors.textTertiary} />
             </View>
           )}
         </View>
@@ -343,8 +358,10 @@ function PortfolioImpactVisual({
   healthScoreChange: number;
   message: string;
 }) {
+  const { colors } = useTheme();
+  const styles = React.useMemo(() => createStyles(colors), [colors]);
   const isPositive = percentChange >= 0;
-  const changeColor = isPositive ? COLORS.buy : COLORS.sell;
+  const changeColor = isPositive ? colors.buy : colors.sell;
 
   return (
     <View style={styles.impactContainer}>
@@ -371,10 +388,10 @@ function PortfolioImpactVisual({
               size={18}
               color={
                 healthScoreChange > 0
-                  ? COLORS.buy
+                  ? colors.buy
                   : healthScoreChange < 0
-                    ? COLORS.sell
-                    : COLORS.textTertiary
+                    ? colors.sell
+                    : colors.textTertiary
               }
             />
             <Text style={styles.impactMetaText}>
@@ -553,6 +570,8 @@ export default React.forwardRef<View, ContextBriefCardProps>(
             color={LAYER_COLORS.historical}
             isExpanded={expandedLayers[1]}
             onToggle={() => toggleLayer(1)}
+            styles={styles}
+            COLORS={COLORS}
           >
             <Text style={styles.layerBodyText}>
               {historicalContext || fact || '역사적 맥락 데이터를 불러오는 중입니다...'}
@@ -568,6 +587,8 @@ export default React.forwardRef<View, ContextBriefCardProps>(
             color={LAYER_COLORS.macro}
             isExpanded={expandedLayers[2]}
             onToggle={() => toggleLayer(2)}
+            styles={styles}
+            COLORS={COLORS}
           >
             {macroChain && macroChain.length > 0 ? (
               <MacroChainVisual chain={macroChain} />
@@ -589,6 +610,8 @@ export default React.forwardRef<View, ContextBriefCardProps>(
             onToggle={() => toggleLayer(3)}
             isLocked={!effectivePremium}
             onPressPremium={onLearnMore}
+            styles={styles}
+            COLORS={COLORS}
           >
             <Text style={styles.layerBodyText}>
               {institutionalBehavior ||
@@ -607,6 +630,8 @@ export default React.forwardRef<View, ContextBriefCardProps>(
             onToggle={() => toggleLayer(4)}
             isLocked={!effectivePremium}
             onPressPremium={onLearnMore}
+            styles={styles}
+            COLORS={COLORS}
           >
             {portfolioImpact ? (
               <PortfolioImpactVisual
