@@ -412,6 +412,110 @@ export default function CheckupScreen() {
           />
         )}
 
+        {/* AI 심화 분석 도구 (Agent 4) */}
+        <View style={{ marginHorizontal: 16, marginTop: 24 }}>
+          <Text style={{ fontSize: 18, fontWeight: '700', marginBottom: 4, color: colors.textPrimary }}>
+            🤖 AI 심화 분석
+          </Text>
+          <Text style={{ fontSize: 13, color: colors.textTertiary, marginBottom: 16 }}>
+            더 깊은 인사이트가 필요하신가요?
+          </Text>
+
+          <View style={{ gap: 12 }}>
+            {/* 종목 딥다이브 */}
+            <TouchableOpacity
+              onPress={() => router.push('/analysis/deep-dive')}
+              style={{
+                backgroundColor: colors.surface,
+                borderRadius: 12,
+                padding: 16,
+                flexDirection: 'row',
+                alignItems: 'center',
+              }}
+            >
+              <Text style={{ fontSize: 32, marginRight: 16 }}>📈</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 15, fontWeight: '600', color: colors.textPrimary }}>
+                  종목 딥다이브
+                </Text>
+                <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>
+                  개별 주식 심층 분석
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
+            </TouchableOpacity>
+
+            {/* What-If 시뮬레이션 */}
+            <TouchableOpacity
+              onPress={() => router.push('/analysis/what-if')}
+              style={{
+                backgroundColor: colors.surface,
+                borderRadius: 12,
+                padding: 16,
+                flexDirection: 'row',
+                alignItems: 'center',
+              }}
+            >
+              <Text style={{ fontSize: 32, marginRight: 16 }}>🧪</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 15, fontWeight: '600', color: colors.textPrimary }}>
+                  What-If 시뮬레이션
+                </Text>
+                <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>
+                  시장 폭락 시나리오 테스트
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
+            </TouchableOpacity>
+
+            {/* 세금 리포트 */}
+            <TouchableOpacity
+              onPress={() => router.push('/analysis/tax-report')}
+              style={{
+                backgroundColor: colors.surface,
+                borderRadius: 12,
+                padding: 16,
+                flexDirection: 'row',
+                alignItems: 'center',
+              }}
+            >
+              <Text style={{ fontSize: 32, marginRight: 16 }}>🧾</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 15, fontWeight: '600', color: colors.textPrimary }}>
+                  세금 리포트
+                </Text>
+                <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>
+                  절세 전략 제안
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
+            </TouchableOpacity>
+
+            {/* AI CFO 채팅 */}
+            <TouchableOpacity
+              onPress={() => router.push('/analysis/cfo-chat')}
+              style={{
+                backgroundColor: colors.surface,
+                borderRadius: 12,
+                padding: 16,
+                flexDirection: 'row',
+                alignItems: 'center',
+              }}
+            >
+              <Text style={{ fontSize: 32, marginRight: 16 }}>💬</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 15, fontWeight: '600', color: colors.textPrimary }}>
+                  AI CFO 채팅
+                </Text>
+                <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>
+                  실시간 대화형 조언
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
         {/* 면책 문구 */}
         <View style={s.disclaimerBox}>
           <Text style={s.disclaimer}>

@@ -16,6 +16,7 @@ import { useScreenTracking } from '../../src/hooks/useAnalytics';
 import { COLORS, SIZES } from '../../src/styles/theme';
 import RealEstatePreview from '../../src/components/more/RealEstatePreview';
 import { useTheme, ThemeMode } from '../../src/hooks/useTheme';
+import { CreditDisplay } from '../../src/components/common/CreditDisplay';
 
 // =============================================================================
 // 타입 정의
@@ -316,6 +317,13 @@ export default function ProfileScreen() {
 
         {/* ── 부동산 보유 현황 (있을 때만 표시) ── */}
         {user && <RealEstatePreview />}
+
+        {/* ── 크레딧 표시 (Agent 3) ── */}
+        {user && (
+          <View style={{ paddingHorizontal: 16, paddingVertical: 12 }}>
+            <CreditDisplay />
+          </View>
+        )}
 
         {/* ── 테마 설정 섹션 ── */}
         {renderSection(themeSection, -1)}
