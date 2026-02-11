@@ -8,6 +8,7 @@
 
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useTheme } from '../../../hooks/useTheme';
 
 interface CfoWeather {
   emoji: string;
@@ -31,24 +32,25 @@ function getDailyMessage(totalGainLoss: number): { text: string; emoji: string }
 }
 
 export default function ReassuranceCard({ totalGainLoss, cfoWeather }: ReassuranceCardProps) {
+  const { colors, shadows } = useTheme();
   const daily = getDailyMessage(totalGainLoss);
 
   return (
-    <View style={s.card}>
-      <Text style={s.cardTitle}>
+    <View style={[s.card, { backgroundColor: colors.card, borderColor: colors.border, ...shadows.md }]}>
+      <Text style={[s.cardTitle, { color: colors.text }]}>
         {'\uD83D\uDCAC 안심 한마디'}
       </Text>
 
       {cfoWeather && (
-        <View style={s.weatherRow}>
+        <View style={[s.weatherRow, { backgroundColor: colors.surface }]}>
           <Text style={s.weatherEmoji}>{cfoWeather.emoji}</Text>
-          <Text style={s.weatherMessage}>{cfoWeather.message}</Text>
+          <Text style={[s.weatherMessage, { color: colors.text }]}>{cfoWeather.message}</Text>
         </View>
       )}
 
       <View style={s.dailyRow}>
         <Text style={s.dailyEmoji}>{daily.emoji}</Text>
-        <Text style={s.dailyText}>{daily.text}</Text>
+        <Text style={[s.dailyText, { color: colors.textSecondary }]}>{daily.text}</Text>
       </View>
     </View>
   );
@@ -56,18 +58,19 @@ export default function ReassuranceCard({ totalGainLoss, cfoWeather }: Reassuran
 
 const s = StyleSheet.create({
   card: {
-    backgroundColor: '#141414',
+    // backgroundColor: '#141414', // Now dynamic via colors.card
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#1B3A2A',
+    // borderColor: '#1B3A2A', // Now dynamic via colors.border
     padding: 24,
     marginHorizontal: 16,
     marginTop: 12,
+    // shadows added dynamically
   },
   cardTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#FFFFFF',
+    // color: '#FFFFFF', // Now dynamic via colors.text
     marginBottom: 16,
   },
   weatherRow: {
@@ -75,7 +78,7 @@ const s = StyleSheet.create({
     alignItems: 'flex-start',
     gap: 10,
     marginBottom: 14,
-    backgroundColor: '#1A2A1F',
+    // backgroundColor: '#1A2A1F', // Now dynamic via colors.surface
     padding: 14,
     borderRadius: 12,
   },
@@ -85,7 +88,7 @@ const s = StyleSheet.create({
   weatherMessage: {
     flex: 1,
     fontSize: 16,
-    color: '#FFFFFF',
+    // color: '#FFFFFF', // Now dynamic via colors.text
     lineHeight: 24,
   },
   dailyRow: {
@@ -98,7 +101,7 @@ const s = StyleSheet.create({
   },
   dailyText: {
     fontSize: 16,
-    color: '#B0B0B0',
+    // color: '#B0B0B0', // Now dynamic via colors.textSecondary
     lineHeight: 22,
   },
 });

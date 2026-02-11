@@ -300,13 +300,13 @@ export interface ValueAnalysis {
   };
 
   /** 자산별 분류 */
-  assetBreakdown: Array<{
+  assetBreakdown: {
     assetId: string;
     assetName: string;
     currentValue: number;
     safetyScore: number;
     personality: AssetPersonality;
-  }>;
+  }[];
 
   /** 종합 판단 */
   verdict: 'VERY_SAFE' | 'SAFE' | 'MODERATE' | 'RISKY' | 'VERY_RISKY';

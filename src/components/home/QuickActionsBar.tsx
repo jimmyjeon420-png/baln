@@ -24,11 +24,11 @@ const ACTIONS = [
 // QuickActionsBar — 퀵 액션 바 (안내 데스크 바로가기 역할)
 // ============================================================================
 
-export default function QuickActionsBar({
+const QuickActionsBar = ({
   onAddAsset,
   onRealEstate,
   onPrediction,
-}: QuickActionsBarProps) {
+}: QuickActionsBarProps) => {
   const haptics = useHaptics();
 
   const handlers: Record<string, () => void> = {
@@ -57,7 +57,20 @@ export default function QuickActionsBar({
       ))}
     </View>
   );
-}
+};
+
+// ============================================================================
+// React.memo 최적화: 콜백 함수 참조 비교 (부모에서 useCallback으로 메모이제이션 필요)
+// ============================================================================
+
+export default React.memo(QuickActionsBar, (prev, next) => {
+  // 세 콜백 함수의 참조가 모두 같으면 리렌더링 방지
+  return (
+    prev.onAddAsset === next.onAddAsset &&
+    prev.onRealEstate === next.onRealEstate &&
+    prev.onPrediction === next.onPrediction
+  );
+});
 
 // ============================================================================
 // 스타일

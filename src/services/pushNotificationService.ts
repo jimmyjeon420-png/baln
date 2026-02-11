@@ -43,7 +43,7 @@ import supabase from './supabase';
 export async function registerForPushNotifications(): Promise<string | null> {
   // 웹에서는 푸시 알림 불가 (expo-device 미설치이므로 Platform으로 대체)
   if (Platform.OS === 'web') {
-    console.log('[Push] 웹에서는 푸시 알림을 사용할 수 없습니다');
+    if (__DEV__) console.log('[Push] 웹에서는 푸시 알림을 사용할 수 없습니다');
     return null;
   }
 
@@ -59,7 +59,7 @@ export async function registerForPushNotifications(): Promise<string | null> {
     }
 
     if (finalStatus !== 'granted') {
-      console.log('[Push] 알림 권한이 거부되었습니다');
+      if (__DEV__) console.log('[Push] 알림 권한이 거부되었습니다');
       return null;
     }
 
@@ -69,7 +69,7 @@ export async function registerForPushNotifications(): Promise<string | null> {
     });
 
     const token = tokenData.data;
-    console.log('[Push] 토큰 획득:', token);
+    if (__DEV__) console.log('[Push] 토큰 획득:', token);
 
     // Android 채널 설정
     if (Platform.OS === 'android') {
@@ -125,7 +125,7 @@ export async function savePushToken(userId: string, token: string): Promise<void
       // push_token 컬럼이 아직 DB에 없을 수 있음 → 경고만 출력
       console.warn('[Push] 토큰 저장 실패 (컬럼 미존재 가능):', error.message);
     } else {
-      console.log('[Push] 토큰 DB 저장 완료');
+      if (__DEV__) console.log('[Push] 토큰 DB 저장 완료');
     }
   } catch (e) {
     console.warn('[Push] 토큰 저장 에러:', e);
@@ -168,7 +168,7 @@ export async function scheduleMorningBriefingNotification(): Promise<void> {
       },
     });
 
-    console.log('[Push] 아침 맥락 카드 알림 예약 완료 (07:30)');
+    if (__DEV__) console.log('[Push] 아침 맥락 카드 알림 예약 완료 (07:30)');
   } catch (e) {
     console.warn('[Push] 아침 알림 예약 실패:', e);
   }
@@ -218,7 +218,7 @@ export async function sendCrisisNotification(
       trigger: null, // 즉시 발송
     });
 
-    console.log(`[Push] 위기 알림 발송 완료: ${level} — ${headline}`);
+    if (__DEV__) console.log(`[Push] 위기 알림 발송 완료: ${level} — ${headline}`);
   } catch (e) {
     console.warn('[Push] 위기 알림 발송 실패:', e);
   }

@@ -42,10 +42,10 @@ interface HealthSignalCardProps {
   gradeLabel: string | null;
 
   /** 관심자산별 개별 신호등 (최대 5개) */
-  assetSignals: Array<{
+  assetSignals: {
     name: string;
     signal: 'green' | 'yellow' | 'red';
-  }>;
+  }[];
 
   /** 자산 등록 여부 */
   hasAssets: boolean;
@@ -57,11 +57,11 @@ interface HealthSignalCardProps {
   onAddAssets?: () => void;
 
   /** 6팩터 상세 데이터 (optional) */
-  healthFactors?: Array<{
+  healthFactors?: {
     label: string;
     score: number;
     weight: number; // 0~100 (가중치 %)
-  }>;
+  }[];
 
   /** 총 자산 금액 (원, optional) */
   totalAssets?: number;
@@ -130,7 +130,7 @@ function formatAssetAmount(amount: number): string {
 // 메인 컴포넌트
 // ============================================================================
 
-export default function HealthSignalCard({
+const HealthSignalCard = React.memo(({
   healthScore,
   healthGrade,
   gradeLabel,
@@ -141,7 +141,7 @@ export default function HealthSignalCard({
   healthFactors,
   totalAssets,
   dailyChangeRate,
-}: HealthSignalCardProps) {
+}: HealthSignalCardProps) => {
   const [showDetail, setShowDetail] = useState(false);
   const signalColor = getSignalColor(healthScore);
   const signalEmoji = getSignalEmoji(healthScore);
@@ -295,7 +295,22 @@ export default function HealthSignalCard({
       </Modal>
     </View>
   );
-}
+}, (prevProps, nextProps) => {
+  // 성능 최적화: props 비교 함수 (변경 없으면 리렌더링 스킵)
+  return (
+    prevProps.healthScore === nextProps.healthScore &&
+    prevProps.healthGrade === nextProps.healthGrade &&
+    prevProps.gradeLabel === nextProps.gradeLabel &&
+    prevProps.hasAssets === nextProps.hasAssets &&
+    prevProps.isLoading === nextProps.isLoading &&
+    prevProps.totalAssets === nextProps.totalAssets &&
+    prevProps.dailyChangeRate === nextProps.dailyChangeRate &&
+    JSON.stringify(prevProps.assetSignals) === JSON.stringify(nextProps.assetSignals) &&
+    JSON.stringify(prevProps.healthFactors) === JSON.stringify(nextProps.healthFactors)
+  );
+});
+
+export default HealthSignalCard;
 
 // ============================================================================
 // 스타일

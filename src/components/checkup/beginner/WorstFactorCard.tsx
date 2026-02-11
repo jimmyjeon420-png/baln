@@ -6,12 +6,13 @@
  * Wave 4: 클릭 시 상세 설명 모달 표시 + 역사적 맥락 추가
  */
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import type { FactorResult } from '../../../services/rebalanceScore';
 import type { Asset } from '../../../types/asset';
 import FactorExplanationModal from '../FactorExplanationModal';
 import { getFactorType, FACTOR_EXPLANATIONS } from '../../../data/factorExplanations';
+import { useTheme } from '../../../hooks/useTheme';
 
 interface WorstFactorCardProps {
   factors: FactorResult[];
@@ -71,6 +72,7 @@ function getScoreColor(score: number): string {
 
 export default function WorstFactorCard({ factors, allAssets }: WorstFactorCardProps) {
   const [modalVisible, setModalVisible] = useState(false);
+  const { colors } = useTheme();
 
   if (!factors || factors.length === 0) return null;
 
@@ -83,22 +85,58 @@ export default function WorstFactorCard({ factors, allAssets }: WorstFactorCardP
   const factorType = getFactorType(worst.label);
   const historicalContext = factorType ? FACTOR_EXPLANATIONS[factorType].historicalContext : null;
 
+  // 다이나믹 스타일 생성
+  const dynamicStyles = useMemo(() => ({
+    card: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+    },
+    cardTitle: {
+      color: colors.textPrimary,
+    },
+    factorLabel: {
+      color: colors.textPrimary,
+    },
+    barTrack: {
+      backgroundColor: colors.borderLight,
+    },
+    comment: {
+      color: colors.textSecondary,
+    },
+    contextContainer: {
+      // 경고 배경색을 테마에 맞게 동적으로 적용 (다크/라이트 모드 대응)
+      backgroundColor: `${colors.warning}15`, // 경고색의 투명도 10%
+    },
+    contextText: {
+      color: colors.warning,
+    },
+    tapHintText: {
+      color: colors.primary,
+    },
+    tapHintIcon: {
+      color: colors.primary,
+    },
+    tapHintBorder: {
+      borderTopColor: colors.border,
+    },
+  }), [colors]);
+
   return (
     <>
       <TouchableOpacity
-        style={s.card}
+        style={[s.card, dynamicStyles.card]}
         activeOpacity={0.7}
         onPress={() => setModalVisible(true)}
       >
-      <Text style={s.cardTitle}>주의할 점</Text>
+      <Text style={[s.cardTitle, dynamicStyles.cardTitle]}>주의할 점</Text>
 
       <View style={s.factorRow}>
         <Text style={s.icon}>{worst.icon}</Text>
         <View style={s.factorContent}>
-          <Text style={s.factorLabel}>{simplifiedLabel}</Text>
+          <Text style={[s.factorLabel, dynamicStyles.factorLabel]}>{simplifiedLabel}</Text>
 
           {/* Score bar */}
-          <View style={s.barTrack}>
+          <View style={[s.barTrack, dynamicStyles.barTrack]}>
             <View
               style={[
                 s.barFill,
@@ -116,20 +154,20 @@ export default function WorstFactorCard({ factors, allAssets }: WorstFactorCardP
         </View>
       </View>
 
-      <Text style={s.comment}>{getStoryMessage(worst, allAssets) ?? worst.comment}</Text>
+      <Text style={[s.comment, dynamicStyles.comment]}>{getStoryMessage(worst, allAssets) ?? worst.comment}</Text>
 
       {/* 역사적 맥락 */}
       {historicalContext && (
-        <View style={s.contextContainer}>
+        <View style={[s.contextContainer, dynamicStyles.contextContainer]}>
           <Text style={s.contextIcon}>📚</Text>
-          <Text style={s.contextText}>{historicalContext}</Text>
+          <Text style={[s.contextText, dynamicStyles.contextText]}>{historicalContext}</Text>
         </View>
       )}
 
       {/* 탭해서 자세히 보기 힌트 */}
-      <View style={s.tapHint}>
-        <Text style={s.tapHintText}>탭해서 자세히 알아보기</Text>
-        <Text style={s.tapHintIcon}>→</Text>
+      <View style={[s.tapHint, dynamicStyles.tapHintBorder]}>
+        <Text style={[s.tapHintText, dynamicStyles.tapHintText]}>탭해서 자세히 알아보기</Text>
+        <Text style={[s.tapHintIcon, dynamicStyles.tapHintIcon]}>→</Text>
       </View>
     </TouchableOpacity>
 
@@ -145,10 +183,8 @@ export default function WorstFactorCard({ factors, allAssets }: WorstFactorCardP
 
 const s = StyleSheet.create({
   card: {
-    backgroundColor: '#141414',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#2A2A2A',
     padding: 24,
     marginHorizontal: 16,
     marginTop: 12,
@@ -156,7 +192,6 @@ const s = StyleSheet.create({
   cardTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#FFFFFF',
     marginBottom: 16,
   },
   factorRow: {
@@ -175,12 +210,10 @@ const s = StyleSheet.create({
   factorLabel: {
     fontSize: 17,
     fontWeight: '600',
-    color: '#FFFFFF',
     marginBottom: 8,
   },
   barTrack: {
     height: 8,
-    backgroundColor: '#2A2A2A',
     borderRadius: 4,
     overflow: 'hidden',
     marginBottom: 6,
@@ -195,7 +228,6 @@ const s = StyleSheet.create({
   },
   comment: {
     fontSize: 15,
-    color: '#B0B0B0',
     lineHeight: 22,
     marginBottom: 12,
   },
@@ -203,7 +235,6 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 8,
-    backgroundColor: 'rgba(255,183,77,0.1)',
     borderRadius: 8,
     padding: 12,
     marginTop: 12,
@@ -215,7 +246,6 @@ const s = StyleSheet.create({
   contextText: {
     flex: 1,
     fontSize: 14,
-    color: '#FFB74D',
     lineHeight: 20,
   },
   tapHint: {
@@ -226,15 +256,12 @@ const s = StyleSheet.create({
     marginTop: 16,
     paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: '#2A2A2A',
   },
   tapHintText: {
     fontSize: 14,
-    color: '#4CAF50',
     fontWeight: '600',
   },
   tapHintIcon: {
     fontSize: 14,
-    color: '#4CAF50',
   },
 });

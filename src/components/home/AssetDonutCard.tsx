@@ -56,7 +56,7 @@ const CENTER = SIZE / 2;
 // AssetDonutCard — SVG 도넛 차트 (자산 배분 보고서 역할)
 // ============================================================================
 
-export default function AssetDonutCard({ slices, totalAssets }: AssetDonutCardProps) {
+const AssetDonutCard = ({ slices, totalAssets }: AssetDonutCardProps) => {
   // 데이터 없으면 렌더링 안 함
   if (slices.length === 0) return null;
 
@@ -140,7 +140,26 @@ export default function AssetDonutCard({ slices, totalAssets }: AssetDonutCardPr
       </View>
     </View>
   );
-}
+};
+
+// ============================================================================
+// React.memo 최적화: slices 배열과 totalAssets 비교
+// ============================================================================
+
+export default React.memo(AssetDonutCard, (prev, next) => {
+  // totalAssets가 같고, slices 배열 길이와 각 항목이 같으면 리렌더링 방지
+  if (prev.totalAssets !== next.totalAssets) return false;
+  if (prev.slices.length !== next.slices.length) return false;
+
+  return prev.slices.every((slice, i) => {
+    const nextSlice = next.slices[i];
+    return (
+      slice.category === nextSlice.category &&
+      slice.value === nextSlice.value &&
+      slice.percent === nextSlice.percent
+    );
+  });
+});
 
 // ============================================================================
 // 스타일

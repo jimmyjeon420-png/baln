@@ -7,6 +7,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, LayoutAnimation, Platform, UIManager } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { FomoSubScores } from '../services/gemini';
+import { useTheme } from '../hooks/useTheme';
 
 // Android 레이아웃 애니메이션 활성화
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -49,6 +50,7 @@ interface FomoVaccineCardProps {
 
 // 가이드 섹션 컴포넌트 (경고 유무와 관계없이 동일)
 function FomoGuideSection() {
+  const { colors } = useTheme();
   const [showGuide, setShowGuide] = useState(false);
 
   const toggleGuide = () => {
@@ -59,84 +61,84 @@ function FomoGuideSection() {
   return (
     <>
       <TouchableOpacity
-        style={styles.guideToggle}
+        style={[styles.guideToggle, { backgroundColor: colors.surface }]}
         onPress={toggleGuide}
         activeOpacity={0.7}
       >
-        <Ionicons name="help-circle-outline" size={16} color="#888888" />
-        <Text style={styles.guideToggleText}>
+        <Ionicons name="help-circle-outline" size={16} color={colors.textTertiary} />
+        <Text style={[styles.guideToggleText, { color: colors.textTertiary }]}>
           이 점수는 무엇인가요?
         </Text>
         <Ionicons
           name={showGuide ? 'chevron-up' : 'chevron-down'}
           size={14}
-          color="#888888"
+          color={colors.textTertiary}
         />
       </TouchableOpacity>
 
       {showGuide && (
-        <View style={styles.guideContainer}>
+        <View style={[styles.guideContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           {/* 개념 설명 + 학술 근거 */}
-          <View style={styles.guideSection}>
-            <Text style={styles.guideSectionTitle}>FOMO Vaccine이란?</Text>
-            <Text style={styles.guideText}>
+          <View style={[styles.guideSection, { borderBottomColor: colors.border }]}>
+            <Text style={[styles.guideSectionTitle, { color: colors.textSecondary }]}>FOMO Vaccine이란?</Text>
+            <Text style={[styles.guideText, { color: colors.textTertiary }]}>
               행동재무학에서 FOMO는{' '}
-              <Text style={styles.guideSource}>희소성 편향(Scarcity Bias)</Text>의 일종입니다.
+              <Text style={[styles.guideSource, { color: colors.info }]}>희소성 편향(Scarcity Bias)</Text>의 일종입니다.
               "남들은 다 벌고 있는데 나만 빠지면 어쩌지?"라는 불안감이
               이미 고점인 종목을 추격 매수하게 만듭니다.
             </Text>
-            <Text style={[styles.guideText, { marginTop: 8 }]}>
-              <Text style={styles.guideSource}>Morningstar(2024)</Text> 연구에 따르면,
+            <Text style={[styles.guideText, { marginTop: 8, color: colors.textTertiary }]}>
+              <Text style={[styles.guideSource, { color: colors.info }]}>Morningstar(2024)</Text> 연구에 따르면,
               FOMO에 휩쓸린 투자자는 그렇지 않은 투자자 대비{' '}
-              <Text style={styles.guideBold}>위험조정 수익률(Sharpe Ratio)이 평균 4% 낮았습니다</Text>.
+              <Text style={[styles.guideBold, { color: colors.textSecondary }]}>위험조정 수익률(Sharpe Ratio)이 평균 4% 낮았습니다</Text>.
               FOMO Vaccine은 이런 충동적 매수를 예방하기 위해
               보유 종목의 고평가 위험도를 실시간으로 분석합니다.
             </Text>
           </View>
 
           {/* 점수 해석 */}
-          <View style={styles.guideSection}>
-            <Text style={styles.guideSectionTitle}>고평가 점수 읽는 법</Text>
-            <Text style={styles.guideText}>
+          <View style={[styles.guideSection, { borderBottomColor: colors.border }]}>
+            <Text style={[styles.guideSectionTitle, { color: colors.textSecondary }]}>고평가 점수 읽는 법</Text>
+            <Text style={[styles.guideText, { color: colors.textTertiary }]}>
               각 종목별로 0~100점의 고평가 점수가 부여됩니다.
               점수가 높을수록 현재 가격이 적정가치(PER, PBR 등) 대비 비싸다는 의미입니다.
             </Text>
             <View style={{ marginTop: 8 }}>
               <View style={styles.guideScoreRow}>
-                <View style={[styles.guideScoreDot, { backgroundColor: '#4CAF50' }]} />
-                <Text style={styles.guideScoreText}>
-                  <Text style={[styles.guideBold, { color: '#4CAF50' }]}>0~30 낮음</Text> — 적정 가격 수준, 추가 매수 가능
+                <View style={[styles.guideScoreDot, { backgroundColor: colors.success }]} />
+                <Text style={[styles.guideScoreText, { color: colors.textTertiary }]}>
+                  <Text style={[styles.guideBold, { color: colors.success }]}>0~30 낮음</Text> — 적정 가격 수준, 추가 매수 가능
                 </Text>
               </View>
               <View style={styles.guideScoreRow}>
-                <View style={[styles.guideScoreDot, { backgroundColor: '#FFC107' }]} />
-                <Text style={styles.guideScoreText}>
-                  <Text style={[styles.guideBold, { color: '#FFC107' }]}>31~60 중간</Text> — 추가 매수 자제, 관망 권장
+                <View style={[styles.guideScoreDot, { backgroundColor: colors.warning }]} />
+                <Text style={[styles.guideScoreText, { color: colors.textTertiary }]}>
+                  <Text style={[styles.guideBold, { color: colors.warning }]}>31~60 중간</Text> — 추가 매수 자제, 관망 권장
                 </Text>
               </View>
               <View style={styles.guideScoreRow}>
-                <View style={[styles.guideScoreDot, { backgroundColor: '#CF6679' }]} />
-                <Text style={styles.guideScoreText}>
-                  <Text style={[styles.guideBold, { color: '#CF6679' }]}>61~100 높음</Text> — 고평가 상태, 분할 매도 검토
+                <View style={[styles.guideScoreDot, { backgroundColor: colors.error }]} />
+                <Text style={[styles.guideScoreText, { color: colors.textTertiary }]}>
+                  <Text style={[styles.guideBold, { color: colors.error }]}>61~100 높음</Text> — 고평가 상태, 분할 매도 검토
                 </Text>
               </View>
             </View>
           </View>
 
           {/* 3개 하위 지표 설명 */}
-          <View style={styles.guideSection}>
-            <Text style={styles.guideSectionTitle}>3가지 세부 지표</Text>
-            <Text style={[styles.guideText, { marginBottom: 10 }]}>
+          <View style={[styles.guideSection, { borderBottomColor: colors.border }]}>
+            <Text style={[styles.guideSectionTitle, { color: colors.textSecondary }]}>3가지 세부 지표</Text>
+            <Text style={[styles.guideText, { marginBottom: 10, color: colors.textTertiary }]}>
               닷컴 버블(2000), 금융위기(2008)에서 FOMO에 빠진 투자자들은
               고평가 자산에 진입해 큰 손실을 입었습니다.
               다음 3가지 관점에서 과열 여부를 진단합니다:
             </Text>
             {FOMO_SUB_LABELS.map(({ key, label }) => (
               <View key={key} style={styles.guideItemRow}>
-                <View style={[styles.guideScoreDot, { backgroundColor: '#FFC107', marginTop: 5 }]} />
+                <View style={[styles.guideScoreDot, { backgroundColor: colors.warning, marginTop: 5 }]} />
                 <View style={styles.guideItemContent}>
-                  <Text style={styles.guideItemLabel}>{label}</Text>
-                  <Text style={styles.guideItemDesc}>
+                  <Text style={[styles.guideItemLabel, { color: colors.textSecondary }]}>{label}</Text>
+                  <Text style={[styles.guideItemDesc, { color: colors.textTertiary }]}>
                     {FOMO_SUB_DESCRIPTIONS[key]}
                   </Text>
                 </View>
@@ -146,17 +148,17 @@ function FomoGuideSection() {
 
           {/* 출처 표시 */}
           <View style={[styles.guideSection, { borderBottomWidth: 0, paddingBottom: 0 }]}>
-            <Text style={styles.guideSectionTitle}>참고 자료</Text>
-            <Text style={styles.guideSourceItem}>
+            <Text style={[styles.guideSectionTitle, { color: colors.textSecondary }]}>참고 자료</Text>
+            <Text style={[styles.guideSourceItem, { color: colors.textQuaternary }]}>
               {'\u2022'} Nirun & Asgarli, "FoMO in Investment: A Critical Literature Review" (SSRN, 2025)
             </Text>
-            <Text style={styles.guideSourceItem}>
+            <Text style={[styles.guideSourceItem, { color: colors.textQuaternary }]}>
               {'\u2022'} Morningstar — "FOMO Can Lead to Lower Returns" (2024)
             </Text>
-            <Text style={styles.guideSourceItem}>
+            <Text style={[styles.guideSourceItem, { color: colors.textQuaternary }]}>
               {'\u2022'} MDPI Finance (2025) — FOMO, Loss Aversion & Herd Behavior in Investment
             </Text>
-            <Text style={styles.guideSourceItem}>
+            <Text style={[styles.guideSourceItem, { color: colors.textQuaternary }]}>
               {'\u2022'} ResearchGate — "The Effects of FOMO on Investment Behavior in the Stock Market"
             </Text>
           </View>
@@ -167,23 +169,25 @@ function FomoGuideSection() {
 }
 
 export default function FomoVaccineCard({ alerts }: FomoVaccineCardProps) {
+  const { colors } = useTheme();
+
   // 심각도별 색상 설정
   const severityConfig = {
     LOW: {
-      color: '#4CAF50',
-      bgColor: '#1A2E1A',
+      color: colors.success,
+      bgColor: colors.streak.background,
       label: '낮음',
       icon: 'checkmark-circle' as const,
     },
     MEDIUM: {
-      color: '#FFC107',
-      bgColor: '#2E2A1A',
+      color: colors.warning,
+      bgColor: colors.surface,
       label: '중간',
       icon: 'alert-circle' as const,
     },
     HIGH: {
-      color: '#CF6679',
-      bgColor: '#2E1A1A',
+      color: colors.error,
+      bgColor: colors.surface,
       label: '높음',
       icon: 'warning' as const,
     },
@@ -192,17 +196,17 @@ export default function FomoVaccineCard({ alerts }: FomoVaccineCardProps) {
   // 경고가 없는 경우
   if (alerts.length === 0) {
     return (
-      <View style={[styles.container, { backgroundColor: '#1A2E1A' }]}>
+      <View style={[styles.container, { backgroundColor: colors.streak.background }]}>
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Ionicons name="medical" size={24} color="#4CAF50" />
-            <Text style={styles.title}>FOMO Vaccine</Text>
+            <Ionicons name="medical" size={24} color={colors.success} />
+            <Text style={[styles.title, { color: colors.textPrimary }]}>FOMO Vaccine</Text>
           </View>
         </View>
         <View style={styles.emptyContainer}>
-          <Ionicons name="checkmark-circle" size={48} color="#4CAF50" />
-          <Text style={styles.emptyText}>고평가 경고 없음</Text>
-          <Text style={styles.emptySubtext}>
+          <Ionicons name="checkmark-circle" size={48} color={colors.success} />
+          <Text style={[styles.emptyText, { color: colors.success }]}>고평가 경고 없음</Text>
+          <Text style={[styles.emptySubtext, { color: colors.textTertiary }]}>
             현재 포트폴리오에 과열 우려 자산이 없습니다
           </Text>
         </View>
@@ -219,12 +223,7 @@ export default function FomoVaccineCard({ alerts }: FomoVaccineCardProps) {
       style={[
         styles.container,
         {
-          backgroundColor:
-            highAlertCount > 0
-              ? '#2E1A1A'
-              : alerts.some((a) => a.severity === 'MEDIUM')
-              ? '#2E2A1A'
-              : '#1E1E1E',
+          backgroundColor: colors.surface,
         },
       ]}
     >
@@ -234,26 +233,26 @@ export default function FomoVaccineCard({ alerts }: FomoVaccineCardProps) {
           <Ionicons
             name="medical"
             size={24}
-            color={highAlertCount > 0 ? '#CF6679' : '#FFC107'}
+            color={highAlertCount > 0 ? colors.error : colors.warning}
           />
-          <Text style={styles.title}>FOMO Vaccine</Text>
+          <Text style={[styles.title, { color: colors.textPrimary }]}>FOMO Vaccine</Text>
         </View>
         {alerts.length > 0 && (
           <View
             style={[
               styles.countBadge,
               {
-                backgroundColor: highAlertCount > 0 ? '#CF6679' : '#FFC107',
+                backgroundColor: highAlertCount > 0 ? colors.error : colors.warning,
               },
             ]}
           >
-            <Text style={styles.countText}>{alerts.length}개 경고</Text>
+            <Text style={[styles.countText, { color: colors.textPrimary }]}>{alerts.length}개 경고</Text>
           </View>
         )}
       </View>
 
       {/* 경고 메시지 */}
-      <Text style={styles.description}>
+      <Text style={[styles.description, { color: colors.textSecondary }]}>
         💉 FOMO(Fear Of Missing Out)를 예방하세요
       </Text>
 
@@ -269,19 +268,19 @@ export default function FomoVaccineCard({ alerts }: FomoVaccineCardProps) {
               <View style={styles.alertHeader}>
                 <View style={styles.alertLeft}>
                   <Ionicons name={config.icon} size={18} color={config.color} />
-                  <Text style={styles.alertTicker}>{alert.ticker}</Text>
-                  <Text style={styles.alertName}>{alert.name}</Text>
+                  <Text style={[styles.alertTicker, { color: colors.textPrimary }]}>{alert.ticker}</Text>
+                  <Text style={[styles.alertName, { color: colors.textTertiary }]}>{alert.name}</Text>
                 </View>
                 <View
                   style={[styles.severityBadge, { backgroundColor: config.color }]}
                 >
-                  <Text style={styles.severityText}>{config.label}</Text>
+                  <Text style={[styles.severityText, { color: colors.textPrimary }]}>{config.label}</Text>
                 </View>
               </View>
 
               {/* 고평가 점수 바 */}
               <View style={styles.scoreContainer}>
-                <View style={styles.scoreBarBg}>
+                <View style={[styles.scoreBarBg, { backgroundColor: colors.border }]}>
                   <View
                     style={[
                       styles.scoreBarFill,
@@ -305,8 +304,8 @@ export default function FomoVaccineCard({ alerts }: FomoVaccineCardProps) {
                     const barColor = getFomoBarColor(score);
                     return (
                       <View key={key} style={styles.fomoSubRow}>
-                        <Text style={styles.fomoSubLabel}>{label}</Text>
-                        <View style={styles.fomoSubBarBg}>
+                        <Text style={[styles.fomoSubLabel, { color: colors.textTertiary }]}>{label}</Text>
+                        <View style={[styles.fomoSubBarBg, { backgroundColor: colors.border }]}>
                           <View
                             style={[
                               styles.fomoSubBarFill,
@@ -324,7 +323,7 @@ export default function FomoVaccineCard({ alerts }: FomoVaccineCardProps) {
               )}
 
               {/* 사유 */}
-              <Text style={styles.reasonText}>{alert.reason}</Text>
+              <Text style={[styles.reasonText, { color: colors.textSecondary }]}>{alert.reason}</Text>
             </View>
           );
         })}
@@ -334,9 +333,9 @@ export default function FomoVaccineCard({ alerts }: FomoVaccineCardProps) {
       <FomoGuideSection />
 
       {/* 하단 팁 */}
-      <View style={styles.tipContainer}>
-        <Ionicons name="bulb" size={16} color="#FFC107" />
-        <Text style={styles.tipText}>
+      <View style={[styles.tipContainer, { borderTopColor: colors.border }]}>
+        <Ionicons name="bulb" size={16} color={colors.warning} />
+        <Text style={[styles.tipText, { color: colors.textTertiary }]}>
           고평가 자산은 추가 매수를 자제하고, 분할 매도를 고려하세요
         </Text>
       </View>
@@ -364,7 +363,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#FFFFFF',
   },
   countBadge: {
     paddingHorizontal: 10,
@@ -374,11 +372,9 @@ const styles = StyleSheet.create({
   countText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#000000',
   },
   description: {
     fontSize: 13,
-    color: '#AAAAAA',
     marginBottom: 16,
   },
   emptyContainer: {
@@ -388,12 +384,10 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#4CAF50',
     marginTop: 12,
   },
   emptySubtext: {
     fontSize: 13,
-    color: '#888888',
     marginTop: 4,
   },
   alertList: {
@@ -418,11 +412,9 @@ const styles = StyleSheet.create({
   alertTicker: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#FFFFFF',
   },
   alertName: {
     fontSize: 12,
-    color: '#888888',
     marginLeft: 4,
   },
   severityBadge: {
@@ -433,7 +425,6 @@ const styles = StyleSheet.create({
   severityText: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#000000',
   },
   scoreContainer: {
     flexDirection: 'row',
@@ -444,7 +435,6 @@ const styles = StyleSheet.create({
   scoreBarBg: {
     flex: 1,
     height: 6,
-    backgroundColor: '#333333',
     borderRadius: 3,
     overflow: 'hidden',
   },
@@ -460,7 +450,6 @@ const styles = StyleSheet.create({
   },
   reasonText: {
     fontSize: 12,
-    color: '#AAAAAA',
     lineHeight: 18,
   },
   tipContainer: {
@@ -470,12 +459,10 @@ const styles = StyleSheet.create({
     marginTop: 16,
     paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: '#333333',
   },
   tipText: {
     flex: 1,
     fontSize: 12,
-    color: '#888888',
     lineHeight: 18,
   },
   // FOMO 서브스코어 스타일
@@ -491,13 +478,11 @@ const styles = StyleSheet.create({
   },
   fomoSubLabel: {
     fontSize: 11,
-    color: '#999999',
     width: 100,
   },
   fomoSubBarBg: {
     flex: 1,
     height: 4,
-    backgroundColor: '#333333',
     borderRadius: 2,
     overflow: 'hidden',
   },
@@ -520,40 +505,32 @@ const styles = StyleSheet.create({
     marginTop: 16,
     paddingVertical: 8,
     borderRadius: 8,
-    backgroundColor: 'rgba(255,255,255,0.05)',
   },
   guideToggleText: {
     fontSize: 12,
-    color: '#888888',
   },
   guideContainer: {
     marginTop: 12,
-    backgroundColor: 'rgba(255,255,255,0.03)',
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#2A2A2A',
   },
   guideSection: {
     paddingBottom: 14,
     marginBottom: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#2A2A2A',
   },
   guideSectionTitle: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#CCCCCC',
     marginBottom: 8,
   },
   guideText: {
     fontSize: 12,
-    color: '#999999',
     lineHeight: 20,
   },
   guideBold: {
     fontWeight: '700',
-    color: '#CCCCCC',
   },
   guideScoreRow: {
     flexDirection: 'row',
@@ -570,7 +547,6 @@ const styles = StyleSheet.create({
   guideScoreText: {
     flex: 1,
     fontSize: 12,
-    color: '#999999',
     lineHeight: 18,
   },
   guideItemRow: {
@@ -584,22 +560,18 @@ const styles = StyleSheet.create({
   guideItemLabel: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#CCCCCC',
     marginBottom: 2,
   },
   guideItemDesc: {
     fontSize: 11,
-    color: '#888888',
     lineHeight: 17,
   },
   guideSource: {
     fontSize: 12,
     fontStyle: 'italic',
-    color: '#7B9EBF',
   },
   guideSourceItem: {
     fontSize: 11,
-    color: '#777777',
     lineHeight: 18,
     marginBottom: 4,
   },

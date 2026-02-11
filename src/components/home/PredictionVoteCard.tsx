@@ -76,7 +76,7 @@ interface PredictionVoteCardProps {
   myVotesMap?: Record<string, 'YES' | 'NO'>;
 
   /** 지난주 복기 (최대 3개) */
-  recentResults: Array<{
+  recentResults: {
     question: string;
     myVote: 'YES' | 'NO';
     correctAnswer: 'YES' | 'NO';
@@ -84,7 +84,7 @@ interface PredictionVoteCardProps {
     reward: number; // 크레딧 보상
     description?: string; // 배경 설명
     source?: string; // 정답 근거
-  }>;
+  }[];
 
   /** 적중률 (0~100, null이면 투표 이력 없음) */
   accuracyRate: number | null;

@@ -399,7 +399,7 @@ function PortfolioImpactVisual({
 // ============================================================================
 
 export default React.forwardRef<View, ContextBriefCardProps>(
-  function ContextBriefCard(
+  (
     {
       fact,
       mechanism,
@@ -417,7 +417,7 @@ export default React.forwardRef<View, ContextBriefCardProps>(
       portfolioImpact,
     }: ContextBriefCardProps,
     ref
-  ) {
+  ) => {
     const sentimentColor = SENTIMENT_COLORS[sentiment];
     const sentimentBg = SENTIMENT_BG_COLORS[sentiment];
     const freeTrial = isFreeTrial();

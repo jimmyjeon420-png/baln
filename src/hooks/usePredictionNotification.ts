@@ -67,7 +67,7 @@ async function schedulePredictionResultNotification(): Promise<void> {
     // 2) 알림 권한 확인
     const { status } = await Notifications.getPermissionsAsync();
     if (status !== 'granted') {
-      console.log('[예측 알림] 권한 없음, skip');
+      if (__DEV__) console.log('[예측 알림] 권한 없음, skip');
       return;
     }
 
@@ -97,7 +97,7 @@ async function schedulePredictionResultNotification(): Promise<void> {
     // 5) 오늘 날짜 저장 (중복 방지)
     await AsyncStorage.setItem(PREDICTION_NOTIFICATION_KEY, today);
 
-    console.log('[예측 알림] 매일 08:00 알림 예약 완료');
+    if (__DEV__) console.log('[예측 알림] 매일 08:00 알림 예약 완료');
   } catch (err) {
     console.error('[예측 알림] 예약 에러:', err);
     throw err;
@@ -115,7 +115,7 @@ export async function resetPredictionNotification(): Promise<void> {
   try {
     await Notifications.cancelScheduledNotificationAsync(NOTIFICATION_ID);
     await AsyncStorage.removeItem(PREDICTION_NOTIFICATION_KEY);
-    console.log('[예측 알림] 예약 초기화 완료');
+    if (__DEV__) console.log('[예측 알림] 예약 초기화 완료');
   } catch (err) {
     console.error('[예측 알림] 초기화 에러:', err);
   }

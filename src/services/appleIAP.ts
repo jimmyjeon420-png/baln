@@ -41,11 +41,11 @@ export const APPLE_PRODUCT_IDS = CREDIT_PACKAGES.map(pkg => pkg.appleProductId);
 export async function connectToStore(): Promise<boolean> {
   try {
     if (Platform.OS !== 'ios') {
-      console.log('[IAP] iOS가 아닌 환경 — 연결 스킵');
+      if (__DEV__) console.log('[IAP] iOS가 아닌 환경 — 연결 스킵');
       return false;
     }
     const result = await initConnection();
-    console.log('[IAP] 스토어 연결 성공:', result);
+    if (__DEV__) console.log('[IAP] 스토어 연결 성공:', result);
     return true;
   } catch (err) {
     console.warn('[IAP] 스토어 연결 실패:', err);
@@ -57,7 +57,7 @@ export async function connectToStore(): Promise<boolean> {
 export async function disconnectFromStore(): Promise<void> {
   try {
     await endConnection();
-    console.log('[IAP] 스토어 연결 해제');
+    if (__DEV__) console.log('[IAP] 스토어 연결 해제');
   } catch (err) {
     console.warn('[IAP] 스토어 연결 해제 실패:', err);
   }
@@ -74,7 +74,7 @@ export async function fetchIAPProducts(): Promise<Product[]> {
     // fetchProducts는 Product[] | ProductSubscription[] | null 반환
     // Consumable 상품이므로 Product[]로 캐스팅
     const result = (products ?? []) as Product[];
-    console.log('[IAP] 상품 조회 성공:', result.length, '개');
+    if (__DEV__) console.log('[IAP] 상품 조회 성공:', result.length, '개');
     return result;
   } catch (err) {
     console.warn('[IAP] 상품 조회 실패:', err);
@@ -89,7 +89,7 @@ export async function fetchIAPProducts(): Promise<Product[]> {
 /** Apple IAP 구매 요청 (Consumable 상품) */
 export async function purchaseProduct(appleProductId: string): Promise<void> {
   try {
-    console.log('[IAP] 구매 요청:', appleProductId);
+    if (__DEV__) console.log('[IAP] 구매 요청:', appleProductId);
     // 최신 react-native-iap API: type + request 구조
     await requestPurchase({
       type: 'in-app',
@@ -112,7 +112,7 @@ export async function purchaseProduct(appleProductId: string): Promise<void> {
 export async function completePurchase(purchase: Purchase): Promise<void> {
   try {
     await finishTransaction({ purchase, isConsumable: true });
-    console.log('[IAP] 트랜잭션 완료 처리:', purchase.id);
+    if (__DEV__) console.log('[IAP] 트랜잭션 완료 처리:', purchase.id);
   } catch (err) {
     console.warn('[IAP] 트랜잭션 완료 실패:', err);
     throw err;

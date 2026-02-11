@@ -16,6 +16,7 @@ import {
 } from '../types/verification';
 
 // Gemini AI 초기화
+// ⚠️ 보안: EXPO_PUBLIC_ 키는 클라이언트 번들에 포함됩니다. 프로덕션에서는 서버 프록시 권장.
 const genAI = new GoogleGenerativeAI(process.env.EXPO_PUBLIC_GEMINI_API_KEY || '');
 
 /**

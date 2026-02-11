@@ -5,8 +5,9 @@
  * 초보자가 "지금 뭘 해야 하는지" 바로 알 수 있도록.
  */
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
+import { useTheme } from '../../../hooks/useTheme';
 
 type ActionType = 'BUY' | 'HOLD' | 'SELL' | 'WATCH';
 
@@ -23,14 +24,17 @@ interface TodayOneActionProps {
   isAILoading: boolean;
 }
 
-const ACTION_CONFIG: Record<ActionType, { label: string; color: string; bgColor: string }> = {
-  BUY: { label: '매수', color: '#4CAF50', bgColor: '#4CAF5020' },
-  HOLD: { label: '유지', color: '#4CAF50', bgColor: '#4CAF5020' },
-  SELL: { label: '매도', color: '#CF6679', bgColor: '#CF667920' },
-  WATCH: { label: '관심', color: '#FFB74D', bgColor: '#FFB74D20' },
-};
+function getActionConfig(actionType: ActionType, colors: any) {
+  const config: Record<ActionType, { label: string; color: string; bgColor: string }> = {
+    BUY: { label: '매수', color: colors.buy, bgColor: `${colors.buy}20` },
+    HOLD: { label: '유지', color: colors.hold, bgColor: `${colors.hold}20` },
+    SELL: { label: '매도', color: colors.sell, bgColor: `${colors.sell}20` },
+    WATCH: { label: '관심', color: colors.warning, bgColor: `${colors.warning}20` },
+  };
+  return config[actionType];
+}
 
-function PulsingDot() {
+function PulsingDot({ dotColor }: { dotColor: string }) {
   const opacity = useRef(new Animated.Value(0.3)).current;
 
   useEffect(() => {
@@ -53,128 +57,142 @@ function PulsingDot() {
   }, [opacity]);
 
   return (
-    <Animated.View style={[s.pulsingDot, { opacity }]} />
+    <Animated.View style={[{ backgroundColor: dotColor }, pulsingDotStyle, { opacity }]} />
   );
 }
 
+const pulsingDotStyle = {
+  width: 10,
+  height: 10,
+  borderRadius: 5,
+};
+
 export default function TodayOneAction({ action, isAILoading }: TodayOneActionProps) {
+  const { colors } = useTheme();
+
+  const actionConfig = useMemo(
+    () => (action ? getActionConfig(action.action, colors) : null),
+    [action, colors],
+  );
+
+  const styles = useMemo(
+    () => createStyles(colors),
+    [colors],
+  );
+
   return (
-    <View style={s.card}>
-      <Text style={s.cardTitle}>{'이번 달 처방전'}</Text>
+    <View style={styles.card}>
+      <Text style={styles.cardTitle}>{'이번 달 처방전'}</Text>
 
       {isAILoading && (
-        <View style={s.loadingRow}>
-          <PulsingDot />
-          <Text style={s.loadingText}>AI가 분석 중이에요...</Text>
+        <View style={styles.loadingRow}>
+          <PulsingDot dotColor={colors.primary} />
+          <Text style={styles.loadingText}>AI가 분석 중이에요...</Text>
         </View>
       )}
 
       {!isAILoading && !action && (
-        <Text style={s.emptyText}>
+        <Text style={styles.emptyText}>
           {'이번 달은 특별히 할 일이 없어요 \uD83D\uDC4D'}
         </Text>
       )}
 
-      {!isAILoading && action && (
-        <View style={s.actionContainer}>
-          <View style={s.actionHeader}>
+      {!isAILoading && action && actionConfig && (
+        <View style={styles.actionContainer}>
+          <View style={styles.actionHeader}>
             <View
               style={[
-                s.badge,
-                { backgroundColor: ACTION_CONFIG[action.action].bgColor },
+                styles.badge,
+                { backgroundColor: actionConfig.bgColor },
               ]}
             >
               <Text
                 style={[
-                  s.badgeText,
-                  { color: ACTION_CONFIG[action.action].color },
+                  styles.badgeText,
+                  { color: actionConfig.color },
                 ]}
               >
-                {ACTION_CONFIG[action.action].label}
+                {actionConfig.label}
               </Text>
             </View>
 
-            <View style={s.tickerInfo}>
-              <Text style={s.tickerName}>{action.name}</Text>
-              <Text style={s.tickerCode}>{action.ticker}</Text>
+            <View style={styles.tickerInfo}>
+              <Text style={styles.tickerName}>{action.name}</Text>
+              <Text style={styles.tickerCode}>{action.ticker}</Text>
             </View>
           </View>
 
-          <Text style={s.reason}>{action.reason}</Text>
+          <Text style={styles.reason}>{action.reason}</Text>
         </View>
       )}
     </View>
   );
 }
 
-const s = StyleSheet.create({
-  card: {
-    backgroundColor: '#141414',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#2A2A2A',
-    padding: 24,
-    marginHorizontal: 16,
-    marginTop: 12,
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    marginBottom: 16,
-  },
-  loadingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  pulsingDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#4CAF50',
-  },
-  loadingText: {
-    fontSize: 16,
-    color: '#B0B0B0',
-  },
-  emptyText: {
-    fontSize: 16,
-    color: '#B0B0B0',
-  },
-  actionContainer: {
-    gap: 12,
-  },
-  actionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  badge: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
-  },
-  badgeText: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  tickerInfo: {
-    flex: 1,
-  },
-  tickerName: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  tickerCode: {
-    fontSize: 13,
-    color: '#808080',
-    marginTop: 2,
-  },
-  reason: {
-    fontSize: 15,
-    color: '#B0B0B0',
-    lineHeight: 22,
-  },
-});
+function createStyles(colors: any) {
+  return StyleSheet.create({
+    card: {
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: colors.borderLight,
+      padding: 24,
+      marginHorizontal: 16,
+      marginTop: 12,
+    },
+    cardTitle: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: colors.textPrimary,
+      marginBottom: 16,
+    },
+    loadingRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+    },
+    loadingText: {
+      fontSize: 16,
+      color: colors.textSecondary,
+    },
+    emptyText: {
+      fontSize: 16,
+      color: colors.textSecondary,
+    },
+    actionContainer: {
+      gap: 12,
+    },
+    actionHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    badge: {
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: 8,
+    },
+    badgeText: {
+      fontSize: 14,
+      fontWeight: '700',
+    },
+    tickerInfo: {
+      flex: 1,
+    },
+    tickerName: {
+      fontSize: 17,
+      fontWeight: '600',
+      color: colors.textPrimary,
+    },
+    tickerCode: {
+      fontSize: 13,
+      color: colors.textTertiary,
+      marginTop: 2,
+    },
+    reason: {
+      fontSize: 15,
+      color: colors.textSecondary,
+      lineHeight: 22,
+    },
+  });
+}

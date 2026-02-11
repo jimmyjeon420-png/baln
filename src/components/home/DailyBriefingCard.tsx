@@ -29,11 +29,11 @@ function getSentimentChip(sentiment: 'BULLISH' | 'BEARISH' | 'NEUTRAL') {
 // DailyBriefingCard — 오늘의 브리핑 (시장 뉴스 게시판 역할)
 // ============================================================================
 
-export default function DailyBriefingCard({
+const DailyBriefingCard = ({
   cfoWeather,
   sentiment,
   isLoading,
-}: DailyBriefingCardProps) {
+}: DailyBriefingCardProps) => {
   // 로딩 중 → 스켈레톤
   if (isLoading) {
     return (
@@ -76,7 +76,29 @@ export default function DailyBriefingCard({
       )}
     </View>
   );
-}
+};
+
+// ============================================================================
+// React.memo 최적화: cfoWeather 객체와 sentiment, isLoading 비교
+// ============================================================================
+
+export default React.memo(DailyBriefingCard, (prev, next) => {
+  // isLoading 상태 비교
+  if (prev.isLoading !== next.isLoading) return false;
+
+  // sentiment 비교
+  if (prev.sentiment !== next.sentiment) return false;
+
+  // cfoWeather 객체 깊은 비교
+  if (prev.cfoWeather === null && next.cfoWeather === null) return true;
+  if (prev.cfoWeather === null || next.cfoWeather === null) return false;
+
+  return (
+    prev.cfoWeather.emoji === next.cfoWeather.emoji &&
+    prev.cfoWeather.message === next.cfoWeather.message &&
+    prev.cfoWeather.status === next.cfoWeather.status
+  );
+});
 
 // ============================================================================
 // 스타일

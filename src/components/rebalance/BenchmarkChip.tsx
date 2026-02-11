@@ -30,7 +30,7 @@ interface BenchmarkChipProps {
   myGainPercent: number; // 내 포트폴리오 수익률 (%)
 }
 
-export default function BenchmarkChip({ myGainPercent }: BenchmarkChipProps) {
+const BenchmarkChip = ({ myGainPercent }: BenchmarkChipProps) => {
   // 벤치마크 지수 가격 조회 (10분 캐시 — 지수는 빈번히 바뀌지 않아도 됨)
   const { data: benchmarkPrices } = useQuery({
     queryKey: ['benchmark-prices'],
@@ -86,7 +86,16 @@ export default function BenchmarkChip({ myGainPercent }: BenchmarkChipProps) {
       </Text>
     </View>
   );
-}
+};
+
+// ──────────────────────────────────────
+// React.memo 최적화: myGainPercent가 같으면 리렌더링 방지
+// ──────────────────────────────────────
+
+export default React.memo(BenchmarkChip, (prev, next) => {
+  // 수익률이 0.01%p 이내로 같으면 리렌더링 방지 (소수점 2자리까지만 표시하므로)
+  return Math.abs(prev.myGainPercent - next.myGainPercent) < 0.01;
+});
 
 const s = StyleSheet.create({
   chip: {

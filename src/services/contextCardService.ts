@@ -53,7 +53,7 @@ export async function getTodayContextCard(
       .single();
 
     if (cardError || !cardData) {
-      console.log('[맥락 카드] 오늘의 카드 없음 → 최근 카드로 폴백');
+      if (__DEV__) console.log('[맥락 카드] 오늘의 카드 없음 → 최근 카드로 폴백');
 
       // 폴백: 가장 최근 맥락 카드 조회 (어제 또는 그 이전)
       const { data: latestCard, error: latestError } = await supabase
@@ -65,7 +65,7 @@ export async function getTodayContextCard(
         .maybeSingle();
 
       if (latestError || !latestCard) {
-        console.log('[맥락 카드] 최근 카드도 없음 → 개발용 샘플 데이터 반환');
+        if (__DEV__) console.log('[맥락 카드] 최근 카드도 없음 → 개발용 샘플 데이터 반환');
 
         // 개발용 샘플 데이터 (DB에 데이터가 전혀 없을 때)
         const devCard: ContextCard = {
@@ -133,7 +133,7 @@ export async function getTodayContextCard(
           }
         : null;
 
-      console.log(`[맥락 카드] 최근 카드 폴백 성공 (${latestCard.date})`);
+      if (__DEV__) console.log(`[맥락 카드] 최근 카드 폴백 성공 (${latestCard.date})`);
       return { card: fallbackCard, userImpact: fallbackImpact };
     }
 
@@ -175,7 +175,7 @@ export async function getTodayContextCard(
         }
       : null;
 
-    console.log('[맥락 카드] 오늘의 카드 조회 성공 (빠른 경로)');
+    if (__DEV__) console.log('[맥락 카드] 오늘의 카드 조회 성공 (빠른 경로)');
     return { card, userImpact };
   } catch (err) {
     console.error('[맥락 카드] 조회 실패:', err);
@@ -215,7 +215,7 @@ export async function getRecentContextCards(
       .order('date', { ascending: false });
 
     if (cardsError || !cardsData) {
-      console.log('[맥락 카드] 최근 카드 조회 실패 또는 데이터 없음');
+      if (__DEV__) console.log('[맥락 카드] 최근 카드 조회 실패 또는 데이터 없음');
       return [];
     }
 
@@ -269,7 +269,7 @@ export async function getRecentContextCards(
       return { card, userImpact };
     });
 
-    console.log(`[맥락 카드] 최근 ${days}일 카드 조회 성공 (${results.length}개)`);
+    if (__DEV__) console.log(`[맥락 카드] 최근 ${days}일 카드 조회 성공 (${results.length}개)`);
     return results;
   } catch (err) {
     console.error('[맥락 카드] 최근 카드 조회 실패:', err);

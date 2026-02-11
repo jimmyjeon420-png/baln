@@ -108,7 +108,7 @@ export function useSharedPortfolio() {
     queryKey: SHARED_PORTFOLIO_KEY,
     queryFn: fetchSharedPortfolio,
     staleTime: 1000 * 60 * 3,        // 3분: 탭 전환 시 재요청 안 함
-    gcTime: 1000 * 60 * 60 * 24,    // 24시간: 영속 캐시와 수명 동기화
+    gcTime: 1000 * 60 * 30,          // 30분: 메모리 최적화 (기존 24시간 → 30분)
     placeholderData: keepPreviousData, // 갱신 중에도 이전 데이터 유지
   });
 

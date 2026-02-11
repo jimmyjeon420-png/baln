@@ -204,7 +204,7 @@ async function sendCrisisNotificationByLevel(
     // 3) 레벨별 최대 횟수 확인
     const maxAlerts = MAX_ALERTS_PER_DAY[crisis.level] || 1;
     if (alertData.alertCount >= maxAlerts) {
-      console.log(
+      if (__DEV__) console.log(
         `[위기 알림] ${crisis.level} 레벨 오늘 최대 ${maxAlerts}회 초과, skip (현재 ${alertData.alertCount}회)`
       );
       return;
@@ -216,7 +216,7 @@ async function sendCrisisNotificationByLevel(
       const now = Date.now();
       const hoursSinceLast = (now - lastTime) / (1000 * 60 * 60);
       if (hoursSinceLast < 1) {
-        console.log('[위기 알림] 마지막 알림 후 1시간 미경과, skip');
+        if (__DEV__) console.log('[위기 알림] 마지막 알림 후 1시간 미경과, skip');
         return;
       }
     }
@@ -224,14 +224,14 @@ async function sendCrisisNotificationByLevel(
     // 5) 알림 권한 확인
     const { status } = await Notifications.getPermissionsAsync();
     if (status !== 'granted') {
-      console.log('[위기 알림] 권한 없음, skip');
+      if (__DEV__) console.log('[위기 알림] 권한 없음, skip');
       return;
     }
 
     // 6) 템플릿 기반 알림 생성
     const template = CRISIS_TEMPLATES[crisis.level];
     if (!template) {
-      console.log('[위기 알림] 템플릿 없음:', crisis.level);
+      if (__DEV__) console.log('[위기 알림] 템플릿 없음:', crisis.level);
       return;
     }
 
@@ -271,7 +271,7 @@ async function sendCrisisNotificationByLevel(
     alertData.lastAlertTime = new Date().toISOString();
     await AsyncStorage.setItem(CRISIS_ALERT_KEY, JSON.stringify(alertData));
 
-    console.log(
+    if (__DEV__) console.log(
       `[위기 알림] ${crisis.level} 발송 완료 (오늘 ${alertData.alertCount}/${maxAlerts}회)`,
       crisis.primaryMarket
     );

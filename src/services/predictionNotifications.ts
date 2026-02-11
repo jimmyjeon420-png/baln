@@ -51,7 +51,7 @@ export async function requestPredictionNotificationPermission(): Promise<boolean
 
     // 권한 거부 시 조용히 실패 (앱 동작은 계속)
     if (finalStatus !== 'granted') {
-      console.log('[predictionNotifications] 알림 권한 거부됨 (앱 동작 유지)');
+      if (__DEV__) console.log('[predictionNotifications] 알림 권한 거부됨 (앱 동작 유지)');
       return false;
     }
 
@@ -102,7 +102,7 @@ export async function scheduleDailyPredictionNotification(): Promise<void> {
       } as Notifications.CalendarTriggerInput,
     });
 
-    console.log('[predictionNotifications] 매일 09:00 알림 스케줄 완료');
+    if (__DEV__) console.log('[predictionNotifications] 매일 09:00 알림 스케줄 완료');
   } catch (error) {
     console.error('[predictionNotifications] 매일 알림 스케줄 실패:', error);
   }
@@ -141,7 +141,7 @@ export async function scheduleResultNotification(): Promise<void> {
       } as Notifications.CalendarTriggerInput,
     });
 
-    console.log('[predictionNotifications] 매일 08:00 결과 알림 스케줄 완료');
+    if (__DEV__) console.log('[predictionNotifications] 매일 08:00 결과 알림 스케줄 완료');
   } catch (error) {
     console.error('[predictionNotifications] 결과 알림 스케줄 실패:', error);
   }
@@ -174,7 +174,7 @@ export async function sendStreakCelebrationNotification(streakCount: number, bon
       trigger: null, // 즉시
     });
 
-    console.log(`[predictionNotifications] ${streakCount}연속 적중 축하 알림 전송`);
+    if (__DEV__) console.log(`[predictionNotifications] ${streakCount}연속 적중 축하 알림 전송`);
   } catch (error) {
     console.error('[predictionNotifications] 축하 알림 전송 실패:', error);
   }
@@ -203,7 +203,7 @@ export async function sendBadgeEarnedNotification(badgeName: string, badgeEmoji:
       trigger: null, // 즉시
     });
 
-    console.log(`[predictionNotifications] 배지 획득 알림 전송: ${badgeName}`);
+    if (__DEV__) console.log(`[predictionNotifications] 배지 획득 알림 전송: ${badgeName}`);
   } catch (error) {
     console.error('[predictionNotifications] 배지 알림 전송 실패:', error);
   }
@@ -216,7 +216,7 @@ export async function cancelAllPredictionNotifications(): Promise<void> {
   try {
     await Notifications.cancelScheduledNotificationAsync('daily_prediction');
     await Notifications.cancelScheduledNotificationAsync('prediction_result');
-    console.log('[predictionNotifications] 모든 알림 취소 완료');
+    if (__DEV__) console.log('[predictionNotifications] 모든 알림 취소 완료');
   } catch (error) {
     console.error('[predictionNotifications] 알림 취소 실패:', error);
   }
@@ -238,9 +238,9 @@ export async function initializePredictionNotifications(): Promise<void> {
       // 권한이 이미 허용되어 있으면 알림 스케줄링
       await scheduleDailyPredictionNotification();
       await scheduleResultNotification();
-      console.log('[predictionNotifications] 초기화 완료');
+      if (__DEV__) console.log('[predictionNotifications] 초기화 완료');
     } else {
-      console.log('[predictionNotifications] 알림 권한 없음 (사용자가 수동 활성화 가능)');
+      if (__DEV__) console.log('[predictionNotifications] 알림 권한 없음 (사용자가 수동 활성화 가능)');
     }
   } catch (error) {
     console.error('[predictionNotifications] 초기화 실패:', error);

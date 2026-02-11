@@ -55,13 +55,13 @@ interface YesterdayReviewCardProps {
 // 개별 결과 아이템 컴포넌트
 // ============================================================================
 
-const ReviewResultItem = React.memo(function ReviewResultItem({
+const ReviewResultItem = React.memo(({
   result,
   index,
 }: {
   result: YesterdayReviewResult;
   index: number;
-}) {
+}) => {
   // 해설 펼침/접힘 상태
   const [expanded, setExpanded] = React.useState(false);
 

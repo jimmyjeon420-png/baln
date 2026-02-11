@@ -20,7 +20,7 @@ export async function lightTap() {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   } catch (error) {
     // 디바이스가 햅틱을 지원하지 않으면 무시
-    console.log('[hapticService] lightTap 지원 안됨');
+    if (__DEV__) console.log('[hapticService] lightTap 지원 안됨');
   }
 }
 
@@ -31,7 +31,7 @@ export async function mediumTap() {
   try {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   } catch (error) {
-    console.log('[hapticService] mediumTap 지원 안됨');
+    if (__DEV__) console.log('[hapticService] mediumTap 지원 안됨');
   }
 }
 
@@ -42,7 +42,7 @@ export async function heavyTap() {
   try {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
   } catch (error) {
-    console.log('[hapticService] heavyTap 지원 안됨');
+    if (__DEV__) console.log('[hapticService] heavyTap 지원 안됨');
   }
 }
 
@@ -53,7 +53,7 @@ export async function success() {
   try {
     await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   } catch (error) {
-    console.log('[hapticService] success 지원 안됨');
+    if (__DEV__) console.log('[hapticService] success 지원 안됨');
   }
 }
 
@@ -64,7 +64,7 @@ export async function warning() {
   try {
     await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
   } catch (error) {
-    console.log('[hapticService] warning 지원 안됨');
+    if (__DEV__) console.log('[hapticService] warning 지원 안됨');
   }
 }
 
@@ -75,7 +75,7 @@ export async function error() {
   try {
     await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
   } catch (error) {
-    console.log('[hapticService] error 지원 안됨');
+    if (__DEV__) console.log('[hapticService] error 지원 안됨');
   }
 }
 
@@ -86,6 +86,6 @@ export async function selection() {
   try {
     await Haptics.selectionAsync();
   } catch (error) {
-    console.log('[hapticService] selection 지원 안됨');
+    if (__DEV__) console.log('[hapticService] selection 지원 안됨');
   }
 }

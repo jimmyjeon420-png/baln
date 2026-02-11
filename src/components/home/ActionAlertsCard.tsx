@@ -31,11 +31,11 @@ const ALERT_COLORS: Record<AlertItem['type'], string> = {
 // ActionAlertsCard — 핵심 알림 카드 (긴급 알림 대시보드 역할)
 // ============================================================================
 
-export default function ActionAlertsCard({
+const ActionAlertsCard = ({
   alerts,
   onPressCTA,
   isLoading,
-}: ActionAlertsCardProps) {
+}: ActionAlertsCardProps) => {
   if (isLoading) return null;
 
   // 알림 0건 → 안정 상태 표시
@@ -92,7 +92,33 @@ export default function ActionAlertsCard({
       </TouchableOpacity>
     </View>
   );
-}
+};
+
+// ============================================================================
+// React.memo 최적화: alerts 배열과 isLoading 비교 (onPressCTA는 함수 참조만 확인)
+// ============================================================================
+
+export default React.memo(ActionAlertsCard, (prev, next) => {
+  // isLoading 상태 비교
+  if (prev.isLoading !== next.isLoading) return false;
+
+  // alerts 배열 길이 비교
+  if (prev.alerts.length !== next.alerts.length) return false;
+
+  // 각 alert 항목 비교
+  const alertsEqual = prev.alerts.every((alert, i) => {
+    const nextAlert = next.alerts[i];
+    return (
+      alert.type === nextAlert.type &&
+      alert.icon === nextAlert.icon &&
+      alert.title === nextAlert.title &&
+      alert.subtitle === nextAlert.subtitle
+    );
+  });
+
+  // onPressCTA 함수 참조 비교 (보통 부모에서 useCallback으로 메모이제이션됨)
+  return alertsEqual && prev.onPressCTA === next.onPressCTA;
+});
 
 // ============================================================================
 // 스타일

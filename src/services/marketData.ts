@@ -6,9 +6,10 @@
 import axios from 'axios';
 
 // Yahoo Finance API 설정
+// ⚠️ 보안: API 키를 하드코딩하지 마세요. .env 파일에서 EXPO_PUBLIC_RAPIDAPI_KEY를 설정하세요.
 const YAHOO_FINANCE_RAPID_API = {
   host: 'yh-finance.p.rapidapi.com',
-  key: 'RAPIDAPI_KEY_HERE', // 환경변수에서 가져와야 함
+  key: process.env.EXPO_PUBLIC_RAPIDAPI_KEY || '',
 };
 
 // CoinGecko API (공개 API, 인증 불필요)

@@ -10,7 +10,10 @@
     "web": "expo start --web",
     "eject": "expo eject",
     "test": "jest",
-    "lint": "eslint . --ext .ts,.tsx"
+    "lint": "eslint . --ext .ts,.tsx",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "analyze:bundle": "npx expo export --dump-sourcemap",
+    "analyze:size": "npm list --depth=0 --parseable | xargs du -sh | sort -hr"
   },
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",
@@ -70,13 +73,17 @@
     "react-refresh": "^0.18.0"
   },
   "devDependencies": {
+    "@testing-library/jest-native": "^5.4.3",
+    "@testing-library/react-native": "^13.3.3",
     "@types/react": "~19.1.10",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
+    "babel-plugin-transform-remove-console": "^6.9.4",
     "babel-preset-expo": "~54.0.10",
     "eslint": "^8.0.0",
     "eslint-config-expo": "~10.0.0",
     "jest": "^29.7.0",
+    "jest-expo": "^54.0.17",
     "typescript": "^5.3.0"
   },
   "private": true

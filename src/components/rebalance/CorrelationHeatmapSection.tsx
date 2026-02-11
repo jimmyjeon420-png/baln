@@ -68,7 +68,7 @@ interface CorrelationHeatmapSectionProps {
   totalAssets: number;
 }
 
-export default function CorrelationHeatmapSection({ assets, totalAssets }: CorrelationHeatmapSectionProps) {
+const CorrelationHeatmapSection = ({ assets, totalAssets }: CorrelationHeatmapSectionProps) => {
   const [showDetail, setShowDetail] = useState(false);
 
   // 보유 중인 자산 카테고리만 추출 (비중 > 0)
@@ -218,7 +218,29 @@ export default function CorrelationHeatmapSection({ assets, totalAssets }: Corre
       )}
     </View>
   );
-}
+};
+
+// ──────────────────────────────────────
+// React.memo 최적화: assets 배열과 totalAssets 비교
+// ──────────────────────────────────────
+
+export default React.memo(CorrelationHeatmapSection, (prev, next) => {
+  // totalAssets 비교
+  if (prev.totalAssets !== next.totalAssets) return false;
+
+  // assets 배열 길이 비교
+  if (prev.assets.length !== next.assets.length) return false;
+
+  // 각 자산의 ID와 currentValue만 비교 (카테고리 분류에 영향을 주는 필드)
+  return prev.assets.every((asset, i) => {
+    const nextAsset = next.assets[i];
+    return (
+      asset.id === nextAsset.id &&
+      asset.currentValue === nextAsset.currentValue &&
+      asset.assetType === nextAsset.assetType
+    );
+  });
+});
 
 const CELL_SIZE = 48;
 

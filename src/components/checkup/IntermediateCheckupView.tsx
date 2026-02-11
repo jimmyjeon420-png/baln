@@ -10,6 +10,7 @@
 
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useTheme } from '../../hooks/useTheme';
 
 import ReassuranceBanner from './ReassuranceBanner';
 import MarketTemperature from './MarketTemperature';
@@ -80,6 +81,8 @@ export default function IntermediateCheckupView({
   onEmotionSave,
   onLevelChange,
 }: IntermediateCheckupViewProps) {
+  const { colors, shadows } = useTheme();
+
   // 취약 팩터 Top 3 (점수 오름차순)
   const weakestFactors = useMemo(() => {
     return [...healthScore.factors]
@@ -96,10 +99,15 @@ export default function IntermediateCheckupView({
       <MarketTemperature morningBriefing={morningBriefing} isAILoading={isAILoading} />
 
       {/* 섹션 제목 */}
-      <Text style={s.sectionTitle}>{'\uD83D\uDCCA'} 분석 리포트</Text>
+      <Text style={[s.sectionTitle, { color: colors.textPrimary }]}>{'\uD83D\uDCCA'} 분석 리포트</Text>
 
       {/* 2. 6팩터 건강 점수 */}
-      <HealthScoreSection healthScore={healthScore} />
+      <HealthScoreSection
+        healthScore={healthScore}
+        onScoreImproved={(improvement) => {
+          // 향후 크레딧 적립 로직 추가 가능 (부모에서 처리)
+        }}
+      />
 
       {/* 4. 취약 팩터 Top 3 (인라인 렌더링) */}
       <View style={s.weakFactorsContainer}>
@@ -108,14 +116,14 @@ export default function IntermediateCheckupView({
           const barWidth = Math.max(factor.score, 5); // 최소 5% 너비
 
           return (
-            <View key={factor.label} style={s.factorCard}>
+            <View key={factor.label} style={[s.factorCard, { backgroundColor: colors.surfaceLight }, shadows.sm]}>
               <View style={s.factorHeader}>
                 <Text style={s.factorIcon}>{factor.icon}</Text>
-                <Text style={s.factorLabel}>{factor.label}</Text>
+                <Text style={[s.factorLabel, { color: colors.textPrimary }]}>{factor.label}</Text>
                 <Text style={[s.factorScore, { color }]}>{factor.score}점</Text>
               </View>
               {/* 점수 바 */}
-              <View style={s.barBackground}>
+              <View style={[s.barBackground, { backgroundColor: colors.border }]}>
                 <View
                   style={[
                     s.barFill,
@@ -123,7 +131,7 @@ export default function IntermediateCheckupView({
                   ]}
                 />
               </View>
-              <Text style={s.factorComment}>{factor.comment}</Text>
+              <Text style={[s.factorComment, { color: colors.textSecondary }]}>{factor.comment}</Text>
             </View>
           );
         })}
@@ -183,7 +191,7 @@ const s = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#FFFFFF',
+    // color: 동적 적용 (colors.textPrimary)
     marginHorizontal: 16,
     marginTop: 16,
     marginBottom: 8,
@@ -199,7 +207,7 @@ const s = StyleSheet.create({
     marginHorizontal: 16,
     marginBottom: 8,
     padding: 14,
-    backgroundColor: '#141414',
+    // backgroundColor: 동적 적용 (colors.surfaceLight)
     borderRadius: 12,
   },
 
@@ -218,7 +226,7 @@ const s = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     fontWeight: '600',
-    color: '#FFFFFF',
+    // color: 동적 적용 (colors.textPrimary)
   },
 
   factorScore: {
@@ -229,7 +237,7 @@ const s = StyleSheet.create({
   // 점수 바
   barBackground: {
     height: 6,
-    backgroundColor: '#2A2A2A',
+    // backgroundColor: 동적 적용 (colors.border)
     borderRadius: 3,
     overflow: 'hidden',
     marginBottom: 8,
@@ -242,7 +250,7 @@ const s = StyleSheet.create({
 
   factorComment: {
     fontSize: 12,
-    color: '#9E9E9E',
+    // color: 동적 적용 (colors.textSecondary)
     lineHeight: 16,
   },
 });

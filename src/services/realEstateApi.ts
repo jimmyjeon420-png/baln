@@ -18,10 +18,12 @@ import { sqmToPyeong } from '../types/realestate';
 import { extractLawdCd } from './lawdCodeMap';
 
 // ============================================================================
-// API 키 설정 — 여기에 키를 넣으면 실제 API로 자동 전환
+// API 키 설정 — 환경변수에서 로드 (.env 파일에 설정)
+// ⚠️ 보안 경고: API 키를 절대 소스 코드에 하드코딩하지 마세요.
+//    반드시 .env 파일 또는 환경변수를 통해 주입하세요.
 // ============================================================================
-const KAKAO_API_KEY = '842910915081de088c80a50f91bb54a5';
-const MOLIT_API_KEY = '625808d41b2788c26cf8824006131127ebde55b431eeb403c8bd6d8d83523d72';
+const KAKAO_API_KEY = process.env.EXPO_PUBLIC_KAKAO_REST_API_KEY || '';
+const MOLIT_API_KEY = process.env.EXPO_PUBLIC_MOLIT_API_KEY || '';
 const USE_MOCK = !KAKAO_API_KEY || !MOLIT_API_KEY;
 
 // ============================================================================

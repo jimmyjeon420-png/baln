@@ -169,7 +169,7 @@ export async function getTodayMarketInsight(): Promise<DailyMarketInsight | null
     .single();
 
   if (error || !data) {
-    console.log('[Central Kitchen] 오늘의 거시경제 데이터 없음 → 폴백 필요');
+    if (__DEV__) console.log('[Central Kitchen] 오늘의 거시경제 데이터 없음 → 폴백 필요');
     return null;
   }
 
@@ -195,7 +195,7 @@ export async function getTodayStockReports(
     .in('ticker', tickers);
 
   if (error || !data) {
-    console.log('[Central Kitchen] 종목 퀀트 데이터 없음 → 폴백 필요');
+    if (__DEV__) console.log('[Central Kitchen] 종목 퀀트 데이터 없음 → 폴백 필요');
     return [];
   }
 
@@ -312,7 +312,7 @@ export async function loadMorningBriefing(
 
     // Central Kitchen 데이터가 있으면 병합하여 반환
     if (insight && insight.macro_summary?.title) {
-      console.log('[Central Kitchen] DB 데이터 사용 (빠른 경로)');
+      if (__DEV__) console.log('[Central Kitchen] DB 데이터 사용 (빠른 경로)');
       const briefing = buildBriefingFromKitchen(insight, stockReports, portfolio);
       return {
         source: 'central-kitchen',
@@ -326,7 +326,7 @@ export async function loadMorningBriefing(
   }
 
   // 2단계: 라이브 Gemini 호출 (폴백)
-  console.log('[Central Kitchen] 라이브 Gemini 폴백 실행');
+  if (__DEV__) console.log('[Central Kitchen] 라이브 Gemini 폴백 실행');
   const liveBriefing = await generateMorningBriefing(portfolio, options);
 
   return {
@@ -396,7 +396,7 @@ export async function savePanicScoreToSnapshot(score: number): Promise<void> {
   if (error) {
     console.warn('[Panic Score] 스냅샷 저장 실패 (기능 영향 없음):', error.message);
   } else {
-    console.log(`[Panic Score] 스냅샷 저장 완료 (${clampedScore}점)`);
+    if (__DEV__) console.log(`[Panic Score] 스냅샷 저장 완료 (${clampedScore}점)`);
   }
 }
 
@@ -471,17 +471,17 @@ export async function getTodayPrescription(
     .single();
 
   if (error || !data) {
-    console.log('[처방전 캐시] 오늘 캐시 없음 → Gemini 생성 필요');
+    if (__DEV__) console.log('[처방전 캐시] 오늘 캐시 없음 → Gemini 생성 필요');
     return null;
   }
 
   // 포트폴리오 구성이 바뀌었으면 캐시 무효화
   if (data.portfolio_hash !== portfolioHash) {
-    console.log('[처방전 캐시] 포트폴리오 변경 감지 → 재생성 필요');
+    if (__DEV__) console.log('[처방전 캐시] 포트폴리오 변경 감지 → 재생성 필요');
     return null;
   }
 
-  console.log('[처방전 캐시] DB 캐시 히트 (빠른 경로)');
+  if (__DEV__) console.log('[처방전 캐시] DB 캐시 히트 (빠른 경로)');
   return {
     morningBriefing: data.morning_briefing as MorningBriefingResult | null,
     riskAnalysis: data.risk_analysis as RiskAnalysisResult | null,
@@ -519,7 +519,7 @@ export async function savePrescription(
   if (error) {
     console.warn('[처방전 캐시] 저장 실패 (기능 영향 없음):', error.message);
   } else {
-    console.log('[처방전 캐시] DB 저장 완료');
+    if (__DEV__) console.log('[처방전 캐시] DB 저장 완료');
   }
 }
 
@@ -542,7 +542,7 @@ export async function getTodayRateCycleEvidence(): Promise<RateCycleEvidence | n
     .single();
 
   if (error || !data || !data.rate_cycle_evidence) {
-    console.log('[Central Kitchen] 오늘의 금리 사이클 증거 없음');
+    if (__DEV__) console.log('[Central Kitchen] 오늘의 금리 사이클 증거 없음');
     return null;
   }
 
@@ -564,7 +564,7 @@ export async function getTodayGuruInsights(): Promise<GuruInsightsData | null> {
     .single();
 
   if (error || !data) {
-    console.log('[Central Kitchen] 오늘의 거장 인사이트 없음');
+    if (__DEV__) console.log('[Central Kitchen] 오늘의 거장 인사이트 없음');
     return null;
   }
 
@@ -611,7 +611,7 @@ export async function getRealEstatePrice(
     .single();
 
   if (error || !data) {
-    console.log('[Central Kitchen] 부동산 시세 캐시 없음');
+    if (__DEV__) console.log('[Central Kitchen] 부동산 시세 캐시 없음');
     return null;
   }
 

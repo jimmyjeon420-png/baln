@@ -77,7 +77,7 @@ const TickerItemView = ({ item, isLast }: TickerItemProps) => {
 // 메인 컴포넌트
 // ═══════════════════════════════════════
 
-export default function MarketTicker() {
+const MarketTicker = () => {
   const { items, isLoading } = useMarketTicker();
   const scrollX = useRef(new Animated.Value(0)).current;
   const [contentWidth, setContentWidth] = useState(0);
@@ -165,7 +165,14 @@ export default function MarketTicker() {
       </Animated.View>
     </View>
   );
-}
+};
+
+// ═══════════════════════════════════════
+// React.memo 최적화: 이 컴포넌트는 props 없이 내부 훅만 사용하므로
+// 부모가 리렌더링되어도 자식까지 리렌더링되지 않도록 최적화
+// ═══════════════════════════════════════
+
+export default React.memo(MarketTicker);
 
 // ═══════════════════════════════════════
 // 스타일

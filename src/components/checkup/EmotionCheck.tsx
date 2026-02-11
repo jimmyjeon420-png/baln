@@ -8,6 +8,7 @@
 
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
+import { useTheme } from '../../hooks/useTheme';
 
 interface EmotionCheckProps {
   todayEmotion: string | null;
@@ -32,13 +33,14 @@ export default function EmotionCheck({
   onMemoChange,
   onSave,
 }: EmotionCheckProps) {
+  const { colors, shadows } = useTheme();
   const isChecked = todayEmotion !== null && memo.length > 0;
   const selectedItem = EMOTIONS.find(e => e.key === todayEmotion);
 
   return (
-    <View style={s.card}>
+    <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border, ...shadows.small }]}>
       <View style={s.headerRow}>
-        <Text style={s.cardTitle}>오늘의 투자 감정</Text>
+        <Text style={[s.cardTitle, { color: colors.textPrimary }]}>오늘의 투자 감정</Text>
         {isChecked && (
           <View style={s.checkedBadge}>
             <Text style={s.checkedText}>기록됨 ✓</Text>
@@ -55,6 +57,7 @@ export default function EmotionCheck({
               key={item.key}
               style={[
                 s.emotionButton,
+                { backgroundColor: colors.surfaceLight },
                 isSelected && s.emotionButtonSelected,
               ]}
               onPress={() => onSelect(item.key)}
@@ -63,7 +66,7 @@ export default function EmotionCheck({
               <Text style={[s.emotionEmoji, isSelected && s.emotionEmojiSelected]}>
                 {item.emoji}
               </Text>
-              <Text style={[s.emotionLabel, isSelected && s.emotionLabelSelected]}>
+              <Text style={[s.emotionLabel, { color: colors.textSecondary }, isSelected && s.emotionLabelSelected]}>
                 {item.label}
               </Text>
             </TouchableOpacity>
@@ -73,12 +76,12 @@ export default function EmotionCheck({
 
       {/* 메모 입력 (감정 선택 시에만 표시) */}
       {todayEmotion && (
-        <View style={s.memoSection}>
-          <Text style={s.memoLabel}>오늘 왜 이런 감정이었나요?</Text>
+        <View style={[s.memoSection, { backgroundColor: colors.surfaceLight }]}>
+          <Text style={[s.memoLabel, { color: colors.textPrimary }]}>오늘 왜 이런 감정이었나요?</Text>
           <TextInput
-            style={s.memoInput}
+            style={[s.memoInput, { backgroundColor: colors.background, color: colors.textPrimary, borderColor: colors.border }]}
             placeholder="30자 이내로 입력해주세요"
-            placeholderTextColor="#757575"
+            placeholderTextColor={colors.textSecondary}
             maxLength={30}
             value={memo}
             onChangeText={onMemoChange}
@@ -86,14 +89,14 @@ export default function EmotionCheck({
             numberOfLines={2}
           />
           <View style={s.memoFooter}>
-            <Text style={s.charCount}>{memo.length}/30</Text>
+            <Text style={[s.charCount, { color: colors.textSecondary }]}>{memo.length}/30</Text>
             <TouchableOpacity
               style={[s.saveButton, !todayEmotion && s.saveButtonDisabled]}
               onPress={onSave}
               disabled={!todayEmotion}
               activeOpacity={0.7}
             >
-              <Text style={s.saveButtonText}>기록하기</Text>
+              <Text style={[s.saveButtonText, { color: colors.textPrimary }]}>기록하기</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -101,8 +104,8 @@ export default function EmotionCheck({
 
       {/* 선택된 감정 피드백 */}
       {isChecked && selectedItem && (
-        <View style={s.feedbackRow}>
-          <Text style={s.feedbackText}>
+        <View style={[s.feedbackRow, { backgroundColor: colors.surfaceLight }]}>
+          <Text style={[s.feedbackText, { color: colors.textSecondary }]}>
             {selectedItem.emoji} {getFeedback(selectedItem.key)}
           </Text>
         </View>
@@ -124,10 +127,10 @@ function getFeedback(key: string): string {
 
 const s = StyleSheet.create({
   card: {
-    backgroundColor: '#141414',
+    // backgroundColor: '#141414', // Now dynamic
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#2A2A2A',
+    // borderColor: '#2A2A2A', // Now dynamic
     padding: 24,
     marginHorizontal: 16,
     marginTop: 12,
@@ -141,7 +144,7 @@ const s = StyleSheet.create({
   cardTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#FFFFFF',
+    // color: '#FFFFFF', // Now dynamic
   },
   checkedBadge: {
     backgroundColor: 'rgba(76,175,80,0.12)',
@@ -164,7 +167,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderRadius: 12,
-    backgroundColor: '#1A1A1A',
+    // backgroundColor: '#1A1A1A', // Now dynamic
   },
   emotionButtonSelected: {
     backgroundColor: 'rgba(76,175,80,0.12)',
@@ -180,7 +183,7 @@ const s = StyleSheet.create({
   },
   emotionLabel: {
     fontSize: 11,
-    color: '#808080',
+    // color: '#808080', // Now dynamic
     fontWeight: '500',
   },
   emotionLabelSelected: {
@@ -189,38 +192,38 @@ const s = StyleSheet.create({
   },
   feedbackRow: {
     marginTop: 14,
-    backgroundColor: '#1A1A1A',
+    // backgroundColor: '#1A1A1A', // Now dynamic
     borderRadius: 12,
     padding: 14,
   },
   feedbackText: {
     fontSize: 13,
-    color: '#B0B0B0',
+    // color: '#B0B0B0', // Now dynamic
     lineHeight: 20,
   },
   // 메모 섹션
   memoSection: {
     marginTop: 16,
-    backgroundColor: '#1A1A1A',
+    // backgroundColor: '#1A1A1A', // Now dynamic
     borderRadius: 12,
     padding: 14,
   },
   memoLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#FFFFFF',
+    // color: '#FFFFFF', // Now dynamic
     marginBottom: 8,
   },
   memoInput: {
     fontSize: 14,
-    color: '#FFFFFF',
-    backgroundColor: '#0A0A0A',
+    // color: '#FFFFFF', // Now dynamic
+    // backgroundColor: '#0A0A0A', // Now dynamic
     borderRadius: 8,
     padding: 12,
     minHeight: 60,
     textAlignVertical: 'top',
     borderWidth: 1,
-    borderColor: '#2A2A2A',
+    // borderColor: '#2A2A2A', // Now dynamic
   },
   memoFooter: {
     flexDirection: 'row',
@@ -230,7 +233,7 @@ const s = StyleSheet.create({
   },
   charCount: {
     fontSize: 12,
-    color: '#757575',
+    // color: '#757575', // Now dynamic
   },
   saveButton: {
     backgroundColor: '#4CAF50',
@@ -244,6 +247,6 @@ const s = StyleSheet.create({
   saveButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#FFFFFF',
+    // color: '#FFFFFF', // Now dynamic
   },
 });

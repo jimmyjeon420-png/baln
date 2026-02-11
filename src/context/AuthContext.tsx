@@ -3,6 +3,8 @@ import { Session, User, Provider } from '@supabase/supabase-js';
 import { Platform, Alert } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
+import * as Crypto from 'expo-crypto';
+import supabase from '../services/supabase';
 // Optional import: 패키지 미설치 시에도 앱 크래시 방지
 let AppleAuthentication: any = null;
 try {
@@ -10,8 +12,6 @@ try {
 } catch {
   // expo-apple-authentication 미설치 → Apple 로그인 비활성화
 }
-import * as Crypto from 'expo-crypto';
-import supabase from '../services/supabase';
 
 // OAuth 세션 완료 처리 (웹 브라우저 팝업 자동 닫기)
 WebBrowser.maybeCompleteAuthSession();
@@ -202,10 +202,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         path: 'auth/callback',
       });
 
-      console.log('=== OAuth 로그인 시작 ===');
-      console.log('Provider:', provider);
-      console.log('Supabase Redirect URI:', supabaseRedirectUri);
-      console.log('App Redirect URL:', appRedirectUrl);
+      if (__DEV__) {
+        console.log('=== OAuth 로그인 시작 ===');
+        console.log('Provider:', provider);
+        console.log('Supabase Redirect URI:', supabaseRedirectUri);
+        console.log('App Redirect URL:', appRedirectUrl);
+      }
 
       // Supabase OAuth 요청
       const { data, error } = await supabase.auth.signInWithOAuth({
@@ -225,7 +227,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error('OAuth URL을 받지 못했습니다');
       }
 
-      console.log('OAuth URL:', data.url);
+      if (__DEV__) console.log('OAuth URL:', data.url);
 
       // 웹 브라우저로 OAuth 페이지 열기
       const result = await WebBrowser.openAuthSessionAsync(
@@ -233,11 +235,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         appRedirectUrl
       );
 
-      console.log('WebBrowser 결과:', result.type);
+      if (__DEV__) console.log('WebBrowser 결과:', result.type);
 
       // 결과 처리
       if (result.type === 'success' && result.url) {
-        console.log('콜백 URL:', result.url);
+        if (__DEV__) console.log('콜백 URL:', result.url);
 
         // URL에서 토큰 추출
         const url = new URL(result.url);
@@ -249,7 +251,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const accessToken = hashParams.get('access_token') || queryParams.get('access_token');
         const refreshToken = hashParams.get('refresh_token') || queryParams.get('refresh_token');
 
-        console.log('Access Token 존재:', !!accessToken);
+        if (__DEV__) console.log('Access Token 존재:', !!accessToken);
 
         if (accessToken) {
           // 세션 설정
@@ -263,7 +265,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             throw new Error(sessionError.message);
           }
 
-          console.log('세션 설정 완료:', !!sessionData.session);
+          if (__DEV__) console.log('세션 설정 완료:', !!sessionData.session);
         } else {
           // 에러 확인
           const errorCode = hashParams.get('error') || queryParams.get('error');
@@ -280,10 +282,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.warn('토큰을 찾을 수 없음. URL 구조 확인 필요.');
         }
       } else if (result.type === 'cancel') {
-        console.log('사용자가 로그인을 취소했습니다');
+        if (__DEV__) console.log('사용자가 로그인을 취소했습니다');
         return;
       } else if (result.type === 'dismiss') {
-        console.log('브라우저가 닫혔습니다');
+        if (__DEV__) console.log('브라우저가 닫혔습니다');
         return;
       }
     } catch (error: any) {
@@ -347,11 +349,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error(error.message);
       }
 
-      console.log('Apple 로그인 성공');
+      if (__DEV__) console.log('Apple 로그인 성공');
     } catch (error: any) {
       // 사용자가 취소한 경우 (Apple 고유 에러코드)
       if (error.code === 'ERR_REQUEST_CANCELED') {
-        console.log('사용자가 Apple 로그인을 취소했습니다');
+        if (__DEV__) console.log('사용자가 Apple 로그인을 취소했습니다');
         return;
       }
       // 네이티브 모듈 미설치 시 (안전장치)

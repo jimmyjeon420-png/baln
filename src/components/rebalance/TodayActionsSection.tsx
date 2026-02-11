@@ -16,7 +16,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { SkeletonBlock } from '../SkeletonLoader';
 import { estimateTax } from '../../utils/taxEstimator';
-import { COLORS } from '../../styles/theme';
+import { useTheme } from '../../hooks/useTheme';
 import type { PortfolioAction, RebalancePortfolioAsset, LivePriceData } from '../../types/rebalanceTypes';
 
 // ── 완료 축하 배너 ──
@@ -250,6 +250,7 @@ export default function TodayActionsSection({
   totalAssets,
   isAILoading,
 }: TodayActionsSectionProps) {
+  const { colors, shadows } = useTheme();
   const router = useRouter();
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
   const [showCompletionBanner, setShowCompletionBanner] = useState(false);
@@ -281,11 +282,11 @@ export default function TodayActionsSection({
   // AI 로딩 중 스켈레톤
   if (isAILoading && sortedActions.length === 0) {
     return (
-      <View style={s.card}>
+      <View style={[s.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <SkeletonBlock width={120} height={16} />
         <View style={{ marginTop: 12, gap: 8 }}>
           {[1, 2, 3].map(i => (
-            <View key={i} style={{ backgroundColor: '#1A1A1A', borderRadius: 12, padding: 14 }}>
+            <View key={i} style={{ backgroundColor: colors.cardDark, borderRadius: 12, padding: 14 }}>
               <SkeletonBlock width={60} height={14} style={{ marginBottom: 6 }} />
               <SkeletonBlock width="85%" height={12} />
             </View>
@@ -298,11 +299,11 @@ export default function TodayActionsSection({
   if (sortedActions.length === 0) return null;
 
   return (
-    <View style={s.card}>
+    <View style={[s.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <View style={s.headerRow}>
         <View>
-          <Text style={s.cardLabel}>이번 달 처방전</Text>
-          <Text style={s.cardLabelEn}>Monthly Prescription</Text>
+          <Text style={[s.cardLabel, { color: colors.text }]}>이번 달 처방전</Text>
+          <Text style={[s.cardLabelEn, { color: colors.textSecondary }]}>Monthly Prescription</Text>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
           {completedCount > 0 && (
@@ -318,22 +319,22 @@ export default function TodayActionsSection({
       </View>
 
       {/* [NEW] "왜 이 액션들이 나왔는가" 전체 요약 */}
-      <View style={s.whySection}>
+      <View style={[s.whySection, { backgroundColor: colors.cardDark }]}>
         <View style={s.whyRow}>
-          <Ionicons name="help-circle-outline" size={14} color={COLORS.textSecondary} />
-          <Text style={s.whyLabel}>왜 이 액션들이 나왔나요?</Text>
+          <Ionicons name="help-circle-outline" size={14} color={colors.textSecondary} />
+          <Text style={[s.whyLabel, { color: colors.textSecondary }]}>왜 이 액션들이 나왔나요?</Text>
         </View>
-        <Text style={s.whyText}>{actionsSummary}</Text>
+        <Text style={[s.whyText, { color: colors.textSecondary }]}>{actionsSummary}</Text>
       </View>
 
       {/* [NEW] "어떤 순서로 실행할까" 우선순위 가이드 */}
       {priorityGuidance && (
-        <View style={s.actionGuideSection}>
+        <View style={[s.actionGuideSection, { backgroundColor: colors.successBg, borderLeftColor: colors.successBorder }]}>
           <View style={s.actionGuideRow}>
-            <Ionicons name="arrow-forward-circle-outline" size={14} color={COLORS.primary} />
-            <Text style={s.actionGuideLabel}>실행 순서 가이드</Text>
+            <Ionicons name="arrow-forward-circle-outline" size={14} color={colors.success} />
+            <Text style={[s.actionGuideLabel, { color: colors.success }]}>실행 순서 가이드</Text>
           </View>
-          <Text style={s.actionGuideText}>{priorityGuidance}</Text>
+          <Text style={[s.actionGuideText, { color: colors.textSecondary }]}>{priorityGuidance}</Text>
         </View>
       )}
 
@@ -381,8 +382,9 @@ export default function TodayActionsSection({
             onPress={() => setExpandedIdx(isExpanded ? null : idx)}
             style={[
               s.actionItem,
+              { backgroundColor: colors.cardDark },
               isHighPriority && { borderLeftWidth: 3, borderLeftColor: ac.text },
-              isExpanded && s.actionItemExpanded,
+              isExpanded && [s.actionItemExpanded, { backgroundColor: colors.card, borderColor: colors.successBorder }],
               isDone && { opacity: 0.5 },
             ]}
           >
@@ -391,8 +393,8 @@ export default function TodayActionsSection({
               <View style={[s.actionBadge, { backgroundColor: ac.bg }]}>
                 <Text style={[s.actionBadgeText, { color: ac.text }]}>{ac.label}</Text>
               </View>
-              <Text style={s.actionTicker}>{isDone ? '✓ ' : ''}{action.ticker}</Text>
-              <Text style={s.actionName} numberOfLines={1}>{action.name}</Text>
+              <Text style={[s.actionTicker, { color: colors.text }]}>{isDone ? '✓ ' : ''}{action.ticker}</Text>
+              <Text style={[s.actionName, { color: colors.textTertiary }]} numberOfLines={1}>{action.name}</Text>
               {isHighPriority && !isDone && (
                 <View style={s.urgentDot}>
                   <Text style={s.urgentDotText}>!</Text>
@@ -415,16 +417,16 @@ export default function TodayActionsSection({
             {/* 현재가 + 등락률 (접힌 상태) */}
             {!isExpanded && displayPrice > 0 && (
               <View style={s.priceRow}>
-                <Text style={s.priceText}>{'\u20A9'}{displayPrice.toLocaleString(undefined, { maximumFractionDigits: 2 })}</Text>
+                <Text style={[s.priceText, { color: colors.text }]}>{'\u20A9'}{displayPrice.toLocaleString(undefined, { maximumFractionDigits: 2 })}</Text>
                 {assetGl !== null && (
-                  <Text style={[s.changeText, { color: (assetGl ?? 0) >= 0 ? '#4CAF50' : '#CF6679' }]}>
+                  <Text style={[s.changeText, { color: (assetGl ?? 0) >= 0 ? colors.success : colors.error }]}>
                     {(assetGl ?? 0) >= 0 ? '+' : ''}{(assetGl ?? 0).toFixed(1)}%
                   </Text>
                 )}
                 {isLive && (
                   <View style={s.liveIndicator}>
-                    <View style={s.liveDotSmall} />
-                    <Text style={s.liveLabel}>LIVE</Text>
+                    <View style={[s.liveDotSmall, { backgroundColor: colors.success }]} />
+                    <Text style={[s.liveLabel, { color: colors.success }]}>LIVE</Text>
                   </View>
                 )}
               </View>
@@ -432,12 +434,12 @@ export default function TodayActionsSection({
 
             {/* 접힌 상태: 사유 2줄 */}
             {!isExpanded && (
-              <Text style={s.actionReason} numberOfLines={2}>{action.reason}</Text>
+              <Text style={[s.actionReason, { color: colors.textTertiary }]} numberOfLines={2}>{action.reason}</Text>
             )}
 
             {/* [NEW] 접힌 상태: 기대 효과 미니 설명 */}
             {!isExpanded && (
-              <Text style={s.actionEffectMini}>{actionEffect}</Text>
+              <Text style={[s.actionEffectMini, { color: colors.textSecondary }]}>{actionEffect}</Text>
             )}
 
             {/* 펼친 상태: 상세 정보 */}
@@ -450,40 +452,40 @@ export default function TodayActionsSection({
                 </View>
 
                 {/* 전체 사유 */}
-                <View style={s.reasonFull}>
-                  <Ionicons name="chatbubble-outline" size={13} color="#666" />
-                  <Text style={s.reasonFullText}>{action.reason}</Text>
+                <View style={[s.reasonFull, { backgroundColor: colors.cardDark }]}>
+                  <Ionicons name="chatbubble-outline" size={13} color={colors.textTertiary} />
+                  <Text style={[s.reasonFullText, { color: colors.textTertiary }]}>{action.reason}</Text>
                 </View>
 
                 {/* [NEW] 기대 효과 (펼친 상태에서 더 잘 보이도록) */}
-                <View style={s.actionEffectExpanded}>
+                <View style={[s.actionEffectExpanded, { backgroundColor: colors.successBg, borderLeftColor: colors.successBorder }]}>
                   <View style={s.actionEffectRow}>
-                    <Ionicons name="trending-up-outline" size={13} color={COLORS.primary} />
-                    <Text style={s.actionEffectLabel}>이 액션의 기대 효과</Text>
+                    <Ionicons name="trending-up-outline" size={13} color={colors.success} />
+                    <Text style={[s.actionEffectLabel, { color: colors.success }]}>이 액션의 기대 효과</Text>
                   </View>
-                  <Text style={s.actionEffectText}>{actionEffect}</Text>
+                  <Text style={[s.actionEffectText, { color: colors.textSecondary }]}>{actionEffect}</Text>
                 </View>
 
                 {/* 내 보유 현황 */}
                 {matchedAsset && (
-                  <View style={s.portfolioInfo}>
-                    <Text style={s.portfolioTitle}>내 보유 현황</Text>
+                  <View style={[s.portfolioInfo, { backgroundColor: colors.successBg, borderColor: colors.successBorder }]}>
+                    <Text style={[s.portfolioTitle, { color: colors.textTertiary }]}>내 보유 현황</Text>
                     <View style={s.portfolioRow}>
                       <View style={s.portfolioItem}>
-                        <Text style={s.portfolioLabel}>현재가{isLive ? ' (실시간)' : ''}</Text>
-                        <Text style={s.portfolioValue}>{'\u20A9'}{displayPrice.toLocaleString(undefined, { maximumFractionDigits: 2 })}</Text>
+                        <Text style={[s.portfolioLabel, { color: colors.textTertiary }]}>현재가{isLive ? ' (실시간)' : ''}</Text>
+                        <Text style={[s.portfolioValue, { color: colors.text }]}>{'\u20A9'}{displayPrice.toLocaleString(undefined, { maximumFractionDigits: 2 })}</Text>
                       </View>
-                      <View style={s.portfolioDivider} />
+                      <View style={[s.portfolioDivider, { backgroundColor: colors.successBorder }]} />
                       <View style={s.portfolioItem}>
-                        <Text style={s.portfolioLabel}>수익률</Text>
-                        <Text style={[s.portfolioValue, { color: (assetGl ?? 0) >= 0 ? '#4CAF50' : '#CF6679' }]}>
+                        <Text style={[s.portfolioLabel, { color: colors.textTertiary }]}>수익률</Text>
+                        <Text style={[s.portfolioValue, { color: (assetGl ?? 0) >= 0 ? colors.success : colors.error }]}>
                           {(assetGl ?? 0) >= 0 ? '+' : ''}{(assetGl ?? 0).toFixed(1)}%
                         </Text>
                       </View>
-                      <View style={s.portfolioDivider} />
+                      <View style={[s.portfolioDivider, { backgroundColor: colors.successBorder }]} />
                       <View style={s.portfolioItem}>
-                        <Text style={s.portfolioLabel}>비중</Text>
-                        <Text style={s.portfolioValue}>{assetWeight}%</Text>
+                        <Text style={[s.portfolioLabel, { color: colors.textTertiary }]}>비중</Text>
+                        <Text style={[s.portfolioValue, { color: colors.text }]}>{assetWeight}%</Text>
                       </View>
                     </View>
                   </View>
@@ -491,9 +493,9 @@ export default function TodayActionsSection({
 
                 {/* 제안 금액/수량 */}
                 {displayPrice > 0 && (action.action === 'BUY' || action.action === 'SELL') && (
-                  <View style={s.suggestBox}>
-                    <Ionicons name="calculator-outline" size={13} color="#FFC107" />
-                    <Text style={s.suggestText}>
+                  <View style={[s.suggestBox, { backgroundColor: colors.warningBg, borderColor: colors.warningBorder }]}>
+                    <Ionicons name="calculator-outline" size={13} color={colors.warning} />
+                    <Text style={[s.suggestText, { color: colors.warning }]}>
                       {action.action === 'BUY'
                         ? `제안: ${displayPrice > 0 ? Math.floor(totalAssets * 0.02 / displayPrice) : 0}주 (${'\u20A9'}${Math.floor(totalAssets * 0.02).toLocaleString()}, 총자산 2%)`
                         : matchedAsset
@@ -511,36 +513,36 @@ export default function TodayActionsSection({
                   const sellAmt = displayPrice * qty;
                   const tax = estimateTax(action.ticker, sellAmt, matchedAsset.avgPrice, displayPrice, qty);
                   return (
-                    <View style={s.taxBox}>
+                    <View style={[s.taxBox, { backgroundColor: colors.infoBg, borderColor: colors.infoBorder }]}>
                       <View style={s.taxHeader}>
-                        <Ionicons name="receipt-outline" size={13} color="#64B5F6" />
-                        <Text style={s.taxHeaderText}>전량 매도 시 예상 비용</Text>
-                        <Text style={s.taxAssetType}>{tax.assetTypeLabel}</Text>
+                        <Ionicons name="receipt-outline" size={13} color={colors.info} />
+                        <Text style={[s.taxHeaderText, { color: colors.info }]}>전량 매도 시 예상 비용</Text>
+                        <Text style={[s.taxAssetType, { color: colors.textTertiary, backgroundColor: colors.cardDark }]}>{tax.assetTypeLabel}</Text>
                       </View>
                       <View style={s.taxRows}>
                         {tax.transactionTax > 0 && (
                           <View style={s.taxRow}>
-                            <Text style={s.taxLabel}>거래세</Text>
-                            <Text style={s.taxValue}>{'\u20A9'}{Math.floor(tax.transactionTax).toLocaleString()}</Text>
+                            <Text style={[s.taxLabel, { color: colors.textTertiary }]}>거래세</Text>
+                            <Text style={[s.taxValue, { color: colors.textTertiary }]}>{'\u20A9'}{Math.floor(tax.transactionTax).toLocaleString()}</Text>
                           </View>
                         )}
                         <View style={s.taxRow}>
-                          <Text style={s.taxLabel}>수수료</Text>
-                          <Text style={s.taxValue}>{'\u20A9'}{Math.floor(tax.brokerageFee).toLocaleString()}</Text>
+                          <Text style={[s.taxLabel, { color: colors.textTertiary }]}>수수료</Text>
+                          <Text style={[s.taxValue, { color: colors.textTertiary }]}>{'\u20A9'}{Math.floor(tax.brokerageFee).toLocaleString()}</Text>
                         </View>
                         {tax.capitalGainsTax > 0 && (
                           <View style={s.taxRow}>
-                            <Text style={s.taxLabel}>양도소득세</Text>
-                            <Text style={[s.taxValue, { color: '#CF6679' }]}>{'\u20A9'}{Math.floor(tax.capitalGainsTax).toLocaleString()}</Text>
+                            <Text style={[s.taxLabel, { color: colors.textTertiary }]}>양도소득세</Text>
+                            <Text style={[s.taxValue, { color: colors.error }]}>{'\u20A9'}{Math.floor(tax.capitalGainsTax).toLocaleString()}</Text>
                           </View>
                         )}
-                        <View style={[s.taxRow, s.taxTotalRow]}>
-                          <Text style={s.taxTotalLabel}>실수령 예상</Text>
-                          <Text style={s.taxTotalValue}>{'\u20A9'}{Math.floor(tax.netProceeds).toLocaleString()}</Text>
+                        <View style={[s.taxRow, s.taxTotalRow, { borderTopColor: colors.infoBorder }]}>
+                          <Text style={[s.taxTotalLabel, { color: colors.info }]}>실수령 예상</Text>
+                          <Text style={[s.taxTotalValue, { color: colors.text }]}>{'\u20A9'}{Math.floor(tax.netProceeds).toLocaleString()}</Text>
                         </View>
                       </View>
-                      {tax.note ? <Text style={s.taxNote}>{tax.note}</Text> : null}
-                      <Text style={s.taxDisclaimer}>* 참고용이며 실제 세금은 개인 상황에 따라 다릅니다</Text>
+                      {tax.note ? <Text style={[s.taxNote, { color: colors.info }]}>{tax.note}</Text> : null}
+                      <Text style={[s.taxDisclaimer, { color: colors.textTertiary }]}>* 참고용이며 실제 세금은 개인 상황에 따라 다릅니다</Text>
                     </View>
                   );
                 })()}
@@ -548,7 +550,7 @@ export default function TodayActionsSection({
                 {/* 실행 완료 기록 (BUY/SELL만) */}
                 {(action.action === 'BUY' || action.action === 'SELL') && displayPrice > 0 && (
                   <TouchableOpacity
-                    style={s.logExecutionBtn}
+                    style={[s.logExecutionBtn, { backgroundColor: colors.successBg, borderColor: colors.successBorder }]}
                     activeOpacity={0.7}
                     onPress={() => {
                       const suggestedQty = action.action === 'BUY'
@@ -566,24 +568,24 @@ export default function TodayActionsSection({
                       });
                     }}
                   >
-                    <Ionicons name="checkbox-outline" size={14} color="#4CAF50" />
-                    <Text style={s.logExecutionText}>실행 완료 기록</Text>
-                    <Ionicons name="chevron-forward" size={14} color="#4CAF50" />
+                    <Ionicons name="checkbox-outline" size={14} color={colors.success} />
+                    <Text style={[s.logExecutionText, { color: colors.success }]}>실행 완료 기록</Text>
+                    <Ionicons name="chevron-forward" size={14} color={colors.success} />
                   </TouchableOpacity>
                 )}
 
                 {/* AI 딥다이브 */}
                 <TouchableOpacity
-                  style={s.deepDiveBtn}
+                  style={[s.deepDiveBtn, { backgroundColor: colors.primaryBg, borderColor: colors.primaryBorder }]}
                   activeOpacity={0.7}
                   onPress={() => router.push({
                     pathname: '/marketplace',
                     params: { ticker: action.ticker, feature: 'deep_dive' },
                   })}
                 >
-                  <Ionicons name="sparkles" size={14} color="#7C4DFF" />
-                  <Text style={s.deepDiveText}>AI 딥다이브 분석 보기</Text>
-                  <Ionicons name="chevron-forward" size={14} color="#7C4DFF" />
+                  <Ionicons name="sparkles" size={14} color={colors.primary} />
+                  <Text style={[s.deepDiveText, { color: colors.primary }]}>AI 딥다이브 분석 보기</Text>
+                  <Ionicons name="chevron-forward" size={14} color={colors.primary} />
                 </TouchableOpacity>
               </View>
             )}
@@ -595,17 +597,26 @@ export default function TodayActionsSection({
 }
 
 const s = StyleSheet.create({
+  // card: {
+  //   backgroundColor: '#141414',
+  //   marginHorizontal: 16,
+  //   marginBottom: 12,
+  //   borderRadius: 16,
+  //   padding: 18,
+  //   borderWidth: 1,
+  //   borderColor: '#1E1E1E',
+  // },
   card: {
-    backgroundColor: '#141414',
     marginHorizontal: 16,
     marginBottom: 12,
     borderRadius: 16,
     padding: 18,
     borderWidth: 1,
-    borderColor: '#1E1E1E',
   },
-  cardLabel: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
-  cardLabelEn: { fontSize: 10, color: '#555', marginTop: 1, letterSpacing: 0.5, textTransform: 'uppercase' },
+  // cardLabel: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
+  // cardLabelEn: { fontSize: 10, color: '#555', marginTop: 1, letterSpacing: 0.5, textTransform: 'uppercase' },
+  cardLabel: { fontSize: 15, fontWeight: '700' },
+  cardLabelEn: { fontSize: 10, marginTop: 1, letterSpacing: 0.5, textTransform: 'uppercase' },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -614,8 +625,13 @@ const s = StyleSheet.create({
   },
 
   // [NEW] "왜 이 액션들이 나왔는가" 섹션
+  // whySection: {
+  //   backgroundColor: 'rgba(176,176,176,0.06)',
+  //   borderRadius: 10,
+  //   padding: 12,
+  //   marginBottom: 8,
+  // },
   whySection: {
-    backgroundColor: 'rgba(176,176,176,0.06)',
     borderRadius: 10,
     padding: 12,
     marginBottom: 8,
@@ -626,25 +642,39 @@ const s = StyleSheet.create({
     gap: 5,
     marginBottom: 4,
   },
+  // whyLabel: {
+  //   fontSize: 11,
+  //   fontWeight: '600',
+  //   color: COLORS.textSecondary,
+  // },
+  // whyText: {
+  //   fontSize: 12,
+  //   color: COLORS.textSecondary,
+  //   lineHeight: 18,
+  // },
   whyLabel: {
     fontSize: 11,
     fontWeight: '600',
-    color: COLORS.textSecondary,
   },
   whyText: {
     fontSize: 12,
-    color: COLORS.textSecondary,
     lineHeight: 18,
   },
 
   // [NEW] "어떤 순서로 실행할까" 가이드 섹션
+  // actionGuideSection: {
+  //   backgroundColor: 'rgba(76,175,80,0.06)',
+  //   borderRadius: 10,
+  //   padding: 12,
+  //   marginBottom: 14,
+  //   borderLeftWidth: 2,
+  //   borderLeftColor: 'rgba(76,175,80,0.3)',
+  // },
   actionGuideSection: {
-    backgroundColor: 'rgba(76,175,80,0.06)',
     borderRadius: 10,
     padding: 12,
     marginBottom: 14,
     borderLeftWidth: 2,
-    borderLeftColor: 'rgba(76,175,80,0.3)',
   },
   actionGuideRow: {
     flexDirection: 'row',
@@ -652,33 +682,52 @@ const s = StyleSheet.create({
     gap: 5,
     marginBottom: 4,
   },
+  // actionGuideLabel: {
+  //   fontSize: 11,
+  //   fontWeight: '600',
+  //   color: COLORS.primary,
+  // },
+  // actionGuideText: {
+  //   fontSize: 12,
+  //   color: COLORS.textSecondary,
+  //   lineHeight: 18,
+  // },
   actionGuideLabel: {
     fontSize: 11,
     fontWeight: '600',
-    color: COLORS.primary,
   },
   actionGuideText: {
     fontSize: 12,
-    color: COLORS.textSecondary,
     lineHeight: 18,
   },
 
   // [NEW] 접힌 상태의 기대 효과 미니 설명
+  // actionEffectMini: {
+  //   fontSize: 11,
+  //   color: COLORS.textSecondary,
+  //   lineHeight: 16,
+  //   marginTop: 4,
+  //   fontStyle: 'italic',
+  // },
   actionEffectMini: {
     fontSize: 11,
-    color: COLORS.textSecondary,
     lineHeight: 16,
     marginTop: 4,
     fontStyle: 'italic',
   },
 
   // [NEW] 펼친 상태의 기대 효과 섹션
+  // actionEffectExpanded: {
+  //   backgroundColor: 'rgba(76,175,80,0.06)',
+  //   borderRadius: 8,
+  //   padding: 10,
+  //   borderLeftWidth: 2,
+  //   borderLeftColor: 'rgba(76,175,80,0.25)',
+  // },
   actionEffectExpanded: {
-    backgroundColor: 'rgba(76,175,80,0.06)',
     borderRadius: 8,
     padding: 10,
     borderLeftWidth: 2,
-    borderLeftColor: 'rgba(76,175,80,0.25)',
   },
   actionEffectRow: {
     flexDirection: 'row',
@@ -686,14 +735,22 @@ const s = StyleSheet.create({
     gap: 5,
     marginBottom: 3,
   },
+  // actionEffectLabel: {
+  //   fontSize: 11,
+  //   fontWeight: '600',
+  //   color: COLORS.primary,
+  // },
+  // actionEffectText: {
+  //   fontSize: 12,
+  //   color: COLORS.textSecondary,
+  //   lineHeight: 17,
+  // },
   actionEffectLabel: {
     fontSize: 11,
     fontWeight: '600',
-    color: COLORS.primary,
   },
   actionEffectText: {
     fontSize: 12,
-    color: COLORS.textSecondary,
     lineHeight: 17,
   },
 
@@ -701,82 +758,133 @@ const s = StyleSheet.create({
   actionCountText: { fontSize: 11, color: '#4CAF50', fontWeight: '600' },
   completedCount: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   completedCountText: { fontSize: 10, color: '#4CAF50', fontWeight: '500' },
-  actionItem: { backgroundColor: '#1A1A1A', borderRadius: 12, padding: 14, marginBottom: 8 },
-  actionItemExpanded: { backgroundColor: '#1E1E1E', borderWidth: 1, borderColor: 'rgba(76,175,80,0.2)' },
+  // actionItem: { backgroundColor: '#1A1A1A', borderRadius: 12, padding: 14, marginBottom: 8 },
+  actionItem: { borderRadius: 12, padding: 14, marginBottom: 8 },
+  // actionItemExpanded: { backgroundColor: '#1E1E1E', borderWidth: 1, borderColor: 'rgba(76,175,80,0.2)' },
+  actionItemExpanded: { borderWidth: 1 },
   actionTop: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
   checkBtn: { padding: 2 },
   checkBtnDone: {},
   actionBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
   actionBadgeText: { fontSize: 11, fontWeight: '800' },
-  actionTicker: { fontSize: 14, fontWeight: '700', color: '#FFFFFF' },
-  actionName: { flex: 1, fontSize: 12, color: '#666' },
+  // actionTicker: { fontSize: 14, fontWeight: '700', color: '#FFFFFF' },
+  // actionName: { flex: 1, fontSize: 12, color: '#666' },
+  actionTicker: { fontSize: 14, fontWeight: '700' },
+  actionName: { flex: 1, fontSize: 12 },
   urgentDot: { width: 18, height: 18, borderRadius: 9, backgroundColor: '#CF6679', justifyContent: 'center', alignItems: 'center' },
   urgentDotText: { fontSize: 10, fontWeight: '800', color: '#FFF' },
-  actionReason: { fontSize: 12, color: '#999', lineHeight: 18 },
+  // actionReason: { fontSize: 12, color: '#999', lineHeight: 18 },
+  actionReason: { fontSize: 12, lineHeight: 18 },
   priceRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
-  priceText: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
+  // priceText: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
+  priceText: { fontSize: 15, fontWeight: '700' },
   changeText: { fontSize: 12, fontWeight: '600' },
   liveIndicator: { flexDirection: 'row', alignItems: 'center', gap: 3, marginLeft: 'auto' },
-  liveDotSmall: { width: 5, height: 5, borderRadius: 2.5, backgroundColor: '#4CAF50' },
-  liveLabel: { fontSize: 9, fontWeight: '700', color: '#4CAF50', letterSpacing: 0.5 },
+  // liveDotSmall: { width: 5, height: 5, borderRadius: 2.5, backgroundColor: '#4CAF50' },
+  liveDotSmall: { width: 5, height: 5, borderRadius: 2.5 },
+  // liveLabel: { fontSize: 9, fontWeight: '700', color: '#4CAF50', letterSpacing: 0.5 },
+  liveLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 0.5 },
   detail: { marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: '#2A2A2A', gap: 10 },
   priorityBadge: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, gap: 6 },
   priorityDot: { width: 6, height: 6, borderRadius: 3 },
   priorityText: { fontSize: 11, fontWeight: '700' },
-  reasonFull: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, backgroundColor: 'rgba(255,255,255,0.03)', padding: 12, borderRadius: 10 },
-  reasonFullText: { flex: 1, fontSize: 13, color: '#CCC', lineHeight: 20 },
-  portfolioInfo: { backgroundColor: 'rgba(76,175,80,0.06)', borderRadius: 10, padding: 12, borderWidth: 1, borderColor: 'rgba(76,175,80,0.1)' },
-  portfolioTitle: { fontSize: 11, color: '#888', fontWeight: '600', marginBottom: 8 },
+  // reasonFull: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, backgroundColor: 'rgba(255,255,255,0.03)', padding: 12, borderRadius: 10 },
+  reasonFull: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, padding: 12, borderRadius: 10 },
+  // reasonFullText: { flex: 1, fontSize: 13, color: '#CCC', lineHeight: 20 },
+  reasonFullText: { flex: 1, fontSize: 13, lineHeight: 20 },
+  // portfolioInfo: { backgroundColor: 'rgba(76,175,80,0.06)', borderRadius: 10, padding: 12, borderWidth: 1, borderColor: 'rgba(76,175,80,0.1)' },
+  portfolioInfo: { borderRadius: 10, padding: 12, borderWidth: 1 },
+  // portfolioTitle: { fontSize: 11, color: '#888', fontWeight: '600', marginBottom: 8 },
+  portfolioTitle: { fontSize: 11, fontWeight: '600', marginBottom: 8 },
   portfolioRow: { flexDirection: 'row', alignItems: 'center' },
   portfolioItem: { flex: 1, alignItems: 'center' },
-  portfolioDivider: { width: 1, height: 28, backgroundColor: 'rgba(76,175,80,0.15)' },
-  portfolioLabel: { fontSize: 10, color: '#666', marginBottom: 3 },
-  portfolioValue: { fontSize: 13, fontWeight: '700', color: '#FFF' },
+  // portfolioDivider: { width: 1, height: 28, backgroundColor: 'rgba(76,175,80,0.15)' },
+  portfolioDivider: { width: 1, height: 28 },
+  // portfolioLabel: { fontSize: 10, color: '#666', marginBottom: 3 },
+  portfolioLabel: { fontSize: 10, marginBottom: 3 },
+  // portfolioValue: { fontSize: 13, fontWeight: '700', color: '#FFF' },
+  portfolioValue: { fontSize: 13, fontWeight: '700' },
+  // logExecutionBtn: {
+  //   flexDirection: 'row',
+  //   alignItems: 'center',
+  //   justifyContent: 'center',
+  //   backgroundColor: 'rgba(76,175,80,0.08)',
+  //   paddingVertical: 10,
+  //   borderRadius: 10,
+  //   gap: 6,
+  //   borderWidth: 1,
+  //   borderColor: 'rgba(76,175,80,0.15)',
+  // },
   logExecutionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(76,175,80,0.08)',
     paddingVertical: 10,
     borderRadius: 10,
     gap: 6,
     borderWidth: 1,
-    borderColor: 'rgba(76,175,80,0.15)',
   },
-  logExecutionText: { fontSize: 12, color: '#4CAF50', fontWeight: '600' },
+  // logExecutionText: { fontSize: 12, color: '#4CAF50', fontWeight: '600' },
+  logExecutionText: { fontSize: 12, fontWeight: '600' },
+  // deepDiveBtn: {
+  //   flexDirection: 'row',
+  //   alignItems: 'center',
+  //   justifyContent: 'center',
+  //   backgroundColor: 'rgba(124,77,255,0.08)',
+  //   paddingVertical: 10,
+  //   borderRadius: 10,
+  //   gap: 6,
+  //   borderWidth: 1,
+  //   borderColor: 'rgba(124,77,255,0.15)',
+  // },
   deepDiveBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(124,77,255,0.08)',
     paddingVertical: 10,
     borderRadius: 10,
     gap: 6,
     borderWidth: 1,
-    borderColor: 'rgba(124,77,255,0.15)',
   },
-  deepDiveText: { fontSize: 12, color: '#7C4DFF', fontWeight: '600' },
-  suggestBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,193,7,0.06)', paddingHorizontal: 12, paddingVertical: 9, borderRadius: 8, gap: 8, borderWidth: 1, borderColor: 'rgba(255,193,7,0.1)' },
-  suggestText: { flex: 1, fontSize: 12, color: '#FFC107', fontWeight: '500', lineHeight: 18 },
+  // deepDiveText: { fontSize: 12, color: '#7C4DFF', fontWeight: '600' },
+  deepDiveText: { fontSize: 12, fontWeight: '600' },
+  // suggestBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,193,7,0.06)', paddingHorizontal: 12, paddingVertical: 9, borderRadius: 8, gap: 8, borderWidth: 1, borderColor: 'rgba(255,193,7,0.1)' },
+  suggestBox: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 9, borderRadius: 8, gap: 8, borderWidth: 1 },
+  // suggestText: { flex: 1, fontSize: 12, color: '#FFC107', fontWeight: '500', lineHeight: 18 },
+  suggestText: { flex: 1, fontSize: 12, fontWeight: '500', lineHeight: 18 },
 
   // 세금/수수료 시뮬레이션
+  // taxBox: {
+  //   backgroundColor: 'rgba(100,181,246,0.06)',
+  //   borderRadius: 10,
+  //   padding: 12,
+  //   borderWidth: 1,
+  //   borderColor: 'rgba(100,181,246,0.1)',
+  // },
   taxBox: {
-    backgroundColor: 'rgba(100,181,246,0.06)',
     borderRadius: 10,
     padding: 12,
     borderWidth: 1,
-    borderColor: 'rgba(100,181,246,0.1)',
   },
   taxHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 },
-  taxHeaderText: { fontSize: 11, color: '#64B5F6', fontWeight: '600' },
-  taxAssetType: { fontSize: 10, color: '#888', marginLeft: 'auto', backgroundColor: 'rgba(255,255,255,0.05)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
+  // taxHeaderText: { fontSize: 11, color: '#64B5F6', fontWeight: '600' },
+  taxHeaderText: { fontSize: 11, fontWeight: '600' },
+  // taxAssetType: { fontSize: 10, color: '#888', marginLeft: 'auto', backgroundColor: 'rgba(255,255,255,0.05)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
+  taxAssetType: { fontSize: 10, marginLeft: 'auto', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
   taxRows: { gap: 6 },
   taxRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  taxLabel: { fontSize: 11, color: '#888' },
-  taxValue: { fontSize: 12, color: '#CCC', fontWeight: '500' },
-  taxTotalRow: { borderTopWidth: 1, borderTopColor: 'rgba(100,181,246,0.15)', paddingTop: 8, marginTop: 4 },
-  taxTotalLabel: { fontSize: 12, color: '#64B5F6', fontWeight: '700' },
-  taxTotalValue: { fontSize: 14, color: '#FFFFFF', fontWeight: '700' },
-  taxNote: { fontSize: 10, color: '#64B5F6', marginTop: 8 },
-  taxDisclaimer: { fontSize: 9, color: '#555', marginTop: 4 },
+  // taxLabel: { fontSize: 11, color: '#888' },
+  taxLabel: { fontSize: 11 },
+  // taxValue: { fontSize: 12, color: '#CCC', fontWeight: '500' },
+  taxValue: { fontSize: 12, fontWeight: '500' },
+  // taxTotalRow: { borderTopWidth: 1, borderTopColor: 'rgba(100,181,246,0.15)', paddingTop: 8, marginTop: 4 },
+  taxTotalRow: { borderTopWidth: 1, paddingTop: 8, marginTop: 4 },
+  // taxTotalLabel: { fontSize: 12, color: '#64B5F6', fontWeight: '700' },
+  taxTotalLabel: { fontSize: 12, fontWeight: '700' },
+  // taxTotalValue: { fontSize: 14, color: '#FFFFFF', fontWeight: '700' },
+  taxTotalValue: { fontSize: 14, fontWeight: '700' },
+  // taxNote: { fontSize: 10, color: '#64B5F6', marginTop: 8 },
+  taxNote: { fontSize: 10, marginTop: 8 },
+  // taxDisclaimer: { fontSize: 9, color: '#555', marginTop: 4 },
+  taxDisclaimer: { fontSize: 9, marginTop: 4 },
 });

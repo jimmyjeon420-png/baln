@@ -173,7 +173,7 @@ export function getTrafficLight(healthScore: HealthScoreResult): TrafficLightRes
  * - overallLight === 'red': 비중 30%+ 자산 red, 15%+ yellow, 나머지 green
  */
 export function getAssetSignals(
-  assets: Array<{ name: string; ticker: string; currentValue: number }>,
+  assets: { name: string; ticker: string; currentValue: number }[],
   totalAssets: number,
   overallLight: TrafficLight
 ): AssetSignal[] {

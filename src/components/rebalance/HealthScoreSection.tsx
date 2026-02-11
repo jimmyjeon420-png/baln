@@ -16,16 +16,18 @@
  * - COLORS.textSecondary 기반 설명 텍스트 레이어
  */
 
-import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView } from 'react-native';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import HealthScoreDetail from '../HealthScoreDetail';
 import type { HealthScoreResult, FactorResult } from '../../services/rebalanceScore';
-import { COLORS } from '../../styles/theme';
+import { useTheme } from '../../hooks/useTheme';
+import { saveHealthScore, loadPreviousHealthScore } from '../../utils/storage';
 
 interface HealthScoreSectionProps {
   healthScore: HealthScoreResult;
+  onScoreImproved?: (improvement: number) => void;
 }
 
 /** 팩터별 설명 텍스트 (툴팁용) */
@@ -130,14 +132,60 @@ function generateActionGuidance(healthScore: HealthScoreResult): string | null {
   return ACTION_MAP[worst.label] || '아래 상세 내역을 펼쳐서 각 팩터별 개선점을 확인해보세요.';
 }
 
-export default function HealthScoreSection({ healthScore }: HealthScoreSectionProps) {
+export default function HealthScoreSection({ healthScore, onScoreImproved }: HealthScoreSectionProps) {
+  const { colors, shadows } = useTheme();
   const [showDetail, setShowDetail] = useState(false);
   const [tooltipVisible, setTooltipVisible] = useState(false);
   const [tooltipContent, setTooltipContent] = useState({ title: '', description: '' });
+  const [improveToast, setImproveToast] = useState<{ show: boolean; improvement: number; credits: number }>({ show: false, improvement: 0, credits: 0 });
+  const improveOpacity = useRef(new Animated.Value(0)).current;
+  const scoreLoadedRef = useRef(false);
 
   // "왜 이 점수인가" + "지금 할 수 있는 것" 계산
   const whyExplanation = useMemo(() => generateWhyExplanation(healthScore), [healthScore]);
   const actionGuidance = useMemo(() => generateActionGuidance(healthScore), [healthScore]);
+
+  // 건강 점수 개선 감지 (최초 로드 시에만 실행)
+  useEffect(() => {
+    const checkScoreImprovement = async () => {
+      if (scoreLoadedRef.current) return;
+      scoreLoadedRef.current = true;
+
+      const previousScore = await loadPreviousHealthScore();
+      const currentScore = healthScore.totalScore;
+
+      // 이전 점수가 있고 현재 점수가 10점 이상 올랐으면
+      if (previousScore !== null && currentScore - previousScore >= 10) {
+        const improvement = currentScore - previousScore;
+        const credits = 1; // 1C = ₩100, 건강 점수 개선 보상
+
+        try {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        } catch (e) {
+          // 햅틱 미지원 무시
+        }
+
+        setImproveToast({ show: true, improvement, credits });
+
+        // 페이드인 → 4초 후 페이드아웃
+        Animated.sequence([
+          Animated.timing(improveOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+          Animated.delay(4000),
+          Animated.timing(improveOpacity, { toValue: 0, duration: 300, useNativeDriver: true }),
+        ]).start(() => setImproveToast({ show: false, improvement: 0, credits: 0 }));
+
+        // 콜백 호출
+        if (onScoreImproved) {
+          onScoreImproved(improvement);
+        }
+      }
+
+      // 현재 점수 저장 (다음 비교를 위해)
+      await saveHealthScore(currentScore);
+    };
+
+    checkScoreImprovement();
+  }, [healthScore]);
 
   /** 툴팁 표시 함수 */
   const showTooltip = (factorLabel: string) => {
@@ -164,7 +212,18 @@ export default function HealthScoreSection({ healthScore }: HealthScoreSectionPr
   };
 
   return (
-    <View style={s.card}>
+    <View style={[s.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      {/* 건강 점수 개선 토스트 */}
+      {improveToast.show && (
+        <Animated.View style={[s.improveToast, { opacity: improveOpacity }]}>
+          <Ionicons name="sparkles" size={20} color="#FFD700" />
+          <View style={s.improveToastContent}>
+            <Text style={s.improveToastTitle}>건강 점수가 {improveToast.improvement}점 올랐어요!</Text>
+            <Text style={s.improveToastSubtitle}>보상으로 AI 분석 1회 무료 (1C 적립)</Text>
+          </View>
+        </Animated.View>
+      )}
+
       {/* 헤더: 건강 점수 + 등급 뱃지 + 상세 토글 */}
       <TouchableOpacity
         style={s.headerRow}
@@ -172,24 +231,24 @@ export default function HealthScoreSection({ healthScore }: HealthScoreSectionPr
         activeOpacity={0.7}
       >
         <View style={s.headerLeft}>
-          <View style={s.scoreCircle}>
+          <View style={[s.scoreCircle, { backgroundColor: colors.border }]}>
             <Text style={[s.scoreNumber, { color: healthScore.gradeColor }]}>
               {healthScore.totalScore}
             </Text>
           </View>
           <View>
             <View style={s.titleRow}>
-              <Text style={s.cardLabel}>건강 점수</Text>
+              <Text style={[s.cardLabel, { color: colors.text }]}>건강 점수</Text>
               <View style={[s.gradeBadge, { backgroundColor: healthScore.gradeBgColor }]}>
                 <Text style={[s.gradeText, { color: healthScore.gradeColor }]}>
                   {healthScore.grade} {healthScore.gradeLabel}
                 </Text>
               </View>
             </View>
-            <Text style={s.cardLabelEn}>Health Score</Text>
+            <Text style={[s.cardLabelEn, { color: colors.textSecondary }]}>Health Score</Text>
           </View>
         </View>
-        <Ionicons name={showDetail ? 'chevron-up' : 'chevron-down'} size={14} color="#888" />
+        <Ionicons name={showDetail ? 'chevron-up' : 'chevron-down'} size={14} color={colors.textSecondary} />
       </TouchableOpacity>
 
       {/* 등급별 상세 해석 */}
@@ -197,23 +256,45 @@ export default function HealthScoreSection({ healthScore }: HealthScoreSectionPr
         {GRADE_ICONS[healthScore.grade]} {GRADE_INTERPRETATIONS[healthScore.grade]}
       </Text>
 
-      {/* [NEW] "왜 이 점수인가" 요약 — 어떤 팩터가 점수를 끌어내렸는지 설명 */}
-      <View style={s.whySection}>
-        <View style={s.whyRow}>
-          <Ionicons name="help-circle-outline" size={14} color={COLORS.textSecondary} />
-          <Text style={s.whyLabel}>왜 이 점수인가요?</Text>
+      {/* [NEW] 역사적 맥락 비교 — 달리오 철학: "2008년 금융위기 때는 30점이었어요" */}
+      <View style={[s.historicalContext, { backgroundColor: colors.cardDark }]}>
+        <View style={s.historicalRow}>
+          <Ionicons name="time-outline" size={14} color={colors.textSecondary} />
+          <Text style={[s.historicalLabel, { color: colors.textSecondary }]}>역사적 비교</Text>
         </View>
-        <Text style={s.whyText}>{whyExplanation}</Text>
+        <View style={s.historicalComparison}>
+          <Text style={[s.historicalText, { color: colors.textSecondary }]}>
+            📊 2008년 금융위기: 평균 35점
+          </Text>
+          <Text style={[s.historicalText, { color: colors.textSecondary }]}>
+            📊 2020년 코로나 팬데믹: 평균 42점
+          </Text>
+          <Text style={[s.currentComparison, { color: healthScore.gradeColor }]}>
+            → 현재 당신의 점수는 {healthScore.totalScore}점입니다
+          </Text>
+          <Text style={[s.historicalNote, { color: colors.textSecondary }]}>
+            위기 속에서도 투자자들이 견디어낸 점수들입니다. 안심하세요.
+          </Text>
+        </View>
+      </View>
+
+      {/* [NEW] "왜 이 점수인가" 요약 — 어떤 팩터가 점수를 끌어내렸는지 설명 */}
+      <View style={[s.whySection, { backgroundColor: colors.cardDark }]}>
+        <View style={s.whyRow}>
+          <Ionicons name="help-circle-outline" size={14} color={colors.textSecondary} />
+          <Text style={[s.whyLabel, { color: colors.textSecondary }]}>왜 이 점수인가요?</Text>
+        </View>
+        <Text style={[s.whyText, { color: colors.textSecondary }]}>{whyExplanation}</Text>
       </View>
 
       {/* [NEW] "지금 할 수 있는 것" 액션 가이드 — S등급이면 표시 안 함 */}
       {actionGuidance && (
-        <View style={s.actionGuideSection}>
+        <View style={[s.actionGuideSection, { backgroundColor: colors.successBg, borderLeftColor: colors.successBorder }]}>
           <View style={s.actionGuideRow}>
-            <Ionicons name="arrow-forward-circle-outline" size={14} color={COLORS.primary} />
-            <Text style={s.actionGuideLabel}>지금 할 수 있는 것</Text>
+            <Ionicons name="arrow-forward-circle-outline" size={14} color={colors.success} />
+            <Text style={[s.actionGuideLabel, { color: colors.success }]}>지금 할 수 있는 것</Text>
           </View>
-          <Text style={s.actionGuideText}>{actionGuidance}</Text>
+          <Text style={[s.actionGuideText, { color: colors.textSecondary }]}>{actionGuidance}</Text>
         </View>
       )}
 
@@ -225,7 +306,7 @@ export default function HealthScoreSection({ healthScore }: HealthScoreSectionPr
             return (
               <View key={idx} style={s.miniFactor}>
                 <Text style={s.miniIcon}>{factor.icon}</Text>
-                <View style={s.miniBarBg}>
+                <View style={[s.miniBarBg, { backgroundColor: colors.cardDark }]}>
                   <View style={[s.miniBarFill, { width: `${factor.score}%`, backgroundColor: barColor }]} />
                 </View>
                 <Text style={[s.miniScore, { color: barColor }]}>{factor.score}</Text>
@@ -236,7 +317,7 @@ export default function HealthScoreSection({ healthScore }: HealthScoreSectionPr
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                   style={s.infoIcon}
                 >
-                  <Ionicons name="information-circle-outline" size={16} color="#888" />
+                  <Ionicons name="information-circle-outline" size={16} color={colors.textSecondary} />
                 </TouchableOpacity>
               </View>
             );
@@ -251,8 +332,8 @@ export default function HealthScoreSection({ healthScore }: HealthScoreSectionPr
 
           {/* 팩터별 개선 제안 (40점 미만) */}
           {healthScore.factors.some(f => f.score < 40) && (
-            <View style={s.suggestionsSection}>
-              <Text style={s.suggestionsTitle}>개선 제안</Text>
+            <View style={[s.suggestionsSection, { borderTopColor: colors.border }]}>
+              <Text style={[s.suggestionsTitle, { color: colors.warning }]}>개선 제안</Text>
               {healthScore.factors.map((factor, idx) => (
                 <View key={idx}>
                   {renderSuggestion(factor)}
@@ -275,15 +356,15 @@ export default function HealthScoreSection({ healthScore }: HealthScoreSectionPr
           activeOpacity={1}
           onPress={() => setTooltipVisible(false)}
         >
-          <View style={s.tooltipModal}>
-            <View style={s.tooltipHeader}>
-              <Text style={s.tooltipTitle}>{tooltipContent.title}</Text>
+          <View style={[s.tooltipModal, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={[s.tooltipHeader, { borderBottomColor: colors.border }]}>
+              <Text style={[s.tooltipTitle, { color: colors.text }]}>{tooltipContent.title}</Text>
               <TouchableOpacity onPress={() => setTooltipVisible(false)}>
-                <Ionicons name="close" size={20} color="#888" />
+                <Ionicons name="close" size={20} color={colors.textSecondary} />
               </TouchableOpacity>
             </View>
             <ScrollView style={s.tooltipScroll}>
-              <Text style={s.tooltipDescription}>{tooltipContent.description}</Text>
+              <Text style={[s.tooltipDescription, { color: colors.textTertiary }]}>{tooltipContent.description}</Text>
             </ScrollView>
           </View>
         </TouchableOpacity>
@@ -293,14 +374,48 @@ export default function HealthScoreSection({ healthScore }: HealthScoreSectionPr
 }
 
 const s = StyleSheet.create({
+  // card: {
+  //   backgroundColor: '#141414',
+  //   marginHorizontal: 16,
+  //   marginBottom: 12,
+  //   borderRadius: 16,
+  //   padding: 18,
+  //   borderWidth: 1,
+  //   borderColor: '#1E1E1E',
+  // },
   card: {
-    backgroundColor: '#141414',
     marginHorizontal: 16,
     marginBottom: 12,
     borderRadius: 16,
     padding: 18,
     borderWidth: 1,
-    borderColor: '#1E1E1E',
+  },
+  // 건강 점수 개선 토스트
+  improveToast: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    backgroundColor: 'rgba(255, 215, 0, 0.15)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.3)',
+  },
+  improveToastContent: {
+    flex: 1,
+  },
+  improveToastTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#FFD700',
+    marginBottom: 2,
+  },
+  improveToastSubtitle: {
+    fontSize: 11,
+    color: 'rgba(255, 215, 0, 0.8)',
+    fontWeight: '500',
   },
   headerRow: {
     flexDirection: 'row',
@@ -313,11 +428,18 @@ const s = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
+  // scoreCircle: {
+  //   width: 44,
+  //   height: 44,
+  //   borderRadius: 22,
+  //   backgroundColor: '#1E1E1E',
+  //   justifyContent: 'center',
+  //   alignItems: 'center',
+  // },
   scoreCircle: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#1E1E1E',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -330,8 +452,10 @@ const s = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
-  cardLabel: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
-  cardLabelEn: { fontSize: 10, color: '#555', marginTop: 1, letterSpacing: 0.5, textTransform: 'uppercase' as const },
+  // cardLabel: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
+  // cardLabelEn: { fontSize: 10, color: '#555', marginTop: 1, letterSpacing: 0.5, textTransform: 'uppercase' as const },
+  cardLabel: { fontSize: 15, fontWeight: '700' },
+  cardLabelEn: { fontSize: 10, marginTop: 1, letterSpacing: 0.5, textTransform: 'uppercase' as const },
   gradeBadge: {
     paddingHorizontal: 8,
     paddingVertical: 2,
@@ -345,12 +469,53 @@ const s = StyleSheet.create({
     fontSize: 13,
     fontWeight: '500',
     lineHeight: 20,
+    marginBottom: 12,
+  },
+
+  // [NEW] 역사적 맥락 비교 섹션 — 달리오 철학
+  historicalContext: {
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 12,
+  },
+  historicalRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
     marginBottom: 8,
+  },
+  historicalLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  historicalComparison: {
+    gap: 6,
+  },
+  historicalText: {
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  currentComparison: {
+    fontSize: 12,
+    fontWeight: '600',
+    lineHeight: 18,
+    marginTop: 4,
+  },
+  historicalNote: {
+    fontSize: 11,
+    lineHeight: 16,
+    marginTop: 6,
+    fontStyle: 'italic',
   },
 
   // [NEW] "왜 이 점수인가" 섹션
+  // whySection: {
+  //   backgroundColor: 'rgba(176,176,176,0.06)',
+  //   borderRadius: 10,
+  //   padding: 12,
+  //   marginBottom: 8,
+  // },
   whySection: {
-    backgroundColor: 'rgba(176,176,176,0.06)',
     borderRadius: 10,
     padding: 12,
     marginBottom: 8,
@@ -361,25 +526,39 @@ const s = StyleSheet.create({
     gap: 5,
     marginBottom: 4,
   },
+  // whyLabel: {
+  //   fontSize: 11,
+  //   fontWeight: '600',
+  //   color: COLORS.textSecondary,
+  // },
+  // whyText: {
+  //   fontSize: 12,
+  //   color: COLORS.textSecondary,
+  //   lineHeight: 18,
+  // },
   whyLabel: {
     fontSize: 11,
     fontWeight: '600',
-    color: COLORS.textSecondary,
   },
   whyText: {
     fontSize: 12,
-    color: COLORS.textSecondary,
     lineHeight: 18,
   },
 
   // [NEW] "지금 할 수 있는 것" 액션 가이드 섹션
+  // actionGuideSection: {
+  //   backgroundColor: 'rgba(76,175,80,0.06)',
+  //   borderRadius: 10,
+  //   padding: 12,
+  //   marginBottom: 12,
+  //   borderLeftWidth: 2,
+  //   borderLeftColor: 'rgba(76,175,80,0.3)',
+  // },
   actionGuideSection: {
-    backgroundColor: 'rgba(76,175,80,0.06)',
     borderRadius: 10,
     padding: 12,
     marginBottom: 12,
     borderLeftWidth: 2,
-    borderLeftColor: 'rgba(76,175,80,0.3)',
   },
   actionGuideRow: {
     flexDirection: 'row',
@@ -387,14 +566,22 @@ const s = StyleSheet.create({
     gap: 5,
     marginBottom: 4,
   },
+  // actionGuideLabel: {
+  //   fontSize: 11,
+  //   fontWeight: '600',
+  //   color: COLORS.primary,
+  // },
+  // actionGuideText: {
+  //   fontSize: 12,
+  //   color: COLORS.textSecondary,
+  //   lineHeight: 18,
+  // },
   actionGuideLabel: {
     fontSize: 11,
     fontWeight: '600',
-    color: COLORS.primary,
   },
   actionGuideText: {
     fontSize: 12,
-    color: COLORS.textSecondary,
     lineHeight: 18,
   },
 
@@ -412,10 +599,16 @@ const s = StyleSheet.create({
     width: 18,
     textAlign: 'center',
   },
+  // miniBarBg: {
+  //   flex: 1,
+  //   height: 4,
+  //   backgroundColor: '#222',
+  //   borderRadius: 2,
+  //   overflow: 'hidden',
+  // },
   miniBarBg: {
     flex: 1,
     height: 4,
-    backgroundColor: '#222',
     borderRadius: 2,
     overflow: 'hidden',
   },
@@ -436,16 +629,26 @@ const s = StyleSheet.create({
     marginTop: 4,
   },
   // 개선 제안 섹션
+  // suggestionsSection: {
+  //   marginTop: 16,
+  //   paddingTop: 16,
+  //   borderTopWidth: 1,
+  //   borderTopColor: '#222',
+  // },
+  // suggestionsTitle: {
+  //   fontSize: 14,
+  //   fontWeight: '700',
+  //   color: '#FFC107',
+  //   marginBottom: 12,
+  // },
   suggestionsSection: {
     marginTop: 16,
     paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: '#222',
   },
   suggestionsTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#FFC107',
     marginBottom: 12,
   },
   suggestion: {
@@ -467,15 +670,31 @@ const s = StyleSheet.create({
     alignItems: 'center',
     padding: 24,
   },
+  // tooltipModal: {
+  //   backgroundColor: '#1E1E1E',
+  //   borderRadius: 16,
+  //   padding: 20,
+  //   width: '100%',
+  //   maxHeight: '70%',
+  //   borderWidth: 1,
+  //   borderColor: '#333',
+  // },
   tooltipModal: {
-    backgroundColor: '#1E1E1E',
     borderRadius: 16,
     padding: 20,
     width: '100%',
     maxHeight: '70%',
     borderWidth: 1,
-    borderColor: '#333',
   },
+  // tooltipHeader: {
+  //   flexDirection: 'row',
+  //   justifyContent: 'space-between',
+  //   alignItems: 'center',
+  //   marginBottom: 12,
+  //   paddingBottom: 12,
+  //   borderBottomWidth: 1,
+  //   borderBottomColor: '#333',
+  // },
   tooltipHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -483,19 +702,26 @@ const s = StyleSheet.create({
     marginBottom: 12,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#333',
   },
+  // tooltipTitle: {
+  //   fontSize: 16,
+  //   fontWeight: '700',
+  //   color: '#FFFFFF',
+  // },
   tooltipTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#FFFFFF',
   },
   tooltipScroll: {
     maxHeight: 300,
   },
+  // tooltipDescription: {
+  //   fontSize: 14,
+  //   color: '#CCCCCC',
+  //   lineHeight: 22,
+  // },
   tooltipDescription: {
     fontSize: 14,
-    color: '#CCCCCC',
     lineHeight: 22,
   },
 });

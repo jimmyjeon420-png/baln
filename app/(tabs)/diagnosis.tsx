@@ -33,6 +33,7 @@ import {
 } from '../../src/hooks/useGatherings';
 import { useSharedPortfolio } from '../../src/hooks/useSharedPortfolio';
 import { useSharedAnalysis } from '../../src/hooks/useSharedAnalysis';
+import { useTheme } from '../../src/hooks/useTheme';
 import { usePeerPanicScore, getAssetBracket } from '../../src/hooks/usePortfolioSnapshots';
 import { TIER_STRATEGIES } from '../../src/constants/tierStrategy';
 import FreePeriodBanner from '../../src/components/FreePeriodBanner';
@@ -40,6 +41,7 @@ import { isFreePeriod } from '../../src/config/freePeriod';
 
 export default function DiagnosisScreen() {
   const router = useRouter();
+  const { colors, shadows } = useTheme();
   const { mediumTap } = useHaptics();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -105,7 +107,7 @@ export default function DiagnosisScreen() {
   // Phase 1: 포트폴리오 DB 확인 전 → 전체 스켈레톤 (100ms 이내)
   if (!initialCheckDone || portfolioLoading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
         <ScrollView>
           <DiagnosisSkeletonLoader />
         </ScrollView>
@@ -117,19 +119,19 @@ export default function DiagnosisScreen() {
   // 빈 포트폴리오 상태
   if (initialCheckDone && totalAssets === 0 && portfolio.length === 0) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>AI 진단</Text>
-          <Text style={styles.headerSubtitle}>맞춤형 투자 처방을 받아보세요</Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>AI 진단</Text>
+          <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>맞춤형 투자 처방을 받아보세요</Text>
         </View>
         <View style={styles.emptyContainer}>
           <View style={styles.emptyIconContainer}>
             <Ionicons name="document-text-outline" size={64} color="#4CAF50" />
           </View>
-          <Text style={styles.emptyTitle}>자산을 등록해주세요</Text>
-          <Text style={styles.emptyText}>
+          <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>자산을 등록해주세요</Text>
+          <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
             보유 자산을 등록하시면{'\n'}
-            <Text style={styles.emptyHighlight}>당신만을 위한 맞춤 처방전</Text>을{'\n'}
+            <Text style={[styles.emptyHighlight, { color: colors.textPrimary }]}>당신만을 위한 맞춤 처방전</Text>을{'\n'}
             AI가 분석해드립니다.
           </Text>
           <TouchableOpacity
@@ -147,9 +149,9 @@ export default function DiagnosisScreen() {
   // 에러 상태: 분석 완료되었지만 결과 없음
   if (analysisFailed) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>AI 진단</Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>AI 진단</Text>
         </View>
         <View style={styles.errorContainer}>
           <Ionicons name="alert-circle" size={48} color="#CF6679" />
@@ -165,7 +167,7 @@ export default function DiagnosisScreen() {
   const tierStrategy = TIER_STRATEGIES[userTier];
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
       {/* 출석 체크 토스트 */}
       {checkInToast && (
         <Animated.View style={[styles.checkInToast, { opacity: toastOpacity }]}>
@@ -175,7 +177,7 @@ export default function DiagnosisScreen() {
       )}
 
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: 24 }]}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -190,7 +192,7 @@ export default function DiagnosisScreen() {
         {/* 헤더 - 티어 정보 포함 */}
         <View style={styles.header}>
           <View style={styles.headerTop}>
-            <Text style={styles.headerTitle}>AI 진단</Text>
+            <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>AI 진단</Text>
             <View style={[styles.tierBadge, { backgroundColor: tierStrategy.color + '30' }]}>
               <Ionicons
                 name={userTier === 'DIAMOND' ? 'diamond' : userTier === 'PLATINUM' ? 'star' : userTier === 'GOLD' ? 'trophy' : 'medal'}
@@ -202,18 +204,18 @@ export default function DiagnosisScreen() {
               </Text>
             </View>
           </View>
-          <Text style={styles.headerSubtitle}>
+          <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
             {TIER_DESCRIPTIONS[userTier]} 회원 맞춤 처방
           </Text>
         </View>
 
         {/* AI 분석 인라인 로딩 (포트폴리오는 이미 표시, AI만 대기) */}
         {isAILoading && (
-          <View style={styles.aiLoadingBanner}>
+          <View style={[styles.aiLoadingBanner, { backgroundColor: colors.surface, borderColor: colors.border }, shadows.sm]}>
             <ActivityIndicator size="small" color="#4CAF50" />
             <View style={styles.aiLoadingTextWrap}>
-              <Text style={styles.aiLoadingTitle}>AI가 포트폴리오를 분석하고 있어요</Text>
-              <Text style={styles.aiLoadingDesc}>
+              <Text style={[styles.aiLoadingTitle, { color: colors.textPrimary }]}>AI가 포트폴리오를 분석하고 있어요</Text>
+              <Text style={[styles.aiLoadingDesc, { color: colors.textSecondary }]}>
                 시장 데이터를 수집하고 맞춤 처방전을 준비 중입니다...
               </Text>
             </View>
@@ -222,13 +224,13 @@ export default function DiagnosisScreen() {
 
         {/* Morning Briefing 카드 */}
         {morningBriefing && (
-          <View style={styles.briefingCard}>
+          <View style={[styles.briefingCard, { backgroundColor: colors.surface, borderColor: colors.border }, shadows.md]}>
             {/* CFO 날씨 헤더 */}
             <View style={styles.briefingHeader}>
               <Text style={styles.briefingWeatherEmoji}>{morningBriefing.cfoWeather.emoji}</Text>
               <View style={styles.briefingHeaderText}>
-                <Text style={styles.briefingTitle}>오늘의 CFO 브리핑</Text>
-                <Text style={styles.briefingStatus}>{morningBriefing.cfoWeather.status}</Text>
+                <Text style={[styles.briefingTitle, { color: colors.textPrimary }]}>오늘의 CFO 브리핑</Text>
+                <Text style={[styles.briefingStatus, { color: colors.textSecondary }]}>{ morningBriefing.cfoWeather.status}</Text>
               </View>
               <View style={[
                 styles.sentimentBadge,
@@ -261,16 +263,16 @@ export default function DiagnosisScreen() {
 
             {/* 매크로 요약 */}
             <View style={styles.briefingSection}>
-              <Text style={styles.briefingSectionTitle}>📊 {morningBriefing.macroSummary.title}</Text>
+              <Text style={[styles.briefingSectionTitle, { color: colors.textPrimary }]}>📊 {morningBriefing.macroSummary.title}</Text>
               {morningBriefing.macroSummary.highlights.map((highlight, idx) => (
-                <View key={idx} style={styles.highlightItem}>
-                  <Text style={styles.highlightBullet}>•</Text>
-                  <Text style={styles.highlightText}>{highlight}</Text>
+                <View key={`highlight-${highlight.substring(0, 20)}-${idx}`} style={styles.highlightItem}>
+                  <Text style={[styles.highlightBullet, { color: colors.textSecondary }]}>•</Text>
+                  <Text style={[styles.highlightText, { color: colors.textSecondary }]}>{highlight}</Text>
                 </View>
               ))}
-              <View style={styles.interestRateBox}>
+              <View style={[styles.interestRateBox, { backgroundColor: colors.surfaceLight }]}>
                 <Ionicons name="trending-up" size={14} color="#FFD700" />
-                <Text style={styles.interestRateText}>
+                <Text style={[styles.interestRateText, { color: colors.textPrimary }]}>
                   금리 전망: {morningBriefing.macroSummary.interestRateProbability}
                 </Text>
               </View>
@@ -278,9 +280,9 @@ export default function DiagnosisScreen() {
 
             {/* 포트폴리오 액션 */}
             <View style={styles.briefingSection}>
-              <Text style={styles.briefingSectionTitle}>🎯 오늘의 포트폴리오 액션</Text>
+              <Text style={[styles.briefingSectionTitle, { color: colors.textPrimary }]}>🎯 오늘의 포트폴리오 액션</Text>
               {morningBriefing.portfolioActions.slice(0, 5).map((action, idx) => (
-                <View key={idx} style={styles.actionItem}>
+                <View key={`action-${action.ticker}-${idx}`} style={styles.actionItem}>
                   <View style={styles.actionLeft}>
                     <View
                       style={[
@@ -300,11 +302,11 @@ export default function DiagnosisScreen() {
                       <Text style={styles.actionBadgeText}>{action.action}</Text>
                     </View>
                     <View>
-                      <Text style={styles.actionTicker}>{action.ticker}</Text>
-                      <Text style={styles.actionName}>{action.name}</Text>
+                      <Text style={[styles.actionTicker, { color: colors.textPrimary }]}>{action.ticker}</Text>
+                      <Text style={[styles.actionName, { color: colors.textSecondary }]}>{action.name}</Text>
                     </View>
                   </View>
-                  <Text style={styles.actionReason} numberOfLines={2}>
+                  <Text style={[styles.actionReason, { color: colors.textSecondary }]} numberOfLines={2}>
                     {action.reason}
                   </Text>
                 </View>
@@ -312,16 +314,16 @@ export default function DiagnosisScreen() {
             </View>
 
             {/* CFO 한마디 */}
-            <View style={styles.cfoMessageBox}>
+            <View style={[styles.cfoMessageBox, { backgroundColor: colors.surfaceLight }]}>
               <Ionicons name="chatbubble-ellipses" size={16} color="#4CAF50" />
-              <Text style={styles.cfoMessageText}>{morningBriefing.cfoWeather.message}</Text>
+              <Text style={[styles.cfoMessageText, { color: colors.textPrimary }]}>{morningBriefing.cfoWeather.message}</Text>
             </View>
           </View>
         )}
 
         {/* 티어별 맞춤 전략 카드 (탭 → 상세 페이지) */}
         <TouchableOpacity
-          style={[styles.strategyCard, { borderColor: tierStrategy.color + '50' }]}
+          style={[styles.strategyCard, { backgroundColor: colors.surface, borderColor: tierStrategy.color + '50' }, shadows.md]}
           onPress={() => {
             mediumTap();
             router.push('/tier-strategy');
@@ -331,7 +333,7 @@ export default function DiagnosisScreen() {
           <View style={styles.strategyHeader}>
             <Ionicons name="bulb" size={24} color={tierStrategy.color} />
             <View style={styles.strategyHeaderText}>
-              <Text style={styles.strategyLabel}>맞춤 전략</Text>
+              <Text style={[styles.strategyLabel, { color: colors.textSecondary }]}>맞춤 전략</Text>
               <Text style={[styles.strategyTitle, { color: tierStrategy.color }]}>
                 {tierStrategy.title}
               </Text>
@@ -339,9 +341,9 @@ export default function DiagnosisScreen() {
           </View>
           <View style={styles.strategyFocusList}>
             {tierStrategy.focus.map((item, idx) => (
-              <View key={idx} style={styles.strategyFocusItem}>
+              <View key={`focus-${item.substring(0, 10)}-${idx}`} style={styles.strategyFocusItem}>
                 <View style={[styles.strategyBullet, { backgroundColor: tierStrategy.color }]} />
-                <Text style={styles.strategyFocusText}>{item}</Text>
+                <Text style={[styles.strategyFocusText, { color: colors.textSecondary }]}>{item}</Text>
               </View>
             ))}
           </View>
@@ -377,7 +379,7 @@ export default function DiagnosisScreen() {
               <Text style={styles.adviceTitle}>{TIER_LABELS[userTier]} 투자자를 위한 조언</Text>
             </View>
             {analysisResult.personalizedAdvice.map((advice, idx) => (
-              <View key={idx} style={styles.adviceItem}>
+              <View key={`advice-${advice.substring(0, 20)}-${idx}`} style={styles.adviceItem}>
                 <Text style={styles.adviceNumber}>{idx + 1}</Text>
                 <Text style={styles.adviceText}>{advice}</Text>
               </View>
@@ -505,7 +507,7 @@ export default function DiagnosisScreen() {
             const gainLossPercent =
               asset.avgPrice > 0 ? (gainLoss / asset.avgPrice) * 100 : 0;
             return (
-              <View key={idx} style={styles.assetItem}>
+              <View key={`asset-${asset.ticker}`} style={styles.assetItem}>
                 <View style={styles.assetLeft}>
                   <View style={styles.assetIcon}>
                     <Text style={styles.assetIconText}>

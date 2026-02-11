@@ -102,7 +102,7 @@ export const getRandomMarketSentiment = () => {
   const sentiments = ['FEAR', 'CAUTIOUS', 'NEUTRAL', 'OPTIMISTIC', 'GREED'];
   const weights = [15, 25, 30, 20, 10]; // 중립에 더 높은 가중치
 
-  let random = Math.random() * 100;
+  const random = Math.random() * 100;
   let cumulativeWeight = 0;
 
   for (let i = 0; i < sentiments.length; i++) {

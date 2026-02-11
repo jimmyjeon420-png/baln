@@ -178,14 +178,17 @@ export function useSharedAnalysis(portfolioAssets: PortfolioAsset[]) {
   const queryClient = useQueryClient();
   const hasAssets = portfolioAssets.length > 0;
 
+  // 포트폴리오 해시 계산 (자산 내용이 바뀌면 캐시 무효화)
+  const portfolioHash = hasAssets ? computePortfolioHash(portfolioAssets) : '';
+
   const query = useQuery({
-    queryKey: [...AI_ANALYSIS_KEY, portfolioAssets.length],
+    queryKey: [...AI_ANALYSIS_KEY, portfolioHash], // length 대신 hash 사용
     queryFn: () => fetchAIAnalysis(portfolioAssets),
     enabled: hasAssets,                // 자산 없으면 실행 안 함
     staleTime: 1000 * 60 * 5,         // 5분: Gemini 결과는 자주 바뀌지 않음
-    gcTime: 1000 * 60 * 60 * 24,     // 24시간: 영속 캐시와 수명 동기화
+    gcTime: 1000 * 60 * 15,           // 15분: 메모리 최적화 (기존 24시간 → 15분)
     retry: 1,                          // 1회 재시도
-    placeholderData: keepPreviousData, // 갱신 중에도 이전 데이터 유지
+    // placeholderData 제거: stale data 방지
   });
 
   const refresh = () => {

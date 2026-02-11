@@ -7,6 +7,7 @@
 
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useTheme } from '../../hooks/useTheme';
 import type { MorningBriefingResult } from '../../services/gemini';
 
 interface MarketTemperatureProps {
@@ -27,11 +28,13 @@ function SkeletonLine({ width }: { width: number }) {
 }
 
 export default function MarketTemperature({ morningBriefing, isAILoading }: MarketTemperatureProps) {
+  const { colors, shadows } = useTheme();
+
   // AI 로딩 중: 스켈레톤
   if (isAILoading) {
     return (
-      <View style={s.card}>
-        <Text style={s.cardTitle}>시장 온도계</Text>
+      <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border }, shadows.sm]}>
+        <Text style={[s.cardTitle, { color: colors.textPrimary }]}>시장 온도계</Text>
         <View style={sk.container}>
           <SkeletonLine width={80} />
           <SkeletonLine width={200} />
@@ -44,9 +47,9 @@ export default function MarketTemperature({ morningBriefing, isAILoading }: Mark
   // 데이터 없음
   if (!morningBriefing) {
     return (
-      <View style={s.card}>
-        <Text style={s.cardTitle}>시장 온도계</Text>
-        <Text style={s.emptyText}>시장 데이터 준비 중</Text>
+      <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border }, shadows.sm]}>
+        <Text style={[s.cardTitle, { color: colors.textPrimary }]}>시장 온도계</Text>
+        <Text style={[s.emptyText, { color: colors.textSecondary }]}>시장 데이터 준비 중</Text>
       </View>
     );
   }
@@ -57,8 +60,8 @@ export default function MarketTemperature({ morningBriefing, isAILoading }: Mark
   const highlight = morningBriefing.macroSummary.highlights?.[0] ?? '';
 
   return (
-    <View style={s.card}>
-      <Text style={s.cardTitle}>시장 온도계</Text>
+    <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border }, shadows.sm]}>
+      <Text style={[s.cardTitle, { color: colors.textPrimary }]}>시장 온도계</Text>
 
       {/* 온도계 인디케이터 */}
       <View style={s.gaugeRow}>
@@ -86,8 +89,8 @@ export default function MarketTemperature({ morningBriefing, isAILoading }: Mark
 
       {/* 요약 */}
       <View style={s.summaryBox}>
-        <Text style={s.summaryTitle}>{title}</Text>
-        {highlight ? <Text style={s.summaryHighlight}>{highlight}</Text> : null}
+        <Text style={[s.summaryTitle, { color: colors.textPrimary }]}>{title}</Text>
+        {highlight ? <Text style={[s.summaryHighlight, { color: colors.textSecondary }]}>{highlight}</Text> : null}
       </View>
     </View>
   );
@@ -95,10 +98,10 @@ export default function MarketTemperature({ morningBriefing, isAILoading }: Mark
 
 const s = StyleSheet.create({
   card: {
-    backgroundColor: '#141414',
+    // backgroundColor: 동적 (colors.surface)
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#2A2A2A',
+    // borderColor: 동적 (colors.border)
     padding: 24,
     marginHorizontal: 16,
     marginTop: 12,
@@ -106,12 +109,12 @@ const s = StyleSheet.create({
   cardTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#FFFFFF',
+    // color: 동적 (colors.textPrimary)
     marginBottom: 16,
   },
   emptyText: {
     fontSize: 14,
-    color: '#808080',
+    // color: 동적 (colors.textSecondary)
   },
   gaugeRow: {
     flexDirection: 'row',

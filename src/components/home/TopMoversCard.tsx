@@ -22,7 +22,7 @@ interface TopMoversCardProps {
 // TopMoversCard — 등락률 Top/Bottom 3 (주식 시황판 역할)
 // ============================================================================
 
-export default function TopMoversCard({ gainers, losers }: TopMoversCardProps) {
+const TopMoversCard = ({ gainers, losers }: TopMoversCardProps) => {
   // 데이터 부족 시 렌더링 안 함
   if (gainers.length + losers.length < 2) return null;
 
@@ -86,7 +86,37 @@ export default function TopMoversCard({ gainers, losers }: TopMoversCardProps) {
       </View>
     </View>
   );
-}
+};
+
+// ============================================================================
+// React.memo 최적화: gainers와 losers 배열 비교
+// ============================================================================
+
+export default React.memo(TopMoversCard, (prev, next) => {
+  // gainers와 losers 배열의 길이와 각 항목 비교
+  if (prev.gainers.length !== next.gainers.length) return false;
+  if (prev.losers.length !== next.losers.length) return false;
+
+  const gainersEqual = prev.gainers.every((item, i) => {
+    const nextItem = next.gainers[i];
+    return (
+      item.ticker === nextItem.ticker &&
+      item.gainLossPercent === nextItem.gainLossPercent &&
+      item.currentValue === nextItem.currentValue
+    );
+  });
+
+  const losersEqual = prev.losers.every((item, i) => {
+    const nextItem = next.losers[i];
+    return (
+      item.ticker === nextItem.ticker &&
+      item.gainLossPercent === nextItem.gainLossPercent &&
+      item.currentValue === nextItem.currentValue
+    );
+  });
+
+  return gainersEqual && losersEqual;
+});
 
 // ============================================================================
 // 스타일

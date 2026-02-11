@@ -10,6 +10,8 @@ import { DEFAULT_TAX_SETTINGS } from '../constants/taxProfiles';
 const STORAGE_KEY_ASSETS = '@portfolio_rebalancer_assets';
 const STORAGE_KEY_PRO_STATUS = '@portfolio_rebalancer_pro';
 const STORAGE_KEY_TAX_SETTINGS = '@portfolio_rebalancer_tax_settings';
+const STORAGE_KEY_HEALTH_SCORE = '@portfolio_rebalancer_health_score';
+const STORAGE_KEY_HEALTH_SCORE_TIMESTAMP = '@portfolio_rebalancer_health_score_timestamp';
 
 /**
  * Save assets to local storage
@@ -127,5 +129,44 @@ export const loadTaxSettings = async (): Promise<TaxSettings> => {
   } catch (error) {
     console.error('Error loading tax settings:', error);
     return DEFAULT_TAX_SETTINGS;
+  }
+};
+
+/**
+ * Save health score to local storage
+ */
+export const saveHealthScore = async (score: number): Promise<void> => {
+  try {
+    await AsyncStorage.setItem(STORAGE_KEY_HEALTH_SCORE, JSON.stringify(score));
+    await AsyncStorage.setItem(STORAGE_KEY_HEALTH_SCORE_TIMESTAMP, JSON.stringify(Date.now()));
+  } catch (error) {
+    console.error('Error saving health score:', error);
+    throw error;
+  }
+};
+
+/**
+ * Load previous health score from local storage
+ */
+export const loadPreviousHealthScore = async (): Promise<number | null> => {
+  try {
+    const data = await AsyncStorage.getItem(STORAGE_KEY_HEALTH_SCORE);
+    return data ? JSON.parse(data) : null;
+  } catch (error) {
+    console.error('Error loading previous health score:', error);
+    return null;
+  }
+};
+
+/**
+ * Get health score update timestamp
+ */
+export const getHealthScoreTimestamp = async (): Promise<number | null> => {
+  try {
+    const data = await AsyncStorage.getItem(STORAGE_KEY_HEALTH_SCORE_TIMESTAMP);
+    return data ? JSON.parse(data) : null;
+  } catch (error) {
+    console.error('Error loading health score timestamp:', error);
+    return null;
   }
 };

@@ -1,6 +1,23 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-// 환경변수에서 API 키와 모델명 가져오기
+// ============================================================================
+// [마켓플레이스] AI 종목 딥다이브 — 재무/기술/뉴스/AI 의견
+// ============================================================================
+
+import type {
+  DeepDiveInput,
+  DeepDiveResult,
+  WhatIfInput,
+  WhatIfResult,
+  TaxReportInput,
+  TaxReportResult,
+  CFOChatInput,
+} from '../types/marketplace';
+
+// ⚠️ 보안 경고: EXPO_PUBLIC_ 접두사가 붙은 환경변수는 클라이언트 번들에 포함됩니다.
+//    Gemini API 키는 현재 클라이언트에서 직접 호출하는 구조이므로 EXPO_PUBLIC_ 사용이 불가피하지만,
+//    프로덕션에서는 Supabase Edge Function 등 서버 사이드 프록시를 통해 호출하는 것을 권장합니다.
+//    절대 API 키를 소스 코드에 하드코딩하지 마세요. 반드시 .env 파일을 통해 주입하세요.
 const API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY || '';
 const MODEL_NAME = process.env.EXPO_PUBLIC_GEMINI_MODEL || 'gemini-2.0-flash';
 
@@ -154,11 +171,11 @@ const correctPriceConfusion = (
 ): ParsedAsset[] => {
   // reportedTotalValue가 없으면 보정 불가 - 그대로 반환
   if (!reportedTotalValue || reportedTotalValue <= 0) {
-    console.log('[가격 보정] 총 자산 정보 없음 - 보정 스킵');
+    if (__DEV__) console.log('[가격 보정] 총 자산 정보 없음 - 보정 스킵');
     return assets;
   }
 
-  console.log(`[가격 보정] 화면 총 자산: ${reportedTotalValue.toLocaleString()}원`);
+  if (__DEV__) console.log(`[가격 보정] 화면 총 자산: ${reportedTotalValue.toLocaleString()}원`);
 
   return assets.map(asset => {
     const calculatedValue = asset.amount * asset.price;
@@ -166,7 +183,7 @@ const correctPriceConfusion = (
     // 핵심 로직: (수량 * 추출가격) > 총 자산이면, 추출가격은 사실 "총 평가금액"
     if (calculatedValue > reportedTotalValue) {
       const correctedPrice = asset.price / asset.amount;
-      console.log(
+      if (__DEV__) console.log(
         `[가격 보정] ${asset.name}: 가격 혼동 감지! ` +
         `${asset.price.toLocaleString()}원은 총 평가금액. ` +
         `단가 보정: ${correctedPrice.toLocaleString()}원`
@@ -186,7 +203,7 @@ const correctPriceConfusion = (
 
       // 보정 후 값이 더 합리적인지 확인
       if (correctedValue < reportedTotalValue * 0.3) {
-        console.log(
+        if (__DEV__) console.log(
           `[가격 보정] ${asset.name}: 의심 항목 보정. ` +
           `${asset.price.toLocaleString()}원 → ${correctedPrice.toLocaleString()}원`
         );
@@ -221,7 +238,7 @@ export const validateAssetData = (
   const errorRatio = Math.abs((totalCalculated / reportedTotalValue) - 1);
   const isValid = errorRatio < tolerance;
 
-  console.log(
+  if (__DEV__) console.log(
     `[무결성 검증] 화면 총액: ${reportedTotalValue.toLocaleString()}원, ` +
     `계산 총액: ${totalCalculated.toLocaleString()}원, ` +
     `오차율: ${(errorRatio * 100).toFixed(2)}%, ` +
@@ -290,7 +307,7 @@ export const analyzeAssetImage = async (
   options?: AnalyzeImageOptions
 ) => {
   try {
-    console.log(`Gemini: 이미지 분석 요청 중... (${MODEL_NAME})`);
+    if (__DEV__) console.log(`Gemini: 이미지 분석 요청 중... (${MODEL_NAME})`);
 
     const { reportedTotalValue, autoCorrectPrices = true } = options || {};
 
@@ -403,7 +420,7 @@ ETF:
 
     const result = await model.generateContent([prompt, imagePart]);
     const responseText = result.response.text();
-    console.log("Gemini 원본 응답:", responseText);
+    if (__DEV__) console.log("Gemini 원본 응답:", responseText);
 
     // JSON 정제 (Markdown 코드블록 제거 + 앞뒤 공백 제거)
     let cleanText = responseText
@@ -425,7 +442,7 @@ ETF:
       cleanText = cleanText.substring(arrStart, arrEnd + 1);
     }
 
-    console.log("정제된 JSON:", cleanText);
+    if (__DEV__) console.log("정제된 JSON:", cleanText);
 
     const parsedData = JSON.parse(cleanText);
 
@@ -468,7 +485,7 @@ ETF:
       // CRITICAL: amount가 0이거나 매우 작은 경우 계산하지 않음 (0으로 나누기 방지)
       if (price === 0 && item.totalValue && amount > 0.0001) {
         price = item.totalValue / amount;
-        console.log(`[단가 계산] ${name}: ${item.totalValue} / ${amount} = ${price}`);
+        if (__DEV__) console.log(`[단가 계산] ${name}: ${item.totalValue} / ${amount} = ${price}`);
       }
 
       // [SANITY CHECK] 비정상적으로 큰 가격 감지 (1억원/주 초과)
@@ -1139,20 +1156,6 @@ ${JSON.stringify(assetsSummary, null, 2)}
     throw new Error('배분 최적화 분석에 실패했습니다');
   }
 };
-
-// ============================================================================
-// [마켓플레이스] AI 종목 딥다이브 — 재무/기술/뉴스/AI 의견
-// ============================================================================
-
-import type {
-  DeepDiveInput,
-  DeepDiveResult,
-  WhatIfInput,
-  WhatIfResult,
-  TaxReportInput,
-  TaxReportResult,
-  CFOChatInput,
-} from '../types/marketplace';
 
 export const generateDeepDive = async (
   input: DeepDiveInput
