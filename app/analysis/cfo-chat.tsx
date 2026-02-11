@@ -28,6 +28,13 @@ interface Message {
   role: 'user' | 'assistant';
   text: string;
   timestamp: Date;
+  // 토론 형식 (3명 투자자 + 정리)
+  debate?: {
+    warren: string;
+    dalio: string;
+    wood: string;
+    summary: string;
+  };
 }
 
 const QUICK_QUESTIONS = [
@@ -86,16 +93,36 @@ export default function CFOChatScreen() {
         throw new Error(`AI 응답 실패: ${error.message}`);
       }
 
-      const aiResponse = data?.data?.answer || '죄송합니다. 응답을 생성하지 못했습니다.';
-      console.log('[AI 워렌 버핏] 응답:', aiResponse);
+      // 토론 형식 응답 파싱
+      const debateData = data?.data;
+      console.log('[AI 워렌 버핏] 응답:', debateData);
 
-      const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        text: aiResponse,
-        timestamp: new Date(),
-      };
-      setMessages(prev => [...prev, aiMessage]);
+      if (debateData?.warren && debateData?.dalio && debateData?.wood && debateData?.summary) {
+        // 토론 형식 메시지
+        const aiMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          text: '', // debate 필드 사용
+          timestamp: new Date(),
+          debate: {
+            warren: debateData.warren,
+            dalio: debateData.dalio,
+            wood: debateData.wood,
+            summary: debateData.summary,
+          },
+        };
+        setMessages(prev => [...prev, aiMessage]);
+      } else {
+        // 폴백: 단일 답변
+        const fallbackText = debateData?.answer || '죄송합니다. 응답을 생성하지 못했습니다.';
+        const aiMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          text: fallbackText,
+          timestamp: new Date(),
+        };
+        setMessages(prev => [...prev, aiMessage]);
+      }
     } catch (err: any) {
       console.error('[AI 워렌 버핏] 에러:', err);
       Alert.alert('오류', err.message || '알 수 없는 오류가 발생했습니다');
@@ -119,6 +146,46 @@ export default function CFOChatScreen() {
 
   const renderMessage = ({ item }: { item: Message }) => {
     const isUser = item.role === 'user';
+
+    // 토론 형식 렌더링
+    if (!isUser && item.debate) {
+      return (
+        <View style={[s.messageContainer, s.aiMessageContainer]}>
+          {/* 워렌 버핏 */}
+          <View style={[s.debateCard, { backgroundColor: '#E3F2FD', borderLeftColor: '#2196F3' }]}>
+            <Text style={[s.investorName, { color: '#1976D2' }]}>💼 워렌 버핏</Text>
+            <Text style={[s.debateText, { color: colors.textPrimary }]}>{item.debate.warren}</Text>
+          </View>
+
+          {/* 레이 달리오 */}
+          <View style={[s.debateCard, { backgroundColor: '#F3E5F5', borderLeftColor: '#9C27B0' }]}>
+            <Text style={[s.investorName, { color: '#7B1FA2' }]}>📊 레이 달리오</Text>
+            <Text style={[s.debateText, { color: colors.textPrimary }]}>{item.debate.dalio}</Text>
+          </View>
+
+          {/* 캐시 우드 */}
+          <View style={[s.debateCard, { backgroundColor: '#FCE4EC', borderLeftColor: '#E91E63' }]}>
+            <Text style={[s.investorName, { color: '#C2185B' }]}>🚀 캐시 우드</Text>
+            <Text style={[s.debateText, { color: colors.textPrimary }]}>{item.debate.wood}</Text>
+          </View>
+
+          {/* 워렌 버핏 최종 정리 */}
+          <View style={[s.summaryCard, { backgroundColor: '#FFF9C4', borderColor: '#FBC02D' }]}>
+            <Text style={[s.summaryTitle, { color: '#F57F17' }]}>✨ 워렌 버핏의 최종 정리</Text>
+            <Text style={[s.summaryText, { color: colors.textPrimary }]}>{item.debate.summary}</Text>
+          </View>
+
+          <Text style={[s.timestamp, { color: colors.textTertiary, marginTop: 8 }]}>
+            {item.timestamp.toLocaleTimeString('ko-KR', {
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
+          </Text>
+        </View>
+      );
+    }
+
+    // 일반 메시지 렌더링 (사용자 또는 폴백)
     return (
       <View style={[s.messageContainer, isUser ? s.userMessageContainer : s.aiMessageContainer]}>
         <View
@@ -316,5 +383,36 @@ const s = StyleSheet.create({
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  debateCard: {
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 10,
+    borderLeftWidth: 4,
+  },
+  investorName: {
+    fontSize: 14,
+    fontWeight: '700',
+    marginBottom: 6,
+  },
+  debateText: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  summaryCard: {
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 6,
+    borderWidth: 2,
+  },
+  summaryTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  summaryText: {
+    fontSize: 15,
+    lineHeight: 22,
+    fontWeight: '500',
   },
 });
