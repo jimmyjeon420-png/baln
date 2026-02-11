@@ -525,3 +525,127 @@ export type AIChatMessageRow = Database['public']['Tables']['ai_chat_messages'][
 
 // 티어 타입 (4단계 전략적 티어)
 export type UserTier = 'SILVER' | 'GOLD' | 'PLATINUM' | 'DIAMOND';
+
+// ============================================
+// Day 0 Migration Types (2026-02-11)
+// ============================================
+
+/**
+ * MIG-001: user_goals (온보딩 목표)
+ */
+export interface UserGoal {
+  id: string;
+  user_id: string;
+  goal_type: 'panic_sell' | 'fomo' | 'context' | 'management';
+  created_at: string;
+}
+
+/**
+ * MIG-002: bracket_performance (또래 비교)
+ */
+export interface BracketPerformance {
+  id: string;
+  bracket: 'B1' | 'B2' | 'B3' | 'B4' | 'B5';
+  avg_health_score: 'A' | 'B' | 'C' | 'D' | 'F' | null;
+  avg_prediction_accuracy: number | null;
+  avg_review_completion: number | null;
+  user_count: number;
+  calculated_at: string;
+  created_at: string;
+}
+
+export const BRACKET_LABELS: Record<BracketPerformance['bracket'], string> = {
+  B1: '1천만 미만',
+  B2: '3천만 미만',
+  B3: '5천만 미만',
+  B4: '1억 미만',
+  B5: '1억 이상',
+};
+
+/**
+ * MIG-003: feature_flags (자동 잠금 해제)
+ */
+export interface FeatureFlag {
+  name: 'peer_comparison' | 'fear_greed_index' | 'account_linking';
+  enabled: boolean;
+  threshold_mau: number | null;
+  threshold_votes: number | null;
+  threshold_trust_score: number | null;
+  unlock_message: string | null;
+  unlocked_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * MIG-004: prediction_votes (sentiment 추가)
+ */
+export type PredictionSentiment = 'BUY' | 'HOLD' | 'SELL';
+
+/**
+ * MIG-005: health_score_history (건강 점수 추이)
+ */
+export interface HealthScoreHistory {
+  id: string;
+  user_id: string;
+  snapshot_date: string; // YYYY-MM-DD
+  health_score: number;
+  health_grade: 'A' | 'B' | 'C' | 'D' | 'F';
+  created_at: string;
+}
+
+export interface HealthScoreDataPoint {
+  date: string;
+  score: number;
+  grade: 'A' | 'B' | 'C' | 'D' | 'F';
+}
+
+/**
+ * MIG-006: app_metrics (MAU 추적)
+ */
+export interface AppMetrics {
+  id: string;
+  metric_date: string; // YYYY-MM-DD
+  mau: number;
+  dau: number;
+  total_votes: number;
+  total_reviews: number;
+  calculated_at: string;
+}
+
+// ============================================
+// Helper Functions (Day 0)
+// ============================================
+
+/**
+ * 자산 브래킷 계산
+ */
+export function getAssetBracket(totalAssets: number): BracketPerformance['bracket'] {
+  if (totalAssets < 10_000_000) return 'B1';
+  if (totalAssets < 30_000_000) return 'B2';
+  if (totalAssets < 50_000_000) return 'B3';
+  if (totalAssets < 100_000_000) return 'B4';
+  return 'B5';
+}
+
+/**
+ * 건강 점수 → 등급 변환
+ */
+export function getHealthGrade(score: number): HealthScoreHistory['health_grade'] {
+  if (score >= 90) return 'A';
+  if (score >= 80) return 'B';
+  if (score >= 70) return 'C';
+  if (score >= 60) return 'D';
+  return 'F';
+}
+
+/**
+ * Feature Flag 진행률 계산
+ */
+export function calculateFeatureFlagProgress(
+  currentMetric: number,
+  threshold: number | null
+): number {
+  if (!threshold || threshold === 0) return 0;
+  return Math.min(100, Math.floor((currentMetric / threshold) * 100));
+}
