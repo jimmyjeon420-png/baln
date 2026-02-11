@@ -56,7 +56,76 @@ interface CFOChatRequest {
   };
 }
 
-type GeminiProxyRequest = MorningBriefingRequest | DeepDiveRequest | CFOChatRequest;
+interface InvestmentReportRequest {
+  type: 'investment-report';
+  data: {
+    ticker: string;
+    currentPrice?: number;
+  };
+}
+
+interface InvestmentReport {
+  executiveSummary: {
+    recommendation: 'BUY' | 'SELL' | 'HOLD';
+    rating: number; // 1-5
+    targetPrice: number;
+    expectedReturn: number;
+    keyPoints: string[];
+  };
+  companyOverview: {
+    name: string;
+    founded: number;
+    ceo: string;
+    industry: string;
+    marketCap: string;
+    employees: number;
+    headquarters: string;
+  };
+  businessModel: {
+    revenueStreams: string;
+    competitiveAdvantage: string;
+    marketSize: string;
+    growthStrategy: string;
+  };
+  financialAnalysis: {
+    revenue: Array<{ year: number; value: number }>;
+    operatingProfit: Array<{ year: number; value: number }>;
+    netIncome: Array<{ year: number; value: number }>;
+    roe: number;
+    roic: number;
+    debtRatio: number;
+    cashFlow: string;
+  };
+  valuation: {
+    currentPrice: number;
+    fairValue: number;
+    targetPrice: number;
+    per: number;
+    pbr: number;
+    psr: number;
+    industryAvgPer: number;
+  };
+  risks: {
+    market: string[];
+    competition: string[];
+    regulation: string[];
+    management: string[];
+  };
+  governance: {
+    ceoRating: number;
+    shareholderFriendly: string;
+    dividendYield: number;
+    esgRating: string;
+  };
+  debate: {
+    warren: string;
+    dalio: string;
+    lee: string;
+    summary: string;
+  };
+}
+
+type GeminiProxyRequest = MorningBriefingRequest | DeepDiveRequest | CFOChatRequest | InvestmentReportRequest;
 
 // ============================================================================
 // 유틸리티 함수
@@ -296,6 +365,210 @@ Google Search로 찾아야 할 정보:
 }
 
 // ============================================================================
+// Investment Report: 전문 투자심사보고서 생성
+// ============================================================================
+
+async function generateInvestmentReport(reqData: InvestmentReportRequest['data']) {
+  const { ticker, currentPrice } = reqData;
+
+  const priceInfo = currentPrice
+    ? `현재 가격: ${currentPrice.toLocaleString()}원/달러`
+    : '최신 가격 정보를 Google Search로 찾아주세요.';
+
+  const prompt = `당신은 블랙록(BlackRock) Aladdin 팀의 시니어 애널리스트입니다. 한국 증권사 리서치센터 스타일로 전문 투자심사보고서를 작성하세요.
+
+**종목: ${ticker}**
+${priceInfo}
+
+**[CRITICAL] Google Search 필수 정보:**
+1. 기업 공식 IR 자료 (최근 분기 실적, 재무제표)
+2. 최신 뉴스 (24시간 이내)
+3. 증권사 리포트 (목표주가, 컨센서스)
+4. 경쟁사 비교 (시가총액, 밸류에이션)
+5. 업종 평균 PER/PBR
+6. CEO/경영진 이력 및 평판
+7. ESG 평가 (MSCI, Sustainalytics 등)
+
+---
+
+## 7개 섹션 필수 포함 (순서 엄수)
+
+### 1️⃣ Executive Summary (투자 의견 요약)
+\`\`\`json
+"executiveSummary": {
+  "recommendation": "BUY" or "SELL" or "HOLD",
+  "rating": 1~5 (5=매우 긍정, 1=매우 부정),
+  "targetPrice": 목표주가 (숫자, Google Search로 증권사 컨센서스 반영),
+  "expectedReturn": 기대수익률 (%, 숫자),
+  "keyPoints": [
+    "핵심 투자 포인트 1 (구체적 근거)",
+    "핵심 투자 포인트 2 (구체적 근거)",
+    "핵심 투자 포인트 3 (구체적 근거)"
+  ]
+}
+\`\`\`
+
+### 2️⃣ Company Overview (기업 개요)
+\`\`\`json
+"companyOverview": {
+  "name": "정식 기업명 (한글/영문)",
+  "founded": 설립연도 (숫자),
+  "ceo": "CEO 이름",
+  "industry": "업종 (예: 반도체, 전기차, AI 소프트웨어)",
+  "marketCap": "시가총액 (예: ₩450조, $2.8T)",
+  "employees": 직원 수 (숫자),
+  "headquarters": "본사 위치"
+}
+\`\`\`
+
+### 3️⃣ Business Model (사업 구조 분석)
+\`\`\`json
+"businessModel": {
+  "revenueStreams": "주요 매출원 3가지 (비중 포함, 예: 반도체 65%, 디스플레이 25%, 기타 10%)",
+  "competitiveAdvantage": "경쟁우위 (Moat) 분석 (2-3문장, 기술력/네트워크 효과/규모의 경제 등)",
+  "marketSize": "TAM (Total Addressable Market) 규모 (예: AI 칩 시장 $500B, CAGR 25%)",
+  "growthStrategy": "성장 전략 (M&A, 신규 사업, 지역 확장 등)"
+}
+\`\`\`
+
+### 4️⃣ Financial Analysis (재무 분석)
+\`\`\`json
+"financialAnalysis": {
+  "revenue": [
+    {"year": 2022, "value": 매출액 (억원/백만달러)},
+    {"year": 2023, "value": 매출액},
+    {"year": 2024, "value": 매출액 (최신)}
+  ],
+  "operatingProfit": [
+    {"year": 2022, "value": 영업이익},
+    {"year": 2023, "value": 영업이익},
+    {"year": 2024, "value": 영업이익}
+  ],
+  "netIncome": [
+    {"year": 2022, "value": 순이익},
+    {"year": 2023, "value": 순이익},
+    {"year": 2024, "value": 순이익}
+  ],
+  "roe": 자기자본이익률 (%, 숫자),
+  "roic": 투하자본이익률 (%, 숫자),
+  "debtRatio": 부채비율 (%, 숫자),
+  "cashFlow": "현금흐름 상태 (예: 영업CF 3년 연속 증가, 잉여현금 풍부)"
+}
+\`\`\`
+
+### 5️⃣ Valuation (밸류에이션 분석)
+\`\`\`json
+"valuation": {
+  "currentPrice": 현재가 (숫자),
+  "fairValue": 적정주가 (DCF/PER 평균법 등, 숫자),
+  "targetPrice": 12개월 목표주가 (숫자),
+  "per": 현재 PER (숫자),
+  "pbr": 현재 PBR (숫자),
+  "psr": 현재 PSR (숫자),
+  "industryAvgPer": 업종 평균 PER (Google Search로 확인, 숫자)
+}
+\`\`\`
+
+**밸류에이션 판단 기준:**
+- PER < 업종 평균 → 저평가
+- PER > 업종 평균 1.5배 → 고평가
+- PBR < 1 → 청산가치 이하 (위험 신호)
+- ROE > 15% + PBR < 2 → 가치투자 후보
+
+### 6️⃣ Risks (리스크 분석)
+\`\`\`json
+"risks": {
+  "market": ["시장 리스크 1 (예: 반도체 업황 사이클)", "시장 리스크 2"],
+  "competition": ["경쟁사 리스크 (예: TSMC 기술 격차 확대)", "신규 진입자"],
+  "regulation": ["규제 리스크 (예: 미-중 무역 분쟁, EU AI 규제)"],
+  "management": ["경영 리스크 (예: CEO 건강 이슈, 지배구조 문제)"]
+}
+\`\`\`
+
+### 7️⃣ Governance & ESG (지배구조 & ESG)
+\`\`\`json
+"governance": {
+  "ceoRating": CEO 평가 (1-5, 5=탁월한 리더십),
+  "shareholderFriendly": "주주친화 정책 (배당, 자사주 매입, 소수주주 보호 등, 2-3문장)",
+  "dividendYield": 배당수익률 (%, 숫자),
+  "esgRating": "ESG 등급 (예: MSCI A등급, Google Search로 확인)"
+}
+\`\`\`
+
+---
+
+## 💬 3인 투자 거장 라운드테이블 토론
+
+다음 3인이 이 종목에 대해 토론합니다:
+
+**1️⃣ 워렌 버핏 (Berkshire Hathaway)**
+- 관점: 가치투자, 장기투자, 경쟁우위(Moat)
+- 톤: 차분하고 보수적, 숫자와 근거 중심
+- 평가 기준: ROE, FCF, 부채비율, 브랜드 가치
+
+**2️⃣ 레이 달리오 (Bridgewater Associates)**
+- 관점: 거시경제 사이클, 리스크 관리, 분산투자
+- 톤: 체계적이고 분석적
+- 평가 기준: 경제 사이클 위치, 인플레이션 헤지, 부채 사이클
+
+**3️⃣ 이승건 (토스 CEO)**
+- 관점: 제품-시장 적합성(PMF), 사용자 경험, 성장 속도
+- 톤: 스타트업 창업가, 실행력 중심
+- 평가 기준: MAU 성장률, 네트워크 효과, 수익화 모델
+
+\`\`\`json
+"debate": {
+  "warren": "워렌 버핏의 의견 (3-4문장, 가치투자 관점, 구체적 지표 포함)",
+  "dalio": "레이 달리오의 의견 (3-4문장, 거시경제 관점, 리스크 강조)",
+  "lee": "이승건의 의견 (3-4문장, 제품/성장 관점, 사용자 경험)",
+  "summary": "워렌 버핏의 최종 정리 (4-5문장, 세 관점 종합 + 실행 가능한 투자 전략)"
+}
+\`\`\`
+
+**토론 규칙:**
+- 각자 다른 의견 OK! (의견 충돌 시 현실적으로 표현)
+- 구체적 숫자와 근거 필수 (예: "ROE 18% 유지", "PER 12배로 저평가")
+- 최신 뉴스/실적 반영 (Google Search 결과 인용)
+- 한국어 자연스럽게, 존댓말 사용
+
+---
+
+## 🔥 출력 형식 (JSON만, 마크다운/설명 절대 금지)
+
+\`\`\`json
+{
+  "executiveSummary": { ... },
+  "companyOverview": { ... },
+  "businessModel": { ... },
+  "financialAnalysis": { ... },
+  "valuation": { ... },
+  "risks": { ... },
+  "governance": { ... },
+  "debate": { ... }
+}
+\`\`\`
+
+**[CRITICAL] 주의사항:**
+- 7개 섹션 모두 필수! 누락 시 에러
+- 모든 숫자는 Google Search로 검증된 최신 데이터
+- 추측 금지, 근거 없는 수치 금지
+- JSON 형식 엄수 (주석, 마크다운 절대 금지)
+- 한국어 자연스럽게 작성
+`;
+
+  // Gemini API 호출
+  const responseText = await callGeminiWithSearch(prompt);
+
+  // JSON 정제 및 파싱
+  const report = cleanJsonResponse(responseText);
+
+  return {
+    ...report,
+    generatedAt: new Date().toISOString(),
+  };
+}
+
+// ============================================================================
 // Warren Buffett Chat: 대화형 투자 조언
 // ============================================================================
 
@@ -411,6 +684,10 @@ serve(async (req: Request) => {
 
       case 'cfo-chat':
         result = await generateCFOChat(body.data);
+        break;
+
+      case 'investment-report':
+        result = await generateInvestmentReport(body.data);
         break;
 
       default:
