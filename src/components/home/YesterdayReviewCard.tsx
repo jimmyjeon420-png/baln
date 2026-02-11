@@ -19,7 +19,8 @@ import {
   Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../../styles/theme';
+import { useTheme } from '../../hooks/useTheme';
+import type { ThemeColors } from '../../styles/colors';
 
 // ============================================================================
 // Props 인터페이스
@@ -175,6 +176,10 @@ function YesterdayReviewCard({
   accuracyRate,
   onViewHistory,
 }: YesterdayReviewCardProps) {
+  const { colors } = useTheme();
+  const styles = React.useMemo(() => createStyles(colors), [colors]);
+  const COLORS = colors; // 하위 호환성
+
   // 결과가 없으면 Empty 상태
   if (!results || results.length === 0) {
     return (
@@ -254,7 +259,7 @@ export default React.memo(YesterdayReviewCard);
 // 스타일
 // ============================================================================
 
-const styles = StyleSheet.create({
+const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
   card: {
     marginHorizontal: 16,
     marginTop: 16,

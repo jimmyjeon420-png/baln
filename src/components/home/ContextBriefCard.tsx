@@ -28,7 +28,8 @@ import {
   UIManager,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../../styles/theme';
+import { useTheme } from '../../hooks/useTheme';
+import type { ThemeColors } from '../../styles/colors';
 
 // Android LayoutAnimation 활성화
 if (
@@ -418,6 +419,10 @@ export default React.forwardRef<View, ContextBriefCardProps>(
     }: ContextBriefCardProps,
     ref
   ) => {
+    const { colors } = useTheme();
+    const styles = React.useMemo(() => createStyles(colors), [colors]);
+    const COLORS = colors; // 하위 호환성을 위해 COLORS 별칭 생성
+
     const sentimentColor = SENTIMENT_COLORS[sentiment];
     const sentimentBg = SENTIMENT_BG_COLORS[sentiment];
     const freeTrial = isFreeTrial();
@@ -647,7 +652,7 @@ export default React.forwardRef<View, ContextBriefCardProps>(
 
 const CARD_HEIGHT = SCREEN_HEIGHT * 0.75;
 
-const styles = StyleSheet.create({
+const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
   // ── 카드 전체 ──
   card: {
     height: CARD_HEIGHT,
@@ -1014,6 +1019,6 @@ const styles = StyleSheet.create({
   freeTrialDday: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: '#FFFFFF', // 초록 배경 위의 흰색 텍스트 (배경이 초록색이므로 항상 흰색 유지)
   },
 });
