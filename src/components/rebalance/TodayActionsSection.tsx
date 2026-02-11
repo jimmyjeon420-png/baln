@@ -282,11 +282,11 @@ export default function TodayActionsSection({
   // AI 로딩 중 스켈레톤
   if (isAILoading && sortedActions.length === 0) {
     return (
-      <View style={[s.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <SkeletonBlock width={120} height={16} />
         <View style={{ marginTop: 12, gap: 8 }}>
           {[1, 2, 3].map(i => (
-            <View key={i} style={{ backgroundColor: colors.cardDark, borderRadius: 12, padding: 14 }}>
+            <View key={i} style={{ backgroundColor: colors.surfaceElevated, borderRadius: 12, padding: 14 }}>
               <SkeletonBlock width={60} height={14} style={{ marginBottom: 6 }} />
               <SkeletonBlock width="85%" height={12} />
             </View>
@@ -299,10 +299,10 @@ export default function TodayActionsSection({
   if (sortedActions.length === 0) return null;
 
   return (
-    <View style={[s.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+    <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
       <View style={s.headerRow}>
         <View>
-          <Text style={[s.cardLabel, { color: colors.text }]}>이번 달 처방전</Text>
+          <Text style={[s.cardLabel, { color: colors.textPrimary }]}>이번 달 처방전</Text>
           <Text style={[s.cardLabelEn, { color: colors.textSecondary }]}>Monthly Prescription</Text>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -319,7 +319,7 @@ export default function TodayActionsSection({
       </View>
 
       {/* [NEW] "왜 이 액션들이 나왔는가" 전체 요약 */}
-      <View style={[s.whySection, { backgroundColor: colors.cardDark }]}>
+      <View style={[s.whySection, { backgroundColor: colors.surfaceElevated }]}>
         <View style={s.whyRow}>
           <Ionicons name="help-circle-outline" size={14} color={colors.textSecondary} />
           <Text style={[s.whyLabel, { color: colors.textSecondary }]}>왜 이 액션들이 나왔나요?</Text>
@@ -329,7 +329,7 @@ export default function TodayActionsSection({
 
       {/* [NEW] "어떤 순서로 실행할까" 우선순위 가이드 */}
       {priorityGuidance && (
-        <View style={[s.actionGuideSection, { backgroundColor: colors.successBg, borderLeftColor: colors.successBorder }]}>
+        <View style={[s.actionGuideSection, { backgroundColor: 'rgba(76, 175, 80, 0.1)', borderLeftColor: 'rgba(76, 175, 80, 0.3)' }]}>
           <View style={s.actionGuideRow}>
             <Ionicons name="arrow-forward-circle-outline" size={14} color={colors.success} />
             <Text style={[s.actionGuideLabel, { color: colors.success }]}>실행 순서 가이드</Text>
@@ -382,9 +382,9 @@ export default function TodayActionsSection({
             onPress={() => setExpandedIdx(isExpanded ? null : idx)}
             style={[
               s.actionItem,
-              { backgroundColor: colors.cardDark },
+              { backgroundColor: colors.surfaceElevated },
               isHighPriority && { borderLeftWidth: 3, borderLeftColor: ac.text },
-              isExpanded && [s.actionItemExpanded, { backgroundColor: colors.card, borderColor: colors.successBorder }],
+              isExpanded && [s.actionItemExpanded, { backgroundColor: colors.surface, borderColor: 'rgba(76, 175, 80, 0.3)' }],
               isDone && { opacity: 0.5 },
             ]}
           >
@@ -393,7 +393,7 @@ export default function TodayActionsSection({
               <View style={[s.actionBadge, { backgroundColor: ac.bg }]}>
                 <Text style={[s.actionBadgeText, { color: ac.text }]}>{ac.label}</Text>
               </View>
-              <Text style={[s.actionTicker, { color: colors.text }]}>{isDone ? '✓ ' : ''}{action.ticker}</Text>
+              <Text style={[s.actionTicker, { color: colors.textPrimary }]}>{isDone ? '✓ ' : ''}{action.ticker}</Text>
               <Text style={[s.actionName, { color: colors.textTertiary }]} numberOfLines={1}>{action.name}</Text>
               {isHighPriority && !isDone && (
                 <View style={s.urgentDot}>
@@ -417,7 +417,7 @@ export default function TodayActionsSection({
             {/* 현재가 + 등락률 (접힌 상태) */}
             {!isExpanded && displayPrice > 0 && (
               <View style={s.priceRow}>
-                <Text style={[s.priceText, { color: colors.text }]}>{'\u20A9'}{displayPrice.toLocaleString(undefined, { maximumFractionDigits: 2 })}</Text>
+                <Text style={[s.priceText, { color: colors.textPrimary }]}>{'\u20A9'}{displayPrice.toLocaleString(undefined, { maximumFractionDigits: 2 })}</Text>
                 {assetGl !== null && (
                   <Text style={[s.changeText, { color: (assetGl ?? 0) >= 0 ? colors.success : colors.error }]}>
                     {(assetGl ?? 0) >= 0 ? '+' : ''}{(assetGl ?? 0).toFixed(1)}%
@@ -452,13 +452,13 @@ export default function TodayActionsSection({
                 </View>
 
                 {/* 전체 사유 */}
-                <View style={[s.reasonFull, { backgroundColor: colors.cardDark }]}>
+                <View style={[s.reasonFull, { backgroundColor: colors.surfaceElevated }]}>
                   <Ionicons name="chatbubble-outline" size={13} color={colors.textTertiary} />
                   <Text style={[s.reasonFullText, { color: colors.textTertiary }]}>{action.reason}</Text>
                 </View>
 
                 {/* [NEW] 기대 효과 (펼친 상태에서 더 잘 보이도록) */}
-                <View style={[s.actionEffectExpanded, { backgroundColor: colors.successBg, borderLeftColor: colors.successBorder }]}>
+                <View style={[s.actionEffectExpanded, { backgroundColor: 'rgba(76, 175, 80, 0.1)', borderLeftColor: 'rgba(76, 175, 80, 0.3)' }]}>
                   <View style={s.actionEffectRow}>
                     <Ionicons name="trending-up-outline" size={13} color={colors.success} />
                     <Text style={[s.actionEffectLabel, { color: colors.success }]}>이 액션의 기대 효과</Text>
@@ -468,24 +468,24 @@ export default function TodayActionsSection({
 
                 {/* 내 보유 현황 */}
                 {matchedAsset && (
-                  <View style={[s.portfolioInfo, { backgroundColor: colors.successBg, borderColor: colors.successBorder }]}>
+                  <View style={[s.portfolioInfo, { backgroundColor: 'rgba(76, 175, 80, 0.1)', borderColor: 'rgba(76, 175, 80, 0.3)' }]}>
                     <Text style={[s.portfolioTitle, { color: colors.textTertiary }]}>내 보유 현황</Text>
                     <View style={s.portfolioRow}>
                       <View style={s.portfolioItem}>
                         <Text style={[s.portfolioLabel, { color: colors.textTertiary }]}>현재가{isLive ? ' (실시간)' : ''}</Text>
-                        <Text style={[s.portfolioValue, { color: colors.text }]}>{'\u20A9'}{displayPrice.toLocaleString(undefined, { maximumFractionDigits: 2 })}</Text>
+                        <Text style={[s.portfolioValue, { color: colors.textPrimary }]}>{'\u20A9'}{displayPrice.toLocaleString(undefined, { maximumFractionDigits: 2 })}</Text>
                       </View>
-                      <View style={[s.portfolioDivider, { backgroundColor: colors.successBorder }]} />
+                      <View style={[s.portfolioDivider, { backgroundColor: 'rgba(76, 175, 80, 0.3)' }]} />
                       <View style={s.portfolioItem}>
                         <Text style={[s.portfolioLabel, { color: colors.textTertiary }]}>수익률</Text>
                         <Text style={[s.portfolioValue, { color: (assetGl ?? 0) >= 0 ? colors.success : colors.error }]}>
                           {(assetGl ?? 0) >= 0 ? '+' : ''}{(assetGl ?? 0).toFixed(1)}%
                         </Text>
                       </View>
-                      <View style={[s.portfolioDivider, { backgroundColor: colors.successBorder }]} />
+                      <View style={[s.portfolioDivider, { backgroundColor: 'rgba(76, 175, 80, 0.3)' }]} />
                       <View style={s.portfolioItem}>
                         <Text style={[s.portfolioLabel, { color: colors.textTertiary }]}>비중</Text>
-                        <Text style={[s.portfolioValue, { color: colors.text }]}>{assetWeight}%</Text>
+                        <Text style={[s.portfolioValue, { color: colors.textPrimary }]}>{assetWeight}%</Text>
                       </View>
                     </View>
                   </View>
@@ -493,7 +493,7 @@ export default function TodayActionsSection({
 
                 {/* 제안 금액/수량 */}
                 {displayPrice > 0 && (action.action === 'BUY' || action.action === 'SELL') && (
-                  <View style={[s.suggestBox, { backgroundColor: colors.warningBg, borderColor: colors.warningBorder }]}>
+                  <View style={[s.suggestBox, { backgroundColor: 'rgba(255, 152, 0, 0.1)', borderColor: 'rgba(255, 152, 0, 0.3)' }]}>
                     <Ionicons name="calculator-outline" size={13} color={colors.warning} />
                     <Text style={[s.suggestText, { color: colors.warning }]}>
                       {action.action === 'BUY'
@@ -513,11 +513,11 @@ export default function TodayActionsSection({
                   const sellAmt = displayPrice * qty;
                   const tax = estimateTax(action.ticker, sellAmt, matchedAsset.avgPrice, displayPrice, qty);
                   return (
-                    <View style={[s.taxBox, { backgroundColor: colors.infoBg, borderColor: colors.infoBorder }]}>
+                    <View style={[s.taxBox, { backgroundColor: 'rgba(33, 150, 243, 0.1)', borderColor: 'rgba(33, 150, 243, 0.3)' }]}>
                       <View style={s.taxHeader}>
                         <Ionicons name="receipt-outline" size={13} color={colors.info} />
                         <Text style={[s.taxHeaderText, { color: colors.info }]}>전량 매도 시 예상 비용</Text>
-                        <Text style={[s.taxAssetType, { color: colors.textTertiary, backgroundColor: colors.cardDark }]}>{tax.assetTypeLabel}</Text>
+                        <Text style={[s.taxAssetType, { color: colors.textTertiary, backgroundColor: colors.surfaceElevated }]}>{tax.assetTypeLabel}</Text>
                       </View>
                       <View style={s.taxRows}>
                         {tax.transactionTax > 0 && (
@@ -536,9 +536,9 @@ export default function TodayActionsSection({
                             <Text style={[s.taxValue, { color: colors.error }]}>{'\u20A9'}{Math.floor(tax.capitalGainsTax).toLocaleString()}</Text>
                           </View>
                         )}
-                        <View style={[s.taxRow, s.taxTotalRow, { borderTopColor: colors.infoBorder }]}>
+                        <View style={[s.taxRow, s.taxTotalRow, { borderTopColor: 'rgba(33, 150, 243, 0.3)' }]}>
                           <Text style={[s.taxTotalLabel, { color: colors.info }]}>실수령 예상</Text>
-                          <Text style={[s.taxTotalValue, { color: colors.text }]}>{'\u20A9'}{Math.floor(tax.netProceeds).toLocaleString()}</Text>
+                          <Text style={[s.taxTotalValue, { color: colors.textPrimary }]}>{'\u20A9'}{Math.floor(tax.netProceeds).toLocaleString()}</Text>
                         </View>
                       </View>
                       {tax.note ? <Text style={[s.taxNote, { color: colors.info }]}>{tax.note}</Text> : null}
@@ -550,7 +550,7 @@ export default function TodayActionsSection({
                 {/* 실행 완료 기록 (BUY/SELL만) */}
                 {(action.action === 'BUY' || action.action === 'SELL') && displayPrice > 0 && (
                   <TouchableOpacity
-                    style={[s.logExecutionBtn, { backgroundColor: colors.successBg, borderColor: colors.successBorder }]}
+                    style={[s.logExecutionBtn, { backgroundColor: 'rgba(76, 175, 80, 0.1)', borderColor: 'rgba(76, 175, 80, 0.3)' }]}
                     activeOpacity={0.7}
                     onPress={() => {
                       const suggestedQty = action.action === 'BUY'
@@ -576,7 +576,7 @@ export default function TodayActionsSection({
 
                 {/* AI 딥다이브 */}
                 <TouchableOpacity
-                  style={[s.deepDiveBtn, { backgroundColor: colors.primaryBg, borderColor: colors.primaryBorder }]}
+                  style={[s.deepDiveBtn, { backgroundColor: 'rgba(76, 175, 80, 0.1)', borderColor: 'rgba(76, 175, 80, 0.3)' }]}
                   activeOpacity={0.7}
                   onPress={() => router.push({
                     pathname: '/marketplace',

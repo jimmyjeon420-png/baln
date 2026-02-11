@@ -59,9 +59,13 @@ interface YesterdayReviewCardProps {
 const ReviewResultItem = React.memo(({
   result,
   index,
+  styles,
+  COLORS,
 }: {
   result: YesterdayReviewResult;
   index: number;
+  styles: ReturnType<typeof createStyles>;
+  COLORS: ThemeColors;
 }) => {
   // 해설 펼침/접힘 상태
   const [expanded, setExpanded] = React.useState(false);
@@ -241,7 +245,13 @@ function YesterdayReviewCard({
 
       {/* 개별 결과 리스트 */}
       {results.map((result, index) => (
-        <ReviewResultItem key={index} result={result} index={index} />
+        <ReviewResultItem
+          key={index}
+          result={result}
+          index={index}
+          styles={styles}
+          COLORS={COLORS}
+        />
       ))}
 
       {/* 하단: 전체 기록 보기 */}

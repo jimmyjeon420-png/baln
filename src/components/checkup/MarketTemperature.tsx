@@ -21,9 +21,9 @@ const SENTIMENT_CONFIG = {
   BEARISH: { emoji: '🧊', label: '냉각', color: '#64B5F6', bg: 'rgba(100,181,246,0.12)' },
 } as const;
 
-function SkeletonLine({ width }: { width: number }) {
+function SkeletonLine({ width, backgroundColor }: { width: number; backgroundColor: string }) {
   return (
-    <View style={[sk.line, { width }]} />
+    <View style={[sk.line, { width, backgroundColor }]} />
   );
 }
 
@@ -36,9 +36,9 @@ export default function MarketTemperature({ morningBriefing, isAILoading }: Mark
       <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border }, shadows.sm]}>
         <Text style={[s.cardTitle, { color: colors.textPrimary }]}>시장 온도계</Text>
         <View style={sk.container}>
-          <SkeletonLine width={80} />
-          <SkeletonLine width={200} />
-          <SkeletonLine width={160} />
+          <SkeletonLine width={80} backgroundColor={colors.inverseSurface} />
+          <SkeletonLine width={200} backgroundColor={colors.inverseSurface} />
+          <SkeletonLine width={160} backgroundColor={colors.inverseSurface} />
         </View>
       </View>
     );
@@ -73,13 +73,14 @@ export default function MarketTemperature({ morningBriefing, isAILoading }: Mark
               key={level}
               style={[
                 s.gaugeItem,
+                { backgroundColor: colors.inverseSurface },
                 isActive && { backgroundColor: cfg.bg, borderColor: cfg.color, borderWidth: 1 },
               ]}
             >
               <Text style={[s.gaugeEmoji, { fontSize: isActive ? 24 : 18 }]}>
                 {cfg.emoji}
               </Text>
-              <Text style={[s.gaugeLabel, isActive && { color: cfg.color, fontWeight: '700' }]}>
+              <Text style={[s.gaugeLabel, { color: colors.inverseText }, isActive && { color: cfg.color, fontWeight: '700' }]}>
                 {cfg.label}
               </Text>
             </View>
@@ -88,8 +89,8 @@ export default function MarketTemperature({ morningBriefing, isAILoading }: Mark
       </View>
 
       {/* 요약 */}
-      <View style={s.summaryBox}>
-        <Text style={[s.summaryTitle, { color: colors.textPrimary }]}>{title}</Text>
+      <View style={[s.summaryBox, { backgroundColor: colors.inverseSurface }]}>
+        <Text style={[s.summaryTitle, { color: colors.inverseText }]}>{title}</Text>
         {highlight ? <Text style={[s.summaryHighlight, { color: colors.textSecondary }]}>{highlight}</Text> : null}
       </View>
     </View>
@@ -127,18 +128,18 @@ const s = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderRadius: 12,
-    backgroundColor: '#1A1A1A',
+    // backgroundColor: 동적 (colors.inverseSurface)
   },
   gaugeEmoji: {
     marginBottom: 4,
   },
   gaugeLabel: {
     fontSize: 12,
-    color: '#808080',
+    // color: 동적 (colors.inverseText 또는 cfg.color)
     fontWeight: '500',
   },
   summaryBox: {
-    backgroundColor: '#1A1A1A',
+    // backgroundColor: 동적 (colors.inverseSurface)
     borderRadius: 12,
     padding: 14,
     gap: 6,
@@ -146,12 +147,12 @@ const s = StyleSheet.create({
   summaryTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#FFFFFF',
+    // color: 동적 (colors.inverseText)
     lineHeight: 20,
   },
   summaryHighlight: {
     fontSize: 13,
-    color: '#B0B0B0',
+    // color: 동적 (colors.textSecondary)
     lineHeight: 20,
   },
 });
@@ -160,7 +161,7 @@ const sk = StyleSheet.create({
   container: { gap: 10 },
   line: {
     height: 14,
-    backgroundColor: '#2A2A2A',
+    // backgroundColor: 동적 (colors.inverseSurface)
     borderRadius: 7,
   },
 });

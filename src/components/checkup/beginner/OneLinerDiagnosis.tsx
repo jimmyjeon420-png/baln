@@ -23,11 +23,11 @@ const GRADE_EMOJI: Record<HealthScoreResult['grade'], string> = {
 };
 
 export default function OneLinerDiagnosis({ healthScore }: OneLinerDiagnosisProps) {
-  const { colors, shadows } = useTheme();
+  const { colors } = useTheme();
   const emoji = GRADE_EMOJI[healthScore.grade];
 
   return (
-    <View style={[s.card, { backgroundColor: colors.cardBackground, borderColor: colors.border, ...shadows.medium }]}>
+    <View style={[s.card, { backgroundColor: colors.background, borderColor: colors.border }]}>
       <Text style={s.emoji}>{emoji}</Text>
 
       <View style={s.textContainer}>

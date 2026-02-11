@@ -11,6 +11,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { InvestorLevel } from '../../hooks/useCheckupLevel';
+import { useTheme } from '../../hooks/useTheme';
 
 interface LevelSwitcherProps {
   currentLevel: InvestorLevel;
@@ -25,9 +26,10 @@ const LEVEL_CONFIG: Record<InvestorLevel, { label: string; emoji: string; color:
 
 export default function LevelSwitcher({ currentLevel, onLevelChange }: LevelSwitcherProps) {
   const config = LEVEL_CONFIG[currentLevel];
+  const { colors } = useTheme();
 
   return (
-    <View style={s.container}>
+    <View style={[s.container, { backgroundColor: colors.inverseSurface, borderColor: colors.border }]}>
       {/* 현재 레벨 표시 */}
       <View style={s.currentLevel}>
         <Text style={s.levelEmoji}>{config.emoji}</Text>
@@ -43,6 +45,7 @@ export default function LevelSwitcher({ currentLevel, onLevelChange }: LevelSwit
             icon="arrow-up"
             color="#29B6F6"
             onPress={() => onLevelChange('intermediate')}
+            bgColor={colors.inverseSurface}
           />
         )}
 
@@ -54,6 +57,7 @@ export default function LevelSwitcher({ currentLevel, onLevelChange }: LevelSwit
               icon="arrow-down"
               color="#4CAF50"
               onPress={() => onLevelChange('beginner')}
+              bgColor={colors.inverseSurface}
             />
             <SwitchButton
               label="더 전문적으로"
@@ -61,6 +65,7 @@ export default function LevelSwitcher({ currentLevel, onLevelChange }: LevelSwit
               icon="arrow-up"
               color="#7C4DFF"
               onPress={() => onLevelChange('advanced')}
+              bgColor={colors.inverseSurface}
             />
           </>
         )}
@@ -72,6 +77,7 @@ export default function LevelSwitcher({ currentLevel, onLevelChange }: LevelSwit
             icon="arrow-down"
             color="#29B6F6"
             onPress={() => onLevelChange('intermediate')}
+            bgColor={colors.inverseSurface}
           />
         )}
       </View>
@@ -85,16 +91,18 @@ function SwitchButton({
   icon,
   color,
   onPress,
+  bgColor,
 }: {
   label: string;
   sublabel: string;
   icon: string;
   color: string;
   onPress: () => void;
+  bgColor: string;
 }) {
   return (
     <TouchableOpacity
-      style={[s.switchButton, { borderColor: color + '40' }]}
+      style={[s.switchButton, { borderColor: color + '40', backgroundColor: bgColor }]}
       onPress={onPress}
       activeOpacity={0.7}
     >
@@ -113,10 +121,10 @@ const s = StyleSheet.create({
     marginTop: 20,
     marginBottom: 8,
     padding: 16,
-    backgroundColor: '#141414',
+    // backgroundColor: 동적 (colors.inverseSurface)
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#2A2A2A',
+    // borderColor: 동적 (colors.border)
   },
   currentLevel: {
     flexDirection: 'row',
@@ -145,7 +153,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 10,
     borderWidth: 1,
-    backgroundColor: '#1A1A1A',
+    // backgroundColor: 동적 (colors.inverseSurface)
   },
   switchLabel: {
     fontSize: 13,

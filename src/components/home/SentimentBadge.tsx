@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { ContextCardSentiment } from '../../types/contextCard';
 import { SENTIMENT_COLORS, SENTIMENT_ICONS, SENTIMENT_LABELS } from '../../types/contextCard';
@@ -33,46 +33,64 @@ export function SentimentBadge({ sentiment, size = 'medium' }: SentimentBadgePro
   const label = SENTIMENT_LABELS[sentiment];
 
   // 크기별 스타일
-  const sizeStyles = {
+  const sizeConfig = {
     small: {
-      containerClass: 'px-2 py-0.5',
+      paddingHorizontal: 8,
+      paddingVertical: 2,
       iconSize: 14,
-      textClass: 'text-xs',
+      fontSize: 12,
     },
     medium: {
-      containerClass: 'px-3 py-1',
+      paddingHorizontal: 12,
+      paddingVertical: 4,
       iconSize: 16,
-      textClass: 'text-sm',
+      fontSize: 13,
     },
     large: {
-      containerClass: 'px-4 py-1.5',
+      paddingHorizontal: 16,
+      paddingVertical: 6,
       iconSize: 20,
-      textClass: 'text-base',
+      fontSize: 15,
     },
   };
 
-  const style = sizeStyles[size];
+  const config = sizeConfig[size];
 
   // 배경색 (투명도 적용)
   const bgColorMap = {
-    calm: 'bg-green-50 dark:bg-green-900/20',
-    caution: 'bg-yellow-50 dark:bg-yellow-900/20',
-    alert: 'bg-red-50 dark:bg-red-900/20',
+    calm: 'rgba(76, 175, 80, 0.1)',
+    caution: 'rgba(255, 193, 7, 0.1)',
+    alert: 'rgba(207, 102, 121, 0.1)',
   };
 
   // 텍스트 색상
   const textColorMap = {
-    calm: 'text-green-700 dark:text-green-400',
-    caution: 'text-yellow-700 dark:text-yellow-400',
-    alert: 'text-red-700 dark:text-red-400',
+    calm: '#4CAF50',
+    caution: '#FFC107',
+    alert: '#CF6679',
   };
 
   return (
     <View
-      className={`flex-row items-center rounded-full ${bgColorMap[sentiment]} ${style.containerClass}`}
+      style={[
+        s.container,
+        {
+          backgroundColor: bgColorMap[sentiment],
+          paddingHorizontal: config.paddingHorizontal,
+          paddingVertical: config.paddingVertical,
+        },
+      ]}
     >
-      <Ionicons name={icon} size={style.iconSize} color={color} />
-      <Text className={`font-semibold ml-1 ${textColorMap[sentiment]} ${style.textClass}`}>
+      <Ionicons name={icon} size={config.iconSize} color={color} />
+      <Text
+        style={[
+          s.label,
+          {
+            color: textColorMap[sentiment],
+            fontSize: config.fontSize,
+          },
+        ]}
+      >
         {label}
       </Text>
     </View>
@@ -83,3 +101,19 @@ export function SentimentBadge({ sentiment, size = 'medium' }: SentimentBadgePro
  * 기본 export (호환성)
  */
 export default SentimentBadge;
+
+// ============================================================================
+// 스타일
+// ============================================================================
+
+const s = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 999,
+  },
+  label: {
+    fontWeight: '600',
+    marginLeft: 4,
+  },
+});

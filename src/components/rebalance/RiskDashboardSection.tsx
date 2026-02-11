@@ -29,15 +29,15 @@ export default function RiskDashboardSection({
   // AI 로딩 중 스켈레톤 (레이아웃 위치 확보 → CLS 방지)
   if (isAILoading && !analysisResult) {
     return (
-      <View style={[s.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <SkeletonBlock width={100} height={16} />
         <View style={{ marginTop: 14, flexDirection: 'row', gap: 10 }}>
-          <View style={{ flex: 1, backgroundColor: colors.cardDark, borderRadius: 12, padding: 14, gap: 8 }}>
+          <View style={{ flex: 1, backgroundColor: colors.surfaceElevated, borderRadius: 12, padding: 14, gap: 8 }}>
             <SkeletonBlock width={24} height={24} style={{ borderRadius: 6 }} />
             <SkeletonBlock width={80} height={11} />
             <SkeletonBlock width={60} height={13} />
           </View>
-          <View style={{ flex: 1, backgroundColor: colors.cardDark, borderRadius: 12, padding: 14, gap: 8 }}>
+          <View style={{ flex: 1, backgroundColor: colors.surfaceElevated, borderRadius: 12, padding: 14, gap: 8 }}>
             <SkeletonBlock width={24} height={24} style={{ borderRadius: 6 }} />
             <SkeletonBlock width={80} height={11} />
             <SkeletonBlock width={60} height={13} />
@@ -54,10 +54,10 @@ export default function RiskDashboardSection({
   const highFomoCount = analysisResult.fomoAlerts.filter(a => a.severity === 'HIGH').length;
 
   return (
-    <View style={[s.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+    <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
       <View style={s.headerRow}>
         <View>
-          <Text style={[s.cardLabel, { color: colors.text }]}>리스크 체크</Text>
+          <Text style={[s.cardLabel, { color: colors.textPrimary }]}>리스크 체크</Text>
           <Text style={[s.cardLabelEn, { color: colors.textSecondary }]}>Risk Dashboard</Text>
         </View>
         <TouchableOpacity
@@ -73,8 +73,8 @@ export default function RiskDashboardSection({
       <View style={s.summaryRow}>
         {/* Panic Shield 요약 */}
         <View style={[s.summaryItem, {
-          backgroundColor: panicLevel === 'DANGER' ? colors.errorBg
-            : panicLevel === 'CAUTION' ? colors.warningBg : colors.successBg
+          backgroundColor: panicLevel === 'DANGER' ? 'rgba(207, 102, 121, 0.1)'
+            : panicLevel === 'CAUTION' ? 'rgba(255, 152, 0, 0.1)' : 'rgba(76, 175, 80, 0.1)'
         }]}>
           <Ionicons name="shield" size={18} color={
             panicLevel === 'DANGER' ? colors.error : panicLevel === 'CAUTION' ? colors.warning : colors.success
@@ -97,7 +97,7 @@ export default function RiskDashboardSection({
 
         {/* FOMO Vaccine 요약 */}
         <View style={[s.summaryItem, {
-          backgroundColor: highFomoCount > 0 ? colors.errorBg : colors.successBg
+          backgroundColor: highFomoCount > 0 ? 'rgba(207, 102, 121, 0.1)' : 'rgba(76, 175, 80, 0.1)'
         }]}>
           <Ionicons name="medical" size={18} color={highFomoCount > 0 ? colors.error : colors.success} />
           <View>

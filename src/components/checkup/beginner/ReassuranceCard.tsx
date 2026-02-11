@@ -32,19 +32,19 @@ function getDailyMessage(totalGainLoss: number): { text: string; emoji: string }
 }
 
 export default function ReassuranceCard({ totalGainLoss, cfoWeather }: ReassuranceCardProps) {
-  const { colors, shadows } = useTheme();
+  const { colors } = useTheme();
   const daily = getDailyMessage(totalGainLoss);
 
   return (
-    <View style={[s.card, { backgroundColor: colors.card, borderColor: colors.border, ...shadows.md }]}>
-      <Text style={[s.cardTitle, { color: colors.text }]}>
+    <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+      <Text style={[s.cardTitle, { color: colors.textPrimary }]}>
         {'\uD83D\uDCAC 안심 한마디'}
       </Text>
 
       {cfoWeather && (
         <View style={[s.weatherRow, { backgroundColor: colors.surface }]}>
           <Text style={s.weatherEmoji}>{cfoWeather.emoji}</Text>
-          <Text style={[s.weatherMessage, { color: colors.text }]}>{cfoWeather.message}</Text>
+          <Text style={[s.weatherMessage, { color: colors.textPrimary }]}>{cfoWeather.message}</Text>
         </View>
       )}
 

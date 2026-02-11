@@ -20,6 +20,7 @@ import * as Haptics from 'expo-haptics';
 import { Asset } from '../../types/asset';
 import { calculateHealthScore } from '../../services/rebalanceScore';
 import { generateOptimalAllocation, type PortfolioAsset } from '../../services/gemini';
+import { useTheme } from '../../hooks/useTheme';
 
 interface WhatIfSimulatorProps {
   assets: Asset[];
@@ -29,6 +30,7 @@ interface WhatIfSimulatorProps {
 
 export default function WhatIfSimulator({ assets, totalAssets, currentHealthScore }: WhatIfSimulatorProps) {
   const router = useRouter();
+  const { colors } = useTheme();
   const [showSimulator, setShowSimulator] = useState(false);
   const [isOptimizing, setIsOptimizing] = useState(false); // 추천 조정 계산 중
 
@@ -155,7 +157,7 @@ export default function WhatIfSimulator({ assets, totalAssets, currentHealthScor
   if (assets.length === 0) return null;
 
   return (
-    <View style={s.card}>
+    <View style={[s.card, { backgroundColor: colors.inverseSurface, borderColor: colors.border }]}>
       {/* 헤더 */}
       <TouchableOpacity
         style={s.headerRow}
@@ -190,7 +192,7 @@ export default function WhatIfSimulator({ assets, totalAssets, currentHealthScor
       {showSimulator && (
         <View style={s.simulatorContainer}>
           {/* 건강 점수 변화 미리보기 */}
-          <View style={s.healthPreview}>
+          <View style={[s.healthPreview, { backgroundColor: colors.inverseSurface }]}>
             <View style={s.healthItem}>
               <Text style={s.healthLabel}>현재</Text>
               <Text style={[s.healthValue, { color: '#888' }]}>{currentHealthScore}</Text>
@@ -239,7 +241,7 @@ export default function WhatIfSimulator({ assets, totalAssets, currentHealthScor
 
           {/* 총자산 변화량 표시 */}
           {hasAdjustments && totalDelta !== 0 && (
-            <View style={s.totalDeltaRow}>
+            <View style={[s.totalDeltaRow, { backgroundColor: colors.inverseSurface }]}>
               <Ionicons name="cash-outline" size={14} color="#888" />
               <Text style={s.totalDeltaText}>
                 총자산 {totalDelta > 0 ? '+' : ''}
@@ -353,13 +355,13 @@ export default function WhatIfSimulator({ assets, totalAssets, currentHealthScor
 
 const s = StyleSheet.create({
   card: {
-    backgroundColor: '#141414',
+    // backgroundColor: 동적 (colors.inverseSurface)
     marginHorizontal: 16,
     marginBottom: 12,
     borderRadius: 16,
     padding: 18,
     borderWidth: 1,
-    borderColor: '#1E1E1E',
+    // borderColor: 동적 (colors.border)
   },
   headerRow: {
     flexDirection: 'row',
@@ -381,7 +383,7 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#1A1A1A',
+    // backgroundColor: 동적 (colors.inverseSurface)
     borderRadius: 12,
     padding: 16,
     gap: 12,
@@ -399,7 +401,7 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
     paddingVertical: 8,
-    backgroundColor: '#1A1A1A',
+    // backgroundColor: 동적 (colors.inverseSurface)
     borderRadius: 8,
   },
   totalDeltaText: { fontSize: 12, color: '#888', fontWeight: '600' },

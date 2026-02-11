@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
   useAnimatedStyle,
@@ -14,6 +14,7 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from 'react-native-reanimated';
+import { useTheme } from '../../hooks/useTheme';
 
 /** 레이어 타입 */
 export type ContextLayer = 'historical' | 'macro' | 'institution' | 'portfolio';
@@ -88,6 +89,7 @@ export function ContextLayerTabs({
   lockedLayers = [],
   onPressPremium,
 }: ContextLayerTabsProps) {
+  const { colors } = useTheme();
   // 언더라인 애니메이션
   const activeIndex = LAYERS.findIndex(l => l.id === activeLayer);
   const underlinePosition = useSharedValue(activeIndex * 25); // 25% 간격
@@ -104,13 +106,13 @@ export function ContextLayerTabs({
   }));
 
   return (
-    <View className="border-b border-gray-200 dark:border-gray-700">
+    <View style={[s.container, { borderBottomColor: colors.border }]}>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ flexGrow: 1 }}
       >
-        <View className="flex-row justify-around w-full">
+        <View style={s.tabsRow}>
           {LAYERS.map((layer, index) => {
             const isActive = layer.id === activeLayer;
             const isLocked = lockedLayers.includes(layer.id);
@@ -125,19 +127,21 @@ export function ContextLayerTabs({
                     onLayerChange(layer.id);
                   }
                 }}
-                className={`flex-1 items-center pb-3 pt-2 px-2 ${isActive ? 'border-b-2' : ''}`}
-                style={isActive ? { borderBottomColor: layer.color } : undefined}
+                style={[
+                  s.tab,
+                  isActive && { borderBottomWidth: 2, borderBottomColor: layer.color }
+                ]}
                 activeOpacity={0.7}
               >
                 {/* 아이콘 */}
-                <View className="relative">
+                <View style={s.iconContainer}>
                   <Ionicons
                     name={layer.icon}
                     size={20}
                     color={isActive ? layer.color : '#9E9E9E'}
                   />
                   {isLocked && (
-                    <View className="absolute -top-1 -right-1 bg-yellow-400 rounded-full w-3 h-3 items-center justify-center">
+                    <View style={s.lockBadge}>
                       <Ionicons name="lock-closed" size={8} color="#FFF" />
                     </View>
                   )}
@@ -145,12 +149,12 @@ export function ContextLayerTabs({
 
                 {/* 라벨 */}
                 <Text
-                  className={`text-xs text-center mt-1 ${
+                  style={[
+                    s.tabLabel,
                     isActive
-                      ? 'font-bold'
-                      : 'text-gray-600 dark:text-gray-400'
-                  }`}
-                  style={isActive ? { color: layer.color } : undefined}
+                      ? { color: layer.color, fontWeight: '700' }
+                      : { color: colors.textTertiary }
+                  ]}
                 >
                   {layer.shortLabel}
                 </Text>
@@ -158,15 +162,6 @@ export function ContextLayerTabs({
             );
           })}
         </View>
-
-        {/* 언더라인 애니메이션 (대체 방식) */}
-        {/* <Animated.View
-          className="absolute bottom-0 h-0.5 w-1/4"
-          style={[
-            { backgroundColor: LAYERS[activeIndex].color },
-            underlineStyle,
-          ]}
-        /> */}
       </ScrollView>
     </View>
   );
@@ -176,3 +171,44 @@ export function ContextLayerTabs({
  * 기본 export (호환성)
  */
 export default ContextLayerTabs;
+
+// ============================================================================
+// 스타일
+// ============================================================================
+
+const s = StyleSheet.create({
+  container: {
+    borderBottomWidth: 1,
+  },
+  tabsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+  },
+  tab: {
+    flex: 1,
+    alignItems: 'center',
+    paddingBottom: 12,
+    paddingTop: 8,
+    paddingHorizontal: 8,
+  },
+  iconContainer: {
+    position: 'relative',
+  },
+  lockBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: '#FFC107',
+    borderRadius: 6,
+    width: 12,
+    height: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tabLabel: {
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 4,
+  },
+});

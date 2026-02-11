@@ -212,7 +212,7 @@ export default function HealthScoreSection({ healthScore, onScoreImproved }: Hea
   };
 
   return (
-    <View style={[s.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+    <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
       {/* 건강 점수 개선 토스트 */}
       {improveToast.show && (
         <Animated.View style={[s.improveToast, { opacity: improveOpacity }]}>
@@ -238,7 +238,7 @@ export default function HealthScoreSection({ healthScore, onScoreImproved }: Hea
           </View>
           <View>
             <View style={s.titleRow}>
-              <Text style={[s.cardLabel, { color: colors.text }]}>건강 점수</Text>
+              <Text style={[s.cardLabel, { color: colors.textPrimary }]}>건강 점수</Text>
               <View style={[s.gradeBadge, { backgroundColor: healthScore.gradeBgColor }]}>
                 <Text style={[s.gradeText, { color: healthScore.gradeColor }]}>
                   {healthScore.grade} {healthScore.gradeLabel}
@@ -257,7 +257,7 @@ export default function HealthScoreSection({ healthScore, onScoreImproved }: Hea
       </Text>
 
       {/* [NEW] 역사적 맥락 비교 — 달리오 철학: "2008년 금융위기 때는 30점이었어요" */}
-      <View style={[s.historicalContext, { backgroundColor: colors.cardDark }]}>
+      <View style={[s.historicalContext, { backgroundColor: colors.surfaceElevated }]}>
         <View style={s.historicalRow}>
           <Ionicons name="time-outline" size={14} color={colors.textSecondary} />
           <Text style={[s.historicalLabel, { color: colors.textSecondary }]}>역사적 비교</Text>
@@ -279,7 +279,7 @@ export default function HealthScoreSection({ healthScore, onScoreImproved }: Hea
       </View>
 
       {/* [NEW] "왜 이 점수인가" 요약 — 어떤 팩터가 점수를 끌어내렸는지 설명 */}
-      <View style={[s.whySection, { backgroundColor: colors.cardDark }]}>
+      <View style={[s.whySection, { backgroundColor: colors.surfaceElevated }]}>
         <View style={s.whyRow}>
           <Ionicons name="help-circle-outline" size={14} color={colors.textSecondary} />
           <Text style={[s.whyLabel, { color: colors.textSecondary }]}>왜 이 점수인가요?</Text>
@@ -289,7 +289,7 @@ export default function HealthScoreSection({ healthScore, onScoreImproved }: Hea
 
       {/* [NEW] "지금 할 수 있는 것" 액션 가이드 — S등급이면 표시 안 함 */}
       {actionGuidance && (
-        <View style={[s.actionGuideSection, { backgroundColor: colors.successBg, borderLeftColor: colors.successBorder }]}>
+        <View style={[s.actionGuideSection, { backgroundColor: 'rgba(76, 175, 80, 0.1)', borderLeftColor: 'rgba(76, 175, 80, 0.3)' }]}>
           <View style={s.actionGuideRow}>
             <Ionicons name="arrow-forward-circle-outline" size={14} color={colors.success} />
             <Text style={[s.actionGuideLabel, { color: colors.success }]}>지금 할 수 있는 것</Text>
@@ -306,7 +306,7 @@ export default function HealthScoreSection({ healthScore, onScoreImproved }: Hea
             return (
               <View key={idx} style={s.miniFactor}>
                 <Text style={s.miniIcon}>{factor.icon}</Text>
-                <View style={[s.miniBarBg, { backgroundColor: colors.cardDark }]}>
+                <View style={[s.miniBarBg, { backgroundColor: colors.surfaceElevated }]}>
                   <View style={[s.miniBarFill, { width: `${factor.score}%`, backgroundColor: barColor }]} />
                 </View>
                 <Text style={[s.miniScore, { color: barColor }]}>{factor.score}</Text>
@@ -356,9 +356,9 @@ export default function HealthScoreSection({ healthScore, onScoreImproved }: Hea
           activeOpacity={1}
           onPress={() => setTooltipVisible(false)}
         >
-          <View style={[s.tooltipModal, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View style={[s.tooltipModal, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={[s.tooltipHeader, { borderBottomColor: colors.border }]}>
-              <Text style={[s.tooltipTitle, { color: colors.text }]}>{tooltipContent.title}</Text>
+              <Text style={[s.tooltipTitle, { color: colors.textPrimary }]}>{tooltipContent.title}</Text>
               <TouchableOpacity onPress={() => setTooltipVisible(false)}>
                 <Ionicons name="close" size={20} color={colors.textSecondary} />
               </TouchableOpacity>

@@ -102,7 +102,7 @@ export default function DeepDiveScreen() {
       >
         {/* 검색 바 */}
         <View style={[s.searchCard, { backgroundColor: colors.surface }]}>
-          <Ionicons name="search" size={20} color={colors.textSecondary} />
+          <Ionicons name="search" size={22} color={colors.textSecondary} style={{ marginRight: 8 }} />
           <TextInput
             value={ticker}
             onChangeText={setTicker}
@@ -111,6 +111,8 @@ export default function DeepDiveScreen() {
             style={[s.input, { color: colors.textPrimary }]}
             returnKeyType="search"
             onSubmitEditing={handleAnalyze}
+            autoCapitalize="none"
+            autoCorrect={false}
           />
         </View>
 
@@ -145,7 +147,7 @@ export default function DeepDiveScreen() {
             {/* 핵심 지표 */}
             <View style={[s.card, { backgroundColor: colors.surface }]}>
               <View style={s.cardHeader}>
-                <Ionicons name="bar-chart" size={18} color="#7C4DFF" />
+                <Ionicons name="bar-chart" size={18} color="#7C4DFF" style={{ marginRight: 8 }} />
                 <Text style={[s.cardTitle, { color: colors.textPrimary }]}>📊 핵심 지표</Text>
               </View>
               <View style={s.metricsGrid}>
@@ -186,6 +188,7 @@ export default function DeepDiveScreen() {
                   name="bulb"
                   size={18}
                   color={getRecommendationColor(result.recommendation)}
+                  style={{ marginRight: 8 }}
                 />
                 <Text style={[s.cardTitle, { color: colors.textPrimary }]}>🎯 AI 의견</Text>
               </View>
@@ -218,13 +221,19 @@ const s = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 12,
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 12,
-    marginBottom: 12,
+    paddingVertical: 14,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   input: {
     flex: 1,
     fontSize: 16,
+    height: 44,
+    paddingVertical: 8,
   },
   analyzeButton: {
     borderRadius: 12,
@@ -238,11 +247,12 @@ const s = StyleSheet.create({
     fontWeight: '600',
   },
   resultContainer: {
-    gap: 16,
+    marginTop: 8,
   },
   card: {
     borderRadius: 16,
     padding: 20,
+    marginBottom: 16,
   },
   stockName: {
     fontSize: 24,
@@ -260,7 +270,6 @@ const s = StyleSheet.create({
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
     marginBottom: 16,
   },
   cardTitle: {

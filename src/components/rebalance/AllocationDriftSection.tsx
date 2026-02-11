@@ -28,6 +28,7 @@ import { Asset } from '../../types/asset';
 import { classifyAsset, AssetCategory } from '../../services/rebalanceScore';
 import AllocationPieChart, { PieSlice } from '../charts/AllocationPieChart';
 import { COLORS } from '../../styles/theme';
+import { useTheme } from '../../hooks/useTheme';
 
 // ── 카테고리 설정 ──
 
@@ -180,6 +181,7 @@ export default function AllocationDriftSection({
   assets,
   totalAssets,
 }: AllocationDriftSectionProps) {
+  const { colors } = useTheme();
   const [showDetail, setShowDetail] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('bar');
@@ -281,7 +283,7 @@ export default function AllocationDriftSection({
   if (totalAssets === 0) return null;
 
   return (
-    <View style={s.card}>
+    <View style={[s.card, { backgroundColor: colors.inverseSurface }]}>
       {/* 헤더 */}
       <TouchableOpacity
         style={s.headerRow}
@@ -289,8 +291,8 @@ export default function AllocationDriftSection({
         activeOpacity={0.7}
       >
         <View>
-          <Text style={s.cardLabel}>배분 이탈도</Text>
-          <Text style={s.cardLabelEn}>Allocation Drift</Text>
+          <Text style={[s.cardLabel, { color: colors.inverseText }]}>배분 이탈도</Text>
+          <Text style={[s.cardLabelEn, { color: colors.textTertiary }]}>Allocation Drift</Text>
         </View>
         <View style={s.headerRight}>
           <View style={[s.driftBadge, { backgroundColor: driftColor + '20' }]}>
@@ -480,7 +482,7 @@ export default function AllocationDriftSection({
 
 const s = StyleSheet.create({
   card: {
-    backgroundColor: '#141414',
+    // backgroundColor: 동적 (colors.inverseSurface)
     marginHorizontal: 16,
     marginBottom: 12,
     borderRadius: 16,
@@ -495,8 +497,8 @@ const s = StyleSheet.create({
     marginBottom: 10,
   },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  cardLabel: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
-  cardLabelEn: { fontSize: 10, color: '#555', marginTop: 1, letterSpacing: 0.5, textTransform: 'uppercase' as const },
+  cardLabel: { fontSize: 15, fontWeight: '700' }, // color: 동적 (colors.inverseText)
+  cardLabelEn: { fontSize: 10, marginTop: 1, letterSpacing: 0.5, textTransform: 'uppercase' as const }, // color: 동적 (colors.textTertiary)
   driftBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10, gap: 6 },
   driftDot: { width: 6, height: 6, borderRadius: 3 },
   driftText: { fontSize: 12, fontWeight: '700' },

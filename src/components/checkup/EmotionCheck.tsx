@@ -33,12 +33,12 @@ export default function EmotionCheck({
   onMemoChange,
   onSave,
 }: EmotionCheckProps) {
-  const { colors, shadows } = useTheme();
+  const { colors } = useTheme();
   const isChecked = todayEmotion !== null && memo.length > 0;
   const selectedItem = EMOTIONS.find(e => e.key === todayEmotion);
 
   return (
-    <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border, ...shadows.small }]}>
+    <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
       <View style={s.headerRow}>
         <Text style={[s.cardTitle, { color: colors.textPrimary }]}>오늘의 투자 감정</Text>
         {isChecked && (

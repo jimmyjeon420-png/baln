@@ -13,6 +13,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Asset } from '../../types/asset';
 import { classifyAsset, AssetCategory } from '../../services/rebalanceScore';
+import { useTheme } from '../../hooks/useTheme';
 
 // ── 상관 계수 매트릭스 (rebalanceScore.ts와 동일, 직접 참조 대신 복사 — export 안 됨) ──
 
@@ -69,6 +70,7 @@ interface CorrelationHeatmapSectionProps {
 }
 
 const CorrelationHeatmapSection = ({ assets, totalAssets }: CorrelationHeatmapSectionProps) => {
+  const { colors } = useTheme();
   const [showDetail, setShowDetail] = useState(false);
 
   // 보유 중인 자산 카테고리만 추출 (비중 > 0)
@@ -104,11 +106,11 @@ const CorrelationHeatmapSection = ({ assets, totalAssets }: CorrelationHeatmapSe
   const divColor = avgCorrelation < 0.15 ? '#4CAF50' : avgCorrelation < 0.35 ? '#FFC107' : '#CF6679';
 
   return (
-    <View style={s.card}>
+    <View style={[s.card, { backgroundColor: colors.inverseSurface }]}>
       <View style={s.headerRow}>
         <View>
-          <Text style={s.cardLabel}>자산 상관관계</Text>
-          <Text style={s.cardLabelEn}>Correlation Matrix</Text>
+          <Text style={[s.cardLabel, { color: colors.inverseText }]}>자산 상관관계</Text>
+          <Text style={[s.cardLabelEn, { color: colors.textTertiary }]}>Correlation Matrix</Text>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <View style={[s.divBadge, { backgroundColor: divColor + '20' }]}>
@@ -127,19 +129,19 @@ const CorrelationHeatmapSection = ({ assets, totalAssets }: CorrelationHeatmapSe
       {/* 요약: 평균 상관 계수 + 해석 */}
       <View style={s.summaryRow}>
         <View style={s.summaryItem}>
-          <Text style={s.summaryLabel}>평균 상관계수</Text>
+          <Text style={[s.summaryLabel, { color: colors.textSecondary }]}>평균 상관계수</Text>
           <Text style={[s.summaryValue, { color: corrToTextColor(avgCorrelation) }]}>
             {avgCorrelation >= 0 ? '+' : ''}{avgCorrelation.toFixed(2)}
           </Text>
         </View>
-        <View style={s.summaryDivider} />
+        <View style={[s.summaryDivider, { backgroundColor: colors.border }]} />
         <View style={s.summaryItem}>
-          <Text style={s.summaryLabel}>보유 자산군</Text>
-          <Text style={s.summaryValue}>{activeCategories.length}종류</Text>
+          <Text style={[s.summaryLabel, { color: colors.textSecondary }]}>보유 자산군</Text>
+          <Text style={[s.summaryValue, { color: colors.inverseText }]}>{activeCategories.length}종류</Text>
         </View>
-        <View style={s.summaryDivider} />
+        <View style={[s.summaryDivider, { backgroundColor: colors.border }]} />
         <View style={s.summaryItem}>
-          <Text style={s.summaryLabel}>해석</Text>
+          <Text style={[s.summaryLabel, { color: colors.textSecondary }]}>해석</Text>
           <Text style={[s.summaryValue, { color: divColor, fontSize: 11 }]}>
             {avgCorrelation < 0.15 ? '헤지 효과 큼' : avgCorrelation < 0.35 ? '적정 분산' : '쏠림 위험'}
           </Text>
@@ -246,7 +248,7 @@ const CELL_SIZE = 48;
 
 const s = StyleSheet.create({
   card: {
-    backgroundColor: '#141414',
+    // backgroundColor: 동적 (colors.inverseSurface)
     marginHorizontal: 16,
     marginBottom: 12,
     borderRadius: 16,
@@ -254,8 +256,8 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#1E1E1E',
   },
-  cardLabel: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
-  cardLabelEn: { fontSize: 10, color: '#555', marginTop: 1, letterSpacing: 0.5, textTransform: 'uppercase' },
+  cardLabel: { fontSize: 15, fontWeight: '700' }, // color: 동적 (colors.inverseText)
+  cardLabelEn: { fontSize: 10, marginTop: 1, letterSpacing: 0.5, textTransform: 'uppercase' }, // color: 동적 (colors.textTertiary)
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -270,12 +272,12 @@ const s = StyleSheet.create({
   // 요약 행
   summaryRow: {
     flexDirection: 'row',
-    backgroundColor: '#1A1A1A',
+    // backgroundColor: 동적 (이미 inverseSurface 카드 안에 있으므로 별도 배경 불필요)
     borderRadius: 10,
     padding: 12,
   },
   summaryItem: { flex: 1, alignItems: 'center' },
-  summaryDivider: { width: 1, backgroundColor: '#2A2A2A' },
+  summaryDivider: { width: 1 }, // backgroundColor: 동적 (colors.border)
   summaryLabel: { fontSize: 10, color: '#666', marginBottom: 4 },
   summaryValue: { fontSize: 14, fontWeight: '700', color: '#FFF' },
 

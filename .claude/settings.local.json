@@ -169,7 +169,15 @@
       "Bash(npx eas:*)",
       "Bash(defaults read:*)",
       "Bash(osascript:*)",
-      "Bash(brew install:*)"
+      "Bash(brew install:*)",
+      "Bash(tail:*)",
+      "Bash(export:*)",
+      "Bash(pkill:*)",
+      "Bash(killall:*)",
+      "Bash(watchman watch-del-all:*)",
+      "Bash(nc:*)",
+      "Bash(open:*)",
+      "Bash(xcrun simctl:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

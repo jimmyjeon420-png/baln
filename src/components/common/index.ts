@@ -24,3 +24,7 @@ export {
   SkeletonAvatar,
   SkeletonChart,
 } from './SkeletonLoader';
+
+// 크레딧 시스템 컴포넌트
+export { CreditDisplay } from './CreditDisplay';
+export { CreditChip } from './CreditChip';

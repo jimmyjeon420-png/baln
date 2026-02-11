@@ -126,7 +126,6 @@ export default function CardSwipeContainer({
         snapToInterval={SCREEN_WIDTH}
         snapToAlignment="center"
         removeClippedSubviews={true}
-        windowSize={3}
         refreshControl={
           onRefresh ? (
             <RefreshControl
