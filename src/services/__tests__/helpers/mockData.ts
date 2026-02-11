@@ -40,7 +40,7 @@ export const mockPortfolio: PortfolioAsset[] = [
     quantity: 10,
     avgPrice: 180.0,
     currentPrice: 195.0,
-    assetType: 'stock',
+    currentValue: 1950.0,
   },
   {
     ticker: 'NVDA',
@@ -48,7 +48,7 @@ export const mockPortfolio: PortfolioAsset[] = [
     quantity: 5,
     avgPrice: 500.0,
     currentPrice: 520.0,
-    assetType: 'stock',
+    currentValue: 2600.0,
   },
   {
     ticker: 'BTC',
@@ -56,7 +56,7 @@ export const mockPortfolio: PortfolioAsset[] = [
     quantity: 0.1,
     avgPrice: 90000.0,
     currentPrice: 95000.0,
-    assetType: 'crypto',
+    currentValue: 9500.0,
   },
 ];
 

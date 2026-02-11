@@ -22,14 +22,15 @@ describe('aiResponseValidator', () => {
         stopLossProximity: 85,
         marketSentiment: 65,
       },
+      stopLossGuidelines: [],
       fomoAlerts: [],
       portfolioSnapshot: {
         totalValue: 50000000,
-        topHoldings: [],
+        totalGainLoss: 5000000,
+        gainLossPercent: 10,
         diversificationScore: 85,
       },
       personalizedAdvice: ['조언 1', '조언 2'],
-      timestamp: Date.now(),
       ...overrides,
     });
 
@@ -99,8 +100,8 @@ describe('aiResponseValidator', () => {
     it('should clamp fomoAlerts overvaluationScore to 0-100', () => {
       const result = createMockResult({
         fomoAlerts: [
-          { ticker: 'AAPL', name: 'Apple', overvaluationScore: 150, reason: 'Test' },
-          { ticker: 'GOOGL', name: 'Google', overvaluationScore: -10, reason: 'Test' },
+          { ticker: 'AAPL', name: 'Apple', overvaluationScore: 150, severity: 'HIGH', reason: 'Test' },
+          { ticker: 'GOOGL', name: 'Google', overvaluationScore: -10, severity: 'LOW', reason: 'Test' },
         ],
       });
       const { corrected, validation } = validateAndCorrectRiskAnalysis(result, 50000000);
@@ -115,7 +116,7 @@ describe('aiResponseValidator', () => {
       const clientTotal = 50000000; // 5천만 (50% 차이)
 
       const result = createMockResult({
-        portfolioSnapshot: { totalValue: aiTotal, topHoldings: [], diversificationScore: 85 },
+        portfolioSnapshot: { totalValue: aiTotal, totalGainLoss: 0, gainLossPercent: 0, diversificationScore: 85 },
       });
       const { corrected, validation } = validateAndCorrectRiskAnalysis(result, clientTotal);
 
@@ -129,7 +130,7 @@ describe('aiResponseValidator', () => {
       const aiTotal = 60000000; // 20% 차이 (허용 범위 내)
 
       const result = createMockResult({
-        portfolioSnapshot: { totalValue: aiTotal, topHoldings: [], diversificationScore: 85 },
+        portfolioSnapshot: { totalValue: aiTotal, totalGainLoss: 0, gainLossPercent: 0, diversificationScore: 85 },
       });
       const { corrected, validation } = validateAndCorrectRiskAnalysis(result, clientTotal);
 
@@ -149,9 +150,9 @@ describe('aiResponseValidator', () => {
       });
       const { corrected, validation } = validateAndCorrectRiskAnalysis(result, 50000000);
 
-      expect(corrected.panicSubScores.portfolioLoss).toBe(100);
-      expect(corrected.panicSubScores.concentrationRisk).toBe(0);
-      expect(corrected.panicSubScores.marketSentiment).toBe(100);
+      expect(corrected.panicSubScores!.portfolioLoss).toBe(100);
+      expect(corrected.panicSubScores!.concentrationRisk).toBe(0);
+      expect(corrected.panicSubScores!.marketSentiment).toBe(100);
       expect(validation.corrected).toBe(true);
     });
 
@@ -169,8 +170,8 @@ describe('aiResponseValidator', () => {
       const result = createMockResult({
         panicShieldIndex: 150,
         panicShieldLevel: 'INVALID' as any,
-        fomoAlerts: [{ ticker: 'AAPL', name: 'Apple', overvaluationScore: 200, reason: 'Test' }],
-        portfolioSnapshot: { totalValue: 150000000, topHoldings: [], diversificationScore: 85 },
+        fomoAlerts: [{ ticker: 'AAPL', name: 'Apple', overvaluationScore: 200, severity: 'HIGH', reason: 'Test' }],
+        portfolioSnapshot: { totalValue: 150000000, totalGainLoss: 0, gainLossPercent: 0, diversificationScore: 85 },
       });
       const { validation } = validateAndCorrectRiskAnalysis(result, 50000000);
 

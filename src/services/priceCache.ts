@@ -17,7 +17,7 @@ interface CacheEntry<T> {
 export class PriceCache {
   private cache = new Map<string, CacheEntry<PriceData>>();
   private defaultTTL: number; // seconds
-  private cleanupInterval: NodeJS.Timeout | null = null;
+  private cleanupInterval: ReturnType<typeof setInterval> | null = null;
 
   constructor(ttlSeconds: number = 300) { // 5 minutes default
     this.defaultTTL = ttlSeconds;

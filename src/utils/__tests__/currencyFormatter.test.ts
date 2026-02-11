@@ -17,21 +17,25 @@ import {
   formatAllocation,
   parseCurrency,
 } from '../currencyFormatter';
-import { LocalizationSettings } from '../../types/i18n';
+import { LocalizationSettings, Language } from '../../types/i18n';
 
 describe('currencyFormatter', () => {
   const mockLocalizationKRW: LocalizationSettings = {
     locale: 'ko-KR',
     currency: 'KRW',
     currencySymbol: '₩',
-    language: 'ko',
+    language: Language.KOREAN,
+    numberFormat: 'comma',
+    thousandsSeparator: ',',
   };
 
   const mockLocalizationUSD: LocalizationSettings = {
     locale: 'en-US',
     currency: 'USD',
     currencySymbol: '$',
-    language: 'en',
+    language: Language.ENGLISH,
+    numberFormat: 'dot',
+    thousandsSeparator: ',',
   };
 
   describe('formatCurrency', () => {

@@ -177,7 +177,8 @@
       "Bash(watchman watch-del-all:*)",
       "Bash(nc:*)",
       "Bash(open:*)",
-      "Bash(xcrun simctl:*)"
+      "Bash(xcrun simctl:*)",
+      "Bash(SUPABASE_ACCESS_TOKEN=sbp_3359cb8927b299963f2881fcadb3eb7f18af0cb2 npx supabase:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

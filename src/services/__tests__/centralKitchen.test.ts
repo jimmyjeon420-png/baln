@@ -24,10 +24,13 @@ import {
   type DailyMarketInsight,
   type StockQuantReport,
   type CentralKitchenResult,
+} from '../centralKitchen';
+
+import {
   type PortfolioAsset,
   type MorningBriefingResult,
   type RiskAnalysisResult,
-} from '../centralKitchen';
+} from '../gemini';
 
 import * as geminiService from '../gemini';
 import supabase from '../supabase';
@@ -62,9 +65,7 @@ const mockPortfolio: PortfolioAsset[] = [
     quantity: 10,
     avgPrice: 150000,
     currentPrice: 180000,
-    totalValue: 1800000,
-    profitLoss: 300000,
-    profitLossRate: 20,
+    currentValue: 1800000,
   },
   {
     ticker: 'NVDA',
@@ -72,9 +73,7 @@ const mockPortfolio: PortfolioAsset[] = [
     quantity: 5,
     avgPrice: 500000,
     currentPrice: 800000,
-    totalValue: 4000000,
-    profitLoss: 1500000,
-    profitLossRate: 60,
+    currentValue: 4000000,
   },
   {
     ticker: '005930.KS',
@@ -82,9 +81,7 @@ const mockPortfolio: PortfolioAsset[] = [
     quantity: 20,
     avgPrice: 70000,
     currentPrice: 75000,
-    totalValue: 1500000,
-    profitLoss: 100000,
-    profitLossRate: 7.14,
+    currentValue: 1500000,
   },
 ];
 
@@ -192,20 +189,20 @@ const mockMorningBriefing: MorningBriefingResult = {
 };
 
 const mockRiskAnalysis: RiskAnalysisResult = {
-  overallRisk: 'MEDIUM',
-  riskScore: 55,
-  diversificationScore: 72,
-  volatilityScore: 48,
-  concentrationRisk: 'HIGH',
-  recommendations: [
+  panicShieldIndex: 55,
+  panicShieldLevel: 'CAUTION',
+  panicShieldReason: '포트폴리오의 60% 이상이 기술주에 집중되어 있습니다',
+  stopLossGuidelines: [],
+  fomoAlerts: [],
+  personalizedAdvice: [
     '포트폴리오의 60% 이상이 기술주에 집중되어 있습니다',
     '채권이나 금 ETF로 일부 분산 검토',
   ],
-  assetAllocation: {
-    stocks: 85,
-    bonds: 0,
-    crypto: 0,
-    cash: 15,
+  portfolioSnapshot: {
+    totalValue: 7300000,
+    totalGainLoss: 1900000,
+    gainLossPercent: 26,
+    diversificationScore: 72,
   },
 };
 
@@ -1038,9 +1035,7 @@ describe('centralKitchen', () => {
           quantity: 10,
           avgPrice: 200000,
           currentPrice: 150000, // -25% 손실
-          totalValue: 1500000,
-          profitLoss: -500000,
-          profitLossRate: -25,
+          currentValue: 1500000,
         },
       ];
 
