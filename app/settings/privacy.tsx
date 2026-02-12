@@ -164,11 +164,14 @@ export default function PrivacyScreen() {
           </Text>
         </View>
 
-        {/* 개인정보보호 책임자 */}
+        {/* 개인정보 보호책임자 (개인정보보호법 필수) */}
         <View style={[styles.contactContainer, { backgroundColor: colors.surface }]}>
-          <Text style={[styles.contactTitle, { color: colors.textPrimary }]}>개인정보보호 책임자</Text>
+          <Text style={[styles.contactTitle, { color: colors.textPrimary }]}>개인정보 보호책임자</Text>
           <Text style={[styles.contactText, { color: colors.textSecondary }]}>
-            성명: 대표이사 (겸임)
+            개인정보 보호책임자: 대표이사 (문의: privacy@baln.app)
+          </Text>
+          <Text style={[styles.contactText, { color: colors.textSecondary }]}>
+            소속: 발른 주식회사
           </Text>
           <Text style={[styles.contactText, { color: colors.textSecondary }]}>
             이메일: privacy@baln.app
@@ -197,7 +200,7 @@ export default function PrivacyScreen() {
 
         {/* 마지막 업데이트 */}
         <Text style={[styles.lastUpdate, { color: colors.textTertiary }]}>
-          마지막 업데이트: 2026년 2월 7일
+          마지막 업데이트: 2026년 2월 13일
         </Text>
       </ScrollView>
     </SafeAreaView>

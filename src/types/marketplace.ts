@@ -103,7 +103,7 @@ export interface DeepDiveResult {
   ticker: string;
   name: string;
   overallScore: number; // 0-100 종합 점수
-  recommendation: 'STRONG_BUY' | 'BUY' | 'HOLD' | 'SELL' | 'STRONG_SELL';
+  recommendation: 'VERY_POSITIVE' | 'POSITIVE' | 'NEUTRAL' | 'NEGATIVE' | 'VERY_NEGATIVE';
   sections: {
     financial: {
       title: string;

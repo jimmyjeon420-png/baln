@@ -567,7 +567,7 @@ export default function CreditsScreen() {
           <Text style={styles.infoText}>
             - 크레딧은 AI 프리미엄 기능 이용에 사용됩니다{'\n'}
             - AI 분석 실패 시 크레딧이 자동 환불됩니다{'\n'}
-            - 구독자는 매월 50 크레딧 보너스를 받습니다{'\n'}
+            - 구독자는 매월 30 크레딧(₩3,000) 보너스를 받습니다{'\n'}
             - 등급이 높을수록 할인율이 적용됩니다{'\n'}
             - 결제는 Apple App Store를 통해 처리됩니다
           </Text>

@@ -19,10 +19,16 @@ function getDefaultMessage(totalGainLoss: number): { emoji: string; text: string
   if (totalGainLoss >= 0) {
     return { emoji: '✨', text: '오늘 자산은 안정적이에요' };
   }
-  if (totalGainLoss > -1) {
+  if (totalGainLoss > -3) {
+    // 소폭 하락 (-3% 미만): 기존 안심 톤 유지
     return { emoji: '🍃', text: '소폭 변동은 자연스러운 거예요' };
   }
-  return { emoji: '🌈', text: '일시적 하락이에요. 장기적으로 봐주세요' };
+  if (totalGainLoss > -10) {
+    // 중간 하락 (-3% ~ -10%): 차분한 안내 톤
+    return { emoji: '📊', text: '단기 변동은 자연스럽습니다. 맥락을 살펴보세요.' };
+  }
+  // 큰 하락 (-10% 이상): 공감 + 맥락 확인 유도 톤
+  return { emoji: '🔍', text: '큰 변동이 있었습니다. 맥락을 확인해보세요.' };
 }
 
 export default function ReassuranceBanner({ totalGainLoss, cfoWeather }: ReassuranceBannerProps) {
@@ -34,7 +40,11 @@ export default function ReassuranceBanner({ totalGainLoss, cfoWeather }: Reassur
   const styles = createStyles(colors);
 
   return (
-    <View style={styles.banner}>
+    <View
+      style={styles.banner}
+      accessibilityLabel={`안심 배너: ${message}`}
+      accessibilityRole="text"
+    >
       <Text style={styles.emoji}>{emoji}</Text>
       <Text style={styles.message}>{message}</Text>
     </View>

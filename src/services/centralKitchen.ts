@@ -49,7 +49,7 @@ export interface StockQuantReport {
   ticker: string;
   date: string;
   valuation_score: number;
-  signal: 'STRONG_BUY' | 'BUY' | 'HOLD' | 'SELL' | 'STRONG_SELL';
+  signal: 'VERY_POSITIVE' | 'POSITIVE' | 'NEUTRAL' | 'NEGATIVE' | 'VERY_NEGATIVE';
   analysis: string;
   metrics: {
     pegRatio?: number;
@@ -237,10 +237,10 @@ function buildBriefingFromKitchen(
 
     if (report) {
       // 퀀트 신호 기반
-      if (report.signal === 'STRONG_BUY' || report.signal === 'BUY') {
+      if (report.signal === 'VERY_POSITIVE' || report.signal === 'POSITIVE') {
         action = 'BUY';
         reason = `밸류에이션 점수 ${report.valuation_score}/100 (저평가). `;
-      } else if (report.signal === 'STRONG_SELL' || report.signal === 'SELL') {
+      } else if (report.signal === 'VERY_NEGATIVE' || report.signal === 'NEGATIVE') {
         action = 'SELL';
         reason = `밸류에이션 점수 ${report.valuation_score}/100 (고평가). `;
       }

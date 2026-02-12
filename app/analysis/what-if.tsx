@@ -18,6 +18,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../src/hooks/useTheme';
 import { HeaderBar } from '../../src/components/common/HeaderBar';
 import { useSharedPortfolio } from '../../src/hooks/useSharedPortfolio';
@@ -290,6 +291,14 @@ export default function WhatIfScreen() {
                 />
                 <HedgingPlaybook result={result} />
                 <RecoveryOutlook scenarioType={selectedScenario} />
+
+                {/* 투자 면책 안내 */}
+                <View style={s.disclaimerBanner}>
+                  <Ionicons name="information-circle-outline" size={14} color="#888" />
+                  <Text style={s.disclaimerText}>
+                    본 정보는 투자 참고용이며, 투자 권유가 아닙니다. 투자 판단의 책임은 본인에게 있습니다.
+                  </Text>
+                </View>
               </View>
             )}
           </>
@@ -309,14 +318,24 @@ export default function WhatIfScreen() {
 
             {/* 선택된 시나리오 리포트 */}
             {selectedExtreme && (
-              <ExtremeScenarioReport
-                scenario={selectedExtreme}
-                simulationResult={extremeResult}
-                isSimulating={isExtremeLoading}
-                simulationError={extremeError}
-                onSimulate={handleExtremeSimulate}
-                hasAssets={hasAssets}
-              />
+              <>
+                <ExtremeScenarioReport
+                  scenario={selectedExtreme}
+                  simulationResult={extremeResult}
+                  isSimulating={isExtremeLoading}
+                  simulationError={extremeError}
+                  onSimulate={handleExtremeSimulate}
+                  hasAssets={hasAssets}
+                />
+
+                {/* 투자 면책 안내 */}
+                <View style={s.disclaimerBanner}>
+                  <Ionicons name="information-circle-outline" size={14} color="#888" />
+                  <Text style={s.disclaimerText}>
+                    본 정보는 투자 참고용이며, 투자 권유가 아닙니다. 투자 판단의 책임은 본인에게 있습니다.
+                  </Text>
+                </View>
+              </>
             )}
           </>
         )}
@@ -403,5 +422,20 @@ const s = StyleSheet.create({
   reportContainer: {
     marginTop: 16,
     gap: 12,
+  },
+  disclaimerBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#1A1A1A',
+    borderRadius: 10,
+    padding: 12,
+    marginTop: 16,
+    gap: 8,
+  },
+  disclaimerText: {
+    flex: 1,
+    fontSize: 11,
+    color: '#888888',
+    lineHeight: 16,
   },
 });

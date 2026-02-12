@@ -119,7 +119,7 @@ const mockStockReports: StockQuantReport[] = [
     ticker: 'AAPL',
     date: '2026-02-11',
     valuation_score: 72,
-    signal: 'BUY',
+    signal: 'POSITIVE',
     analysis: 'AI 기능 탑재로 실적 개선 기대',
     metrics: {
       pegRatio: 2.1,
@@ -133,7 +133,7 @@ const mockStockReports: StockQuantReport[] = [
     ticker: 'NVDA',
     date: '2026-02-11',
     valuation_score: 88,
-    signal: 'STRONG_BUY',
+    signal: 'VERY_POSITIVE',
     analysis: 'AI 수요 폭발, 데이터센터 주문 급증',
     metrics: {
       pegRatio: 1.8,
@@ -147,7 +147,7 @@ const mockStockReports: StockQuantReport[] = [
     ticker: '005930.KS',
     date: '2026-02-11',
     valuation_score: 65,
-    signal: 'HOLD',
+    signal: 'NEUTRAL',
     analysis: 'HBM 수주 증가, 단 중국 리스크 존재',
     metrics: {
       pegRatio: 1.5,
@@ -778,7 +778,7 @@ describe('centralKitchen', () => {
           eq: jest.fn().mockReturnThis(),
           single: jest.fn().mockResolvedValue({
             data: {
-              signal: 'STRONG_BUY',
+              signal: 'VERY_POSITIVE',
               valuation_score: 88,
               analysis: 'AI 수요 폭발',
             },
@@ -792,7 +792,7 @@ describe('centralKitchen', () => {
       const result = await getQuickStockSignal('NVDA');
 
       expect(result).toEqual({
-        signal: 'STRONG_BUY',
+        signal: 'VERY_POSITIVE',
         score: 88,
         analysis: 'AI 수요 폭발',
       });
@@ -999,7 +999,7 @@ describe('centralKitchen', () => {
             select: jest.fn().mockReturnValue({
               eq: jest.fn().mockReturnValue({
                 in: jest.fn().mockResolvedValue({
-                  data: [mockStockReports[1]], // NVDA (STRONG_BUY, 수익률 60%)
+                  data: [mockStockReports[1]], // NVDA (VERY_POSITIVE, 수익률 60%)
                   error: null,
                 }),
               }),

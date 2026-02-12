@@ -285,7 +285,16 @@ export default function DeepDiveScreen() {
 
         {/* 분석 결과 — 통합 리포트 */}
         {result && !isLoading && (
-          <DeepDiveReport result={result} />
+          <>
+            <DeepDiveReport result={result} />
+            {/* 투자 면책 안내 */}
+            <View style={s.disclaimerBanner}>
+              <Ionicons name="information-circle-outline" size={14} color="#888" />
+              <Text style={s.disclaimerText}>
+                본 정보는 투자 참고용이며, 투자 권유가 아닙니다. 투자 판단의 책임은 본인에게 있습니다.
+              </Text>
+            </View>
+          </>
         )}
 
         {/* 안내 문구 (결과 없을 때) */}
@@ -443,5 +452,20 @@ const s = StyleSheet.create({
   exampleChipText: {
     fontSize: 14,
     fontWeight: '500',
+  },
+  disclaimerBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#1A1A1A',
+    borderRadius: 10,
+    padding: 12,
+    marginTop: 16,
+    gap: 8,
+  },
+  disclaimerText: {
+    flex: 1,
+    fontSize: 11,
+    color: '#888888',
+    lineHeight: 16,
   },
 });

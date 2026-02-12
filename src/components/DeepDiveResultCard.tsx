@@ -62,19 +62,19 @@ function SectionCard({
 
 export default function DeepDiveResultCard({ result }: Props) {
   const recColor = {
-    STRONG_BUY: '#4CAF50',
-    BUY: '#81C784',
-    HOLD: '#FFA726',
-    SELL: '#EF5350',
-    STRONG_SELL: '#CF6679',
+    VERY_POSITIVE: '#4CAF50',
+    POSITIVE: '#81C784',
+    NEUTRAL: '#FFA726',
+    NEGATIVE: '#EF5350',
+    VERY_NEGATIVE: '#CF6679',
   }[result.recommendation];
 
   const recLabel = {
-    STRONG_BUY: '적극 매수',
-    BUY: '매수',
-    HOLD: '보유',
-    SELL: '매도',
-    STRONG_SELL: '적극 매도',
+    VERY_POSITIVE: '매우 긍정적',
+    POSITIVE: '긍정적',
+    NEUTRAL: '중립',
+    NEGATIVE: '부정적',
+    VERY_NEGATIVE: '매우 부정적',
   }[result.recommendation];
 
   return (
@@ -135,13 +135,23 @@ export default function DeepDiveResultCard({ result }: Props) {
       <SectionCard title={result.sections.news.title} icon="newspaper" iconColor="#7C4DFF">
         <View style={[
           styles.sentimentBadge,
-          { backgroundColor: result.sections.news.sentiment === 'POSITIVE' ? '#4CAF5020' : result.sections.news.sentiment === 'NEGATIVE' ? '#CF667920' : '#FFA72620' },
+          { backgroundColor:
+            (result.sections.news.sentiment === 'VERY_POSITIVE' || result.sections.news.sentiment === 'POSITIVE') ? '#4CAF5020'
+            : (result.sections.news.sentiment === 'VERY_NEGATIVE' || result.sections.news.sentiment === 'NEGATIVE') ? '#CF667920'
+            : '#FFA72620' },
         ]}>
           <Text style={[
             styles.sentimentText,
-            { color: result.sections.news.sentiment === 'POSITIVE' ? '#4CAF50' : result.sections.news.sentiment === 'NEGATIVE' ? '#CF6679' : '#FFA726' },
+            { color:
+              (result.sections.news.sentiment === 'VERY_POSITIVE' || result.sections.news.sentiment === 'POSITIVE') ? '#4CAF50'
+              : (result.sections.news.sentiment === 'VERY_NEGATIVE' || result.sections.news.sentiment === 'NEGATIVE') ? '#CF6679'
+              : '#FFA726' },
           ]}>
-            {result.sections.news.sentiment === 'POSITIVE' ? '긍정적' : result.sections.news.sentiment === 'NEGATIVE' ? '부정적' : '중립'}
+            {result.sections.news.sentiment === 'VERY_POSITIVE' ? '매우 긍정적'
+              : result.sections.news.sentiment === 'POSITIVE' ? '긍정적'
+              : result.sections.news.sentiment === 'NEGATIVE' ? '부정적'
+              : result.sections.news.sentiment === 'VERY_NEGATIVE' ? '매우 부정적'
+              : '중립'}
           </Text>
         </View>
         {result.sections.news.recentNews.map((n, i) => (

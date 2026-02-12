@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { Tabs, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -56,18 +56,23 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
               style={styles.tabItem}
               onPress={onPress}
               activeOpacity={0.7}
+              accessibilityLabel={`${label} 탭`}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: isFocused }}
             >
               <Ionicons
                 name={iconName}
                 size={24}
                 color={isFocused ? COLORS.active : COLORS.inactive}
               />
-              <View
+              <Text
                 style={[
-                  styles.tabLabel,
-                  { backgroundColor: isFocused ? COLORS.active : 'transparent' },
+                  styles.tabLabelText,
+                  { color: isFocused ? COLORS.active : COLORS.inactive },
                 ]}
-              />
+              >
+                {label}
+              </Text>
             </TouchableOpacity>
           );
         })}
@@ -179,10 +184,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     height: '100%',
   },
-  tabLabel: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
+  tabLabelText: {
+    fontSize: 10,
+    fontWeight: '600',
     marginTop: 4,
+    letterSpacing: 0.2,
   },
 });

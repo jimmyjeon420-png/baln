@@ -234,6 +234,12 @@ function LayerSection({
         style={styles.layerHeader}
         onPress={isLocked ? onPressPremium : onToggle}
         activeOpacity={0.7}
+        accessibilityLabel={
+          isLocked
+            ? `${title} 레이어 — 프리미엄 잠금`
+            : `${title} 레이어 ${isExpanded ? '접기' : '펼치기'}`
+        }
+        accessibilityRole="button"
       >
         {/* 좌측: 번호 배지 + 아이콘 + 제목 */}
         <View style={styles.layerHeaderLeft}>
@@ -277,6 +283,8 @@ function LayerSection({
           style={styles.lockedContent}
           onPress={onPressPremium}
           activeOpacity={0.7}
+          accessibilityLabel={`${title} 프리미엄 구독으로 잠금 해제`}
+          accessibilityRole="button"
         >
           <View style={styles.lockedBlur}>
             <Text style={styles.lockedBlurText}>
@@ -300,14 +308,36 @@ function LayerSection({
 // 거시경제 체인 시각화 서브 컴포넌트
 // ============================================================================
 
-function MacroChainVisual({ chain }: { chain: string[] }) {
+/**
+ * 포트폴리오 영향도에 따른 마지막 노드 색상을 반환합니다.
+ * - 양수(상승): 초록 (#4CAF50)
+ * - 소폭 하락(-3% 미만): 노랑/앰버 (#FFC107)
+ * - 큰 하락(-3% 이상): 빨강 (#FF5252)
+ * - 데이터 없음/무시 가능: 회색 (#888888)
+ */
+function getLastNodeColor(percentChange: number | undefined | null): string {
+  if (percentChange == null) return '#888888';
+  if (percentChange >= 0) return '#4CAF50';
+  if (percentChange > -3) return '#FFC107';
+  return '#FF5252';
+}
+
+function MacroChainVisual({
+  chain,
+  portfolioPercentChange,
+}: {
+  chain: string[];
+  portfolioPercentChange?: number | null;
+}) {
   const { colors } = useTheme();
   const styles = React.useMemo(() => createStyles(colors), [colors]);
 
   if (!chain || chain.length === 0) return null;
 
+  const lastNodeColor = getLastNodeColor(portfolioPercentChange);
+
   return (
-    <View style={styles.chainContainer}>
+    <View style={styles.chainContainer} accessibilityLabel="거시경제 연쇄 반응 차트">
       {chain.map((step, index) => (
         <View key={index}>
           <View style={styles.chainStep}>
@@ -319,7 +349,7 @@ function MacroChainVisual({ chain }: { chain: string[] }) {
                     index === 0
                       ? LAYER_COLORS.macro
                       : index === chain.length - 1
-                        ? colors.sell
+                        ? lastNodeColor
                         : colors.textTertiary,
                 },
               ]}
@@ -328,7 +358,10 @@ function MacroChainVisual({ chain }: { chain: string[] }) {
               style={[
                 styles.chainStepText,
                 index === 0 && styles.chainStepFirst,
-                index === chain.length - 1 && styles.chainStepLast,
+                index === chain.length - 1 && {
+                  fontWeight: '600' as const,
+                  color: lastNodeColor,
+                },
               ]}
             >
               {step}
@@ -524,7 +557,7 @@ export default React.forwardRef<View, ContextBriefCardProps>(
     // 데이터 상태 (4겹 레이어 브리핑)
     // ──────────────────────────────────────────────────────────────
     return (
-      <View ref={ref} style={styles.card}>
+      <View ref={ref} style={styles.card} accessibilityLabel="오늘의 맥락 브리핑 카드">
         {/* ── 헤더: 센티먼트 + 무료체험 D-day + 공유 + baln ── */}
         <View style={styles.headerRow}>
           <View style={[styles.sentimentBadge, { backgroundColor: sentimentBg }]}>
@@ -540,7 +573,13 @@ export default React.forwardRef<View, ContextBriefCardProps>(
           </View>
           <View style={styles.headerRightGroup}>
             {onShare && (
-              <TouchableOpacity onPress={onShare} activeOpacity={0.7} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <TouchableOpacity
+                onPress={onShare}
+                activeOpacity={0.7}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                accessibilityLabel="맥락 카드 공유하기"
+                accessibilityRole="button"
+              >
                 <Ionicons name="share-social-outline" size={18} color={COLORS.textTertiary} />
               </TouchableOpacity>
             )}
@@ -549,7 +588,7 @@ export default React.forwardRef<View, ContextBriefCardProps>(
         </View>
 
         {/* ── 헤드라인 ── */}
-        <View style={styles.headlineSection}>
+        <View style={styles.headlineSection} accessibilityLabel="오늘의 시장 헤드라인" accessibilityRole="header">
           <Text style={styles.headlineText}>
             {fact || '시장 데이터 준비 중'}
           </Text>
@@ -595,7 +634,10 @@ export default React.forwardRef<View, ContextBriefCardProps>(
             COLORS={COLORS}
           >
             {macroChain && macroChain.length > 0 ? (
-              <MacroChainVisual chain={macroChain} />
+              <MacroChainVisual
+                chain={macroChain}
+                portfolioPercentChange={portfolioImpact?.percentChange}
+              />
             ) : (
               <Text style={styles.layerBodyText}>
                 {mechanism || '거시경제 연쇄 반응을 분석 중입니다...'}
@@ -912,10 +954,7 @@ const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
     fontWeight: '600',
     color: COLORS.textPrimary,
   },
-  chainStepLast: {
-    fontWeight: '600',
-    color: COLORS.sell,
-  },
+  // chainStepLast: 동적 색상으로 대체됨 (getLastNodeColor 함수 참조)
   chainArrowContainer: {
     alignItems: 'flex-start',
     paddingLeft: 1,

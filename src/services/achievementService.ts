@@ -277,7 +277,11 @@ export async function checkAndUnlockAchievements(
   }
 
   // 6. 적중률 80% (최소 10회 이상 투표)
-  if (params.predictionAccuracy !== undefined && params.predictionAccuracy >= 80) {
+  if (
+    params.predictionAccuracy !== undefined &&
+    params.predictionAccuracy >= 80 &&
+    (params.correctVotes ?? 0) >= 10
+  ) {
     const unlocked = await unlockAchievement('accuracy_80');
     if (unlocked) newlyUnlocked.push('accuracy_80');
   }

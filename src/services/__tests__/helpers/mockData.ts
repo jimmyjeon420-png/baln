@@ -185,7 +185,7 @@ export const mockStockQuantReports: StockQuantReport[] = [
     ticker: 'AAPL',
     date: '2026-02-11',
     valuation_score: 72,
-    signal: 'HOLD',
+    signal: 'NEUTRAL',
     analysis: 'PER 28배, 적정 밸류에이션. 신제품 모멘텀 주시.',
     metrics: {
       pegRatio: 1.8,
@@ -199,7 +199,7 @@ export const mockStockQuantReports: StockQuantReport[] = [
     ticker: 'NVDA',
     date: '2026-02-11',
     valuation_score: 88,
-    signal: 'STRONG_BUY',
+    signal: 'VERY_POSITIVE',
     analysis: 'AI 반도체 독점. 실적 상향 조정. 단기 과열 주의.',
     metrics: {
       pegRatio: 1.2,

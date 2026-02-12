@@ -29,7 +29,8 @@ if (!API_KEY) {
   console.error('  2. npx expo start --clear 실행');
   console.error('  3. 앱 완전히 재시작');
 } else {
-  console.log('✅ Gemini API 키 로드됨:', API_KEY.substring(0, 8) + '...');
+  // API 키가 정상적으로 로드됨 (보안상 키 내용은 로그에 출력하지 않음)
+  console.log('✅ Gemini API 키 로드됨');
   console.log('✅ 사용 모델:', MODEL_NAME);
 }
 
@@ -651,7 +652,7 @@ export interface RiskAnalysisResult {
     name: string;
     suggestedStopLoss: number; // 손절가 (%)
     currentLoss: number; // 현재 손실률
-    action: 'HOLD' | 'WATCH' | 'CONSIDER_SELL';
+    action: 'HOLD' | 'WATCH' | 'REVIEW';
   }[];
   fomoAlerts: {
     ticker: string;
@@ -788,12 +789,12 @@ export const analyzePortfolioRisk = async (
   userProfile?: UserProfile
 ): Promise<RiskAnalysisResult> => {
   try {
-    // 기본 사용자 프로필 (38세 가장 페르소나)
+    // 기본 사용자 프로필 (프로필 정보 없을 시 포트폴리오 데이터만으로 분석)
     const profile: UserProfile = userProfile || {
-      age: 38,
+      age: 0,
       riskTolerance: 'moderate',
-      investmentGoal: '자녀 교육비 및 노후 대비',
-      dependents: 2,
+      investmentGoal: '사용자 프로필 정보 없음',
+      dependents: 0,
     };
 
     // 포트폴리오 데이터 준비 - profit_loss_rate 명시적 계산
@@ -824,10 +825,10 @@ export const analyzePortfolioRisk = async (
 **오늘 날짜:** ${dateStr}
 
 **사용자 프로필:**
-- 나이: ${profile.age}세
+${profile.age > 0 ? `- 나이: ${profile.age}세` : '- 나이: 정보 없음 (포트폴리오 데이터 기반으로 분석)'}
 - 투자 성향: ${profile.riskTolerance}
 - 투자 목표: ${profile.investmentGoal}
-- 부양가족: ${profile.dependents}명
+${profile.dependents > 0 ? `- 부양가족: ${profile.dependents}명` : '- 부양가족: 정보 없음'}
 
 **포트폴리오 (수익률 포함):**
 ${JSON.stringify(portfolioWithAllocation.map(p => ({
@@ -861,7 +862,7 @@ ${JSON.stringify(portfolioWithAllocation.map(p => ({
    - 현재 손실률(profit_loss_rate)과 비교하여 action 결정:
      - HOLD: 손절선 도달 전
      - WATCH: 손절선 근접 (5% 이내)
-     - CONSIDER_SELL: 손절선 초과
+     - REVIEW: 손절선 초과 (점검 필요)
    - *실시간 뉴스*가 손절 판단에 영향을 미치면 reason에 명시
 
 3. **FOMO Vaccine (고평가 경고)**
@@ -872,8 +873,8 @@ ${JSON.stringify(portfolioWithAllocation.map(p => ({
    - 구체적 사유 (예: "현재 +45% 수익 중, 최근 3개월 200% 상승")
 
 4. **맞춤 조언**
-   - ${profile.age}세 ${profile.dependents > 0 ? '가장' : '투자자'}의 관점에서 3가지 핵심 조언
-   - 가족 부양 책임을 고려한 실용적 조언
+   - ${profile.age > 0 ? `${profile.age}세 ${profile.dependents > 0 ? '가장' : '투자자'}의 관점에서` : '포트폴리오 데이터를 기반으로'} 3가지 핵심 조언
+   - ${profile.dependents > 0 ? '가족 부양 책임을 고려한 실용적 조언' : '포트폴리오 구성에 기반한 실용적 조언'}
    - *오늘의 시장 상황*을 반영한 타이밍 조언
 
 **출력 형식 (JSON만, 마크다운 코드블록 금지):**
@@ -1299,8 +1300,8 @@ overallScore, financial.score, technical.score, quality.score는 반드시 아�
     - NEGATIVE(30): 실적 미달, 업종 악재
     - VERY_NEGATIVE(10): 회계 이슈, 대형 소송, 규제 충격 등 구조적 악재
 
-■ recommendation:
-  78+: STRONG_BUY / 63~77: BUY / 42~62: HOLD / 28~41: SELL / 27 이하: STRONG_SELL
+■ recommendation (분석 의견 — 투자 자문이 아닌 분석 등급):
+  78+: VERY_POSITIVE / 63~77: POSITIVE / 42~62: NEUTRAL / 28~41: NEGATIVE / 27 이하: VERY_NEGATIVE
 
 [필수 분석 항목]
 1. 재무 분석 (financial): PER, PBR, ROE, 매출성장률, 영업이익률, 부채비율 + 시가총액 + 최근 4분기 매출/영업이익/순이익
@@ -1317,7 +1318,7 @@ overallScore, financial.score, technical.score, quality.score는 반드시 아�
   "ticker": "${input.ticker}",
   "name": "${input.name}",
   "overallScore": <0-100 위 기준으로 계산한 실제 점수>,
-  "recommendation": "<STRONG_BUY|BUY|HOLD|SELL|STRONG_SELL>",
+  "recommendation": "<VERY_POSITIVE|POSITIVE|NEUTRAL|NEGATIVE|VERY_NEGATIVE>",
   "sections": {
     "financial": {
       "title": "재무 분석",
@@ -1419,7 +1420,7 @@ overallScore, financial.score, technical.score, quality.score는 반드시 아�
 1. 유효한 JSON만 반환. 마크다운 코드블록이나 설명 텍스트 없이 JSON만 출력.
 2. overallScore, financial.score, technical.score는 반드시 종목별로 실제 데이터 기반으로 다르게 산출.
 3. 예시 숫자(75, 80, 65)를 그대로 사용하면 안 됨. 실제 계산 결과를 넣으세요.
-4. recommendation은 overallScore 기준에 따라 결정.
+4. recommendation은 overallScore 기준에 따라 결정 (분석 의견이며 투자 권유가 아님).
 5. 한국어로 작성.
 6. quarterlyData는 실제 실적 발표 기준으로 작성. 사업보고서/분기보고서 기반 데이터 사용.
 7. quarterDetail.revenueSegments의 color 필드에는 "#6366F1", "#8B5CF6", "#EC4899", "#F59E0B", "#10B981", "#3B82F6" 중에서 순서대로 배정.

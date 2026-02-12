@@ -15,6 +15,7 @@
 
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
 
 import ReassuranceBanner from './ReassuranceBanner';
@@ -116,6 +117,14 @@ export default function BeginnerCheckupView({
       {/* 5. 레벨 전환 */}
       <LevelSwitcher currentLevel="beginner" onLevelChange={onLevelChange} />
 
+      {/* 투자 면책 안내 */}
+      <View style={s.disclaimerBanner}>
+        <Ionicons name="information-circle-outline" size={14} color="#888" />
+        <Text style={s.disclaimerText}>
+          본 정보는 투자 참고용이며, 투자 권유가 아닙니다. 투자 판단의 책임은 본인에게 있습니다.
+        </Text>
+      </View>
+
       {/* Bottom spacing */}
       <View style={s.bottomSpacer} />
     </View>
@@ -136,5 +145,21 @@ const s = StyleSheet.create({
   },
   bottomSpacer: {
     height: 32,
+  },
+  disclaimerBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#1A1A1A',
+    borderRadius: 10,
+    padding: 12,
+    marginHorizontal: 16,
+    marginTop: 16,
+    gap: 8,
+  },
+  disclaimerText: {
+    flex: 1,
+    fontSize: 11,
+    color: '#888888',
+    lineHeight: 16,
   },
 });

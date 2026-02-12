@@ -35,11 +35,11 @@ interface DeepDiveReportProps {
 
 // ── 추천 뱃지 색상 매핑 ──
 const RECOMMENDATION_COLORS: Record<string, { bg: string; text: string; label: string }> = {
-  STRONG_BUY: { bg: 'rgba(76,175,80,0.2)', text: '#4CAF50', label: '강력 매수' },
-  BUY: { bg: 'rgba(102,187,106,0.2)', text: '#66BB6A', label: '매수' },
-  HOLD: { bg: 'rgba(255,183,77,0.2)', text: '#FFB74D', label: '보유' },
-  SELL: { bg: 'rgba(239,83,80,0.2)', text: '#EF5350', label: '매도' },
-  STRONG_SELL: { bg: 'rgba(207,102,121,0.2)', text: '#CF6679', label: '강력 매도' },
+  VERY_POSITIVE: { bg: 'rgba(76,175,80,0.2)', text: '#4CAF50', label: '매우 긍정적' },
+  POSITIVE: { bg: 'rgba(102,187,106,0.2)', text: '#66BB6A', label: '긍정적' },
+  NEUTRAL: { bg: 'rgba(255,183,77,0.2)', text: '#FFB74D', label: '중립' },
+  NEGATIVE: { bg: 'rgba(239,83,80,0.2)', text: '#EF5350', label: '부정적' },
+  VERY_NEGATIVE: { bg: 'rgba(207,102,121,0.2)', text: '#CF6679', label: '매우 부정적' },
 };
 
 // ── 뉴스 sentiment → 점수 변환 (5단계) ──
@@ -83,7 +83,7 @@ export default function DeepDiveReport({ result }: DeepDiveReportProps) {
   const { colors } = useTheme();
 
   const { sections } = result;
-  const rec = RECOMMENDATION_COLORS[result.recommendation] ?? RECOMMENDATION_COLORS.HOLD;
+  const rec = RECOMMENDATION_COLORS[result.recommendation] ?? RECOMMENDATION_COLORS.NEUTRAL;
 
   // ── 뉴스 점수 (ScoreRadar용) ──
   const newsScore = sentimentToScore(sections.news.sentiment);

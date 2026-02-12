@@ -20,7 +20,7 @@ interface StopLossGuideline {
   name: string;
   suggestedStopLoss: number;
   currentLoss: number;
-  action: 'HOLD' | 'WATCH' | 'CONSIDER_SELL';
+  action: 'HOLD' | 'WATCH' | 'REVIEW';
 }
 
 interface PeerComparison {
@@ -376,12 +376,12 @@ export default function PanicShieldCard({
                     styles.actionBadge,
                     {
                       backgroundColor:
-                        item.action === 'CONSIDER_SELL' ? colors.error : colors.warning,
+                        item.action === 'REVIEW' ? colors.error : colors.warning,
                     },
                   ]}
                 >
                   <Text style={[styles.actionText, { color: colors.background }]}>
-                    {item.action === 'WATCH' ? '주시' : '검토'}
+                    {item.action === 'WATCH' ? '주시' : '점검 필요'}
                   </Text>
                 </View>
               </View>

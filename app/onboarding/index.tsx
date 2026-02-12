@@ -113,7 +113,8 @@ export default function OnboardingScreen() {
   const [investorLevel, setInvestorLevel] = useState<string | null>(null);
   const [investmentGoal, setInvestmentGoal] = useState<string | null>(null);
 
-  // Step 3: 자산 등록 상태
+  // Step 3: 개인정보 동의 + 자산 등록 상태
+  const [privacyConsent, setPrivacyConsent] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<StockItem[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -494,8 +495,37 @@ export default function OnboardingScreen() {
           등록하면 바로 포트폴리오 건강 점수를 알려드려요
         </Text>
 
-        {/* 검색바 */}
-        <View style={styles.searchBarContainer}>
+        {/* 개인정보 수집 동의 */}
+        <TouchableOpacity
+          style={styles.consentRow}
+          onPress={() => setPrivacyConsent(!privacyConsent)}
+          activeOpacity={0.7}
+        >
+          <Ionicons
+            name={privacyConsent ? 'checkbox' : 'square-outline'}
+            size={22}
+            color={privacyConsent ? COLORS.primary : '#666666'}
+          />
+          <Text style={styles.consentText}>
+            개인정보 수집 및 이용에 동의합니다
+          </Text>
+          <TouchableOpacity
+            onPress={() => router.push('/settings/privacy')}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Text style={styles.consentLink}>[전문 보기]</Text>
+          </TouchableOpacity>
+        </TouchableOpacity>
+
+        {/* 동의 전에는 자산 등록 폼 비활성화 안내 */}
+        {!privacyConsent && (
+          <Text style={styles.consentHint}>
+            자산을 등록하려면 개인정보 수집에 동의해주세요
+          </Text>
+        )}
+
+        {/* 검색바 (동의 후 활성화) */}
+        <View style={[styles.searchBarContainer, !privacyConsent && { opacity: 0.4 }]} pointerEvents={privacyConsent ? 'auto' : 'none'}>
           <Ionicons name="search" size={18} color="#757575" style={{ marginRight: 8 }} />
           <TextInput
             style={styles.searchInput}
@@ -512,6 +542,7 @@ export default function OnboardingScreen() {
             onFocus={() => { if (searchResults.length > 0) setShowDropdown(true); }}
             autoCorrect={false}
             returnKeyType="search"
+            editable={privacyConsent}
           />
           {searchQuery.length > 0 && (
             <TouchableOpacity onPress={() => { setSearchQuery(''); setSelectedStock(null); setAssetPrice(''); }}>
@@ -1210,5 +1241,34 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     color: '#FFFFFF',
+  },
+
+  // 개인정보 동의
+  consentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: COLORS.surface,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    marginBottom: 8,
+  },
+  consentText: {
+    flex: 1,
+    fontSize: 14,
+    color: COLORS.textPrimary,
+    fontWeight: '500',
+  },
+  consentLink: {
+    fontSize: 13,
+    color: COLORS.primary,
+    fontWeight: '600',
+  },
+  consentHint: {
+    fontSize: 12,
+    color: '#666666',
+    textAlign: 'center',
+    marginBottom: 8,
   },
 });
