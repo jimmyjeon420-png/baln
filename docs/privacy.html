@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Smart Rebalancer - 개인정보처리방침</title>
+  <title>개인정보 처리방침 - baln</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -21,7 +21,7 @@
       border-bottom: 1px solid #2A2A2A;
       margin-bottom: 30px;
     }
-    .logo { font-size: 32px; margin-bottom: 8px; }
+    .logo { font-size: 36px; font-weight: 800; color: #4CAF50; margin-bottom: 8px; }
     h1 { color: #FFFFFF; font-size: 24px; margin-bottom: 6px; }
     .subtitle { color: #4CAF50; font-size: 14px; font-weight: 600; }
     .date { color: #888888; font-size: 13px; margin-top: 12px; }
@@ -30,42 +30,24 @@
       border-radius: 12px;
       padding: 20px;
       margin-bottom: 30px;
-      display: flex;
-      align-items: center;
-      gap: 16px;
     }
-    .banner-icon { font-size: 36px; }
-    .banner h2 { color: #4CAF50; font-size: 18px; margin-bottom: 4px; }
-    .banner p { color: #AAAAAA; font-size: 13px; }
+    .banner p { color: #AADDAA; font-size: 14px; }
     .section {
       background-color: #1E1E1E;
       border-radius: 12px;
       padding: 20px;
       margin-bottom: 16px;
     }
-    .section-header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 12px;
-    }
-    .section-icon {
-      width: 40px;
-      height: 40px;
-      border-radius: 20px;
-      background-color: #2A2A2A;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 20px;
-      flex-shrink: 0;
-    }
-    .section h3 { color: #FFFFFF; font-size: 15px; }
-    .section p { font-size: 14px; line-height: 1.8; }
+    .section h3 { color: #FFFFFF; font-size: 16px; margin-bottom: 12px; }
+    .section h4 { color: #4CAF50; font-size: 14px; margin: 16px 0 8px; }
+    .section p, .section li { font-size: 14px; line-height: 1.8; color: #BBBBBB; }
+    .section ul, .section ol { padding-left: 20px; margin-bottom: 12px; }
+    .section li { margin-bottom: 4px; }
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 12px;
+      margin: 12px 0;
+      font-size: 13px;
     }
     th {
       color: #4CAF50;
@@ -76,19 +58,12 @@
       border-bottom: 1px solid #333333;
     }
     td {
-      font-size: 13px;
       padding: 10px 8px;
       border-bottom: 1px solid #2A2A2A;
+      color: #BBBBBB;
     }
-    .contact {
-      background-color: #1E1E1E;
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 16px;
-    }
-    .contact h3 { color: #FFFFFF; font-size: 15px; margin-bottom: 12px; }
-    .contact p { font-size: 13px; color: #AAAAAA; margin-bottom: 6px; }
-    .contact a { color: #4CAF50; text-decoration: none; }
+    a { color: #4CAF50; text-decoration: none; }
+    a:hover { text-decoration: underline; }
     footer {
       text-align: center;
       padding: 30px 0;
@@ -96,7 +71,6 @@
       margin-top: 20px;
     }
     footer p { color: #666666; font-size: 12px; }
-    footer a { color: #4CAF50; text-decoration: none; }
     .nav-links { margin-top: 12px; }
     .nav-links a { color: #888888; font-size: 12px; margin: 0 8px; }
   </style>
@@ -104,115 +78,137 @@
 <body>
 
 <header>
-  <div class="logo">&#8383;</div>
-  <h1>Smart Rebalancer</h1>
-  <p class="subtitle">개인정보처리방침 (Privacy Policy)</p>
-  <p class="date">최종 수정일: 2026년 2월 1일</p>
+  <div class="logo">baln</div>
+  <h1>개인정보 처리방침</h1>
+  <p class="subtitle">Privacy Policy</p>
+  <p class="date">시행일: 2026년 2월 14일</p>
 </header>
 
 <div class="banner">
-  <div class="banner-icon">&#128737;</div>
-  <div>
-    <h2>Zero-Knowledge 정책</h2>
-    <p>당사는 귀하의 비밀을 알지 못합니다</p>
-  </div>
+  <p><strong>baln은 투자 교육 목적 앱</strong>이며, 주민등록번호, 계좌번호, 금융거래 정보를 수집하지 않습니다.</p>
 </div>
 
 <div class="section">
-  <div class="section-header">
-    <div class="section-icon">&#128737;</div>
-    <h3>Zero-Knowledge 원칙</h3>
-  </div>
-  <p>당사는 귀하의 실제 자산 정보, 거래 비밀번호, 증권사 로그인 정보를 수집하거나 저장하지 않습니다. 앱은 스크린샷 이미지만 분석하며, 원본 이미지는 처리 후 즉시 삭제됩니다.</p>
-</div>
-
-<div class="section">
-  <div class="section-header">
-    <div class="section-icon">&#128274;</div>
-    <h3>데이터 암호화</h3>
-  </div>
-  <p>모든 데이터는 전송 중 TLS 1.3으로 암호화되며, 저장 시 AES-256 암호화를 적용합니다. 암호화 키는 사용자 기기에서만 생성되고 관리됩니다.</p>
-</div>
-
-<div class="section">
-  <div class="section-header">
-    <div class="section-icon">&#9729;</div>
-    <h3>로컬 우선 처리</h3>
-  </div>
-  <p>가능한 한 모든 계산과 분석은 기기 내에서 수행됩니다. AI 분석이 필요한 경우에만 익명화된 데이터가 서버로 전송됩니다.</p>
-</div>
-
-<div class="section">
-  <div class="section-header">
-    <div class="section-icon">&#128065;</div>
-    <h3>익명화 처리</h3>
-  </div>
-  <p>AI 분석을 위해 전송되는 데이터는 개인 식별 정보가 모두 제거됩니다. 티커 심볼과 수량만 사용하며, 계좌번호나 실명은 전송되지 않습니다.</p>
-</div>
-
-<div class="section">
-  <div class="section-header">
-    <div class="section-icon">&#128465;</div>
-    <h3>데이터 삭제 권리</h3>
-  </div>
-  <p>언제든지 모든 데이터를 삭제할 수 있습니다. 앱 내 설정 &gt; 보안 &gt; 계정 삭제에서 모든 데이터를 영구적으로 삭제할 수 있습니다. 삭제된 데이터는 복구할 수 없습니다.</p>
-</div>
-
-<div class="section">
-  <div class="section-header">
-    <div class="section-icon">&#9995;</div>
-    <h3>제3자 공유 금지</h3>
-  </div>
-  <p>귀하의 데이터는 광고, 마케팅, 또는 어떤 제3자 목적으로도 판매되거나 공유되지 않습니다. 법적 요구가 있는 경우에도 암호화된 데이터만 존재하므로 실질적인 정보 제공이 불가능합니다.</p>
-</div>
-
-<div class="section">
-  <h3 style="color: #FFFFFF; margin-bottom: 12px;">수집 데이터 현황</h3>
+  <h3>1. 개인정보 수집 항목</h3>
+  <h4>필수 수집</h4>
   <table>
-    <thead>
-      <tr>
-        <th>항목</th>
-        <th>목적</th>
-        <th>보관 기간</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>이메일 주소</td>
-        <td>계정 생성 및 로그인</td>
-        <td>계정 삭제 시까지</td>
-      </tr>
-      <tr>
-        <td>포트폴리오 데이터</td>
-        <td>자산 관리 및 분석</td>
-        <td>사용자 삭제 가능</td>
-      </tr>
-      <tr>
-        <td>AI 분석 로그</td>
-        <td>서비스 품질 향상</td>
-        <td>30일 후 자동 삭제</td>
-      </tr>
-      <tr>
-        <td>앱 사용 통계</td>
-        <td>서비스 개선</td>
-        <td>익명화 후 저장</td>
-      </tr>
-    </tbody>
+    <tr><th>항목</th><th>수집 목적</th><th>수집 방법</th></tr>
+    <tr><td>이메일 주소</td><td>회원 가입, 로그인, 계정 관리</td><td>사용자 입력</td></tr>
+    <tr><td>자산 데이터</td><td>포트폴리오 분석, AI 진단</td><td>사용자 직접 입력</td></tr>
+    <tr><td>예측 투표 기록</td><td>맥락 이해도 분석</td><td>게임 참여 시 자동</td></tr>
+    <tr><td>Analytics 이벤트</td><td>앱 사용 패턴 분석</td><td>자동 수집</td></tr>
+  </table>
+  <h4>선택 수집</h4>
+  <table>
+    <tr><th>항목</th><th>수집 목적</th></tr>
+    <tr><td>푸시 알림 토큰</td><td>맥락 카드, 예측 결과 알림</td></tr>
+    <tr><td>부동산 자산 정보</td><td>총자산 계산 (선택사항)</td></tr>
+  </table>
+  <h4>자동 수집</h4>
+  <table>
+    <tr><th>항목</th><th>수집 목적</th></tr>
+    <tr><td>기기 정보</td><td>앱 안정성 분석 (기종, OS 버전)</td></tr>
+    <tr><td>IP 주소</td><td>보안 목적 (비정상 접근 감지)</td></tr>
+    <tr><td>앱 사용 기록</td><td>서비스 개선</td></tr>
   </table>
 </div>
 
-<div class="contact">
-  <h3>문의하기</h3>
-  <p>개인정보 관련 문의: <a href="mailto:privacy@smartrebalancer.com">privacy@smartrebalancer.com</a></p>
-  <p>데이터 삭제 요청: <a href="mailto:delete@smartrebalancer.com">delete@smartrebalancer.com</a></p>
+<div class="section">
+  <h3>2. 수집 목적</h3>
+  <table>
+    <tr><th>목적</th><th>상세</th></tr>
+    <tr><td>서비스 제공</td><td>포트폴리오 관리, AI 진단, 맥락 카드</td></tr>
+    <tr><td>AI 분석</td><td>Gemini AI 건강 점수, 딥다이브 분석</td></tr>
+    <tr><td>통계 분석</td><td>익명 또래 비교, 커뮤니티 인사이트</td></tr>
+    <tr><td>서비스 개선</td><td>사용 패턴 분석, 버그 수정</td></tr>
+  </table>
+</div>
+
+<div class="section">
+  <h3>3. 보유 및 이용 기간</h3>
+  <ul>
+    <li><strong>회원 정보</strong>: 회원 탈퇴 시까지 (탈퇴 후 30일 이내 완전 삭제)</li>
+    <li><strong>Analytics 이벤트</strong>: 익명화 후 1년 보관</li>
+    <li><strong>계약/결제 기록</strong>: 5년 (전자상거래법)</li>
+    <li><strong>소비자 불만/분쟁 기록</strong>: 3년 (전자상거래법)</li>
+  </ul>
+</div>
+
+<div class="section">
+  <h3>4. 제3자 제공</h3>
+  <p style="margin-bottom:12px">baln은 <strong>사용자 동의 없이 개인정보를 외부에 제공하지 않습니다.</strong></p>
+  <table>
+    <tr><th>제공 대상</th><th>제공 항목</th><th>목적</th><th>위치</th></tr>
+    <tr><td>Supabase Inc.</td><td>이메일, 자산 데이터</td><td>데이터베이스 호스팅</td><td>미국 (AWS)</td></tr>
+    <tr><td>Google LLC (Gemini AI)</td><td>자산 데이터 (익명화)</td><td>AI 분석</td><td>미국</td></tr>
+  </table>
+  <p style="margin-top:12px"><strong>안전 조치</strong>: Supabase RLS, SSL 암호화, Gemini AI 호출 시 개인 식별 정보 제외</p>
+  <p><strong>국외 이전 근거</strong>: 개인정보보호법 제39조의13 (정보주체 동의)</p>
+</div>
+
+<div class="section">
+  <h3>5. 이용자의 권리</h3>
+  <ul>
+    <li><strong>열람 요구권</strong>: 본인의 개인정보를 확인할 권리</li>
+    <li><strong>정정 요구권</strong>: 잘못된 정보를 수정할 권리</li>
+    <li><strong>삭제 요구권</strong>: 본인의 정보를 삭제할 권리</li>
+    <li><strong>처리 정지 요구권</strong>: 개인정보 처리를 중지할 권리</li>
+  </ul>
+  <p style="margin-top:12px"><strong>행사 방법</strong>: 앱 내 설정 > 계정 삭제 (즉시) 또는 <a href="mailto:privacy@baln.app">privacy@baln.app</a> (10일 이내 처리)</p>
+</div>
+
+<div class="section">
+  <h3>6. 파기 절차</h3>
+  <ol>
+    <li>회원 탈퇴 요청 → 탈퇴 확인</li>
+    <li>30일 이내 개인정보 완전 삭제</li>
+    <li>백업 데이터에서도 90일 이내 완전 삭제</li>
+  </ol>
+</div>
+
+<div class="section">
+  <h3>7. 안전성 확보 조치</h3>
+  <ul>
+    <li><strong>암호화</strong>: 비밀번호 bcrypt (Supabase Auth), 통신 SSL/TLS</li>
+    <li><strong>접근 제어</strong>: Supabase Row-Level Security (RLS)</li>
+    <li><strong>백업</strong>: 일일 자동 백업 (Supabase)</li>
+    <li><strong>서버</strong>: AWS (ISO 27001 인증)</li>
+  </ul>
+</div>
+
+<div class="section">
+  <h3>8. 개인정보 보호책임자</h3>
+  <table>
+    <tr><th>구분</th><th>정보</th></tr>
+    <tr><td>책임자</td><td>대표이사 (겸임)</td></tr>
+    <tr><td>이메일</td><td><a href="mailto:privacy@baln.app">privacy@baln.app</a></td></tr>
+    <tr><td>고객지원</td><td><a href="mailto:support@baln.app">support@baln.app</a></td></tr>
+  </table>
+  <p style="margin-top:12px"><strong>외부 기관 문의</strong>:</p>
+  <ul>
+    <li>개인정보 침해신고센터: 118 (<a href="https://privacy.kisa.or.kr">privacy.kisa.or.kr</a>)</li>
+    <li>개인정보 분쟁조정위원회: 1833-6972 (<a href="https://www.kopico.go.kr">kopico.go.kr</a>)</li>
+  </ul>
+</div>
+
+<div class="section">
+  <h3>9. 면책 조항</h3>
+  <p>baln 앱은 <strong>투자 교육 목적 앱</strong>이며, 투자 권유 또는 투자 조언을 제공하지 않습니다. 맥락 카드, AI 진단, 건강 점수는 참고용이며, 실제 투자 결정은 사용자 본인의 책임입니다.</p>
+</div>
+
+<div class="section">
+  <h3>10. 처리방침 변경</h3>
+  <p>법령 및 정책 변경 시 앱 공지사항 또는 이메일을 통해 공지합니다.</p>
+  <p style="margin-top:8px"><strong>변경 이력</strong>: 2026년 2월 14일 초기 버전 제정</p>
 </div>
 
 <footer>
-  <p>&copy; 2026 Smart Rebalancer. All rights reserved.</p>
+  <p><strong>발른 주식회사 (baln Inc.)</strong></p>
+  <p>문의: <a href="mailto:privacy@baln.app">privacy@baln.app</a></p>
+  <p>&copy; 2026 baln. All rights reserved.</p>
   <div class="nav-links">
     <a href="./index.html">홈</a>
     <a href="./terms.html">이용약관</a>
-    <a href="./support.html">고객지원</a>
   </div>
 </footer>
 
