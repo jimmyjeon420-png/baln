@@ -905,9 +905,10 @@ ${JSON.stringify(portfolioWithAllocation.map(p => ({
     const result = await modelWithSearch.generateContent(prompt);
     const responseText = result.response.text();
 
-    // JSON 정제
+    // JSON 정제 (Gemini 마크다운 응답 대응)
     let cleanText = responseText
       .replace(/```json\s*/gi, '')
+      .replace(/```javascript\s*/gi, '')
       .replace(/```\s*/g, '')
       .trim();
 
@@ -916,6 +917,12 @@ ${JSON.stringify(portfolioWithAllocation.map(p => ({
     if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
       cleanText = cleanText.substring(jsonStart, jsonEnd + 1);
     }
+
+    // 마크다운 기호 제거 (JSON 문자열 내부의 *, _, # 등)
+    cleanText = cleanText
+      .replace(/\*{1,3}([^*]+)\*{1,3}/g, '$1')  // *bold* → bold
+      .replace(/_{1,2}([^_]+)_{1,2}/g, '$1')     // _italic_ → italic
+      .replace(/^#+\s*/gm, '');                    // # header → header
 
     const analysisResult = JSON.parse(cleanText);
 

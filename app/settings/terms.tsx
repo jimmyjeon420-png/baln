@@ -118,7 +118,7 @@ export default function TermsScreen() {
               {'  '}가. 해당 회원의 <Text style={styles.dangerHighlight}>계정 영구 정지</Text> (복구 불가){'\n'}
               {'  '}나. 관련 데이터의 보전 및 <Text style={styles.dangerHighlight}>관할 수사기관 통보</Text>{'\n'}
               {'  '}다. 피해 회원에 대한 민사상 손해배상 청구 지원{'\n\n'}
-              4. 회원은 위반 행위를 목격한 경우 즉시 앱 내 신고 기능 또는 고객센터(support@baln.app)를 통해 신고하여야 합니다.
+              4. 회원은 위반 행위를 목격한 경우 즉시 앱 내 신고 기능 또는 고객센터(baln.logic@gmail.com)를 통해 신고하여야 합니다.
             </Text>
           </View>
         </View>
@@ -132,7 +132,7 @@ export default function TermsScreen() {
             4. 구독 보너스 크레딧 및 프로모션 크레딧은 환불 대상이 아닙니다.{'\n\n'}
             5. AI 분석 실행 중 기술적 오류로 결과를 제공하지 못한 경우, 차감된 크레딧은 자동으로 환불됩니다.{'\n\n'}
             6. 크레딧의 유효기간은 마지막 충전일로부터 5년이며, 유효기간 만료 30일 전 앱 내 알림으로 안내합니다.{'\n\n'}
-            7. 환불 신청: support@baln.app 또는 앱 내 고객센터를 통해 접수합니다.
+            7. 환불 신청: baln.logic@gmail.com 또는 앱 내 고객센터를 통해 접수합니다.
           </Text>
         </View>
 

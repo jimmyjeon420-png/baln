@@ -126,7 +126,7 @@ export default function PrivacyScreen() {
             당사는 포트폴리오 데이터를 기반으로 AI 자동 분석(리스크 평가, 리밸런싱 제안, 세금 계산, 투자 거장 인사이트 등)을 수행합니다.{'\n\n'}
             「개인정보 보호법」 제37조의2에 따라, 귀하는 완전히 자동화된 의사결정에 대해 설명을 요구하거나 거부할 권리가 있습니다.{'\n\n'}
             • AI 분석 거부: 설정 {'>'} 보안 {'>'} AI 자동 분석 비활성화{'\n'}
-            • AI 의사결정 설명 요구: support@baln.app으로 문의{'\n\n'}
+            • AI 의사결정 설명 요구: baln.logic@gmail.com으로 문의{'\n\n'}
             AI 분석은 투자 결정을 자동으로 실행하지 않으며, 최종 판단은 항상 이용자 본인이 직접 수행합니다.
           </Text>
         </View>
@@ -180,7 +180,7 @@ export default function PrivacyScreen() {
             이메일: privacy@baln.app
           </Text>
           <Text style={styles.contactText}>
-            고객센터: support@baln.app
+            고객센터: baln.logic@gmail.com
           </Text>
         </View>
 

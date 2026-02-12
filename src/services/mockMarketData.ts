@@ -154,6 +154,8 @@ const MOCK_STOCK_PRICES: Record<string, number> = {
   BAC: 39.2,
   WFC: 54.8,
   GS: 411.2,
+  'BRK-B': 418.5,
+  'BRK.B': 418.5,
 
   // Other stocks
   VTI: 232.4, // S&P 500 ETF

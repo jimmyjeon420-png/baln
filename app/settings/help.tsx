@@ -30,7 +30,7 @@ export default function HelpScreen() {
     },
   ];
 
-  const SUPPORT_EMAIL = 'jimmyjeon420@gmail.com';
+  const SUPPORT_EMAIL = 'baln.logic@gmail.com';
 
   const supportItems = [
     { icon: 'mail-outline', label: '이메일 문의', desc: SUPPORT_EMAIL, action: () => Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=[baln] 문의`) },

@@ -52,8 +52,9 @@ export class YahooFinanceProvider {
     if (/^\d{6}$/.test(ticker)) {
       return `${ticker}.KS`;
     }
-    // 미국 주식 등 (그대로)
-    return ticker.toUpperCase();
+    // 특수 티커 변환: Yahoo Finance는 점(.) 대신 하이픈(-) 사용
+    const dotToHyphen = ticker.toUpperCase().replace(/\./g, '-');
+    return dotToHyphen;
   }
 
   /**

@@ -208,12 +208,12 @@ export default function WebsiteScreen() {
             style={styles.contactItem}
             onPress={() =>
               Linking.openURL(
-                'mailto:jimmyjeon420@gmail.com?subject=[baln] 문의'
+                'mailto:baln.logic@gmail.com?subject=[baln] 문의'
               )
             }
           >
             <Ionicons name="mail" size={20} color="#4CAF50" />
-            <Text style={styles.contactText}>jimmyjeon420@gmail.com</Text>
+            <Text style={styles.contactText}>baln.logic@gmail.com</Text>
           </TouchableOpacity>
           <View style={styles.contactItem}>
             <Ionicons name="location" size={20} color="#4CAF50" />

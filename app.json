@@ -29,10 +29,13 @@
         "NSPrivacyAccessedAPITypes": [
           {
             "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
-            "NSPrivacyAccessedAPITypeReasons": ["CA92.1"]
+            "NSPrivacyAccessedAPITypeReasons": [
+              "CA92.1"
+            ]
           }
         ]
-      }
+      },
+      "usesAppleSignIn": true
     },
     "android": {
       "adaptiveIcon": {
@@ -68,7 +71,8 @@
           "color": "#4CAF50"
         }
       ],
-      "expo-updates"
+      "expo-updates",
+      "expo-apple-authentication"
     ],
     "extra": {
       "eas": {

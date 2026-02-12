@@ -26,8 +26,9 @@ node_modules/
 .DS_Store
 Thumbs.db
 
-# .env는 EAS 빌드에 포함 (Supabase, Gemini 등 환경변수 필요)
-# .env         ← 의도적으로 제외하지 않음
+# Environment — .env는 EAS Secrets로 관리 (eas secret:create 사용)
+# 빌드에 .env 파일을 직접 포함하면 보안 위험 → EAS Secrets 권장
+.env
 .env.local
 .env.*.local
 

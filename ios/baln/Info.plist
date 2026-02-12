@@ -43,7 +43,7 @@
     <key>ITSAppUsesNonExemptEncryption</key>
     <false/>
     <key>LSMinimumSystemVersion</key>
-    <string>12.0</string>
+    <string>15.1</string>
     <key>LSRequiresIPhoneOS</key>
     <true/>
     <key>NSAppTransportSecurity</key>
@@ -58,9 +58,9 @@
     <key>NSFaceIDUsageDescription</key>
     <string>생체인증으로 앱을 보호합니다</string>
     <key>NSMicrophoneUsageDescription</key>
-    <string>Allow $(PRODUCT_NAME) to access your microphone</string>
+    <string>음성 입력을 위해 마이크를 사용합니다</string>
     <key>NSPhotoLibraryAddUsageDescription</key>
-    <string>Allow $(PRODUCT_NAME) to save photos</string>
+    <string>공유 카드와 분석 결과를 사진첩에 저장합니다</string>
     <key>NSPhotoLibraryUsageDescription</key>
     <string>공유 카드를 저장합니다</string>
     <key>RCTNewArchEnabled</key>

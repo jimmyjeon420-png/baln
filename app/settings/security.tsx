@@ -2,16 +2,15 @@
  * 보안 설정 화면
  * - 생체인증 ON/OFF (실제 Face ID/지문 연동)
  * - 자동 잠금 설정
+ * - 계정 삭제는 전용 화면(delete-account.tsx)으로 이동
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Switch, Alert, ActivityIndicator } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Switch, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
-import supabase from '../../src/services/supabase';
-import { useAuth } from '../../src/context/AuthContext';
 import {
   checkBiometricAvailable,
   getBiometricTypeName,
@@ -22,13 +21,11 @@ import {
 
 export default function SecurityScreen() {
   const router = useRouter();
-  const { signOut } = useAuth();
   const [biometricEnabled, setBiometricEnabled] = useState(false);
   const [autoLock, setAutoLock] = useState(true);
   const [biometricAvailable, setBiometricAvailable] = useState(false);
   const [biometricName, setBiometricName] = useState('생체 인증');
   const [loading, setLoading] = useState(true);
-  const [deleting, setDeleting] = useState(false);
 
   // 화면 진입 시 설정 로드 + 기기 지원 여부 확인
   useFocusEffect(
@@ -85,120 +82,8 @@ export default function SecurityScreen() {
     );
   };
 
-  // ================================================================
-  // 계정 삭제 — Apple App Store 필수 요구사항
-  // 14개 테이블에서 유저 데이터 전부 삭제 후 로그아웃
-  // ================================================================
-  const handleDeleteAccount = () => {
-    Alert.alert(
-      '계정 삭제',
-      '정말 계정을 삭제하시겠습니까?\n\n• 모든 포트폴리오 데이터가 삭제됩니다\n• 모든 AI 분석 기록이 삭제됩니다\n• 이 작업은 되돌릴 수 없습니다',
-      [
-        { text: '취소', style: 'cancel' },
-        {
-          text: '영구 삭제',
-          style: 'destructive',
-          onPress: confirmDeleteAccount,
-        },
-      ]
-    );
-  };
-
-  const confirmDeleteAccount = () => {
-    Alert.alert(
-      '최종 확인',
-      '삭제된 데이터는 복구할 수 없습니다.\n정말 진행하시겠습니까?',
-      [
-        { text: '취소', style: 'cancel' },
-        {
-          text: '삭제 진행',
-          style: 'destructive',
-          onPress: executeDeleteAccount,
-        },
-      ]
-    );
-  };
-
-  const executeDeleteAccount = async () => {
-    setDeleting(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('로그인 정보를 찾을 수 없습니다');
-      const userId = user.id;
-
-      // 채팅 세션 ID 조회 (메시지 삭제에 필요)
-      const { data: sessions } = await supabase
-        .from('chat_sessions')
-        .select('id')
-        .eq('user_id', userId);
-      const sessionIds = sessions?.map((s: any) => s.id) || [];
-
-      // 자식 테이블부터 순서대로 삭제 (FK 제약 준수)
-      // 각 삭제는 개별 try/catch — 테이블 미존재 시에도 진행
-      const deletions: { table: string; filter: [string, any] }[] = [
-        { table: 'ai_chat_messages', filter: ['user_id', userId] },
-        { table: 'ai_feature_results', filter: ['user_id', userId] },
-        { table: 'credit_transactions', filter: ['user_id', userId] },
-        { table: 'user_credits', filter: ['user_id', userId] },
-        { table: 'daily_summaries', filter: ['user_id', userId] },
-        { table: 'team_messages', filter: ['user_id', userId] },
-        { table: 'gathering_participants', filter: ['user_id', userId] },
-        { table: 'gatherings', filter: ['host_id', userId] },
-        { table: 'community_posts', filter: ['user_id', userId] },
-        { table: 'asset_verifications', filter: ['user_id', userId] },
-        { table: 'assets', filter: ['user_id', userId] },
-        { table: 'portfolios', filter: ['user_id', userId] },
-      ];
-
-      // 채팅 메시지 삭제 (session_id 기반)
-      if (sessionIds.length > 0) {
-        try {
-          await supabase.from('chat_messages').delete().in('session_id', sessionIds);
-        } catch (e) { /* 무시 */ }
-      }
-      // 채팅 세션 삭제
-      try {
-        await supabase.from('chat_sessions').delete().eq('user_id', userId);
-      } catch (e) { /* 무시 */ }
-
-      // 나머지 테이블 순차 삭제
-      for (const { table, filter } of deletions) {
-        try {
-          await supabase.from(table).delete().eq(filter[0], filter[1]);
-        } catch (e) {
-          console.warn(`[계정삭제] ${table} 삭제 실패 (무시):`, e);
-        }
-      }
-
-      // profiles 마지막 삭제 (다른 테이블이 FK 참조할 수 있음)
-      try {
-        await supabase.from('profiles').delete().eq('id', userId);
-      } catch (e) {
-        console.warn('[계정삭제] profiles 삭제 실패:', e);
-      }
-
-      // 로그아웃 → AuthGate가 자동으로 로그인 화면으로 이동
-      await signOut();
-
-    } catch (err) {
-      console.error('계정 삭제 오류:', err);
-      Alert.alert('오류', '계정 삭제 중 문제가 발생했습니다.\n다시 시도해주세요.');
-    } finally {
-      setDeleting(false);
-    }
-  };
-
   return (
     <SafeAreaView style={styles.container}>
-      {/* 삭제 진행 중 오버레이 */}
-      {deleting && (
-        <View style={styles.deletingOverlay}>
-          <ActivityIndicator size="large" color="#CF6679" />
-          <Text style={styles.deletingText}>계정 데이터 삭제 중...</Text>
-          <Text style={styles.deletingSubtext}>잠시만 기다려주세요</Text>
-        </View>
-      )}
-
       {/* 헤더 */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
@@ -253,7 +138,7 @@ export default function SecurityScreen() {
             <Ionicons name="chevron-forward" size={18} color="#888888" />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.actionItem} onPress={handleDeleteAccount}>
+          <TouchableOpacity style={styles.actionItem} onPress={() => router.push('/settings/delete-account')}>
             <Ionicons name="trash-outline" size={22} color="#CF6679" />
             <Text style={[styles.actionLabel, { color: '#CF6679' }]}>계정 삭제</Text>
             <Ionicons name="chevron-forward" size={18} color="#888888" />
@@ -324,24 +209,5 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     color: '#FFFFFF',
-  },
-  // 삭제 오버레이
-  deletingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(18, 18, 18, 0.95)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 999,
-  },
-  deletingText: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#CF6679',
-    marginTop: 20,
-  },
-  deletingSubtext: {
-    fontSize: 14,
-    color: '#888888',
-    marginTop: 8,
   },
 });

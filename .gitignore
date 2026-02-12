@@ -43,4 +43,7 @@ dist/
 coverage/
 .nyc_output/
 
+# Backup files
+*.bak
+
 nul
