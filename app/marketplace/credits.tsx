@@ -41,12 +41,21 @@ import {
   type Product,
 } from '../../src/services/appleIAP';
 
+/** 충전 기능 오픈일 (6월 1일부터 활성화) */
+const CHARGE_OPEN_DATE = new Date('2026-06-01T00:00:00');
+const FREE_TRIAL_END_LABEL = '5월 31일';
+
+function isChargingOpen(): boolean {
+  return new Date() >= CHARGE_OPEN_DATE;
+}
+
 export default function CreditsScreen() {
   const router = useRouter();
   const { mediumTap, heavyTap, success } = useHaptics();
   const { data: credits, isLoading: creditsLoading } = useMyCredits();
   const { data: history } = useCreditHistory(20);
   const purchaseMutation = usePurchaseCredits();
+  const chargingOpen = isChargingOpen();
 
   const [selectedPackage, setSelectedPackage] = useState<string | null>(null);
   const [iapConnected, setIapConnected] = useState(false);
@@ -292,9 +301,23 @@ export default function CreditsScreen() {
           </Text>
         </View>
 
+        {/* 무료 체험 기간 안내 (6/1 이전) */}
+        {!chargingOpen && (
+          <View style={styles.trialBanner}>
+            <Ionicons name="gift" size={24} color="#4CAF50" />
+            <View style={{ flex: 1, marginLeft: 12 }}>
+              <Text style={styles.trialTitle}>{FREE_TRIAL_END_LABEL}까지 무료 체험 기간</Text>
+              <Text style={styles.trialDesc}>
+                현재 모든 AI 기능을 무료로 이용하실 수 있습니다.{'\n'}
+                크레딧 충전은 6월 1일부터 오픈됩니다.
+              </Text>
+            </View>
+          </View>
+        )}
+
         {/* 패키지 목록 */}
         <Text style={styles.sectionTitle}>크레딧 패키지</Text>
-        <View style={styles.packageList}>
+        <View style={[styles.packageList, !chargingOpen && { opacity: 0.4 }]}>
           {CREDIT_PACKAGES.map(pkg => {
             const applePrice = getApplePrice(pkg.appleProductId);
             return (
@@ -303,13 +326,15 @@ export default function CreditsScreen() {
                 style={[
                   styles.packageCard,
                   pkg.popular && styles.popularCard,
-                  selectedPackage === pkg.id && styles.selectedCard,
+                  chargingOpen && selectedPackage === pkg.id && styles.selectedCard,
                 ]}
                 onPress={() => {
+                  if (!chargingOpen) return;
                   mediumTap();
                   setSelectedPackage(pkg.id);
                 }}
-                activeOpacity={0.7}
+                activeOpacity={chargingOpen ? 0.7 : 1}
+                disabled={!chargingOpen}
               >
                 {pkg.badge && (
                   <View style={[styles.badge, pkg.popular && styles.popularBadge]}>
@@ -336,8 +361,8 @@ export default function CreditsScreen() {
           })}
         </View>
 
-        {/* 구매 버튼 */}
-        {selectedPackage && (
+        {/* 구매 버튼 (6/1 이후에만 활성) */}
+        {chargingOpen && selectedPackage && (
           <TouchableOpacity
             style={[
               styles.purchaseButton,
@@ -440,6 +465,29 @@ const styles = StyleSheet.create({
     borderColor: '#FFB74D40',
   },
   expoGoBannerText: { color: '#FFB74D', fontSize: 12, lineHeight: 18, flex: 1 },
+
+  // 무료 체험 배너
+  trialBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(76, 175, 80, 0.1)',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(76, 175, 80, 0.3)',
+  },
+  trialTitle: {
+    color: '#4CAF50',
+    fontSize: 15,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  trialDesc: {
+    color: '#9E9E9E',
+    fontSize: 13,
+    lineHeight: 19,
+  },
 
   // 잔액 카드
   balanceCard: {

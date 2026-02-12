@@ -461,6 +461,10 @@ ETF:
       cleanText = cleanText.substring(objStart, objEnd + 1);
     } else if (arrStart !== -1 && arrEnd !== -1 && arrEnd > arrStart) {
       cleanText = cleanText.substring(arrStart, arrEnd + 1);
+    } else {
+      // JSON 구조를 찾을 수 없는 경우 방어
+      console.error('[Gemini] JSON 구조를 찾을 수 없음. 원본 응답 앞 200자:', cleanText.substring(0, 200));
+      throw new Error(`Gemini 응답이 JSON 형식이 아닙니다: "${cleanText.substring(0, 100)}"`);
     }
 
     // trailing comma 제거 (Gemini가 종종 ,} 또는 ,] 형태로 응답)
@@ -917,9 +921,14 @@ ${JSON.stringify(portfolioWithAllocation.map(p => ({
 
     const jsonStart = cleanText.indexOf('{');
     const jsonEnd = cleanText.lastIndexOf('}');
-    if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
-      cleanText = cleanText.substring(jsonStart, jsonEnd + 1);
+
+    // JSON 객체가 응답에 없는 경우 방어 (429 에러, 텍스트 응답 등)
+    if (jsonStart === -1 || jsonEnd === -1 || jsonEnd <= jsonStart) {
+      console.error('[Gemini] JSON 객체를 찾을 수 없음. 원본 응답 앞 200자:', responseText.substring(0, 200));
+      throw new Error(`Gemini 응답이 JSON 형식이 아닙니다: "${responseText.substring(0, 100)}"`);
     }
+
+    cleanText = cleanText.substring(jsonStart, jsonEnd + 1);
 
     // 마크다운 기호 제거 (JSON 문자열 내부의 *, _, # 등)
     cleanText = cleanText
@@ -1122,9 +1131,11 @@ ${JSON.stringify(assetsSummary, null, 2)}
 
     const jsonStart = cleanText.indexOf('{');
     const jsonEnd = cleanText.lastIndexOf('}');
-    if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
-      cleanText = cleanText.substring(jsonStart, jsonEnd + 1);
+    if (jsonStart === -1 || jsonEnd === -1 || jsonEnd <= jsonStart) {
+      console.error('[Gemini] JSON 객체를 찾을 수 없음. 원본 응답 앞 200자:', text.substring(0, 200));
+      throw new Error(`Gemini 응답이 JSON 형식이 아닙니다: "${text.substring(0, 100)}"`);
     }
+    cleanText = cleanText.substring(jsonStart, jsonEnd + 1);
 
     // trailing comma 제거
     cleanText = cleanText.replace(/,\s*([\]}])/g, '$1');
@@ -1145,9 +1156,73 @@ ${JSON.stringify(assetsSummary, null, 2)}
 export const generateDeepDive = async (
   input: DeepDiveInput
 ): Promise<DeepDiveResult> => {
+  // 팩트 데이터가 있으면 프롬프트에 주입
+  const fundamentals = input.fundamentals;
+  const hasFundamentals = fundamentals != null && fundamentals.marketCap != null;
+
+  // 환율 정보
+  const exchangeRate = fundamentals?.exchangeRate;
+  const isUSD = fundamentals?.currency !== 'KRW' && fundamentals?.currency != null;
+
+  // KRW 금액 포맷 헬퍼
+  const fmtKRW = (v: number): string => {
+    const abs = Math.abs(v);
+    if (abs >= 1e12) return `약 ${(v / 1e12).toFixed(1)}조원`;
+    if (abs >= 1e8) return `약 ${(v / 1e8).toFixed(0)}억원`;
+    return `₩${v.toLocaleString()}`;
+  };
+
+  // --- 팩트 데이터 섹션 (API 조회 성공 시) ---
+  const factDataSection = hasFundamentals ? `
+[★★★ 실제 API 조회 데이터 — 이 숫자를 그대로 사용하세요 ★★★]
+아래 데이터는 Yahoo Finance API에서 실시간 조회한 팩트 데이터입니다.
+이 숫자들을 임의로 변경하거나 추측하지 마세요. 그대로 metrics에 반영하세요.
+${isUSD && exchangeRate ? `\n[적용 환율] 1 USD = ${exchangeRate.toFixed(2)} KRW (실시간 조회)` : ''}
+${isUSD ? '\n[★ 원화 표기 규칙] 미국 주식이므로 모든 금액(시가총액, 매출, 영업이익, 순이익 등)을 원화(₩)로 환산하여 표시하세요.' : ''}
+
+시가총액: ${fundamentals!.marketCapKRW != null ? fmtKRW(fundamentals!.marketCapKRW) : fundamentals!.marketCap!.toLocaleString() + '원'}${isUSD && fundamentals!.marketCap ? ` ($${(fundamentals!.marketCap / 1e9).toFixed(1)}B)` : ''}
+${fundamentals!.currentPrice != null ? (isUSD && exchangeRate ? `현재 주가: ₩${Math.round(fundamentals!.currentPrice * exchangeRate).toLocaleString()} ($${fundamentals!.currentPrice.toLocaleString()})` : `현재 주가: ₩${fundamentals!.currentPrice.toLocaleString()}`) : ''}
+${fundamentals!.trailingPE != null ? `PER (Trailing): ${fundamentals!.trailingPE.toFixed(2)}` : 'PER: 데이터 없음 — Google Search로 조회하세요'}
+${fundamentals!.forwardPE != null ? `PER (Forward): ${fundamentals!.forwardPE.toFixed(2)}` : ''}
+${fundamentals!.priceToBook != null ? `PBR: ${fundamentals!.priceToBook.toFixed(2)}` : 'PBR: 데이터 없음 — Google Search로 조회하세요'}
+${fundamentals!.returnOnEquity != null ? `ROE: ${(fundamentals!.returnOnEquity * 100).toFixed(2)}%` : ''}
+${fundamentals!.operatingMargins != null ? `영업이익률: ${(fundamentals!.operatingMargins * 100).toFixed(2)}%` : ''}
+${fundamentals!.profitMargins != null ? `순이익률: ${(fundamentals!.profitMargins * 100).toFixed(2)}%` : ''}
+${fundamentals!.revenueGrowth != null ? `매출성장률(YoY): ${(fundamentals!.revenueGrowth * 100).toFixed(2)}%` : ''}
+${fundamentals!.debtToEquity != null ? `부채비율: ${fundamentals!.debtToEquity.toFixed(2)}%` : ''}
+${fundamentals!.quarterlyEarnings && fundamentals!.quarterlyEarnings.length > 0
+    ? '\n분기별 실적 (API 조회, 원화 환산):\n' + fundamentals!.quarterlyEarnings.map(q => {
+        const revDisplay = q.revenueKRW != null ? fmtKRW(q.revenueKRW) : (q.revenue != null ? `$${q.revenue.toLocaleString()}` : 'N/A');
+        const earnDisplay = q.earningsKRW != null ? fmtKRW(q.earningsKRW) : (q.earnings != null ? `$${q.earnings.toLocaleString()}` : 'N/A');
+        return `- ${q.quarter}: 매출 ${revDisplay}, 순이익 ${earnDisplay}`;
+      }).join('\n')
+    : ''}
+
+[중요] 위 데이터를 financial.metrics에 그대로 사용하고, marketCap/per/pbr 필드에도 그대로 넣으세요.
+없는 항목만 Google Search로 보완하세요.
+${isUSD ? `[중요] marketCap 필드에는 원화 환산값(숫자)을 넣으세요. quarterlyData의 매출/영업이익/순이익도 모두 원화(₩)로 환산하세요. 환율: ${exchangeRate?.toFixed(2) || '1450'}원.` : ''}
+` : `
+[★★★ 데이터 정확성 — 최우선 원칙 ★★★]
+API 데이터 조회에 실패하여 Google Search를 활용합니다.
+
+1. **시가총액**: 반드시 Google Search로 "${input.ticker} market cap"을 검색하여 최신 USD 시가총액을 확인하세요.
+   - 참고: Tesla ~$1.1T, Samsung Electronics ~$350B, Apple ~$3.4T, NVIDIA ~$3.2T
+   - USD → KRW 환산 시 실시간 환율 적용 (없으면 1,450원)
+   - 테슬라가 2조원이 될 수 없습니다 (실제 ~1,600조원). 반드시 검증하세요.
+   - **모든 금액은 원화(₩)로 환산하여 표시하세요**
+
+2. **PER/PBR**: "${input.ticker} PE ratio PBR" 검색하여 실제 값 사용
+
+3. **분기 실적**: "${input.name} quarterly earnings 2024" 검색하여 실제 발표 실적 사용
+   - 가짜 숫자를 만들지 마세요.
+   - **매출, 영업이익, 순이익은 원화(₩)로 환산하여 표시**
+`;
+
   const prompt = `
-당신은 CFA 자격을 보유한 최고 수준의 투자 애널리스트입니다.
-다음 종목에 대한 심층 분석 리포트를 JSON 형식으로 작성하세요.
+당신은 CFA 자격을 보유한 골드만삭스 수석 애널리스트입니다.
+${hasFundamentals
+    ? '아래 제공된 실제 API 데이터를 기반으로 분석 리포트를 작성하세요. 기술적 분석과 뉴스는 Google Search를 활용하세요.'
+    : 'Google Search를 활용하여 **실시간 데이터**를 조회한 후 분석 리포트를 작성하세요.'}
 
 [분석 대상]
 - 종목: ${input.name} (${input.ticker})
@@ -1155,47 +1230,87 @@ ${input.currentPrice ? `- 현재가: ₩${input.currentPrice.toLocaleString()}` 
 ${input.avgPrice ? `- 평균 매수가: ₩${input.avgPrice.toLocaleString()}` : ''}
 ${input.quantity ? `- 보유 수량: ${input.quantity}주` : ''}
 
-[★ 점수 산정 기준 — 반드시 실제 데이터 기반으로 계산]
+${factDataSection}
 
-overallScore, financial.score, technical.score는 반드시 아래 기준에 따라 종목별로 다르게 산출하세요.
-예시 숫자를 복사하지 마세요.
+[★ 점수 산정 기준 — 4인 전문가 라운드테이블 합의 (Goldman Sachs PM + Cathie Wood + Buffett + Dalio)]
+
+overallScore, financial.score, technical.score, quality.score는 반드시 아래 기준에 따라 종목별로 다르게 산출하세요.
+각 항목의 계산 과정을 내부적으로 수행한 후 최종 점수만 출력하세요.
 
 ■ financial.score (재무 점수, 0-100):
-  - PER: 업종 평균 대비 → 저평가(+15) / 적정(+8) / 고평가(-10)
-  - PBR: 1 이하(+10) / 1~3(+5) / 3 이상(-5)
-  - ROE: 15%+(+20) / 10~15%(+10) / 10% 미만(+0)
-  - 매출성장률 YoY: 20%+(+15) / 10~20%(+8) / 마이너스(-10)
-  - 영업이익률: 15%+(+15) / 5~15%(+8) / 마이너스(-15)
-  - 부채비율: 100% 미만(+10) / 100~200%(+0) / 200% 초과(-10)
-  - 기본 50점에서 위 항목 합산. 최소 0, 최대 100.
+  기본 40점에서 시작:
 
-■ technical.score (기술 점수, 0-100):
-  - RSI: 30~70 중립(+10), 70+ 과매수(-15), 30 미만 과매도(+15, 반등 기대)
-  - MACD: 골든크로스(+20) / 데드크로스(-20) / 중립(0)
-  - 이동평균(20일/60일/120일): 정배열(+20) / 역배열(-20) / 혼합(0)
-  - 볼린저밴드: 하단 접근(+10, 반등 기대) / 상단 접근(-5) / 중앙(+5)
-  - 거래량: 최근 20일 평균 대비 150%+(+10) / 50% 미만(-10) / 보통(0)
-  - 기본 50점에서 위 항목 합산. 최소 0, 최대 100.
+  [밸류에이션 — 최대 ±20점]
+  - PER: ★업종 평균을 반드시 Google Search로 확인 후, Forward PER(없으면 Trailing PER)을 업종 평균과 비교
+    → Forward PER < 업종 평균 × 0.7: 저평가(+15)
+    → Forward PER 업종 평균 × 0.7~1.3: 적정(+5)
+    → Forward PER 업종 평균 × 1.3~2.0: 고평가(-5)
+    → Forward PER > 업종 평균 × 2.0: 초고평가(-10)
+    ※ 적자기업(PER 음수/N/A): 매출성장률 30%+ → 중립(0), 그 외 → (-15)
+  - PBR: ★업종 유형에 따라 다른 기준 적용
+    → 자산집약 업종(금융/제조/유틸리티/건설): PBR<1(+10) / 1~2(+5) / 2~3(0) / 3+(-5)
+    → 자산경량 업종(SW/플랫폼/SaaS/바이오/콘텐츠): PBR<5(+5) / 5~15(0) / 15~30(-3) / 30+(-5)
 
-■ overallScore (종합 점수, 0-100):
-  = financial.score × 0.45 + technical.score × 0.35 + 뉴스센티먼트점수 × 0.20
-  (뉴스: POSITIVE=80, NEUTRAL=50, NEGATIVE=20)
+  [수익성 — 최대 ±25점]
+  - ROE (★3년 평균 우선, 없으면 최근 실적):
+    → 20%+(+15) / 15~20%(+10) / 10~15%(+5) / 5~10%(0) / 5%미만(-10)
+  - 영업이익률: ★업종 평균 대비 판단 (Google Search로 확인)
+    → 업종 평균의 1.5배 이상(+10) / 업종 평균 이상(+5) / 업종 평균 미만(0) / 적자(-10)
+    ※ 확인 불가 시: 20%+(+10) / 10~20%(+5) / 0~10%(0) / 적자(-10)
+  - 잉여현금흐름(FCF): Google Search로 최근 연간 FCF 확인
+    → FCF 양수 + 증가 추세(+10) / FCF 양수(+5) / FCF 음수(-5) / FCF 음수 + 악화(-10)
 
-■ recommendation 기준:
-  - overallScore 85+: STRONG_BUY
-  - 70~84: BUY
-  - 50~69: HOLD
-  - 35~49: SELL
-  - 34 이하: STRONG_SELL
+  [성장성 — 최대 ±20점]
+  - 매출성장률 YoY: ★가속/감속 반드시 구분
+    → 30%+ AND 가속(전년보다 성장률 상승)(+15) / 30%+ AND 감속(+10)
+    → 20~30%(+8) / 10~20%(+5) / 0~10%(0)
+    → 마이너스 AND 일시적(업황 사이클)(-5) / 마이너스 AND 구조적(-10)
+
+  [안정성 — 최대 ±15점]
+  - 부채비율: 50%미만(+8) / 50~100%(+3) / 100~200%(0) / 200%초과(-7)
+  - 이익 안정성: 최근 4분기 영업이익 모두 흑자(+5) / 혼합(0) / 연속 적자(-5)
+    ※ 고성장 적자기업(매출성장 30%+): 적자 패널티 면제(0)
+
+■ technical.score (기술 보조 점수, 0-100):
+  기본 50점에서 시작:
+  - 이동평균(20/60/120일): 정배열(+15) / 역배열(-15) / 혼합(0)
+  - 현재가 vs 120일 이평: 120일선 위 10%+(+5) / 위(+3) / 아래(-3) / 아래 20%+(-5)
+  - RSI(14일): 40~60(+5) / 60~70(+8) / 30~40(-3) / 70+(과매수 -8) / 30미만(역발상 +10)
+  - MACD: 골든크로스(+7) / 데드크로스(-7) / 중립(0)
+  - 거래량: 20일 평균 대비 200%+(+5) / 50%미만(-5) / 보통(0)
+  - 볼린저밴드: 하단 접근(+5) / 상단 돌파(-3) / 중앙(+2)
+
+■ quality.score (투자 품질 점수, 0-100) ★신규:
+  기본 50점에서 시작:
+  - 경쟁우위(Moat): 브랜드파워/네트워크효과/전환비용/원가우위/규모의경제 중
+    → 2개 이상 보유(+20) / 1개 보유(+10) / 판별 불가(0) / 진입장벽 낮음(-10)
+  - 경영진 신뢰도: 주주환원(배당/자사주) + CEO 실행력
+    → 우수(+10) / 보통(0) / 우려(-10)
+  - 산업 성장성: 해당 업종의 향후 3~5년 전망
+    → 고성장 산업(+10) / 성숙 산업(0) / 쇠퇴 산업(-10)
+
+■ overallScore (종합 점수):
+  = financial.score × 0.55 + technical.score × 0.15 + news_score × 0.15 + quality.score × 0.15
+
+  ※ news_score 산정 (5단계):
+    - VERY_POSITIVE(90): 실적 서프라이즈, M&A, 대형 수주 등 구조적 호재
+    - POSITIVE(70): 목표가 상향, 업종 호재
+    - NEUTRAL(50): 특이사항 없음
+    - NEGATIVE(30): 실적 미달, 업종 악재
+    - VERY_NEGATIVE(10): 회계 이슈, 대형 소송, 규제 충격 등 구조적 악재
+
+■ recommendation:
+  78+: STRONG_BUY / 63~77: BUY / 42~62: HOLD / 28~41: SELL / 27 이하: STRONG_SELL
 
 [필수 분석 항목]
 1. 재무 분석 (financial): PER, PBR, ROE, 매출성장률, 영업이익률, 부채비율 + 시가총액 + 최근 4분기 매출/영업이익/순이익
 2. 기술적 분석 (technical): RSI, MACD, 이동평균선(20/60/120일), 볼린저밴드, 거래량 추이
 3. 뉴스/이벤트 분석 (news): 최근 주요 뉴스 3개 이상 + 센티먼트
 4. AI 종합 의견 (aiOpinion): 매수/매도 의견, 목표가, 강세/약세 시나리오
-5. 분기별 실적 (quarterlyData): 최근 4분기 매출/영업이익/순이익 (실제 실적 발표 기준, 사업보고서 기반)
-6. 최신 분기 상세 (quarterDetail): 가장 최근 실적 발표 분기의 사업부별 매출 비중, 주요 비용 항목, 매출→비용→영업이익→순이익 워터폴 흐름
+5. 분기별 실적 (quarterlyData): 최근 4분기 매출/영업이익/순이익 (실제 실적 발표 기준)
+6. 최신 분기 상세 (quarterDetail): 사업부별 매출 비중, 주요 비용, 워터폴 흐름
 7. 밸류에이션 (marketCap, per, pbr): 시가총액(원), PER, PBR 숫자값
+8. 데이터 출처 (dataSources): 사용한 데이터의 출처 목록
 
 [출력 형식] 반드시 아래 JSON 구조로 반환 (값은 실제 분석 결과로 채우세요):
 {
@@ -1213,9 +1328,10 @@ overallScore, financial.score, technical.score는 반드시 아래 기준에 따
         {"label": "PBR", "value": "<실제값>", "status": "<good|neutral|bad>"},
         {"label": "ROE", "value": "<실제값>%", "status": "<good|neutral|bad>"},
         {"label": "영업이익률", "value": "<실제값>%", "status": "<good|neutral|bad>"},
-        {"label": "매출성장률", "value": "<실제값>%", "status": "<good|neutral|bad>"},
+        {"label": "매출성장률", "value": "<실제값>% (가속/감속 명시)", "status": "<good|neutral|bad>"},
+        {"label": "FCF", "value": "<양수/음수, 약 X억원>", "status": "<good|neutral|bad>"},
         {"label": "부채비율", "value": "<실제값>%", "status": "<good|neutral|bad>"},
-        {"label": "시가총액", "value": "<실제값>", "status": "neutral"}
+        {"label": "시가총액", "value": "<약 X조원 형태>", "status": "neutral"}
       ]
     },
     "technical": {
@@ -1232,10 +1348,20 @@ overallScore, financial.score, technical.score는 반드시 아래 기준에 따
     },
     "news": {
       "title": "뉴스 분석",
-      "sentiment": "<POSITIVE|NEUTRAL|NEGATIVE>",
+      "sentiment": "<VERY_POSITIVE|POSITIVE|NEUTRAL|NEGATIVE|VERY_NEGATIVE>",
       "highlights": ["실제 뉴스 기반 분석 3개 이상"],
       "recentNews": [
         {"title": "<실제 뉴스 제목>", "impact": "<긍정적|중립|부정적>", "date": "<YYYY-MM-DD>"}
+      ]
+    },
+    "quality": {
+      "title": "투자 품질",
+      "score": <0-100 위 기준으로 계산>,
+      "highlights": ["경쟁우위/경영진/산업 분석 3개 이상"],
+      "metrics": [
+        {"label": "경쟁우위(Moat)", "value": "<강력|보통|약함>", "status": "<good|neutral|bad>", "detail": "<보유한 Moat 설명>"},
+        {"label": "경영진", "value": "<우수|보통|우려>", "status": "<good|neutral|bad>", "detail": "<주주환원/실행력>"},
+        {"label": "산업 성장성", "value": "<고성장|성숙|쇠퇴>", "status": "<good|neutral|bad>", "detail": "<3~5년 전망>"}
       ]
     },
     "aiOpinion": {
@@ -1280,9 +1406,13 @@ overallScore, financial.score, technical.score는 반드시 아래 기준에 따
     "netMargin": <순이익률(%)>,
     "keyTakeaway": "<이번 분기 핵심 포인트 한 문장>"
   },
-  "marketCap": <시가총액(원, 숫자만)>,
+  "marketCap": <시가총액(원, 숫자만. 예: 테슬라 약 1600000000000000, 삼성전자 약 500000000000000)>,
   "per": <PER(숫자만)>,
-  "pbr": <PBR(숫자만)>
+  "pbr": <PBR(숫자만)>,
+  "dataSources": [
+    ${hasFundamentals ? '{"name": "Yahoo Finance API", "detail": "시가총액, PER, PBR, ROE, 영업이익률, 매출성장률, 부채비율, 분기실적' + (isUSD && exchangeRate ? ` (환율 ${exchangeRate.toFixed(2)}원 적용)` : '') + '", "date": "' + (fundamentals?.fetchedAt || new Date().toISOString()) + '"},' : ''}
+    {"name": "Google Search", "detail": "기술적 분석, 뉴스, 사업부별 상세", "date": "${new Date().toISOString().split('T')[0]}"}
+  ]
 }
 
 ★★★ 절대 규칙 ★★★
@@ -1293,21 +1423,76 @@ overallScore, financial.score, technical.score는 반드시 아래 기준에 따
 5. 한국어로 작성.
 6. quarterlyData는 실제 실적 발표 기준으로 작성. 사업보고서/분기보고서 기반 데이터 사용.
 7. quarterDetail.revenueSegments의 color 필드에는 "#6366F1", "#8B5CF6", "#EC4899", "#F59E0B", "#10B981", "#3B82F6" 중에서 순서대로 배정.
-8. marketCap, per, pbr은 반드시 숫자값만 입력 (문자열 X). 예: "marketCap": 350000000000000
+8. marketCap, per, pbr, revenue, operatingIncome, netIncome 등 JSON 숫자 필드는 반드시 **숫자만** 입력 (₩, $, 원, 조, 억 등 문자 붙이지 말 것). 예: "marketCap": 1600000000000000 (테슬라 원화 환산값)
+9. dataSources에 사용한 데이터 출처를 반드시 2개 이상 명시하세요.
+10. 시가총액 검증: 미국 대형주(TSLA, AAPL, NVDA 등)는 최소 수백조원 이상이어야 합니다. 조 단위 미만이면 재검색하세요.
+11. **원화 환산 규칙**: 미국 주식의 금액은 모두 원화(₩) 환산값을 사용. ${isUSD && exchangeRate ? `환율 ${exchangeRate.toFixed(2)}원 적용.` : '실시간 환율 적용.'} 단, JSON 숫자 필드에는 ₩ 기호를 붙이지 마세요. metrics의 "value" 문자열에만 "약 1,600조원" 형태로 표기.
+${hasFundamentals ? '12. API 제공 데이터(시가총액, PER, PBR, ROE 등)는 반드시 그대로 사용하세요. 임의로 수정하지 마세요.' : ''}
 `;
 
   try {
     const result = await modelWithSearch.generateContent(prompt);
     const text = result.response.text();
-    let cleaned = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
-    // JSON 객체 추출 + trailing comma 제거
-    const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
-    if (jsonMatch) cleaned = jsonMatch[0];
+
+    if (__DEV__) {
+      console.log('[DeepDive] Gemini 원본 응답 길이:', text.length);
+      console.log('[DeepDive] 응답 앞 200자:', text.substring(0, 200));
+    }
+
+    // Step 1: 마크다운 코드블록 제거
+    let cleaned = text
+      .replace(/```json\s*/gi, '')
+      .replace(/```javascript\s*/gi, '')
+      .replace(/```\s*/g, '')
+      .trim();
+
+    // Step 2: JSON 객체 추출 (가장 바깥 { } 매칭)
+    const jsonStart = cleaned.indexOf('{');
+    const jsonEnd = cleaned.lastIndexOf('}');
+
+    if (jsonStart === -1 || jsonEnd === -1 || jsonEnd <= jsonStart) {
+      console.error('[DeepDive] JSON 객체를 찾을 수 없음. 원본 응답:', text.substring(0, 500));
+      throw new Error('Gemini 응답에서 JSON을 찾을 수 없습니다');
+    }
+
+    cleaned = cleaned.substring(jsonStart, jsonEnd + 1);
+
+    // Step 3: 마크다운 기호 제거 (JSON 문자열 내부의 *, _, # 등)
+    cleaned = cleaned
+      .replace(/\*{1,3}([^*]+)\*{1,3}/g, '$1')
+      .replace(/_{1,2}([^_]+)_{1,2}/g, '$1')
+      .replace(/^#+\s*/gm, '');
+
+    // Step 4: trailing comma 제거 (Gemini가 종종 ,} 또는 ,] 형태로 응답)
     cleaned = cleaned.replace(/,\s*([\]}])/g, '$1');
-    return JSON.parse(cleaned) as DeepDiveResult;
-  } catch (error) {
+
+    // Step 5: ₩ 기호 처리 — JSON 숫자 필드 앞의 ₩ 제거
+    // 예: "marketCap": ₩1600000 → "marketCap": 1600000
+    // 문자열 내부의 ₩는 유지 (예: "value": "₩1,600조원")
+    cleaned = cleaned.replace(/:\s*₩\s*([0-9])/g, ': $1');
+
+    // Step 6: JSON 파싱
+    try {
+      return JSON.parse(cleaned) as DeepDiveResult;
+    } catch (parseErr) {
+      console.error('[DeepDive] JSON 파싱 실패. 정제된 응답 앞 500자:', cleaned.substring(0, 500));
+      console.error('[DeepDive] JSON 파싱 에러:', parseErr);
+      throw new Error('Gemini 응답 JSON 파싱에 실패했습니다. 다시 시도해주세요.');
+    }
+  } catch (error: any) {
     console.error('Deep Dive 생성 오류:', error);
-    throw new Error('종목 딥다이브 분석에 실패했습니다');
+
+    // 원인별 사용자 메시지
+    if (error.message?.includes('JSON')) {
+      throw error; // JSON 파싱 에러는 그대로 전달
+    }
+    if (error.message?.includes('429') || error.message?.includes('RESOURCE_EXHAUSTED')) {
+      throw new Error('AI 분석 요청이 너무 많습니다. 잠시 후 다시 시도해주세요.');
+    }
+    if (error.message?.includes('Network') || error.message?.includes('network')) {
+      throw new Error('네트워크 연결을 확인해주세요.');
+    }
+    throw new Error('종목 딥다이브 분석에 실패했습니다. 다시 시도해주세요.');
   }
 };
 
@@ -1322,52 +1507,82 @@ export const generateWhatIf = async (
     .map(a => `${a.name}(${a.ticker}): ₩${a.currentValue.toLocaleString()} / 비중 ${a.allocation}%`)
     .join('\n');
 
+  const magnitude = input.magnitude || -20;
+
   const prompt = `
-당신은 리스크 관리 전문가(CRM)입니다. 사용자의 포트폴리오에 다음 시나리오가 발생할 경우의 영향을 분석하세요.
+당신은 골드만삭스 출신 리스크 관리 전문가(CRM)입니다.
+사용자의 포트폴리오에 특정 시나리오가 발생할 경우, 자산별로 **서로 다른 영향도**를 분석하세요.
 
 [시나리오]
 - 유형: ${input.scenario}
 - 상세: ${input.description}
-${input.magnitude ? `- 변동 크기: ${input.magnitude}%` : ''}
+- 기준 변동폭: ${magnitude}%
 
 [현재 포트폴리오]
 ${portfolioStr}
 
+[★★★ 핵심 규칙: 자산 클래스별 감응도(Beta) ★★★]
+시나리오의 기준 변동폭(${magnitude}%)을 자산 클래스별 beta로 곱해서 각각 다르게 계산하세요.
+절대로 모든 자산에 동일한 퍼센트를 적용하지 마세요.
+
+자산 클래스별 감응도 참고표 (시장 폭락 시나리오 기준):
+- 고변동 기술주 (NVDA, TSLA, META): beta 1.3~1.5 → 시장보다 더 크게 하락
+- 대형 가치주 (AAPL, MSFT, GOOGL): beta 0.9~1.1 → 시장과 유사
+- 방어주/가치주 (BRK.B, JNJ, KO): beta 0.5~0.7 → 시장보다 덜 하락
+- 금/금ETF (GLD, IAU): beta -0.2~-0.4 → 반대로 상승
+- 채권ETF (TLT, AGG, BND): beta -0.1~-0.3 → 소폭 상승
+- 암호화폐 (BTC, ETH, XRP): beta 1.5~2.0 → 가장 크게 하락
+- 에너지 (XOM, CEG): beta 0.7~1.0 → 시나리오 따라 다름
+- 리츠/부동산 (VNQ, O): beta 0.8~1.0 → 금리 시나리오에 민감
+- 삼성전자/한국주식: beta 1.0~1.3 → 신흥국 프리미엄 반영
+
+계산 예시 (시장 폭락 ${magnitude}% 시나리오):
+- NVDA(기술주): ${magnitude}% × 1.4 = ${(magnitude * 1.4).toFixed(1)}%
+- BRK.B(가치주): ${magnitude}% × 0.6 = ${(magnitude * 0.6).toFixed(1)}%
+- GLD(금): ${magnitude}% × -0.3 = ${(magnitude * -0.3).toFixed(1)}% (상승!)
+- BTC(암호화폐): ${magnitude}% × 1.8 = ${(magnitude * 1.8).toFixed(1)}%
+
+[★ 절대 규칙 ★]
+1. 각 자산의 changePercent가 모두 동일하면 실패입니다
+2. 금/채권은 시장 폭락 시 반드시 양수(상승)여야 합니다
+3. 암호화폐는 기술주보다 더 크게 하락해야 합니다
+4. projectedValue = currentValue × (1 + changePercent/100) 으로 정확히 계산
+
 [분석 항목]
-1. 전체 영향 요약 (totalImpact)
-2. 자산별 영향 분석 (assetImpacts)
+1. 전체 영향 요약 (totalImpact) — 포트폴리오 가중평균 변동률
+2. 자산별 영향 분석 (assetImpacts) — 자산마다 다른 changePercent
 3. 리스크 평가 + 헤지 전략 (riskAssessment)
 
-[출력 형식] 반드시 아래 JSON 구조로 반환:
+[출력 형식] 반드시 아래 JSON 구조만 반환 (설명 텍스트 없이):
 {
   "scenario": "${input.description}",
-  "summary": "전체 요약 텍스트...",
+  "summary": "전체 요약 (어떤 자산이 가장 취약하고, 어떤 자산이 방어적인지 명시)",
   "totalImpact": {
-    "currentTotal": 총현재가치,
-    "projectedTotal": 예상가치,
-    "changePercent": -5.2,
-    "changeAmount": -520000
+    "currentTotal": (포트폴리오 총 현재가치),
+    "projectedTotal": (시나리오 후 예상 총 가치),
+    "changePercent": (가중평균 변동률),
+    "changeAmount": (원화 변동액)
   },
   "assetImpacts": [
     {
-      "ticker": "AAPL",
-      "name": "애플",
-      "currentValue": 5000000,
-      "projectedValue": 4500000,
-      "changePercent": -10.0,
-      "impactLevel": "HIGH",
-      "explanation": "기술주 민감도 높음..."
+      "ticker": "종목코드",
+      "name": "종목명",
+      "currentValue": (현재가치),
+      "projectedValue": (예상가치),
+      "changePercent": (자산별 개별 변동률 — 모두 다른 값!),
+      "impactLevel": "HIGH/MEDIUM/LOW",
+      "explanation": "이 자산이 왜 이만큼 영향받는지 1문장"
     }
   ],
   "riskAssessment": {
-    "overallRisk": "MEDIUM",
-    "vulnerabilities": ["기술주 집중 리스크", "..."],
-    "hedgingSuggestions": ["채권 ETF 5% 편입 검토", "..."]
+    "overallRisk": "HIGH/MEDIUM/LOW",
+    "vulnerabilities": ["취약점 2~3개"],
+    "hedgingSuggestions": ["구체적 헤지 전략 2~3개"]
   },
   "generatedAt": "${new Date().toISOString()}"
 }
 
-중요: 반드시 유효한 JSON만 반환. 금액은 숫자로, 한국어로 작성.
+중요: 유효한 JSON만 반환. 금액은 숫자로, 한국어로 작성. 설명 텍스트를 JSON 앞뒤에 붙이지 마세요.
 `;
 
   try {

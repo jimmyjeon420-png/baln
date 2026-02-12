@@ -10,8 +10,10 @@ import { View, Text, StyleSheet } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { priceService } from '../../services/PriceService';
 import { AssetClass } from '../../types/price';
+import { useTheme } from '../../hooks/useTheme';
+import type { ThemeColors } from '../../styles/colors';
 
-// ── 벤치마크 지수 ──
+// -- 벤치마크 지수 --
 
 interface BenchmarkConfig {
   ticker: string;
@@ -24,13 +26,15 @@ const BENCHMARKS: BenchmarkConfig[] = [
   { ticker: '^GSPC', label: 'S&P', assetClass: AssetClass.STOCK },
 ];
 
-// ── Props ──
+// -- Props --
 
 interface BenchmarkChipProps {
   myGainPercent: number; // 내 포트폴리오 수익률 (%)
 }
 
 const BenchmarkChip = ({ myGainPercent }: BenchmarkChipProps) => {
+  const { colors } = useTheme();
+
   // 벤치마크 지수 가격 조회 (10분 캐시 — 지수는 빈번히 바뀌지 않아도 됨)
   const { data: benchmarkPrices } = useQuery({
     queryKey: ['benchmark-prices'],
@@ -74,10 +78,12 @@ const BenchmarkChip = ({ myGainPercent }: BenchmarkChipProps) => {
 
   if (!comparison) return null;
 
-  const chipColor = comparison.isBeating ? '#4CAF50' : '#CF6679';
+  const chipColor = comparison.isBeating
+    ? (colors.primaryDark ?? colors.primary)
+    : colors.error;
 
   return (
-    <View style={[s.chip, { backgroundColor: chipColor + '15' }]}>
+    <View style={[s.chip, { backgroundColor: `${chipColor}20` }]}>
       <Text style={[s.chipLabel, { color: chipColor }]}>
         vs {comparison.label}
       </Text>
@@ -88,10 +94,7 @@ const BenchmarkChip = ({ myGainPercent }: BenchmarkChipProps) => {
   );
 };
 
-// ──────────────────────────────────────
 // React.memo 최적화: myGainPercent가 같으면 리렌더링 방지
-// ──────────────────────────────────────
-
 export default React.memo(BenchmarkChip, (prev, next) => {
   // 수익률이 0.01%p 이내로 같으면 리렌더링 방지 (소수점 2자리까지만 표시하므로)
   return Math.abs(prev.myGainPercent - next.myGainPercent) < 0.01;

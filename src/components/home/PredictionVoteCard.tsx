@@ -27,7 +27,7 @@ import {
   Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../../styles/theme';
+import { useTheme } from '../../hooks/useTheme';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -130,6 +130,8 @@ export default function PredictionVoteCard({
   selectedCategory = 'all',
   onCategoryChange,
 }: PredictionVoteCardProps) {
+  const { colors } = useTheme();
+  const styles = React.useMemo(() => createStyles(colors), [colors]);
   const scrollRef = React.useRef<ScrollView>(null);
   const [currentIndex, setCurrentIndex] = React.useState(0);
 
@@ -203,10 +205,10 @@ export default function PredictionVoteCard({
       <View style={styles.card}>
         <View style={styles.topRow}>
           <View />
-          <Text style={styles.cardLogo}>baln</Text>
+          <Text style={styles.cardLogo}>bal<Text style={{ color: '#4CAF50' }}>n</Text></Text>
         </View>
         <View style={styles.centerArea}>
-          <ActivityIndicator size="large" color={COLORS.textSecondary} />
+          <ActivityIndicator size="large" color={colors.textSecondary} />
           <Text style={[styles.loadingText, { marginTop: 16 }]}>
             오늘의 예측을 불러오는 중...
           </Text>
@@ -223,7 +225,7 @@ export default function PredictionVoteCard({
       <View style={styles.card}>
         <View style={styles.topRow}>
           <View />
-          <Text style={styles.cardLogo}>baln</Text>
+          <Text style={styles.cardLogo}>bal<Text style={{ color: '#4CAF50' }}>n</Text></Text>
         </View>
         <View style={styles.centerArea}>
           <Text style={styles.emptyEmoji}>🎯</Text>
@@ -287,7 +289,7 @@ export default function PredictionVoteCard({
         {/* 투표 버튼 */}
         <View style={styles.voteArea}>
           {isVoting ? (
-            <ActivityIndicator size="small" color={COLORS.primary} />
+            <ActivityIndicator size="small" color={colors.primary} />
           ) : hasVoted ? (
             // 투표 완료 → 비율 바 표시
             <View style={styles.resultsRow}>
@@ -376,7 +378,7 @@ export default function PredictionVoteCard({
               })}
             </View>
           )}
-          <Text style={styles.cardLogo}>baln</Text>
+          <Text style={styles.cardLogo}>bal<Text style={{ color: '#4CAF50' }}>n</Text></Text>
         </View>
       </View>
 
@@ -445,7 +447,7 @@ export default function PredictionVoteCard({
                     <Ionicons
                       name={isExpanded ? 'chevron-up' : 'chevron-down'}
                       size={16}
-                      color={COLORS.textTertiary}
+                      color={colors.textTertiary}
                       style={{ marginLeft: 4 }}
                     />
                   )}
@@ -492,7 +494,7 @@ export default function PredictionVoteCard({
       {onViewHistory && (
         <TouchableOpacity style={styles.historyButton} onPress={onViewHistory}>
           <Text style={styles.historyText}>📊 상세 통계 보기</Text>
-          <Ionicons name="arrow-forward" size={18} color={COLORS.textSecondary} />
+          <Ionicons name="arrow-forward" size={18} color={colors.textSecondary} />
         </TouchableOpacity>
       )}
     </View>
@@ -505,323 +507,325 @@ export default function PredictionVoteCard({
 
 const CARD_HEIGHT = SCREEN_HEIGHT * 0.78;
 
-const styles = StyleSheet.create({
-  card: {
-    height: CARD_HEIGHT,
-    marginHorizontal: 16,
-    backgroundColor: COLORS.surface,
-    borderRadius: 24,
-    padding: 24,
-    justifyContent: 'space-between',
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  topRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  cardLogo: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: COLORS.textSecondary,
-    letterSpacing: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  headerEmoji: {
-    fontSize: 24,
-  },
-  headerText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
-  },
-  // 페이지 인디케이터
-  pageIndicator: {
-    flexDirection: 'row',
-    gap: 6,
-  },
-  pageDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: COLORS.surfaceLight,
-  },
-  pageDotActive: {
-    width: 16,
-    backgroundColor: COLORS.textPrimary,
-  },
-  pageDotVoted: {
-    backgroundColor: COLORS.primary,
-  },
-  // 수평 스크롤 FlatList
-  pollFlatList: {
-    flex: 1,
-  },
-  pollFlatListContent: {
-    // 질문 슬라이드들이 정렬되도록
-  },
-  // 개별 질문 슬라이드
-  pollSlide: {
-    width: POLL_SLIDE_WIDTH,
-    justifyContent: 'center',
-  },
-  // 카테고리 칩
-  pollCategoryChip: {
-    flexDirection: 'row',
-    alignSelf: 'flex-start',
-    alignItems: 'center',
-    gap: 4,
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: 12,
-    borderWidth: 1,
-    marginBottom: 12,
-  },
-  pollCategoryEmoji: {
-    fontSize: 12,
-  },
-  pollCategoryLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  pollQuestionArea: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingVertical: 12,
-  },
-  questionText: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-    lineHeight: 32,
-    textAlign: 'center',
-  },
-  // [NEW] 근거 박스 스타일
-  reasonsContainer: {
-    gap: 10,
-    marginVertical: 12,
-  },
-  reasonBox: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 8,
-    backgroundColor: 'rgba(176,176,176,0.06)',
-    borderRadius: 10,
-    padding: 12,
-    borderLeftWidth: 2,
-    borderLeftColor: COLORS.textSecondary,
-  },
-  reasonIcon: {
-    fontSize: 16,
-    marginTop: 2,
-  },
-  reasonLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: COLORS.textSecondary,
-    marginBottom: 3,
-  },
-  reasonText: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-    lineHeight: 18,
-  },
-  voteArea: {
-    marginVertical: 12,
-  },
-  voteRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  resultsRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  voteButton: {
-    flex: 1,
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-  },
-  voteButtonYes: {
-    borderColor: '#4CAF50',
-    backgroundColor: 'transparent',
-  },
-  voteButtonNo: {
-    borderColor: '#CF6679',
-    backgroundColor: 'transparent',
-  },
-  voteButtonSelected: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
-  },
-  voteButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
-  },
-  voteButtonTextSelected: {
-    color: COLORS.textPrimary,
-  },
-  votePercentage: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    marginTop: 4,
-  },
-  votePercentageSelected: {
-    color: COLORS.textPrimary,
-  },
-  // 모두 투표 완료 배너
-  allVotedBanner: {
-    backgroundColor: 'rgba(76, 175, 80, 0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(76, 175, 80, 0.3)',
-    borderRadius: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    alignItems: 'center',
-  },
-  allVotedText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.primary,
-  },
-  // 복기 섹션
-  reviewArea: {
-    gap: 12,
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-  },
-  reviewTitle: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  reviewItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  reviewEmoji: {
-    fontSize: 16,
-  },
-  reviewQuestion: {
-    flex: 1,
-    fontSize: 14,
-    color: COLORS.textSecondary,
-  },
-  reviewReward: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.primary,
-  },
-  explanationBox: {
-    marginTop: 8,
-    marginLeft: 28,
-    paddingLeft: 12,
-    borderLeftWidth: 2,
-    borderLeftColor: COLORS.primary,
-    gap: 12,
-  },
-  explanationSection: {
-    gap: 4,
-  },
-  explanationLabel: {
-    fontSize: 12,
-    color: COLORS.textTertiary,
-    fontWeight: '600',
-  },
-  explanationText: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    lineHeight: 20,
-  },
-  accuracyText: {
-    fontSize: 14,
-    color: COLORS.textPrimary,
-    textAlign: 'center',
-    marginTop: 4,
-  },
-  accuracyHint: {
-    fontSize: 12,
-    color: COLORS.textTertiary,
-    textAlign: 'center',
-    marginTop: 4,
-  },
-  historyButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 14,
-    paddingHorizontal: 18,
-    backgroundColor: COLORS.surfaceLight,
-    borderRadius: 12,
-  },
-  historyText: {
-    fontSize: 15,
-    color: COLORS.textSecondary,
-  },
-  centerArea: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    fontSize: 16,
-    color: COLORS.textSecondary,
-  },
-  emptyEmoji: {
-    fontSize: 80,
-    marginBottom: 20,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: COLORS.textSecondary,
-    textAlign: 'center',
-  },
-  categoryFilter: {
-    flexDirection: 'row',
-    gap: 8,
-    paddingVertical: 12,
-    flexWrap: 'wrap',
-  },
-  categoryChip: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 16,
-    backgroundColor: COLORS.surfaceLight,
-    borderWidth: 1,
-    borderColor: 'transparent',
-  },
-  categoryChipActive: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
-  },
-  categoryText: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-  },
-  categoryTextActive: {
-    color: COLORS.textPrimary,
-    fontWeight: '600',
-  },
-});
+function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
+    card: {
+      height: CARD_HEIGHT,
+      marginHorizontal: 16,
+      backgroundColor: colors.surface,
+      borderRadius: 24,
+      padding: 24,
+      justifyContent: 'space-between',
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    topRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    cardLogo: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: colors.textSecondary,
+      letterSpacing: 1,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    headerLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    headerRight: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+    },
+    headerEmoji: {
+      fontSize: 24,
+    },
+    headerText: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: colors.textPrimary,
+    },
+    // 페이지 인디케이터
+    pageIndicator: {
+      flexDirection: 'row',
+      gap: 6,
+    },
+    pageDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: colors.surfaceLight,
+    },
+    pageDotActive: {
+      width: 16,
+      backgroundColor: colors.textPrimary,
+    },
+    pageDotVoted: {
+      backgroundColor: colors.primary,
+    },
+    // 수평 스크롤 FlatList
+    pollFlatList: {
+      flex: 1,
+    },
+    pollFlatListContent: {
+      // 질문 슬라이드들이 정렬되도록
+    },
+    // 개별 질문 슬라이드
+    pollSlide: {
+      width: POLL_SLIDE_WIDTH,
+      justifyContent: 'center',
+    },
+    // 카테고리 칩
+    pollCategoryChip: {
+      flexDirection: 'row',
+      alignSelf: 'flex-start',
+      alignItems: 'center',
+      gap: 4,
+      paddingVertical: 4,
+      paddingHorizontal: 10,
+      borderRadius: 12,
+      borderWidth: 1,
+      marginBottom: 12,
+    },
+    pollCategoryEmoji: {
+      fontSize: 12,
+    },
+    pollCategoryLabel: {
+      fontSize: 12,
+      fontWeight: '600',
+    },
+    pollQuestionArea: {
+      flex: 1,
+      justifyContent: 'center',
+      paddingVertical: 12,
+    },
+    questionText: {
+      fontSize: 22,
+      fontWeight: '700',
+      color: colors.textPrimary,
+      lineHeight: 32,
+      textAlign: 'center',
+    },
+    // [NEW] 근거 박스 스타일
+    reasonsContainer: {
+      gap: 10,
+      marginVertical: 12,
+    },
+    reasonBox: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: 8,
+      backgroundColor: colors.border + '0F',
+      borderRadius: 10,
+      padding: 12,
+      borderLeftWidth: 2,
+      borderLeftColor: colors.textSecondary,
+    },
+    reasonIcon: {
+      fontSize: 16,
+      marginTop: 2,
+    },
+    reasonLabel: {
+      fontSize: 11,
+      fontWeight: '600',
+      color: colors.textSecondary,
+      marginBottom: 3,
+    },
+    reasonText: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      lineHeight: 18,
+    },
+    voteArea: {
+      marginVertical: 12,
+    },
+    voteRow: {
+      flexDirection: 'row',
+      gap: 12,
+    },
+    resultsRow: {
+      flexDirection: 'row',
+      gap: 8,
+    },
+    voteButton: {
+      flex: 1,
+      paddingVertical: 16,
+      borderRadius: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1,
+    },
+    voteButtonYes: {
+      borderColor: colors.primary,
+      backgroundColor: 'transparent',
+    },
+    voteButtonNo: {
+      borderColor: colors.error,
+      backgroundColor: 'transparent',
+    },
+    voteButtonSelected: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    voteButtonText: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.textPrimary,
+    },
+    voteButtonTextSelected: {
+      color: colors.textPrimary,
+    },
+    votePercentage: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      marginTop: 4,
+    },
+    votePercentageSelected: {
+      color: colors.textPrimary,
+    },
+    // 모두 투표 완료 배너
+    allVotedBanner: {
+      backgroundColor: colors.primary + '1A',
+      borderWidth: 1,
+      borderColor: colors.primary + '4D',
+      borderRadius: 12,
+      paddingVertical: 10,
+      paddingHorizontal: 16,
+      alignItems: 'center',
+    },
+    allVotedText: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.primary,
+    },
+    // 복기 섹션
+    reviewArea: {
+      gap: 12,
+      paddingVertical: 12,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+    },
+    reviewTitle: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      marginBottom: 4,
+    },
+    reviewItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    reviewEmoji: {
+      fontSize: 16,
+    },
+    reviewQuestion: {
+      flex: 1,
+      fontSize: 14,
+      color: colors.textSecondary,
+    },
+    reviewReward: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.primary,
+    },
+    explanationBox: {
+      marginTop: 8,
+      marginLeft: 28,
+      paddingLeft: 12,
+      borderLeftWidth: 2,
+      borderLeftColor: colors.primary,
+      gap: 12,
+    },
+    explanationSection: {
+      gap: 4,
+    },
+    explanationLabel: {
+      fontSize: 12,
+      color: colors.textTertiary,
+      fontWeight: '600',
+    },
+    explanationText: {
+      fontSize: 13,
+      color: colors.textSecondary,
+      lineHeight: 20,
+    },
+    accuracyText: {
+      fontSize: 14,
+      color: colors.textPrimary,
+      textAlign: 'center',
+      marginTop: 4,
+    },
+    accuracyHint: {
+      fontSize: 12,
+      color: colors.textTertiary,
+      textAlign: 'center',
+      marginTop: 4,
+    },
+    historyButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingVertical: 14,
+      paddingHorizontal: 18,
+      backgroundColor: colors.surfaceLight,
+      borderRadius: 12,
+    },
+    historyText: {
+      fontSize: 15,
+      color: colors.textSecondary,
+    },
+    centerArea: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    loadingText: {
+      fontSize: 16,
+      color: colors.textSecondary,
+    },
+    emptyEmoji: {
+      fontSize: 80,
+      marginBottom: 20,
+    },
+    emptyText: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      textAlign: 'center',
+    },
+    categoryFilter: {
+      flexDirection: 'row',
+      gap: 8,
+      paddingVertical: 12,
+      flexWrap: 'wrap',
+    },
+    categoryChip: {
+      paddingVertical: 6,
+      paddingHorizontal: 12,
+      borderRadius: 16,
+      backgroundColor: colors.surfaceLight,
+      borderWidth: 1,
+      borderColor: 'transparent',
+    },
+    categoryChipActive: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    categoryText: {
+      fontSize: 13,
+      color: colors.textSecondary,
+    },
+    categoryTextActive: {
+      color: colors.textPrimary,
+      fontWeight: '600',
+    },
+  });
+}

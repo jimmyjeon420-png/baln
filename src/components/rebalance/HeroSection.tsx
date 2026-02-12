@@ -9,6 +9,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { CfoWeather } from '../../types/rebalanceTypes';
 import BenchmarkChip from './BenchmarkChip';
+import { useTheme } from '../../hooks/useTheme';
 
 interface HeroSectionProps {
   dateString: string;
@@ -33,38 +34,40 @@ export default function HeroSection({
   cfoWeather,
   holdingLabel,
 }: HeroSectionProps) {
+  const { colors } = useTheme();
   const isPositive = totalGainLoss >= 0;
+  const changeColor = isPositive ? colors.success : colors.error;
 
   return (
     <View style={s.hero}>
       <View style={s.heroTop}>
-        <Text style={s.heroDate}>{dateString}</Text>
+        <Text style={[s.heroDate, { color: colors.textTertiary }]}>{dateString}</Text>
         <View style={{ flexDirection: 'row', gap: 6 }}>
           <View style={[s.tierChip, { backgroundColor: tierColor + '20' }]}>
             <Text style={[s.tierChipText, { color: tierColor }]}>{tierLabel}</Text>
           </View>
           {holdingLabel && (
-            <View style={[s.tierChip, { backgroundColor: '#7C4DFF20' }]}>
-              <Text style={[s.tierChipText, { color: '#7C4DFF' }]}>{holdingLabel}</Text>
+            <View style={[s.tierChip, { backgroundColor: colors.premium.purple + '33' }]}>
+              <Text style={[s.tierChipText, { color: colors.premium.purple }]}>{holdingLabel}</Text>
             </View>
           )}
         </View>
       </View>
 
-      <Text style={s.heroAmount}>₩{Math.floor(totalAssets).toLocaleString()}</Text>
+      <Text style={[s.heroAmount, { color: colors.textPrimary }]}>₩{Math.floor(totalAssets).toLocaleString()}</Text>
 
       {/* 주 지표: 투자원금 대비 수익 */}
       <View style={s.heroChangeRow}>
-        <View style={[s.heroChangeBadge, { backgroundColor: isPositive ? 'rgba(76,175,80,0.12)' : 'rgba(207,102,121,0.12)' }]}>
+        <View style={[s.heroChangeBadge, { backgroundColor: changeColor + '1F' }]}>
           <Ionicons
             name={isPositive ? 'arrow-up' : 'arrow-down'}
             size={12}
-            color={isPositive ? '#4CAF50' : '#CF6679'}
+            color={changeColor}
           />
-          <Text style={[s.heroChangeText, { color: isPositive ? '#4CAF50' : '#CF6679' }]}>
+          <Text style={[s.heroChangeText, { color: changeColor }]}>
             {isPositive ? '+' : ''}₩{Math.floor(Math.abs(totalGainLoss)).toLocaleString()}
           </Text>
-          <Text style={[s.heroChangePercent, { color: isPositive ? '#4CAF50' : '#CF6679' }]}>
+          <Text style={[s.heroChangePercent, { color: changeColor }]}>
             ({isPositive ? '+' : ''}{gainPercent.toFixed(1)}%)
           </Text>
         </View>
@@ -74,9 +77,9 @@ export default function HeroSection({
 
       {/* CFO 한줄 코멘트 */}
       {cfoWeather && (
-        <View style={s.cfoLine}>
+        <View style={[s.cfoLine, { backgroundColor: colors.success + '0F', borderColor: colors.success + '14' }]}>
           <Text style={s.cfoEmoji}>{cfoWeather.emoji}</Text>
-          <Text style={s.cfoMessage} numberOfLines={2}>{cfoWeather.message}</Text>
+          <Text style={[s.cfoMessage, { color: colors.textSecondary }]} numberOfLines={2}>{cfoWeather.message}</Text>
         </View>
       )}
     </View>
@@ -97,7 +100,6 @@ const s = StyleSheet.create({
   },
   heroDate: {
     fontSize: 14,
-    color: '#666',
     fontWeight: '500',
   },
   tierChip: {
@@ -112,7 +114,6 @@ const s = StyleSheet.create({
   heroAmount: {
     fontSize: 34,
     fontWeight: '800',
-    color: '#FFFFFF',
     letterSpacing: -1,
     marginBottom: 6,
   },
@@ -141,13 +142,11 @@ const s = StyleSheet.create({
   cfoLine: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: 'rgba(76,175,80,0.06)',
     paddingHorizontal: 14,
     paddingVertical: 12,
     borderRadius: 12,
     gap: 10,
     borderWidth: 1,
-    borderColor: 'rgba(76,175,80,0.08)',
   },
   cfoEmoji: {
     fontSize: 20,
@@ -156,7 +155,6 @@ const s = StyleSheet.create({
   cfoMessage: {
     flex: 1,
     fontSize: 13,
-    color: '#CCCCCC',
     lineHeight: 20,
     fontWeight: '500',
   },

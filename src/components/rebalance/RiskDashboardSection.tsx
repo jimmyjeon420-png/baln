@@ -2,13 +2,14 @@
  * 리스크 대시보드 섹션 — Panic Shield + FOMO Vaccine 요약/상세
  */
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SkeletonBlock } from '../SkeletonLoader';
 import PanicShieldCard from '../PanicShieldCard';
 import FomoVaccineCard from '../FomoVaccineCard';
 import { useTheme } from '../../hooks/useTheme';
+import type { ThemeColors } from '../../styles/colors';
 import type { RiskAnalysisResult } from '../../services/gemini';
 import type { PeerComparison } from '../../types/rebalanceTypes';
 
@@ -26,18 +27,20 @@ export default function RiskDashboardSection({
   const { colors, shadows } = useTheme();
   const [showDetail, setShowDetail] = useState(false);
 
-  // AI 로딩 중 스켈레톤 (레이아웃 위치 확보 → CLS 방지)
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
+  // AI 로딩 중 스켈레톤 (레이아웃 위치 확보 -> CLS 방지)
   if (isAILoading && !analysisResult) {
     return (
-      <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+      <View style={styles.card}>
         <SkeletonBlock width={100} height={16} />
         <View style={{ marginTop: 14, flexDirection: 'row', gap: 10 }}>
-          <View style={{ flex: 1, backgroundColor: colors.surfaceElevated, borderRadius: 12, padding: 14, gap: 8 }}>
+          <View style={[styles.skeletonBox]}>
             <SkeletonBlock width={24} height={24} style={{ borderRadius: 6 }} />
             <SkeletonBlock width={80} height={11} />
             <SkeletonBlock width={60} height={13} />
           </View>
-          <View style={{ flex: 1, backgroundColor: colors.surfaceElevated, borderRadius: 12, padding: 14, gap: 8 }}>
+          <View style={[styles.skeletonBox]}>
             <SkeletonBlock width={24} height={24} style={{ borderRadius: 6 }} />
             <SkeletonBlock width={80} height={11} />
             <SkeletonBlock width={60} height={13} />
@@ -53,42 +56,53 @@ export default function RiskDashboardSection({
   const panicIndex = analysisResult.panicShieldIndex;
   const highFomoCount = analysisResult.fomoAlerts.filter(a => a.severity === 'HIGH').length;
 
+  /**
+   * 요약 아이템 배경색: 충분한 알파값으로 라이트 모드에서도 가시성 확보
+   */
+  const getPanicBg = () => {
+    if (panicLevel === 'DANGER') return `${colors.error}25`;
+    if (panicLevel === 'CAUTION') return `${colors.warning}25`;
+    return `${colors.success}25`;
+  };
+
+  const getFomoBg = () => {
+    if (highFomoCount > 0) return `${colors.error}25`;
+    return `${colors.success}25`;
+  };
+
   return (
-    <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-      <View style={s.headerRow}>
+    <View style={styles.card}>
+      <View style={styles.headerRow}>
         <View>
-          <Text style={[s.cardLabel, { color: colors.textPrimary }]}>리스크 체크</Text>
-          <Text style={[s.cardLabelEn, { color: colors.textSecondary }]}>Risk Dashboard</Text>
+          <Text style={styles.cardLabel}>리스크 체크</Text>
+          <Text style={styles.cardLabelEn}>Risk Dashboard</Text>
         </View>
         <TouchableOpacity
-          style={s.expandButton}
+          style={styles.expandButton}
           onPress={() => setShowDetail(!showDetail)}
         >
-          <Text style={[s.expandButtonText, { color: colors.textTertiary }]}>{showDetail ? '접기' : '상세'}</Text>
+          <Text style={styles.expandButtonText}>{showDetail ? '접기' : '상세'}</Text>
           <Ionicons name={showDetail ? 'chevron-up' : 'chevron-down'} size={14} color={colors.textTertiary} />
         </TouchableOpacity>
       </View>
 
       {/* 요약 2줄 */}
-      <View style={s.summaryRow}>
+      <View style={styles.summaryRow}>
         {/* Panic Shield 요약 */}
-        <View style={[s.summaryItem, {
-          backgroundColor: panicLevel === 'DANGER' ? 'rgba(207, 102, 121, 0.1)'
-            : panicLevel === 'CAUTION' ? 'rgba(255, 152, 0, 0.1)' : 'rgba(76, 175, 80, 0.1)'
-        }]}>
+        <View style={[styles.summaryItem, { backgroundColor: getPanicBg() }]}>
           <Ionicons name="shield" size={18} color={
             panicLevel === 'DANGER' ? colors.error : panicLevel === 'CAUTION' ? colors.warning : colors.success
           } />
           <View style={{ flex: 1 }}>
-            <Text style={[s.summaryLabel, { color: colors.textTertiary }]}>Panic Shield</Text>
-            <Text style={[s.summaryValue, {
-              color: panicLevel === 'DANGER' ? colors.error : panicLevel === 'CAUTION' ? colors.warning : colors.success
+            <Text style={styles.summaryLabel}>Panic Shield</Text>
+            <Text style={[styles.summaryValue, {
+              color: panicLevel === 'DANGER' ? colors.error : panicLevel === 'CAUTION' ? colors.warning : (colors.primaryDark ?? colors.success)
             }]}>
               {panicIndex}/100 {panicLevel === 'SAFE' ? '안전' : panicLevel === 'CAUTION' ? '주의' : '위험'}
             </Text>
-            {/* [NEW] 패닉 실드 점수 이유 */}
+            {/* 패닉 실드 점수 이유 */}
             {analysisResult.panicShieldReason && (
-              <Text style={[s.reasonText, { color: colors.textTertiary }]} numberOfLines={2}>
+              <Text style={styles.reasonText} numberOfLines={2}>
                 {analysisResult.panicShieldReason}
               </Text>
             )}
@@ -96,13 +110,11 @@ export default function RiskDashboardSection({
         </View>
 
         {/* FOMO Vaccine 요약 */}
-        <View style={[s.summaryItem, {
-          backgroundColor: highFomoCount > 0 ? 'rgba(207, 102, 121, 0.1)' : 'rgba(76, 175, 80, 0.1)'
-        }]}>
+        <View style={[styles.summaryItem, { backgroundColor: getFomoBg() }]}>
           <Ionicons name="medical" size={18} color={highFomoCount > 0 ? colors.error : colors.success} />
           <View>
-            <Text style={[s.summaryLabel, { color: colors.textTertiary }]}>FOMO Vaccine</Text>
-            <Text style={[s.summaryValue, { color: highFomoCount > 0 ? colors.error : colors.success }]}>
+            <Text style={styles.summaryLabel}>FOMO Vaccine</Text>
+            <Text style={[styles.summaryValue, { color: highFomoCount > 0 ? colors.error : (colors.primaryDark ?? colors.success) }]}>
               {highFomoCount > 0 ? `경고 ${analysisResult.fomoAlerts.length}건` : '경고 없음'}
             </Text>
           </View>
@@ -111,7 +123,7 @@ export default function RiskDashboardSection({
 
       {/* 상세 펼침 */}
       {showDetail && (
-        <View style={[s.detailContainer, { borderTopColor: colors.border }]}>
+        <View style={styles.detailContainer}>
           <PanicShieldCard
             index={analysisResult.panicShieldIndex}
             level={analysisResult.panicShieldLevel}
@@ -126,27 +138,35 @@ export default function RiskDashboardSection({
   );
 }
 
-const s = StyleSheet.create({
-  // card: {
-  //   backgroundColor: '#141414',
-  //   marginHorizontal: 16,
-  //   marginBottom: 12,
-  //   borderRadius: 16,
-  //   padding: 18,
-  //   borderWidth: 1,
-  //   borderColor: '#1E1E1E',
-  // },
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   card: {
     marginHorizontal: 16,
     marginBottom: 12,
     borderRadius: 16,
     padding: 18,
     borderWidth: 1,
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
   },
-  // cardLabel: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
-  // cardLabelEn: { fontSize: 10, color: '#555', marginTop: 1, letterSpacing: 0.5, textTransform: 'uppercase' },
-  cardLabel: { fontSize: 15, fontWeight: '700' },
-  cardLabelEn: { fontSize: 10, marginTop: 1, letterSpacing: 0.5, textTransform: 'uppercase' },
+  skeletonBox: {
+    flex: 1,
+    backgroundColor: colors.surfaceElevated,
+    borderRadius: 12,
+    padding: 14,
+    gap: 8,
+  },
+  cardLabel: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+  cardLabelEn: {
+    fontSize: 10,
+    marginTop: 1,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+    color: colors.textSecondary,
+  },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -154,8 +174,10 @@ const s = StyleSheet.create({
     marginBottom: 14,
   },
   expandButton: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  // expandButtonText: { fontSize: 12, color: '#888' },
-  expandButtonText: { fontSize: 12 },
+  expandButtonText: {
+    fontSize: 12,
+    color: colors.textTertiary,
+  },
   summaryRow: { flexDirection: 'row', gap: 10 },
   summaryItem: {
     flex: 1,
@@ -165,20 +187,22 @@ const s = StyleSheet.create({
     borderRadius: 12,
     gap: 10,
   },
-  // summaryLabel: { fontSize: 11, color: '#888', marginBottom: 2 },
-  summaryLabel: { fontSize: 11, marginBottom: 2 },
+  summaryLabel: {
+    fontSize: 11,
+    marginBottom: 2,
+    color: colors.textTertiary,
+  },
   summaryValue: { fontSize: 13, fontWeight: '700' },
-  // reasonText: {
-  //   fontSize: 11,
-  //   color: '#888',
-  //   marginTop: 4,
-  //   lineHeight: 15,
-  // },
   reasonText: {
     fontSize: 11,
     marginTop: 4,
     lineHeight: 15,
+    color: colors.textTertiary,
   },
-  // detailContainer: { marginTop: 14, paddingTop: 14, borderTopWidth: 1, borderTopColor: '#222' },
-  detailContainer: { marginTop: 14, paddingTop: 14, borderTopWidth: 1 },
+  detailContainer: {
+    marginTop: 14,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
 });

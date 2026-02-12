@@ -15,7 +15,9 @@ import {
   StyleSheet,
   SafeAreaView,
 } from 'react-native';
+import { useTheme } from '../../hooks/useTheme';
 import { FACTOR_EXPLANATIONS, FactorType } from '../../data/factorExplanations';
+import type { ThemeColors } from '../../styles/colors';
 
 interface FactorExplanationModalProps {
   visible: boolean;
@@ -28,9 +30,12 @@ export default function FactorExplanationModal({
   factorType,
   onClose,
 }: FactorExplanationModalProps) {
+  const { colors } = useTheme();
+
   if (!factorType) return null;
 
   const explanation = FACTOR_EXPLANATIONS[factorType];
+  const styles = createStyles(colors);
 
   return (
     <Modal
@@ -96,10 +101,10 @@ export default function FactorExplanationModal({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#0A0A0A',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -108,7 +113,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#2A2A2A',
+    borderBottomColor: colors.border,
   },
   headerContent: {
     flexDirection: 'row',
@@ -121,19 +126,19 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 22,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: colors.textPrimary,
   },
   closeButton: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#2A2A2A',
+    backgroundColor: colors.surfaceElevated,
     alignItems: 'center',
     justifyContent: 'center',
   },
   closeButtonText: {
     fontSize: 20,
-    color: '#B0B0B0',
+    color: colors.textTertiary,
     fontWeight: '600',
   },
   scrollView: {
@@ -149,33 +154,33 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: colors.textPrimary,
     marginBottom: 12,
   },
   sectionText: {
     fontSize: 16,
     lineHeight: 24,
-    color: '#D0D0D0',
+    color: colors.textSecondary,
   },
   exampleBox: {
-    backgroundColor: '#141414',
+    backgroundColor: colors.surface,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#2A2A2A',
+    borderColor: colors.border,
     padding: 16,
   },
   exampleText: {
     fontSize: 15,
     lineHeight: 23,
-    color: '#D0D0D0',
+    color: colors.textSecondary,
   },
   solutionBox: {
     flexDirection: 'row',
     gap: 12,
-    backgroundColor: 'rgba(76,175,80,0.1)',
+    backgroundColor: `${colors.primary}14`,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(76,175,80,0.3)',
+    borderColor: `${colors.primary}4D`,
     padding: 16,
   },
   solutionIcon: {
@@ -186,28 +191,28 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     lineHeight: 23,
-    color: '#D0D0D0',
+    color: colors.textSecondary,
   },
   contextBox: {
-    backgroundColor: 'rgba(255,183,77,0.1)',
+    backgroundColor: `${colors.warning}1A`,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255,183,77,0.3)',
+    borderColor: `${colors.warning}4D`,
     padding: 16,
   },
   contextText: {
     fontSize: 15,
     lineHeight: 23,
-    color: '#D0D0D0',
+    color: colors.textSecondary,
   },
   footer: {
     padding: 20,
     paddingBottom: 30,
     borderTopWidth: 1,
-    borderTopColor: '#2A2A2A',
+    borderTopColor: colors.border,
   },
   footerButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: colors.primary,
     borderRadius: 12,
     height: 52,
     alignItems: 'center',

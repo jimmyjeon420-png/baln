@@ -20,7 +20,6 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import {
   loadNotificationSettings,
   saveNotificationSettings,
@@ -28,6 +27,8 @@ import {
   type NotificationSettings,
   DEFAULT_NOTIFICATION_SETTINGS,
 } from '../../src/services/notifications';
+import { useTheme } from '../../src/hooks/useTheme';
+import { HeaderBar } from '../../src/components/common/HeaderBar';
 
 // ============================================================================
 // 알림 종류별 설정 데이터
@@ -81,7 +82,7 @@ const NOTIFICATION_ITEMS: NotificationItem[] = [
 ];
 
 export default function NotificationsScreen() {
-  const router = useRouter();
+  const { colors } = useTheme();
   const [settings, setSettings] = useState<NotificationSettings>(
     DEFAULT_NOTIFICATION_SETTINGS
   );
@@ -123,49 +124,43 @@ export default function NotificationsScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.loadingWrap}>
-          <ActivityIndicator size="large" color="#4CAF50" />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* 헤더 */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={28} color="#4CAF50" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>알림 설정</Text>
-        <View style={{ width: 28 }}>
-          {syncing && <ActivityIndicator size="small" color="#4CAF50" />}
-        </View>
-      </View>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <HeaderBar
+        title="알림 설정"
+        rightElement={syncing ? <ActivityIndicator size="small" color={colors.primary} /> : undefined}
+      />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* 마스터 토글 */}
-        <View style={styles.masterSection}>
+        <View style={[styles.masterSection, { backgroundColor: colors.surface }]}>
           <View style={styles.masterRow}>
             <View style={styles.masterInfo}>
-              <Text style={styles.masterLabel}>🔔 푸시 알림</Text>
-              <Text style={styles.masterDesc}>
+              <Text style={[styles.masterLabel, { color: colors.textPrimary }]}>🔔 푸시 알림</Text>
+              <Text style={[styles.masterDesc, { color: colors.textSecondary }]}>
                 모든 알림을 한 번에 켜거나 끌 수 있어요
               </Text>
             </View>
             <Switch
               value={settings.pushEnabled}
               onValueChange={(v) => updateSetting('pushEnabled', v)}
-              trackColor={{ false: '#333333', true: '#4CAF50' }}
-              thumbColor={settings.pushEnabled ? '#FFFFFF' : '#888888'}
+              trackColor={{ false: colors.border, true: colors.primary }}
+              thumbColor={settings.pushEnabled ? colors.textPrimary : colors.textTertiary}
             />
           </View>
 
           {!settings.pushEnabled && (
             <View style={styles.masterOffBanner}>
-              <Ionicons name="notifications-off-outline" size={16} color="#CF6679" />
-              <Text style={styles.masterOffText}>
+              <Ionicons name="notifications-off-outline" size={16} color={colors.error} />
+              <Text style={[styles.masterOffText, { color: colors.error }]}>
                 알림이 꺼져 있습니다. 중요한 시장 변화를 놓칠 수 있어요.
               </Text>
             </View>
@@ -173,8 +168,8 @@ export default function NotificationsScreen() {
         </View>
 
         {/* 개별 알림 토글 */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>알림 종류</Text>
+        <View style={[styles.section, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.sectionTitle, { color: colors.textTertiary }]}>알림 종류</Text>
 
           {NOTIFICATION_ITEMS.map((item, index) => {
             const isEnabled = settings[item.key];
@@ -185,7 +180,7 @@ export default function NotificationsScreen() {
                 key={item.key}
                 style={[
                   styles.itemCard,
-                  index < NOTIFICATION_ITEMS.length - 1 && styles.itemCardBorder,
+                  index < NOTIFICATION_ITEMS.length - 1 && [styles.itemCardBorder, { borderBottomColor: colors.border }],
                   isDisabled && styles.itemCardDisabled,
                 ]}
               >
@@ -197,6 +192,7 @@ export default function NotificationsScreen() {
                       <Text
                         style={[
                           styles.itemLabel,
+                          { color: colors.textPrimary },
                           isDisabled && styles.textDisabled,
                         ]}
                       >
@@ -205,6 +201,7 @@ export default function NotificationsScreen() {
                       <Text
                         style={[
                           styles.itemSummary,
+                          { color: colors.textSecondary },
                           isDisabled && styles.textDisabled,
                         ]}
                       >
@@ -216,21 +213,22 @@ export default function NotificationsScreen() {
                     value={isEnabled}
                     onValueChange={(v) => updateSetting(item.key, v)}
                     disabled={isDisabled}
-                    trackColor={{ false: '#333333', true: '#4CAF50' }}
-                    thumbColor={isEnabled && !isDisabled ? '#FFFFFF' : '#666666'}
+                    trackColor={{ false: colors.border, true: colors.primary }}
+                    thumbColor={isEnabled && !isDisabled ? colors.textPrimary : colors.textTertiary}
                   />
                 </View>
 
                 {/* 하단: 상세 설명 */}
-                <View style={styles.detailsWrap}>
+                <View style={[styles.detailsWrap, { backgroundColor: `${colors.primary}0D` }]}>
                   {item.details.map((detail, i) => (
                     <View key={i} style={styles.detailRow}>
-                      <Text style={[styles.detailDot, isDisabled && styles.textDisabled]}>
+                      <Text style={[styles.detailDot, { color: colors.primary }, isDisabled && styles.textDisabled]}>
                         •
                       </Text>
                       <Text
                         style={[
                           styles.detailText,
+                          { color: colors.textSecondary },
                           isDisabled && styles.textDisabled,
                         ]}
                       >
@@ -245,17 +243,17 @@ export default function NotificationsScreen() {
         </View>
 
         {/* 안내 정보 */}
-        <View style={styles.infoSection}>
+        <View style={[styles.infoSection, { backgroundColor: colors.surface }]}>
           <View style={styles.infoRow}>
-            <Ionicons name="information-circle-outline" size={18} color="#888888" />
-            <Text style={styles.infoText}>
+            <Ionicons name="information-circle-outline" size={18} color={colors.textTertiary} />
+            <Text style={[styles.infoText, { color: colors.textTertiary }]}>
               알림은 휴대폰의 알림 권한이 허용되어 있어야 동작합니다.
-              기기 설정에서 baln의 알림이 켜져 있는지 확인해주세요.
+              기기 설정에서 bal<Text style={{ color: '#4CAF50' }}>n</Text>의 알림이 켜져 있는지 확인해주세요.
             </Text>
           </View>
           <View style={[styles.infoRow, { marginTop: 8 }]}>
-            <Ionicons name="time-outline" size={18} color="#888888" />
-            <Text style={styles.infoText}>
+            <Ionicons name="time-outline" size={18} color={colors.textTertiary} />
+            <Text style={[styles.infoText, { color: colors.textTertiary }]}>
               알림 발송 시간은 기기의 현지 시간 기준입니다.
               가격 변동 알림 7:30 → 아침 브리핑 8:00 → 리밸런싱 점검 9:00(월요일) 순서로 도착합니다.
             </Text>
@@ -275,24 +273,11 @@ export default function NotificationsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
   },
   loadingWrap: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#FFFFFF',
   },
   content: {
     flex: 1,
@@ -301,7 +286,6 @@ const styles = StyleSheet.create({
 
   // 마스터 토글
   masterSection: {
-    backgroundColor: '#1E1E1E',
     borderRadius: 16,
     marginBottom: 20,
     overflow: 'hidden',
@@ -319,11 +303,9 @@ const styles = StyleSheet.create({
   masterLabel: {
     fontSize: 17,
     fontWeight: '700',
-    color: '#FFFFFF',
   },
   masterDesc: {
     fontSize: 13,
-    color: '#AAAAAA',
     marginTop: 4,
   },
   masterOffBanner: {
@@ -336,13 +318,11 @@ const styles = StyleSheet.create({
   },
   masterOffText: {
     fontSize: 12,
-    color: '#CF6679',
     flex: 1,
   },
 
   // 개별 알림 섹션
   section: {
-    backgroundColor: '#1E1E1E',
     borderRadius: 16,
     overflow: 'hidden',
     marginBottom: 16,
@@ -350,7 +330,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#888888',
     paddingHorizontal: 16,
     paddingTop: 16,
     paddingBottom: 8,
@@ -362,7 +341,6 @@ const styles = StyleSheet.create({
   },
   itemCardBorder: {
     borderBottomWidth: 1,
-    borderBottomColor: '#2A2A2A',
   },
   itemCardDisabled: {
     opacity: 0.4,
@@ -388,11 +366,9 @@ const styles = StyleSheet.create({
   itemLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#FFFFFF',
   },
   itemSummary: {
     fontSize: 13,
-    color: '#AAAAAA',
     marginTop: 2,
   },
 
@@ -400,7 +376,6 @@ const styles = StyleSheet.create({
   detailsWrap: {
     marginTop: 12,
     marginLeft: 34, // 아이콘 너비만큼 들여쓰기
-    backgroundColor: 'rgba(76, 175, 80, 0.05)',
     borderRadius: 8,
     padding: 10,
   },
@@ -410,25 +385,22 @@ const styles = StyleSheet.create({
   },
   detailDot: {
     fontSize: 12,
-    color: '#4CAF50',
     marginRight: 6,
     marginTop: 1,
   },
   detailText: {
     fontSize: 12,
-    color: '#BBBBBB',
     flex: 1,
     lineHeight: 18,
   },
 
   // 비활성화 텍스트
   textDisabled: {
-    color: '#555555',
+    opacity: 0.4,
   },
 
   // 하단 안내
   infoSection: {
-    backgroundColor: '#1A1A1A',
     borderRadius: 12,
     padding: 14,
   },
@@ -438,7 +410,6 @@ const styles = StyleSheet.create({
   },
   infoText: {
     fontSize: 12,
-    color: '#888888',
     flex: 1,
     lineHeight: 18,
   },

@@ -5,10 +5,11 @@
  * 큰 이모지 + 등급 + 점수로 직관적으로 표현.
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import type { HealthScoreResult } from '../../../services/rebalanceScore';
 import { useTheme } from '../../../contexts/ThemeContext';
+import type { ThemeColors } from '../../../styles/colors';
 
 interface OneLinerDiagnosisProps {
   healthScore: HealthScoreResult;
@@ -23,38 +24,40 @@ const GRADE_EMOJI: Record<HealthScoreResult['grade'], string> = {
 };
 
 export default function OneLinerDiagnosis({ healthScore }: OneLinerDiagnosisProps) {
-  const { colors } = useTheme();
+  const { colors, shadows } = useTheme();
   const emoji = GRADE_EMOJI[healthScore.grade];
 
-  return (
-    <View style={[s.card, { backgroundColor: colors.background, borderColor: colors.border }]}>
-      <Text style={s.emoji}>{emoji}</Text>
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
-      <View style={s.textContainer}>
-        <Text style={[s.title, { color: colors.textSecondary }]}>
+  return (
+    <View style={[styles.card, shadows.sm]}>
+      <Text style={styles.emoji}>{emoji}</Text>
+
+      <View style={styles.textContainer}>
+        <Text style={styles.title}>
           {'투자 컨디션: '}
-          <Text style={[s.gradeLabel, { color: healthScore.gradeColor }]}>
+          <Text style={[styles.gradeLabel, { color: healthScore.gradeColor }]}>
             {healthScore.gradeLabel}
           </Text>
         </Text>
 
-        <Text style={[s.score, { color: colors.textPrimary }]}>
+        <Text style={styles.score}>
           {healthScore.totalScore}
-          <Text style={[s.scoreUnit, { color: colors.textSecondary }]}>점</Text>
+          <Text style={styles.scoreUnit}>점</Text>
         </Text>
       </View>
 
-      <Text style={[s.summary, { color: colors.textSecondary }]}>{healthScore.summary}</Text>
+      <Text style={styles.summary}>{healthScore.summary}</Text>
     </View>
   );
 }
 
-const s = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   card: {
-    // backgroundColor: '#141414', // → colors.cardBackground
+    backgroundColor: colors.surface,
     borderRadius: 16,
     borderWidth: 1,
-    // borderColor: '#2A2A2A', // → colors.border
+    borderColor: colors.border,
     padding: 24,
     marginHorizontal: 16,
     marginTop: 12,
@@ -70,7 +73,7 @@ const s = StyleSheet.create({
   },
   title: {
     fontSize: 16,
-    // color: '#B0B0B0', // → colors.textSecondary
+    color: colors.textSecondary,
     marginBottom: 4,
   },
   gradeLabel: {
@@ -80,16 +83,16 @@ const s = StyleSheet.create({
   score: {
     fontSize: 28,
     fontWeight: '700',
-    // color: '#FFFFFF', // → colors.textPrimary
+    color: colors.textPrimary,
   },
   scoreUnit: {
     fontSize: 16,
     fontWeight: '400',
-    // color: '#B0B0B0', // → colors.textSecondary
+    color: colors.textSecondary,
   },
   summary: {
     fontSize: 14,
-    // color: '#B0B0B0', // → colors.textSecondary
+    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
     marginTop: 4,

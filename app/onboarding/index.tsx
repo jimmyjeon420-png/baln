@@ -377,7 +377,7 @@ export default function OnboardingScreen() {
       <View style={styles.stepContent}>
         <Text style={styles.welcomeEmoji}>{'👋'}</Text>
         <Text style={styles.heading}>
-          {'baln에 오신 걸\n환영합니다'}
+          bal<Text style={{ color: '#4CAF50' }}>n</Text>{'에 오신 걸\n환영합니다'}
         </Text>
         <Text style={styles.subheading}>
           {'매일 5분, 시장 맥락을 읽어보세요.\n자기만의 투자 기준이 생깁니다.'}

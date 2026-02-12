@@ -6,9 +6,10 @@
  * "안심을 판다, 불안을 팔지 않는다" 원칙 준수.
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '../../../hooks/useTheme';
+import type { ThemeColors } from '../../../styles/colors';
 
 interface CfoWeather {
   emoji: string;
@@ -35,42 +36,43 @@ export default function ReassuranceCard({ totalGainLoss, cfoWeather }: Reassuran
   const { colors } = useTheme();
   const daily = getDailyMessage(totalGainLoss);
 
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
-    <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-      <Text style={[s.cardTitle, { color: colors.textPrimary }]}>
+    <View style={styles.card}>
+      <Text style={styles.cardTitle}>
         {'\uD83D\uDCAC 안심 한마디'}
       </Text>
 
       {cfoWeather && (
-        <View style={[s.weatherRow, { backgroundColor: colors.surface }]}>
-          <Text style={s.weatherEmoji}>{cfoWeather.emoji}</Text>
-          <Text style={[s.weatherMessage, { color: colors.textPrimary }]}>{cfoWeather.message}</Text>
+        <View style={styles.weatherRow}>
+          <Text style={styles.weatherEmoji}>{cfoWeather.emoji}</Text>
+          <Text style={styles.weatherMessage}>{cfoWeather.message}</Text>
         </View>
       )}
 
-      <View style={s.dailyRow}>
-        <Text style={s.dailyEmoji}>{daily.emoji}</Text>
-        <Text style={[s.dailyText, { color: colors.textSecondary }]}>{daily.text}</Text>
+      <View style={styles.dailyRow}>
+        <Text style={styles.dailyEmoji}>{daily.emoji}</Text>
+        <Text style={styles.dailyText}>{daily.text}</Text>
       </View>
     </View>
   );
 }
 
-const s = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   card: {
-    // backgroundColor: '#141414', // Now dynamic via colors.card
+    backgroundColor: colors.surface,
     borderRadius: 16,
     borderWidth: 1,
-    // borderColor: '#1B3A2A', // Now dynamic via colors.border
+    borderColor: colors.border,
     padding: 24,
     marginHorizontal: 16,
     marginTop: 12,
-    // shadows added dynamically
   },
   cardTitle: {
     fontSize: 16,
     fontWeight: '700',
-    // color: '#FFFFFF', // Now dynamic via colors.text
+    color: colors.textPrimary,
     marginBottom: 16,
   },
   weatherRow: {
@@ -78,9 +80,11 @@ const s = StyleSheet.create({
     alignItems: 'flex-start',
     gap: 10,
     marginBottom: 14,
-    // backgroundColor: '#1A2A1F', // Now dynamic via colors.surface
+    backgroundColor: colors.surfaceElevated,
     padding: 14,
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   weatherEmoji: {
     fontSize: 24,
@@ -88,7 +92,7 @@ const s = StyleSheet.create({
   weatherMessage: {
     flex: 1,
     fontSize: 16,
-    // color: '#FFFFFF', // Now dynamic via colors.text
+    color: colors.textPrimary,
     lineHeight: 24,
   },
   dailyRow: {
@@ -101,7 +105,7 @@ const s = StyleSheet.create({
   },
   dailyText: {
     fontSize: 16,
-    // color: '#B0B0B0', // Now dynamic via colors.textSecondary
+    color: colors.textSecondary,
     lineHeight: 22,
   },
 });

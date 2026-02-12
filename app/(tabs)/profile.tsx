@@ -347,7 +347,7 @@ export default function ProfileScreen() {
         )}
 
         {/* ── 버전 정보 ── */}
-        <Text style={[styles.versionText, { color: colors.textTertiary }]}>baln v3.0.0</Text>
+        <Text style={[styles.versionText, { color: colors.textTertiary }]}>bal<Text style={{ color: '#4CAF50' }}>n</Text> v3.0.0</Text>
       </ScrollView>
     </SafeAreaView>
   );

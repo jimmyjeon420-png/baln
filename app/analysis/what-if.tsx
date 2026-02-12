@@ -144,7 +144,7 @@ export default function WhatIfScreen() {
     let creditsCharged = false;
 
     try {
-      // 크레딧 차감 (spendCredits 내부에서 무료 기간 자동 처리)
+      // 크레딧 차감 (1C/회)
       const spendResult = await spendCredits(cost, 'what_if');
       if (!spendResult.success) {
         setExtremeError(spendResult.errorMessage || '크레딧이 부족합니다');

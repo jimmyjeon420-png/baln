@@ -154,7 +154,7 @@ export default function ShareableCard({
       <View style={styles.topRow}>
         <View style={styles.logoArea}>
           <View style={styles.logoRow}>
-            <Text style={styles.logoBaln}>baln</Text>
+            <Text style={styles.logoBaln}>bal<Text style={{ color: '#4CAF50' }}>n</Text></Text>
             <Text style={styles.logoDot}>.logic</Text>
           </View>
           <Text style={styles.logoSubtext}>AI Portfolio Optimizer</Text>
@@ -232,7 +232,7 @@ export default function ShareableCard({
       {/* 워터마크: baln.logic 브랜딩 */}
       <View style={styles.watermarkRow}>
         <View style={styles.watermarkLine} />
-        <Text style={styles.watermarkBaln}>baln</Text>
+        <Text style={styles.watermarkBaln}>bal<Text style={{ color: '#4CAF50' }}>n</Text></Text>
         <Text style={styles.watermarkDot}>.logic</Text>
         <View style={styles.watermarkLine} />
       </View>

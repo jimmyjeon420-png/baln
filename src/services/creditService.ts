@@ -97,17 +97,7 @@ export async function spendCredits(
       return { success: false, newBalance: 0, errorMessage: '로그인이 필요합니다.' };
     }
 
-    // 무료 기간: 크레딧 차감 없이 바로 성공 반환
-    if (!shouldChargeCredits()) {
-      console.log(`[Credits] 무료 기간 — ${featureType} 크레딧 차감 스킵 (${amount}C)`);
-      // 현재 잔액 조회만 해서 반환
-      const credits = await getMyCredits();
-      return {
-        success: true,
-        newBalance: credits?.balance ?? 0,
-      };
-    }
-
+    // 무료 기간에도 크레딧 차감 (활동 참여로 얻은 크레딧 순환 경제)
     const { data, error } = await supabase.rpc('spend_credits', {
       p_user_id: user.id,
       p_amount: amount,
@@ -250,18 +240,12 @@ export async function getCreditHistory(
 // 티어 할인 계산
 // ============================================================================
 
-/** 티어 할인이 적용된 기능 비용 계산 (무료 기간: 0원 반환) */
+/** 티어 할인이 적용된 기능 비용 계산 (무료 기간에도 크레딧 차감) */
 export function getDiscountedCost(
   featureType: AIFeatureType,
   userTier: UserTier
 ): { originalCost: number; discountedCost: number; discountPercent: number; isFree: boolean } {
   const originalCost = FEATURE_COSTS[featureType];
-
-  // 무료 기간: 모든 AI 기능 0원
-  if (!shouldChargeCredits()) {
-    return { originalCost, discountedCost: 0, discountPercent: 100, isFree: true };
-  }
-
   const discountPercent = TIER_DISCOUNTS[userTier];
   const discountedCost = Math.round(originalCost * (1 - discountPercent / 100));
 

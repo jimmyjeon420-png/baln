@@ -59,6 +59,36 @@ export interface CreditPackage {
 // AI 기능별 Input/Result 타입
 // ============================================================================
 
+// --- 재무 팩트 데이터 (Yahoo Finance API 조회 결과) ---
+export interface StockFundamentals {
+  ticker: string;
+  name: string;
+  marketCap?: number;
+  marketCapKRW?: number;
+  trailingPE?: number;
+  forwardPE?: number;
+  priceToBook?: number;
+  returnOnEquity?: number;
+  operatingMargins?: number;
+  profitMargins?: number;
+  revenueGrowth?: number;
+  earningsGrowth?: number;
+  debtToEquity?: number;
+  currentPrice?: number;
+  currency?: string;
+  quarterlyEarnings?: Array<{
+    quarter: string;
+    date: string;
+    revenue?: number;
+    earnings?: number;
+    revenueKRW?: number;
+    earningsKRW?: number;
+  }>;
+  exchangeRate?: number;     // 적용된 실시간 환율 (USD/KRW)
+  fetchedAt: string;
+  dataSource: 'yahoo_finance_v10';
+}
+
 // --- AI 종목 딥다이브 ---
 export interface DeepDiveInput {
   ticker: string;
@@ -66,6 +96,7 @@ export interface DeepDiveInput {
   currentPrice?: number;
   avgPrice?: number;
   quantity?: number;
+  fundamentals?: StockFundamentals;
 }
 
 export interface DeepDiveResult {
@@ -88,9 +119,15 @@ export interface DeepDiveResult {
     };
     news: {
       title: string;
-      sentiment: 'POSITIVE' | 'NEUTRAL' | 'NEGATIVE';
+      sentiment: 'VERY_POSITIVE' | 'POSITIVE' | 'NEUTRAL' | 'NEGATIVE' | 'VERY_NEGATIVE';
       highlights: string[];
       recentNews: { title: string; impact: string; date: string }[];
+    };
+    quality?: {
+      title: string;
+      score: number;
+      highlights: string[];
+      metrics?: { label: string; value: string; status: 'good' | 'neutral' | 'bad'; detail?: string }[];
     };
     aiOpinion: {
       title: string;
@@ -136,6 +173,11 @@ export interface DeepDiveResult {
   marketCap?: number;
   per?: number;
   pbr?: number;
+  dataSources?: Array<{
+    name: string;
+    detail: string;
+    date: string;
+  }>;
 }
 
 // --- What-If 시뮬레이터 ---
@@ -305,8 +347,8 @@ export const CREDIT_PACKAGES: CreditPackage[] = [
 
 /** 기능별 크레딧 비용 (웹툰 1화 = ₩300 컨셉, 1크레딧 = ₩100) */
 export const FEATURE_COSTS: Record<AIFeatureType, number> = {
-  deep_dive: 5,       // ₩500 — 커피 반 잔
-  what_if: 2,         // ₩200 — 극한 시나리오 시뮬레이션
+  deep_dive: 1,       // ₩100 — 1크레딧 = 1액션 통일
+  what_if: 1,         // ₩100 — 1크레딧 = 1액션 통일
   tax_report: 10,     // ₩1,000 — 천원에 세금 계산
   ai_cfo_chat: 1,     // ₩100/메시지 — 부담 없이 대화
   tier_insights: 3,   // ₩300 — 웹툰 1화
@@ -317,7 +359,7 @@ export const FEATURE_LABELS: Record<AIFeatureType, string> = {
   deep_dive: 'AI 종목 딥다이브',
   what_if: 'What-If 시뮬레이터',
   tax_report: '세금 최적화 리포트',
-  ai_cfo_chat: 'AI CFO 1:1 채팅',
+  ai_cfo_chat: 'AI 버핏과 티타임',
   tier_insights: '투자 DNA 비교',
 };
 

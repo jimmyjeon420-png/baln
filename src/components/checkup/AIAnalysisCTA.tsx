@@ -15,8 +15,12 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { isFreePeriod } from '../../config/freePeriod';
 import { useTheme } from '../../hooks/useTheme';
+
+const FEATURE_COLOR_DEEP_DIVE = '#2196F3';
+const FEATURE_COLOR_WHAT_IF = '#FF9800';
+const FEATURE_COLOR_TAX_REPORT = '#9C27B0';
+const FEATURE_COLOR_AI_CFO = '#4CAF50';
 
 /**
  * AI 기능 항목
@@ -36,7 +40,7 @@ const AI_FEATURES: AIFeatureItem[] = [
     icon: 'telescope-outline',
     title: '종목 딥다이브',
     description: '보유 종목 심층 분석',
-    color: '#2196F3',
+    color: FEATURE_COLOR_DEEP_DIVE,
     route: '/marketplace?feature=deep_dive',
     comingSoon: true,
     comingSoonDate: '2월 말',
@@ -45,7 +49,7 @@ const AI_FEATURES: AIFeatureItem[] = [
     icon: 'git-branch-outline',
     title: 'What-If 시뮬',
     description: '매도 후 시나리오 예측',
-    color: '#FF9800',
+    color: FEATURE_COLOR_WHAT_IF,
     route: '/marketplace?feature=what_if',
     // 활성화됨 - comingSoon 없음
   },
@@ -53,16 +57,16 @@ const AI_FEATURES: AIFeatureItem[] = [
     icon: 'calculator-outline',
     title: '세금 리포트',
     description: '양도세·증여세 계산',
-    color: '#9C27B0',
+    color: FEATURE_COLOR_TAX_REPORT,
     route: '/marketplace?feature=tax_report',
     comingSoon: true,
     comingSoonDate: '2월 말',
   },
   {
     icon: 'chatbubbles-outline',
-    title: 'AI CFO 채팅',
+    title: 'AI 버핏과 티타임',
     description: '실시간 투자 상담',
-    color: '#4CAF50',
+    color: FEATURE_COLOR_AI_CFO,
     route: '/marketplace?feature=ai_cfo_chat',
     comingSoon: true,
     comingSoonDate: '2월 말',
@@ -79,11 +83,9 @@ export default function AIAnalysisCTA() {
       <View style={styles.header}>
         <Ionicons name="sparkles" size={24} color={colors.premium.purple} />
         <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>AI 심화 분석</Text>
-        {isFreePeriod() && (
-          <View style={styles.freeBadge}>
-            <Text style={styles.freeBadgeText}>지금 무료!</Text>
-          </View>
-        )}
+        <View style={[styles.freeBadge, { backgroundColor: colors.premium.purple }]}>
+          <Text style={styles.freeBadgeText}>1C/회</Text>
+        </View>
       </View>
 
       <Text style={[styles.headerDesc, { color: colors.textTertiary }]}>
@@ -123,7 +125,7 @@ export default function AIAnalysisCTA() {
                 {feature.title}
               </Text>
               {feature.comingSoon && (
-                <View style={styles.comingSoonBadge}>
+                <View style={[styles.comingSoonBadge, { backgroundColor: colors.textTertiary }]}>
                   <Text style={styles.comingSoonText}>준비 중</Text>
                 </View>
               )}
@@ -173,7 +175,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   freeBadge: {
-    backgroundColor: '#FF6B6B',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
@@ -225,7 +226,6 @@ const styles = StyleSheet.create({
     // color는 동적으로 적용됨
   },
   comingSoonBadge: {
-    backgroundColor: '#666',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 6,

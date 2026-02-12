@@ -27,6 +27,7 @@ import type { Asset } from '../../types/asset';
 import type { PortfolioAsset } from '../../services/gemini';
 import type { InvestorLevel } from '../../hooks/useCheckupLevel';
 import type { PeerComparison } from '../../types/rebalanceTypes';
+import type { ThemeColors } from '../../styles/colors';
 
 // ── Props ──
 
@@ -51,12 +52,12 @@ interface IntermediateCheckupViewProps {
   onLevelChange: (level: InvestorLevel) => void;
 }
 
-// ── 점수 → 색상 매핑 ──
+// ── 점수 → 색상 매핑 (테마 인식) ──
 
-function getScoreColor(score: number): string {
-  if (score >= 70) return '#4CAF50';
-  if (score >= 40) return '#FFB74D';
-  return '#CF6679';
+function getScoreColor(score: number, colors: ThemeColors): string {
+  if (score >= 70) return colors.success;
+  if (score >= 40) return colors.warning;
+  return colors.error;
 }
 
 // ── 컴포넌트 ──
@@ -112,11 +113,11 @@ export default function IntermediateCheckupView({
       {/* 4. 취약 팩터 Top 3 (인라인 렌더링) */}
       <View style={s.weakFactorsContainer}>
         {weakestFactors.map((factor: FactorResult) => {
-          const color = getScoreColor(factor.score);
+          const color = getScoreColor(factor.score, colors);
           const barWidth = Math.max(factor.score, 5); // 최소 5% 너비
 
           return (
-            <View key={factor.label} style={[s.factorCard, { backgroundColor: colors.surfaceLight }, shadows.sm]}>
+            <View key={factor.label} style={[s.factorCard, { backgroundColor: colors.surface, borderColor: colors.border }, shadows.sm]}>
               <View style={s.factorHeader}>
                 <Text style={s.factorIcon}>{factor.icon}</Text>
                 <Text style={[s.factorLabel, { color: colors.textPrimary }]}>{factor.label}</Text>
@@ -207,8 +208,10 @@ const s = StyleSheet.create({
     marginHorizontal: 16,
     marginBottom: 8,
     padding: 14,
-    // backgroundColor: 동적 적용 (colors.surfaceLight)
+    // backgroundColor: 동적 적용 (colors.surface)
     borderRadius: 12,
+    borderWidth: 1,
+    // borderColor: 동적 적용 (colors.border)
   },
 
   factorHeader: {

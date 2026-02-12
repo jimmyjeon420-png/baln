@@ -412,7 +412,7 @@ export default function CheckupScreen() {
           />
         )}
 
-        {/* AI 심화 분석 도구 (Agent 4) */}
+        {/* AI 심화 분석 도구 */}
         <View style={{ marginHorizontal: 16, marginTop: 24 }}>
           <Text style={{ fontSize: 18, fontWeight: '700', marginBottom: 4, color: colors.textPrimary }}>
             🤖 AI 심화 분석
@@ -491,7 +491,7 @@ export default function CheckupScreen() {
               <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
             </TouchableOpacity>
 
-            {/* AI CFO 채팅 */}
+            {/* AI 버핏과 티타임 */}
             <TouchableOpacity
               onPress={() => router.push('/analysis/cfo-chat')}
               style={{
@@ -502,10 +502,10 @@ export default function CheckupScreen() {
                 alignItems: 'center',
               }}
             >
-              <Text style={{ fontSize: 32, marginRight: 16 }}>💬</Text>
+              <Text style={{ fontSize: 32, marginRight: 16 }}>☕</Text>
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 15, fontWeight: '600', color: colors.textPrimary }}>
-                  AI CFO 채팅
+                  AI 버핏과 티타임
                 </Text>
                 <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>
                   실시간 대화형 조언

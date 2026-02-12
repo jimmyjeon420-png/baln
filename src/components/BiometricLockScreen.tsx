@@ -47,7 +47,7 @@ export default function BiometricLockScreen({ onUnlock }: BiometricLockScreenPro
         <View style={styles.iconCircle}>
           <Ionicons name="lock-closed" size={48} color="#4CAF50" />
         </View>
-        <Text style={styles.appName}>baln</Text>
+        <Text style={styles.appName}>bal<Text style={{ color: '#4CAF50' }}>n</Text></Text>
         <Text style={styles.subtitle}>앱이 잠겨 있습니다</Text>
       </View>
 

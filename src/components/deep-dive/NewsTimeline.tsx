@@ -17,7 +17,7 @@ import { useTheme } from '../../hooks/useTheme';
 // ============================================================================
 
 export interface NewsTimelineProps {
-  sentiment: 'POSITIVE' | 'NEUTRAL' | 'NEGATIVE';
+  sentiment: 'VERY_POSITIVE' | 'POSITIVE' | 'NEUTRAL' | 'NEGATIVE' | 'VERY_NEGATIVE';
   highlights: string[];
   recentNews: Array<{
     title: string;
@@ -31,9 +31,11 @@ export interface NewsTimelineProps {
 // ============================================================================
 
 const SENTIMENT_CONFIG = {
+  VERY_POSITIVE: { label: '매우 긍정', icon: 'rocket' as const, colorKey: 'success' as const },
   POSITIVE: { label: '긍정적', icon: 'trending-up' as const, colorKey: 'success' as const },
   NEUTRAL: { label: '중립', icon: 'remove' as const, colorKey: 'neutral' as const },
   NEGATIVE: { label: '부정적', icon: 'trending-down' as const, colorKey: 'error' as const },
+  VERY_NEGATIVE: { label: '매우 부정', icon: 'alert-circle' as const, colorKey: 'error' as const },
 };
 
 const getImpactColor = (impact: string, colors: any) => {

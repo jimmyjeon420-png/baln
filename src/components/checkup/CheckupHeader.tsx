@@ -10,11 +10,12 @@
  * - Panic Shield 점수 (간단 표시)
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { HealthScoreResult } from '../../services/rebalanceScore';
 import { useTheme } from '../../hooks/useTheme';
+import type { ThemeColors } from '../../styles/colors';
 
 interface CheckupHeaderProps {
   /** 건강 점수 (6팩터) */
@@ -26,17 +27,6 @@ interface CheckupHeaderProps {
   /** 총 자산 */
   totalAssets: number;
 }
-
-/**
- * 건강 등급별 색상
- */
-const GRADE_COLORS: Record<string, string> = {
-  S: '#4CAF50', // 초록
-  A: '#64B5F6', // 파랑
-  B: '#FFA726', // 주황
-  C: '#FF7043', // 빨강-주황
-  D: '#CF6679', // 빨강
-};
 
 /**
  * 건강 등급별 아이콘
@@ -74,6 +64,21 @@ function generateSummary(healthScore: HealthScoreResult): string {
   }
 }
 
+/**
+ * 등급 색상을 테마에 맞게 반환
+ * 라이트 모드에서 텍스트로 쓰일 때 WCAG AA 대비 확보를 위해 primaryDark 사용
+ */
+function getGradeColor(grade: string, colors: ThemeColors): string {
+  const gradeColors: Record<string, string> = {
+    S: colors.primaryDark ?? colors.primary,
+    A: colors.info,
+    B: colors.warning,
+    C: colors.error,
+    D: colors.error,
+  };
+  return gradeColors[grade] ?? colors.textPrimary;
+}
+
 export default function CheckupHeader({
   healthScore,
   panicScore,
@@ -81,9 +86,11 @@ export default function CheckupHeader({
   totalAssets,
 }: CheckupHeaderProps) {
   const { colors, shadows } = useTheme();
-  const gradeColor = healthScore.gradeColor || GRADE_COLORS[healthScore.grade];
+  const gradeColor = healthScore.gradeColor || getGradeColor(healthScore.grade, colors);
   const gradeIcon = GRADE_ICONS[healthScore.grade];
   const summary = generateSummary(healthScore);
+
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   // Panic Shield 이유 생성 (없으면 점수 기반 기본 메시지)
   const getPanicReason = (): string => {
@@ -113,39 +120,41 @@ export default function CheckupHeader({
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.surface, borderColor: colors.border }, shadows.md]}>
+    <View style={[styles.container, shadows.md]}>
       {/* 상단: 건강 등급 뱃지 */}
       <View style={styles.gradeSection}>
-        <View style={[styles.gradeBadge, { backgroundColor: gradeColor + '20' }]}>
+        <View style={[styles.gradeBadge, { backgroundColor: `${gradeColor}20` }]}>
           <Ionicons name={gradeIcon} size={28} color={gradeColor} />
           <Text style={[styles.gradeText, { color: gradeColor }]}>
             {healthScore.grade}
           </Text>
         </View>
         <View style={styles.gradeInfo}>
-          <Text style={[styles.scoreText, { color: colors.textPrimary }]}>{Math.round(healthScore.totalScore)}점</Text>
-          <Text style={[styles.totalAssetsText, { color: colors.textSecondary }]}>{formatAssets(totalAssets)}</Text>
+          <Text style={styles.scoreText}>{Math.round(healthScore.totalScore)}점</Text>
+          <Text style={styles.totalAssetsText}>{formatAssets(totalAssets)}</Text>
         </View>
       </View>
 
       {/* 중간: 한 줄 요약 */}
-      <View style={[styles.summarySection, { borderTopColor: colors.border }]}>
-        <Text style={[styles.summaryText, { color: colors.textPrimary }]}>{summary}</Text>
+      <View style={styles.summarySection}>
+        <Text style={styles.summaryText}>{summary}</Text>
       </View>
 
       {/* 하단: Panic Shield 간단 표시 (있을 때만) */}
       {panicScore !== undefined && (
-        <View style={[styles.panicSection, { borderTopColor: colors.border }]}>
+        <View style={styles.panicSection}>
           <View style={styles.panicRow}>
-            <Ionicons name="shield-checkmark-outline" size={16} color="#4CAF50" />
-            <Text style={[styles.panicLabel, { color: colors.textSecondary }]}>Panic Shield</Text>
-            <Text style={styles.panicScore}>{Math.round(panicScore)}점</Text>
-            <Text style={[styles.panicDesc, { color: colors.textSecondary }]}>
+            <Ionicons name="shield-checkmark-outline" size={16} color={colors.primaryDark ?? colors.primary} />
+            <Text style={styles.panicLabel}>Panic Shield</Text>
+            <Text style={[styles.panicScore, { color: colors.primaryDark ?? colors.primary }]}>
+              {Math.round(panicScore)}점
+            </Text>
+            <Text style={styles.panicDesc}>
               {panicScore >= 70 ? '강함' : panicScore >= 50 ? '보통' : '취약'}
             </Text>
           </View>
           {/* 점수 이유 (달리오: 맥락 제공) */}
-          <Text style={[styles.panicReason, { color: colors.textTertiary }]}>
+          <Text style={styles.panicReason}>
             {getPanicReason()}
           </Text>
         </View>
@@ -154,15 +163,15 @@ export default function CheckupHeader({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     marginHorizontal: 16,
     marginVertical: 12,
     padding: 20,
-    // backgroundColor: 동적 적용 (colors.surface)
+    backgroundColor: colors.surface,
     borderRadius: 16,
     borderWidth: 1,
-    // borderColor: 동적 적용 (colors.border)
+    borderColor: colors.border,
   },
   gradeSection: {
     flexDirection: 'row',
@@ -188,28 +197,28 @@ const styles = StyleSheet.create({
   scoreText: {
     fontSize: 28,
     fontWeight: '700',
-    // color: 동적 적용 (colors.textPrimary)
+    color: colors.textPrimary,
     marginBottom: 4,
   },
   totalAssetsText: {
     fontSize: 14,
-    // color: 동적 적용 (colors.textSecondary)
+    color: colors.textSecondary,
   },
   summarySection: {
     paddingTop: 16,
     borderTopWidth: 1,
-    // borderTopColor: 동적 적용 (colors.border)
+    borderTopColor: colors.border,
   },
   summaryText: {
     fontSize: 15,
-    // color: 동적 적용 (colors.textPrimary)
+    color: colors.textPrimary,
     lineHeight: 22,
   },
   panicSection: {
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    // borderTopColor: 동적 적용 (colors.border)
+    borderTopColor: colors.border,
   },
   panicRow: {
     flexDirection: 'row',
@@ -218,24 +227,23 @@ const styles = StyleSheet.create({
   },
   panicLabel: {
     fontSize: 13,
-    // color: 동적 적용 (colors.textSecondary)
+    color: colors.textSecondary,
     marginLeft: 6,
   },
   panicScore: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#4CAF50', // 고정 색상 (강조색)
     marginLeft: 8,
   },
   panicDesc: {
     fontSize: 13,
-    // color: 동적 적용 (colors.textSecondary)
+    color: colors.textSecondary,
     marginLeft: 4,
   },
   panicReason: {
     fontSize: 12,
-    // color: 동적 적용 (colors.textTertiary)
-    marginLeft: 22, // 아이콘 + 라벨 너비만큼 들여쓰기
+    color: colors.textTertiary,
+    marginLeft: 22,
     fontStyle: 'italic',
   },
 });

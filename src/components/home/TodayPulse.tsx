@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import { COLORS, SIZES } from '../../styles/theme';
+import { SIZES } from '../../styles/theme';
+import { useTheme } from '../../hooks/useTheme';
 import { useHaptics } from '../../hooks/useHaptics';
 import { useSharedPortfolio } from '../../hooks/useSharedPortfolio';
 import { useSharedMarketData } from '../../hooks/useSharedAnalysis';
@@ -26,6 +27,7 @@ interface TodayPulseProps {
 export default function TodayPulse({ totalAssets, yesterdayChange }: TodayPulseProps) {
   const router = useRouter();
   const haptics = useHaptics();
+  const { colors, shadows } = useTheme();
   const { assets } = useSharedPortfolio();
 
   // 건강 점수 계산
@@ -53,7 +55,7 @@ export default function TodayPulse({ totalAssets, yesterdayChange }: TodayPulseP
   };
 
   // 수익률 색상
-  const changeColor = yesterdayChange >= 0 ? COLORS.primary : COLORS.error;
+  const changeColor = yesterdayChange >= 0 ? colors.primary : colors.error;
 
   // 터치 핸들러: 처방전 탭으로 이동
   const handlePress = () => {
@@ -63,7 +65,7 @@ export default function TodayPulse({ totalAssets, yesterdayChange }: TodayPulseP
 
   return (
     <TouchableOpacity
-      style={styles.container}
+      style={[styles.container, { backgroundColor: colors.surface }, shadows.sm]}
       onPress={handlePress}
       activeOpacity={0.7}
     >
@@ -71,10 +73,10 @@ export default function TodayPulse({ totalAssets, yesterdayChange }: TodayPulseP
         {/* 💰 총 자산 */}
         <View style={styles.section}>
           <Text style={styles.emoji}>💰</Text>
-          <Text style={styles.value}>{formatAssets(totalAssets)}</Text>
+          <Text style={[styles.value, { color: colors.textPrimary }]}>{formatAssets(totalAssets)}</Text>
         </View>
 
-        <View style={styles.divider} />
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
         {/* 🏥 건강 등급 */}
         <View style={styles.section}>
@@ -84,7 +86,7 @@ export default function TodayPulse({ totalAssets, yesterdayChange }: TodayPulseP
           </Text>
         </View>
 
-        <View style={styles.divider} />
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
         {/* 📈/📉 어제 대비 */}
         <View style={styles.section}>
@@ -100,16 +102,8 @@ export default function TodayPulse({ totalAssets, yesterdayChange }: TodayPulseP
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: COLORS.surface,
     borderRadius: SIZES.rMd,
     marginBottom: SIZES.lg,
-    // 그림자 효과 (iOS)
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    // 그림자 효과 (Android)
-    elevation: 3,
   },
   content: {
     flexDirection: 'row',
@@ -130,12 +124,10 @@ const styles = StyleSheet.create({
   value: {
     fontSize: 15,
     fontWeight: '700',
-    color: COLORS.textPrimary,
   },
   divider: {
     width: 1,
     height: 20,
-    backgroundColor: COLORS.border,
     opacity: 0.3,
   },
 });

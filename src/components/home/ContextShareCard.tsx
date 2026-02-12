@@ -184,7 +184,7 @@ export default function ContextShareCard({
       <View style={styles.topRow}>
         <View style={styles.logoArea}>
           <View style={styles.logoRow}>
-            <Text style={styles.logoBaln}>baln</Text>
+            <Text style={styles.logoBaln}>bal<Text style={{ color: '#4CAF50' }}>n</Text></Text>
             <Text style={styles.logoDot}>.logic</Text>
           </View>
           <Text style={styles.logoSubtext}>AI 맥락 분석</Text>
@@ -248,14 +248,14 @@ export default function ContextShareCard({
       <View style={styles.ctaContainer}>
         <View style={styles.ctaBox}>
           <Ionicons name="open-outline" size={16} color="#4CAF50" />
-          <Text style={styles.ctaText}>baln.app에서 전체 분석 보기</Text>
+          <Text style={styles.ctaText}>bal<Text style={{ color: '#4CAF50' }}>n</Text>.app에서 전체 분석 보기</Text>
         </View>
       </View>
 
       {/* 워터마크: baln.logic 브랜딩 */}
       <View style={styles.watermarkRow}>
         <View style={styles.watermarkLine} />
-        <Text style={styles.watermarkBaln}>baln</Text>
+        <Text style={styles.watermarkBaln}>bal<Text style={{ color: '#4CAF50' }}>n</Text></Text>
         <Text style={styles.watermarkDot}>.logic</Text>
         <View style={styles.watermarkLine} />
       </View>

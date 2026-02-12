@@ -7,6 +7,8 @@
 
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useTheme } from '../../hooks/useTheme';
+import type { ThemeColors } from '../../styles/colors';
 
 interface ReassuranceBannerProps {
   totalGainLoss: number;
@@ -24,23 +26,26 @@ function getDefaultMessage(totalGainLoss: number): { emoji: string; text: string
 }
 
 export default function ReassuranceBanner({ totalGainLoss, cfoWeather }: ReassuranceBannerProps) {
+  const { colors } = useTheme();
   const defaultMsg = getDefaultMessage(totalGainLoss);
   const emoji = cfoWeather?.emoji ?? defaultMsg.emoji;
   const message = cfoWeather?.message ?? defaultMsg.text;
 
+  const styles = createStyles(colors);
+
   return (
-    <View style={s.banner}>
-      <Text style={s.emoji}>{emoji}</Text>
-      <Text style={s.message} numberOfLines={1}>{message}</Text>
+    <View style={styles.banner}>
+      <Text style={styles.emoji}>{emoji}</Text>
+      <Text style={styles.message} numberOfLines={1}>{message}</Text>
     </View>
   );
 }
 
-const s = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   banner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(76,175,80,0.06)',
+    backgroundColor: `${colors.primary}10`,
     marginHorizontal: 16,
     marginTop: 12,
     paddingHorizontal: 14,
@@ -49,7 +54,7 @@ const s = StyleSheet.create({
     gap: 10,
     height: 44,
     borderWidth: 1,
-    borderColor: 'rgba(76,175,80,0.08)',
+    borderColor: `${colors.primary}15`,
   },
   emoji: {
     fontSize: 18,
@@ -57,7 +62,7 @@ const s = StyleSheet.create({
   message: {
     flex: 1,
     fontSize: 13,
-    color: '#CCCCCC',
+    color: colors.textTertiary,
     fontWeight: '500',
   },
 });

@@ -128,7 +128,7 @@ export default function DeleteAccountScreen() {
                 // 삭제 성공 → AuthContext가 세션 변경 감지 → 자동으로 로그인 화면 이동
                 Alert.alert(
                   '계정이 삭제되었습니다',
-                  '그동안 baln을 이용해주셔서 감사합니다.',
+                  '그동안 baln을 이용해 주셔서 감사합니다.',
                   [
                     {
                       text: '확인',

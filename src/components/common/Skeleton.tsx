@@ -9,8 +9,8 @@
  */
 
 import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, Animated } from 'react-native';
-import { COLORS } from '../../styles/theme';
+import { Animated } from 'react-native';
+import { useTheme } from '../../hooks/useTheme';
 
 interface SkeletonProps {
   /** 너비 (숫자 또는 '100%') */
@@ -36,6 +36,7 @@ export default function Skeleton({
   style,
   circle = false,
 }: SkeletonProps) {
+  const { colors } = useTheme();
   const opacity = useRef(new Animated.Value(0.3)).current;
 
   useEffect(() => {
@@ -75,7 +76,7 @@ export default function Skeleton({
   return (
     <Animated.View
       style={[
-        styles.skeleton,
+        { backgroundColor: colors.disabled },
         skeletonStyle,
         { opacity },
         style,
@@ -84,8 +85,3 @@ export default function Skeleton({
   );
 }
 
-const styles = StyleSheet.create({
-  skeleton: {
-    backgroundColor: '#2A2A2A',
-  },
-});

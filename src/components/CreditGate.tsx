@@ -22,7 +22,6 @@ import { useHaptics } from '../hooks/useHaptics';
 import type { AIFeatureType } from '../types/marketplace';
 import { FEATURE_LABELS } from '../types/marketplace';
 import type { UserTier } from '../types/database';
-import { isFreePeriod, getFreePeriodDaysLeft } from '../config/freePeriod';
 
 interface CreditGateProps {
   visible: boolean;
@@ -47,8 +46,7 @@ export default function CreditGate({
 
   const balance = credits?.balance ?? 0;
   const { originalCost, discountedCost, discountPercent } = getDiscountedCost(featureType, userTier);
-  const freePeriodActive = isFreePeriod();
-  const hasEnough = freePeriodActive || balance >= discountedCost;
+  const hasEnough = balance >= discountedCost;
   const featureLabel = FEATURE_LABELS[featureType];
 
   const handleConfirm = () => {
@@ -74,51 +72,31 @@ export default function CreditGate({
           {/* 헤더 */}
           <View style={styles.header}>
             <Ionicons
-              name={freePeriodActive ? 'gift' : hasEnough ? 'diamond' : 'alert-circle'}
+              name={hasEnough ? 'diamond' : 'alert-circle'}
               size={40}
-              color={freePeriodActive ? '#4CAF50' : hasEnough ? '#7C4DFF' : '#CF6679'}
+              color={hasEnough ? '#7C4DFF' : '#CF6679'}
             />
             <Text style={styles.title}>
-              {freePeriodActive ? `${featureLabel} (무료)` : hasEnough ? featureLabel : '크레딧 부족'}
+              {hasEnough ? featureLabel : '크레딧 부족'}
             </Text>
           </View>
-
-          {/* 무료 기간 배너 */}
-          {freePeriodActive && (
-            <View style={styles.freeBanner}>
-              <Text style={styles.freeBannerText}>
-                5/31까지 모든 AI 기능 무료!
-              </Text>
-            </View>
-          )}
 
           {/* 비용 정보 */}
           <View style={styles.costContainer}>
             <Text style={styles.costLabel}>필요 크레딧</Text>
             <View style={styles.costRow}>
-              {freePeriodActive ? (
-                <>
-                  <Text style={styles.originalCost}>{originalCost}</Text>
-                  <View style={[styles.discountBadge, { backgroundColor: '#4CAF50' }]}>
-                    <Text style={styles.discountText}>FREE</Text>
-                  </View>
-                </>
-              ) : (
-                <>
-                  {discountPercent > 0 && (
-                    <Text style={styles.originalCost}>{originalCost}</Text>
-                  )}
-                  <Ionicons name="diamond" size={18} color="#7C4DFF" />
-                  <Text style={styles.discountedCost}>{discountedCost}</Text>
-                  {discountPercent > 0 && (
-                    <View style={styles.discountBadge}>
-                      <Text style={styles.discountText}>-{discountPercent}%</Text>
-                    </View>
-                  )}
-                </>
+              {discountPercent > 0 && (
+                <Text style={styles.originalCost}>{originalCost}</Text>
+              )}
+              <Ionicons name="diamond" size={18} color="#7C4DFF" />
+              <Text style={styles.discountedCost}>{discountedCost}</Text>
+              {discountPercent > 0 && (
+                <View style={styles.discountBadge}>
+                  <Text style={styles.discountText}>-{discountPercent}%</Text>
+                </View>
               )}
             </View>
-            {!freePeriodActive && discountPercent > 0 && (
+            {discountPercent > 0 && (
               <Text style={styles.tierNote}>
                 {userTier} 등급 할인 적용
               </Text>
@@ -137,6 +115,15 @@ export default function CreditGate({
             <Text style={styles.shortageText}>
               {discountedCost - balance} 크레딧이 부족합니다
             </Text>
+          )}
+
+          {/* 크레딧 획득 안내 (잔액 부족 시) */}
+          {!hasEnough && (
+            <View style={styles.earnHint}>
+              <Text style={styles.earnHintText}>
+                출석(+2C) · 퀴즈 적중(+3C) · 공유(+5C)로 크레딧을 모아보세요!
+              </Text>
+            </View>
           )}
 
           {/* 버튼 */}
@@ -292,7 +279,22 @@ const styles = StyleSheet.create({
     color: '#CF6679',
     fontSize: 13,
     textAlign: 'center',
+    marginBottom: 8,
+  },
+  earnHint: {
+    backgroundColor: 'rgba(124, 77, 255, 0.1)',
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
     marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(124, 77, 255, 0.2)',
+  },
+  earnHintText: {
+    color: '#B39DDB',
+    fontSize: 12,
+    textAlign: 'center',
+    lineHeight: 18,
   },
   buttonRow: {
     flexDirection: 'row',
@@ -355,20 +357,5 @@ const styles = StyleSheet.create({
     color: '#4CAF50',
     fontSize: 13,
     fontWeight: '600',
-  },
-  freeBanner: {
-    backgroundColor: 'rgba(76, 175, 80, 0.12)',
-    borderRadius: 10,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(76, 175, 80, 0.25)',
-  },
-  freeBannerText: {
-    color: '#4CAF50',
-    fontSize: 13,
-    fontWeight: '700',
-    textAlign: 'center',
   },
 });

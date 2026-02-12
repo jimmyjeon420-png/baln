@@ -141,8 +141,7 @@ export default function AdvancedCheckupView({
         isAILoading={isAILoading}
       />
 
-      {/* 10. AI marketplace CTA */}
-      <AIAnalysisCTA />
+      {/* 10. AI marketplace CTA — rebalance.tsx 하단에서 공통 렌더링 */}
 
       {/* 11. 감정 체크 */}
       {onEmotionSelect && onMemoChange && onEmotionSave && (

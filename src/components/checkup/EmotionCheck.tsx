@@ -42,8 +42,8 @@ export default function EmotionCheck({
       <View style={s.headerRow}>
         <Text style={[s.cardTitle, { color: colors.textPrimary }]}>오늘의 투자 감정</Text>
         {isChecked && (
-          <View style={s.checkedBadge}>
-            <Text style={s.checkedText}>기록됨 ✓</Text>
+          <View style={[s.checkedBadge, { backgroundColor: `${colors.primary}1F` }]}>
+            <Text style={[s.checkedText, { color: colors.primaryDark ?? colors.primary }]}>기록됨 ✓</Text>
           </View>
         )}
       </View>
@@ -57,8 +57,8 @@ export default function EmotionCheck({
               key={item.key}
               style={[
                 s.emotionButton,
-                { backgroundColor: colors.surfaceLight },
-                isSelected && s.emotionButtonSelected,
+                { backgroundColor: colors.surfaceElevated, borderColor: colors.border },
+                isSelected && { backgroundColor: `${colors.primary}1F`, borderColor: `${colors.primary}4D` },
               ]}
               onPress={() => onSelect(item.key)}
               activeOpacity={0.7}
@@ -66,7 +66,11 @@ export default function EmotionCheck({
               <Text style={[s.emotionEmoji, isSelected && s.emotionEmojiSelected]}>
                 {item.emoji}
               </Text>
-              <Text style={[s.emotionLabel, { color: colors.textSecondary }, isSelected && s.emotionLabelSelected]}>
+              <Text style={[
+                s.emotionLabel,
+                { color: colors.textSecondary },
+                isSelected && { color: colors.primaryDark ?? colors.primary, fontWeight: '700' as const },
+              ]}>
                 {item.label}
               </Text>
             </TouchableOpacity>
@@ -76,12 +80,12 @@ export default function EmotionCheck({
 
       {/* 메모 입력 (감정 선택 시에만 표시) */}
       {todayEmotion && (
-        <View style={[s.memoSection, { backgroundColor: colors.surfaceLight }]}>
+        <View style={[s.memoSection, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}>
           <Text style={[s.memoLabel, { color: colors.textPrimary }]}>오늘 왜 이런 감정이었나요?</Text>
           <TextInput
             style={[s.memoInput, { backgroundColor: colors.background, color: colors.textPrimary, borderColor: colors.border }]}
             placeholder="30자 이내로 입력해주세요"
-            placeholderTextColor={colors.textSecondary}
+            placeholderTextColor={colors.textTertiary}
             maxLength={30}
             value={memo}
             onChangeText={onMemoChange}
@@ -89,14 +93,18 @@ export default function EmotionCheck({
             numberOfLines={2}
           />
           <View style={s.memoFooter}>
-            <Text style={[s.charCount, { color: colors.textSecondary }]}>{memo.length}/30</Text>
+            <Text style={[s.charCount, { color: colors.textTertiary }]}>{memo.length}/30</Text>
             <TouchableOpacity
-              style={[s.saveButton, !todayEmotion && s.saveButtonDisabled]}
+              style={[
+                s.saveButton,
+                { backgroundColor: colors.primary },
+                !todayEmotion && { backgroundColor: colors.disabled },
+              ]}
               onPress={onSave}
               disabled={!todayEmotion}
               activeOpacity={0.7}
             >
-              <Text style={[s.saveButtonText, { color: colors.textPrimary }]}>기록하기</Text>
+              <Text style={[s.saveButtonText, !todayEmotion ? { color: colors.disabledText } : { color: '#FFFFFF' }]}>기록하기</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -104,7 +112,7 @@ export default function EmotionCheck({
 
       {/* 선택된 감정 피드백 */}
       {isChecked && selectedItem && (
-        <View style={[s.feedbackRow, { backgroundColor: colors.surfaceLight }]}>
+        <View style={[s.feedbackRow, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}>
           <Text style={[s.feedbackText, { color: colors.textSecondary }]}>
             {selectedItem.emoji} {getFeedback(selectedItem.key)}
           </Text>
@@ -147,14 +155,14 @@ const s = StyleSheet.create({
     // color: '#FFFFFF', // Now dynamic
   },
   checkedBadge: {
-    backgroundColor: 'rgba(76,175,80,0.12)',
+    // backgroundColor: 동적 적용
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 8,
   },
   checkedText: {
     fontSize: 12,
-    color: '#4CAF50',
+    // color: 동적 적용 (colors.primaryDark)
     fontWeight: '600',
   },
   emotionRow: {
@@ -167,12 +175,8 @@ const s = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderRadius: 12,
-    // backgroundColor: '#1A1A1A', // Now dynamic
-  },
-  emotionButtonSelected: {
-    backgroundColor: 'rgba(76,175,80,0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(76,175,80,0.3)',
+    // backgroundColor & borderColor: 동적 적용
   },
   emotionEmoji: {
     fontSize: 24,
@@ -186,15 +190,14 @@ const s = StyleSheet.create({
     // color: '#808080', // Now dynamic
     fontWeight: '500',
   },
-  emotionLabelSelected: {
-    color: '#4CAF50',
-    fontWeight: '700',
-  },
+  // emotionLabelSelected removed — applied dynamically inline
   feedbackRow: {
     marginTop: 14,
-    // backgroundColor: '#1A1A1A', // Now dynamic
+    // backgroundColor: 동적 적용 (colors.surfaceElevated)
     borderRadius: 12,
     padding: 14,
+    borderWidth: 1,
+    // borderColor: 동적 적용 (colors.border)
   },
   feedbackText: {
     fontSize: 13,
@@ -204,9 +207,11 @@ const s = StyleSheet.create({
   // 메모 섹션
   memoSection: {
     marginTop: 16,
-    // backgroundColor: '#1A1A1A', // Now dynamic
+    // backgroundColor: 동적 적용 (colors.surfaceElevated)
     borderRadius: 12,
     padding: 14,
+    borderWidth: 1,
+    // borderColor: 동적 적용 (colors.border)
   },
   memoLabel: {
     fontSize: 13,
@@ -236,13 +241,10 @@ const s = StyleSheet.create({
     // color: '#757575', // Now dynamic
   },
   saveButton: {
-    backgroundColor: '#4CAF50',
+    // backgroundColor: 동적 적용 (colors.primary / colors.disabled)
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
-  },
-  saveButtonDisabled: {
-    backgroundColor: '#424242',
   },
   saveButtonText: {
     fontSize: 14,

@@ -25,6 +25,7 @@ import { Stack, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../src/hooks/useTheme';
 import { generateDeepDive } from '../../src/services/gemini';
+import { fetchStockFundamentals } from '../../src/services/stockDataService';
 import DeepDiveReport from '../../src/components/deep-dive/DeepDiveReport';
 import type { DeepDiveInput, DeepDiveResult } from '../../src/types/marketplace';
 
@@ -144,11 +145,26 @@ export default function DeepDiveScreen() {
     setResult(null);
 
     try {
-      console.log(`[DeepDive] 분석 시작: ${targetName} (${targetTicker})`);
+      // [Step 1] Yahoo Finance API로 실제 재무 데이터 조회
+      console.log(`[DeepDive] Step 1: 재무 데이터 조회 — ${targetName} (${targetTicker})`);
+      const fundamentals = await fetchStockFundamentals(targetTicker, targetName);
 
+      if (fundamentals) {
+        console.log(`[DeepDive] 재무 데이터 조회 성공:`, {
+          marketCap: fundamentals.marketCap,
+          PE: fundamentals.trailingPE,
+          PB: fundamentals.priceToBook,
+        });
+      } else {
+        console.log(`[DeepDive] 재무 데이터 조회 실패 — Gemini 단독 분석으로 fallback`);
+      }
+
+      // [Step 2] Gemini AI 분석 (팩트 데이터 주입)
+      console.log(`[DeepDive] Step 2: AI 분석 시작`);
       const input: DeepDiveInput = {
         ticker: targetTicker,
         name: targetName,
+        fundamentals: fundamentals || undefined,
       };
 
       const analysisResult = await generateDeepDive(input);

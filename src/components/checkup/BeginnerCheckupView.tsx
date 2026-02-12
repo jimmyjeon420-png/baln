@@ -15,6 +15,7 @@
 
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useTheme } from '../../hooks/useTheme';
 
 import ReassuranceBanner from './ReassuranceBanner';
 import OneLinerDiagnosis from './beginner/OneLinerDiagnosis';
@@ -78,6 +79,7 @@ export default function BeginnerCheckupView({
   onEmotionSave,
   onLevelChange,
 }: BeginnerCheckupViewProps) {
+  const { colors } = useTheme();
   const topAction = getTopAction(morningBriefing);
 
   return (
@@ -86,7 +88,7 @@ export default function BeginnerCheckupView({
       <ReassuranceBanner totalGainLoss={totalGainLoss} cfoWeather={cfoWeather} />
 
       {/* Section title */}
-      <Text style={s.sectionTitle}>
+      <Text style={[s.sectionTitle, { color: colors.textPrimary }]}>
         {'\uD83C\uDF31 분석 리포트'}
       </Text>
 
@@ -124,7 +126,7 @@ const s = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#FFFFFF',
+    // color: 동적 적용 (colors.textPrimary)
     marginHorizontal: 16,
     marginTop: 16,
     marginBottom: 4,

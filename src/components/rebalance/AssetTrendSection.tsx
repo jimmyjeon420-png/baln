@@ -10,6 +10,8 @@ import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Svg, { Path, Line, Circle } from 'react-native-svg';
 import { SkeletonBlock } from '../SkeletonLoader';
+import { useTheme } from '../../hooks/useTheme';
+import { ThemeColors } from '../../styles/colors';
 import type { PortfolioSnapshot } from '../../hooks/usePortfolioSnapshots';
 
 // ── 기간 탭 ──
@@ -68,6 +70,7 @@ export default function AssetTrendSection({
   isLoading,
   currentTotal,
 }: AssetTrendSectionProps) {
+  const { colors } = useTheme();
   const [period, setPeriod] = useState<Period>('1M');
 
   const selectedDays = PERIOD_OPTIONS.find(p => p.key === period)?.days ?? 30;
@@ -111,10 +114,12 @@ export default function AssetTrendSection({
     [chartValues],
   );
 
+  const styles = createStyles(colors);
+
   // 로딩 스켈레톤
   if (isLoading) {
     return (
-      <View style={s.card}>
+      <View style={styles.card}>
         <SkeletonBlock width={100} height={16} />
         <View style={{ marginTop: 12 }}>
           <SkeletonBlock width="100%" height={100} style={{ borderRadius: 12 }} />
@@ -126,34 +131,40 @@ export default function AssetTrendSection({
   // 데이터 부족
   if (chartValues.length < 2) return null;
 
-  const lineColor = isPositive ? '#4CAF50' : '#CF6679';
+  const lineColor = isPositive ? colors.buy : colors.sell;
 
   return (
-    <View style={s.card}>
+    <View style={styles.card}>
       {/* 헤더 */}
-      <View style={s.headerRow}>
+      <View style={styles.headerRow}>
         <View>
-          <Text style={s.cardLabel}>자산 추이</Text>
-          <Text style={s.cardLabelEn}>Asset Trend</Text>
+          <Text style={[styles.cardLabel, { color: colors.textPrimary }]}>자산 추이</Text>
+          <Text style={[styles.cardLabelEn, { color: colors.textTertiary }]}>Asset Trend</Text>
         </View>
         {/* 기간 변동 */}
-        <View style={[s.changeBadge, { backgroundColor: isPositive ? 'rgba(76,175,80,0.12)' : 'rgba(207,102,121,0.12)' }]}>
-          <Text style={[s.changeText, { color: lineColor }]}>
+        <View style={[styles.changeBadge, { backgroundColor: isPositive ? `${colors.buy}1F` : `${colors.sell}1F` }]}>
+          <Text style={[styles.changeText, { color: lineColor }]}>
             {isPositive ? '+' : ''}{periodChange.percent.toFixed(1)}%
           </Text>
         </View>
       </View>
 
       {/* 기간 탭 */}
-      <View style={s.periodTabs}>
+      <View style={styles.periodTabs}>
         {PERIOD_OPTIONS.map(opt => (
           <TouchableOpacity
             key={opt.key}
-            style={[s.periodTab, period === opt.key && s.periodTabActive]}
+            style={[
+              styles.periodTab,
+              { backgroundColor: period === opt.key ? `${colors.primary}26` : colors.surfaceElevated },
+            ]}
             onPress={() => setPeriod(opt.key)}
             activeOpacity={0.7}
           >
-            <Text style={[s.periodTabText, period === opt.key && s.periodTabTextActive]}>
+            <Text style={[
+              styles.periodTabText,
+              { color: period === opt.key ? colors.primaryDark ?? colors.primary : colors.textTertiary },
+            ]}>
               {opt.label}
             </Text>
           </TouchableOpacity>
@@ -161,7 +172,7 @@ export default function AssetTrendSection({
       </View>
 
       {/* SVG 라인 차트 */}
-      <View style={s.chartContainer}>
+      <View style={styles.chartContainer}>
         <Svg width="100%" height={CHART_HEIGHT} viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}>
           {/* 기준선 (시작 값) */}
           <Line
@@ -169,7 +180,7 @@ export default function AssetTrendSection({
             y1={CHART_HEIGHT - PADDING}
             x2={CHART_WIDTH - PADDING}
             y2={CHART_HEIGHT - PADDING}
-            stroke="#222"
+            stroke={colors.border}
             strokeWidth={0.5}
             strokeDasharray="4,4"
           />
@@ -190,7 +201,7 @@ export default function AssetTrendSection({
               cy={lastPoint.y}
               r={4}
               fill={lineColor}
-              stroke="#141414"
+              stroke={colors.surface}
               strokeWidth={2}
             />
           )}
@@ -198,18 +209,18 @@ export default function AssetTrendSection({
       </View>
 
       {/* 기간 요약 */}
-      <View style={s.summaryRow}>
-        <View style={s.summaryItem}>
-          <Text style={s.summaryLabel}>{selectedDays}일 전</Text>
-          <Text style={s.summaryValue}>₩{chartValues[0] != null ? Math.floor(chartValues[0]).toLocaleString() : '0'}</Text>
+      <View style={styles.summaryRow}>
+        <View style={styles.summaryItem}>
+          <Text style={[styles.summaryLabel, { color: colors.textTertiary }]}>{selectedDays}일 전</Text>
+          <Text style={[styles.summaryValue, { color: colors.textPrimary }]}>₩{chartValues[0] != null ? Math.floor(chartValues[0]).toLocaleString() : '0'}</Text>
         </View>
-        <View style={s.summaryItem}>
-          <Text style={s.summaryLabel}>현재</Text>
-          <Text style={[s.summaryValue, { color: lineColor }]}>₩{Math.floor(currentTotal).toLocaleString()}</Text>
+        <View style={styles.summaryItem}>
+          <Text style={[styles.summaryLabel, { color: colors.textTertiary }]}>현재</Text>
+          <Text style={[styles.summaryValue, { color: lineColor }]}>₩{Math.floor(currentTotal).toLocaleString()}</Text>
         </View>
-        <View style={s.summaryItem}>
-          <Text style={s.summaryLabel}>변동</Text>
-          <Text style={[s.summaryValue, { color: lineColor }]}>
+        <View style={styles.summaryItem}>
+          <Text style={[styles.summaryLabel, { color: colors.textTertiary }]}>변동</Text>
+          <Text style={[styles.summaryValue, { color: lineColor }]}>
             {isPositive ? '+' : ''}₩{Math.floor(Math.abs(periodChange.amount)).toLocaleString()}
           </Text>
         </View>
@@ -218,15 +229,15 @@ export default function AssetTrendSection({
   );
 }
 
-const s = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   card: {
-    backgroundColor: '#141414',
+    backgroundColor: colors.surface,
     marginHorizontal: 16,
     marginBottom: 12,
     borderRadius: 16,
     padding: 18,
     borderWidth: 1,
-    borderColor: '#1E1E1E',
+    borderColor: colors.border,
   },
   headerRow: {
     flexDirection: 'row',
@@ -234,17 +245,15 @@ const s = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
-  cardLabel: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
-  cardLabelEn: { fontSize: 10, color: '#555', marginTop: 1, letterSpacing: 0.5, textTransform: 'uppercase' as const },
+  cardLabel: { fontSize: 15, fontWeight: '700' },
+  cardLabelEn: { fontSize: 10, marginTop: 1, letterSpacing: 0.5, textTransform: 'uppercase' as const },
   changeBadge: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 },
   changeText: { fontSize: 13, fontWeight: '700' },
 
   // 기간 탭
   periodTabs: { flexDirection: 'row', gap: 6, marginBottom: 12 },
-  periodTab: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 8, backgroundColor: '#1E1E1E' },
-  periodTabActive: { backgroundColor: 'rgba(76,175,80,0.15)' },
-  periodTabText: { fontSize: 12, color: '#666', fontWeight: '600' },
-  periodTabTextActive: { color: '#4CAF50' },
+  periodTab: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 8 },
+  periodTabText: { fontSize: 12, fontWeight: '600' },
 
   // 차트
   chartContainer: { marginBottom: 12 },
@@ -252,6 +261,6 @@ const s = StyleSheet.create({
   // 요약
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between' },
   summaryItem: { alignItems: 'center' },
-  summaryLabel: { fontSize: 10, color: '#666', marginBottom: 3 },
-  summaryValue: { fontSize: 12, fontWeight: '700', color: '#FFF' },
+  summaryLabel: { fontSize: 10, marginBottom: 3 },
+  summaryValue: { fontSize: 12, fontWeight: '700' },
 });

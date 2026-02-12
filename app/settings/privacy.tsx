@@ -6,11 +6,12 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import { TouchableOpacity } from 'react-native';
+import { useTheme } from '../../src/hooks/useTheme';
+import { HeaderBar } from '../../src/components/common/HeaderBar';
 
 export default function PrivacyScreen() {
-  const router = useRouter();
+  const { colors } = useTheme();
 
   const privacyPolicies = [
     {
@@ -61,23 +62,16 @@ export default function PrivacyScreen() {
   ];
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* 헤더 */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={28} color="#4CAF50" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>개인정보처리방침</Text>
-        <View style={{ width: 28 }} />
-      </View>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <HeaderBar title="개인정보처리방침" />
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Zero-Knowledge 배너 */}
-        <View style={styles.zeroBanner}>
-          <Ionicons name="shield" size={40} color="#4CAF50" />
+        <View style={[styles.zeroBanner, { backgroundColor: `${colors.primary}20` }]}>
+          <Ionicons name="shield" size={40} color={colors.primary} />
           <View style={styles.zeroBannerText}>
-            <Text style={styles.zeroBannerTitle}>Zero-Knowledge 정책</Text>
-            <Text style={styles.zeroBannerSubtitle}>
+            <Text style={[styles.zeroBannerTitle, { color: colors.primary }]}>Zero-Knowledge 정책</Text>
+            <Text style={[styles.zeroBannerSubtitle, { color: colors.textSecondary }]}>
               당사는 귀하의 비밀을 알지 못합니다
             </Text>
           </View>
@@ -86,43 +80,43 @@ export default function PrivacyScreen() {
         {/* 정책 목록 */}
         <View style={styles.policiesContainer}>
           {privacyPolicies.map((policy, index) => (
-            <View key={index} style={styles.policyItem}>
-              <View style={styles.policyIconContainer}>
+            <View key={index} style={[styles.policyItem, { backgroundColor: colors.surface }]}>
+              <View style={[styles.policyIconContainer, { backgroundColor: colors.surfaceElevated }]}>
                 <Ionicons
                   name={policy.icon as any}
                   size={24}
-                  color="#4CAF50"
+                  color={colors.primary}
                 />
               </View>
               <View style={styles.policyContent}>
-                <Text style={styles.policyTitle}>{policy.title}</Text>
-                <Text style={styles.policyDescription}>{policy.description}</Text>
+                <Text style={[styles.policyTitle, { color: colors.textPrimary }]}>{policy.title}</Text>
+                <Text style={[styles.policyDescription, { color: colors.textSecondary }]}>{policy.description}</Text>
               </View>
             </View>
           ))}
         </View>
 
         {/* 수집 데이터 테이블 */}
-        <View style={styles.tableContainer}>
-          <Text style={styles.tableTitle}>수집 데이터 현황</Text>
-          <View style={styles.tableHeader}>
-            <Text style={[styles.tableHeaderText, { flex: 2 }]}>항목</Text>
-            <Text style={[styles.tableHeaderText, { flex: 2 }]}>목적</Text>
-            <Text style={[styles.tableHeaderText, { flex: 2 }]}>보관 기간</Text>
+        <View style={[styles.tableContainer, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.tableTitle, { color: colors.textPrimary }]}>수집 데이터 현황</Text>
+          <View style={[styles.tableHeader, { borderBottomColor: colors.border }]}>
+            <Text style={[styles.tableHeaderText, { flex: 2, color: colors.primary }]}>항목</Text>
+            <Text style={[styles.tableHeaderText, { flex: 2, color: colors.primary }]}>목적</Text>
+            <Text style={[styles.tableHeaderText, { flex: 2, color: colors.primary }]}>보관 기간</Text>
           </View>
           {dataCollected.map((data, index) => (
-            <View key={index} style={styles.tableRow}>
-              <Text style={[styles.tableCell, { flex: 2 }]}>{data.item}</Text>
-              <Text style={[styles.tableCell, { flex: 2 }]}>{data.purpose}</Text>
-              <Text style={[styles.tableCell, { flex: 2 }]}>{data.retention}</Text>
+            <View key={index} style={[styles.tableRow, { borderBottomColor: colors.border }]}>
+              <Text style={[styles.tableCell, { flex: 2, color: colors.textSecondary }]}>{data.item}</Text>
+              <Text style={[styles.tableCell, { flex: 2, color: colors.textSecondary }]}>{data.purpose}</Text>
+              <Text style={[styles.tableCell, { flex: 2, color: colors.textSecondary }]}>{data.retention}</Text>
             </View>
           ))}
         </View>
 
         {/* AI 자동화 의사결정 */}
-        <View style={styles.tableContainer}>
-          <Text style={styles.tableTitle}>AI 자동화 의사결정 및 프로파일링</Text>
-          <Text style={styles.aiDecisionText}>
+        <View style={[styles.tableContainer, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.tableTitle, { color: colors.textPrimary }]}>AI 자동화 의사결정 및 프로파일링</Text>
+          <Text style={[styles.aiDecisionText, { color: colors.textSecondary }]}>
             당사는 포트폴리오 데이터를 기반으로 AI 자동 분석(리스크 평가, 리밸런싱 제안, 세금 계산, 투자 거장 인사이트 등)을 수행합니다.{'\n\n'}
             「개인정보 보호법」 제37조의2에 따라, 귀하는 완전히 자동화된 의사결정에 대해 설명을 요구하거나 거부할 권리가 있습니다.{'\n\n'}
             • AI 분석 거부: 설정 {'>'} 보안 {'>'} AI 자동 분석 비활성화{'\n'}
@@ -132,32 +126,32 @@ export default function PrivacyScreen() {
         </View>
 
         {/* 개인정보의 국외 이전 */}
-        <View style={styles.tableContainer}>
-          <Text style={styles.tableTitle}>개인정보의 국외 이전</Text>
-          <View style={styles.tableHeader}>
-            <Text style={[styles.tableHeaderText, { flex: 2 }]}>이전받는 자</Text>
-            <Text style={[styles.tableHeaderText, { flex: 2 }]}>목적</Text>
-            <Text style={[styles.tableHeaderText, { flex: 1 }]}>국가</Text>
+        <View style={[styles.tableContainer, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.tableTitle, { color: colors.textPrimary }]}>개인정보의 국외 이전</Text>
+          <View style={[styles.tableHeader, { borderBottomColor: colors.border }]}>
+            <Text style={[styles.tableHeaderText, { flex: 2, color: colors.primary }]}>이전받는 자</Text>
+            <Text style={[styles.tableHeaderText, { flex: 2, color: colors.primary }]}>목적</Text>
+            <Text style={[styles.tableHeaderText, { flex: 1, color: colors.primary }]}>국가</Text>
           </View>
-          <View style={styles.tableRow}>
-            <Text style={[styles.tableCell, { flex: 2 }]}>Supabase Inc.{'\n'}(AWS 인프라)</Text>
-            <Text style={[styles.tableCell, { flex: 2 }]}>데이터베이스{'\n'}호스팅</Text>
-            <Text style={[styles.tableCell, { flex: 1 }]}>미국</Text>
+          <View style={[styles.tableRow, { borderBottomColor: colors.border }]}>
+            <Text style={[styles.tableCell, { flex: 2, color: colors.textSecondary }]}>Supabase Inc.{'\n'}(AWS 인프라)</Text>
+            <Text style={[styles.tableCell, { flex: 2, color: colors.textSecondary }]}>데이터베이스{'\n'}호스팅</Text>
+            <Text style={[styles.tableCell, { flex: 1, color: colors.textSecondary }]}>미국</Text>
           </View>
-          <View style={styles.tableRow}>
-            <Text style={[styles.tableCell, { flex: 2 }]}>Google LLC{'\n'}(Gemini AI)</Text>
-            <Text style={[styles.tableCell, { flex: 2 }]}>AI 분석{'\n'}처리</Text>
-            <Text style={[styles.tableCell, { flex: 1 }]}>미국</Text>
+          <View style={[styles.tableRow, { borderBottomColor: colors.border }]}>
+            <Text style={[styles.tableCell, { flex: 2, color: colors.textSecondary }]}>Google LLC{'\n'}(Gemini AI)</Text>
+            <Text style={[styles.tableCell, { flex: 2, color: colors.textSecondary }]}>AI 분석{'\n'}처리</Text>
+            <Text style={[styles.tableCell, { flex: 1, color: colors.textSecondary }]}>미국</Text>
           </View>
-          <Text style={styles.aiDecisionText}>
+          <Text style={[styles.aiDecisionText, { color: colors.textSecondary }]}>
             {'\n'}이전되는 데이터는 익명화 처리되며, 개인 식별 정보(이름, 계좌번호 등)는 포함되지 않습니다. 각 수탁업체는 GDPR 및 SOC 2 Type II 인증을 보유하고 있습니다.
           </Text>
         </View>
 
         {/* 정보주체의 권리 */}
-        <View style={styles.tableContainer}>
-          <Text style={styles.tableTitle}>정보주체의 권리 행사 방법</Text>
-          <Text style={styles.aiDecisionText}>
+        <View style={[styles.tableContainer, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.tableTitle, { color: colors.textPrimary }]}>정보주체의 권리 행사 방법</Text>
+          <Text style={[styles.aiDecisionText, { color: colors.textSecondary }]}>
             「개인정보 보호법」 제35조~제37조에 따라 귀하는 다음과 같은 권리를 행사할 수 있습니다.{'\n\n'}
             1. 개인정보 열람 요구권{'\n'}
             2. 개인정보 정정·삭제 요구권{'\n'}
@@ -171,38 +165,38 @@ export default function PrivacyScreen() {
         </View>
 
         {/* 개인정보보호 책임자 */}
-        <View style={styles.contactContainer}>
-          <Text style={styles.contactTitle}>개인정보보호 책임자</Text>
-          <Text style={styles.contactText}>
+        <View style={[styles.contactContainer, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.contactTitle, { color: colors.textPrimary }]}>개인정보보호 책임자</Text>
+          <Text style={[styles.contactText, { color: colors.textSecondary }]}>
             성명: 대표이사 (겸임)
           </Text>
-          <Text style={styles.contactText}>
+          <Text style={[styles.contactText, { color: colors.textSecondary }]}>
             이메일: privacy@baln.app
           </Text>
-          <Text style={styles.contactText}>
+          <Text style={[styles.contactText, { color: colors.textSecondary }]}>
             고객센터: baln.logic@gmail.com
           </Text>
         </View>
 
         {/* 연락처 */}
-        <View style={styles.contactContainer}>
-          <Text style={styles.contactTitle}>권익침해 구제방법</Text>
-          <Text style={styles.contactText}>
+        <View style={[styles.contactContainer, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.contactTitle, { color: colors.textPrimary }]}>권익침해 구제방법</Text>
+          <Text style={[styles.contactText, { color: colors.textSecondary }]}>
             개인정보침해 신고센터: (국번없이) 118 (privacy.kisa.or.kr)
           </Text>
-          <Text style={styles.contactText}>
+          <Text style={[styles.contactText, { color: colors.textSecondary }]}>
             개인정보 분쟁조정위원회: (국번없이) 1833-6972 (kopico.go.kr)
           </Text>
-          <Text style={styles.contactText}>
+          <Text style={[styles.contactText, { color: colors.textSecondary }]}>
             대검찰청 사이버수사과: (국번없이) 1301 (spo.go.kr)
           </Text>
-          <Text style={styles.contactText}>
+          <Text style={[styles.contactText, { color: colors.textSecondary }]}>
             경찰청 사이버안전국: (국번없이) 182 (cyberbureau.police.go.kr)
           </Text>
         </View>
 
         {/* 마지막 업데이트 */}
-        <Text style={styles.lastUpdate}>
+        <Text style={[styles.lastUpdate, { color: colors.textTertiary }]}>
           마지막 업데이트: 2026년 2월 7일
         </Text>
       </ScrollView>
@@ -213,19 +207,6 @@ export default function PrivacyScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#FFFFFF',
   },
   scrollContent: {
     padding: 20,
@@ -234,7 +215,6 @@ const styles = StyleSheet.create({
   zeroBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1A2E1A',
     borderRadius: 16,
     padding: 20,
     marginBottom: 24,
@@ -246,11 +226,9 @@ const styles = StyleSheet.create({
   zeroBannerTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#4CAF50',
   },
   zeroBannerSubtitle: {
     fontSize: 13,
-    color: '#AAAAAA',
     marginTop: 4,
   },
   policiesContainer: {
@@ -259,7 +237,6 @@ const styles = StyleSheet.create({
   },
   policyItem: {
     flexDirection: 'row',
-    backgroundColor: '#1E1E1E',
     borderRadius: 12,
     padding: 16,
     gap: 14,
@@ -268,7 +245,6 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#2A2A2A',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -278,16 +254,13 @@ const styles = StyleSheet.create({
   policyTitle: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#FFFFFF',
     marginBottom: 6,
   },
   policyDescription: {
     fontSize: 13,
-    color: '#AAAAAA',
     lineHeight: 20,
   },
   tableContainer: {
-    backgroundColor: '#1E1E1E',
     borderRadius: 12,
     padding: 16,
     marginBottom: 24,
@@ -295,32 +268,26 @@ const styles = StyleSheet.create({
   tableTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#FFFFFF',
     marginBottom: 16,
   },
   tableHeader: {
     flexDirection: 'row',
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#333333',
   },
   tableHeaderText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#4CAF50',
   },
   tableRow: {
     flexDirection: 'row',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#2A2A2A',
   },
   tableCell: {
     fontSize: 12,
-    color: '#CCCCCC',
   },
   contactContainer: {
-    backgroundColor: '#1E1E1E',
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
@@ -328,22 +295,18 @@ const styles = StyleSheet.create({
   contactTitle: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#FFFFFF',
     marginBottom: 12,
   },
   contactText: {
     fontSize: 13,
-    color: '#AAAAAA',
     marginBottom: 6,
   },
   aiDecisionText: {
     fontSize: 13,
-    color: '#AAAAAA',
     lineHeight: 21,
   },
   lastUpdate: {
     fontSize: 12,
-    color: '#666666',
     textAlign: 'center',
   },
 });

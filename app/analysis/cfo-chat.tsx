@@ -21,6 +21,8 @@ import {
 import { Stack, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../src/hooks/useTheme';
+import { useMyCredits, useSpendCredits } from '../../src/hooks/useCredits';
+import { FEATURE_COSTS } from '../../src/types/marketplace';
 import supabase from '../../src/services/supabase';
 
 interface Message {
@@ -50,6 +52,9 @@ export default function CFOChatScreen() {
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const flatListRef = useRef<FlatList>(null);
+  const { data: credits } = useMyCredits();
+  const spendCreditsMutation = useSpendCredits();
+  const chatCost = FEATURE_COSTS.ai_cfo_chat; // 1크레딧
 
   useEffect(() => {
     // 환영 메시지
@@ -66,6 +71,17 @@ export default function CFOChatScreen() {
     const messageText = text || inputText.trim();
     if (!messageText) return;
 
+    // 크레딧 잔액 확인
+    const balance = credits?.balance ?? 0;
+    if (balance < chatCost) {
+      Alert.alert(
+        '크레딧 부족',
+        `질문 1회에 ${chatCost}크레딧(₩${chatCost * 100})이 필요합니다.\n현재 잔액: ${balance}크레딧\n\n출석(+2C), 퀴즈 적중(+3C), 공유(+5C)로 모아보세요!`,
+        [{ text: '확인' }]
+      );
+      return;
+    }
+
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
@@ -77,7 +93,17 @@ export default function CFOChatScreen() {
     setIsLoading(true);
 
     try {
-      // 실제 Gemini API 호출 (Edge Function 사용)
+      // 크레딧 차감 실행
+      const spendResult = await spendCreditsMutation.mutateAsync({
+        amount: chatCost,
+        featureType: 'ai_cfo_chat',
+      });
+
+      if (!spendResult.success) {
+        throw new Error(spendResult.errorMessage || '크레딧 차감에 실패했습니다.');
+      }
+
+      // Gemini API 호출 (Edge Function 사용)
       console.log('[AI 워렌 버핏] 질문:', messageText);
       const { data, error } = await supabase.functions.invoke('gemini-proxy', {
         body: {
@@ -216,7 +242,7 @@ export default function CFOChatScreen() {
     <>
       <Stack.Screen
         options={{
-          title: 'AI 워렌 버핏',
+          title: 'AI 버핏과 티타임 ☕',
           headerStyle: { backgroundColor: colors.background },
           headerTintColor: colors.textPrimary,
           headerLeft: () => (
@@ -226,6 +252,14 @@ export default function CFOChatScreen() {
             >
               <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
             </TouchableOpacity>
+          ),
+          headerRight: () => (
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 12, gap: 4 }}>
+              <Ionicons name="diamond" size={14} color="#7C4DFF" />
+              <Text style={{ color: '#7C4DFF', fontSize: 14, fontWeight: '600' }}>
+                {credits?.balance ?? 0}
+              </Text>
+            </View>
           ),
         }}
       />
@@ -278,7 +312,7 @@ export default function CFOChatScreen() {
           <TextInput
             value={inputText}
             onChangeText={setInputText}
-            placeholder="AI 워렌 버핏에게 물어보세요..."
+            placeholder="버핏에게 질문하기 (1크레딧)..."
             placeholderTextColor={colors.textTertiary}
             style={[s.input, { color: colors.textPrimary }]}
             multiline

@@ -12,7 +12,7 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, InteractionManager } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, InteractionManager, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import Slider from '@react-native-community/slider';
@@ -21,6 +21,9 @@ import { Asset } from '../../types/asset';
 import { calculateHealthScore } from '../../services/rebalanceScore';
 import { generateOptimalAllocation, type PortfolioAsset } from '../../services/gemini';
 import { useTheme } from '../../hooks/useTheme';
+import { ThemeColors } from '../../styles/colors';
+import { useMyCredits, useSpendCredits } from '../../hooks/useCredits';
+import { FEATURE_COSTS } from '../../types/marketplace';
 
 interface WhatIfSimulatorProps {
   assets: Asset[];
@@ -31,6 +34,8 @@ interface WhatIfSimulatorProps {
 export default function WhatIfSimulator({ assets, totalAssets, currentHealthScore }: WhatIfSimulatorProps) {
   const router = useRouter();
   const { colors } = useTheme();
+  const { data: credits } = useMyCredits();
+  const spendMutation = useSpendCredits();
   const [showSimulator, setShowSimulator] = useState(false);
   const [isOptimizing, setIsOptimizing] = useState(false); // 추천 조정 계산 중
 
@@ -97,11 +102,34 @@ export default function WhatIfSimulator({ assets, totalAssets, currentHealthScor
     });
   };
 
-  // 추천 조정 (AI 기반 최적 배분 계산)
+  // 추천 조정 (AI 기반 최적 배분 계산) — 1크레딧 소모
+  const cost = FEATURE_COSTS.what_if; // 1C
+  const currentBalance = credits?.balance ?? 0;
+
   const handleRecommendedAdjustment = async () => {
+    // 잔액 부족 체크
+    if (currentBalance < cost) {
+      Alert.alert(
+        '크레딧 부족',
+        `AI 배분 최적화에는 ${cost}C가 필요합니다.\n현재 잔액: ${currentBalance}C`,
+        [
+          { text: '취소', style: 'cancel' },
+          { text: '충전하기', onPress: () => router.push('/marketplace/credits') },
+        ]
+      );
+      return;
+    }
+
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       setIsOptimizing(true);
+
+      // 크레딧 차감 (AI 호출 전에 먼저 차감)
+      await spendMutation.mutateAsync({
+        amount: cost,
+        featureType: 'what_if',
+        featureRefId: `whatif_optimize_${Date.now()}`,
+      });
 
       // UI 렌더 완료 후 AI 계산 시작
       await new Promise<void>(resolve => {
@@ -147,7 +175,6 @@ export default function WhatIfSimulator({ assets, totalAssets, currentHealthScor
     } catch (error) {
       console.error('AI 배분 최적화 실패:', error);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      // 에러 발생 시 기존 로직으로 폴백 (옵션)
     } finally {
       setIsOptimizing(false);
     }
@@ -155,6 +182,8 @@ export default function WhatIfSimulator({ assets, totalAssets, currentHealthScor
 
   // 자산 없으면 표시 안 함
   if (assets.length === 0) return null;
+
+  const s = createStyles(colors);
 
   return (
     <View style={[s.card, { backgroundColor: colors.inverseSurface, borderColor: colors.border }]}>
@@ -166,7 +195,7 @@ export default function WhatIfSimulator({ assets, totalAssets, currentHealthScor
       >
         <View>
           <View style={s.titleRow}>
-            <Ionicons name="flask-outline" size={16} color="#7C4DFF" />
+            <Ionicons name="flask-outline" size={16} color={colors.premium.purple} />
             <Text style={s.cardLabel}>What-if 시뮬레이터</Text>
           </View>
           <Text style={s.cardLabelEn}>Portfolio Simulation</Text>
@@ -177,7 +206,7 @@ export default function WhatIfSimulator({ assets, totalAssets, currentHealthScor
               <Text style={s.activeBadgeText}>조정 중</Text>
             </View>
           )}
-          <Ionicons name={showSimulator ? 'chevron-up' : 'chevron-down'} size={14} color="#888" />
+          <Ionicons name={showSimulator ? 'chevron-up' : 'chevron-down'} size={14} color={colors.textTertiary} />
         </View>
       </TouchableOpacity>
 
@@ -192,13 +221,13 @@ export default function WhatIfSimulator({ assets, totalAssets, currentHealthScor
       {showSimulator && (
         <View style={s.simulatorContainer}>
           {/* 건강 점수 변화 미리보기 */}
-          <View style={[s.healthPreview, { backgroundColor: colors.inverseSurface }]}>
+          <View style={[s.healthPreview, { backgroundColor: colors.surfaceElevated }]}>
             <View style={s.healthItem}>
               <Text style={s.healthLabel}>현재</Text>
-              <Text style={[s.healthValue, { color: '#888' }]}>{currentHealthScore}</Text>
+              <Text style={[s.healthValue, { color: colors.textTertiary }]}>{currentHealthScore}</Text>
             </View>
 
-            {/* 동적 화살표: ⬆️ 개선 / ⬇️ 악화 / ➡️ 동일 */}
+            {/* 동적 화살표 */}
             <Ionicons
               name={
                 healthDelta > 2 ? 'arrow-up' :
@@ -207,9 +236,9 @@ export default function WhatIfSimulator({ assets, totalAssets, currentHealthScor
               }
               size={20}
               color={
-                healthDelta > 2 ? '#4CAF50' :
-                healthDelta < -2 ? '#CF6679' :
-                '#666'
+                healthDelta > 2 ? colors.success :
+                healthDelta < -2 ? colors.error :
+                colors.textTertiary
               }
             />
 
@@ -217,7 +246,7 @@ export default function WhatIfSimulator({ assets, totalAssets, currentHealthScor
               <Text style={s.healthLabel}>예상</Text>
               <Text style={[
                 s.healthValue,
-                { color: healthDelta > 0 ? '#4CAF50' : healthDelta < 0 ? '#CF6679' : '#888' },
+                { color: healthDelta > 0 ? colors.success : healthDelta < 0 ? colors.error : colors.textTertiary },
               ]}>
                 {simulatedHealthScore}
               </Text>
@@ -227,11 +256,11 @@ export default function WhatIfSimulator({ assets, totalAssets, currentHealthScor
             {healthDelta !== 0 && (
               <View style={[
                 s.healthDelta,
-                { backgroundColor: healthDelta > 0 ? 'rgba(76,175,80,0.15)' : 'rgba(207,102,121,0.15)' },
+                { backgroundColor: healthDelta > 0 ? `${colors.success}20` : `${colors.error}20` },
               ]}>
                 <Text style={[
                   s.healthDeltaText,
-                  { color: healthDelta > 0 ? '#4CAF50' : '#CF6679' },
+                  { color: healthDelta > 0 ? colors.success : colors.error },
                 ]}>
                   {healthDelta > 0 ? '+' : ''}{healthDelta.toFixed(0)}점 {healthDelta > 0 ? '개선' : '악화'}
                 </Text>
@@ -241,8 +270,8 @@ export default function WhatIfSimulator({ assets, totalAssets, currentHealthScor
 
           {/* 총자산 변화량 표시 */}
           {hasAdjustments && totalDelta !== 0 && (
-            <View style={[s.totalDeltaRow, { backgroundColor: colors.inverseSurface }]}>
-              <Ionicons name="cash-outline" size={14} color="#888" />
+            <View style={[s.totalDeltaRow, { backgroundColor: colors.surfaceElevated }]}>
+              <Ionicons name="cash-outline" size={14} color={colors.textTertiary} />
               <Text style={s.totalDeltaText}>
                 총자산 {totalDelta > 0 ? '+' : ''}
                 {totalDelta.toLocaleString('ko-KR', { style: 'currency', currency: 'KRW', maximumFractionDigits: 0 })}{' '}
@@ -259,11 +288,11 @@ export default function WhatIfSimulator({ assets, totalAssets, currentHealthScor
             disabled={isOptimizing}
           >
             {isOptimizing ? (
-              <ActivityIndicator size="small" color="#FFF" />
+              <ActivityIndicator size="small" color={colors.inverseText} />
             ) : (
               <>
-                <Ionicons name="sparkles-outline" size={16} color="#FFF" />
-                <Text style={s.recommendButtonText}>✨ AI 배분 최적화</Text>
+                <Ionicons name="sparkles-outline" size={16} color={colors.inverseText} />
+                <Text style={s.recommendButtonText}>AI 배분 최적화 ({cost}C)</Text>
               </>
             )}
           </TouchableOpacity>
@@ -299,9 +328,9 @@ export default function WhatIfSimulator({ assets, totalAssets, currentHealthScor
                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                         setAdjustments(prev => ({ ...prev, [key]: val }));
                       }}
-                      minimumTrackTintColor="#7C4DFF"
-                      maximumTrackTintColor="#333"
-                      thumbTintColor="#7C4DFF"
+                      minimumTrackTintColor={colors.premium.purple}
+                      maximumTrackTintColor={colors.borderStrong}
+                      thumbTintColor={colors.premium.purple}
                     />
                     <Text style={s.sliderLabel}>+100%</Text>
                   </View>
@@ -326,7 +355,7 @@ export default function WhatIfSimulator({ assets, totalAssets, currentHealthScor
           <View style={s.buttonGroup}>
             {hasAdjustments && (
               <TouchableOpacity style={s.resetButton} onPress={handleReset} activeOpacity={0.7}>
-                <Ionicons name="refresh" size={14} color="#666" />
+                <Ionicons name="refresh" size={14} color={colors.textTertiary} />
                 <Text style={s.resetButtonText}>초기화</Text>
               </TouchableOpacity>
             )}
@@ -336,7 +365,7 @@ export default function WhatIfSimulator({ assets, totalAssets, currentHealthScor
               activeOpacity={0.7}
               disabled={!hasAdjustments}
             >
-              <Ionicons name="sparkles" size={14} color={hasAdjustments ? '#FFF' : '#555'} />
+              <Ionicons name="sparkles" size={14} color={hasAdjustments ? colors.inverseText : colors.disabledText} />
               <Text style={[s.aiButtonText, !hasAdjustments && s.aiButtonTextDisabled]}>
                 AI 분석 받기 (3C)
               </Text>
@@ -345,7 +374,7 @@ export default function WhatIfSimulator({ assets, totalAssets, currentHealthScor
 
           {/* 안내 */}
           <Text style={s.hint}>
-            💡 AI 배분 최적화 버튼을 누르면 건강 점수를 최대화하는 배분을 자동으로 제안합니다
+            AI 배분 최적화 버튼을 누르면 건강 점수를 최대화하는 배분을 자동으로 제안합니다
           </Text>
         </View>
       )}
@@ -353,15 +382,13 @@ export default function WhatIfSimulator({ assets, totalAssets, currentHealthScor
   );
 }
 
-const s = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   card: {
-    // backgroundColor: 동적 (colors.inverseSurface)
     marginHorizontal: 16,
     marginBottom: 12,
     borderRadius: 16,
     padding: 18,
     borderWidth: 1,
-    // borderColor: 동적 (colors.border)
   },
   headerRow: {
     flexDirection: 'row',
@@ -369,27 +396,26 @@ const s = StyleSheet.create({
     alignItems: 'center',
   },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 },
-  cardLabel: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
-  cardLabelEn: { fontSize: 10, color: '#555', marginTop: 1, letterSpacing: 0.5, textTransform: 'uppercase' },
-  activeBadge: { backgroundColor: 'rgba(124,77,255,0.15)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
-  activeBadgeText: { fontSize: 10, color: '#7C4DFF', fontWeight: '700' },
-  collapsedDesc: { marginTop: 8, fontSize: 12, color: '#999', lineHeight: 18 },
+  cardLabel: { fontSize: 15, fontWeight: '700', color: colors.textPrimary },
+  cardLabelEn: { fontSize: 10, color: colors.textTertiary, marginTop: 1, letterSpacing: 0.5, textTransform: 'uppercase' },
+  activeBadge: { backgroundColor: `${colors.premium.purple}20`, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
+  activeBadgeText: { fontSize: 10, color: colors.premium.purple, fontWeight: '700' },
+  collapsedDesc: { marginTop: 8, fontSize: 12, color: colors.textSecondary, lineHeight: 18 },
 
   // 시뮬레이터
-  simulatorContainer: { marginTop: 14, paddingTop: 14, borderTopWidth: 1, borderTopColor: '#222', gap: 14 },
+  simulatorContainer: { marginTop: 14, paddingTop: 14, borderTopWidth: 1, borderTopColor: colors.border, gap: 14 },
 
   // 건강 점수 미리보기
   healthPreview: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    // backgroundColor: 동적 (colors.inverseSurface)
     borderRadius: 12,
     padding: 16,
     gap: 12,
   },
   healthItem: { alignItems: 'center' },
-  healthLabel: { fontSize: 10, color: '#666', marginBottom: 4 },
+  healthLabel: { fontSize: 10, color: colors.textTertiary, marginBottom: 4 },
   healthValue: { fontSize: 22, fontWeight: '800' },
   healthDelta: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 },
   healthDeltaText: { fontSize: 12, fontWeight: '700' },
@@ -401,35 +427,34 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
     paddingVertical: 8,
-    // backgroundColor: 동적 (colors.inverseSurface)
     borderRadius: 8,
   },
-  totalDeltaText: { fontSize: 12, color: '#888', fontWeight: '600' },
+  totalDeltaText: { fontSize: 12, color: colors.textSecondary, fontWeight: '600' },
 
   // 추천 조정 버튼
   recommendButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#4CAF50',
+    backgroundColor: colors.primary,
     paddingVertical: 14,
     borderRadius: 12,
     gap: 8,
   },
-  recommendButtonText: { fontSize: 14, color: '#FFF', fontWeight: '700' },
+  recommendButtonText: { fontSize: 14, color: colors.inverseText, fontWeight: '700' },
 
   // 자산 리스트
   assetsScroll: { maxHeight: 300 },
-  assetRow: { marginBottom: 16, backgroundColor: '#1A1A1A', borderRadius: 10, padding: 12 },
+  assetRow: { marginBottom: 16, backgroundColor: colors.surfaceElevated, borderRadius: 10, padding: 12 },
   assetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  assetTicker: { fontSize: 14, fontWeight: '700', color: '#FFF' },
-  assetWeight: { fontSize: 11, color: '#7C4DFF', fontWeight: '600' },
+  assetTicker: { fontSize: 14, fontWeight: '700', color: colors.textPrimary },
+  assetWeight: { fontSize: 11, color: colors.premium.purple, fontWeight: '600' },
   sliderRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  sliderLabel: { fontSize: 10, color: '#555', width: 36, textAlign: 'center' },
+  sliderLabel: { fontSize: 10, color: colors.textTertiary, width: 36, textAlign: 'center' },
   slider: { flex: 1, height: 32 },
   adjustmentRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 6, gap: 6 },
-  adjustmentValue: { fontSize: 13, color: '#7C4DFF', fontWeight: '700' },
-  adjustmentAmount: { fontSize: 11, color: '#666', fontWeight: '500' },
+  adjustmentValue: { fontSize: 13, color: colors.premium.purple, fontWeight: '700' },
+  adjustmentAmount: { fontSize: 11, color: colors.textTertiary, fontWeight: '500' },
 
   // 버튼
   buttonGroup: { flexDirection: 'row', gap: 8 },
@@ -438,26 +463,26 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#1E1E1E',
+    backgroundColor: colors.surfaceElevated,
     paddingVertical: 12,
     borderRadius: 10,
     gap: 6,
   },
-  resetButtonText: { fontSize: 13, color: '#666', fontWeight: '600' },
+  resetButtonText: { fontSize: 13, color: colors.textTertiary, fontWeight: '600' },
   aiButton: {
     flex: 2,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#7C4DFF',
+    backgroundColor: colors.premium.purple,
     paddingVertical: 12,
     borderRadius: 10,
     gap: 6,
   },
-  aiButtonDisabled: { backgroundColor: '#222' },
-  aiButtonText: { fontSize: 13, color: '#FFF', fontWeight: '700' },
-  aiButtonTextDisabled: { color: '#555' },
+  aiButtonDisabled: { backgroundColor: colors.disabled },
+  aiButtonText: { fontSize: 13, color: colors.inverseText, fontWeight: '700' },
+  aiButtonTextDisabled: { color: colors.disabledText },
 
   // 안내
-  hint: { fontSize: 11, color: '#666', lineHeight: 16, textAlign: 'center' },
+  hint: { fontSize: 11, color: colors.textTertiary, lineHeight: 16, textAlign: 'center' },
 });

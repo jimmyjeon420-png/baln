@@ -16,10 +16,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../src/context/AuthContext';
+import { useTheme } from '../../src/hooks/useTheme';
+import { HeaderBar } from '../../src/components/common/HeaderBar';
 
 export default function ProfileSettingsScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  const { colors } = useTheme();
   const [displayName, setDisplayName] = useState(user?.email?.split('@')[0] || '');
   const [loading, setLoading] = useState(false);
 
@@ -33,64 +36,57 @@ export default function ProfileSettingsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* 헤더 */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={28} color="#4CAF50" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>프로필 설정</Text>
-        <View style={{ width: 28 }} />
-      </View>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <HeaderBar title="프로필 설정" />
 
       {/* 컨텐츠 */}
       <View style={styles.content}>
         {/* 이메일 (읽기 전용) */}
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>이메일</Text>
-          <View style={styles.readOnlyInput}>
-            <Text style={styles.readOnlyText}>{user?.email || '로그인 필요'}</Text>
+          <Text style={[styles.label, { color: colors.textSecondary }]}>이메일</Text>
+          <View style={[styles.readOnlyInput, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Text style={[styles.readOnlyText, { color: colors.textTertiary }]}>{user?.email || '로그인 필요'}</Text>
           </View>
         </View>
 
         {/* 표시 이름 */}
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>표시 이름</Text>
+          <Text style={[styles.label, { color: colors.textSecondary }]}>표시 이름</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, { backgroundColor: colors.surface, color: colors.textPrimary, borderColor: colors.border }]}
             value={displayName}
             onChangeText={setDisplayName}
             placeholder="표시 이름 입력"
-            placeholderTextColor="#666666"
+            placeholderTextColor={colors.textTertiary}
           />
         </View>
 
         {/* 저장 버튼 */}
         <TouchableOpacity
-          style={[styles.saveButton, loading && styles.saveButtonDisabled]}
+          style={[styles.saveButton, { backgroundColor: colors.primary }, loading && styles.saveButtonDisabled]}
           onPress={handleSave}
           disabled={loading}
         >
           {loading ? (
-            <ActivityIndicator color="#121212" size="small" />
+            <ActivityIndicator color={colors.background} size="small" />
           ) : (
-            <Text style={styles.saveButtonText}>저장</Text>
+            <Text style={[styles.saveButtonText, { color: colors.background }]}>저장</Text>
           )}
         </TouchableOpacity>
 
         {/* 구분선 */}
-        <View style={styles.divider} />
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
         {/* 계정 삭제 (Apple App Store 필수 요건) */}
         <TouchableOpacity
-          style={styles.deleteAccountButton}
+          style={[styles.deleteAccountButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
           onPress={() => router.push('/settings/delete-account')}
         >
-          <Ionicons name="trash-outline" size={20} color="#CF6679" />
-          <Text style={styles.deleteAccountText}>계정 삭제</Text>
-          <Ionicons name="chevron-forward" size={18} color="#666666" />
+          <Ionicons name="trash-outline" size={20} color={colors.error} />
+          <Text style={[styles.deleteAccountText, { color: colors.error }]}>계정 삭제</Text>
+          <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
         </TouchableOpacity>
-        <Text style={styles.deleteAccountHint}>
+        <Text style={[styles.deleteAccountHint, { color: colors.textTertiary }]}>
           계정과 모든 데이터가 영구적으로 삭제됩니다
         </Text>
       </View>
@@ -101,19 +97,6 @@ export default function ProfileSettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#FFFFFF',
   },
   content: {
     flex: 1,
@@ -125,31 +108,23 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#AAAAAA',
     marginBottom: 8,
   },
   input: {
-    backgroundColor: '#1E1E1E',
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
-    color: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#333333',
   },
   readOnlyInput: {
-    backgroundColor: '#1A1A1A',
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#2A2A2A',
   },
   readOnlyText: {
     fontSize: 16,
-    color: '#666666',
   },
   saveButton: {
-    backgroundColor: '#4CAF50',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
@@ -161,32 +136,26 @@ const styles = StyleSheet.create({
   saveButtonText: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#121212',
   },
   divider: {
     height: 1,
-    backgroundColor: '#2A2A2A',
     marginVertical: 32,
   },
   deleteAccountButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1E1E1E',
     borderRadius: 12,
     padding: 16,
     gap: 12,
     borderWidth: 1,
-    borderColor: '#2A2A2A',
   },
   deleteAccountText: {
     flex: 1,
     fontSize: 15,
     fontWeight: '600',
-    color: '#CF6679',
   },
   deleteAccountHint: {
     fontSize: 12,
-    color: '#666666',
     marginTop: 8,
     marginLeft: 4,
   },

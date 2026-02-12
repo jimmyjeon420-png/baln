@@ -481,7 +481,7 @@ export default React.forwardRef<View, ContextBriefCardProps>(
             >
               <SkeletonBar width={60} />
             </View>
-            <Text style={styles.cardLogo}>baln</Text>
+            <Text style={styles.cardLogo}>bal<Text style={{ color: '#4CAF50' }}>n</Text></Text>
           </View>
           <View style={styles.contentArea}>
             <View style={styles.section}>
@@ -507,7 +507,7 @@ export default React.forwardRef<View, ContextBriefCardProps>(
         <View style={styles.card}>
           <View style={styles.topRow}>
             <View />
-            <Text style={styles.cardLogo}>baln</Text>
+            <Text style={styles.cardLogo}>bal<Text style={{ color: '#4CAF50' }}>n</Text></Text>
           </View>
           <View style={styles.centerArea}>
             <Ionicons name="analytics-outline" size={64} color={COLORS.textTertiary} />
@@ -544,7 +544,7 @@ export default React.forwardRef<View, ContextBriefCardProps>(
                 <Ionicons name="share-social-outline" size={18} color={COLORS.textTertiary} />
               </TouchableOpacity>
             )}
-            <Text style={styles.cardLogo}>baln</Text>
+            <Text style={styles.cardLogo}>bal<Text style={{ color: '#4CAF50' }}>n</Text></Text>
           </View>
         </View>
 

@@ -59,7 +59,7 @@ export default function BrandSplash({ onFinish }: BrandSplashProps) {
       <View style={styles.brandRow}>
         {/* 'baln' 부분 */}
         <Animated.Text style={[styles.brandText, { opacity: fadeAnim }]}>
-          baln
+          bal<Text style={{ color: '#4CAF50' }}>n</Text>
         </Animated.Text>
         {/* '.logic' 부분 - 살짝 늦게 등장 */}
         <Animated.Text style={[styles.dotText, { opacity: dotFade }]}>

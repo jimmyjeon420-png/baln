@@ -67,7 +67,7 @@ export default function WelcomeBonusModal({
       <Animated.View style={[s.card, { transform: [{ scale: scaleAnim }] }]}>
         <Text style={s.emoji}>{'🎉'}</Text>
         <Text style={s.title}>환영합니다!</Text>
-        <Text style={s.subtitle}>baln과 함께 투자 기준을 만들어보세요</Text>
+        <Text style={s.subtitle}>bal<Text style={{ color: '#4CAF50' }}>n</Text>과 함께 투자 기준을 만들어보세요</Text>
 
         <View style={s.bonusRow}>
           <Text style={s.bonusLabel}>환영 보너스</Text>

@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, SIZES } from '../../styles/theme';
+import { SIZES } from '../../styles/theme';
+import { useTheme } from '../../hooks/useTheme';
 import RollingNumber from '../RollingNumber';
 
 // ============================================================================
@@ -39,13 +40,14 @@ export default function HeroCard({
   onDiagnosisPress,
   onRealEstatePress,
 }: HeroCardProps) {
+  const { colors } = useTheme();
   const isPositive = totalPnL >= 0;
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: colors.surface }]}>
       {/* 상단: 총 평가금액 라벨 + 등급 배지 */}
       <View style={styles.topRow}>
-        <Text style={styles.label}>총 평가금액</Text>
+        <Text style={[styles.label, { color: colors.textSecondary }]}>총 평가금액</Text>
         <View style={[styles.gradeBadge, { backgroundColor: healthGradeBgColor }]}>
           <Text style={[styles.gradeText, { color: healthGradeColor }]}>
             {healthGrade} {healthGradeLabel}
@@ -58,13 +60,13 @@ export default function HeroCard({
         value={totalAssets}
         format="currency"
         prefix="₩"
-        style={styles.totalValue}
+        style={StyleSheet.flatten([styles.totalValue, { color: colors.textPrimary }]) as TextStyle}
         duration={1000}
       />
 
       {/* 손익 표시 */}
       <View style={styles.pnlRow}>
-        <Text style={[styles.pnlText, { color: isPositive ? COLORS.primary : COLORS.error }]}>
+        <Text style={[styles.pnlText, { color: isPositive ? colors.primary : colors.error }]}>
           {isPositive ? '+' : ''}₩{Math.abs(Math.round(totalPnL)).toLocaleString('ko-KR')}
           {' '}({isPositive ? '+' : ''}{totalPnLPercent.toFixed(2)}%)
           {' '}{isPositive ? '▲' : '▼'}
@@ -79,20 +81,20 @@ export default function HeroCard({
           activeOpacity={0.7}
           disabled={!onRealEstatePress}
         >
-          <Ionicons name="home-outline" size={14} color="#FF9800" />
-          <Text style={styles.realEstateText}>
+          <Ionicons name="home-outline" size={14} color={colors.warning} />
+          <Text style={[styles.realEstateText, { color: colors.warning }]}>
             부동산 ₩{totalRealEstate.toLocaleString('ko-KR', { maximumFractionDigits: 0 })} 포함
           </Text>
           {onRealEstatePress && (
-            <Ionicons name="add-circle-outline" size={14} color={COLORS.textTertiary} />
+            <Ionicons name="add-circle-outline" size={14} color={colors.textTertiary} />
           )}
         </TouchableOpacity>
       )}
 
       {/* 하단 버튼 2개: 건강 점수 | AI 진단 받기 */}
       <View style={styles.actions}>
-        <View style={styles.actionBtn}>
-          <Text style={styles.actionLabel}>건강 점수</Text>
+        <View style={[styles.actionBtn, { backgroundColor: colors.background }]}>
+          <Text style={[styles.actionLabel, { color: colors.textSecondary }]}>건강 점수</Text>
           <View style={styles.scoreRow}>
             <Text style={[styles.scoreValue, { color: healthGradeColor }]}>
               {healthScore}점
@@ -101,14 +103,14 @@ export default function HeroCard({
         </View>
 
         <TouchableOpacity
-          style={[styles.actionBtn, styles.diagnosisBtn]}
+          style={[styles.actionBtn, styles.diagnosisBtn, { backgroundColor: colors.background }]}
           onPress={onDiagnosisPress}
           activeOpacity={0.7}
         >
-          <Text style={styles.actionLabel}>AI 진단 받기</Text>
+          <Text style={[styles.actionLabel, { color: colors.textSecondary }]}>AI 진단 받기</Text>
           <View style={styles.diagnosisArrow}>
-            <Ionicons name="analytics-outline" size={20} color={COLORS.primary} />
-            <Ionicons name="chevron-forward" size={16} color={COLORS.textSecondary} />
+            <Ionicons name="analytics-outline" size={20} color={colors.primary} />
+            <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
           </View>
         </TouchableOpacity>
       </View>
@@ -122,7 +124,6 @@ export default function HeroCard({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: COLORS.surface,
     borderRadius: SIZES.rXl,
     padding: SIZES.xl,
     marginBottom: SIZES.lg,
@@ -135,7 +136,6 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 13,
-    color: COLORS.textSecondary,
   },
   gradeBadge: {
     paddingHorizontal: 10,
@@ -149,7 +149,6 @@ const styles = StyleSheet.create({
   totalValue: {
     fontSize: 32,
     fontWeight: '800',
-    color: COLORS.textPrimary,
   },
   pnlRow: {
     marginTop: 4,
@@ -164,7 +163,6 @@ const styles = StyleSheet.create({
   },
   realEstateText: {
     fontSize: 13,
-    color: '#FF9800',
     fontWeight: '600',
     flex: 1,
   },
@@ -178,14 +176,12 @@ const styles = StyleSheet.create({
   },
   actionBtn: {
     flex: 1,
-    backgroundColor: COLORS.background,
     borderRadius: 12,
     padding: 12,
   },
   diagnosisBtn: {},
   actionLabel: {
     fontSize: 12,
-    color: COLORS.textSecondary,
     marginBottom: 6,
   },
   scoreRow: {

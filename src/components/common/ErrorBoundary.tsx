@@ -11,7 +11,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../../styles/theme';
+import { DARK_COLORS } from '../../styles/colors';
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
@@ -63,7 +63,7 @@ export default class ErrorBoundary extends React.Component<
 
       return (
         <View style={styles.container}>
-          <Ionicons name="alert-circle-outline" size={64} color={COLORS.error} />
+          <Ionicons name="alert-circle-outline" size={64} color={DARK_COLORS.error} />
           <Text style={styles.title}>문제가 발생했습니다</Text>
           <Text style={styles.message}>
             잠시 후 다시 시도해 주세요.
@@ -99,23 +99,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
-    backgroundColor: COLORS.background,
+    backgroundColor: DARK_COLORS.background,
   },
   title: {
     fontSize: 20,
     fontWeight: '700',
-    color: COLORS.textPrimary,
+    color: DARK_COLORS.textPrimary,
     marginTop: 16,
     marginBottom: 8,
   },
   message: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: DARK_COLORS.textSecondary,
     textAlign: 'center',
     marginBottom: 24,
   },
   button: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: DARK_COLORS.primary,
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 8,
@@ -123,31 +123,31 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: COLORS.textPrimary,
+    color: DARK_COLORS.textPrimary,
   },
   devErrorBox: {
     width: '100%',
-    backgroundColor: '#1E1E1E',
+    backgroundColor: DARK_COLORS.surface,
     borderRadius: 8,
     padding: 12,
     marginBottom: 24,
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: DARK_COLORS.borderStrong,
   },
   devErrorTitle: {
     fontSize: 12,
     fontWeight: '700',
-    color: COLORS.error,
+    color: DARK_COLORS.error,
     marginBottom: 4,
   },
   devErrorText: {
     fontSize: 12,
-    color: '#FF8A80',
+    color: DARK_COLORS.error,
     marginBottom: 4,
   },
   devErrorStack: {
     fontSize: 10,
-    color: '#888',
+    color: DARK_COLORS.textTertiary,
     fontFamily: 'monospace',
   },
 });

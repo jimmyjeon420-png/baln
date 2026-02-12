@@ -77,11 +77,17 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   useDeepLink();           // 딥링크 처리 (알림 탭, 외부 링크 등)
   usePrefetchCheckup();    // 분석 탭 데이터 미리 로드 (이승건: "보기 전에 준비")
 
-  // 웰컴 보너스 지급 시 축하 모달 표시
+  // 웰컴 보너스 지급 시 축하 모달 표시 (1회만)
+  // TanStack Query 캐시가 영속되므로, 모달 표시 여부를 별도로 추적
   useEffect(() => {
     if (welcomeBonus.data?.granted && welcomeBonus.data?.creditsEarned) {
-      setWelcomeCredits(welcomeBonus.data.creditsEarned);
-      setShowWelcomeModal(true);
+      AsyncStorage.getItem('@baln:welcome_modal_shown').then((shown) => {
+        if (shown !== 'true') {
+          setWelcomeCredits(welcomeBonus.data!.creditsEarned!);
+          setShowWelcomeModal(true);
+          AsyncStorage.setItem('@baln:welcome_modal_shown', 'true');
+        }
+      });
     }
   }, [welcomeBonus.data?.granted]);
 

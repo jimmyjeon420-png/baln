@@ -21,6 +21,7 @@ export interface ThemeColors {
   // 기본 액션 - Green 강조
   primary: string;           // 메인 브랜드 컬러 (그린)
   primaryLight: string;      // 밝은 그린
+  primaryDark?: string;      // WCAG AA 준수 텍스트용 그린 (라이트 모드에서 대비 확보)
 
   // 매매 액션
   buy: string;               // 매수/상승 (그린)
@@ -90,6 +91,7 @@ export const DARK_COLORS: ThemeColors = {
 
   primary: '#4CAF50',
   primaryLight: '#66BB6A',
+  primaryDark: '#4CAF50',       // 다크 모드에서는 primary와 동일
 
   buy: '#4CAF50',
   sell: '#CF6679',
@@ -148,7 +150,7 @@ export const LIGHT_COLORS: ThemeColors = {
   // ========================================
   background: '#FAFAFA',        // 페이지 배경 (아주 밝은 회색, Apple 스타일)
   surface: '#FFFFFF',           // 카드 배경 (순백)
-  surfaceElevated: '#FFFFFF',   // 강조 카드 (순백 + 그림자로 구분)
+  surfaceElevated: '#F7F7F8',   // 강조/중첩 카드 (순백과 구분되는 미세 회색)
   surfaceLight: '#F8F9FA',      // 하위 호환 (약간 밝은 회색)
 
   // 인버스 섹션 (라이트 모드에서도 밝은 배경 유지)
@@ -157,6 +159,7 @@ export const LIGHT_COLORS: ThemeColors = {
 
   primary: '#4CAF50',
   primaryLight: '#66BB6A',
+  primaryDark: '#2E7D32',       // 라이트 모드 텍스트용 (흰 배경에서 WCAG AA 5.9:1)
 
   buy: '#4CAF50',
   sell: '#E53935',
@@ -180,7 +183,7 @@ export const LIGHT_COLORS: ThemeColors = {
   // 구분선 & 테두리 (밝은 회색 - 배경과 조화)
   // ========================================
   border: '#E8E8E8',            // 일반 구분선 (연한 회색)
-  borderLight: '#F0F0F0',       // 매우 연한 구분선
+  borderLight: '#E5E5E5',       // 연한 구분선 (배경과 구분 가능)
   borderStrong: '#D0D0D0',      // 강한 구분선 (중간 회색)
 
   disabled: '#E8E8E8',          // 비활성 배경 (연한 회색)

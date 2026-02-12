@@ -12,7 +12,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../../styles/theme';
+import { useTheme } from '../../hooks/useTheme';
 
 export type ToastType = 'success' | 'error' | 'info' | 'warning';
 
@@ -31,6 +31,7 @@ export default function Toast({
   duration = 3000,
   onHide,
 }: ToastProps) {
+  const { colors } = useTheme();
   const [slideAnim] = useState(new Animated.Value(100));
 
   useEffect(() => {
@@ -74,10 +75,10 @@ export default function Toast({
   }[type];
 
   const bgColor = {
-    success: '#4CAF50',
-    error: '#CF6679',
-    info: '#2196F3',
-    warning: '#FF9800',
+    success: colors.success,
+    error: colors.error,
+    info: colors.info,
+    warning: colors.warning,
   }[type];
 
   return (

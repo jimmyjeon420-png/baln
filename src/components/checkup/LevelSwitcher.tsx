@@ -7,45 +7,67 @@
  * advanced → "더 간단하게 [중급으로]"
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { InvestorLevel } from '../../hooks/useCheckupLevel';
 import { useTheme } from '../../hooks/useTheme';
+import type { ThemeColors } from '../../styles/colors';
 
 interface LevelSwitcherProps {
   currentLevel: InvestorLevel;
   onLevelChange: (level: InvestorLevel) => void;
 }
 
-const LEVEL_CONFIG: Record<InvestorLevel, { label: string; emoji: string; color: string }> = {
-  beginner: { label: '초급', emoji: '🌱', color: '#4CAF50' },
-  intermediate: { label: '중급', emoji: '📊', color: '#29B6F6' },
-  advanced: { label: '고급', emoji: '🔬', color: '#7C4DFF' },
-};
+/**
+ * 레벨별 색상을 테마에 맞게 반환.
+ * 라이트 모드에서 텍스트로 쓰이는 색은 WCAG AA 대비를 확보한 어두운 톤 사용.
+ */
+function getLevelConfig(level: InvestorLevel, colors: ThemeColors) {
+  const configs: Record<InvestorLevel, { label: string; emoji: string; color: string }> = {
+    beginner: { label: '초급', emoji: '🌱', color: colors.primaryDark ?? colors.primary },
+    intermediate: { label: '중급', emoji: '📊', color: colors.info },
+    advanced: { label: '고급', emoji: '🔬', color: colors.premium.purple },
+  };
+  return configs[level];
+}
+
+/**
+ * 스위치 버튼 색상 (배경색으로 쓰이므로 원래 채도 유지, 텍스트는 흰색)
+ */
+function getSwitchColor(level: InvestorLevel, colors: ThemeColors): string {
+  const switchColors: Record<InvestorLevel, string> = {
+    beginner: colors.primaryDark ?? colors.primary,
+    intermediate: colors.info,
+    advanced: colors.premium.purple,
+  };
+  return switchColors[level];
+}
 
 export default function LevelSwitcher({ currentLevel, onLevelChange }: LevelSwitcherProps) {
-  const config = LEVEL_CONFIG[currentLevel];
   const { colors } = useTheme();
+  const config = getLevelConfig(currentLevel, colors);
+
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   return (
-    <View style={[s.container, { backgroundColor: colors.inverseSurface, borderColor: colors.border }]}>
+    <View style={styles.container}>
       {/* 현재 레벨 표시 */}
-      <View style={s.currentLevel}>
-        <Text style={s.levelEmoji}>{config.emoji}</Text>
-        <Text style={[s.levelLabel, { color: config.color }]}>{config.label} 모드</Text>
+      <View style={styles.currentLevel}>
+        <Text style={styles.levelEmoji}>{config.emoji}</Text>
+        <Text style={[styles.levelLabel, { color: config.color }]}>{config.label} 모드</Text>
       </View>
 
       {/* 전환 버튼 */}
-      <View style={s.buttons}>
+      <View style={styles.buttons}>
         {currentLevel === 'beginner' && (
           <SwitchButton
             label="더 자세히"
             sublabel="중급"
             icon="arrow-up"
-            color="#29B6F6"
+            targetLevel="intermediate"
+            colors={colors}
             onPress={() => onLevelChange('intermediate')}
-            bgColor={colors.inverseSurface}
           />
         )}
 
@@ -55,17 +77,17 @@ export default function LevelSwitcher({ currentLevel, onLevelChange }: LevelSwit
               label="더 간단하게"
               sublabel="초급"
               icon="arrow-down"
-              color="#4CAF50"
+              targetLevel="beginner"
+              colors={colors}
               onPress={() => onLevelChange('beginner')}
-              bgColor={colors.inverseSurface}
             />
             <SwitchButton
               label="더 전문적으로"
               sublabel="고급"
               icon="arrow-up"
-              color="#7C4DFF"
+              targetLevel="advanced"
+              colors={colors}
               onPress={() => onLevelChange('advanced')}
-              bgColor={colors.inverseSurface}
             />
           </>
         )}
@@ -75,9 +97,9 @@ export default function LevelSwitcher({ currentLevel, onLevelChange }: LevelSwit
             label="더 간단하게"
             sublabel="중급"
             icon="arrow-down"
-            color="#29B6F6"
+            targetLevel="intermediate"
+            colors={colors}
             onPress={() => onLevelChange('intermediate')}
-            bgColor={colors.inverseSurface}
           />
         )}
       </View>
@@ -89,42 +111,47 @@ function SwitchButton({
   label,
   sublabel,
   icon,
-  color,
+  targetLevel,
+  colors,
   onPress,
-  bgColor,
 }: {
   label: string;
   sublabel: string;
   icon: string;
-  color: string;
+  targetLevel: InvestorLevel;
+  colors: ThemeColors;
   onPress: () => void;
-  bgColor: string;
 }) {
+  const color = getSwitchColor(targetLevel, colors);
+
   return (
     <TouchableOpacity
-      style={[s.switchButton, { borderColor: color + '40', backgroundColor: bgColor }]}
+      style={[switchStyles.switchButton, {
+        borderColor: `${color}40`,
+        backgroundColor: colors.inverseSurface,
+      }]}
       onPress={onPress}
       activeOpacity={0.7}
     >
       <Ionicons name={icon as any} size={14} color={color} />
-      <Text style={[s.switchLabel, { color }]}>{label}</Text>
-      <View style={[s.sublabelBadge, { backgroundColor: color + '20' }]}>
-        <Text style={[s.sublabelText, { color }]}>{sublabel}</Text>
+      <Text style={[switchStyles.switchLabel, { color }]}>{label}</Text>
+      <View style={[switchStyles.sublabelBadge, { backgroundColor: `${color}20` }]}>
+        <Text style={[switchStyles.sublabelText, { color }]}>{sublabel}</Text>
       </View>
     </TouchableOpacity>
   );
 }
 
-const s = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     marginHorizontal: 16,
     marginTop: 20,
     marginBottom: 8,
     padding: 16,
-    // backgroundColor: 동적 (colors.inverseSurface)
+    backgroundColor: colors.inverseSurface,
     borderRadius: 16,
     borderWidth: 1,
-    // borderColor: 동적 (colors.border)
+    borderColor: colors.border,
   },
   currentLevel: {
     flexDirection: 'row',
@@ -143,6 +170,9 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     gap: 10,
   },
+});
+
+const switchStyles = StyleSheet.create({
   switchButton: {
     flex: 1,
     flexDirection: 'row',
@@ -153,7 +183,6 @@ const s = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 10,
     borderWidth: 1,
-    // backgroundColor: 동적 (colors.inverseSurface)
   },
   switchLabel: {
     fontSize: 13,

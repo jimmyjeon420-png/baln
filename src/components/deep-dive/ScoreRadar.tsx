@@ -78,8 +78,10 @@ export default function ScoreRadar({
 }: ScoreRadarProps) {
   const { colors } = useTheme();
 
-  const cx = size / 2;
-  const cy = size / 2;
+  const padding = 30; // 상단 라벨 잘림 방지
+  const svgSize = size + padding * 2;
+  const cx = svgSize / 2;
+  const cy = svgSize / 2 + 8; // 약간 아래로 → 상단 라벨 공간 확보
   const maxRadius = size * 0.35;
   const scores = [financialScore, technicalScore, newsScore];
   const avgScore = (financialScore + technicalScore + newsScore) / 3;
@@ -105,7 +107,7 @@ export default function ScoreRadar({
         { backgroundColor: colors.surface, borderColor: colors.border },
       ]}
     >
-      <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      <Svg width={svgSize} height={svgSize} viewBox={`0 0 ${svgSize} ${svgSize}`}>
         {/* ── 배경 그리드 삼각형 ── */}
         {GRID_LEVELS.map((level, idx) => {
           const points = getTrianglePoints(cx, cy, maxRadius * level);

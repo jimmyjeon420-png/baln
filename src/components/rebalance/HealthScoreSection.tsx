@@ -205,7 +205,7 @@ export default function HealthScoreSection({ healthScore, onScoreImproved }: Hea
   const renderSuggestion = (factor: { label: string; score: number }) => {
     if (factor.score >= 40) return null;
     return (
-      <Text style={s.suggestion}>
+      <Text style={[s.suggestion, { color: colors.error, backgroundColor: colors.error + '1A', borderLeftColor: colors.error }]}>
         {FACTOR_SUGGESTIONS[factor.label] || ''}
       </Text>
     );
@@ -215,11 +215,11 @@ export default function HealthScoreSection({ healthScore, onScoreImproved }: Hea
     <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
       {/* 건강 점수 개선 토스트 */}
       {improveToast.show && (
-        <Animated.View style={[s.improveToast, { opacity: improveOpacity }]}>
-          <Ionicons name="sparkles" size={20} color="#FFD700" />
+        <Animated.View style={[s.improveToast, { opacity: improveOpacity, backgroundColor: colors.premium.gold + '26', borderColor: colors.premium.gold + '4D' }]}>
+          <Ionicons name="sparkles" size={20} color={colors.premium.gold} />
           <View style={s.improveToastContent}>
-            <Text style={s.improveToastTitle}>건강 점수가 {improveToast.improvement}점 올랐어요!</Text>
-            <Text style={s.improveToastSubtitle}>보상으로 AI 분석 1회 무료 (1C 적립)</Text>
+            <Text style={[s.improveToastTitle, { color: colors.premium.gold }]}>건강 점수가 {improveToast.improvement}점 올랐어요!</Text>
+            <Text style={[s.improveToastSubtitle, { color: colors.premium.gold + 'CC' }]}>보상으로 AI 분석 1회 무료 (1C 적립)</Text>
           </View>
         </Animated.View>
       )}
@@ -289,7 +289,7 @@ export default function HealthScoreSection({ healthScore, onScoreImproved }: Hea
 
       {/* [NEW] "지금 할 수 있는 것" 액션 가이드 — S등급이면 표시 안 함 */}
       {actionGuidance && (
-        <View style={[s.actionGuideSection, { backgroundColor: 'rgba(76, 175, 80, 0.1)', borderLeftColor: 'rgba(76, 175, 80, 0.3)' }]}>
+        <View style={[s.actionGuideSection, { backgroundColor: colors.success + '1A', borderLeftColor: colors.success + '4D' }]}>
           <View style={s.actionGuideRow}>
             <Ionicons name="arrow-forward-circle-outline" size={14} color={colors.success} />
             <Text style={[s.actionGuideLabel, { color: colors.success }]}>지금 할 수 있는 것</Text>
@@ -302,7 +302,7 @@ export default function HealthScoreSection({ healthScore, onScoreImproved }: Hea
       {!showDetail && (
         <View style={s.miniFactors}>
           {healthScore.factors.map((factor, idx) => {
-            const barColor = factor.score >= 70 ? '#4CAF50' : factor.score >= 40 ? '#FFC107' : '#CF6679';
+            const barColor = factor.score >= 70 ? colors.success : factor.score >= 40 ? colors.warning : colors.error;
             return (
               <View key={idx} style={s.miniFactor}>
                 <Text style={s.miniIcon}>{factor.icon}</Text>
@@ -398,10 +398,8 @@ const s = StyleSheet.create({
     marginBottom: 16,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    backgroundColor: 'rgba(255, 215, 0, 0.15)',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 215, 0, 0.3)',
   },
   improveToastContent: {
     flex: 1,
@@ -409,12 +407,10 @@ const s = StyleSheet.create({
   improveToastTitle: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#FFD700',
     marginBottom: 2,
   },
   improveToastSubtitle: {
     fontSize: 11,
-    color: 'rgba(255, 215, 0, 0.8)',
     fontWeight: '500',
   },
   headerRow: {
@@ -653,14 +649,11 @@ const s = StyleSheet.create({
   },
   suggestion: {
     fontSize: 13,
-    color: '#CF6679',
     lineHeight: 20,
     marginBottom: 12,
-    backgroundColor: 'rgba(207,102,121,0.1)',
     padding: 12,
     borderRadius: 8,
     borderLeftWidth: 3,
-    borderLeftColor: '#CF6679',
   },
   // 툴팁 모달
   modalOverlay: {

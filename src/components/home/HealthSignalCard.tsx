@@ -154,7 +154,7 @@ const HealthSignalCard = React.memo(({
       <View style={styles.card}>
         <View style={styles.headerRow}>
           <Text style={styles.dateText}>{formatDate()}</Text>
-          <Text style={styles.cardLogo}>baln</Text>
+          <Text style={styles.cardLogo}>bal<Text style={{ color: '#4CAF50' }}>n</Text></Text>
         </View>
         <View style={styles.centerArea}>
           <ActivityIndicator size="large" color={COLORS.textSecondary} />
@@ -174,7 +174,7 @@ const HealthSignalCard = React.memo(({
       <View style={styles.card}>
         <View style={styles.headerRow}>
           <Text style={styles.dateText}>{formatDate()}</Text>
-          <Text style={styles.cardLogo}>baln</Text>
+          <Text style={styles.cardLogo}>bal<Text style={{ color: '#4CAF50' }}>n</Text></Text>
         </View>
         <View style={styles.centerArea}>
           <Text style={styles.emptyEmoji}>❤️</Text>
@@ -198,7 +198,7 @@ const HealthSignalCard = React.memo(({
       {/* 상단: 날짜 + baln 로고 */}
       <View style={styles.headerRow}>
         <Text style={styles.dateText}>{formatDate()}</Text>
-        <Text style={styles.cardLogo}>baln</Text>
+        <Text style={styles.cardLogo}>bal<Text style={{ color: '#4CAF50' }}>n</Text></Text>
       </View>
 
       {/* 중앙: 거대 신호등 */}

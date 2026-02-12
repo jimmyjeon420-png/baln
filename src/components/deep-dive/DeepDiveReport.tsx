@@ -42,12 +42,14 @@ const RECOMMENDATION_COLORS: Record<string, { bg: string; text: string; label: s
   STRONG_SELL: { bg: 'rgba(207,102,121,0.2)', text: '#CF6679', label: '강력 매도' },
 };
 
-// ── 뉴스 sentiment → 점수 변환 ──
+// ── 뉴스 sentiment → 점수 변환 (5단계) ──
 function sentimentToScore(sentiment: string): number {
   switch (sentiment) {
-    case 'POSITIVE': return 80;
+    case 'VERY_POSITIVE': return 90;
+    case 'POSITIVE': return 70;
     case 'NEUTRAL': return 50;
-    case 'NEGATIVE': return 20;
+    case 'NEGATIVE': return 30;
+    case 'VERY_NEGATIVE': return 10;
     default: return 50;
   }
 }
@@ -158,7 +160,7 @@ export default function DeepDiveReport({ result }: DeepDiveReportProps) {
           <View style={styles.scoreLabels}>
             <Text style={[styles.scoreLabelMain, { color: colors.textPrimary }]}>종합 점수</Text>
             <Text style={[styles.scoreLabelSub, { color: colors.textTertiary }]}>
-              재무 {sections.financial.score} · 기술 {sections.technical.score} · 뉴스 {newsScore}
+              재무 {sections.financial.score} · 품질 {sections.quality?.score ?? '-'} · 기술 {sections.technical.score} · 뉴스 {newsScore}
             </Text>
           </View>
         </View>
@@ -306,7 +308,66 @@ export default function DeepDiveReport({ result }: DeepDiveReportProps) {
       </View>
 
       {/* ═══════════════════════════════════════
-          5. 뉴스 타임라인
+          5. 투자 품질 (Moat / 경영진 / 산업)
+         ═══════════════════════════════════════ */}
+      {sections.quality && (
+        <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+            투자 품질
+          </Text>
+          <Text style={[styles.sectionScore, { color: colors.primary }]}>
+            {sections.quality.score}점
+          </Text>
+
+          <View style={styles.highlightList}>
+            {sections.quality.highlights.map((h: string, i: number) => (
+              <View key={i} style={styles.highlightRow}>
+                <Ionicons name="ellipse" size={6} color={colors.primary} style={styles.bulletIcon} />
+                <Text style={[styles.highlightText, { color: colors.textSecondary }]}>{h}</Text>
+              </View>
+            ))}
+          </View>
+
+          {sections.quality.metrics && (
+            <View style={[styles.signalTable, { borderColor: colors.border }]}>
+              <View style={[styles.signalHeaderRow, { backgroundColor: colors.surfaceLight }]}>
+                <Text style={[styles.signalHeaderCell, styles.signalCol1, { color: colors.textTertiary }]}>항목</Text>
+                <Text style={[styles.signalHeaderCell, styles.signalCol2, { color: colors.textTertiary }]}>평가</Text>
+                <Text style={[styles.signalHeaderCell, styles.signalCol3, { color: colors.textTertiary }]}>상세</Text>
+              </View>
+              {sections.quality.metrics.map((m: any, i: number) => (
+                <View
+                  key={i}
+                  style={[
+                    styles.signalRow,
+                    { borderBottomColor: colors.border },
+                    i === sections.quality!.metrics!.length - 1 && styles.signalRowLast,
+                  ]}
+                >
+                  <Text style={[styles.signalCell, styles.signalCol1, { color: colors.textPrimary }]}>
+                    {m.label}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.signalCell,
+                      styles.signalCol2,
+                      { color: m.status === 'good' ? '#4CAF50' : m.status === 'bad' ? '#EF5350' : '#FFB74D' },
+                    ]}
+                  >
+                    {m.value}
+                  </Text>
+                  <Text style={[styles.signalCell, styles.signalCol3, { color: colors.textSecondary }]}>
+                    {m.detail || ''}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
+      )}
+
+      {/* ═══════════════════════════════════════
+          6. 뉴스 타임라인
          ═══════════════════════════════════════ */}
       <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
@@ -336,7 +397,29 @@ export default function DeepDiveReport({ result }: DeepDiveReportProps) {
       </View>
 
       {/* ═══════════════════════════════════════
-          7. 면책 문구
+          7. 데이터 출처
+         ═══════════════════════════════════════ */}
+      {result.dataSources && result.dataSources.length > 0 && (
+        <View style={[styles.sourcesBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View style={styles.sourcesHeader}>
+            <Ionicons name="document-text-outline" size={16} color={colors.textTertiary} />
+            <Text style={[styles.sourcesTitle, { color: colors.textSecondary }]}>데이터 출처</Text>
+          </View>
+          {result.dataSources.map((source, idx) => (
+            <View key={idx} style={styles.sourceRow}>
+              <Text style={[styles.sourceName, { color: colors.textPrimary }]}>
+                {source.name}
+              </Text>
+              <Text style={[styles.sourceDetail, { color: colors.textTertiary }]}>
+                {source.detail} ({source.date})
+              </Text>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {/* ═══════════════════════════════════════
+          8. 면책 문구
          ═══════════════════════════════════════ */}
       <View style={[styles.disclaimerBox, { borderColor: colors.border }]}>
         <Text style={[styles.disclaimerText, { color: colors.textQuaternary }]}>
@@ -349,18 +432,21 @@ export default function DeepDiveReport({ result }: DeepDiveReportProps) {
   );
 }
 
-// ── 유틸: 큰 숫자 포맷 (억/조) ──
+// ── 유틸: 큰 숫자 포맷 (원화 단위: 조원/억원/만원) ──
 function formatLargeNumber(value: number): string {
-  if (value >= 1_0000_0000_0000) {
-    return `${(value / 1_0000_0000_0000).toFixed(1)}조`;
+  const abs = Math.abs(value);
+  const sign = value < 0 ? '-' : '';
+
+  if (abs >= 1_0000_0000_0000) {
+    return `${sign}약 ${(abs / 1_0000_0000_0000).toFixed(1)}조원`;
   }
-  if (value >= 1_0000_0000) {
-    return `${(value / 1_0000_0000).toFixed(0)}억`;
+  if (abs >= 1_0000_0000) {
+    return `${sign}약 ${(abs / 1_0000_0000).toFixed(0)}억원`;
   }
-  if (value >= 1_0000) {
-    return `${(value / 1_0000).toFixed(0)}만`;
+  if (abs >= 1_0000) {
+    return `${sign}약 ${(abs / 1_0000).toFixed(0)}만원`;
   }
-  return value.toLocaleString();
+  return `${sign}${abs.toLocaleString()}원`;
 }
 
 // ── 유틸: 시그널 색상 ──
@@ -553,6 +639,35 @@ const styles = StyleSheet.create({
   signalCol1: { flex: 2 },
   signalCol2: { flex: 1.5, fontWeight: '600' },
   signalCol3: { flex: 1.5, textAlign: 'right' },
+
+  // ── 데이터 출처 ──
+  sourcesBox: {
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    marginBottom: 12,
+  },
+  sourcesHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 10,
+  },
+  sourcesTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  sourceRow: {
+    marginBottom: 6,
+  },
+  sourceName: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  sourceDetail: {
+    fontSize: 11,
+    marginTop: 1,
+  },
 
   // ── 면책 ──
   disclaimerBox: {

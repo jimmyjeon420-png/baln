@@ -5,9 +5,10 @@
  * 시장 분위기를 직관적인 온도계로 표시. 중급+고급 전용.
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '../../hooks/useTheme';
+import type { ThemeColors } from '../../styles/colors';
 import type { MorningBriefingResult } from '../../services/gemini';
 
 interface MarketTemperatureProps {
@@ -15,11 +16,18 @@ interface MarketTemperatureProps {
   isAILoading: boolean;
 }
 
-const SENTIMENT_CONFIG = {
-  BULLISH: { emoji: '🔥', label: '과열', color: '#CF6679', bg: 'rgba(207,102,121,0.12)' },
-  NEUTRAL: { emoji: '😐', label: '보통', color: '#FFB74D', bg: 'rgba(255,183,77,0.12)' },
-  BEARISH: { emoji: '🧊', label: '냉각', color: '#64B5F6', bg: 'rgba(100,181,246,0.12)' },
-} as const;
+/**
+ * 센티먼트별 색상을 테마 토큰에서 가져옴.
+ * 활성 상태에서는 색상을 배경으로 사용하고 텍스트는 흰색으로 처리하여
+ * 라이트 모드에서도 대비 확보.
+ */
+function getSentimentConfig(colors: ThemeColors) {
+  return {
+    BULLISH: { emoji: '🔥', label: '과열', color: colors.error, bg: `${colors.error}20` },
+    NEUTRAL: { emoji: '😐', label: '보통', color: colors.warning, bg: `${colors.warning}20` },
+    BEARISH: { emoji: '🧊', label: '냉각', color: colors.info, bg: `${colors.info}20` },
+  } as const;
+}
 
 function SkeletonLine({ width, backgroundColor }: { width: number; backgroundColor: string }) {
   return (
@@ -29,12 +37,14 @@ function SkeletonLine({ width, backgroundColor }: { width: number; backgroundCol
 
 export default function MarketTemperature({ morningBriefing, isAILoading }: MarketTemperatureProps) {
   const { colors, shadows } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const SENTIMENT_CONFIG = useMemo(() => getSentimentConfig(colors), [colors]);
 
   // AI 로딩 중: 스켈레톤
   if (isAILoading) {
     return (
-      <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border }, shadows.sm]}>
-        <Text style={[s.cardTitle, { color: colors.textPrimary }]}>시장 온도계</Text>
+      <View style={[styles.card, shadows.sm]}>
+        <Text style={styles.cardTitle}>시장 온도계</Text>
         <View style={sk.container}>
           <SkeletonLine width={80} backgroundColor={colors.inverseSurface} />
           <SkeletonLine width={200} backgroundColor={colors.inverseSurface} />
@@ -47,9 +57,9 @@ export default function MarketTemperature({ morningBriefing, isAILoading }: Mark
   // 데이터 없음
   if (!morningBriefing) {
     return (
-      <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border }, shadows.sm]}>
-        <Text style={[s.cardTitle, { color: colors.textPrimary }]}>시장 온도계</Text>
-        <Text style={[s.emptyText, { color: colors.textSecondary }]}>시장 데이터 준비 중</Text>
+      <View style={[styles.card, shadows.sm]}>
+        <Text style={styles.cardTitle}>시장 온도계</Text>
+        <Text style={styles.emptyText}>시장 데이터 준비 중</Text>
       </View>
     );
   }
@@ -60,11 +70,11 @@ export default function MarketTemperature({ morningBriefing, isAILoading }: Mark
   const highlight = morningBriefing.macroSummary.highlights?.[0] ?? '';
 
   return (
-    <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border }, shadows.sm]}>
-      <Text style={[s.cardTitle, { color: colors.textPrimary }]}>시장 온도계</Text>
+    <View style={[styles.card, shadows.sm]}>
+      <Text style={styles.cardTitle}>시장 온도계</Text>
 
       {/* 온도계 인디케이터 */}
-      <View style={s.gaugeRow}>
+      <View style={styles.gaugeRow}>
         {(['BEARISH', 'NEUTRAL', 'BULLISH'] as const).map((level) => {
           const cfg = SENTIMENT_CONFIG[level];
           const isActive = level === sentiment;
@@ -72,15 +82,24 @@ export default function MarketTemperature({ morningBriefing, isAILoading }: Mark
             <View
               key={level}
               style={[
-                s.gaugeItem,
-                { backgroundColor: colors.inverseSurface },
-                isActive && { backgroundColor: cfg.bg, borderColor: cfg.color, borderWidth: 1 },
+                styles.gaugeItem,
+                isActive && {
+                  backgroundColor: cfg.color,
+                  borderColor: cfg.color,
+                  borderWidth: 1,
+                },
               ]}
             >
-              <Text style={[s.gaugeEmoji, { fontSize: isActive ? 24 : 18 }]}>
+              <Text style={[styles.gaugeEmoji, { fontSize: isActive ? 24 : 18 }]}>
                 {cfg.emoji}
               </Text>
-              <Text style={[s.gaugeLabel, { color: colors.inverseText }, isActive && { color: cfg.color, fontWeight: '700' }]}>
+              <Text style={[
+                styles.gaugeLabel,
+                isActive && {
+                  color: '#FFFFFF',
+                  fontWeight: '700',
+                },
+              ]}>
                 {cfg.label}
               </Text>
             </View>
@@ -89,20 +108,20 @@ export default function MarketTemperature({ morningBriefing, isAILoading }: Mark
       </View>
 
       {/* 요약 */}
-      <View style={[s.summaryBox, { backgroundColor: colors.inverseSurface }]}>
-        <Text style={[s.summaryTitle, { color: colors.inverseText }]}>{title}</Text>
-        {highlight ? <Text style={[s.summaryHighlight, { color: colors.textSecondary }]}>{highlight}</Text> : null}
+      <View style={styles.summaryBox}>
+        <Text style={styles.summaryTitle}>{title}</Text>
+        {highlight ? <Text style={styles.summaryHighlight}>{highlight}</Text> : null}
       </View>
     </View>
   );
 }
 
-const s = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   card: {
-    // backgroundColor: 동적 (colors.surface)
+    backgroundColor: colors.surface,
     borderRadius: 16,
     borderWidth: 1,
-    // borderColor: 동적 (colors.border)
+    borderColor: colors.border,
     padding: 24,
     marginHorizontal: 16,
     marginTop: 12,
@@ -110,12 +129,12 @@ const s = StyleSheet.create({
   cardTitle: {
     fontSize: 16,
     fontWeight: '700',
-    // color: 동적 (colors.textPrimary)
+    color: colors.textPrimary,
     marginBottom: 16,
   },
   emptyText: {
     fontSize: 14,
-    // color: 동적 (colors.textSecondary)
+    color: colors.textSecondary,
   },
   gaugeRow: {
     flexDirection: 'row',
@@ -128,18 +147,20 @@ const s = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderRadius: 12,
-    // backgroundColor: 동적 (colors.inverseSurface)
+    backgroundColor: colors.surfaceElevated,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   gaugeEmoji: {
     marginBottom: 4,
   },
   gaugeLabel: {
     fontSize: 12,
-    // color: 동적 (colors.inverseText 또는 cfg.color)
+    color: colors.textSecondary,
     fontWeight: '500',
   },
   summaryBox: {
-    // backgroundColor: 동적 (colors.inverseSurface)
+    backgroundColor: colors.surfaceElevated,
     borderRadius: 12,
     padding: 14,
     gap: 6,
@@ -147,12 +168,12 @@ const s = StyleSheet.create({
   summaryTitle: {
     fontSize: 14,
     fontWeight: '600',
-    // color: 동적 (colors.inverseText)
+    color: colors.textPrimary,
     lineHeight: 20,
   },
   summaryHighlight: {
     fontSize: 13,
-    // color: 동적 (colors.textSecondary)
+    color: colors.textSecondary,
     lineHeight: 20,
   },
 });
@@ -161,7 +182,6 @@ const sk = StyleSheet.create({
   container: { gap: 10 },
   line: {
     height: 14,
-    // backgroundColor: 동적 (colors.inverseSurface)
     borderRadius: 7,
   },
 });

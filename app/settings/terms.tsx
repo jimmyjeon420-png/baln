@@ -3,39 +3,33 @@
  */
 
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useTheme } from '../../src/hooks/useTheme';
+import { HeaderBar } from '../../src/components/common/HeaderBar';
 
 export default function TermsScreen() {
-  const router = useRouter();
+  const { colors } = useTheme();
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* 헤더 */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={28} color="#4CAF50" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>이용약관</Text>
-        <View style={{ width: 28 }} />
-      </View>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <HeaderBar title="이용약관" />
 
       <ScrollView style={styles.content}>
-        <Text style={styles.title}>스마트 리밸런서 서비스 이용약관</Text>
-        <Text style={styles.date}>최종 수정일: 2026년 2월 1일</Text>
+        <Text style={[styles.title, { color: colors.textPrimary }]}>스마트 리밸런서 서비스 이용약관</Text>
+        <Text style={[styles.date, { color: colors.textTertiary }]}>최종 수정일: 2026년 2월 1일</Text>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>제1조 (목적)</Text>
-          <Text style={styles.sectionContent}>
+          <Text style={[styles.sectionTitle, { color: colors.primary }]}>제1조 (목적)</Text>
+          <Text style={[styles.sectionContent, { color: colors.textSecondary }]}>
             이 약관은 스마트 리밸런서(이하 "회사")가 제공하는 포트폴리오 관리 서비스(이하 "서비스")의 이용조건 및 절차, 회사와 회원 간의 권리, 의무, 책임사항 및 기타 필요한 사항을 규정함을 목적으로 합니다.
           </Text>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>제2조 (서비스의 내용)</Text>
-          <Text style={styles.sectionContent}>
+          <Text style={[styles.sectionTitle, { color: colors.primary }]}>제2조 (서비스의 내용)</Text>
+          <Text style={[styles.sectionContent, { color: colors.textSecondary }]}>
             1. 포트폴리오 현황 관리 및 시각화{'\n'}
             2. AI 기반 자산 분석 및 추출{'\n'}
             3. 리밸런싱 추천 및 시뮬레이션{'\n'}
@@ -45,13 +39,13 @@ export default function TermsScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>제3조 (면책조항 및 투자 위험 고지)</Text>
-          <View style={styles.warningBox}>
-            <Text style={styles.warningText}>
+          <Text style={[styles.sectionTitle, { color: colors.primary }]}>제3조 (면책조항 및 투자 위험 고지)</Text>
+          <View style={[styles.warningBox, { borderColor: `${colors.error}4D` }]}>
+            <Text style={[styles.warningText, { color: colors.error }]}>
               ⚠️ 원금 손실 위험 경고: 투자 원금의 일부 또는 전부를 잃을 수 있습니다.
             </Text>
           </View>
-          <Text style={styles.sectionContent}>
+          <Text style={[styles.sectionContent, { color: colors.textSecondary }]}>
             1. 본 서비스는 「자본시장과 금융투자업에 관한 법률」(이하 "자본시장법") 제6조에 따른 금융투자업(투자자문업, 투자일임업, 집합투자업 등)에 해당하지 않으며, 금융위원회에 등록된 투자자문·일임 서비스가 아닙니다.{'\n\n'}
             2. 서비스에서 제공하는 모든 정보(AI 분석, 리밸런싱 제안, 세금 계산, 종목 분석 등)는 일반적인 정보 제공 목적이며, 특정 금융상품에 대한 매수·매도 권유가 아닙니다. 투자 결정에 대한 모든 책임은 이용자 본인에게 있습니다.{'\n\n'}
             3. 회사는 서비스 이용으로 인한 직접적·간접적 투자 손실에 대해 어떠한 법적 책임도 부담하지 않습니다.{'\n\n'}
@@ -62,15 +56,15 @@ export default function TermsScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>제4조 (개인정보 보호)</Text>
-          <Text style={styles.sectionContent}>
+          <Text style={[styles.sectionTitle, { color: colors.primary }]}>제4조 (개인정보 보호)</Text>
+          <Text style={[styles.sectionContent, { color: colors.textSecondary }]}>
             회사는 관련 법령이 정하는 바에 따라 회원의 개인정보를 보호하며, 개인정보의 보호 및 사용에 대해서는 개인정보처리방침을 따릅니다.
           </Text>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>제5조 (서비스 이용 제한)</Text>
-          <Text style={styles.sectionContent}>
+          <Text style={[styles.sectionTitle, { color: colors.primary }]}>제5조 (서비스 이용 제한)</Text>
+          <Text style={[styles.sectionContent, { color: colors.textSecondary }]}>
             다음의 경우 서비스 이용이 제한될 수 있습니다:{'\n'}
             1. 타인의 정보 도용{'\n'}
             2. 서비스 운영 방해{'\n'}
@@ -80,8 +74,8 @@ export default function TermsScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>제6조 (VIP 라운지 모임 서비스)</Text>
-          <Text style={styles.sectionContent}>
+          <Text style={[styles.sectionTitle, { color: colors.primary }]}>제6조 (VIP 라운지 모임 서비스)</Text>
+          <Text style={[styles.sectionContent, { color: colors.textSecondary }]}>
             1. VIP 라운지 모임은 회원 간의 자발적인 만남을 위한 매칭 플랫폼으로, 회사는 모임의 주최자가 아닙니다.{'\n\n'}
             2. 회사는 모임 진행 중 또는 모임으로 인해 발생하는 어떠한 사고, 분쟁, 손해에 대해서도 책임을 지지 않습니다.{'\n\n'}
             3. 모임 참가에 따른 모든 위험과 책임은 참가자 본인에게 있습니다.{'\n\n'}
@@ -93,8 +87,8 @@ export default function TermsScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>제7조 (수수료 및 결제)</Text>
-          <Text style={styles.sectionContent}>
+          <Text style={[styles.sectionTitle, { color: colors.primary }]}>제7조 (수수료 및 결제)</Text>
+          <Text style={[styles.sectionContent, { color: colors.textSecondary }]}>
             1. 유료 모임 참가 시 참가비의 10%가 플랫폼 수수료로 부과됩니다.{'\n\n'}
             2. 결제는 신뢰할 수 있는 결제 대행사를 통해 처리되며, 결제 정보는 회사에 저장되지 않습니다.{'\n\n'}
             3. 환불은 모임 시작 24시간 전까지 신청 시 전액 환불이 가능하며, 이후에는 호스트의 정책에 따릅니다.
@@ -103,20 +97,20 @@ export default function TermsScreen() {
 
         <View style={styles.section}>
           <View style={styles.dangerSectionHeader}>
-            <Ionicons name="warning" size={18} color="#CF6679" />
-            <Text style={[styles.sectionTitle, styles.dangerSectionTitle]}>제8조 (유사투자자문업 금지)</Text>
+            <Ionicons name="warning" size={18} color={colors.error} />
+            <Text style={[styles.sectionTitle, styles.dangerSectionTitle, { color: colors.error }]}>제8조 (유사투자자문업 금지)</Text>
           </View>
-          <View style={styles.dangerBox}>
-            <Text style={styles.sectionContent}>
+          <View style={[styles.dangerBox, { backgroundColor: `${colors.error}15`, borderColor: `${colors.error}4D` }]}>
+            <Text style={[styles.sectionContent, { color: colors.textSecondary }]}>
               1. 회원은 본 서비스를 이용하여 다음 각 호에 해당하는 행위를 하여서는 아니 됩니다.{'\n\n'}
-              {'  '}가. <Text style={styles.dangerHighlight}>「리딩방」 운영</Text>: 불특정 다수에게 특정 종목의 매수·매도를 지시하거나 유사투자자문 행위를 하는 것{'\n\n'}
-              {'  '}나. <Text style={styles.dangerHighlight}>수익 보장 표현</Text>: "원금 보장", "확정 수익률 OO%", "100% 수익" 등 투자 결과를 보장하는 표현을 사용하는 것{'\n\n'}
-              {'  '}다. <Text style={styles.dangerHighlight}>외부 채널 유인</Text>: 카카오톡, 텔레그램, 라인 등 외부 메신저로 회원을 유도하여 투자 권유 또는 금전을 요구하는 것{'\n\n'}
-              {'  '}라. <Text style={styles.dangerHighlight}>종목 추천료 수취</Text>: 유료 또는 무료를 불문하고, 투자 자문업 등록 없이 종목 추천의 대가를 수취하는 것{'\n\n'}
-              2. 상기 행위는 「자본시장과 금융투자업에 관한 법률」 제7조(무인가·무등록 금융투자업) 위반에 해당하며, <Text style={styles.dangerHighlight}>5년 이하의 징역 또는 2억원 이하의 벌금</Text>에 처해질 수 있습니다.{'\n\n'}
+              {'  '}가. <Text style={[styles.dangerHighlight, { color: colors.error }]}>「리딩방」 운영</Text>: 불특정 다수에게 특정 종목의 매수·매도를 지시하거나 유사투자자문 행위를 하는 것{'\n\n'}
+              {'  '}나. <Text style={[styles.dangerHighlight, { color: colors.error }]}>수익 보장 표현</Text>: "원금 보장", "확정 수익률 OO%", "100% 수익" 등 투자 결과를 보장하는 표현을 사용하는 것{'\n\n'}
+              {'  '}다. <Text style={[styles.dangerHighlight, { color: colors.error }]}>외부 채널 유인</Text>: 카카오톡, 텔레그램, 라인 등 외부 메신저로 회원을 유도하여 투자 권유 또는 금전을 요구하는 것{'\n\n'}
+              {'  '}라. <Text style={[styles.dangerHighlight, { color: colors.error }]}>종목 추천료 수취</Text>: 유료 또는 무료를 불문하고, 투자 자문업 등록 없이 종목 추천의 대가를 수취하는 것{'\n\n'}
+              2. 상기 행위는 「자본시장과 금융투자업에 관한 법률」 제7조(무인가·무등록 금융투자업) 위반에 해당하며, <Text style={[styles.dangerHighlight, { color: colors.error }]}>5년 이하의 징역 또는 2억원 이하의 벌금</Text>에 처해질 수 있습니다.{'\n\n'}
               3. 회사는 위반 행위 적발 시 다음의 조치를 즉시 시행합니다.{'\n\n'}
-              {'  '}가. 해당 회원의 <Text style={styles.dangerHighlight}>계정 영구 정지</Text> (복구 불가){'\n'}
-              {'  '}나. 관련 데이터의 보전 및 <Text style={styles.dangerHighlight}>관할 수사기관 통보</Text>{'\n'}
+              {'  '}가. 해당 회원의 <Text style={[styles.dangerHighlight, { color: colors.error }]}>계정 영구 정지</Text> (복구 불가){'\n'}
+              {'  '}나. 관련 데이터의 보전 및 <Text style={[styles.dangerHighlight, { color: colors.error }]}>관할 수사기관 통보</Text>{'\n'}
               {'  '}다. 피해 회원에 대한 민사상 손해배상 청구 지원{'\n\n'}
               4. 회원은 위반 행위를 목격한 경우 즉시 앱 내 신고 기능 또는 고객센터(baln.logic@gmail.com)를 통해 신고하여야 합니다.
             </Text>
@@ -124,8 +118,8 @@ export default function TermsScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>제9조 (크레딧 및 환불 정책)</Text>
-          <Text style={styles.sectionContent}>
+          <Text style={[styles.sectionTitle, { color: colors.primary }]}>제9조 (크레딧 및 환불 정책)</Text>
+          <Text style={[styles.sectionContent, { color: colors.textSecondary }]}>
             1. 크레딧은 서비스 내 AI 프리미엄 기능을 이용하기 위한 선불 결제 수단입니다.{'\n\n'}
             2. 크레딧 구매 후 미사용 크레딧에 대해 「전자상거래 등에서의 소비자보호에 관한 법률」 제17조에 따라 구매일로부터 7일 이내 청약철회가 가능합니다.{'\n\n'}
             3. 단, 이미 사용(차감)된 크레딧은 환불 대상에서 제외됩니다.{'\n\n'}
@@ -137,8 +131,8 @@ export default function TermsScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>제10조 (AI 자동화 의사결정 및 프로파일링)</Text>
-          <Text style={styles.sectionContent}>
+          <Text style={[styles.sectionTitle, { color: colors.primary }]}>제10조 (AI 자동화 의사결정 및 프로파일링)</Text>
+          <Text style={[styles.sectionContent, { color: colors.textSecondary }]}>
             1. 회사는 이용자의 포트폴리오 데이터를 기반으로 AI 자동 분석(리스크 평가, 리밸런싱 제안, 세금 계산 등)을 수행합니다.{'\n\n'}
             2. 이용자는 「개인정보 보호법」 제37조의2에 따라 완전히 자동화된 의사결정에 대해 거부할 권리가 있으며, 설정 메뉴에서 AI 자동 분석 기능을 비활성화할 수 있습니다.{'\n\n'}
             3. AI 분석은 투자 결정을 자동으로 실행하지 않으며, 최종 투자 판단은 항상 이용자 본인이 직접 수행합니다.{'\n\n'}
@@ -146,7 +140,7 @@ export default function TermsScreen() {
           </Text>
         </View>
 
-        <Text style={styles.footer}>
+        <Text style={[styles.footer, { color: colors.textTertiary, borderTopColor: colors.border }]}>
           본 약관에 동의하지 않으실 경우 서비스 이용이 제한될 수 있습니다.{'\n'}
           본 약관은 대한민국 법률에 따라 해석되며, 관할 법원은 서울중앙지방법원으로 합니다.
         </Text>
@@ -158,19 +152,6 @@ export default function TermsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#FFFFFF',
   },
   content: {
     flex: 1,
@@ -179,12 +160,10 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#FFFFFF',
     marginBottom: 8,
   },
   date: {
     fontSize: 13,
-    color: '#888888',
     marginBottom: 24,
   },
   section: {
@@ -193,23 +172,19 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#4CAF50',
     marginBottom: 8,
   },
   sectionContent: {
     fontSize: 14,
-    color: '#CCCCCC',
     lineHeight: 22,
   },
   footer: {
     fontSize: 13,
-    color: '#888888',
     textAlign: 'center',
     marginTop: 16,
     marginBottom: 40,
     paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: '#2A2A2A',
   },
   // 유사투자자문 금지 조항 (위험 강조 스타일)
   dangerSectionHeader: {
@@ -219,18 +194,14 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   dangerSectionTitle: {
-    color: '#CF6679',
     marginBottom: 0,
   },
   dangerBox: {
-    backgroundColor: '#1a0a0a',
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(207, 102, 121, 0.3)',
   },
   dangerHighlight: {
-    color: '#CF6679',
     fontWeight: '700',
   },
   // 원금 손실 경고 박스
@@ -240,12 +211,10 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: 'rgba(207, 102, 121, 0.3)',
   },
   warningText: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#CF6679',
     textAlign: 'center',
     lineHeight: 20,
   },

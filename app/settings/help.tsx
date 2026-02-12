@@ -6,10 +6,11 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useTheme } from '../../src/hooks/useTheme';
+import { HeaderBar } from '../../src/components/common/HeaderBar';
 
 export default function HelpScreen() {
-  const router = useRouter();
+  const { colors } = useTheme();
 
   const faqItems = [
     {
@@ -39,39 +40,32 @@ export default function HelpScreen() {
   ];
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* 헤더 */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={28} color="#4CAF50" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>도움말</Text>
-        <View style={{ width: 28 }} />
-      </View>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <HeaderBar title="도움말" />
 
       <ScrollView style={styles.content}>
         {/* FAQ 섹션 */}
-        <Text style={styles.sectionTitle}>자주 묻는 질문</Text>
-        <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: colors.textTertiary }]}>자주 묻는 질문</Text>
+        <View style={[styles.section, { backgroundColor: colors.surface }]}>
           {faqItems.map((item, index) => (
-            <View key={index} style={styles.faqItem}>
-              <Text style={styles.faqQuestion}>{item.question}</Text>
-              <Text style={styles.faqAnswer}>{item.answer}</Text>
+            <View key={index} style={[styles.faqItem, { borderBottomColor: colors.border }]}>
+              <Text style={[styles.faqQuestion, { color: colors.textPrimary }]}>{item.question}</Text>
+              <Text style={[styles.faqAnswer, { color: colors.textSecondary }]}>{item.answer}</Text>
             </View>
           ))}
         </View>
 
         {/* 문의하기 섹션 */}
-        <Text style={[styles.sectionTitle, { marginTop: 24 }]}>문의하기</Text>
-        <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { marginTop: 24, color: colors.textTertiary }]}>문의하기</Text>
+        <View style={[styles.section, { backgroundColor: colors.surface }]}>
           {supportItems.map((item, index) => (
-            <TouchableOpacity key={index} style={styles.supportItem} onPress={item.action}>
-              <Ionicons name={item.icon as any} size={22} color="#4CAF50" />
+            <TouchableOpacity key={index} style={[styles.supportItem, { borderBottomColor: colors.border }]} onPress={item.action}>
+              <Ionicons name={item.icon as any} size={22} color={colors.primary} />
               <View style={{ flex: 1 }}>
-                <Text style={styles.supportLabel}>{item.label}</Text>
-                <Text style={styles.supportDesc}>{item.desc}</Text>
+                <Text style={[styles.supportLabel, { color: colors.textPrimary }]}>{item.label}</Text>
+                <Text style={[styles.supportDesc, { color: colors.textTertiary }]}>{item.desc}</Text>
               </View>
-              <Ionicons name="chevron-forward" size={18} color="#888888" />
+              <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
             </TouchableOpacity>
           ))}
         </View>
@@ -83,19 +77,6 @@ export default function HelpScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#FFFFFF',
   },
   content: {
     flex: 1,
@@ -104,29 +85,24 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#888888',
     marginBottom: 12,
     textTransform: 'uppercase',
   },
   section: {
-    backgroundColor: '#1E1E1E',
     borderRadius: 16,
     overflow: 'hidden',
   },
   faqItem: {
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#2A2A2A',
   },
   faqQuestion: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#FFFFFF',
     marginBottom: 8,
   },
   faqAnswer: {
     fontSize: 14,
-    color: '#AAAAAA',
     lineHeight: 20,
   },
   supportItem: {
@@ -134,16 +110,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#2A2A2A',
     gap: 12,
   },
   supportLabel: {
     fontSize: 16,
-    color: '#FFFFFF',
   },
   supportDesc: {
     fontSize: 12,
-    color: '#888888',
     marginTop: 2,
   },
 });

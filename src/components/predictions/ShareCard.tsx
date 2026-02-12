@@ -155,7 +155,7 @@ export default function ShareCard({
               >
                 {/* 상단: baln 로고 */}
                 <View style={styles.cardHeader}>
-                  <Text style={styles.logoText}>baln</Text>
+                  <Text style={styles.logoText}>bal<Text style={{ color: '#4CAF50' }}>n</Text></Text>
                   <Text style={styles.logoSubtext}>.logic</Text>
                 </View>
 
@@ -183,10 +183,10 @@ export default function ShareCard({
 
                 {/* 하단: 워터마크 */}
                 <View style={styles.cardFooter}>
-                  <Text style={styles.watermark}>baln.app</Text>
+                  <Text style={styles.watermark}>bal<Text style={{ color: '#4CAF50' }}>n</Text>.app</Text>
                   <View style={styles.divider} />
                   <Text style={styles.watermark}>
-                    <Text style={styles.watermarkBrand}>baln</Text>
+                    <Text style={styles.watermarkBrand}>bal<Text style={{ color: '#4CAF50' }}>n</Text></Text>
                     <Text style={styles.watermarkLogic}>.logic</Text>
                   </Text>
                 </View>

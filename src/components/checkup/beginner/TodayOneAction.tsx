@@ -8,6 +8,7 @@
 import React, { useEffect, useRef, useMemo } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
 import { useTheme } from '../../../hooks/useTheme';
+import type { ThemeColors } from '../../../styles/colors';
 
 type ActionType = 'BUY' | 'HOLD' | 'SELL' | 'WATCH';
 
@@ -24,12 +25,15 @@ interface TodayOneActionProps {
   isAILoading: boolean;
 }
 
-function getActionConfig(actionType: ActionType, colors: any) {
-  const config: Record<ActionType, { label: string; color: string; bgColor: string }> = {
-    BUY: { label: '매수', color: colors.buy, bgColor: `${colors.buy}20` },
-    HOLD: { label: '유지', color: colors.hold, bgColor: `${colors.hold}20` },
-    SELL: { label: '매도', color: colors.sell, bgColor: `${colors.sell}20` },
-    WATCH: { label: '관심', color: colors.warning, bgColor: `${colors.warning}20` },
+/**
+ * 액션 배지 설정: 배경색에 액션 색상 사용, 텍스트는 흰색으로 대비 확보
+ */
+function getActionConfig(actionType: ActionType, colors: ThemeColors) {
+  const config: Record<ActionType, { label: string; bgColor: string; textColor: string }> = {
+    BUY: { label: '매수', bgColor: colors.buy, textColor: '#FFFFFF' },
+    HOLD: { label: '유지', bgColor: colors.hold, textColor: '#FFFFFF' },
+    SELL: { label: '매도', bgColor: colors.sell, textColor: '#FFFFFF' },
+    WATCH: { label: '관심', bgColor: colors.warning, textColor: '#FFFFFF' },
   };
   return config[actionType];
 }
@@ -109,7 +113,7 @@ export default function TodayOneAction({ action, isAILoading }: TodayOneActionPr
               <Text
                 style={[
                   styles.badgeText,
-                  { color: actionConfig.color },
+                  { color: actionConfig.textColor },
                 ]}
               >
                 {actionConfig.label}
@@ -129,7 +133,7 @@ export default function TodayOneAction({ action, isAILoading }: TodayOneActionPr
   );
 }
 
-function createStyles(colors: any) {
+function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
     card: {
       backgroundColor: colors.surface,

@@ -31,14 +31,12 @@
  */
 
 import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, Animated, ViewStyle, DimensionValue } from 'react-native';
+import { View, Animated, ViewStyle, DimensionValue } from 'react-native';
+import { useTheme } from '../../hooks/useTheme';
 
 // ──────────────────────────────────────────────
 // 상수 정의
 // ──────────────────────────────────────────────
-
-/** 스켈레톤 배경색 (Surface #1E1E1E보다 약간 밝게) */
-const SKELETON_COLOR = '#2A2A2A';
 
 /** 애니메이션 속도 — 한 방향 전환에 750ms (총 왕복 1.5초) */
 const PULSE_DURATION = 750;
@@ -79,6 +77,7 @@ export function SkeletonLoader({
   borderRadius = 8,
   style,
 }: SkeletonLoaderProps) {
+  const { colors } = useTheme();
   // opacity 값을 관리하는 Animated 값 (0.3에서 시작)
   const opacity = useRef(new Animated.Value(OPACITY_MIN)).current;
 
@@ -108,7 +107,7 @@ export function SkeletonLoader({
   return (
     <Animated.View
       style={[
-        styles.skeleton,
+        { backgroundColor: colors.disabled },
         {
           width,
           height,
@@ -271,12 +270,3 @@ export function SkeletonChart({ height = 200, style }: SkeletonChartProps) {
   );
 }
 
-// ──────────────────────────────────────────────
-// 스타일
-// ──────────────────────────────────────────────
-
-const styles = StyleSheet.create({
-  skeleton: {
-    backgroundColor: SKELETON_COLOR,
-  },
-});

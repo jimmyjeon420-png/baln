@@ -17,6 +17,16 @@ import { router } from 'expo-router';
 import { useMyCredits } from '../../hooks/useCredits';
 import { formatCredits } from '../../utils/formatters';
 
+/** 충전 기능 오픈일 (6월 1일부터 활성화) */
+const CHARGE_OPEN_DATE = new Date('2026-06-01T00:00:00');
+
+/** 무료 체험 종료일 표시용 */
+const FREE_TRIAL_LABEL = '5/31';
+
+function isChargingOpen(): boolean {
+  return new Date() >= CHARGE_OPEN_DATE;
+}
+
 interface CreditDisplayProps {
   /** 커스텀 클릭 핸들러 (기본: 마켓플레이스 이동) */
   onPress?: () => void;
@@ -25,13 +35,15 @@ interface CreditDisplayProps {
 export function CreditDisplay({ onPress }: CreditDisplayProps) {
   const { data: credits, isLoading } = useMyCredits();
   const balance = credits?.balance ?? 0;
+  const chargingOpen = isChargingOpen();
 
   const handlePress = () => {
     if (onPress) {
       onPress();
-    } else {
-      router.push('/marketplace');
+    } else if (chargingOpen) {
+      router.push('/marketplace/credits');
     }
+    // 무료 체험 기간에는 카드 터치해도 이동 안 함
   };
 
   if (isLoading) {
@@ -72,12 +84,18 @@ export function CreditDisplay({ onPress }: CreditDisplayProps) {
             ₩{(balance * 100).toLocaleString()}
           </Text>
 
-          {/* 충전 버튼 */}
-          <View style={styles.footer}>
+          {/* 충전 버튼 / 무료 체험 안내 */}
+          <View style={[styles.footer, !chargingOpen && styles.footerTrial]}>
             <View style={styles.plusIcon}>
-              <Ionicons name="add-circle" size={16} color="#FFF" />
+              <Ionicons
+                name={chargingOpen ? 'add-circle' : 'gift'}
+                size={16}
+                color="#FFF"
+              />
             </View>
-            <Text style={styles.footerText}>충전하기</Text>
+            <Text style={styles.footerText}>
+              {chargingOpen ? '충전하기' : `${FREE_TRIAL_LABEL}까지 무료 체험 중`}
+            </Text>
           </View>
 
           {/* 장식 원 */}
@@ -168,6 +186,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 20,
+  },
+  footerTrial: {
+    backgroundColor: 'rgba(76, 175, 80, 0.25)',
   },
   plusIcon: {
     marginRight: 6,
