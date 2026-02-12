@@ -57,8 +57,13 @@ export function formatCreditReward(credits: number): string {
  */
 export function formatKRW(amount: number, compact = false): string {
   if (compact) {
-    if (amount >= 100000000) {
-      return `${(amount / 100000000).toFixed(1)}억`;
+    if (amount >= 1_000_000_000_000) {
+      // 1조 이상 → 조 단위
+      return `${Math.round(amount / 1_000_000_000_000).toLocaleString()}조`;
+    }
+    if (amount >= 100_000_000) {
+      // 1억 이상 → 억 단위 (소수점 없음)
+      return `${Math.round(amount / 100_000_000).toLocaleString()}억`;
     }
     if (amount >= 10000) {
       return `${Math.floor(amount / 10000).toLocaleString()}만`;

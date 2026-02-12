@@ -152,7 +152,10 @@ const HealthSignalCard = React.memo(({
   if (isLoading) {
     return (
       <View style={styles.card}>
-        <Text style={styles.dateText}>{formatDate()}</Text>
+        <View style={styles.headerRow}>
+          <Text style={styles.dateText}>{formatDate()}</Text>
+          <Text style={styles.cardLogo}>baln</Text>
+        </View>
         <View style={styles.centerArea}>
           <ActivityIndicator size="large" color={COLORS.textSecondary} />
           <Text style={[styles.loadingText, { marginTop: 16 }]}>
@@ -169,7 +172,10 @@ const HealthSignalCard = React.memo(({
   if (!hasAssets || healthScore === null) {
     return (
       <View style={styles.card}>
-        <Text style={styles.dateText}>{formatDate()}</Text>
+        <View style={styles.headerRow}>
+          <Text style={styles.dateText}>{formatDate()}</Text>
+          <Text style={styles.cardLogo}>baln</Text>
+        </View>
         <View style={styles.centerArea}>
           <Text style={styles.emptyEmoji}>❤️</Text>
           <Text style={styles.emptyTitle}>내 투자 건강이 궁금하다면</Text>
@@ -189,8 +195,11 @@ const HealthSignalCard = React.memo(({
   // ──────────────────────────────────────────────────────────────────────
   return (
     <View style={styles.card}>
-      {/* 상단: 날짜 */}
-      <Text style={styles.dateText}>{formatDate()}</Text>
+      {/* 상단: 날짜 + baln 로고 */}
+      <View style={styles.headerRow}>
+        <Text style={styles.dateText}>{formatDate()}</Text>
+        <Text style={styles.cardLogo}>baln</Text>
+      </View>
 
       {/* 중앙: 거대 신호등 */}
       <TouchableOpacity style={styles.centerArea} onPress={() => setShowDetail(true)} activeOpacity={0.7}>
@@ -316,7 +325,7 @@ export default HealthSignalCard;
 // 스타일
 // ============================================================================
 
-const CARD_HEIGHT = SCREEN_HEIGHT * 0.55;
+const CARD_HEIGHT = SCREEN_HEIGHT * 0.78;
 
 const styles = StyleSheet.create({
   card: {
@@ -324,15 +333,25 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     backgroundColor: COLORS.surface,
     borderRadius: 24,
-    padding: 20,
+    padding: 24,
     justifyContent: 'space-between',
     borderWidth: 1,
     borderColor: COLORS.border,
   },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   dateText: {
     fontSize: 14,
     color: COLORS.textSecondary,
-    textAlign: 'center',
+  },
+  cardLogo: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.textSecondary,
+    letterSpacing: 1,
   },
   centerArea: {
     flex: 1,
@@ -340,31 +359,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   signalEmoji: {
-    fontSize: 72,
-    marginBottom: 12,
+    fontSize: 88,
+    marginBottom: 16,
   },
   gradeLabel: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '600',
-    marginBottom: 8,
+    marginBottom: 10,
   },
   scoreRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
   },
   scoreNumber: {
-    fontSize: 48,
+    fontSize: 56,
     fontWeight: '800',
-    lineHeight: 56,
+    lineHeight: 64,
   },
   scoreDivider: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: '300',
     color: COLORS.textSecondary,
     marginHorizontal: 4,
   },
   scoreMax: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: '300',
     color: COLORS.textSecondary,
   },
@@ -373,8 +392,8 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
   },
   emptyEmoji: {
-    fontSize: 60,
-    marginBottom: 16,
+    fontSize: 72,
+    marginBottom: 20,
   },
   emptyTitle: {
     fontSize: 22,

@@ -196,18 +196,15 @@ export default function HomeScreen() {
       };
     }
 
-    // 4겹 맥락카드 → 3줄 브리핑 변환 (타입 안전 캐스팅)
-    const typedContext = contextData as {
-      headline?: string;
-      macroChain?: string[];
-      portfolioImpact?: { message?: string };
-      sentiment?: 'calm' | 'caution' | 'alert';
-    } | null;
+    // contextData = { card: ContextCard, userImpact: UserContextImpact | null }
+    const { card, userImpact } = contextData;
+
+    // 4겹 맥락카드 → 3줄 브리핑 변환
     const briefing = convertContextToBriefing({
-      headline: typedContext?.headline || '오늘의 시장 분석',
-      macroChain: typedContext?.macroChain || [],
-      portfolioImpact: typedContext?.portfolioImpact || { message: '' },
-      sentiment: typedContext?.sentiment || 'calm',
+      headline: card.headline || '오늘의 시장 분석',
+      macroChain: card.macro_chain || [],
+      portfolioImpact: { message: userImpact?.impact_message || '' },
+      sentiment: card.sentiment || 'calm',
     });
 
     return {
@@ -233,6 +230,15 @@ export default function HomeScreen() {
         );
       },
       isLoading: contextLoading,
+      // 4겹 레이어 데이터 전달
+      historicalContext: card.historical_context,
+      macroChain: card.macro_chain,
+      institutionalBehavior: card.institutional_behavior,
+      portfolioImpact: userImpact ? {
+        percentChange: userImpact.percent_change ?? 0,
+        healthScoreChange: userImpact.health_score_change ?? 0,
+        message: userImpact.impact_message || '',
+      } : null,
     };
   }, [contextData, contextLoading, isPremium, router, shareContext, showToast]);
 
@@ -475,7 +481,7 @@ const styles = StyleSheet.create({
   },
   streakContainer: {
     paddingHorizontal: 16,
-    paddingTop: 4,
+    paddingTop: 0,
   },
   modalContainer: {
     flex: 1,

@@ -201,6 +201,10 @@ export default function PredictionVoteCard({
   if (isLoading) {
     return (
       <View style={styles.card}>
+        <View style={styles.topRow}>
+          <View />
+          <Text style={styles.cardLogo}>baln</Text>
+        </View>
         <View style={styles.centerArea}>
           <ActivityIndicator size="large" color={COLORS.textSecondary} />
           <Text style={[styles.loadingText, { marginTop: 16 }]}>
@@ -217,6 +221,10 @@ export default function PredictionVoteCard({
   if (allPolls.length === 0) {
     return (
       <View style={styles.card}>
+        <View style={styles.topRow}>
+          <View />
+          <Text style={styles.cardLogo}>baln</Text>
+        </View>
         <View style={styles.centerArea}>
           <Text style={styles.emptyEmoji}>🎯</Text>
           <Text style={styles.emptyText}>오늘의 예측이 아직 준비되지 않았어요</Text>
@@ -343,30 +351,33 @@ export default function PredictionVoteCard({
   // ──────────────────────────────────────────────────────────────────────
   return (
     <View style={styles.card}>
-      {/* 상단: 헤더 + 페이지 표시 */}
+      {/* 상단: 헤더 + 페이지 표시 + baln */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <Text style={styles.headerEmoji}>🎯</Text>
           <Text style={styles.headerText}>오늘의 예측</Text>
         </View>
-        {/* 페이지 인디케이터 (1/3) */}
-        {allPolls.length > 1 && (
-          <View style={styles.pageIndicator}>
-            {allPolls.map((poll, idx) => {
-              const voted = getMyVoteForPoll(poll.id) !== null;
-              return (
-                <View
-                  key={idx}
-                  style={[
-                    styles.pageDot,
-                    idx === currentIndex && styles.pageDotActive,
-                    voted && styles.pageDotVoted,
-                  ]}
-                />
-              );
-            })}
-          </View>
-        )}
+        <View style={styles.headerRight}>
+          {/* 페이지 인디케이터 (1/3) */}
+          {allPolls.length > 1 && (
+            <View style={styles.pageIndicator}>
+              {allPolls.map((poll, idx) => {
+                const voted = getMyVoteForPoll(poll.id) !== null;
+                return (
+                  <View
+                    key={idx}
+                    style={[
+                      styles.pageDot,
+                      idx === currentIndex && styles.pageDotActive,
+                      voted && styles.pageDotVoted,
+                    ]}
+                  />
+                );
+              })}
+            </View>
+          )}
+          <Text style={styles.cardLogo}>baln</Text>
+        </View>
       </View>
 
       {/* 수평 스크롤 질문 리스트 (ScrollView + map으로 중첩 에러 방지) */}
@@ -492,7 +503,7 @@ export default function PredictionVoteCard({
 // 스타일
 // ============================================================================
 
-const CARD_HEIGHT = SCREEN_HEIGHT * 0.55;
+const CARD_HEIGHT = SCREEN_HEIGHT * 0.78;
 
 const styles = StyleSheet.create({
   card: {
@@ -505,6 +516,17 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border,
   },
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  cardLogo: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.textSecondary,
+    letterSpacing: 1,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -514,6 +536,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
   headerEmoji: {
     fontSize: 24,

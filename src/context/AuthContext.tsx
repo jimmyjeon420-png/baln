@@ -198,7 +198,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // 앱으로 돌아올 딥링크 URL
       const appRedirectUrl = AuthSession.makeRedirectUri({
-        scheme: 'smartrebalancer',
+        scheme: 'baln',
         path: 'auth/callback',
       });
 
@@ -306,7 +306,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       const isAvailable = await AppleAuthentication.isAvailableAsync();
       if (!isAvailable) {
-        throw new Error('앱을 최신 버전으로 업데이트해주세요');
+        if (__DEV__) {
+          throw new Error('Apple 로그인은 실제 기기에서만 테스트할 수 있습니다 (시뮬레이터 미지원)');
+        }
+        throw new Error('이 기기에서는 Apple 로그인을 사용할 수 없습니다');
       }
 
       // 1. 랜덤 nonce 생성 (보안용 1회성 토큰)

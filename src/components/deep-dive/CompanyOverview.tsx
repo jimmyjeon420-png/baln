@@ -97,12 +97,12 @@ export default function CompanyOverview({
   const { colors } = useTheme();
   const [isExpanded, setIsExpanded] = useState(initiallyExpanded);
 
-  // 시가총액 포맷 (조/억)
+  // 시가총액 포맷 (조/억, 소수점 없음)
   const formatMarketCap = (value: number): string => {
     if (value >= 1_000_000_000_000) {
-      return `${(value / 1_000_000_000_000).toFixed(1)}조`;
+      return `${Math.round(value / 1_000_000_000_000).toLocaleString()}조`;
     } else if (value >= 100_000_000) {
-      return `${(value / 100_000_000).toFixed(0)}억`;
+      return `${Math.round(value / 100_000_000).toLocaleString()}억`;
     }
     return `${value.toLocaleString()}원`;
   };

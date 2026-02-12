@@ -17,7 +17,6 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
   ScrollView,
   StyleSheet,
   Dimensions,
@@ -25,8 +24,6 @@ import {
   NativeScrollEvent,
   RefreshControl,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '../../styles/theme';
 import { selection } from '../../services/hapticService';
 
@@ -43,7 +40,7 @@ interface CardSwipeContainerProps {
   /** 카드 라벨 (하단 인디케이터 아래 텍스트) */
   labels?: string[]; // default: ['건강', '맥락', '예측']
 
-  /** ⚙️ 설정 버튼 탭 콜백 */
+  /** ⚙️ 설정 버튼 탭 콜백 (deprecated - 제거됨) */
   onSettingsPress?: () => void;
 
   /** 초기 카드 인덱스 (기본 0) */
@@ -72,7 +69,6 @@ export default function CardSwipeContainer({
   onRefresh,
   refreshing,
 }: CardSwipeContainerProps) {
-  const insets = useSafeAreaInsets();
   const [currentPage, setCurrentPage] = useState(initialIndex);
 
   // 스크롤 종료 시 페이지 추적
@@ -87,30 +83,27 @@ export default function CardSwipeContainer({
   };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* 상단 헤더 */}
-      <View style={styles.header}>
-        {/* 좌측: baln 로고 */}
-        <Text style={styles.logo} accessibilityRole="header">baln</Text>
-
-        {/* 우측: ⚙️ 설정 아이콘 */}
-        {onSettingsPress && (
-          <TouchableOpacity
-            style={styles.settingsButton}
-            onPress={onSettingsPress}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            accessible={true}
-            accessibilityRole="button"
-            accessibilityLabel="설정"
-            accessibilityHint="설정 화면으로 이동합니다"
-          >
-            <Ionicons
-              name="settings-outline"
-              size={24}
-              color={COLORS.textSecondary}
+    <View style={styles.container}>
+      {/* 카드 위: 페이지 인디케이터 + 라벨 (스와이프 유도) */}
+      <View style={styles.topNav}>
+        {labels.map((label, index) => (
+          <View key={index} style={styles.navItem}>
+            <View
+              style={[
+                styles.indicator,
+                index === currentPage && styles.indicatorActive,
+              ]}
             />
-          </TouchableOpacity>
-        )}
+            <Text
+              style={[
+                styles.label,
+                index === currentPage && styles.labelActive,
+              ]}
+            >
+              {label}
+            </Text>
+          </View>
+        ))}
       </View>
 
       {/* 수평 스와이프 영역 */}
@@ -143,37 +136,6 @@ export default function CardSwipeContainer({
           </View>
         ))}
       </ScrollView>
-
-      {/* 하단: 페이지 인디케이터 + 카드 라벨 */}
-      <View style={styles.footer}>
-        {/* 페이지 인디케이터 (● ○ ○) */}
-        <View style={styles.indicatorContainer}>
-          {children.map((_, index) => (
-            <View
-              key={index}
-              style={[
-                styles.indicator,
-                index === currentPage && styles.indicatorActive,
-              ]}
-            />
-          ))}
-        </View>
-
-        {/* 카드 라벨 */}
-        <View style={styles.labelsContainer}>
-          {labels.map((label, index) => (
-            <Text
-              key={index}
-              style={[
-                styles.label,
-                index === currentPage && styles.labelActive,
-              ]}
-            >
-              {label}
-            </Text>
-          ))}
-        </View>
-      </View>
     </View>
   );
 }
@@ -187,64 +149,46 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  header: {
+  topNav: {
     flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
+    gap: 24,
+    paddingTop: 2,
+    paddingBottom: 6,
   },
-  logo: {
-    fontSize: 20,
+  navItem: {
+    alignItems: 'center',
+    gap: 3,
+  },
+  indicator: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#3A3A3A',
+  },
+  indicatorActive: {
+    width: 20,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: COLORS.textPrimary,
+  },
+  label: {
+    fontSize: 12,
+    fontWeight: '400',
+    color: COLORS.textTertiary,
+  },
+  labelActive: {
     fontWeight: '700',
     color: COLORS.textPrimary,
-  },
-  settingsButton: {
-    padding: 4,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    // ScrollView 내부 컨텐츠는 각 카드가 SCREEN_WIDTH 차지
   },
   cardWrapper: {
     width: SCREEN_WIDTH,
-    justifyContent: 'center',
-  },
-  footer: {
-    paddingBottom: 20,
-    gap: 12,
-  },
-  indicatorContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  indicator: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#3A3A3A',
-  },
-  indicatorActive: {
-    width: 24,
-    backgroundColor: COLORS.textPrimary,
-  },
-  labelsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    paddingHorizontal: 40,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '400',
-    color: COLORS.textTertiary,
-  },
-  labelActive: {
-    fontWeight: '600',
-    color: COLORS.textPrimary,
+    paddingTop: 4,
   },
 });

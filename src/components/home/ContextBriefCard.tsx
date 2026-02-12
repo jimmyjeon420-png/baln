@@ -26,6 +26,7 @@ import {
   LayoutAnimation,
   Platform,
   UIManager,
+  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
@@ -448,21 +449,21 @@ export default React.forwardRef<View, ContextBriefCardProps>(
     // 무료 체험 기간에는 프리미엄처럼 취급
     const effectivePremium = isPremium || freeTrial;
 
-    // 레이어 펼침 상태 관리
-    const [expandedLayers, setExpandedLayers] = useState<Record<number, boolean>>({
-      1: false,
-      2: false,
-      3: false,
-      4: false,
-    });
+    // 싱글 아코디언: 하나만 열림 (null = 모두 접힘)
+    const [expandedLayer, setExpandedLayer] = useState<number | null>(null);
 
     const toggleLayer = useCallback((layerNum: number) => {
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      setExpandedLayers((prev) => ({
-        ...prev,
-        [layerNum]: !prev[layerNum],
-      }));
+      setExpandedLayer((prev) => (prev === layerNum ? null : layerNum));
     }, []);
+
+    // 하위호환: LayerSection에서 사용하는 boolean 변환
+    const expandedLayers: Record<number, boolean> = {
+      1: expandedLayer === 1,
+      2: expandedLayer === 2,
+      3: expandedLayer === 3,
+      4: expandedLayer === 4,
+    };
 
     // 4겹 데이터 존재 여부 확인
     const has4LayerData =
@@ -474,10 +475,13 @@ export default React.forwardRef<View, ContextBriefCardProps>(
     if (isLoading) {
       return (
         <View style={styles.card}>
-          <View
-            style={[styles.sentimentBadge, { backgroundColor: COLORS.surfaceLight }]}
-          >
-            <SkeletonBar width={60} />
+          <View style={styles.topRow}>
+            <View
+              style={[styles.sentimentBadge, { backgroundColor: COLORS.surfaceLight }]}
+            >
+              <SkeletonBar width={60} />
+            </View>
+            <Text style={styles.cardLogo}>baln</Text>
           </View>
           <View style={styles.contentArea}>
             <View style={styles.section}>
@@ -501,6 +505,10 @@ export default React.forwardRef<View, ContextBriefCardProps>(
     if (!fact && !mechanism && !impact) {
       return (
         <View style={styles.card}>
+          <View style={styles.topRow}>
+            <View />
+            <Text style={styles.cardLogo}>baln</Text>
+          </View>
           <View style={styles.centerArea}>
             <Ionicons name="analytics-outline" size={64} color={COLORS.textTertiary} />
             <Text style={styles.emptyText}>오늘의 맥락을 준비 중이에요</Text>
@@ -517,51 +525,48 @@ export default React.forwardRef<View, ContextBriefCardProps>(
     // ──────────────────────────────────────────────────────────────
     return (
       <View ref={ref} style={styles.card}>
-        {/* 무료 체험 배너 (5/31까지) */}
-        {freeTrial && (
-          <View style={styles.freeTrialBanner}>
-            <Ionicons name="gift-outline" size={16} color={COLORS.primary} />
-            <Text style={styles.freeTrialText}>
-              5월 31일까지 모든 기능 무료!
-            </Text>
-            <View style={styles.freeTrialCountdown}>
-              <Text style={styles.freeTrialDday}>D-{daysRemaining}</Text>
-            </View>
-          </View>
-        )}
-
-        {/* ──────────────────────────────────────────────────── */}
-        {/* 상단: 센티먼트 배지 + 날짜 */}
-        {/* ──────────────────────────────────────────────────── */}
+        {/* ── 헤더: 센티먼트 + 무료체험 D-day + 공유 + baln ── */}
         <View style={styles.headerRow}>
           <View style={[styles.sentimentBadge, { backgroundColor: sentimentBg }]}>
             <View style={[styles.sentimentDot, { backgroundColor: sentimentColor }]} />
             <Text style={[styles.sentimentLabel, { color: sentimentColor }]}>
               {sentimentLabel}
             </Text>
+            {freeTrial && (
+              <View style={styles.freeTrialInline}>
+                <Text style={styles.freeTrialInlineText}>D-{daysRemaining}</Text>
+              </View>
+            )}
           </View>
-          {date ? <Text style={styles.dateText}>{date}</Text> : null}
+          <View style={styles.headerRightGroup}>
+            {onShare && (
+              <TouchableOpacity onPress={onShare} activeOpacity={0.7} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Ionicons name="share-social-outline" size={18} color={COLORS.textTertiary} />
+              </TouchableOpacity>
+            )}
+            <Text style={styles.cardLogo}>baln</Text>
+          </View>
         </View>
 
-        {/* ──────────────────────────────────────────────────── */}
-        {/* 헤드라인 (FACT) */}
-        {/* ──────────────────────────────────────────────────── */}
+        {/* ── 헤드라인 ── */}
         <View style={styles.headlineSection}>
-          <Text style={styles.headlineText} numberOfLines={3}>
+          <Text style={styles.headlineText} numberOfLines={2}>
             {fact || '시장 데이터 준비 중'}
           </Text>
           {mechanism ? (
-            <Text style={styles.mechanismSummary} numberOfLines={2}>
+            <Text style={styles.mechanismSummary} numberOfLines={1}>
               {mechanism}
             </Text>
           ) : null}
         </View>
 
-        {/* ──────────────────────────────────────────────────── */}
-        {/* 4겹 레이어 아코디언 */}
-        {/* ──────────────────────────────────────────────────── */}
-        <View style={styles.layersArea}>
-          {/* Layer 1: 역사적 맥락 [무료] */}
+        {/* ── 4겹 레이어 (스크롤 가능) ── */}
+        <ScrollView
+          style={styles.layersScroll}
+          contentContainerStyle={styles.layersContent}
+          showsVerticalScrollIndicator={false}
+          nestedScrollEnabled
+        >
           <LayerSection
             layerNum={1}
             icon="time-outline"
@@ -578,7 +583,6 @@ export default React.forwardRef<View, ContextBriefCardProps>(
             </Text>
           </LayerSection>
 
-          {/* Layer 2: 거시경제 체인 [무료] */}
           <LayerSection
             layerNum={2}
             icon="git-network-outline"
@@ -599,7 +603,6 @@ export default React.forwardRef<View, ContextBriefCardProps>(
             )}
           </LayerSection>
 
-          {/* Layer 3: 기관 행동 [Premium] */}
           <LayerSection
             layerNum={3}
             icon="business-outline"
@@ -614,17 +617,15 @@ export default React.forwardRef<View, ContextBriefCardProps>(
             COLORS={COLORS}
           >
             <Text style={styles.layerBodyText}>
-              {institutionalBehavior ||
-                '기관 투자자 데이터를 분석 중입니다...'}
+              {institutionalBehavior || '기관 투자자 데이터를 분석 중입니다...'}
             </Text>
           </LayerSection>
 
-          {/* Layer 4: 내 포트폴리오 영향 [Premium] */}
           <LayerSection
             layerNum={4}
             icon="wallet-outline"
             title="내 포트폴리오 영향"
-            subtitle="My Portfolio Impact"
+            subtitle="Portfolio Impact"
             color={LAYER_COLORS.portfolio}
             isExpanded={expandedLayers[4]}
             onToggle={() => toggleLayer(4)}
@@ -645,27 +646,7 @@ export default React.forwardRef<View, ContextBriefCardProps>(
               </Text>
             )}
           </LayerSection>
-        </View>
-
-        {/* ──────────────────────────────────────────────────── */}
-        {/* 하단: 공유 버튼 */}
-        {/* ──────────────────────────────────────────────────── */}
-        <View style={styles.footer}>
-          {onShare && (
-            <TouchableOpacity
-              style={styles.shareButton}
-              onPress={onShare}
-              activeOpacity={0.7}
-            >
-              <Ionicons
-                name="share-social-outline"
-                size={18}
-                color={COLORS.textSecondary}
-              />
-              <Text style={styles.shareText}>공유하기</Text>
-            </TouchableOpacity>
-          )}
-        </View>
+        </ScrollView>
       </View>
     );
   }
@@ -675,7 +656,7 @@ export default React.forwardRef<View, ContextBriefCardProps>(
 // 스타일
 // ============================================================================
 
-const CARD_HEIGHT = SCREEN_HEIGHT * 0.55;
+const CARD_HEIGHT = SCREEN_HEIGHT * 0.78;
 
 const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
   // ── 카드 전체 ──
@@ -684,23 +665,40 @@ const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
     marginHorizontal: 16,
     backgroundColor: COLORS.surface,
     borderRadius: 24,
-    padding: 20,
-    justifyContent: 'space-between',
+    padding: 16,
     borderWidth: 1,
     borderColor: COLORS.border,
   },
 
-  // ── 헤더 (센티먼트 + 날짜) ──
+  // ── 로딩/빈 상태용 상단 행 ──
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  cardLogo: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.textSecondary,
+    letterSpacing: 1,
+  },
+
+  // ── 헤더 (센티먼트 + 공유 + baln) ──
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 4,
+    marginBottom: 8,
+  },
+  headerRightGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
   sentimentBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 5,
+    paddingVertical: 4,
     paddingHorizontal: 10,
     borderRadius: 20,
     gap: 6,
@@ -719,23 +717,35 @@ const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
     fontSize: 13,
     color: COLORS.textTertiary,
   },
+  freeTrialInline: {
+    backgroundColor: COLORS.primary,
+    borderRadius: 6,
+    paddingVertical: 1,
+    paddingHorizontal: 6,
+    marginLeft: 2,
+  },
+  freeTrialInlineText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
 
   // ── 헤드라인 ──
   headlineSection: {
-    marginBottom: 4,
+    marginBottom: 8,
   },
   headlineText: {
-    fontSize: 19,
+    fontSize: 17,
     fontWeight: '700',
     color: COLORS.textPrimary,
-    lineHeight: 28,
-    marginBottom: 6,
+    lineHeight: 24,
+    marginBottom: 2,
   },
   mechanismSummary: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '400',
     color: COLORS.textSecondary,
-    lineHeight: 20,
+    lineHeight: 18,
   },
 
   // ── 콘텐츠 영역 (로딩/빈 상태) ──
@@ -748,17 +758,19 @@ const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
     gap: 8,
   },
 
-  // ── 4겹 레이어 아코디언 ──
-  layersArea: {
+  // ── 4겹 레이어 (스크롤 가능) ──
+  layersScroll: {
     flex: 1,
-    gap: 6,
-    justifyContent: 'center',
+  },
+  layersContent: {
+    gap: 4,
+    paddingBottom: 4,
   },
 
   // 레이어 컨테이너
   layerContainer: {
     backgroundColor: COLORS.surfaceLight,
-    borderRadius: 14,
+    borderRadius: 12,
     overflow: 'hidden',
   },
 
@@ -767,8 +779,8 @@ const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 12,
-    paddingHorizontal: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
   },
   layerHeaderLeft: {
     flexDirection: 'row',
@@ -781,47 +793,47 @@ const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
 
   // 레이어 번호 배지
   layerNumBadge: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
   layerNumText: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '800',
     color: '#FFFFFF',
   },
 
   // 레이어 제목
   layerTitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
     color: COLORS.textPrimary,
-    lineHeight: 18,
+    lineHeight: 17,
   },
   layerSubtitle: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '400',
     color: COLORS.textTertiary,
-    lineHeight: 14,
+    lineHeight: 12,
     letterSpacing: 0.3,
   },
 
   // 레이어 콘텐츠 (펼쳐졌을 때)
   layerContent: {
-    paddingHorizontal: 14,
-    paddingBottom: 14,
-    paddingTop: 2,
+    paddingHorizontal: 12,
+    paddingBottom: 12,
+    paddingTop: 0,
     borderLeftWidth: 3,
-    marginLeft: 24,
+    marginLeft: 22,
   },
 
   // 레이어 본문 텍스트
   layerBodyText: {
-    fontSize: 14,
+    fontSize: 13,
     color: COLORS.textSecondary,
-    lineHeight: 22,
+    lineHeight: 20,
   },
 
   // ── 프리미엄 잠금 ──
@@ -841,37 +853,37 @@ const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
     letterSpacing: 0.5,
   },
   lockedContent: {
-    paddingHorizontal: 14,
-    paddingBottom: 12,
+    paddingHorizontal: 12,
+    paddingBottom: 10,
   },
   lockedBlur: {
     opacity: 0.25,
-    marginBottom: 8,
-    marginLeft: 24,
+    marginBottom: 6,
+    marginLeft: 22,
   },
   lockedBlurText: {
-    fontSize: 13,
+    fontSize: 12,
     color: COLORS.textSecondary,
-    lineHeight: 20,
+    lineHeight: 18,
   },
   lockedCTA: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     backgroundColor: 'rgba(255, 193, 7, 0.10)',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
     borderRadius: 10,
-    marginLeft: 24,
+    marginLeft: 22,
   },
   lockedCTAText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
     color: COLORS.premium.gold,
     flex: 1,
   },
   lockedCTAPrice: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '500',
     color: COLORS.textTertiary,
   },
@@ -883,11 +895,11 @@ const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
   chainStep: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
   },
   chainDot: {
-    width: 8,
-    height: 8,
+    width: 7,
+    height: 7,
     borderRadius: 4,
   },
   chainStepText: {
@@ -906,47 +918,47 @@ const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
   },
   chainArrowContainer: {
     alignItems: 'flex-start',
-    paddingLeft: 2,
-    marginVertical: -2,
+    paddingLeft: 1,
+    marginVertical: -3,
   },
   chainLine: {
     width: 1,
-    height: 6,
+    height: 4,
     backgroundColor: COLORS.textTertiary,
     marginLeft: 3,
   },
 
   // ── 포트폴리오 영향 시각화 ──
   impactContainer: {
-    gap: 12,
+    gap: 10,
   },
   impactMainRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
+    gap: 12,
   },
   impactBigBox: {
     borderWidth: 1.5,
-    borderRadius: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
     alignItems: 'center',
-    minWidth: 100,
+    minWidth: 90,
   },
   impactBigNumber: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '800',
-    lineHeight: 28,
+    lineHeight: 26,
   },
   impactBigLabel: {
-    fontSize: 10,
+    fontSize: 9,
     color: COLORS.textTertiary,
-    marginTop: 2,
+    marginTop: 1,
     fontWeight: '500',
   },
   impactMetaColumn: {
     flex: 1,
-    gap: 6,
+    gap: 4,
   },
   impactMetaRow: {
     flexDirection: 'row',
@@ -954,38 +966,18 @@ const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
     gap: 6,
   },
   impactMetaText: {
-    fontSize: 13,
+    fontSize: 12,
     color: COLORS.textSecondary,
-    lineHeight: 18,
+    lineHeight: 16,
   },
   impactMessage: {
-    fontSize: 13,
+    fontSize: 12,
     color: COLORS.textSecondary,
-    lineHeight: 20,
+    lineHeight: 18,
     backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    paddingVertical: 8,
-    paddingHorizontal: 10,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
     borderRadius: 8,
-  },
-
-  // ── 하단 푸터 ──
-  footer: {
-    marginTop: 4,
-    alignItems: 'center',
-  },
-  shareButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-    backgroundColor: COLORS.surfaceLight,
-  },
-  shareText: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    fontWeight: '500',
   },
 
   // ── 빈 상태 ──
@@ -1016,7 +1008,7 @@ const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
     gap: 10,
   },
 
-  // ── 무료 체험 배너 ──
+  // ── 무료 체험 배너 (레거시, 로딩 상태용) ──
   freeTrialBanner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1044,6 +1036,6 @@ const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
   freeTrialDday: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#FFFFFF', // 초록 배경 위의 흰색 텍스트 (배경이 초록색이므로 항상 흰색 유지)
+    color: '#FFFFFF',
   },
 });
