@@ -225,7 +225,7 @@ export default function DiagnosisScreen() {
         {/* Morning Briefing 카드 */}
         {morningBriefing && (
           <View style={[styles.briefingCard, { backgroundColor: colors.surface, borderColor: colors.border }, shadows.md]}>
-            {/* CFO 날씨 헤더 */}
+            {/* 투자 날씨 헤더 */}
             <View style={styles.briefingHeader}>
               <Text style={styles.briefingWeatherEmoji}>{morningBriefing.cfoWeather.emoji}</Text>
               <View style={styles.briefingHeaderText}>
@@ -313,7 +313,7 @@ export default function DiagnosisScreen() {
               ))}
             </View>
 
-            {/* CFO 한마디 */}
+            {/* 투자 날씨 한마디 */}
             <View style={[styles.cfoMessageBox, { backgroundColor: colors.surfaceLight }]}>
               <Ionicons name="chatbubble-ellipses" size={16} color="#4CAF50" />
               <Text style={[styles.cfoMessageText, { color: colors.textPrimary }]}>{morningBriefing.cfoWeather.message}</Text>

@@ -1,5 +1,5 @@
 /**
- * ChatBubble - AI CFO 채팅 말풍선 컴포넌트
+ * ChatBubble - AI 버핏과 티타임 채팅 말풍선 컴포넌트
  */
 
 import React from 'react';

@@ -65,39 +65,8 @@ export async function getTodayContextCard(
         .maybeSingle();
 
       if (latestError || !latestCard) {
-        if (__DEV__) console.log('[맥락 카드] 최근 카드도 없음 → 개발용 샘플 데이터 반환');
-
-        // 개발용 샘플 데이터 (DB에 데이터가 전혀 없을 때)
-        const devCard: ContextCard = {
-          id: 'dev-sample-001',
-          date: today,
-          headline: '미국 고용지표 호조에 글로벌 증시 동반 상승',
-          historical_context: '2023년에도 비슷한 고용 서프라이즈 이후 S&P500이 2주간 4.2% 상승한 사례가 있습니다. 고용 안정은 소비 지속 → 기업 실적 개선으로 이어지는 경향이 있습니다.',
-          macro_chain: [
-            '미국 비농업 고용 +35.3만명 (예상 +18만)',
-            '경기 연착륙 기대 강화',
-            '달러 약세 전환 → 원화 강세',
-            '외국인 순매수 전환 기대',
-            '코스피 수출주 수혜',
-          ],
-          institutional_behavior: '외국인 투자자가 3거래일 연속 순매수로 전환했습니다. 특히 반도체·2차전지 업종에 집중 매수 중이며, 이는 글로벌 경기 회복 베팅으로 해석됩니다.',
-          sentiment: 'calm' as ContextCardSentiment,
-          is_premium_only: false,
-          market_data: {},
-          created_at: new Date().toISOString(),
-        };
-
-        const devImpact: UserContextImpact = {
-          id: 'dev-impact-001',
-          user_id: userId,
-          context_card_id: 'dev-sample-001',
-          percent_change: -0.8,
-          health_score_change: 0,
-          impact_message: '오늘 시장 변동이 포트폴리오에 미미한 영향을 주었습니다. 건강 점수는 변동 없습니다.',
-          created_at: new Date().toISOString(),
-        };
-
-        return { card: devCard, userImpact: devImpact };
+        if (__DEV__) console.log('[맥락 카드] 최근 카드도 없음 → null 반환 (데이터 없음)');
+        return null;
       }
 
       // 최근 카드의 유저 영향도 조회
@@ -332,6 +301,7 @@ export function convertToContextCardData(
     percentChange: number;
     healthScoreChange: number;
     message: string;
+    isCalculating: boolean;
   };
   sentiment: ContextCardSentiment;
   isPremiumContent: boolean;
@@ -347,7 +317,8 @@ export function convertToContextCardData(
     portfolioImpact: {
       percentChange: userImpact?.percent_change ?? 0,
       healthScoreChange: userImpact?.health_score_change ?? 0,
-      message: userImpact?.impact_message || '영향도 데이터가 아직 계산되지 않았습니다.',
+      message: userImpact?.impact_message || '포트폴리오 영향도를 분석 중입니다',
+      isCalculating: userImpact != null && (userImpact.percent_change == null || userImpact.impact_message == null),
     },
     sentiment: card.sentiment,
     isPremiumContent: card.is_premium_only,

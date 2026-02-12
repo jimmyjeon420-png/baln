@@ -271,7 +271,7 @@ export interface TaxReportResult {
   generatedAt: string;
 }
 
-// --- AI CFO 1:1 채팅 ---
+// --- AI 버핏과 티타임 1:1 채팅 ---
 export interface ChatMessage {
   id: string;
   session_id: string;

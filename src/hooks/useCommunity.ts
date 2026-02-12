@@ -88,11 +88,22 @@ const computeEligibility = (totalAssets: number, hasAssets: boolean): LoungeElig
 
 /** useSharedPortfolio 캐시 기반 자격 확인 (독립 Supabase 쿼리 제거) */
 export const useLoungeEligibility = () => {
-  const { totalAssets, hasAssets, isLoading, refresh } = useSharedPortfolio();
+  const { totalAssets, hasAssets, isLoading, isError, refresh } = useSharedPortfolio();
+
+  // 에러 발생 시 기본값 반환 (자격 미달로 잠기지 않도록 무료 기간 기준만 적용)
+  if (isError) {
+    return {
+      eligibility: computeEligibility(0, false),
+      loading: false,
+      error: true,
+      refetch: refresh,
+    };
+  }
 
   return {
     eligibility: computeEligibility(totalAssets, hasAssets),
     loading: isLoading,
+    error: false,
     refetch: refresh,
   };
 };
@@ -258,16 +269,24 @@ export const useMyLikes = () => {
   return useQuery({
     queryKey: ['myLikes'],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return new Set<string>();
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return new Set<string>();
 
-      const { data, error } = await supabase
-        .from('community_likes')
-        .select('post_id')
-        .eq('user_id', user.id);
+        const { data, error } = await supabase
+          .from('community_likes')
+          .select('post_id')
+          .eq('user_id', user.id);
 
-      if (error) return new Set<string>();
-      return new Set((data || []).map(d => d.post_id));
+        if (error) {
+          console.warn('[Community] 좋아요 목록 조회 실패:', error.message);
+          return new Set<string>();
+        }
+        return new Set((data || []).map(d => d.post_id));
+      } catch (err) {
+        console.warn('[Community] 좋아요 목록 조회 예외:', err);
+        return new Set<string>();
+      }
     },
     staleTime: 60000,
   });

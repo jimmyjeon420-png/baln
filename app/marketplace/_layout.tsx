@@ -1,6 +1,6 @@
 /**
  * Marketplace Layout - AI 프리미엄 마켓플레이스 네비게이션
- * Stack 네비게이터로 메인/딥다이브/What-If/세금/AI CFO/충전소 관리
+ * Stack 네비게이터로 메인/딥다이브/What-If/세금/AI 버핏 티타임/충전소 관리
  */
 
 import { Stack } from 'expo-router';

@@ -1,5 +1,5 @@
 /**
- * 시장 날씨 섹션 — 센티먼트 + 매크로 요약 + 부동산 인사이트 + CFO 상세
+ * 시장 날씨 섹션 — 센티먼트 + 매크로 요약 + 부동산 인사이트 + 투자 날씨 상세
  */
 
 import React, { useState } from 'react';
@@ -112,7 +112,7 @@ export default function MarketWeatherSection({
             </View>
           )}
 
-          {/* CFO 날씨 상세 */}
+          {/* 투자 날씨 상세 */}
           <View style={[styles.cfoDetailSection, { backgroundColor: `${colors.success}0F`, borderColor: `${colors.success}14` }]}>
             <View style={styles.cfoDetailHeader}>
               <Text style={styles.cfoDetailEmoji}>{morningBriefing.cfoWeather.emoji}</Text>

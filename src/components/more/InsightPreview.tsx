@@ -96,7 +96,7 @@ export default function InsightPreview() {
         <Ionicons name="chevron-forward" size={18} color="#666" />
       </TouchableOpacity>
 
-      {/* CFO 날씨 (있으면 표시) */}
+      {/* 투자 날씨 (있으면 표시) */}
       {marketData?.sentiment?.cfoWeather && (
         <View style={styles.weatherBox}>
           <Ionicons name="partly-sunny" size={16} color={COLORS.textSecondary} />

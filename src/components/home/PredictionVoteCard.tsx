@@ -623,7 +623,7 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       paddingHorizontal: 10,
       borderRadius: 12,
       borderWidth: 1,
-      marginBottom: 12,
+      marginBottom: 8,
     },
     pollCategoryEmoji: {
       fontSize: 12,
@@ -635,7 +635,7 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
     pollQuestionArea: {
       flex: 1,
       justifyContent: 'center',
-      paddingVertical: 12,
+      paddingVertical: 8,
     },
     questionText: {
       fontSize: 22,
@@ -646,8 +646,8 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
     },
     // [NEW] 근거 박스 스타일
     reasonsContainer: {
-      gap: 10,
-      marginVertical: 12,
+      gap: 6,
+      marginVertical: 6,
     },
     reasonBox: {
       flexDirection: 'row',
@@ -655,7 +655,7 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       gap: 8,
       backgroundColor: colors.border + '0F',
       borderRadius: 10,
-      padding: 12,
+      padding: 10,
       borderLeftWidth: 2,
       borderLeftColor: colors.textSecondary,
     },
@@ -675,7 +675,8 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       lineHeight: 18,
     },
     voteArea: {
-      marginVertical: 12,
+      marginTop: 8,
+      marginBottom: 4,
     },
     voteRow: {
       flexDirection: 'row',
@@ -687,7 +688,7 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
     },
     voteButton: {
       flex: 1,
-      paddingVertical: 16,
+      paddingVertical: 14,
       borderRadius: 12,
       alignItems: 'center',
       justifyContent: 'center',

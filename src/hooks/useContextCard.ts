@@ -50,7 +50,7 @@ export const CONTEXT_SENTIMENT_KEY = ['contextCard', 'sentiment'];
  * }
  */
 export function useContextCard() {
-  return useQuery<ContextCardWithImpact | null>({
+  const query = useQuery<ContextCardWithImpact | null>({
     queryKey: CONTEXT_CARD_TODAY_KEY,
     queryFn: async () => {
       // 1. 현재 로그인 유저 확인
@@ -66,8 +66,17 @@ export function useContextCard() {
     },
     staleTime: 5 * 60 * 1000, // 5분 (Edge Function이 매일 07:00에 1회 생성하므로 자주 갱신 불필요)
     gcTime: 30 * 60 * 1000,   // 30분 동안 메모리 유지
-    retry: 1,                 // 실패 시 1번만 재시도 (DB 조회 실패는 빠르게 포기)
+    retry: 2,                 // 실패 시 2번 재시도 (네트워크 불안정 대응)
   });
+
+  // 데이터 상태 구분: 로딩 / 에러 / 데이터 없음 / 데이터 있음
+  const isEmpty = !query.isLoading && !query.isError && query.data === null;
+
+  return {
+    ...query,
+    /** 로딩 완료했지만 맥락 카드 데이터가 없는 상태 (DB에 카드 미생성) */
+    isEmpty,
+  };
 }
 
 // ============================================================================

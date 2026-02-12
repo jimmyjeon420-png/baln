@@ -1,5 +1,5 @@
 /**
- * AI CFO 1:1 채팅 — 메시지당 10 크레딧, 포트폴리오 컨텍스트 자동 주입
+ * AI 버핏과 티타임 1:1 채팅 — 메시지당 크레딧, 포트폴리오 컨텍스트 자동 주입
  */
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';

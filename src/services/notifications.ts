@@ -35,7 +35,7 @@ export interface NotificationSettings {
   rebalanceAlert: boolean;
   /** 가격 변동 알림: 매일 아침 변동 확인 리마인더 */
   priceAlert: boolean;
-  /** 시장 뉴스: 매일 아침 AI CFO 브리핑 */
+  /** 시장 뉴스: 매일 아침 시장 브리핑 */
   marketNews: boolean;
 }
 
@@ -165,7 +165,7 @@ export async function scheduleMorningBriefing(): Promise<string | null> {
 
     const id = await Notifications.scheduleNotificationAsync({
       content: {
-        title: '☀️ 오늘의 CFO 브리핑 준비 완료',
+        title: '☀️ 오늘의 시장 브리핑 준비 완료',
         body: 'AI가 분석한 오늘의 시장 동향과 포트폴리오 처방전을 확인하세요.',
         data: { type: 'morning-briefing', screen: '/(tabs)/diagnosis' },
         sound: 'default',

@@ -180,8 +180,17 @@ async function generateQuizWithGemini(): Promise<{
 // 폴백 퀴즈 (Gemini 사용 불가 시)
 // ============================================================================
 
-/** 내장 폴백 퀴즈 풀 */
+/**
+ * 내장 폴백 퀴즈 풀 (18개)
+ * - Easy (difficulty: 1) — 6문제: 기초 용어/개념
+ * - Medium (difficulty: 2) — 6문제: 투자 전략/분석
+ * - Hard (difficulty: 3) — 6문제: 고급 거시경제/파생상품/퀀트
+ * - 날짜 기반으로 해당일 난이도의 퀴즈 1개를 선택 (getDailyFallbackQuiz)
+ */
 const FALLBACK_QUIZZES = [
+  // ══════════════════════════════════════════════════════════════
+  // Easy (difficulty: 1) — 기초 용어/개념 (6문제)
+  // ══════════════════════════════════════════════════════════════
   {
     category: 'stock_basics' as QuizCategory,
     question: 'PER(주가수익비율)이 낮을수록 의미하는 것은?',
@@ -222,24 +231,11 @@ const FALLBACK_QUIZZES = [
     difficulty: 1,
   },
   {
-    category: 'market_news' as QuizCategory,
-    question: '기준금리를 인하하면 일반적으로 주식시장에 어떤 영향을 미칠까요?',
-    options: [
-      { id: 'A', text: '주식시장에 긍정적 (상승 요인)' },
-      { id: 'B', text: '주식시장에 부정적 (하락 요인)' },
-      { id: 'C', text: '주식시장과 무관하다' },
-      { id: 'D', text: '채권시장에만 영향을 미친다' },
-    ],
-    correct_option: 'A',
-    explanation: '기준금리 인하는 기업의 차입 비용을 줄이고, 은행 예금 대비 주식의 상대적 매력도를 높여 일반적으로 주식시장에 긍정적인 영향을 미칩니다.',
-    difficulty: 1,
-  },
-  {
     category: 'stock_basics' as QuizCategory,
     question: '시가총액이란?',
     options: [
       { id: 'A', text: '회사의 총 부채 금액' },
-      { id: 'B', text: '주가 × 발행주식 총수' },
+      { id: 'B', text: '주가 x 발행주식 총수' },
       { id: 'C', text: '연간 매출액의 합계' },
       { id: 'D', text: '회사의 순자산 가치' },
     ],
@@ -261,6 +257,23 @@ const FALLBACK_QUIZZES = [
     difficulty: 1,
   },
   {
+    category: 'market_news' as QuizCategory,
+    question: '기준금리를 인하하면 일반적으로 주식시장에 어떤 영향을 미칠까요?',
+    options: [
+      { id: 'A', text: '주식시장에 긍정적 (상승 요인)' },
+      { id: 'B', text: '주식시장에 부정적 (하락 요인)' },
+      { id: 'C', text: '주식시장과 무관하다' },
+      { id: 'D', text: '채권시장에만 영향을 미친다' },
+    ],
+    correct_option: 'A',
+    explanation: '기준금리 인하는 기업의 차입 비용을 줄이고, 은행 예금 대비 주식의 상대적 매력도를 높여 일반적으로 주식시장에 긍정적인 영향을 미칩니다.',
+    difficulty: 1,
+  },
+
+  // ══════════════════════════════════════════════════════════════
+  // Medium (difficulty: 2) — 투자 전략/분석 (6문제)
+  // ══════════════════════════════════════════════════════════════
+  {
     category: 'risk_management' as QuizCategory,
     question: '다음 중 "체계적 위험(시장 위험)"에 해당하는 것은?',
     options: [
@@ -273,13 +286,179 @@ const FALLBACK_QUIZZES = [
     explanation: '체계적 위험은 시장 전체에 영향을 미치는 위험으로, 분산투자로도 제거할 수 없습니다. 금융 위기, 전쟁, 팬데믹 등이 해당합니다. 나머지는 개별 기업의 비체계적 위험입니다.',
     difficulty: 2,
   },
+  {
+    category: 'stock_basics' as QuizCategory,
+    question: 'PBR(주가순자산비율)이 1 미만이면 의미하는 것은?',
+    options: [
+      { id: 'A', text: '주가가 순자산 가치보다 낮게 거래되고 있다' },
+      { id: 'B', text: '회사의 부채가 자본보다 많다' },
+      { id: 'C', text: '배당금을 지급하지 않는 기업이다' },
+      { id: 'D', text: '매출이 감소하고 있다' },
+    ],
+    correct_option: 'A',
+    explanation: 'PBR(Price-to-Book Ratio)은 주가를 주당 순자산가치(BPS)로 나눈 비율입니다. PBR < 1이면 시장이 기업을 청산 가치보다 낮게 평가한다는 의미로, 저평가 또는 시장의 비관적 전망을 나타낼 수 있습니다.',
+    difficulty: 2,
+  },
+  {
+    category: 'investing_terms' as QuizCategory,
+    question: '샤프 비율(Sharpe Ratio)이 높을수록 의미하는 것은?',
+    options: [
+      { id: 'A', text: '위험 대비 초과 수익이 크다' },
+      { id: 'B', text: '변동성이 크다' },
+      { id: 'C', text: '절대 수익률이 높다' },
+      { id: 'D', text: '거래량이 많다' },
+    ],
+    correct_option: 'A',
+    explanation: '샤프 비율은 (포트폴리오 수익률 - 무위험 수익률) / 표준편차로 계산합니다. 같은 위험을 감수하면서 더 높은 초과 수익을 내는 투자가 효율적이라는 뜻이며, 펀드 성과 비교의 핵심 지표입니다.',
+    difficulty: 2,
+  },
+  {
+    category: 'market_news' as QuizCategory,
+    question: '미국 고용보고서에서 비농업 고용(Non-Farm Payrolls)이 예상보다 강하면 일반적으로?',
+    options: [
+      { id: 'A', text: '금리 인하 기대가 후퇴하여 주식에 부정적' },
+      { id: 'B', text: '경기 호조로 주식에 무조건 긍정적' },
+      { id: 'C', text: '달러가 약세로 전환된다' },
+      { id: 'D', text: '채권 가격이 상승한다' },
+    ],
+    correct_option: 'A',
+    explanation: '강한 고용은 경기 과열 → 인플레이션 지속 → 연준 금리 인하 지연으로 해석됩니다. "좋은 뉴스가 나쁜 뉴스"인 역설적 상황이 현재 시장의 특징입니다. 달러는 강세, 채권은 하락 압력을 받습니다.',
+    difficulty: 2,
+  },
+  {
+    category: 'risk_management' as QuizCategory,
+    question: '리밸런싱(Rebalancing)의 가장 중요한 목적은?',
+    options: [
+      { id: 'A', text: '수익률이 높은 자산에 더 집중 투자하기 위해' },
+      { id: 'B', text: '원래 설정한 자산 배분 비율을 유지하기 위해' },
+      { id: 'C', text: '세금을 줄이기 위해' },
+      { id: 'D', text: '거래 비용을 줄이기 위해' },
+    ],
+    correct_option: 'B',
+    explanation: '리밸런싱은 시장 변동으로 변한 자산 비율을 원래 목표 비율로 되돌리는 것입니다. 자연스럽게 "고평가 자산 매도, 저평가 자산 매수" 효과가 있어 장기적으로 위험 대비 수익률을 개선합니다.',
+    difficulty: 2,
+  },
+  {
+    category: 'investing_terms' as QuizCategory,
+    question: '"밸류 트랩(Value Trap)"이란?',
+    options: [
+      { id: 'A', text: '가치주가 시장 대비 초과 수익을 내는 현상' },
+      { id: 'B', text: '저평가로 보이지만 실제로는 합당한 이유가 있어 회복하지 못하는 종목' },
+      { id: 'C', text: '고평가 성장주가 계속 상승하는 현상' },
+      { id: 'D', text: '배당수익률이 높아 매력적으로 보이는 우량주' },
+    ],
+    correct_option: 'B',
+    explanation: '밸류 트랩은 PER, PBR 등이 낮아 저평가처럼 보이지만, 구조적 문제(사양 산업, 경영 리스크)로 주가가 회복되지 않는 종목입니다. 저평가 지표만 보고 투자하면 빠지기 쉬운 함정입니다.',
+    difficulty: 2,
+  },
+
+  // ══════════════════════════════════════════════════════════════
+  // Hard (difficulty: 3) — 고급 거시경제/파생상품/퀀트 (6문제)
+  // ══════════════════════════════════════════════════════════════
+  {
+    category: 'risk_management' as QuizCategory,
+    question: '듀레이션(Duration)이 긴 채권의 금리 상승 시 특성은?',
+    options: [
+      { id: 'A', text: '가격 하락폭이 크다' },
+      { id: 'B', text: '가격 변동이 거의 없다' },
+      { id: 'C', text: '이자 수익이 증가한다' },
+      { id: 'D', text: '만기가 짧아진다' },
+    ],
+    correct_option: 'A',
+    explanation: '듀레이션은 금리 변동에 대한 채권 가격 민감도를 나타냅니다. 듀레이션이 10년이면 금리 1%p 상승 시 채권 가격은 약 10% 하락합니다. 장기채일수록 듀레이션이 길어 금리 리스크가 큽니다.',
+    difficulty: 3,
+  },
+  {
+    category: 'market_news' as QuizCategory,
+    question: 'VIX 지수가 30을 넘을 때 역사적으로 가장 효과적이었던 전략은?',
+    options: [
+      { id: 'A', text: '전량 매도 후 현금 보유' },
+      { id: 'B', text: '변동성이 높을 때 분할 매수 (공포에 매수)' },
+      { id: 'C', text: '레버리지 ETF로 추세 추종' },
+      { id: 'D', text: '금만 매수' },
+    ],
+    correct_option: 'B',
+    explanation: 'VIX 30 이상은 극도의 공포 구간입니다. 역사적으로 VIX 30+ 시점에 S&P 500을 매수하면 12개월 후 평균 +20% 이상 수익을 기록했습니다. "남들이 두려워할 때 탐욕적이 되라"는 워렌 버핏의 원칙이 데이터로 증명됩니다.',
+    difficulty: 3,
+  },
+  {
+    category: 'market_news' as QuizCategory,
+    question: '역이율드커브(Inverted Yield Curve)가 발생한 후 평균적으로 경기침체까지 걸리는 기간은?',
+    options: [
+      { id: 'A', text: '약 1~3개월' },
+      { id: 'B', text: '약 6~18개월' },
+      { id: 'C', text: '약 3~5년' },
+      { id: 'D', text: '경기침체와 무관하다' },
+    ],
+    correct_option: 'B',
+    explanation: '역이율드커브(장단기 금리 역전)는 경기침체의 가장 신뢰도 높은 선행지표입니다. 1960년 이후 8번의 경기침체 중 7번을 사전에 예고했으며, 역전 후 평균 12~18개월 뒤 침체가 시작되었습니다. 단, 타이밍이 부정확할 수 있어 즉각적 매도 신호는 아닙니다.',
+    difficulty: 3,
+  },
+  {
+    category: 'investing_terms' as QuizCategory,
+    question: '옵션에서 "내재변동성(Implied Volatility)"이 급등하면 의미하는 것은?',
+    options: [
+      { id: 'A', text: '시장 참여자들이 향후 큰 가격 변동을 예상한다' },
+      { id: 'B', text: '기초자산 가격이 반드시 하락한다' },
+      { id: 'C', text: '옵션 매도가 유리하다' },
+      { id: 'D', text: '거래량이 감소한다' },
+    ],
+    correct_option: 'A',
+    explanation: '내재변동성은 옵션 가격에 반영된 시장의 미래 변동성 기대치입니다. IV 급등은 불확실성 증가를 의미하며, 옵션 프리미엄이 비싸집니다. VIX도 S&P 500 옵션의 내재변동성으로 계산되며, 공포지수로 불립니다.',
+    difficulty: 3,
+  },
+  {
+    category: 'stock_basics' as QuizCategory,
+    question: 'ROE(자기자본이익률)가 15%이고 배당성향이 40%일 때, 지속가능 성장률(Sustainable Growth Rate)은?',
+    options: [
+      { id: 'A', text: '6%' },
+      { id: 'B', text: '9%' },
+      { id: 'C', text: '15%' },
+      { id: 'D', text: '21%' },
+    ],
+    correct_option: 'B',
+    explanation: '지속가능 성장률 = ROE x (1 - 배당성향) = 15% x (1 - 0.4) = 15% x 0.6 = 9%. 기업이 외부 자금 조달 없이 내부 유보금만으로 달성 가능한 성장률입니다. 이 수치를 초과하는 성장은 부채 증가나 유상증자가 필요합니다.',
+    difficulty: 3,
+  },
+  {
+    category: 'risk_management' as QuizCategory,
+    question: '포트폴리오의 99% VaR(Value at Risk)가 -5%라면 의미하는 것은?',
+    options: [
+      { id: 'A', text: '99%의 확률로 최대 손실이 5%를 넘지 않는다' },
+      { id: 'B', text: '매일 5%씩 손실이 발생한다' },
+      { id: 'C', text: '1년에 5% 이상 하락할 확률이 99%다' },
+      { id: 'D', text: '최대 손실이 5%로 제한된다' },
+    ],
+    correct_option: 'A',
+    explanation: 'VaR는 주어진 신뢰수준(여기서 99%)에서 특정 기간 동안 발생할 수 있는 최대 예상 손실입니다. 99% VaR -5%는 "100거래일 중 99일은 손실이 5% 이내"라는 뜻입니다. 다만 나머지 1%의 꼬리 위험(Tail Risk)은 훨씬 클 수 있어 CVaR로 보완합니다.',
+    difficulty: 3,
+  },
 ];
 
-/** 오늘 날짜 기반 폴백 퀴즈 선택 */
+/**
+ * 오늘 날짜 기반 폴백 퀴즈 선택
+ * - 날짜(1~31)를 3으로 나눈 나머지로 난이도 결정: 0→Easy, 1→Medium, 2→Hard
+ * - 해당 난이도 퀴즈 중에서 날짜 기반으로 1개 선택
+ * - 같은 날에는 항상 같은 퀴즈가 선택됨 (일관성)
+ */
 function getFallbackQuiz() {
-  const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
-  const index = dayOfYear % FALLBACK_QUIZZES.length;
-  return FALLBACK_QUIZZES[index];
+  const today = new Date();
+  const dayOfMonth = today.getDate(); // 1~31
+
+  // 난이도 순환: 1일→Easy, 2일→Medium, 3일→Hard, 4일→Easy, ...
+  const difficulties = [1, 2, 3];
+  const todayDifficulty = difficulties[(dayOfMonth - 1) % 3];
+
+  // 해당 난이도 퀴즈 필터링
+  const filtered = FALLBACK_QUIZZES.filter(q => q.difficulty === todayDifficulty);
+
+  // 날짜 기반으로 퀴즈 선택 (연중 일수를 시드로 활용)
+  const dayOfYear = Math.floor(
+    (Date.now() - new Date(today.getFullYear(), 0, 0).getTime()) / 86400000
+  );
+  const index = dayOfYear % filtered.length;
+
+  return filtered[index];
 }
 
 // ============================================================================

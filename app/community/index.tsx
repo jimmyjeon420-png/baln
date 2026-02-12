@@ -48,7 +48,7 @@ export default function CommunityMainScreen() {
   const router = useRouter();
 
   // 자격 확인
-  const { eligibility, loading: eligibilityLoading } = useLoungeEligibility();
+  const { eligibility, loading: eligibilityLoading, error: eligibilityError } = useLoungeEligibility();
 
   // 상태
   const [category, setCategory] = useState<CommunityCategoryFilter>('all');
@@ -58,6 +58,7 @@ export default function CommunityMainScreen() {
   const {
     data,
     isLoading,
+    isError: postsError,
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
@@ -93,10 +94,10 @@ export default function CommunityMainScreen() {
 
   // 글쓰기 버튼
   const handleCreatePost = () => {
-    if (!eligibility.canPost) {
+    if (!eligibility?.canPost) {
       Alert.alert(
         '글쓰기 제한',
-        `글쓰기는 자산 ${(LOUNGE_POST_THRESHOLD / 100000000).toFixed(1)}억원 이상 회원만 가능합니다.\n\n현재 자산: ${(eligibility.totalAssets / 100000000).toFixed(2)}억원`,
+        `글쓰기는 자산 ${(LOUNGE_POST_THRESHOLD / 100000000).toFixed(1)}억원 이상 회원만 가능합니다.\n\n현재 자산: ${((eligibility?.totalAssets ?? 0) / 100000000).toFixed(2)}억원`,
       );
       return;
     }
@@ -193,6 +194,56 @@ export default function CommunityMainScreen() {
   const posts = data?.pages?.flatMap((page) => page) ?? [];
 
   // ──────────────────────────────────────────────────────────
+  // 로딩 중일 때 대기 화면 (자격 확인이 끝나기 전에 잠금 화면이 뜨는 것 방지)
+  // ──────────────────────────────────────────────────────────
+  if (eligibilityLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()}>
+            <Ionicons name="chevron-back" size={28} color={COLORS.primary} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>VIP 라운지</Text>
+          <View style={{ width: 28 }} />
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // ──────────────────────────────────────────────────────────
+  // 에러 발생 시 또는 데이터 조회 실패 시 준비 중 안내
+  // ──────────────────────────────────────────────────────────
+  if (eligibilityError || postsError) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()}>
+            <Ionicons name="chevron-back" size={28} color={COLORS.primary} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>VIP 라운지</Text>
+          <View style={{ width: 28 }} />
+        </View>
+        <View style={styles.comingSoonContainer}>
+          <Ionicons name="people-outline" size={48} color="#555" />
+          <Text style={styles.comingSoonTitle}>VIP 라운지 준비 중</Text>
+          <Text style={styles.comingSoonDescription}>
+            곧 투자 고수들의 커뮤니티가 열립니다!
+          </Text>
+          <Text style={styles.comingSoonHint}>
+            매일 출석하고 크레딧을 모아보세요
+          </Text>
+          <TouchableOpacity style={styles.comingSoonButton} onPress={() => router.back()}>
+            <Text style={styles.comingSoonButtonText}>돌아가기</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // ──────────────────────────────────────────────────────────
   // 자격 미달 시 잠금 화면
   // ──────────────────────────────────────────────────────────
   if (!eligibility.isEligible) {
@@ -259,10 +310,16 @@ export default function CommunityMainScreen() {
           <ActivityIndicator size="large" color={COLORS.primary} />
         </View>
       ) : posts.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Ionicons name="chatbubbles-outline" size={48} color={COLORS.textSecondary} />
-          <Text style={styles.emptyText}>아직 게시물이 없습니다</Text>
-          {eligibility.canPost && (
+        <View style={styles.comingSoonContainer}>
+          <Ionicons name="people-outline" size={48} color="#555" />
+          <Text style={styles.comingSoonTitle}>VIP 라운지 준비 중</Text>
+          <Text style={styles.comingSoonDescription}>
+            곧 투자 고수들의 커뮤니티가 열립니다!
+          </Text>
+          <Text style={styles.comingSoonHint}>
+            매일 출석하고 크레딧을 모아보세요
+          </Text>
+          {eligibility?.canPost && (
             <TouchableOpacity style={styles.emptyButton} onPress={handleCreatePost}>
               <Text style={styles.emptyButtonText}>첫 게시물 작성하기</Text>
             </TouchableOpacity>
@@ -271,7 +328,7 @@ export default function CommunityMainScreen() {
       ) : (
         <FlatList
           data={posts}
-          keyExtractor={(item, index) => `${item.id}-${index}`}
+          keyExtractor={(item, index) => `${item?.id ?? index}-${index}`}
           renderItem={({ item }) => (
             <View style={styles.postWrapper}>
               <CommunityPostCard
@@ -417,6 +474,45 @@ const styles = StyleSheet.create({
   },
   emptyButtonText: {
     fontSize: 14,
+    fontWeight: '600',
+    color: '#000000',
+  },
+
+  // ── 준비 중 / 에러 안내 화면 ──
+  comingSoonContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+    gap: 12,
+  },
+  comingSoonTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+    marginTop: 8,
+  },
+  comingSoonDescription: {
+    fontSize: 15,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  comingSoonHint: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    marginTop: 4,
+  },
+  comingSoonButton: {
+    marginTop: 20,
+    paddingHorizontal: 32,
+    paddingVertical: 12,
+    backgroundColor: COLORS.primary,
+    borderRadius: 12,
+  },
+  comingSoonButtonText: {
+    fontSize: 15,
     fontWeight: '600',
     color: '#000000',
   },

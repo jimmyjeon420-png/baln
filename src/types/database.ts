@@ -427,7 +427,7 @@ export interface Database {
           created_at?: string;
         };
       };
-      // AI CFO 채팅 히스토리
+      // AI 버핏과 티타임 채팅 히스토리
       ai_chat_messages: {
         Row: {
           id: string;

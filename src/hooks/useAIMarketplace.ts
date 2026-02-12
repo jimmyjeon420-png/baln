@@ -71,7 +71,7 @@ export function useTaxReport() {
   });
 }
 
-/** AI CFO 채팅 메시지 전송 */
+/** AI 버핏과 티타임 채팅 메시지 전송 */
 export function useAICFOChat(sessionId: string) {
   const queryClient = useQueryClient();
 

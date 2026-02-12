@@ -68,7 +68,7 @@ const DailyBriefingCard = ({
         )}
       </View>
 
-      {/* CFO 메시지 */}
+      {/* 투자 날씨 메시지 */}
       {cfoWeather?.message && (
         <Text style={styles.message} numberOfLines={3}>
           "{cfoWeather.message}"

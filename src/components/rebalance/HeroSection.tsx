@@ -1,5 +1,5 @@
 /**
- * 처방전 히어로 섹션 — 총자산 + 투자원금 대비 수익 + CFO 한줄 코멘트
+ * 처방전 히어로 섹션 — 총자산 + 투자원금 대비 수익 + 투자 날씨 한줄 코멘트
  *
  * [주 지표] 투자원금(평단가×수량) 대비 평가 손익 — 펀드매니저 기준
  */
@@ -75,7 +75,7 @@ export default function HeroSection({
         <BenchmarkChip myGainPercent={gainPercent} />
       </View>
 
-      {/* CFO 한줄 코멘트 */}
+      {/* 투자 날씨 한줄 코멘트 */}
       {cfoWeather && (
         <View style={[s.cfoLine, { backgroundColor: colors.success + '0F', borderColor: colors.success + '14' }]}>
           <Text style={s.cfoEmoji}>{cfoWeather.emoji}</Text>

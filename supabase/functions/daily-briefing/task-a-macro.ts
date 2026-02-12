@@ -51,7 +51,7 @@ export interface MacroAnalysisResult {
  * [출력]
  * - macroSummary: 글로벌 시장 핵심 요약
  * - bitcoinAnalysis: BTC 분석 (0-100 점수 + 세부 요인)
- * - cfoWeather: CFO용 날씨 이모티콘
+ * - cfoWeather: 투자 날씨 이모티콘
  * - vixLevel: VIX 지수
  * - globalLiquidity: M2 유동성 설명
  * - rateCycleEvidence: 금리 사이클 판단 근거

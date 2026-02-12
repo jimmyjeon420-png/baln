@@ -260,6 +260,9 @@ const HealthSignalCard = React.memo(({
         )}
       </View>
 
+      {/* 스와이프 힌트 */}
+      <Text style={styles.swipeHint}>스와이프하여 다음 카드 →</Text>
+
       {/* 상세 모달 */}
       <Modal
         visible={showDetail}
@@ -493,6 +496,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: COLORS.textPrimary,
+  },
+  swipeHint: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    marginTop: 8,
+    opacity: 0.7,
   },
   modalOverlay: {
     flex: 1,

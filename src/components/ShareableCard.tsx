@@ -1,6 +1,6 @@
 /**
  * ShareableCard - 인스타그램 스토리 공유용 프리미엄 카드
- * "baln.logic" 브랜딩 + 티어 배지 + CFO 날씨 이모지
+ * "baln.logic" 브랜딩 + 티어 배지 + 투자 날씨 이모지
  * 공유 성공 시 3크레딧 보상 지급 (1일 1회)
  *
  * 네이티브: react-native-view-shot → expo-sharing
@@ -168,7 +168,7 @@ export default function ShareableCard({
         </Text>
       </View>
 
-      {/* 중앙: CFO 날씨 + 감성 */}
+      {/* 중앙: 투자 날씨 + 감성 */}
       <View style={styles.centerSection}>
         <Text style={styles.weatherEmoji}>{weatherEmoji}</Text>
         <Text style={[styles.statusText, { color: tierStyle.text }]}>

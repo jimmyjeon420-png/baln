@@ -5,7 +5,7 @@
  * 현재: 한 곳에서 정의하고 import로 공유
  */
 
-// ── CFO 날씨 ──
+// ── 투자 날씨 ──
 export interface CfoWeather {
   emoji: string;
   status: string;

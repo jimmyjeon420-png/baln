@@ -689,6 +689,9 @@ export default React.forwardRef<View, ContextBriefCardProps>(
             )}
           </LayerSection>
         </ScrollView>
+
+        {/* 스와이프 힌트 */}
+        <Text style={styles.swipeHint}>스와이프하여 다음 카드 →</Text>
       </View>
     );
   }
@@ -1034,6 +1037,14 @@ const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
   emptySubtext: {
     fontSize: 13,
     color: COLORS.textTertiary,
+  },
+  swipeHint: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    marginTop: 6,
+    opacity: 0.7,
   },
 
   // ── 스켈레톤 ──

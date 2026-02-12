@@ -8,7 +8,7 @@
  * - 종목 딥다이브 (Deep Dive)
  * - What-If 시뮬레이션
  * - 세금 리포트
- * - AI CFO 채팅
+ * - AI 버핏과 티타임
  */
 
 import React from 'react';

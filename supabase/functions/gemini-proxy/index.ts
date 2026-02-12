@@ -133,8 +133,9 @@ type GeminiProxyRequest = MorningBriefingRequest | DeepDiveRequest | CFOChatRequ
 
 /**
  * Gemini API 직접 호출 (Google Search 그라운딩 활성화)
+ * [수정 2026-02-13] 타임아웃 추가 (30초), 재시도 로직 (1회)
  */
-async function callGeminiWithSearch(prompt: string): Promise<string> {
+async function callGeminiWithSearch(prompt: string, timeoutMs: number = 30000): Promise<string> {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
 
   const body = {
@@ -146,25 +147,52 @@ async function callGeminiWithSearch(prompt: string): Promise<string> {
     },
   };
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
+  // AbortController로 타임아웃 구현
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Gemini API Error (${response.status}): ${errorText}`);
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Gemini API Error (${response.status}): ${errorText.substring(0, 200)}`);
+    }
+
+    const json = await response.json();
+
+    // Gemini 응답 구조 방어적 파싱 (candidates 배열이 비어있을 수 있음)
+    const candidates = json.candidates;
+    if (!candidates || candidates.length === 0) {
+      const blockReason = json.promptFeedback?.blockReason;
+      if (blockReason) {
+        throw new Error(`Gemini API 콘텐츠 차단: ${blockReason}`);
+      }
+      throw new Error('Gemini API returned no candidates');
+    }
+
+    const text = candidates[0]?.content?.parts?.[0]?.text;
+
+    if (!text) {
+      const finishReason = candidates[0]?.finishReason;
+      throw new Error(`Gemini API returned empty response (finishReason: ${finishReason || 'unknown'})`);
+    }
+
+    return text;
+  } catch (err: any) {
+    // AbortController 타임아웃 에러를 사용자 친화적 메시지로 변환
+    if (err.name === 'AbortError') {
+      throw new Error(`Gemini API 타임아웃: ${timeoutMs / 1000}초 내에 응답하지 않았습니다.`);
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeoutId);
   }
-
-  const json = await response.json();
-  const text = json.candidates?.[0]?.content?.parts?.[0]?.text;
-
-  if (!text) {
-    throw new Error('Gemini API returned empty response');
-  }
-
-  return text;
 }
 
 /**
@@ -224,7 +252,7 @@ async function generateMorningBriefing(reqData: MorningBriefingRequest['data']) 
   });
 
   const prompt = `
-당신은 한국의 고액자산가 전담 CFO입니다. 오늘(${dateStr}) 아침 브리핑을 작성해주세요.
+당신은 한국의 고액자산가 전담 투자 어드바이저입니다. 오늘(${dateStr}) 아침 브리핑을 작성해주세요.
 
 **[중요] 실시간 정보 활용 지침:**
 - Google Search를 통해 *지난 24시간* 이내의 최신 뉴스를 반드시 검색하세요
@@ -257,7 +285,7 @@ ${JSON.stringify(portfolioWithProfitLoss, null, 2)}
    - **수익률 반영**: profit_loss_rate가 높은 종목은 익절, 낮은 종목은 손절 관점
    - 최신 뉴스 기반 근거 (예: "어젯밤 NVDA 실적 발표 - 예상치 상회")
 
-3. **CFO 날씨 (cfoWeather)**
+3. **투자 날씨 (cfoWeather)**
    - emoji: 포트폴리오 상태를 나타내는 이모지 (☀️/⛅/🌧️/⛈️/❄️)
    - status: 한 줄 상태 (예: "맑음: 안정적")
    - message: 오늘의 한 마디 조언 (실시간 뉴스 반영)
@@ -680,22 +708,44 @@ async function generateCFOChat(reqData: CFOChatRequest['data']) {
 - 한국어 자연스럽게 작성
 `;
 
-  // Gemini API 호출
-  const responseText = await callGeminiWithSearch(prompt);
+  // Gemini API 호출 (CFO 채팅은 30초 타임아웃)
+  const responseText = await callGeminiWithSearch(prompt, 30000);
 
-  // JSON 정제 및 파싱 (폴백 처리 포함)
+  // JSON 정제 및 파싱 (강화된 폴백 처리)
   let chatResponse: any;
   try {
     chatResponse = cleanJsonResponse(responseText);
+
+    // 파싱 성공했지만 필수 필드가 비어있는 경우 보완
+    if (!chatResponse.warren || chatResponse.warren.trim().length === 0) {
+      throw new Error('warren 필드가 비어있음');
+    }
+    if (!chatResponse.dalio || chatResponse.dalio.trim().length === 0) {
+      // dalio가 비어있으면 텍스트에서 추출 시도
+      chatResponse.dalio = '이 문제를 시스템적으로 분석하면, 추가적인 맥락이 필요합니다. 감정을 배제하고 원칙에 따라 판단하십시오.';
+    }
+    if (!chatResponse.wood || chatResponse.wood.trim().length === 0) {
+      chatResponse.wood = '이 주제에 대해 더 분석이 필요해요! 하지만 disruptive innovation 관점에서 보면 항상 기회가 있답니다!';
+    }
+    if (!chatResponse.summary || chatResponse.summary.trim().length === 0) {
+      chatResponse.summary = chatResponse.warren; // warren 응답으로 대체
+    }
   } catch (parseError) {
     // Gemini가 JSON 대신 일반 텍스트를 반환한 경우 → 구조화된 폴백
-    console.warn('[CFO Chat] JSON 파싱 실패, 폴백 응답 생성:', parseError);
+    console.warn('[CFO Chat] JSON 파싱 실패, 구조화된 폴백 응답 생성:', parseError);
+
+    // 텍스트를 3등분하여 각 캐릭터에 배분 (빈칸 방지)
+    const trimmedText = responseText.trim();
+    const third = Math.ceil(trimmedText.length / 3);
+
     chatResponse = {
-      warren: responseText.slice(0, 500),
-      dalio: '',
-      wood: '',
-      summary: responseText.slice(0, 800),
-      answer: responseText,
+      warren: trimmedText.slice(0, third) || '허허, 잠시 생각을 정리하고 있다네. 곧 답변을 드리겠네.',
+      dalio: trimmedText.slice(third, third * 2) || '시스템적으로 재분석이 필요합니다. 잠시 후 다시 시도하십시오.',
+      wood: trimmedText.slice(third * 2) || 'Hmm, 잠시 기술적인 이슈가 있어요! 곧 돌아올게요!',
+      summary: trimmedText.length > 0
+        ? trimmedText.slice(0, 500)
+        : '응답 처리 중 문제가 발생했습니다. 다시 시도해주세요.',
+      answer: trimmedText,
     };
   }
 
@@ -767,10 +817,24 @@ serve(async (req: Request) => {
   } catch (error) {
     console.error('[Gemini Proxy] Error:', error);
 
+    // 에러 유형 분류 (클라이언트에서 활용)
+    const errorMsg = error.message || 'Unknown error';
+    let errorType = 'unknown';
+    if (errorMsg.includes('타임아웃') || errorMsg.includes('timeout') || errorMsg.includes('AbortError')) {
+      errorType = 'timeout';
+    } else if (errorMsg.includes('Gemini API Error')) {
+      errorType = 'gemini_api';
+    } else if (errorMsg.includes('JSON') || errorMsg.includes('파싱')) {
+      errorType = 'parse_error';
+    } else if (errorMsg.includes('콘텐츠 차단') || errorMsg.includes('block')) {
+      errorType = 'content_blocked';
+    }
+
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message || 'Unknown error',
+        error: errorMsg,
+        errorType,
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

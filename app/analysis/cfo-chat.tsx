@@ -1,8 +1,14 @@
 /**
- * AI CFO 채팅 - 실시간 대화형 투자 조언
+ * AI 버핏과 티타임 - 실시간 대화형 투자 조언
  *
  * 역할: ChatGPT 스타일 대화형 AI 재무 상담
  * 사용자 흐름: 질문 입력 → AI 응답 → 추가 질문
+ *
+ * [수정 2026-02-13] 에러 처리 개선:
+ * - API 호출 먼저 → 성공 시에만 크레딧 차감 (순서 변경)
+ * - 로컬 폴백 응답 (네트워크/서버 에러 시 캐릭터별 안내)
+ * - 에러 메시지를 대화 버블로 표시 (빨간 테두리 + 다시 시도 버튼)
+ * - 네트워크 에러와 서버 에러 구분 안내
  */
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
@@ -42,6 +48,62 @@ interface Message {
     dalio: string;
     wood: string;
     summary: string;
+  };
+  // 에러 상태 (에러 버블 표시용)
+  isError?: boolean;
+  // 다시 시도할 원본 질문 (에러 시 재시도용)
+  retryQuestion?: string;
+}
+
+// ============================================================================
+// 로컬 폴백 응답 (서버 응답 실패 시 사용)
+// ============================================================================
+
+const LOCAL_FALLBACK_DEBATE = {
+  warren: '허허, 자네. 지금 시장을 분석 중이라네. 체리콜라 한 잔 마시면서 잠시 기다려 주시게. 좋은 투자는 인내심에서 시작된다네.',
+  dalio: '원칙 제1조: 인내심을 가지십시오. 시스템이 잠시 정비 중입니다. 이런 일시적 중단은 장기 성과에 영향을 주지 않습니다.',
+  wood: 'Oh no! 기술적인 이슈가 있네요. 하지만 걱정 마세요, 곧 돌아올게요! Innovation은 멈추지 않으니까요!',
+  summary: 'AI 분석 서버가 일시적으로 응답하지 않습니다. 잠시 후 다시 시도해주세요. 크레딧은 차감되지 않았습니다.',
+};
+
+/** 에러 종류를 판별하여 사용자 친화적 메시지 반환 */
+function classifyError(err: any): { type: 'network' | 'server' | 'unknown'; message: string } {
+  const msg = err?.message || '';
+
+  // 네트워크 관련 에러
+  if (
+    msg.includes('network') ||
+    msg.includes('Network') ||
+    msg.includes('fetch') ||
+    msg.includes('timeout') ||
+    msg.includes('ECONNREFUSED') ||
+    msg.includes('Failed to fetch') ||
+    msg.includes('인터넷')
+  ) {
+    return {
+      type: 'network',
+      message: '인터넷 연결을 확인해주세요. Wi-Fi 또는 모바일 데이터가 켜져 있는지 확인 후 다시 시도해주세요.',
+    };
+  }
+
+  // 서버 에러 (5xx, Gemini 관련)
+  if (
+    msg.includes('500') ||
+    msg.includes('502') ||
+    msg.includes('503') ||
+    msg.includes('Gemini') ||
+    msg.includes('AI 응답 실패') ||
+    msg.includes('Edge Function')
+  ) {
+    return {
+      type: 'server',
+      message: 'AI 서버가 일시적으로 바쁩니다. 보통 1-2분 내에 복구됩니다. 잠시 후 다시 시도해주세요.',
+    };
+  }
+
+  return {
+    type: 'unknown',
+    message: '일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.',
   };
 }
 
@@ -95,10 +157,18 @@ export default function CFOChatScreen() {
     const welcomeMessage: Message = {
       id: 'welcome',
       role: 'assistant',
-      text: '안녕하세요, 자네! 워렌 버핏이라고 하네. 체리콜라 한 잔 하면서 투자 이야기 나눠보겠나? 오늘은 달리오와 캐시도 함께 있으니, 편하게 물어보시게. 🍒',
+      text: '안녕하세요, 자네! 워렌 버핏이라고 하네. 체리콜라 한 잔 하면서 투자 이야기 나눠보겠나? 오늘은 달리오와 캐시도 함께 있으니, 편하게 물어보시게.',
       timestamp: new Date(),
     };
     setMessages([welcomeMessage]);
+  }, []);
+
+  /** 다시 시도 핸들러: 에러 메시지를 제거하고 해당 질문을 재전송 */
+  const handleRetry = useCallback((errorMsgId: string, question: string) => {
+    // 에러 메시지를 목록에서 제거
+    setMessages(prev => prev.filter(m => m.id !== errorMsgId));
+    // 원본 질문으로 재시도 (사용자 메시지는 이미 있으므로 직접 API만 호출)
+    handleSend(question);
   }, []);
 
   const handleSend = async (text?: string) => {
@@ -110,54 +180,90 @@ export default function CFOChatScreen() {
     if (balance < chatCost) {
       Alert.alert(
         '크레딧 부족',
-        `질문 1회에 ${chatCost}크레딧(₩${chatCost * 100})이 필요합니다.\n현재 잔액: ${balance}크레딧\n\n출석(+2C), 퀴즈 적중(+3C), 공유(+5C)로 모아보세요!`,
+        `질문 1회에 ${chatCost}크레딧(\u20A9${chatCost * 100})이 필요합니다.\n현재 잔액: ${balance}크레딧\n\n출석(+2C), 퀴즈 적중(+3C), 공유(+5C)로 모아보세요!`,
         [{ text: '확인' }]
       );
       return;
     }
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: 'user',
-      text: messageText,
-      timestamp: new Date(),
-    };
-    setMessages(prev => [...prev, userMessage]);
+    // 이미 같은 질문의 사용자 메시지가 마지막에 있으면 추가하지 않음 (재시도 시)
+    const lastUserMsg = [...messages].reverse().find(m => m.role === 'user');
+    const isRetry = lastUserMsg?.text === messageText;
+
+    if (!isRetry) {
+      const userMessage: Message = {
+        id: Date.now().toString(),
+        role: 'user',
+        text: messageText,
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, userMessage]);
+    }
     setInputText('');
     setIsLoading(true);
 
     try {
-      // 크레딧 차감 실행
-      const spendResult = await spendCreditsMutation.mutateAsync({
-        amount: chatCost,
-        featureType: 'ai_cfo_chat',
-      });
+      // ============================================================
+      // [핵심 변경] API 호출을 먼저 → 성공 시에만 크레딧 차감
+      // 기존: 크레딧 차감 → API 호출 (실패하면 크레딧 날아감)
+      // 변경: API 호출 → 성공 확인 → 크레딧 차감
+      // ============================================================
 
-      if (!spendResult.success) {
-        throw new Error(spendResult.errorMessage || '크레딧 차감에 실패했습니다.');
-      }
-
-      // Gemini API 호출 (Edge Function 사용)
-      console.log('[AI 워렌 버핏] 질문:', messageText);
+      // 1단계: Gemini API 호출 (Edge Function 사용)
+      console.log('[AI 버핏과 티타임] 질문:', messageText);
       const { data, error } = await supabase.functions.invoke('gemini-proxy', {
         body: {
           type: 'cfo-chat',
           data: {
             question: messageText,
-            conversationHistory: messages.slice(-10), // 최근 10개 대화만 전달 (컨텍스트)
+            conversationHistory: messages.slice(-10), // 최근 10개 대화만 전달
           },
         },
       });
 
+      // Edge Function 레벨 에러 (네트워크, 5xx 등)
       if (error) {
         throw new Error(`AI 응답 실패: ${error.message}`);
       }
 
+      // Edge Function이 200을 반환했지만 내부 success:false인 경우
+      if (data && data.success === false) {
+        throw new Error(data.error || 'AI 서버에서 응답 생성에 실패했습니다.');
+      }
+
       // 토론 형식 응답 파싱
       const debateData = data?.data;
-      console.log('[AI 워렌 버핏] 응답:', debateData);
+      console.log('[AI 버핏과 티타임] 응답 수신 완료');
 
-      if (debateData?.warren && debateData?.dalio && debateData?.wood && debateData?.summary) {
+      // 응답 유효성 검사
+      const hasValidDebate =
+        debateData?.warren && debateData.warren.length > 0 &&
+        debateData?.dalio && debateData.dalio.length > 0 &&
+        debateData?.wood && debateData.wood.length > 0 &&
+        debateData?.summary && debateData.summary.length > 0;
+
+      if (!hasValidDebate && !debateData?.answer) {
+        throw new Error('AI 응답이 불완전합니다. 다시 시도해주세요.');
+      }
+
+      // 2단계: API 성공 확인 후 크레딧 차감
+      try {
+        const spendResult = await spendCreditsMutation.mutateAsync({
+          amount: chatCost,
+          featureType: 'ai_cfo_chat',
+        });
+
+        if (!spendResult.success) {
+          // 크레딧 차감 실패해도 응답은 보여줌 (사용자 경험 우선)
+          console.warn('[AI 버핏과 티타임] 크레딧 차감 실패 (응답은 표시):', spendResult.errorMessage);
+        }
+      } catch (creditErr) {
+        // 크레딧 차감 에러도 무시하고 응답은 보여줌
+        console.warn('[AI 버핏과 티타임] 크레딧 차감 예외 (응답은 표시):', creditErr);
+      }
+
+      // 3단계: 응답 표시
+      if (hasValidDebate) {
         // 토론 형식 메시지
         const aiMessage: Message = {
           id: (Date.now() + 1).toString(),
@@ -173,8 +279,8 @@ export default function CFOChatScreen() {
         };
         setMessages(prev => [...prev, aiMessage]);
       } else {
-        // 폴백: 단일 답변
-        const fallbackText = debateData?.answer || '죄송합니다. 응답을 생성하지 못했습니다.';
+        // 폴백: 단일 답변 (warren만 있는 경우 등)
+        const fallbackText = debateData?.answer || debateData?.warren || '응답을 처리하는 중 문제가 발생했습니다.';
         const aiMessage: Message = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
@@ -184,17 +290,34 @@ export default function CFOChatScreen() {
         setMessages(prev => [...prev, aiMessage]);
       }
     } catch (err: any) {
-      console.error('[AI 워렌 버핏] 에러:', err);
-      Alert.alert('오류', err.message || '알 수 없는 오류가 발생했습니다');
+      console.error('[AI 버핏과 티타임] 에러:', err);
 
-      // 에러 메시지도 대화에 추가
+      // 에러 분류 (네트워크 vs 서버 vs 기타)
+      const classified = classifyError(err);
+
+      // 에러 메시지를 대화 버블로 표시 (Alert 대신 인라인)
+      // 폴백 토론 형식으로 에러 안내 + 다시 시도 버튼
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        text: '죄송합니다. 일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
+        text: '',
         timestamp: new Date(),
+        isError: true,
+        retryQuestion: messageText,
+        debate: {
+          ...LOCAL_FALLBACK_DEBATE,
+          // summary에 구체적 에러 유형별 안내 추가
+          summary: classified.type === 'network'
+            ? `${LOCAL_FALLBACK_DEBATE.summary}\n\n[네트워크 오류] ${classified.message}`
+            : classified.type === 'server'
+              ? `${LOCAL_FALLBACK_DEBATE.summary}\n\n[서버 오류] ${classified.message}`
+              : `${LOCAL_FALLBACK_DEBATE.summary}\n\n${classified.message}`,
+        },
       };
       setMessages(prev => [...prev, errorMessage]);
+
+      // 크레딧은 차감되지 않음 (API 호출이 먼저이므로 실패 시 차감 안 됨)
+      // → 사용자에게 별도 안내 불필요
     } finally {
       setIsLoading(false);
     }
@@ -207,7 +330,7 @@ export default function CFOChatScreen() {
   const renderMessage = ({ item }: { item: Message }) => {
     const isUser = item.role === 'user';
 
-    // 토론 형식 렌더링
+    // 토론 형식 렌더링 (에러 폴백 포함)
     if (!isUser && item.debate) {
       // 사용자 질문 찾기 (캡처에 포함)
       const prevMsg = messages.find((m, idx) => {
@@ -220,12 +343,26 @@ export default function CFOChatScreen() {
           <ViewShot
             ref={(ref) => { debateRefs.current[item.id] = ref; }}
             options={{ format: 'png', quality: 1.0 }}
-            style={{ backgroundColor: '#1A1A2E', padding: 16, borderRadius: 20 }}
+            style={[
+              { backgroundColor: '#1A1A2E', padding: 16, borderRadius: 20 },
+              // 에러 시 빨간 테두리 표시
+              item.isError && { borderWidth: 2, borderColor: '#FF5252' },
+            ]}
           >
+          {/* 에러 배너 (에러 시만 표시) */}
+          {item.isError && (
+            <View style={s.errorBanner}>
+              <Ionicons name="warning-outline" size={16} color="#FF5252" />
+              <Text style={s.errorBannerText}>
+                응답 생성 실패 - 크레딧이 차감되지 않았습니다
+              </Text>
+            </View>
+          )}
+
           {/* baln 브랜딩 (강화) */}
           <View style={s.shareBrandRow}>
             <Text style={s.shareBrandText}>bal<Text style={{ color: '#4CAF50' }}>n</Text>.logic</Text>
-            <Text style={s.shareBrandSub}>AI 버핏과 티타임 ☕</Text>
+            <Text style={s.shareBrandSub}>AI 버핏과 티타임</Text>
           </View>
 
           {/* 사용자 질문 (캡처에 포함) */}
@@ -238,48 +375,64 @@ export default function CFOChatScreen() {
 
           {/* 워렌 버핏 */}
           <View style={[s.debateCard, { backgroundColor: '#E3F2FD', borderLeftColor: '#2196F3' }]}>
-            <Text style={[s.investorName, { color: '#1976D2' }]}>🦉 워렌 버핏</Text>
+            <Text style={[s.investorName, { color: '#1976D2' }]}>워렌 버핏</Text>
             <Text style={[s.debateText, { color: '#2D2D2D' }]}>{item.debate.warren}</Text>
           </View>
 
           {/* 레이 달리오 */}
           <View style={[s.debateCard, { backgroundColor: '#F3E5F5', borderLeftColor: '#9C27B0' }]}>
-            <Text style={[s.investorName, { color: '#7B1FA2' }]}>🌊 레이 달리오</Text>
+            <Text style={[s.investorName, { color: '#7B1FA2' }]}>레이 달리오</Text>
             <Text style={[s.debateText, { color: '#2D2D2D' }]}>{item.debate.dalio}</Text>
           </View>
 
           {/* 캐시 우드 */}
           <View style={[s.debateCard, { backgroundColor: '#FCE4EC', borderLeftColor: '#E91E63' }]}>
-            <Text style={[s.investorName, { color: '#C2185B' }]}>🚀 캐시 우드</Text>
+            <Text style={[s.investorName, { color: '#C2185B' }]}>캐시 우드</Text>
             <Text style={[s.debateText, { color: '#2D2D2D' }]}>{item.debate.wood}</Text>
           </View>
 
           {/* 워렌 버핏 최종 정리 */}
           <View style={[s.summaryCard, { backgroundColor: '#FFF9C4', borderColor: '#FBC02D' }]}>
-            <Text style={[s.summaryTitle, { color: '#F57F17' }]}>🦉 워렌의 한마디</Text>
+            <Text style={[s.summaryTitle, { color: '#F57F17' }]}>워렌의 한마디</Text>
             <Text style={[s.summaryText, { color: '#2D2D2D' }]}>{item.debate.summary}</Text>
           </View>
 
-          {/* 바이럴 CTA */}
-          <View style={s.captureCTA}>
-            <Text style={s.captureCTAText}>나도 버핏과 대화하기 → baln.app</Text>
-          </View>
+          {/* 바이럴 CTA (에러가 아닐 때만) */}
+          {!item.isError && (
+            <View style={s.captureCTA}>
+              <Text style={s.captureCTAText}>{'나도 버핏과 대화하기 → baln.app'}</Text>
+            </View>
+          )}
           </ViewShot>
 
-          {/* 공유 버튼 */}
-          <TouchableOpacity
-            style={s.shareDebateButton}
-            onPress={() => handleShareDebate(item.id)}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="share-social" size={14} color="#4CAF50" />
-            <Text style={s.shareDebateText}>인스타 공유</Text>
-            {!rewarded && (
-              <View style={s.shareRewardBadge}>
-                <Text style={s.shareRewardBadgeText}>+{REWARD_AMOUNTS.shareCard}C</Text>
-              </View>
-            )}
-          </TouchableOpacity>
+          {/* 다시 시도 버튼 (에러 시만 표시) */}
+          {item.isError && item.retryQuestion && (
+            <TouchableOpacity
+              style={s.retryButton}
+              onPress={() => handleRetry(item.id, item.retryQuestion!)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="refresh" size={16} color="#FFFFFF" />
+              <Text style={s.retryButtonText}>다시 시도</Text>
+            </TouchableOpacity>
+          )}
+
+          {/* 공유 버튼 (에러가 아닐 때만) */}
+          {!item.isError && (
+            <TouchableOpacity
+              style={s.shareDebateButton}
+              onPress={() => handleShareDebate(item.id)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="share-social" size={14} color="#4CAF50" />
+              <Text style={s.shareDebateText}>인스타 공유</Text>
+              {!rewarded && (
+                <View style={s.shareRewardBadge}>
+                  <Text style={s.shareRewardBadgeText}>+{REWARD_AMOUNTS.shareCard}C</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          )}
 
           <Text style={[s.timestamp, { color: colors.textTertiary, marginTop: 8 }]}>
             {item.timestamp.toLocaleTimeString('ko-KR', {
@@ -299,12 +452,32 @@ export default function CFOChatScreen() {
             s.messageBubble,
             isUser
               ? { backgroundColor: '#7C4DFF' }
-              : { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+              : item.isError
+                ? { backgroundColor: colors.surface, borderWidth: 2, borderColor: '#FF5252' }
+                : { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
           ]}
         >
+          {/* 에러 아이콘 (에러 메시지일 때) */}
+          {item.isError && (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+              <Ionicons name="warning-outline" size={14} color="#FF5252" />
+              <Text style={{ color: '#FF5252', fontSize: 12, fontWeight: '600' }}>오류 발생</Text>
+            </View>
+          )}
           <Text style={[s.messageText, { color: isUser ? '#FFFFFF' : colors.textPrimary }]}>
             {item.text}
           </Text>
+          {/* 다시 시도 버튼 (에러 + 텍스트 메시지일 때) */}
+          {item.isError && item.retryQuestion && (
+            <TouchableOpacity
+              style={[s.retryButton, { marginTop: 8 }]}
+              onPress={() => handleRetry(item.id, item.retryQuestion!)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="refresh" size={14} color="#FFFFFF" />
+              <Text style={[s.retryButtonText, { fontSize: 12 }]}>다시 시도</Text>
+            </TouchableOpacity>
+          )}
           <Text
             style={[s.timestamp, { color: isUser ? 'rgba(255,255,255,0.7)' : colors.textTertiary }]}
           >
@@ -643,5 +816,42 @@ const s = StyleSheet.create({
     fontSize: 11,
     color: '#888888',
     lineHeight: 16,
+  },
+  // ============================================================================
+  // 에러 UI 스타일
+  // ============================================================================
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(255, 82, 82, 0.15)',
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 82, 82, 0.3)',
+  },
+  errorBannerText: {
+    flex: 1,
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#FF5252',
+  },
+  retryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+    gap: 6,
+    marginTop: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: '#7C4DFF',
+    borderRadius: 20,
+  },
+  retryButtonText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
 });

@@ -672,7 +672,7 @@ export interface RiskAnalysisResult {
 }
 
 // ============================================================================
-// CFO Morning Briefing - 아침 처방전
+// 시장 브리핑 - 아침 처방전
 // ============================================================================
 
 export interface MorningBriefingResult {
@@ -703,12 +703,12 @@ export interface MorningBriefingResult {
 }
 
 /**
- * CFO Morning Briefing 생성
+ * 시장 브리핑 생성
  * - 실시간 Google Search 그라운딩으로 최신 뉴스 반영
  * - 거시경제 요약
  * - 포트폴리오별 액션 (수익률 기반)
  * - 부동산 인사이트
- * - CFO 날씨
+ * - 투자 날씨
  */
 export const generateMorningBriefing = async (
   portfolio: PortfolioAsset[],
@@ -1690,7 +1690,7 @@ ${input.residency === 'KR' ?
 };
 
 // ============================================================================
-// [마켓플레이스] AI CFO 1:1 채팅 — 포트폴리오 컨텍스트 포함
+// [마켓플레이스] AI 버핏과 티타임 1:1 채팅 — 포트폴리오 컨텍스트 포함
 // ============================================================================
 
 export const generateAICFOResponse = async (
@@ -1699,7 +1699,7 @@ export const generateAICFOResponse = async (
 ): Promise<string> => {
   const historyStr = conversationHistory
     .slice(-10) // 최근 10개 메시지만
-    .map(m => `${m.role === 'user' ? '사용자' : 'AI CFO'}: ${m.content}`)
+    .map(m => `${m.role === 'user' ? '사용자' : 'AI 버핏'}: ${m.content}`)
     .join('\n');
 
   const portfolioContext = input.portfolioContext
@@ -1712,7 +1712,7 @@ export const generateAICFOResponse = async (
     : '';
 
   const prompt = `
-당신은 AI CFO (최고재무책임자)입니다. 사용자의 재무 상담에 친절하고 전문적으로 응답하세요.
+당신은 AI 투자 어드바이저입니다. 사용자의 재무 상담에 친절하고 전문적으로 응답하세요.
 
 ${portfolioContext}
 
@@ -1735,7 +1735,7 @@ ${input.message}
     const result = await modelWithSearch.generateContent(prompt);
     return result.response.text();
   } catch (error) {
-    console.error('AI CFO 응답 오류:', error);
-    throw new Error('AI CFO 응답 생성에 실패했습니다');
+    console.error('AI 버핏 응답 오류:', error);
+    throw new Error('AI 버핏 응답 생성에 실패했습니다');
   }
 };
