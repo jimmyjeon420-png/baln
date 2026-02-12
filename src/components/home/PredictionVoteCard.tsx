@@ -492,7 +492,7 @@ export default function PredictionVoteCard({
 // 스타일
 // ============================================================================
 
-const CARD_HEIGHT = SCREEN_HEIGHT * 0.75;
+const CARD_HEIGHT = SCREEN_HEIGHT * 0.55;
 
 const styles = StyleSheet.create({
   card: {

@@ -675,7 +675,7 @@ export default React.forwardRef<View, ContextBriefCardProps>(
 // 스타일
 // ============================================================================
 
-const CARD_HEIGHT = SCREEN_HEIGHT * 0.75;
+const CARD_HEIGHT = SCREEN_HEIGHT * 0.55;
 
 const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
   // ── 카드 전체 ──

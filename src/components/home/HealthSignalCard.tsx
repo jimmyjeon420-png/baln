@@ -316,7 +316,7 @@ export default HealthSignalCard;
 // 스타일
 // ============================================================================
 
-const CARD_HEIGHT = SCREEN_HEIGHT * 0.75;
+const CARD_HEIGHT = SCREEN_HEIGHT * 0.55;
 
 const styles = StyleSheet.create({
   card: {
@@ -324,7 +324,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     backgroundColor: COLORS.surface,
     borderRadius: 24,
-    padding: 24,
+    padding: 20,
     justifyContent: 'space-between',
     borderWidth: 1,
     borderColor: COLORS.border,
@@ -340,31 +340,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   signalEmoji: {
-    fontSize: 100,
-    marginBottom: 20,
+    fontSize: 72,
+    marginBottom: 12,
   },
   gradeLabel: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '600',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   scoreRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
   },
   scoreNumber: {
-    fontSize: 64,
+    fontSize: 48,
     fontWeight: '800',
-    lineHeight: 72,
+    lineHeight: 56,
   },
   scoreDivider: {
-    fontSize: 32,
+    fontSize: 24,
     fontWeight: '300',
     color: COLORS.textSecondary,
     marginHorizontal: 4,
   },
   scoreMax: {
-    fontSize: 32,
+    fontSize: 24,
     fontWeight: '300',
     color: COLORS.textSecondary,
   },
@@ -373,8 +373,8 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
   },
   emptyEmoji: {
-    fontSize: 80,
-    marginBottom: 24,
+    fontSize: 60,
+    marginBottom: 16,
   },
   emptyTitle: {
     fontSize: 22,

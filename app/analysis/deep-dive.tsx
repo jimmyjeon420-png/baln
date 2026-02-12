@@ -2,10 +2,13 @@
  * 종목 딥다이브 - 개별 주식 심층 분석
  *
  * 역할: AI 기반 개별 종목 분석 제공
- * 사용자 흐름: 종목명 입력 → AI 분석 → 매수/매도/보유 추천
+ * 사용자 흐름: 종목명/티커 입력 → AI 분석 → 4섹션 리포트
+ *
+ * [수정] Edge Function 대신 클라이언트 Gemini 직접 호출
+ * [수정] 한국어 기업명 검색 지원 (삼성전자, SK하이닉스 등)
  */
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -15,78 +18,142 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  FlatList,
+  Keyboard,
 } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../src/hooks/useTheme';
-import { PriceService } from '../../src/services/PriceService';
-import { AssetClass } from '../../src/types/price';
-import supabase from '../../src/services/supabase';
+import { generateDeepDive } from '../../src/services/gemini';
+import DeepDiveResultCard from '../../src/components/DeepDiveResultCard';
+import type { DeepDiveInput, DeepDiveResult } from '../../src/types/marketplace';
 
-interface AnalysisResult {
-  name: string;
+// ============================================================================
+// 한국 주요 종목 + 글로벌 인기 종목 DB (오프라인 검색용)
+// ============================================================================
+
+interface StockItem {
   ticker: string;
-  currentPrice: number;
-  change: number;
-  overview: string;
-  marketCap: string;
-  per: number;
-  pbr: number;
-  recommendation: 'BUY' | 'SELL' | 'HOLD';
-  reason: string;
+  name: string;
+  nameEn?: string;
+  market: 'KRX' | 'NASDAQ' | 'NYSE' | 'CRYPTO';
 }
+
+const STOCK_DB: StockItem[] = [
+  // 한국 대형주
+  { ticker: '005930', name: '삼성전자', nameEn: 'Samsung Electronics', market: 'KRX' },
+  { ticker: '000660', name: 'SK하이닉스', nameEn: 'SK Hynix', market: 'KRX' },
+  { ticker: '373220', name: 'LG에너지솔루션', nameEn: 'LG Energy Solution', market: 'KRX' },
+  { ticker: '207940', name: '삼성바이오로직스', nameEn: 'Samsung Biologics', market: 'KRX' },
+  { ticker: '005935', name: '삼성전자우', nameEn: 'Samsung Electronics Pref.', market: 'KRX' },
+  { ticker: '006400', name: '삼성SDI', nameEn: 'Samsung SDI', market: 'KRX' },
+  { ticker: '051910', name: 'LG화학', nameEn: 'LG Chem', market: 'KRX' },
+  { ticker: '035420', name: 'NAVER', nameEn: 'Naver Corp', market: 'KRX' },
+  { ticker: '000270', name: '기아', nameEn: 'Kia Corp', market: 'KRX' },
+  { ticker: '005380', name: '현대자동차', nameEn: 'Hyundai Motor', market: 'KRX' },
+  { ticker: '068270', name: '셀트리온', nameEn: 'Celltrion', market: 'KRX' },
+  { ticker: '035720', name: '카카오', nameEn: 'Kakao Corp', market: 'KRX' },
+  { ticker: '105560', name: 'KB금융', nameEn: 'KB Financial Group', market: 'KRX' },
+  { ticker: '055550', name: '신한지주', nameEn: 'Shinhan Financial', market: 'KRX' },
+  { ticker: '003670', name: '포스코퓨처엠', nameEn: 'POSCO Future M', market: 'KRX' },
+  { ticker: '066570', name: 'LG전자', nameEn: 'LG Electronics', market: 'KRX' },
+  { ticker: '028260', name: '삼성물산', nameEn: 'Samsung C&T', market: 'KRX' },
+  { ticker: '012330', name: '현대모비스', nameEn: 'Hyundai Mobis', market: 'KRX' },
+  { ticker: '003550', name: 'LG', nameEn: 'LG Corp', market: 'KRX' },
+  { ticker: '034730', name: 'SK', nameEn: 'SK Inc', market: 'KRX' },
+  { ticker: '096770', name: 'SK이노베이션', nameEn: 'SK Innovation', market: 'KRX' },
+  { ticker: '030200', name: 'KT', nameEn: 'KT Corp', market: 'KRX' },
+  { ticker: '017670', name: 'SK텔레콤', nameEn: 'SK Telecom', market: 'KRX' },
+  { ticker: '032830', name: '삼성생명', nameEn: 'Samsung Life', market: 'KRX' },
+  { ticker: '009150', name: '삼성전기', nameEn: 'Samsung Electro-Mechanics', market: 'KRX' },
+  { ticker: '086790', name: '하나금융지주', nameEn: 'Hana Financial', market: 'KRX' },
+  { ticker: '010130', name: '고려아연', nameEn: 'Korea Zinc', market: 'KRX' },
+  { ticker: '018260', name: '삼성에스디에스', nameEn: 'Samsung SDS', market: 'KRX' },
+  { ticker: '259960', name: '크래프톤', nameEn: 'Krafton', market: 'KRX' },
+  { ticker: '352820', name: '하이브', nameEn: 'HYBE', market: 'KRX' },
+
+  // 미국 대형주
+  { ticker: 'AAPL', name: '애플', nameEn: 'Apple', market: 'NASDAQ' },
+  { ticker: 'MSFT', name: '마이크로소프트', nameEn: 'Microsoft', market: 'NASDAQ' },
+  { ticker: 'GOOGL', name: '구글(알파벳)', nameEn: 'Alphabet', market: 'NASDAQ' },
+  { ticker: 'AMZN', name: '아마존', nameEn: 'Amazon', market: 'NASDAQ' },
+  { ticker: 'NVDA', name: '엔비디아', nameEn: 'NVIDIA', market: 'NASDAQ' },
+  { ticker: 'META', name: '메타(페이스북)', nameEn: 'Meta Platforms', market: 'NASDAQ' },
+  { ticker: 'TSLA', name: '테슬라', nameEn: 'Tesla', market: 'NASDAQ' },
+  { ticker: 'TSM', name: 'TSMC', nameEn: 'Taiwan Semiconductor', market: 'NYSE' },
+  { ticker: 'BRK.B', name: '버크셔 해서웨이', nameEn: 'Berkshire Hathaway', market: 'NYSE' },
+  { ticker: 'JPM', name: 'JP모건', nameEn: 'JPMorgan Chase', market: 'NYSE' },
+  { ticker: 'V', name: '비자', nameEn: 'Visa', market: 'NYSE' },
+  { ticker: 'JNJ', name: '존슨앤존슨', nameEn: 'Johnson & Johnson', market: 'NYSE' },
+  { ticker: 'WMT', name: '월마트', nameEn: 'Walmart', market: 'NYSE' },
+  { ticker: 'MA', name: '마스터카드', nameEn: 'Mastercard', market: 'NYSE' },
+  { ticker: 'PG', name: 'P&G', nameEn: 'Procter & Gamble', market: 'NYSE' },
+  { ticker: 'DIS', name: '디즈니', nameEn: 'Walt Disney', market: 'NYSE' },
+  { ticker: 'NFLX', name: '넷플릭스', nameEn: 'Netflix', market: 'NASDAQ' },
+  { ticker: 'AMD', name: 'AMD', nameEn: 'Advanced Micro Devices', market: 'NASDAQ' },
+  { ticker: 'INTC', name: '인텔', nameEn: 'Intel', market: 'NASDAQ' },
+  { ticker: 'CRM', name: '세일즈포스', nameEn: 'Salesforce', market: 'NYSE' },
+  { ticker: 'COST', name: '코스트코', nameEn: 'Costco', market: 'NASDAQ' },
+  { ticker: 'AVGO', name: '브로드컴', nameEn: 'Broadcom', market: 'NASDAQ' },
+  { ticker: 'COIN', name: '코인베이스', nameEn: 'Coinbase', market: 'NASDAQ' },
+  { ticker: 'PLTR', name: '팔란티어', nameEn: 'Palantir', market: 'NASDAQ' },
+  { ticker: 'SOFI', name: '소파이', nameEn: 'SoFi Technologies', market: 'NASDAQ' },
+];
+
+// ============================================================================
+// 메인 화면
+// ============================================================================
 
 export default function DeepDiveScreen() {
   const { colors } = useTheme();
-  const [ticker, setTicker] = useState('');
-  const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [query, setQuery] = useState('');
+  const [selectedStock, setSelectedStock] = useState<StockItem | null>(null);
+  const [result, setResult] = useState<DeepDiveResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const priceService = new PriceService();
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  // 검색 필터 (한국어 이름, 영문 이름, 티커 모두 검색)
+  const filteredStocks = query.trim().length > 0
+    ? STOCK_DB.filter(s => {
+        const q = query.toLowerCase();
+        return (
+          s.name.toLowerCase().includes(q) ||
+          s.ticker.toLowerCase().includes(q) ||
+          (s.nameEn && s.nameEn.toLowerCase().includes(q))
+        );
+      }).slice(0, 8)
+    : [];
+
+  const handleSelectStock = useCallback((stock: StockItem) => {
+    setSelectedStock(stock);
+    setQuery(`${stock.name} (${stock.ticker})`);
+    setShowSuggestions(false);
+    Keyboard.dismiss();
+  }, []);
 
   const handleAnalyze = async () => {
-    if (!ticker.trim()) return;
+    // 선택된 종목이 없으면 직접 입력된 텍스트를 종목명으로 사용
+    const targetName = selectedStock?.name || query.trim();
+    const targetTicker = selectedStock?.ticker || query.trim().toUpperCase();
+
+    if (!targetName) return;
 
     setIsLoading(true);
     setError(null);
     setResult(null);
 
     try {
-      // 1단계: Yahoo Finance로 실시간 가격 조회
-      console.log(`[DeepDive] 가격 조회 시작: ${ticker}`);
-      let priceData;
-      try {
-        priceData = await priceService.fetchPrice(ticker, AssetClass.STOCK, 'KRW');
-        console.log(`[DeepDive] 가격 조회 성공:`, priceData);
-      } catch (priceError) {
-        console.warn(`[DeepDive] 가격 조회 실패, AI만으로 분석:`, priceError);
-        // 가격 조회 실패해도 AI 분석은 시도 (Gemini가 Google Search로 찾음)
-      }
+      console.log(`[DeepDive] 분석 시작: ${targetName} (${targetTicker})`);
 
-      // 2단계: Gemini AI로 종목 분석
-      console.log(`[DeepDive] AI 분석 시작: ${ticker}`);
-      const { data, error: geminiError } = await supabase.functions.invoke('gemini-proxy', {
-        body: {
-          type: 'deep-dive',
-          data: {
-            ticker,
-            currentPrice: priceData?.currentPrice,
-            previousPrice: priceData?.previousPrice,
-            percentChange: priceData?.percentChange24h,
-          },
-        },
-      });
+      const input: DeepDiveInput = {
+        ticker: targetTicker,
+        name: targetName,
+      };
 
-      if (geminiError) {
-        throw new Error(`AI 분석 실패: ${geminiError.message}`);
-      }
-
-      if (!data?.data) {
-        throw new Error('AI 응답이 비어있습니다');
-      }
-
-      console.log(`[DeepDive] AI 분석 완료:`, data.data);
-      setResult(data.data);
+      const analysisResult = await generateDeepDive(input);
+      console.log(`[DeepDive] 분석 완료`);
+      setResult(analysisResult);
 
     } catch (err: any) {
       console.error('[DeepDive] 분석 실패:', err);
@@ -98,26 +165,11 @@ export default function DeepDiveScreen() {
     }
   };
 
-  const getRecommendationColor = (rec: string) => {
-    switch (rec) {
-      case 'BUY':
-        return '#4CAF50';
-      case 'SELL':
-        return '#CF6679';
-      default:
-        return '#FFB74D';
-    }
-  };
-
-  const getRecommendationLabel = (rec: string) => {
-    switch (rec) {
-      case 'BUY':
-        return '매수';
-      case 'SELL':
-        return '매도';
-      default:
-        return '보유';
-    }
+  const handleQueryChange = (text: string) => {
+    setQuery(text);
+    setSelectedStock(null);
+    setShowSuggestions(text.trim().length > 0);
+    setError(null);
   };
 
   return (
@@ -140,39 +192,82 @@ export default function DeepDiveScreen() {
       <ScrollView
         style={[s.container, { backgroundColor: colors.background }]}
         contentContainerStyle={s.content}
+        keyboardShouldPersistTaps="handled"
       >
         {/* 검색 바 */}
         <View style={[s.searchCard, { backgroundColor: colors.surface }]}>
           <Ionicons name="search" size={22} color={colors.textSecondary} style={{ marginRight: 8 }} />
           <TextInput
-            value={ticker}
-            onChangeText={setTicker}
-            placeholder="종목 검색 (예: 삼성전자, AAPL)"
+            value={query}
+            onChangeText={handleQueryChange}
+            placeholder="종목 검색 (삼성전자, AAPL, 테슬라...)"
             placeholderTextColor={colors.textTertiary}
             style={[s.input, { color: colors.textPrimary }]}
             returnKeyType="search"
             onSubmitEditing={handleAnalyze}
             autoCapitalize="none"
             autoCorrect={false}
+            onFocus={() => query.trim().length > 0 && setShowSuggestions(true)}
           />
+          {query.length > 0 && (
+            <TouchableOpacity onPress={() => { setQuery(''); setSelectedStock(null); setShowSuggestions(false); }}>
+              <Ionicons name="close-circle" size={20} color={colors.textTertiary} />
+            </TouchableOpacity>
+          )}
         </View>
 
+        {/* 검색 제안 목록 */}
+        {showSuggestions && filteredStocks.length > 0 && (
+          <View style={[s.suggestionsCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            {filteredStocks.map((stock, index) => (
+              <TouchableOpacity
+                key={stock.ticker}
+                onPress={() => handleSelectStock(stock)}
+                style={[
+                  s.suggestionItem,
+                  index < filteredStocks.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border },
+                ]}
+                activeOpacity={0.7}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text style={[s.suggestionName, { color: colors.textPrimary }]}>{stock.name}</Text>
+                  <Text style={[s.suggestionTicker, { color: colors.textTertiary }]}>
+                    {stock.ticker} · {stock.market}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
+        {/* DB에 없는 종목 안내 */}
+        {showSuggestions && filteredStocks.length === 0 && query.trim().length > 1 && (
+          <View style={[s.noResultCard, { backgroundColor: colors.surface }]}>
+            <Ionicons name="information-circle" size={18} color={colors.textSecondary} />
+            <Text style={[s.noResultText, { color: colors.textSecondary }]}>
+              "{query}" — 목록에 없지만 분석 가능합니다. 분석 버튼을 눌러주세요.
+            </Text>
+          </View>
+        )}
+
+        {/* 분석 버튼 */}
         <TouchableOpacity
           onPress={handleAnalyze}
-          disabled={isLoading || !ticker.trim()}
+          disabled={isLoading || !query.trim()}
           style={[
             s.analyzeButton,
-            { backgroundColor: isLoading || !ticker.trim() ? colors.disabled : '#7C4DFF' },
+            { backgroundColor: isLoading || !query.trim() ? colors.disabled : '#7C4DFF' },
           ]}
           activeOpacity={0.7}
         >
           {isLoading ? (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <ActivityIndicator color="#FFFFFF" />
-              <Text style={s.analyzeButtonText}>분석 중...</Text>
+              <Text style={s.analyzeButtonText}>AI가 분석 중... (10~20초)</Text>
             </View>
           ) : (
-            <Text style={s.analyzeButtonText}>🔍 AI 분석 시작</Text>
+            <Text style={s.analyzeButtonText}>AI 분석 시작</Text>
           )}
         </TouchableOpacity>
 
@@ -184,82 +279,46 @@ export default function DeepDiveScreen() {
           </View>
         )}
 
-        {/* 결과 */}
+        {/* 분석 결과 — 기존 DeepDiveResultCard 활용 */}
         {result && !isLoading && (
-          <View style={s.resultContainer}>
-            {/* 기본 정보 */}
-            <View style={[s.card, { backgroundColor: colors.surface }]}>
-              <Text style={[s.stockName, { color: colors.textPrimary }]}>{result.name}</Text>
-              <Text style={[s.ticker, { color: colors.textSecondary }]}>
-                {result.ticker} | ₩{result.currentPrice.toLocaleString()}
-              </Text>
-              <Text style={[s.overview, { color: colors.textSecondary }]}>{result.overview}</Text>
-            </View>
+          <DeepDiveResultCard result={result} />
+        )}
 
-            {/* 핵심 지표 */}
-            <View style={[s.card, { backgroundColor: colors.surface }]}>
-              <View style={s.cardHeader}>
-                <Ionicons name="bar-chart" size={18} color="#7C4DFF" style={{ marginRight: 8 }} />
-                <Text style={[s.cardTitle, { color: colors.textPrimary }]}>📊 핵심 지표</Text>
-              </View>
-              <View style={s.metricsGrid}>
-                <View style={s.metricItem}>
-                  <Text style={[s.metricLabel, { color: colors.textSecondary }]}>시가총액</Text>
-                  <Text style={[s.metricValue, { color: colors.textPrimary }]}>
-                    {result.marketCap}
-                  </Text>
-                </View>
-                <View style={s.metricItem}>
-                  <Text style={[s.metricLabel, { color: colors.textSecondary }]}>PER</Text>
-                  <Text style={[s.metricValue, { color: colors.textPrimary }]}>
-                    {result.per}
-                  </Text>
-                </View>
-                <View style={s.metricItem}>
-                  <Text style={[s.metricLabel, { color: colors.textSecondary }]}>PBR</Text>
-                  <Text style={[s.metricValue, { color: colors.textPrimary }]}>
-                    {result.pbr}
-                  </Text>
-                </View>
-              </View>
-            </View>
+        {/* 안내 문구 (결과 없을 때) */}
+        {!result && !isLoading && !error && (
+          <View style={s.guideSection}>
+            <Text style={[s.guideTitle, { color: colors.textSecondary }]}>
+              어떤 종목이든 분석 가능합니다
+            </Text>
+            <Text style={[s.guideText, { color: colors.textTertiary }]}>
+              한국 주식, 미국 주식, ETF 등{'\n'}
+              종목명 또는 티커를 입력하면 AI가 실시간 분석합니다
+            </Text>
 
-            {/* AI 의견 */}
-            <View
-              style={[
-                s.card,
-                {
-                  backgroundColor: colors.surface,
-                  borderLeftWidth: 4,
-                  borderLeftColor: getRecommendationColor(result.recommendation),
-                },
-              ]}
-            >
-              <View style={s.cardHeader}>
-                <Ionicons
-                  name="bulb"
-                  size={18}
-                  color={getRecommendationColor(result.recommendation)}
-                  style={{ marginRight: 8 }}
-                />
-                <Text style={[s.cardTitle, { color: colors.textPrimary }]}>🎯 AI 의견</Text>
-              </View>
-              <Text
-                style={[
-                  s.recommendation,
-                  { color: getRecommendationColor(result.recommendation) },
-                ]}
-              >
-                {getRecommendationLabel(result.recommendation)}
-              </Text>
-              <Text style={[s.reason, { color: colors.textSecondary }]}>{result.reason}</Text>
+            <View style={s.exampleSection}>
+              <Text style={[s.exampleLabel, { color: colors.textTertiary }]}>예시</Text>
+              {['삼성전자', 'NVDA', 'SK하이닉스', 'TSLA'].map((example) => (
+                <TouchableOpacity
+                  key={example}
+                  onPress={() => handleQueryChange(example)}
+                  style={[s.exampleChip, { backgroundColor: colors.surface, borderColor: colors.border }]}
+                >
+                  <Text style={[s.exampleChipText, { color: colors.textPrimary }]}>{example}</Text>
+                </TouchableOpacity>
+              ))}
             </View>
           </View>
         )}
+
+        <View style={{ height: 40 }} />
       </ScrollView>
     </>
   );
 }
+
+// ============================================================================
+// 스타일
+// ============================================================================
 
 const s = StyleSheet.create({
   container: {
@@ -274,7 +333,7 @@ const s = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
-    marginBottom: 16,
+    marginBottom: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -287,71 +346,50 @@ const s = StyleSheet.create({
     height: 44,
     paddingVertical: 8,
   },
+  suggestionsCard: {
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 8,
+    overflow: 'hidden',
+  },
+  suggestionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  suggestionName: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  suggestionTicker: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  noResultCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    borderRadius: 12,
+    marginBottom: 8,
+    gap: 8,
+  },
+  noResultText: {
+    flex: 1,
+    fontSize: 13,
+    lineHeight: 18,
+  },
   analyzeButton: {
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
+    marginTop: 4,
     marginBottom: 20,
   },
   analyzeButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
-  },
-  resultContainer: {
-    marginTop: 8,
-  },
-  card: {
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
-  },
-  stockName: {
-    fontSize: 24,
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-  ticker: {
-    fontSize: 14,
-    marginBottom: 12,
-  },
-  overview: {
-    fontSize: 15,
-    lineHeight: 22,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  metricsGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  metricItem: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  metricLabel: {
-    fontSize: 12,
-    marginBottom: 6,
-  },
-  metricValue: {
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  recommendation: {
-    fontSize: 22,
-    fontWeight: '700',
-    marginBottom: 12,
-  },
-  reason: {
-    fontSize: 15,
-    lineHeight: 22,
   },
   errorCard: {
     flexDirection: 'row',
@@ -365,5 +403,41 @@ const s = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     lineHeight: 20,
+  },
+  guideSection: {
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  guideTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  guideText: {
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 24,
+  },
+  exampleSection: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 8,
+    alignItems: 'center',
+  },
+  exampleLabel: {
+    fontSize: 13,
+    marginRight: 4,
+  },
+  exampleChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  exampleChipText: {
+    fontSize: 14,
+    fontWeight: '500',
   },
 });
