@@ -2,42 +2,53 @@
  * FinancialAnalysis.tsx - 투자심사보고서: 재무 분석 섹션
  *
  * 역할: "재무 분석 부서"
- * - 최근 3년 실적 테이블 (매출, 영업이익, 순이익)
+ * - 분기별 실적 바 차트 (매출/영업이익/순이익)
+ * - 선택한 분기 상세: 사업부별 매출 + 비용 구조 + 워터폴
+ * - 시가총액 & PER/PBR
+ * - 최근 3년 연간 실적 테이블
  * - 핵심 지표 (ROE, ROIC, 부채비율)
  * - 현금흐름 설명
- * - 증감률 표시 (초록/빨강)
  *
- * 사용 예:
- * <FinancialAnalysis
- *   yearlyData={[
- *     { year: '2022', revenue: 100000000000000, operatingIncome: 20000000000000, netIncome: 15000000000000 },
- *     { year: '2023', revenue: 120000000000000, operatingIncome: 25000000000000, netIncome: 18000000000000 },
- *     { year: '2024', revenue: 150000000000000, operatingIncome: 30000000000000, netIncome: 22000000000000 },
- *   ]}
- *   keyMetrics={{ roe: 22.5, roic: 18.3, debtRatio: 35.2 }}
- *   cashFlowSummary="영업활동현금흐름 안정적, 자본지출 증가 중"
- * />
+ * useTheme() 훅으로 다크/라이트 모드 대응
  */
 
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { formatKRW } from '../../utils/formatters';
 import { useTheme } from '../../hooks/useTheme';
+import QuarterlyChart from './QuarterlyChart';
+import EarningsBreakdown from './EarningsBreakdown';
+import type { QuarterlyData } from './QuarterlyChart';
+import type { RevenueSegment, CostItem, WaterfallItem } from './EarningsBreakdown';
 
+// ── 연간 재무 데이터 ──
 interface YearlyFinancialData {
   year: string;
-  revenue: number; // 매출액 (원)
-  operatingIncome: number; // 영업이익 (원)
-  netIncome: number; // 순이익 (원)
+  revenue: number;
+  operatingIncome: number;
+  netIncome: number;
 }
 
+// ── 핵심 지표 ──
 interface KeyMetrics {
-  roe: number; // ROE (%)
-  roic: number; // ROIC (%)
-  debtRatio: number; // 부채비율 (%)
+  roe: number;
+  roic: number;
+  debtRatio: number;
 }
 
+// ── 분기 상세 데이터 ──
+export interface QuarterDetailData {
+  quarter: string;
+  revenueSegments: RevenueSegment[];
+  costItems: CostItem[];
+  waterfall: WaterfallItem[];
+  operatingMargin?: number;
+  netMargin?: number;
+  keyTakeaway?: string;
+}
+
+// ── Props ──
 interface FinancialAnalysisProps {
   /** 최근 3년 재무 데이터 */
   yearlyData: YearlyFinancialData[];
@@ -45,12 +56,16 @@ interface FinancialAnalysisProps {
   keyMetrics: KeyMetrics;
   /** 현금흐름 요약 */
   cashFlowSummary: string;
-  /** 시가총액 (원) — 선택적 */
+  /** 시가총액 (원) */
   marketCap?: number;
-  /** PER — 선택적 */
+  /** PER */
   per?: number;
-  /** PBR — 선택적 */
+  /** PBR */
   pbr?: number;
+  /** 분기별 실적 데이터 (4분기) */
+  quarterlyData?: QuarterlyData[];
+  /** 분기 상세 (실적 발표 후 1개 분기) */
+  quarterDetail?: QuarterDetailData;
 }
 
 export function FinancialAnalysis({
@@ -60,8 +75,17 @@ export function FinancialAnalysis({
   marketCap,
   per,
   pbr,
+  quarterlyData,
+  quarterDetail,
 }: FinancialAnalysisProps) {
   const { colors } = useTheme();
+  const [selectedQuarter, setSelectedQuarter] = useState<string | undefined>(
+    quarterDetail?.quarter
+  );
+
+  const handleSelectQuarter = useCallback((quarter: string) => {
+    setSelectedQuarter(quarter);
+  }, []);
 
   // 증감률 계산
   const calculateGrowth = (current: number, previous: number): number => {
@@ -69,7 +93,6 @@ export function FinancialAnalysis({
     return ((current - previous) / previous) * 100;
   };
 
-  // 증감률 포맷 (색상 포함)
   const formatGrowth = (growth: number) => {
     const sign = growth >= 0 ? '+' : '';
     return {
@@ -77,6 +100,9 @@ export function FinancialAnalysis({
       color: growth >= 0 ? '#10B981' : '#EF4444',
     };
   };
+
+  // 선택된 분기가 상세 데이터와 매칭되는지 확인
+  const showDetail = quarterDetail && selectedQuarter === quarterDetail.quarter;
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
@@ -86,11 +112,72 @@ export function FinancialAnalysis({
         <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>재무 분석</Text>
       </View>
 
-      {/* 1. 최근 3년 실적 테이블 */}
+      {/* ═══ 1. 시가총액 & 밸류에이션 ═══ */}
+      {(marketCap || per || pbr) && (
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.icon}>{'📊'}</Text>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>시가총액 & 밸류에이션</Text>
+          </View>
+
+          {marketCap != null && marketCap > 0 && (
+            <View style={[styles.marketCapCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Text style={[styles.marketCapLabel, { color: colors.textTertiary }]}>시가총액</Text>
+              <Text style={[styles.marketCapValue, { color: colors.textPrimary }]}>
+                {formatKRW(marketCap, true)}
+              </Text>
+            </View>
+          )}
+
+          <View style={styles.metricsRow}>
+            {per != null && <MetricCard label="PER" value={per} unit="배" colors={colors} />}
+            {pbr != null && <MetricCard label="PBR" value={pbr} unit="배" colors={colors} />}
+            {(!per && !pbr) && <View style={{ flex: 1 }} />}
+          </View>
+        </View>
+      )}
+
+      {/* ═══ 2. 분기별 실적 차트 ═══ */}
+      {quarterlyData && quarterlyData.length > 0 && (
+        <View style={styles.section}>
+          <QuarterlyChart
+            data={quarterlyData}
+            onSelectQuarter={handleSelectQuarter}
+            selectedQuarter={selectedQuarter}
+          />
+        </View>
+      )}
+
+      {/* ═══ 3. 선택 분기 상세 실적 ═══ */}
+      {showDetail && (
+        <View style={styles.section}>
+          <EarningsBreakdown
+            quarter={quarterDetail.quarter}
+            revenueSegments={quarterDetail.revenueSegments}
+            costItems={quarterDetail.costItems}
+            waterfall={quarterDetail.waterfall}
+            operatingMargin={quarterDetail.operatingMargin}
+            netMargin={quarterDetail.netMargin}
+            keyTakeaway={quarterDetail.keyTakeaway}
+          />
+        </View>
+      )}
+
+      {/* 상세 없는 분기 선택 시 안내 */}
+      {selectedQuarter && !showDetail && quarterDetail && (
+        <View style={[styles.noDetailCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Ionicons name="information-circle-outline" size={16} color={colors.textTertiary} />
+          <Text style={[styles.noDetailText, { color: colors.textTertiary }]}>
+            {quarterDetail.quarter} 분기만 상세 실적을 확인할 수 있습니다
+          </Text>
+        </View>
+      )}
+
+      {/* ═══ 4. 연간 실적 테이블 ═══ */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.icon}>💼</Text>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>실적 추이 (최근 3년)</Text>
+          <Text style={styles.icon}>{'💼'}</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>연간 실적 추이</Text>
         </View>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -179,35 +266,10 @@ export function FinancialAnalysis({
         </ScrollView>
       </View>
 
-      {/* 2. 시가총액 + 밸류에이션 */}
-      {(marketCap || per || pbr) && (
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.icon}>📊</Text>
-            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>시가총액 & 밸류에이션</Text>
-          </View>
-
-          {marketCap != null && marketCap > 0 && (
-            <View style={[styles.marketCapCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <Text style={[styles.marketCapLabel, { color: colors.textTertiary }]}>시가총액</Text>
-              <Text style={[styles.marketCapValue, { color: colors.textPrimary }]}>
-                {formatKRW(marketCap, true)}
-              </Text>
-            </View>
-          )}
-
-          <View style={styles.metricsRow}>
-            {per != null && <MetricCard label="PER" value={per} unit="배" colors={colors} />}
-            {pbr != null && <MetricCard label="PBR" value={pbr} unit="배" colors={colors} />}
-            {(!per && !pbr) && <View style={{ flex: 1 }} />}
-          </View>
-        </View>
-      )}
-
-      {/* 3. 핵심 지표 */}
+      {/* ═══ 5. 핵심 지표 ═══ */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.icon}>🎯</Text>
+          <Text style={styles.icon}>{'🎯'}</Text>
           <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>핵심 지표</Text>
         </View>
 
@@ -218,10 +280,10 @@ export function FinancialAnalysis({
         </View>
       </View>
 
-      {/* 4. 현금흐름 */}
+      {/* ═══ 6. 현금흐름 ═══ */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.icon}>💵</Text>
+          <Text style={styles.icon}>{'💵'}</Text>
           <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>현금흐름</Text>
         </View>
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -229,7 +291,6 @@ export function FinancialAnalysis({
         </View>
       </View>
 
-      {/* 하단 여백 */}
       <View style={{ height: 20 }} />
     </ScrollView>
   );
@@ -282,7 +343,25 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
-  // 테이블 스타일
+  // 시가총액
+  marketCapCard: {
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  marketCapLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 6,
+  },
+  marketCapValue: {
+    fontSize: 28,
+    fontWeight: '900',
+  },
+
+  // 테이블
   table: {
     borderRadius: 12,
     overflow: 'hidden',
@@ -326,24 +405,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  // 시가총액 카드
-  marketCapCard: {
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  marketCapLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    marginBottom: 6,
-  },
-  marketCapValue: {
-    fontSize: 28,
-    fontWeight: '900',
-  },
-
   // 지표 카드
   metricsRow: {
     flexDirection: 'row',
@@ -380,5 +441,20 @@ const styles = StyleSheet.create({
   descriptionText: {
     fontSize: 14,
     lineHeight: 22,
+  },
+
+  // 상세 미제공 안내
+  noDetailCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    padding: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginBottom: 24,
+  },
+  noDetailText: {
+    fontSize: 12,
+    fontWeight: '500',
   },
 });

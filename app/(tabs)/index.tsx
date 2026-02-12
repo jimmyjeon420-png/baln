@@ -2,10 +2,8 @@
  * index.tsx - 홈 탭 (습관 루프 강화 Phase 3)
  *
  * 역할: "투자 신호등 메인 화면"
- * - 3개 카드 스와이프 (건강/맥락/예측)
- * - 어제 예측 복기 카드 (습관 루프 핵심)
+ * - 3개 카드 스와이프 (건강/맥락/예측) — 풀스크린
  * - 총 자산 Pulse + 전일 대비 변동
- * - 3개 예측 질문 수평 스크롤
  *
  * Anti-Toss 5원칙:
  * 1. Gateway: 3장 스와이프 → 30초 → 퇴장
@@ -26,9 +24,6 @@ import HealthSignalCard from '../../src/components/home/HealthSignalCard';
 import ContextBriefCard from '../../src/components/home/ContextBriefCard';
 import PredictionVoteCard from '../../src/components/home/PredictionVoteCard';
 import StreakBanner from '../../src/components/home/StreakBanner';
-import YesterdayReviewCard from '../../src/components/home/YesterdayReviewCard';
-import PredictionVote from '../../src/components/home/PredictionVote';
-import PredictionReview from '../../src/components/home/PredictionReview';
 import { ErrorBoundary, Toast, ToastType, OfflineBanner } from '../../src/components/common';
 
 // 맥락 카드 전체 모달
@@ -43,7 +38,6 @@ import {
   useResolvedPolls,
   useSubmitVote,
   useMyPredictionStats,
-  useYesterdayReview,
 } from '../../src/hooks/usePredictions';
 import { useSubscriptionStatus } from '../../src/hooks/useSubscription';
 import { useSharedPortfolio } from '../../src/hooks/useSharedPortfolio';
@@ -386,64 +380,6 @@ export default function HomeScreen() {
   }, [currentPoll, pollsForCard, myVote, myVotesChoiceMap, recentResults, myStats, router, submitVote, showToast, isVoting]);
 
   // ──────────────────────────────────────────────────────────────────────
-  // 4. 어제 예측 복기 데이터 (YesterdayReviewCard)
-  // ──────────────────────────────────────────────────────────────────────
-  const {
-    data: yesterdayPolls,
-    isLoading: yesterdayLoading,
-    summary: yesterdaySummary,
-  } = useYesterdayReview();
-
-  // 어제 복기 결과 변환
-  const yesterdayResults = React.useMemo(() => {
-    if (!yesterdayPolls || yesterdayPolls.length === 0) return [];
-
-    return yesterdayPolls.map(poll => {
-      const reward = poll.myIsCorrect ? (isPremium ? 4 : 2) : 0;
-      return {
-        question: poll.question,
-        myVote: (poll.myVote || 'YES') as 'YES' | 'NO',
-        correctAnswer: (poll.correct_answer || 'YES') as 'YES' | 'NO',
-        isCorrect: poll.myIsCorrect === true,
-        reward,
-        description: poll.description || undefined,
-        source: poll.source || undefined,
-      };
-    });
-  }, [yesterdayPolls, isPremium]);
-
-  // ──────────────────────────────────────────────────────────────────────
-  // 4-1. 새 PredictionVote / PredictionReview 데이터 어댑터
-  // ──────────────────────────────────────────────────────────────────────
-  const adaptedQuestions = React.useMemo(() => {
-    return todayPolls.map(poll => ({
-      id: poll.id,
-      text: poll.question,
-      options: ['YES', 'NO'],
-      votedOption: myVotesChoiceMap[poll.id] || undefined,
-    }));
-  }, [todayPolls, myVotesChoiceMap]);
-
-  const adaptedReviews = React.useMemo(() => {
-    return yesterdayResults.map((r, i) => ({
-      id: `review-${i}`,
-      question: r.question,
-      myAnswer: r.myVote,
-      correctAnswer: r.correctAnswer,
-      isCorrect: r.isCorrect,
-      explanation: r.description || '해설이 아직 준비되지 않았습니다.',
-    }));
-  }, [yesterdayResults]);
-
-  const predictionCreditsEarned = React.useMemo(() => {
-    return adaptedQuestions.filter(q => q.votedOption).length * 2;
-  }, [adaptedQuestions]);
-
-  const reviewCreditsEarned = React.useMemo(() => {
-    return adaptedReviews.filter(r => r.isCorrect).length * 3;
-  }, [adaptedReviews]);
-
-  // ──────────────────────────────────────────────────────────────────────
   // 맥락 카드 전체 데이터 (모달용)
   // ──────────────────────────────────────────────────────────────────────
   const fullContextCardData = React.useMemo(() => {
@@ -461,10 +397,6 @@ export default function HomeScreen() {
   const handleCardChange = React.useCallback((index: number) => {
     console.log('[CardSwipe] 카드 전환:', index);
   }, []);
-
-  const handleViewHistory = React.useCallback(() => {
-    router.push('/games/predictions');
-  }, [router]);
 
   // ──────────────────────────────────────────────────────────────────────
   // 렌더링
@@ -502,48 +434,6 @@ export default function HomeScreen() {
           <PredictionVoteCard {...predictionVoteProps} />
         </ErrorBoundary>
       </CardSwipeContainer>
-
-      {/* 어제 예측 복기 카드 (스와이프 아래 배치, 데이터 있을 때만) */}
-      {yesterdayResults.length > 0 && (
-        <View style={styles.reviewSection}>
-          <YesterdayReviewCard
-            results={yesterdayResults}
-            accuracyRate={myStats?.accuracy_rate ?? null}
-            onViewHistory={handleViewHistory}
-          />
-        </View>
-      )}
-
-      {/* 새 예측 투표 카드 (다중 옵션 + 크레딧 애니메이션) */}
-      {adaptedQuestions.length > 0 && (
-        <View style={styles.reviewSection}>
-          <PredictionVote
-            questions={adaptedQuestions}
-            onVote={(questionId, option) => {
-              submitVote(
-                { pollId: questionId, vote: option as 'YES' | 'NO' },
-                {
-                  onSuccess: () => showToast('투표 완료! +2C (₩200)', 'success'),
-                  onError: (err: any) => showToast(err?.message || '투표 실패', 'error'),
-                }
-              );
-            }}
-            creditsEarned={predictionCreditsEarned}
-          />
-        </View>
-      )}
-
-      {/* 새 예측 복기 카드 (아코디언 + 스트릭) */}
-      {adaptedReviews.length > 0 && (
-        <View style={styles.reviewSection}>
-          <PredictionReview
-            reviews={adaptedReviews}
-            streak={myStats?.current_streak ?? 0}
-            accuracy={myStats?.accuracy_rate ?? 0}
-            creditsEarned={reviewCreditsEarned}
-          />
-        </View>
-      )}
 
       {/* 맥락 카드 전체 모달 (4겹 레이어) */}
       <Modal
@@ -591,11 +481,6 @@ const styles = StyleSheet.create({
   streakContainer: {
     paddingHorizontal: 16,
     paddingTop: 16,
-  },
-  reviewSection: {
-    // 복기 카드는 CardSwipeContainer 바로 아래에 배치
-    // 카드 스와이프와 겹치지 않도록 absolute가 아닌 일반 flow
-    paddingBottom: 16,
   },
   modalContainer: {
     flex: 1,
