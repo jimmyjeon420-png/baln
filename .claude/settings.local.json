@@ -178,7 +178,17 @@
       "Bash(nc:*)",
       "Bash(open:*)",
       "Bash(xcrun simctl:*)",
-      "Bash(SUPABASE_ACCESS_TOKEN=sbp_3359cb8927b299963f2881fcadb3eb7f18af0cb2 npx supabase:*)"
+      "Bash(SUPABASE_ACCESS_TOKEN=sbp_3359cb8927b299963f2881fcadb3eb7f18af0cb2 npx supabase:*)",
+      "Bash(git revert:*)",
+      "Bash(cat:*)",
+      "Bash(pbcopy)",
+      "WebFetch(domain:informaconnect.com)",
+      "WebFetch(domain:gen2fund.com)",
+      "Bash(git -C /Users/nicenoodle/smart-rebalancer log --oneline -10)",
+      "Bash(git -C /Users/nicenoodle/smart-rebalancer status)",
+      "Bash(git checkout:*)",
+      "Bash(pip3 install:*)",
+      "Bash(tty:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
