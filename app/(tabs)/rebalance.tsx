@@ -213,6 +213,58 @@ export default function CheckupScreen() {
   }, [onRefresh]);
 
   // ══════════════════════════════════════════
+  // 파생 데이터 (Hook은 반드시 early return 위에 위치해야 함)
+  // ══════════════════════════════════════════
+
+  // 6팩터 건강 점수 (순수 함수, AI 미사용, 즉시 계산)
+  const healthScore = useMemo(() => calculateHealthScore(allAssets, totalAssets), [allAssets, totalAssets]);
+
+  // 액션 정렬: HIGH → MEDIUM → LOW, SELL/WATCH → BUY → HOLD
+  const sortedActions = useMemo(() =>
+    [...(morningBriefing?.portfolioActions ?? [])].sort((a, b) => {
+      const priorityOrder: Record<string, number> = { HIGH: 0, MEDIUM: 1, LOW: 2 };
+      const actionOrder: Record<string, number> = { SELL: 0, WATCH: 1, BUY: 2, HOLD: 3 };
+      const pDiff = (priorityOrder[a.priority] ?? 2) - (priorityOrder[b.priority] ?? 2);
+      if (pDiff !== 0) return pDiff;
+      return (actionOrder[a.action] ?? 3) - (actionOrder[b.action] ?? 3);
+    }),
+  [morningBriefing]);
+
+  // 오늘의 액션 종목: 실시간 가격 조회
+  const priceTargets = useMemo(() => {
+    if (sortedActions.length === 0) return [];
+    const seen = new Set<string>();
+    return sortedActions
+      .filter(a => {
+        if (!a.ticker || seen.has(a.ticker)) return false;
+        seen.add(a.ticker);
+        return true;
+      })
+      .map(a => ({
+        id: a.ticker,
+        name: a.name || a.ticker,
+        ticker: a.ticker,
+        currentValue: 0,
+        targetAllocation: 0,
+        createdAt: Date.now(),
+        assetType: AssetType.LIQUID,
+      }));
+  }, [sortedActions]);
+
+  const { prices: livePrices } = usePrices(priceTargets, {
+    currency: 'KRW',
+    autoRefreshMs: 300000,
+  });
+
+  // Panic Shield 점수
+  const panicScore = analysisResult?.panicShieldIndex;
+
+  // 히어로 섹션 데이터
+  const tierInfo = getTierInfo(totalAssets);
+  const dateString = formatTodayDate();
+  const cfoWeather = morningBriefing?.cfoWeather || null;
+
+  // ══════════════════════════════════════════
   // 로딩 / 빈 상태
   // ══════════════════════════════════════════
 
@@ -251,58 +303,6 @@ export default function CheckupScreen() {
       </SafeAreaView>
     );
   }
-
-  // ══════════════════════════════════════════
-  // 파생 데이터
-  // ══════════════════════════════════════════
-
-  // 6팩터 건강 점수 (순수 함수, AI 미사용, 즉시 계산)
-  const healthScore = useMemo(() => calculateHealthScore(allAssets, totalAssets), [allAssets, totalAssets]);
-
-  // Panic Shield 점수
-  const panicScore = analysisResult?.panicShieldIndex;
-
-  // 히어로 섹션 데이터
-  const tierInfo = getTierInfo(totalAssets);
-  const dateString = formatTodayDate();
-  const cfoWeather = morningBriefing?.cfoWeather || null;
-
-  // 액션 정렬: HIGH → MEDIUM → LOW, SELL/WATCH → BUY → HOLD
-  const sortedActions = useMemo(() =>
-    [...(morningBriefing?.portfolioActions ?? [])].sort((a, b) => {
-      const priorityOrder: Record<string, number> = { HIGH: 0, MEDIUM: 1, LOW: 2 };
-      const actionOrder: Record<string, number> = { SELL: 0, WATCH: 1, BUY: 2, HOLD: 3 };
-      const pDiff = (priorityOrder[a.priority] ?? 2) - (priorityOrder[b.priority] ?? 2);
-      if (pDiff !== 0) return pDiff;
-      return (actionOrder[a.action] ?? 3) - (actionOrder[b.action] ?? 3);
-    }),
-  [morningBriefing]);
-
-  // 오늘의 액션 종목: 실시간 가격 조회
-  const priceTargets = useMemo(() => {
-    if (sortedActions.length === 0) return [];
-    const seen = new Set<string>();
-    return sortedActions
-      .filter(a => {
-        if (!a.ticker || seen.has(a.ticker)) return false;
-        seen.add(a.ticker);
-        return true;
-      })
-      .map(a => ({
-        id: a.ticker,
-        name: a.name || a.ticker,
-        ticker: a.ticker,
-        currentValue: 0,
-        targetAllocation: 0,
-        createdAt: Date.now(),
-        assetType: AssetType.LIQUID,
-      }));
-  }, [sortedActions]);
-
-  const { prices: livePrices } = usePrices(priceTargets, {
-    currency: 'KRW',
-    autoRefreshMs: 300000,
-  });
 
   // ══════════════════════════════════════════
   // 렌더 — 분석 탭 섹션 구성

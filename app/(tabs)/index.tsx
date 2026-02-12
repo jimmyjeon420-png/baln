@@ -27,6 +27,8 @@ import ContextBriefCard from '../../src/components/home/ContextBriefCard';
 import PredictionVoteCard from '../../src/components/home/PredictionVoteCard';
 import StreakBanner from '../../src/components/home/StreakBanner';
 import YesterdayReviewCard from '../../src/components/home/YesterdayReviewCard';
+import PredictionVote from '../../src/components/home/PredictionVote';
+import PredictionReview from '../../src/components/home/PredictionReview';
 import { ErrorBoundary, Toast, ToastType, OfflineBanner } from '../../src/components/common';
 
 // 맥락 카드 전체 모달
@@ -411,6 +413,37 @@ export default function HomeScreen() {
   }, [yesterdayPolls, isPremium]);
 
   // ──────────────────────────────────────────────────────────────────────
+  // 4-1. 새 PredictionVote / PredictionReview 데이터 어댑터
+  // ──────────────────────────────────────────────────────────────────────
+  const adaptedQuestions = React.useMemo(() => {
+    return todayPolls.map(poll => ({
+      id: poll.id,
+      text: poll.question,
+      options: ['YES', 'NO'],
+      votedOption: myVotesChoiceMap[poll.id] || undefined,
+    }));
+  }, [todayPolls, myVotesChoiceMap]);
+
+  const adaptedReviews = React.useMemo(() => {
+    return yesterdayResults.map((r, i) => ({
+      id: `review-${i}`,
+      question: r.question,
+      myAnswer: r.myVote,
+      correctAnswer: r.correctAnswer,
+      isCorrect: r.isCorrect,
+      explanation: r.description || '해설이 아직 준비되지 않았습니다.',
+    }));
+  }, [yesterdayResults]);
+
+  const predictionCreditsEarned = React.useMemo(() => {
+    return adaptedQuestions.filter(q => q.votedOption).length * 2;
+  }, [adaptedQuestions]);
+
+  const reviewCreditsEarned = React.useMemo(() => {
+    return adaptedReviews.filter(r => r.isCorrect).length * 3;
+  }, [adaptedReviews]);
+
+  // ──────────────────────────────────────────────────────────────────────
   // 맥락 카드 전체 데이터 (모달용)
   // ──────────────────────────────────────────────────────────────────────
   const fullContextCardData = React.useMemo(() => {
@@ -477,6 +510,37 @@ export default function HomeScreen() {
             results={yesterdayResults}
             accuracyRate={myStats?.accuracy_rate ?? null}
             onViewHistory={handleViewHistory}
+          />
+        </View>
+      )}
+
+      {/* 새 예측 투표 카드 (다중 옵션 + 크레딧 애니메이션) */}
+      {adaptedQuestions.length > 0 && (
+        <View style={styles.reviewSection}>
+          <PredictionVote
+            questions={adaptedQuestions}
+            onVote={(questionId, option) => {
+              submitVote(
+                { pollId: questionId, vote: option as 'YES' | 'NO' },
+                {
+                  onSuccess: () => showToast('투표 완료! +2C (₩200)', 'success'),
+                  onError: (err: any) => showToast(err?.message || '투표 실패', 'error'),
+                }
+              );
+            }}
+            creditsEarned={predictionCreditsEarned}
+          />
+        </View>
+      )}
+
+      {/* 새 예측 복기 카드 (아코디언 + 스트릭) */}
+      {adaptedReviews.length > 0 && (
+        <View style={styles.reviewSection}>
+          <PredictionReview
+            reviews={adaptedReviews}
+            streak={myStats?.current_streak ?? 0}
+            accuracy={myStats?.accuracy_rate ?? 0}
+            creditsEarned={reviewCreditsEarned}
           />
         </View>
       )}

@@ -153,8 +153,13 @@ async function generateQuizWithGemini(): Promise<{
     const result = await model.generateContent(prompt);
     const text = result.response.text().trim();
 
-    // JSON 파싱 (```json 래핑 제거)
-    const jsonStr = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    // JSON 파싱 (```json 래핑 제거 + 안전한 JSON 추출)
+    let jsonStr = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    // Gemini가 가끔 JSON 앞뒤에 불필요한 텍스트를 붙이는 경우 대비
+    const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      jsonStr = jsonMatch[0];
+    }
     const parsed = JSON.parse(jsonStr);
 
     return {

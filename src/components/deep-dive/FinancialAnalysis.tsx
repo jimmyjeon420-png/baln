@@ -23,6 +23,7 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { formatKRW } from '../../utils/formatters';
+import { useTheme } from '../../hooks/useTheme';
 
 interface YearlyFinancialData {
   year: string;
@@ -51,6 +52,8 @@ export function FinancialAnalysis({
   keyMetrics,
   cashFlowSummary,
 }: FinancialAnalysisProps) {
+  const { colors } = useTheme();
+
   // 증감률 계산
   const calculateGrowth = (current: number, previous: number): number => {
     if (previous === 0) return 0;
@@ -67,38 +70,38 @@ export function FinancialAnalysis({
   };
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
       {/* 헤더 */}
-      <View style={styles.header}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <Ionicons name="stats-chart" size={28} color="#9333EA" />
-        <Text style={styles.headerTitle}>재무 분석</Text>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>재무 분석</Text>
       </View>
 
       {/* 1. 최근 3년 실적 테이블 */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.icon}>💼</Text>
-          <Text style={styles.sectionTitle}>실적 추이 (최근 3년)</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>실적 추이 (최근 3년)</Text>
         </View>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <View style={styles.table}>
+          <View style={[styles.table, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             {/* 테이블 헤더 */}
-            <View style={styles.tableRow}>
-              <View style={[styles.tableCell, styles.tableCellHeader, styles.tableCellFirst]}>
+            <View style={[styles.tableRow, { borderBottomColor: colors.border }]}>
+              <View style={[styles.tableCell, styles.tableCellHeader, styles.tableCellFirst, { borderRightColor: colors.border }]}>
                 <Text style={styles.tableCellHeaderText}>항목</Text>
               </View>
               {yearlyData.map((data, index) => (
-                <View key={index} style={[styles.tableCell, styles.tableCellHeader]}>
+                <View key={index} style={[styles.tableCell, styles.tableCellHeader, { borderRightColor: colors.border }]}>
                   <Text style={styles.tableCellHeaderText}>{data.year}</Text>
                 </View>
               ))}
             </View>
 
             {/* 매출액 행 */}
-            <View style={styles.tableRow}>
-              <View style={[styles.tableCell, styles.tableCellFirst]}>
-                <Text style={styles.tableCellText}>매출액</Text>
+            <View style={[styles.tableRow, { borderBottomColor: colors.border }]}>
+              <View style={[styles.tableCell, styles.tableCellFirst, { borderRightColor: colors.border }]}>
+                <Text style={[styles.tableCellText, { color: colors.textSecondary }]}>매출액</Text>
               </View>
               {yearlyData.map((data, index) => {
                 const growth = index > 0
@@ -106,8 +109,8 @@ export function FinancialAnalysis({
                   : 0;
                 const growthStyle = formatGrowth(growth);
                 return (
-                  <View key={index} style={styles.tableCell}>
-                    <Text style={styles.tableCellValue}>{formatKRW(data.revenue, true)}</Text>
+                  <View key={index} style={[styles.tableCell, { borderRightColor: colors.border }]}>
+                    <Text style={[styles.tableCellValue, { color: colors.textPrimary }]}>{formatKRW(data.revenue, true)}</Text>
                     {index > 0 && (
                       <Text style={[styles.growthText, { color: growthStyle.color }]}>
                         {growthStyle.text}
@@ -119,9 +122,9 @@ export function FinancialAnalysis({
             </View>
 
             {/* 영업이익 행 */}
-            <View style={styles.tableRow}>
-              <View style={[styles.tableCell, styles.tableCellFirst]}>
-                <Text style={styles.tableCellText}>영업이익</Text>
+            <View style={[styles.tableRow, { borderBottomColor: colors.border }]}>
+              <View style={[styles.tableCell, styles.tableCellFirst, { borderRightColor: colors.border }]}>
+                <Text style={[styles.tableCellText, { color: colors.textSecondary }]}>영업이익</Text>
               </View>
               {yearlyData.map((data, index) => {
                 const growth = index > 0
@@ -129,8 +132,8 @@ export function FinancialAnalysis({
                   : 0;
                 const growthStyle = formatGrowth(growth);
                 return (
-                  <View key={index} style={styles.tableCell}>
-                    <Text style={styles.tableCellValue}>{formatKRW(data.operatingIncome, true)}</Text>
+                  <View key={index} style={[styles.tableCell, { borderRightColor: colors.border }]}>
+                    <Text style={[styles.tableCellValue, { color: colors.textPrimary }]}>{formatKRW(data.operatingIncome, true)}</Text>
                     {index > 0 && (
                       <Text style={[styles.growthText, { color: growthStyle.color }]}>
                         {growthStyle.text}
@@ -142,9 +145,9 @@ export function FinancialAnalysis({
             </View>
 
             {/* 순이익 행 */}
-            <View style={styles.tableRow}>
-              <View style={[styles.tableCell, styles.tableCellFirst]}>
-                <Text style={styles.tableCellText}>순이익</Text>
+            <View style={[styles.tableRow, { borderBottomColor: colors.border }]}>
+              <View style={[styles.tableCell, styles.tableCellFirst, { borderRightColor: colors.border }]}>
+                <Text style={[styles.tableCellText, { color: colors.textSecondary }]}>순이익</Text>
               </View>
               {yearlyData.map((data, index) => {
                 const growth = index > 0
@@ -152,8 +155,8 @@ export function FinancialAnalysis({
                   : 0;
                 const growthStyle = formatGrowth(growth);
                 return (
-                  <View key={index} style={styles.tableCell}>
-                    <Text style={styles.tableCellValue}>{formatKRW(data.netIncome, true)}</Text>
+                  <View key={index} style={[styles.tableCell, { borderRightColor: colors.border }]}>
+                    <Text style={[styles.tableCellValue, { color: colors.textPrimary }]}>{formatKRW(data.netIncome, true)}</Text>
                     {index > 0 && (
                       <Text style={[styles.growthText, { color: growthStyle.color }]}>
                         {growthStyle.text}
@@ -171,13 +174,13 @@ export function FinancialAnalysis({
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.icon}>🎯</Text>
-          <Text style={styles.sectionTitle}>핵심 지표</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>핵심 지표</Text>
         </View>
 
         <View style={styles.metricsRow}>
-          <MetricCard label="ROE" value={keyMetrics.roe} unit="%" />
-          <MetricCard label="ROIC" value={keyMetrics.roic} unit="%" />
-          <MetricCard label="부채비율" value={keyMetrics.debtRatio} unit="%" />
+          <MetricCard label="ROE" value={keyMetrics.roe} unit="%" colors={colors} />
+          <MetricCard label="ROIC" value={keyMetrics.roic} unit="%" colors={colors} />
+          <MetricCard label="부채비율" value={keyMetrics.debtRatio} unit="%" colors={colors} />
         </View>
       </View>
 
@@ -185,10 +188,10 @@ export function FinancialAnalysis({
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.icon}>💵</Text>
-          <Text style={styles.sectionTitle}>현금흐름</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>현금흐름</Text>
         </View>
-        <View style={styles.card}>
-          <Text style={styles.descriptionText}>{cashFlowSummary}</Text>
+        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Text style={[styles.descriptionText, { color: colors.textSecondary }]}>{cashFlowSummary}</Text>
         </View>
       </View>
 
@@ -199,13 +202,13 @@ export function FinancialAnalysis({
 }
 
 /** 지표 카드 컴포넌트 */
-function MetricCard({ label, value, unit }: { label: string; value: number; unit: string }) {
+function MetricCard({ label, value, unit, colors }: { label: string; value: number; unit: string; colors: any }) {
   return (
-    <View style={styles.metricCard}>
-      <Text style={styles.metricLabel}>{label}</Text>
+    <View style={[styles.metricCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+      <Text style={[styles.metricLabel, { color: colors.textTertiary }]}>{label}</Text>
       <Text style={styles.metricValue}>
         {value.toFixed(1)}
-        <Text style={styles.metricUnit}>{unit}</Text>
+        <Text style={[styles.metricUnit, { color: colors.textTertiary }]}>{unit}</Text>
       </Text>
     </View>
   );
@@ -214,7 +217,6 @@ function MetricCard({ label, value, unit }: { label: string; value: number; unit
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
     paddingHorizontal: 16,
   },
   header: {
@@ -222,13 +224,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#2A2A2A',
     marginBottom: 16,
   },
   headerTitle: {
     fontSize: 22,
     fontWeight: '800',
-    color: '#FFF',
     marginLeft: 12,
   },
   section: {
@@ -246,21 +246,17 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#FFF',
   },
 
   // 테이블 스타일
   table: {
     borderRadius: 12,
     overflow: 'hidden',
-    backgroundColor: '#1F1F1F',
     borderWidth: 1,
-    borderColor: '#2A2A2A',
   },
   tableRow: {
     flexDirection: 'row',
     borderBottomWidth: 1,
-    borderBottomColor: '#2A2A2A',
   },
   tableCell: {
     width: 100,
@@ -269,7 +265,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderRightWidth: 1,
-    borderRightColor: '#2A2A2A',
   },
   tableCellFirst: {
     width: 120,
@@ -286,12 +281,10 @@ const styles = StyleSheet.create({
   tableCellText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#E5E7EB',
   },
   tableCellValue: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#FFF',
     marginBottom: 4,
   },
   growthText: {
@@ -306,17 +299,14 @@ const styles = StyleSheet.create({
   },
   metricCard: {
     flex: 1,
-    backgroundColor: '#1F1F1F',
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#2A2A2A',
     alignItems: 'center',
   },
   metricLabel: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#9CA3AF',
     marginBottom: 8,
   },
   metricValue: {
@@ -327,20 +317,16 @@ const styles = StyleSheet.create({
   metricUnit: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#6B7280',
   },
 
   // 설명 카드
   card: {
-    backgroundColor: '#1F1F1F',
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#2A2A2A',
   },
   descriptionText: {
     fontSize: 14,
-    color: '#E5E7EB',
     lineHeight: 22,
   },
 });

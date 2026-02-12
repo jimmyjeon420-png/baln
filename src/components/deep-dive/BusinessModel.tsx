@@ -19,6 +19,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../../hooks/useTheme';
 
 interface BusinessModelProps {
   /** 수익 구조 설명 */
@@ -40,22 +41,24 @@ export function BusinessModel({
   growthStrategy,
   notes,
 }: BusinessModelProps) {
+  const { colors } = useTheme();
+
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
       {/* 헤더 */}
-      <View style={styles.header}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <Ionicons name="business" size={28} color="#9333EA" />
-        <Text style={styles.headerTitle}>비즈니스 모델</Text>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>비즈니스 모델</Text>
       </View>
 
       {/* 1. 수익 구조 */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.icon}>💰</Text>
-          <Text style={styles.sectionTitle}>수익 구조</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>수익 구조</Text>
         </View>
-        <View style={styles.card}>
-          <Text style={styles.descriptionText}>{revenueModel}</Text>
+        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Text style={[styles.descriptionText, { color: colors.textSecondary }]}>{revenueModel}</Text>
         </View>
       </View>
 
@@ -63,13 +66,13 @@ export function BusinessModel({
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.icon}>🏰</Text>
-          <Text style={styles.sectionTitle}>핵심 경쟁력 (Moat)</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>핵심 경쟁력 (Moat)</Text>
         </View>
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           {moat.map((item, index) => (
             <View key={index} style={styles.listItem}>
               <View style={styles.bullet} />
-              <Text style={styles.listText}>{item}</Text>
+              <Text style={[styles.listText, { color: colors.textSecondary }]}>{item}</Text>
             </View>
           ))}
         </View>
@@ -79,10 +82,10 @@ export function BusinessModel({
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.icon}>🌍</Text>
-          <Text style={styles.sectionTitle}>시장 규모 (TAM)</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>시장 규모 (TAM)</Text>
         </View>
-        <View style={styles.card}>
-          <Text style={styles.descriptionText}>{tam}</Text>
+        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Text style={[styles.descriptionText, { color: colors.textSecondary }]}>{tam}</Text>
         </View>
       </View>
 
@@ -90,13 +93,13 @@ export function BusinessModel({
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.icon}>📈</Text>
-          <Text style={styles.sectionTitle}>성장 전략</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>성장 전략</Text>
         </View>
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           {growthStrategy.map((item, index) => (
             <View key={index} style={styles.listItem}>
               <View style={[styles.bullet, styles.bulletGreen]} />
-              <Text style={styles.listText}>{item}</Text>
+              <Text style={[styles.listText, { color: colors.textSecondary }]}>{item}</Text>
             </View>
           ))}
         </View>
@@ -104,9 +107,9 @@ export function BusinessModel({
 
       {/* 추가 노트 */}
       {notes && (
-        <View style={styles.notesCard}>
-          <Ionicons name="information-circle" size={16} color="#6B7280" />
-          <Text style={styles.notesText}>{notes}</Text>
+        <View style={[styles.notesCard, { backgroundColor: colors.surface, borderColor: colors.borderStrong }]}>
+          <Ionicons name="information-circle" size={16} color={colors.textTertiary} />
+          <Text style={[styles.notesText, { color: colors.textTertiary }]}>{notes}</Text>
         </View>
       )}
 
@@ -119,7 +122,6 @@ export function BusinessModel({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
     paddingHorizontal: 16,
   },
   header: {
@@ -127,13 +129,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#2A2A2A',
     marginBottom: 16,
   },
   headerTitle: {
     fontSize: 22,
     fontWeight: '800',
-    color: '#FFF',
     marginLeft: 12,
   },
   section: {
@@ -151,18 +151,14 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#FFF',
   },
   card: {
-    backgroundColor: '#1F1F1F',
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#2A2A2A',
   },
   descriptionText: {
     fontSize: 14,
-    color: '#E5E7EB',
     lineHeight: 22,
   },
   listItem: {
@@ -184,22 +180,18 @@ const styles = StyleSheet.create({
   listText: {
     flex: 1,
     fontSize: 14,
-    color: '#E5E7EB',
     lineHeight: 22,
   },
   notesCard: {
     flexDirection: 'row',
-    backgroundColor: '#1F1F1F',
     borderRadius: 12,
     padding: 12,
     borderWidth: 1,
-    borderColor: '#374151',
     marginTop: 8,
   },
   notesText: {
     flex: 1,
     fontSize: 12,
-    color: '#9CA3AF',
     lineHeight: 18,
     marginLeft: 8,
   },
