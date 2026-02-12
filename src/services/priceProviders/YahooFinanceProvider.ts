@@ -17,7 +17,7 @@ import { PriceData, AssetClass } from '../../types/price';
 export class YahooFinanceProvider {
   readonly name = 'YahooFinance';
   private readonly baseURL = 'https://query1.finance.yahoo.com';
-  private readonly timeout = 10000; // 10초
+  private readonly timeout = 15000; // 15초
   private requestCount = 0;
   private lastRequestTime = 0;
 

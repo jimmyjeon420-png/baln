@@ -8,6 +8,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { grantEmotionReward, REWARD_AMOUNTS } from '../services/rewardService';
 
 const STORAGE_KEY = '@baln:emotion_history';
 
@@ -29,11 +30,14 @@ interface EmotionCheckResult {
   setMemo: (memo: string) => void;
   saveEmotionWithMemo: () => Promise<void>;
   isChecked: boolean;
+  /** 감정 기록 보상으로 받은 크레딧 (저장 직후 한 번만 값이 있음) */
+  rewardCredits: number;
 }
 
 export function useEmotionCheck(): EmotionCheckResult {
   const [todayEmotion, setTodayEmotionState] = useState<string | null>(null);
   const [todayMemo, setTodayMemoState] = useState<string>('');
+  const [rewardCredits, setRewardCredits] = useState<number>(0);
 
   // 초기 로드: 오늘 날짜의 감정 체크
   useEffect(() => {
@@ -83,6 +87,16 @@ export function useEmotionCheck(): EmotionCheckResult {
       }
 
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+
+      // 감정 기록 보상 지급 (1일 1회, 5크레딧)
+      try {
+        const reward = await grantEmotionReward();
+        if (reward.success) {
+          setRewardCredits(reward.creditsEarned);
+          // 3초 후 보상 표시 초기화
+          setTimeout(() => setRewardCredits(0), 3000);
+        }
+      } catch {}
     } catch (error) {
       console.error('Failed to save emotion with memo:', error);
     }
@@ -95,5 +109,6 @@ export function useEmotionCheck(): EmotionCheckResult {
     setMemo,
     saveEmotionWithMemo,
     isChecked: todayEmotion !== null,
+    rewardCredits,
   };
 }

@@ -16,6 +16,8 @@ import {
   Alert,
   ActivityIndicator,
   Platform,
+  TextInput,
+  Share,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -25,6 +27,7 @@ import { useHaptics } from '../../src/hooks/useHaptics';
 import { CREDIT_PACKAGES } from '../../src/types/marketplace';
 import type { CreditTransaction } from '../../src/types/marketplace';
 import { formatCredits, CREDIT_TO_KRW } from '../../src/utils/formatters';
+import { getMyReferralCode, applyReferralCode, REWARD_AMOUNTS } from '../../src/services/rewardService';
 import {
   connectToStore,
   disconnectFromStore,
@@ -63,8 +66,42 @@ export default function CreditsScreen() {
   const [purchasing, setPurchasing] = useState(false);
   const [isExpoGoEnv, setIsExpoGoEnv] = useState(false);
 
+  // 친구 추천 코드
+  const [myReferralCode, setMyReferralCode] = useState('');
+  const [friendCode, setFriendCode] = useState('');
+  const [referralLoading, setReferralLoading] = useState(false);
+  const [showReferralSection, setShowReferralSection] = useState(false);
+
   // 구매 중인 패키지 ID 추적 (리스너에서 참조)
   const purchasingPackageRef = useRef<string | null>(null);
+
+  // ========================================================================
+  // 친구 추천 코드 로드
+  // ========================================================================
+
+  useEffect(() => {
+    getMyReferralCode().then(code => {
+      if (code) setMyReferralCode(code);
+    });
+  }, []);
+
+  const handleShareReferral = async () => {
+    mediumTap();
+    try {
+      await Share.share({
+        message: `baln(발른)에서 투자 습관을 만들어보세요! 내 추천 코드: ${myReferralCode}\n가입 시 10크레딧(₩1,000) 보너스!`,
+      });
+    } catch {}
+  };
+
+  const handleApplyReferral = async () => {
+    if (!friendCode.trim()) return;
+    setReferralLoading(true);
+    const result = await applyReferralCode(friendCode.trim());
+    setReferralLoading(false);
+    Alert.alert(result.success ? '성공!' : '실패', result.message);
+    if (result.success) setFriendCode('');
+  };
 
   // ========================================================================
   // Apple IAP 초기화
@@ -320,13 +357,30 @@ export default function CreditsScreen() {
           <View style={styles.earnSection}>
             <Text style={styles.sectionTitle}>크레딧 획득 방법</Text>
             {[
-              { icon: 'calendar-outline' as const, label: '매일 출석 체크', credits: 2, desc: '앱을 열면 자동 적립' },
-              { icon: 'checkmark-circle-outline' as const, label: '예측 적중', credits: 3, desc: '투표 결과가 맞으면 보상' },
-              { icon: 'share-social-outline' as const, label: '인스타 공유', credits: 5, desc: '분석 결과를 캡처해서 공유' },
-              { icon: 'people-outline' as const, label: '친구 추천', credits: 50, desc: '내 추천 코드로 친구가 가입' },
-              { icon: 'sparkles-outline' as const, label: '환영 보너스', credits: 10, desc: '신규 가입 시 1회 지급' },
+              { icon: 'calendar-outline' as const, label: '매일 출석 체크', credits: 2, desc: '앱을 열면 자동 적립', route: null },
+              { icon: 'checkmark-circle-outline' as const, label: '예측 적중', credits: 3, desc: '투표 결과가 맞으면 보상', route: '/(tabs)' as const },
+              { icon: 'heart-outline' as const, label: '투자 감정 기록', credits: 5, desc: '오늘의 감정을 기록하면 보상', route: '/(tabs)/rebalance' as const },
+              { icon: 'share-social-outline' as const, label: '인스타 공유', credits: 5, desc: '분석 결과를 캡처해서 공유', route: '/analysis/what-if' as const },
+              { icon: 'trophy-outline' as const, label: '성취 배지 해금', credits: '3~30', desc: '배지 획득 시 크레딧 보상 (총 128C)', route: '/achievements' as const },
+              { icon: 'people-outline' as const, label: '친구 추천', credits: 50, desc: '내 추천 코드로 친구가 가입', route: 'referral' as const },
+              { icon: 'wallet-outline' as const, label: '자산 3개 등록', credits: 20, desc: '자산 3종목 이상 등록 시 1회', route: '/add-asset' as const },
+              { icon: 'sparkles-outline' as const, label: '환영 보너스', credits: 10, desc: '신규 가입 시 1회 지급', route: null },
             ].map((item, idx) => (
-              <View key={idx} style={styles.earnRow}>
+              <TouchableOpacity
+                key={idx}
+                style={styles.earnRow}
+                activeOpacity={item.route ? 0.6 : 1}
+                onPress={() => {
+                  if (!item.route) return;
+                  if (item.route === 'referral') {
+                    mediumTap();
+                    setShowReferralSection(prev => !prev);
+                    return;
+                  }
+                  mediumTap();
+                  router.push(item.route as any);
+                }}
+              >
                 <View style={styles.earnIconWrap}>
                   <Ionicons name={item.icon} size={20} color="#4CAF50" />
                 </View>
@@ -337,8 +391,56 @@ export default function CreditsScreen() {
                 <View style={styles.earnBadge}>
                   <Text style={styles.earnBadgeText}>+{item.credits}C</Text>
                 </View>
-              </View>
+                {item.route && (
+                  <Ionicons name="chevron-forward" size={16} color="#555" style={{ marginLeft: 4 }} />
+                )}
+              </TouchableOpacity>
             ))}
+
+            {/* 친구 추천 코드 섹션 (펼침) */}
+            {showReferralSection && (
+              <View style={styles.referralSection}>
+                {/* 내 추천 코드 */}
+                <View style={styles.referralMyCode}>
+                  <Text style={styles.referralLabel}>내 추천 코드</Text>
+                  <View style={styles.referralCodeRow}>
+                    <Text style={styles.referralCode}>{myReferralCode || '...'}</Text>
+                    <TouchableOpacity style={styles.referralShareBtn} onPress={handleShareReferral}>
+                      <Ionicons name="share-outline" size={16} color="#FFF" />
+                      <Text style={styles.referralShareText}>공유하기</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <Text style={styles.referralHint}>친구가 이 코드로 가입하면 나에게 50C, 친구에게 10C!</Text>
+                </View>
+
+                {/* 친구 코드 입력 */}
+                <View style={styles.referralInputSection}>
+                  <Text style={styles.referralLabel}>친구 추천 코드 입력</Text>
+                  <View style={styles.referralInputRow}>
+                    <TextInput
+                      style={styles.referralInput}
+                      value={friendCode}
+                      onChangeText={setFriendCode}
+                      placeholder="6자리 코드 입력"
+                      placeholderTextColor="#555"
+                      maxLength={6}
+                      autoCapitalize="characters"
+                    />
+                    <TouchableOpacity
+                      style={[styles.referralApplyBtn, (!friendCode.trim() || referralLoading) && { opacity: 0.4 }]}
+                      onPress={handleApplyReferral}
+                      disabled={!friendCode.trim() || referralLoading}
+                    >
+                      {referralLoading ? (
+                        <ActivityIndicator size="small" color="#FFF" />
+                      ) : (
+                        <Text style={styles.referralApplyText}>적용</Text>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+            )}
 
             <View style={styles.earnTip}>
               <Ionicons name="information-circle" size={16} color="#7C4DFF" />
@@ -677,6 +779,69 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     flex: 1,
   },
+
+  // 친구 추천 섹션
+  referralSection: {
+    backgroundColor: '#1A1A2E',
+    borderRadius: 14,
+    padding: 16,
+    marginTop: 4,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#7C4DFF30',
+    gap: 16,
+  },
+  referralMyCode: { gap: 8 },
+  referralLabel: { color: '#CCC', fontSize: 13, fontWeight: '600' },
+  referralCodeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  referralCode: {
+    flex: 1,
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#7C4DFF',
+    letterSpacing: 4,
+  },
+  referralShareBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#7C4DFF',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 10,
+    gap: 6,
+  },
+  referralShareText: { color: '#FFF', fontSize: 13, fontWeight: '600' },
+  referralHint: { color: '#888', fontSize: 11, lineHeight: 16 },
+  referralInputSection: { gap: 8 },
+  referralInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  referralInput: {
+    flex: 1,
+    backgroundColor: '#252525',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 2,
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  referralApplyBtn: {
+    backgroundColor: '#4CAF50',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  referralApplyText: { color: '#FFF', fontSize: 14, fontWeight: '700' },
 
   // 안내 섹션
   infoSection: {

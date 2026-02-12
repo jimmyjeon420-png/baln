@@ -19,14 +19,35 @@ import supabase from './supabase';
 export const REWARD_AMOUNTS = {
   dailyCheckIn: 2,    // 매일 출석: 2크레딧 (₩200)
   shareCard: 5,       // 인스타 공유: 5크레딧 (₩500)
+  emotionCheck: 5,    // 감정 기록: 5크레딧 (₩500)
   welcomeBonus: 10,   // 신규 가입: 10크레딧 (₩1,000)
+  assetRegistration: 20, // 자산 3개+ 등록: 20크레딧 (₩2,000)
   referral: 50,       // 친구 추천: 50크레딧 (₩5,000)
+} as const;
+
+/**
+ * 성취 배지별 보상 크레딧 (이승건 원칙: 습관 단계에 맞춰 에스컬레이팅)
+ * 총합: 128C (₩12,800) — 모든 배지 수집 시
+ */
+export const ACHIEVEMENT_REWARDS: Record<string, number> = {
+  first_visit: 3,       // 첫 출석: 3C (₩300) — 첫 시작의 작은 기쁨
+  streak_7: 10,         // 7일 연속: 10C (₩1,000) — 습관 시작 격려
+  streak_30: 30,        // 30일 연속: 30C (₩3,000) — 한 달 습관 대성공
+  first_correct: 5,     // 첫 적중: 5C (₩500) — 예측 게임 입문
+  streak_correct_5: 15, // 5연속 적중: 15C (₩1,500) — 분석력 인정
+  accuracy_80: 30,      // 적중률 80%: 30C (₩3,000) — 상위 1% 보상
+  first_diagnosis: 5,   // 첫 AI 진단: 5C (₩500) — AI 기능 체험 유도
+  assets_100m: 20,      // 1억 달성: 20C (₩2,000) — 자산 관리 의지
+  first_share: 5,       // 첫 공유: 5C (₩500) — 바이럴 유도
+  first_post: 5,        // 첫 게시글: 5C (₩500) — 커뮤니티 참여
 } as const;
 
 /** AsyncStorage 키 */
 const KEYS = {
   dailyCheckIn: 'reward_daily_checkin',
   dailyShare: 'reward_daily_share',
+  dailyEmotion: 'reward_daily_emotion',
+  assetRegistration: 'reward_asset_registration',
   welcomeBonus: 'reward_welcome_bonus',
   checkInStreak: 'reward_checkin_streak',
   lastCheckinDate: '@baln:last_checkin_date',
@@ -74,6 +95,51 @@ async function grantRewardCredits(
   } catch (err) {
     console.warn(`[Reward] grantRewardCredits 예외 (${rewardType}):`, err);
     return { success: false, newBalance: 0 };
+  }
+}
+
+// ============================================================================
+// 성취 배지 보상 (Achievement Reward)
+// ============================================================================
+
+/** 성취 배지 해금 시 크레딧 보상 지급 (1회) */
+export async function grantAchievementReward(achievementId: string): Promise<{
+  success: boolean;
+  creditsEarned: number;
+  newBalance: number;
+}> {
+  try {
+    const reward = ACHIEVEMENT_REWARDS[achievementId];
+    if (!reward || reward <= 0) {
+      return { success: false, creditsEarned: 0, newBalance: 0 };
+    }
+
+    // 이미 이 배지 보상을 받았는지 확인
+    const key = `@baln:achievement_reward_${achievementId}`;
+    const already = await AsyncStorage.getItem(key);
+    if (already === 'granted') {
+      return { success: false, creditsEarned: 0, newBalance: 0 };
+    }
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, creditsEarned: 0, newBalance: 0 };
+
+    const result = await grantRewardCredits(user.id, reward, 'achievement_reward', {
+      achievement_id: achievementId,
+    });
+
+    if (result.success) {
+      await AsyncStorage.setItem(key, 'granted');
+    }
+
+    return {
+      success: result.success,
+      creditsEarned: result.success ? reward : 0,
+      newBalance: result.newBalance,
+    };
+  } catch (err) {
+    console.warn(`[Reward] 성취 보상 실패 (${achievementId}):`, err);
+    return { success: false, creditsEarned: 0, newBalance: 0 };
   }
 }
 
@@ -301,6 +367,112 @@ export async function grantWelcomeBonus(): Promise<{
   } catch (err) {
     console.warn('[Reward] 웰컴 보너스 실패:', err);
     return { success: false, creditsEarned: 0, newBalance: 0, alreadyReceived: false };
+  }
+}
+
+// ============================================================================
+// 자산 등록 보상 (Asset Registration — 3개 이상 등록 시 1회)
+// ============================================================================
+
+/** 자산 등록 보상을 이미 받았는지 확인 */
+export async function getAssetRegistrationRewardStatus(): Promise<{
+  received: boolean;
+}> {
+  try {
+    const raw = await AsyncStorage.getItem(KEYS.assetRegistration);
+    return { received: raw === 'granted' };
+  } catch {
+    return { received: false };
+  }
+}
+
+/** 자산 3개 이상 등록 시 보상 지급 (1회) */
+export async function grantAssetRegistrationReward(assetCount: number): Promise<{
+  success: boolean;
+  creditsEarned: number;
+  newBalance: number;
+}> {
+  try {
+    if (assetCount < 3) {
+      return { success: false, creditsEarned: 0, newBalance: 0 };
+    }
+
+    const { received } = await getAssetRegistrationRewardStatus();
+    if (received) {
+      return { success: false, creditsEarned: 0, newBalance: 0 };
+    }
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, creditsEarned: 0, newBalance: 0 };
+
+    const result = await grantRewardCredits(user.id, REWARD_AMOUNTS.assetRegistration, 'asset_registration', {
+      asset_count: assetCount,
+    });
+
+    if (result.success) {
+      await AsyncStorage.setItem(KEYS.assetRegistration, 'granted');
+    }
+
+    return {
+      success: result.success,
+      creditsEarned: result.success ? REWARD_AMOUNTS.assetRegistration : 0,
+      newBalance: result.newBalance,
+    };
+  } catch (err) {
+    console.warn('[Reward] 자산 등록 보상 실패:', err);
+    return { success: false, creditsEarned: 0, newBalance: 0 };
+  }
+}
+
+// ============================================================================
+// 투자 감정 기록 보상 (Emotion Check)
+// ============================================================================
+
+/** 오늘 감정 기록 보상 받았는지 확인 */
+export async function getEmotionRewardStatus(): Promise<{
+  rewarded: boolean;
+}> {
+  try {
+    const raw = await AsyncStorage.getItem(KEYS.dailyEmotion);
+    return { rewarded: raw === getTodayKey() };
+  } catch {
+    return { rewarded: false };
+  }
+}
+
+/** 감정 기록 완료 후 보상 지급 (1일 1회) */
+export async function grantEmotionReward(): Promise<{
+  success: boolean;
+  creditsEarned: number;
+  newBalance: number;
+  alreadyRewarded: boolean;
+}> {
+  try {
+    const { rewarded } = await getEmotionRewardStatus();
+    if (rewarded) {
+      return { success: false, creditsEarned: 0, newBalance: 0, alreadyRewarded: true };
+    }
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, creditsEarned: 0, newBalance: 0, alreadyRewarded: false };
+
+    const result = await grantRewardCredits(user.id, REWARD_AMOUNTS.emotionCheck, 'emotion_check', {
+      date: getTodayKey(),
+    });
+
+    if (result.success) {
+      await AsyncStorage.setItem(KEYS.dailyEmotion, getTodayKey());
+    }
+
+    return {
+      success: result.success,
+      creditsEarned: result.success ? REWARD_AMOUNTS.emotionCheck : 0,
+      newBalance: result.newBalance,
+      alreadyRewarded: false,
+    };
+  } catch (err) {
+    console.warn('[Reward] 감정 기록 보상 실패:', err);
+    return { success: false, creditsEarned: 0, newBalance: 0, alreadyRewarded: false };
   }
 }
 

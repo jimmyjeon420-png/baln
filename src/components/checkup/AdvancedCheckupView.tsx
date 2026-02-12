@@ -48,6 +48,7 @@ interface AdvancedCheckupViewProps {
   onEmotionSelect?: (emotion: string) => void;
   onMemoChange?: (memo: string) => void;
   onEmotionSave?: () => void;
+  emotionRewardCredits?: number;
   onLevelChange: (level: InvestorLevel) => void;
 }
 
@@ -75,6 +76,7 @@ export default function AdvancedCheckupView({
   onEmotionSelect,
   onMemoChange,
   onEmotionSave,
+  emotionRewardCredits,
   onLevelChange,
 }: AdvancedCheckupViewProps) {
   return (
@@ -90,7 +92,6 @@ export default function AdvancedCheckupView({
         totalAssets={totalAssets}
         totalGainLoss={totalGainLoss}
         gainPercent={gainPercent}
-        cfoWeather={cfoWeather}
         holdingLabel={holdingLabel}
       />
 
@@ -151,6 +152,7 @@ export default function AdvancedCheckupView({
           memo={todayMemo ?? ''}
           onMemoChange={onMemoChange}
           onSave={onEmotionSave}
+          rewardCredits={emotionRewardCredits}
         />
       )}
 

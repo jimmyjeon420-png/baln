@@ -36,7 +36,7 @@ export default function ReassuranceBanner({ totalGainLoss, cfoWeather }: Reassur
   return (
     <View style={styles.banner}>
       <Text style={styles.emoji}>{emoji}</Text>
-      <Text style={styles.message} numberOfLines={2}>{message}</Text>
+      <Text style={styles.message}>{message}</Text>
     </View>
   );
 }

@@ -15,7 +15,7 @@
  * - 보험 BM: 투표 무료, 상세 리뷰 프리미엄
  */
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -382,6 +382,18 @@ export default function PredictionVoteCard({
         </View>
       </View>
 
+      {/* 질문 카운터 (1/3) + 스와이프 힌트 */}
+      {allPolls.length > 1 && (
+        <View style={styles.pollCounterRow}>
+          <Text style={styles.pollCounterText}>
+            {currentIndex + 1} / {allPolls.length}
+          </Text>
+          {currentIndex < allPolls.length - 1 && (
+            <Text style={styles.pollSwipeHint}>스와이프하여 다음 퀴즈 →</Text>
+          )}
+        </View>
+      )}
+
       {/* 수평 스크롤 질문 리스트 (ScrollView + map으로 중첩 에러 방지) */}
       <ScrollView
         ref={scrollRef}
@@ -570,6 +582,24 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
     },
     pageDotVoted: {
       backgroundColor: colors.primary,
+    },
+    // 질문 카운터 + 스와이프 힌트
+    pollCounterRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingTop: 8,
+      paddingBottom: 4,
+    },
+    pollCounterText: {
+      fontSize: 13,
+      fontWeight: '700',
+      color: colors.textSecondary,
+    },
+    pollSwipeHint: {
+      fontSize: 12,
+      fontWeight: '500',
+      color: colors.primary,
     },
     // 수평 스크롤 FlatList
     pollFlatList: {

@@ -24,8 +24,8 @@ import { formatPrice } from '../src/services/realEstateApi';
 import { sqmToPyeong } from '../src/types/realestate';
 import type { ApartmentComplex, AreaPriceSummary } from '../src/types/realestate';
 
-// 4단계 스텝 흐름
-type Step = 'search' | 'area' | 'price' | 'confirm';
+// 5단계 스텝 흐름 (직접 입력 포함)
+type Step = 'search' | 'area' | 'price' | 'confirm' | 'manual';
 
 export default function AddRealEstateScreen() {
   const router = useRouter();
@@ -40,6 +40,13 @@ export default function AddRealEstateScreen() {
   const [customArea, setCustomArea] = useState('');
   const [unitDetail, setUnitDetail] = useState('');
   const [purchasePrice, setPurchasePrice] = useState('');
+
+  // 직접 입력 상태
+  const [manualName, setManualName] = useState('');
+  const [manualAddress, setManualAddress] = useState('');
+  const [manualArea, setManualArea] = useState('');
+  const [manualUnitDetail, setManualUnitDetail] = useState('');
+  const [manualPrice, setManualPrice] = useState('');
 
   // 훅
   const { data: searchResults, isLoading: searching } = useRealEstateSearch(query);
@@ -127,6 +134,60 @@ export default function AddRealEstateScreen() {
     }
   }, [selectedComplex, selectedArea, priceData, purchasePrice, unitDetail, saveMutation, router]);
 
+  // 직접 입력 저장
+  const handleManualSave = useCallback(async () => {
+    if (!manualName.trim()) {
+      Alert.alert('입력 오류', '건물/단지명을 입력해주세요.');
+      return;
+    }
+    if (!manualArea.trim()) {
+      Alert.alert('입력 오류', '전용면적을 입력해주세요.');
+      return;
+    }
+    const area = parseFloat(manualArea);
+    if (!area || area < 1 || area > 1000) {
+      Alert.alert('입력 오류', '전용면적을 1~1000㎡ 범위로 입력해주세요.');
+      return;
+    }
+    if (!manualPrice.trim()) {
+      Alert.alert('입력 오류', '매입가(현재 추정가)를 입력해주세요.');
+      return;
+    }
+    const priceVal = parseInt(manualPrice.replace(/[^0-9]/g, ''), 10) * 10000; // 만원 단위
+    if (!priceVal || priceVal <= 0) {
+      Alert.alert('입력 오류', '올바른 금액을 입력해주세요.');
+      return;
+    }
+
+    try {
+      await saveMutation.mutateAsync({
+        lawdCd: '00000',
+        complexName: manualName.trim(),
+        unitArea: area,
+        unitDetail: manualUnitDetail || undefined,
+        purchasePrice: priceVal,
+        currentPrice: priceVal, // 시세 데이터 없으므로 매입가 = 현재가
+      });
+
+      Alert.alert(
+        '등록 완료',
+        `${manualName.trim()} ${Math.round(area)}㎡\n${formatPrice(priceVal)}\n\n포트폴리오에 추가되었습니다.`,
+        [
+          {
+            text: '포트폴리오 보기',
+            onPress: () => router.replace('/(tabs)/diagnosis'),
+          },
+          {
+            text: '확인',
+            onPress: () => router.back(),
+          },
+        ],
+      );
+    } catch (error: any) {
+      Alert.alert('저장 실패', error.message || '부동산 자산 저장 중 오류가 발생했습니다.');
+    }
+  }, [manualName, manualAddress, manualArea, manualUnitDetail, manualPrice, saveMutation, router]);
+
   // 현재 선택된 면적의 시세 요약
   const selectedAreaSummary = selectedArea
     ? priceData?.priceSummary.find(
@@ -151,7 +212,7 @@ export default function AddRealEstateScreen() {
         <View style={styles.header}>
           <TouchableOpacity
             onPress={() => {
-              if (step === 'search') {
+              if (step === 'search' || step === 'manual') {
                 router.back();
               } else if (step === 'area') {
                 setStep('search');
@@ -170,16 +231,21 @@ export default function AddRealEstateScreen() {
 
         {/* 진행 표시기 */}
         <View style={styles.progressBar}>
-          {(['search', 'area', 'price', 'confirm'] as Step[]).map((s, i) => (
-            <View
-              key={s}
-              style={[
-                styles.progressDot,
-                (step === s || ['search', 'area', 'price', 'confirm'].indexOf(step) >= i) &&
-                  styles.progressDotActive,
-              ]}
-            />
-          ))}
+          {step === 'manual' ? (
+            // 직접 입력 모드: 1단계짜리
+            <View style={[styles.progressDot, styles.progressDotActive]} />
+          ) : (
+            (['search', 'area', 'price', 'confirm'] as Step[]).map((s, i) => (
+              <View
+                key={s}
+                style={[
+                  styles.progressDot,
+                  (step === s || ['search', 'area', 'price', 'confirm'].indexOf(step) >= i) &&
+                    styles.progressDotActive,
+                ]}
+              />
+            ))
+          )}
         </View>
 
         {/* ============================================================ */}
@@ -245,10 +311,40 @@ export default function AddRealEstateScreen() {
               )}
               ListEmptyComponent={
                 query.length >= 2 && !searching ? (
-                  <Text style={styles.emptyText}>검색 결과가 없습니다</Text>
+                  <View style={styles.emptyContainer}>
+                    <Ionicons name="search-outline" size={40} color="#444" />
+                    <Text style={styles.emptyText}>검색 결과가 없습니다</Text>
+                    <Text style={styles.emptySubtext}>
+                      찾으시는 건물이 목록에 없나요?
+                    </Text>
+                    <TouchableOpacity
+                      style={styles.manualEntryButton}
+                      onPress={() => {
+                        setManualName(query); // 검색어를 단지명에 미리 채움
+                        setStep('manual');
+                      }}
+                    >
+                      <Ionicons name="create-outline" size={18} color="#FFF" />
+                      <Text style={styles.manualEntryButtonText}>직접 입력하기</Text>
+                    </TouchableOpacity>
+                  </View>
                 ) : query.length > 0 ? (
                   <Text style={styles.emptyText}>2자 이상 입력해주세요</Text>
-                ) : null
+                ) : (
+                  <View style={styles.emptyContainer}>
+                    <Text style={styles.emptySubtext}>
+                      아파트, 빌라, 오피스텔 등 부동산을 검색하세요
+                    </Text>
+                    <TouchableOpacity
+                      style={styles.manualEntryLinkButton}
+                      onPress={() => setStep('manual')}
+                    >
+                      <Text style={styles.manualEntryLinkText}>
+                        검색 없이 직접 입력하기 →
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                )
               }
             />
           </View>
@@ -489,6 +585,113 @@ export default function AddRealEstateScreen() {
             </TouchableOpacity>
           </ScrollView>
         )}
+        {/* ============================================================ */}
+        {/* Step: 직접 입력 */}
+        {/* ============================================================ */}
+        {step === 'manual' && (
+          <ScrollView style={styles.stepContainer} contentContainerStyle={{ paddingBottom: 40 }}>
+            <Text style={styles.stepTitle}>부동산 직접 입력</Text>
+            <Text style={styles.stepDesc}>
+              검색되지 않는 건물도 직접 정보를 입력하여 등록할 수 있어요
+            </Text>
+
+            {/* 단지/건물명 */}
+            <Text style={styles.sectionLabel}>건물/단지명 *</Text>
+            <TextInput
+              style={styles.unitDetailInput}
+              placeholder="예: 래미안 아파트, 한강뷰 오피스텔"
+              placeholderTextColor="#666"
+              value={manualName}
+              onChangeText={setManualName}
+              autoFocus
+            />
+
+            {/* 주소 */}
+            <Text style={styles.sectionLabel}>주소 (선택)</Text>
+            <TextInput
+              style={styles.unitDetailInput}
+              placeholder="예: 서울시 강남구 대치동 123"
+              placeholderTextColor="#666"
+              value={manualAddress}
+              onChangeText={setManualAddress}
+            />
+
+            {/* 전용면적 */}
+            <Text style={styles.sectionLabel}>전용면적 (㎡) *</Text>
+            <View style={styles.customAreaRow}>
+              <TextInput
+                style={[styles.customAreaInput, { flex: 1 }]}
+                placeholder="예: 84"
+                placeholderTextColor="#666"
+                keyboardType="numeric"
+                value={manualArea}
+                onChangeText={setManualArea}
+              />
+              {manualArea ? (
+                <View style={styles.pyeongBadge}>
+                  <Text style={styles.pyeongBadgeText}>
+                    ≈ {Math.round(sqmToPyeong(parseFloat(manualArea) || 0))}평
+                  </Text>
+                </View>
+              ) : null}
+            </View>
+
+            {/* 동/호수 */}
+            <Text style={styles.sectionLabel}>동/호수 (선택)</Text>
+            <TextInput
+              style={styles.unitDetailInput}
+              placeholder="예: 103동 1502호"
+              placeholderTextColor="#666"
+              value={manualUnitDetail}
+              onChangeText={setManualUnitDetail}
+            />
+
+            {/* 매입가 / 현재 추정가 */}
+            <Text style={styles.sectionLabel}>매입가 또는 현재 추정가 (만원) *</Text>
+            <TextInput
+              style={styles.unitDetailInput}
+              placeholder="예: 150000 (= 15억)"
+              placeholderTextColor="#666"
+              keyboardType="numeric"
+              value={manualPrice}
+              onChangeText={setManualPrice}
+            />
+            {manualPrice ? (
+              <Text style={styles.manualPricePreview}>
+                = {formatPrice(parseInt(manualPrice.replace(/[^0-9]/g, ''), 10) * 10000 || 0)}
+              </Text>
+            ) : (
+              <Text style={styles.hintText}>
+                만원 단위로 입력하세요. 예: 150000 = 15억
+              </Text>
+            )}
+
+            {/* 안내 문구 */}
+            <View style={styles.manualInfoBox}>
+              <Ionicons name="information-circle" size={16} color="#888" />
+              <Text style={styles.manualInfoText}>
+                직접 입력한 자산은 자동 시세 업데이트가 제공되지 않습니다.{'\n'}
+                나중에 시세가 변동되면 수정할 수 있어요.
+              </Text>
+            </View>
+
+            {/* 저장 버튼 */}
+            <TouchableOpacity
+              style={[styles.saveButton, saveMutation.isPending && styles.saveButtonDisabled]}
+              onPress={handleManualSave}
+              disabled={saveMutation.isPending}
+            >
+              {saveMutation.isPending ? (
+                <ActivityIndicator color="#FFF" />
+              ) : (
+                <>
+                  <Ionicons name="home" size={20} color="#FFF" />
+                  <Text style={styles.saveButtonText}>포트폴리오에 추가</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </ScrollView>
+        )}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -599,11 +802,47 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#666',
   },
+  emptyContainer: {
+    alignItems: 'center',
+    paddingTop: 32,
+    paddingBottom: 16,
+    gap: 8,
+  },
   emptyText: {
     textAlign: 'center',
+    color: '#888',
+    fontSize: 15,
+    fontWeight: '600',
+    marginTop: 8,
+  },
+  emptySubtext: {
+    textAlign: 'center',
     color: '#666',
-    marginTop: 32,
-    fontSize: 14,
+    fontSize: 13,
+  },
+  manualEntryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#4CAF50',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 10,
+    marginTop: 12,
+  },
+  manualEntryButtonText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#FFF',
+  },
+  manualEntryLinkButton: {
+    marginTop: 16,
+    paddingVertical: 8,
+  },
+  manualEntryLinkText: {
+    fontSize: 13,
+    color: '#4CAF50',
+    fontWeight: '600',
   },
   // 면적 선택
   sectionLabel: {
@@ -813,5 +1052,40 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: '#FFF',
+  },
+  // 직접 입력 전용
+  pyeongBadge: {
+    backgroundColor: '#1B4D1B',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 10,
+    marginLeft: 10,
+  },
+  pyeongBadgeText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#4CAF50',
+  },
+  manualPricePreview: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#4CAF50',
+    marginTop: 6,
+  },
+  manualInfoBox: {
+    flexDirection: 'row',
+    gap: 8,
+    backgroundColor: '#1A1A1A',
+    borderRadius: 10,
+    padding: 12,
+    marginTop: 20,
+    borderWidth: 1,
+    borderColor: '#2A2A2A',
+  },
+  manualInfoText: {
+    flex: 1,
+    fontSize: 12,
+    color: '#888',
+    lineHeight: 18,
   },
 });

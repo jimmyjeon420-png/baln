@@ -157,7 +157,7 @@ export default function OnboardingScreen() {
       const currency = stock.ticker.endsWith('.KS') || stock.ticker.endsWith('.KQ') ? 'KRW' : 'USD';
       const priceData = await withTimeout(
         priceService.fetchPrice(stock.ticker, assetClass, currency),
-        8000,
+        20000,
         '가격 조회 시간 초과'
       );
       if (priceData && priceData.currentPrice > 0) {

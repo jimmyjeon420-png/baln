@@ -300,9 +300,14 @@ export const ExtremeScenarioReport: React.FC<ExtremeScenarioReportProps> = ({
       <ViewShot
         ref={viewShotRef}
         options={{ format: 'png', quality: 1.0 }}
-        style={{ backgroundColor: colors.background }}
+        style={{ backgroundColor: colors.background, padding: 8, borderRadius: 16 }}
       >
-      {/* 시나리오 헤더 */}
+      {/* 바이럴 훅 — 드라마틱한 질문 */}
+      <View style={styles.viralHook}>
+        <Text style={styles.viralHookText}>만약 이게 실제로 일어난다면?</Text>
+      </View>
+
+      {/* 시나리오 헤더 (바이럴 강화) */}
       <View style={[styles.header, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <Text style={styles.headerEmoji}>{scenario.emoji}</Text>
         <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
@@ -313,6 +318,9 @@ export const ExtremeScenarioReport: React.FC<ExtremeScenarioReportProps> = ({
             {scenario.categoryLabel}
           </Text>
         </View>
+        <Text style={[styles.headerSub, { color: colors.textSecondary }]}>
+          AI 위기 시뮬레이터가 분석한 결과
+        </Text>
       </View>
 
       {/* 섹션들 (무료 열람) */}
@@ -375,9 +383,10 @@ export const ExtremeScenarioReport: React.FC<ExtremeScenarioReportProps> = ({
         </Text>
       </View>
 
-      {/* baln 워터마크 (캡처용) */}
+      {/* baln 워터마크 + CTA (캡처용) */}
       <View style={styles.watermark}>
         <Text style={styles.watermarkText}>bal<Text style={{ color: '#4CAF50' }}>n</Text>.logic</Text>
+        <Text style={styles.watermarkCTA}>나도 시뮬레이션 해보기 → baln.app</Text>
       </View>
       </ViewShot>
 
@@ -418,6 +427,22 @@ const styles = StyleSheet.create({
   container: {
     gap: 12,
   },
+  viralHook: {
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    marginBottom: 8,
+    backgroundColor: '#EF444415',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#EF444430',
+  },
+  viralHookText: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#EF4444',
+    letterSpacing: 0.5,
+  },
   header: {
     borderRadius: 16,
     borderWidth: 1,
@@ -426,11 +451,12 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   headerEmoji: {
-    fontSize: 48,
+    fontSize: 56,
   },
   headerTitle: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: '800',
+    textAlign: 'center',
   },
   headerBadge: {
     paddingHorizontal: 12,
@@ -440,6 +466,11 @@ const styles = StyleSheet.create({
   headerBadgeText: {
     fontSize: 13,
     fontWeight: '600',
+  },
+  headerSub: {
+    fontSize: 12,
+    fontWeight: '500',
+    marginTop: 4,
   },
   ctaButton: {
     flexDirection: 'row',
@@ -485,14 +516,21 @@ const styles = StyleSheet.create({
   },
   watermark: {
     alignItems: 'center',
-    paddingTop: 12,
-    paddingBottom: 8,
+    paddingTop: 16,
+    paddingBottom: 12,
+    gap: 4,
   },
   watermarkText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#555555',
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#777777',
     letterSpacing: 1,
+  },
+  watermarkCTA: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: '#999999',
+    letterSpacing: 0.3,
   },
   shareButton: {
     flexDirection: 'row',

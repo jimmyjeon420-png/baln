@@ -17,7 +17,8 @@ interface CoinGeckoResponse {
 export class CoinGeckoProvider {
   readonly name = 'CoinGecko';
   private readonly baseURL = 'https://api.coingecko.com/api/v3';
-  private readonly timeout = 8000; // 8 seconds
+  private readonly fallbackURL = 'https://api.coinpaprika.com/v1';
+  private readonly timeout = 15000; // 15 seconds
   private requestCount = 0;
   private lastRequestTime = 0;
 
@@ -94,8 +95,58 @@ export class CoinGeckoProvider {
         source: 'coingecko',
       };
     } catch (error) {
-      throw this.formatError(error as AxiosError, ticker);
+      // CoinGecko 실패 → Coinpaprika 폴백
+      console.warn(`[CoinGecko] ${ticker} 실패, Coinpaprika 폴백 시도...`);
+      try {
+        return await this.fetchFromCoinpaprika(ticker, currency);
+      } catch {
+        throw this.formatError(error as AxiosError, ticker);
+      }
     }
+  }
+
+  /**
+   * Coinpaprika fallback (no auth, generous rate limit)
+   */
+  private async fetchFromCoinpaprika(ticker: string, currency: string): Promise<PriceData> {
+    const coinId = this.mapTickerToCoinpaprikaId(ticker);
+    const response = await axios.get(
+      `${this.fallbackURL}/tickers/${coinId}`,
+      { timeout: this.timeout }
+    );
+    const data = response.data;
+    const quotes = data?.quotes?.USD;
+    if (!quotes?.price) throw new Error(`NOT_FOUND: ${ticker}`);
+
+    return {
+      ticker,
+      assetClass: AssetClass.CRYPTO,
+      currentPrice: quotes.price,
+      percentChange24h: quotes.percent_change_24h,
+      currency,
+      marketCap: quotes.market_cap,
+      volume24h: quotes.volume_24h,
+      lastUpdated: Date.now(),
+      source: 'coingecko',
+    };
+  }
+
+  private mapTickerToCoinpaprikaId(ticker: string): string {
+    const mapping: Record<string, string> = {
+      'BTC': 'btc-bitcoin',
+      'ETH': 'eth-ethereum',
+      'SOL': 'sol-solana',
+      'XRP': 'xrp-xrp',
+      'ADA': 'ada-cardano',
+      'DOGE': 'doge-dogecoin',
+      'DOT': 'dot-polkadot',
+      'AVAX': 'avax-avalanche',
+      'LINK': 'link-chainlink',
+      'MATIC': 'matic-polygon',
+      'LTC': 'ltc-litecoin',
+      'UNI': 'uni-uniswap',
+    };
+    return mapping[ticker.toUpperCase()] || `${ticker.toLowerCase()}-${ticker.toLowerCase()}`;
   }
 
   /**

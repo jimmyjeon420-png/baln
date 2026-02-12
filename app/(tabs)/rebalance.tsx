@@ -157,6 +157,7 @@ export default function CheckupScreen() {
     setEmotion,
     setMemo,
     saveEmotionWithMemo,
+    rewardCredits: emotionRewardCredits,
   } = useEmotionCheck();
 
   const myBracket = getAssetBracket(totalAssets);
@@ -356,6 +357,7 @@ export default function CheckupScreen() {
             onEmotionSelect={setEmotion}
             onMemoChange={setMemo}
             onEmotionSave={saveEmotionWithMemo}
+            emotionRewardCredits={emotionRewardCredits}
             onLevelChange={setLevel}
           />
         )}
@@ -379,6 +381,7 @@ export default function CheckupScreen() {
             onEmotionSelect={setEmotion}
             onMemoChange={setMemo}
             onEmotionSave={saveEmotionWithMemo}
+            emotionRewardCredits={emotionRewardCredits}
             onLevelChange={setLevel}
           />
         )}
@@ -408,6 +411,7 @@ export default function CheckupScreen() {
             onEmotionSelect={setEmotion}
             onMemoChange={setMemo}
             onEmotionSave={saveEmotionWithMemo}
+            emotionRewardCredits={emotionRewardCredits}
             onLevelChange={setLevel}
           />
         )}

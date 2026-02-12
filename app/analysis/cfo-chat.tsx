@@ -209,18 +209,32 @@ export default function CFOChatScreen() {
 
     // 토론 형식 렌더링
     if (!isUser && item.debate) {
+      // 사용자 질문 찾기 (캡처에 포함)
+      const prevMsg = messages.find((m, idx) => {
+        const nextIdx = messages.indexOf(item);
+        return m.role === 'user' && idx === nextIdx - 1;
+      });
+
       return (
         <View style={[s.messageContainer, s.aiMessageContainer]}>
           <ViewShot
             ref={(ref) => { debateRefs.current[item.id] = ref; }}
             options={{ format: 'png', quality: 1.0 }}
-            style={{ backgroundColor: colors.background, padding: 4, borderRadius: 16 }}
+            style={{ backgroundColor: '#1A1A2E', padding: 16, borderRadius: 20 }}
           >
-          {/* baln 브랜딩 */}
+          {/* baln 브랜딩 (강화) */}
           <View style={s.shareBrandRow}>
             <Text style={s.shareBrandText}>bal<Text style={{ color: '#4CAF50' }}>n</Text>.logic</Text>
-            <Text style={s.shareBrandSub}>AI 버핏과 티타임</Text>
+            <Text style={s.shareBrandSub}>AI 버핏과 티타임 ☕</Text>
           </View>
+
+          {/* 사용자 질문 (캡처에 포함) */}
+          {prevMsg && (
+            <View style={s.captureQuestion}>
+              <Text style={s.captureQuestionLabel}>Q.</Text>
+              <Text style={s.captureQuestionText}>{prevMsg.text}</Text>
+            </View>
+          )}
 
           {/* 워렌 버핏 */}
           <View style={[s.debateCard, { backgroundColor: '#E3F2FD', borderLeftColor: '#2196F3' }]}>
@@ -244,6 +258,11 @@ export default function CFOChatScreen() {
           <View style={[s.summaryCard, { backgroundColor: '#FFF9C4', borderColor: '#FBC02D' }]}>
             <Text style={[s.summaryTitle, { color: '#F57F17' }]}>🦉 워렌의 한마디</Text>
             <Text style={[s.summaryText, { color: '#2D2D2D' }]}>{item.debate.summary}</Text>
+          </View>
+
+          {/* 바이럴 CTA */}
+          <View style={s.captureCTA}>
+            <Text style={s.captureCTAText}>나도 버핏과 대화하기 → baln.app</Text>
           </View>
           </ViewShot>
 
@@ -510,18 +529,54 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginBottom: 10,
+    marginBottom: 12,
     paddingLeft: 4,
   },
   shareBrandText: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '800',
     color: '#FFFFFF',
     letterSpacing: 0.5,
   },
   shareBrandSub: {
-    fontSize: 11,
-    color: '#888888',
+    fontSize: 12,
+    color: '#AAAAAA',
+    fontWeight: '500',
+  },
+  captureQuestion: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    backgroundColor: 'rgba(124, 77, 255, 0.15)',
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(124, 77, 255, 0.3)',
+  },
+  captureQuestionLabel: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#7C4DFF',
+  },
+  captureQuestionText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    flex: 1,
+    lineHeight: 20,
+  },
+  captureCTA: {
+    alignItems: 'center',
+    paddingTop: 12,
+    paddingBottom: 4,
+  },
+  captureCTAText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#AAAAAA',
+    letterSpacing: 0.3,
   },
   shareDebateButton: {
     flexDirection: 'row',

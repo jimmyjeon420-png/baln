@@ -13,7 +13,7 @@
  * - One Page One Card: 한 화면에 카드 1장만
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -23,6 +23,7 @@ import {
   NativeSyntheticEvent,
   NativeScrollEvent,
   RefreshControl,
+  Animated,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '../../styles/theme';
@@ -72,6 +73,37 @@ export default function CardSwipeContainer({
 }: CardSwipeContainerProps) {
   const [currentPage, setCurrentPage] = useState(initialIndex);
   const insets = useSafeAreaInsets();
+  const [showSwipeHint, setShowSwipeHint] = useState(true);
+  const hintOpacity = useRef(new Animated.Value(1)).current;
+  const hintTranslateX = useRef(new Animated.Value(0)).current;
+
+  // 스와이프 힌트 애니메이션 (첫 페이지에서만 3초간 표시)
+  useEffect(() => {
+    if (currentPage === 0 && showSwipeHint) {
+      // 좌우 흔들기 애니메이션
+      const shake = Animated.loop(
+        Animated.sequence([
+          Animated.timing(hintTranslateX, { toValue: -8, duration: 400, useNativeDriver: true }),
+          Animated.timing(hintTranslateX, { toValue: 0, duration: 400, useNativeDriver: true }),
+        ]),
+        { iterations: 3 }
+      );
+      shake.start();
+
+      // 3초 후 페이드아웃
+      const timeout = setTimeout(() => {
+        Animated.timing(hintOpacity, {
+          toValue: 0,
+          duration: 500,
+          useNativeDriver: true,
+        }).start(() => setShowSwipeHint(false));
+      }, 3000);
+
+      return () => clearTimeout(timeout);
+    } else if (currentPage !== 0) {
+      setShowSwipeHint(false);
+    }
+  }, [currentPage]);
 
   // 스크롤 종료 시 페이지 추적
   const handleScrollEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -117,7 +149,19 @@ export default function CardSwipeContainer({
         ))}
       </ScrollView>
 
-      {/* 카드 아래: 페이지 인디케이터 + 라벨 (스와이프 유도) */}
+      {/* 스와이프 힌트 (첫 페이지에서만, 3초 후 사라짐) */}
+      {showSwipeHint && currentPage === 0 && (
+        <Animated.View
+          style={[
+            styles.swipeHint,
+            { opacity: hintOpacity, transform: [{ translateX: hintTranslateX }] },
+          ]}
+        >
+          <Text style={styles.swipeHintText}>← 스와이프하여 더 보기</Text>
+        </Animated.View>
+      )}
+
+      {/* 카드 아래: 탭 형태 네비게이터 (선택 + 인디케이터) */}
       <View style={styles.bottomNav}>
         {labels.map((label, index) => (
           <View key={index} style={styles.navItem}>
@@ -138,6 +182,13 @@ export default function CardSwipeContainer({
           </View>
         ))}
       </View>
+
+      {/* 페이지 카운터 (1/3 형태) */}
+      <View style={styles.pageCounter}>
+        <Text style={styles.pageCounterText}>
+          {currentPage + 1} / {children.length}
+        </Text>
+      </View>
     </View>
   );
 }
@@ -156,8 +207,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     gap: 32,
-    paddingTop: 12,
-    paddingBottom: 16,
+    paddingTop: 10,
+    paddingBottom: 4,
   },
   navItem: {
     alignItems: 'center',
@@ -193,5 +244,30 @@ const styles = StyleSheet.create({
   cardWrapper: {
     width: SCREEN_WIDTH,
     paddingTop: 8,
+  },
+  swipeHint: {
+    position: 'absolute',
+    bottom: 80,
+    alignSelf: 'center',
+    backgroundColor: 'rgba(76, 175, 80, 0.9)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  swipeHintText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: 0.3,
+  },
+  pageCounter: {
+    alignItems: 'center',
+    paddingBottom: 10,
+  },
+  pageCounterText: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: COLORS.textTertiary,
+    letterSpacing: 1,
   },
 });

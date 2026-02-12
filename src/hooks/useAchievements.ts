@@ -23,6 +23,7 @@ import {
   type AutoCheckParams,
   ACHIEVEMENTS,
 } from '../services/achievementService';
+import { grantAchievementReward, ACHIEVEMENT_REWARDS } from '../services/rewardService';
 
 // ============================================================================
 // 훅 반환 타입
@@ -39,6 +40,8 @@ interface UseAchievementsReturn {
   isLoading: boolean;
   /** 새로 해금된 배지 (토스트 표시용) */
   newlyUnlocked: AchievementId[];
+  /** 새로 해금된 배지의 보상 크레딧 총합 */
+  rewardCreditsEarned: number;
   /** 새로 해금 알림 초기화 */
   clearNewlyUnlocked: () => void;
   /** 데이터 새로고침 */
@@ -64,6 +67,7 @@ export function useAchievements(): UseAchievementsReturn {
   const [unlockedCount, setUnlockedCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [newlyUnlocked, setNewlyUnlocked] = useState<AchievementId[]>([]);
+  const [rewardCreditsEarned, setRewardCreditsEarned] = useState(0);
 
   // 데이터 로드
   const loadData = useCallback(async () => {
@@ -97,6 +101,18 @@ export function useAchievements(): UseAchievementsReturn {
           // 새로 해금된 배지 저장 (토스트 표시용)
           setNewlyUnlocked((prev) => [...prev, ...newBadges]);
 
+          // 배지 보상 크레딧 지급
+          let totalReward = 0;
+          for (const badgeId of newBadges) {
+            const result = await grantAchievementReward(badgeId);
+            if (result.success) {
+              totalReward += result.creditsEarned;
+            }
+          }
+          if (totalReward > 0) {
+            setRewardCreditsEarned(totalReward);
+          }
+
           // 데이터 리로드
           await loadData();
         }
@@ -113,6 +129,7 @@ export function useAchievements(): UseAchievementsReturn {
   // 새로 해금 알림 초기화
   const clearNewlyUnlocked = useCallback(() => {
     setNewlyUnlocked([]);
+    setRewardCreditsEarned(0);
   }, []);
 
   return {
@@ -121,6 +138,7 @@ export function useAchievements(): UseAchievementsReturn {
     totalCount: ACHIEVEMENTS.length,
     isLoading,
     newlyUnlocked,
+    rewardCreditsEarned,
     clearNewlyUnlocked,
     refresh: loadData,
     checkAchievements,

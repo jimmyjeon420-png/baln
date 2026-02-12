@@ -88,7 +88,7 @@ export default function MarketWeatherSection({
       {morningBriefing.macroSummary.interestRateProbability && (
         <View style={[styles.rateBadge, { backgroundColor: `${colors.warning}14` }]}>
           <Ionicons name="trending-up" size={12} color={colors.warning} />
-          <Text style={[styles.rateText, { color: colors.warning }]} numberOfLines={showDetail ? undefined : 1}>
+          <Text style={[styles.rateText, { color: colors.warning }]} numberOfLines={showDetail ? undefined : 2}>
             {morningBriefing.macroSummary.interestRateProbability}
           </Text>
         </View>

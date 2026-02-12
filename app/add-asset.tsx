@@ -37,6 +37,7 @@ import { searchStocks, StockItem, getCategoryLabel, getCategoryColor } from '../
 import { priceService } from '../src/services/PriceService';
 import { AssetClass, PriceData } from '../src/types/price';
 import { SHARED_PORTFOLIO_KEY } from '../src/hooks/useSharedPortfolio';
+import { grantAssetRegistrationReward, REWARD_AMOUNTS } from '../src/services/rewardService';
 
 // ── 상수 ──
 
@@ -385,9 +386,19 @@ export default function AddAssetScreen() {
       // 보유 자산 다시 로드
       await loadExistingAssets();
 
+      // 자산 3개 이상 등록 보상 확인
+      const updatedCount = existingAssets.length + 1; // 방금 추가한 것 포함
+      let rewardMsg = '';
+      try {
+        const reward = await grantAssetRegistrationReward(updatedCount);
+        if (reward.success) {
+          rewardMsg = `\n\n🎉 자산 3개 등록 보상 +${REWARD_AMOUNTS.assetRegistration}C (₩${REWARD_AMOUNTS.assetRegistration * 100}) 적립!`;
+        }
+      } catch {}
+
       Alert.alert(
         '등록 완료',
-        `${name} ${q}${selectedStock.category === 'crypto' ? '개' : '주'} (${currencySymbol}${currentValue.toLocaleString()})이(가) 등록되었습니다.`,
+        `${name} ${q}${selectedStock.category === 'crypto' ? '개' : '주'} (${currencySymbol}${currentValue.toLocaleString()})이(가) 등록되었습니다.${rewardMsg}`,
         [
           {
             text: '처방전 보기',
@@ -550,7 +561,10 @@ export default function AddAssetScreen() {
           {/* 3. 현재가 */}
           <View style={styles.inputGroup}>
             <View style={styles.priceLabelRow}>
-              <Text style={styles.inputLabel}>매수 단가</Text>
+              <View style={styles.priceLabelGroup}>
+                <Text style={styles.inputLabel}>매수 단가</Text>
+                <Text style={styles.priceHelp}>내가 산 평균 가격</Text>
+              </View>
               {priceLoading && (
                 <View style={styles.priceLoadingRow}>
                   <ActivityIndicator size="small" color={COLORS.primary} />
@@ -909,6 +923,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 6,
+  },
+  priceLabelGroup: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 6,
+  },
+  priceHelp: {
+    fontSize: 11,
+    color: '#666',
   },
   priceLoadingRow: {
     flexDirection: 'row',

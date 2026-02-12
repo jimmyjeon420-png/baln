@@ -49,6 +49,7 @@ interface IntermediateCheckupViewProps {
   onEmotionSelect?: (emotion: string) => void;
   onMemoChange?: (memo: string) => void;
   onEmotionSave?: () => void;
+  emotionRewardCredits?: number;
   onLevelChange: (level: InvestorLevel) => void;
 }
 
@@ -80,6 +81,7 @@ export default function IntermediateCheckupView({
   onEmotionSelect,
   onMemoChange,
   onEmotionSave,
+  emotionRewardCredits,
   onLevelChange,
 }: IntermediateCheckupViewProps) {
   const { colors, shadows } = useTheme();
@@ -169,6 +171,7 @@ export default function IntermediateCheckupView({
           memo={todayMemo ?? ''}
           onMemoChange={onMemoChange}
           onSave={onEmotionSave}
+          rewardCredits={emotionRewardCredits}
         />
       )}
 

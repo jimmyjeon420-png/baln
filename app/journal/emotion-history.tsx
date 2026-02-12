@@ -17,12 +17,14 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useEmotionHistory } from '../../src/hooks/useEmotionHistory';
+import { useEmotionCheck } from '../../src/hooks/useEmotionCheck';
 import { useTheme } from '../../src/hooks/useTheme';
 import { SIZES } from '../../src/styles/theme';
 import type { EmotionEntry } from '../../src/hooks/useEmotionCheck';
@@ -40,6 +42,15 @@ export default function EmotionHistoryScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const { last30Days, reminderText, isLoading, refresh } = useEmotionHistory();
+  const {
+    todayEmotion,
+    todayMemo,
+    setEmotion,
+    setMemo,
+    saveEmotionWithMemo,
+    isChecked: todayIsChecked,
+    rewardCredits,
+  } = useEmotionCheck();
   const [selectedDay, setSelectedDay] = useState<EmotionEntry | null>(null);
   const [refreshing, setRefreshing] = React.useState(false);
 
@@ -88,6 +99,80 @@ export default function EmotionHistoryScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
+        {/* 오늘의 감정 입력 (미기록 시) */}
+        {!todayIsChecked && (
+          <View style={[s.todayInputCard, { backgroundColor: colors.surface, borderColor: `${colors.primary}33` }]}>
+            <View style={s.todayInputHeader}>
+              <Ionicons name="heart" size={18} color={colors.primary} />
+              <Text style={[s.todayInputTitle, { color: colors.textPrimary }]}>
+                오늘의 투자 감정을 기록하세요
+              </Text>
+              <View style={[s.todayRewardBadge, { backgroundColor: `${colors.primary}1F` }]}>
+                <Text style={[s.todayRewardText, { color: colors.primary }]}>+5C</Text>
+              </View>
+            </View>
+
+            {/* 이모지 선택 */}
+            <View style={s.todayEmotionRow}>
+              {Object.entries(EMOTION_MAP).map(([key, { emoji, label }]) => {
+                const isSelected = todayEmotion === key;
+                return (
+                  <TouchableOpacity
+                    key={key}
+                    style={[
+                      s.todayEmotionBtn,
+                      { backgroundColor: colors.surfaceLight, borderColor: colors.border },
+                      isSelected && { backgroundColor: `${colors.primary}1F`, borderColor: `${colors.primary}4D` },
+                    ]}
+                    onPress={() => setEmotion(key)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[s.todayEmotionEmoji, isSelected && { fontSize: 28 }]}>{emoji}</Text>
+                    <Text style={[
+                      s.todayEmotionLabel,
+                      { color: colors.textSecondary },
+                      isSelected && { color: colors.primary, fontWeight: '700' as const },
+                    ]}>{label}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            {/* 메모 + 저장 (감정 선택 시) */}
+            {todayEmotion && (
+              <View style={s.todayMemoSection}>
+                <TextInput
+                  style={[s.todayMemoInput, { backgroundColor: colors.background, color: colors.textPrimary, borderColor: colors.border }]}
+                  placeholder="오늘 왜 이런 감정이었나요? (30자)"
+                  placeholderTextColor={colors.textTertiary}
+                  maxLength={30}
+                  value={todayMemo}
+                  onChangeText={setMemo}
+                />
+                <TouchableOpacity
+                  style={[s.todaySaveBtn, { backgroundColor: colors.primary }]}
+                  onPress={async () => {
+                    await saveEmotionWithMemo();
+                    refresh(); // 히스토리 새로고침
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={s.todaySaveBtnText}>기록하기 +5C</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* 오늘 이미 기록함 + 보상 토스트 */}
+        {todayIsChecked && rewardCredits > 0 && (
+          <View style={[s.rewardToast, { backgroundColor: `${colors.primary}1F`, borderColor: `${colors.primary}33` }]}>
+            <Text style={[s.rewardToastText, { color: colors.primary }]}>
+              🎉 감정 기록 보상 +{rewardCredits}C (₩{rewardCredits * 100}) 적립!
+            </Text>
+          </View>
+        )}
+
         {/* 리마인더 카드 */}
         {reminderText && (
           <View style={[s.reminderCard, { backgroundColor: colors.surface }]}>
@@ -237,6 +322,85 @@ const s = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: SIZES.xl,
     paddingBottom: 120,
+  },
+
+  // 오늘 감정 입력 카드
+  todayInputCard: {
+    borderRadius: SIZES.card.borderRadius,
+    padding: SIZES.card.padding,
+    marginBottom: SIZES.xxl,
+    borderWidth: 1,
+  },
+  todayInputHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 14,
+  },
+  todayInputTitle: {
+    flex: 1,
+    fontSize: SIZES.fBase,
+    fontWeight: '700',
+  },
+  todayRewardBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  todayRewardText: {
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  todayEmotionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 6,
+  },
+  todayEmotionBtn: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  todayEmotionEmoji: {
+    fontSize: 24,
+    marginBottom: 4,
+  },
+  todayEmotionLabel: {
+    fontSize: 11,
+    fontWeight: '500',
+  },
+  todayMemoSection: {
+    marginTop: 14,
+    gap: 10,
+  },
+  todayMemoInput: {
+    borderRadius: 10,
+    padding: 12,
+    fontSize: 14,
+    borderWidth: 1,
+  },
+  todaySaveBtn: {
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  todaySaveBtnText: {
+    color: '#FFF',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  rewardToast: {
+    borderRadius: 12,
+    padding: 14,
+    alignItems: 'center',
+    marginBottom: SIZES.xxl,
+    borderWidth: 1,
+  },
+  rewardToastText: {
+    fontSize: 14,
+    fontWeight: '700',
   },
 
   // 리마인더 카드

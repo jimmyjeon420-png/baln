@@ -140,11 +140,6 @@ export default function ProfileScreen() {
           badgeColor: COLORS.primary,
         },
         {
-          icon: 'home-outline',
-          label: '부동산 자산',
-          onPress: () => router.push('/add-realestate'),
-        },
-        {
           icon: 'add-circle-outline',
           label: '나의 자산 추가',
           onPress: () => router.push('/add-asset'),
@@ -213,13 +208,6 @@ export default function ProfileScreen() {
         label: '다크 모드',
         onPress: () => handleThemeChange('dark'),
         badge: themeMode === 'dark' ? '✓' : undefined,
-        badgeColor: colors.primary,
-      },
-      {
-        icon: 'phone-portrait-outline',
-        label: '시스템 설정 따름',
-        onPress: () => handleThemeChange('system'),
-        badge: themeMode === 'system' ? '✓' : undefined,
         badgeColor: colors.primary,
       },
     ],

@@ -41,6 +41,7 @@ interface BeginnerCheckupViewProps {
   onEmotionSelect: (emotion: string) => void;
   onMemoChange: (memo: string) => void;
   onEmotionSave: () => void;
+  emotionRewardCredits?: number;
   onLevelChange: (level: InvestorLevel) => void;
 }
 
@@ -77,6 +78,7 @@ export default function BeginnerCheckupView({
   onEmotionSelect,
   onMemoChange,
   onEmotionSave,
+  emotionRewardCredits,
   onLevelChange,
 }: BeginnerCheckupViewProps) {
   const { colors } = useTheme();
@@ -108,6 +110,7 @@ export default function BeginnerCheckupView({
         memo={todayMemo}
         onMemoChange={onMemoChange}
         onSave={onEmotionSave}
+        rewardCredits={emotionRewardCredits}
       />
 
       {/* 5. 레벨 전환 */}

@@ -27,6 +27,7 @@ import { useAchievements } from '../src/hooks/useAchievements';
 import { useStreak } from '../src/hooks/useStreak';
 import { useMyPredictionStats } from '../src/hooks/usePredictions';
 import { COLORS } from '../src/styles/theme';
+import { ACHIEVEMENT_REWARDS } from '../src/services/rewardService';
 import type { AchievementWithStatus, AchievementId } from '../src/services/achievementService';
 
 export default function AchievementsScreen() {
@@ -37,6 +38,7 @@ export default function AchievementsScreen() {
     totalCount,
     isLoading,
     newlyUnlocked,
+    rewardCreditsEarned,
     clearNewlyUnlocked,
     checkAchievements,
   } = useAchievements();
@@ -71,7 +73,9 @@ export default function AchievementsScreen() {
       // 첫 번째 새 배지 정보 가져오기
       const newBadge = achievements.find(a => a.id === newlyUnlocked[0]);
       if (newBadge) {
-        showToast(`${newBadge.emoji} ${newBadge.title} 배지 획득!`);
+        const reward = ACHIEVEMENT_REWARDS[newBadge.id] || 0;
+        const rewardText = reward > 0 ? ` +${reward}C` : '';
+        showToast(`${newBadge.emoji} ${newBadge.title} 배지 획득!${rewardText}`);
 
         // 햅틱 진동
         triggerHaptic();
@@ -154,6 +158,17 @@ export default function AchievementsScreen() {
           ))}
         </View>
 
+        {/* 보상 안내 카드 */}
+        <View style={styles.rewardInfoCard}>
+          <Ionicons name="diamond" size={18} color="#7C4DFF" />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.rewardInfoTitle}>배지 보상</Text>
+            <Text style={styles.rewardInfoDesc}>
+              배지를 해금하면 크레딧을 받아요! 모두 모으면 총 128C (₩12,800)
+            </Text>
+          </View>
+        </View>
+
         {/* 안내 문구 */}
         <View style={styles.infoCard}>
           <Ionicons name="information-circle-outline" size={16} color="#888888" />
@@ -180,9 +195,19 @@ export default function AchievementsScreen() {
 
 function BadgeCard({ badge }: { badge: AchievementWithStatus }) {
   const isUnlocked = badge.isUnlocked;
+  const reward = ACHIEVEMENT_REWARDS[badge.id] || 0;
 
   return (
     <View style={[styles.badgeCard, !isUnlocked && styles.badgeCardLocked]}>
+      {/* 보상 배지 (우측 상단) */}
+      {reward > 0 && (
+        <View style={[styles.rewardBadge, isUnlocked && styles.rewardBadgeClaimed]}>
+          <Text style={[styles.rewardBadgeText, isUnlocked && styles.rewardBadgeTextClaimed]}>
+            {isUnlocked ? '✓' : `+${reward}C`}
+          </Text>
+        </View>
+      )}
+
       {/* 이모지 or 자물쇠 */}
       <View style={styles.badgeEmojiContainer}>
         {isUnlocked ? (
@@ -317,10 +342,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#2A2A2A',
+    position: 'relative' as const,
   },
   badgeCardLocked: {
     opacity: 0.35,
     borderColor: '#1E1E1E',
+  },
+  rewardBadge: {
+    position: 'absolute' as const,
+    top: -6,
+    right: -4,
+    backgroundColor: '#4CAF50',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    zIndex: 1,
+  },
+  rewardBadgeClaimed: {
+    backgroundColor: '#333',
+  },
+  rewardBadgeText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  rewardBadgeTextClaimed: {
+    color: '#4CAF50',
   },
   badgeEmojiContainer: {
     width: 52,
@@ -362,6 +409,30 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
     marginTop: 6,
     fontWeight: '600',
+  },
+
+  // 보상 안내
+  rewardInfoCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: 'rgba(124, 77, 255, 0.08)',
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(124, 77, 255, 0.2)',
+  },
+  rewardInfoTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#B39DDB',
+    marginBottom: 2,
+  },
+  rewardInfoDesc: {
+    fontSize: 12,
+    color: '#888888',
+    lineHeight: 18,
   },
 
   // 안내 카드

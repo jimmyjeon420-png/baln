@@ -16,6 +16,8 @@ interface EmotionCheckProps {
   memo: string;
   onMemoChange: (memo: string) => void;
   onSave: () => void;
+  /** 감정 기록 보상으로 받은 크레딧 (표시용) */
+  rewardCredits?: number;
 }
 
 const EMOTIONS = [
@@ -32,6 +34,7 @@ export default function EmotionCheck({
   memo,
   onMemoChange,
   onSave,
+  rewardCredits = 0,
 }: EmotionCheckProps) {
   const { colors } = useTheme();
   const isChecked = todayEmotion !== null && memo.length > 0;
@@ -104,9 +107,18 @@ export default function EmotionCheck({
               disabled={!todayEmotion}
               activeOpacity={0.7}
             >
-              <Text style={[s.saveButtonText, !todayEmotion ? { color: colors.disabledText } : { color: '#FFFFFF' }]}>기록하기</Text>
+              <Text style={[s.saveButtonText, !todayEmotion ? { color: colors.disabledText } : { color: '#FFFFFF' }]}>기록하기 +5C</Text>
             </TouchableOpacity>
           </View>
+        </View>
+      )}
+
+      {/* 보상 토스트 */}
+      {rewardCredits > 0 && (
+        <View style={[s.rewardToast, { backgroundColor: `${colors.primary}1F`, borderColor: `${colors.primary}33` }]}>
+          <Text style={[s.rewardToastText, { color: colors.primary }]}>
+            🎉 감정 기록 보상 +{rewardCredits}C (₩{rewardCredits * 100}) 적립!
+          </Text>
         </View>
       )}
 
@@ -250,5 +262,16 @@ const s = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     // color: '#FFFFFF', // Now dynamic
+  },
+  rewardToast: {
+    marginTop: 12,
+    borderRadius: 12,
+    padding: 12,
+    alignItems: 'center' as const,
+    borderWidth: 1,
+  },
+  rewardToastText: {
+    fontSize: 13,
+    fontWeight: '700',
   },
 });

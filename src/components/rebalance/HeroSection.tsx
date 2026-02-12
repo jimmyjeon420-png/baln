@@ -79,7 +79,7 @@ export default function HeroSection({
       {cfoWeather && (
         <View style={[s.cfoLine, { backgroundColor: colors.success + '0F', borderColor: colors.success + '14' }]}>
           <Text style={s.cfoEmoji}>{cfoWeather.emoji}</Text>
-          <Text style={[s.cfoMessage, { color: colors.textSecondary }]} numberOfLines={2}>{cfoWeather.message}</Text>
+          <Text style={[s.cfoMessage, { color: colors.textSecondary }]}>{cfoWeather.message}</Text>
         </View>
       )}
     </View>

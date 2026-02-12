@@ -550,11 +550,11 @@ export default React.forwardRef<View, ContextBriefCardProps>(
 
         {/* ── 헤드라인 ── */}
         <View style={styles.headlineSection}>
-          <Text style={styles.headlineText} numberOfLines={2}>
+          <Text style={styles.headlineText}>
             {fact || '시장 데이터 준비 중'}
           </Text>
           {mechanism ? (
-            <Text style={styles.mechanismSummary} numberOfLines={1}>
+            <Text style={styles.mechanismSummary} numberOfLines={2}>
               {mechanism}
             </Text>
           ) : null}
