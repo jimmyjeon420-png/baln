@@ -1,6 +1,10 @@
 # EAS Build 전용 ignore 파일
 # .gitignore와 동일하지만 .env는 포함시킴 (빌드 시 환경변수 필요)
 
+# Native folders (CNG/Prebuild 사용 — EAS가 자동 생성)
+/ios
+/android
+
 # Expo
 .expo/
 .expo-shared/
