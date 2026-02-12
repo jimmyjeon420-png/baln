@@ -101,7 +101,7 @@ interface InvestmentReportData {
   debate: {
     warren: string;
     dalio: string;
-    lee: string;
+    wood: string;
     summary: string;
   };
 }
@@ -226,7 +226,7 @@ export default function InvestmentReportModal({
 
                 {/* 워렌 버핏 */}
                 <View style={[styles.debateCard, { backgroundColor: '#E3F2FD', borderLeftColor: '#2196F3' }]}>
-                  <Text style={[styles.investorName, { color: '#1976D2' }]}>💼 워렌 버핏</Text>
+                  <Text style={[styles.investorName, { color: '#1976D2' }]}>🦉 워렌 버핏</Text>
                   <Text style={[styles.debateText, { color: colors.textPrimary }]}>
                     {data.debate.warren}
                   </Text>
@@ -234,24 +234,24 @@ export default function InvestmentReportModal({
 
                 {/* 레이 달리오 */}
                 <View style={[styles.debateCard, { backgroundColor: '#F3E5F5', borderLeftColor: '#9C27B0' }]}>
-                  <Text style={[styles.investorName, { color: '#7B1FA2' }]}>📊 레이 달리오</Text>
+                  <Text style={[styles.investorName, { color: '#7B1FA2' }]}>🌊 레이 달리오</Text>
                   <Text style={[styles.debateText, { color: colors.textPrimary }]}>
                     {data.debate.dalio}
                   </Text>
                 </View>
 
-                {/* 이승관 */}
-                <View style={[styles.debateCard, { backgroundColor: '#FFF3E0', borderLeftColor: '#FF9800' }]}>
-                  <Text style={[styles.investorName, { color: '#F57C00' }]}>🚀 이승관</Text>
+                {/* 캐시 우드 */}
+                <View style={[styles.debateCard, { backgroundColor: '#FCE4EC', borderLeftColor: '#E91E63' }]}>
+                  <Text style={[styles.investorName, { color: '#C2185B' }]}>🚀 캐시 우드</Text>
                   <Text style={[styles.debateText, { color: colors.textPrimary }]}>
-                    {data.debate.lee}
+                    {data.debate.wood}
                   </Text>
                 </View>
 
                 {/* 최종 정리 */}
                 <View style={[styles.summaryCard, { backgroundColor: '#FFF9C4', borderColor: '#FBC02D' }]}>
                   <Text style={[styles.summaryTitle, { color: '#F57F17' }]}>
-                    ✨ 워렌 버핏의 최종 정리
+                    🦉 워렌의 한마디
                   </Text>
                   <Text style={[styles.summaryText, { color: colors.textPrimary }]}>
                     {data.debate.summary}

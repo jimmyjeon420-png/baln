@@ -56,7 +56,7 @@ export default function CFOChatScreen() {
     const welcomeMessage: Message = {
       id: 'welcome',
       role: 'assistant',
-      text: '안녕하세요! 저는 AI 워렌 버핏입니다. 투자 관련 질문이 있으시면 편하게 물어보세요. 📊',
+      text: '안녕하세요, 자네! 워렌 버핏이라고 하네. 체리콜라 한 잔 하면서 투자 이야기 나눠보겠나? 오늘은 달리오와 캐시도 함께 있으니, 편하게 물어보시게. 🍒',
       timestamp: new Date(),
     };
     setMessages([welcomeMessage]);
@@ -153,26 +153,26 @@ export default function CFOChatScreen() {
         <View style={[s.messageContainer, s.aiMessageContainer]}>
           {/* 워렌 버핏 */}
           <View style={[s.debateCard, { backgroundColor: '#E3F2FD', borderLeftColor: '#2196F3' }]}>
-            <Text style={[s.investorName, { color: '#1976D2' }]}>💼 워렌 버핏</Text>
-            <Text style={[s.debateText, { color: colors.textPrimary }]}>{item.debate.warren}</Text>
+            <Text style={[s.investorName, { color: '#1976D2' }]}>🦉 워렌 버핏</Text>
+            <Text style={[s.debateText, { color: '#2D2D2D' }]}>{item.debate.warren}</Text>
           </View>
 
           {/* 레이 달리오 */}
           <View style={[s.debateCard, { backgroundColor: '#F3E5F5', borderLeftColor: '#9C27B0' }]}>
-            <Text style={[s.investorName, { color: '#7B1FA2' }]}>📊 레이 달리오</Text>
-            <Text style={[s.debateText, { color: colors.textPrimary }]}>{item.debate.dalio}</Text>
+            <Text style={[s.investorName, { color: '#7B1FA2' }]}>🌊 레이 달리오</Text>
+            <Text style={[s.debateText, { color: '#2D2D2D' }]}>{item.debate.dalio}</Text>
           </View>
 
           {/* 캐시 우드 */}
           <View style={[s.debateCard, { backgroundColor: '#FCE4EC', borderLeftColor: '#E91E63' }]}>
             <Text style={[s.investorName, { color: '#C2185B' }]}>🚀 캐시 우드</Text>
-            <Text style={[s.debateText, { color: colors.textPrimary }]}>{item.debate.wood}</Text>
+            <Text style={[s.debateText, { color: '#2D2D2D' }]}>{item.debate.wood}</Text>
           </View>
 
           {/* 워렌 버핏 최종 정리 */}
           <View style={[s.summaryCard, { backgroundColor: '#FFF9C4', borderColor: '#FBC02D' }]}>
-            <Text style={[s.summaryTitle, { color: '#F57F17' }]}>✨ 워렌 버핏의 최종 정리</Text>
-            <Text style={[s.summaryText, { color: colors.textPrimary }]}>{item.debate.summary}</Text>
+            <Text style={[s.summaryTitle, { color: '#F57F17' }]}>🦉 워렌의 한마디</Text>
+            <Text style={[s.summaryText, { color: '#2D2D2D' }]}>{item.debate.summary}</Text>
           </View>
 
           <Text style={[s.timestamp, { color: colors.textTertiary, marginTop: 8 }]}>

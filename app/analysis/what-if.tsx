@@ -1,8 +1,11 @@
 /**
- * What-If 시뮬레이션 - 위기 시나리오 분석
+ * What-If 시뮬레이션 — 위기 시뮬레이터
  *
- * 역할: 시장 급락/폭락 시나리오에서 포트폴리오 방어력 테스트
- * 사용자 흐름: 시나리오 선택 → AI 시뮬레이션 → 대응 전략 제시
+ * 2-탭 구조:
+ * 1) 스트레스 테스트: 블랙록 4-Beat 리포트 (기존)
+ * 2) 극한 시나리오: 화제성 극한 시나리오 시뮬레이터 (신규)
+ *    - 시나리오 열람 무료, 포트폴리오 시뮬레이션 2크레딧
+ *    - 5/31까지 무료 기간 (isFreePeriod)
  */
 
 import React, { useState } from 'react';
@@ -15,112 +18,173 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Stack } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../src/hooks/useTheme';
+import { useSharedPortfolio } from '../../src/hooks/useSharedPortfolio';
+import { generateWhatIf } from '../../src/services/gemini';
+import { spendCredits, refundCredits } from '../../src/services/creditService';
+import { FEATURE_COSTS } from '../../src/types/marketplace';
+import type { WhatIfInput, WhatIfResult } from '../../src/types/marketplace';
+import {
+  ScenarioSelector,
+  EmpathyHeader,
+  HistoricalContext,
+  FactorAttribution,
+  AssetImpactWaterfall,
+  RiskBudgetGauge,
+  HedgingPlaybook,
+  RecoveryOutlook,
+} from '../../src/components/stress-report';
+import type { ScenarioType } from '../../src/components/stress-report';
+import { ExtremeScenarioGrid, ExtremeScenarioReport } from '../../src/components/what-if';
+import type { ExtremeScenario } from '../../src/data/whatIfScenarios';
 
-interface Scenario {
-  id: string;
-  title: string;
-  description: string;
-  severity: 'low' | 'medium' | 'high';
-  icon: keyof typeof Ionicons.glyphMap;
-}
+// ============================================================================
+// 타입 & 상수
+// ============================================================================
 
-interface SimulationResult {
-  totalLoss: number;
-  totalLossPercent: number;
-  defenseScore: number;
-  strategy: string;
-  recommendations: string[];
-}
+type TabMode = 'stress' | 'extreme';
 
-const SCENARIOS: Scenario[] = [
-  {
-    id: '1',
-    title: '시장 조정 -10%',
-    description: 'S&P 500 10% 하락',
-    severity: 'medium',
-    icon: 'trending-down',
+const SCENARIO_CONFIG: Record<
+  ScenarioType,
+  { scenario: WhatIfInput['scenario']; description: string; magnitude: number; label: string; maxTolerance: number }
+> = {
+  market_correction: {
+    scenario: 'market_crash',
+    description: '시장 조정 -10%: S&P 500이 10% 하락하는 시나리오',
+    magnitude: -10,
+    label: '시장 조정 -10%',
+    maxTolerance: 20,
   },
-  {
-    id: '2',
-    title: '시장 폭락 -20%',
-    description: '금융위기급 하락',
-    severity: 'high',
-    icon: 'warning',
+  bear_market: {
+    scenario: 'market_crash',
+    description: '약세장 -20%: 시장이 20% 이상 하락하는 장기 하락 국면',
+    magnitude: -20,
+    label: '약세장 -20%',
+    maxTolerance: 30,
   },
-  {
-    id: '3',
-    title: '암호화폐 붕괴',
-    description: '비트코인 -50%',
-    severity: 'high',
-    icon: 'flash',
+  rate_shock: {
+    scenario: 'interest_rate_change',
+    description: '금리 쇼크 +3%p: 기준금리가 3%p 급등하는 시나리오',
+    magnitude: 3,
+    label: '금리 쇼크 +3%p',
+    maxTolerance: 20,
   },
-  {
-    id: '4',
-    title: '금리 급등',
-    description: '기준금리 +3%p 인상',
-    severity: 'medium',
-    icon: 'stats-chart',
-  },
-];
+};
+
+// ============================================================================
+// 메인 화면
+// ============================================================================
 
 export default function WhatIfScreen() {
   const { colors } = useTheme();
-  const [result, setResult] = useState<SimulationResult | null>(null);
+  const { portfolioAssets, totalAssets, hasAssets } = useSharedPortfolio();
+
+  // --- 탭 ---
+  const [activeTab, setActiveTab] = useState<TabMode>('extreme');
+
+  // --- 스트레스 테스트 state ---
+  const [selectedScenario, setSelectedScenario] = useState<ScenarioType | null>(null);
+  const [result, setResult] = useState<WhatIfResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedScenario, setSelectedScenario] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const getSeverityColor = (severity: string) => {
-    switch (severity) {
-      case 'low':
-        return '#FFB74D';
-      case 'medium':
-        return '#FF9800';
-      case 'high':
-        return '#CF6679';
-      default:
-        return '#9E9E9E';
-    }
-  };
+  // --- 극한 시나리오 state ---
+  const [selectedExtreme, setSelectedExtreme] = useState<ExtremeScenario | null>(null);
+  const [extremeResult, setExtremeResult] = useState<WhatIfResult | null>(null);
+  const [isExtremeLoading, setIsExtremeLoading] = useState(false);
+  const [extremeError, setExtremeError] = useState<string | null>(null);
 
-  const handleSimulate = async (scenario: Scenario) => {
-    setSelectedScenario(scenario.id);
+  // ── 스트레스 테스트 핸들러 ──
+  const handleSelectScenario = async (type: ScenarioType) => {
+    setSelectedScenario(type);
+    setResult(null);
+    setError(null);
     setIsLoading(true);
+
+    const config = SCENARIO_CONFIG[type];
+
     try {
-      // TODO: 실제 포트폴리오 기반 시뮬레이션
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      setResult({
-        totalLoss: 5000000,
-        totalLossPercent: -15,
-        defenseScore: 65,
-        strategy:
-          '현재 포트폴리오는 주식 비중이 높아 폭락에 취약합니다. 채권/금 비중을 늘려 헤지하세요.',
-        recommendations: [
-          '주식 비중 70% → 50%로 축소',
-          '채권 비중 10% → 25%로 확대',
-          '금/원자재 비중 5% → 15%로 확대',
-          '현금 비중 15% → 10% 유지',
-        ],
-      });
-    } catch (error) {
-      console.error('[WhatIf] 시뮬레이션 실패:', error);
+      const input: WhatIfInput = {
+        scenario: config.scenario,
+        description: config.description,
+        magnitude: config.magnitude,
+        portfolio: portfolioAssets.map(a => ({
+          ticker: a.ticker,
+          name: a.name,
+          currentValue: a.currentValue,
+          allocation: a.allocation ?? Math.round((a.currentValue / totalAssets) * 100),
+        })),
+      };
+
+      const whatIfResult = await generateWhatIf(input);
+      setResult(whatIfResult);
+    } catch (err) {
+      console.error('[WhatIf] 시뮬레이션 실패:', err);
+      setError('분석에 실패했습니다. 잠시 후 다시 시도해주세요.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const getDefenseScoreColor = (score: number) => {
-    if (score >= 80) return '#4CAF50';
-    if (score >= 60) return '#FFB74D';
-    return '#CF6679';
+  // ── 극한 시나리오 선택 ──
+  const handleSelectExtreme = (scenario: ExtremeScenario) => {
+    setSelectedExtreme(scenario);
+    setExtremeResult(null);
+    setExtremeError(null);
+  };
+
+  // ── 극한 시나리오 포트폴리오 시뮬레이션 (2크레딧) ──
+  const handleExtremeSimulate = async () => {
+    if (!selectedExtreme || !hasAssets) return;
+    setExtremeResult(null);
+    setExtremeError(null);
+    setIsExtremeLoading(true);
+
+    const cost = FEATURE_COSTS.what_if; // 2크레딧
+    let creditsCharged = false;
+
+    try {
+      // 크레딧 차감 (spendCredits 내부에서 무료 기간 자동 처리)
+      const spendResult = await spendCredits(cost, 'what_if');
+      if (!spendResult.success) {
+        setExtremeError(spendResult.errorMessage || '크레딧이 부족합니다');
+        setIsExtremeLoading(false);
+        return;
+      }
+      creditsCharged = true;
+
+      // AI 호출
+      const input: WhatIfInput = {
+        scenario: selectedExtreme.whatIfInput.scenario,
+        description: selectedExtreme.whatIfInput.description,
+        magnitude: selectedExtreme.whatIfInput.magnitude,
+        portfolio: portfolioAssets.map(a => ({
+          ticker: a.ticker,
+          name: a.name,
+          currentValue: a.currentValue,
+          allocation: a.allocation ?? Math.round((a.currentValue / totalAssets) * 100),
+        })),
+      };
+
+      const whatIfResult = await generateWhatIf(input);
+      setExtremeResult(whatIfResult);
+    } catch (err) {
+      console.error('[ExtremeScenario] 시뮬레이션 실패:', err);
+      // 실패 시 환불 (실제 차감된 경우만)
+      if (creditsCharged) {
+        await refundCredits(cost, 'what_if', 'AI 분석 실패').catch(() => {});
+      }
+      setExtremeError('분석에 실패했습니다. 크레딧은 환불됩니다.');
+    } finally {
+      setIsExtremeLoading(false);
+    }
   };
 
   return (
     <>
       <Stack.Screen
         options={{
-          title: 'What-If 시뮬레이션',
+          title: '위기 시뮬레이터',
           headerStyle: { backgroundColor: colors.background },
           headerTintColor: colors.textPrimary,
         }}
@@ -128,120 +192,147 @@ export default function WhatIfScreen() {
       <ScrollView
         style={[s.container, { backgroundColor: colors.background }]}
         contentContainerStyle={s.content}
+        showsVerticalScrollIndicator={false}
       >
-        <Text style={[s.sectionTitle, { color: colors.textPrimary }]}>🧪 위기 시나리오</Text>
-
-        {/* 시나리오 선택 */}
-        {SCENARIOS.map(scenario => (
+        {/* ── 세그먼트 탭 ── */}
+        <View style={[s.segmentContainer, { backgroundColor: colors.surface }]}>
           <TouchableOpacity
-            key={scenario.id}
-            onPress={() => handleSimulate(scenario)}
-            disabled={isLoading}
             style={[
-              s.scenarioCard,
-              {
-                backgroundColor: colors.surface,
-                borderLeftColor: getSeverityColor(scenario.severity),
-              },
+              s.segmentTab,
+              activeTab === 'stress' && { backgroundColor: colors.primary },
             ]}
-            activeOpacity={0.7}
+            onPress={() => setActiveTab('stress')}
+            activeOpacity={0.8}
           >
-            <View style={s.scenarioHeader}>
-              <Ionicons
-                name={scenario.icon}
-                size={24}
-                color={getSeverityColor(scenario.severity)}
-              />
-              <View style={{ flex: 1 }}>
-                <Text style={[s.scenarioTitle, { color: colors.textPrimary }]}>
-                  {scenario.title}
+            <Text
+              style={[
+                s.segmentText,
+                { color: activeTab === 'stress' ? '#FFFFFF' : colors.textTertiary },
+              ]}
+            >
+              스트레스 테스트
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              s.segmentTab,
+              activeTab === 'extreme' && { backgroundColor: colors.primary },
+            ]}
+            onPress={() => setActiveTab('extreme')}
+            activeOpacity={0.8}
+          >
+            <Text
+              style={[
+                s.segmentText,
+                { color: activeTab === 'extreme' ? '#FFFFFF' : colors.textTertiary },
+              ]}
+            >
+              극한 시나리오
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* ══════════════════════════════════════════════════ */}
+        {/* 탭 1: 스트레스 테스트 (기존) */}
+        {/* ══════════════════════════════════════════════════ */}
+        {activeTab === 'stress' && (
+          <>
+            {/* 자산 미등록 시 안내 */}
+            {!hasAssets && (
+              <View style={[s.emptyCard, { backgroundColor: colors.surface }]}>
+                <Text style={s.emptyEmoji}>📊</Text>
+                <Text style={[s.emptyTitle, { color: colors.textPrimary }]}>
+                  자산을 먼저 등록해주세요
                 </Text>
-                <Text style={[s.scenarioDesc, { color: colors.textSecondary }]}>
-                  {scenario.description}
+                <Text style={[s.emptyDesc, { color: colors.textTertiary }]}>
+                  포트폴리오를 등록하면 시나리오별 방어력을 분석할 수 있습니다
                 </Text>
               </View>
-              <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
-            </View>
-          </TouchableOpacity>
-        ))}
+            )}
 
-        {/* 로딩 */}
-        {isLoading && (
-          <View style={[s.loadingCard, { backgroundColor: colors.surface }]}>
-            <ActivityIndicator size="large" color="#7C4DFF" />
-            <Text style={[s.loadingText, { color: colors.textSecondary }]}>
-              AI가 시나리오를 분석 중입니다...
-            </Text>
-          </View>
+            {/* 시나리오 선택 */}
+            {hasAssets && (
+              <ScenarioSelector
+                selected={selectedScenario}
+                onSelect={handleSelectScenario}
+                disabled={isLoading}
+              />
+            )}
+
+            {/* 로딩 */}
+            {isLoading && (
+              <View style={[s.loadingCard, { backgroundColor: colors.surface }]}>
+                <ActivityIndicator size="large" color={colors.primary} />
+                <Text style={[s.loadingTitle, { color: colors.textPrimary }]}>
+                  포트폴리오 스트레스 분석 중
+                </Text>
+                <Text style={[s.loadingDesc, { color: colors.textTertiary }]}>
+                  AI가 시나리오별 영향을 계산하고 있습니다
+                </Text>
+              </View>
+            )}
+
+            {/* 에러 */}
+            {error && !isLoading && (
+              <View style={[s.errorCard, { backgroundColor: `${colors.warning}10` }]}>
+                <Text style={[s.errorText, { color: colors.warning }]}>{error}</Text>
+              </View>
+            )}
+
+            {/* 블랙록 4-Beat 리포트 */}
+            {result && selectedScenario && !isLoading && (
+              <View style={s.reportContainer}>
+                <EmpathyHeader
+                  scenarioLabel={SCENARIO_CONFIG[selectedScenario].label}
+                  result={result}
+                />
+                <HistoricalContext scenarioType={selectedScenario} />
+                <FactorAttribution result={result} />
+                <AssetImpactWaterfall result={result} />
+                <RiskBudgetGauge
+                  result={result}
+                  maxTolerancePercent={SCENARIO_CONFIG[selectedScenario].maxTolerance}
+                />
+                <HedgingPlaybook result={result} />
+                <RecoveryOutlook scenarioType={selectedScenario} />
+              </View>
+            )}
+          </>
         )}
 
-        {/* 시뮬레이션 결과 */}
-        {result && !isLoading && (
-          <View style={s.resultContainer}>
-            {/* 예상 손실 */}
-            <View style={[s.card, { backgroundColor: colors.surface }]}>
-              <Text style={[s.cardLabel, { color: colors.textSecondary }]}>예상 총 손실</Text>
-              <Text style={[s.lossAmount, { color: '#CF6679' }]}>
-                ₩{Math.abs(result.totalLoss).toLocaleString()}
-              </Text>
-              <Text style={[s.lossPercent, { color: colors.textSecondary }]}>
-                ({result.totalLossPercent}%)
-              </Text>
-            </View>
+        {/* ══════════════════════════════════════════════════ */}
+        {/* 탭 2: 극한 시나리오 (신규) */}
+        {/* ══════════════════════════════════════════════════ */}
+        {activeTab === 'extreme' && (
+          <>
+            {/* 시나리오 그리드 */}
+            <ExtremeScenarioGrid
+              selectedId={selectedExtreme?.id ?? null}
+              onSelect={handleSelectExtreme}
+              disabled={isExtremeLoading}
+            />
 
-            {/* 방어 점수 */}
-            <View style={[s.card, { backgroundColor: colors.surface }]}>
-              <Text style={[s.cardLabel, { color: colors.textSecondary }]}>방어력 점수</Text>
-              <Text
-                style={[s.defenseScore, { color: getDefenseScoreColor(result.defenseScore) }]}
-              >
-                {result.defenseScore}점
-              </Text>
-              <View style={s.scoreBar}>
-                <View
-                  style={[
-                    s.scoreBarFill,
-                    {
-                      width: `${result.defenseScore}%`,
-                      backgroundColor: getDefenseScoreColor(result.defenseScore),
-                    },
-                  ]}
-                />
-              </View>
-            </View>
-
-            {/* AI 대응 전략 */}
-            <View style={[s.card, { backgroundColor: colors.surface }]}>
-              <View style={s.cardHeader}>
-                <Ionicons name="bulb" size={18} color="#7C4DFF" />
-                <Text style={[s.cardTitle, { color: colors.textPrimary }]}>
-                  💡 AI 대응 전략
-                </Text>
-              </View>
-              <Text style={[s.strategyText, { color: colors.textSecondary }]}>
-                {result.strategy}
-              </Text>
-
-              <View style={s.recommendationsContainer}>
-                <Text style={[s.recommendationsTitle, { color: colors.textPrimary }]}>
-                  추천 조정:
-                </Text>
-                {result.recommendations.map((rec, index) => (
-                  <View key={index} style={s.recommendationItem}>
-                    <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
-                    <Text style={[s.recommendationText, { color: colors.textSecondary }]}>
-                      {rec}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-          </View>
+            {/* 선택된 시나리오 리포트 */}
+            {selectedExtreme && (
+              <ExtremeScenarioReport
+                scenario={selectedExtreme}
+                simulationResult={extremeResult}
+                isSimulating={isExtremeLoading}
+                simulationError={extremeError}
+                onSimulate={handleExtremeSimulate}
+                hasAssets={hasAssets}
+              />
+            )}
+          </>
         )}
       </ScrollView>
     </>
   );
 }
+
+// ============================================================================
+// 스타일
+// ============================================================================
 
 const s = StyleSheet.create({
   container: {
@@ -249,107 +340,73 @@ const s = StyleSheet.create({
   },
   content: {
     padding: 16,
+    paddingBottom: 40,
   },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    marginBottom: 16,
-  },
-  scenarioCard: {
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    borderLeftWidth: 4,
-  },
-  scenarioHeader: {
+  // 세그먼트 컨트롤
+  segmentContainer: {
     flexDirection: 'row',
+    borderRadius: 12,
+    padding: 4,
+    marginBottom: 20,
+  },
+  segmentTab: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 10,
     alignItems: 'center',
-    gap: 12,
   },
-  scenarioTitle: {
-    fontSize: 16,
+  segmentText: {
+    fontSize: 14,
     fontWeight: '600',
-    marginBottom: 2,
   },
-  scenarioDesc: {
-    fontSize: 13,
+  // 기존 스타일 유지
+  emptyCard: {
+    borderRadius: 16,
+    padding: 32,
+    alignItems: 'center',
+  },
+  emptyEmoji: {
+    fontSize: 48,
+    marginBottom: 12,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  emptyDesc: {
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20,
   },
   loadingCard: {
     borderRadius: 16,
     padding: 32,
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: 16,
   },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 14,
-  },
-  resultContainer: {
-    marginTop: 20,
-    gap: 16,
-  },
-  card: {
-    borderRadius: 16,
-    padding: 20,
-  },
-  cardLabel: {
-    fontSize: 13,
-    marginBottom: 8,
-  },
-  lossAmount: {
-    fontSize: 36,
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-  lossPercent: {
-    fontSize: 14,
-  },
-  defenseScore: {
-    fontSize: 48,
-    fontWeight: '700',
-    marginBottom: 12,
-  },
-  scoreBar: {
-    height: 8,
-    backgroundColor: '#E0E0E0',
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  scoreBarFill: {
-    height: '100%',
-    borderRadius: 4,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 12,
-  },
-  cardTitle: {
+  loadingTitle: {
     fontSize: 16,
-    fontWeight: '700',
-  },
-  strategyText: {
-    fontSize: 15,
-    lineHeight: 22,
-    marginBottom: 16,
-  },
-  recommendationsContainer: {
-    gap: 10,
-  },
-  recommendationsTitle: {
-    fontSize: 14,
     fontWeight: '600',
+    marginTop: 16,
     marginBottom: 4,
   },
-  recommendationItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 8,
+  loadingDesc: {
+    fontSize: 13,
   },
-  recommendationText: {
-    flex: 1,
+  errorCard: {
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 16,
+    alignItems: 'center',
+  },
+  errorText: {
     fontSize: 14,
-    lineHeight: 20,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  reportContainer: {
+    marginTop: 16,
+    gap: 12,
   },
 });

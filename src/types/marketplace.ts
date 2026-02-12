@@ -306,7 +306,7 @@ export const CREDIT_PACKAGES: CreditPackage[] = [
 /** 기능별 크레딧 비용 (웹툰 1화 = ₩300 컨셉, 1크레딧 = ₩100) */
 export const FEATURE_COSTS: Record<AIFeatureType, number> = {
   deep_dive: 5,       // ₩500 — 커피 반 잔
-  what_if: 3,         // ₩300 — 웹툰 1화
+  what_if: 2,         // ₩200 — 극한 시나리오 시뮬레이션
   tax_report: 10,     // ₩1,000 — 천원에 세금 계산
   ai_cfo_chat: 1,     // ₩100/메시지 — 부담 없이 대화
   tier_insights: 3,   // ₩300 — 웹툰 1화
