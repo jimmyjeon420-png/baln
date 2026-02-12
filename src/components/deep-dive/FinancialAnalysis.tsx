@@ -45,12 +45,21 @@ interface FinancialAnalysisProps {
   keyMetrics: KeyMetrics;
   /** 현금흐름 요약 */
   cashFlowSummary: string;
+  /** 시가총액 (원) — 선택적 */
+  marketCap?: number;
+  /** PER — 선택적 */
+  per?: number;
+  /** PBR — 선택적 */
+  pbr?: number;
 }
 
 export function FinancialAnalysis({
   yearlyData,
   keyMetrics,
   cashFlowSummary,
+  marketCap,
+  per,
+  pbr,
 }: FinancialAnalysisProps) {
   const { colors } = useTheme();
 
@@ -170,7 +179,32 @@ export function FinancialAnalysis({
         </ScrollView>
       </View>
 
-      {/* 2. 핵심 지표 */}
+      {/* 2. 시가총액 + 밸류에이션 */}
+      {(marketCap || per || pbr) && (
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.icon}>📊</Text>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>시가총액 & 밸류에이션</Text>
+          </View>
+
+          {marketCap != null && marketCap > 0 && (
+            <View style={[styles.marketCapCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Text style={[styles.marketCapLabel, { color: colors.textTertiary }]}>시가총액</Text>
+              <Text style={[styles.marketCapValue, { color: colors.textPrimary }]}>
+                {formatKRW(marketCap, true)}
+              </Text>
+            </View>
+          )}
+
+          <View style={styles.metricsRow}>
+            {per != null && <MetricCard label="PER" value={per} unit="배" colors={colors} />}
+            {pbr != null && <MetricCard label="PBR" value={pbr} unit="배" colors={colors} />}
+            {(!per && !pbr) && <View style={{ flex: 1 }} />}
+          </View>
+        </View>
+      )}
+
+      {/* 3. 핵심 지표 */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.icon}>🎯</Text>
@@ -184,7 +218,7 @@ export function FinancialAnalysis({
         </View>
       </View>
 
-      {/* 3. 현금흐름 */}
+      {/* 4. 현금흐름 */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.icon}>💵</Text>
@@ -290,6 +324,24 @@ const styles = StyleSheet.create({
   growthText: {
     fontSize: 11,
     fontWeight: '600',
+  },
+
+  // 시가총액 카드
+  marketCapCard: {
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  marketCapLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 6,
+  },
+  marketCapValue: {
+    fontSize: 28,
+    fontWeight: '900',
   },
 
   // 지표 카드

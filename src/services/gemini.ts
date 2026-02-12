@@ -463,6 +463,9 @@ ETF:
       cleanText = cleanText.substring(arrStart, arrEnd + 1);
     }
 
+    // trailing comma 제거 (Gemini가 종종 ,} 또는 ,] 형태로 응답)
+    cleanText = cleanText.replace(/,\s*([\]}])/g, '$1');
+
     if (__DEV__) console.log("정제된 JSON:", cleanText);
 
     const parsedData = JSON.parse(cleanText);
@@ -924,6 +927,9 @@ ${JSON.stringify(portfolioWithAllocation.map(p => ({
       .replace(/_{1,2}([^_]+)_{1,2}/g, '$1')     // _italic_ → italic
       .replace(/^#+\s*/gm, '');                    // # header → header
 
+    // trailing comma 제거 (Gemini가 종종 ,} 또는 ,] 형태로 응답)
+    cleanText = cleanText.replace(/,\s*([\]}])/g, '$1');
+
     const analysisResult = JSON.parse(cleanText);
 
     // 총 손익 계산
@@ -1120,6 +1126,9 @@ ${JSON.stringify(assetsSummary, null, 2)}
       cleanText = cleanText.substring(jsonStart, jsonEnd + 1);
     }
 
+    // trailing comma 제거
+    cleanText = cleanText.replace(/,\s*([\]}])/g, '$1');
+
     const optimizationResult = JSON.parse(cleanText);
 
     return {
@@ -1197,7 +1206,11 @@ recommendation은 반드시 STRONG_BUY, BUY, HOLD, SELL, STRONG_SELL 중 하나�
   try {
     const result = await modelWithSearch.generateContent(prompt);
     const text = result.response.text();
-    const cleaned = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+    let cleaned = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+    // JSON 객체 추출 + trailing comma 제거
+    const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+    if (jsonMatch) cleaned = jsonMatch[0];
+    cleaned = cleaned.replace(/,\s*([\]}])/g, '$1');
     return JSON.parse(cleaned) as DeepDiveResult;
   } catch (error) {
     console.error('Deep Dive 생성 오류:', error);
@@ -1267,7 +1280,10 @@ ${portfolioStr}
   try {
     const result = await modelWithSearch.generateContent(prompt);
     const text = result.response.text();
-    const cleaned = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+    let cleaned = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+    const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+    if (jsonMatch) cleaned = jsonMatch[0];
+    cleaned = cleaned.replace(/,\s*([\]}])/g, '$1');
     return JSON.parse(cleaned) as WhatIfResult;
   } catch (error) {
     console.error('What-If 시뮬레이션 오류:', error);
@@ -1353,7 +1369,10 @@ ${input.residency === 'KR' ?
   try {
     const result = await modelWithSearch.generateContent(prompt);
     const text = result.response.text();
-    const cleaned = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+    let cleaned = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+    const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+    if (jsonMatch) cleaned = jsonMatch[0];
+    cleaned = cleaned.replace(/,\s*([\]}])/g, '$1');
     return JSON.parse(cleaned) as TaxReportResult;
   } catch (error) {
     console.error('세금 리포트 생성 오류:', error);
