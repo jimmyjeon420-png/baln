@@ -102,6 +102,40 @@ export interface DeepDiveResult {
     };
   };
   generatedAt: string;
+
+  // --- 분기별 실적 데이터 (optional) ---
+  quarterlyData?: Array<{
+    quarter: string;
+    revenue: number;
+    operatingIncome: number;
+    netIncome: number;
+  }>;
+  quarterDetail?: {
+    quarter: string;
+    revenueSegments: Array<{
+      name: string;
+      amount: number;
+      percentage: number;
+      color: string;
+      growth?: number;
+    }>;
+    costItems: Array<{
+      name: string;
+      amount: number;
+      percentage: number;
+    }>;
+    waterfall: Array<{
+      label: string;
+      amount: number;
+      type: 'revenue' | 'cost' | 'subtotal' | 'income';
+    }>;
+    operatingMargin?: number;
+    netMargin?: number;
+    keyTakeaway?: string;
+  };
+  marketCap?: number;
+  per?: number;
+  pbr?: number;
 }
 
 // --- What-If 시뮬레이터 ---

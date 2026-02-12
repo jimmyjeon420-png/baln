@@ -25,7 +25,7 @@ import { Stack, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../src/hooks/useTheme';
 import { generateDeepDive } from '../../src/services/gemini';
-import DeepDiveResultCard from '../../src/components/DeepDiveResultCard';
+import DeepDiveReport from '../../src/components/deep-dive/DeepDiveReport';
 import type { DeepDiveInput, DeepDiveResult } from '../../src/types/marketplace';
 
 // ============================================================================
@@ -279,9 +279,9 @@ export default function DeepDiveScreen() {
           </View>
         )}
 
-        {/* 분석 결과 — 기존 DeepDiveResultCard 활용 */}
+        {/* 분석 결과 — 통합 리포트 */}
         {result && !isLoading && (
-          <DeepDiveResultCard result={result} />
+          <DeepDiveReport result={result} />
         )}
 
         {/* 안내 문구 (결과 없을 때) */}

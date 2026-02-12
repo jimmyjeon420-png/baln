@@ -1193,6 +1193,9 @@ overallScore, financial.score, technical.score는 반드시 아래 기준에 따
 2. 기술적 분석 (technical): RSI, MACD, 이동평균선(20/60/120일), 볼린저밴드, 거래량 추이
 3. 뉴스/이벤트 분석 (news): 최근 주요 뉴스 3개 이상 + 센티먼트
 4. AI 종합 의견 (aiOpinion): 매수/매도 의견, 목표가, 강세/약세 시나리오
+5. 분기별 실적 (quarterlyData): 최근 4분기 매출/영업이익/순이익 (실제 실적 발표 기준, 사업보고서 기반)
+6. 최신 분기 상세 (quarterDetail): 가장 최근 실적 발표 분기의 사업부별 매출 비중, 주요 비용 항목, 매출→비용→영업이익→순이익 워터폴 흐름
+7. 밸류에이션 (marketCap, per, pbr): 시가총액(원), PER, PBR 숫자값
 
 [출력 형식] 반드시 아래 JSON 구조로 반환 (값은 실제 분석 결과로 채우세요):
 {
@@ -1244,7 +1247,42 @@ overallScore, financial.score, technical.score는 반드시 아래 기준에 따
       "timeHorizon": "<투자 기간>"
     }
   },
-  "generatedAt": "${new Date().toISOString()}"
+  "generatedAt": "${new Date().toISOString()}",
+
+  "quarterlyData": [
+    {"quarter": "2024 Q1", "revenue": <매출액(원)>, "operatingIncome": <영업이익(원)>, "netIncome": <순이익(원)>},
+    {"quarter": "2024 Q2", "revenue": <매출액>, "operatingIncome": <영업이익>, "netIncome": <순이익>},
+    {"quarter": "2024 Q3", "revenue": <매출액>, "operatingIncome": <영업이익>, "netIncome": <순이익>},
+    {"quarter": "2024 Q4", "revenue": <매출액>, "operatingIncome": <영업이익>, "netIncome": <순이익>}
+  ],
+  "quarterDetail": {
+    "quarter": "<가장 최근 실적 발표 분기, 예: 2024 Q4>",
+    "revenueSegments": [
+      {"name": "<사업부명>", "amount": <매출액(원)>, "percentage": <비중%>, "color": "#6366F1", "growth": <전년동기대비 성장률%>},
+      {"name": "<사업부명>", "amount": <매출액>, "percentage": <비중%>, "color": "#8B5CF6", "growth": <성장률%>},
+      {"name": "<사업부명>", "amount": <매출액>, "percentage": <비중%>, "color": "#EC4899", "growth": <성장률%>}
+    ],
+    "costItems": [
+      {"name": "매출원가", "amount": <금액(원)>, "percentage": <매출대비 비중%>},
+      {"name": "판관비", "amount": <금액>, "percentage": <비중%>},
+      {"name": "연구개발비", "amount": <금액>, "percentage": <비중%>}
+    ],
+    "waterfall": [
+      {"label": "매출", "amount": <총매출(원)>, "type": "revenue"},
+      {"label": "매출원가", "amount": <매출원가(원)>, "type": "cost"},
+      {"label": "매출총이익", "amount": <매출총이익(원)>, "type": "subtotal"},
+      {"label": "판관비", "amount": <판관비(원)>, "type": "cost"},
+      {"label": "영업이익", "amount": <영업이익(원)>, "type": "income"},
+      {"label": "기타손익", "amount": <기타손익(원)>, "type": "cost"},
+      {"label": "순이익", "amount": <순이익(원)>, "type": "income"}
+    ],
+    "operatingMargin": <영업이익률(%)>,
+    "netMargin": <순이익률(%)>,
+    "keyTakeaway": "<이번 분기 핵심 포인트 한 문장>"
+  },
+  "marketCap": <시가총액(원, 숫자만)>,
+  "per": <PER(숫자만)>,
+  "pbr": <PBR(숫자만)>
 }
 
 ★★★ 절대 규칙 ★★★
@@ -1253,6 +1291,9 @@ overallScore, financial.score, technical.score는 반드시 아래 기준에 따
 3. 예시 숫자(75, 80, 65)를 그대로 사용하면 안 됨. 실제 계산 결과를 넣으세요.
 4. recommendation은 overallScore 기준에 따라 결정.
 5. 한국어로 작성.
+6. quarterlyData는 실제 실적 발표 기준으로 작성. 사업보고서/분기보고서 기반 데이터 사용.
+7. quarterDetail.revenueSegments의 color 필드에는 "#6366F1", "#8B5CF6", "#EC4899", "#F59E0B", "#10B981", "#3B82F6" 중에서 순서대로 배정.
+8. marketCap, per, pbr은 반드시 숫자값만 입력 (문자열 X). 예: "marketCap": 350000000000000
 `;
 
   try {

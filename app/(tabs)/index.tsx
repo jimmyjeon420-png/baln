@@ -390,10 +390,6 @@ export default function HomeScreen() {
   // ──────────────────────────────────────────────────────────────────────
   // 메모이제이션된 콜백
   // ──────────────────────────────────────────────────────────────────────
-  const handleSettingsPress = React.useCallback(() => {
-    router.push('/settings/profile');
-  }, [router]);
-
   const handleCardChange = React.useCallback((index: number) => {
     console.log('[CardSwipe] 카드 전환:', index);
   }, []);
@@ -413,7 +409,6 @@ export default function HomeScreen() {
 
       <CardSwipeContainer
         labels={['건강', '맥락', '예측']}
-        onSettingsPress={handleSettingsPress}
         initialIndex={0}
         onCardChange={handleCardChange}
         onRefresh={handleRefresh}
@@ -480,7 +475,7 @@ const styles = StyleSheet.create({
   },
   streakContainer: {
     paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingTop: 4,
   },
   modalContainer: {
     flex: 1,
