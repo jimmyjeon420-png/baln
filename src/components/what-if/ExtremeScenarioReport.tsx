@@ -10,12 +10,16 @@
  * - AI 시뮬레이션 결과 표시
  */
 
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import React, { useRef, useState, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import ViewShot from 'react-native-view-shot';
+import * as Sharing from 'expo-sharing';
 import { useTheme } from '../../hooks/useTheme';
+import { useShareReward } from '../../hooks/useRewards';
 import { CATEGORY_COLORS, type ExtremeScenario } from '../../data/whatIfScenarios';
 import { formatCredits } from '../../utils/formatters';
+import { REWARD_AMOUNTS } from '../../services/rewardService';
 import type { WhatIfResult } from '../../types/marketplace';
 
 // ============================================================================
@@ -255,9 +259,49 @@ export const ExtremeScenarioReport: React.FC<ExtremeScenarioReportProps> = ({
 }) => {
   const { colors } = useTheme();
   const catColor = CATEGORY_COLORS[scenario.category];
+  const viewShotRef = useRef<ViewShot>(null);
+  const [sharing, setSharing] = useState(false);
+  const [rewardMessage, setRewardMessage] = useState<string | null>(null);
+  const { rewarded, claimReward } = useShareReward();
+
+  const handleShare = useCallback(async () => {
+    setSharing(true);
+    try {
+      const isAvailable = await Sharing.isAvailableAsync();
+      if (!isAvailable) {
+        Alert.alert('공유 불가', '이 기기에서는 공유 기능을 사용할 수 없습니다.');
+        return;
+      }
+      if (!viewShotRef.current?.capture) {
+        Alert.alert('오류', '캡처 영역을 찾을 수 없습니다.');
+        return;
+      }
+      const uri = await viewShotRef.current.capture();
+      await Sharing.shareAsync(uri, {
+        mimeType: 'image/png',
+        dialogTitle: `baln 위기 시뮬레이터 — ${scenario.title}`,
+        UTI: 'public.png',
+      });
+      // 공유 성공 → 크레딧 보상
+      const result = await claimReward();
+      if (result.success) {
+        setRewardMessage(`+${result.creditsEarned} 크레딧 획득!`);
+        setTimeout(() => setRewardMessage(null), 3000);
+      }
+    } catch (err) {
+      console.error('[ExtremeShare] 공유 실패:', err);
+    } finally {
+      setSharing(false);
+    }
+  }, [scenario.title, claimReward]);
 
   return (
     <View style={styles.container}>
+      <ViewShot
+        ref={viewShotRef}
+        options={{ format: 'png', quality: 1.0 }}
+        style={{ backgroundColor: colors.background }}
+      >
       {/* 시나리오 헤더 */}
       <View style={[styles.header, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <Text style={styles.headerEmoji}>{scenario.emoji}</Text>
@@ -330,6 +374,38 @@ export const ExtremeScenarioReport: React.FC<ExtremeScenarioReportProps> = ({
           실제 위기 시 패닉 대신 이해로 대응할 수 있습니다.
         </Text>
       </View>
+
+      {/* baln 워터마크 (캡처용) */}
+      <View style={styles.watermark}>
+        <Text style={styles.watermarkText}>bal<Text style={{ color: '#4CAF50' }}>n</Text>.logic</Text>
+      </View>
+      </ViewShot>
+
+      {/* 인스타 공유 버튼 */}
+      <TouchableOpacity
+        style={[styles.shareButton, { backgroundColor: colors.primary }]}
+        onPress={handleShare}
+        disabled={sharing}
+        activeOpacity={0.8}
+      >
+        <Ionicons name="share-social" size={18} color="#FFFFFF" />
+        <Text style={styles.shareButtonText}>
+          {sharing ? '캡처 중...' : '인스타그램에 공유하기'}
+        </Text>
+        {!rewarded && (
+          <View style={styles.rewardHint}>
+            <Text style={styles.rewardHintText}>+{REWARD_AMOUNTS.shareCard}C</Text>
+          </View>
+        )}
+      </TouchableOpacity>
+
+      {/* 보상 토스트 */}
+      {rewardMessage && (
+        <View style={styles.rewardToast}>
+          <Ionicons name="gift" size={14} color="#4CAF50" />
+          <Text style={styles.rewardToastText}>{rewardMessage}</Text>
+        </View>
+      )}
     </View>
   );
 };
@@ -406,6 +482,59 @@ const styles = StyleSheet.create({
   reassureText: {
     fontSize: 13,
     lineHeight: 20,
+  },
+  watermark: {
+    alignItems: 'center',
+    paddingTop: 12,
+    paddingBottom: 8,
+  },
+  watermarkText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#555555',
+    letterSpacing: 1,
+  },
+  shareButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 14,
+    padding: 16,
+    gap: 8,
+    marginTop: 4,
+  },
+  shareButtonText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  rewardHint: {
+    backgroundColor: '#FFD700',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+    marginLeft: 4,
+  },
+  rewardHintText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#1A1A1A',
+  },
+  rewardToast: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: 'rgba(76, 175, 80, 0.15)',
+    borderRadius: 20,
+  },
+  rewardToastText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#4CAF50',
   },
 });
 

@@ -87,7 +87,7 @@ const AI_TOOLS: {
   },
   {
     type: 'ai_cfo_chat',
-    title: 'AI CFO 상담',
+    title: 'AI 버핏 티타임',
     tagline: '뭐든지\n물어보세요',
     icon: 'chatbubbles',
     color: '#7C4DFF',

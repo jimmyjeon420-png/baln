@@ -5,7 +5,7 @@
  * 사용자 흐름: 질문 입력 → AI 응답 → 추가 질문
  */
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -18,11 +18,17 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import { Stack, router } from 'expo-router';
+import { router } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import ViewShot from 'react-native-view-shot';
+import * as Sharing from 'expo-sharing';
+import { HeaderBar } from '../../src/components/common/HeaderBar';
 import { useTheme } from '../../src/hooks/useTheme';
 import { useMyCredits, useSpendCredits } from '../../src/hooks/useCredits';
+import { useShareReward } from '../../src/hooks/useRewards';
 import { FEATURE_COSTS } from '../../src/types/marketplace';
+import { REWARD_AMOUNTS } from '../../src/services/rewardService';
 import supabase from '../../src/services/supabase';
 
 interface Message {
@@ -55,6 +61,34 @@ export default function CFOChatScreen() {
   const { data: credits } = useMyCredits();
   const spendCreditsMutation = useSpendCredits();
   const chatCost = FEATURE_COSTS.ai_cfo_chat; // 1크레딧
+  const { rewarded, claimReward } = useShareReward();
+  const [shareRewardMsg, setShareRewardMsg] = useState<string | null>(null);
+  const debateRefs = useRef<Record<string, ViewShot | null>>({});
+
+  const handleShareDebate = useCallback(async (msgId: string) => {
+    try {
+      const isAvailable = await Sharing.isAvailableAsync();
+      if (!isAvailable) {
+        Alert.alert('공유 불가', '이 기기에서는 공유 기능을 사용할 수 없습니다.');
+        return;
+      }
+      const ref = debateRefs.current[msgId];
+      if (!ref?.capture) return;
+      const uri = await ref.capture();
+      await Sharing.shareAsync(uri, {
+        mimeType: 'image/png',
+        dialogTitle: 'AI 버핏과 티타임 공유',
+        UTI: 'public.png',
+      });
+      const result = await claimReward();
+      if (result.success) {
+        setShareRewardMsg(`+${result.creditsEarned} 크레딧 획득!`);
+        setTimeout(() => setShareRewardMsg(null), 3000);
+      }
+    } catch (err) {
+      console.error('[CFO Share] 공유 실패:', err);
+    }
+  }, [claimReward]);
 
   useEffect(() => {
     // 환영 메시지
@@ -177,6 +211,17 @@ export default function CFOChatScreen() {
     if (!isUser && item.debate) {
       return (
         <View style={[s.messageContainer, s.aiMessageContainer]}>
+          <ViewShot
+            ref={(ref) => { debateRefs.current[item.id] = ref; }}
+            options={{ format: 'png', quality: 1.0 }}
+            style={{ backgroundColor: colors.background, padding: 4, borderRadius: 16 }}
+          >
+          {/* baln 브랜딩 */}
+          <View style={s.shareBrandRow}>
+            <Text style={s.shareBrandText}>bal<Text style={{ color: '#4CAF50' }}>n</Text>.logic</Text>
+            <Text style={s.shareBrandSub}>AI 버핏과 티타임</Text>
+          </View>
+
           {/* 워렌 버핏 */}
           <View style={[s.debateCard, { backgroundColor: '#E3F2FD', borderLeftColor: '#2196F3' }]}>
             <Text style={[s.investorName, { color: '#1976D2' }]}>🦉 워렌 버핏</Text>
@@ -200,6 +245,22 @@ export default function CFOChatScreen() {
             <Text style={[s.summaryTitle, { color: '#F57F17' }]}>🦉 워렌의 한마디</Text>
             <Text style={[s.summaryText, { color: '#2D2D2D' }]}>{item.debate.summary}</Text>
           </View>
+          </ViewShot>
+
+          {/* 공유 버튼 */}
+          <TouchableOpacity
+            style={s.shareDebateButton}
+            onPress={() => handleShareDebate(item.id)}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="share-social" size={14} color="#4CAF50" />
+            <Text style={s.shareDebateText}>인스타 공유</Text>
+            {!rewarded && (
+              <View style={s.shareRewardBadge}>
+                <Text style={s.shareRewardBadgeText}>+{REWARD_AMOUNTS.shareCard}C</Text>
+              </View>
+            )}
+          </TouchableOpacity>
 
           <Text style={[s.timestamp, { color: colors.textTertiary, marginTop: 8 }]}>
             {item.timestamp.toLocaleTimeString('ko-KR', {
@@ -239,29 +300,17 @@ export default function CFOChatScreen() {
   };
 
   return (
-    <>
-      <Stack.Screen
-        options={{
-          title: 'AI 버핏과 티타임 ☕',
-          headerStyle: { backgroundColor: colors.background },
-          headerTintColor: colors.textPrimary,
-          headerLeft: () => (
-            <TouchableOpacity
-              onPress={() => router.back()}
-              style={{ marginLeft: 8, padding: 8 }}
-            >
-              <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
-            </TouchableOpacity>
-          ),
-          headerRight: () => (
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 12, gap: 4 }}>
-              <Ionicons name="diamond" size={14} color="#7C4DFF" />
-              <Text style={{ color: '#7C4DFF', fontSize: 14, fontWeight: '600' }}>
-                {credits?.balance ?? 0}
-              </Text>
-            </View>
-          ),
-        }}
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+      <HeaderBar
+        title="AI 버핏과 티타임"
+        rightElement={
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <Ionicons name="diamond" size={14} color="#7C4DFF" />
+            <Text style={{ color: '#7C4DFF', fontSize: 14, fontWeight: '600' }}>
+              {credits?.balance ?? 0}
+            </Text>
+          </View>
+        }
       />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -307,6 +356,14 @@ export default function CFOChatScreen() {
           </View>
         )}
 
+        {/* 공유 보상 토스트 */}
+        {shareRewardMsg && (
+          <View style={s.rewardToast}>
+            <Ionicons name="gift" size={14} color="#4CAF50" />
+            <Text style={s.rewardToastText}>{shareRewardMsg}</Text>
+          </View>
+        )}
+
         {/* 입력창 */}
         <View style={[s.inputContainer, { backgroundColor: colors.surface }]}>
           <TextInput
@@ -331,7 +388,7 @@ export default function CFOChatScreen() {
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
-    </>
+    </SafeAreaView>
   );
 }
 
@@ -448,5 +505,63 @@ const s = StyleSheet.create({
     fontSize: 15,
     lineHeight: 22,
     fontWeight: '500',
+  },
+  shareBrandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 10,
+    paddingLeft: 4,
+  },
+  shareBrandText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
+  },
+  shareBrandSub: {
+    fontSize: 11,
+    color: '#888888',
+  },
+  shareDebateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 6,
+    marginTop: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: 'rgba(76, 175, 80, 0.12)',
+    borderRadius: 16,
+  },
+  shareDebateText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#4CAF50',
+  },
+  shareRewardBadge: {
+    backgroundColor: '#FFD700',
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 8,
+  },
+  shareRewardBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#1A1A1A',
+  },
+  rewardToast: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: 'rgba(76, 175, 80, 0.15)',
+  },
+  rewardToastText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#4CAF50',
   },
 });

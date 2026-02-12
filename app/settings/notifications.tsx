@@ -74,7 +74,7 @@ const NOTIFICATION_ITEMS: NotificationItem[] = [
     label: '아침 시장 브리핑',
     summary: 'AI가 분석한 오늘의 시장 동향을 매일 받아보세요',
     details: [
-      '매일 아침 8시에 AI CFO 브리핑 알림',
+      '매일 아침 8시에 AI 브리핑 알림',
       'AI가 전날 시장 데이터를 분석하여 핵심 정보를 정리',
       '금리/환율/주요 지수 변동 + 포트폴리오 처방전 포함',
     ],

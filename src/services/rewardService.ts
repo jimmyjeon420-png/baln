@@ -18,8 +18,9 @@ import supabase from './supabase';
 /** 보상 크레딧 금액 */
 export const REWARD_AMOUNTS = {
   dailyCheckIn: 2,    // 매일 출석: 2크레딧 (₩200)
-  shareCard: 3,       // 인스타 공유: 3크레딧 (₩300)
+  shareCard: 5,       // 인스타 공유: 5크레딧 (₩500)
   welcomeBonus: 10,   // 신규 가입: 10크레딧 (₩1,000)
+  referral: 50,       // 친구 추천: 50크레딧 (₩5,000)
 } as const;
 
 /** AsyncStorage 키 */
@@ -29,6 +30,7 @@ const KEYS = {
   welcomeBonus: 'reward_welcome_bonus',
   checkInStreak: 'reward_checkin_streak',
   lastCheckinDate: '@baln:last_checkin_date',
+  referralCode: '@baln:my_referral_code',
 } as const;
 
 // ============================================================================
@@ -299,5 +301,89 @@ export async function grantWelcomeBonus(): Promise<{
   } catch (err) {
     console.warn('[Reward] 웰컴 보너스 실패:', err);
     return { success: false, creditsEarned: 0, newBalance: 0, alreadyReceived: false };
+  }
+}
+
+// ============================================================================
+// 친구 추천 코드 (Referral)
+// ============================================================================
+
+/** 내 추천 코드 생성/조회 (userId 기반 6자리) */
+export async function getMyReferralCode(): Promise<string> {
+  try {
+    const cached = await AsyncStorage.getItem(KEYS.referralCode);
+    if (cached) return cached;
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return '';
+
+    // userId 앞 6자리를 대문자 코드로 사용
+    const code = user.id.replace(/-/g, '').slice(0, 6).toUpperCase();
+    await AsyncStorage.setItem(KEYS.referralCode, code);
+    return code;
+  } catch {
+    return '';
+  }
+}
+
+/** 추천 코드 입력 → 추천인에게 50크레딧 보상 */
+export async function applyReferralCode(code: string): Promise<{
+  success: boolean;
+  message: string;
+}> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, message: '로그인이 필요합니다.' };
+
+    // 자기 자신 코드 방지
+    const myCode = await getMyReferralCode();
+    if (code.toUpperCase() === myCode) {
+      return { success: false, message: '본인의 추천 코드는 사용할 수 없습니다.' };
+    }
+
+    // 이미 추천 코드를 사용했는지 확인
+    const alreadyUsed = await AsyncStorage.getItem('@baln:referral_used');
+    if (alreadyUsed) {
+      return { success: false, message: '이미 추천 코드를 사용했습니다.' };
+    }
+
+    // 추천인 찾기 (코드 = userId 앞 6자리)
+    const { data: profiles, error } = await supabase
+      .from('profiles')
+      .select('id')
+      .ilike('id', `${code.toLowerCase()}%`)
+      .limit(1);
+
+    if (error || !profiles || profiles.length === 0) {
+      return { success: false, message: '유효하지 않은 추천 코드입니다.' };
+    }
+
+    const referrerId = profiles[0].id;
+
+    // 추천인에게 50크레딧 지급
+    const referrerResult = await grantRewardCredits(referrerId, REWARD_AMOUNTS.referral, 'referral_reward', {
+      referred_user_id: user.id,
+      code,
+    });
+
+    // 피추천인(나)에게도 10크레딧 보너스
+    await grantRewardCredits(user.id, 10, 'referral_bonus', {
+      referrer_id: referrerId,
+      code,
+    });
+
+    if (referrerResult.success) {
+      await AsyncStorage.setItem('@baln:referral_used', 'true');
+    }
+
+    return {
+      success: referrerResult.success,
+      message: referrerResult.success
+        ? '추천 코드가 적용되었습니다! 10크레딧을 받았어요.'
+        : '추천 코드 적용에 실패했습니다.',
+    };
+  } catch (err) {
+    console.warn('[Reward] 추천 코드 적용 실패:', err);
+    return { success: false, message: '오류가 발생했습니다.' };
   }
 }

@@ -145,9 +145,9 @@ export default function ProfileScreen() {
           onPress: () => router.push('/add-realestate'),
         },
         {
-          icon: 'heart-outline',
-          label: 'Heart 자산 관리',
-          onPress: () => router.push('/settings/manage-hearts'),
+          icon: 'add-circle-outline',
+          label: '나의 자산 추가',
+          onPress: () => router.push('/add-asset'),
         },
       ],
     },

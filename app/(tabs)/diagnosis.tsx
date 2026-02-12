@@ -229,7 +229,7 @@ export default function DiagnosisScreen() {
             <View style={styles.briefingHeader}>
               <Text style={styles.briefingWeatherEmoji}>{morningBriefing.cfoWeather.emoji}</Text>
               <View style={styles.briefingHeaderText}>
-                <Text style={[styles.briefingTitle, { color: colors.textPrimary }]}>오늘의 CFO 브리핑</Text>
+                <Text style={[styles.briefingTitle, { color: colors.textPrimary }]}>오늘의 AI 브리핑</Text>
                 <Text style={[styles.briefingStatus, { color: colors.textSecondary }]}>{ morningBriefing.cfoWeather.status}</Text>
               </View>
               <View style={[

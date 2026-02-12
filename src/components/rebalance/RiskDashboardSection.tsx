@@ -102,7 +102,7 @@ export default function RiskDashboardSection({
             </Text>
             {/* 패닉 실드 점수 이유 */}
             {analysisResult.panicShieldReason && (
-              <Text style={styles.reasonText} numberOfLines={2}>
+              <Text style={styles.reasonText} numberOfLines={4}>
                 {analysisResult.panicShieldReason}
               </Text>
             )}

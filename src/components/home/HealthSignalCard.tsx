@@ -238,9 +238,9 @@ const HealthSignalCard = React.memo(({
         </View>
       )}
 
-      {/* 하단: 관심자산 미니 신호등 */}
-      {assetSignals.length > 0 && (
-        <View style={styles.assetsArea}>
+      {/* 하단: 관심자산 미니 신호등 + 자산 추가 */}
+      <View style={styles.assetsArea}>
+        {assetSignals.length > 0 && (
           <View style={styles.assetsList}>
             {assetSignals.slice(0, 5).map((asset, index) => (
               <View key={index} style={styles.assetChip}>
@@ -251,8 +251,14 @@ const HealthSignalCard = React.memo(({
               </View>
             ))}
           </View>
-        </View>
-      )}
+        )}
+        {onAddAssets && (
+          <TouchableOpacity style={styles.addAssetChip} onPress={onAddAssets}>
+            <Text style={styles.addAssetChipIcon}>+</Text>
+            <Text style={styles.addAssetChipText}>자산 추가</Text>
+          </TouchableOpacity>
+        )}
+      </View>
 
       {/* 상세 모달 */}
       <Modal
@@ -466,6 +472,27 @@ const styles = StyleSheet.create({
   },
   assetSignal: {
     fontSize: 16,
+  },
+  addAssetChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+    backgroundColor: COLORS.primary,
+    borderRadius: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    gap: 6,
+    marginTop: 12,
+  },
+  addAssetChipIcon: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+  },
+  addAssetChipText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
   },
   modalOverlay: {
     flex: 1,

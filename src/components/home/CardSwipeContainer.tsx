@@ -24,6 +24,7 @@ import {
   NativeScrollEvent,
   RefreshControl,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '../../styles/theme';
 import { selection } from '../../services/hapticService';
 
@@ -70,6 +71,7 @@ export default function CardSwipeContainer({
   refreshing,
 }: CardSwipeContainerProps) {
   const [currentPage, setCurrentPage] = useState(initialIndex);
+  const insets = useSafeAreaInsets();
 
   // 스크롤 종료 시 페이지 추적
   const handleScrollEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -83,29 +85,7 @@ export default function CardSwipeContainer({
   };
 
   return (
-    <View style={styles.container}>
-      {/* 카드 위: 페이지 인디케이터 + 라벨 (스와이프 유도) */}
-      <View style={styles.topNav}>
-        {labels.map((label, index) => (
-          <View key={index} style={styles.navItem}>
-            <View
-              style={[
-                styles.indicator,
-                index === currentPage && styles.indicatorActive,
-              ]}
-            />
-            <Text
-              style={[
-                styles.label,
-                index === currentPage && styles.labelActive,
-              ]}
-            >
-              {label}
-            </Text>
-          </View>
-        ))}
-      </View>
-
+    <View style={[styles.container, { paddingTop: insets.top + 8 }]}>
       {/* 수평 스와이프 영역 */}
       <ScrollView
         horizontal
@@ -136,6 +116,28 @@ export default function CardSwipeContainer({
           </View>
         ))}
       </ScrollView>
+
+      {/* 카드 아래: 페이지 인디케이터 + 라벨 (스와이프 유도) */}
+      <View style={styles.bottomNav}>
+        {labels.map((label, index) => (
+          <View key={index} style={styles.navItem}>
+            <Text
+              style={[
+                styles.label,
+                index === currentPage && styles.labelActive,
+              ]}
+            >
+              {label}
+            </Text>
+            <View
+              style={[
+                styles.indicator,
+                index === currentPage && styles.indicatorActive,
+              ]}
+            />
+          </View>
+        ))}
+      </View>
     </View>
   );
 }
@@ -149,34 +151,35 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  topNav: {
+  bottomNav: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 24,
-    paddingTop: 2,
-    paddingBottom: 6,
+    gap: 32,
+    paddingTop: 12,
+    paddingBottom: 16,
   },
   navItem: {
     alignItems: 'center',
-    gap: 3,
+    gap: 6,
   },
   indicator: {
     width: 6,
-    height: 6,
-    borderRadius: 3,
+    height: 3,
+    borderRadius: 1.5,
     backgroundColor: '#3A3A3A',
   },
   indicatorActive: {
-    width: 20,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: COLORS.textPrimary,
+    width: 24,
+    height: 3,
+    borderRadius: 1.5,
+    backgroundColor: COLORS.primary,
   },
   label: {
-    fontSize: 12,
-    fontWeight: '400',
+    fontSize: 13,
+    fontWeight: '500',
     color: COLORS.textTertiary,
+    letterSpacing: 0.5,
   },
   labelActive: {
     fontWeight: '700',
@@ -189,6 +192,6 @@ const styles = StyleSheet.create({
   },
   cardWrapper: {
     width: SCREEN_WIDTH,
-    paddingTop: 4,
+    paddingTop: 8,
   },
 });

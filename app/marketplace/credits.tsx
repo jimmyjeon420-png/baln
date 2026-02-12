@@ -301,15 +301,49 @@ export default function CreditsScreen() {
           </Text>
         </View>
 
-        {/* 무료 체험 기간 안내 (6/1 이전) */}
+        {/* 무료 크레딧 획득 안내 (6/1 이전) */}
         {!chargingOpen && (
           <View style={styles.trialBanner}>
             <Ionicons name="gift" size={24} color="#4CAF50" />
             <View style={{ flex: 1, marginLeft: 12 }}>
-              <Text style={styles.trialTitle}>{FREE_TRIAL_END_LABEL}까지 무료 체험 기간</Text>
+              <Text style={styles.trialTitle}>무료로 크레딧을 모아보세요!</Text>
               <Text style={styles.trialDesc}>
-                현재 모든 AI 기능을 무료로 이용하실 수 있습니다.{'\n'}
-                크레딧 충전은 6월 1일부터 오픈됩니다.
+                아래 활동으로 크레딧을 획득하면{'\n'}
+                AI 분석, 시뮬레이션 등 프리미엄 서비스를 이용할 수 있어요.
+              </Text>
+            </View>
+          </View>
+        )}
+
+        {/* 크레딧 획득 방법 카드 */}
+        {!chargingOpen && (
+          <View style={styles.earnSection}>
+            <Text style={styles.sectionTitle}>크레딧 획득 방법</Text>
+            {[
+              { icon: 'calendar-outline' as const, label: '매일 출석 체크', credits: 2, desc: '앱을 열면 자동 적립' },
+              { icon: 'checkmark-circle-outline' as const, label: '예측 적중', credits: 3, desc: '투표 결과가 맞으면 보상' },
+              { icon: 'share-social-outline' as const, label: '인스타 공유', credits: 5, desc: '분석 결과를 캡처해서 공유' },
+              { icon: 'people-outline' as const, label: '친구 추천', credits: 50, desc: '내 추천 코드로 친구가 가입' },
+              { icon: 'sparkles-outline' as const, label: '환영 보너스', credits: 10, desc: '신규 가입 시 1회 지급' },
+            ].map((item, idx) => (
+              <View key={idx} style={styles.earnRow}>
+                <View style={styles.earnIconWrap}>
+                  <Ionicons name={item.icon} size={20} color="#4CAF50" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.earnLabel}>{item.label}</Text>
+                  <Text style={styles.earnDesc}>{item.desc}</Text>
+                </View>
+                <View style={styles.earnBadge}>
+                  <Text style={styles.earnBadgeText}>+{item.credits}C</Text>
+                </View>
+              </View>
+            ))}
+
+            <View style={styles.earnTip}>
+              <Ionicons name="information-circle" size={16} color="#7C4DFF" />
+              <Text style={styles.earnTipText}>
+                획득한 크레딧으로 딥다이브 분석, 위기 시뮬레이션, AI 버핏 티타임 등을 이용하세요!
               </Text>
             </View>
           </View>
@@ -583,6 +617,66 @@ const styles = StyleSheet.create({
   txRight: { alignItems: 'flex-end' },
   txAmount: { fontSize: 14, fontWeight: '700' },
   txBalance: { color: '#666', fontSize: 11 },
+
+  // 크레딧 획득 방법
+  earnSection: {
+    marginBottom: 24,
+  },
+  earnRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1E1E1E',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 8,
+    gap: 12,
+  },
+  earnIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: 'rgba(76, 175, 80, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  earnLabel: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  earnDesc: {
+    color: '#888',
+    fontSize: 12,
+    marginTop: 2,
+  },
+  earnBadge: {
+    backgroundColor: 'rgba(76, 175, 80, 0.2)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  earnBadgeText: {
+    color: '#4CAF50',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  earnTip: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: 'rgba(124, 77, 255, 0.08)',
+    borderRadius: 12,
+    padding: 14,
+    marginTop: 8,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(124, 77, 255, 0.2)',
+  },
+  earnTipText: {
+    color: '#B39DDB',
+    fontSize: 12,
+    lineHeight: 18,
+    flex: 1,
+  },
 
   // 안내 섹션
   infoSection: {

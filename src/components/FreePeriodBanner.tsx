@@ -65,7 +65,7 @@ export default function FreePeriodBanner({ compact = false }: FreePeriodBannerPr
         </View>
         <View style={styles.benefitRow}>
           <Ionicons name="checkmark-circle" size={14} color="#4CAF50" />
-          <Text style={styles.benefitText}>세금 리포트 / AI CFO 상담</Text>
+          <Text style={styles.benefitText}>세금 리포트 / AI 버핏 티타임</Text>
         </View>
         <View style={styles.benefitRow}>
           <Ionicons name="checkmark-circle" size={14} color="#4CAF50" />

@@ -134,7 +134,7 @@ export default function AICFOChatScreen() {
           <Ionicons name="arrow-back" size={22} color="#FFF" />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>AI CFO</Text>
+          <Text style={styles.headerTitle}>AI 버핏 티타임</Text>
           <Text style={styles.headerSubtitle}>
             메시지당 {discountedCost} 크레딧
           </Text>
@@ -157,7 +157,7 @@ export default function AICFOChatScreen() {
           {chatMessages.length === 0 && !messages.isLoading && (
             <View style={styles.welcomeContainer}>
               <Ionicons name="sparkles" size={40} color="#7C4DFF" />
-              <Text style={styles.welcomeTitle}>AI CFO에게 물어보세요</Text>
+              <Text style={styles.welcomeTitle}>AI 버핏에게 물어보세요</Text>
               <Text style={styles.welcomeDesc}>
                 포트폴리오 맞춤 재무 상담을 제공합니다.{'\n'}
                 투자 전략, 리스크 관리, 자산 배분 등{'\n'}
@@ -207,7 +207,7 @@ export default function AICFOChatScreen() {
               </View>
               <View style={styles.typingBubble}>
                 <ActivityIndicator size="small" color="#7C4DFF" />
-                <Text style={styles.typingText}>AI CFO가 답변 중...</Text>
+                <Text style={styles.typingText}>AI 버핏이 답변 중...</Text>
               </View>
             </View>
           )}

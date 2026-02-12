@@ -16,9 +16,15 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { SkeletonBlock } from '../SkeletonLoader';
 import { estimateTax } from '../../utils/taxEstimator';
+import { formatCurrency } from '../../utils/formatters';
 import { useTheme } from '../../hooks/useTheme';
 import { ThemeColors } from '../../styles/colors';
 import type { PortfolioAction, RebalancePortfolioAsset, LivePriceData } from '../../types/rebalanceTypes';
+
+/** 티커 기반 통화 판별 — 6자리 숫자 또는 .KS/.KQ 접미사면 KRW, 아니면 USD */
+function getCurrency(ticker: string): 'KRW' | 'USD' {
+  return /^\d{6}(\.(KS|KQ))?$/i.test(ticker) ? 'KRW' : 'USD';
+}
 
 // ── 완료 축하 배너 ──
 
@@ -411,7 +417,7 @@ export default function TodayActionsSection({
             {/* 현재가 + 등락률 (접힌 상태) */}
             {!isExpanded && displayPrice > 0 && (
               <View style={s.priceRow}>
-                <Text style={[s.priceText, { color: colors.textPrimary }]}>{'\u20A9'}{displayPrice.toLocaleString(undefined, { maximumFractionDigits: 2 })}</Text>
+                <Text style={[s.priceText, { color: colors.textPrimary }]}>{formatCurrency(displayPrice, getCurrency(action.ticker))}</Text>
                 {assetGl !== null && (
                   <Text style={[s.changeText, { color: (assetGl ?? 0) >= 0 ? colors.success : colors.error }]}>
                     {(assetGl ?? 0) >= 0 ? '+' : ''}{(assetGl ?? 0).toFixed(1)}%
@@ -467,7 +473,7 @@ export default function TodayActionsSection({
                     <View style={s.portfolioRow}>
                       <View style={s.portfolioItem}>
                         <Text style={[s.portfolioLabel, { color: colors.textTertiary }]}>현재가{isLive ? ' (실시간)' : ''}</Text>
-                        <Text style={[s.portfolioValue, { color: colors.textPrimary }]}>{'\u20A9'}{displayPrice.toLocaleString(undefined, { maximumFractionDigits: 2 })}</Text>
+                        <Text style={[s.portfolioValue, { color: colors.textPrimary }]}>{formatCurrency(displayPrice, getCurrency(action.ticker))}</Text>
                       </View>
                       <View style={[s.portfolioDivider, { backgroundColor: `${colors.success}4D` }]} />
                       <View style={s.portfolioItem}>
@@ -491,7 +497,7 @@ export default function TodayActionsSection({
                     <Ionicons name="calculator-outline" size={13} color={colors.warning} />
                     <Text style={[s.suggestText, { color: colors.warning }]}>
                       {action.action === 'BUY'
-                        ? `제안: ${displayPrice > 0 ? Math.floor(totalAssets * 0.02 / displayPrice) : 0}주 (${'\u20A9'}${Math.floor(totalAssets * 0.02).toLocaleString()}, 총자산 2%)`
+                        ? `제안: ${displayPrice > 0 ? Math.floor(totalAssets * 0.02 / displayPrice) : 0}주 (${formatCurrency(Math.floor(totalAssets * 0.02), 'KRW')}, 총자산 2%)`
                         : matchedAsset
                           ? `보유 ${matchedAsset.quantity ?? 0}주 중 일부 매도 검토`
                           : '매도 수량은 보유량에 따라 결정'

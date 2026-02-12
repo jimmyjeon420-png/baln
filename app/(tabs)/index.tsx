@@ -23,8 +23,7 @@ import CardSwipeContainer from '../../src/components/home/CardSwipeContainer';
 import HealthSignalCard from '../../src/components/home/HealthSignalCard';
 import ContextBriefCard from '../../src/components/home/ContextBriefCard';
 import PredictionVoteCard from '../../src/components/home/PredictionVoteCard';
-import StreakBanner from '../../src/components/home/StreakBanner';
-import { ErrorBoundary, Toast, ToastType, OfflineBanner } from '../../src/components/common';
+import { ErrorBoundary, Toast, ToastType } from '../../src/components/common';
 
 // 맥락 카드 전체 모달
 import ContextCard from '../../src/components/home/ContextCard';
@@ -405,14 +404,6 @@ export default function HomeScreen() {
   // ──────────────────────────────────────────────────────────────────────
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* 네트워크 끊김 감지 배너 (최상단) */}
-      <OfflineBanner />
-
-      {/* 연속 방문 배너 (상단 고정) */}
-      <View style={styles.streakContainer}>
-        <StreakBanner />
-      </View>
-
       <CardSwipeContainer
         labels={['건강', '맥락', '예측']}
         initialIndex={0}
@@ -478,10 +469,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     // backgroundColor는 동적으로 적용됨
-  },
-  streakContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 0,
   },
   modalContainer: {
     flex: 1,

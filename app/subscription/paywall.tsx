@@ -65,7 +65,7 @@ const BENEFITS = [
   },
   {
     icon: 'chatbubbles' as const,
-    title: 'AI CFO 상담',
+    title: 'AI 버핏 티타임',
     desc: '1:1 AI 재무 상담 (메시지당 ₩100)',
   },
   {

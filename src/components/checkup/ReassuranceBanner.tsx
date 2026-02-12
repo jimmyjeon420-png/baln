@@ -36,7 +36,7 @@ export default function ReassuranceBanner({ totalGainLoss, cfoWeather }: Reassur
   return (
     <View style={styles.banner}>
       <Text style={styles.emoji}>{emoji}</Text>
-      <Text style={styles.message} numberOfLines={1}>{message}</Text>
+      <Text style={styles.message} numberOfLines={2}>{message}</Text>
     </View>
   );
 }
@@ -52,7 +52,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 12,
     gap: 10,
-    height: 44,
+    minHeight: 44,
     borderWidth: 1,
     borderColor: `${colors.primary}15`,
   },

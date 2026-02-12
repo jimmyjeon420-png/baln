@@ -21,8 +21,10 @@ import {
   FlatList,
   Keyboard,
 } from 'react-native';
-import { Stack, router } from 'expo-router';
+import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { HeaderBar } from '../../src/components/common/HeaderBar';
 import { useTheme } from '../../src/hooks/useTheme';
 import { generateDeepDive } from '../../src/services/gemini';
 import { fetchStockFundamentals } from '../../src/services/stockDataService';
@@ -189,22 +191,8 @@ export default function DeepDiveScreen() {
   };
 
   return (
-    <>
-      <Stack.Screen
-        options={{
-          title: '종목 딥다이브',
-          headerStyle: { backgroundColor: colors.background },
-          headerTintColor: colors.textPrimary,
-          headerLeft: () => (
-            <TouchableOpacity
-              onPress={() => router.back()}
-              style={{ marginLeft: 8, padding: 8 }}
-            >
-              <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
-            </TouchableOpacity>
-          ),
-        }}
-      />
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+      <HeaderBar title="종목 딥다이브" />
       <ScrollView
         style={[s.container, { backgroundColor: colors.background }]}
         contentContainerStyle={s.content}
@@ -328,7 +316,7 @@ export default function DeepDiveScreen() {
 
         <View style={{ height: 40 }} />
       </ScrollView>
-    </>
+    </SafeAreaView>
   );
 }
 

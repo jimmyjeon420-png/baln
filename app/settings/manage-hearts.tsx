@@ -12,7 +12,9 @@ import {
   Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { HeaderBar } from '../../src/components/common/HeaderBar';
 import { useHeartAssets } from '../../src/hooks/useHeartAssets';
 import { COLORS } from '../../src/styles/theme';
 
@@ -61,15 +63,8 @@ export default function ManageHeartsScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      {/* 헤더 */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color={COLORS.textPrimary} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Heart 자산 관리</Text>
-        <View style={{ width: 24 }} />
-      </View>
+    <SafeAreaView style={styles.container}>
+      <HeaderBar title="Heart 자산 관리" />
 
       {/* 목록 */}
       {isLoading ? (
@@ -114,7 +109,7 @@ export default function ManageHeartsScreen() {
           )}
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -122,20 +117,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
   },
   emptyContainer: {
     flex: 1,

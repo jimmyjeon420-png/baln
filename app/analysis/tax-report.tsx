@@ -14,8 +14,9 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
-import { Stack } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { HeaderBar } from '../../src/components/common/HeaderBar';
 import { useTheme } from '../../src/hooks/useTheme';
 
 interface TaxReport {
@@ -108,12 +109,15 @@ export default function TaxReportScreen() {
 
   if (isLoading) {
     return (
-      <View style={[s.loadingContainer, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color="#7C4DFF" />
-        <Text style={[s.loadingText, { color: colors.textSecondary }]}>
-          세금 리포트 생성 중...
-        </Text>
-      </View>
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+        <HeaderBar title="세금 리포트" />
+        <View style={[s.loadingContainer, { backgroundColor: colors.background }]}>
+          <ActivityIndicator size="large" color="#7C4DFF" />
+          <Text style={[s.loadingText, { color: colors.textSecondary }]}>
+            세금 리포트 생성 중...
+          </Text>
+        </View>
+      </SafeAreaView>
     );
   }
 
@@ -122,14 +126,8 @@ export default function TaxReportScreen() {
   }
 
   return (
-    <>
-      <Stack.Screen
-        options={{
-          title: '세금 리포트',
-          headerStyle: { backgroundColor: colors.background },
-          headerTintColor: colors.textPrimary,
-        }}
-      />
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+      <HeaderBar title="세금 리포트" />
       <ScrollView
         style={[s.container, { backgroundColor: colors.background }]}
         contentContainerStyle={s.content}
@@ -227,7 +225,7 @@ export default function TaxReportScreen() {
           </Text>
         </View>
       </ScrollView>
-    </>
+    </SafeAreaView>
   );
 }
 

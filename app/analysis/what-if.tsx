@@ -17,8 +17,9 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
-import { Stack } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../src/hooks/useTheme';
+import { HeaderBar } from '../../src/components/common/HeaderBar';
 import { useSharedPortfolio } from '../../src/hooks/useSharedPortfolio';
 import { generateWhatIf } from '../../src/services/gemini';
 import { spendCredits, refundCredits } from '../../src/services/creditService';
@@ -181,14 +182,8 @@ export default function WhatIfScreen() {
   };
 
   return (
-    <>
-      <Stack.Screen
-        options={{
-          title: '위기 시뮬레이터',
-          headerStyle: { backgroundColor: colors.background },
-          headerTintColor: colors.textPrimary,
-        }}
-      />
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+      <HeaderBar title="위기 시뮬레이터" />
       <ScrollView
         style={[s.container, { backgroundColor: colors.background }]}
         contentContainerStyle={s.content}
@@ -326,7 +321,7 @@ export default function WhatIfScreen() {
           </>
         )}
       </ScrollView>
-    </>
+    </SafeAreaView>
   );
 }
 

@@ -32,7 +32,7 @@ export default function ChatBubble({
 
       <View style={[styles.bubble, isUser ? styles.userBubble : styles.assistantBubble]}>
         {!isUser && (
-          <Text style={styles.aiLabel}>AI CFO</Text>
+          <Text style={styles.aiLabel}>AI 버핏</Text>
         )}
         <Text style={[styles.content, isUser ? styles.userContent : styles.assistantContent]}>
           {content}
