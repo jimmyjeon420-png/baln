@@ -1155,52 +1155,104 @@ ${input.currentPrice ? `- 현재가: ₩${input.currentPrice.toLocaleString()}` 
 ${input.avgPrice ? `- 평균 매수가: ₩${input.avgPrice.toLocaleString()}` : ''}
 ${input.quantity ? `- 보유 수량: ${input.quantity}주` : ''}
 
+[★ 점수 산정 기준 — 반드시 실제 데이터 기반으로 계산]
+
+overallScore, financial.score, technical.score는 반드시 아래 기준에 따라 종목별로 다르게 산출하세요.
+예시 숫자를 복사하지 마세요.
+
+■ financial.score (재무 점수, 0-100):
+  - PER: 업종 평균 대비 → 저평가(+15) / 적정(+8) / 고평가(-10)
+  - PBR: 1 이하(+10) / 1~3(+5) / 3 이상(-5)
+  - ROE: 15%+(+20) / 10~15%(+10) / 10% 미만(+0)
+  - 매출성장률 YoY: 20%+(+15) / 10~20%(+8) / 마이너스(-10)
+  - 영업이익률: 15%+(+15) / 5~15%(+8) / 마이너스(-15)
+  - 부채비율: 100% 미만(+10) / 100~200%(+0) / 200% 초과(-10)
+  - 기본 50점에서 위 항목 합산. 최소 0, 최대 100.
+
+■ technical.score (기술 점수, 0-100):
+  - RSI: 30~70 중립(+10), 70+ 과매수(-15), 30 미만 과매도(+15, 반등 기대)
+  - MACD: 골든크로스(+20) / 데드크로스(-20) / 중립(0)
+  - 이동평균(20일/60일/120일): 정배열(+20) / 역배열(-20) / 혼합(0)
+  - 볼린저밴드: 하단 접근(+10, 반등 기대) / 상단 접근(-5) / 중앙(+5)
+  - 거래량: 최근 20일 평균 대비 150%+(+10) / 50% 미만(-10) / 보통(0)
+  - 기본 50점에서 위 항목 합산. 최소 0, 최대 100.
+
+■ overallScore (종합 점수, 0-100):
+  = financial.score × 0.45 + technical.score × 0.35 + 뉴스센티먼트점수 × 0.20
+  (뉴스: POSITIVE=80, NEUTRAL=50, NEGATIVE=20)
+
+■ recommendation 기준:
+  - overallScore 85+: STRONG_BUY
+  - 70~84: BUY
+  - 50~69: HOLD
+  - 35~49: SELL
+  - 34 이하: STRONG_SELL
+
 [필수 분석 항목]
-1. 재무 분석 (financial): PER, PBR, ROE, 매출성장률, 영업이익률 등 핵심 지표 + 점수(0-100)
-2. 기술적 분석 (technical): RSI, MACD, 이동평균선, 볼린저밴드 등 + 점수(0-100)
-3. 뉴스/이벤트 분석 (news): 최근 주요 뉴스 + 센티먼트
+1. 재무 분석 (financial): PER, PBR, ROE, 매출성장률, 영업이익률, 부채비율 + 시가총액 + 최근 4분기 매출/영업이익/순이익
+2. 기술적 분석 (technical): RSI, MACD, 이동평균선(20/60/120일), 볼린저밴드, 거래량 추이
+3. 뉴스/이벤트 분석 (news): 최근 주요 뉴스 3개 이상 + 센티먼트
 4. AI 종합 의견 (aiOpinion): 매수/매도 의견, 목표가, 강세/약세 시나리오
 
-[출력 형식] 반드시 아래 JSON 구조로 반환:
+[출력 형식] 반드시 아래 JSON 구조로 반환 (값은 실제 분석 결과로 채우세요):
 {
   "ticker": "${input.ticker}",
   "name": "${input.name}",
-  "overallScore": 75,
-  "recommendation": "BUY",
+  "overallScore": <0-100 위 기준으로 계산한 실제 점수>,
+  "recommendation": "<STRONG_BUY|BUY|HOLD|SELL|STRONG_SELL>",
   "sections": {
     "financial": {
       "title": "재무 분석",
-      "score": 80,
-      "highlights": ["매출 성장 YoY 25%", "..."],
-      "metrics": [{"label": "PER", "value": "15.3", "status": "good"}, ...]
+      "score": <0-100 위 기준으로 계산한 실제 점수>,
+      "highlights": ["실제 재무 분석 내용 3개 이상"],
+      "metrics": [
+        {"label": "PER", "value": "<실제값>", "status": "<good|neutral|bad>"},
+        {"label": "PBR", "value": "<실제값>", "status": "<good|neutral|bad>"},
+        {"label": "ROE", "value": "<실제값>%", "status": "<good|neutral|bad>"},
+        {"label": "영업이익률", "value": "<실제값>%", "status": "<good|neutral|bad>"},
+        {"label": "매출성장률", "value": "<실제값>%", "status": "<good|neutral|bad>"},
+        {"label": "부채비율", "value": "<실제값>%", "status": "<good|neutral|bad>"},
+        {"label": "시가총액", "value": "<실제값>", "status": "neutral"}
+      ]
     },
     "technical": {
       "title": "기술적 분석",
-      "score": 65,
-      "highlights": ["RSI 중립 구간", "..."],
-      "signals": [{"indicator": "RSI", "signal": "중립", "value": "52.3"}, ...]
+      "score": <0-100 위 기준으로 계산한 실제 점수>,
+      "highlights": ["실제 기술적 분석 내용 3개 이상"],
+      "signals": [
+        {"indicator": "RSI", "signal": "<과매수|중립|과매도>", "value": "<실제값>"},
+        {"indicator": "MACD", "signal": "<골든크로스|데드크로스|중립>", "value": "<실제값>"},
+        {"indicator": "이동평균", "signal": "<정배열|역배열|혼합>", "value": "<20일/60일/120일 수치>"},
+        {"indicator": "볼린저밴드", "signal": "<상단|중앙|하단>", "value": "<실제 위치>"},
+        {"indicator": "거래량", "signal": "<급증|보통|급감>", "value": "<평균 대비 비율>"}
+      ]
     },
     "news": {
       "title": "뉴스 분석",
-      "sentiment": "POSITIVE",
-      "highlights": ["신제품 발표 호재", "..."],
-      "recentNews": [{"title": "...", "impact": "긍정적", "date": "2026-02-06"}, ...]
+      "sentiment": "<POSITIVE|NEUTRAL|NEGATIVE>",
+      "highlights": ["실제 뉴스 기반 분석 3개 이상"],
+      "recentNews": [
+        {"title": "<실제 뉴스 제목>", "impact": "<긍정적|중립|부정적>", "date": "<YYYY-MM-DD>"}
+      ]
     },
     "aiOpinion": {
       "title": "AI 종합 의견",
-      "summary": "현재 가격 대비 상승 여력 존재...",
-      "bullCase": ["...", "..."],
-      "bearCase": ["...", "..."],
-      "targetPrice": "₩85,000",
-      "timeHorizon": "6개월"
+      "summary": "<종합 분석 요약 2-3문장>",
+      "bullCase": ["강세 시나리오 2개 이상"],
+      "bearCase": ["약세 시나리오 2개 이상"],
+      "targetPrice": "<목표 주가>",
+      "timeHorizon": "<투자 기간>"
     }
   },
   "generatedAt": "${new Date().toISOString()}"
 }
 
-중요: 반드시 유효한 JSON만 반환하세요. 마크다운 코드블록이나 설명 텍스트 없이 JSON만 출력하세요.
-recommendation은 반드시 STRONG_BUY, BUY, HOLD, SELL, STRONG_SELL 중 하나여야 합니다.
-한국어로 작성하세요.
+★★★ 절대 규칙 ★★★
+1. 유효한 JSON만 반환. 마크다운 코드블록이나 설명 텍스트 없이 JSON만 출력.
+2. overallScore, financial.score, technical.score는 반드시 종목별로 실제 데이터 기반으로 다르게 산출.
+3. 예시 숫자(75, 80, 65)를 그대로 사용하면 안 됨. 실제 계산 결과를 넣으세요.
+4. recommendation은 overallScore 기준에 따라 결정.
+5. 한국어로 작성.
 `;
 
   try {
