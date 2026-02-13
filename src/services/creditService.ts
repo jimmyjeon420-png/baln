@@ -16,6 +16,17 @@ import {
 import { UserTier } from '../types/database';
 import { isFreePeriod } from '../config/freePeriod';
 
+/** RPC 호출에 15초 타임아웃 추가 */
+async function withRpcTimeout<T>(rpcPromise: PromiseLike<T>, label: string): Promise<T> {
+  const result = await Promise.race([
+    rpcPromise,
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error(`${label} RPC 15초 타임아웃`)), 15000)
+    ),
+  ]);
+  return result;
+}
+
 // ============================================================================
 // 잔액 조회
 // ============================================================================
@@ -93,12 +104,15 @@ export async function spendCredits(
     }
 
     // 무료 기간에도 크레딧 차감 (활동 참여로 얻은 크레딧 순환 경제)
-    const { data, error } = await supabase.rpc('spend_credits', {
-      p_user_id: user.id,
-      p_amount: amount,
-      p_feature_type: featureType,
-      p_feature_ref_id: featureRefId || null,
-    });
+    const { data, error } = await withRpcTimeout(
+      supabase.rpc('spend_credits', {
+        p_user_id: user.id,
+        p_amount: amount,
+        p_feature_type: featureType,
+        p_feature_ref_id: featureRefId || null,
+      }),
+      'spend_credits'
+    );
 
     if (error) {
       console.warn('[Credits] spend_credits RPC 실패 (기본값 반환):', error.message);
@@ -170,19 +184,22 @@ export async function purchaseCredits(
 
     const totalCredits = pkg.credits + pkg.bonus;
 
-    const { data, error } = await supabase.rpc('add_credits', {
-      p_user_id: user.id,
-      p_amount: totalCredits,
-      p_type: 'purchase',
-      p_metadata: {
-        package_id: _packageId,
-        package_name: pkg.name,
-        credits: pkg.credits,
-        bonus: pkg.bonus,
-        price: pkg.price,
-        iap_receipt_id: _iapReceiptId || null,
-      },
-    });
+    const { data, error } = await withRpcTimeout(
+      supabase.rpc('add_credits', {
+        p_user_id: user.id,
+        p_amount: totalCredits,
+        p_type: 'purchase',
+        p_metadata: {
+          package_id: _packageId,
+          package_name: pkg.name,
+          credits: pkg.credits,
+          bonus: pkg.bonus,
+          price: pkg.price,
+          iap_receipt_id: _iapReceiptId || null,
+        },
+      }),
+      'add_credits(purchase)'
+    );
 
     if (error) {
       console.warn('[Credits] add_credits RPC 실패 (purchaseCredits):', error.message);
@@ -298,15 +315,18 @@ export async function checkAndGrantSubscriptionBonus(): Promise<{
     }
 
     // 보너스 지급
-    const { data, error } = await supabase.rpc('add_credits', {
-      p_user_id: user.id,
-      p_amount: SUBSCRIPTION_MONTHLY_BONUS,
-      p_type: 'subscription_bonus',
-      p_metadata: {
-        month: new Date().toISOString().slice(0, 7), // "2026-02"
-        plan_type: profile.plan_type,
-      },
-    });
+    const { data, error } = await withRpcTimeout(
+      supabase.rpc('add_credits', {
+        p_user_id: user.id,
+        p_amount: SUBSCRIPTION_MONTHLY_BONUS,
+        p_type: 'subscription_bonus',
+        p_metadata: {
+          month: new Date().toISOString().slice(0, 7), // "2026-02"
+          plan_type: profile.plan_type,
+        },
+      }),
+      'add_credits(subscription_bonus)'
+    );
 
     if (error) {
       console.warn('[Credits] add_credits RPC 실패 (구독 보너스):', error.message);
@@ -342,15 +362,18 @@ export async function refundCredits(
       return { success: false, newBalance: 0 };
     }
 
-    const { data, error } = await supabase.rpc('add_credits', {
-      p_user_id: user.id,
-      p_amount: amount,
-      p_type: 'refund',
-      p_metadata: {
-        feature_type: featureType,
-        reason: reason || 'AI 분석 실패',
-      },
-    });
+    const { data, error } = await withRpcTimeout(
+      supabase.rpc('add_credits', {
+        p_user_id: user.id,
+        p_amount: amount,
+        p_type: 'refund',
+        p_metadata: {
+          feature_type: featureType,
+          reason: reason || 'AI 분석 실패',
+        },
+      }),
+      'add_credits(refund)'
+    );
 
     if (error) {
       console.warn('[Credits] add_credits RPC 실패 (refundCredits):', error.message);

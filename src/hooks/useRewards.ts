@@ -93,7 +93,7 @@ export function useShareReward() {
  * - 앱 시작 시 1회 자동 실행 (queryFn 안에서 지급)
  * - 이미 받았으면 무시
  */
-export function useWelcomeBonus() {
+export function useWelcomeBonus(enabled: boolean = true) {
   return useQuery({
     queryKey: WELCOME_KEY,
     queryFn: async () => {
@@ -109,5 +109,6 @@ export function useWelcomeBonus() {
     },
     staleTime: Infinity, // 한 번 실행 후 다시 안 함
     retry: false,
+    enabled, // 인증 완료 전에는 실행하지 않음
   });
 }

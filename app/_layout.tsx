@@ -2,7 +2,7 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import { View, AppState, AppStateStatus, Alert } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
@@ -60,11 +60,13 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [welcomeCredits, setWelcomeCredits] = useState(10);
 
-  // 앱 시작 시 자동 보상 체크 (로그인된 경우만)
-  useSubscriptionBonus();  // 구독자 월 30크레딧 보너스
-  const welcomeBonus = useWelcomeBonus();       // 신규 가입 10크레딧 웰컴 보너스
-  useDeepLink();           // 딥링크 처리 (알림 탭, 외부 링크 등)
-  usePrefetchCheckup();    // 분석 탭 데이터 미리 로드 (이승건: "보기 전에 준비")
+  // ★ 인증 완료 전에는 데이터 훅을 실행하지 않음 (콜드 스타트 레이스 컨디션 방지)
+  // loading=true이거나 user=null이면 enabled: false로 쿼리 자체를 차단
+  const isReady = !loading && !!user;
+  useSubscriptionBonus(isReady);  // 구독자 월 30크레딧 보너스
+  const welcomeBonus = useWelcomeBonus(isReady);       // 신규 가입 10크레딧 웰컴 보너스
+  useDeepLink(isReady);           // 딥링크 처리 (인증 완료 후에만)
+  usePrefetchCheckup();    // 분석 탭 데이터 미리 로드 (내부에서 hasAssets 체크)
 
   // 웰컴 보너스 지급 시 축하 모달 표시 (1회만)
   // TanStack Query 캐시가 영속되므로, 모달 표시 여부를 별도로 추적
@@ -112,6 +114,12 @@ function AuthGate({ children }: { children: React.ReactNode }) {
       }).catch((err) => console.warn('[AuthGate] 온보딩 완료 상태 조회 실패:', err));
     }
   }, [user, loading, segments]);
+
+  // ★ 인증 로딩 중에는 자식을 렌더링하지 않음 (콜드 스타트 레이스 컨디션 방지)
+  // BrandSplash는 AuthGate 외부(RootLayout)에서 렌더되므로 사용자는 스플래시를 봄
+  if (loading) {
+    return null;
+  }
 
   return (
     <>

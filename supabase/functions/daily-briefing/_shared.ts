@@ -177,7 +177,7 @@ export async function sleep(ms: number): Promise<void> {
  * Gemini API 직접 호출 (Google Search 그라운딩 활성화)
  * - Rate Limit 방지: 호출 전 자동 1초 대기
  */
-export async function callGeminiWithSearch(prompt: string): Promise<string> {
+export async function callGeminiWithSearch(prompt: string, timeoutMs: number = 30000): Promise<string> {
   // Rate Limit 방지: 호출 전 1초 대기
   await sleep(1000);
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
@@ -191,24 +191,47 @@ export async function callGeminiWithSearch(prompt: string): Promise<string> {
     },
   };
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
+  // ★ AbortController로 타임아웃 추가 — 무한 대기 방지
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Gemini API 에러 (${response.status}): ${errorText}`);
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Gemini API 에러 (${response.status}): ${errorText}`);
+    }
+
+    const data: GeminiResponse = await response.json();
+
+    // ★ 빈 응답 검증 추가
+    if (!data.candidates || data.candidates.length === 0) {
+      throw new Error('Gemini API가 빈 응답을 반환했습니다');
+    }
+
+    const rawText = data.candidates[0]?.content?.parts?.[0]?.text || '';
+    if (!rawText) {
+      throw new Error('Gemini API 응답에 텍스트가 없습니다');
+    }
+
+    // JSON 정제 (사족 제거)
+    const cleanedText = cleanJsonResponse(rawText);
+
+    return cleanedText;
+  } catch (err: any) {
+    if (err.name === 'AbortError') {
+      throw new Error(`Gemini API ${timeoutMs / 1000}초 타임아웃. 다시 시도해주세요.`);
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeoutId);
   }
-
-  const data: GeminiResponse = await response.json();
-  const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-
-  // JSON 정제 (사족 제거)
-  const cleanedText = cleanJsonResponse(rawText);
-
-  return cleanedText;
 }
 
 // ============================================================================

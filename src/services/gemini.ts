@@ -801,22 +801,28 @@ export const generateMorningBriefing = async (
   try {
     // [핵심] Supabase Edge Function으로 Gemini API 프록시 호출
     // 이유: 클라이언트 측 네트워크 제한 우회 + API 키 보안 강화
-    const { data, error } = await supabase.functions.invoke('gemini-proxy', {
-      body: {
-        type: 'morning-briefing',
-        data: {
-          portfolio: portfolio.map(p => ({
-            ticker: p.ticker,
-            name: p.name,
-            currentValue: p.currentValue,
-            avgPrice: p.avgPrice,
-            currentPrice: p.currentPrice,
-            allocation: p.allocation,
-          })),
-          options,
+    const invokeResult = await Promise.race([
+      supabase.functions.invoke('gemini-proxy', {
+        body: {
+          type: 'morning-briefing',
+          data: {
+            portfolio: portfolio.map(p => ({
+              ticker: p.ticker,
+              name: p.name,
+              currentValue: p.currentValue,
+              avgPrice: p.avgPrice,
+              currentPrice: p.currentPrice,
+              allocation: p.allocation,
+            })),
+            options,
+          },
         },
-      },
-    });
+      }),
+      new Promise<{ data: null; error: { message: string } }>((resolve) =>
+        setTimeout(() => resolve({ data: null, error: { message: 'Edge Function 호출 30초 타임아웃' } }), 30000)
+      ),
+    ]);
+    const { data, error } = invokeResult;
 
     if (error) {
       console.error('[Edge Function] Error object:', JSON.stringify(error, null, 2));

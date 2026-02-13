@@ -26,7 +26,7 @@ import { useTheme } from '../../src/hooks/useTheme';
 export default function DailyQuizScreen() {
   const router = useRouter();
   const { colors } = useTheme();
-  const { data: quiz, isLoading: quizLoading } = useTodayQuiz();
+  const { data: quiz, isLoading: quizLoading, isError: quizError, refetch: refetchQuiz } = useTodayQuiz();
   const { data: attempt, isLoading: attemptLoading } = useMyQuizAttempt(quiz?.id);
   const submitQuiz = useSubmitQuiz();
   const { data: stats } = useQuizStats();
@@ -73,7 +73,7 @@ export default function DailyQuizScreen() {
     return result;
   };
 
-  const isLoading = quizLoading || attemptLoading;
+  const isLoading = (quizLoading || attemptLoading) && !quizError;
   const isAnswered = !!attempt;
 
   return (
@@ -96,8 +96,23 @@ export default function DailyQuizScreen() {
           </View>
         )}
 
-        {/* 퀴즈 없음 */}
-        {!isLoading && !quiz && (
+        {/* 에러 상태 */}
+        {quizError && !quiz && (
+          <View style={styles.emptyBox}>
+            <Text style={styles.emptyIcon}>⚠️</Text>
+            <Text style={styles.emptyTitle}>퀴즈를 불러오지 못했습니다</Text>
+            <Text style={styles.emptySubtitle}>네트워크를 확인하고 다시 시도해주세요</Text>
+            <TouchableOpacity
+              onPress={() => refetchQuiz()}
+              style={{ marginTop: 12, backgroundColor: '#4CAF50', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8 }}
+            >
+              <Text style={{ color: '#FFFFFF', fontWeight: '600' }}>다시 시도</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* 퀴즈 없음 (에러가 아닌 경우만) */}
+        {!isLoading && !quiz && !quizError && (
           <View style={styles.emptyBox}>
             <Text style={styles.emptyIcon}>📝</Text>
             <Text style={styles.emptyTitle}>오늘의 퀴즈를 준비 중입니다</Text>

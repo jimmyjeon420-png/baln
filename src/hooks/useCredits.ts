@@ -80,11 +80,12 @@ export function useCreditHistory(limit: number = 20) {
 }
 
 /** 구독 보너스 체크 (앱 시작 시 1회) */
-export function useSubscriptionBonus() {
+export function useSubscriptionBonus(enabled: boolean = true) {
   return useQuery({
     queryKey: ['credits', 'subscription-bonus'],
     queryFn: checkAndGrantSubscriptionBonus,
     staleTime: 1000 * 60 * 60, // 1시간 (한 번 체크하면 충분)
     retry: false, // 실패해도 재시도 안 함 (non-critical)
+    enabled, // 인증 완료 전에는 실행하지 않음
   });
 }

@@ -112,26 +112,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         // 인증 관련 에러인 경우 세션 무효화
         const msg = (error.message || '').toLowerCase();
-        const isAuthError =
+        // ★ 타임아웃은 네트워크 문제이므로 인증 에러로 분류하지 않음
+        // 이전: timeout을 인증 에러로 처리 → 느린 네트워크에서 강제 로그아웃
+        const isTimeout = msg.includes('timeout');
+        const isAuthError = !isTimeout && (
           msg.includes('jwt') ||
           msg.includes('token') ||
           msg.includes('expired') ||
           msg.includes('invalid') ||
           msg.includes('unauthorized') ||
-          msg.includes('401') ||
-          msg.includes('timeout');
+          msg.includes('401')
+        );
 
         if (isAuthError) {
           console.warn('[AuthContext] 세션 토큰 만료/손상 감지 → 세션 초기화');
 
           // 먼저 토큰 갱신 시도 (refresh token이 유효할 수 있음)
+          // ★ 10초 타임아웃 추가 — 네트워크 느릴 때 무한 대기 방지
           try {
-            const { data: refreshData, error: refreshError } =
-              await supabase.auth.refreshSession();
+            const refreshResult = await Promise.race([
+              supabase.auth.refreshSession(),
+              new Promise<null>((resolve) => setTimeout(() => resolve(null), 10000)),
+            ]);
 
-            if (!refreshError && refreshData.session) {
-              console.log('[AuthContext] 토큰 갱신 성공 → 세션 유지');
-              return true;
+            if (refreshResult && 'data' in refreshResult) {
+              const { data: refreshData, error: refreshError } = refreshResult;
+              if (!refreshError && refreshData.session) {
+                console.log('[AuthContext] 토큰 갱신 성공 → 세션 유지');
+                return true;
+              }
+            } else {
+              console.warn('[AuthContext] 토큰 갱신 10초 타임아웃 → 오프라인 허용');
+              return true; // 타임아웃은 네트워크 문제 → 세션 유지
             }
           } catch {
             // 갱신도 실패 → 아래에서 세션 삭제

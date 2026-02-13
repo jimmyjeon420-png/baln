@@ -150,7 +150,11 @@ async function generateQuizWithGemini(): Promise<{
   "difficulty": 1
 }`;
 
-    const result = await model.generateContent(prompt);
+    // ★ 30초 타임아웃 — Gemini 무한 대기 방지
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 30000);
+    const result = await model.generateContent(prompt, { signal: controller.signal });
+    clearTimeout(timer);
     const text = result.response.text().trim();
 
     // JSON 파싱 (```json 래핑 제거 + 안전한 JSON 추출)
