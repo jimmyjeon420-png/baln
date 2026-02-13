@@ -28,7 +28,7 @@ import { COLORS } from '../../src/styles/theme';
 
 export default function BookmarksScreen() {
   const router = useRouter();
-  const { data: posts, isLoading, refetch } = useBookmarkedPosts();
+  const { data: posts, isLoading, isError, refetch } = useBookmarkedPosts();
   const { data: myLikes } = useMyLikes();
   const { data: myBookmarks } = useMyBookmarks();
   const likePost = useLikePost();
@@ -136,8 +136,19 @@ export default function BookmarksScreen() {
         </View>
       )}
 
+      {/* 에러 */}
+      {!isLoading && isError && (
+        <View style={styles.emptyContainer}>
+          <Ionicons name="cloud-offline-outline" size={48} color="#444" />
+          <Text style={styles.emptyTitle}>불러오기 실패</Text>
+          <Text style={styles.emptyDesc}>
+            네트워크 연결을 확인하고{'\n'}아래로 당겨서 새로고침해주세요
+          </Text>
+        </View>
+      )}
+
       {/* 목록 */}
-      {!isLoading && (
+      {!isLoading && !isError && (
         <FlatList
           data={posts || []}
           keyExtractor={(item) => item.id}

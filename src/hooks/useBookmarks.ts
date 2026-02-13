@@ -41,6 +41,7 @@ export function useMyBookmarks() {
       return new Set((data || []).map(d => d.post_id));
     },
     staleTime: 60000, // 1분
+    retry: 1,         // 실패 시 1회만 재시도 (무한 로딩 방지)
   });
 }
 
@@ -164,5 +165,6 @@ export function useBookmarkedPosts() {
         })) as CommunityPost[];
     },
     staleTime: 60000,
+    retry: 1, // 실패 시 1회만 재시도 (무한 로딩 방지)
   });
 }
