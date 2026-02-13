@@ -315,17 +315,46 @@ const HealthSignalCard = React.memo(({
   );
 }, (prevProps, nextProps) => {
   // 성능 최적화: props 비교 함수 (변경 없으면 리렌더링 스킵)
-  return (
-    prevProps.healthScore === nextProps.healthScore &&
-    prevProps.healthGrade === nextProps.healthGrade &&
-    prevProps.gradeLabel === nextProps.gradeLabel &&
-    prevProps.hasAssets === nextProps.hasAssets &&
-    prevProps.isLoading === nextProps.isLoading &&
-    prevProps.totalAssets === nextProps.totalAssets &&
-    prevProps.dailyChangeRate === nextProps.dailyChangeRate &&
-    JSON.stringify(prevProps.assetSignals) === JSON.stringify(nextProps.assetSignals) &&
-    JSON.stringify(prevProps.healthFactors) === JSON.stringify(nextProps.healthFactors)
-  );
+  // JSON.stringify 대신 배열 길이 + 요소별 비교로 성능 개선
+  if (
+    prevProps.healthScore !== nextProps.healthScore ||
+    prevProps.healthGrade !== nextProps.healthGrade ||
+    prevProps.gradeLabel !== nextProps.gradeLabel ||
+    prevProps.hasAssets !== nextProps.hasAssets ||
+    prevProps.isLoading !== nextProps.isLoading ||
+    prevProps.totalAssets !== nextProps.totalAssets ||
+    prevProps.dailyChangeRate !== nextProps.dailyChangeRate
+  ) {
+    return false;
+  }
+
+  // assetSignals 얕은 비교
+  const prevSignals = prevProps.assetSignals;
+  const nextSignals = nextProps.assetSignals;
+  if (prevSignals.length !== nextSignals.length) return false;
+  for (let i = 0; i < prevSignals.length; i++) {
+    if (prevSignals[i].name !== nextSignals[i].name || prevSignals[i].signal !== nextSignals[i].signal) {
+      return false;
+    }
+  }
+
+  // healthFactors 얕은 비교
+  const prevFactors = prevProps.healthFactors;
+  const nextFactors = nextProps.healthFactors;
+  if (prevFactors?.length !== nextFactors?.length) return false;
+  if (prevFactors && nextFactors) {
+    for (let i = 0; i < prevFactors.length; i++) {
+      if (
+        prevFactors[i].label !== nextFactors[i].label ||
+        prevFactors[i].score !== nextFactors[i].score ||
+        prevFactors[i].weight !== nextFactors[i].weight
+      ) {
+        return false;
+      }
+    }
+  }
+
+  return true;
 });
 
 export default HealthSignalCard;

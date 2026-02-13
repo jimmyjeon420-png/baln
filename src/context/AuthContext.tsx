@@ -4,7 +4,9 @@ import { Platform, Alert } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
 import * as Crypto from 'expo-crypto';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import supabase from '../services/supabase';
+import queryClient from '../services/queryClient';
 // Optional import: 패키지 미설치 시에도 앱 크래시 방지
 let AppleAuthentication: any = null;
 try {
@@ -88,20 +90,119 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   /**
-   * 앱 초기화 시: Supabase의 기존 세션 복구
+   * 세션 건강 체크 (Session Health Check)
+   *
+   * TestFlight 업데이트 후 이전 빌드의 세션 토큰이 남아있으면
+   * getSession()은 "로그인됨"을 반환하지만, 실제 서버 요청은 실패합니다.
+   * → 간단한 DB 쿼리를 보내 세션이 진짜 유효한지 확인합니다.
+   * → 실패하면 세션을 지우고 로그인 화면으로 보냅니다.
+   */
+  const verifySessionHealth = async (sessionToCheck: Session): Promise<boolean> => {
+    try {
+      const result = await Promise.race([
+        supabase.from('profiles').select('id').limit(1),
+        new Promise<{ error: { message: string } }>((resolve) =>
+          setTimeout(() => resolve({ error: { message: 'Health check timeout (5s)' } }), 5000)
+        ),
+      ]);
+
+      const error = (result as any)?.error;
+      if (error) {
+        console.warn('[AuthContext] 세션 건강 체크 실패:', error.message);
+
+        // 인증 관련 에러인 경우 세션 무효화
+        const msg = (error.message || '').toLowerCase();
+        const isAuthError =
+          msg.includes('jwt') ||
+          msg.includes('token') ||
+          msg.includes('expired') ||
+          msg.includes('invalid') ||
+          msg.includes('unauthorized') ||
+          msg.includes('401') ||
+          msg.includes('timeout');
+
+        if (isAuthError) {
+          console.warn('[AuthContext] 세션 토큰 만료/손상 감지 → 세션 초기화');
+
+          // 먼저 토큰 갱신 시도 (refresh token이 유효할 수 있음)
+          try {
+            const { data: refreshData, error: refreshError } =
+              await supabase.auth.refreshSession();
+
+            if (!refreshError && refreshData.session) {
+              console.log('[AuthContext] 토큰 갱신 성공 → 세션 유지');
+              return true;
+            }
+          } catch {
+            // 갱신도 실패 → 아래에서 세션 삭제
+          }
+
+          // 갱신 실패 → 세션 완전 삭제
+          await supabase.auth.signOut().catch(() => {});
+          queryClient.clear();
+          try {
+            const allKeys = await AsyncStorage.getAllKeys();
+            const keysToRemove = allKeys.filter(
+              (key) =>
+                key === 'BALN_QUERY_CACHE' ||
+                key.startsWith('@baln:') ||
+                key.startsWith('reward_')
+            );
+            if (keysToRemove.length > 0) {
+              await AsyncStorage.multiRemove(keysToRemove);
+            }
+          } catch {
+            // 스토리지 정리 실패는 치명적이지 않음
+          }
+          return false;
+        }
+
+        // 네트워크 에러 등 비-인증 에러 → 세션은 유지 (오프라인 접속 허용)
+        console.log('[AuthContext] 비-인증 에러 (네트워크?) → 세션 유지, 오프라인 허용');
+        return true;
+      }
+
+      console.log('[AuthContext] 세션 건강 체크 통과');
+      return true;
+    } catch (error) {
+      console.warn('[AuthContext] 세션 건강 체크 예외:', error);
+      // 예외 발생 시 세션 유지 (오프라인 등)
+      return true;
+    }
+  };
+
+  /**
+   * 앱 초기화 시: Supabase의 기존 세션 복구 + 건강 체크
    */
   useEffect(() => {
     const initAuth = async () => {
       try {
-        // 저장된 세션 복구
+        // 1단계: 저장된 세션 복구 (로컬 AsyncStorage에서)
         const {
           data: { session: existingSession },
         } = await supabase.auth.getSession();
 
-        setSession(existingSession);
-        setUser(existingSession?.user || null);
+        if (existingSession) {
+          // 2단계: 세션이 있으면 서버에 실제 요청을 보내 유효성 확인
+          const isHealthy = await verifySessionHealth(existingSession);
+
+          if (isHealthy) {
+            setSession(existingSession);
+            setUser(existingSession.user || null);
+          } else {
+            // 건강 체크 실패 → 로그인 화면으로 보냄 (session=null)
+            console.warn('[AuthContext] 세션 건강 체크 실패 → 로그인 필요');
+            setSession(null);
+            setUser(null);
+          }
+        } else {
+          setSession(null);
+          setUser(null);
+        }
       } catch (error) {
         console.error('세션 복구 실패:', error);
+        setSession(null);
+        setUser(null);
       } finally {
         setLoading(false);
       }
@@ -112,18 +213,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   /**
    * 인증 상태 변화 감지 + 프로필 자동 동기화
+   *
+   * 처리하는 이벤트:
+   * - SIGNED_IN: 프로필 동기화 + 캐시 새로고침 (새 사용자 데이터 로드)
+   * - SIGNED_OUT: 캐시 전체 삭제 (이전 사용자 데이터 제거)
+   * - TOKEN_REFRESHED: 세션 갱신 성공 (정상 동작, 로그만)
    */
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, currentSession) => {
+        console.log('[AuthContext] onAuthStateChange:', event);
+
         setSession(currentSession);
         setUser(currentSession?.user || null);
         setLoading(false);
 
-        // 로그인 성공 시 프로필 동기화
+        // 로그인 성공 시 프로필 동기화 + 캐시 새로고침
         if (event === 'SIGNED_IN' && currentSession?.user) {
           const provider = currentSession.user.app_metadata?.provider as OAuthProvider | 'email' || 'email';
           await syncUserProfile(currentSession.user, provider);
+
+          // 이전 세션의 오래된 캐시 데이터 무효화 → 새로운 사용자 데이터로 갱신
+          queryClient.invalidateQueries();
+        }
+
+        // 로그아웃 시 캐시 정리 (signOut 함수가 아닌 외부 요인으로 로그아웃된 경우 대비)
+        if (event === 'SIGNED_OUT') {
+          queryClient.clear();
+        }
+
+        // 토큰 갱신 성공 로그
+        if (event === 'TOKEN_REFRESHED') {
+          console.log('[AuthContext] 토큰 자동 갱신 성공');
         }
       }
     );
@@ -173,13 +294,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   /**
    * 로그아웃
+   *
+   * 보안: 이전 사용자의 데이터가 다음 사용자에게 노출되지 않도록
+   * React Query 캐시 + AsyncStorage 영속 캐시 + 앱 로컬 데이터를 모두 삭제합니다.
    */
   const signOut = async () => {
     try {
+      // 1. Supabase 세션 종료
       const { error } = await supabase.auth.signOut();
-
       if (error) {
         throw new Error(error.message);
+      }
+
+      // 2. React Query 메모리 캐시 전체 삭제 (이전 사용자 데이터 제거)
+      queryClient.clear();
+
+      // 3. AsyncStorage에서 앱 데이터 + 영속 캐시 삭제
+      //    BALN_QUERY_CACHE: React Query 영속 캐시 (이전 사용자 포트폴리오/크레딧 등)
+      //    @baln:*: 앱별 로컬 데이터 (온보딩 완료, 스트릭, 웰컴 모달 등)
+      //    reward_*: 보상 관련 키
+      try {
+        const allKeys = await AsyncStorage.getAllKeys();
+        const keysToRemove = allKeys.filter(
+          (key) =>
+            key === 'BALN_QUERY_CACHE' ||
+            key.startsWith('@baln:') ||
+            key.startsWith('reward_')
+        );
+        if (keysToRemove.length > 0) {
+          await AsyncStorage.multiRemove(keysToRemove);
+        }
+      } catch (storageError) {
+        // AsyncStorage 삭제 실패는 치명적이지 않음 — 로그만 남기고 진행
+        console.warn('[signOut] AsyncStorage 클리어 실패:', storageError);
       }
     } catch (error) {
       console.error('로그아웃 실패:', error);

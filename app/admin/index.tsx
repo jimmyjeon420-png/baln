@@ -65,6 +65,13 @@ const ADMIN_CARDS: AdminCard[] = [
     subtitle: '리텐션, 분포, 추이',
     route: '/admin/analytics',
   },
+  {
+    key: 'lounge',
+    icon: 'chatbubbles',
+    title: '라운지 관리',
+    subtitle: '게시글, 모임 관리',
+    route: '/admin/lounge',
+  },
 ];
 
 // ================================================================
@@ -137,40 +144,31 @@ export default function AdminHubScreen() {
         <View style={styles.headerSpacer} />
       </View>
 
-      {/* 그리드 */}
+      {/* 그리드 — 2열 동적 생성 */}
       <View style={styles.gridContainer}>
-        <View style={styles.gridRow}>
-          {ADMIN_CARDS.slice(0, 2).map((card) => (
-            <TouchableOpacity
-              key={card.key}
-              style={styles.card}
-              activeOpacity={0.7}
-              onPress={() => router.push(card.route as any)}
-            >
-              <View style={styles.iconContainer}>
-                <Ionicons name={card.icon} size={28} color={COLORS.primary} />
-              </View>
-              <Text style={styles.cardTitle}>{card.title}</Text>
-              <Text style={styles.cardSubtitle}>{card.subtitle}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-        <View style={styles.gridRow}>
-          {ADMIN_CARDS.slice(2, 4).map((card) => (
-            <TouchableOpacity
-              key={card.key}
-              style={styles.card}
-              activeOpacity={0.7}
-              onPress={() => router.push(card.route as any)}
-            >
-              <View style={styles.iconContainer}>
-                <Ionicons name={card.icon} size={28} color={COLORS.primary} />
-              </View>
-              <Text style={styles.cardTitle}>{card.title}</Text>
-              <Text style={styles.cardSubtitle}>{card.subtitle}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        {Array.from({ length: Math.ceil(ADMIN_CARDS.length / 2) }, (_, rowIdx) => {
+          const rowCards = ADMIN_CARDS.slice(rowIdx * 2, rowIdx * 2 + 2);
+          return (
+            <View key={`row-${rowIdx}`} style={styles.gridRow}>
+              {rowCards.map((card) => (
+                <TouchableOpacity
+                  key={card.key}
+                  style={styles.card}
+                  activeOpacity={0.7}
+                  onPress={() => router.push(card.route as any)}
+                >
+                  <View style={styles.iconContainer}>
+                    <Ionicons name={card.icon} size={28} color={COLORS.primary} />
+                  </View>
+                  <Text style={styles.cardTitle}>{card.title}</Text>
+                  <Text style={styles.cardSubtitle}>{card.subtitle}</Text>
+                </TouchableOpacity>
+              ))}
+              {/* 홀수 카드일 때 마지막 행에 빈 공간 유지 */}
+              {rowCards.length === 1 && <View style={styles.cardPlaceholder} />}
+            </View>
+          );
+        })}
       </View>
     </SafeAreaView>
   );
@@ -270,6 +268,9 @@ const styles = StyleSheet.create({
     padding: 20,
     borderWidth: 1,
     borderColor: COLORS.border,
+  },
+  cardPlaceholder: {
+    flex: 1,
   },
   iconContainer: {
     width: 48,

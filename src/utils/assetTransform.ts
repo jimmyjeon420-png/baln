@@ -15,24 +15,35 @@ type PortfolioInsert = Database['public']['Tables']['portfolios']['Insert'];
  * @returns Asset 객체
  */
 export const transformDbRowToAsset = (row: PortfolioRow): Asset => {
+  // NaN 방어: Number()가 NaN을 반환하면 0 또는 undefined로 대체
+  const safeNumber = (val: unknown): number => {
+    const n = Number(val);
+    return Number.isFinite(n) ? n : 0;
+  };
+  const safeOptionalNumber = (val: unknown): number | undefined => {
+    if (val === null || val === undefined) return undefined;
+    const n = Number(val);
+    return Number.isFinite(n) ? n : undefined;
+  };
+
   return {
     id: row.id,
     name: row.name,
-    currentValue: Number(row.current_value),
-    targetAllocation: Number(row.target_allocation),
+    currentValue: safeNumber(row.current_value),
+    targetAllocation: safeNumber(row.target_allocation),
     createdAt: new Date(row.created_at).getTime(),
     assetType: (row.asset_type === 'liquid' ? AssetType.LIQUID : AssetType.ILLIQUID),
 
-    // 주식 관련 필드
+    // 주식 관련 필드 (NaN 방어 적용)
     ticker: row.ticker ?? undefined,
-    quantity: row.quantity ? Number(row.quantity) : undefined,
-    avgPrice: row.avg_price ? Number(row.avg_price) : undefined,
-    currentPrice: row.current_price ? Number(row.current_price) : undefined,
+    quantity: safeOptionalNumber(row.quantity),
+    avgPrice: safeOptionalNumber(row.avg_price),
+    currentPrice: safeOptionalNumber(row.current_price),
 
     // Tax 관련
-    costBasis: row.cost_basis ? Number(row.cost_basis) : undefined,
+    costBasis: safeOptionalNumber(row.cost_basis),
     purchaseDate: row.purchase_date ? new Date(row.purchase_date).getTime() : undefined,
-    customTaxRate: row.custom_tax_rate ? Number(row.custom_tax_rate) : undefined,
+    customTaxRate: safeOptionalNumber(row.custom_tax_rate),
 
     // 메타데이터
     currency: row.currency,

@@ -31,6 +31,7 @@ export interface PrescriptionHistoryItem {
  * 처방전 히스토리 조회 (최근 N일)
  */
 async function fetchHistory(days = 30): Promise<PrescriptionHistoryItem[]> {
+  try {
   const user = await getCurrentUser();
   if (!user) return [];
 
@@ -46,7 +47,10 @@ async function fetchHistory(days = 30): Promise<PrescriptionHistoryItem[]> {
     .gte('date', cutoffStr)
     .order('date', { ascending: false });
 
-  if (prescError) throw prescError;
+  if (prescError) {
+    console.warn('[RebalanceHistory] 처방전 조회 실패 (빈 배열 반환):', prescError.message);
+    return [];
+  }
 
   // 2) 실행 기록 조회
   const { data: executions, error: execError } = await supabase
@@ -56,7 +60,10 @@ async function fetchHistory(days = 30): Promise<PrescriptionHistoryItem[]> {
     .gte('prescription_date', cutoffStr)
     .order('executed_at', { ascending: false });
 
-  if (execError) throw execError;
+  if (execError) {
+    console.warn('[RebalanceHistory] 실행 기록 조회 실패 (빈 배열 반환):', execError.message);
+    return [];
+  }
 
   // 3) 날짜별로 그룹화
   const grouped: Record<string, PrescriptionHistoryItem> = {};
@@ -108,6 +115,10 @@ async function fetchHistory(days = 30): Promise<PrescriptionHistoryItem[]> {
 
   // 날짜순 정렬 (최신 → 과거)
   return Object.values(grouped).sort((a, b) => b.date.localeCompare(a.date));
+  } catch (err) {
+    console.warn('[RebalanceHistory] 히스토리 조회 예외 (빈 배열 반환):', err);
+    return [];
+  }
 }
 
 export function useRebalanceHistory(days = 30) {

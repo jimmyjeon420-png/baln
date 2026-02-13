@@ -61,12 +61,12 @@ function formatCredits(value: number): string {
   return `${formatNumber(value)}C`;
 }
 
+const CREDIT_SYMBOL = '\u20A9'; // ₩
+
 function formatCreditsWithKrw(value: number): string {
   const krw = value * 100;
-  return `${CREDIT_SYMBOL}${formatNumber(krw)}`;
+  return `${formatNumber(value)}C (${CREDIT_SYMBOL}${formatNumber(krw)})`;
 }
-
-const CREDIT_SYMBOL = '\u20A9'; // ₩
 
 function getRelativeTime(dateString: string): string {
   const now = new Date();
@@ -91,13 +91,13 @@ const PRIMARY_KPIS: KpiCardConfig[] = [
     label: '전체 유저',
     icon: 'people',
     color: COLORS.info,
-    getValue: (d) => formatNumber(d.total_users),
+    getValue: (d) => `${formatNumber(d.total_users)}명`,
   },
   {
     label: '오늘 활성',
     icon: 'pulse',
     color: COLORS.primary,
-    getValue: (d) => formatNumber(d.dau),
+    getValue: (d) => `${formatNumber(d.dau)}명`,
     getSubLabel: (d) => {
       if (d.total_users === 0) return '전체의 0%';
       const pct = ((d.dau / d.total_users) * 100).toFixed(1);
@@ -108,14 +108,14 @@ const PRIMARY_KPIS: KpiCardConfig[] = [
     label: '신규 가입',
     icon: 'person-add',
     color: COLORS.primaryLight,
-    getValue: (d) => formatNumber(d.new_today),
+    getValue: (d) => `${formatNumber(d.new_today)}명`,
     getSubLabel: (d) => `이번 주 ${formatNumber(d.new_this_week)}명`,
   },
   {
     label: 'Premium',
     icon: 'diamond',
     color: '#FFC107',
-    getValue: (d) => formatNumber(d.premium_count),
+    getValue: (d) => `${formatNumber(d.premium_count)}명`,
     getSubLabel: (d) => {
       if (d.total_users === 0) return '전환율 0%';
       const pct = ((d.premium_count / d.total_users) * 100).toFixed(1);
@@ -129,7 +129,7 @@ const SECONDARY_KPIS: KpiCardConfig[] = [
     label: '주간 활성',
     icon: 'calendar',
     color: COLORS.info,
-    getValue: (d) => formatNumber(d.wau),
+    getValue: (d) => `${formatNumber(d.wau)}명`,
     getSubLabel: (d) => 'WAU',
   },
   {
@@ -137,20 +137,20 @@ const SECONDARY_KPIS: KpiCardConfig[] = [
     icon: 'add-circle',
     color: COLORS.primary,
     getValue: (d) => formatCredits(d.credits_issued_today),
-    getSubLabel: (d) => `${CREDIT_SYMBOL}${formatNumber(d.credits_issued_today * 100)}`,
+    getSubLabel: (d) => `(${CREDIT_SYMBOL}${formatNumber(d.credits_issued_today * 100)})`,
   },
   {
     label: '예측 참여',
     icon: 'help-circle',
     color: COLORS.warning,
-    getValue: (d) => formatNumber(d.predictions_today),
+    getValue: (d) => `${formatNumber(d.predictions_today)}건`,
     getSubLabel: () => '오늘',
   },
   {
     label: '이탈 위험',
     icon: 'warning',
     color: COLORS.error,
-    getValue: (d) => formatNumber(d.churn_risk_count),
+    getValue: (d) => `${formatNumber(d.churn_risk_count)}명`,
     getSubLabel: (d) => d.churn_risk_count > 0 ? '주의 필요' : '안전',
   },
 ];
@@ -167,6 +167,7 @@ function KpiCard({
   data: any;
   large?: boolean;
 }) {
+  if (!data) return null;
   const value = config.getValue(data);
   const subLabel = config.getSubLabel?.(data);
 
@@ -361,7 +362,7 @@ export default function AdminDashboardScreen() {
           <View style={styles.infoBannerItem}>
             <Text style={styles.infoBannerLabel}>게시글</Text>
             <Text style={styles.infoBannerValue}>
-              {overview ? formatNumber(overview.posts_today) : '-'}
+              {overview ? `${formatNumber(overview.posts_today)}건` : '-'}
             </Text>
           </View>
           <View style={styles.infoBannerDivider} />
@@ -373,14 +374,14 @@ export default function AdminDashboardScreen() {
                 overview && overview.pending_reports > 0 && { color: COLORS.error },
               ]}
             >
-              {overview ? formatNumber(overview.pending_reports) : '-'}
+              {overview ? `${formatNumber(overview.pending_reports)}건` : '-'}
             </Text>
           </View>
           <View style={styles.infoBannerDivider} />
           <View style={styles.infoBannerItem}>
             <Text style={styles.infoBannerLabel}>크레딧 소비</Text>
             <Text style={styles.infoBannerValue}>
-              {overview ? formatCredits(overview.credits_spent_today) : '-'}
+              {overview ? `${formatCredits(overview.credits_spent_today)} (${CREDIT_SYMBOL}${formatNumber(overview.credits_spent_today * 100)})` : '-'}
             </Text>
           </View>
         </View>
@@ -394,6 +395,7 @@ export default function AdminDashboardScreen() {
         {activitiesLoading && !activities ? (
           <View style={styles.activityLoadingContainer}>
             <ActivityIndicator size="small" color={COLORS.primary} />
+            <Text style={styles.activityLoadingText}>활동 내역 불러오는 중...</Text>
           </View>
         ) : activities && activities.length > 0 ? (
           <View style={styles.activityList}>
@@ -448,7 +450,11 @@ const styles = StyleSheet.create({
     borderBottomColor: COLORS.border,
   },
   backButton: {
-    padding: 4,
+    padding: 8,
+    minWidth: 44,
+    minHeight: 44,
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
   },
   headerTitle: {
     fontSize: 18,
@@ -638,6 +644,11 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     padding: 32,
     alignItems: 'center',
+  },
+  activityLoadingText: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    marginTop: 8,
   },
   emptyActivity: {
     backgroundColor: COLORS.surface,

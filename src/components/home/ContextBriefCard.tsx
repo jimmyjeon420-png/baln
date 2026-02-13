@@ -172,7 +172,7 @@ function SkeletonBar({ width }: { width: number | `${number}%` }) {
     );
     anim.start();
     return () => anim.stop();
-  }, []);
+  }, [opacity]);
 
   return (
     <Animated.View
@@ -329,7 +329,7 @@ function getLastNodeColor(percentChange: number | undefined | null): string {
   return '#FF5252';
 }
 
-function MacroChainVisual({
+const MacroChainVisual = React.memo(function MacroChainVisual({
   chain,
   portfolioPercentChange,
 }: {
@@ -384,13 +384,13 @@ function MacroChainVisual({
       ))}
     </View>
   );
-}
+});
 
 // ============================================================================
 // 포트폴리오 영향 시각화 서브 컴포넌트
 // ============================================================================
 
-function PortfolioImpactVisual({
+const PortfolioImpactVisual = React.memo(function PortfolioImpactVisual({
   percentChange,
   healthScoreChange,
   message,
@@ -451,7 +451,7 @@ function PortfolioImpactVisual({
       ) : null}
     </View>
   );
-}
+});
 
 // ============================================================================
 // 메인 컴포넌트

@@ -25,6 +25,9 @@ import ContextBriefCard from '../../src/components/home/ContextBriefCard';
 import PredictionVoteCard from '../../src/components/home/PredictionVoteCard';
 import { ErrorBoundary, Toast, ToastType } from '../../src/components/common';
 
+// 진단용 (Supabase 연결 상태 확인 — 문제 해결 후 제거)
+import ConnectionStatus from '../../src/components/common/ConnectionStatus';
+
 // 맥락 카드 전체 모달
 import ContextCard from '../../src/components/home/ContextCard';
 
@@ -404,15 +407,26 @@ export default function HomeScreen() {
   // ──────────────────────────────────────────────────────────────────────
   // 메모이제이션된 콜백
   // ──────────────────────────────────────────────────────────────────────
-  const handleCardChange = React.useCallback((index: number) => {
-    console.log('[CardSwipe] 카드 전환:', index);
+  const handleCardChange = React.useCallback((_index: number) => {
+    // 프로덕션에서 불필요한 console.log 제거 (성능 개선)
   }, []);
+
+  // 모달 콜백 (매 렌더 시 새 함수 생성 방지)
+  const handleModalClose = React.useCallback(() => setContextModalVisible(false), []);
+  const handlePressPremium = React.useCallback(() => {
+    setContextModalVisible(false);
+    router.push('/subscription/paywall');
+  }, [router]);
+  const handleToastHide = React.useCallback(() => setToastVisible(false), []);
 
   // ──────────────────────────────────────────────────────────────────────
   // 렌더링
   // ──────────────────────────────────────────────────────────────────────
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* 진단용: Supabase 연결 상태 표시 (문제 해결 후 제거) */}
+      <ConnectionStatus />
+
       <CardSwipeContainer
         labels={['건강', '맥락', '예측']}
         initialIndex={0}
@@ -441,18 +455,15 @@ export default function HomeScreen() {
         visible={contextModalVisible}
         animationType="slide"
         presentationStyle="pageSheet"
-        onRequestClose={() => setContextModalVisible(false)}
+        onRequestClose={handleModalClose}
       >
         <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
           {fullContextCardData && (
             <ContextCard
               data={fullContextCardData}
               isPremium={isPremium || false}
-              onPressPremium={() => {
-                setContextModalVisible(false);
-                router.push('/paywall');
-              }}
-              onClose={() => setContextModalVisible(false)}
+              onPressPremium={handlePressPremium}
+              onClose={handleModalClose}
             />
           )}
         </View>
@@ -464,7 +475,7 @@ export default function HomeScreen() {
         message={toastMessage}
         type={toastType}
         duration={3000}
-        onHide={() => setToastVisible(false)}
+        onHide={handleToastHide}
       />
     </View>
   );

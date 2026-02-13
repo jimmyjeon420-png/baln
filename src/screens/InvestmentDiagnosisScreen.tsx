@@ -68,7 +68,7 @@ const InvestmentDiagnosisScreen: React.FC<InvestmentDiagnosisScreenProps> = ({
       setResult(diagnosisResult);
       setStep('RESULTS');
     } catch (error) {
-      Alert.alert('오류', `진단 실패: ${error}`);
+      Alert.alert('진단 실패', '투자 진단 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
     }
   };
 

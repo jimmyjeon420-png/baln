@@ -160,7 +160,7 @@ export function ContextCardTabbed({ isPremium = false, onPressPremium }: Context
             color="#2196F3"
           >
             <View>
-              {cardData.macroChain.map((step, index) => (
+              {(cardData.macroChain ?? []).map((step, index) => (
                 <View key={index}>
                   <View style={s.macroStep}>
                     <View style={s.macroBullet} />
@@ -168,7 +168,7 @@ export function ContextCardTabbed({ isPremium = false, onPressPremium }: Context
                       {step}
                     </Text>
                   </View>
-                  {index < cardData.macroChain.length - 1 && (
+                  {index < (cardData.macroChain ?? []).length - 1 && (
                     <View style={s.macroArrow}>
                       <Ionicons name="arrow-down" size={18} color="#9E9E9E" />
                     </View>

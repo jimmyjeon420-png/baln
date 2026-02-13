@@ -61,13 +61,20 @@ function SectionCard({
 }
 
 export default function DeepDiveResultCard({ result }: Props) {
+  // null 안전 접근: AI 응답이 부분적일 수 있으므로 모든 중첩 배열/객체에 기본값 적용
+  const sections = result.sections ?? {} as any;
+  const financial = sections.financial ?? { score: 0, title: '재무 분석', highlights: [], metrics: [] };
+  const technical = sections.technical ?? { score: 0, title: '기술적 분석', highlights: [], signals: [] };
+  const news = sections.news ?? { title: '뉴스 분석', sentiment: 'NEUTRAL', recentNews: [] };
+  const aiOpinion = sections.aiOpinion ?? { title: 'AI 종합 의견', summary: '', bullCase: [], bearCase: [], targetPrice: '-', timeHorizon: '-' };
+
   const recColor = {
     VERY_POSITIVE: '#4CAF50',
     POSITIVE: '#81C784',
     NEUTRAL: '#FFA726',
     NEGATIVE: '#EF5350',
     VERY_NEGATIVE: '#CF6679',
-  }[result.recommendation];
+  }[result.recommendation] ?? '#FFA726';
 
   const recLabel = {
     VERY_POSITIVE: '매우 긍정적',
@@ -75,7 +82,7 @@ export default function DeepDiveResultCard({ result }: Props) {
     NEUTRAL: '중립',
     NEGATIVE: '부정적',
     VERY_NEGATIVE: '매우 부정적',
-  }[result.recommendation];
+  }[result.recommendation] ?? '중립';
 
   return (
     <View style={styles.container}>
@@ -96,16 +103,16 @@ export default function DeepDiveResultCard({ result }: Props) {
 
       {/* 점수 게이지 */}
       <View style={styles.gaugeSection}>
-        <ScoreGauge score={result.sections.financial.score} label="재무" />
-        <ScoreGauge score={result.sections.technical.score} label="기술" />
+        <ScoreGauge score={financial.score ?? 0} label="재무" />
+        <ScoreGauge score={technical.score ?? 0} label="기술" />
       </View>
 
       {/* 재무 분석 */}
-      <SectionCard title={result.sections.financial.title} icon="bar-chart" iconColor="#4FC3F7">
-        {result.sections.financial.highlights.map((h, i) => (
+      <SectionCard title={financial.title || '재무 분석'} icon="bar-chart" iconColor="#4FC3F7">
+        {(financial.highlights ?? []).map((h: string, i: number) => (
           <Text key={i} style={styles.highlight}>- {h}</Text>
         ))}
-        {result.sections.financial.metrics.map((m, i) => (
+        {(financial.metrics ?? []).map((m: any, i: number) => (
           <View key={i} style={styles.metricRow}>
             <Text style={styles.metricLabel}>{m.label}</Text>
             <Text style={[
@@ -119,11 +126,11 @@ export default function DeepDiveResultCard({ result }: Props) {
       </SectionCard>
 
       {/* 기술적 분석 */}
-      <SectionCard title={result.sections.technical.title} icon="trending-up" iconColor="#FFA726">
-        {result.sections.technical.highlights.map((h, i) => (
+      <SectionCard title={technical.title || '기술적 분석'} icon="trending-up" iconColor="#FFA726">
+        {(technical.highlights ?? []).map((h: string, i: number) => (
           <Text key={i} style={styles.highlight}>- {h}</Text>
         ))}
-        {result.sections.technical.signals.map((s, i) => (
+        {(technical.signals ?? []).map((s: any, i: number) => (
           <View key={i} style={styles.metricRow}>
             <Text style={styles.metricLabel}>{s.indicator}</Text>
             <Text style={styles.metricValue}>{s.signal} ({s.value})</Text>
@@ -132,29 +139,29 @@ export default function DeepDiveResultCard({ result }: Props) {
       </SectionCard>
 
       {/* 뉴스 분석 */}
-      <SectionCard title={result.sections.news.title} icon="newspaper" iconColor="#7C4DFF">
+      <SectionCard title={news.title || '뉴스 분석'} icon="newspaper" iconColor="#7C4DFF">
         <View style={[
           styles.sentimentBadge,
           { backgroundColor:
-            (result.sections.news.sentiment === 'VERY_POSITIVE' || result.sections.news.sentiment === 'POSITIVE') ? '#4CAF5020'
-            : (result.sections.news.sentiment === 'VERY_NEGATIVE' || result.sections.news.sentiment === 'NEGATIVE') ? '#CF667920'
+            (news.sentiment === 'VERY_POSITIVE' || news.sentiment === 'POSITIVE') ? '#4CAF5020'
+            : (news.sentiment === 'VERY_NEGATIVE' || news.sentiment === 'NEGATIVE') ? '#CF667920'
             : '#FFA72620' },
         ]}>
           <Text style={[
             styles.sentimentText,
             { color:
-              (result.sections.news.sentiment === 'VERY_POSITIVE' || result.sections.news.sentiment === 'POSITIVE') ? '#4CAF50'
-              : (result.sections.news.sentiment === 'VERY_NEGATIVE' || result.sections.news.sentiment === 'NEGATIVE') ? '#CF6679'
+              (news.sentiment === 'VERY_POSITIVE' || news.sentiment === 'POSITIVE') ? '#4CAF50'
+              : (news.sentiment === 'VERY_NEGATIVE' || news.sentiment === 'NEGATIVE') ? '#CF6679'
               : '#FFA726' },
           ]}>
-            {result.sections.news.sentiment === 'VERY_POSITIVE' ? '매우 긍정적'
-              : result.sections.news.sentiment === 'POSITIVE' ? '긍정적'
-              : result.sections.news.sentiment === 'NEGATIVE' ? '부정적'
-              : result.sections.news.sentiment === 'VERY_NEGATIVE' ? '매우 부정적'
+            {news.sentiment === 'VERY_POSITIVE' ? '매우 긍정적'
+              : news.sentiment === 'POSITIVE' ? '긍정적'
+              : news.sentiment === 'NEGATIVE' ? '부정적'
+              : news.sentiment === 'VERY_NEGATIVE' ? '매우 부정적'
               : '중립'}
           </Text>
         </View>
-        {result.sections.news.recentNews.map((n, i) => (
+        {(news.recentNews ?? []).map((n: any, i: number) => (
           <View key={i} style={styles.newsItem}>
             <Text style={styles.newsTitle}>{n.title}</Text>
             <Text style={styles.newsImpact}>{n.impact} | {n.date}</Text>
@@ -163,19 +170,19 @@ export default function DeepDiveResultCard({ result }: Props) {
       </SectionCard>
 
       {/* AI 종합 의견 */}
-      <SectionCard title={result.sections.aiOpinion.title} icon="sparkles" iconColor="#4CAF50">
-        <Text style={styles.summary}>{result.sections.aiOpinion.summary}</Text>
+      <SectionCard title={aiOpinion.title || 'AI 종합 의견'} icon="sparkles" iconColor="#4CAF50">
+        <Text style={styles.summary}>{aiOpinion.summary || ''}</Text>
         <Text style={styles.subHeader}>강세 시나리오</Text>
-        {result.sections.aiOpinion.bullCase.map((b, i) => (
+        {(aiOpinion.bullCase ?? []).map((b: string, i: number) => (
           <Text key={i} style={[styles.highlight, { color: '#4CAF50' }]}>+ {b}</Text>
         ))}
         <Text style={styles.subHeader}>약세 시나리오</Text>
-        {result.sections.aiOpinion.bearCase.map((b, i) => (
+        {(aiOpinion.bearCase ?? []).map((b: string, i: number) => (
           <Text key={i} style={[styles.highlight, { color: '#CF6679' }]}>- {b}</Text>
         ))}
         <View style={styles.targetRow}>
-          <Text style={styles.targetLabel}>목표가: {result.sections.aiOpinion.targetPrice}</Text>
-          <Text style={styles.targetLabel}>기간: {result.sections.aiOpinion.timeHorizon}</Text>
+          <Text style={styles.targetLabel}>목표가: {aiOpinion.targetPrice ?? '-'}</Text>
+          <Text style={styles.targetLabel}>기간: {aiOpinion.timeHorizon ?? '-'}</Text>
         </View>
       </SectionCard>
 

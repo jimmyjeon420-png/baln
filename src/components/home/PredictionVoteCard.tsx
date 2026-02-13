@@ -175,7 +175,7 @@ export default function PredictionVoteCard({
     } else {
       completeFade.setValue(0);
     }
-  }, [allVoted]);
+  }, [allVoted, completeFade]);
 
   // 투표 핸들러 (투표 후 자동 다음 질문 스크롤)
   const handleVote = React.useCallback((pollId: string, choice: 'YES' | 'NO') => {
@@ -237,9 +237,9 @@ export default function PredictionVoteCard({
   }
 
   // ──────────────────────────────────────────────────────────────────────
-  // 개별 질문 슬라이드 렌더러
+  // 개별 질문 슬라이드 렌더러 (useCallback으로 불필요한 재생성 방지)
   // ──────────────────────────────────────────────────────────────────────
-  const renderPollSlide = ({ item, index }: { item: PollItem; index: number }) => {
+  const renderPollSlide = React.useCallback(({ item, index }: { item: PollItem; index: number }) => {
     const pollVote = getMyVoteForPoll(item.id);
     const hasVoted = pollVote !== null;
     const catInfo = CATEGORY_INFO[item.category];
@@ -347,7 +347,7 @@ export default function PredictionVoteCard({
         </View>
       </View>
     );
-  };
+  }, [styles, colors, isVoting, getMyVoteForPoll, handleVote]);
 
   // ──────────────────────────────────────────────────────────────────────
   // 데이터 상태 (질문 + 투표 + 복기)

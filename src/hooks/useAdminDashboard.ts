@@ -18,6 +18,11 @@ import {
   fetchAdminRetention,
   fetchRecentActivity,
   grantBonusCredits,
+  fetchAdminLoungePosts,
+  adminDeletePost,
+  adminTogglePinPost,
+  fetchAdminGatherings,
+  adminCancelGathering,
 } from '../services/adminService';
 
 /** 현재 유저가 관리자인지 확인 */
@@ -79,6 +84,78 @@ export function useGrantBonusCredits() {
     onSuccess: () => {
       // 지급 후 유저 목록 & 대시보드 캐시 갱신
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'overview'] });
+    },
+  });
+}
+
+// ─── 라운지 관리 훅 ─────────────────────────────────────
+
+/** 라운지 게시글 목록 조회 */
+export function useAdminLoungePosts(params: {
+  limit?: number;
+  offset?: number;
+  filter?: string;
+  enabled?: boolean;
+}) {
+  const { enabled = true, ...queryParams } = params;
+  return useQuery({
+    queryKey: ['admin', 'lounge-posts', queryParams],
+    queryFn: () => fetchAdminLoungePosts(queryParams),
+    staleTime: 30 * 1000,
+    enabled,
+  });
+}
+
+/** 게시글 삭제 (Mutation) */
+export function useAdminDeletePost() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: adminDeletePost,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'lounge-posts'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'overview'] });
+    },
+  });
+}
+
+/** 게시글 고정/해제 토글 (Mutation) */
+export function useAdminTogglePinPost() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: adminTogglePinPost,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'lounge-posts'] });
+    },
+  });
+}
+
+/** 모임 목록 조회 */
+export function useAdminGatherings(params: {
+  limit?: number;
+  offset?: number;
+  filter?: string;
+  enabled?: boolean;
+}) {
+  const { enabled = true, ...queryParams } = params;
+  return useQuery({
+    queryKey: ['admin', 'gatherings', queryParams],
+    queryFn: () => fetchAdminGatherings(queryParams),
+    staleTime: 30 * 1000,
+    enabled,
+  });
+}
+
+/** 모임 취소 (Mutation) */
+export function useAdminCancelGathering() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: adminCancelGathering,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'gatherings'] });
       queryClient.invalidateQueries({ queryKey: ['admin', 'overview'] });
     },
   });

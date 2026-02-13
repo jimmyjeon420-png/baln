@@ -163,7 +163,7 @@ export class PriceCache {
       }
 
       if (removed > 0) {
-        console.log(`[PriceCache] Cleaned up ${removed} expired entries`);
+        if (__DEV__) console.log(`[PriceCache] Cleaned up ${removed} expired entries`);
       }
     }, 60000); // 1 minute
   }

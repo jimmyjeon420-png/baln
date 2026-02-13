@@ -52,7 +52,9 @@ export function useEmotionCheck(): EmotionCheckResult {
             setTodayMemoState(todayEntry.memo);
           }
         }
-      } catch {}
+      } catch (err) {
+        console.warn('[감정 체크] 오늘의 감정 로드 실패:', err);
+      }
     })();
   }, []);
 
@@ -96,9 +98,11 @@ export function useEmotionCheck(): EmotionCheckResult {
           // 3초 후 보상 표시 초기화
           setTimeout(() => setRewardCredits(0), 3000);
         }
-      } catch {}
+      } catch (err) {
+        console.warn('[감정 체크] 보상 지급 실패 (무시):', err);
+      }
     } catch (error) {
-      console.error('Failed to save emotion with memo:', error);
+      console.error('[감정 체크] 감정 저장 실패:', error);
     }
   }, [todayEmotion, todayMemo]);
 

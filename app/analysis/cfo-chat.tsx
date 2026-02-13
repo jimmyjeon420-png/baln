@@ -148,7 +148,7 @@ export default function CFOChatScreen() {
         setTimeout(() => setShareRewardMsg(null), 3000);
       }
     } catch (err) {
-      console.error('[CFO Share] 공유 실패:', err);
+      console.error('[AI 버핏과 티타임] 공유 실패:', err);
     }
   }, [claimReward]);
 
@@ -210,7 +210,7 @@ export default function CFOChatScreen() {
       // ============================================================
 
       // 1단계: Gemini API 호출 (Edge Function 사용)
-      console.log('[AI 버핏과 티타임] 질문:', messageText);
+      if (__DEV__) console.log('[AI 버핏과 티타임] 질문:', messageText);
       const { data, error } = await supabase.functions.invoke('gemini-proxy', {
         body: {
           type: 'cfo-chat',
@@ -233,7 +233,7 @@ export default function CFOChatScreen() {
 
       // 토론 형식 응답 파싱
       const debateData = data?.data;
-      console.log('[AI 버핏과 티타임] 응답 수신 완료');
+      if (__DEV__) console.log('[AI 버핏과 티타임] 응답 수신 완료');
 
       // 응답 유효성 검사
       const hasValidDebate =

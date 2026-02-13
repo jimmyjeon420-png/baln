@@ -13,13 +13,18 @@ interface Props {
 }
 
 export default function WhatIfResultCard({ result }: Props) {
-  const isNegative = result.totalImpact.changePercent < 0;
+  // null 안전: AI 응답이 부분적일 수 있으므로 기본값 적용
+  const totalImpact = result.totalImpact ?? { changePercent: 0, currentTotal: 0, projectedTotal: 0, changeAmount: 0 };
+  const riskAssessment = result.riskAssessment ?? { overallRisk: 'MEDIUM' as const, vulnerabilities: [], hedgingSuggestions: [] };
+  const assetImpacts = result.assetImpacts ?? [];
+
+  const isNegative = totalImpact.changePercent < 0;
   const impactColor = isNegative ? '#CF6679' : '#4CAF50';
   const riskColor = {
     HIGH: '#CF6679',
     MEDIUM: '#FFA726',
     LOW: '#4CAF50',
-  }[result.riskAssessment.overallRisk];
+  }[riskAssessment.overallRisk] ?? '#FFA726';
 
   return (
     <View style={styles.container}>
@@ -37,22 +42,22 @@ export default function WhatIfResultCard({ result }: Props) {
           <View style={styles.impactItem}>
             <Text style={styles.impactLabel}>현재</Text>
             <Text style={styles.impactValue}>
-              ₩{Math.floor(result.totalImpact.currentTotal).toLocaleString()}
+              ₩{Math.floor(totalImpact.currentTotal ?? 0).toLocaleString()}
             </Text>
           </View>
           <Ionicons name="arrow-forward" size={20} color="#555" />
           <View style={styles.impactItem}>
             <Text style={styles.impactLabel}>예상</Text>
             <Text style={[styles.impactValue, { color: impactColor }]}>
-              ₩{Math.floor(result.totalImpact.projectedTotal).toLocaleString()}
+              ₩{Math.floor(totalImpact.projectedTotal ?? 0).toLocaleString()}
             </Text>
           </View>
         </View>
         <View style={[styles.changeBadge, { backgroundColor: impactColor + '20' }]}>
           <Text style={[styles.changeText, { color: impactColor }]}>
             {isNegative ? '' : '+'}
-            {result.totalImpact.changePercent.toFixed(1)}%
-            ({isNegative ? '' : '+'}₩{Math.floor(Math.abs(result.totalImpact.changeAmount)).toLocaleString()})
+            {(totalImpact.changePercent ?? 0).toFixed(1)}%
+            ({isNegative ? '' : '+'}₩{Math.floor(Math.abs(totalImpact.changeAmount ?? 0)).toLocaleString()})
           </Text>
         </View>
       </View>
@@ -60,7 +65,7 @@ export default function WhatIfResultCard({ result }: Props) {
       {/* 자산별 영향 */}
       <View style={styles.sectionCard}>
         <Text style={styles.sectionTitle}>자산별 영향</Text>
-        {result.assetImpacts.map((asset, i) => {
+        {assetImpacts.map((asset, i) => {
           const assetNeg = asset.changePercent < 0;
           const assetColor = assetNeg ? '#CF6679' : '#4CAF50';
           const levelColor = {
@@ -95,21 +100,21 @@ export default function WhatIfResultCard({ result }: Props) {
           <Text style={styles.sectionTitle}>리스크 평가</Text>
           <View style={[styles.riskBadge, { backgroundColor: riskColor + '20' }]}>
             <Text style={[styles.riskBadgeText, { color: riskColor }]}>
-              {result.riskAssessment.overallRisk === 'HIGH' ? '고위험' :
-               result.riskAssessment.overallRisk === 'MEDIUM' ? '중위험' : '저위험'}
+              {riskAssessment.overallRisk === 'HIGH' ? '고위험' :
+               riskAssessment.overallRisk === 'MEDIUM' ? '중위험' : '저위험'}
             </Text>
           </View>
         </View>
 
         <Text style={styles.subTitle}>취약점</Text>
-        {result.riskAssessment.vulnerabilities.map((v, i) => (
+        {(riskAssessment.vulnerabilities ?? []).map((v: string, i: number) => (
           <Text key={i} style={styles.listItem}>
             <Text style={{ color: '#CF6679' }}>!</Text> {v}
           </Text>
         ))}
 
         <Text style={[styles.subTitle, { marginTop: 10 }]}>헤지 전략</Text>
-        {result.riskAssessment.hedgingSuggestions.map((s, i) => (
+        {(riskAssessment.hedgingSuggestions ?? []).map((s: string, i: number) => (
           <Text key={i} style={styles.listItem}>
             <Text style={{ color: '#4CAF50' }}>+</Text> {s}
           </Text>

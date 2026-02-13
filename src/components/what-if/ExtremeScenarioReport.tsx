@@ -105,7 +105,7 @@ const MarketImpactSection: React.FC<{
 
     {/* 수혜 섹터 */}
     <Text style={[sectionStyles.subTitle, { color: '#10B981' }]}>▲ 수혜 섹터</Text>
-    {marketImpact.upSectors.map((s, i) => (
+    {(marketImpact.upSectors ?? []).map((s, i) => (
       <View key={i} style={sectionStyles.sectorRow}>
         <Text style={[sectionStyles.sectorName, { color: colors.textPrimary }]}>{s.name}</Text>
         <Text style={[sectionStyles.sectorChange, { color: '#10B981' }]}>{s.change}</Text>
@@ -114,7 +114,7 @@ const MarketImpactSection: React.FC<{
 
     {/* 피해 섹터 */}
     <Text style={[sectionStyles.subTitle, { color: '#EF4444', marginTop: 12 }]}>▼ 피해 섹터</Text>
-    {marketImpact.downSectors.map((s, i) => (
+    {(marketImpact.downSectors ?? []).map((s, i) => (
       <View key={i} style={sectionStyles.sectorRow}>
         <Text style={[sectionStyles.sectorName, { color: colors.textPrimary }]}>{s.name}</Text>
         <Text style={[sectionStyles.sectorChange, { color: '#EF4444' }]}>{s.change}</Text>
@@ -207,7 +207,7 @@ const SimulationResultSection: React.FC<{
     </View>
 
     {/* 종목별 영향 */}
-    {result.assetImpacts.map((asset, idx) => {
+    {(result.assetImpacts ?? []).map((asset, idx) => {
       const impactColor =
         asset.impactLevel === 'HIGH' ? '#EF4444' :
         asset.impactLevel === 'MEDIUM' ? '#F59E0B' : '#10B981';

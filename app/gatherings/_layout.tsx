@@ -3,13 +3,15 @@
  */
 
 import { Stack } from 'expo-router';
+import { useTheme } from '../../src/hooks/useTheme';
 
 export default function GatheringsLayout() {
+  const { colors } = useTheme();
   return (
     <Stack
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: '#121212' },
+        contentStyle: { backgroundColor: colors.background },
         animation: 'slide_from_right',
       }}
     />

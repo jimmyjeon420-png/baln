@@ -115,7 +115,11 @@ async function grantRewardCredits(
 // 성취 배지 보상 (Achievement Reward)
 // ============================================================================
 
-/** 성취 배지 해금 시 크레딧 보상 지급 (1회) */
+/** 성취 배지 해금 시 크레딧 보상 지급 (1회)
+ *
+ * Race condition 방어: AsyncStorage를 먼저 'pending'으로 마킹하여
+ * 두 번째 호출이 즉시 차단되도록 함. RPC 실패 시 롤백.
+ */
 export async function grantAchievementReward(achievementId: string): Promise<{
   success: boolean;
   creditsEarned: number;
@@ -127,15 +131,22 @@ export async function grantAchievementReward(achievementId: string): Promise<{
       return { success: false, creditsEarned: 0, newBalance: 0 };
     }
 
-    // 이미 이 배지 보상을 받았는지 확인
     const key = `@baln:achievement_reward_${achievementId}`;
     const already = await AsyncStorage.getItem(key);
-    if (already === 'granted') {
+    // 이미 지급 완료 또는 진행 중이면 즉시 차단 (TOCTOU 방어)
+    if (already === 'granted' || already === 'pending') {
       return { success: false, creditsEarned: 0, newBalance: 0 };
     }
 
+    // 먼저 pending으로 마킹 (동시 호출 방어)
+    await AsyncStorage.setItem(key, 'pending');
+
     const user = await getCurrentUser();
-    if (!user) return { success: false, creditsEarned: 0, newBalance: 0 };
+    if (!user) {
+      // 로그인 안 됐으면 롤백
+      await AsyncStorage.removeItem(key);
+      return { success: false, creditsEarned: 0, newBalance: 0 };
+    }
 
     const result = await grantRewardCredits(user.id, reward, 'achievement_reward', {
       achievement_id: achievementId,
@@ -143,6 +154,9 @@ export async function grantAchievementReward(achievementId: string): Promise<{
 
     if (result.success) {
       await AsyncStorage.setItem(key, 'granted');
+    } else {
+      // RPC 실패 시 롤백 (다음 시도 허용)
+      await AsyncStorage.removeItem(key);
     }
 
     return {
@@ -151,6 +165,14 @@ export async function grantAchievementReward(achievementId: string): Promise<{
       newBalance: result.newBalance,
     };
   } catch (err) {
+    // 예외 시 롤백 시도
+    try {
+      const key = `@baln:achievement_reward_${achievementId}`;
+      const current = await AsyncStorage.getItem(key);
+      if (current === 'pending') {
+        await AsyncStorage.removeItem(key);
+      }
+    } catch { /* 롤백 실패도 무시 */ }
     console.warn(`[Reward] 성취 보상 실패 (${achievementId}):`, err);
     return { success: false, creditsEarned: 0, newBalance: 0 };
   }
@@ -271,11 +293,12 @@ export async function performDailyCheckIn(): Promise<{
   } catch (err) {
     console.warn('[Reward] 출석 체크 실패:', err);
     // 최후의 폴백: 로컬에만 기록하여 사용자 경험 보존
+    // 주의: creditsEarned를 0으로 반환 — RPC가 실패했으므로 실제 크레딧 미지급
     try {
       await AsyncStorage.setItem(KEYS.dailyCheckIn, getTodayKey());
       await AsyncStorage.setItem(KEYS.lastCheckinDate, getTodayKey());
     } catch { /* AsyncStorage 실패도 무시 */ }
-    return { success: true, creditsEarned: REWARD_AMOUNTS.dailyCheckIn, newStreak: 1, newBalance: 0 };
+    return { success: false, creditsEarned: 0, newStreak: 1, newBalance: 0 };
   }
 }
 
@@ -295,30 +318,40 @@ export async function getShareRewardStatus(): Promise<{
   }
 }
 
-/** 공유 완료 후 보상 지급 (1일 1회) */
+/** 공유 완료 후 보상 지급 (1일 1회, 이중 탭 방어) */
 export async function grantShareReward(): Promise<{
   success: boolean;
   creditsEarned: number;
   newBalance: number;
   alreadyRewarded: boolean;
 }> {
+  const today = getTodayKey();
   try {
-    // 오늘 이미 받았는지 확인
-    const { rewarded } = await getShareRewardStatus();
-    if (rewarded) {
+    // 오늘 이미 받았거나 진행 중이면 즉시 차단
+    const raw = await AsyncStorage.getItem(KEYS.dailyShare);
+    if (raw === today || raw === `${today}_pending`) {
       return { success: false, creditsEarned: 0, newBalance: 0, alreadyRewarded: true };
     }
 
+    // 먼저 pending으로 마킹 (동시 호출 방어)
+    await AsyncStorage.setItem(KEYS.dailyShare, `${today}_pending`);
+
     const user = await getCurrentUser();
-    if (!user) return { success: false, creditsEarned: 0, newBalance: 0, alreadyRewarded: false };
+    if (!user) {
+      await AsyncStorage.removeItem(KEYS.dailyShare);
+      return { success: false, creditsEarned: 0, newBalance: 0, alreadyRewarded: false };
+    }
 
     // 크레딧 지급
     const result = await grantRewardCredits(user.id, REWARD_AMOUNTS.shareCard, 'share_card', {
-      date: getTodayKey(),
+      date: today,
     });
 
     if (result.success) {
-      await AsyncStorage.setItem(KEYS.dailyShare, getTodayKey());
+      await AsyncStorage.setItem(KEYS.dailyShare, today);
+    } else {
+      // RPC 실패 시 롤백 (다음 시도 허용)
+      await AsyncStorage.removeItem(KEYS.dailyShare);
     }
 
     return {
@@ -328,6 +361,13 @@ export async function grantShareReward(): Promise<{
       alreadyRewarded: false,
     };
   } catch (err) {
+    // 예외 시 pending 롤백
+    try {
+      const current = await AsyncStorage.getItem(KEYS.dailyShare);
+      if (current === `${today}_pending`) {
+        await AsyncStorage.removeItem(KEYS.dailyShare);
+      }
+    } catch { /* ignore */ }
     console.warn('[Reward] 공유 보상 실패:', err);
     return { success: false, creditsEarned: 0, newBalance: 0, alreadyRewarded: false };
   }
@@ -343,13 +383,13 @@ export async function getWelcomeBonusStatus(): Promise<{
 }> {
   try {
     const raw = await AsyncStorage.getItem(KEYS.welcomeBonus);
-    return { received: raw === 'granted' };
+    return { received: raw === 'granted' || raw === 'pending' };
   } catch {
     return { received: false };
   }
 }
 
-/** 웰컴 보너스 지급 (앱 첫 실행 시 1회) */
+/** 웰컴 보너스 지급 (앱 첫 실행 시 1회, TOCTOU 방어) */
 export async function grantWelcomeBonus(): Promise<{
   success: boolean;
   creditsEarned: number;
@@ -357,18 +397,28 @@ export async function grantWelcomeBonus(): Promise<{
   alreadyReceived: boolean;
 }> {
   try {
-    const { received } = await getWelcomeBonusStatus();
-    if (received) {
+    const raw = await AsyncStorage.getItem(KEYS.welcomeBonus);
+    // 이미 지급 완료 또는 진행 중이면 즉시 차단
+    if (raw === 'granted' || raw === 'pending') {
       return { success: false, creditsEarned: 0, newBalance: 0, alreadyReceived: true };
     }
 
+    // 먼저 pending으로 마킹 (동시 호출 방어)
+    await AsyncStorage.setItem(KEYS.welcomeBonus, 'pending');
+
     const user = await getCurrentUser();
-    if (!user) return { success: false, creditsEarned: 0, newBalance: 0, alreadyReceived: false };
+    if (!user) {
+      await AsyncStorage.removeItem(KEYS.welcomeBonus);
+      return { success: false, creditsEarned: 0, newBalance: 0, alreadyReceived: false };
+    }
 
     const result = await grantRewardCredits(user.id, REWARD_AMOUNTS.welcomeBonus, 'welcome_bonus');
 
     if (result.success) {
       await AsyncStorage.setItem(KEYS.welcomeBonus, 'granted');
+    } else {
+      // RPC 실패 시 롤백 (다음 시도 허용)
+      await AsyncStorage.removeItem(KEYS.welcomeBonus);
     }
 
     return {
@@ -378,6 +428,13 @@ export async function grantWelcomeBonus(): Promise<{
       alreadyReceived: false,
     };
   } catch (err) {
+    // 예외 시 pending 롤백
+    try {
+      const current = await AsyncStorage.getItem(KEYS.welcomeBonus);
+      if (current === 'pending') {
+        await AsyncStorage.removeItem(KEYS.welcomeBonus);
+      }
+    } catch { /* ignore */ }
     console.warn('[Reward] 웰컴 보너스 실패:', err);
     return { success: false, creditsEarned: 0, newBalance: 0, alreadyReceived: false };
   }
@@ -393,13 +450,13 @@ export async function getAssetRegistrationRewardStatus(): Promise<{
 }> {
   try {
     const raw = await AsyncStorage.getItem(KEYS.assetRegistration);
-    return { received: raw === 'granted' };
+    return { received: raw === 'granted' || raw === 'pending' };
   } catch {
     return { received: false };
   }
 }
 
-/** 자산 3개 이상 등록 시 보상 지급 (1회) */
+/** 자산 3개 이상 등록 시 보상 지급 (1회, TOCTOU 방어) */
 export async function grantAssetRegistrationReward(assetCount: number): Promise<{
   success: boolean;
   creditsEarned: number;
@@ -410,13 +467,20 @@ export async function grantAssetRegistrationReward(assetCount: number): Promise<
       return { success: false, creditsEarned: 0, newBalance: 0 };
     }
 
-    const { received } = await getAssetRegistrationRewardStatus();
-    if (received) {
+    const raw = await AsyncStorage.getItem(KEYS.assetRegistration);
+    // 이미 지급 완료 또는 진행 중이면 즉시 차단
+    if (raw === 'granted' || raw === 'pending') {
       return { success: false, creditsEarned: 0, newBalance: 0 };
     }
 
+    // 먼저 pending으로 마킹 (동시 호출 방어)
+    await AsyncStorage.setItem(KEYS.assetRegistration, 'pending');
+
     const user = await getCurrentUser();
-    if (!user) return { success: false, creditsEarned: 0, newBalance: 0 };
+    if (!user) {
+      await AsyncStorage.removeItem(KEYS.assetRegistration);
+      return { success: false, creditsEarned: 0, newBalance: 0 };
+    }
 
     const result = await grantRewardCredits(user.id, REWARD_AMOUNTS.assetRegistration, 'asset_registration', {
       asset_count: assetCount,
@@ -424,6 +488,9 @@ export async function grantAssetRegistrationReward(assetCount: number): Promise<
 
     if (result.success) {
       await AsyncStorage.setItem(KEYS.assetRegistration, 'granted');
+    } else {
+      // RPC 실패 시 롤백 (다음 시도 허용)
+      await AsyncStorage.removeItem(KEYS.assetRegistration);
     }
 
     return {
@@ -432,6 +499,13 @@ export async function grantAssetRegistrationReward(assetCount: number): Promise<
       newBalance: result.newBalance,
     };
   } catch (err) {
+    // 예외 시 pending 롤백
+    try {
+      const current = await AsyncStorage.getItem(KEYS.assetRegistration);
+      if (current === 'pending') {
+        await AsyncStorage.removeItem(KEYS.assetRegistration);
+      }
+    } catch { /* ignore */ }
     console.warn('[Reward] 자산 등록 보상 실패:', err);
     return { success: false, creditsEarned: 0, newBalance: 0 };
   }
@@ -453,28 +527,39 @@ export async function getEmotionRewardStatus(): Promise<{
   }
 }
 
-/** 감정 기록 완료 후 보상 지급 (1일 1회) */
+/** 감정 기록 완료 후 보상 지급 (1일 1회, 이중 탭 방어) */
 export async function grantEmotionReward(): Promise<{
   success: boolean;
   creditsEarned: number;
   newBalance: number;
   alreadyRewarded: boolean;
 }> {
+  const today = getTodayKey();
   try {
-    const { rewarded } = await getEmotionRewardStatus();
-    if (rewarded) {
+    // 오늘 이미 받았거나 진행 중이면 즉시 차단
+    const raw = await AsyncStorage.getItem(KEYS.dailyEmotion);
+    if (raw === today || raw === `${today}_pending`) {
       return { success: false, creditsEarned: 0, newBalance: 0, alreadyRewarded: true };
     }
 
+    // 먼저 pending으로 마킹 (동시 호출 방어)
+    await AsyncStorage.setItem(KEYS.dailyEmotion, `${today}_pending`);
+
     const user = await getCurrentUser();
-    if (!user) return { success: false, creditsEarned: 0, newBalance: 0, alreadyRewarded: false };
+    if (!user) {
+      await AsyncStorage.removeItem(KEYS.dailyEmotion);
+      return { success: false, creditsEarned: 0, newBalance: 0, alreadyRewarded: false };
+    }
 
     const result = await grantRewardCredits(user.id, REWARD_AMOUNTS.emotionCheck, 'emotion_check', {
-      date: getTodayKey(),
+      date: today,
     });
 
     if (result.success) {
-      await AsyncStorage.setItem(KEYS.dailyEmotion, getTodayKey());
+      await AsyncStorage.setItem(KEYS.dailyEmotion, today);
+    } else {
+      // RPC 실패 시 롤백
+      await AsyncStorage.removeItem(KEYS.dailyEmotion);
     }
 
     return {
@@ -484,6 +569,13 @@ export async function grantEmotionReward(): Promise<{
       alreadyRewarded: false,
     };
   } catch (err) {
+    // 예외 시 pending 롤백
+    try {
+      const current = await AsyncStorage.getItem(KEYS.dailyEmotion);
+      if (current === `${today}_pending`) {
+        await AsyncStorage.removeItem(KEYS.dailyEmotion);
+      }
+    } catch { /* ignore */ }
     console.warn('[Reward] 감정 기록 보상 실패:', err);
     return { success: false, creditsEarned: 0, newBalance: 0, alreadyRewarded: false };
   }

@@ -20,7 +20,7 @@ import { useTheme } from '../../hooks/useTheme';
 const FEATURE_COLOR_DEEP_DIVE = '#2196F3';
 const FEATURE_COLOR_WHAT_IF = '#FF9800';
 const FEATURE_COLOR_TAX_REPORT = '#9C27B0';
-const FEATURE_COLOR_AI_CFO = '#4CAF50';
+const FEATURE_COLOR_AI_BUFFETT = '#4CAF50';
 
 /**
  * AI 기능 항목
@@ -66,7 +66,7 @@ const AI_FEATURES: AIFeatureItem[] = [
     icon: 'chatbubbles-outline',
     title: 'AI 버핏과 티타임',
     description: '실시간 투자 상담',
-    color: FEATURE_COLOR_AI_CFO,
+    color: FEATURE_COLOR_AI_BUFFETT,
     route: '/marketplace?feature=ai_cfo_chat',
     comingSoon: true,
     comingSoonDate: '2월 말',

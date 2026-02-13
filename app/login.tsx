@@ -16,15 +16,19 @@ import {
   TouchableWithoutFeedback,
   ScrollView,
   Platform,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAuth, OAuthProvider } from '../src/context/AuthContext';
 import { COLORS, SIZES } from '../src/styles/theme';
+import { useTheme } from '../src/hooks/useTheme';
+import queryClient from '../src/services/queryClient';
 
 export default function LoginScreen() {
   const router = useRouter();
   const { signIn, signUp, signInWithOAuth, signInWithApple } = useAuth();
+  const { colors } = useTheme();
 
   // 상태
   const [email, setEmail] = useState('');
@@ -59,8 +63,12 @@ export default function LoginScreen() {
         await signUp(email, password);
         // 가입 성공 → 즉시 자동 로그인 (AuthGate가 온보딩으로 라우팅)
         await signIn(email, password);
+        // 새 사용자이므로 이전 캐시 데이터 제거
+        queryClient.clear();
       } else {
         await signIn(email, password);
+        // 이전 세션의 캐시된 데이터 제거 후 새로 로드
+        queryClient.clear();
         router.replace('/(tabs)');
       }
     } catch (error: any) {
@@ -89,12 +97,15 @@ export default function LoginScreen() {
 
     try {
       await signInWithOAuth(provider);
+      // 이전 세션의 캐시된 데이터 제거 후 새로 로드
+      queryClient.clear();
       router.replace('/(tabs)');
     } catch (error: any) {
-      const errorMessage = error?.message || `${provider} 로그인 실패`;
+      const errorMessage = error?.message || '';
 
       if (!errorMessage.includes('cancel')) {
-        Alert.alert('소셜 로그인 오류', errorMessage);
+        console.warn(`[로그인] ${provider} OAuth 오류:`, errorMessage);
+        Alert.alert('소셜 로그인 오류', '소셜 로그인에 실패했습니다. 잠시 후 다시 시도해주세요.');
       }
     } finally {
       setLoadingProvider(null);
@@ -109,6 +120,8 @@ export default function LoginScreen() {
 
     try {
       await signInWithApple();
+      // 이전 세션의 캐시된 데이터 제거 후 새로 로드
+      queryClient.clear();
       router.replace('/(tabs)');
     } catch (error: any) {
       const errorMessage = error?.message || 'Apple 로그인 실패';
@@ -135,7 +148,11 @@ export default function LoginScreen() {
   const isAnyLoading = isLoading || loadingProvider !== null;
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <ScrollView
           contentContainerStyle={styles.scrollContent}
@@ -144,8 +161,8 @@ export default function LoginScreen() {
         >
           {/* 헤더 */}
           <View style={styles.headerSection}>
-            <Text style={styles.title}>baln</Text>
-            <Text style={styles.subtitle}>
+            <Text style={[styles.title, { color: colors.textPrimary }]}>baln</Text>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
               {isSignUpMode
                 ? '계정을 만들어 시작하세요'
                 : '매일 5분, 바른 투자 습관'}
@@ -207,40 +224,43 @@ export default function LoginScreen() {
 
           {/* 구분선 */}
           <View style={styles.dividerSection}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>또는 이메일로</Text>
-            <View style={styles.dividerLine} />
+            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+            <Text style={[styles.dividerText, { color: colors.textTertiary }]}>또는 이메일로</Text>
+            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
           </View>
 
           {/* 이메일 입력 필드 */}
           <View style={styles.formSection}>
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>이메일</Text>
+              <Text style={[styles.label, { color: colors.textPrimary }]}>이메일</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: colors.textPrimary, backgroundColor: colors.surface, borderColor: colors.border }]}
                 placeholder="your@email.com"
-                placeholderTextColor={COLORS.textTertiary}
+                placeholderTextColor={colors.textTertiary}
                 value={email}
                 onChangeText={setEmail}
                 editable={!isAnyLoading}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoComplete="email"
+                returnKeyType="next"
               />
             </View>
 
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>비밀번호</Text>
+              <Text style={[styles.label, { color: colors.textPrimary }]}>비밀번호</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: colors.textPrimary, backgroundColor: colors.surface, borderColor: colors.border }]}
                 placeholder="••••••••"
-                placeholderTextColor={COLORS.textTertiary}
+                placeholderTextColor={colors.textTertiary}
                 value={password}
                 onChangeText={setPassword}
                 editable={!isAnyLoading}
                 secureTextEntry
                 autoCapitalize="none"
                 autoComplete="password"
+                returnKeyType="done"
+                onSubmitEditing={handleAuth}
               />
             </View>
           </View>
@@ -262,7 +282,7 @@ export default function LoginScreen() {
             </TouchableOpacity>
 
             <View style={styles.toggleSection}>
-              <Text style={styles.toggleText}>
+              <Text style={[styles.toggleText, { color: colors.textSecondary }]}>
                 {isSignUpMode ? '이미 계정이 있나요?' : '계정이 없나요?'}
               </Text>
               <TouchableOpacity
@@ -282,12 +302,13 @@ export default function LoginScreen() {
 
           {/* 하단 안내 */}
           <View style={styles.footerSection}>
-            <Text style={styles.footerText}>
+            <Text style={[styles.footerText, { color: colors.textTertiary }]}>
               계정을 만들면 이용약관 및 개인정보처리방침에 동의하게 됩니다
             </Text>
           </View>
         </ScrollView>
       </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

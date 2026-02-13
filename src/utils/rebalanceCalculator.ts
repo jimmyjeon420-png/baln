@@ -27,8 +27,11 @@ export const calculateRebalancing = (assets: Asset[]): PortfolioSummary => {
     };
   }
 
-  // Calculate total portfolio value
-  const totalValue = assets.reduce((sum, asset) => sum + asset.currentValue, 0);
+  // Calculate total portfolio value (NaN/Infinity defense)
+  const totalValue = assets.reduce((sum, asset) => {
+    const val = asset.currentValue;
+    return sum + (Number.isFinite(val) ? val : 0);
+  }, 0);
 
   if (totalValue <= 0) {
     return {
@@ -46,10 +49,13 @@ export const calculateRebalancing = (assets: Asset[]): PortfolioSummary => {
 
   // Calculate current allocations
   const actions: RebalanceAction[] = assets.map((asset) => {
-    const currentPercentage = (asset.currentValue / totalValue) * 100;
-    const targetValue = (asset.targetAllocation / 100) * totalValue;
-    const difference = targetValue - asset.currentValue;
-    const percentageDifference = asset.targetAllocation - currentPercentage;
+    // NaN defense: ensure currentValue is finite
+    const safeCurrentValue = Number.isFinite(asset.currentValue) ? asset.currentValue : 0;
+    const safeTargetAlloc = Number.isFinite(asset.targetAllocation) ? asset.targetAllocation : 0;
+    const currentPercentage = (safeCurrentValue / totalValue) * 100;
+    const targetValue = (safeTargetAlloc / 100) * totalValue;
+    const difference = targetValue - safeCurrentValue;
+    const percentageDifference = safeTargetAlloc - currentPercentage;
 
     // Determine action
     let action: 'BUY' | 'SELL' | 'HOLD';
@@ -64,7 +70,7 @@ export const calculateRebalancing = (assets: Asset[]): PortfolioSummary => {
     return {
       assetId: asset.id,
       assetName: asset.name,
-      currentValue: asset.currentValue,
+      currentValue: safeCurrentValue,
       targetValue: Math.round(targetValue * 100) / 100, // Round to 2 decimals
       action,
       amount: Math.round(Math.abs(difference) * 100) / 100,

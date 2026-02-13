@@ -338,7 +338,7 @@ export default function CheckupScreen() {
       >
 
         {/* 무료 기간 배너 */}
-        <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
+        <View style={s.freeBannerWrap}>
           <FreePeriodBanner compact={true} />
         </View>
 
@@ -435,32 +435,26 @@ export default function CheckupScreen() {
         )}
 
         {/* AI 심화 분석 도구 */}
-        <View style={{ marginHorizontal: 16, marginTop: 24 }}>
-          <Text style={{ fontSize: 18, fontWeight: '700', marginBottom: 4, color: colors.textPrimary }}>
+        <View style={s.aiSection}>
+          <Text style={[s.aiSectionTitle, { color: colors.textPrimary }]}>
             🤖 AI 심화 분석
           </Text>
-          <Text style={{ fontSize: 13, color: colors.textTertiary, marginBottom: 16 }}>
+          <Text style={[s.aiSectionSubtitle, { color: colors.textTertiary }]}>
             더 깊은 인사이트가 필요하신가요?
           </Text>
 
-          <View style={{ gap: 12 }}>
+          <View style={s.aiButtonList}>
             {/* 종목 딥다이브 */}
             <TouchableOpacity
               onPress={() => router.push('/analysis/deep-dive')}
-              style={{
-                backgroundColor: colors.surface,
-                borderRadius: 12,
-                padding: 16,
-                flexDirection: 'row',
-                alignItems: 'center',
-              }}
+              style={[s.aiButton, { backgroundColor: colors.surface }]}
             >
-              <Text style={{ fontSize: 32, marginRight: 16 }}>📈</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 15, fontWeight: '600', color: colors.textPrimary }}>
+              <Text style={s.aiButtonEmoji}>📈</Text>
+              <View style={s.aiButtonTextWrap}>
+                <Text style={[s.aiButtonTitle, { color: colors.textPrimary }]}>
                   종목 딥다이브
                 </Text>
-                <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>
+                <Text style={[s.aiButtonDesc, { color: colors.textSecondary }]}>
                   개별 주식 심층 분석
                 </Text>
               </View>
@@ -470,20 +464,14 @@ export default function CheckupScreen() {
             {/* What-If 시뮬레이션 */}
             <TouchableOpacity
               onPress={() => router.push('/analysis/what-if')}
-              style={{
-                backgroundColor: colors.surface,
-                borderRadius: 12,
-                padding: 16,
-                flexDirection: 'row',
-                alignItems: 'center',
-              }}
+              style={[s.aiButton, { backgroundColor: colors.surface }]}
             >
-              <Text style={{ fontSize: 32, marginRight: 16 }}>🧪</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 15, fontWeight: '600', color: colors.textPrimary }}>
+              <Text style={s.aiButtonEmoji}>🧪</Text>
+              <View style={s.aiButtonTextWrap}>
+                <Text style={[s.aiButtonTitle, { color: colors.textPrimary }]}>
                   What-If 시뮬레이션
                 </Text>
-                <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>
+                <Text style={[s.aiButtonDesc, { color: colors.textSecondary }]}>
                   시장 폭락 시나리오 테스트
                 </Text>
               </View>
@@ -493,20 +481,14 @@ export default function CheckupScreen() {
             {/* 세금 리포트 */}
             <TouchableOpacity
               onPress={() => router.push('/analysis/tax-report')}
-              style={{
-                backgroundColor: colors.surface,
-                borderRadius: 12,
-                padding: 16,
-                flexDirection: 'row',
-                alignItems: 'center',
-              }}
+              style={[s.aiButton, { backgroundColor: colors.surface }]}
             >
-              <Text style={{ fontSize: 32, marginRight: 16 }}>🧾</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 15, fontWeight: '600', color: colors.textPrimary }}>
+              <Text style={s.aiButtonEmoji}>🧾</Text>
+              <View style={s.aiButtonTextWrap}>
+                <Text style={[s.aiButtonTitle, { color: colors.textPrimary }]}>
                   세금 리포트
                 </Text>
-                <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>
+                <Text style={[s.aiButtonDesc, { color: colors.textSecondary }]}>
                   절세 전략 제안
                 </Text>
               </View>
@@ -516,20 +498,14 @@ export default function CheckupScreen() {
             {/* AI 버핏과 티타임 */}
             <TouchableOpacity
               onPress={() => router.push('/analysis/cfo-chat')}
-              style={{
-                backgroundColor: colors.surface,
-                borderRadius: 12,
-                padding: 16,
-                flexDirection: 'row',
-                alignItems: 'center',
-              }}
+              style={[s.aiButton, { backgroundColor: colors.surface }]}
             >
-              <Text style={{ fontSize: 32, marginRight: 16 }}>☕</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 15, fontWeight: '600', color: colors.textPrimary }}>
+              <Text style={s.aiButtonEmoji}>☕</Text>
+              <View style={s.aiButtonTextWrap}>
+                <Text style={[s.aiButtonTitle, { color: colors.textPrimary }]}>
                   AI 버핏과 티타임
                 </Text>
-                <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>
+                <Text style={[s.aiButtonDesc, { color: colors.textSecondary }]}>
                   실시간 대화형 조언
                 </Text>
               </View>
@@ -545,7 +521,7 @@ export default function CheckupScreen() {
           </Text>
         </View>
 
-        <View style={{ height: 100 }} />
+        <View style={s.bottomSpacer} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -561,7 +537,7 @@ const s = StyleSheet.create({
     // backgroundColor는 동적으로 적용됨
   },
   scroll: {
-    paddingBottom: 20,
+    paddingBottom: 120,
   },
   emptyContainer: {
     flex: 1,
@@ -671,5 +647,50 @@ const s = StyleSheet.create({
     fontSize: 11,
     color: '#9E9E9E',
     lineHeight: 16,
+  },
+  // ── AI 심화 분석 섹션 (인라인 스타일 → StyleSheet 추출) ──
+  freeBannerWrap: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+  },
+  bottomSpacer: {
+    height: 100,
+  },
+  aiSection: {
+    marginHorizontal: 16,
+    marginTop: 24,
+  },
+  aiSectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  aiSectionSubtitle: {
+    fontSize: 13,
+    marginBottom: 16,
+  },
+  aiButtonList: {
+    gap: 12,
+  },
+  aiButton: {
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  aiButtonEmoji: {
+    fontSize: 32,
+    marginRight: 16,
+  },
+  aiButtonTextWrap: {
+    flex: 1,
+  },
+  aiButtonTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  aiButtonDesc: {
+    fontSize: 12,
+    marginTop: 2,
   },
 });

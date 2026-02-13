@@ -30,25 +30,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAdminRetention } from '../../src/hooks/useAdminDashboard';
-
-// ================================================================
-// 색상 상수 (다크 모드 핀테크 UI)
-// ================================================================
-
-const COLORS = {
-  background: '#121212',
-  surface: '#1E1E1E',
-  surfaceLight: '#2C2C2C',
-  primary: '#4CAF50',
-  primaryLight: '#66BB6A',
-  textPrimary: '#FFFFFF',
-  textSecondary: '#B0B0B0',
-  textTertiary: '#757575',
-  border: '#3A3A3A',
-  error: '#CF6679',
-  warning: '#FFB74D',
-  info: '#29B6F6',
-};
+import { COLORS } from '../../src/styles/theme';
 
 // 등급별 색상
 const TIER_COLORS: Record<string, string> = {
@@ -112,7 +94,7 @@ function HorizontalBar({
         />
       </View>
       <Text style={barStyles.value}>
-        {value}
+        {value.toLocaleString('ko-KR')}
         {suffix || ''}
       </Text>
     </View>
@@ -144,7 +126,7 @@ const barStyles = StyleSheet.create({
     minWidth: 4,
   },
   value: {
-    width: 50,
+    width: 64,
     fontSize: 13,
     fontWeight: '600',
     color: COLORS.textPrimary,
@@ -187,7 +169,7 @@ function DistributionBar({
         />
       </View>
       <Text style={distStyles.value}>
-        {value}명 ({percentage}%)
+        {value.toLocaleString('ko-KR')}명 ({percentage}%)
       </Text>
     </View>
   );
@@ -261,8 +243,11 @@ export default function AdminAnalyticsScreen() {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await refetch();
-    setRefreshing(false);
+    try {
+      await refetch();
+    } finally {
+      setRefreshing(false);
+    }
   }, [refetch]);
 
   // --------------------------------------------------
@@ -414,7 +399,7 @@ export default function AdminAnalyticsScreen() {
         {/* ============================================================ */}
         <Text style={styles.sectionTitle}>리텐션율</Text>
         <Text style={styles.sectionSubtitle}>
-          전체 가입자 {data.total_signups}명 기준
+          전체 가입자 {data.total_signups.toLocaleString('ko-KR')}명 기준
         </Text>
 
         <View style={styles.retentionRow}>
@@ -430,7 +415,7 @@ export default function AdminAnalyticsScreen() {
               {data.d1_retention.toFixed(1)}%
             </Text>
             <Text style={styles.retentionCount}>
-              {data.d1_count}명 / {data.total_signups}명
+              {data.d1_count.toLocaleString('ko-KR')}명 / {data.total_signups.toLocaleString('ko-KR')}명
             </Text>
           </View>
 
@@ -446,7 +431,7 @@ export default function AdminAnalyticsScreen() {
               {data.d7_retention.toFixed(1)}%
             </Text>
             <Text style={styles.retentionCount}>
-              {data.d7_count}명 / {data.total_signups}명
+              {data.d7_count.toLocaleString('ko-KR')}명 / {data.total_signups.toLocaleString('ko-KR')}명
             </Text>
           </View>
 
@@ -462,7 +447,7 @@ export default function AdminAnalyticsScreen() {
               {data.d30_retention.toFixed(1)}%
             </Text>
             <Text style={styles.retentionCount}>
-              {data.d30_count}명 / {data.total_signups}명
+              {data.d30_count.toLocaleString('ko-KR')}명 / {data.total_signups.toLocaleString('ko-KR')}명
             </Text>
           </View>
         </View>
@@ -618,7 +603,11 @@ const styles = StyleSheet.create({
     borderBottomColor: COLORS.border,
   },
   backButton: {
-    padding: 4,
+    padding: 8,
+    minWidth: 44,
+    minHeight: 44,
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
   },
   headerTitle: {
     fontSize: 18,

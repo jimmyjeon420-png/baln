@@ -7,12 +7,14 @@
 
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
+import { useTheme } from '../hooks/useTheme';
 
 interface BrandSplashProps {
   onFinish: () => void; // 스플래시 끝나면 호출 (메인 화면 표시)
 }
 
 export default function BrandSplash({ onFinish }: BrandSplashProps) {
+  const { colors } = useTheme();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const dotFade = useRef(new Animated.Value(0)).current;
 
@@ -55,10 +57,10 @@ export default function BrandSplash({ onFinish }: BrandSplashProps) {
   }, []);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.brandRow}>
         {/* 'baln' 부분 */}
-        <Animated.Text style={[styles.brandText, { opacity: fadeAnim }]}>
+        <Animated.Text style={[styles.brandText, { opacity: fadeAnim, color: colors.textPrimary }]}>
           bal<Text style={{ color: '#4CAF50' }}>n</Text>
         </Animated.Text>
         {/* '.logic' 부분 - 살짝 늦게 등장 */}

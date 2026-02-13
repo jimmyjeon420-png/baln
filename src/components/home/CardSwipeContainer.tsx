@@ -13,7 +13,7 @@
  * - One Page One Card: 한 화면에 카드 1장만
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -27,6 +27,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '../../styles/theme';
+import { useTheme } from '../../hooks/useTheme';
 import { selection } from '../../services/hapticService';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -73,6 +74,7 @@ export default function CardSwipeContainer({
 }: CardSwipeContainerProps) {
   const [currentPage, setCurrentPage] = useState(initialIndex);
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
   const [showSwipeHint, setShowSwipeHint] = useState(true);
   const hintOpacity = useRef(new Animated.Value(1)).current;
   const hintTranslateX = useRef(new Animated.Value(0)).current;
@@ -99,17 +101,22 @@ export default function CardSwipeContainer({
         }).start(() => setShowSwipeHint(false));
       }, 3000);
 
-      return () => clearTimeout(timeout);
+      return () => {
+        clearTimeout(timeout);
+        shake.stop();
+      };
     } else if (currentPage !== 0) {
       setShowSwipeHint(false);
     }
-  }, [currentPage]);
+  }, [currentPage, showSwipeHint, hintTranslateX, hintOpacity]);
 
-  // children 개수 기반 동적 처리
-  const childCount = Array.isArray(children) ? children.length : 0;
+  // children 개수 기반 동적 처리 (빈 배열/비배열 안전 처리)
+  const childArray = Array.isArray(children) ? children : [];
+  const childCount = childArray.length;
 
   // 스크롤 종료 시 페이지 추적 (범위 가드 추가)
-  const handleScrollEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+  const handleScrollEnd = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    if (childCount <= 0) return; // 빈 상태 가드
     const offsetX = e.nativeEvent.contentOffset.x;
     const page = Math.min(Math.max(Math.round(offsetX / SCREEN_WIDTH), 0), childCount - 1);
     if (page !== currentPage && page >= 0) {
@@ -117,10 +124,10 @@ export default function CardSwipeContainer({
       selection(); // 햅틱 피드백
       onCardChange?.(page);
     }
-  };
+  }, [childCount, currentPage, onCardChange]);
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top + 8 }]}>
+    <View style={[styles.container, { paddingTop: insets.top + 8, backgroundColor: colors.background }]}>
       {/* 수평 스와이프 영역 */}
       <ScrollView
         horizontal
@@ -145,7 +152,7 @@ export default function CardSwipeContainer({
           ) : undefined
         }
       >
-        {children.map((child, index) => (
+        {childArray.map((child, index) => (
           <View key={index} style={styles.cardWrapper}>
             {child}
           </View>
@@ -171,7 +178,8 @@ export default function CardSwipeContainer({
             <Text
               style={[
                 styles.label,
-                index === currentPage && styles.labelActive,
+                { color: colors.textTertiary },
+                index === currentPage && [styles.labelActive, { color: colors.textPrimary }],
               ]}
             >
               {label}
@@ -179,6 +187,7 @@ export default function CardSwipeContainer({
             <View
               style={[
                 styles.indicator,
+                { backgroundColor: colors.border },
                 index === currentPage && styles.indicatorActive,
               ]}
             />
@@ -188,8 +197,8 @@ export default function CardSwipeContainer({
 
       {/* 페이지 카운터 (1/3 형태) */}
       <View style={styles.pageCounter}>
-        <Text style={styles.pageCounterText}>
-          {currentPage + 1} / {children.length}
+        <Text style={[styles.pageCounterText, { color: colors.textTertiary }]}>
+          {currentPage + 1} / {childCount}
         </Text>
       </View>
     </View>
@@ -203,7 +212,7 @@ export default function CardSwipeContainer({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    // backgroundColor는 동적으로 적용됨 (colors.background)
   },
   bottomNav: {
     flexDirection: 'row',
@@ -221,7 +230,7 @@ const styles = StyleSheet.create({
     width: 6,
     height: 3,
     borderRadius: 1.5,
-    backgroundColor: '#3A3A3A',
+    // backgroundColor는 동적으로 적용됨 (colors.border)
   },
   indicatorActive: {
     width: 24,
@@ -265,7 +274,7 @@ const styles = StyleSheet.create({
   },
   pageCounter: {
     alignItems: 'center',
-    paddingBottom: 10,
+    paddingBottom: 80,
   },
   pageCounterText: {
     fontSize: 11,

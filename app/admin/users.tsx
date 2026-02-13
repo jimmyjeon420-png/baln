@@ -33,23 +33,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAdminUserList, useGrantBonusCredits } from '../../src/hooks/useAdminDashboard';
 import { AdminUser } from '../../src/services/adminService';
-
-// ─── 색상 상수 ──────────────────────────────────────────────
-
-const COLORS = {
-  background: '#121212',
-  surface: '#1E1E1E',
-  surfaceLight: '#2C2C2C',
-  primary: '#4CAF50',
-  primaryLight: '#66BB6A',
-  textPrimary: '#FFFFFF',
-  textSecondary: '#B0B0B0',
-  textTertiary: '#757575',
-  border: '#3A3A3A',
-  error: '#CF6679',
-  warning: '#FFB74D',
-  info: '#29B6F6',
-};
+import { COLORS } from '../../src/styles/theme';
 
 // ─── 티어 색상 매핑 ─────────────────────────────────────────
 
@@ -335,9 +319,18 @@ export default function AdminUsersScreen() {
               });
               if (result.success) {
                 setShowGrantModal(false);
-                // 로컬 상태의 잔액도 업데이트
+                const newBalance = result.new_balance ?? selectedUser.credit_balance + amount;
+                // 로컬 상태의 잔액도 업데이트 (선택된 유저 + 목록)
                 setSelectedUser((prev) =>
-                  prev ? { ...prev, credit_balance: result.new_balance ?? prev.credit_balance + amount } : null
+                  prev ? { ...prev, credit_balance: newBalance } : null
+                );
+                // allUsers 목록의 해당 유저 잔액도 동기화
+                setAllUsers((prev) =>
+                  prev.map((u) =>
+                    u.id === selectedUser.id
+                      ? { ...u, credit_balance: newBalance }
+                      : u
+                  )
                 );
                 Alert.alert(
                   '지급 완료',

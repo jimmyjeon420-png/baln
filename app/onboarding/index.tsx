@@ -28,6 +28,7 @@ import {
   Platform,
   InputAccessoryView,
   TouchableWithoutFeedback,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -35,6 +36,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { COLORS } from '../../src/styles/theme';
+import { useTheme } from '../../src/hooks/useTheme';
 import supabase, { getCurrentUser } from '../../src/services/supabase';
 import { searchStocks, StockItem, getCategoryColor } from '../../src/data/stockList';
 import { priceService } from '../../src/services/PriceService';
@@ -108,6 +110,7 @@ const INVESTMENT_GOALS: SelectionOption[] = [
 export default function OnboardingScreen() {
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
+  const { colors } = useTheme();
 
   // 현재 단계 (0-indexed: 0=환영, 1=경험, 2=목표, 3=자산등록, 4=건강점수)
   const [currentStep, setCurrentStep] = useState(0);
@@ -778,7 +781,10 @@ export default function OnboardingScreen() {
   // ============================================================================
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top + 12 }]}>
+    <KeyboardAvoidingView
+      style={[styles.container, { paddingTop: insets.top + 12, backgroundColor: colors.background }]}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
       {/* 상단: 뒤로가기 + 진행률 + 건너뛰기 */}
       <View style={styles.topBar}>
         {currentStep > 0 ? (
@@ -824,7 +830,7 @@ export default function OnboardingScreen() {
           </TouchableOpacity>
         )}
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

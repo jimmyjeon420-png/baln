@@ -82,11 +82,16 @@ function extractMetricValue(
 export default function DeepDiveReport({ result }: DeepDiveReportProps) {
   const { colors } = useTheme();
 
-  const { sections } = result;
+  // null 안전: AI 응답이 부분적일 수 있으므로 기본값 적용
+  const sections = result.sections ?? {} as any;
+  const financial = sections.financial ?? { score: 0, title: '재무 분석', highlights: [], metrics: [] };
+  const technical = sections.technical ?? { score: 0, title: '기술적 분석', highlights: [], signals: [] };
+  const news = sections.news ?? { title: '뉴스 분석', sentiment: 'NEUTRAL', recentNews: [] };
+  const quality = (sections.quality ?? { title: '퀄리티 분석', score: 0, highlights: [], metrics: [] }) as { title: string; score: number; highlights: string[]; metrics?: { label: string; value: string; status: 'good' | 'neutral' | 'bad'; detail?: string }[] };
   const rec = RECOMMENDATION_COLORS[result.recommendation] ?? RECOMMENDATION_COLORS.NEUTRAL;
 
   // ── 뉴스 점수 (ScoreRadar용) ──
-  const newsScore = sentimentToScore(sections.news.sentiment);
+  const newsScore = sentimentToScore(news.sentiment);
 
   // ── 재무 분석 Props 계산 ──
   const financialProps = useMemo(() => {
@@ -111,18 +116,18 @@ export default function DeepDiveReport({ result }: DeepDiveReportProps) {
     })();
 
     // keyMetrics: financial.metrics에서 ROE, 부채비율 추출
-    const roe = extractMetricValue(sections.financial.metrics, ['roe', '자기자본이익률']);
-    const debtRatio = extractMetricValue(sections.financial.metrics, ['부채비율', 'debt']);
+    const roe = extractMetricValue(financial.metrics ?? [], ['roe', '자기자본이익률']);
+    const debtRatio = extractMetricValue(financial.metrics ?? [], ['부채비율', 'debt']);
     const keyMetrics = { roe, roic: 0, debtRatio };
 
     // cashFlowSummary: financial.highlights에서 현금흐름 관련 추출
-    const cashFlowHighlight = sections.financial.highlights.find((h) =>
+    const cashFlowHighlight = (financial.highlights ?? []).find((h: string) =>
       h.includes('현금') || h.includes('cash') || h.includes('영업활동'),
     );
     const cashFlowSummary = cashFlowHighlight ?? '상세 정보는 실적 발표 후 제공됩니다';
 
     return { yearlyData, keyMetrics, cashFlowSummary };
-  }, [result.quarterlyData, sections.financial.metrics, sections.financial.highlights]);
+  }, [result.quarterlyData, financial.metrics, financial.highlights]);
 
   return (
     <View style={styles.wrapper}>
@@ -160,7 +165,7 @@ export default function DeepDiveReport({ result }: DeepDiveReportProps) {
           <View style={styles.scoreLabels}>
             <Text style={[styles.scoreLabelMain, { color: colors.textPrimary }]}>종합 점수</Text>
             <Text style={[styles.scoreLabelSub, { color: colors.textTertiary }]}>
-              재무 {sections.financial.score} · 품질 {sections.quality?.score ?? '-'} · 기술 {sections.technical.score} · 뉴스 {newsScore}
+              재무 {financial.score ?? 0} · 품질 {quality?.score ?? '-'} · 기술 {technical.score ?? 0} · 뉴스 {newsScore}
             </Text>
           </View>
         </View>
@@ -205,8 +210,8 @@ export default function DeepDiveReport({ result }: DeepDiveReportProps) {
         </Text>
         <View style={styles.radarCenter}>
           <ScoreRadar
-            financialScore={sections.financial.score}
-            technicalScore={sections.technical.score}
+            financialScore={financial.score ?? 0}
+            technicalScore={technical.score ?? 0}
             newsScore={newsScore}
           />
         </View>
@@ -220,12 +225,12 @@ export default function DeepDiveReport({ result }: DeepDiveReportProps) {
           재무 분석
         </Text>
         <Text style={[styles.sectionScore, { color: colors.primary }]}>
-          {sections.financial.score}점
+          {financial.score ?? 0}점
         </Text>
 
         {/* 하이라이트 */}
         <View style={styles.highlightList}>
-          {sections.financial.highlights.map((h, i) => (
+          {(financial.highlights ?? []).map((h: string, i: number) => (
             <View key={i} style={styles.highlightRow}>
               <Ionicons name="ellipse" size={6} color={colors.primary} style={styles.bulletIcon} />
               <Text style={[styles.highlightText, { color: colors.textSecondary }]}>{h}</Text>
@@ -254,12 +259,12 @@ export default function DeepDiveReport({ result }: DeepDiveReportProps) {
           기술적 분석
         </Text>
         <Text style={[styles.sectionScore, { color: colors.primary }]}>
-          {sections.technical.score}점
+          {technical.score ?? 0}점
         </Text>
 
         {/* 하이라이트 */}
         <View style={styles.highlightList}>
-          {sections.technical.highlights.map((h, i) => (
+          {(technical.highlights ?? []).map((h: string, i: number) => (
             <View key={i} style={styles.highlightRow}>
               <Ionicons name="ellipse" size={6} color={colors.primary} style={styles.bulletIcon} />
               <Text style={[styles.highlightText, { color: colors.textSecondary }]}>{h}</Text>
@@ -268,7 +273,7 @@ export default function DeepDiveReport({ result }: DeepDiveReportProps) {
         </View>
 
         {/* 시그널 테이블 */}
-        {sections.technical.signals.length > 0 && (
+        {(technical.signals ?? []).length > 0 && (
           <View style={[styles.signalTable, { borderColor: colors.border }]}>
             {/* 테이블 헤더 */}
             <View style={[styles.signalHeaderRow, { backgroundColor: colors.surfaceLight }]}>
@@ -277,13 +282,13 @@ export default function DeepDiveReport({ result }: DeepDiveReportProps) {
               <Text style={[styles.signalHeaderCell, styles.signalCol3, { color: colors.textTertiary }]}>값</Text>
             </View>
             {/* 테이블 바디 */}
-            {sections.technical.signals.map((sig, i) => (
+            {(technical.signals ?? []).map((sig: any, i: number) => (
               <View
                 key={i}
                 style={[
                   styles.signalRow,
                   { borderBottomColor: colors.border },
-                  i === sections.technical.signals.length - 1 && styles.signalRowLast,
+                  i === (technical.signals ?? []).length - 1 && styles.signalRowLast,
                 ]}
               >
                 <Text style={[styles.signalCell, styles.signalCol1, { color: colors.textPrimary }]}>
@@ -310,17 +315,17 @@ export default function DeepDiveReport({ result }: DeepDiveReportProps) {
       {/* ═══════════════════════════════════════
           5. 투자 품질 (Moat / 경영진 / 산업)
          ═══════════════════════════════════════ */}
-      {sections.quality && (
+      {quality && quality.highlights && (
         <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
             투자 품질
           </Text>
           <Text style={[styles.sectionScore, { color: colors.primary }]}>
-            {sections.quality.score}점
+            {quality.score ?? 0}점
           </Text>
 
           <View style={styles.highlightList}>
-            {sections.quality.highlights.map((h: string, i: number) => (
+            {(quality.highlights ?? []).map((h: string, i: number) => (
               <View key={i} style={styles.highlightRow}>
                 <Ionicons name="ellipse" size={6} color={colors.primary} style={styles.bulletIcon} />
                 <Text style={[styles.highlightText, { color: colors.textSecondary }]}>{h}</Text>
@@ -328,20 +333,20 @@ export default function DeepDiveReport({ result }: DeepDiveReportProps) {
             ))}
           </View>
 
-          {sections.quality.metrics && (
+          {quality.metrics && (
             <View style={[styles.signalTable, { borderColor: colors.border }]}>
               <View style={[styles.signalHeaderRow, { backgroundColor: colors.surfaceLight }]}>
                 <Text style={[styles.signalHeaderCell, styles.signalCol1, { color: colors.textTertiary }]}>항목</Text>
                 <Text style={[styles.signalHeaderCell, styles.signalCol2, { color: colors.textTertiary }]}>평가</Text>
                 <Text style={[styles.signalHeaderCell, styles.signalCol3, { color: colors.textTertiary }]}>상세</Text>
               </View>
-              {sections.quality.metrics.map((m: any, i: number) => (
+              {(quality.metrics ?? []).map((m: any, i: number) => (
                 <View
                   key={i}
                   style={[
                     styles.signalRow,
                     { borderBottomColor: colors.border },
-                    i === sections.quality!.metrics!.length - 1 && styles.signalRowLast,
+                    i === (quality.metrics ?? []).length - 1 && styles.signalRowLast,
                   ]}
                 >
                   <Text style={[styles.signalCell, styles.signalCol1, { color: colors.textPrimary }]}>
@@ -374,9 +379,9 @@ export default function DeepDiveReport({ result }: DeepDiveReportProps) {
           뉴스 분석
         </Text>
         <NewsTimeline
-          sentiment={sections.news.sentiment}
-          highlights={sections.news.highlights}
-          recentNews={sections.news.recentNews}
+          sentiment={news.sentiment ?? 'NEUTRAL'}
+          highlights={news.highlights ?? []}
+          recentNews={news.recentNews ?? []}
         />
       </View>
 
@@ -388,11 +393,11 @@ export default function DeepDiveReport({ result }: DeepDiveReportProps) {
           AI 종합 의견
         </Text>
         <AIOpinionCard
-          summary={sections.aiOpinion.summary}
-          bullCase={sections.aiOpinion.bullCase}
-          bearCase={sections.aiOpinion.bearCase}
-          targetPrice={sections.aiOpinion.targetPrice}
-          timeHorizon={sections.aiOpinion.timeHorizon}
+          summary={sections.aiOpinion?.summary ?? ''}
+          bullCase={sections.aiOpinion?.bullCase ?? []}
+          bearCase={sections.aiOpinion?.bearCase ?? []}
+          targetPrice={sections.aiOpinion?.targetPrice ?? '-'}
+          timeHorizon={sections.aiOpinion?.timeHorizon ?? '-'}
         />
       </View>
 

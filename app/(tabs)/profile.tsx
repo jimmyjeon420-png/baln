@@ -52,9 +52,9 @@ export default function ProfileScreen() {
   const { themeMode, setThemeMode, colors } = useTheme();
 
   // ---------------------------------------------------------------------------
-  // 로그아웃 처리
+  // 로그아웃 처리 (useCallback으로 불필요한 재생성 방지)
   // ---------------------------------------------------------------------------
-  const handleLogout = async () => {
+  const handleLogout = React.useCallback(async () => {
     Alert.alert(
       '로그아웃',
       '정말 로그아웃 하시겠습니까?',
@@ -74,20 +74,20 @@ export default function ProfileScreen() {
         },
       ]
     );
-  };
+  }, [signOut, router]);
 
   // ---------------------------------------------------------------------------
   // 테마 변경 핸들러
   // ---------------------------------------------------------------------------
-  const handleThemeChange = async (mode: ThemeMode) => {
+  const handleThemeChange = React.useCallback(async (mode: ThemeMode) => {
     await setThemeMode(mode);
-  };
+  }, [setThemeMode]);
 
   // ---------------------------------------------------------------------------
-  // 메뉴 섹션 정의 — 3개 그룹으로 깔끔하게 분류
+  // 메뉴 섹션 정의 — useMemo로 매 렌더 시 배열 재생성 방지
   // ---------------------------------------------------------------------------
 
-  const sections: MenuSection[] = [
+  const sections: MenuSection[] = React.useMemo(() => [
     // ── 섹션 1: 나의 활동 ──
     {
       title: '나의 활동',
@@ -179,13 +179,16 @@ export default function ProfileScreen() {
         },
       ],
     },
-  ];
+  ], [router, unlockedCount, totalCount]);
 
   // ---------------------------------------------------------------------------
   // 다크모드 토글 (헤더 우측 스위치에서 사용)
   // ---------------------------------------------------------------------------
   const isDarkMode = themeMode === 'dark';
-  const toggleTheme = () => handleThemeChange(isDarkMode ? 'light' : 'dark');
+  const toggleTheme = React.useCallback(
+    () => handleThemeChange(isDarkMode ? 'light' : 'dark'),
+    [handleThemeChange, isDarkMode],
+  );
 
   // ---------------------------------------------------------------------------
   // DEV 전용 섹션 (개발 모드에서만 노출)
@@ -195,8 +198,8 @@ export default function ProfileScreen() {
     items: [
       {
         icon: 'shield',
-        label: '관리자 신고 처리',
-        onPress: () => router.push('/admin/reports'),
+        label: '관리자 허브',
+        onPress: () => router.push('/admin'),
       },
     ],
   };
@@ -296,7 +299,7 @@ export default function ProfileScreen() {
 
         {/* ── 크레딧 표시 (Agent 3) ── */}
         {user && (
-          <View style={{ paddingHorizontal: 16, paddingVertical: 12 }}>
+          <View style={styles.creditWrap}>
             <CreditDisplay />
           </View>
         )}
@@ -336,7 +339,7 @@ const styles = StyleSheet.create({
   // ---------------------------------------------------------------------------
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    // backgroundColor는 동적으로 적용됨 (colors.background)
   },
   header: {
     flexDirection: 'row',
@@ -349,7 +352,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: SIZES.fXxxl,
     fontWeight: '700',
-    color: COLORS.textPrimary,
+    // color는 동적으로 적용됨 (colors.textPrimary)
   },
   themeToggle: {
     flexDirection: 'row',
@@ -370,7 +373,7 @@ const styles = StyleSheet.create({
   profileCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.surface,
+    // backgroundColor는 동적으로 적용됨 (colors.surface)
     borderRadius: SIZES.card.borderRadius,
     padding: SIZES.card.padding,
     marginBottom: SIZES.xxl,
@@ -379,7 +382,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: COLORS.surfaceLight,
+    // backgroundColor는 동적으로 적용됨 (colors.surfaceLight)
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -390,11 +393,11 @@ const styles = StyleSheet.create({
   profileName: {
     fontSize: SIZES.fLg,
     fontWeight: '600',
-    color: COLORS.textPrimary,
+    // color는 동적으로 적용됨 (colors.textPrimary)
   },
   profileEmail: {
     fontSize: SIZES.fXs,
-    color: COLORS.textSecondary,
+    // color는 동적으로 적용됨 (colors.textSecondary)
     marginTop: 2,
   },
 
@@ -407,14 +410,14 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: SIZES.fXs,
     fontWeight: '600',
-    color: COLORS.textTertiary,
+    // color는 동적으로 적용됨 (colors.textTertiary)
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginBottom: SIZES.sm,
     marginLeft: SIZES.xs,
   },
   sectionCard: {
-    backgroundColor: COLORS.surface,
+    // backgroundColor는 동적으로 적용됨 (colors.surface)
     borderRadius: SIZES.card.borderRadius,
     overflow: 'hidden',
   },
@@ -428,7 +431,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: SIZES.card.padding,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: COLORS.borderLight,
+    // borderBottomColor는 동적으로 적용됨 (colors.borderLight)
   },
   menuItemLast: {
     borderBottomWidth: 0,
@@ -437,14 +440,14 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 8,
-    backgroundColor: COLORS.surfaceLight,
+    // backgroundColor는 동적으로 적용됨 (colors.surfaceLight)
     justifyContent: 'center',
     alignItems: 'center',
   },
   menuLabel: {
     flex: 1,
     fontSize: SIZES.fBase,
-    color: COLORS.textPrimary,
+    // color는 동적으로 적용됨 (colors.textPrimary)
     marginLeft: SIZES.md,
   },
 
@@ -460,7 +463,7 @@ const styles = StyleSheet.create({
   badgeText: {
     fontSize: SIZES.fTiny,
     fontWeight: '700',
-    color: COLORS.textPrimary,
+    // color는 동적으로 적용됨 (colors.textPrimary)
   },
 
   // ---------------------------------------------------------------------------
@@ -470,7 +473,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.surface,
+    // backgroundColor는 동적으로 적용됨 (colors.surface)
     borderRadius: SIZES.card.borderRadius,
     paddingVertical: 14,
     marginTop: SIZES.sm,
@@ -479,7 +482,15 @@ const styles = StyleSheet.create({
   logoutText: {
     fontSize: SIZES.fBase,
     fontWeight: '600',
-    color: COLORS.error,
+    // color는 동적으로 적용됨 (colors.error)
+  },
+
+  // ---------------------------------------------------------------------------
+  // 크레딧 표시 래퍼
+  // ---------------------------------------------------------------------------
+  creditWrap: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
 
   // ---------------------------------------------------------------------------
@@ -487,7 +498,7 @@ const styles = StyleSheet.create({
   // ---------------------------------------------------------------------------
   versionText: {
     textAlign: 'center',
-    color: COLORS.textTertiary,
+    // color는 동적으로 적용됨 (colors.textTertiary)
     fontSize: SIZES.fXs,
     marginTop: SIZES.xxl,
     marginBottom: 40,

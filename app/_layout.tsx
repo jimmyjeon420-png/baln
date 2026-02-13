@@ -3,7 +3,6 @@ import { View, AppState, AppStateStatus, Alert } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useEffect, useRef, useState } from 'react';
-import { QueryClient } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
@@ -28,17 +27,7 @@ import WelcomeBonusModal from '../src/components/WelcomeBonusModal';
 import { useDeepLink } from '../src/hooks/useDeepLink';
 import { useAnalyticsInit } from '../src/hooks/useAnalytics';
 import { usePrefetchCheckup } from '../src/hooks/usePrefetchCheckup';
-
-// React Query 클라이언트 — gcTime을 24시간으로 설정 (영속 캐시와 동기화)
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 5,          // 5분: 이 시간 내 재요청 안 함
-      gcTime: 1000 * 60 * 60 * 24,       // 24시간: 영속 캐시와 수명 동기화
-      retry: 2,
-    },
-  },
-});
+import queryClient from '../src/services/queryClient';
 
 // AsyncStorage 기반 영속 캐시 — 앱 재시작 시에도 데이터 즉시 표시
 const asyncStoragePersister = createAsyncStoragePersister({
@@ -85,9 +74,11 @@ function AuthGate({ children }: { children: React.ReactNode }) {
         if (shown !== 'true') {
           setWelcomeCredits(welcomeBonus.data!.creditsEarned!);
           setShowWelcomeModal(true);
-          AsyncStorage.setItem('@baln:welcome_modal_shown', 'true');
+          AsyncStorage.setItem('@baln:welcome_modal_shown', 'true').catch((err) =>
+            console.warn('[AuthGate] 웰컴 모달 상태 저장 실패:', err)
+          );
         }
-      });
+      }).catch((err) => console.warn('[AuthGate] 웰컴 모달 상태 조회 실패:', err));
     }
   }, [welcomeBonus.data?.granted]);
 
@@ -108,6 +99,9 @@ function AuthGate({ children }: { children: React.ReactNode }) {
         } else {
           router.replace('/onboarding');
         }
+      }).catch((err) => {
+        console.warn('[AuthGate] 온보딩 상태 조회 실패, 메인으로 이동:', err);
+        router.replace('/(tabs)');
       });
     } else if (user && inOnboarding) {
       // 온보딩 중인데 이미 완료했으면 메인으로
@@ -115,7 +109,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
         if (completed === 'true') {
           router.replace('/(tabs)');
         }
-      });
+      }).catch((err) => console.warn('[AuthGate] 온보딩 완료 상태 조회 실패:', err));
     }
   }, [user, loading, segments]);
 
@@ -324,6 +318,36 @@ export default function RootLayout() {
                 <Stack.Screen name="rebalance-history" options={{ headerShown: false }} />
                 {/* 거래 기록 화면 */}
                 <Stack.Screen name="log-trade" options={{ headerShown: false }} />
+                {/* 데일리 퀴즈 화면 */}
+                <Stack.Screen name="settings/daily-quiz" options={{ headerShown: false }} />
+                {/* 친구 초대 화면 */}
+                <Stack.Screen name="settings/referral" options={{ headerShown: false }} />
+                {/* Heart 자산 관리 화면 */}
+                <Stack.Screen name="settings/manage-hearts" options={{ headerShown: false }} />
+                {/* 투자자 레벨 화면 */}
+                <Stack.Screen name="settings/investor-level" options={{ headerShown: false }} />
+                {/* 라이선스 화면 */}
+                <Stack.Screen name="settings/licenses" options={{ headerShown: false }} />
+                {/* 웹사이트 화면 */}
+                <Stack.Screen name="settings/website" options={{ headerShown: false }} />
+                {/* 커뮤니티 메인 화면 */}
+                <Stack.Screen name="community/index" options={{ headerShown: false }} />
+                {/* 커뮤니티 글 작성 화면 */}
+                <Stack.Screen name="community/create" options={{ headerShown: false }} />
+                {/* AI 분석 - 종목 딥다이브 */}
+                <Stack.Screen name="analysis/deep-dive" options={{ headerShown: false }} />
+                {/* AI 분석 - What-If 시뮬레이션 */}
+                <Stack.Screen name="analysis/what-if" options={{ headerShown: false }} />
+                {/* AI 분석 - 세금 리포트 */}
+                <Stack.Screen name="analysis/tax-report" options={{ headerShown: false }} />
+                {/* AI 분석 - 시장 브리핑 채팅 */}
+                <Stack.Screen name="analysis/cfo-chat" options={{ headerShown: false }} />
+                {/* 어드민 화면 */}
+                <Stack.Screen name="admin" options={{ headerShown: false }} />
+                {/* 감정 히스토리 화면 */}
+                <Stack.Screen name="journal/emotion-history" options={{ headerShown: false }} />
+                {/* 모임 화면 */}
+                <Stack.Screen name="gatherings" options={{ headerShown: false }} />
               </Stack>
                 </AuthGate>
               </ErrorBoundary>

@@ -48,18 +48,23 @@ async function getCachedResult<T>(
   featureType: AIFeatureType,
   inputHash: string
 ): Promise<T | null> {
-  const { data } = await supabase
-    .from('ai_feature_results')
-    .select('result')
-    .eq('user_id', userId)
-    .eq('feature_type', featureType)
-    .eq('input_hash', inputHash)
-    .gt('expires_at', new Date().toISOString())
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .single();
+  try {
+    const { data } = await supabase
+      .from('ai_feature_results')
+      .select('result')
+      .eq('user_id', userId)
+      .eq('feature_type', featureType)
+      .eq('input_hash', inputHash)
+      .gt('expires_at', new Date().toISOString())
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
 
-  return data?.result as T | null;
+    return data?.result as T | null;
+  } catch (err) {
+    console.warn('[Marketplace] 캐시 조회 실패 (무시하고 진행):', err);
+    return null;
+  }
 }
 
 // ============================================================================
@@ -85,7 +90,7 @@ async function saveResult(
     .select('id')
     .single();
 
-  if (error) console.error('결과 저장 실패:', error);
+  if (error && __DEV__) console.error('결과 저장 실패:', error);
   return data?.id || '';
 }
 
@@ -226,39 +231,53 @@ export async function sendCFOMessage(
     throw new Error(spendResult.errorMessage || '크레딧이 부족합니다');
   }
 
-  // 2. 대화 히스토리 조회
-  const { data: history } = await supabase
-    .from('ai_chat_messages')
-    .select('role, content')
-    .eq('user_id', user.id)
-    .eq('session_id', input.sessionId)
-    .order('created_at', { ascending: true })
-    .limit(20);
+  // 2. 대화 히스토리 조회 (실패해도 빈 배열로 진행)
+  let history: { role: string; content: string }[] = [];
+  try {
+    const { data } = await supabase
+      .from('ai_chat_messages')
+      .select('role, content')
+      .eq('user_id', user.id)
+      .eq('session_id', input.sessionId)
+      .order('created_at', { ascending: true })
+      .limit(20);
+    history = (data || []) as { role: string; content: string }[];
+  } catch (err) {
+    console.warn('[Marketplace] 대화 히스토리 조회 실패 (빈 배열로 진행):', err);
+  }
 
-  // 3. 사용자 메시지 DB 저장
-  await supabase.from('ai_chat_messages').insert({
-    session_id: input.sessionId,
-    user_id: user.id,
-    role: 'user',
-    content: input.message,
-    credits_charged: discountedCost,
-  });
+  // 3. 사용자 메시지 DB 저장 (실패해도 AI 응답은 계속 진행)
+  try {
+    await supabase.from('ai_chat_messages').insert({
+      session_id: input.sessionId,
+      user_id: user.id,
+      role: 'user',
+      content: input.message,
+      credits_charged: discountedCost,
+    });
+  } catch (err) {
+    console.warn('[Marketplace] 사용자 메시지 저장 실패 (진행):', err);
+  }
 
   // 4. AI 응답 생성
   try {
     const response = await generateAICFOResponse(
       input,
-      (history || []) as { role: string; content: string }[]
+      history
     );
 
-    // 5. AI 응답 DB 저장
-    await supabase.from('ai_chat_messages').insert({
-      session_id: input.sessionId,
-      user_id: user.id,
-      role: 'assistant',
-      content: response,
-      credits_charged: 0,
-    });
+    // 5. AI 응답 DB 저장 (실패해도 응답 자체는 반환)
+    try {
+      await supabase.from('ai_chat_messages').insert({
+        session_id: input.sessionId,
+        user_id: user.id,
+        role: 'assistant',
+        content: response,
+        credits_charged: 0,
+      });
+    } catch (err) {
+      console.warn('[Marketplace] AI 응답 저장 실패 (응답은 반환):', err);
+    }
 
     return { userMessage: input.message, assistantMessage: response };
   } catch (error) {
@@ -310,48 +329,64 @@ export async function getFeatureHistory(
 export async function getChatSessions(): Promise<
   { sessionId: string; lastMessage: string; createdAt: string }[]
 > {
-  const user = await getCurrentUser();
-  if (!user) return [];
+  try {
+    const user = await getCurrentUser();
+    if (!user) return [];
 
-  // 세션별 마지막 메시지 조회 (최근 10개 세션)
-  const { data } = await supabase
-    .from('ai_chat_messages')
-    .select('session_id, content, created_at')
-    .eq('user_id', user.id)
-    .eq('role', 'user')
-    .order('created_at', { ascending: false })
-    .limit(50);
+    // 세션별 마지막 메시지 조회 (최근 10개 세션)
+    const { data, error } = await supabase
+      .from('ai_chat_messages')
+      .select('session_id, content, created_at')
+      .eq('user_id', user.id)
+      .eq('role', 'user')
+      .order('created_at', { ascending: false })
+      .limit(50);
 
-  if (!data) return [];
-
-  // 세션별 그룹핑 (최신 메시지 기준)
-  const sessions = new Map<string, { lastMessage: string; createdAt: string }>();
-  for (const msg of data) {
-    if (!sessions.has(msg.session_id)) {
-      sessions.set(msg.session_id, {
-        lastMessage: msg.content,
-        createdAt: msg.created_at,
-      });
+    if (error || !data) {
+      console.warn('[Marketplace] 채팅 세션 조회 실패 (빈 배열 반환):', error?.message);
+      return [];
     }
-  }
 
-  return Array.from(sessions.entries())
-    .map(([sessionId, info]) => ({ sessionId, ...info }))
-    .slice(0, 10);
+    // 세션별 그룹핑 (최신 메시지 기준)
+    const sessions = new Map<string, { lastMessage: string; createdAt: string }>();
+    for (const msg of data) {
+      if (!sessions.has(msg.session_id)) {
+        sessions.set(msg.session_id, {
+          lastMessage: msg.content,
+          createdAt: msg.created_at,
+        });
+      }
+    }
+
+    return Array.from(sessions.entries())
+      .map(([sessionId, info]) => ({ sessionId, ...info }))
+      .slice(0, 10);
+  } catch (err) {
+    console.warn('[Marketplace] 채팅 세션 조회 예외 (빈 배열 반환):', err);
+    return [];
+  }
 }
 
 /** 특정 세션의 채팅 메시지 조회 */
 export async function getChatMessages(sessionId: string) {
-  const user = await getCurrentUser();
-  if (!user) return [];
+  try {
+    const user = await getCurrentUser();
+    if (!user) return [];
 
-  const { data, error } = await supabase
-    .from('ai_chat_messages')
-    .select('*')
-    .eq('user_id', user.id)
-    .eq('session_id', sessionId)
-    .order('created_at', { ascending: true });
+    const { data, error } = await supabase
+      .from('ai_chat_messages')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('session_id', sessionId)
+      .order('created_at', { ascending: true });
 
-  if (error) throw error;
-  return data || [];
+    if (error) {
+      console.warn('[Marketplace] 채팅 메시지 조회 실패 (빈 배열 반환):', error.message);
+      return [];
+    }
+    return data || [];
+  } catch (err) {
+    console.warn('[Marketplace] 채팅 메시지 조회 예외 (빈 배열 반환):', err);
+    return [];
+  }
 }

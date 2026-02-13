@@ -118,7 +118,9 @@ function useActionChecklist() {
             setChecked(parsed.items || {});
           }
         }
-      } catch {}
+      } catch (err) {
+        console.warn('[오늘의 액션] 체크리스트 로드 실패:', err);
+      }
     })();
   }, []);
 

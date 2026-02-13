@@ -184,7 +184,7 @@ export default function AllocationDriftSection({
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY).then(stored => {
       if (stored) {
-        try { setTarget(JSON.parse(stored)); } catch {}
+        try { setTarget(JSON.parse(stored)); } catch (err) { console.warn('[배분이탈] 목표 배분 파싱 실패:', err); }
       }
     });
   }, []);

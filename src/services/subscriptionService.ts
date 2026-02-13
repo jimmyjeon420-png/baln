@@ -179,7 +179,7 @@ export async function upgradeToPaid(
   period: 'monthly' | 'yearly'
 ): Promise<{ success: boolean; error?: string }> {
   // TODO: RevenueCat 연동
-  console.log(`[구독] 유료 전환 요청: userId=${userId}, period=${period}`);
+  if (__DEV__) console.log(`[구독] 유료 전환 요청: userId=${userId}, period=${period}`);
   return { success: false, error: '결제 시스템 준비 중입니다. 곧 출시됩니다!' };
 }
 
@@ -216,7 +216,9 @@ export async function getDailyFreeStatus(isPremium: boolean): Promise<{
         return { used, limit, remaining: Math.max(0, limit - used) };
       }
     }
-  } catch {}
+  } catch (err) {
+    console.warn('[구독] 무료 진단 현황 조회 실패:', err);
+  }
 
   // 새 날이거나 데이터 없으면 0회 사용
   return { used: 0, limit, remaining: limit };

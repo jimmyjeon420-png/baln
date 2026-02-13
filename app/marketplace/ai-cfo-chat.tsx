@@ -62,7 +62,7 @@ export default function AICFOChatScreen() {
           if (profileRes.data?.tier) setUserTier(profileRes.data.tier as UserTier);
           if (portfolioRes.data) setPortfolio(portfolioRes.data);
         } catch (err) {
-          console.warn('[AICFOChat] 데이터 로드 실패:', err);
+          if (__DEV__) console.warn('[AICFOChat] 데이터 로드 실패:', err);
         }
       };
       load();

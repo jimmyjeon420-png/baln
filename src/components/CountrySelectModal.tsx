@@ -44,7 +44,7 @@ export const CountrySelectModal: React.FC<Props> = ({
   const handleCustomRateSubmit = () => {
     const rate = parseFloat(customRate);
     if (isNaN(rate) || rate < 0 || rate > 100) {
-      Alert.alert('Invalid Rate', 'Please enter a tax rate between 0 and 100');
+      Alert.alert('입력 오류', '세율은 0에서 100 사이의 숫자로 입력해주세요.');
       return;
     }
     onSelect(currentCountry, rate);

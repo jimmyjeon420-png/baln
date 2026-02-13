@@ -23,11 +23,13 @@ import {
 import { formatPrice } from '../src/services/realEstateApi';
 import { sqmToPyeong } from '../src/types/realestate';
 import type { ApartmentComplex, AreaPriceSummary } from '../src/types/realestate';
+import { useTheme } from '../src/hooks/useTheme';
 
 // 5단계 스텝 흐름 (직접 입력 포함)
 type Step = 'search' | 'area' | 'price' | 'confirm' | 'manual';
 
 export default function AddRealEstateScreen() {
+  const { colors } = useTheme();
   const router = useRouter();
 
   // 스텝 상태
@@ -121,7 +123,7 @@ export default function AddRealEstateScreen() {
         [
           {
             text: '포트폴리오 보기',
-            onPress: () => router.replace('/(tabs)/diagnosis'),
+            onPress: () => router.replace('/(tabs)/rebalance'),
           },
           {
             text: '확인',
@@ -175,7 +177,7 @@ export default function AddRealEstateScreen() {
         [
           {
             text: '포트폴리오 보기',
-            onPress: () => router.replace('/(tabs)/diagnosis'),
+            onPress: () => router.replace('/(tabs)/rebalance'),
           },
           {
             text: '확인',
@@ -203,7 +205,7 @@ export default function AddRealEstateScreen() {
     : [];
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -700,7 +702,7 @@ export default function AddRealEstateScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
+    // backgroundColor는 동적으로 적용됨 (colors.background)
   },
   header: {
     flexDirection: 'row',

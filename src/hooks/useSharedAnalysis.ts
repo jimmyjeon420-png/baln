@@ -241,6 +241,8 @@ export function useSharedMarketData(liquidTickers: string[]) {
     enabled: liquidTickers.length > 0,
     staleTime: 1000 * 60 * 3,   // 3분
     gcTime: 1000 * 60 * 10,
+    retry: 1,                    // 홈 탭 시장 데이터 — 1회 재시도
+    retryDelay: 2000,
   });
 }
 

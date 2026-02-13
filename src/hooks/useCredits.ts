@@ -23,6 +23,8 @@ export function useMyCredits() {
     queryKey: CREDITS_KEY,
     queryFn: getMyCredits,
     staleTime: 1000 * 60 * 5, // 5분 (충전/차감 시 invalidate로 즉시 갱신)
+    retry: 1,                  // 크레딧 잔액은 중요 데이터 — 1회 재시도
+    retryDelay: 2000,          // 2초 후 재시도
   });
 }
 
@@ -73,6 +75,7 @@ export function useCreditHistory(limit: number = 20) {
     queryKey: [...CREDIT_HISTORY_KEY, limit],
     queryFn: () => getCreditHistory(limit),
     staleTime: 1000 * 60 * 10, // 10분 (거래 내역은 자주 바뀌지 않음)
+    retry: 1,
   });
 }
 

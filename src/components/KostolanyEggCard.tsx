@@ -373,15 +373,15 @@ const ExpertSection: React.FC<{ perspectives: RateCycleEvidence['expertPerspecti
           <Ionicons name="arrow-up-circle" size={12} color="#CF6679" />
           <Text style={[evidStyles.campTitle, { color: '#CF6679' }]}>매파 (긴축 선호)</Text>
         </View>
-        {perspectives.hawkishArgs.map((arg, i) => (
+        {(perspectives.hawkishArgs ?? []).map((arg, i) => (
           <View key={i} style={evidStyles.argRow}>
             <View style={[evidStyles.argBullet, { backgroundColor: '#CF6679' }]} />
             <Text style={evidStyles.argText}>{arg}</Text>
           </View>
         ))}
-        {perspectives.hawkishFigures.length > 0 && (
+        {(perspectives.hawkishFigures ?? []).length > 0 && (
           <Text style={evidStyles.figuresText}>
-            대표: {perspectives.hawkishFigures.join(', ')}
+            대표: {(perspectives.hawkishFigures ?? []).join(', ')}
           </Text>
         )}
       </View>
@@ -392,15 +392,15 @@ const ExpertSection: React.FC<{ perspectives: RateCycleEvidence['expertPerspecti
           <Ionicons name="arrow-down-circle" size={12} color="#4CAF50" />
           <Text style={[evidStyles.campTitle, { color: '#4CAF50' }]}>비둘기파 (완화 선호)</Text>
         </View>
-        {perspectives.dovishArgs.map((arg, i) => (
+        {(perspectives.dovishArgs ?? []).map((arg, i) => (
           <View key={i} style={evidStyles.argRow}>
             <View style={[evidStyles.argBullet, { backgroundColor: '#4CAF50' }]} />
             <Text style={evidStyles.argText}>{arg}</Text>
           </View>
         ))}
-        {perspectives.dovishFigures.length > 0 && (
+        {(perspectives.dovishFigures ?? []).length > 0 && (
           <Text style={evidStyles.figuresText}>
-            대표: {perspectives.dovishFigures.join(', ')}
+            대표: {(perspectives.dovishFigures ?? []).join(', ')}
           </Text>
         )}
       </View>
@@ -690,7 +690,7 @@ const KostolanyEggCard: React.FC<KostolanyEggCardProps> = ({
                 <Ionicons name="arrow-up-circle" size={14} color="#4CAF50" />
                 <Text style={[styles.caseHeaderText, { color: '#4CAF50' }]}>상승 근거</Text>
               </View>
-              {fundManagerView.bullCase.map((item, idx) => (
+              {(fundManagerView.bullCase ?? []).map((item, idx) => (
                 <View key={idx} style={styles.caseItem}>
                   <View style={[styles.caseBullet, { backgroundColor: '#4CAF50' }]} />
                   <Text style={styles.caseItemText}>{item}</Text>
@@ -704,7 +704,7 @@ const KostolanyEggCard: React.FC<KostolanyEggCardProps> = ({
                 <Ionicons name="arrow-down-circle" size={14} color="#CF6679" />
                 <Text style={[styles.caseHeaderText, { color: '#CF6679' }]}>반론 / 위험 요인</Text>
               </View>
-              {fundManagerView.bearCase.map((item, idx) => (
+              {(fundManagerView.bearCase ?? []).map((item, idx) => (
                 <View key={idx} style={styles.caseItem}>
                   <View style={[styles.caseBullet, { backgroundColor: '#CF6679' }]} />
                   <Text style={styles.caseItemText}>{item}</Text>

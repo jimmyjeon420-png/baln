@@ -138,11 +138,12 @@ export function classifyAsset(asset: Asset): AssetCategory {
 // 팩터 계산 함수들
 // ============================================================================
 
-/** 자산의 현재 평가 금액 */
+/** 자산의 현재 평가 금액 (NaN/Infinity 방어) */
 function getAssetValue(asset: Asset): number {
-  return (asset.quantity && asset.currentPrice)
+  const computed = (asset.quantity != null && asset.quantity > 0 && asset.currentPrice != null && asset.currentPrice > 0)
     ? asset.quantity * asset.currentPrice
     : asset.currentValue;
+  return Number.isFinite(computed) ? computed : 0;
 }
 
 /**

@@ -753,7 +753,7 @@ async function generateCFOChat(reqData: CFOChatRequest['data']) {
 - 한국어 자연스럽게 작성
 `;
 
-  // Gemini API 호출 (CFO 채팅은 30초 타임아웃)
+  // Gemini API 호출 (AI 버핏과 티타임 채팅은 30초 타임아웃)
   const responseText = await callGeminiWithSearch(prompt, 30000);
 
   // JSON 정제 및 파싱 (강화된 폴백 처리)
@@ -777,7 +777,7 @@ async function generateCFOChat(reqData: CFOChatRequest['data']) {
     }
   } catch (parseError) {
     // Gemini가 JSON 대신 일반 텍스트를 반환한 경우 → 구조화된 폴백
-    console.warn('[CFO Chat] JSON 파싱 실패, 구조화된 폴백 응답 생성:', parseError);
+    console.warn('[AI 버핏과 티타임] JSON 파싱 실패, 구조화된 폴백 응답 생성:', parseError);
 
     // 텍스트를 3등분하여 각 캐릭터에 배분 (빈칸 방지)
     const trimmedText = responseText.trim();
@@ -824,10 +824,38 @@ serve(async (req: Request) => {
       );
     }
 
+    // ========================================================================
+    // 인증 확인: 로그인한 사용자만 Gemini API 호출 허용
+    // Supabase 클라이언트가 자동으로 Authorization 헤더에 JWT를 포함하므로
+    // JWT 존재 + 서명 검증으로 미인증 남용을 차단
+    // ========================================================================
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return new Response(
+        JSON.stringify({ success: false, error: '인증이 필요합니다. 로그인 후 다시 시도해주세요.', errorType: 'auth' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // JWT 유효성 검증 (Supabase auth.getUser로 서명 + 만료 확인)
+    const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
+    const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const authClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: { user: authUser }, error: authError } = await authClient.auth.getUser();
+    if (authError || !authUser) {
+      return new Response(
+        JSON.stringify({ success: false, error: '세션이 만료되었습니다. 다시 로그인해주세요.', errorType: 'auth' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // 요청 body 파싱
     const body = await req.json() as GeminiProxyRequest;
 
-    console.log(`[Gemini Proxy] 요청 타입: ${body.type}`);
+    console.log(`[Gemini Proxy] 요청 타입: ${body.type}, 사용자: ${authUser.id}`);
 
     let result: any;
 

@@ -13,6 +13,9 @@ interface Props {
 }
 
 export default function TaxReportCard({ result }: Props) {
+  // null 안전: AI 응답이 부분적일 수 있으므로 기본값 적용
+  const taxSummary = result.taxSummary ?? { estimatedCapitalGainsTax: 0, estimatedIncomeTax: 0, totalTaxBurden: 0, effectiveTaxRate: 0 };
+
   return (
     <View style={styles.container}>
       {/* 세금 요약 */}
@@ -27,13 +30,13 @@ export default function TaxReportCard({ result }: Props) {
           <View style={styles.taxItem}>
             <Text style={styles.taxLabel}>양도소득세</Text>
             <Text style={styles.taxValue}>
-              ₩{Math.floor(result.taxSummary.estimatedCapitalGainsTax).toLocaleString()}
+              ₩{Math.floor(taxSummary.estimatedCapitalGainsTax).toLocaleString()}
             </Text>
           </View>
           <View style={styles.taxItem}>
             <Text style={styles.taxLabel}>소득세</Text>
             <Text style={styles.taxValue}>
-              ₩{Math.floor(result.taxSummary.estimatedIncomeTax).toLocaleString()}
+              ₩{Math.floor(taxSummary.estimatedIncomeTax).toLocaleString()}
             </Text>
           </View>
         </View>
@@ -41,13 +44,13 @@ export default function TaxReportCard({ result }: Props) {
         <View style={styles.totalRow}>
           <Text style={styles.totalLabel}>총 세금 부담</Text>
           <Text style={styles.totalValue}>
-            ₩{Math.floor(result.taxSummary.totalTaxBurden).toLocaleString()}
+            ₩{Math.floor(taxSummary.totalTaxBurden).toLocaleString()}
           </Text>
         </View>
         <View style={styles.effectiveRateRow}>
           <Text style={styles.effectiveLabel}>실효 세율</Text>
           <Text style={styles.effectiveValue}>
-            {result.taxSummary.effectiveTaxRate.toFixed(1)}%
+            {taxSummary.effectiveTaxRate.toFixed(1)}%
           </Text>
         </View>
       </View>
@@ -55,7 +58,7 @@ export default function TaxReportCard({ result }: Props) {
       {/* 절세 전략 */}
       <View style={styles.sectionCard}>
         <Text style={styles.sectionTitle}>절세 전략</Text>
-        {result.strategies.map((strategy, i) => {
+        {(result.strategies ?? []).map((strategy, i) => {
           const priorityColor = {
             HIGH: '#CF6679',
             MEDIUM: '#FFA726',
@@ -79,7 +82,7 @@ export default function TaxReportCard({ result }: Props) {
                   예상 절세: ₩{Math.floor(strategy.potentialSaving).toLocaleString()}
                 </Text>
               </View>
-              {strategy.actionItems.map((action, j) => (
+              {(strategy.actionItems ?? []).map((action, j) => (
                 <Text key={j} style={styles.actionItem}>
                   <Text style={{ color: '#4CAF50' }}>+</Text> {action}
                 </Text>
@@ -92,7 +95,7 @@ export default function TaxReportCard({ result }: Props) {
       {/* 매도 타이밍 */}
       <View style={styles.sectionCard}>
         <Text style={styles.sectionTitle}>종목별 매도 타이밍</Text>
-        {result.sellTimeline.map((item, i) => {
+        {(result.sellTimeline ?? []).map((item, i) => {
           const actionColor = {
             SELL_NOW: '#CF6679',
             HOLD_FOR_TAX: '#FFA726',
@@ -125,12 +128,12 @@ export default function TaxReportCard({ result }: Props) {
       {/* 연간 플랜 */}
       <View style={styles.sectionCard}>
         <Text style={styles.sectionTitle}>연간 세금 플랜</Text>
-        {result.annualPlan.map((quarter, i) => (
+        {(result.annualPlan ?? []).map((quarter, i) => (
           <View key={i} style={styles.quarterItem}>
             <View style={styles.quarterBadge}>
               <Text style={styles.quarterText}>{quarter.quarter}</Text>
             </View>
-            {quarter.actions.map((action, j) => (
+            {(quarter.actions ?? []).map((action, j) => (
               <Text key={j} style={styles.quarterAction}>- {action}</Text>
             ))}
           </View>

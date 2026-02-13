@@ -56,23 +56,26 @@ export default function StreakBanner() {
   // ─── 프리즈 자동 적용 로직 ───
   // isNewStreak === true이면 어제 미접속 → 스트릭이 리셋되려 하는 상황
   // 이때 프리즈가 있으면 자동 소모하여 스트릭을 보호
-  const handleAutoFreeze = useCallback(async () => {
-    if (!isNewStreak || freezeLoading) return;
+  // ref를 사용하여 useFreeze 변경 시 불필요한 재실행 방지 (메모리 누수/무한 루프 방지)
+  const useFreezeRef = React.useRef(useFreeze);
+  useFreezeRef.current = useFreeze;
 
-    // 프리즈가 있으면 사용
-    if (hasActiveFreeze) {
-      const result = await useFreeze();
-      if (result.success && result.freezeUsed) {
-        setFreezeUsedToast(true);
-        // 3초 후 토스트 숨김
-        setTimeout(() => setFreezeUsedToast(false), 3000);
-      }
-    }
-  }, [isNewStreak, freezeLoading, hasActiveFreeze, useFreeze]);
+  const autoFreezeRan = React.useRef(false);
 
   useEffect(() => {
-    handleAutoFreeze();
-  }, [handleAutoFreeze]);
+    if (autoFreezeRan.current || !isNewStreak || freezeLoading) return;
+
+    if (hasActiveFreeze) {
+      autoFreezeRan.current = true;
+      (async () => {
+        const result = await useFreezeRef.current();
+        if (result.success && result.freezeUsed) {
+          setFreezeUsedToast(true);
+          setTimeout(() => setFreezeUsedToast(false), 3000);
+        }
+      })();
+    }
+  }, [isNewStreak, freezeLoading, hasActiveFreeze]);
 
   // ─── 프리즈 구매 핸들러 ───
   const handlePurchaseFreeze = async () => {

@@ -47,7 +47,9 @@ const BenchmarkChip = ({ myGainPercent }: BenchmarkChipProps) => {
             if (price.percentChange24h != null) {
               results[bm.label] = price.percentChange24h;
             }
-          } catch {}
+          } catch (err) {
+            console.warn(`[벤치마크] ${bm.label} 가격 조회 실패:`, err);
+          }
         })
       );
       return results;

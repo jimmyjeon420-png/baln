@@ -149,3 +149,119 @@ export async function grantBonusCredits(params: {
   if (error) throw new Error(error.message);
   return data as GrantCreditsResult;
 }
+
+// ─── 라운지 관리 타입 ─────────────────────────────────────
+
+/** 관리자용 게시글 아이템 */
+export interface AdminLoungePost {
+  id: string;
+  user_id: string;
+  email: string | null;
+  display_tag: string | null;
+  content: string;
+  category: string;
+  likes_count: number;
+  comments_count: number;
+  is_pinned: boolean;
+  created_at: string;
+  report_count: number;
+}
+
+/** 게시글 목록 결과 */
+export interface AdminLoungePostsResult {
+  posts: AdminLoungePost[];
+  total_count: number;
+}
+
+/** 관리자용 모임 아이템 */
+export interface AdminGathering {
+  id: string;
+  host_id: string;
+  host_email: string | null;
+  host_display_name: string | null;
+  host_tier: string;
+  title: string;
+  description: string | null;
+  category: string;
+  entry_fee: number;
+  max_capacity: number;
+  current_capacity: number;
+  event_date: string;
+  location: string;
+  location_type: string;
+  status: string;
+  min_tier_required: string;
+  created_at: string;
+}
+
+/** 모임 목록 결과 */
+export interface AdminGatheringsResult {
+  gatherings: AdminGathering[];
+  total_count: number;
+}
+
+/** 관리자 액션 결과 (삭제, 고정, 취소 등) */
+export interface AdminActionResult {
+  success: boolean;
+  is_pinned?: boolean;
+  error?: string;
+}
+
+// ─── 라운지 관리 API ──────────────────────────────────────
+
+/** 라운지 게시글 목록 조회 */
+export async function fetchAdminLoungePosts(params: {
+  limit?: number;
+  offset?: number;
+  filter?: string;
+}): Promise<AdminLoungePostsResult> {
+  const { data, error } = await supabase.rpc('admin_get_lounge_posts', {
+    p_limit: params.limit ?? 30,
+    p_offset: params.offset ?? 0,
+    p_filter: params.filter || 'all',
+  });
+  if (error) throw new Error(error.message);
+  return data as AdminLoungePostsResult;
+}
+
+/** 게시글 삭제 */
+export async function adminDeletePost(postId: string): Promise<AdminActionResult> {
+  const { data, error } = await supabase.rpc('admin_delete_post', {
+    p_post_id: postId,
+  });
+  if (error) throw new Error(error.message);
+  return data as AdminActionResult;
+}
+
+/** 게시글 고정/해제 토글 */
+export async function adminTogglePinPost(postId: string): Promise<AdminActionResult> {
+  const { data, error } = await supabase.rpc('admin_toggle_pin_post', {
+    p_post_id: postId,
+  });
+  if (error) throw new Error(error.message);
+  return data as AdminActionResult;
+}
+
+/** 모임 목록 조회 */
+export async function fetchAdminGatherings(params: {
+  limit?: number;
+  offset?: number;
+  filter?: string;
+}): Promise<AdminGatheringsResult> {
+  const { data, error } = await supabase.rpc('admin_get_gatherings', {
+    p_limit: params.limit ?? 30,
+    p_offset: params.offset ?? 0,
+    p_filter: params.filter || 'all',
+  });
+  if (error) throw new Error(error.message);
+  return data as AdminGatheringsResult;
+}
+
+/** 모임 취소 */
+export async function adminCancelGathering(gatheringId: string): Promise<AdminActionResult> {
+  const { data, error } = await supabase.rpc('admin_cancel_gathering', {
+    p_gathering_id: gatheringId,
+  });
+  if (error) throw new Error(error.message);
+  return data as AdminActionResult;
+}

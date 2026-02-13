@@ -80,7 +80,8 @@ export default function PredictionsScreen() {
       { pollId, vote },
       {
         onError: (error: Error) => {
-          Alert.alert('투표 실패', error.message);
+          console.warn('[예측] 투표 실패:', error.message);
+          Alert.alert('투표 실패', '투표를 처리할 수 없습니다. 잠시 후 다시 시도해주세요.');
         },
       },
     );

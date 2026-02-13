@@ -552,7 +552,7 @@ export default function DiagnosisScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
+    // backgroundColor는 동적으로 적용됨 (colors.background)
   },
   // 출석 체크 토스트
   checkInToast: {

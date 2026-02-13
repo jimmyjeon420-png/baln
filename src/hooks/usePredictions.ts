@@ -405,6 +405,8 @@ export const useActivePolls = () => {
       }
     },
     staleTime: 60000, // 60초
+    retry: 1,          // 예측 게임은 중요 — 1회 재시도
+    retryDelay: 2000,
   });
 };
 
@@ -416,17 +418,23 @@ export const useResolvedPolls = (limit: number = 10) => {
   return useQuery({
     queryKey: PREDICTION_KEYS.resolvedPolls(limit),
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('prediction_polls')
-        .select('*')
-        .eq('status', 'resolved')
-        .order('resolved_at', { ascending: false })
-        .limit(limit);
+      try {
+        const { data, error } = await supabase
+          .from('prediction_polls')
+          .select('*')
+          .eq('status', 'resolved')
+          .order('resolved_at', { ascending: false })
+          .limit(limit);
 
-      if (error) throw error;
-      return (data || []) as PredictionPoll[];
+        if (error) throw error;
+        return (data || []) as PredictionPoll[];
+      } catch {
+        // 테이블 없음 등 → 빈 배열 반환
+        return [] as PredictionPoll[];
+      }
     },
     staleTime: 300000, // 5분
+    retry: 1,
   });
 };
 

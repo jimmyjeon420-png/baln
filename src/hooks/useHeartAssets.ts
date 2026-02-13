@@ -213,17 +213,27 @@ export function useHeartAssets(): UseHeartAssetsReturn {
       const updated = [...current, newAsset];
       await AsyncStorage.setItem(HEART_ASSETS_KEY, JSON.stringify(updated));
 
-      // ★ 포트폴리오 DB에도 추가 (초기 수량 0)
-      const user = await getCurrentUser();
-      if (user) {
-        await supabase.from('portfolios').insert({
-          user_id: user.id,
-          ticker: asset.ticker,
-          quantity: 0,
-          asset_type: asset.type === 'stock' ? 'stock' :
-                      asset.type === 'crypto' ? 'crypto' : 'other',
-          name: asset.name,
-        });
+      // ★ 포트폴리오 DB에도 추가 (초기 수량 0, 실패해도 하트 저장은 유지)
+      // upsert + onConflict로 중복 삽입 방지 (같은 ticker를 두 번 하트하면 무시)
+      try {
+        const user = await getCurrentUser();
+        if (user) {
+          await supabase.from('portfolios').upsert({
+            user_id: user.id,
+            ticker: asset.ticker,
+            quantity: 0,
+            asset_type: asset.type === 'stock' ? 'stock' :
+                        asset.type === 'crypto' ? 'crypto' : 'other',
+            name: asset.name,
+            current_value: 0,
+            target_allocation: 0,
+          }, {
+            onConflict: 'user_id,name',
+            ignoreDuplicates: true, // 이미 존재하면 기존 데이터 유지
+          });
+        }
+      } catch (err) {
+        console.warn('[HeartAssets] 포트폴리오 DB 추가 실패 (하트 저장은 유지):', err);
       }
 
       return updated;
@@ -241,13 +251,17 @@ export function useHeartAssets(): UseHeartAssetsReturn {
       const updated = current.filter(a => a.ticker !== ticker);
       await AsyncStorage.setItem(HEART_ASSETS_KEY, JSON.stringify(updated));
 
-      // ★ 포트폴리오 DB에서도 삭제
-      const user = await getCurrentUser();
-      if (user) {
-        await supabase.from('portfolios')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('ticker', ticker);
+      // ★ 포트폴리오 DB에서도 삭제 (실패해도 하트 제거는 유지)
+      try {
+        const user = await getCurrentUser();
+        if (user) {
+          await supabase.from('portfolios')
+            .delete()
+            .eq('user_id', user.id)
+            .eq('ticker', ticker);
+        }
+      } catch (err) {
+        console.warn('[HeartAssets] 포트폴리오 DB 삭제 실패 (하트 제거는 유지):', err);
       }
 
       return updated;

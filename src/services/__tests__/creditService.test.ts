@@ -19,13 +19,16 @@ import {
   shouldChargeCredits,
   getCreditHistory,
 } from '../creditService';
-import supabase from '../supabase';
+import supabase, { getCurrentUser } from '../supabase';
 import { isFreePeriod } from '../../config/freePeriod';
 import { FEATURE_COSTS, TIER_DISCOUNTS } from '../../types/marketplace';
 
 // Mock 모듈
 jest.mock('../supabase');
 jest.mock('../../config/freePeriod');
+
+// getCurrentUser Mock 설정
+const mockGetCurrentUser = getCurrentUser as jest.MockedFunction<typeof getCurrentUser>;
 
 // Mock RPC 함수
 const mockRpc = jest.fn();
@@ -47,12 +50,7 @@ describe('creditService', () => {
   describe('getMyCredits', () => {
     it('1. [Success] 정상적으로 크레딧 잔액을 조회한다', async () => {
       // Mock 사용자 인증
-      (supabase.auth.getUser as jest.Mock).mockResolvedValue({
-        data: {
-          user: { id: 'test-user-123' },
-        },
-        error: null,
-      });
+      mockGetCurrentUser.mockResolvedValue({ id: 'test-user-123' } as any);
 
       // Mock 크레딧 데이터
       const mockCredits = {
@@ -76,15 +74,12 @@ describe('creditService', () => {
       const result = await getMyCredits();
 
       expect(result).toEqual(mockCredits);
-      expect(supabase.auth.getUser).toHaveBeenCalledTimes(1);
+      expect(mockGetCurrentUser).toHaveBeenCalledTimes(1);
       expect(supabase.from).toHaveBeenCalledWith('user_credits');
     });
 
     it('2. [Error - No User] 로그인하지 않은 경우 null을 반환한다', async () => {
-      (supabase.auth.getUser as jest.Mock).mockResolvedValue({
-        data: { user: null },
-        error: null,
-      });
+      mockGetCurrentUser.mockResolvedValue(null);
 
       const result = await getMyCredits();
 
@@ -92,10 +87,7 @@ describe('creditService', () => {
     });
 
     it('3. [Error - DB Error] DB 조회 실패 시 기본값(잔액 0)을 반환한다', async () => {
-      (supabase.auth.getUser as jest.Mock).mockResolvedValue({
-        data: { user: { id: 'test-user-123' } },
-        error: null,
-      });
+      mockGetCurrentUser.mockResolvedValue({ id: 'test-user-123' } as any);
 
       (supabase.from as jest.Mock).mockReturnValue({
         select: jest.fn().mockReturnThis(),
@@ -129,10 +121,7 @@ describe('creditService', () => {
       // 무료 기간 아님 (유료 모드)
       (isFreePeriod as jest.Mock).mockReturnValue(false);
 
-      (supabase.auth.getUser as jest.Mock).mockResolvedValue({
-        data: { user: { id: 'test-user-123' } },
-        error: null,
-      });
+      mockGetCurrentUser.mockResolvedValue({ id: 'test-user-123' } as any);
 
       // Mock RPC 응답
       const mockRpcResponse = {
@@ -168,10 +157,7 @@ describe('creditService', () => {
       // 무료 기간 활성화
       (isFreePeriod as jest.Mock).mockReturnValue(true);
 
-      (supabase.auth.getUser as jest.Mock).mockResolvedValue({
-        data: { user: { id: 'test-user-123' } },
-        error: null,
-      });
+      mockGetCurrentUser.mockResolvedValue({ id: 'test-user-123' } as any);
 
       // getMyCredits Mock (무료 기간 중에는 현재 잔액만 조회)
       (supabase.from as jest.Mock).mockReturnValue({
@@ -193,10 +179,7 @@ describe('creditService', () => {
     it('6. [Error - Insufficient Balance] 잔액 부족 시 실패를 반환한다', async () => {
       (isFreePeriod as jest.Mock).mockReturnValue(false);
 
-      (supabase.auth.getUser as jest.Mock).mockResolvedValue({
-        data: { user: { id: 'test-user-123' } },
-        error: null,
-      });
+      mockGetCurrentUser.mockResolvedValue({ id: 'test-user-123' } as any);
 
       const mockRpcResponse = {
         data: [
@@ -218,10 +201,7 @@ describe('creditService', () => {
     });
 
     it('7. [Error - No User] 로그인하지 않은 경우 에러를 반환한다', async () => {
-      (supabase.auth.getUser as jest.Mock).mockResolvedValue({
-        data: { user: null },
-        error: null,
-      });
+      mockGetCurrentUser.mockResolvedValue(null);
 
       const result = await spendCredits(10, 'deep_dive');
 
@@ -302,10 +282,7 @@ describe('creditService', () => {
       // 유료 기간 (무료 기간 종료)
       (isFreePeriod as jest.Mock).mockReturnValue(false);
 
-      (supabase.auth.getUser as jest.Mock).mockResolvedValue({
-        data: { user: { id: 'test-user-123' } },
-        error: null,
-      });
+      mockGetCurrentUser.mockResolvedValue({ id: 'test-user-123' } as any);
 
       const mockRpcResponse = {
         data: [
@@ -357,10 +334,7 @@ describe('creditService', () => {
 
   describe('refundCredits', () => {
     it('13. [Success] AI 실패 시 크레딧을 환불한다', async () => {
-      (supabase.auth.getUser as jest.Mock).mockResolvedValue({
-        data: { user: { id: 'test-user-123' } },
-        error: null,
-      });
+      mockGetCurrentUser.mockResolvedValue({ id: 'test-user-123' } as any);
 
       const mockRpcResponse = {
         data: [
@@ -391,10 +365,7 @@ describe('creditService', () => {
     });
 
     it('14. [Error - No User] 로그인하지 않은 경우 환불이 실패한다', async () => {
-      (supabase.auth.getUser as jest.Mock).mockResolvedValue({
-        data: { user: null },
-        error: null,
-      });
+      mockGetCurrentUser.mockResolvedValue(null);
 
       const result = await refundCredits(5, 'deep_dive');
 
@@ -409,10 +380,7 @@ describe('creditService', () => {
 
   describe('getCreditHistory', () => {
     it('15. [Success] 크레딧 거래 내역을 조회한다', async () => {
-      (supabase.auth.getUser as jest.Mock).mockResolvedValue({
-        data: { user: { id: 'test-user-123' } },
-        error: null,
-      });
+      mockGetCurrentUser.mockResolvedValue({ id: 'test-user-123' } as any);
 
       const mockTransactions = [
         {
@@ -450,10 +418,7 @@ describe('creditService', () => {
     });
 
     it('16. [Error] 조회 실패 시 빈 배열을 반환한다', async () => {
-      (supabase.auth.getUser as jest.Mock).mockResolvedValue({
-        data: { user: { id: 'test-user-123' } },
-        error: null,
-      });
+      mockGetCurrentUser.mockResolvedValue({ id: 'test-user-123' } as any);
 
       (supabase.from as jest.Mock).mockReturnValue({
         select: jest.fn().mockReturnThis(),

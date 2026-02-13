@@ -8,7 +8,10 @@
  *       → 3개 탭이 같은 데이터를 공유 (탭 전환 시 0ms)
  *
  * [캐시 전략]
- * - staleTime: 3분 → 탭 전환 시 재요청 안 함
+ * - staleTime: 5분 → 탭 전환 시 재요청 안 함 (캐시 우선)
+ * - gcTime: 30분 → 이 기간 내 캐시를 fallback으로 사용
+ * - networkMode: offlineFirst → 오프라인 시 캐시 데이터 표시
+ * - Supabase 쿼리 타임아웃: 10초 (무한 로딩 방지)
  * - Pull-to-refresh 시에만 강제 갱신
  */
 
@@ -40,21 +43,80 @@ interface SharedPortfolioData {
   totalRealEstate: number;
 }
 
+/** 빈 포트폴리오 기본값 (타임아웃·에러·빈 데이터 시 공통 반환) */
+const EMPTY_PORTFOLIO: SharedPortfolioData = {
+  assets: [],
+  portfolioAssets: [],
+  totalAssets: 0,
+  userTier: 'SILVER',
+  liquidTickers: [],
+  realEstateAssets: [],
+  totalRealEstate: 0,
+};
+
+/** Supabase 쿼리에 타임아웃을 감싸는 헬퍼 (기본 10초) */
+function withTimeout<T>(
+  promise: PromiseLike<T>,
+  ms: number = 10000,
+  label: string = 'query',
+): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      console.warn(`[useSharedPortfolio] ${label} ${ms}ms 타임아웃`);
+      reject(new Error(`${label} timeout after ${ms}ms`));
+    }, ms);
+
+    Promise.resolve(promise).then(
+      (value) => { clearTimeout(timer); resolve(value); },
+      (err)   => { clearTimeout(timer); reject(err); },
+    );
+  });
+}
+
 /** Supabase에서 포트폴리오 조회 + 두 가지 형식으로 변환 */
-async function fetchSharedPortfolio(): Promise<SharedPortfolioData> {
-  const user = await getCurrentUser();
-  if (!user) {
-    return { assets: [], portfolioAssets: [], totalAssets: 0, userTier: 'SILVER', liquidTickers: [], realEstateAssets: [], totalRealEstate: 0 };
+async function fetchSharedPortfolio(
+  options?: { signal?: AbortSignal },
+): Promise<SharedPortfolioData> {
+  // AbortController 시그널이 이미 취소되었으면 즉시 빈 데이터 반환
+  if (options?.signal?.aborted) {
+    return EMPTY_PORTFOLIO;
   }
 
-  const { data, error } = await supabase
-    .from('portfolios')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('current_value', { ascending: false });
+  const user = await getCurrentUser();
+  if (!user) {
+    return EMPTY_PORTFOLIO;
+  }
 
-  if (error || !data || data.length === 0) {
-    return { assets: [], portfolioAssets: [], totalAssets: 0, userTier: 'SILVER', liquidTickers: [], realEstateAssets: [], totalRealEstate: 0 };
+  // 10초 타임아웃 — 서버 응답 없으면 에러로 처리 (React Query retry가 1회 재시도)
+  let data: any[] | null = null;
+  let error: any = null;
+
+  try {
+    const result = await withTimeout(
+      supabase
+        .from('portfolios')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('current_value', { ascending: false }),
+      10000,
+      'portfolios query',
+    );
+    data = result.data;
+    error = result.error;
+  } catch (timeoutErr) {
+    console.warn('[useSharedPortfolio] Supabase 쿼리 실패:', timeoutErr);
+    // 타임아웃이나 네트워크 에러 시 — 에러를 throw해서 React Query가
+    // 캐시된 데이터(placeholderData)를 유지하면서 retry 로직을 작동시킴
+    throw timeoutErr;
+  }
+
+  if (error) {
+    console.warn('[useSharedPortfolio] Supabase 에러:', error.message || error);
+    throw new Error(error.message || 'Supabase query failed');
+  }
+
+  if (!data || data.length === 0) {
+    return EMPTY_PORTFOLIO;
   }
 
   // 홈 탭용 Asset 배열
@@ -62,26 +124,38 @@ async function fetchSharedPortfolio(): Promise<SharedPortfolioData> {
 
   // 부동산 자산 필터링 (RE_ 티커) — ticker undefined 방어
   const realEstateAssets = assets.filter(a => a.ticker && a.ticker.startsWith('RE_'));
-  const totalRealEstate = realEstateAssets.reduce((sum, a) => sum + a.currentValue, 0);
+  const totalRealEstate = realEstateAssets.reduce((sum, a) => sum + (Number.isFinite(a.currentValue) ? a.currentValue : 0), 0);
 
   // 진단/처방전용 PortfolioAsset 배열 (부동산 제외 — Gemini에 전달하지 않음)
   const portfolioAssets: PortfolioAsset[] = data
     .filter((item: any) => !item.ticker || !item.ticker.startsWith('RE_'))
-    .map((item: any) => ({
-    ticker: item.ticker || 'UNKNOWN',
-    name: item.name || '알 수 없는 자산',
-    quantity: item.quantity || 0,
-    avgPrice: item.avg_price || 0,
-    currentPrice: item.current_price || item.avg_price || 0,
-    currentValue: item.current_value || (item.quantity * (item.current_price || item.avg_price)) || 0,
-  }));
+    .map((item: any) => {
+    const qty = Number(item.quantity) || 0;
+    const avgP = Number(item.avg_price) || 0;
+    const curP = Number(item.current_price) || avgP || 0;
+    const curV = Number(item.current_value);
+    // currentValue: DB값 우선, NaN이면 quantity*currentPrice로 계산
+    const computedValue = Number.isFinite(curV) && curV > 0
+      ? curV
+      : (qty > 0 && curP > 0 ? qty * curP : 0);
+    return {
+      ticker: item.ticker || 'UNKNOWN',
+      name: item.name || '알 수 없는 자산',
+      quantity: qty,
+      avgPrice: avgP,
+      currentPrice: curP,
+      currentValue: computedValue,
+    };
+  });
 
-  // 총 자산 계산
+  // 총 자산 계산 (getAssetValue와 동일한 로직 — 일관성 보장)
+  // quantity * currentPrice가 둘 다 양수면 실시간 계산, 아니면 DB의 currentValue 사용
   const totalAssets = assets.reduce((sum, asset) => {
-    if (asset.quantity && asset.currentPrice) {
-      return sum + (asset.quantity * asset.currentPrice);
-    }
-    return sum + asset.currentValue;
+    const value = (asset.quantity != null && asset.quantity > 0 && asset.currentPrice != null && asset.currentPrice > 0)
+      ? asset.quantity * asset.currentPrice
+      : asset.currentValue;
+    // NaN/Infinity 방어: 비정상 값은 0으로 처리
+    return sum + (Number.isFinite(value) ? value : 0);
   }, 0);
 
   const userTier = determineTier(totalAssets);
@@ -106,12 +180,13 @@ export function useSharedPortfolio() {
 
   const query = useQuery({
     queryKey: SHARED_PORTFOLIO_KEY,
-    queryFn: fetchSharedPortfolio,
-    staleTime: 1000 * 60 * 3,        // 3분: 탭 전환 시 재요청 안 함
-    gcTime: 1000 * 60 * 30,          // 30분: 메모리 최적화 (기존 24시간 → 30분)
-    placeholderData: keepPreviousData, // 갱신 중에도 이전 데이터 유지
+    queryFn: ({ signal }) => fetchSharedPortfolio({ signal }),
+    staleTime: 1000 * 60 * 5,        // 5분: 탭 전환 시 재요청 안 함 (캐시 우선)
+    gcTime: 1000 * 60 * 30,          // 30분: 이 기간 내 캐시 데이터를 fallback으로 사용
+    placeholderData: keepPreviousData, // 갱신 중에도 이전 데이터 유지 (로딩 방지)
     retry: 1,                         // 네트워크 실패 시 1회 재시도 (무한 로딩 방지)
     retryDelay: 2000,                 // 2초 후 재시도
+    networkMode: 'offlineFirst',      // 오프라인 시 캐시 데이터 먼저 사용
   });
 
   /** Pull-to-refresh 시 호출 — 캐시 즉시 무효화 + 재조회 */

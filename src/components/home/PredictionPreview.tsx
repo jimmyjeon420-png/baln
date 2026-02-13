@@ -43,7 +43,8 @@ export default function PredictionPreview() {
         { pollId, vote },
         {
           onError: (error: Error) => {
-            Alert.alert('투표 실패', error.message);
+            console.warn('[예측 미리보기] 투표 실패:', error.message);
+            Alert.alert('투표 실패', '투표를 처리할 수 없습니다. 잠시 후 다시 시도해주세요.');
           },
         },
       );

@@ -12,7 +12,7 @@
  * 크레딧 차감: Supabase spend_credits RPC
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import supabase, { getCurrentUser } from '../services/supabase';
 
@@ -139,6 +139,9 @@ async function saveFreezeData(data: StreakFreezeData): Promise<void> {
 export function useStreakFreeze(): UseStreakFreezeReturn {
   const [data, setData] = useState<StreakFreezeData>(DEFAULT_DATA);
   const [isLoading, setIsLoading] = useState(true);
+  // 동시 구매/사용 방지 가드
+  const purchaseInProgress = React.useRef(false);
+  const useFreezeInProgress = React.useRef(false);
 
   // 데이터 로드
   const loadData = useCallback(async () => {
@@ -158,8 +161,19 @@ export function useStreakFreeze(): UseStreakFreezeReturn {
     loadData();
   }, [loadData]);
 
-  // ─── 프리즈 구매 (3크레딧 차감) ───
+  // ─── 프리즈 구매 (3크레딧 차감, 이중 탭 방어) ───
   const purchaseFreeze = useCallback(async (): Promise<PurchaseFreezeResult> => {
+    // 동시 구매 방지: 이미 진행 중이면 즉시 반환
+    if (purchaseInProgress.current) {
+      return {
+        success: false,
+        newFreezeCount: data.count,
+        newCreditBalance: 0,
+        errorMessage: '구매 처리 중입니다. 잠시 기다려주세요.',
+      };
+    }
+    purchaseInProgress.current = true;
+
     try {
       // 1. 로그인 확인
       const user = await getCurrentUser();
@@ -223,11 +237,19 @@ export function useStreakFreeze(): UseStreakFreezeReturn {
         newCreditBalance: 0,
         errorMessage: error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.',
       };
+    } finally {
+      purchaseInProgress.current = false;
     }
   }, [data]);
 
-  // ─── 프리즈 사용 (스트릭 끊길 때 자동 호출) ───
+  // ─── 프리즈 사용 (스트릭 끊길 때 자동 호출, 이중 호출 방어) ───
   const useFreeze = useCallback(async (): Promise<UseFreezeResult> => {
+    // 동시 사용 방지
+    if (useFreezeInProgress.current) {
+      return { success: false, freezeUsed: false, remainingFreezes: data.count };
+    }
+    useFreezeInProgress.current = true;
+
     try {
       const current = await getFreezeData();
 
@@ -255,6 +277,8 @@ export function useStreakFreeze(): UseStreakFreezeReturn {
     } catch (error) {
       console.warn('[StreakFreeze] useFreeze 예외:', error);
       return { success: false, freezeUsed: false, remainingFreezes: data.count };
+    } finally {
+      useFreezeInProgress.current = false;
     }
   }, [data]);
 

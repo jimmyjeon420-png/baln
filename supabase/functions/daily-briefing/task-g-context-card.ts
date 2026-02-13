@@ -136,7 +136,7 @@ ${macroContext}
   const parsed: ContextCardData = JSON.parse(cleanJson);
 
   // context_cards 테이블에 UPSERT (date가 Primary Key)
-  const todayDate = new Date().toISOString().split('T')[0];
+  // todayDate는 line 63에서 이미 선언됨 — 중복 선언 제거 (BOOT_ERROR 원인)
 
   const { data: insertedCard, error: upsertError } = await supabase
     .from('context_cards')

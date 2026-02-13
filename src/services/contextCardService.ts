@@ -445,22 +445,27 @@ export async function getQuickContextSentiment(): Promise<{
   sentiment: ContextCardSentiment;
   headline: string;
 } | null> {
-  const today = new Date().toISOString().split('T')[0];
+  try {
+    const today = new Date().toISOString().split('T')[0];
 
-  const { data, error } = await supabase
-    .from('context_cards')
-    .select('sentiment, headline')
-    .eq('date', today)
-    .single();
+    const { data, error } = await supabase
+      .from('context_cards')
+      .select('sentiment, headline')
+      .eq('date', today)
+      .single();
 
-  if (error || !data) {
+    if (error || !data) {
+      return null;
+    }
+
+    return {
+      sentiment: data.sentiment as ContextCardSentiment,
+      headline: data.headline,
+    };
+  } catch (err) {
+    console.warn('[맥락 카드] 빠른 심리 상태 조회 실패:', err);
     return null;
   }
-
-  return {
-    sentiment: data.sentiment as ContextCardSentiment,
-    headline: data.headline,
-  };
 }
 
 // ============================================================================

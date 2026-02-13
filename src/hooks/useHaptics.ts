@@ -18,7 +18,7 @@ export function useHaptics() {
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } catch {
-      // 디바이스가 햅틱 미지원 시 무시
+      /* 디바이스가 햅틱 미지원 시 무시 */
     }
   }, []);
 
@@ -27,7 +27,9 @@ export function useHaptics() {
     if (!isHapticsSupported) return;
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    } catch {}
+    } catch {
+      /* 디바이스가 햅틱 미지원 시 무시 */
+    }
   }, []);
 
   /** 강한 탭 (저장, 삭제 등 주요 액션) */
@@ -35,7 +37,9 @@ export function useHaptics() {
     if (!isHapticsSupported) return;
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    } catch {}
+    } catch {
+      /* 디바이스가 햅틱 미지원 시 무시 */
+    }
   }, []);
 
   /** 성공 피드백 (저장 완료, 분석 완료) */
@@ -43,7 +47,9 @@ export function useHaptics() {
     if (!isHapticsSupported) return;
     try {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch {}
+    } catch {
+      /* 디바이스가 햅틱 미지원 시 무시 */
+    }
   }, []);
 
   /** 경고 피드백 (주의 사항, 확인 필요) */
@@ -51,7 +57,9 @@ export function useHaptics() {
     if (!isHapticsSupported) return;
     try {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-    } catch {}
+    } catch {
+      /* 디바이스가 햅틱 미지원 시 무시 */
+    }
   }, []);
 
   /** 에러 피드백 (실패, 거부) */
@@ -59,7 +67,9 @@ export function useHaptics() {
     if (!isHapticsSupported) return;
     try {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-    } catch {}
+    } catch {
+      /* 디바이스가 햅틱 미지원 시 무시 */
+    }
   }, []);
 
   /** 선택 피드백 (토글, 체크박스, 피커) */
@@ -67,7 +77,9 @@ export function useHaptics() {
     if (!isHapticsSupported) return;
     try {
       await Haptics.selectionAsync();
-    } catch {}
+    } catch {
+      /* 디바이스가 햅틱 미지원 시 무시 */
+    }
   }, []);
 
   return {

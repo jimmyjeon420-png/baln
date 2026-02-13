@@ -12,7 +12,7 @@
  * → 결론: 수동 입력을 극도로 편하게 만든다
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -27,6 +27,7 @@ import {
   TouchableWithoutFeedback,
   Platform,
   InputAccessoryView,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -36,6 +37,7 @@ import { useQueryClient } from '@tanstack/react-query';
 
 import supabase, { getCurrentUser } from '../src/services/supabase';
 import { COLORS } from '../src/styles/theme';
+import { useTheme } from '../src/hooks/useTheme';
 import { searchStocks, StockItem, getCategoryLabel, getCategoryColor } from '../src/data/stockList';
 import { priceService } from '../src/services/PriceService';
 import { AssetClass, PriceData } from '../src/types/price';
@@ -113,6 +115,7 @@ function getCurrencySymbol(ticker: string): string {
 export default function AddAssetScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { colors } = useTheme();
 
   // --- 검색 상태 ---
   const [searchQuery, setSearchQuery] = useState('');
@@ -128,6 +131,7 @@ export default function AddAssetScreen() {
 
   // --- 저장 상태 ---
   const [saving, setSaving] = useState(false);
+  const savingRef = React.useRef(false); // 이중 탭 방어 (setState보다 빠른 동기적 가드)
 
   // --- 최근 추가 종목 ---
   const [recentAssets, setRecentAssets] = useState<RecentAsset[]>([]);
@@ -135,6 +139,7 @@ export default function AddAssetScreen() {
   // --- 보유 자산 ---
   const [existingAssets, setExistingAssets] = useState<ExistingAsset[]>([]);
   const [loadingAssets, setLoadingAssets] = useState(true);
+  const [authFailed, setAuthFailed] = useState(false); // 인증 실패 → 사용자에게 안내 표시
 
   // --- 수정 모드 ---
   const [editingAsset, setEditingAsset] = useState<ExistingAsset | null>(null);
@@ -146,12 +151,36 @@ export default function AddAssetScreen() {
     loadExistingAssets();
   }, []);
 
+  // Safety timeout: 10초 후에도 로딩 중이면 강제 종료
+  useEffect(() => {
+    if (!loadingAssets) return;
+    const timer = setTimeout(() => {
+      console.warn('[AddAsset] 10초 안전 타임아웃 — 로딩 강제 종료');
+      setLoadingAssets(false);
+    }, 10000);
+    return () => clearTimeout(timer);
+  }, [loadingAssets]);
+
+  // Safety timeout: 30초 후에도 저장 중이면 강제 종료
+  useEffect(() => {
+    if (!saving) return;
+    const timer = setTimeout(() => {
+      console.warn('[AddAsset] 30초 안전 타임아웃 — 저장 강제 종료');
+      setSaving(false);
+      savingRef.current = false;
+      Alert.alert('저장 시간 초과', '저장이 너무 오래 걸리고 있습니다. 네트워크를 확인하고 다시 시도해주세요.');
+    }, 30000);
+    return () => clearTimeout(timer);
+  }, [saving]);
+
   // 최근 추가 종목 로드
   const loadRecentAssets = async () => {
     try {
       const stored = await AsyncStorage.getItem(RECENT_ASSETS_KEY);
       if (stored) setRecentAssets(JSON.parse(stored));
-    } catch {}
+    } catch (err) {
+      console.warn('[AddAsset] 최근 종목 로드 실패:', err);
+    }
   };
 
   // 최근 추가 종목 저장
@@ -166,14 +195,23 @@ export default function AddAssetScreen() {
       const updated = [newRecent, ...recentAssets.filter(r => r.ticker !== stock.ticker)].slice(0, 5);
       setRecentAssets(updated);
       await AsyncStorage.setItem(RECENT_ASSETS_KEY, JSON.stringify(updated));
-    } catch {}
+    } catch (err) {
+      console.warn('[AddAsset] 최근 종목 저장 실패:', err);
+    }
   };
 
   // 보유 자산 로드 (getSession으로 즉시 로컬 세션 조회)
   const loadExistingAssets = async () => {
     try {
+      setLoadingAssets(true);
       const user = await getCurrentUser();
-      if (!user) { setLoadingAssets(false); return; }
+      if (!user) {
+        console.warn('[AddAsset] 인증 실패 — 로그인 필요');
+        setAuthFailed(true);
+        setLoadingAssets(false);
+        return;
+      }
+      setAuthFailed(false);
 
       const { data, error } = await withTimeout(
         supabase
@@ -183,13 +221,15 @@ export default function AddAssetScreen() {
           .not('ticker', 'like', 'RE_%')  // 부동산 제외
           .order('current_value', { ascending: false }),
         15000,
-        'timeout',
+        '자산 목록 조회 시간이 초과되었습니다.',
       );
 
       if (!error && data) {
         setExistingAssets(data);
       }
-    } catch {} finally {
+    } catch (err) {
+      console.warn('[AddAsset] 보유 자산 로드 실패:', err);
+    } finally {
       setLoadingAssets(false);
     }
   };
@@ -314,7 +354,12 @@ export default function AddAssetScreen() {
   // ─── 등록 버튼 ───
 
   const handleSave = async () => {
+    // 이중 탭 방어: ref로 동기적으로 체크 (setState는 비동기라 간극 있음)
+    if (savingRef.current) return;
+    savingRef.current = true;
+
     if (!selectedStock) {
+      savingRef.current = false;
       Alert.alert('종목 선택', '등록할 종목을 먼저 선택해주세요.');
       return;
     }
@@ -323,11 +368,13 @@ export default function AddAssetScreen() {
     const p = parseFloat(price);
 
     if (!q || q <= 0) {
+      savingRef.current = false;
       Alert.alert('수량 입력', '보유 수량을 입력해주세요.');
       return;
     }
 
     if (!p || p <= 0) {
+      savingRef.current = false;
       Alert.alert('가격 입력', '매수 단가를 입력해주세요.');
       return;
     }
@@ -397,7 +444,9 @@ export default function AddAssetScreen() {
         if (reward.success) {
           rewardMsg = `\n\n🎉 자산 3개 등록 보상 +${REWARD_AMOUNTS.assetRegistration}C (₩${REWARD_AMOUNTS.assetRegistration * 100}) 적립!`;
         }
-      } catch {}
+      } catch (err) {
+        console.warn('[AddAsset] 자산 등록 보상 확인 실패:', err);
+      }
 
       Alert.alert(
         '등록 완료',
@@ -421,6 +470,7 @@ export default function AddAssetScreen() {
       );
     } finally {
       setSaving(false);
+      savingRef.current = false;
     }
   };
 
@@ -440,7 +490,7 @@ export default function AddAssetScreen() {
   // ─── 렌더링 ───
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* iOS 숫자 키보드 위에 "완료" 버튼 추가 */}
       {Platform.OS === 'ios' && (
         <InputAccessoryView nativeID={INPUT_ACCESSORY_ID}>
@@ -456,6 +506,10 @@ export default function AddAssetScreen() {
         </InputAccessoryView>
       )}
 
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
@@ -698,6 +752,18 @@ export default function AddAssetScreen() {
               <ActivityIndicator size="small" color={COLORS.primary} />
               <Text style={styles.loadingText}>자산 불러오는 중...</Text>
             </View>
+          ) : authFailed ? (
+            <View style={styles.emptyContainer}>
+              <Ionicons name="log-in-outline" size={40} color="#CF6679" />
+              <Text style={styles.emptyText}>로그인이 필요합니다</Text>
+              <Text style={styles.emptySubtext}>자산을 불러오려면 로그인해주세요</Text>
+              <TouchableOpacity
+                style={styles.retryButton}
+                onPress={() => loadExistingAssets()}
+              >
+                <Text style={styles.retryButtonText}>다시 시도</Text>
+              </TouchableOpacity>
+            </View>
           ) : existingAssets.length === 0 ? (
             <View style={styles.emptyContainer}>
               <Ionicons name="wallet-outline" size={40} color="#444" />
@@ -747,6 +813,7 @@ export default function AddAssetScreen() {
         {/* 하단 여백 */}
         <View style={{ height: 40 }} />
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -756,7 +823,7 @@ export default function AddAssetScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    // backgroundColor는 동적으로 적용됨 (colors.background)
   },
   scrollContent: {
     padding: 16,
@@ -1197,6 +1264,18 @@ const styles = StyleSheet.create({
   },
   keyboardDoneText: {
     fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.primary,
+  },
+  retryButton: {
+    marginTop: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    backgroundColor: 'rgba(76, 175, 80, 0.15)',
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    fontSize: 13,
     fontWeight: '600',
     color: COLORS.primary,
   },

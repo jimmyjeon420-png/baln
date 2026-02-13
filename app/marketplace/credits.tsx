@@ -28,6 +28,7 @@ import { CREDIT_PACKAGES } from '../../src/types/marketplace';
 import type { CreditTransaction } from '../../src/types/marketplace';
 import { formatCredits, CREDIT_TO_KRW } from '../../src/utils/formatters';
 import { getMyReferralCode, applyReferralCode, REWARD_AMOUNTS } from '../../src/services/rewardService';
+import { useTheme } from '../../src/hooks/useTheme';
 import {
   connectToStore,
   disconnectFromStore,
@@ -54,6 +55,7 @@ function isChargingOpen(): boolean {
 
 export default function CreditsScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   const { mediumTap, heavyTap, success } = useHaptics();
   const { data: credits, isLoading: creditsLoading } = useMyCredits();
   const { data: history } = useCreditHistory(20);
@@ -82,7 +84,7 @@ export default function CreditsScreen() {
   useEffect(() => {
     getMyReferralCode().then(code => {
       if (code) setMyReferralCode(code);
-    });
+    }).catch(err => console.warn('[크레딧] 추천 코드 로드 실패:', err));
   }, []);
 
   const handleShareReferral = async () => {
@@ -91,16 +93,25 @@ export default function CreditsScreen() {
       await Share.share({
         message: `baln(발른)에서 투자 습관을 만들어보세요! 내 추천 코드: ${myReferralCode}\n가입 시 10크레딧(₩1,000) 보너스!`,
       });
-    } catch {}
+    } catch (err) {
+      // 사용자가 공유를 취소한 경우에도 에러가 발생할 수 있으므로 경고만 로그
+      console.warn('[크레딧] 공유 실패 또는 취소:', err);
+    }
   };
 
   const handleApplyReferral = async () => {
     if (!friendCode.trim()) return;
     setReferralLoading(true);
-    const result = await applyReferralCode(friendCode.trim());
-    setReferralLoading(false);
-    Alert.alert(result.success ? '성공!' : '실패', result.message);
-    if (result.success) setFriendCode('');
+    try {
+      const result = await applyReferralCode(friendCode.trim());
+      Alert.alert(result.success ? '성공!' : '실패', result.message);
+      if (result.success) setFriendCode('');
+    } catch (err) {
+      console.warn('[크레딧] 추천 코드 적용 실패:', err);
+      Alert.alert('오류', '추천 코드 적용 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.');
+    } finally {
+      setReferralLoading(false);
+    }
   };
 
   // ========================================================================
@@ -304,7 +315,7 @@ export default function CreditsScreen() {
   // ========================================================================
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* 헤더 */}
         <View style={styles.header}>
@@ -578,7 +589,7 @@ export default function CreditsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#121212' },
+  container: { flex: 1 },
   scrollContent: { padding: 16, paddingBottom: 40 },
   header: {
     flexDirection: 'row',
