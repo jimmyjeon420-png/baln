@@ -9,7 +9,7 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import supabase from './supabase';
+import supabase, { getCurrentUser } from './supabase';
 
 // ============================================================================
 // 상수 정의
@@ -134,7 +134,7 @@ export async function grantAchievementReward(achievementId: string): Promise<{
       return { success: false, creditsEarned: 0, newBalance: 0 };
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) return { success: false, creditsEarned: 0, newBalance: 0 };
 
     const result = await grantRewardCredits(user.id, reward, 'achievement_reward', {
@@ -198,7 +198,7 @@ export async function performDailyCheckIn(): Promise<{
       return { success: false, creditsEarned: 0, newStreak: 0, newBalance: 0 };
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) return { success: false, creditsEarned: 0, newStreak: 0, newBalance: 0 };
 
     // daily_checkin_v2 RPC 호출 (원자적 스트릭 + 에스컬레이팅 보상 + XP)
@@ -309,7 +309,7 @@ export async function grantShareReward(): Promise<{
       return { success: false, creditsEarned: 0, newBalance: 0, alreadyRewarded: true };
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) return { success: false, creditsEarned: 0, newBalance: 0, alreadyRewarded: false };
 
     // 크레딧 지급
@@ -362,7 +362,7 @@ export async function grantWelcomeBonus(): Promise<{
       return { success: false, creditsEarned: 0, newBalance: 0, alreadyReceived: true };
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) return { success: false, creditsEarned: 0, newBalance: 0, alreadyReceived: false };
 
     const result = await grantRewardCredits(user.id, REWARD_AMOUNTS.welcomeBonus, 'welcome_bonus');
@@ -415,7 +415,7 @@ export async function grantAssetRegistrationReward(assetCount: number): Promise<
       return { success: false, creditsEarned: 0, newBalance: 0 };
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) return { success: false, creditsEarned: 0, newBalance: 0 };
 
     const result = await grantRewardCredits(user.id, REWARD_AMOUNTS.assetRegistration, 'asset_registration', {
@@ -466,7 +466,7 @@ export async function grantEmotionReward(): Promise<{
       return { success: false, creditsEarned: 0, newBalance: 0, alreadyRewarded: true };
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) return { success: false, creditsEarned: 0, newBalance: 0, alreadyRewarded: false };
 
     const result = await grantRewardCredits(user.id, REWARD_AMOUNTS.emotionCheck, 'emotion_check', {
@@ -499,7 +499,7 @@ export async function getMyReferralCode(): Promise<string> {
     const cached = await AsyncStorage.getItem(KEYS.referralCode);
     if (cached) return cached;
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) return '';
 
     // userId 앞 6자리를 대문자 코드로 사용
@@ -517,7 +517,7 @@ export async function applyReferralCode(code: string): Promise<{
   message: string;
 }> {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) return { success: false, message: '로그인이 필요합니다.' };
 
     // 자기 자신 코드 방지

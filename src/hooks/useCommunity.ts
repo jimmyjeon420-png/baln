@@ -8,7 +8,7 @@
  */
 
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import supabase from '../services/supabase';
+import supabase, { getCurrentUser } from '../services/supabase';
 import { isFreePeriod } from '../config/freePeriod';
 import { useSharedPortfolio } from './useSharedPortfolio';
 import {
@@ -211,7 +211,7 @@ export const useCreatePost = () => {
 
   return useMutation({
     mutationFn: async (input: CreatePostInput & { displayTag: string; assetMix: string; totalAssets: number; imageUrls?: string[] }) => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await getCurrentUser();
       if (!user) throw new Error('로그인이 필요합니다.');
 
       // 자산 1.5억 미만이면 차단 (무료 기간에는 스킵)
@@ -270,7 +270,7 @@ export const useMyLikes = () => {
     queryKey: ['myLikes'],
     queryFn: async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const user = await getCurrentUser();
         if (!user) return new Set<string>();
 
         const { data, error } = await supabase
@@ -429,7 +429,7 @@ export const useCreateComment = (postId: string) => {
 
   return useMutation({
     mutationFn: async (input: { content: string; displayTag: string; totalAssets: number; parentId?: string }) => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await getCurrentUser();
       if (!user) throw new Error('로그인이 필요합니다.');
 
       // 자산 1,000만원 미만이면 차단 (무료 기간 제외)
@@ -476,7 +476,7 @@ export const useUpdateComment = (postId: string) => {
 
   return useMutation({
     mutationFn: async ({ commentId, content }: { commentId: string; content: string }) => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await getCurrentUser();
       if (!user) throw new Error('로그인이 필요합니다.');
 
       // 본인 댓글인지 확인
@@ -513,7 +513,7 @@ export const useDeleteComment = (postId: string) => {
 
   return useMutation({
     mutationFn: async (commentId: string) => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await getCurrentUser();
       if (!user) throw new Error('로그인이 필요합니다.');
 
       // 본인 댓글인지 확인
@@ -555,7 +555,7 @@ export const useMyCommentLikes = () => {
   return useQuery({
     queryKey: ['myCommentLikes'],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await getCurrentUser();
       if (!user) return new Set<string>();
 
       const { data, error } = await supabase
@@ -576,7 +576,7 @@ export const useLikeComment = (postId: string) => {
 
   return useMutation({
     mutationFn: async (commentId: string) => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await getCurrentUser();
       if (!user) throw new Error('로그인이 필요합니다.');
 
       // 기존 좋아요 확인

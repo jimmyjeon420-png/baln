@@ -10,7 +10,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import supabase from '../services/supabase';
+import supabase, { getCurrentUser } from '../services/supabase';
 import type { CommunityPost } from '../types/community';
 
 // ============================================================================
@@ -25,7 +25,7 @@ export function useMyBookmarks() {
   return useQuery({
     queryKey: ['myBookmarks'],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await getCurrentUser();
       if (!user) return new Set<string>();
 
       const { data, error } = await supabase
@@ -60,7 +60,7 @@ export function useToggleBookmark() {
 
   return useMutation({
     mutationFn: async (postId: string) => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await getCurrentUser();
       if (!user) throw new Error('로그인이 필요합니다.');
 
       // 기존 북마크 확인
@@ -133,7 +133,7 @@ export function useBookmarkedPosts() {
   return useQuery({
     queryKey: ['bookmarkedPosts'],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await getCurrentUser();
       if (!user) return [];
 
       // 북마크 → 게시글 조인 조회

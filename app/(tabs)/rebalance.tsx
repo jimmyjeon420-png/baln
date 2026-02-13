@@ -289,7 +289,7 @@ export default function CheckupScreen() {
     // 네트워크 에러로 데이터를 못 가져온 경우 vs 실제로 자산이 없는 경우 구분
     const isNetworkIssue = portfolioError;
     return (
-      <SafeAreaView style={s.container} edges={['top']}>
+      <SafeAreaView style={[s.container, { backgroundColor: colors.background }]} edges={['top']}>
         <View style={s.emptyContainer}>
           <View style={s.emptyIcon}>
             <Ionicons

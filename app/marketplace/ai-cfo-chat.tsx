@@ -25,7 +25,7 @@ import { useAICFOChat } from '../../src/hooks/useAIMarketplace';
 import { useMyCredits } from '../../src/hooks/useCredits';
 import { getDiscountedCost } from '../../src/services/creditService';
 import { useHaptics } from '../../src/hooks/useHaptics';
-import supabase from '../../src/services/supabase';
+import supabase, { getCurrentUser } from '../../src/services/supabase';
 import type { UserTier } from '../../src/types/database';
 import type { CFOChatInput } from '../../src/types/marketplace';
 
@@ -51,7 +51,7 @@ export default function AICFOChatScreen() {
     useCallback(() => {
       const load = async () => {
         try {
-          const { data: { user } } = await supabase.auth.getUser();
+          const user = await getCurrentUser();
           if (!user) return;
 
           const [profileRes, portfolioRes] = await Promise.all([

@@ -13,7 +13,7 @@
  */
 
 import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
-import supabase from '../services/supabase';
+import supabase, { getCurrentUser } from '../services/supabase';
 import { Asset, AssetType } from '../types/asset';
 import { transformDbRowToAsset } from '../utils/assetTransform';
 import { determineTier, syncUserProfileTier } from './useGatherings';
@@ -42,7 +42,7 @@ interface SharedPortfolioData {
 
 /** Supabase에서 포트폴리오 조회 + 두 가지 형식으로 변환 */
 async function fetchSharedPortfolio(): Promise<SharedPortfolioData> {
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) {
     return { assets: [], portfolioAssets: [], totalAssets: 0, userTier: 'SILVER', liquidTickers: [], realEstateAssets: [], totalRealEstate: 0 };
   }

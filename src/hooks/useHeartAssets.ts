@@ -22,7 +22,7 @@ import {
   type HealthScoreResult,
   type HealthGrade,
 } from '../services/rebalanceScore';
-import supabase from '../services/supabase';
+import supabase, { getCurrentUser } from '../services/supabase';
 
 // ============================================================================
 // 상수
@@ -214,7 +214,7 @@ export function useHeartAssets(): UseHeartAssetsReturn {
       await AsyncStorage.setItem(HEART_ASSETS_KEY, JSON.stringify(updated));
 
       // ★ 포트폴리오 DB에도 추가 (초기 수량 0)
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await getCurrentUser();
       if (user) {
         await supabase.from('portfolios').insert({
           user_id: user.id,
@@ -242,7 +242,7 @@ export function useHeartAssets(): UseHeartAssetsReturn {
       await AsyncStorage.setItem(HEART_ASSETS_KEY, JSON.stringify(updated));
 
       // ★ 포트폴리오 DB에서도 삭제
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await getCurrentUser();
       if (user) {
         await supabase.from('portfolios')
           .delete()

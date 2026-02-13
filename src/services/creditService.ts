@@ -3,7 +3,7 @@
  * 잔액 조회, 원자적 차감 (RPC), 충전, 거래 내역, 티어 할인 계산
  */
 
-import supabase from './supabase';
+import supabase, { getCurrentUser } from './supabase';
 import {
   type AIFeatureType,
   type CreditTransaction,
@@ -23,7 +23,7 @@ import { isFreePeriod } from '../config/freePeriod';
 /** 내 크레딧 잔액 조회 (에러 시 기본값 반환 — 화면 로딩 차단 방지) */
 export async function getMyCredits(): Promise<UserCredits | null> {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) return null;
 
     const { data, error } = await supabase
@@ -86,12 +86,7 @@ export async function spendCredits(
   featureRefId?: string
 ): Promise<SpendResult> {
   try {
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-    if (authError) {
-      console.warn('[Credits] 인증 조회 실패:', authError.message);
-      return { success: false, newBalance: 0, errorMessage: '네트워크 연결을 확인해주세요.' };
-    }
+    const user = await getCurrentUser();
 
     if (!user) {
       return { success: false, newBalance: 0, errorMessage: '로그인이 필요합니다.' };
@@ -161,7 +156,7 @@ export async function purchaseCredits(
     }
 
     // --- 아래는 6월 유료 전환 시 활성화 ---
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) {
       console.warn('[Credits] purchaseCredits: 로그인 필요');
       return { success: false, newBalance: 0, totalCredits: 0 };
@@ -215,7 +210,7 @@ export async function getCreditHistory(
   limit: number = 20
 ): Promise<CreditTransaction[]> {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) return [];
 
     const { data, error } = await supabase
@@ -263,7 +258,7 @@ export async function checkAndGrantSubscriptionBonus(): Promise<{
   newBalance: number;
 }> {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) return { granted: false, amount: 0, newBalance: 0 };
 
     // 프로필에서 구독 상태 확인
@@ -341,7 +336,7 @@ export async function refundCredits(
   reason?: string
 ): Promise<{ success: boolean; newBalance: number }> {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) {
       console.warn('[Credits] refundCredits: 로그인 필요');
       return { success: false, newBalance: 0 };

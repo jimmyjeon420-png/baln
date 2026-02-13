@@ -12,7 +12,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 export const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 export const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 export const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')!;
-export const GEMINI_MODEL = 'gemini-2.0-flash';
+export const GEMINI_MODEL = 'gemini-2.5-flash';
 export const MOLIT_API_KEY = Deno.env.get('MOLIT_API_KEY') || ''; // 국토부 API 키 (없으면 Task F 스킵)
 
 // Service Role 클라이언트 (RLS 우회하여 쓰기 가능)

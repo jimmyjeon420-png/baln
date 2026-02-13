@@ -17,7 +17,7 @@ import {
 } from '../services/realEstateApi';
 import { makeRealEstateTicker } from '../types/realestate';
 import type { RealEstatePortfolioInput } from '../types/realestate';
-import supabase from '../services/supabase';
+import supabase, { getCurrentUser } from '../services/supabase';
 import { SHARED_PORTFOLIO_KEY } from './useSharedPortfolio';
 
 // ============================================================================
@@ -92,7 +92,7 @@ export function useMyRealEstate() {
   return useQuery({
     queryKey: ['my-realestate'],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await getCurrentUser();
       if (!user) return [];
 
       const { data, error } = await supabase
@@ -126,7 +126,7 @@ export function useSaveRealEstate() {
 
   return useMutation({
     mutationFn: async (input: RealEstatePortfolioInput) => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await getCurrentUser();
       if (!user) throw new Error('로그인이 필요합니다.');
 
       const ticker = makeRealEstateTicker(

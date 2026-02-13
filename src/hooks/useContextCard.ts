@@ -24,7 +24,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import supabase from '../services/supabase';
+import supabase, { getCurrentUser } from '../services/supabase';
 import {
   getTodayContextCard,
   getRecentContextCards,
@@ -124,7 +124,7 @@ export function useContextCard(options?: { retryCount?: number }) {
     queryKey: CONTEXT_CARD_TODAY_KEY,
     queryFn: async () => {
       // 1. 현재 로그인 유저 확인
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await getCurrentUser();
       if (!user) {
         console.log('[맥락 카드 훅] 로그인 필요');
         return null;
@@ -225,7 +225,7 @@ export function useRecentContextCards(days: number = 7) {
     queryKey: CONTEXT_CARDS_RECENT_KEY(days),
     queryFn: async () => {
       // 1. 현재 로그인 유저 확인
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await getCurrentUser();
       if (!user) {
         console.log('[맥락 카드 훅] 로그인 필요 (최근 카드)');
         return [];

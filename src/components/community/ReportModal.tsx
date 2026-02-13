@@ -22,7 +22,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES } from '../../styles/theme';
-import supabase from '../../services/supabase';
+import supabase, { getCurrentUser } from '../../services/supabase';
 
 type ReportReason = 'spam' | 'abuse' | 'leading' | 'other';
 
@@ -74,7 +74,7 @@ export default function ReportModal({
     setIsSubmitting(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await getCurrentUser();
       if (!user) throw new Error('로그인이 필요합니다.');
 
       // community_reports 테이블에 저장

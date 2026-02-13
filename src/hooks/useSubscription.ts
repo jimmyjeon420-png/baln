@@ -15,7 +15,7 @@ import {
   useDailyFreeAnalysis as consumeDailyFree,
   SubscriptionStatus,
 } from '../services/subscriptionService';
-import supabase from '../services/supabase';
+import supabase, { getCurrentUser } from '../services/supabase';
 
 // 캐시 키
 const SUBSCRIPTION_KEY = 'subscription';
@@ -29,7 +29,7 @@ export function useSubscriptionStatus() {
   const query = useQuery<SubscriptionStatus>({
     queryKey: [SUBSCRIPTION_KEY],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await getCurrentUser();
       if (!user) {
         return {
           isPremium: false,
@@ -67,7 +67,7 @@ export function useActivateTrial() {
 
   return useMutation({
     mutationFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await getCurrentUser();
       if (!user) throw new Error('로그인이 필요합니다');
       return activateFreeTrial(user.id);
     },

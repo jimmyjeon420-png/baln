@@ -12,7 +12,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import supabase from '../services/supabase';
+import supabase, { getCurrentUser } from '../services/supabase';
 import type { LeaderboardEntry } from '../types/prediction';
 
 // ============================================================================
@@ -88,7 +88,7 @@ export function usePredictionLeaderboard(): UsePredictionLeaderboardReturn {
       setError(null);
 
       // 현재 사용자
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await getCurrentUser();
       const userId = user?.id;
 
       // ── 1. 월간 리더보드 Top 10 ──

@@ -10,7 +10,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import supabase from '../services/supabase';
+import supabase, { getCurrentUser } from '../services/supabase';
 import type {
   PredictionPoll,
   PredictionVote,
@@ -441,7 +441,7 @@ export const useMyVotes = (pollIds: string[]) => {
       if (pollIds.length === 0) return [] as PredictionVote[];
 
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const user = await getCurrentUser();
         if (!user) return await getLocalVotes(pollIds);
 
         const { data, error } = await supabase
@@ -518,7 +518,7 @@ export const useLeaderboard = () => {
     queryKey: PREDICTION_KEYS.leaderboard,
     queryFn: async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const user = await getCurrentUser();
 
         // 상위 10명 조회 (최소 5회 투표한 유저만)
         const { data: topData, error: topError } = await supabase
@@ -594,7 +594,7 @@ export const useMyPredictionStats = () => {
     queryKey: PREDICTION_KEYS.myStats,
     queryFn: async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const user = await getCurrentUser();
         if (!user) return null;
 
         const { data, error } = await supabase

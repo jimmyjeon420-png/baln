@@ -37,7 +37,7 @@ import { MarketplaceMainSkeleton } from '../../src/components/MarketplaceSkeleto
 import { useMyCredits } from '../../src/hooks/useCredits';
 import { useFeatureHistory } from '../../src/hooks/useAIMarketplace';
 import { useHaptics } from '../../src/hooks/useHaptics';
-import supabase from '../../src/services/supabase';
+import supabase, { getCurrentUser } from '../../src/services/supabase';
 import type { UserTier } from '../../src/types/database';
 import { FEATURE_LABELS, TIER_DISCOUNTS } from '../../src/types/marketplace';
 import type { AIFeatureType } from '../../src/types/marketplace';
@@ -188,7 +188,7 @@ export default function MarketplaceScreen() {
     useCallback(() => {
       const load = async () => {
         try {
-          const { data: { user } } = await supabase.auth.getUser();
+          const user = await getCurrentUser();
           if (!user) return;
 
           const [profileRes, portfolioRes] = await Promise.all([

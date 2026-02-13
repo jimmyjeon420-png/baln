@@ -13,7 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { getPortfolioAdvice } from '../../src/services/gemini';
-import supabase from '../../src/services/supabase';
+import supabase, { getCurrentUser } from '../../src/services/supabase';
 import { createChatSession, addChatMessage } from '../../src/services/setupDatabase';
 
 // 다크모드 색상 테마
@@ -51,7 +51,7 @@ export default function StrategyScreen() {
   // 현재 사용자 정보 로드
   useEffect(() => {
     const loadUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await getCurrentUser();
       if (user) {
         setCurrentUser({
           id: user.id,

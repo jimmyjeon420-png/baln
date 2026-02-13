@@ -4,7 +4,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import supabase from '../services/supabase';
+import supabase, { getCurrentUser } from '../services/supabase';
 import {
   Gathering,
   GatheringInsert,
@@ -181,7 +181,7 @@ export const useMyParticipation = (gatheringId: string | undefined) => {
       if (!gatheringId) return null;
 
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const user = await getCurrentUser();
         if (!user) return null;
 
         const { data, error } = await supabase
@@ -213,7 +213,7 @@ export const useHostingEligibility = () => {
   return useQuery({
     queryKey: ['hostingEligibility'],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await getCurrentUser();
       if (!user) {
         return {
           canHost: false,
@@ -296,7 +296,7 @@ export const useCurrentUserInfo = () => {
   return useQuery({
     queryKey: ['currentUserInfo'],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await getCurrentUser();
       if (!user) return null;
 
       // 프로필 조회 (tier 컬럼이 없을 수 있으므로 에러 핸들링)
@@ -359,7 +359,7 @@ export const useCreateGathering = () => {
 
   return useMutation({
     mutationFn: async (input: Omit<GatheringInsert, 'host_id' | 'host_display_name' | 'host_verified_assets' | 'host_tier'>) => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await getCurrentUser();
       if (!user) throw new Error('로그인이 필요합니다.');
 
       // 호스팅 자격 확인
@@ -444,7 +444,7 @@ export const useJoinGathering = () => {
 
   return useMutation({
     mutationFn: async (gatheringId: string) => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await getCurrentUser();
       if (!user) throw new Error('로그인이 필요합니다.');
 
       // 1. 서버사이드 티어 검증 (스푸핑 방지)
@@ -598,7 +598,7 @@ export const useCancelParticipation = () => {
 
   return useMutation({
     mutationFn: async (gatheringId: string) => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await getCurrentUser();
       if (!user) throw new Error('로그인이 필요합니다.');
 
       // 1. 기존 참가 기록 확인
@@ -661,7 +661,7 @@ export const useMyHostedGatherings = () => {
     queryKey: ['myHostedGatherings'],
     queryFn: async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const user = await getCurrentUser();
         if (!user) return [];
 
         const { data, error } = await supabase
@@ -691,7 +691,7 @@ export const useMyJoinedGatherings = () => {
     queryKey: ['myJoinedGatherings'],
     queryFn: async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const user = await getCurrentUser();
         if (!user) return [];
 
         const { data: participations, error } = await supabase
@@ -783,7 +783,7 @@ export const useSyncProfileTier = () => {
 
   return useMutation({
     mutationFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await getCurrentUser();
       if (!user) throw new Error('로그인이 필요합니다.');
 
       return syncUserProfileTier(user.id);

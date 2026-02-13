@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import supabase from '../../src/services/supabase';
+import supabase, { getCurrentUser } from '../../src/services/supabase';
 import { Asset, AssetType } from '../../src/types/asset';
 import { transformDbRowToAsset } from '../../src/utils/assetTransform';
 import { COLORS, SIZES, SHADOWS, TYPOGRAPHY } from '../../src/styles/theme';
@@ -39,10 +39,10 @@ export default function InvestScreen() {
   const loadAssets = useCallback(async () => {
     try {
       setIsLoading(true);
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      const user = await getCurrentUser();
 
-      if (userError || !user) {
-        console.error('사용자 정보 불러오기 실패:', userError);
+      if (!user) {
+        console.error('사용자 정보 불러오기 실패');
         setAssets([]);
         return;
       }

@@ -34,7 +34,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQueryClient } from '@tanstack/react-query';
 
-import supabase from '../src/services/supabase';
+import supabase, { getCurrentUser } from '../src/services/supabase';
 import { COLORS } from '../src/styles/theme';
 import { searchStocks, StockItem, getCategoryLabel, getCategoryColor } from '../src/data/stockList';
 import { priceService } from '../src/services/PriceService';
@@ -169,14 +169,10 @@ export default function AddAssetScreen() {
     } catch {}
   };
 
-  // 보유 자산 로드 (15초 타임아웃 추가 — 무한 로딩 방지)
+  // 보유 자산 로드 (getSession으로 즉시 로컬 세션 조회)
   const loadExistingAssets = async () => {
     try {
-      const { data: { user } } = await withTimeout(
-        supabase.auth.getUser(),
-        15000,
-        'timeout',
-      );
+      const user = await getCurrentUser();
       if (!user) { setLoadingAssets(false); return; }
 
       const { data, error } = await withTimeout(
@@ -338,13 +334,9 @@ export default function AddAssetScreen() {
 
     setSaving(true);
     try {
-      const { data: { user } } = await withTimeout(
-        supabase.auth.getUser(),
-        20000,
-        '서버 연결이 느립니다. WiFi 연결을 확인하고 다시 시도해주세요.',
-      );
+      const user = await getCurrentUser();
 
-      if (!user) throw new Error('로그인이 필요합니다.');
+      if (!user) throw new Error('로그인이 필요합니다. 앱을 재시작하고 다시 로그인해주세요.');
 
       const ticker = selectedStock.ticker.trim();
       const name = selectedStock.name.trim();

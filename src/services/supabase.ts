@@ -14,4 +14,16 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
 });
 
+/**
+ * 현재 로그인한 사용자를 로컬 세션에서 즉시 반환
+ *
+ * ⚠️ supabase.auth.getUser() 대신 이 함수를 사용하세요!
+ * - getUser(): 매번 서버에 HTTP 요청 → 네트워크 느리면 타임아웃
+ * - getCurrentUser(): 핸드폰에 저장된 세션에서 즉시 반환 → 0ms
+ */
+export async function getCurrentUser() {
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.user ?? null;
+}
+
 export default supabase;

@@ -20,7 +20,7 @@ import DeepDiveResultCard from '../../src/components/DeepDiveResultCard';
 import { AnalysisSkeletonLoader } from '../../src/components/MarketplaceSkeletonLoader';
 import { useDeepDive } from '../../src/hooks/useAIMarketplace';
 import { useHaptics } from '../../src/hooks/useHaptics';
-import supabase from '../../src/services/supabase';
+import supabase, { getCurrentUser } from '../../src/services/supabase';
 import type { UserTier } from '../../src/types/database';
 import type { DeepDiveInput, DeepDiveResult } from '../../src/types/marketplace';
 
@@ -41,7 +41,7 @@ export default function DeepDiveScreen() {
     useCallback(() => {
       const load = async () => {
         try {
-          const { data: { user } } = await supabase.auth.getUser();
+          const user = await getCurrentUser();
           if (!user) return;
 
           const [profileRes, portfolioRes] = await Promise.all([

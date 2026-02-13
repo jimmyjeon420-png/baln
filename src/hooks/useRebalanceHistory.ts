@@ -5,7 +5,7 @@
  */
 
 import { useQuery } from '@tanstack/react-query';
-import supabase from '../services/supabase';
+import supabase, { getCurrentUser } from '../services/supabase';
 import type { MorningBriefingResult, RiskAnalysisResult } from '../services/gemini';
 import type { RebalanceExecution } from '../types/rebalanceExecution';
 
@@ -31,7 +31,7 @@ export interface PrescriptionHistoryItem {
  * 처방전 히스토리 조회 (최근 N일)
  */
 async function fetchHistory(days = 30): Promise<PrescriptionHistoryItem[]> {
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) return [];
 
   const cutoff = new Date();

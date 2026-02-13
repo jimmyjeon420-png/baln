@@ -4,7 +4,7 @@
  * AI 실패 시 자동 환불, 24시간 캐시 (Central Kitchen 패턴)
  */
 
-import supabase from './supabase';
+import supabase, { getCurrentUser } from './supabase';
 import { spendCredits, refundCredits, getDiscountedCost } from './creditService';
 import {
   generateDeepDive,
@@ -97,7 +97,7 @@ export async function executeDeepDive(
   input: DeepDiveInput,
   userTier: UserTier
 ): Promise<DeepDiveResult> {
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) throw new Error('로그인이 필요합니다');
 
   const inputHash = hashInput({ type: 'deep_dive', ticker: input.ticker });
@@ -136,7 +136,7 @@ export async function executeWhatIf(
   input: WhatIfInput,
   userTier: UserTier
 ): Promise<WhatIfResult> {
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) throw new Error('로그인이 필요합니다');
 
   const inputHash = hashInput({
@@ -176,7 +176,7 @@ export async function executeTaxReport(
   input: TaxReportInput,
   userTier: UserTier
 ): Promise<TaxReportResult> {
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) throw new Error('로그인이 필요합니다');
 
   const inputHash = hashInput({
@@ -216,7 +216,7 @@ export async function sendCFOMessage(
   input: CFOChatInput,
   userTier: UserTier
 ): Promise<{ userMessage: string; assistantMessage: string }> {
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) throw new Error('로그인이 필요합니다');
 
   // 1. 크레딧 차감 (1C/회)
@@ -277,7 +277,7 @@ export async function getFeatureHistory(
   limit: number = 10
 ) {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) return [];
 
     let query = supabase
@@ -310,7 +310,7 @@ export async function getFeatureHistory(
 export async function getChatSessions(): Promise<
   { sessionId: string; lastMessage: string; createdAt: string }[]
 > {
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) return [];
 
   // 세션별 마지막 메시지 조회 (최근 10개 세션)
@@ -342,7 +342,7 @@ export async function getChatSessions(): Promise<
 
 /** 특정 세션의 채팅 메시지 조회 */
 export async function getChatMessages(sessionId: string) {
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) return [];
 
   const { data, error } = await supabase

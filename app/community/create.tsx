@@ -53,7 +53,7 @@ import {
   MAX_IMAGES,
   PickedImage,
 } from '../../src/services/imageUpload';
-import supabase from '../../src/services/supabase';
+import supabase, { getCurrentUser } from '../../src/services/supabase';
 
 const MAX_CONTENT_LENGTH = 500;
 
@@ -171,7 +171,7 @@ export default function CreatePostScreen() {
       // 1. 이미지 업로드 (있는 경우)
       let imageUrls: string[] = [];
       if (selectedImages.length > 0) {
-        const { data: { user } } = await supabase.auth.getUser();
+        const user = await getCurrentUser();
         if (!user) {
           throw new Error('로그인이 필요합니다.');
         }

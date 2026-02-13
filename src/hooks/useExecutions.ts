@@ -5,7 +5,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import supabase from '../services/supabase';
+import supabase, { getCurrentUser } from '../services/supabase';
 import type { RebalanceExecution, ExecutionInput } from '../types/rebalanceExecution';
 
 export const EXECUTIONS_KEY = ['rebalance-executions'];
@@ -13,7 +13,7 @@ export const EXECUTIONS_KEY = ['rebalance-executions'];
 // ── 내 실행 기록 조회 (최근 30일) ──
 
 async function fetchMyExecutions(days = 30): Promise<RebalanceExecution[]> {
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) return [];
 
   const cutoff = new Date();
@@ -44,7 +44,7 @@ export function useMyExecutions(days = 30) {
 // ── 특정 날짜 + 티커 실행 기록 조회 ──
 
 async function fetchExecution(date: string, ticker: string): Promise<RebalanceExecution | null> {
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) return null;
 
   const { data, error } = await supabase

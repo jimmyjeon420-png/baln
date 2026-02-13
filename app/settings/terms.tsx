@@ -17,13 +17,13 @@ export default function TermsScreen() {
       <HeaderBar title="이용약관" />
 
       <ScrollView style={styles.content}>
-        <Text style={[styles.title, { color: colors.textPrimary }]}>스마트 리밸런서 서비스 이용약관</Text>
+        <Text style={[styles.title, { color: colors.textPrimary }]}>baln 서비스 이용약관</Text>
         <Text style={[styles.date, { color: colors.textTertiary }]}>최종 수정일: 2026년 2월 1일</Text>
 
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.primary }]}>제1조 (목적)</Text>
           <Text style={[styles.sectionContent, { color: colors.textSecondary }]}>
-            이 약관은 스마트 리밸런서(이하 "회사")가 제공하는 포트폴리오 관리 서비스(이하 "서비스")의 이용조건 및 절차, 회사와 회원 간의 권리, 의무, 책임사항 및 기타 필요한 사항을 규정함을 목적으로 합니다.
+            이 약관은 발른 주식회사(이하 "회사")가 제공하는 포트폴리오 관리 서비스(이하 "서비스")의 이용조건 및 절차, 회사와 회원 간의 권리, 의무, 책임사항 및 기타 필요한 사항을 규정함을 목적으로 합니다.
           </Text>
         </View>
 

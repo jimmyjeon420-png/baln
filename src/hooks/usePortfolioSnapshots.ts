@@ -8,7 +8,7 @@
  */
 
 import { useQuery } from '@tanstack/react-query';
-import supabase from '../services/supabase';
+import supabase, { getCurrentUser } from '../services/supabase';
 
 // ============================================================================
 // 타입 정의
@@ -68,7 +68,7 @@ export const useMySnapshots = (days: number = 30) => {
   return useQuery({
     queryKey: ['mySnapshots', days],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await getCurrentUser();
       if (!user) return [];
 
       // N일 전 날짜 계산

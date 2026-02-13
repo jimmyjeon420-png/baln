@@ -35,7 +35,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { COLORS } from '../../src/styles/theme';
-import supabase from '../../src/services/supabase';
+import supabase, { getCurrentUser } from '../../src/services/supabase';
 import { searchStocks, StockItem, getCategoryColor } from '../../src/data/stockList';
 import { priceService } from '../../src/services/PriceService';
 import { AssetClass } from '../../src/types/price';
@@ -183,7 +183,7 @@ export default function OnboardingScreen() {
 
     setAddingAsset(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await getCurrentUser();
       if (!user) throw new Error('로그인 필요');
 
       const ticker = selectedStock.ticker.trim();

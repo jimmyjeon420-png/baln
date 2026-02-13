@@ -47,7 +47,7 @@ import {
   type GuruInsightsData,
   type RateCycleEvidence,
 } from '../services/centralKitchen';
-import supabase from '../services/supabase';
+import supabase, { getCurrentUser } from '../services/supabase';
 import { validateAndCorrectRiskAnalysis, validatePortfolioActions } from '../utils/aiResponseValidator';
 
 // 쿼리 키 (외부에서 invalidate 할 때 사용)
@@ -86,7 +86,7 @@ export async function fetchAIAnalysis(
   }
 
   // 1) 유저 ID 가져오기
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   const userId = user?.id;
 
   // 2) 포트폴리오 해시 계산

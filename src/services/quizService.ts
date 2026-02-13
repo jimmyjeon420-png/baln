@@ -13,7 +13,7 @@
  */
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import supabase from './supabase';
+import supabase, { getCurrentUser } from './supabase';
 import type { DailyQuiz, QuizAttempt, SubmitQuizResult, QuizCategory } from '../types/quiz';
 
 // ⚠️ 보안: EXPO_PUBLIC_ 키는 클라이언트 번들에 포함됩니다. 프로덕션에서는 서버 프록시 권장.
@@ -486,7 +486,7 @@ export async function submitQuizAnswer(quizId: number, selectedOption: string): 
 
 /** 오늘 퀴즈 답안 조회 (이미 풀었는지 확인) */
 export async function getMyTodayAttempt(quizId: number): Promise<QuizAttempt | null> {
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) return null;
 
   const { data, error } = await supabase
@@ -507,7 +507,7 @@ export async function getMyQuizStats(): Promise<{
   streak: number;
   accuracy: number;
 }> {
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) return { total: 0, correct: 0, streak: 0, accuracy: 0 };
 
   const { data } = await supabase

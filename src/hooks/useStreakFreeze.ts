@@ -14,7 +14,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import supabase from '../services/supabase';
+import supabase, { getCurrentUser } from '../services/supabase';
 
 // ============================================================================
 // 타입 정의
@@ -76,7 +76,7 @@ function getTodayString(): string {
 async function getFreezeData(): Promise<StreakFreezeData> {
   try {
     // 1. Supabase에서 먼저 조회 (서버 데이터가 진실의 원천)
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (user) {
       const { data: profile } = await supabase
         .from('profiles')
@@ -117,7 +117,7 @@ async function saveFreezeData(data: StreakFreezeData): Promise<void> {
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 
     // 서버 저장 (백그라운드, 실패해도 무시)
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (user) {
       await supabase
         .from('profiles')
@@ -162,17 +162,7 @@ export function useStreakFreeze(): UseStreakFreezeReturn {
   const purchaseFreeze = useCallback(async (): Promise<PurchaseFreezeResult> => {
     try {
       // 1. 로그인 확인
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-      if (authError) {
-        console.warn('[StreakFreeze] 인증 조회 실패:', authError.message);
-        return {
-          success: false,
-          newFreezeCount: data.count,
-          newCreditBalance: 0,
-          errorMessage: '네트워크 연결을 확인해주세요.',
-        };
-      }
+      const user = await getCurrentUser();
 
       if (!user) {
         return {

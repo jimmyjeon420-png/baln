@@ -160,7 +160,7 @@ export default function CardSwipeContainer({
             { opacity: hintOpacity, transform: [{ translateX: hintTranslateX }] },
           ]}
         >
-          <Text style={styles.swipeHintText}>← 스와이프하여 더 보기</Text>
+          <Text style={styles.swipeHintText}>스와이프하여 더 보기 →</Text>
         </Animated.View>
       )}
 
