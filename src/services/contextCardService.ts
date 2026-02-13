@@ -257,7 +257,13 @@ export async function getTodayContextCard(
           : null
       );
 
-      const result: ContextCardWithImpact = { card: fallbackCard, userImpact: fallbackImpact };
+      const result: ContextCardWithImpact = {
+        card: fallbackCard,
+        userImpact: fallbackImpact,
+        dataTimestamp: latestCard.created_at || new Date().toISOString(),
+        dataSource: 'baln.logic AI 분석 · Google Search 그라운딩',
+        confidenceNote: '이전 분석 데이터 (캐시)',
+      };
 
       // 캐시 저장 (비동기, 에러 무시)
       setCachedCard(result);
@@ -306,7 +312,13 @@ export async function getTodayContextCard(
         : null
     );
 
-    const result: ContextCardWithImpact = { card, userImpact };
+    const result: ContextCardWithImpact = {
+      card,
+      userImpact,
+      dataTimestamp: cardData.created_at || new Date().toISOString(),
+      dataSource: 'baln.logic AI 분석 · Google Search 그라운딩',
+      confidenceNote: '실시간 데이터 기반 분석',
+    };
 
     // 캐시 저장 (비동기, 에러 무시)
     setCachedCard(result);
@@ -315,6 +327,14 @@ export async function getTodayContextCard(
     return result;
   } catch (err) {
     console.error('[맥락 카드] 조회 실패:', err);
+    // 네트워크 에러 시 캐시 fallback
+    try {
+      const cached = await getCachedCard();
+      if (cached) {
+        if (__DEV__) console.log('[맥락 카드] 네트워크 에러 → 캐시 fallback');
+        return cached;
+      }
+    } catch { /* ignore */ }
     return null;
   }
 }

@@ -105,11 +105,14 @@ export default function CardSwipeContainer({
     }
   }, [currentPage]);
 
-  // 스크롤 종료 시 페이지 추적
+  // children 개수 기반 동적 처리
+  const childCount = Array.isArray(children) ? children.length : 0;
+
+  // 스크롤 종료 시 페이지 추적 (범위 가드 추가)
   const handleScrollEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const offsetX = e.nativeEvent.contentOffset.x;
-    const page = Math.round(offsetX / SCREEN_WIDTH);
-    if (page !== currentPage) {
+    const page = Math.min(Math.max(Math.round(offsetX / SCREEN_WIDTH), 0), childCount - 1);
+    if (page !== currentPage && page >= 0) {
       setCurrentPage(page);
       selection(); // 햅틱 피드백
       onCardChange?.(page);

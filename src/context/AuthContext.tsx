@@ -19,7 +19,7 @@ WebBrowser.maybeCompleteAuthSession();
 /**
  * 지원하는 OAuth 제공자 타입
  */
-export type OAuthProvider = 'google' | 'kakao';
+export type OAuthProvider = 'google' | 'kakao' | 'apple';
 
 /**
  * 인증 컨텍스트 타입

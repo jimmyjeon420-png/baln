@@ -34,6 +34,7 @@ import { generatePredictionPolls } from './task-e-predictions.ts';
 import { resolvePredictionPolls } from './task-e-resolve.ts';
 import { updateRealEstatePrices } from './task-f-realestate.ts';
 import { runContextCardGeneration } from './task-g-context-card.ts';
+import { checkCrisisAlert } from './task-h-crisis-alert.ts';
 
 // 공통 유틸 import
 import { supabase, STOCK_LIST, GURU_LIST, sleep } from './_shared.ts';
@@ -135,6 +136,14 @@ serve(async (req: Request) => {
       value => ({ status: 'fulfilled' as const, value }),
       reason => ({ status: 'rejected' as const, reason })
     );
+    await sleep(2000);
+
+    // Task H: 위기 알림 감지 (Gemini + Search)
+    console.log('[Task H] 시작: 위기 알림 감지...');
+    const crisisResult = await checkCrisisAlert().then(
+      value => ({ status: 'fulfilled' as const, value }),
+      reason => ({ status: 'rejected' as const, reason })
+    );
 
     // ========================================================================
     // 결과 로깅 및 통계 집계
@@ -201,6 +210,14 @@ serve(async (req: Request) => {
       console.error('[Task G] 실패:', contextCardResult.reason);
     }
 
+    // Task H 로깅
+    if (crisisResult.status === 'fulfilled') {
+      const cr = crisisResult.value;
+      console.log(`[Task H] ${cr.crisisDetected ? `위기 감지: ${cr.alertsCreated}건 알림 생성` : '정상 — 위기 미감지'} (${cr.marketsChecked.length}개 시장 확인)`);
+    } else {
+      console.error('[Task H] 실패:', crisisResult.reason);
+    }
+
     // ========================================================================
     // 응답 생성
     // ========================================================================
@@ -225,6 +242,9 @@ serve(async (req: Request) => {
     const contextCardStatus = contextCardResult.status === 'fulfilled' ? 'SUCCESS' : 'FAILED';
     const contextCardSentiment = contextCardResult.status === 'fulfilled' ? contextCardResult.value.sentiment : 'N/A';
     const contextCardUsers = contextCardResult.status === 'fulfilled' ? contextCardResult.value.usersCalculated : 0;
+    const crisisStatus = crisisResult.status === 'fulfilled' ? 'SUCCESS' : 'FAILED';
+    const crisisDetected = crisisResult.status === 'fulfilled' ? crisisResult.value.crisisDetected : false;
+    const crisisAlerts = crisisResult.status === 'fulfilled' ? crisisResult.value.alertsCreated : 0;
 
     console.log('========================================');
     console.log(`[Central Kitchen] 배치 완료: ${elapsed}초`);
@@ -236,6 +256,7 @@ serve(async (req: Request) => {
     console.log(`  - 예측 정답 판정 (E-2): ${resolveStatus} (${resolveCount}건)`);
     console.log(`  - 부동산 시세 (F): ${realEstateStatus} (${realEstateUpdated}건)`);
     console.log(`  - 맥락 카드 (G): ${contextCardStatus} (${contextCardSentiment}, ${contextCardUsers}명)`);
+    console.log(`  - 위기 알림 (H): ${crisisStatus} (${crisisDetected ? `위기! ${crisisAlerts}건` : '정상'})`);
     console.log('========================================');
 
     return new Response(
@@ -251,6 +272,7 @@ serve(async (req: Request) => {
           resolve: { status: resolveStatus, resolved: resolveCount },
           realEstate: { status: realEstateStatus, updated: realEstateUpdated },
           contextCard: { status: contextCardStatus, sentiment: contextCardSentiment, users: contextCardUsers },
+          crisisAlert: { status: crisisStatus, detected: crisisDetected, alerts: crisisAlerts },
         },
         timestamp: new Date().toISOString(),
       }),

@@ -70,32 +70,45 @@ function getYesterdayKey(): string {
   return d.toISOString().slice(0, 10);
 }
 
-/** add_credits RPC 호출 (보상 타입) */
+/** add_credits RPC 호출 (보상 타입, 최대 2회 재시도) */
 async function grantRewardCredits(
   userId: string,
   amount: number,
   rewardType: string,
   metadata: Record<string, any> = {}
 ): Promise<{ success: boolean; newBalance: number }> {
-  try {
-    const { data, error } = await supabase.rpc('add_credits', {
-      p_user_id: userId,
-      p_amount: amount,
-      p_type: 'bonus',
-      p_metadata: { reward_type: rewardType, ...metadata },
-    });
+  const maxRetries = 2;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const { data, error } = await supabase.rpc('add_credits', {
+        p_user_id: userId,
+        p_amount: amount,
+        p_type: 'bonus',
+        p_metadata: { reward_type: rewardType, ...metadata },
+      });
 
-    if (error) {
-      console.warn(`[Reward] add_credits RPC 실패 (${rewardType}):`, error.message);
+      if (error) {
+        if (attempt < maxRetries) {
+          console.warn(`[Reward] add_credits 재시도 ${attempt + 1}/${maxRetries} (${rewardType}):`, error.message);
+          await new Promise(r => setTimeout(r, 500 * (attempt + 1)));
+          continue;
+        }
+        console.warn(`[Reward] add_credits RPC 최종 실패 (${rewardType}):`, error.message);
+        return { success: false, newBalance: 0 };
+      }
+
+      const row = data?.[0];
+      return { success: row?.success ?? false, newBalance: row?.new_balance ?? 0 };
+    } catch (err) {
+      if (attempt < maxRetries) {
+        await new Promise(r => setTimeout(r, 500 * (attempt + 1)));
+        continue;
+      }
+      console.warn(`[Reward] grantRewardCredits 예외 (${rewardType}):`, err);
       return { success: false, newBalance: 0 };
     }
-
-    const row = data?.[0];
-    return { success: row?.success ?? false, newBalance: row?.new_balance ?? 0 };
-  } catch (err) {
-    console.warn(`[Reward] grantRewardCredits 예외 (${rewardType}):`, err);
-    return { success: false, newBalance: 0 };
   }
+  return { success: false, newBalance: 0 };
 }
 
 // ============================================================================

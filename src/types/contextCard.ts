@@ -37,6 +37,13 @@ export interface UserContextImpact {
 export interface ContextCardWithImpact {
   card: ContextCard;
   userImpact: UserContextImpact | null; // 영향도 없으면 null
+
+  /** 데이터 수집/분석 시점 (ISO 8601) */
+  dataTimestamp?: string | null;
+  /** 데이터 출처 */
+  dataSource?: string | null;
+  /** AI 신뢰도 메모 */
+  confidenceNote?: string | null;
 }
 
 /** UI 컴포넌트용 맥락 카드 데이터 (ContextCard.tsx prop) */

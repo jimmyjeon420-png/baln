@@ -54,6 +54,11 @@ function isFreeTrial(): boolean {
   return new Date() <= FREE_TRIAL_END;
 }
 
+/** 수요일 전체 공개일 (Full Context Day) 확인 */
+function isFullContextDay(): boolean {
+  return new Date().getDay() === 3; // 0=일, 3=수
+}
+
 /** 남은 일수 계산 (D-xxx) */
 function getDaysRemaining(): number {
   const now = new Date();
@@ -151,7 +156,7 @@ function SkeletonBar({ width }: { width: number | `${number}%` }) {
   const opacity = React.useRef(new Animated.Value(0.3)).current;
 
   React.useEffect(() => {
-    Animated.loop(
+    const anim = Animated.loop(
       Animated.sequence([
         Animated.timing(opacity, {
           toValue: 0.7,
@@ -164,7 +169,9 @@ function SkeletonBar({ width }: { width: number | `${number}%` }) {
           useNativeDriver: true,
         }),
       ])
-    ).start();
+    );
+    anim.start();
+    return () => anim.stop();
   }, []);
 
   return (

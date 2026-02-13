@@ -252,8 +252,8 @@ export function useStreakFreeze(): UseStreakFreezeReturn {
         return { success: true, freezeUsed: false, remainingFreezes: current.count };
       }
 
-      // 프리즈 1개 소모
-      const newCount = current.count - 1;
+      // 프리즈 1개 소모 (음수 방지 가드)
+      const newCount = Math.max(0, current.count - 1);
       const newData: StreakFreezeData = {
         count: newCount,
         lastUsedDate: today,
