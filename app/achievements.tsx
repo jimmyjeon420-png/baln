@@ -132,6 +132,27 @@ export default function AchievementsScreen() {
       </View>
 
       <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
+        {/* 감정 기록 바로가기 카드 */}
+        <TouchableOpacity
+          style={styles.emotionEntryCard}
+          onPress={() => router.push('/journal/emotion-history')}
+          activeOpacity={0.8}
+        >
+          <View style={styles.emotionEntryLeft}>
+            <Text style={styles.emotionEntryEmoji}>{'\u{1F4DD}'}</Text>
+            <View>
+              <Text style={styles.emotionEntryTitle}>오늘의 투자 감정 기록</Text>
+              <Text style={styles.emotionEntryDesc}>
+                매일 감정을 기록하면 패닉셀을 방지할 수 있어요
+              </Text>
+            </View>
+          </View>
+          <View style={styles.emotionEntryRight}>
+            <Text style={styles.emotionEntryReward}>+5C</Text>
+            <Ionicons name="chevron-forward" size={18} color={COLORS.primary} />
+          </View>
+        </TouchableOpacity>
+
         {/* 진행률 카드 */}
         <View style={styles.progressCard}>
           <View style={styles.progressHeader}>
@@ -283,6 +304,48 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 16,
     paddingBottom: 80,
+  },
+
+  // 감정 기록 바로가기
+  emotionEntryCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#1565C0' + '14',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#1565C0' + '33',
+  },
+  emotionEntryLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  emotionEntryEmoji: {
+    fontSize: 28,
+  },
+  emotionEntryTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+    marginBottom: 2,
+  },
+  emotionEntryDesc: {
+    fontSize: 12,
+    color: '#888888',
+  },
+  emotionEntryRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  emotionEntryReward: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.primary,
   },
 
   // 진행률 카드
