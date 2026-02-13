@@ -54,7 +54,7 @@ export default function RiskDashboardSection({
 
   const panicLevel = analysisResult.panicShieldLevel;
   const panicIndex = analysisResult.panicShieldIndex;
-  const highFomoCount = analysisResult.fomoAlerts.filter(a => a.severity === 'HIGH').length;
+  const highFomoCount = (analysisResult.fomoAlerts ?? []).filter(a => a.severity === 'HIGH').length;
 
   /**
    * 요약 아이템 배경색: 충분한 알파값으로 라이트 모드에서도 가시성 확보

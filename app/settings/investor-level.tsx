@@ -33,16 +33,18 @@ import {
   getXPToNextLevel,
 } from '../../src/types/level';
 import type { XPSource } from '../../src/types/level';
+import { useTheme } from '../../src/hooks/useTheme';
 
 export default function InvestorLevelScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   const { data: levelData, isLoading } = useMyLevel();
   const { data: xpHistory = [] } = useXPHistory(30);
   const { data: heatmapDates = [] } = useCheckinHeatmap();
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#4CAF50" />
         </View>
@@ -95,7 +97,7 @@ export default function InvestorLevelScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
       {/* 헤더 */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>

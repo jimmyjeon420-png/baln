@@ -57,6 +57,18 @@ const ACTIVITY_BADGES: Badge[] = [
     enabled: true,
   },
   {
+    id: 'month_master_30',
+    name: '한 달 마스터',
+    nameEn: 'Month Master',
+    icon: '💪',
+    description: '30일 연속 출석 — 투자 습관이 자리잡은 사람',
+    category: 'activity',
+    condition: { type: 'streak', threshold: 30 },
+    rarity: 'rare',
+    color: '#4A90E2',
+    enabled: true,
+  },
+  {
     id: 'week_warrior',
     name: '일주일 전사',
     nameEn: 'Week Warrior',

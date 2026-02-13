@@ -28,6 +28,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSharedPortfolio } from '../src/hooks/useSharedPortfolio';
 import { useSharedAnalysis } from '../src/hooks/useSharedAnalysis';
 import { useHaptics } from '../src/hooks/useHaptics';
+import { useTheme } from '../src/hooks/useTheme';
 import {
   TIER_STRATEGIES,
   TIER_STRATEGY_DETAILS,
@@ -43,6 +44,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function TierStrategyScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   const { lightTap, mediumTap } = useHaptics();
 
   // 공유 훅 데이터
@@ -135,7 +137,7 @@ export default function TierStrategyScreen() {
   const totalActions = tierDetail.quarterlyActions.length;
 
   return (
-    <SafeAreaView style={s.container} edges={['top']}>
+    <SafeAreaView style={[s.container, { backgroundColor: colors.background }]} edges={['top']}>
       {/* 상단 네비게이션 */}
       <View style={s.nav}>
         <TouchableOpacity

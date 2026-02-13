@@ -34,6 +34,7 @@ import ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { useHaptics } from '../../hooks/useHaptics';
 import { useShareReward } from '../../hooks/useRewards';
+import { useTrackEvent } from '../../hooks/useAnalytics';
 import {
   ContextCardData,
   SENTIMENT_COLORS,
@@ -62,6 +63,7 @@ export default function ContextShareCard({
   const [rewardMessage, setRewardMessage] = useState<string | null>(null);
   const { heavyTap, success, error: errorHaptic } = useHaptics();
   const { rewarded, claimReward } = useShareReward();
+  const track = useTrackEvent();
 
   const sentimentColor = SENTIMENT_COLORS[data.sentiment];
   const sentimentIcon = SENTIMENT_ICONS[data.sentiment];
@@ -154,6 +156,9 @@ export default function ContextShareCard({
       }
       success();
 
+      // 이벤트 추적: 맥락 카드 공유 완료
+      track('share_card', { source: 'context_share_modal', sentiment: data.sentiment, date: data.date });
+
       // 공유 성공 → 크레딧 보상 지급
       await handleRewardAfterShare();
     } catch (err) {
@@ -163,7 +168,7 @@ export default function ContextShareCard({
     } finally {
       setSharing(false);
     }
-  }, [heavyTap, success, errorHaptic, handleWebShare, handleNativeShare, handleRewardAfterShare]);
+  }, [heavyTap, success, errorHaptic, handleWebShare, handleNativeShare, handleRewardAfterShare, track, data.sentiment, data.date]);
 
   // 거시경제 체인 최대 4개만 표시
   const displayChain = data.macroChain.slice(0, 4);

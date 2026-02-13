@@ -6,7 +6,6 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { TouchableOpacity } from 'react-native';
 import { useTheme } from '../../src/hooks/useTheme';
 import { HeaderBar } from '../../src/components/common/HeaderBar';
 
@@ -96,6 +95,18 @@ export default function PrivacyScreen() {
           ))}
         </View>
 
+        {/* 개인정보의 처리 목적 */}
+        <View style={[styles.tableContainer, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.tableTitle, { color: colors.textPrimary }]}>개인정보의 처리 목적</Text>
+          <Text style={[styles.aiDecisionText, { color: colors.textSecondary }]}>
+            회사는 다음의 목적을 위하여 개인정보를 처리합니다. 처리하고 있는 개인정보는 다음의 목적 이외의 용도로는 이용되지 않으며, 이용 목적이 변경되는 경우에는 「개인정보 보호법」 제18조에 따라 별도의 동의를 받는 등 필요한 조치를 이행할 예정입니다.{'\n\n'}
+            1. 회원 가입 및 관리: 회원 가입 의사 확인, 본인 식별·인증, 회원자격 유지·관리, 서비스 부정이용 방지{'\n'}
+            2. 서비스 제공: 포트폴리오 관리, AI 기반 자산 분석, 리밸런싱 추천, 맥락 카드 제공, 예측 게임 운영{'\n'}
+            3. 마케팅 및 광고 활용: 이벤트 및 광고성 정보 제공 (동의 시), 서비스 이용 통계 및 접속빈도 파악{'\n'}
+            4. 민원 처리: 민원인의 신원 확인, 민원사항 확인, 사실 조사를 위한 연락·통지, 처리결과 통보
+          </Text>
+        </View>
+
         {/* 수집 데이터 테이블 */}
         <View style={[styles.tableContainer, { backgroundColor: colors.surface }]}>
           <Text style={[styles.tableTitle, { color: colors.textPrimary }]}>수집 데이터 현황</Text>
@@ -164,20 +175,90 @@ export default function PrivacyScreen() {
           </Text>
         </View>
 
-        {/* 개인정보 보호책임자 (개인정보보호법 필수) */}
+        {/* 개인정보 보호책임자 (개인정보보호법 제31조 필수) */}
         <View style={[styles.contactContainer, { backgroundColor: colors.surface }]}>
           <Text style={[styles.contactTitle, { color: colors.textPrimary }]}>개인정보 보호책임자</Text>
-          <Text style={[styles.contactText, { color: colors.textSecondary }]}>
-            개인정보 보호책임자: 대표이사 (문의: privacy@baln.app)
+          <Text style={[styles.aiDecisionText, { color: colors.textSecondary }]}>
+            「개인정보 보호법」 제31조에 따라 개인정보 처리에 관한 업무를 총괄해서 책임지고, 정보주체의 개인정보 관련 불만처리 및 피해구제 등을 위하여 아래와 같이 개인정보 보호책임자를 지정하고 있습니다.
           </Text>
-          <Text style={[styles.contactText, { color: colors.textSecondary }]}>
-            소속: 발른 주식회사
+          <View style={{ marginTop: 12 }}>
+            <Text style={[styles.contactText, { color: colors.textSecondary }]}>
+              {'\u2022'} 성명: 대표이사 (추후 업데이트 예정)
+            </Text>
+            <Text style={[styles.contactText, { color: colors.textSecondary }]}>
+              {'\u2022'} 직위: 개인정보 보호책임자 (CPO)
+            </Text>
+            <Text style={[styles.contactText, { color: colors.textSecondary }]}>
+              {'\u2022'} 소속: 발른 주식회사
+            </Text>
+            <Text style={[styles.contactText, { color: colors.textSecondary }]}>
+              {'\u2022'} 이메일: privacy@baln.app
+            </Text>
+            <Text style={[styles.contactText, { color: colors.textSecondary }]}>
+              {'\u2022'} 고객센터: baln.logic@gmail.com
+            </Text>
+            <Text style={[styles.contactText, { color: colors.textSecondary }]}>
+              {'\u2022'} 전화: 추후 업데이트 예정
+            </Text>
+          </View>
+        </View>
+
+        {/* 개인정보 파기 절차 및 방법 */}
+        <View style={[styles.tableContainer, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.tableTitle, { color: colors.textPrimary }]}>개인정보 파기 절차 및 방법</Text>
+          <Text style={[styles.aiDecisionText, { color: colors.textSecondary }]}>
+            회사는 개인정보 보유기간의 경과, 처리목적 달성 등 개인정보가 불필요하게 되었을 때에는 지체없이 해당 개인정보를 파기합니다.{'\n\n'}
+            <Text style={{ fontWeight: '600', color: '#FFFFFF' }}>1. 파기 절차</Text>{'\n'}
+            이용자가 회원가입 등을 위해 입력한 정보는 목적이 달성된 후 별도의 DB로 옮겨져(종이의 경우 별도의 서류함) 내부 방침 및 기타 관련 법령에 의한 정보보호 사유에 따라 일정 기간 저장된 후 파기됩니다. 별도 DB로 옮겨진 개인정보는 법률에 의한 경우가 아니고서는 보유되는 이외의 다른 목적으로 이용되지 않습니다.{'\n\n'}
+            <Text style={{ fontWeight: '600', color: '#FFFFFF' }}>2. 파기 방법</Text>{'\n'}
+            {'  '}{'\u2022'} 전자적 파일 형태: 기록을 재생할 수 없는 기술적 방법을 사용하여 삭제합니다. 데이터베이스 레코드는 복구 불가능한 방식(논리적 삭제 후 물리적 덮어쓰기)으로 파기합니다.{'\n'}
+            {'  '}{'\u2022'} 종이 문서: 분쇄기로 분쇄하거나 소각합니다.{'\n'}
+            {'  '}{'\u2022'} AI 분석 로그: 생성 후 30일이 경과하면 자동으로 영구 삭제됩니다.{'\n'}
+            {'  '}{'\u2022'} 백업 데이터: 원본 삭제 후 최대 30일 이내에 백업 사본에서도 파기됩니다.{'\n\n'}
+            <Text style={{ fontWeight: '600', color: '#FFFFFF' }}>3. 법령에 따른 보존 항목</Text>{'\n'}
+            {'  '}{'\u2022'} 계약 또는 청약철회 등에 관한 기록: 5년 (전자상거래법){'\n'}
+            {'  '}{'\u2022'} 대금결제 및 재화 등의 공급에 관한 기록: 5년 (전자상거래법){'\n'}
+            {'  '}{'\u2022'} 소비자의 불만 또는 분쟁처리에 관한 기록: 3년 (전자상거래법){'\n'}
+            {'  '}{'\u2022'} 통신사실확인자료: 12개월 (통신비밀보호법){'\n'}
+            {'  '}{'\u2022'} 로그인 기록: 3개월 (통신비밀보호법)
           </Text>
-          <Text style={[styles.contactText, { color: colors.textSecondary }]}>
-            이메일: privacy@baln.app
+        </View>
+
+        {/* 개인정보의 안전성 확보 조치 */}
+        <View style={[styles.tableContainer, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.tableTitle, { color: colors.textPrimary }]}>개인정보의 안전성 확보 조치</Text>
+          <Text style={[styles.aiDecisionText, { color: colors.textSecondary }]}>
+            회사는 「개인정보 보호법」 제29조에 따라 다음과 같이 안전성 확보에 필요한 기술적·관리적·물리적 조치를 하고 있습니다.{'\n\n'}
+            <Text style={{ fontWeight: '600', color: '#FFFFFF' }}>1. 관리적 조치</Text>{'\n'}
+            {'  '}{'\u2022'} 내부관리계획 수립·시행{'\n'}
+            {'  '}{'\u2022'} 개인정보 취급 직원의 최소화 및 교육{'\n'}
+            {'  '}{'\u2022'} 정기적 자체 감사 실시{'\n\n'}
+            <Text style={{ fontWeight: '600', color: '#FFFFFF' }}>2. 기술적 조치</Text>{'\n'}
+            {'  '}{'\u2022'} 개인정보의 암호화: 모든 데이터는 TLS 1.3으로 전송되며, AES-256으로 저장 시 암호화{'\n'}
+            {'  '}{'\u2022'} 해킹 등에 대비한 기술적 대책: 침입 탐지 시스템 운영, 보안 프로그램 설치·갱신{'\n'}
+            {'  '}{'\u2022'} 접근 통제: 개인정보 처리 시스템에 대한 접근권한 관리, 접근 기록 보관{'\n'}
+            {'  '}{'\u2022'} 접속기록 보관 및 위변조 방지: 최소 1년 이상 접속기록 보관·관리{'\n\n'}
+            <Text style={{ fontWeight: '600', color: '#FFFFFF' }}>3. 물리적 조치</Text>{'\n'}
+            {'  '}{'\u2022'} 클라우드 기반 서비스로 물리적 서버는 Supabase Inc.(AWS 인프라)에서 관리하며, SOC 2 Type II 인증 기준을 충족합니다.
           </Text>
-          <Text style={[styles.contactText, { color: colors.textSecondary }]}>
-            고객센터: baln.logic@gmail.com
+        </View>
+
+        {/* 개인정보 자동 수집 장치의 설치·운영 및 거부 */}
+        <View style={[styles.tableContainer, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.tableTitle, { color: colors.textPrimary }]}>개인정보 자동 수집 장치의 설치·운영 및 거부</Text>
+          <Text style={[styles.aiDecisionText, { color: colors.textSecondary }]}>
+            회사는 이용자에게 개별적인 맞춤 서비스를 제공하기 위해 이용 정보를 저장하고 수시로 불러오는 기술을 사용할 수 있습니다.{'\n\n'}
+            <Text style={{ fontWeight: '600', color: '#FFFFFF' }}>1. 수집 항목</Text>{'\n'}
+            {'  '}{'\u2022'} 앱 사용 통계 (화면 조회, 기능 사용 빈도){'\n'}
+            {'  '}{'\u2022'} 기기 정보 (OS 버전, 앱 버전){'\n'}
+            {'  '}{'\u2022'} 인증 토큰 (로그인 상태 유지){'\n\n'}
+            <Text style={{ fontWeight: '600', color: '#FFFFFF' }}>2. 수집 목적</Text>{'\n'}
+            {'  '}{'\u2022'} 서비스 이용 분석 및 개선{'\n'}
+            {'  '}{'\u2022'} 맞춤형 서비스 제공{'\n'}
+            {'  '}{'\u2022'} 로그인 상태 유지{'\n\n'}
+            <Text style={{ fontWeight: '600', color: '#FFFFFF' }}>3. 거부 방법</Text>{'\n'}
+            {'  '}{'\u2022'} 이용자는 기기의 설정에서 앱 데이터를 삭제하거나, 앱을 재설치하여 자동 수집된 정보를 초기화할 수 있습니다.{'\n'}
+            {'  '}{'\u2022'} 단, 자동 수집을 거부할 경우 로그인 유지 등 일부 서비스 이용에 제한이 있을 수 있습니다.
           </Text>
         </View>
 
@@ -195,6 +276,17 @@ export default function PrivacyScreen() {
           </Text>
           <Text style={[styles.contactText, { color: colors.textSecondary }]}>
             경찰청 사이버안전국: (국번없이) 182 (cyberbureau.police.go.kr)
+          </Text>
+        </View>
+
+        {/* 개인정보처리방침의 변경 */}
+        <View style={[styles.tableContainer, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.tableTitle, { color: colors.textPrimary }]}>개인정보처리방침의 변경</Text>
+          <Text style={[styles.aiDecisionText, { color: colors.textSecondary }]}>
+            1. 이 개인정보처리방침은 2026년 2월 13일부터 적용됩니다.{'\n\n'}
+            2. 이전의 개인정보처리방침은 아래에서 확인하실 수 있습니다.{'\n'}
+            {'  '}{'\u2022'} 현재 최초 버전이며, 변경 이력이 없습니다.{'\n\n'}
+            3. 개인정보처리방침이 변경되는 경우 변경사항을 시행일의 7일 전부터 앱 내 공지사항을 통해 고지할 것입니다. 다만, 이용자 권리의 중대한 변경이 있을 경우에는 최소 30일 전에 고지합니다.
           </Text>
         </View>
 

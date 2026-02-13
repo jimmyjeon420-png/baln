@@ -38,10 +38,12 @@ import {
   HOLDING_TYPE_COLORS,
   formatAssetAmount,
 } from '../../../src/utils/communityUtils';
+import { useTheme } from '../../../src/hooks/useTheme';
 
 export default function AuthorProfileScreen() {
   const { userId } = useLocalSearchParams<{ userId: string }>();
   const router = useRouter();
+  const { colors } = useTheme();
 
   // 작성자 게시물 목록
   const { data: posts, isLoading, refetch } = useAuthorPosts(userId || '');
@@ -69,7 +71,7 @@ export default function AuthorProfileScreen() {
   // 로딩
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={28} color="#4CAF50" />
@@ -87,7 +89,7 @@ export default function AuthorProfileScreen() {
   // 게시물 없음
   if (!posts || posts.length === 0) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={28} color="#4CAF50" />
@@ -233,7 +235,7 @@ export default function AuthorProfileScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* 헤더 */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>

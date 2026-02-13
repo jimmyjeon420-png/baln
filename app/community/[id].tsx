@@ -60,10 +60,12 @@ import ReportModal from '../../src/components/community/ReportModal';
 import { useAuth } from '../../src/context/AuthContext';
 import { useMyBookmarks, useToggleBookmark } from '../../src/hooks/useBookmarks';
 import { validateContent, getViolationMessage } from '../../src/services/contentFilter';
+import { useTheme } from '../../src/hooks/useTheme';
 
 export default function PostDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { colors } = useTheme();
   const { user } = useAuth();
   const [commentText, setCommentText] = useState('');
   const [replyToId, setReplyToId] = useState<string | null>(null);
@@ -234,7 +236,7 @@ export default function PostDetailScreen() {
   // 로딩
   if (postLoading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#4CAF50" />
         </View>
@@ -245,7 +247,7 @@ export default function PostDetailScreen() {
   // 게시물 없음
   if (!post) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={28} color="#4CAF50" />
@@ -429,7 +431,7 @@ export default function PostDetailScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}

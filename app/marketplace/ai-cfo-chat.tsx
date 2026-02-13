@@ -28,9 +28,11 @@ import { useHaptics } from '../../src/hooks/useHaptics';
 import supabase, { getCurrentUser } from '../../src/services/supabase';
 import type { UserTier } from '../../src/types/database';
 import type { CFOChatInput } from '../../src/types/marketplace';
+import { useTheme } from '../../src/hooks/useTheme';
 
 export default function AICFOChatScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   const { mediumTap } = useHaptics();
   const scrollRef = useRef<ScrollView>(null);
 
@@ -127,7 +129,7 @@ export default function AICFOChatScreen() {
   const chatMessages = messages.data || [];
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* 헤더 */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7}>

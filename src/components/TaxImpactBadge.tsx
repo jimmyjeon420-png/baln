@@ -41,7 +41,7 @@ export const TaxImpactBadge: React.FC<Props> = ({ taxImpact, showDetails = false
     >
       {/* Compact view */}
       <View style={styles.compactRow}>
-        <Text style={styles.label}>🧾 Tax ({taxImpact.effectiveTaxRate.toFixed(1)}%)</Text>
+        <Text style={styles.label}>🧾 Tax ({(taxImpact.effectiveTaxRate ?? 0).toFixed(1)}%)</Text>
         <View style={styles.amountGroup}>
           <Text style={styles.taxAmount}>-{formatCurrency(taxImpact.taxAmount)}</Text>
           <Text style={styles.netAmount}>→ {formatCurrency(taxImpact.netProceeds)}</Text>
@@ -71,7 +71,7 @@ export const TaxImpactBadge: React.FC<Props> = ({ taxImpact, showDetails = false
           <View style={styles.divider} />
 
           <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Tax ({taxImpact.effectiveTaxRate.toFixed(1)}%)</Text>
+            <Text style={styles.detailLabel}>Tax ({(taxImpact.effectiveTaxRate ?? 0).toFixed(1)}%)</Text>
             <Text style={styles.negative}>
               -{formatCurrency(taxImpact.taxAmount)}
             </Text>

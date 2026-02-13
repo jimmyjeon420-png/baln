@@ -18,7 +18,7 @@ export default function TermsScreen() {
 
       <ScrollView style={styles.content}>
         <Text style={[styles.title, { color: colors.textPrimary }]}>baln 서비스 이용약관</Text>
-        <Text style={[styles.date, { color: colors.textTertiary }]}>최종 수정일: 2026년 2월 1일</Text>
+        <Text style={[styles.date, { color: colors.textTertiary }]}>최종 수정일: 2026년 2월 13일</Text>
 
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.primary }]}>제1조 (목적)</Text>

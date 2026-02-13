@@ -42,6 +42,7 @@ import type { UserTier } from '../../src/types/database';
 import { FEATURE_LABELS, TIER_DISCOUNTS } from '../../src/types/marketplace';
 import type { AIFeatureType } from '../../src/types/marketplace';
 import { getDiscountedCost } from '../../src/services/creditService';
+import { useTheme } from '../../src/hooks/useTheme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_GAP = 12;
@@ -174,6 +175,7 @@ function getRecommendation(portfolio: any[]): Recommendation {
 
 export default function MarketplaceScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   const { mediumTap } = useHaptics();
   const { data: credits, refetch: refetchCredits } = useMyCredits();
   const { data: history } = useFeatureHistory(undefined, 5);
@@ -222,7 +224,7 @@ export default function MarketplaceScreen() {
   // ── 로딩 상태 (포트폴리오/티어 로드만 대기, 크레딧은 인라인 로딩) ──
   if (!initialLoaded) {
     return (
-      <SafeAreaView style={s.container}>
+      <SafeAreaView style={[s.container, { backgroundColor: colors.background }]}>
         <MarketplaceMainSkeleton />
       </SafeAreaView>
     );
@@ -237,7 +239,7 @@ export default function MarketplaceScreen() {
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   return (
-    <SafeAreaView style={s.container}>
+    <SafeAreaView style={[s.container, { backgroundColor: colors.background }]}>
       <ScrollView
         contentContainerStyle={s.scroll}
         refreshControl={
@@ -428,7 +430,7 @@ export default function MarketplaceScreen() {
 const s = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0A0A0A',
+    // backgroundColor는 동적으로 적용됨 (colors.background)
   },
   scroll: {
     paddingBottom: 40,

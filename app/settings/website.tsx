@@ -15,9 +15,11 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useTheme } from '../../src/hooks/useTheme';
 
 export default function WebsiteScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
 
   // 핵심 기능
   const features = [
@@ -71,7 +73,7 @@ export default function WebsiteScreen() {
   ];
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* 헤더 */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>

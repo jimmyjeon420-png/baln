@@ -9,7 +9,7 @@
  * - 접힘/펼침 토글로 상세 해설 보기
  */
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -18,6 +18,7 @@ import {
   Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTrackEvent } from '../../hooks/useAnalytics';
 import { PollWithMyVote } from '../../types/prediction';
 
 interface ReviewCardProps {
@@ -28,6 +29,8 @@ interface ReviewCardProps {
 
 export default function ReviewCard({ poll, isCorrect, currentStreak }: ReviewCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const track = useTrackEvent();
+  const hasTrackedReview = useRef(false);
 
   // 상태별 스타일
   const bgColor = isCorrect ? '#1A2A1A' : '#2A1A1A';
@@ -92,7 +95,13 @@ export default function ReviewCard({ poll, isCorrect, currentStreak }: ReviewCar
       {/* 해설 토글 버튼 */}
       <TouchableOpacity
         style={styles.toggleButton}
-        onPress={() => setIsExpanded(!isExpanded)}
+        onPress={() => {
+          if (!isExpanded && !hasTrackedReview.current) {
+            hasTrackedReview.current = true;
+            track('review_completed', { pollId: poll.id, isCorrect });
+          }
+          setIsExpanded(!isExpanded);
+        }}
         activeOpacity={0.7}
       >
         <Text style={styles.toggleButtonText}>

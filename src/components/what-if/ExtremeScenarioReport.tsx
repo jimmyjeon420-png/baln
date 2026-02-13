@@ -197,12 +197,12 @@ const SimulationResultSection: React.FC<{
         예상 총 영향
       </Text>
       <Text style={[sectionStyles.totalImpactValue, { color: '#EF4444' }]}>
-        {result.totalImpact.changePercent > 0 ? '+' : ''}
-        {result.totalImpact.changePercent.toFixed(1)}%
+        {(result.totalImpact?.changePercent ?? 0) > 0 ? '+' : ''}
+        {(result.totalImpact?.changePercent ?? 0).toFixed(1)}%
       </Text>
       <Text style={[sectionStyles.totalImpactAmount, { color: colors.textSecondary }]}>
-        {result.totalImpact.changeAmount > 0 ? '+' : ''}
-        {Math.round(result.totalImpact.changeAmount).toLocaleString()}원
+        {(result.totalImpact?.changeAmount ?? 0) > 0 ? '+' : ''}
+        {Math.round(result.totalImpact?.changeAmount ?? 0).toLocaleString()}원
       </Text>
     </View>
 

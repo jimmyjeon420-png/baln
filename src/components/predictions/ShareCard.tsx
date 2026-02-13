@@ -29,6 +29,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
+import { useTrackEvent } from '../../hooks/useAnalytics';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_SIZE = Math.min(SCREEN_WIDTH - 32, 400); // 화면 크기 대응
@@ -49,6 +50,7 @@ export default function ShareCard({
   const viewShotRef = useRef<ViewShot>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
+  const track = useTrackEvent();
 
   // 공유하기 버튼 클릭 → 모달 열기
   const handleOpenModal = () => {
@@ -87,6 +89,7 @@ export default function ShareCard({
       });
 
       // 4. 공유 성공 콜백
+      track('share_card', { source: 'prediction_share', accuracyRate, totalVotes, currentStreak });
       onShare?.();
       setIsVisible(false);
 

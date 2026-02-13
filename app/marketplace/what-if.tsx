@@ -23,6 +23,7 @@ import { useHaptics } from '../../src/hooks/useHaptics';
 import supabase, { getCurrentUser } from '../../src/services/supabase';
 import type { UserTier } from '../../src/types/database';
 import type { WhatIfScenario, WhatIfInput, WhatIfResult } from '../../src/types/marketplace';
+import { useTheme } from '../../src/hooks/useTheme';
 
 const SCENARIO_PRESETS: {
   id: WhatIfScenario;
@@ -70,6 +71,7 @@ const SCENARIO_PRESETS: {
 
 export default function WhatIfScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   const { mediumTap } = useHaptics();
   const whatIfMutation = useWhatIf();
 
@@ -150,7 +152,7 @@ export default function WhatIfScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* 헤더 */}
         <View style={styles.header}>

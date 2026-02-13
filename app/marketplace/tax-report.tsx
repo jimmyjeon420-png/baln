@@ -23,9 +23,11 @@ import { useHaptics } from '../../src/hooks/useHaptics';
 import supabase, { getCurrentUser } from '../../src/services/supabase';
 import type { UserTier } from '../../src/types/database';
 import type { TaxResidency, TaxReportInput, TaxReportResult } from '../../src/types/marketplace';
+import { useTheme } from '../../src/hooks/useTheme';
 
 export default function TaxReportScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   const { mediumTap } = useHaptics();
   const taxMutation = useTaxReport();
 
@@ -93,7 +95,7 @@ export default function TaxReportScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* 헤더 */}
         <View style={styles.header}>

@@ -18,6 +18,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useHaptics } from '../../hooks/useHaptics';
+import { useTrackEvent } from '../../hooks/useAnalytics';
 import {
   PollWithMyVote,
   POLL_CATEGORY_INFO,
@@ -32,6 +33,7 @@ interface PollCardProps {
 
 export default function PollCard({ poll, onVote, isVoting }: PollCardProps) {
   const { mediumTap } = useHaptics();
+  const track = useTrackEvent();
   const [countdown, setCountdown] = useState('');
 
   // 마감 카운트다운 계산
@@ -76,6 +78,7 @@ export default function PollCard({ poll, onVote, isVoting }: PollCardProps) {
   // 투표 핸들러
   const handleVote = (vote: 'YES' | 'NO') => {
     mediumTap();
+    track('prediction_vote', { pollId: poll.id, choice: vote, category: poll.category });
     onVote(poll.id, vote);
   };
 

@@ -25,6 +25,7 @@ import { useHaptics } from '../../src/hooks/useHaptics';
 import { useSubscriptionStatus, useActivateTrial } from '../../src/hooks/useSubscription';
 import { isFreePeriod, getFreePeriodDaysLeft } from '../../src/config/freePeriod';
 import { useStreakData } from '../../src/hooks/useStreak';
+import { useTheme } from '../../src/hooks/useTheme';
 
 // 가격 정보
 const PRICING = {
@@ -82,6 +83,7 @@ const BENEFITS = [
 
 export default function PaywallScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   const { mediumTap, heavyTap } = useHaptics();
   const {
     isPremium,
@@ -133,7 +135,7 @@ export default function PaywallScreen() {
   // 로딩 중 표시
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.loadingWrap}>
           <ActivityIndicator size="large" color="#4CAF50" />
         </View>
@@ -145,7 +147,7 @@ export default function PaywallScreen() {
   if (isFreePeriod()) {
     const daysLeft = getFreePeriodDaysLeft();
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <ScrollView contentContainerStyle={styles.scrollContent}>
           {/* 닫기 버튼 */}
           <TouchableOpacity
@@ -226,7 +228,7 @@ export default function PaywallScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* 닫기 버튼 */}
         <TouchableOpacity

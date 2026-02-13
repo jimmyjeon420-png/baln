@@ -15,7 +15,7 @@
  * - 무료 체험 기간 (5/31까지): 모든 레이어 오픈
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -30,6 +30,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
+import { useTrackEvent } from '../../hooks/useAnalytics';
+import { useHabitLoopTracking } from '../../hooks/useHabitLoopTracking';
 import type { ThemeColors } from '../../styles/colors';
 
 // Android LayoutAnimation 활성화
@@ -478,6 +480,9 @@ export default React.forwardRef<View, ContextBriefCardProps>(
     ref
   ) => {
     const { colors } = useTheme();
+    const track = useTrackEvent();
+    const { trackStep } = useHabitLoopTracking();
+    const hasTrackedRead = useRef(false);
     const styles = React.useMemo(() => createStyles(colors), [colors]);
     const COLORS = colors; // 하위 호환성을 위해 COLORS 별칭 생성
 
@@ -485,6 +490,15 @@ export default React.forwardRef<View, ContextBriefCardProps>(
     const sentimentBg = SENTIMENT_BG_COLORS[sentiment];
     const freeTrial = isFreeTrial();
     const daysRemaining = getDaysRemaining();
+
+    // 맥락 카드 데이터가 로드되면 context_card_read 이벤트 기록 (1회만)
+    useEffect(() => {
+      if (!isLoading && fact && !hasTrackedRead.current) {
+        hasTrackedRead.current = true;
+        track('context_card_read', { sentiment, date });
+        trackStep('context_card_read');
+      }
+    }, [isLoading, fact, sentiment, date, track, trackStep]);
 
     // 무료 체험 기간에는 프리미엄처럼 취급
     const effectivePremium = isPremium || freeTrial;
@@ -494,8 +508,15 @@ export default React.forwardRef<View, ContextBriefCardProps>(
 
     const toggleLayer = useCallback((layerNum: number) => {
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      setExpandedLayer((prev) => (prev === layerNum ? null : layerNum));
-    }, []);
+      setExpandedLayer((prev) => {
+        const isExpanding = prev !== layerNum;
+        if (isExpanding) {
+          const layerNames = ['', 'historical', 'macro', 'institutional', 'portfolio'];
+          track('context_layer_expanded', { layer: layerNum, name: layerNames[layerNum] });
+        }
+        return prev === layerNum ? null : layerNum;
+      });
+    }, [track]);
 
     // 하위호환: LayerSection에서 사용하는 boolean 변환
     const expandedLayers: Record<number, boolean> = {
@@ -581,7 +602,7 @@ export default React.forwardRef<View, ContextBriefCardProps>(
           <View style={styles.headerRightGroup}>
             {onShare && (
               <TouchableOpacity
-                onPress={onShare}
+                onPress={() => { track('share_card', { source: 'context_brief' }); onShare(); }}
                 activeOpacity={0.7}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 accessibilityLabel="맥락 카드 공유하기"

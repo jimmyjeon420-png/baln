@@ -21,6 +21,7 @@ import { GuruInsightsSkeleton } from '../../src/components/SkeletonLoader';
 import type { GuruInsight } from '../../src/services/centralKitchen';
 import { useQueryClient } from '@tanstack/react-query';
 import { GURU_INSIGHTS_KEY } from '../../src/hooks/useSharedAnalysis';
+import { useTheme } from '../../src/hooks/useTheme';
 
 // 센티먼트 필터 옵션
 type SentimentFilter = 'ALL' | 'BULLISH' | 'BEARISH' | 'CAUTIOUS' | 'NEUTRAL';
@@ -50,6 +51,7 @@ const SENTIMENT_LABELS: Record<string, string> = {
 
 export default function GuruInsightsScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   const queryClient = useQueryClient();
   const { data, isLoading, isRefetching } = useGuruInsights();
   const [filter, setFilter] = useState<SentimentFilter>('ALL');
@@ -67,7 +69,7 @@ export default function GuruInsightsScreen() {
   // 로딩 중
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
@@ -86,7 +88,7 @@ export default function GuruInsightsScreen() {
   const hasData = data && data.insights && data.insights.length > 0;
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
       {/* 헤더 */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>

@@ -10,7 +10,7 @@
  * useTheme()으로 다크/라이트 모드 대응
  */
 
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -23,6 +23,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
+import { useTrackEvent } from '../../hooks/useAnalytics';
+import { useHabitLoopTracking } from '../../hooks/useHabitLoopTracking';
 import { formatCredits } from '../../utils/formatters';
 
 // Android LayoutAnimation 활성화
@@ -233,8 +235,25 @@ export default function PredictionReview({
   creditsEarned,
 }: PredictionReviewProps) {
   const { colors, shadows } = useTheme();
+  const track = useTrackEvent();
+  const { trackStep } = useHabitLoopTracking();
+  const hasTrackedReview = useRef(false);
 
   const correctCount = reviews.filter((r) => r.isCorrect).length;
+
+  // 복기 데이터가 로드되면 review_completed 이벤트 기록 (1회만)
+  useEffect(() => {
+    if (reviews.length > 0 && !hasTrackedReview.current) {
+      hasTrackedReview.current = true;
+      track('review_completed', {
+        totalReviews: reviews.length,
+        correctCount,
+        accuracy,
+        streak,
+      });
+      trackStep('review_completed');
+    }
+  }, [reviews.length, correctCount, accuracy, streak, track, trackStep]);
 
   // 빈 상태
   if (reviews.length === 0) {

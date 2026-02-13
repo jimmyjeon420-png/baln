@@ -23,9 +23,11 @@ import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useSaveExecution } from '../src/hooks/useExecutions';
 import type { ExecutionInput } from '../src/types/rebalanceExecution';
+import { useTheme } from '../src/hooks/useTheme';
 
 export default function LogTradeScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   const params = useLocalSearchParams<{
     ticker: string;
     name: string;
@@ -96,7 +98,7 @@ export default function LogTradeScreen() {
   };
 
   return (
-    <SafeAreaView style={s.container} edges={['top']}>
+    <SafeAreaView style={[s.container, { backgroundColor: colors.background }]} edges={['top']}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}

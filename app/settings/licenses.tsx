@@ -15,6 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useTheme } from '../../src/hooks/useTheme';
 
 // 라이선스 타입 정의
 interface LicenseEntry {
@@ -304,6 +305,7 @@ const LICENSE_DATA: LicenseCategory[] = [
 
 export default function LicensesScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   // 펼쳐진 카테고리 인덱스 관리
   const [expandedCategories, setExpandedCategories] = useState<number[]>([0]);
 
@@ -320,7 +322,7 @@ export default function LicensesScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* 헤더 */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>

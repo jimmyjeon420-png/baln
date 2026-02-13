@@ -17,16 +17,18 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useRebalanceHistory, useOverallStats } from '../src/hooks/useRebalanceHistory';
 import { SkeletonBlock } from '../src/components/SkeletonLoader';
+import { useTheme } from '../src/hooks/useTheme';
 
 export default function RebalanceHistoryScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   const [period, setPeriod] = useState<30 | 90>(30);
 
   const { data: history, isLoading } = useRebalanceHistory(period);
   const overallStats = useOverallStats(period);
 
   return (
-    <SafeAreaView style={s.container} edges={['top']}>
+    <SafeAreaView style={[s.container, { backgroundColor: colors.background }]} edges={['top']}>
       <ScrollView contentContainerStyle={s.scroll}>
         {/* 헤더 */}
         <View style={s.header}>

@@ -15,6 +15,7 @@
 import React from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTrackEvent } from '../../hooks/useAnalytics';
 import {
   BADGE_DEFINITIONS,
   getBadgesByCategory,
@@ -29,6 +30,7 @@ interface BadgeShowcaseProps {
 }
 
 export function BadgeShowcase({ ownedBadgeIds, onBadgePress }: BadgeShowcaseProps) {
+  const track = useTrackEvent();
   const categories: Array<{ key: Badge['category']; title: string; icon: string }> = [
     { key: 'activity', title: '활동 뱃지', icon: '🏆' },
     { key: 'skill', title: '실력 뱃지', icon: '🎯' },
@@ -68,7 +70,15 @@ export function BadgeShowcase({ ownedBadgeIds, onBadgePress }: BadgeShowcaseProp
                     key={badge.id}
                     badge={badge}
                     isOwned={isOwned}
-                    onPress={() => onBadgePress?.(badge)}
+                    onPress={() => {
+                      track('badge_viewed', {
+                        badgeId: badge.id,
+                        badgeName: badge.name,
+                        isOwned,
+                        category: badge.category,
+                      });
+                      onBadgePress?.(badge);
+                    }}
                   />
                 );
               })}

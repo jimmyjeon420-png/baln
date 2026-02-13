@@ -28,6 +28,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
+import { useTrackEvent } from '../../hooks/useAnalytics';
+import { useHabitLoopTracking } from '../../hooks/useHabitLoopTracking';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -131,6 +133,8 @@ export default function PredictionVoteCard({
   onCategoryChange,
 }: PredictionVoteCardProps) {
   const { colors } = useTheme();
+  const track = useTrackEvent();
+  const { trackStep } = useHabitLoopTracking();
   const styles = React.useMemo(() => createStyles(colors), [colors]);
   const scrollRef = React.useRef<ScrollView>(null);
   const [currentIndex, setCurrentIndex] = React.useState(0);
@@ -179,6 +183,10 @@ export default function PredictionVoteCard({
 
   // 투표 핸들러 (투표 후 자동 다음 질문 스크롤)
   const handleVote = React.useCallback((pollId: string, choice: 'YES' | 'NO') => {
+    // 이벤트 추적: 예측 투표
+    track('prediction_vote', { pollId, choice, pollIndex: currentIndex });
+    trackStep('prediction_vote');
+
     // 신규 방식 (다중 질문)
     if (onVotePoll) {
       onVotePoll(pollId, choice);
@@ -196,7 +204,7 @@ export default function PredictionVoteCard({
         setCurrentIndex(nextIndex);
       }
     }, 300);
-  }, [onVotePoll, onVote, currentIndex, allPolls.length]);
+  }, [onVotePoll, onVote, currentIndex, allPolls.length, track, trackStep]);
 
   // ──────────────────────────────────────────────────────────────────────
   // 로딩 상태
@@ -441,6 +449,9 @@ export default function PredictionVoteCard({
                   style={styles.reviewItem}
                   onPress={() => {
                     if (hasExplanation) {
+                      if (!isExpanded) {
+                        track('review_explanation_viewed', { questionIndex: index });
+                      }
                       setExpandedReviewIndex(isExpanded ? null : index);
                     }
                   }}
@@ -505,7 +516,7 @@ export default function PredictionVoteCard({
 
       {/* 하단: [전체 기록 보기] 프리미엄 게이트 */}
       {onViewHistory && (
-        <TouchableOpacity style={styles.historyButton} onPress={onViewHistory}>
+        <TouchableOpacity style={styles.historyButton} onPress={() => { track('prediction_history_viewed'); onViewHistory(); }}>
           <Text style={styles.historyText}>📊 상세 통계 보기</Text>
           <Ionicons name="arrow-forward" size={18} color={colors.textSecondary} />
         </TouchableOpacity>

@@ -8,16 +8,34 @@
  * - ReviewCard 컴포넌트 재사용
  */
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useYesterdayReview, useMyPredictionStats } from '../../hooks/usePredictions';
+import { useTrackEvent } from '../../hooks/useAnalytics';
+import { useHabitLoopTracking } from '../../hooks/useHabitLoopTracking';
 import ReviewCard from './ReviewCard';
 import { AccuracyBadge } from './AccuracyBadge';
 
 export default function YesterdayReviewSection() {
   const { data: yesterdayPolls, summary, isLoading } = useYesterdayReview();
   const { data: myStats } = useMyPredictionStats();
+  const track = useTrackEvent();
+  const { trackStep } = useHabitLoopTracking();
+  const hasTrackedView = useRef(false);
+
+  // 복기 데이터가 로드되고 어제 투표가 있으면 review_completed 이벤트 기록
+  useEffect(() => {
+    if (!isLoading && yesterdayPolls && yesterdayPolls.length > 0 && !hasTrackedView.current) {
+      hasTrackedView.current = true;
+      track('review_completed', {
+        totalVoted: summary.totalVoted,
+        totalCorrect: summary.totalCorrect,
+        accuracyRate: summary.accuracyRate,
+      });
+      trackStep('review_completed');
+    }
+  }, [isLoading, yesterdayPolls, summary, track, trackStep]);
 
   // 로딩 상태
   if (isLoading) {

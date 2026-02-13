@@ -35,6 +35,7 @@ import {
   exportUserData,
   getUserDataSummary,
 } from '../../src/services/accountDeletion';
+import { useTheme } from '../../src/hooks/useTheme';
 
 // ============================================================================
 // 상수
@@ -50,6 +51,7 @@ type Step = 1 | 2 | 3;
 export default function DeleteAccountScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  const { colors } = useTheme();
 
   // 상태
   const [step, setStep] = useState<Step>(1);
@@ -170,7 +172,7 @@ export default function DeleteAccountScreen() {
   // ============================================================================
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* 헤더 */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>

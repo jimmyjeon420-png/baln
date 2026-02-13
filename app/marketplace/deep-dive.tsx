@@ -23,9 +23,11 @@ import { useHaptics } from '../../src/hooks/useHaptics';
 import supabase, { getCurrentUser } from '../../src/services/supabase';
 import type { UserTier } from '../../src/types/database';
 import type { DeepDiveInput, DeepDiveResult } from '../../src/types/marketplace';
+import { useTheme } from '../../src/hooks/useTheme';
 
 export default function DeepDiveScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   const { mediumTap } = useHaptics();
   const deepDiveMutation = useDeepDive();
 
@@ -95,7 +97,7 @@ export default function DeepDiveScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* 헤더 */}
         <View style={styles.header}>

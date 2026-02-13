@@ -122,7 +122,7 @@ export default function Risks({ risks, onRefresh }: RisksProps) {
 
               {/* Bullet Points */}
               <View style={s.pointsList}>
-                {risk.points.map((point, idx) => (
+                {(risk.points ?? []).map((point, idx) => (
                   <View key={idx} style={s.pointRow}>
                     <Text style={[s.bullet, { color: colors.textTertiary }]}>•</Text>
                     <Text style={[s.pointText, { color: colors.textSecondary }]}>{point}</Text>

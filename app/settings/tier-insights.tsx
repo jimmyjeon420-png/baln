@@ -30,6 +30,7 @@ import {
 } from '../../src/hooks/useTierAllocation';
 import { FEATURE_COSTS, TIER_DISCOUNTS } from '../../src/types/marketplace';
 import { TIER_COLORS, TIER_LABELS } from '../../src/types/community';
+import { useTheme } from '../../src/hooks/useTheme';
 
 // 자산 유형별 색상
 const ASSET_COLORS = {
@@ -142,6 +143,7 @@ function TierAllocationCard({ stat, isMyTier }: { stat: TierAllocationStat; isMy
 
 export default function TierInsightsScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   const [isUnlocked, setIsUnlocked] = useState(false);
 
   // 내 자산/등급 정보
@@ -217,7 +219,7 @@ export default function TierInsightsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* 헤더 */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>

@@ -133,9 +133,9 @@ const MarketDriversList: React.FC<MarketDriversListProps> = ({
         </Text>
 
         {/* 영향받는 자산 태그 */}
-        {item.affectedAssets.length > 0 && (
+        {(item.affectedAssets ?? []).length > 0 && (
           <View style={{ marginTop: SIZES.md, flexDirection: 'row', flexWrap: 'wrap' }}>
-            {item.affectedAssets.map((asset, i) => (
+            {(item.affectedAssets ?? []).map((asset, i) => (
               <View
                 key={`${item.rank}-asset-${i}`}
                 style={[

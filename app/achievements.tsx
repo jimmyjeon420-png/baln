@@ -27,11 +27,13 @@ import { useAchievements } from '../src/hooks/useAchievements';
 import { useStreak } from '../src/hooks/useStreak';
 import { useMyPredictionStats } from '../src/hooks/usePredictions';
 import { COLORS } from '../src/styles/theme';
+import { useTheme } from '../src/hooks/useTheme';
 import { ACHIEVEMENT_REWARDS } from '../src/services/rewardService';
 import type { AchievementWithStatus, AchievementId } from '../src/services/achievementService';
 
 export default function AchievementsScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   const {
     achievements,
     unlockedCount,
@@ -119,7 +121,7 @@ export default function AchievementsScreen() {
   const progressPercent = totalCount > 0 ? Math.round((unlockedCount / totalCount) * 100) : 0;
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
       {/* 헤더 */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>

@@ -21,9 +21,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTodayQuiz, useMyQuizAttempt, useSubmitQuiz, useQuizStats } from '../../src/hooks/useQuiz';
 import QuizCard from '../../src/components/QuizCard';
+import { useTheme } from '../../src/hooks/useTheme';
 
 export default function DailyQuizScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   const { data: quiz, isLoading: quizLoading } = useTodayQuiz();
   const { data: attempt, isLoading: attemptLoading } = useMyQuizAttempt(quiz?.id);
   const submitQuiz = useSubmitQuiz();
@@ -75,7 +77,7 @@ export default function DailyQuizScreen() {
   const isAnswered = !!attempt;
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
       {/* 헤더 */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
