@@ -46,6 +46,8 @@ import { useCheckupLevel } from '../../src/hooks/useCheckupLevel';
 import { useHoldingPeriod } from '../../src/hooks/useHoldingPeriod';
 import { useEmotionCheck } from '../../src/hooks/useEmotionCheck';
 import { useTheme } from '../../src/hooks/useTheme';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import DisclaimerBanner from '../../src/components/common/DisclaimerBanner';
 
 // ── 레벨별 뷰 컴포넌트 ──
 import BeginnerCheckupView from '../../src/components/checkup/BeginnerCheckupView';
@@ -118,6 +120,8 @@ function formatTodayDate(): string {
   return `${month}월 ${day}일 ${weekday}요일`;
 }
 
+const DISCLAIMER_STORAGE_KEY = '@baln:disclaimer_dismissed';
+
 export default function CheckupScreen() {
   useScreenTracking('checkup');
   const router = useRouter();
@@ -126,6 +130,14 @@ export default function CheckupScreen() {
   const [showToast, setShowToast] = useState(false);
   const lastRefreshRef = useRef(Date.now());
   const toastKeyRef = useRef(0);
+  const [disclaimerDismissed, setDisclaimerDismissed] = useState(true); // 기본 숨김 → 로드 후 표시
+
+  // AsyncStorage에서 면책 배너 해제 여부 확인
+  useEffect(() => {
+    AsyncStorage.getItem(DISCLAIMER_STORAGE_KEY).then((value) => {
+      setDisclaimerDismissed(value === 'true');
+    });
+  }, []);
 
   // ══════════════════════════════════════════
   // 데이터 수집 (공유 훅)
@@ -341,6 +353,21 @@ export default function CheckupScreen() {
         <View style={s.freeBannerWrap}>
           <FreePeriodBanner compact={true} />
         </View>
+
+        {/* 면책 고지 배너 */}
+        {!disclaimerDismissed && (
+          <View style={s.disclaimerBannerWrap}>
+            <DisclaimerBanner
+              message="본 서비스는 투자 자문이 아닙니다. AI 분석 결과는 참고 자료이며, 투자 결정에 대한 책임은 사용자에게 있습니다."
+              type="legal"
+              dismissible
+              onDismiss={() => {
+                setDisclaimerDismissed(true);
+                AsyncStorage.setItem(DISCLAIMER_STORAGE_KEY, 'true');
+              }}
+            />
+          </View>
+        )}
 
         {/* AI 로딩 배너 */}
         {isAILoading && (
@@ -652,6 +679,10 @@ const s = StyleSheet.create({
   freeBannerWrap: {
     paddingHorizontal: 16,
     paddingTop: 8,
+  },
+  disclaimerBannerWrap: {
+    paddingHorizontal: 16,
+    marginTop: 8,
   },
   bottomSpacer: {
     height: 100,

@@ -18,6 +18,7 @@ import { COLORS, SIZES } from '../../src/styles/theme';
 import RealEstatePreview from '../../src/components/more/RealEstatePreview';
 import { useTheme, ThemeMode } from '../../src/hooks/useTheme';
 import { CreditDisplay } from '../../src/components/common/CreditDisplay';
+import { useIsAdmin } from '../../src/hooks/useAdminDashboard';
 
 // =============================================================================
 // 타입 정의
@@ -50,6 +51,7 @@ export default function ProfileScreen() {
   const { user, signOut } = useAuth();
   const { unlockedCount, totalCount } = useAchievementCount();
   const { themeMode, setThemeMode, colors } = useTheme();
+  const { data: isAdmin } = useIsAdmin();
 
   // ---------------------------------------------------------------------------
   // 로그아웃 처리 (useCallback으로 불필요한 재생성 방지)
@@ -304,6 +306,24 @@ export default function ProfileScreen() {
           </View>
         )}
 
+        {/* ── 관리자 대시보드 (관리자만 표시) ── */}
+        {user && isAdmin && (
+          <TouchableOpacity
+            style={[styles.adminCard, { backgroundColor: colors.surface }]}
+            onPress={() => router.push('/admin')}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.adminIconWrap, { backgroundColor: colors.surfaceLight }]}>
+              <Ionicons name="shield-checkmark" size={22} color={colors.primary} />
+            </View>
+            <View style={styles.adminInfo}>
+              <Text style={[styles.adminTitle, { color: colors.textPrimary }]}>관리자 대시보드</Text>
+              <Text style={[styles.adminSubtitle, { color: colors.textSecondary }]}>유저, 지표, 라운지 관리</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
+          </TouchableOpacity>
+        )}
+
         {/* ── 3개 메뉴 섹션 ── */}
         {sections.map((section, idx) => renderSection(section, idx))}
 
@@ -491,6 +511,36 @@ const styles = StyleSheet.create({
   creditWrap: {
     paddingHorizontal: 16,
     paddingVertical: 12,
+  },
+
+  // ---------------------------------------------------------------------------
+  // 관리자 대시보드 카드
+  // ---------------------------------------------------------------------------
+  adminCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: SIZES.card.borderRadius,
+    padding: SIZES.card.padding,
+    marginBottom: SIZES.xxl,
+  },
+  adminIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  adminInfo: {
+    flex: 1,
+    marginLeft: SIZES.md,
+  },
+  adminTitle: {
+    fontSize: SIZES.fBase,
+    fontWeight: '600',
+  },
+  adminSubtitle: {
+    fontSize: SIZES.fXs,
+    marginTop: 2,
   },
 
   // ---------------------------------------------------------------------------

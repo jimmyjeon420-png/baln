@@ -13,8 +13,9 @@
  * 5. 보험 BM: 신호등 무료, 상세 프리미엄
  */
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Modal } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -27,6 +28,10 @@ import { ErrorBoundary, Toast, ToastType } from '../../src/components/common';
 
 // 진단용 (Supabase 연결 상태 확인 — 문제 해결 후 제거)
 import ConnectionStatus from '../../src/components/common/ConnectionStatus';
+
+// 스트릭 복구 & 마일스톤 축하
+import StreakRecoveryModal from '../../src/components/common/StreakRecoveryModal';
+import MilestoneCelebration from '../../src/components/common/MilestoneCelebration';
 
 // 맥락 카드 전체 모달
 import ContextCard from '../../src/components/home/ContextCard';
@@ -53,6 +58,8 @@ import { convertToContextCardData } from '../../src/services/contextCardService'
 import { useScreenTracking } from '../../src/hooks/useAnalytics';
 import { usePushSetup } from '../../src/hooks/usePushSetup';
 import { useTheme } from '../../src/hooks/useTheme';
+import { useStreak } from '../../src/hooks/useStreak';
+import { useStreakRecovery } from '../../src/hooks/useStreakRecovery';
 
 // ============================================================================
 // 메인 컴포넌트
@@ -67,6 +74,58 @@ export default function HomeScreen() {
   const queryClient = useQueryClient();
   const contextCardRef = React.useRef(null);
   const { colors } = useTheme();
+
+  // ──────────────────────────────────────────────────────────────────────
+  // 스트릭 복구 & 마일스톤 축하
+  // ──────────────────────────────────────────────────────────────────────
+  const { currentStreak, isNewStreak } = useStreak();
+  const {
+    daysMissed,
+    previousStreak,
+    recoverStreak,
+    showRecoveryModal,
+    dismissRecoveryModal,
+  } = useStreakRecovery();
+
+  // 마일스톤 축하 상태
+  const [milestoneToShow, setMilestoneToShow] = useState<number | null>(null);
+
+  // 마일스톤 체크: 7, 30, 90, 365일 달성 시 축하 모달 표시
+  const STREAK_MILESTONES = [7, 30, 90, 365];
+  const MILESTONE_SHOWN_KEY = '@baln:milestone_shown';
+
+  useEffect(() => {
+    if (!isNewStreak || currentStreak === 0) return;
+
+    // 현재 스트릭이 마일스톤에 해당하는지 확인
+    if (!STREAK_MILESTONES.includes(currentStreak)) return;
+
+    // AsyncStorage에서 이미 표시한 마일스톤인지 확인
+    const checkMilestone = async () => {
+      try {
+        const shownRaw = await AsyncStorage.getItem(MILESTONE_SHOWN_KEY);
+        const shownSet: number[] = shownRaw ? JSON.parse(shownRaw) : [];
+
+        if (!shownSet.includes(currentStreak)) {
+          // 아직 표시하지 않은 마일스톤 → 축하 모달 표시
+          setMilestoneToShow(currentStreak);
+
+          // 표시 완료 기록
+          shownSet.push(currentStreak);
+          await AsyncStorage.setItem(MILESTONE_SHOWN_KEY, JSON.stringify(shownSet));
+        }
+      } catch (error) {
+        console.warn('[HomeScreen] 마일스톤 체크 에러:', error);
+      }
+    };
+
+    checkMilestone();
+  }, [currentStreak, isNewStreak]);
+
+  // 스트릭 복구 핸들러 (StreakRecoveryModal의 onRecover 시그니처에 맞춤)
+  const handleStreakRecover = React.useCallback(async (_cost: number) => {
+    await recoverStreak();
+  }, [recoverStreak]);
 
   // 맥락 카드 전체 모달 상태
   const [contextModalVisible, setContextModalVisible] = React.useState(false);
@@ -468,6 +527,22 @@ export default function HomeScreen() {
           )}
         </View>
       </Modal>
+
+      {/* 스트릭 복구 모달 */}
+      <StreakRecoveryModal
+        visible={showRecoveryModal}
+        onClose={dismissRecoveryModal}
+        daysMissed={daysMissed}
+        previousStreak={previousStreak}
+        onRecover={handleStreakRecover}
+      />
+
+      {/* 마일스톤 축하 모달 */}
+      <MilestoneCelebration
+        milestone={milestoneToShow ?? 7}
+        visible={milestoneToShow !== null}
+        onClose={() => setMilestoneToShow(null)}
+      />
 
       {/* Toast 알림 */}
       <Toast

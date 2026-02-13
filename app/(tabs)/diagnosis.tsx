@@ -38,12 +38,24 @@ import { usePeerPanicScore, getAssetBracket } from '../../src/hooks/usePortfolio
 import { TIER_STRATEGIES } from '../../src/constants/tierStrategy';
 import FreePeriodBanner from '../../src/components/FreePeriodBanner';
 import { isFreePeriod } from '../../src/config/freePeriod';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import DisclaimerBanner from '../../src/components/common/DisclaimerBanner';
+
+const DIAGNOSIS_DISCLAIMER_KEY = '@baln:diagnosis_disclaimer_dismissed';
 
 export default function DiagnosisScreen() {
   const router = useRouter();
   const { colors, shadows } = useTheme();
   const { mediumTap } = useHaptics();
   const [refreshing, setRefreshing] = useState(false);
+  const [diagDisclaimerDismissed, setDiagDisclaimerDismissed] = useState(true); // 기본 숨김 → 로드 후 표시
+
+  // AsyncStorage에서 진단 면책 배너 해제 여부 확인
+  useEffect(() => {
+    AsyncStorage.getItem(DIAGNOSIS_DISCLAIMER_KEY).then((value) => {
+      setDiagDisclaimerDismissed(value === 'true');
+    });
+  }, []);
 
   // 매일 출석 체크 (진단 탭 진입 시 자동 실행)
   const { checkedIn, streak, checkIn } = useDailyCheckIn();
@@ -188,6 +200,21 @@ export default function DiagnosisScreen() {
       >
         {/* 무료 기간 프로모션 배너 */}
         <FreePeriodBanner compact={false} />
+
+        {/* 면책 고지 배너 */}
+        {!diagDisclaimerDismissed && (
+          <View style={styles.diagDisclaimerWrap}>
+            <DisclaimerBanner
+              message="AI 진단 결과는 참고용이며, 전문 투자 자문을 대체하지 않습니다."
+              type="info"
+              dismissible
+              onDismiss={() => {
+                setDiagDisclaimerDismissed(true);
+                AsyncStorage.setItem(DIAGNOSIS_DISCLAIMER_KEY, 'true');
+              }}
+            />
+          </View>
+        )}
 
         {/* 헤더 - 티어 정보 포함 */}
         <View style={styles.header}>
@@ -553,6 +580,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     // backgroundColor는 동적으로 적용됨 (colors.background)
+  },
+  diagDisclaimerWrap: {
+    marginBottom: 12,
   },
   // 출석 체크 토스트
   checkInToast: {
