@@ -42,7 +42,7 @@ import {
   CATEGORY_INFO,
   LOUNGE_POST_THRESHOLD,
 } from '../../src/types/community';
-import { COLORS, SIZES } from '../../src/styles/theme';
+import { useTheme } from '../../src/hooks/useTheme';
 import { getTierFromAssets, TIER_COLORS, TIER_LABELS } from '../../src/utils/communityUtils';
 import { validateContent, getViolationMessage } from '../../src/services/contentFilter';
 import {
@@ -59,6 +59,7 @@ const MAX_CONTENT_LENGTH = 500;
 
 export default function CreatePostScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
 
   // 자격 확인
   const { eligibility, loading: eligibilityLoading } = useLoungeEligibility();
@@ -214,16 +215,16 @@ export default function CreatePostScreen() {
   // 자격 미달 시 차단 화면
   if (eligibilityLoading) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
           <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons name="chevron-back" size={28} color={COLORS.primary} />
+            <Ionicons name="chevron-back" size={28} color={colors.primary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>글쓰기</Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>글쓰기</Text>
           <View style={{ width: 28 }} />
         </View>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       </SafeAreaView>
     );
@@ -231,33 +232,33 @@ export default function CreatePostScreen() {
 
   if (!eligibility.canPost) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
           <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons name="chevron-back" size={28} color={COLORS.primary} />
+            <Ionicons name="chevron-back" size={28} color={colors.primary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>글쓰기</Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>글쓰기</Text>
           <View style={{ width: 28 }} />
         </View>
 
         <View style={styles.lockedContainer}>
-          <View style={styles.lockedIcon}>
+          <View style={[styles.lockedIcon, { backgroundColor: colors.surface }]}>
             <Ionicons name="lock-closed" size={48} color="#FFC107" />
           </View>
-          <Text style={styles.lockedTitle}>글쓰기는 잠겨 있습니다</Text>
-          <Text style={styles.lockedDescription}>
+          <Text style={[styles.lockedTitle, { color: colors.textPrimary }]}>글쓰기는 잠겨 있습니다</Text>
+          <Text style={[styles.lockedDescription, { color: colors.textSecondary }]}>
             글쓰기는 자산 {(LOUNGE_POST_THRESHOLD / 100000000).toFixed(1)}억원 이상 회원만 가능합니다.
           </Text>
-          <View style={styles.lockedAssetBox}>
-            <Text style={styles.lockedAssetLabel}>현재 자산</Text>
-            <Text style={styles.lockedAssetValue}>
+          <View style={[styles.lockedAssetBox, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.lockedAssetLabel, { color: colors.textSecondary }]}>현재 자산</Text>
+            <Text style={[styles.lockedAssetValue, { color: colors.textPrimary }]}>
               {(eligibility.totalAssets / 100000000).toFixed(2)}억원
             </Text>
             <Text style={styles.lockedShortfall}>
               {((LOUNGE_POST_THRESHOLD - eligibility.totalAssets) / 100000000).toFixed(2)}억원 더 필요합니다
             </Text>
           </View>
-          <TouchableOpacity style={styles.lockedButton} onPress={() => router.back()}>
+          <TouchableOpacity style={[styles.lockedButton, { backgroundColor: colors.primary }]} onPress={() => router.back()}>
             <Text style={styles.lockedButtonText}>돌아가기</Text>
           </TouchableOpacity>
         </View>
@@ -272,23 +273,24 @@ export default function CreatePostScreen() {
 
   // 메인 화면
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         {/* 헤더 */}
-        <View style={styles.header}>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
           <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons name="chevron-back" size={28} color={COLORS.primary} />
+            <Ionicons name="chevron-back" size={28} color={colors.primary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>글쓰기</Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>글쓰기</Text>
           <TouchableOpacity
             onPress={handleSubmit}
             disabled={createPost.isPending}
             style={[
               styles.submitButton,
-              (!category || content.trim().length === 0) && styles.submitButtonDisabled,
+              { backgroundColor: colors.primary },
+              (!category || content.trim().length === 0) && [styles.submitButtonDisabled, { backgroundColor: colors.surface }],
             ]}
           >
             {createPost.isPending ? (
@@ -297,7 +299,7 @@ export default function CreatePostScreen() {
               <Text
                 style={[
                   styles.submitButtonText,
-                  (!category || content.trim().length === 0) && styles.submitButtonTextDisabled,
+                  (!category || content.trim().length === 0) && { color: colors.textSecondary },
                 ]}
               >
                 작성
@@ -308,7 +310,7 @@ export default function CreatePostScreen() {
 
         <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
           {/* 작성자 정보 카드 */}
-          <View style={styles.authorCard}>
+          <View style={[styles.authorCard, { backgroundColor: colors.surface }]}>
             <View style={[styles.tierBadge, { backgroundColor: tierColor }]}>
               <Ionicons
                 name={tier === 'DIAMOND' ? 'diamond' : tier === 'PLATINUM' ? 'star' : tier === 'GOLD' ? 'medal' : 'shield'}
@@ -320,19 +322,19 @@ export default function CreatePostScreen() {
               <View style={[styles.tierChip, { backgroundColor: tierColor + '25' }]}>
                 <Text style={[styles.tierChipText, { color: tierColor }]}>{tierLabel}</Text>
               </View>
-              <Text style={styles.authorAssets}>
+              <Text style={[styles.authorAssets, { color: colors.textPrimary }]}>
                 자산: {(eligibility.totalAssets / 100000000).toFixed(2)}억원
               </Text>
               {assetMix && (
-                <Text style={styles.authorAssetMix}>{assetMix}</Text>
+                <Text style={[styles.authorAssetMix, { color: colors.textSecondary }]}>{assetMix}</Text>
               )}
             </View>
           </View>
 
           {/* 카테고리 선택 */}
           <View style={styles.section}>
-            <Text style={styles.sectionLabel}>
-              카테고리 선택 <Text style={{ color: COLORS.error }}>*</Text>
+            <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>
+              카테고리 선택 <Text style={{ color: colors.error }}>*</Text>
             </Text>
             <View style={styles.categoryRow}>
               {(['stocks', 'crypto', 'realestate'] as CommunityCategory[]).map((cat) => {
@@ -343,6 +345,7 @@ export default function CreatePostScreen() {
                     key={cat}
                     style={[
                       styles.categoryChip,
+                      { backgroundColor: colors.surface, borderColor: colors.border },
                       isSelected && { backgroundColor: info.color + '25', borderColor: info.color },
                     ]}
                     onPress={() => setCategory(cat)}
@@ -350,11 +353,12 @@ export default function CreatePostScreen() {
                     <Ionicons
                       name={info.icon as any}
                       size={18}
-                      color={isSelected ? info.color : COLORS.textSecondary}
+                      color={isSelected ? info.color : colors.textSecondary}
                     />
                     <Text
                       style={[
                         styles.categoryLabel,
+                        { color: colors.textSecondary },
                         isSelected && { color: info.color, fontWeight: '700' },
                       ]}
                     >
@@ -369,22 +373,23 @@ export default function CreatePostScreen() {
           {/* 본문 입력 */}
           <View style={styles.section}>
             <View style={styles.labelRow}>
-              <Text style={styles.sectionLabel}>
-                내용 <Text style={{ color: COLORS.error }}>*</Text>
+              <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>
+                내용 <Text style={{ color: colors.error }}>*</Text>
               </Text>
               <Text
                 style={[
                   styles.charCount,
-                  content.length > MAX_CONTENT_LENGTH && { color: COLORS.error },
+                  { color: colors.textSecondary },
+                  content.length > MAX_CONTENT_LENGTH && { color: colors.error },
                 ]}
               >
                 {content.length} / {MAX_CONTENT_LENGTH}
               </Text>
             </View>
             <TextInput
-              style={styles.contentInput}
+              style={[styles.contentInput, { backgroundColor: colors.surface, color: colors.textPrimary }]}
               placeholder="투자 경험, 전략, 또는 시장 관점을 공유해보세요..."
-              placeholderTextColor={COLORS.textSecondary}
+              placeholderTextColor={colors.textSecondary}
               multiline
               maxLength={MAX_CONTENT_LENGTH}
               value={content}
@@ -396,8 +401,8 @@ export default function CreatePostScreen() {
           {/* 이미지 첨부 */}
           <View style={styles.section}>
             <View style={styles.labelRow}>
-              <Text style={styles.sectionLabel}>이미지 첨부 (선택)</Text>
-              <Text style={styles.charCount}>
+              <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>이미지 첨부 (선택)</Text>
+              <Text style={[styles.charCount, { color: colors.textSecondary }]}>
                 {selectedImages.length} / {MAX_IMAGES}
               </Text>
             </View>
@@ -405,12 +410,12 @@ export default function CreatePostScreen() {
             {/* 이미지 선택 버튼 */}
             {selectedImages.length < MAX_IMAGES && (
               <TouchableOpacity
-                style={styles.imagePickButton}
+                style={[styles.imagePickButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
                 onPress={handlePickImages}
                 disabled={isUploadingImages}
               >
-                <Ionicons name="camera" size={24} color={COLORS.primary} />
-                <Text style={styles.imagePickButtonText}>
+                <Ionicons name="camera" size={24} color={colors.primary} />
+                <Text style={[styles.imagePickButtonText, { color: colors.textSecondary }]}>
                   이미지 선택 (최대 {MAX_IMAGES}장, 각 5MB 이하)
                 </Text>
               </TouchableOpacity>
@@ -421,16 +426,16 @@ export default function CreatePostScreen() {
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imagePreviewContainer}>
                 {selectedImages.map((image, index) => (
                   <View key={index} style={styles.imagePreviewItem}>
-                    <Image source={{ uri: image.uri }} style={styles.imagePreview} />
+                    <Image source={{ uri: image.uri }} style={[styles.imagePreview, { backgroundColor: colors.surface }]} />
                     <TouchableOpacity
-                      style={styles.imageRemoveButton}
+                      style={[styles.imageRemoveButton, { backgroundColor: colors.background }]}
                       onPress={() => handleRemoveImage(index)}
                       disabled={isUploadingImages}
                     >
-                      <Ionicons name="close-circle" size={24} color={COLORS.error} />
+                      <Ionicons name="close-circle" size={24} color={colors.error} />
                     </TouchableOpacity>
                     {image.fileSize && (
-                      <Text style={styles.imageFileSize}>{formatFileSize(image.fileSize)}</Text>
+                      <Text style={[styles.imageFileSize, { color: colors.textSecondary }]}>{formatFileSize(image.fileSize)}</Text>
                     )}
                   </View>
                 ))}
@@ -439,17 +444,17 @@ export default function CreatePostScreen() {
 
             {/* 업로드 진행 표시 */}
             {isUploadingImages && (
-              <View style={styles.uploadingIndicator}>
-                <ActivityIndicator size="small" color={COLORS.primary} />
-                <Text style={styles.uploadingText}>이미지 업로드 중...</Text>
+              <View style={[styles.uploadingIndicator, { backgroundColor: colors.primary + '15' }]}>
+                <ActivityIndicator size="small" color={colors.primary} />
+                <Text style={[styles.uploadingText, { color: colors.primary }]}>이미지 업로드 중...</Text>
               </View>
             )}
           </View>
 
           {/* 안내 문구 */}
-          <View style={styles.infoBox}>
-            <Ionicons name="information-circle" size={16} color={COLORS.primary} />
-            <Text style={styles.infoText}>
+          <View style={[styles.infoBox, { backgroundColor: colors.primary + '15' }]}>
+            <Ionicons name="information-circle" size={16} color={colors.primary} />
+            <Text style={[styles.infoText, { color: colors.textPrimary }]}>
               게시글 작성 시 보유종목 상위 10개가 자동으로 표시됩니다.
             </Text>
           </View>
@@ -470,7 +475,6 @@ export default function CreatePostScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   header: {
     flexDirection: 'row',
@@ -479,39 +483,30 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: COLORS.textPrimary,
   },
   submitButton: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    backgroundColor: COLORS.primary,
     borderRadius: 12,
   },
   submitButtonDisabled: {
-    backgroundColor: COLORS.surface,
+    opacity: 0.5,
   },
   submitButtonText: {
     fontSize: 15,
     fontWeight: '600',
     color: '#000000',
   },
-  submitButtonTextDisabled: {
-    color: COLORS.textSecondary,
-  },
-
-  // ── 로딩 ──
+  submitButtonTextDisabled: {},
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-
-  // ── 잠금 화면 ──
   lockedContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -523,7 +518,6 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#1A1A0E',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 8,
@@ -531,16 +525,13 @@ const styles = StyleSheet.create({
   lockedTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: COLORS.textPrimary,
   },
   lockedDescription: {
     fontSize: 14,
-    color: COLORS.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
   },
   lockedAssetBox: {
-    backgroundColor: COLORS.surface,
     borderRadius: 16,
     padding: 20,
     alignItems: 'center',
@@ -549,12 +540,10 @@ const styles = StyleSheet.create({
   },
   lockedAssetLabel: {
     fontSize: 12,
-    color: COLORS.textSecondary,
   },
   lockedAssetValue: {
     fontSize: 24,
     fontWeight: '700',
-    color: COLORS.textPrimary,
   },
   lockedShortfall: {
     fontSize: 13,
@@ -564,7 +553,6 @@ const styles = StyleSheet.create({
     marginTop: 16,
     paddingHorizontal: 32,
     paddingVertical: 12,
-    backgroundColor: COLORS.primary,
     borderRadius: 12,
   },
   lockedButtonText: {
@@ -572,8 +560,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#000000',
   },
-
-  // ── 메인 콘텐츠 ──
   content: {
     flex: 1,
   },
@@ -582,10 +568,7 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
     gap: 20,
   },
-
-  // ── 작성자 정보 카드 ──
   authorCard: {
-    backgroundColor: COLORS.surface,
     borderRadius: 16,
     padding: 16,
     flexDirection: 'row',
@@ -613,22 +596,17 @@ const styles = StyleSheet.create({
   authorAssets: {
     fontSize: 14,
     fontWeight: '600',
-    color: COLORS.textPrimary,
     marginBottom: 2,
   },
   authorAssetMix: {
     fontSize: 12,
-    color: COLORS.textSecondary,
   },
-
-  // ── 섹션 ──
   section: {
     gap: 12,
   },
   sectionLabel: {
     fontSize: 15,
     fontWeight: '700',
-    color: COLORS.textPrimary,
   },
   labelRow: {
     flexDirection: 'row',
@@ -637,10 +615,7 @@ const styles = StyleSheet.create({
   },
   charCount: {
     fontSize: 13,
-    color: COLORS.textSecondary,
   },
-
-  // ── 카테고리 선택 ──
   categoryRow: {
     flexDirection: 'row',
     gap: 10,
@@ -653,49 +628,36 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 14,
     borderRadius: 12,
-    backgroundColor: COLORS.surface,
     borderWidth: 2,
-    borderColor: COLORS.border,
   },
   categoryLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: COLORS.textSecondary,
   },
-
-  // ── 본문 입력 ──
   contentInput: {
-    backgroundColor: COLORS.surface,
     borderRadius: 12,
     padding: 16,
     fontSize: 15,
-    color: COLORS.textPrimary,
     minHeight: 200,
     lineHeight: 24,
   },
-
-  // ── 안내 박스 ──
   infoBox: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 10,
-    backgroundColor: COLORS.primary + '15',
     borderRadius: 12,
     padding: 14,
   },
   infoText: {
     flex: 1,
     fontSize: 13,
-    color: COLORS.textPrimary,
     lineHeight: 18,
   },
-
-  // ── 경고 박스 ──
   warningBox: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 10,
-    backgroundColor: '#1A1A0E',
+    backgroundColor: 'rgba(255, 193, 7, 0.06)',
     borderRadius: 12,
     padding: 14,
     borderLeftWidth: 3,
@@ -707,23 +669,18 @@ const styles = StyleSheet.create({
     color: '#FFC107',
     lineHeight: 18,
   },
-
-  // ── 이미지 첨부 ──
   imagePickButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 10,
-    backgroundColor: COLORS.surface,
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: COLORS.border,
     borderStyle: 'dashed',
   },
   imagePickButtonText: {
     fontSize: 14,
-    color: COLORS.textSecondary,
   },
   imagePreviewContainer: {
     flexDirection: 'row',
@@ -738,18 +695,15 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 12,
-    backgroundColor: COLORS.surface,
   },
   imageRemoveButton: {
     position: 'absolute',
     top: -8,
     right: -8,
-    backgroundColor: COLORS.background,
     borderRadius: 12,
   },
   imageFileSize: {
     fontSize: 10,
-    color: COLORS.textSecondary,
     textAlign: 'center',
     marginTop: 4,
   },
@@ -758,14 +712,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 10,
-    backgroundColor: COLORS.primary + '15',
     borderRadius: 12,
     padding: 12,
     marginTop: 8,
   },
   uploadingText: {
     fontSize: 13,
-    color: COLORS.primary,
     fontWeight: '600',
   },
 });

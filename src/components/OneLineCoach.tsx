@@ -11,7 +11,8 @@ import {
   ViewStyle,
 } from 'react-native';
 import { CoachingMessage, CoachingSeverity } from '../types/coaching';
-import { COLORS, SIZES, SHADOWS, TYPOGRAPHY } from '../styles/theme';
+import { SIZES, SHADOWS, TYPOGRAPHY } from '../styles/theme';
+import { useTheme } from '../hooks/useTheme';
 
 interface OneLineCoachProps {
   message: CoachingMessage;
@@ -24,6 +25,8 @@ const OneLineCoach: React.FC<OneLineCoachProps> = ({
   containerStyle,
   showDetailed = false,
 }) => {
+  const { colors } = useTheme();
+
   /**
    * 심각도에 따른 색상 및 스타일
    */
@@ -31,28 +34,28 @@ const OneLineCoach: React.FC<OneLineCoachProps> = ({
     switch (message.severity) {
       case CoachingSeverity.DANGER:
         return {
-          backgroundColor: COLORS.error + '20',
-          borderColor: COLORS.error,
-          textColor: COLORS.error,
+          backgroundColor: colors.error + '20',
+          borderColor: colors.error,
+          textColor: colors.error,
         };
       case CoachingSeverity.WARNING:
         return {
-          backgroundColor: COLORS.warning + '20',
-          borderColor: COLORS.warning,
-          textColor: COLORS.warning,
+          backgroundColor: colors.warning + '20',
+          borderColor: colors.warning,
+          textColor: colors.warning,
         };
       case CoachingSeverity.SUCCESS:
         return {
-          backgroundColor: COLORS.success + '20',
-          borderColor: COLORS.success,
-          textColor: COLORS.success,
+          backgroundColor: colors.success + '20',
+          borderColor: colors.success,
+          textColor: colors.success,
         };
       case CoachingSeverity.INFO:
       default:
         return {
-          backgroundColor: COLORS.info + '20',
-          borderColor: COLORS.info,
-          textColor: COLORS.info,
+          backgroundColor: colors.info + '20',
+          borderColor: colors.info,
+          textColor: colors.info,
         };
     }
   };
@@ -64,10 +67,10 @@ const OneLineCoach: React.FC<OneLineCoachProps> = ({
    */
   const renderSeverityIndicator = () => {
     const badgeColors: Record<CoachingSeverity, string> = {
-      [CoachingSeverity.DANGER]: COLORS.error,
-      [CoachingSeverity.WARNING]: COLORS.warning,
-      [CoachingSeverity.SUCCESS]: COLORS.success,
-      [CoachingSeverity.INFO]: COLORS.info,
+      [CoachingSeverity.DANGER]: colors.error,
+      [CoachingSeverity.WARNING]: colors.warning,
+      [CoachingSeverity.SUCCESS]: colors.success,
+      [CoachingSeverity.INFO]: colors.info,
     };
 
     return (
@@ -127,7 +130,7 @@ const OneLineCoach: React.FC<OneLineCoachProps> = ({
               style={[
                 TYPOGRAPHY.bodySmall,
                 {
-                  color: COLORS.textSecondary,
+                  color: colors.textSecondary,
                   marginLeft: SIZES.xl + SIZES.md, // 아이콘 너비 + 여백
                 },
               ]}

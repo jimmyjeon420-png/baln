@@ -25,7 +25,8 @@ import {
   Dimensions,
 } from 'react-native';
 import Svg, { Line, Rect, Circle, Path, Text as SvgText } from 'react-native-svg';
-import { COLORS, SIZES, TYPOGRAPHY, SHADOWS } from '../../styles/theme';
+import { SIZES, TYPOGRAPHY, SHADOWS } from '../../styles/theme';
+import { useTheme } from '../../hooks/useTheme';
 import {
   useMyPredictionStats,
   useResolvedPollsWithMyVotes,
@@ -60,6 +61,7 @@ interface CategoryData {
 
 export default function StatsChart() {
   const [activeTab, setActiveTab] = useState<ChartTab>('accuracy');
+  const { colors } = useTheme();
 
   // 데이터 로딩
   const { data: stats, isLoading: statsLoading } = useMyPredictionStats();
@@ -98,9 +100,9 @@ export default function StatsChart() {
   // 로딩 상태
   if (isLoading) {
     return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
-        <Text style={styles.loadingText}>차트 데이터 로딩 중...</Text>
+      <View style={[styles.container, { backgroundColor: colors.surface }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={[styles.loadingText, { color: colors.textSecondary }]}>차트 데이터 로딩 중...</Text>
       </View>
     );
   }
@@ -108,9 +110,9 @@ export default function StatsChart() {
   // 데이터 없음
   if (!stats || stats.total_votes === 0) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.emptyText}>아직 투표 기록이 없습니다</Text>
-        <Text style={styles.emptySubtext}>
+      <View style={[styles.container, { backgroundColor: colors.surface }]}>
+        <Text style={[styles.emptyText, { color: colors.textPrimary }]}>아직 투표 기록이 없습니다</Text>
+        <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>
           첫 예측에 참여하고{'\n'}통계 차트를 확인해보세요!
         </Text>
       </View>
@@ -118,7 +120,7 @@ export default function StatsChart() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.surface }]}>
       {/* 탭 헤더 */}
       <View style={styles.tabContainer}>
         {tabs.map(tab => (
@@ -126,7 +128,8 @@ export default function StatsChart() {
             key={tab.key}
             style={[
               styles.tab,
-              activeTab === tab.key && styles.tabActive,
+              { backgroundColor: colors.background, borderColor: colors.border },
+              activeTab === tab.key && { backgroundColor: `${colors.primary}20`, borderColor: colors.primary },
             ]}
             onPress={() => setActiveTab(tab.key)}
           >
@@ -134,7 +137,8 @@ export default function StatsChart() {
             <Text
               style={[
                 styles.tabLabel,
-                activeTab === tab.key && styles.tabLabelActive,
+                { color: colors.textSecondary },
+                activeTab === tab.key && { color: colors.primary },
               ]}
             >
               {tab.label}
@@ -168,15 +172,16 @@ interface AccuracyChartProps {
 }
 
 function AccuracyChart({ data }: AccuracyChartProps) {
+  const { colors } = useTheme();
   const width = Dimensions.get('window').width - 64; // padding 32 * 2
   const height = 200;
   const padding = 40;
 
   if (data.length === 0) {
     return (
-      <View style={styles.emptyChart}>
-        <Text style={styles.emptyChartText}>아직 데이터가 부족합니다</Text>
-        <Text style={styles.emptyChartSubtext}>더 많은 예측에 참여해주세요</Text>
+      <View style={[styles.emptyChart, { backgroundColor: colors.background, borderColor: colors.border }]}>
+        <Text style={[styles.emptyChartText, { color: colors.textSecondary }]}>아직 데이터가 부족합니다</Text>
+        <Text style={[styles.emptyChartSubtext, { color: colors.textTertiary }]}>더 많은 예측에 참여해주세요</Text>
       </View>
     );
   }
@@ -201,8 +206,8 @@ function AccuracyChart({ data }: AccuracyChartProps) {
 
   return (
     <View>
-      <Text style={styles.chartTitle}>최근 적중률 추이</Text>
-      <Text style={styles.chartSubtitle}>평균: {avgAccuracy.toFixed(1)}%</Text>
+      <Text style={[styles.chartTitle, { color: colors.textPrimary }]}>최근 적중률 추이</Text>
+      <Text style={[styles.chartSubtitle, { color: colors.textSecondary }]}>평균: {avgAccuracy.toFixed(1)}%</Text>
 
       <Svg width={width} height={height}>
         {/* Y축 그리드 라인 (0, 25, 50, 75, 100%) */}
@@ -215,7 +220,7 @@ function AccuracyChart({ data }: AccuracyChartProps) {
                 y1={y}
                 x2={width - padding}
                 y2={y}
-                stroke={COLORS.border}
+                stroke={colors.border}
                 strokeWidth={1}
                 strokeDasharray={tick === 50 ? '0' : '4,4'}
               />
@@ -223,7 +228,7 @@ function AccuracyChart({ data }: AccuracyChartProps) {
                 x={padding - 8}
                 y={y + 4}
                 fontSize={10}
-                fill={COLORS.textSecondary}
+                fill={colors.textSecondary}
                 textAnchor="end"
               >
                 {tick}%
@@ -238,7 +243,7 @@ function AccuracyChart({ data }: AccuracyChartProps) {
           y1={height - padding - avgAccuracy * yScale}
           x2={width - padding}
           y2={height - padding - avgAccuracy * yScale}
-          stroke={COLORS.warning}
+          stroke={colors.warning}
           strokeWidth={2}
           strokeDasharray="6,4"
         />
@@ -246,7 +251,7 @@ function AccuracyChart({ data }: AccuracyChartProps) {
         {/* 라인 차트 */}
         <Path
           d={linePath}
-          stroke={COLORS.primary}
+          stroke={colors.primary}
           strokeWidth={3}
           fill="none"
         />
@@ -258,8 +263,8 @@ function AccuracyChart({ data }: AccuracyChartProps) {
             cx={point.x}
             cy={point.y}
             r={5}
-            fill={COLORS.primary}
-            stroke={COLORS.background}
+            fill={colors.primary}
+            stroke={colors.background}
             strokeWidth={2}
           />
         ))}
@@ -276,7 +281,7 @@ function AccuracyChart({ data }: AccuracyChartProps) {
               x={point.x}
               y={height - padding + 20}
               fontSize={10}
-              fill={COLORS.textSecondary}
+              fill={colors.textSecondary}
               textAnchor="middle"
             >
               {label}
@@ -297,15 +302,16 @@ interface CategoryChartProps {
 }
 
 function CategoryChart({ data }: CategoryChartProps) {
+  const { colors } = useTheme();
   const width = Dimensions.get('window').width - 64;
   const height = 200;
   const padding = 40;
 
   if (data.length === 0) {
     return (
-      <View style={styles.emptyChart}>
-        <Text style={styles.emptyChartText}>카테고리별 데이터 부족</Text>
-        <Text style={styles.emptyChartSubtext}>다양한 주제에 참여해보세요</Text>
+      <View style={[styles.emptyChart, { backgroundColor: colors.background, borderColor: colors.border }]}>
+        <Text style={[styles.emptyChartText, { color: colors.textSecondary }]}>카테고리별 데이터 부족</Text>
+        <Text style={[styles.emptyChartSubtext, { color: colors.textTertiary }]}>다양한 주제에 참여해보세요</Text>
       </View>
     );
   }
@@ -315,8 +321,8 @@ function CategoryChart({ data }: CategoryChartProps) {
 
   return (
     <View>
-      <Text style={styles.chartTitle}>카테고리별 정확도</Text>
-      <Text style={styles.chartSubtitle}>각 분야별 적중률</Text>
+      <Text style={[styles.chartTitle, { color: colors.textPrimary }]}>카테고리별 정확도</Text>
+      <Text style={[styles.chartSubtitle, { color: colors.textSecondary }]}>각 분야별 적중률</Text>
 
       <Svg width={width} height={height}>
         {/* Y축 그리드 */}
@@ -329,7 +335,7 @@ function CategoryChart({ data }: CategoryChartProps) {
                 y1={y}
                 x2={width - padding}
                 y2={y}
-                stroke={COLORS.border}
+                stroke={colors.border}
                 strokeWidth={1}
                 strokeDasharray="4,4"
               />
@@ -337,7 +343,7 @@ function CategoryChart({ data }: CategoryChartProps) {
                 x={padding - 8}
                 y={y + 4}
                 fontSize={10}
-                fill={COLORS.textSecondary}
+                fill={colors.textSecondary}
                 textAnchor="end"
               >
                 {tick}%
@@ -368,7 +374,7 @@ function CategoryChart({ data }: CategoryChartProps) {
                 x={x + barWidth / 2}
                 y={y - 8}
                 fontSize={12}
-                fill={COLORS.textPrimary}
+                fill={colors.textPrimary}
                 fontWeight="bold"
                 textAnchor="middle"
               >
@@ -379,7 +385,7 @@ function CategoryChart({ data }: CategoryChartProps) {
                 x={x + barWidth / 2}
                 y={height - padding + 20}
                 fontSize={10}
-                fill={COLORS.textSecondary}
+                fill={colors.textSecondary}
                 textAnchor="middle"
               >
                 {POLL_CATEGORY_INFO[item.category].emoji}
@@ -389,7 +395,7 @@ function CategoryChart({ data }: CategoryChartProps) {
                 x={x + barWidth / 2}
                 y={height - padding + 35}
                 fontSize={9}
-                fill={COLORS.textTertiary}
+                fill={colors.textTertiary}
                 textAnchor="middle"
               >
                 {item.correct}/{item.total}
@@ -411,15 +417,16 @@ interface CreditsChartProps {
 }
 
 function CreditsChart({ data }: CreditsChartProps) {
+  const { colors } = useTheme();
   const width = Dimensions.get('window').width - 64;
   const height = 200;
   const padding = 40;
 
   if (data.length === 0) {
     return (
-      <View style={styles.emptyChart}>
-        <Text style={styles.emptyChartText}>크레딧 획득 기록 없음</Text>
-        <Text style={styles.emptyChartSubtext}>첫 정답을 맞춰보세요!</Text>
+      <View style={[styles.emptyChart, { backgroundColor: colors.background, borderColor: colors.border }]}>
+        <Text style={[styles.emptyChartText, { color: colors.textSecondary }]}>크레딧 획득 기록 없음</Text>
+        <Text style={[styles.emptyChartSubtext, { color: colors.textTertiary }]}>첫 정답을 맞춰보세요!</Text>
       </View>
     );
   }
@@ -447,8 +454,8 @@ function CreditsChart({ data }: CreditsChartProps) {
 
   return (
     <View>
-      <Text style={styles.chartTitle}>크레딧 누적 그래프</Text>
-      <Text style={styles.chartSubtitle}>
+      <Text style={[styles.chartTitle, { color: colors.textPrimary }]}>크레딧 누적 그래프</Text>
+      <Text style={[styles.chartSubtitle, { color: colors.textSecondary }]}>
         총 획득: {data[data.length - 1]?.value || 0}C
       </Text>
 
@@ -464,7 +471,7 @@ function CreditsChart({ data }: CreditsChartProps) {
                 y1={y}
                 x2={width - padding}
                 y2={y}
-                stroke={COLORS.border}
+                stroke={colors.border}
                 strokeWidth={1}
                 strokeDasharray="4,4"
               />
@@ -472,7 +479,7 @@ function CreditsChart({ data }: CreditsChartProps) {
                 x={padding - 8}
                 y={y + 4}
                 fontSize={10}
-                fill={COLORS.textSecondary}
+                fill={colors.textSecondary}
                 textAnchor="end"
               >
                 {tick}C
@@ -484,13 +491,13 @@ function CreditsChart({ data }: CreditsChartProps) {
         {/* Area (채움) */}
         <Path
           d={areaPath}
-          fill={`${COLORS.primary}40`} // 25% opacity
+          fill={`${colors.primary}40`}
         />
 
         {/* Line (테두리) */}
         <Path
           d={linePath}
-          stroke={COLORS.primary}
+          stroke={colors.primary}
           strokeWidth={3}
           fill="none"
         />
@@ -502,8 +509,8 @@ function CreditsChart({ data }: CreditsChartProps) {
             cx={point.x}
             cy={point.y}
             r={4}
-            fill={COLORS.primary}
-            stroke={COLORS.background}
+            fill={colors.primary}
+            stroke={colors.background}
             strokeWidth={2}
           />
         ))}
@@ -520,7 +527,7 @@ function CreditsChart({ data }: CreditsChartProps) {
               x={point.x}
               y={height - padding + 20}
               fontSize={10}
-              fill={COLORS.textSecondary}
+              fill={colors.textSecondary}
               textAnchor="middle"
             >
               {label}
@@ -609,26 +616,22 @@ function calculateCreditsCumulative(polls: PollWithMyVote[]): DataPoint[] {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: COLORS.surface,
     borderRadius: SIZES.card.borderRadius,
     padding: SIZES.card.padding,
     ...SHADOWS.medium,
   },
   loadingText: {
     ...TYPOGRAPHY.bodyMedium,
-    color: COLORS.textSecondary,
     textAlign: 'center',
     marginTop: SIZES.md,
   },
   emptyText: {
     ...TYPOGRAPHY.bodyLarge,
-    color: COLORS.textPrimary,
     textAlign: 'center',
     marginBottom: SIZES.sm,
   },
   emptySubtext: {
     ...TYPOGRAPHY.bodySmall,
-    color: COLORS.textSecondary,
     textAlign: 'center',
     lineHeight: 18,
   },
@@ -646,14 +649,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: SIZES.md,
     paddingHorizontal: SIZES.sm,
-    backgroundColor: COLORS.background,
     borderRadius: SIZES.rMd,
     borderWidth: 2,
-    borderColor: COLORS.border,
-  },
-  tabActive: {
-    backgroundColor: `${COLORS.primary}20`,
-    borderColor: COLORS.primary,
   },
   tabEmoji: {
     fontSize: SIZES.fLg,
@@ -661,10 +658,6 @@ const styles = StyleSheet.create({
   },
   tabLabel: {
     ...TYPOGRAPHY.labelMedium,
-    color: COLORS.textSecondary,
-  },
-  tabLabelActive: {
-    color: COLORS.primary,
   },
 
   // 차트
@@ -673,31 +666,25 @@ const styles = StyleSheet.create({
   },
   chartTitle: {
     ...TYPOGRAPHY.labelLarge,
-    color: COLORS.textPrimary,
     marginBottom: SIZES.xs,
   },
   chartSubtitle: {
     ...TYPOGRAPHY.bodySmall,
-    color: COLORS.textSecondary,
     marginBottom: SIZES.lg,
   },
   emptyChart: {
     height: 200,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: COLORS.background,
     borderRadius: SIZES.rMd,
     borderWidth: 1,
-    borderColor: COLORS.border,
     borderStyle: 'dashed',
   },
   emptyChartText: {
     ...TYPOGRAPHY.bodyMedium,
-    color: COLORS.textSecondary,
     marginBottom: SIZES.xs,
   },
   emptyChartSubtext: {
     ...TYPOGRAPHY.bodySmall,
-    color: COLORS.textTertiary,
   },
 });

@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { COLORS, SIZES } from '../../styles/theme';
+import { SIZES } from '../../styles/theme';
+import { useTheme } from '../../hooks/useTheme';
 
 // ============================================================================
 // 타입 정의
@@ -23,64 +24,66 @@ interface TopMoversCardProps {
 // ============================================================================
 
 const TopMoversCard = ({ gainers, losers }: TopMoversCardProps) => {
+  const { colors } = useTheme();
+
   // 데이터 부족 시 렌더링 안 함
   if (gainers.length + losers.length < 2) return null;
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: colors.surface }]}>
       {/* 헤더 */}
-      <Text style={styles.title}>등락률 Top</Text>
-      <Text style={styles.subtitle}>Top Movers</Text>
+      <Text style={[styles.title, { color: colors.textPrimary }]}>등락률 Top</Text>
+      <Text style={[styles.subtitle, { color: colors.textTertiary }]}>Top Movers</Text>
 
       {/* 2열 레이아웃 */}
       <View style={styles.columns}>
         {/* 왼쪽: 상승 */}
         <View style={styles.column}>
-          <Text style={styles.columnHeader}>상승 ▲</Text>
+          <Text style={[styles.columnHeader, { color: colors.textSecondary }]}>상승 ▲</Text>
           {gainers.map((item) => (
             <View key={item.ticker} style={styles.moverRow}>
-              <View style={styles.tickerIcon}>
-                <Text style={styles.tickerIconText}>
+              <View style={[styles.tickerIcon, { backgroundColor: colors.background }]}>
+                <Text style={[styles.tickerIconText, { color: colors.primary }]}>
                   {item.ticker[0]}
                 </Text>
               </View>
               <View style={styles.moverInfo}>
-                <Text style={styles.moverName} numberOfLines={1}>
+                <Text style={[styles.moverName, { color: colors.textPrimary }]} numberOfLines={1}>
                   {item.name || item.ticker}
                 </Text>
-                <Text style={[styles.moverPercent, { color: COLORS.primary }]}>
+                <Text style={[styles.moverPercent, { color: colors.primary }]}>
                   +{item.gainLossPercent.toFixed(1)}%
                 </Text>
               </View>
             </View>
           ))}
           {gainers.length === 0 && (
-            <Text style={styles.emptyText}>-</Text>
+            <Text style={[styles.emptyText, { color: colors.textTertiary }]}>-</Text>
           )}
         </View>
 
         {/* 오른쪽: 하락 */}
         <View style={styles.column}>
-          <Text style={styles.columnHeader}>하락 ▼</Text>
+          <Text style={[styles.columnHeader, { color: colors.textSecondary }]}>하락 ▼</Text>
           {losers.map((item) => (
             <View key={item.ticker} style={styles.moverRow}>
-              <View style={styles.tickerIcon}>
-                <Text style={styles.tickerIconText}>
+              <View style={[styles.tickerIcon, { backgroundColor: colors.background }]}>
+                <Text style={[styles.tickerIconText, { color: colors.primary }]}>
                   {item.ticker[0]}
                 </Text>
               </View>
               <View style={styles.moverInfo}>
-                <Text style={styles.moverName} numberOfLines={1}>
+                <Text style={[styles.moverName, { color: colors.textPrimary }]} numberOfLines={1}>
                   {item.name || item.ticker}
                 </Text>
-                <Text style={[styles.moverPercent, { color: COLORS.error }]}>
+                <Text style={[styles.moverPercent, { color: colors.error }]}>
                   {item.gainLossPercent.toFixed(1)}%
                 </Text>
               </View>
             </View>
           ))}
           {losers.length === 0 && (
-            <Text style={styles.emptyText}>-</Text>
+            <Text style={[styles.emptyText, { color: colors.textTertiary }]}>-</Text>
           )}
         </View>
       </View>
@@ -124,7 +127,6 @@ export default React.memo(TopMoversCard, (prev, next) => {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: COLORS.surface,
     borderRadius: SIZES.rXl,
     padding: SIZES.xl,
     marginBottom: SIZES.lg,
@@ -132,11 +134,9 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 16,
     fontWeight: '700',
-    color: COLORS.textPrimary,
   },
   subtitle: {
     fontSize: 11,
-    color: COLORS.textTertiary,
     marginTop: 2,
     marginBottom: 14,
   },
@@ -150,7 +150,6 @@ const styles = StyleSheet.create({
   columnHeader: {
     fontSize: 13,
     fontWeight: '700',
-    color: COLORS.textSecondary,
     marginBottom: 10,
   },
   moverRow: {
@@ -163,14 +162,12 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: COLORS.background,
     alignItems: 'center',
     justifyContent: 'center',
   },
   tickerIconText: {
     fontSize: 12,
     fontWeight: '700',
-    color: COLORS.primary,
   },
   moverInfo: {
     flex: 1,
@@ -178,7 +175,6 @@ const styles = StyleSheet.create({
   moverName: {
     fontSize: 13,
     fontWeight: '600',
-    color: COLORS.textPrimary,
   },
   moverPercent: {
     fontSize: 13,
@@ -187,7 +183,6 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 13,
-    color: COLORS.textTertiary,
     textAlign: 'center',
     paddingVertical: 10,
   },

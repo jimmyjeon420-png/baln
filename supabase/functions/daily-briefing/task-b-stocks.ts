@@ -64,69 +64,86 @@ async function analyzeStockBatch(
 
   const tickerList = stocks.map(s => `${s.ticker}(${s.name})`).join(', ');
 
-  const prompt = `
-당신은 퀀트 분석가입니다. 오늘(${dateStr}) 다음 종목들의 퀀트 리포트를 작성하세요.
+  const prompt = `당신은 baln(발른) 앱의 퀀트 분석 AI입니다.
+오늘(${dateStr}) 아래 종목들의 퀀트 리포트를 작성하세요.
 
-**분석 대상:** ${tickerList}
+[분석 대상] ${tickerList}
 
-**[중요] Google Search로 각 종목의 최신 데이터를 검색하세요:**
-- "${stocks.map(s => s.ticker).join(' stock price today')}"
-- 각 종목의 최근 실적, 뉴스, 애널리스트 의견
-- RSI, PEG Ratio 관련 최신 데이터
+[핵심 원칙]
+- 한국 개인투자자가 이해할 수 있는 쉬운 한국어로 작성한다.
+- "안심을 판다, 불안을 팔지 않는다" — 하락 종목도 맥락과 함께 설명한다.
+- 분석은 데이터 기반으로 하되, 결론을 단정짓지 않는다.
 
-**각 종목별 분석:**
-1. valuation_score (0-100): 높을수록 저평가 (PEG, P/E, P/S 종합)
-2. signal: STRONG_BUY / BUY / HOLD / SELL / STRONG_SELL
-3. analysis: 한글 2-3문장 분석 (최신 뉴스 반영)
-4. metrics: { pegRatio, rsi, earningsRevision, priceToFairValue, shortInterest }
+[Google Search 검색]
+- 각 종목의 현재 주가, 최근 실적, 주요 뉴스를 검색하세요.
 
-**출력 형식 (CRITICAL: RAW JSON ONLY):**
-- ❌ 사족 금지: "알겠습니다", "분석 결과입니다" 같은 설명 절대 금지
-- ❌ 마크다운 금지: \`\`\`json 같은 코드 블록 금지
-- ✅ 순수 JSON만 출력: { 부터 } 까지만
+[각 종목 분석 항목]
+1. valuation_score (0~100 정수): 높을수록 저평가. PEG, P/E, P/S 종합 판단
+2. signal: STRONG_BUY / BUY / HOLD / SELL / STRONG_SELL 중 하나
+3. analysis: 한국어 2~3문장. 최근 뉴스나 실적을 반영한 구체적 분석
+4. metrics: pegRatio(숫자), rsi(정수), earningsRevision(문자열), priceToFairValue(숫자), shortInterest(문자열)
 
+[응답 형식 — 아래 JSON만 출력. 설명문, 마크다운, 코드블록 절대 금지.]
 {
   "reports": [
     {
       "ticker": "NVDA",
       "valuation_score": 45,
       "signal": "HOLD",
-      "analysis": "[실시간] 구체적 분석...",
-      "metrics": {
-        "pegRatio": 1.8,
-        "rsi": 62,
-        "earningsRevision": "+5%",
-        "priceToFairValue": 0.95,
-        "shortInterest": "2.1%"
-      }
+      "analysis": "엔비디아는 AI 반도체 수요 호조로 매출이 전년 대비 122% 증가했으나, 현 주가는 이미 실적 기대를 상당 부분 반영한 상태입니다. 단기 과열 신호(RSI 68)가 나타나 관망이 적절합니다.",
+      "metrics": {"pegRatio": 1.8, "rsi": 62, "earningsRevision": "+5%", "priceToFairValue": 0.95, "shortInterest": "2.1%"}
     }
   ]
 }
 `;
 
-  const responseText = await callGeminiWithSearch(prompt);
-  const cleanJson = cleanJsonResponse(responseText);
+  let reports: Record<string, unknown>[] = [];
+  try {
+    const responseText = await callGeminiWithSearch(prompt);
+    const cleanJson = cleanJsonResponse(responseText);
 
-  // 배열 또는 객체 형태 모두 처리
-  let parsed: { reports?: StockQuantResult[] };
-  const cleaned = cleanJson.trim();
+    // 배열 또는 객체 형태 모두 처리
+    let parsed: { reports?: Record<string, unknown>[] };
+    const cleaned = cleanJson.trim();
 
-  if (cleaned.startsWith('[')) {
-    parsed = { reports: JSON.parse(cleaned) };
-  } else {
-    parsed = JSON.parse(cleaned);
+    if (cleaned.startsWith('[')) {
+      parsed = { reports: JSON.parse(cleaned) };
+    } else {
+      parsed = JSON.parse(cleaned);
+    }
+
+    reports = parsed.reports || [];
+  } catch (parseErr) {
+    console.error(`[Task B] Gemini 응답 파싱 실패 — 배치 전체 기본값 사용:`, parseErr);
+    // 파싱 실패 시 빈 배열 → 아래 로직에서 기본값으로 채움
   }
 
-  const reports = parsed.reports || [];
-
-  return reports.map((r: Record<string, unknown>) => ({
+  // 분석 결과가 부족하면 누락 종목을 기본값으로 보충
+  const analyzedTickers = new Set(reports.map(r => String(r.ticker || '')));
+  const results: StockQuantResult[] = reports.map((r: Record<string, unknown>) => ({
     ticker: String(r.ticker || ''),
     valuationScore: Number(r.valuation_score ?? r.valuationScore ?? 50),
     signal: String(r.signal || 'HOLD'),
-    analysis: String(r.analysis || '분석 데이터 없음'),
+    analysis: String(r.analysis || '분석 데이터를 불러오는 중입니다.'),
     metrics: (r.metrics as Record<string, unknown>) || {},
     sector: stocks.find(s => s.ticker === r.ticker)?.sector || '',
   }));
+
+  // 누락된 종목 기본값 추가
+  for (const stock of stocks) {
+    if (!analyzedTickers.has(stock.ticker)) {
+      results.push({
+        ticker: stock.ticker,
+        valuationScore: 50,
+        signal: 'HOLD',
+        analysis: '분석 데이터를 불러오지 못했습니다. 잠시 후 업데이트됩니다.',
+        metrics: {},
+        sector: stock.sector,
+      });
+    }
+  }
+
+  return results;
 }
 
 // ============================================================================

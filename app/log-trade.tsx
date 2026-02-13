@@ -107,30 +107,30 @@ export default function LogTradeScreen() {
           {/* 헤더 */}
           <View style={s.header}>
             <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <Ionicons name="close" size={28} color="#FFF" />
+              <Ionicons name="close" size={28} color={colors.textPrimary} />
             </TouchableOpacity>
             <View style={{ flex: 1 }}>
-              <Text style={s.headerTitle}>실행 기록</Text>
-              <Text style={s.headerSubtitle}>증권사에서 직접 실행한 내역을 입력하세요</Text>
+              <Text style={[s.headerTitle, { color: colors.textPrimary }]}>실행 기록</Text>
+              <Text style={[s.headerSubtitle, { color: colors.textTertiary }]}>증권사에서 직접 실행한 내역을 입력하세요</Text>
             </View>
           </View>
 
           {/* 종목 정보 */}
-          <View style={s.tickerCard}>
+          <View style={[s.tickerCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={[s.actionBadge, { backgroundColor: params.action === 'BUY' ? 'rgba(76,175,80,0.15)' : 'rgba(207,102,121,0.15)' }]}>
-              <Text style={[s.actionBadgeText, { color: params.action === 'BUY' ? '#4CAF50' : '#CF6679' }]}>
+              <Text style={[s.actionBadgeText, { color: params.action === 'BUY' ? colors.buy : colors.sell }]}>
                 {params.action === 'BUY' ? '매수' : '매도'}
               </Text>
             </View>
-            <Text style={s.tickerName}>{params.name}</Text>
-            <Text style={s.tickerCode}>{params.ticker}</Text>
+            <Text style={[s.tickerName, { color: colors.textPrimary }]}>{params.name}</Text>
+            <Text style={[s.tickerCode, { color: colors.textSecondary }]}>{params.ticker}</Text>
           </View>
 
           {/* AI 제안 정보 (참고용) */}
           {params.suggestedPrice && (
             <View style={s.suggestionBox}>
-              <Ionicons name="information-circle-outline" size={16} color="#64B5F6" />
-              <Text style={s.suggestionText}>
+              <Ionicons name="information-circle-outline" size={16} color={colors.info} />
+              <Text style={[s.suggestionText, { color: colors.info }]}>
                 AI 제안 시점: ₩{Math.floor(parseFloat(params.suggestedPrice)).toLocaleString()} × {params.suggestedQty || 0}주
               </Text>
             </View>
@@ -140,10 +140,10 @@ export default function LogTradeScreen() {
           <View style={s.form}>
             {/* 실행 일시 */}
             <View style={s.formGroup}>
-              <Text style={s.label}>실행 일시 *</Text>
-              <TouchableOpacity style={s.dateButton} onPress={() => setShowDatePicker(true)}>
-                <Ionicons name="calendar-outline" size={20} color="#4CAF50" />
-                <Text style={s.dateText}>{executedAt.toLocaleString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</Text>
+              <Text style={[s.label, { color: colors.textSecondary }]}>실행 일시 *</Text>
+              <TouchableOpacity style={[s.dateButton, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => setShowDatePicker(true)}>
+                <Ionicons name="calendar-outline" size={20} color={colors.primary} />
+                <Text style={[s.dateText, { color: colors.textPrimary }]}>{executedAt.toLocaleString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</Text>
               </TouchableOpacity>
               {showDatePicker && (
                 <DateTimePicker
@@ -160,39 +160,39 @@ export default function LogTradeScreen() {
 
             {/* 체결 가격 */}
             <View style={s.formGroup}>
-              <Text style={s.label}>체결 가격 (KRW) *</Text>
+              <Text style={[s.label, { color: colors.textSecondary }]}>체결 가격 (KRW) *</Text>
               <TextInput
-                style={s.input}
+                style={[s.input, { backgroundColor: colors.surface, color: colors.textPrimary, borderColor: colors.border }]}
                 value={executedPrice}
                 onChangeText={setExecutedPrice}
                 keyboardType="numeric"
                 placeholder="예: 50000"
-                placeholderTextColor="#555"
+                placeholderTextColor={colors.textQuaternary}
               />
             </View>
 
             {/* 체결 수량 */}
             <View style={s.formGroup}>
-              <Text style={s.label}>체결 수량 (주) *</Text>
+              <Text style={[s.label, { color: colors.textSecondary }]}>체결 수량 (주) *</Text>
               <TextInput
-                style={s.input}
+                style={[s.input, { backgroundColor: colors.surface, color: colors.textPrimary, borderColor: colors.border }]}
                 value={executedQty}
                 onChangeText={setExecutedQty}
                 keyboardType="number-pad"
                 placeholder="예: 10"
-                placeholderTextColor="#555"
+                placeholderTextColor={colors.textQuaternary}
               />
             </View>
 
             {/* 메모 */}
             <View style={s.formGroup}>
-              <Text style={s.label}>메모 (선택)</Text>
+              <Text style={[s.label, { color: colors.textSecondary }]}>메모 (선택)</Text>
               <TextInput
-                style={[s.input, s.textArea]}
+                style={[s.input, s.textArea, { backgroundColor: colors.surface, color: colors.textPrimary, borderColor: colors.border }]}
                 value={note}
                 onChangeText={setNote}
                 placeholder="증권사, 주문 방식 등 (예: 키움증권 시장가)"
-                placeholderTextColor="#555"
+                placeholderTextColor={colors.textQuaternary}
                 multiline
                 numberOfLines={3}
               />
@@ -201,8 +201,8 @@ export default function LogTradeScreen() {
 
           {/* 면책 */}
           <View style={s.disclaimer}>
-            <Ionicons name="alert-circle-outline" size={14} color="#666" />
-            <Text style={s.disclaimerText}>
+            <Ionicons name="alert-circle-outline" size={14} color={colors.textTertiary} />
+            <Text style={[s.disclaimerText, { color: colors.textTertiary }]}>
               본 앱은 실제 매매를 대행하지 않습니다. 직접 증권사에서 실행한 내역을 기록용으로 저장하는 기능입니다.
             </Text>
           </View>
@@ -217,7 +217,7 @@ export default function LogTradeScreen() {
               <Text style={s.submitButtonText}>저장 중...</Text>
             ) : (
               <>
-                <Ionicons name="checkmark-circle" size={20} color="#000" />
+                <Ionicons name="checkmark-circle" size={20} color={colors.background} />
                 <Text style={s.submitButtonText}>기록 저장</Text>
               </>
             )}
@@ -229,24 +229,22 @@ export default function LogTradeScreen() {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0A0A0A' },
+  container: { flex: 1 },
   scroll: { padding: 16, paddingBottom: 40 },
   header: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 24 },
-  headerTitle: { fontSize: 20, fontWeight: '700', color: '#FFF' },
-  headerSubtitle: { fontSize: 12, color: '#666', marginTop: 2 },
+  headerTitle: { fontSize: 20, fontWeight: '700' },
+  headerSubtitle: { fontSize: 12, marginTop: 2 },
   tickerCard: {
-    backgroundColor: '#141414',
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#1E1E1E',
   },
   actionBadge: { paddingHorizontal: 12, paddingVertical: 4, borderRadius: 8, marginBottom: 8 },
   actionBadgeText: { fontSize: 12, fontWeight: '800' },
-  tickerName: { fontSize: 18, fontWeight: '700', color: '#FFF', marginBottom: 4 },
-  tickerCode: { fontSize: 13, color: '#888' },
+  tickerName: { fontSize: 18, fontWeight: '700', marginBottom: 4 },
+  tickerCode: { fontSize: 13 },
   suggestionBox: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -258,31 +256,26 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(100,181,246,0.1)',
   },
-  suggestionText: { flex: 1, fontSize: 12, color: '#64B5F6', lineHeight: 18 },
+  suggestionText: { flex: 1, fontSize: 12, lineHeight: 18 },
   form: { gap: 20, marginBottom: 24 },
   formGroup: {},
-  label: { fontSize: 13, fontWeight: '600', color: '#CCC', marginBottom: 8 },
+  label: { fontSize: 13, fontWeight: '600', marginBottom: 8 },
   input: {
-    backgroundColor: '#141414',
     borderRadius: 10,
     padding: 14,
     fontSize: 15,
-    color: '#FFF',
     borderWidth: 1,
-    borderColor: '#1E1E1E',
   },
   textArea: { height: 80, textAlignVertical: 'top' },
   dateButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#141414',
     borderRadius: 10,
     padding: 14,
     borderWidth: 1,
-    borderColor: '#1E1E1E',
     gap: 10,
   },
-  dateText: { fontSize: 15, color: '#FFF' },
+  dateText: { fontSize: 15 },
   disclaimer: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -292,7 +285,7 @@ const s = StyleSheet.create({
     gap: 8,
     marginBottom: 20,
   },
-  disclaimerText: { flex: 1, fontSize: 11, color: '#666', lineHeight: 16 },
+  disclaimerText: { flex: 1, fontSize: 11, lineHeight: 16 },
   submitButton: {
     flexDirection: 'row',
     alignItems: 'center',

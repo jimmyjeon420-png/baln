@@ -16,7 +16,8 @@ import {
 import { Text } from 'react-native';
 import { Country, TaxSettings } from '../types/tax';
 import { COUNTRY_TAX_PROFILES } from '../constants/taxProfiles';
-import { COLORS, SIZES, TYPOGRAPHY } from '../styles/theme';
+import { SIZES, TYPOGRAPHY } from '../styles/theme';
+import { useTheme } from '../hooks/useTheme';
 
 interface Props {
   visible: boolean;
@@ -33,6 +34,7 @@ export const CountrySelectModal: React.FC<Props> = ({
 }) => {
   const [showCustom, setShowCustom] = useState(false);
   const [customRate, setCustomRate] = useState('');
+  const { colors } = useTheme();
 
   const handleCountrySelect = (country: Country) => {
     onSelect(country);
@@ -55,24 +57,24 @@ export const CountrySelectModal: React.FC<Props> = ({
 
   return (
     <Modal visible={visible} animationType="slide" transparent={false}>
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
           <TouchableOpacity onPress={onClose}>
-            <Text style={styles.closeButton}>✕</Text>
+            <Text style={[styles.closeButton, { color: colors.textSecondary }]}>✕</Text>
           </TouchableOpacity>
-          <Text style={styles.title}>Tax Jurisdiction</Text>
+          <Text style={[styles.title, { color: colors.textPrimary }]}>Tax Jurisdiction</Text>
           <View style={{ width: 30 }} />
         </View>
 
         {showCustom ? (
           // Custom Tax Rate Input
           <View style={styles.customContainer}>
-            <Text style={styles.customLabel}>Enter Custom Tax Rate (%)</Text>
+            <Text style={[styles.customLabel, { color: colors.textPrimary }]}>Enter Custom Tax Rate (%)</Text>
             <TextInput
-              style={styles.customInput}
+              style={[styles.customInput, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.textPrimary }]}
               placeholder="e.g., 35"
-              placeholderTextColor={COLORS.textTertiary}
+              placeholderTextColor={colors.textTertiary}
               keyboardType="decimal-pad"
               value={customRate}
               onChangeText={setCustomRate}
@@ -80,16 +82,16 @@ export const CountrySelectModal: React.FC<Props> = ({
             />
             <View style={styles.customButtonGroup}>
               <TouchableOpacity
-                style={styles.customCancelButton}
+                style={[styles.customCancelButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
                 onPress={() => {
                   setShowCustom(false);
                   setCustomRate('');
                 }}
               >
-                <Text style={styles.customCancelButtonText}>Cancel</Text>
+                <Text style={[styles.customCancelButtonText, { color: colors.textPrimary }]}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={styles.customSubmitButton}
+                style={[styles.customSubmitButton, { backgroundColor: colors.primary }]}
                 onPress={handleCustomRateSubmit}
               >
                 <Text style={styles.customSubmitButtonText}>Apply</Text>
@@ -104,7 +106,8 @@ export const CountrySelectModal: React.FC<Props> = ({
                 key={profile.code}
                 style={[
                   styles.countryItem,
-                  currentCountry === profile.code && styles.countryItemSelected
+                  { backgroundColor: colors.surface, borderColor: colors.border },
+                  currentCountry === profile.code && { borderColor: colors.primary, backgroundColor: colors.surfaceLight },
                 ]}
                 onPress={() => handleCountrySelect(profile.code)}
               >
@@ -112,29 +115,29 @@ export const CountrySelectModal: React.FC<Props> = ({
                   <View style={styles.countryHeader}>
                     <Text style={styles.flag}>{profile.flag}</Text>
                     <View style={styles.countryInfo}>
-                      <Text style={styles.countryName}>{profile.name}</Text>
-                      <Text style={styles.countryRate}>
+                      <Text style={[styles.countryName, { color: colors.textPrimary }]}>{profile.name}</Text>
+                      <Text style={[styles.countryRate, { color: colors.textSecondary }]}>
                         {profile.capitalGainsTaxRate}% Capital Gains Tax
                       </Text>
                     </View>
                   </View>
                   {profile.notes && (
-                    <Text style={styles.countryNotes}>{profile.notes}</Text>
+                    <Text style={[styles.countryNotes, { color: colors.textTertiary }]}>{profile.notes}</Text>
                   )}
                 </View>
                 {currentCountry === profile.code && (
-                  <Text style={styles.checkmark}>✓</Text>
+                  <Text style={[styles.checkmark, { color: colors.primary }]}>✓</Text>
                 )}
               </TouchableOpacity>
             ))}
 
             {/* Custom Override Option */}
             <TouchableOpacity
-              style={[styles.countryItem, styles.customOption]}
+              style={[styles.countryItem, styles.customOption, { backgroundColor: colors.surfaceLight, borderColor: colors.primary }]}
               onPress={() => setShowCustom(true)}
             >
               <View style={styles.countryContent}>
-                <Text style={styles.customOptionText}>⚙️ Set Custom Tax Rate</Text>
+                <Text style={[styles.customOptionText, { color: colors.primary }]}>⚙️ Set Custom Tax Rate</Text>
               </View>
             </TouchableOpacity>
           </ScrollView>
@@ -147,7 +150,6 @@ export const CountrySelectModal: React.FC<Props> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   header: {
     flexDirection: 'row',
@@ -156,15 +158,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: SIZES.lg,
     paddingVertical: SIZES.md,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
   },
   title: {
     ...TYPOGRAPHY.headingSmall,
-    color: COLORS.textPrimary,
   },
   closeButton: {
     fontSize: 24,
-    color: COLORS.textSecondary,
     width: 30,
     textAlign: 'center',
   },
@@ -179,14 +178,8 @@ const styles = StyleSheet.create({
     paddingVertical: SIZES.md,
     paddingHorizontal: SIZES.md,
     marginVertical: SIZES.xs,
-    backgroundColor: COLORS.surface,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  countryItemSelected: {
-    borderColor: COLORS.primary,
-    backgroundColor: COLORS.surfaceLight,
   },
   countryContent: {
     flex: 1,
@@ -206,35 +199,28 @@ const styles = StyleSheet.create({
   countryName: {
     fontSize: 16,
     fontWeight: '600',
-    color: COLORS.textPrimary,
     marginBottom: 2,
   },
   countryRate: {
     fontSize: 13,
-    color: COLORS.textSecondary,
   },
   countryNotes: {
     fontSize: 12,
-    color: COLORS.textTertiary,
     marginLeft: 32,
     marginTop: SIZES.xs,
     fontStyle: 'italic',
   },
   checkmark: {
     fontSize: 20,
-    color: COLORS.primary,
     marginLeft: SIZES.md,
   },
   customOption: {
-    backgroundColor: COLORS.surfaceLight,
-    borderColor: COLORS.primary,
     marginTop: SIZES.lg,
     marginBottom: SIZES.xxl,
   },
   customOptionText: {
     fontSize: 15,
     fontWeight: '600',
-    color: COLORS.primary,
   },
   customContainer: {
     flex: 1,
@@ -244,17 +230,13 @@ const styles = StyleSheet.create({
   customLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: COLORS.textPrimary,
     marginBottom: SIZES.md,
   },
   customInput: {
-    backgroundColor: COLORS.surface,
     borderWidth: 1,
-    borderColor: COLORS.border,
     borderRadius: 8,
     paddingHorizontal: SIZES.md,
     paddingVertical: SIZES.md,
-    color: COLORS.textPrimary,
     fontSize: 16,
     marginBottom: SIZES.lg,
   },
@@ -266,13 +248,10 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: SIZES.md,
     borderRadius: 8,
-    backgroundColor: COLORS.surface,
     borderWidth: 1,
-    borderColor: COLORS.border,
   },
   customCancelButtonText: {
     textAlign: 'center',
-    color: COLORS.textPrimary,
     fontWeight: '600',
     fontSize: 14,
   },
@@ -280,7 +259,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: SIZES.md,
     borderRadius: 8,
-    backgroundColor: COLORS.primary,
   },
   customSubmitButtonText: {
     textAlign: 'center',

@@ -13,7 +13,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Svg, { Path, Circle, Line, G, Defs, LinearGradient, Stop } from 'react-native-svg';
-import { COLORS } from '../../styles/theme';
+import { useTheme } from '../../hooks/useTheme';
 
 // ── 타입 정의 ──
 
@@ -28,7 +28,7 @@ interface HealthScoreGaugeProps {
 
 // ── 유틸 함수 ──
 
-/** 점수에 따른 색상 반환 */
+/** 점수에 따른 색상 반환 (시맨틱 - 테마 불변) */
 function getScoreColor(score: number): string {
   if (score >= 70) return '#4CAF50';  // 초록
   if (score >= 55) return '#8BC34A';  // 연두
@@ -82,6 +82,7 @@ export default function HealthScoreGauge({
   size = 220,
   strokeWidth = 16,
 }: HealthScoreGaugeProps) {
+  const { colors } = useTheme();
   // 점수 클램프 (0~100)
   const clampedScore = Math.max(0, Math.min(100, score));
   const color = gradeColor || getScoreColor(clampedScore);
@@ -137,7 +138,7 @@ export default function HealthScoreGauge({
         {/* 배경 반원 (어두운) */}
         <Path
           d={bgPath}
-          stroke="#2A2A2A"
+          stroke={colors.surfaceLight}
           strokeWidth={strokeWidth}
           strokeLinecap="round"
           fill="none"
@@ -160,13 +161,13 @@ export default function HealthScoreGauge({
           y1={needleStart.y}
           x2={needleEnd.x}
           y2={needleEnd.y}
-          stroke="#FFFFFF"
+          stroke={colors.textPrimary}
           strokeWidth={2.5}
           strokeLinecap="round"
         />
 
         {/* 바늘 중심점 */}
-        <Circle cx={cx} cy={cy} r={5} fill="#FFFFFF" />
+        <Circle cx={cx} cy={cy} r={5} fill={colors.textPrimary} />
         <Circle cx={cx} cy={cy} r={3} fill={color} />
 
         {/* 눈금 텍스트 */}
@@ -177,7 +178,7 @@ export default function HealthScoreGauge({
               y1={tick.outer.y}
               x2={tick.inner.x}
               y2={tick.inner.y}
-              stroke="#444"
+              stroke={colors.border}
               strokeWidth={1}
             />
           </G>
@@ -197,11 +198,11 @@ export default function HealthScoreGauge({
 
       {/* 하단 눈금 라벨 */}
       <View style={[styles.tickLabels, { width: size }]}>
-        <Text style={styles.tickText}>0</Text>
-        <Text style={styles.tickText}>25</Text>
-        <Text style={styles.tickText}>50</Text>
-        <Text style={styles.tickText}>75</Text>
-        <Text style={styles.tickText}>100</Text>
+        <Text style={[styles.tickText, { color: colors.textTertiary }]}>0</Text>
+        <Text style={[styles.tickText, { color: colors.textTertiary }]}>25</Text>
+        <Text style={[styles.tickText, { color: colors.textTertiary }]}>50</Text>
+        <Text style={[styles.tickText, { color: colors.textTertiary }]}>75</Text>
+        <Text style={[styles.tickText, { color: colors.textTertiary }]}>100</Text>
       </View>
     </View>
   );
@@ -249,7 +250,6 @@ const styles = StyleSheet.create({
   },
   tickText: {
     fontSize: 9,
-    color: '#555',
     fontWeight: '500',
   },
 });

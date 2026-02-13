@@ -51,22 +51,13 @@ import {
 } from '../../src/types/community';
 import { formatAssetAmount } from '../../src/utils/communityUtils';
 import { Gathering, GATHERING_CATEGORY_LABELS } from '../../src/types/database';
+import { useTheme } from '../../src/hooks/useTheme';
 
 // ══════════════════════════════════════════
 // 상수
 // ══════════════════════════════════════════
 
-const COLORS = {
-  background: '#121212',
-  surface: '#1E1E1E',
-  surfaceLight: '#2A2A2A',
-  primary: '#4CAF50',
-  error: '#CF6679',
-  text: '#FFFFFF',
-  textSecondary: '#B0B0B0',
-  textMuted: '#888888',
-  border: '#333333',
-};
+// Local COLORS removed - using themeColors from useTheme()
 
 type Segment = 'community' | 'gatherings';
 
@@ -93,6 +84,7 @@ const GATHERING_CATEGORY_FILTERS: { key: Gathering['category'] | 'all'; label: s
 export default function LoungeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { colors: themeColors } = useTheme();
 
   // 세그먼트 상태
   const [activeSegment, setActiveSegment] = useState<Segment>('community');
@@ -200,10 +192,10 @@ export default function LoungeScreen() {
   // ══════════════════════════════════════════
   if (eligibilityLoading) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
+      <View style={[styles.container, { paddingTop: insets.top, backgroundColor: themeColors.background }]}>
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Text style={styles.headerTitle}>VIP 라운지</Text>
+            <Text style={[styles.headerTitle, { color: themeColors.textPrimary }]}>VIP 라운지</Text>
             <View style={styles.vipBadge}>
               <Ionicons name="diamond" size={14} color="#B9F2FF" />
               <Text style={styles.vipBadgeText}>PRIVATE</Text>
@@ -211,8 +203,8 @@ export default function LoungeScreen() {
           </View>
         </View>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
-          <Text style={styles.loadingText}>자격 확인 중...</Text>
+          <ActivityIndicator size="large" color={themeColors.primary} />
+          <Text style={[styles.loadingText, { color: themeColors.textTertiary }]}>자격 확인 중...</Text>
         </View>
       </View>
     );
@@ -223,11 +215,11 @@ export default function LoungeScreen() {
   // ══════════════════════════════════════════
   if (!eligibility.isEligible) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
+      <View style={[styles.container, { paddingTop: insets.top, backgroundColor: themeColors.background }]}>
         {/* 헤더 */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Text style={styles.headerTitle}>VIP 라운지</Text>
+            <Text style={[styles.headerTitle, { color: themeColors.textPrimary }]}>VIP 라운지</Text>
             <View style={styles.vipBadge}>
               <Ionicons name="diamond" size={14} color="#B9F2FF" />
               <Text style={styles.vipBadgeText}>PRIVATE</Text>
@@ -241,21 +233,21 @@ export default function LoungeScreen() {
             <Ionicons name="lock-closed" size={64} color="#FFC107" />
           </View>
 
-          <Text style={styles.lockedTitle}>VIP 전용 공간입니다</Text>
-          <Text style={styles.lockedSubtitle}>
+          <Text style={[styles.lockedTitle, { color: themeColors.textPrimary }]}>VIP 전용 공간입니다</Text>
+          <Text style={[styles.lockedSubtitle, { color: themeColors.textTertiary }]}>
             자산 인증 후 100만원 이상의 자산을 보유한{'\n'}
             회원만 입장할 수 있습니다
           </Text>
 
           {/* 등급 안내 */}
-          <View style={styles.accessGuide}>
-            <Text style={styles.accessGuideTitle}>접근 등급 안내</Text>
+          <View style={[styles.accessGuide, { backgroundColor: themeColors.surface }]}>
+            <Text style={[styles.accessGuideTitle, { color: themeColors.textPrimary }]}>접근 등급 안내</Text>
 
             <View style={styles.accessTier}>
               <View style={[styles.accessDot, { backgroundColor: '#4CAF50' }]} />
               <View style={styles.accessTierContent}>
-                <Text style={styles.accessTierLabel}>열람 가능</Text>
-                <Text style={styles.accessTierReq}>자산 100만원 이상</Text>
+                <Text style={[styles.accessTierLabel, { color: themeColors.textPrimary }]}>열람 가능</Text>
+                <Text style={[styles.accessTierReq, { color: themeColors.textTertiary }]}>자산 100만원 이상</Text>
               </View>
               <Ionicons
                 name={eligibility.totalAssets >= LOUNGE_VIEW_THRESHOLD ? 'checkmark-circle' : 'ellipse-outline'}
@@ -267,8 +259,8 @@ export default function LoungeScreen() {
             <View style={styles.accessTier}>
               <View style={[styles.accessDot, { backgroundColor: '#2196F3' }]} />
               <View style={styles.accessTierContent}>
-                <Text style={styles.accessTierLabel}>댓글 작성</Text>
-                <Text style={styles.accessTierReq}>자산 1,000만원 이상</Text>
+                <Text style={[styles.accessTierLabel, { color: themeColors.textPrimary }]}>댓글 작성</Text>
+                <Text style={[styles.accessTierReq, { color: themeColors.textTertiary }]}>자산 1,000만원 이상</Text>
               </View>
               <Ionicons
                 name={eligibility.totalAssets >= LOUNGE_COMMENT_THRESHOLD ? 'checkmark-circle' : 'ellipse-outline'}
@@ -280,8 +272,8 @@ export default function LoungeScreen() {
             <View style={styles.accessTier}>
               <View style={[styles.accessDot, { backgroundColor: '#FFD700' }]} />
               <View style={styles.accessTierContent}>
-                <Text style={styles.accessTierLabel}>게시물 작성</Text>
-                <Text style={styles.accessTierReq}>자산 1.5억 이상</Text>
+                <Text style={[styles.accessTierLabel, { color: themeColors.textPrimary }]}>게시물 작성</Text>
+                <Text style={[styles.accessTierReq, { color: themeColors.textTertiary }]}>자산 1.5억 이상</Text>
               </View>
               <Ionicons
                 name={eligibility.totalAssets >= LOUNGE_POST_THRESHOLD ? 'checkmark-circle' : 'ellipse-outline'}
@@ -292,18 +284,18 @@ export default function LoungeScreen() {
           </View>
 
           {/* 현재 자산 진행률 */}
-          <View style={styles.progressSection}>
+          <View style={[styles.progressSection, { backgroundColor: themeColors.surface }]}>
             <View style={styles.progressHeader}>
-              <Text style={styles.progressLabel}>현재 자산</Text>
-              <Text style={styles.progressValue}>
+              <Text style={[styles.progressLabel, { color: themeColors.textTertiary }]}>현재 자산</Text>
+              <Text style={[styles.progressValue, { color: themeColors.primary }]}>
                 {formatAssetAmount(eligibility.totalAssets)}
               </Text>
             </View>
-            <View style={styles.progressBarBg}>
+            <View style={[styles.progressBarBg, { backgroundColor: themeColors.border }]}>
               <View
                 style={[
                   styles.progressBarFill,
-                  { width: `${Math.min((eligibility.totalAssets / LOUNGE_VIEW_THRESHOLD) * 100, 100)}%` },
+                  { width: `${Math.min((eligibility.totalAssets / LOUNGE_VIEW_THRESHOLD) * 100, 100)}%`, backgroundColor: themeColors.primary },
                 ]}
               />
             </View>
@@ -322,7 +314,7 @@ export default function LoungeScreen() {
             <Text style={styles.investButtonText}>자산 등록하기</Text>
           </TouchableOpacity>
 
-          <Text style={styles.verificationNote}>
+          <Text style={[styles.verificationNote, { color: themeColors.textTertiary }]}>
             * 자산을 등록하면 자동으로 등급이 부여됩니다
           </Text>
         </View>
@@ -334,7 +326,7 @@ export default function LoungeScreen() {
   // 메인 화면 (100만원 이상 — 입장 완료)
   // ══════════════════════════════════════════
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={[styles.container, { paddingTop: insets.top, backgroundColor: themeColors.background }]}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -342,7 +334,7 @@ export default function LoungeScreen() {
         {/* 헤더 */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Text style={styles.headerTitle}>VIP 라운지</Text>
+            <Text style={[styles.headerTitle, { color: themeColors.textPrimary }]}>VIP 라운지</Text>
             <View style={styles.vipBadge}>
               <Ionicons name="diamond" size={14} color="#B9F2FF" />
               <Text style={styles.vipBadgeText}>PRIVATE</Text>
@@ -352,22 +344,22 @@ export default function LoungeScreen() {
 
         {/* 세그먼트 컨트롤 (토스 스타일 pill) */}
         <View style={styles.segmentContainer}>
-          <View style={styles.segmentControl}>
+          <View style={[styles.segmentControl, { backgroundColor: themeColors.surface }]}>
             <TouchableOpacity
               style={[
                 styles.segmentButton,
-                activeSegment === 'community' && styles.segmentButtonActive,
+                activeSegment === 'community' && { backgroundColor: themeColors.primary },
               ]}
               onPress={() => setActiveSegment('community')}
             >
               <Ionicons
                 name="chatbubbles"
                 size={14}
-                color={activeSegment === 'community' ? '#000' : COLORS.textMuted}
+                color={activeSegment === 'community' ? '#000' : themeColors.textTertiary}
               />
               <Text
                 style={[
-                  styles.segmentText,
+                  styles.segmentText, { color: themeColors.textTertiary },
                   activeSegment === 'community' && styles.segmentTextActive,
                 ]}
               >
@@ -378,18 +370,18 @@ export default function LoungeScreen() {
             <TouchableOpacity
               style={[
                 styles.segmentButton,
-                activeSegment === 'gatherings' && styles.segmentButtonActive,
+                activeSegment === 'gatherings' && { backgroundColor: themeColors.primary },
               ]}
               onPress={() => setActiveSegment('gatherings')}
             >
               <Ionicons
                 name="calendar"
                 size={14}
-                color={activeSegment === 'gatherings' ? '#000' : COLORS.textMuted}
+                color={activeSegment === 'gatherings' ? '#000' : themeColors.textTertiary}
               />
               <Text
                 style={[
-                  styles.segmentText,
+                  styles.segmentText, { color: themeColors.textTertiary },
                   activeSegment === 'gatherings' && styles.segmentTextActive,
                 ]}
               >
@@ -403,7 +395,7 @@ export default function LoungeScreen() {
         {activeSegment === 'community' && (
           <>
             {/* 카테고리 필터 */}
-            <View style={styles.categoryTabContainer}>
+            <View style={[styles.categoryTabContainer, { borderBottomColor: themeColors.surfaceLight }]}>
               {(Object.keys(CATEGORY_INFO) as CommunityCategoryFilter[]).map((key) => {
                 const info = CATEGORY_INFO[key];
                 const isActive = communityCategory === key;
@@ -411,7 +403,7 @@ export default function LoungeScreen() {
                   <TouchableOpacity
                     key={key}
                     style={[
-                      styles.categoryTab,
+                      styles.categoryTab, { borderColor: themeColors.border, backgroundColor: themeColors.surface },
                       isActive && { backgroundColor: info.color + '20', borderColor: info.color },
                     ]}
                     onPress={() => setCommunityCategory(key)}
@@ -419,7 +411,7 @@ export default function LoungeScreen() {
                     <Ionicons
                       name={info.icon as any}
                       size={14}
-                      color={isActive ? info.color : COLORS.textMuted}
+                      color={isActive ? info.color : themeColors.textTertiary}
                     />
                     <Text style={[
                       styles.categoryTabText,
@@ -438,7 +430,7 @@ export default function LoungeScreen() {
                 <TouchableOpacity
                   key={opt.key}
                   style={[
-                    styles.sortChip,
+                    styles.sortChip, { backgroundColor: themeColors.surface, borderColor: themeColors.border },
                     sortBy === opt.key && styles.sortChipActive,
                   ]}
                   onPress={() => setSortBy(opt.key)}
@@ -446,7 +438,7 @@ export default function LoungeScreen() {
                   <Ionicons
                     name={opt.icon}
                     size={12}
-                    color={sortBy === opt.key ? '#000' : COLORS.textMuted}
+                    color={sortBy === opt.key ? '#000' : themeColors.textTertiary}
                   />
                   <Text style={[
                     styles.sortChipText,
@@ -460,11 +452,11 @@ export default function LoungeScreen() {
 
             {/* 글쓰기 영역 */}
             {isComposing && (
-              <View style={styles.composeContainer}>
+              <View style={[styles.composeContainer, { backgroundColor: themeColors.surface, borderBottomColor: themeColors.surfaceLight }]}>
                 <View style={styles.composeHeader}>
-                  <Text style={styles.composeTitle}>새 게시물</Text>
+                  <Text style={[styles.composeTitle, { color: themeColors.textPrimary }]}>새 게시물</Text>
                   <TouchableOpacity onPress={() => setIsComposing(false)}>
-                    <Ionicons name="close" size={24} color={COLORS.textMuted} />
+                    <Ionicons name="close" size={24} color={themeColors.textTertiary} />
                   </TouchableOpacity>
                 </View>
 
@@ -476,12 +468,12 @@ export default function LoungeScreen() {
                       <TouchableOpacity
                         key={key}
                         style={[
-                          styles.composeCategoryChip,
+                          styles.composeCategoryChip, { borderColor: themeColors.border, backgroundColor: themeColors.surface },
                           isActive && { backgroundColor: info.color + '20', borderColor: info.color },
                         ]}
                         onPress={() => setPostCategory(key)}
                       >
-                        <Ionicons name={info.icon as any} size={12} color={isActive ? info.color : COLORS.textMuted} />
+                        <Ionicons name={info.icon as any} size={12} color={isActive ? info.color : themeColors.textTertiary} />
                         <Text style={[styles.composeCategoryText, isActive && { color: info.color }]}>
                           {info.label}
                         </Text>
@@ -491,7 +483,7 @@ export default function LoungeScreen() {
                 </View>
 
                 <TextInput
-                  style={styles.composeInput}
+                  style={[styles.composeInput, { backgroundColor: themeColors.surfaceLight, color: themeColors.textPrimary }]}
                   placeholder="투자 인사이트를 공유해주세요..."
                   placeholderTextColor="#666666"
                   multiline
@@ -500,7 +492,7 @@ export default function LoungeScreen() {
                   onChangeText={setNewPostContent}
                 />
                 <View style={styles.composeFooter}>
-                  <Text style={styles.charCount}>{newPostContent.length}/500</Text>
+                  <Text style={[styles.charCount, { color: themeColors.textTertiary }]}>{newPostContent.length}/500</Text>
                   <TouchableOpacity
                     style={[styles.submitButton, { opacity: newPostContent.trim() ? 1 : 0.5 }]}
                     onPress={handleSubmitPost}
@@ -513,7 +505,7 @@ export default function LoungeScreen() {
                     )}
                   </TouchableOpacity>
                 </View>
-                <Text style={styles.holdingsNotice}>
+                <Text style={[styles.holdingsNotice, { color: themeColors.textTertiary }]}>
                   게시물에 상위 보유종목이 자동으로 공개됩니다
                 </Text>
               </View>
@@ -538,7 +530,7 @@ export default function LoungeScreen() {
                     <Text style={styles.welcomeIcon}>{'🏦'}</Text>
                     <View style={{ flex: 1 }}>
                       <Text style={styles.welcomeText}>VIP 회원님, 환영합니다!</Text>
-                      <Text style={styles.welcomeSubtext}>
+                      <Text style={[styles.welcomeSubtext, { color: themeColors.textTertiary }]}>
                         현재 자산: {formatAssetAmount(eligibility.totalAssets)}
                       </Text>
                     </View>
@@ -586,13 +578,13 @@ export default function LoungeScreen() {
               ListEmptyComponent={
                 postsLoading ? (
                   <View style={styles.postsLoading}>
-                    <ActivityIndicator size="large" color={COLORS.primary} />
+                    <ActivityIndicator size="large" color={themeColors.primary} />
                   </View>
                 ) : (
                   <View style={styles.emptyContainer}>
-                    <Ionicons name="chatbubbles-outline" size={48} color={COLORS.textMuted} />
-                    <Text style={styles.emptyTitle}>아직 게시물이 없습니다</Text>
-                    <Text style={styles.emptyDescription}>
+                    <Ionicons name="chatbubbles-outline" size={48} color={themeColors.textTertiary} />
+                    <Text style={[styles.emptyTitle, { color: themeColors.textPrimary }]}>아직 게시물이 없습니다</Text>
+                    <Text style={[styles.emptyDescription, { color: themeColors.textTertiary }]}>
                       {eligibility.canPost
                         ? '첫 번째 게시물을 작성해보세요!'
                         : '자산 1.5억 이상 회원이 게시물을 작성할 수 있습니다'}
@@ -603,7 +595,7 @@ export default function LoungeScreen() {
               ListFooterComponent={
                 isFetchingNextPage ? (
                   <View style={styles.postsLoading}>
-                    <ActivityIndicator size="small" color={COLORS.primary} />
+                    <ActivityIndicator size="small" color={themeColors.primary} />
                   </View>
                 ) : <View style={{ height: 100 }} />
               }
@@ -614,8 +606,8 @@ export default function LoungeScreen() {
                 <RefreshControl
                   refreshing={refreshing}
                   onRefresh={onRefresh}
-                  tintColor={COLORS.primary}
-                  colors={[COLORS.primary]}
+                  tintColor={themeColors.primary}
+                  colors={[themeColors.primary]}
                 />
               }
             />
@@ -648,14 +640,14 @@ export default function LoungeScreen() {
                 <TouchableOpacity
                   key={filter.key}
                   style={[
-                    styles.categoryChip,
-                    gatheringCategory === filter.key && styles.categoryChipActive,
+                    styles.categoryChip, { backgroundColor: themeColors.surface, borderColor: themeColors.border },
+                    gatheringCategory === filter.key && { backgroundColor: themeColors.primary, borderColor: themeColors.primary },
                   ]}
                   onPress={() => setGatheringCategory(filter.key)}
                 >
                   <Text
                     style={[
-                      styles.categoryChipText,
+                      styles.categoryChipText, { color: themeColors.textSecondary },
                       gatheringCategory === filter.key && styles.categoryChipTextActive,
                     ]}
                   >
@@ -677,10 +669,10 @@ export default function LoungeScreen() {
                 />
               )}
               ListHeaderComponent={
-                <View style={styles.gatheringWelcome}>
+                <View style={[styles.gatheringWelcome, { backgroundColor: themeColors.surface }]}>
                   <View style={styles.gatheringWelcomeContent}>
-                    <Text style={styles.gatheringWelcomeTitle}>안녕하세요, VIP 멤버님 {'👑'}</Text>
-                    <Text style={styles.gatheringWelcomeSubtitle}>
+                    <Text style={[styles.gatheringWelcomeTitle, { color: themeColors.textPrimary }]}>안녕하세요, VIP 멤버님 {'👑'}</Text>
+                    <Text style={[styles.gatheringWelcomeSubtitle, { color: themeColors.textSecondary }]}>
                       인증된 자산가들과 함께하는 프라이빗 모임에 참여하세요.
                     </Text>
                   </View>
@@ -709,9 +701,9 @@ export default function LoungeScreen() {
                   <LoungeSkeleton />
                 ) : (
                   <View style={styles.emptyContainer}>
-                    <Ionicons name="calendar-outline" size={64} color={COLORS.textMuted} />
-                    <Text style={styles.emptyTitle}>아직 등록된 모임이 없습니다</Text>
-                    <Text style={styles.emptyDescription}>
+                    <Ionicons name="calendar-outline" size={64} color={themeColors.textTertiary} />
+                    <Text style={[styles.emptyTitle, { color: themeColors.textPrimary }]}>아직 등록된 모임이 없습니다</Text>
+                    <Text style={[styles.emptyDescription, { color: themeColors.textTertiary }]}>
                       첫 번째 모임을 만들어보세요!
                     </Text>
                   </View>
@@ -723,8 +715,8 @@ export default function LoungeScreen() {
                 <RefreshControl
                   refreshing={refreshing}
                   onRefresh={onRefresh}
-                  tintColor={COLORS.primary}
-                  colors={[COLORS.primary]}
+                  tintColor={themeColors.primary}
+                  colors={[themeColors.primary]}
                 />
               }
             />
@@ -754,7 +746,6 @@ export default function LoungeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
 
   // ── 헤더 ──
@@ -773,7 +764,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 24,
     fontWeight: '800',
-    color: COLORS.text,
   },
   vipBadge: {
     flexDirection: 'row',
@@ -797,7 +787,6 @@ const styles = StyleSheet.create({
   },
   segmentControl: {
     flexDirection: 'row',
-    backgroundColor: COLORS.surface,
     borderRadius: 18,
     padding: 3,
     height: 36,
@@ -810,13 +799,10 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     gap: 6,
   },
-  segmentButtonActive: {
-    backgroundColor: COLORS.primary,
-  },
+  segmentButtonActive: {},
   segmentText: {
     fontSize: 13,
     fontWeight: '600',
-    color: COLORS.textMuted,
   },
   segmentTextActive: {
     color: '#000',
@@ -830,7 +816,6 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 14,
-    color: COLORS.textMuted,
     marginTop: 12,
   },
 
@@ -845,7 +830,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: '#2A2A1A',
+    backgroundColor: 'rgba(255, 193, 7, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 24,
@@ -853,19 +838,16 @@ const styles = StyleSheet.create({
   lockedTitle: {
     fontSize: 22,
     fontWeight: '700',
-    color: COLORS.text,
     marginBottom: 8,
   },
   lockedSubtitle: {
     fontSize: 14,
-    color: COLORS.textMuted,
     textAlign: 'center',
     marginBottom: 24,
     lineHeight: 21,
   },
   accessGuide: {
     width: '100%',
-    backgroundColor: COLORS.surface,
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
@@ -873,7 +855,6 @@ const styles = StyleSheet.create({
   accessGuideTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: COLORS.text,
     marginBottom: 14,
   },
   accessTier: {
@@ -893,16 +874,13 @@ const styles = StyleSheet.create({
   accessTierLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#DDD',
   },
   accessTierReq: {
     fontSize: 11,
-    color: COLORS.textMuted,
     marginTop: 1,
   },
   progressSection: {
     width: '100%',
-    backgroundColor: COLORS.surface,
     borderRadius: 16,
     padding: 20,
     marginBottom: 24,
@@ -915,23 +893,19 @@ const styles = StyleSheet.create({
   },
   progressLabel: {
     fontSize: 14,
-    color: COLORS.textMuted,
   },
   progressValue: {
     fontSize: 20,
     fontWeight: '700',
-    color: COLORS.primary,
   },
   progressBarBg: {
     height: 8,
-    backgroundColor: COLORS.border,
     borderRadius: 4,
     overflow: 'hidden',
     marginBottom: 12,
   },
   progressBarFill: {
     height: '100%',
-    backgroundColor: COLORS.primary,
     borderRadius: 4,
   },
   progressShortfall: {
@@ -942,7 +916,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: COLORS.primary,
+    backgroundColor: '#4CAF50',
     paddingHorizontal: 24,
     paddingVertical: 14,
     borderRadius: 12,
@@ -954,7 +928,6 @@ const styles = StyleSheet.create({
   },
   verificationNote: {
     fontSize: 12,
-    color: '#666666',
     textAlign: 'center',
     marginTop: 16,
     fontStyle: 'italic',
@@ -967,7 +940,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     gap: 8,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.surfaceLight,
   },
   categoryTab: {
     flexDirection: 'row',
@@ -977,12 +949,9 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: COLORS.border,
-    backgroundColor: COLORS.surface,
   },
   categoryTabText: {
     fontSize: 12,
-    color: COLORS.textMuted,
   },
 
   // ── 커뮤니티: 정렬 칩 ──
@@ -999,18 +968,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 14,
-    backgroundColor: COLORS.surface,
     borderWidth: 1,
-    borderColor: COLORS.border,
   },
-  sortChipActive: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
-  },
+  sortChipActive: {},
   sortChipText: {
     fontSize: 11,
     fontWeight: '600',
-    color: COLORS.textMuted,
   },
   sortChipTextActive: {
     color: '#000',
@@ -1018,7 +981,7 @@ const styles = StyleSheet.create({
 
   // ── 커뮤니티: 환영 배너 ──
   welcomeBanner: {
-    backgroundColor: '#1A2E1A',
+    backgroundColor: 'rgba(76, 175, 80, 0.08)',
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
@@ -1035,11 +998,10 @@ const styles = StyleSheet.create({
   welcomeText: {
     fontSize: 16,
     fontWeight: '600',
-    color: COLORS.primary,
+    color: '#4CAF50',
   },
   welcomeSubtext: {
     fontSize: 13,
-    color: COLORS.textMuted,
     marginTop: 2,
   },
   accessBadgeRow: {
@@ -1061,10 +1023,8 @@ const styles = StyleSheet.create({
 
   // ── 커뮤니티: 글쓰기 ──
   composeContainer: {
-    backgroundColor: COLORS.surface,
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.surfaceLight,
   },
   composeHeader: {
     flexDirection: 'row',
@@ -1075,7 +1035,6 @@ const styles = StyleSheet.create({
   composeTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: COLORS.text,
   },
   composeCategoryRow: {
     flexDirection: 'row',
@@ -1090,19 +1049,14 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: COLORS.border,
-    backgroundColor: COLORS.surface,
   },
   composeCategoryText: {
     fontSize: 12,
-    color: COLORS.textMuted,
   },
   composeInput: {
-    backgroundColor: COLORS.surfaceLight,
     borderRadius: 12,
     padding: 14,
     fontSize: 15,
-    color: COLORS.text,
     minHeight: 100,
     textAlignVertical: 'top',
   },
@@ -1114,10 +1068,9 @@ const styles = StyleSheet.create({
   },
   charCount: {
     fontSize: 13,
-    color: '#666666',
   },
   submitButton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: '#4CAF50',
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 8,
@@ -1129,7 +1082,6 @@ const styles = StyleSheet.create({
   },
   holdingsNotice: {
     fontSize: 11,
-    color: '#666',
     textAlign: 'center',
     marginTop: 8,
     fontStyle: 'italic',
@@ -1157,19 +1109,13 @@ const styles = StyleSheet.create({
   categoryChip: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    backgroundColor: COLORS.surface,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: COLORS.border,
   },
-  categoryChipActive: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
-  },
+  categoryChipActive: {},
   categoryChipText: {
     fontSize: 13,
     fontWeight: '600',
-    color: COLORS.textSecondary,
   },
   categoryChipTextActive: {
     color: '#000000',
@@ -1179,7 +1125,6 @@ const styles = StyleSheet.create({
   gatheringWelcome: {
     marginBottom: 16,
     padding: 16,
-    backgroundColor: COLORS.surface,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: 'rgba(76, 175, 80, 0.3)',
@@ -1190,12 +1135,10 @@ const styles = StyleSheet.create({
   gatheringWelcomeTitle: {
     fontSize: 17,
     fontWeight: '700',
-    color: COLORS.text,
     marginBottom: 4,
   },
   gatheringWelcomeSubtitle: {
     fontSize: 13,
-    color: COLORS.textSecondary,
     lineHeight: 18,
   },
   tierIndicator: {
@@ -1225,13 +1168,11 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 17,
     fontWeight: '600',
-    color: COLORS.text,
     marginTop: 16,
     marginBottom: 8,
   },
   emptyDescription: {
     fontSize: 14,
-    color: COLORS.textMuted,
     textAlign: 'center',
   },
 
@@ -1241,12 +1182,12 @@ const styles = StyleSheet.create({
     right: 20,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.primary,
+    backgroundColor: '#4CAF50',
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderRadius: 28,
     gap: 8,
-    shadowColor: COLORS.primary,
+    shadowColor: '#4CAF50',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
     shadowRadius: 8,

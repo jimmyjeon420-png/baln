@@ -63,109 +63,122 @@ export async function analyzeMacroAndBitcoin(): Promise<MacroAnalysisResult> {
   const today = new Date();
   const dateStr = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`;
 
-  const prompt = `
-당신은 골드만삭스 수석 매크로 전략가입니다. 오늘(${dateStr}) 글로벌 시장 분석을 작성하세요.
+  const prompt = `당신은 baln(발른) 앱의 글로벌 매크로 전략 AI입니다.
+오늘(${dateStr}) 시장 상황을 한국 개인투자자에게 설명합니다.
 
-**[중요] Google Search로 반드시 실시간 데이터를 검색하세요:**
-1. "나스닥 종가 today", "S&P 500 today", "다우존스 today"
-2. "Trump tariff crypto news today"
-3. "Bitcoin whale alerts ETF inflows ${today.getMonth() + 1}월", "Bitcoin hash rate today"
-4. "Fed interest rate probability CME FedWatch"
-5. "VIX index today", "Global M2 liquidity"
-6. "Fed governor speech today", "CPI latest data", "PCE core inflation"
-7. "Treasury yield curve spread 10Y-2Y", "unemployment rate latest"
+[핵심 원칙]
+- "안심을 판다, 불안을 팔지 않는다" — 공포 표현 대신 맥락으로 이해를 돕는다.
+- 수치와 출처를 반드시 포함한다. 감정적 표현(급락, 폭등, 공포, 패닉)을 지양하고 사실 기반으로 서술한다.
+- 한국어로 자연스럽게 작성한다.
 
-**출력 형식 (JSON만, 마크다운 금지):**
+[Google Search 검색 키워드]
+1. "S&P 500 today", "NASDAQ today", "Dow Jones today"
+2. "VIX index today", "CME FedWatch tool"
+3. "Bitcoin price today", "Bitcoin ETF inflows", "Bitcoin hash rate"
+4. "Fed interest rate decision", "CPI latest", "PCE core inflation latest"
+5. "Treasury yield curve 10Y-2Y spread", "unemployment rate US latest"
+6. "Global M2 money supply"
+
+[응답 형식 — 반드시 아래 JSON 구조만 출력하세요. 설명문, 마크다운, 코드블록 금지.]
 {
   "macroSummary": {
-    "title": "오늘의 글로벌 시장 핵심",
+    "title": "오늘의 시장 핵심 한 줄 (15자 이내)",
     "highlights": [
-      "[검색결과] 구체적 이슈 1 (수치 포함)",
-      "[검색결과] 구체적 이슈 2",
-      "[검색결과] 구체적 이슈 3"
+      "구체적 이슈 1 — 수치와 출처 포함",
+      "구체적 이슈 2 — 수치와 출처 포함",
+      "구체적 이슈 3 — 수치와 출처 포함"
     ],
-    "interestRateProbability": "동결 65% / 인하 30% / 인상 5%",
-    "marketSentiment": "BULLISH" | "BEARISH" | "NEUTRAL"
+    "interestRateProbability": "동결 ??% / 인하 ??% / 인상 ??%",
+    "marketSentiment": "BULLISH 또는 BEARISH 또는 NEUTRAL 중 하나"
   },
   "bitcoinAnalysis": {
-    "score": 0-100,
-    "whaleAlerts": ["고래 동향 1", "고래 동향 2"],
-    "etfInflows": "BTC ETF 순유입/유출 정보",
-    "politicsImpact": "트럼프/규제 뉴스 영향",
-    "priceTarget": "단기 목표가 범위",
-    "hashRate": "해시레이트 수치 및 추세 설명",
+    "score": 50,
+    "whaleAlerts": ["고래 동향 요약 1", "고래 동향 요약 2"],
+    "etfInflows": "BTC ETF 순유입/유출 요약",
+    "politicsImpact": "규제/정치 뉴스 요약",
+    "priceTarget": "단기 예상 가격대",
+    "hashRate": "해시레이트 현황",
     "subScores": {
-      "vixFear": 0-100,
-      "hashRateHealth": 0-100,
-      "whaleActivity": 0-100,
-      "etfFlows": 0-100,
-      "macroEnvironment": 0-100
+      "vixFear": 50,
+      "hashRateHealth": 50,
+      "whaleActivity": 50,
+      "etfFlows": 50,
+      "macroEnvironment": 50
     }
   },
   "cfoWeather": {
-    "emoji": "☀️ 또는 ⛅ 또는 🌧️ 또는 ⛈️",
-    "status": "맑음: 시장 긍정적",
-    "message": "오늘의 핵심 한 마디"
+    "emoji": "☀️ 또는 ⛅ 또는 🌧️ 또는 ⛈️ 중 하나",
+    "status": "맑음: 시장 안정 등 간결한 상태",
+    "message": "투자자에게 전하는 한 마디 (안심 톤)"
   },
   "vixLevel": 15.5,
-  "globalLiquidity": "M2 증감 설명 (한글)",
+  "globalLiquidity": "글로벌 M2 유동성 현황 요약 (한국어 1~2문장)",
   "rateCycleEvidence": {
     "keyEvidence": [
-      {
-        "headline": "Fed 파월 의장, 추가 인하 신중론 재확인",
-        "source": "Reuters",
-        "date": "${dateStr}",
-        "stance": "hawkish",
-        "impact": "high"
-      },
-      {
-        "headline": "1월 CPI 3.0% — 시장 예상 상회",
-        "source": "Bloomberg",
-        "date": "${dateStr}",
-        "stance": "hawkish",
-        "impact": "high"
-      },
-      {
-        "headline": "고용시장 둔화 조짐, 실업수당 청구 증가",
-        "source": "CNBC",
-        "date": "${dateStr}",
-        "stance": "dovish",
-        "impact": "medium"
-      }
+      {"headline": "뉴스 제목", "source": "출처", "date": "${dateStr}", "stance": "hawkish 또는 dovish 또는 neutral", "impact": "high 또는 medium 또는 low"},
+      {"headline": "뉴스 제목", "source": "출처", "date": "${dateStr}", "stance": "dovish", "impact": "medium"}
     ],
     "economicIndicators": {
-      "fedRate": { "name": "Fed 기준금리", "value": "현재 값", "previous": "이전 값", "trend": "stable", "nextRelease": "다음 FOMC 날짜" },
-      "cpi": { "name": "CPI (전년 대비)", "value": "현재 값", "previous": "이전 값", "trend": "rising 또는 falling 또는 stable" },
-      "unemployment": { "name": "실업률", "value": "현재 값", "previous": "이전 값", "trend": "rising 또는 falling 또는 stable" },
-      "yieldCurveSpread": { "name": "10Y-2Y 스프레드", "value": "현재 값 (bp)", "previous": "이전 값", "trend": "rising 또는 falling 또는 stable" },
-      "pceCore": { "name": "PCE 코어", "value": "현재 값", "previous": "이전 값", "trend": "rising 또는 falling 또는 stable" }
+      "fedRate": {"name": "Fed 기준금리", "value": "현재값", "previous": "이전값", "trend": "stable 또는 rising 또는 falling", "nextRelease": "다음 FOMC 날짜"},
+      "cpi": {"name": "CPI (전년 대비)", "value": "현재값", "previous": "이전값", "trend": "stable"},
+      "unemployment": {"name": "실업률", "value": "현재값", "previous": "이전값", "trend": "stable"},
+      "yieldCurveSpread": {"name": "10Y-2Y 스프레드", "value": "현재값(bp)", "previous": "이전값", "trend": "stable"},
+      "pceCore": {"name": "PCE 코어", "value": "현재값", "previous": "이전값", "trend": "stable"}
     },
     "expertPerspectives": {
       "ratio": 55,
-      "hawkishArgs": ["인플레이션이 목표치 2%에 도달하지 못함", "고용시장 여전히 견고"],
-      "dovishArgs": ["경기 둔화 신호 확산", "글로벌 수요 위축"],
-      "hawkishFigures": ["크리스토퍼 월러 (Fed 이사)", "닐 카시카리 (미니애폴리스 연은 총재)"],
-      "dovishFigures": ["오스탄 굴스비 (시카고 연은 총재)", "라파엘 보스틱 (애틀랜타 연은 총재)"]
+      "hawkishArgs": ["매파적 근거 1", "매파적 근거 2"],
+      "dovishArgs": ["비둘기파 근거 1", "비둘기파 근거 2"],
+      "hawkishFigures": ["인물명 (직함)"],
+      "dovishFigures": ["인물명 (직함)"]
     },
     "confidenceFactors": {
-      "overall": 72,
+      "overall": 70,
       "factors": [
-        { "factor": "CME FedWatch 금리 동결 확률 80%+", "type": "supporting", "weight": "strong" },
-        { "factor": "CPI 하락 추세 유지", "type": "supporting", "weight": "medium" },
-        { "factor": "관세 정책 불확실성", "type": "opposing", "weight": "medium" },
-        { "factor": "고용 지표 혼조", "type": "opposing", "weight": "weak" }
+        {"factor": "근거 설명", "type": "supporting 또는 opposing", "weight": "strong 또는 medium 또는 weak"}
       ]
     },
     "generatedAt": "${today.toISOString()}"
   }
 }
+
+[예시 — highlights 작성법]
+- "S&P 500 +0.3% 마감(5,230pt) — 고용지표 호조에 매수세 유입 (Bloomberg)"
+- "VIX 14.2로 안정권 유지 — 투자자 심리 개선 지속 (CBOE)"
+- "BTC ETF 순유입 $120M — 기관 매수세 이틀째 지속 (CoinDesk)"
 `;
 
   try {
     console.log('[Task A] 거시경제 & 비트코인 분석 시작...');
-    const responseText = await callGeminiWithSearch(prompt);
-    const cleanJson = cleanJsonResponse(responseText);
-    const parsed = JSON.parse(cleanJson);
+    let parsed: Record<string, unknown>;
+    try {
+      const responseText = await callGeminiWithSearch(prompt);
+      const cleanJson = cleanJsonResponse(responseText);
+      parsed = JSON.parse(cleanJson);
+    } catch (parseErr) {
+      console.error('[Task A] Gemini 응답 파싱 실패 — 기본값 사용:', parseErr);
+      parsed = {
+        macroSummary: {
+          title: '시장 데이터 수집 중',
+          highlights: ['최신 시장 데이터를 불러오지 못했습니다. 잠시 후 다시 확인해주세요.'],
+          interestRateProbability: '데이터 없음',
+          marketSentiment: 'NEUTRAL',
+        },
+        bitcoinAnalysis: {
+          score: 50,
+          whaleAlerts: [],
+          etfInflows: '데이터 없음',
+          politicsImpact: '데이터 없음',
+          priceTarget: '데이터 없음',
+          hashRate: '데이터 없음',
+          subScores: { vixFear: 50, hashRateHealth: 50, whaleActivity: 50, etfFlows: 50, macroEnvironment: 50 },
+        },
+        cfoWeather: { emoji: '⛅', status: '데이터 수집 중', message: '시장 분석이 잠시 후 업데이트됩니다.' },
+        vixLevel: null,
+        globalLiquidity: '데이터를 불러오지 못했습니다.',
+        rateCycleEvidence: null,
+      };
+    }
 
     // 금리 사이클 증거 파싱 (실패 시 null — 기존 데이터에 영향 없음)
     let rateCycleEvidence: Record<string, unknown> | null = null;

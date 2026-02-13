@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Svg, { Circle, Text as SvgText } from 'react-native-svg';
-import { COLORS, SIZES } from '../../styles/theme';
+import { SIZES } from '../../styles/theme';
+import { useTheme } from '../../hooks/useTheme';
 
 // ============================================================================
 // 타입 정의
@@ -57,6 +58,8 @@ const CENTER = SIZE / 2;
 // ============================================================================
 
 const AssetDonutCard = ({ slices, totalAssets }: AssetDonutCardProps) => {
+  const { colors } = useTheme();
+
   // 데이터 없으면 렌더링 안 함
   if (slices.length === 0) return null;
 
@@ -64,10 +67,10 @@ const AssetDonutCard = ({ slices, totalAssets }: AssetDonutCardProps) => {
   let cumulativePercent = 0;
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: colors.surface }]}>
       {/* 헤더 */}
-      <Text style={styles.title}>자산 배분</Text>
-      <Text style={styles.subtitle}>Asset Allocation</Text>
+      <Text style={[styles.title, { color: colors.textPrimary }]}>자산 배분</Text>
+      <Text style={[styles.subtitle, { color: colors.textTertiary }]}>Asset Allocation</Text>
 
       {/* SVG 도넛 */}
       <View style={styles.chartContainer}>
@@ -77,7 +80,7 @@ const AssetDonutCard = ({ slices, totalAssets }: AssetDonutCardProps) => {
             cx={CENTER}
             cy={CENTER}
             r={RADIUS}
-            stroke={COLORS.surfaceLight}
+            stroke={colors.surfaceLight}
             strokeWidth={STROKE_WIDTH}
             fill="none"
           />
@@ -110,7 +113,7 @@ const AssetDonutCard = ({ slices, totalAssets }: AssetDonutCardProps) => {
             x={CENTER}
             y={CENTER - 6}
             textAnchor="middle"
-            fill={COLORS.textPrimary}
+            fill={colors.textPrimary}
             fontSize="16"
             fontWeight="700"
           >
@@ -120,7 +123,7 @@ const AssetDonutCard = ({ slices, totalAssets }: AssetDonutCardProps) => {
             x={CENTER}
             y={CENTER + 12}
             textAnchor="middle"
-            fill={COLORS.textSecondary}
+            fill={colors.textSecondary}
             fontSize="11"
           >
             총 자산
@@ -133,8 +136,8 @@ const AssetDonutCard = ({ slices, totalAssets }: AssetDonutCardProps) => {
         {slices.map((slice) => (
           <View key={slice.category} style={styles.legendItem}>
             <View style={[styles.legendDot, { backgroundColor: slice.color }]} />
-            <Text style={styles.legendLabel}>{slice.label}</Text>
-            <Text style={styles.legendPercent}>{slice.percent.toFixed(0)}%</Text>
+            <Text style={[styles.legendLabel, { color: colors.textSecondary }]}>{slice.label}</Text>
+            <Text style={[styles.legendPercent, { color: colors.textPrimary }]}>{slice.percent.toFixed(0)}%</Text>
           </View>
         ))}
       </View>
@@ -167,7 +170,6 @@ export default React.memo(AssetDonutCard, (prev, next) => {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: COLORS.surface,
     borderRadius: SIZES.rXl,
     padding: SIZES.xl,
     marginBottom: SIZES.lg,
@@ -175,11 +177,9 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 16,
     fontWeight: '700',
-    color: COLORS.textPrimary,
   },
   subtitle: {
     fontSize: 11,
-    color: COLORS.textTertiary,
     marginTop: 2,
   },
   chartContainer: {
@@ -204,11 +204,9 @@ const styles = StyleSheet.create({
   },
   legendLabel: {
     fontSize: 13,
-    color: COLORS.textSecondary,
   },
   legendPercent: {
     fontSize: 13,
     fontWeight: '700',
-    color: COLORS.textPrimary,
   },
 });

@@ -157,24 +157,25 @@ export default function WhatIfScreen() {
         {/* 헤더 */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7}>
-            <Ionicons name="arrow-back" size={22} color="#FFF" />
+            <Ionicons name="arrow-back" size={22} color={colors.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>What-If 시뮬레이터</Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>What-If 시뮬레이터</Text>
           <View style={{ width: 22 }} />
         </View>
 
-        <Text style={styles.subtitle}>
+        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
           "만약 ~하면?" 포트폴리오 영향을 AI가 분석합니다
         </Text>
 
         {/* 시나리오 프리셋 */}
-        <Text style={styles.sectionLabel}>시나리오 선택</Text>
+        <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>시나리오 선택</Text>
         <View style={styles.scenarioList}>
           {SCENARIO_PRESETS.map(preset => (
             <TouchableOpacity
               key={preset.id}
               style={[
                 styles.scenarioCard,
+                { backgroundColor: colors.surface, borderColor: colors.border },
                 selectedScenario === preset.id && {
                   borderColor: preset.color,
                   backgroundColor: preset.color + '10',
@@ -187,8 +188,8 @@ export default function WhatIfScreen() {
               activeOpacity={0.7}
             >
               <Ionicons name={preset.icon} size={24} color={preset.color} />
-              <Text style={styles.scenarioLabel}>{preset.label}</Text>
-              <Text style={styles.scenarioDesc}>{preset.description}</Text>
+              <Text style={[styles.scenarioLabel, { color: colors.textPrimary }]}>{preset.label}</Text>
+              <Text style={[styles.scenarioDesc, { color: colors.textSecondary }]}>{preset.description}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -196,11 +197,11 @@ export default function WhatIfScreen() {
         {/* 자유 시나리오 입력 */}
         {selectedScenario === 'custom' && (
           <TextInput
-            style={styles.customInput}
+            style={[styles.customInput, { backgroundColor: colors.surface, color: colors.textPrimary, borderColor: colors.borderStrong }]}
             value={customDescription}
             onChangeText={setCustomDescription}
             placeholder="시나리오를 자유롭게 입력하세요..."
-            placeholderTextColor="#555"
+            placeholderTextColor={colors.textQuaternary}
             multiline
             numberOfLines={3}
           />
@@ -237,7 +238,7 @@ export default function WhatIfScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#121212' },
+  container: { flex: 1 },
   scrollContent: { padding: 16, paddingBottom: 40 },
   header: {
     flexDirection: 'row',
@@ -245,28 +246,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 4,
   },
-  headerTitle: { color: '#FFF', fontSize: 18, fontWeight: '700' },
-  subtitle: { color: '#888', fontSize: 13, textAlign: 'center', marginBottom: 20 },
-  sectionLabel: { color: '#FFF', fontSize: 14, fontWeight: '700', marginBottom: 10 },
+  headerTitle: { fontSize: 18, fontWeight: '700' },
+  subtitle: { fontSize: 13, textAlign: 'center', marginBottom: 20 },
+  sectionLabel: { fontSize: 14, fontWeight: '700', marginBottom: 10 },
   scenarioList: { gap: 8, marginBottom: 16 },
   scenarioCard: {
-    backgroundColor: '#1E1E1E',
     borderRadius: 14,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#2A2A2A',
     gap: 4,
   },
-  scenarioLabel: { color: '#FFF', fontSize: 15, fontWeight: '700' },
-  scenarioDesc: { color: '#888', fontSize: 12 },
+  scenarioLabel: { fontSize: 15, fontWeight: '700' },
+  scenarioDesc: { fontSize: 12 },
   customInput: {
-    backgroundColor: '#1E1E1E',
     borderRadius: 12,
     padding: 14,
-    color: '#FFF',
     fontSize: 14,
     borderWidth: 1,
-    borderColor: '#333',
     minHeight: 80,
     textAlignVertical: 'top',
     marginBottom: 16,

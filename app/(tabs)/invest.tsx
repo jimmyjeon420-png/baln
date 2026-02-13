@@ -7,18 +7,19 @@ import {
   View,
   ScrollView,
   Text,
-  SafeAreaView,
   StyleSheet,
   ActivityIndicator,
   FlatList,
   TouchableOpacity,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import supabase, { getCurrentUser } from '../../src/services/supabase';
 import { Asset, AssetType } from '../../src/types/asset';
 import { transformDbRowToAsset } from '../../src/utils/assetTransform';
-import { COLORS, SIZES, SHADOWS, TYPOGRAPHY } from '../../src/styles/theme';
+import { SIZES, SHADOWS, TYPOGRAPHY } from '../../src/styles/theme';
+import { useTheme } from '../../src/hooks/useTheme';
 
 interface AssetWithPerformance {
   id: string;
@@ -32,6 +33,7 @@ interface AssetWithPerformance {
 
 export default function InvestScreen() {
   const router = useRouter();
+  const { colors: COLORS } = useTheme();
   const [assets, setAssets] = useState<Asset[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -122,7 +124,7 @@ export default function InvestScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]}>
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={COLORS.primary} />
         </View>
@@ -131,7 +133,7 @@ export default function InvestScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         {/* 헤더 */}
         <View style={styles.header}>
@@ -160,7 +162,7 @@ export default function InvestScreen() {
                   {totalGain >= 0 ? '+' : ''}{(totalGain / 10000000).toFixed(2)}억 원
                 </Text>
               </View>
-              <View style={styles.divider} />
+              <View style={[styles.divider, { backgroundColor: COLORS.border }]} />
               <View>
                 <Text style={[TYPOGRAPHY.bodySmall, { color: COLORS.textSecondary }]}>
                   수익률
@@ -283,7 +285,7 @@ export default function InvestScreen() {
         </View>
 
         {/* 설명 */}
-        <View style={[styles.infoBox, { backgroundColor: COLORS.surfaceLight }]}>
+        <View style={[styles.infoBox, { backgroundColor: COLORS.surfaceLight, borderLeftColor: COLORS.primary }]}>
           <Text style={[TYPOGRAPHY.labelSmall, { color: COLORS.textPrimary, marginBottom: SIZES.sm }]}>
             📊 수익률 계산
           </Text>
@@ -312,7 +314,6 @@ export default function InvestScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   scrollContent: {
     paddingHorizontal: SIZES.lg,
@@ -340,7 +341,6 @@ const styles = StyleSheet.create({
   },
   divider: {
     width: 1,
-    backgroundColor: COLORS.border,
     marginHorizontal: SIZES.lg,
     height: 50,
   },
@@ -390,7 +390,6 @@ const styles = StyleSheet.create({
     borderRadius: SIZES.rMd,
     padding: SIZES.lg,
     borderLeftWidth: 4,
-    borderLeftColor: COLORS.primary,
   },
   fab: {
     position: 'absolute',

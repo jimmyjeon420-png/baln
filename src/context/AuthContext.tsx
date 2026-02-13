@@ -4,6 +4,7 @@ import { Platform, Alert } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
 import * as Crypto from 'expo-crypto';
+import * as Sentry from '@sentry/react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import supabase from '../services/supabase';
 import queryClient from '../services/queryClient';
@@ -126,6 +127,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (isAuthError) {
           console.warn('[AuthContext] 세션 토큰 만료/손상 감지 → 세션 초기화');
+          Sentry.captureMessage('세션 토큰 만료/손상 감지', {
+            level: 'warning',
+            tags: { service: 'auth', type: 'session_invalid' },
+            extra: { errorMessage: msg },
+          });
 
           // 먼저 토큰 갱신 시도 (refresh token이 유효할 수 있음)
           // ★ 10초 타임아웃 추가 — 네트워크 느릴 때 무한 대기 방지
@@ -245,12 +251,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const provider = currentSession.user.app_metadata?.provider as OAuthProvider | 'email' || 'email';
           await syncUserProfile(currentSession.user, provider);
 
+          // Sentry 사용자 컨텍스트 설정 (이메일은 개인정보이므로 ID만 전달)
+          Sentry.setUser({ id: currentSession.user.id });
+
           // 이전 세션의 오래된 캐시 데이터 무효화 → 새로운 사용자 데이터로 갱신
           queryClient.invalidateQueries();
         }
 
         // 로그아웃 시 캐시 정리 (signOut 함수가 아닌 외부 요인으로 로그아웃된 경우 대비)
         if (event === 'SIGNED_OUT') {
+          Sentry.setUser(null); // Sentry 사용자 컨텍스트 초기화
           queryClient.clear();
         }
 
@@ -449,6 +459,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error: any) {
       console.error(`${provider} 로그인 실패:`, error);
+      Sentry.captureException(error, {
+        tags: { service: 'auth', provider },
+      });
       throw error;
     }
   };
@@ -524,6 +537,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error('앱을 최신 버전으로 업데이트해주세요');
       }
       console.error('Apple 로그인 실패:', error);
+      Sentry.captureException(error, {
+        tags: { service: 'auth', provider: 'apple' },
+      });
       throw error;
     }
   };

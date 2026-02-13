@@ -14,7 +14,7 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '../../src/context/AuthContext';
 import { useAchievementCount } from '../../src/hooks/useAchievements';
 import { useScreenTracking } from '../../src/hooks/useAnalytics';
-import { COLORS, SIZES } from '../../src/styles/theme';
+import { SIZES } from '../../src/styles/theme';
 import RealEstatePreview from '../../src/components/more/RealEstatePreview';
 import { useTheme, ThemeMode } from '../../src/hooks/useTheme';
 import { CreditDisplay } from '../../src/components/common/CreditDisplay';
@@ -104,14 +104,14 @@ export default function ProfileScreen() {
           label: '성취 & 감정 기록',
           onPress: () => router.push('/achievements'),
           badge: unlockedCount > 0 ? `${unlockedCount}/${totalCount}` : undefined,
-          badgeColor: COLORS.primary,
+          badgeColor: '#4CAF50',
         },
         {
           icon: 'gift-outline',
           label: '친구 초대',
           onPress: () => router.push('/settings/referral'),
           badge: '20C',
-          badgeColor: COLORS.primary,
+          badgeColor: '#4CAF50',
         },
       ],
     },
@@ -135,7 +135,7 @@ export default function ProfileScreen() {
           label: '오늘의 퀴즈',
           onPress: () => router.push('/settings/daily-quiz'),
           badge: 'NEW',
-          badgeColor: COLORS.primary,
+          badgeColor: '#4CAF50',
         },
       ],
     },

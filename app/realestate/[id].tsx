@@ -34,7 +34,7 @@ import { useRealEstatePrice } from '../../src/hooks/useRealEstate';
 import { formatPrice } from '../../src/services/realEstateApi';
 import { sqmToPyeong } from '../../src/types/realestate';
 import type { AreaPriceSummary } from '../../src/types/realestate';
-import { COLORS } from '../../src/styles/theme';
+import { useTheme } from '../../src/hooks/useTheme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // 메모 저장용 AsyncStorage 키
@@ -44,6 +44,7 @@ export default function RealEstateDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { colors } = useTheme();
 
   // 메모 상태
   const [memo, setMemo] = useState('');
@@ -200,9 +201,9 @@ export default function RealEstateDetailScreen() {
   // 로딩
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       </SafeAreaView>
     );
@@ -211,17 +212,17 @@ export default function RealEstateDetailScreen() {
   // 자산 없음
   if (!asset) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
           <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons name="chevron-back" size={28} color={COLORS.primary} />
+            <Ionicons name="chevron-back" size={28} color={colors.primary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>부동산 상세</Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>부동산 상세</Text>
           <View style={{ width: 28 }} />
         </View>
         <View style={styles.loadingContainer}>
-          <Ionicons name="alert-circle-outline" size={48} color="#666" />
-          <Text style={styles.emptyText}>자산을 찾을 수 없습니다</Text>
+          <Ionicons name="alert-circle-outline" size={48} color={colors.textTertiary} />
+          <Text style={[styles.emptyText, { color: colors.textTertiary }]}>자산을 찾을 수 없습니다</Text>
         </View>
       </SafeAreaView>
     );
@@ -232,13 +233,13 @@ export default function RealEstateDetailScreen() {
   const area = asset.unit_area || 0;
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* 헤더 */}
-      <View style={styles.header}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={28} color={COLORS.primary} />
+          <Ionicons name="chevron-back" size={28} color={colors.primary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>부동산 상세</Text>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>부동산 상세</Text>
         <View style={{ width: 28 }} />
       </View>
 
@@ -246,28 +247,28 @@ export default function RealEstateDetailScreen() {
         style={styles.content}
         contentContainerStyle={{ paddingBottom: 40 }}
       >
-        {/* ── 헤더 카드: 단지명 + 면적 ── */}
-        <View style={styles.heroCard}>
+        {/* 헤더 카드: 단지명 + 면적 */}
+        <View style={[styles.heroCard, { backgroundColor: colors.surface }]}>
           <View style={styles.heroIcon}>
-            <Ionicons name="business" size={32} color={COLORS.primary} />
+            <Ionicons name="business" size={32} color={colors.primary} />
           </View>
-          <Text style={styles.heroName}>
+          <Text style={[styles.heroName, { color: colors.textPrimary }]}>
             {asset.complex_name || asset.name || '부동산'}
           </Text>
           {area > 0 && (
-            <Text style={styles.heroArea}>
+            <Text style={[styles.heroArea, { color: colors.textSecondary }]}>
               전용 {Math.round(area)}㎡ ({Math.round(sqmToPyeong(area))}평)
             </Text>
           )}
           {asset.unit_detail && (
-            <Text style={styles.heroDetail}>{asset.unit_detail}</Text>
+            <Text style={[styles.heroDetail, { color: colors.textTertiary }]}>{asset.unit_detail}</Text>
           )}
         </View>
 
-        {/* ── 현재 시세 ── */}
-        <View style={styles.priceCard}>
-          <Text style={styles.priceLabel}>현재 시세</Text>
-          <Text style={styles.priceValue}>
+        {/* 현재 시세 */}
+        <View style={[styles.priceCard, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.priceLabel, { color: colors.textSecondary }]}>현재 시세</Text>
+          <Text style={[styles.priceValue, { color: colors.primary }]}>
             {formatPrice(asset.current_price || asset.current_value || 0)}
           </Text>
 
@@ -276,11 +277,11 @@ export default function RealEstateDetailScreen() {
               <Ionicons
                 name={changeInfo.isPositive ? 'arrow-up' : 'arrow-down'}
                 size={16}
-                color={changeInfo.isPositive ? COLORS.primary : COLORS.error}
+                color={changeInfo.isPositive ? colors.primary : colors.error}
               />
               <Text style={[
                 styles.changeText,
-                { color: changeInfo.isPositive ? COLORS.primary : COLORS.error },
+                { color: changeInfo.isPositive ? colors.primary : colors.error },
               ]}>
                 {changeInfo.changeRate} (매입가 대비)
               </Text>
@@ -289,56 +290,56 @@ export default function RealEstateDetailScreen() {
 
           {/* 매입가 */}
           {(asset.avg_price || asset.purchase_price_krw) ? (
-            <View style={styles.purchaseRow}>
-              <Text style={styles.purchaseLabel}>매입가</Text>
-              <Text style={styles.purchaseValue}>
+            <View style={[styles.purchaseRow, { borderTopColor: colors.surfaceLight }]}>
+              <Text style={[styles.purchaseLabel, { color: colors.textSecondary }]}>매입가</Text>
+              <Text style={[styles.purchaseValue, { color: colors.textPrimary }]}>
                 {formatPrice(asset.avg_price || asset.purchase_price_krw || 0)}
               </Text>
             </View>
           ) : null}
         </View>
 
-        {/* ── 실거래 히스토리 ── */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>최근 실거래 내역</Text>
+        {/* 실거래 히스토리 */}
+        <View style={[styles.sectionCard, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>최근 실거래 내역</Text>
           {priceLoading ? (
-            <ActivityIndicator color={COLORS.primary} style={{ marginVertical: 16 }} />
+            <ActivityIndicator color={colors.primary} style={{ marginVertical: 16 }} />
           ) : transactions.length > 0 ? (
             transactions.map((tx: any, idx: number) => (
               <View
                 key={idx}
                 style={[
                   styles.txRow,
-                  idx < transactions.length - 1 && styles.txRowBorder,
+                  idx < transactions.length - 1 && [styles.txRowBorder, { borderBottomColor: colors.surfaceLight }],
                 ]}
               >
-                <Text style={styles.txDate}>{tx.dealDate}</Text>
-                <Text style={styles.txFloor}>{tx.floor}층</Text>
-                <Text style={styles.txArea}>{Math.round(tx.area)}㎡</Text>
-                <Text style={styles.txPrice}>
+                <Text style={[styles.txDate, { color: colors.textTertiary }]}>{tx.dealDate}</Text>
+                <Text style={[styles.txFloor, { color: colors.textSecondary }]}>{tx.floor}층</Text>
+                <Text style={[styles.txArea, { color: colors.textSecondary }]}>{Math.round(tx.area)}㎡</Text>
+                <Text style={[styles.txPrice, { color: colors.textPrimary }]}>
                   {formatPrice(tx.dealAmountMan * 10000)}
                 </Text>
               </View>
             ))
           ) : (
-            <Text style={styles.noDataText}>
+            <Text style={[styles.noDataText, { color: colors.textTertiary }]}>
               해당 면적의 최근 거래 내역이 없습니다
             </Text>
           )}
         </View>
 
-        {/* ── 메모 ── */}
-        <View style={styles.sectionCard}>
+        {/* 메모 */}
+        <View style={[styles.sectionCard, { backgroundColor: colors.surface }]}>
           <View style={styles.memoHeader}>
-            <Text style={styles.sectionTitle}>메모</Text>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>메모</Text>
             {memoSaved && (
-              <Text style={styles.savedBadge}>저장됨</Text>
+              <Text style={[styles.savedBadge, { color: colors.primary, backgroundColor: colors.primary + '20' }]}>저장됨</Text>
             )}
           </View>
           <TextInput
-            style={styles.memoInput}
+            style={[styles.memoInput, { backgroundColor: colors.surfaceLight, color: colors.textPrimary }]}
             placeholder="메모를 입력하세요 (예: 전세 만기 2027.03, 리모델링 예정)"
-            placeholderTextColor="#666"
+            placeholderTextColor={colors.textTertiary}
             value={memo}
             onChangeText={setMemo}
             multiline
@@ -346,25 +347,25 @@ export default function RealEstateDetailScreen() {
             textAlignVertical="top"
           />
           <TouchableOpacity
-            style={styles.memoSaveBtn}
+            style={[styles.memoSaveBtn, { backgroundColor: colors.primary + '15' }]}
             onPress={handleSaveMemo}
           >
-            <Ionicons name="save-outline" size={16} color={COLORS.primary} />
-            <Text style={styles.memoSaveBtnText}>메모 저장</Text>
+            <Ionicons name="save-outline" size={16} color={colors.primary} />
+            <Text style={[styles.memoSaveBtnText, { color: colors.primary }]}>메모 저장</Text>
           </TouchableOpacity>
         </View>
 
-        {/* ── 시세 수정 모드 ── */}
+        {/* 시세 수정 모드 */}
         {editMode && (
-          <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>시세 수정</Text>
-            <Text style={styles.editHint}>
+          <View style={[styles.sectionCard, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>시세 수정</Text>
+            <Text style={[styles.editHint, { color: colors.textTertiary }]}>
               만원 단위로 입력하세요 (예: 150000 = 15억)
             </Text>
             <TextInput
-              style={styles.editInput}
+              style={[styles.editInput, { backgroundColor: colors.surfaceLight, color: colors.textPrimary, borderColor: colors.primary + '40' }]}
               placeholder="시세 (만원)"
-              placeholderTextColor="#666"
+              placeholderTextColor={colors.textTertiary}
               keyboardType="numeric"
               value={editPrice}
               onChangeText={setEditPrice}
@@ -372,13 +373,13 @@ export default function RealEstateDetailScreen() {
             />
             <View style={styles.editActions}>
               <TouchableOpacity
-                style={styles.editCancelBtn}
+                style={[styles.editCancelBtn, { backgroundColor: colors.surfaceLight }]}
                 onPress={() => setEditMode(false)}
               >
-                <Text style={styles.editCancelText}>취소</Text>
+                <Text style={[styles.editCancelText, { color: colors.textPrimary }]}>취소</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={styles.editSaveBtn}
+                style={[styles.editSaveBtn, { backgroundColor: colors.primary }]}
                 onPress={handleUpdatePrice}
                 disabled={updatePriceMutation.isPending}
               >
@@ -392,39 +393,39 @@ export default function RealEstateDetailScreen() {
           </View>
         )}
 
-        {/* ── 액션 버튼 ── */}
+        {/* 액션 버튼 */}
         <View style={styles.actionRow}>
           <TouchableOpacity
-            style={styles.editBtn}
+            style={[styles.editBtn, { backgroundColor: colors.surface, borderColor: colors.primary + '40' }]}
             onPress={() => {
               setEditPrice('');
               setEditMode(true);
             }}
           >
-            <Ionicons name="create-outline" size={20} color={COLORS.primary} />
-            <Text style={styles.editBtnText}>시세 수정</Text>
+            <Ionicons name="create-outline" size={20} color={colors.primary} />
+            <Text style={[styles.editBtnText, { color: colors.primary }]}>시세 수정</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.deleteBtn}
+            style={[styles.deleteBtn, { backgroundColor: colors.surface, borderColor: colors.error + '40' }]}
             onPress={handleDelete}
             disabled={deleteMutation.isPending}
           >
             {deleteMutation.isPending ? (
-              <ActivityIndicator size="small" color={COLORS.error} />
+              <ActivityIndicator size="small" color={colors.error} />
             ) : (
               <>
-                <Ionicons name="trash-outline" size={20} color={COLORS.error} />
-                <Text style={styles.deleteBtnText}>삭제</Text>
+                <Ionicons name="trash-outline" size={20} color={colors.error} />
+                <Text style={[styles.deleteBtnText, { color: colors.error }]}>삭제</Text>
               </>
             )}
           </TouchableOpacity>
         </View>
 
         {/* 면책 문구 */}
-        <View style={styles.disclaimerBox}>
-          <Ionicons name="information-circle" size={14} color="#666" />
-          <Text style={styles.disclaimerText}>
+        <View style={[styles.disclaimerBox, { backgroundColor: colors.surfaceLight }]}>
+          <Ionicons name="information-circle" size={14} color={colors.textTertiary} />
+          <Text style={[styles.disclaimerText, { color: colors.textTertiary }]}>
             본 시세는 국토교통부 실거래가 데이터 기반 참고 자료이며, 실제 시장가와 차이가 있을 수 있습니다.
           </Text>
         </View>
@@ -436,7 +437,6 @@ export default function RealEstateDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   loadingContainer: {
     flex: 1,
@@ -446,7 +446,6 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 14,
-    color: '#888',
   },
   header: {
     flexDirection: 'row',
@@ -455,12 +454,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#2A2A2A',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: COLORS.textPrimary,
   },
   content: {
     flex: 1,
@@ -470,7 +467,6 @@ const styles = StyleSheet.create({
   // 히어로 카드
   heroCard: {
     alignItems: 'center',
-    backgroundColor: COLORS.surface,
     borderRadius: 16,
     padding: 24,
     marginTop: 16,
@@ -479,7 +475,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: '#1A2A1A',
+    backgroundColor: 'rgba(76, 175, 80, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
@@ -487,23 +483,19 @@ const styles = StyleSheet.create({
   heroName: {
     fontSize: 20,
     fontWeight: '700',
-    color: COLORS.textPrimary,
     textAlign: 'center',
   },
   heroArea: {
     fontSize: 14,
-    color: COLORS.textSecondary,
     marginTop: 4,
   },
   heroDetail: {
     fontSize: 13,
-    color: '#666',
     marginTop: 2,
   },
 
   // 시세 카드
   priceCard: {
-    backgroundColor: COLORS.surface,
     borderRadius: 16,
     padding: 20,
     marginTop: 12,
@@ -511,13 +503,11 @@ const styles = StyleSheet.create({
   },
   priceLabel: {
     fontSize: 13,
-    color: COLORS.textSecondary,
     marginBottom: 8,
   },
   priceValue: {
     fontSize: 28,
     fontWeight: '700',
-    color: COLORS.primary,
   },
   changeRow: {
     flexDirection: 'row',
@@ -536,23 +526,19 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#2A2A2A',
     width: '100%',
     justifyContent: 'space-between',
   },
   purchaseLabel: {
     fontSize: 13,
-    color: COLORS.textSecondary,
   },
   purchaseValue: {
     fontSize: 15,
     fontWeight: '600',
-    color: COLORS.textPrimary,
   },
 
   // 섹션 카드
   sectionCard: {
-    backgroundColor: COLORS.surface,
     borderRadius: 16,
     padding: 16,
     marginTop: 12,
@@ -560,7 +546,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: COLORS.textPrimary,
     marginBottom: 12,
   },
 
@@ -572,33 +557,27 @@ const styles = StyleSheet.create({
   },
   txRowBorder: {
     borderBottomWidth: 1,
-    borderBottomColor: '#2A2A2A',
   },
   txDate: {
     fontSize: 13,
-    color: '#888',
     width: 90,
   },
   txFloor: {
     fontSize: 13,
-    color: '#AAA',
     width: 40,
   },
   txArea: {
     fontSize: 13,
-    color: '#AAA',
     width: 50,
   },
   txPrice: {
     flex: 1,
     fontSize: 14,
     fontWeight: '600',
-    color: COLORS.textPrimary,
     textAlign: 'right',
   },
   noDataText: {
     fontSize: 13,
-    color: '#666',
     textAlign: 'center',
     paddingVertical: 16,
   },
@@ -612,18 +591,14 @@ const styles = StyleSheet.create({
   savedBadge: {
     fontSize: 11,
     fontWeight: '600',
-    color: COLORS.primary,
-    backgroundColor: COLORS.primary + '20',
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 6,
   },
   memoInput: {
-    backgroundColor: '#2A2A2A',
     borderRadius: 10,
     padding: 12,
     fontSize: 14,
-    color: COLORS.textPrimary,
     minHeight: 80,
     lineHeight: 20,
   },
@@ -635,29 +610,23 @@ const styles = StyleSheet.create({
     marginTop: 10,
     paddingVertical: 8,
     borderRadius: 8,
-    backgroundColor: COLORS.primary + '15',
   },
   memoSaveBtnText: {
     fontSize: 13,
     fontWeight: '600',
-    color: COLORS.primary,
   },
 
   // 수정 모드
   editHint: {
     fontSize: 12,
-    color: '#888',
     marginBottom: 8,
   },
   editInput: {
-    backgroundColor: '#2A2A2A',
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 16,
-    color: COLORS.textPrimary,
     borderWidth: 1,
-    borderColor: COLORS.primary + '40',
   },
   editActions: {
     flexDirection: 'row',
@@ -668,19 +637,16 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 12,
     borderRadius: 10,
-    backgroundColor: '#2A2A2A',
     alignItems: 'center',
   },
   editCancelText: {
     fontSize: 14,
     fontWeight: '600',
-    color: COLORS.textPrimary,
   },
   editSaveBtn: {
     flex: 1,
     paddingVertical: 12,
     borderRadius: 10,
-    backgroundColor: COLORS.primary,
     alignItems: 'center',
   },
   editSaveText: {
@@ -703,14 +669,11 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 14,
     borderRadius: 12,
-    backgroundColor: COLORS.surface,
     borderWidth: 1,
-    borderColor: COLORS.primary + '40',
   },
   editBtnText: {
     fontSize: 15,
     fontWeight: '600',
-    color: COLORS.primary,
   },
   deleteBtn: {
     flex: 1,
@@ -720,21 +683,17 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 14,
     borderRadius: 12,
-    backgroundColor: COLORS.surface,
     borderWidth: 1,
-    borderColor: COLORS.error + '40',
   },
   deleteBtnText: {
     fontSize: 15,
     fontWeight: '600',
-    color: COLORS.error,
   },
 
   // 면책
   disclaimerBox: {
     flexDirection: 'row',
     gap: 6,
-    backgroundColor: '#1A1A1A',
     borderRadius: 10,
     padding: 12,
     marginTop: 16,
@@ -742,7 +701,6 @@ const styles = StyleSheet.create({
   disclaimerText: {
     flex: 1,
     fontSize: 11,
-    color: '#666',
     lineHeight: 16,
   },
 });

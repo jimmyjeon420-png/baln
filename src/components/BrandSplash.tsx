@@ -75,7 +75,6 @@ export default function BrandSplash({ onFinish }: BrandSplashProps) {
 const styles = StyleSheet.create({
   container: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#121212',
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 9999,
@@ -87,7 +86,6 @@ const styles = StyleSheet.create({
   brandText: {
     fontSize: 36,
     fontWeight: '700',
-    color: '#FFFFFF',
     letterSpacing: 2,
   },
   dotText: {

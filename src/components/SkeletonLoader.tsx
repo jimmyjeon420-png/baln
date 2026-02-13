@@ -13,6 +13,7 @@ import Animated, {
   withTiming,
   Easing,
 } from 'react-native-reanimated';
+import { useTheme } from '../hooks/useTheme';
 
 interface SkeletonProps {
   width?: number | string;
@@ -23,6 +24,7 @@ interface SkeletonProps {
 
 /** 단일 스켈레톤 블록 (shimmer 효과 포함) */
 function SkeletonBlock({ width = '100%', height = 20, borderRadius = 8, style }: SkeletonProps) {
+  const { colors } = useTheme();
   const opacity = useSharedValue(0.3);
 
   useEffect(() => {
@@ -44,7 +46,7 @@ function SkeletonBlock({ width = '100%', height = 20, borderRadius = 8, style }:
           width: width as any,
           height,
           borderRadius,
-          backgroundColor: '#2A2A2A',
+          backgroundColor: colors.surfaceElevated,
         },
         animatedStyle,
         style,
@@ -270,7 +272,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cardSkeleton: {
-    backgroundColor: '#1E1E1E',
     borderRadius: 16,
     padding: 20,
   },
@@ -282,7 +283,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: '#2A2A2A',
+    backgroundColor: 'rgba(255,255,255,0.05)',
     marginVertical: 12,
   },
 });

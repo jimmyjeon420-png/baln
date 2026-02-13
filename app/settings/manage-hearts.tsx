@@ -16,10 +16,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { HeaderBar } from '../../src/components/common/HeaderBar';
 import { useHeartAssets } from '../../src/hooks/useHeartAssets';
-import { COLORS } from '../../src/styles/theme';
+import { useTheme } from '../../src/hooks/useTheme';
 
 export default function ManageHeartsScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   const { heartAssets, removeHeartAsset, updateHeartAsset, isLoading } = useHeartAssets();
 
   const handleDelete = (ticker: string, name: string) => {
@@ -63,21 +64,21 @@ export default function ManageHeartsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <HeaderBar title="Heart 자산 관리" />
 
       {/* 목록 */}
       {isLoading ? (
-        <Text style={styles.emptyText}>로딩 중...</Text>
+        <Text style={[styles.emptyText, { color: colors.textSecondary }]}>로딩 중...</Text>
       ) : heartAssets.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyEmoji}>❤️</Text>
-          <Text style={styles.emptyText}>Heart한 자산이 없습니다</Text>
+          <Text style={[styles.emptyText, { color: colors.textSecondary }]}>Heart한 자산이 없습니다</Text>
           <TouchableOpacity
-            style={styles.addButton}
+            style={[styles.addButton, { backgroundColor: colors.primary }]}
             onPress={() => router.push('/add-asset')}
           >
-            <Text style={styles.addButtonText}>자산 추가하기</Text>
+            <Text style={[styles.addButtonText, { color: colors.textPrimary }]}>자산 추가하기</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -85,10 +86,10 @@ export default function ManageHeartsScreen() {
           data={heartAssets}
           keyExtractor={(item) => item.ticker}
           renderItem={({ item }) => (
-            <View style={styles.item}>
+            <View style={[styles.item, { borderBottomColor: colors.border }]}>
               <View style={styles.itemLeft}>
-                <Text style={styles.itemName}>{item.name}</Text>
-                <Text style={styles.itemTicker}>{item.ticker}</Text>
+                <Text style={[styles.itemName, { color: colors.textPrimary }]}>{item.name}</Text>
+                <Text style={[styles.itemTicker, { color: colors.textSecondary }]}>{item.ticker}</Text>
               </View>
               <View style={styles.itemActions}>
                 <TouchableOpacity
@@ -96,13 +97,13 @@ export default function ManageHeartsScreen() {
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                   style={{ marginRight: 12 }}
                 >
-                  <Ionicons name="pencil-outline" size={20} color={COLORS.textSecondary} />
+                  <Ionicons name="pencil-outline" size={20} color={colors.textSecondary} />
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => handleDelete(item.ticker, item.name)}
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
-                  <Ionicons name="trash-outline" size={20} color={COLORS.error} />
+                  <Ionicons name="trash-outline" size={20} color={colors.error} />
                 </TouchableOpacity>
               </View>
             </View>
@@ -116,7 +117,6 @@ export default function ManageHeartsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   emptyContainer: {
     flex: 1,
@@ -130,20 +130,17 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: COLORS.textSecondary,
     textAlign: 'center',
   },
   addButton: {
     marginTop: 24,
     paddingVertical: 12,
     paddingHorizontal: 24,
-    backgroundColor: COLORS.primary,
     borderRadius: 12,
   },
   addButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: COLORS.textPrimary,
   },
   item: {
     flexDirection: 'row',
@@ -152,7 +149,6 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 20,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
   },
   itemLeft: {
     flex: 1,
@@ -160,12 +156,10 @@ const styles = StyleSheet.create({
   itemName: {
     fontSize: 16,
     fontWeight: '600',
-    color: COLORS.textPrimary,
     marginBottom: 4,
   },
   itemTicker: {
     fontSize: 14,
-    color: COLORS.textSecondary,
   },
   itemActions: {
     flexDirection: 'row',

@@ -89,28 +89,38 @@ export async function resolvePredictionPolls(): Promise<PredictionResolutionResu
 
   for (const poll of expiredPolls) {
     try {
-      const judgmentPrompt = `
-당신은 투자 예측 판정관입니다. 다음 예측 질문의 정답을 판정하세요.
+      const judgmentPrompt = `당신은 baln(발른) 앱의 예측 판정 AI입니다.
+아래 예측 질문의 정답을 객관적 데이터에 기반하여 판정하세요.
 
-**질문:** ${poll.question}
-**설명:** ${poll.description || '없음'}
-**카테고리:** ${poll.category}
-**마감 시간:** ${poll.deadline}
+[질문] ${poll.question}
+[설명] ${poll.description || '없음'}
+[카테고리] ${poll.category}
+[마감 시간] ${poll.deadline}
 
-**[중요] Google Search로 최신 데이터를 검색하여 정답을 확인하세요.**
+[판정 원칙]
+- Google Search로 실제 시장 데이터(종가, 가격 등)를 검색하여 사실 확인한다.
+- 데이터가 불충분하면 confidence를 낮게(60 미만) 설정하여 보류 처리한다.
+- 추측으로 판정하지 않는다.
 
-**출력 형식 (JSON만):**
+[응답 형식 — 아래 JSON만 출력. 설명문, 마크다운 금지.]
 {
-  "answer": "YES" 또는 "NO",
-  "confidence": 0-100,
-  "source": "판정 근거 출처 (뉴스 사이트명, 데이터 출처)",
-  "reasoning": "판정 이유 한 줄"
+  "answer": "YES 또는 NO",
+  "confidence": 75,
+  "source": "데이터 출처 (예: Yahoo Finance, Bloomberg)",
+  "reasoning": "판정 근거 한 줄 요약"
 }
 `;
 
-      const responseText = await callGeminiWithSearch(judgmentPrompt);
-      const cleanJson = cleanJsonResponse(responseText);
-      const judgment = JSON.parse(cleanJson);
+      let judgment: { answer?: string; confidence?: number; source?: string; reasoning?: string };
+      try {
+        const responseText = await callGeminiWithSearch(judgmentPrompt);
+        const cleanJson = cleanJsonResponse(responseText);
+        judgment = JSON.parse(cleanJson);
+      } catch (parseErr) {
+        console.warn(`[Task E-2] "${poll.question}" Gemini 응답 파싱 실패 → 보류:`, parseErr);
+        deferred++;
+        continue;
+      }
 
       // confidence 60 미만이면 보류
       if (!judgment.confidence || judgment.confidence < 60) {

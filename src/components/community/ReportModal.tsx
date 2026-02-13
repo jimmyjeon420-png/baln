@@ -21,7 +21,8 @@ import {
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, SIZES } from '../../styles/theme';
+import { SIZES } from '../../styles/theme';
+import { useTheme } from '../../hooks/useTheme';
 import supabase, { getCurrentUser } from '../../services/supabase';
 
 type ReportReason = 'spam' | 'abuse' | 'leading' | 'other';
@@ -48,6 +49,7 @@ export default function ReportModal({
   onClose,
   onSuccess,
 }: ReportModalProps) {
+  const { colors } = useTheme();
   const [reason, setReason] = useState<ReportReason | null>(null);
   const [description, setDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -108,44 +110,49 @@ export default function ReportModal({
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={handleClose}>
       <View style={styles.overlay}>
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
           {/* 헤더 */}
-          <View style={styles.header}>
-            <Text style={styles.title}>신고하기</Text>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <Text style={[styles.title, { color: colors.textPrimary }]}>신고하기</Text>
             <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
-              <Ionicons name="close" size={24} color={COLORS.textPrimary} />
+              <Ionicons name="close" size={24} color={colors.textPrimary} />
             </TouchableOpacity>
           </View>
 
           <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
             {/* 안내 */}
-            <View style={styles.infoBox}>
-              <Ionicons name="information-circle" size={18} color={COLORS.primary} />
-              <Text style={styles.infoText}>
+            <View style={[styles.infoBox, { backgroundColor: colors.primary + '15' }]}>
+              <Ionicons name="information-circle" size={18} color={colors.primary} />
+              <Text style={[styles.infoText, { color: colors.textPrimary }]}>
                 허위 신고 시 이용에 제한이 있을 수 있습니다.
               </Text>
             </View>
 
             {/* 신고 사유 선택 */}
-            <Text style={styles.label}>신고 사유</Text>
+            <Text style={[styles.label, { color: colors.textPrimary }]}>신고 사유</Text>
             <View style={styles.reasonGrid}>
               {REPORT_REASONS.map((item) => {
                 const isSelected = reason === item.key;
                 return (
                   <TouchableOpacity
                     key={item.key}
-                    style={[styles.reasonButton, isSelected && styles.reasonButtonSelected]}
+                    style={[
+                      styles.reasonButton,
+                      { backgroundColor: colors.surface, borderColor: colors.border },
+                      isSelected && { backgroundColor: colors.primary + '15', borderColor: colors.primary },
+                    ]}
                     onPress={() => setReason(item.key)}
                   >
                     <Ionicons
                       name={item.icon as any}
                       size={22}
-                      color={isSelected ? COLORS.primary : COLORS.textSecondary}
+                      color={isSelected ? colors.primary : colors.textSecondary}
                     />
                     <Text
                       style={[
                         styles.reasonLabel,
-                        isSelected && { color: COLORS.primary, fontWeight: '700' },
+                        { color: colors.textSecondary },
+                        isSelected && { color: colors.primary, fontWeight: '700' },
                       ]}
                     >
                       {item.label}
@@ -156,26 +163,26 @@ export default function ReportModal({
             </View>
 
             {/* 상세 설명 */}
-            <Text style={styles.label}>
-              상세 설명 {reason === 'other' && <Text style={{ color: COLORS.error }}>*</Text>}
+            <Text style={[styles.label, { color: colors.textPrimary }]}>
+              상세 설명 {reason === 'other' && <Text style={{ color: colors.error }}>*</Text>}
             </Text>
             <TextInput
-              style={styles.descriptionInput}
+              style={[styles.descriptionInput, { backgroundColor: colors.surface, color: colors.textPrimary }]}
               placeholder="구체적인 신고 사유를 입력해주세요 (선택사항)"
-              placeholderTextColor={COLORS.textSecondary}
+              placeholderTextColor={colors.textSecondary}
               multiline
               maxLength={500}
               value={description}
               onChangeText={setDescription}
               textAlignVertical="top"
             />
-            <Text style={styles.charCount}>{description.length} / 500</Text>
+            <Text style={[styles.charCount, { color: colors.textSecondary }]}>{description.length} / 500</Text>
           </ScrollView>
 
           {/* 제출 버튼 */}
-          <View style={styles.footer}>
+          <View style={[styles.footer, { borderTopColor: colors.border }]}>
             <TouchableOpacity
-              style={[styles.submitButton, !reason && styles.submitButtonDisabled]}
+              style={[styles.submitButton, { backgroundColor: colors.primary }, !reason && { backgroundColor: colors.surface }]}
               onPress={handleSubmit}
               disabled={!reason || isSubmitting}
             >
@@ -199,7 +206,6 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   container: {
-    backgroundColor: COLORS.background,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     maxHeight: '80%',
@@ -211,12 +217,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
   },
   title: {
     fontSize: 18,
     fontWeight: '700',
-    color: COLORS.textPrimary,
   },
   closeButton: {
     padding: 4,
@@ -232,20 +236,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 10,
-    backgroundColor: COLORS.primary + '15',
     borderRadius: 12,
     padding: 14,
   },
   infoText: {
     flex: 1,
     fontSize: 13,
-    color: COLORS.textPrimary,
     lineHeight: 18,
   },
   label: {
     fontSize: 15,
     fontWeight: '700',
-    color: COLORS.textPrimary,
   },
   reasonGrid: {
     flexDirection: 'row',
@@ -260,48 +261,33 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 16,
     borderRadius: 12,
-    backgroundColor: COLORS.surface,
     borderWidth: 2,
-    borderColor: COLORS.border,
-  },
-  reasonButtonSelected: {
-    backgroundColor: COLORS.primary + '15',
-    borderColor: COLORS.primary,
   },
   reasonLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: COLORS.textSecondary,
     textAlign: 'center',
   },
   descriptionInput: {
-    backgroundColor: COLORS.surface,
     borderRadius: 12,
     padding: 14,
     fontSize: 14,
-    color: COLORS.textPrimary,
     minHeight: 100,
     lineHeight: 20,
   },
   charCount: {
     fontSize: 12,
-    color: COLORS.textSecondary,
     textAlign: 'right',
   },
   footer: {
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderTopWidth: 1,
-    borderTopColor: COLORS.border,
   },
   submitButton: {
-    backgroundColor: COLORS.primary,
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
-  },
-  submitButtonDisabled: {
-    backgroundColor: COLORS.surface,
   },
   submitButtonText: {
     fontSize: 16,

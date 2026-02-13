@@ -89,51 +89,62 @@ async function generateContextCard(): Promise<{
     console.log('[Task G-1] Task A 결과 참조 실패 (무시) — Google Search로 직접 검색');
   }
 
-  const prompt = `
-당신은 한국 투자자를 위한 시장 분석가입니다. 오늘(${dateStr}) 시장 상황을 아래 4가지 관점으로 분석해주세요.
+  const prompt = `당신은 baln(발른) 앱의 맥락 카드 AI입니다.
+오늘(${dateStr}) 시장 상황을 4가지 관점으로 분석하여, 한국 개인투자자가 "오늘 내 자산이 왜 이렇게 움직였는지" 5분 안에 이해할 수 있도록 설명하세요.
 ${macroContext}
-**[중요] Google Search로 최신 시장 데이터를 검색하세요:**
-- "S&P 500 today", "나스닥 종가 today"
-- "외국인 순매수 순매도 today", "기관 투자자 동향"
-- "VIX 공포지수 today", "미국 국채 금리"
-- "경제 뉴스 오늘 한국", "미국 경제지표 발표"
+[핵심 원칙]
+- "안심을 판다, 불안을 팔지 않는다" — 하락장에서도 공포가 아닌 맥락을 제공한다.
+- 쉬운 한국어로 작성한다. 전문 용어 사용 시 괄호 안에 간단한 설명을 추가한다.
+- 과거 사례를 들 때는 "그때도 회복했다"는 안심 메시지를 포함한다.
 
-**분석 4겹 레이어:**
+[Google Search 검색]
+- "S&P 500 today", "KOSPI today", "VIX today"
+- "외국인 순매수 순매도", "기관 투자자 동향"
+- "미국 경제지표 발표", "한국 경제 뉴스 오늘"
 
-1. **역사적 맥락 (Historical Context)**
-   - 과거 비슷한 패턴이 있었는지, 그때 어떻게 됐는지
-   - 예: "2008년 금융위기 때도 이런 패턴이 있었고, 6개월 후 회복했습니다"
-   - 구체적 사례와 기간 포함
+[4겹 분석 레이어]
+1. 역사적 맥락: 과거 유사한 패턴과 이후 흐름 (구체적 시기와 회복 기간 포함, 2~3문장)
+2. 거시경제 체인: 오늘 시장을 움직인 이벤트의 인과관계 (배열, 4~6단계)
+3. 기관 행동: 외국인/기관 투자자 동향과 그 의미 (2~3문장)
+4. 시장 분위기: calm(VIX 15 이하) / caution(VIX 15~25) / alert(VIX 25+)
 
-2. **거시경제 체인 (Macro Chain)**
-   - 오늘 시장을 움직인 이벤트를 인과관계 화살표(→)로 연결
-   - 예: ["미국 CPI 발표", "금리 인상 우려", "기술주 하락", "삼성전자 연동 하락"]
-   - 배열 형태로 4~6단계 체인
-
-3. **기관 행동 (Institutional Behavior)**
-   - 외국인/기관 투자자의 최근 움직임과 그 의미
-   - 예: "외국인 3일 연속 순매도 중 (패닉이 아니라 연말 리밸런싱 시즌)"
-   - 실제 데이터 + 해석 포함
-
-4. **시장 분위기 (Sentiment)**
-   - calm (평온): VIX 15 이하, 시장 안정
-   - caution (주의): VIX 15~25, 변동성 증가
-   - alert (경계): VIX 25+, 고위험 구간
-
-**출력 형식 (JSON만, 마크다운 금지):**
+[응답 형식 — 아래 JSON만 출력. 설명문, 마크다운, 코드블록 금지.]
 {
-  "headline": "오늘의 한 줄 핵심 (20자 이내)",
-  "historical_context": "역사적 맥락 설명 (2-3문장)",
-  "macro_chain": ["이벤트1", "이벤트2", "이벤트3", "이벤트4"],
-  "institutional_behavior": "기관 행동 분석 (2-3문장)",
-  "sentiment": "calm" 또는 "caution" 또는 "alert"
+  "headline": "시장 핵심 한 줄 (20자 이내)",
+  "historical_context": "2020년 3월 코로나 급락 때도 S&P 500이 한 달 만에 34% 하락했지만, 5개월 만에 전고점을 회복했습니다. 단기 조정은 장기 투자자에게 오히려 매수 기회가 되는 경우가 많습니다.",
+  "macro_chain": ["미국 CPI 예상 상회", "금리 인하 기대 후퇴", "기술주 차익 실현", "코스피 연동 하락"],
+  "institutional_behavior": "외국인이 3거래일 연속 순매도 중이지만, 이는 분기말 리밸런싱(자산 비율 재조정)의 일환으로 보입니다. 패닉 매도가 아니라 정기적인 포트폴리오 조정입니다.",
+  "sentiment": "caution"
 }
 `;
 
   console.log('[Task G-1] 맥락 카드 생성 시작...');
-  const responseText = await callGeminiWithSearch(prompt);
-  const cleanJson = cleanJsonResponse(responseText);
-  const parsed: ContextCardData = JSON.parse(cleanJson);
+  let parsed: ContextCardData;
+  try {
+    const responseText = await callGeminiWithSearch(prompt);
+    const cleanJson = cleanJsonResponse(responseText);
+    parsed = JSON.parse(cleanJson);
+  } catch (parseErr) {
+    console.error('[Task G-1] Gemini 응답 파싱 실패 — 기본값 사용:', parseErr);
+    parsed = {
+      headline: '시장 분석 업데이트 중',
+      historical_context: '시장 데이터를 불러오는 중입니다. 잠시 후 다시 확인해주세요. 장기적 관점에서 일시적 데이터 지연은 투자 판단에 영향을 주지 않습니다.',
+      macro_chain: ['데이터 수집 중'],
+      institutional_behavior: '기관 투자자 동향 데이터를 수집하고 있습니다.',
+      sentiment: 'calm' as const,
+    };
+  }
+
+  // 필수 필드 검증 및 기본값 보장
+  if (!parsed.headline || typeof parsed.headline !== 'string') {
+    parsed.headline = '오늘의 시장 분석';
+  }
+  if (!Array.isArray(parsed.macro_chain) || parsed.macro_chain.length === 0) {
+    parsed.macro_chain = ['시장 데이터 수집 중'];
+  }
+  if (!['calm', 'caution', 'alert'].includes(parsed.sentiment)) {
+    parsed.sentiment = 'calm';
+  }
 
   // context_cards 테이블에 UPSERT (date가 Primary Key)
   // todayDate는 line 63에서 이미 선언됨 — 중복 선언 제거 (BOOT_ERROR 원인)

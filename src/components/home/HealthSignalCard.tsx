@@ -23,7 +23,7 @@ import {
   ActivityIndicator,
   Modal,
 } from 'react-native';
-import { COLORS, SIZES } from '../../styles/theme';
+import { useTheme } from '../../hooks/useTheme';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -71,11 +71,11 @@ interface HealthSignalCardProps {
 }
 
 // ============================================================================
-// 신호등 색상 매핑
+// 신호등 색상 매핑 (시맨틱 컬러 - 테마 불변)
 // ============================================================================
 
-function getSignalColor(score: number | null): string {
-  if (score === null) return COLORS.textSecondary;
+function getSignalColor(score: number | null, fallbackColor: string): string {
+  if (score === null) return fallbackColor;
   if (score >= 75) return '#4CAF50'; // 🟢 초록
   if (score >= 50) return '#FFB74D'; // 🟡 노랑
   return '#CF6679'; // 🔴 빨강
@@ -143,7 +143,8 @@ const HealthSignalCard = React.memo(({
   dailyChangeRate,
 }: HealthSignalCardProps) => {
   const [showDetail, setShowDetail] = useState(false);
-  const signalColor = getSignalColor(healthScore);
+  const { colors } = useTheme();
+  const signalColor = getSignalColor(healthScore, colors.textSecondary);
   const signalEmoji = getSignalEmoji(healthScore);
 
   // ──────────────────────────────────────────────────────────────────────
@@ -151,14 +152,14 @@ const HealthSignalCard = React.memo(({
   // ──────────────────────────────────────────────────────────────────────
   if (isLoading) {
     return (
-      <View style={styles.card}>
+      <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <View style={styles.headerRow}>
-          <Text style={styles.dateText}>{formatDate()}</Text>
-          <Text style={styles.cardLogo}>bal<Text style={{ color: '#4CAF50' }}>n</Text></Text>
+          <Text style={[styles.dateText, { color: colors.textSecondary }]}>{formatDate()}</Text>
+          <Text style={[styles.cardLogo, { color: colors.textSecondary }]}>bal<Text style={{ color: '#4CAF50' }}>n</Text></Text>
         </View>
         <View style={styles.centerArea}>
-          <ActivityIndicator size="large" color={COLORS.textSecondary} />
-          <Text style={[styles.loadingText, { marginTop: 16 }]}>
+          <ActivityIndicator size="large" color={colors.textSecondary} />
+          <Text style={[styles.loadingText, { marginTop: 16, color: colors.textSecondary }]}>
             건강 점수를 계산하고 있어요
           </Text>
         </View>
@@ -171,18 +172,18 @@ const HealthSignalCard = React.memo(({
   // ──────────────────────────────────────────────────────────────────────
   if (!hasAssets || healthScore === null) {
     return (
-      <View style={styles.card}>
+      <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <View style={styles.headerRow}>
-          <Text style={styles.dateText}>{formatDate()}</Text>
-          <Text style={styles.cardLogo}>bal<Text style={{ color: '#4CAF50' }}>n</Text></Text>
+          <Text style={[styles.dateText, { color: colors.textSecondary }]}>{formatDate()}</Text>
+          <Text style={[styles.cardLogo, { color: colors.textSecondary }]}>bal<Text style={{ color: '#4CAF50' }}>n</Text></Text>
         </View>
         <View style={styles.centerArea}>
           <Text style={styles.emptyEmoji}>❤️</Text>
-          <Text style={styles.emptyTitle}>내 투자 건강이 궁금하다면</Text>
-          <Text style={styles.emptySubtitle}>자산을 하트해주세요</Text>
+          <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>내 투자 건강이 궁금하다면</Text>
+          <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>자산을 하트해주세요</Text>
           {onAddAssets && (
-            <TouchableOpacity style={styles.addButton} onPress={onAddAssets}>
-              <Text style={styles.addButtonText}>자산 추가하기</Text>
+            <TouchableOpacity style={[styles.addButton, { backgroundColor: colors.primary }]} onPress={onAddAssets}>
+              <Text style={[styles.addButtonText, { color: colors.textPrimary }]}>자산 추가하기</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -194,11 +195,11 @@ const HealthSignalCard = React.memo(({
   // 데이터 상태 (건강 점수 표시)
   // ──────────────────────────────────────────────────────────────────────
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
       {/* 상단: 날짜 + baln 로고 */}
       <View style={styles.headerRow}>
-        <Text style={styles.dateText}>{formatDate()}</Text>
-        <Text style={styles.cardLogo}>bal<Text style={{ color: '#4CAF50' }}>n</Text></Text>
+        <Text style={[styles.dateText, { color: colors.textSecondary }]}>{formatDate()}</Text>
+        <Text style={[styles.cardLogo, { color: colors.textSecondary }]}>bal<Text style={{ color: '#4CAF50' }}>n</Text></Text>
       </View>
 
       {/* 중앙: 거대 신호등 */}
@@ -211,20 +212,20 @@ const HealthSignalCard = React.memo(({
           <Text style={[styles.scoreNumber, { color: signalColor }]}>
             {healthScore}
           </Text>
-          <Text style={styles.scoreDivider}>/</Text>
-          <Text style={styles.scoreMax}>100</Text>
+          <Text style={[styles.scoreDivider, { color: colors.textSecondary }]}>/</Text>
+          <Text style={[styles.scoreMax, { color: colors.textSecondary }]}>100</Text>
         </View>
       </TouchableOpacity>
 
       {/* 총 자산 요약 한 줄 (Pulse) */}
       {totalAssets != null && totalAssets > 0 && (
-        <View style={styles.assetPulseRow}>
-          <Text style={styles.assetPulseText}>
+        <View style={[styles.assetPulseRow, { backgroundColor: colors.surfaceLight }]}>
+          <Text style={[styles.assetPulseText, { color: colors.textPrimary }]}>
             총 자산 {formatAssetAmount(totalAssets)}
           </Text>
           {dailyChangeRate != null && (
             <>
-              <Text style={styles.assetPulseDivider}> | </Text>
+              <Text style={[styles.assetPulseDivider, { color: colors.textTertiary }]}> | </Text>
               <Text
                 style={[
                   styles.assetPulseChange,
@@ -243,8 +244,8 @@ const HealthSignalCard = React.memo(({
         {assetSignals.length > 0 && (
           <View style={styles.assetsList}>
             {assetSignals.slice(0, 5).map((asset, index) => (
-              <View key={index} style={styles.assetChip}>
-                <Text style={styles.assetName}>{asset.name}</Text>
+              <View key={index} style={[styles.assetChip, { backgroundColor: colors.surfaceLight }]}>
+                <Text style={[styles.assetName, { color: colors.textPrimary }]}>{asset.name}</Text>
                 <Text style={styles.assetSignal}>
                   {getMiniSignalEmoji(asset.signal)}
                 </Text>
@@ -253,15 +254,15 @@ const HealthSignalCard = React.memo(({
           </View>
         )}
         {onAddAssets && (
-          <TouchableOpacity style={styles.addAssetChip} onPress={onAddAssets}>
-            <Text style={styles.addAssetChipIcon}>+</Text>
-            <Text style={styles.addAssetChipText}>자산 추가</Text>
+          <TouchableOpacity style={[styles.addAssetChip, { backgroundColor: colors.primary }]} onPress={onAddAssets}>
+            <Text style={[styles.addAssetChipIcon, { color: colors.textPrimary }]}>+</Text>
+            <Text style={[styles.addAssetChipText, { color: colors.textPrimary }]}>자산 추가</Text>
           </TouchableOpacity>
         )}
       </View>
 
       {/* 스와이프 힌트 */}
-      <Text style={styles.swipeHint}>스와이프하여 다음 카드 →</Text>
+      <Text style={[styles.swipeHint, { color: colors.textSecondary }]}>스와이프하여 다음 카드 →</Text>
 
       {/* 상세 모달 */}
       <Modal
@@ -271,25 +272,25 @@ const HealthSignalCard = React.memo(({
         onRequestClose={() => setShowDetail(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>건강 점수 상세</Text>
-            <Text style={styles.modalSubtitle}>
+          <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>건강 점수 상세</Text>
+            <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>
               6팩터 기반 복합 점수입니다
             </Text>
             <View style={styles.modalScoreBox}>
-              <Text style={styles.modalScore}>{healthScore}</Text>
-              <Text style={styles.modalGrade}>{gradeLabel} ({healthGrade}등급)</Text>
+              <Text style={[styles.modalScore, { color: colors.textPrimary }]}>{healthScore}</Text>
+              <Text style={[styles.modalGrade, { color: colors.textSecondary }]}>{gradeLabel} ({healthGrade}등급)</Text>
             </View>
 
             {/* 6팩터 상세 */}
             {healthFactors && healthFactors.length > 0 && (
-              <View style={styles.factorsContainer}>
-                <Text style={styles.factorsTitle}>6팩터 상세</Text>
+              <View style={[styles.factorsContainer, { borderTopColor: colors.border }]}>
+                <Text style={[styles.factorsTitle, { color: colors.textPrimary }]}>6팩터 상세</Text>
                 {healthFactors.map((factor, index) => (
                   <View key={index} style={styles.factorRow}>
                     <View style={styles.factorLeft}>
-                      <Text style={styles.factorLabel}>{factor.label}</Text>
-                      <Text style={styles.factorWeight}>가중치 {factor.weight}%</Text>
+                      <Text style={[styles.factorLabel, { color: colors.textPrimary }]}>{factor.label}</Text>
+                      <Text style={[styles.factorWeight, { color: colors.textSecondary }]}>가중치 {factor.weight}%</Text>
                     </View>
                     <Text style={[
                       styles.factorScore,
@@ -303,10 +304,10 @@ const HealthSignalCard = React.memo(({
             )}
 
             <TouchableOpacity
-              style={styles.modalCloseButton}
+              style={[styles.modalCloseButton, { backgroundColor: colors.primary }]}
               onPress={() => setShowDetail(false)}
             >
-              <Text style={styles.modalCloseText}>닫기</Text>
+              <Text style={[styles.modalCloseText, { color: colors.textPrimary }]}>닫기</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -369,12 +370,10 @@ const styles = StyleSheet.create({
   card: {
     height: CARD_HEIGHT,
     marginHorizontal: 16,
-    backgroundColor: COLORS.surface,
     borderRadius: 24,
     padding: 24,
     justifyContent: 'space-between',
     borderWidth: 1,
-    borderColor: COLORS.border,
   },
   headerRow: {
     flexDirection: 'row',
@@ -383,12 +382,10 @@ const styles = StyleSheet.create({
   },
   dateText: {
     fontSize: 14,
-    color: COLORS.textSecondary,
   },
   cardLogo: {
     fontSize: 16,
     fontWeight: '700',
-    color: COLORS.textSecondary,
     letterSpacing: 1,
   },
   centerArea: {
@@ -417,17 +414,14 @@ const styles = StyleSheet.create({
   scoreDivider: {
     fontSize: 28,
     fontWeight: '300',
-    color: COLORS.textSecondary,
     marginHorizontal: 4,
   },
   scoreMax: {
     fontSize: 28,
     fontWeight: '300',
-    color: COLORS.textSecondary,
   },
   loadingText: {
     fontSize: 16,
-    color: COLORS.textSecondary,
   },
   emptyEmoji: {
     fontSize: 72,
@@ -436,16 +430,13 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 22,
     fontWeight: '700',
-    color: COLORS.textPrimary,
     marginBottom: 8,
   },
   emptySubtitle: {
     fontSize: 16,
-    color: COLORS.textSecondary,
     marginBottom: 32,
   },
   addButton: {
-    backgroundColor: COLORS.primary,
     paddingVertical: 14,
     paddingHorizontal: 32,
     borderRadius: 12,
@@ -453,7 +444,6 @@ const styles = StyleSheet.create({
   addButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: COLORS.textPrimary,
   },
   // 총 자산 Pulse 행
   assetPulseRow: {
@@ -462,18 +452,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 10,
     paddingHorizontal: 16,
-    backgroundColor: COLORS.surfaceLight,
     borderRadius: 12,
     marginTop: 16,
   },
   assetPulseText: {
     fontSize: 14,
     fontWeight: '600',
-    color: COLORS.textPrimary,
   },
   assetPulseDivider: {
     fontSize: 14,
-    color: COLORS.textTertiary,
   },
   assetPulseChange: {
     fontSize: 14,
@@ -491,7 +478,6 @@ const styles = StyleSheet.create({
   assetChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.surfaceLight,
     borderRadius: 16,
     paddingVertical: 8,
     paddingHorizontal: 12,
@@ -499,7 +485,6 @@ const styles = StyleSheet.create({
   },
   assetName: {
     fontSize: 14,
-    color: COLORS.textPrimary,
     fontWeight: '500',
   },
   assetSignal: {
@@ -509,7 +494,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'center',
-    backgroundColor: COLORS.primary,
     borderRadius: 20,
     paddingVertical: 10,
     paddingHorizontal: 20,
@@ -519,17 +503,14 @@ const styles = StyleSheet.create({
   addAssetChipIcon: {
     fontSize: 18,
     fontWeight: '700',
-    color: COLORS.textPrimary,
   },
   addAssetChipText: {
     fontSize: 14,
     fontWeight: '600',
-    color: COLORS.textPrimary,
   },
   swipeHint: {
     fontSize: 12,
     fontWeight: '500',
-    color: COLORS.textSecondary,
     textAlign: 'center',
     marginTop: 8,
     opacity: 0.7,
@@ -542,19 +523,16 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     width: '85%',
-    backgroundColor: COLORS.surface,
     borderRadius: 20,
     padding: 24,
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: COLORS.textPrimary,
     marginBottom: 8,
   },
   modalSubtitle: {
     fontSize: 14,
-    color: COLORS.textSecondary,
     marginBottom: 20,
   },
   modalScoreBox: {
@@ -565,34 +543,28 @@ const styles = StyleSheet.create({
   modalScore: {
     fontSize: 48,
     fontWeight: '800',
-    color: COLORS.textPrimary,
   },
   modalGrade: {
     fontSize: 16,
-    color: COLORS.textSecondary,
     marginTop: 8,
   },
   modalCloseButton: {
     paddingVertical: 12,
-    backgroundColor: COLORS.primary,
     borderRadius: 12,
     alignItems: 'center',
   },
   modalCloseText: {
     fontSize: 16,
     fontWeight: '600',
-    color: COLORS.textPrimary,
   },
   factorsContainer: {
     marginTop: 16,
     paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: COLORS.border,
   },
   factorsTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: COLORS.textPrimary,
     marginBottom: 12,
   },
   factorRow: {
@@ -606,12 +578,10 @@ const styles = StyleSheet.create({
   },
   factorLabel: {
     fontSize: 14,
-    color: COLORS.textPrimary,
     marginBottom: 2,
   },
   factorWeight: {
     fontSize: 12,
-    color: COLORS.textSecondary,
   },
   factorScore: {
     fontSize: 18,

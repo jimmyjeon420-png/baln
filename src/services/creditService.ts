@@ -3,6 +3,7 @@
  * 잔액 조회, 원자적 차감 (RPC), 충전, 거래 내역, 티어 할인 계산
  */
 
+import * as Sentry from '@sentry/react-native';
 import supabase, { getCurrentUser } from './supabase';
 import {
   type AIFeatureType,
@@ -116,6 +117,10 @@ export async function spendCredits(
 
     if (error) {
       console.warn('[Credits] spend_credits RPC 실패 (기본값 반환):', error.message);
+      Sentry.captureException(new Error(`spend_credits RPC: ${error.message}`), {
+        tags: { service: 'credits', rpc: 'spend_credits' },
+        extra: { amount, featureType },
+      });
       return { success: false, newBalance: 0, errorMessage: error.message };
     }
 
@@ -131,6 +136,10 @@ export async function spendCredits(
     };
   } catch (err) {
     console.warn('[Credits] 크레딧 차감 중 예외:', err);
+    Sentry.captureException(err, {
+      tags: { service: 'credits', rpc: 'spend_credits' },
+      extra: { amount, featureType },
+    });
     return {
       success: false,
       newBalance: 0,

@@ -26,7 +26,6 @@ import { useRouter } from 'expo-router';
 import { useAchievements } from '../src/hooks/useAchievements';
 import { useStreak } from '../src/hooks/useStreak';
 import { useMyPredictionStats } from '../src/hooks/usePredictions';
-import { COLORS } from '../src/styles/theme';
 import { useTheme } from '../src/hooks/useTheme';
 import { ACHIEVEMENT_REWARDS } from '../src/services/rewardService';
 import type { AchievementWithStatus, AchievementId } from '../src/services/achievementService';
@@ -125,10 +124,10 @@ export default function AchievementsScreen() {
       {/* 헤더 */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+          <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.title}>나의 성취</Text>
-        <View style={styles.countBadge}>
+        <Text style={[styles.title, { color: colors.textPrimary }]}>나의 성취</Text>
+        <View style={[styles.countBadge, { backgroundColor: colors.primary }]}>
           <Text style={styles.countBadgeText}>{unlockedCount}/{totalCount}</Text>
         </View>
       </View>
@@ -143,29 +142,29 @@ export default function AchievementsScreen() {
           <View style={styles.emotionEntryLeft}>
             <Text style={styles.emotionEntryEmoji}>{'\u{1F4DD}'}</Text>
             <View>
-              <Text style={styles.emotionEntryTitle}>오늘의 투자 감정 기록</Text>
-              <Text style={styles.emotionEntryDesc}>
+              <Text style={[styles.emotionEntryTitle, { color: colors.textPrimary }]}>오늘의 투자 감정 기록</Text>
+              <Text style={[styles.emotionEntryDesc, { color: colors.textTertiary }]}>
                 매일 감정을 기록하면 패닉셀을 방지할 수 있어요
               </Text>
             </View>
           </View>
           <View style={styles.emotionEntryRight}>
             <Text style={styles.emotionEntryReward}>+5C</Text>
-            <Ionicons name="chevron-forward" size={18} color={COLORS.primary} />
+            <Ionicons name="chevron-forward" size={18} color={colors.primary} />
           </View>
         </TouchableOpacity>
 
         {/* 진행률 카드 */}
-        <View style={styles.progressCard}>
+        <View style={[styles.progressCard, { backgroundColor: colors.surface }]}>
           <View style={styles.progressHeader}>
-            <Text style={styles.progressTitle}>{'🏆'} 배지 수집 진행률</Text>
-            <Text style={styles.progressPercent}>{progressPercent}%</Text>
+            <Text style={[styles.progressTitle, { color: colors.textPrimary }]}>{'🏆'} 배지 수집 진행률</Text>
+            <Text style={[styles.progressPercent, { color: colors.primary }]}>{progressPercent}%</Text>
           </View>
           {/* 진행률 바 */}
-          <View style={styles.progressBarBg}>
-            <View style={[styles.progressBarFill, { width: `${progressPercent}%` }]} />
+          <View style={[styles.progressBarBg, { backgroundColor: colors.surfaceLight }]}>
+            <View style={[styles.progressBarFill, { width: `${progressPercent}%`, backgroundColor: colors.primary }]} />
           </View>
-          <Text style={styles.progressSubtitle}>
+          <Text style={[styles.progressSubtitle, { color: colors.textTertiary }]}>
             {unlockedCount === 0
               ? '첫 배지를 획득해보세요!'
               : unlockedCount >= totalCount
@@ -193,9 +192,9 @@ export default function AchievementsScreen() {
         </View>
 
         {/* 안내 문구 */}
-        <View style={styles.infoCard}>
-          <Ionicons name="information-circle-outline" size={16} color="#888888" />
-          <Text style={styles.infoText}>
+        <View style={[styles.infoCard, { backgroundColor: colors.surface }]}>
+          <Ionicons name="information-circle-outline" size={16} color={colors.textTertiary} />
+          <Text style={[styles.infoText, { color: colors.textTertiary }]}>
             배지는 앱 사용 활동에 따라 자동으로 해금됩니다.{'\n'}
             매일 방문하고, 예측에 참여하면 배지를 모을 수 있어요!
           </Text>
@@ -217,11 +216,12 @@ export default function AchievementsScreen() {
 // ============================================================================
 
 function BadgeCard({ badge }: { badge: AchievementWithStatus }) {
+  const { colors } = useTheme();
   const isUnlocked = badge.isUnlocked;
   const reward = ACHIEVEMENT_REWARDS[badge.id] || 0;
 
   return (
-    <View style={[styles.badgeCard, !isUnlocked && styles.badgeCardLocked]}>
+    <View style={[styles.badgeCard, { backgroundColor: colors.surface }, !isUnlocked && styles.badgeCardLocked]}>
       {/* 보상 배지 (우측 상단) */}
       {reward > 0 && (
         <View style={[styles.rewardBadge, isUnlocked && styles.rewardBadgeClaimed]}>
@@ -243,7 +243,7 @@ function BadgeCard({ badge }: { badge: AchievementWithStatus }) {
       </View>
 
       {/* 배지 제목 */}
-      <Text style={[styles.badgeTitle, !isUnlocked && styles.badgeTitleLocked]}>
+      <Text style={[styles.badgeTitle, { color: colors.textPrimary }, !isUnlocked && styles.badgeTitleLocked]}>
         {badge.title}
       </Text>
 
@@ -270,7 +270,6 @@ function BadgeCard({ badge }: { badge: AchievementWithStatus }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   header: {
     flexDirection: 'row',
@@ -286,10 +285,8 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 20,
     fontWeight: 'bold',
-    color: COLORS.textPrimary,
   },
   countBadge: {
-    backgroundColor: COLORS.primary,
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 12,
@@ -299,7 +296,6 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#000000',
   },
-
   content: {
     flex: 1,
   },
@@ -307,18 +303,16 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 80,
   },
-
-  // 감정 기록 바로가기
   emotionEntryCard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#1565C0' + '14',
+    backgroundColor: '#1565C014',
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#1565C0' + '33',
+    borderColor: '#1565C033',
   },
   emotionEntryLeft: {
     flexDirection: 'row',
@@ -332,12 +326,10 @@ const styles = StyleSheet.create({
   emotionEntryTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: COLORS.textPrimary,
     marginBottom: 2,
   },
   emotionEntryDesc: {
     fontSize: 12,
-    color: '#888888',
   },
   emotionEntryRight: {
     flexDirection: 'row',
@@ -347,12 +339,9 @@ const styles = StyleSheet.create({
   emotionEntryReward: {
     fontSize: 14,
     fontWeight: '700',
-    color: COLORS.primary,
+    color: '#4CAF50',
   },
-
-  // 진행률 카드
   progressCard: {
-    backgroundColor: COLORS.surface,
     borderRadius: 16,
     padding: 20,
     marginBottom: 24,
@@ -366,42 +355,32 @@ const styles = StyleSheet.create({
   progressTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: COLORS.textPrimary,
   },
   progressPercent: {
     fontSize: 20,
     fontWeight: '800',
-    color: COLORS.primary,
   },
   progressBarBg: {
     height: 10,
-    backgroundColor: '#2A2A2A',
     borderRadius: 5,
     overflow: 'hidden',
     marginBottom: 10,
   },
   progressBarFill: {
     height: '100%',
-    backgroundColor: COLORS.primary,
     borderRadius: 5,
   },
   progressSubtitle: {
     fontSize: 13,
-    color: '#888888',
   },
-
-  // 배지 그리드 (3열)
   badgeGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
     marginBottom: 24,
   },
-
-  // 배지 카드
   badgeCard: {
     width: '30.5%',
-    backgroundColor: COLORS.surface,
     borderRadius: 16,
     padding: 14,
     alignItems: 'center',
@@ -453,7 +432,6 @@ const styles = StyleSheet.create({
   badgeTitle: {
     fontSize: 12,
     fontWeight: '700',
-    color: COLORS.textPrimary,
     textAlign: 'center',
     marginBottom: 4,
   },
@@ -471,12 +449,10 @@ const styles = StyleSheet.create({
   },
   badgeDate: {
     fontSize: 9,
-    color: COLORS.primary,
+    color: '#4CAF50',
     marginTop: 6,
     fontWeight: '600',
   },
-
-  // 보상 안내
   rewardInfoCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -499,30 +475,24 @@ const styles = StyleSheet.create({
     color: '#888888',
     lineHeight: 18,
   },
-
-  // 안내 카드
   infoCard: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 8,
-    backgroundColor: '#1A1A1A',
     borderRadius: 12,
     padding: 14,
   },
   infoText: {
     flex: 1,
     fontSize: 12,
-    color: '#888888',
     lineHeight: 18,
   },
-
-  // 축하 토스트
   toast: {
     position: 'absolute',
     top: 100,
     left: 24,
     right: 24,
-    backgroundColor: COLORS.primary,
+    backgroundColor: '#4CAF50',
     borderRadius: 14,
     padding: 16,
     alignItems: 'center',

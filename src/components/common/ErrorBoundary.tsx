@@ -16,6 +16,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Sentry from '@sentry/react-native';
 import { DARK_COLORS } from '../../styles/colors';
 import supabase, { getCurrentUser } from '../../services/supabase';
 
@@ -131,6 +132,11 @@ export default class ErrorBoundary extends React.Component<
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('[ErrorBoundary] 에러 발생:', error, errorInfo);
     this.props.onError?.(error, errorInfo);
+
+    // Sentry에 에러 전달 (DSN 미설정 시 자동 무시)
+    Sentry.captureException(error, {
+      contexts: { react: { componentStack: errorInfo.componentStack ?? undefined } },
+    });
 
     // 서버에 에러 리포팅 (fire-and-forget, 절대 블로킹하지 않음)
     reportErrorToServer(

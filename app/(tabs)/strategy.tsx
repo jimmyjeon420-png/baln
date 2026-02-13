@@ -15,17 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { getPortfolioAdvice } from '../../src/services/gemini';
 import supabase, { getCurrentUser } from '../../src/services/supabase';
 import { createChatSession, addChatMessage } from '../../src/services/setupDatabase';
-
-// 다크모드 색상 테마
-const COLORS = {
-  background: '#121212',
-  surface: '#1E1E1E',
-  primary: '#4CAF50',
-  error: '#CF6679',
-  textPrimary: '#FFFFFF',
-  textSecondary: '#B0B0B0',
-  border: '#333333',
-};
+import { useTheme } from '../../src/hooks/useTheme';
 
 // 메시지 타입 정의
 interface Message {
@@ -39,6 +29,7 @@ interface Message {
 type TabType = 'ai' | 'team';
 
 export default function StrategyScreen() {
+  const { colors } = useTheme();
   const [activeTab, setActiveTab] = useState<TabType>('ai');
   const [aiMessages, setAiMessages] = useState<Message[]>([]);
   const [teamMessages, setTeamMessages] = useState<Message[]>([]);
@@ -176,11 +167,10 @@ export default function StrategyScreen() {
             await addChatMessage(sid, 'assistant', response);
           }
         } catch (dbError) {
-          console.log('DB 저장 실패 (무시):', dbError);
+          // DB 저장 실패는 무시 (non-critical)
         }
       }
     } catch (error) {
-      console.error('AI 응답 오류:', error);
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         text: '죄송합니다. 일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.',
@@ -217,7 +207,7 @@ export default function StrategyScreen() {
         room_id: 'global-strategy',
       });
     } catch (error) {
-      console.log('팀 메시지 전송 실패:', error);
+      // 팀 메시지 전송 실패는 무시 (UI에 이미 표시됨)
     }
   }, [inputText, currentUser]);
 
@@ -227,11 +217,13 @@ export default function StrategyScreen() {
       key={message.id}
       style={[
         styles.messageBubble,
-        message.isUser ? styles.userBubble : styles.aiBubble,
+        message.isUser
+          ? [styles.userBubble, { backgroundColor: colors.primary }]
+          : [styles.aiBubble, { backgroundColor: colors.surface }],
       ]}
     >
-      <Text style={styles.messageText}>{message.text}</Text>
-      <Text style={styles.messageTime}>
+      <Text style={[styles.messageText, { color: colors.textPrimary }]}>{message.text}</Text>
+      <Text style={[styles.messageTime, { color: colors.textSecondary }]}>
         {message.timestamp.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
       </Text>
     </View>
@@ -241,37 +233,37 @@ export default function StrategyScreen() {
   const handleSend = activeTab === 'ai' ? sendAiMessage : sendTeamMessage;
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
       {/* 헤더 */}
-      <View style={styles.header}>
-        <Text style={styles.title}>전략 회의실</Text>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+        <Text style={[styles.title, { color: colors.textPrimary }]}>전략 회의실</Text>
       </View>
 
       {/* 탭 네비게이션 */}
       <View style={styles.tabContainer}>
         <TouchableOpacity
-          style={[styles.tab, activeTab === 'ai' && styles.activeTab]}
+          style={[styles.tab, { backgroundColor: colors.surface }, activeTab === 'ai' && { backgroundColor: colors.primary + '20', borderWidth: 1, borderColor: colors.primary }]}
           onPress={() => setActiveTab('ai')}
         >
           <Ionicons
             name="sparkles"
             size={18}
-            color={activeTab === 'ai' ? COLORS.primary : COLORS.textSecondary}
+            color={activeTab === 'ai' ? colors.primary : colors.textSecondary}
           />
-          <Text style={[styles.tabText, activeTab === 'ai' && styles.activeTabText]}>
+          <Text style={[styles.tabText, { color: colors.textSecondary }, activeTab === 'ai' && { color: colors.primary }]}>
             AI 상담
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.tab, activeTab === 'team' && styles.activeTab]}
+          style={[styles.tab, { backgroundColor: colors.surface }, activeTab === 'team' && { backgroundColor: colors.primary + '20', borderWidth: 1, borderColor: colors.primary }]}
           onPress={() => setActiveTab('team')}
         >
           <Ionicons
             name="people"
             size={18}
-            color={activeTab === 'team' ? COLORS.primary : COLORS.textSecondary}
+            color={activeTab === 'team' ? colors.primary : colors.textSecondary}
           />
-          <Text style={[styles.tabText, activeTab === 'team' && styles.activeTabText]}>
+          <Text style={[styles.tabText, { color: colors.textSecondary }, activeTab === 'team' && { color: colors.primary }]}>
             팀 채팅
           </Text>
         </TouchableOpacity>
@@ -292,29 +284,29 @@ export default function StrategyScreen() {
           {currentMessages.map(renderMessage)}
           {isLoading && (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="small" color={COLORS.primary} />
-              <Text style={styles.loadingText}>AI가 응답 중...</Text>
+              <ActivityIndicator size="small" color={colors.primary} />
+              <Text style={[styles.loadingText, { color: colors.textSecondary }]}>AI가 응답 중...</Text>
             </View>
           )}
         </ScrollView>
 
         {/* 입력 영역 */}
-        <View style={styles.inputContainer}>
+        <View style={[styles.inputContainer, { borderTopColor: colors.border, backgroundColor: colors.surface }]}>
           <TextInput
-            style={styles.textInput}
+            style={[styles.textInput, { backgroundColor: colors.background, color: colors.textPrimary }]}
             placeholder={activeTab === 'ai' ? '전략에 대해 질문하세요...' : '전략을 공유하세요...'}
-            placeholderTextColor={COLORS.textSecondary}
+            placeholderTextColor={colors.textSecondary}
             value={inputText}
             onChangeText={setInputText}
             multiline
             maxLength={500}
           />
           <TouchableOpacity
-            style={[styles.sendButton, !inputText.trim() && styles.sendButtonDisabled]}
+            style={[styles.sendButton, { backgroundColor: colors.primary }, !inputText.trim() && styles.sendButtonDisabled]}
             onPress={handleSend}
             disabled={!inputText.trim() || isLoading}
           >
-            <Ionicons name="send" size={20} color={COLORS.textPrimary} />
+            <Ionicons name="send" size={20} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -325,18 +317,15 @@ export default function StrategyScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   header: {
     paddingHorizontal: 20,
     paddingVertical: 15,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: COLORS.textPrimary,
   },
   tabContainer: {
     flexDirection: 'row',
@@ -352,21 +341,11 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 12,
-    backgroundColor: COLORS.surface,
     gap: 8,
-  },
-  activeTab: {
-    backgroundColor: COLORS.primary + '20',
-    borderWidth: 1,
-    borderColor: COLORS.primary,
   },
   tabText: {
     fontSize: 14,
     fontWeight: '600',
-    color: COLORS.textSecondary,
-  },
-  activeTabText: {
-    color: COLORS.primary,
   },
   chatContainer: {
     flex: 1,
@@ -385,23 +364,19 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   userBubble: {
-    backgroundColor: COLORS.primary,
     alignSelf: 'flex-end',
     borderBottomRightRadius: 4,
   },
   aiBubble: {
-    backgroundColor: COLORS.surface,
     alignSelf: 'flex-start',
     borderBottomLeftRadius: 4,
   },
   messageText: {
     fontSize: 15,
     lineHeight: 22,
-    color: COLORS.textPrimary,
   },
   messageTime: {
     fontSize: 10,
-    color: COLORS.textSecondary,
     marginTop: 4,
     alignSelf: 'flex-end',
   },
@@ -413,7 +388,6 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   loadingText: {
-    color: COLORS.textSecondary,
     fontSize: 12,
   },
   inputContainer: {
@@ -422,25 +396,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-    backgroundColor: COLORS.surface,
     gap: 12,
   },
   textInput: {
     flex: 1,
-    backgroundColor: COLORS.background,
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 10,
     fontSize: 15,
-    color: COLORS.textPrimary,
     maxHeight: 100,
   },
   sendButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: COLORS.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },

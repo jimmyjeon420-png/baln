@@ -34,7 +34,7 @@ export interface MarketChangeData {
   btcChange?: number;
   /** 시장 센티먼트 (AI 분석) */
   sentiment?: 'BULLISH' | 'BEARISH' | 'NEUTRAL';
-  /** VIX 공포지수 (향후 확장) */
+  /** VIX 공포지수 (30+ = 위기 감지) */
   vixLevel?: number;
 }
 
@@ -67,7 +67,7 @@ export interface CrisisDetectionResult {
  * 3. 여러 지수가 동시 하락 시 위기 등급 가중
  */
 export function detectCrisis(data: MarketChangeData): CrisisDetectionResult {
-  const { kospiChange, nasdaqChange, btcChange, sentiment } = data;
+  const { kospiChange, nasdaqChange, btcChange, sentiment, vixLevel } = data;
 
   // 1) 가장 큰 하락폭 찾기
   const changes = [
@@ -76,7 +76,10 @@ export function detectCrisis(data: MarketChangeData): CrisisDetectionResult {
     { market: 'BTC', change: btcChange },
   ].filter((item) => item.change !== undefined) as { market: string; change: number }[];
 
-  if (changes.length === 0) {
+  // VIX 30 이상이면 자체 위기 트리거
+  const vixCrisis = vixLevel != null && vixLevel >= 30;
+
+  if (changes.length === 0 && !vixCrisis) {
     return {
       level: 'none',
       message: '',
@@ -88,13 +91,13 @@ export function detectCrisis(data: MarketChangeData): CrisisDetectionResult {
 
   // 가장 큰 하락폭 (절댓값 기준)
   const sorted = changes.sort((a, b) => a.change - b.change);
-  const worst = sorted[0];
-  const worstChange = worst.change;
+  const worst = sorted.length > 0 ? sorted[0] : null;
+  const worstChange = worst?.change ?? 0;
 
   // 2) 동시 하락 개수 (모두 -2% 이상 하락)
   const multiCrashCount = changes.filter((item) => item.change < -2).length;
 
-  // 3) 기본 위기 등급 판정
+  // 3) 기본 위기 등급 판정 (지수 하락 기준)
   let baseLevel: CrisisLevel = 'none';
 
   if (worstChange <= -7) {
@@ -103,6 +106,24 @@ export function detectCrisis(data: MarketChangeData): CrisisDetectionResult {
     baseLevel = 'severe';
   } else if (worstChange <= -3) {
     baseLevel = 'moderate';
+  }
+
+  // 3-1) VIX 기반 위기 등급 (VIX 30+ = moderate, 40+ = severe, 50+ = extreme)
+  if (vixCrisis) {
+    let vixBaseLevel: CrisisLevel = 'none';
+    if (vixLevel! >= 50) {
+      vixBaseLevel = 'extreme';
+    } else if (vixLevel! >= 40) {
+      vixBaseLevel = 'severe';
+    } else if (vixLevel! >= 30) {
+      vixBaseLevel = 'moderate';
+    }
+
+    // VIX 등급이 지수 등급보다 높으면 상향
+    const levelPriority: Record<CrisisLevel, number> = { none: 0, moderate: 1, severe: 2, extreme: 3 };
+    if (levelPriority[vixBaseLevel] > levelPriority[baseLevel]) {
+      baseLevel = vixBaseLevel;
+    }
   }
 
   // 4) 센티먼트 가중치 (BEARISH이면 1단계 상향)
@@ -116,15 +137,35 @@ export function detectCrisis(data: MarketChangeData): CrisisDetectionResult {
     finalLevel = 'severe';
   }
 
-  // 6) 메시지 생성
-  const message = getCrisisMessage(finalLevel, worst.market);
+  // 6) VIX + 지수 동시 하락이면 추가 가중 (VIX 30+ && 지수 -2%+ = 1단계 상향)
+  if (vixCrisis && worstChange <= -2 && finalLevel === 'moderate') {
+    finalLevel = 'severe';
+  }
+
+  // 7) 주요 시장 결정: VIX만 트리거된 경우 VIX를 primaryMarket으로
+  let primaryMarket: string | null = worst?.market ?? null;
+  let primaryChange: number | null = worstChange !== 0 ? worstChange : null;
+
+  if (!primaryMarket && vixCrisis) {
+    primaryMarket = 'VIX';
+    primaryChange = vixLevel!;
+  }
+
+  // 8) 메시지 생성
+  let message: string;
+  if (vixCrisis && (!worst || worstChange > -3)) {
+    // VIX만 트리거된 경우
+    message = `VIX 공포지수 ${vixLevel!.toFixed(0)}으로 급등. 맥락 카드에서 배경을 확인하세요`;
+  } else {
+    message = getCrisisMessage(finalLevel, primaryMarket || '');
+  }
 
   return {
     level: finalLevel,
     message,
     isInCrisis: finalLevel !== 'none',
-    primaryMarket: worst.market,
-    primaryChange: worstChange,
+    primaryMarket,
+    primaryChange,
   };
 }
 

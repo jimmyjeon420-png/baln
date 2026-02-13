@@ -397,11 +397,11 @@ export default function HomeScreen() {
     const totalVotes = currentPoll
       ? (currentPoll.yes_count + currentPoll.no_count)
       : 0;
-    const yesPercentage = totalVotes > 0
-      ? (currentPoll!.yes_count / totalVotes) * 100
+    const yesPercentage = totalVotes > 0 && currentPoll
+      ? (currentPoll.yes_count / totalVotes) * 100
       : 0;
-    const noPercentage = totalVotes > 0
-      ? (currentPoll!.no_count / totalVotes) * 100
+    const noPercentage = totalVotes > 0 && currentPoll
+      ? (currentPoll.no_count / totalVotes) * 100
       : 0;
 
     return {

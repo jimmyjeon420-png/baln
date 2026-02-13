@@ -100,61 +100,61 @@ export default function TaxReportScreen() {
         {/* 헤더 */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7}>
-            <Ionicons name="arrow-back" size={22} color="#FFF" />
+            <Ionicons name="arrow-back" size={22} color={colors.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>세금 최적화 리포트</Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>세금 최적화 리포트</Text>
           <View style={{ width: 22 }} />
         </View>
 
-        <Text style={styles.subtitle}>
+        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
           AI가 분석하는 맞춤 절세 전략 & 매도 타이밍
         </Text>
 
         {/* 거주지 선택 */}
-        <Text style={styles.sectionLabel}>세금 거주지</Text>
+        <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>세금 거주지</Text>
         <View style={styles.residencyRow}>
           <TouchableOpacity
-            style={[styles.residencyCard, residency === 'KR' && styles.residencyActive]}
+            style={[styles.residencyCard, { backgroundColor: colors.surface, borderColor: colors.border }, residency === 'KR' && styles.residencyActive]}
             onPress={() => { mediumTap(); setResidency('KR'); }}
             activeOpacity={0.7}
           >
             <Text style={styles.residencyFlag}>한국</Text>
-            <Text style={[styles.residencyLabel, residency === 'KR' && styles.residencyLabelActive]}>
+            <Text style={[styles.residencyLabel, { color: colors.textSecondary }, residency === 'KR' && { color: colors.textPrimary }]}>
               한국 거주자
             </Text>
-            <Text style={styles.residencyDesc}>양도소득세 + 금융소득종합과세</Text>
+            <Text style={[styles.residencyDesc, { color: colors.textTertiary }]}>양도소득세 + 금융소득종합과세</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.residencyCard, residency === 'US' && styles.residencyActive]}
+            style={[styles.residencyCard, { backgroundColor: colors.surface, borderColor: colors.border }, residency === 'US' && styles.residencyActive]}
             onPress={() => { mediumTap(); setResidency('US'); }}
             activeOpacity={0.7}
           >
             <Text style={styles.residencyFlag}>미국</Text>
-            <Text style={[styles.residencyLabel, residency === 'US' && styles.residencyLabelActive]}>
+            <Text style={[styles.residencyLabel, { color: colors.textSecondary }, residency === 'US' && { color: colors.textPrimary }]}>
               미국 거주자
             </Text>
-            <Text style={styles.residencyDesc}>Capital Gains Tax + Tax-Loss Harvesting</Text>
+            <Text style={[styles.residencyDesc, { color: colors.textTertiary }]}>Capital Gains Tax + Tax-Loss Harvesting</Text>
           </TouchableOpacity>
         </View>
 
         {/* 연 소득 입력 */}
-        <Text style={styles.sectionLabel}>연 소득 (선택)</Text>
+        <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>연 소득 (선택)</Text>
         <TextInput
-          style={styles.textInput}
+          style={[styles.textInput, { backgroundColor: colors.surface, color: colors.textPrimary, borderColor: colors.borderStrong }]}
           value={annualIncome}
           onChangeText={setAnnualIncome}
           placeholder="예: 50,000,000"
-          placeholderTextColor="#555"
+          placeholderTextColor={colors.textQuaternary}
           keyboardType="numeric"
         />
-        <Text style={styles.hint}>
+        <Text style={[styles.hint, { color: colors.textQuaternary }]}>
           소득 정보를 입력하면 더 정확한 세율 계산이 가능합니다
         </Text>
 
         {/* 포트폴리오 요약 */}
-        <View style={styles.portfolioSummary}>
-          <Ionicons name="briefcase" size={18} color="#888" />
-          <Text style={styles.summaryText}>
+        <View style={[styles.portfolioSummary, { backgroundColor: colors.surface }]}>
+          <Ionicons name="briefcase" size={18} color={colors.textSecondary} />
+          <Text style={[styles.summaryText, { color: colors.textSecondary }]}>
             {portfolio.length}개 자산 | 총 ₩
             {portfolio
               .reduce((s: number, p: any) => s + (p.current_value || 0), 0)
@@ -181,8 +181,8 @@ export default function TaxReportScreen() {
 
         {/* 세금 면책 문구 */}
         <View style={styles.taxDisclaimer}>
-          <Text style={styles.taxDisclaimerTitle}>세금 관련 유의사항</Text>
-          <Text style={styles.taxDisclaimerText}>
+          <Text style={[styles.taxDisclaimerTitle, { color: colors.primaryLight }]}>세금 관련 유의사항</Text>
+          <Text style={[styles.taxDisclaimerText, { color: colors.textSecondary }]}>
             • 본 리포트는 참고용 정보이며, 법적 효력이 있는 세무 자문이 아닙니다.{'\n'}
             • 정확한 세무 처리를 위해 반드시 세무사 또는 공인 세무 전문가와 상담하시기 바랍니다.{'\n'}
             • 세율 및 과세 기준은 관련 법령 개정에 따라 수시로 변경될 수 있습니다.{'\n'}
@@ -206,7 +206,7 @@ export default function TaxReportScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#121212' },
+  container: { flex: 1 },
   scrollContent: { padding: 16, paddingBottom: 40 },
   header: {
     flexDirection: 'row',
@@ -214,44 +214,37 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 4,
   },
-  headerTitle: { color: '#FFF', fontSize: 18, fontWeight: '700' },
-  subtitle: { color: '#888', fontSize: 13, textAlign: 'center', marginBottom: 20 },
-  sectionLabel: { color: '#FFF', fontSize: 14, fontWeight: '700', marginBottom: 10, marginTop: 16 },
+  headerTitle: { fontSize: 18, fontWeight: '700' },
+  subtitle: { fontSize: 13, textAlign: 'center', marginBottom: 20 },
+  sectionLabel: { fontSize: 14, fontWeight: '700', marginBottom: 10, marginTop: 16 },
   residencyRow: { flexDirection: 'row', gap: 10 },
   residencyCard: {
     flex: 1,
-    backgroundColor: '#1E1E1E',
     borderRadius: 14,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#2A2A2A',
     alignItems: 'center',
   },
   residencyActive: { borderColor: '#66BB6A', backgroundColor: '#66BB6A10' },
   residencyFlag: { fontSize: 24, marginBottom: 4 },
-  residencyLabel: { color: '#888', fontSize: 14, fontWeight: '700' },
-  residencyLabelActive: { color: '#FFF' },
-  residencyDesc: { color: '#666', fontSize: 10, textAlign: 'center', marginTop: 4 },
+  residencyLabel: { fontSize: 14, fontWeight: '700' },
+  residencyDesc: { fontSize: 10, textAlign: 'center', marginTop: 4 },
   textInput: {
-    backgroundColor: '#1E1E1E',
     borderRadius: 12,
     padding: 14,
-    color: '#FFF',
     fontSize: 15,
     borderWidth: 1,
-    borderColor: '#333',
   },
-  hint: { color: '#555', fontSize: 11, marginTop: 4 },
+  hint: { fontSize: 11, marginTop: 4 },
   portfolioSummary: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#1E1E1E',
     borderRadius: 10,
     padding: 12,
     marginTop: 16,
   },
-  summaryText: { color: '#888', fontSize: 13 },
+  summaryText: { fontSize: 13 },
   analyzeButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -276,12 +269,10 @@ const styles = StyleSheet.create({
   taxDisclaimerTitle: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#66BB6A',
     marginBottom: 10,
   },
   taxDisclaimerText: {
     fontSize: 11,
-    color: '#888888',
     lineHeight: 18,
   },
 });

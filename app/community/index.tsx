@@ -40,12 +40,14 @@ import {
   LOUNGE_VIEW_THRESHOLD,
   LOUNGE_POST_THRESHOLD,
 } from '../../src/types/community';
-import { COLORS, SIZES } from '../../src/styles/theme';
+import { SIZES } from '../../src/styles/theme';
+import { useTheme } from '../../src/hooks/useTheme';
 
 type SortMode = 'popular' | 'latest';
 
 export default function CommunityMainScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
 
   // 자격 확인
   const { eligibility, loading: eligibilityLoading, error: eligibilityError } = useLoungeEligibility();
@@ -116,7 +118,7 @@ export default function CommunityMainScreen() {
             <TouchableOpacity
               key={cat}
               style={[
-                styles.chip,
+                styles.chip, { backgroundColor: colors.surface, borderColor: colors.border },
                 isActive && { backgroundColor: info.color + '25', borderColor: info.color },
               ]}
               onPress={() => setCategory(cat)}
@@ -124,11 +126,11 @@ export default function CommunityMainScreen() {
               <Ionicons
                 name={info.icon as any}
                 size={14}
-                color={isActive ? info.color : COLORS.textSecondary}
+                color={isActive ? info.color : colors.textSecondary}
               />
               <Text
                 style={[
-                  styles.chipLabel,
+                  styles.chipLabel, { color: colors.textSecondary },
                   isActive && { color: info.color, fontWeight: '700' },
                 ]}
               >
@@ -145,36 +147,36 @@ export default function CommunityMainScreen() {
   const renderSortButtons = () => (
     <View style={styles.sortRow}>
       <TouchableOpacity
-        style={[styles.sortButton, sortMode === 'popular' && styles.sortButtonActive]}
+        style={[styles.sortButton, { backgroundColor: colors.surface }, sortMode === 'popular' && styles.sortButtonActive]}
         onPress={() => setSortMode('popular')}
       >
         <Ionicons
           name="flame"
           size={14}
-          color={sortMode === 'popular' ? COLORS.primary : COLORS.textSecondary}
+          color={sortMode === 'popular' ? colors.primary : colors.textSecondary}
         />
         <Text
           style={[
-            styles.sortLabel,
-            sortMode === 'popular' && { color: COLORS.primary, fontWeight: '700' },
+            styles.sortLabel, { color: colors.textSecondary },
+            sortMode === 'popular' && { color: colors.primary, fontWeight: '700' },
           ]}
         >
           인기순
         </Text>
       </TouchableOpacity>
       <TouchableOpacity
-        style={[styles.sortButton, sortMode === 'latest' && styles.sortButtonActive]}
+        style={[styles.sortButton, { backgroundColor: colors.surface }, sortMode === 'latest' && styles.sortButtonActive]}
         onPress={() => setSortMode('latest')}
       >
         <Ionicons
           name="time"
           size={14}
-          color={sortMode === 'latest' ? COLORS.primary : COLORS.textSecondary}
+          color={sortMode === 'latest' ? colors.primary : colors.textSecondary}
         />
         <Text
           style={[
-            styles.sortLabel,
-            sortMode === 'latest' && { color: COLORS.primary, fontWeight: '700' },
+            styles.sortLabel, { color: colors.textSecondary },
+            sortMode === 'latest' && { color: colors.primary, fontWeight: '700' },
           ]}
         >
           최신순
@@ -198,16 +200,16 @@ export default function CommunityMainScreen() {
   // ──────────────────────────────────────────────────────────
   if (eligibilityLoading) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
           <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons name="chevron-back" size={28} color={COLORS.primary} />
+            <Ionicons name="chevron-back" size={28} color={colors.primary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>VIP 라운지</Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>VIP 라운지</Text>
           <View style={{ width: 28 }} />
         </View>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       </SafeAreaView>
     );
@@ -218,21 +220,21 @@ export default function CommunityMainScreen() {
   // ──────────────────────────────────────────────────────────
   if (eligibilityError || postsError) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
           <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons name="chevron-back" size={28} color={COLORS.primary} />
+            <Ionicons name="chevron-back" size={28} color={colors.primary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>VIP 라운지</Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>VIP 라운지</Text>
           <View style={{ width: 28 }} />
         </View>
         <View style={styles.comingSoonContainer}>
           <Ionicons name="people-outline" size={48} color="#555" />
-          <Text style={styles.comingSoonTitle}>VIP 라운지 준비 중</Text>
-          <Text style={styles.comingSoonDescription}>
+          <Text style={[styles.comingSoonTitle, { color: colors.textPrimary }]}>VIP 라운지 준비 중</Text>
+          <Text style={[styles.comingSoonDescription, { color: colors.textSecondary }]}>
             곧 투자 고수들의 커뮤니티가 열립니다!
           </Text>
-          <Text style={styles.comingSoonHint}>
+          <Text style={[styles.comingSoonHint, { color: colors.textSecondary }]}>
             매일 출석하고 크레딧을 모아보세요
           </Text>
           <TouchableOpacity style={styles.comingSoonButton} onPress={() => router.back()}>
@@ -248,12 +250,12 @@ export default function CommunityMainScreen() {
   // ──────────────────────────────────────────────────────────
   if (!eligibility.isEligible) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
           <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons name="chevron-back" size={28} color={COLORS.primary} />
+            <Ionicons name="chevron-back" size={28} color={colors.primary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>VIP 라운지</Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>VIP 라운지</Text>
           <View style={{ width: 28 }} />
         </View>
 
@@ -261,13 +263,13 @@ export default function CommunityMainScreen() {
           <View style={styles.lockedIcon}>
             <Ionicons name="lock-closed" size={48} color="#FFC107" />
           </View>
-          <Text style={styles.lockedTitle}>VIP 라운지는 잠겨 있습니다</Text>
-          <Text style={styles.lockedDescription}>
+          <Text style={[styles.lockedTitle, { color: colors.textPrimary }]}>VIP 라운지는 잠겨 있습니다</Text>
+          <Text style={[styles.lockedDescription, { color: colors.textSecondary }]}>
             VIP 라운지 열람은 자산 {(LOUNGE_VIEW_THRESHOLD / 10000).toFixed(0)}만원 이상 회원만 가능합니다.
           </Text>
-          <View style={styles.lockedAssetBox}>
-            <Text style={styles.lockedAssetLabel}>현재 자산</Text>
-            <Text style={styles.lockedAssetValue}>
+          <View style={[styles.lockedAssetBox, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.lockedAssetLabel, { color: colors.textSecondary }]}>현재 자산</Text>
+            <Text style={[styles.lockedAssetValue, { color: colors.textPrimary }]}>
               {(eligibility.totalAssets / 10000).toFixed(0)}만원
             </Text>
             <Text style={styles.lockedShortfall}>
@@ -286,20 +288,20 @@ export default function CommunityMainScreen() {
   // 메인 화면
   // ──────────────────────────────────────────────────────────
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* 헤더 */}
-      <View style={styles.header}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={28} color={COLORS.primary} />
+          <Ionicons name="chevron-back" size={28} color={colors.primary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>VIP 라운지</Text>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>VIP 라운지</Text>
         <TouchableOpacity onPress={handleCreatePost}>
-          <Ionicons name="create-outline" size={26} color={COLORS.primary} />
+          <Ionicons name="create-outline" size={26} color={colors.primary} />
         </TouchableOpacity>
       </View>
 
       {/* 필터 + 정렬 */}
-      <View style={styles.filterSection}>
+      <View style={[styles.filterSection, { borderBottomColor: colors.border }]}>
         {renderCategoryChips()}
         {renderSortButtons()}
       </View>
@@ -307,16 +309,16 @@ export default function CommunityMainScreen() {
       {/* 게시물 리스트 */}
       {isLoading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       ) : posts.length === 0 ? (
         <View style={styles.comingSoonContainer}>
           <Ionicons name="people-outline" size={48} color="#555" />
-          <Text style={styles.comingSoonTitle}>VIP 라운지 준비 중</Text>
-          <Text style={styles.comingSoonDescription}>
+          <Text style={[styles.comingSoonTitle, { color: colors.textPrimary }]}>VIP 라운지 준비 중</Text>
+          <Text style={[styles.comingSoonDescription, { color: colors.textSecondary }]}>
             곧 투자 고수들의 커뮤니티가 열립니다!
           </Text>
-          <Text style={styles.comingSoonHint}>
+          <Text style={[styles.comingSoonHint, { color: colors.textSecondary }]}>
             매일 출석하고 크레딧을 모아보세요
           </Text>
           {eligibility?.canPost && (
@@ -347,7 +349,7 @@ export default function CommunityMainScreen() {
           ListFooterComponent={
             isFetchingNextPage ? (
               <View style={styles.footerLoader}>
-                <ActivityIndicator size="small" color={COLORS.primary} />
+                <ActivityIndicator size="small" color={colors.primary} />
               </View>
             ) : null
           }
@@ -355,7 +357,7 @@ export default function CommunityMainScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor={COLORS.primary}
+              tintColor={colors.primary}
             />
           }
         />
@@ -367,7 +369,6 @@ export default function CommunityMainScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   header: {
     flexDirection: 'row',
@@ -376,12 +377,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: COLORS.textPrimary,
   },
 
   // ── 필터 섹션 ──
@@ -389,7 +388,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
     gap: 12,
   },
   chipsRow: {
@@ -403,13 +401,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: COLORS.surface,
     borderWidth: 1,
-    borderColor: COLORS.border,
   },
   chipLabel: {
     fontSize: 13,
-    color: COLORS.textSecondary,
   },
 
   // ── 정렬 버튼 ──
@@ -424,14 +419,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
-    backgroundColor: COLORS.surface,
   },
-  sortButtonActive: {
-    backgroundColor: COLORS.primary + '15',
-  },
+  sortButtonActive: {},
   sortLabel: {
     fontSize: 13,
-    color: COLORS.textSecondary,
   },
 
   // ── 리스트 ──
@@ -463,13 +454,12 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 14,
-    color: COLORS.textSecondary,
   },
   emptyButton: {
     marginTop: 8,
     paddingHorizontal: 20,
     paddingVertical: 10,
-    backgroundColor: COLORS.primary,
+    backgroundColor: '#4CAF50',
     borderRadius: 12,
   },
   emptyButtonText: {
@@ -489,18 +479,15 @@ const styles = StyleSheet.create({
   comingSoonTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: COLORS.textPrimary,
     marginTop: 8,
   },
   comingSoonDescription: {
     fontSize: 15,
-    color: COLORS.textSecondary,
     textAlign: 'center',
     lineHeight: 22,
   },
   comingSoonHint: {
     fontSize: 13,
-    color: COLORS.textSecondary,
     textAlign: 'center',
     marginTop: 4,
   },
@@ -508,7 +495,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
     paddingHorizontal: 32,
     paddingVertical: 12,
-    backgroundColor: COLORS.primary,
+    backgroundColor: '#4CAF50',
     borderRadius: 12,
   },
   comingSoonButtonText: {
@@ -529,7 +516,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#1A1A0E',
+    backgroundColor: 'rgba(255, 193, 7, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 8,
@@ -537,16 +524,13 @@ const styles = StyleSheet.create({
   lockedTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: COLORS.textPrimary,
   },
   lockedDescription: {
     fontSize: 14,
-    color: COLORS.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
   },
   lockedAssetBox: {
-    backgroundColor: COLORS.surface,
     borderRadius: 16,
     padding: 20,
     alignItems: 'center',
@@ -555,12 +539,10 @@ const styles = StyleSheet.create({
   },
   lockedAssetLabel: {
     fontSize: 12,
-    color: COLORS.textSecondary,
   },
   lockedAssetValue: {
     fontSize: 24,
     fontWeight: '700',
-    color: COLORS.textPrimary,
   },
   lockedShortfall: {
     fontSize: 13,
@@ -570,7 +552,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
     paddingHorizontal: 32,
     paddingVertical: 12,
-    backgroundColor: COLORS.primary,
+    backgroundColor: '#4CAF50',
     borderRadius: 12,
   },
   lockedButtonText: {

@@ -8,6 +8,7 @@ import { TouchableOpacity, Text, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useMyCredits } from '../hooks/useCredits';
+import { useTheme } from '../hooks/useTheme';
 
 interface CreditBadgeProps {
   size?: 'small' | 'medium' | 'large';
@@ -21,6 +22,7 @@ export default function CreditBadge({
   onPress,
 }: CreditBadgeProps) {
   const router = useRouter();
+  const { colors } = useTheme();
   const { data: credits } = useMyCredits();
 
   const balance = credits?.balance ?? 0;
@@ -46,6 +48,8 @@ export default function CreditBadge({
         {
           paddingHorizontal: sizeStyles.paddingH,
           paddingVertical: sizeStyles.paddingV,
+          backgroundColor: colors.surfaceElevated,
+          borderColor: colors.borderStrong,
         },
       ]}
       onPress={handlePress}
@@ -55,17 +59,17 @@ export default function CreditBadge({
         <Ionicons
           name="diamond"
           size={sizeStyles.iconSize}
-          color="#7C4DFF"
+          color={colors.premium.purple}
           style={styles.icon}
         />
       )}
-      <Text style={[styles.text, { fontSize: sizeStyles.fontSize }]}>
+      <Text style={[styles.text, { fontSize: sizeStyles.fontSize, color: colors.textPrimary }]}>
         {balance.toLocaleString()}
       </Text>
       <Ionicons
         name="add-circle"
         size={sizeStyles.iconSize}
-        color="#666"
+        color={colors.textTertiary}
         style={styles.addIcon}
       />
     </TouchableOpacity>
@@ -76,16 +80,13 @@ const styles = StyleSheet.create({
   badge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#2A2A2A',
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#3A3A3A',
   },
   icon: {
     marginRight: 4,
   },
   text: {
-    color: '#FFFFFF',
     fontWeight: '700',
   },
   addIcon: {

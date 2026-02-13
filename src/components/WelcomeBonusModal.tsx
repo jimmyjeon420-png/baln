@@ -15,7 +15,7 @@ import {
   Animated,
   Dimensions,
 } from 'react-native';
-import { COLORS } from '../styles/theme';
+import { useTheme } from '../hooks/useTheme';
 import { formatCredits } from '../utils/formatters';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -31,6 +31,7 @@ export default function WelcomeBonusModal({
   creditsEarned,
   onDismiss,
 }: WelcomeBonusModalProps) {
+  const { colors } = useTheme();
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
 
@@ -64,21 +65,21 @@ export default function WelcomeBonusModal({
 
   return (
     <Animated.View style={[s.overlay, { opacity: opacityAnim }]}>
-      <Animated.View style={[s.card, { transform: [{ scale: scaleAnim }] }]}>
+      <Animated.View style={[s.card, { backgroundColor: colors.surfaceLight, transform: [{ scale: scaleAnim }] }]}>
         <Text style={s.emoji}>{'🎉'}</Text>
-        <Text style={s.title}>환영합니다!</Text>
-        <Text style={s.subtitle}>bal<Text style={{ color: '#4CAF50' }}>n</Text>과 함께 투자 기준을 만들어보세요</Text>
+        <Text style={[s.title, { color: colors.textPrimary }]}>환영합니다!</Text>
+        <Text style={[s.subtitle, { color: colors.textSecondary }]}>bal<Text style={{ color: colors.primary }}>n</Text>과 함께 투자 기준을 만들어보세요</Text>
 
         <View style={s.bonusRow}>
-          <Text style={s.bonusLabel}>환영 보너스</Text>
-          <Text style={s.bonusAmount}>+{formatCredits(creditsEarned)}</Text>
+          <Text style={[s.bonusLabel, { color: colors.textSecondary }]}>환영 보너스</Text>
+          <Text style={[s.bonusAmount, { color: colors.primary }]}>+{formatCredits(creditsEarned)}</Text>
         </View>
 
-        <Text style={s.hint}>
+        <Text style={[s.hint, { color: colors.textTertiary }]}>
           크레딧은 AI 분석, 프리미엄 체험 등에 사용할 수 있어요
         </Text>
 
-        <TouchableOpacity style={s.button} onPress={onDismiss} activeOpacity={0.8}>
+        <TouchableOpacity style={[s.button, { backgroundColor: colors.primary }]} onPress={onDismiss} activeOpacity={0.8}>
           <Text style={s.buttonText}>시작하기</Text>
         </TouchableOpacity>
       </Animated.View>
@@ -96,7 +97,6 @@ const s = StyleSheet.create({
   },
   card: {
     width: SCREEN_WIDTH - 64,
-    backgroundColor: '#1A1A1A',
     borderRadius: 24,
     padding: 32,
     alignItems: 'center',
@@ -110,12 +110,10 @@ const s = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: '800',
-    color: '#FFFFFF',
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 15,
-    color: '#AAAAAA',
     textAlign: 'center',
     marginBottom: 24,
     lineHeight: 22,
@@ -135,21 +133,17 @@ const s = StyleSheet.create({
   },
   bonusLabel: {
     fontSize: 15,
-    color: '#CCCCCC',
     fontWeight: '600',
   },
   bonusAmount: {
     fontSize: 22,
     fontWeight: '800',
-    color: COLORS.primary,
   },
   hint: {
     fontSize: 12,
-    color: '#777777',
     marginBottom: 24,
   },
   button: {
-    backgroundColor: COLORS.primary,
     borderRadius: 12,
     paddingVertical: 14,
     paddingHorizontal: 48,

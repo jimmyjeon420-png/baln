@@ -31,20 +31,7 @@ import {
 } from '../../src/hooks/useGatherings';
 import { Gathering, GATHERING_CATEGORY_LABELS, UserTier } from '../../src/types/database';
 import LocationSearchInput from '../../src/components/LocationSearchInput';
-
-// 컬러 팔레트
-const COLORS = {
-  background: '#121212',
-  surface: '#1E1E1E',
-  surfaceLight: '#2A2A2A',
-  primary: '#4CAF50',
-  error: '#CF6679',
-  text: '#FFFFFF',
-  textSecondary: '#B0B0B0',
-  textMuted: '#888888',
-  border: '#333333',
-  inputBg: '#1A1A1A',
-};
+import { useTheme } from '../../src/hooks/useTheme';
 
 // 카테고리 옵션
 const CATEGORY_OPTIONS: { key: Gathering['category']; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
@@ -63,6 +50,7 @@ const LOCATION_TYPE_OPTIONS: { key: Gathering['location_type']; label: string; i
 export default function CreateGatheringScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
 
   // 호스팅 자격 확인
   const { data: hostingEligibility, isLoading: eligibilityLoading } = useHostingEligibility();
@@ -86,39 +74,39 @@ export default function CreateGatheringScreen() {
   // 권한 체크
   if (eligibilityLoading) {
     return (
-      <View style={[styles.container, styles.loadingContainer]}>
+      <View style={[styles.container, styles.loadingContainer, { backgroundColor: colors.background }]}>
         <Stack.Screen options={{ headerShown: false }} />
-        <ActivityIndicator size="large" color={COLORS.primary} />
-        <Text style={styles.loadingText}>권한을 확인하는 중...</Text>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={[styles.loadingText, { color: colors.textTertiary }]}>권한을 확인하는 중...</Text>
       </View>
     );
   }
 
   if (!hostingEligibility?.canHost) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
+      <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
         <Stack.Screen options={{ headerShown: false }} />
 
         {/* 헤더 */}
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
+          <TouchableOpacity style={[styles.backButton, { backgroundColor: colors.surface }]} onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>모임 만들기</Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>모임 만들기</Text>
           <View style={{ width: 40 }} />
         </View>
 
         {/* 권한 없음 */}
         <View style={styles.noPermissionContainer}>
-          <View style={styles.lockIconContainer}>
-            <Ionicons name="lock-closed" size={48} color={COLORS.textMuted} />
+          <View style={[styles.lockIconContainer, { backgroundColor: colors.surface }]}>
+            <Ionicons name="lock-closed" size={48} color={colors.textTertiary} />
           </View>
-          <Text style={styles.noPermissionTitle}>호스트 자격이 필요합니다</Text>
-          <Text style={styles.noPermissionDescription}>
+          <Text style={[styles.noPermissionTitle, { color: colors.textPrimary }]}>호스트 자격이 필요합니다</Text>
+          <Text style={[styles.noPermissionDescription, { color: colors.textSecondary }]}>
             모임을 만들려면 1억 이상 자산이{'\n'}OCR 인증되어야 합니다.
           </Text>
           <TouchableOpacity
-            style={styles.verifyButton}
+            style={[styles.verifyButton, { backgroundColor: colors.primary }]}
             onPress={() => router.push('/add-asset')}
           >
             <Ionicons name="camera" size={20} color="#000000" />
@@ -233,17 +221,17 @@ export default function CreateGatheringScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Stack.Screen options={{ headerShown: false }} />
 
       {/* 헤더 */}
-      <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Ionicons name="close" size={24} color={COLORS.text} />
+      <View style={[styles.header, { paddingTop: insets.top + 10, borderBottomColor: colors.border }]}>
+        <TouchableOpacity style={[styles.backButton, { backgroundColor: colors.surface }]} onPress={() => router.back()}>
+          <Ionicons name="close" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>모임 만들기</Text>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>모임 만들기</Text>
         <TouchableOpacity
-          style={[styles.submitButton, (submitting || !agreedToTerms) && styles.submitButtonDisabled]}
+          style={[styles.submitButton, { backgroundColor: colors.primary }, (submitting || !agreedToTerms) && styles.submitButtonDisabled]}
           onPress={handleSubmit}
           disabled={submitting || !agreedToTerms}
         >
@@ -266,12 +254,12 @@ export default function CreateGatheringScreen() {
           keyboardShouldPersistTaps="handled"
         >
           {/* 호스트 정보 */}
-          <View style={styles.hostInfoBanner}>
+          <View style={[styles.hostInfoBanner, { backgroundColor: colors.surface }]}>
             <View style={[styles.tierBadge, { backgroundColor: TIER_COLORS[hostingEligibility.tier as keyof typeof TIER_COLORS] }]}>
               <Ionicons name="shield-checkmark" size={16} color="#000000" />
             </View>
             <View style={styles.hostInfoText}>
-              <Text style={styles.hostName}>{hostingEligibility.displayName}</Text>
+              <Text style={[styles.hostName, { color: colors.textPrimary }]}>{hostingEligibility.displayName}</Text>
               <Text style={[styles.hostAssets, { color: TIER_COLORS[hostingEligibility.tier as keyof typeof TIER_COLORS] }]}>
                 {formatAssetInBillion(hostingEligibility.verifiedAssets)} 인증 호스트
               </Text>
@@ -280,39 +268,41 @@ export default function CreateGatheringScreen() {
 
           {/* 모임 제목 */}
           <View style={styles.formGroup}>
-            <Text style={styles.label}>모임 제목 *</Text>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>모임 제목 *</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: colors.surfaceLight, color: colors.textPrimary, borderColor: colors.border }]}
               placeholder="예: 부동산 투자 스터디 3기"
-              placeholderTextColor={COLORS.textMuted}
+              placeholderTextColor={colors.textTertiary}
               value={title}
               onChangeText={setTitle}
               maxLength={50}
             />
-            <Text style={styles.charCount}>{title.length}/50</Text>
+            <Text style={[styles.charCount, { color: colors.textTertiary }]}>{title.length}/50</Text>
           </View>
 
           {/* 카테고리 */}
           <View style={styles.formGroup}>
-            <Text style={styles.label}>카테고리 *</Text>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>카테고리 *</Text>
             <View style={styles.optionsGrid}>
               {CATEGORY_OPTIONS.map((option) => (
                 <TouchableOpacity
                   key={option.key}
                   style={[
                     styles.optionCard,
-                    category === option.key && styles.optionCardActive,
+                    { backgroundColor: colors.surface, borderColor: colors.border },
+                    category === option.key && { backgroundColor: colors.primary, borderColor: colors.primary },
                   ]}
                   onPress={() => setCategory(option.key)}
                 >
                   <Ionicons
                     name={option.icon}
                     size={20}
-                    color={category === option.key ? '#000000' : COLORS.textSecondary}
+                    color={category === option.key ? '#000000' : colors.textSecondary}
                   />
                   <Text
                     style={[
                       styles.optionLabel,
+                      { color: colors.textSecondary },
                       category === option.key && styles.optionLabelActive,
                     ]}
                   >
@@ -325,25 +315,26 @@ export default function CreateGatheringScreen() {
 
           {/* 장소 타입 */}
           <View style={styles.formGroup}>
-            <Text style={styles.label}>진행 방식 *</Text>
-            <View style={styles.segmentedControl}>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>진행 방식 *</Text>
+            <View style={[styles.segmentedControl, { backgroundColor: colors.surface }]}>
               {LOCATION_TYPE_OPTIONS.map((option) => (
                 <TouchableOpacity
                   key={option.key}
                   style={[
                     styles.segment,
-                    locationType === option.key && styles.segmentActive,
+                    locationType === option.key && { backgroundColor: colors.primary },
                   ]}
                   onPress={() => setLocationType(option.key)}
                 >
                   <Ionicons
                     name={option.icon}
                     size={18}
-                    color={locationType === option.key ? '#000000' : COLORS.textSecondary}
+                    color={locationType === option.key ? '#000000' : colors.textSecondary}
                   />
                   <Text
                     style={[
                       styles.segmentText,
+                      { color: colors.textSecondary },
                       locationType === option.key && styles.segmentTextActive,
                     ]}
                   >
@@ -356,7 +347,7 @@ export default function CreateGatheringScreen() {
 
           {/* 장소/링크 */}
           <View style={[styles.formGroup, locationType === 'offline' && { zIndex: 10 }]}>
-            <Text style={styles.label}>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>
               {locationType === 'online' ? '미팅 링크' : '장소'} *
             </Text>
             {locationType === 'offline' ? (
@@ -367,9 +358,9 @@ export default function CreateGatheringScreen() {
               />
             ) : (
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: colors.surfaceLight, color: colors.textPrimary, borderColor: colors.border }]}
                 placeholder="예: https://zoom.us/j/123456"
-                placeholderTextColor={COLORS.textMuted}
+                placeholderTextColor={colors.textTertiary}
                 value={location}
                 onChangeText={setLocation}
                 autoCapitalize="none"
@@ -379,21 +370,21 @@ export default function CreateGatheringScreen() {
 
           {/* 일시 */}
           <View style={styles.formGroup}>
-            <Text style={styles.label}>일시 *</Text>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>일시 *</Text>
             <View style={styles.dateTimeRow}>
               <TouchableOpacity
-                style={styles.dateTimeButton}
+                style={[styles.dateTimeButton, { backgroundColor: colors.surfaceLight, borderColor: colors.border }]}
                 onPress={() => setShowDatePicker(true)}
               >
-                <Ionicons name="calendar-outline" size={18} color={COLORS.primary} />
-                <Text style={styles.dateTimeText}>{formatDate(eventDate)}</Text>
+                <Ionicons name="calendar-outline" size={18} color={colors.primary} />
+                <Text style={[styles.dateTimeText, { color: colors.textPrimary }]}>{formatDate(eventDate)}</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={styles.dateTimeButton}
+                style={[styles.dateTimeButton, { backgroundColor: colors.surfaceLight, borderColor: colors.border }]}
                 onPress={() => setShowTimePicker(true)}
               >
-                <Ionicons name="time-outline" size={18} color={COLORS.primary} />
-                <Text style={styles.dateTimeText}>{formatTime(eventDate)}</Text>
+                <Ionicons name="time-outline" size={18} color={colors.primary} />
+                <Text style={[styles.dateTimeText, { color: colors.textPrimary }]}>{formatTime(eventDate)}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -405,7 +396,7 @@ export default function CreateGatheringScreen() {
               display="spinner"
               onChange={handleDateChange}
               minimumDate={new Date()}
-              textColor={COLORS.text}
+              textColor={colors.textPrimary}
             />
           )}
 
@@ -415,14 +406,14 @@ export default function CreateGatheringScreen() {
               mode="time"
               display="spinner"
               onChange={handleTimeChange}
-              textColor={COLORS.text}
+              textColor={colors.textPrimary}
             />
           )}
 
           {/* 정원 */}
           <View style={styles.formGroup}>
-            <Text style={styles.label}>정원 *</Text>
-            <View style={styles.capacityInput}>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>정원 *</Text>
+            <View style={[styles.capacityInput, { backgroundColor: colors.surfaceLight, borderColor: colors.border }]}>
               <TouchableOpacity
                 style={styles.capacityButton}
                 onPress={() => {
@@ -430,16 +421,16 @@ export default function CreateGatheringScreen() {
                   if (current > 2) setMaxCapacity(String(current - 1));
                 }}
               >
-                <Ionicons name="remove" size={20} color={COLORS.text} />
+                <Ionicons name="remove" size={20} color={colors.textPrimary} />
               </TouchableOpacity>
               <TextInput
-                style={styles.capacityValue}
+                style={[styles.capacityValue, { color: colors.textPrimary }]}
                 value={maxCapacity}
                 onChangeText={setMaxCapacity}
                 keyboardType="number-pad"
                 maxLength={3}
               />
-              <Text style={styles.capacityUnit}>명</Text>
+              <Text style={[styles.capacityUnit, { color: colors.textTertiary }]}>명</Text>
               <TouchableOpacity
                 style={styles.capacityButton}
                 onPress={() => {
@@ -447,39 +438,39 @@ export default function CreateGatheringScreen() {
                   if (current < 100) setMaxCapacity(String(current + 1));
                 }}
               >
-                <Ionicons name="add" size={20} color={COLORS.text} />
+                <Ionicons name="add" size={20} color={colors.textPrimary} />
               </TouchableOpacity>
             </View>
           </View>
 
           {/* 참가비 */}
           <View style={styles.formGroup}>
-            <Text style={styles.label}>참가비</Text>
-            <View style={styles.feeInput}>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>참가비</Text>
+            <View style={[styles.feeInput, { backgroundColor: colors.surfaceLight, borderColor: colors.border }]}>
               <TextInput
-                style={styles.feeValue}
+                style={[styles.feeValue, { color: colors.textPrimary }]}
                 value={entryFee}
                 onChangeText={setEntryFee}
                 keyboardType="number-pad"
                 placeholder="0"
-                placeholderTextColor={COLORS.textMuted}
+                placeholderTextColor={colors.textTertiary}
               />
-              <Text style={styles.feeUnit}>원</Text>
+              <Text style={[styles.feeUnit, { color: colors.textTertiary }]}>원</Text>
             </View>
             {parseInt(entryFee, 10) > 0 && (
-              <View style={styles.feeBreakdown}>
-                <Text style={styles.feeBreakdownText}>
+              <View style={[styles.feeBreakdown, { backgroundColor: colors.surfaceLight }]}>
+                <Text style={[styles.feeBreakdownText, { color: colors.textSecondary }]}>
                   참가비: {parseInt(entryFee, 10).toLocaleString()}원
                 </Text>
-                <Text style={styles.feeBreakdownText}>
+                <Text style={[styles.feeBreakdownText, { color: colors.textSecondary }]}>
                   + 수수료(10%): {Math.round(parseInt(entryFee, 10) * 0.1).toLocaleString()}원
                 </Text>
-                <Text style={styles.feeBreakdownTotal}>
+                <Text style={[styles.feeBreakdownTotal, { color: colors.primary }]}>
                   = 참가자 결제 금액: {Math.round(parseInt(entryFee, 10) * 1.1).toLocaleString()}원
                 </Text>
               </View>
             )}
-            <Text style={styles.helperText}>
+            <Text style={[styles.helperText, { color: colors.textTertiary }]}>
               0원 입력 시 무료 모임으로 설정됩니다{'\n'}
               유료 모임의 경우 참가자에게 10% 수수료가 별도 부과됩니다
             </Text>
@@ -487,8 +478,8 @@ export default function CreateGatheringScreen() {
 
           {/* 최소 입장 티어 (TBAC) */}
           <View style={styles.formGroup}>
-            <Text style={styles.label}>최소 입장 조건</Text>
-            <Text style={styles.helperText}>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>최소 입장 조건</Text>
+            <Text style={[styles.helperText, { color: colors.textTertiary }]}>
               선택한 등급 이상의 회원만 참가할 수 있습니다
             </Text>
             <View style={styles.tierOptionsContainer}>
@@ -497,8 +488,8 @@ export default function CreateGatheringScreen() {
                   key={tier}
                   style={[
                     styles.tierOption,
-                    minTierRequired === tier && styles.tierOptionActive,
-                    { borderColor: TIER_COLORS[tier] + '50' },
+                    { backgroundColor: colors.surface, borderColor: TIER_COLORS[tier] + '50' },
+                    minTierRequired === tier && { backgroundColor: colors.surfaceLight },
                   ]}
                   onPress={() => setMinTierRequired(tier)}
                 >
@@ -510,10 +501,10 @@ export default function CreateGatheringScreen() {
                     />
                   </View>
                   <View style={styles.tierOptionText}>
-                    <Text style={[styles.tierOptionLabel, minTierRequired === tier && { color: TIER_COLORS[tier] }]}>
+                    <Text style={[styles.tierOptionLabel, { color: colors.textPrimary }, minTierRequired === tier && { color: TIER_COLORS[tier] }]}>
                       {TIER_LABELS[tier]}
                     </Text>
-                    <Text style={styles.tierOptionDesc}>{TIER_DESCRIPTIONS[tier]}</Text>
+                    <Text style={[styles.tierOptionDesc, { color: colors.textTertiary }]}>{TIER_DESCRIPTIONS[tier]}</Text>
                   </View>
                   {minTierRequired === tier && (
                     <Ionicons name="checkmark-circle" size={20} color={TIER_COLORS[tier]} />
@@ -525,11 +516,11 @@ export default function CreateGatheringScreen() {
 
           {/* 모임 설명 */}
           <View style={styles.formGroup}>
-            <Text style={styles.label}>모임 소개</Text>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>모임 소개</Text>
             <TextInput
-              style={[styles.input, styles.textArea]}
+              style={[styles.input, styles.textArea, { backgroundColor: colors.surfaceLight, color: colors.textPrimary, borderColor: colors.border }]}
               placeholder="모임에 대해 소개해주세요 (선택사항)"
-              placeholderTextColor={COLORS.textMuted}
+              placeholderTextColor={colors.textTertiary}
               value={description}
               onChangeText={setDescription}
               multiline
@@ -537,7 +528,7 @@ export default function CreateGatheringScreen() {
               maxLength={500}
               textAlignVertical="top"
             />
-            <Text style={styles.charCount}>{description.length}/500</Text>
+            <Text style={[styles.charCount, { color: colors.textTertiary }]}>{description.length}/500</Text>
           </View>
 
           {/* 불법 리딩방 금지 동의 (필수) */}
@@ -549,13 +540,14 @@ export default function CreateGatheringScreen() {
             >
               <View style={[
                 styles.checkbox,
-                agreedToTerms && styles.checkboxChecked,
+                { borderColor: colors.error },
+                agreedToTerms && { backgroundColor: colors.error, borderColor: colors.error },
               ]}>
                 {agreedToTerms && (
                   <Ionicons name="checkmark" size={14} color="#000000" />
                 )}
               </View>
-              <Text style={styles.checkboxLabel}>
+              <Text style={[styles.checkboxLabel, { color: colors.error }]}>
                 불법 리딩방 운영 시 계정 영구 정지 및 민형사상 책임에 동의합니다.
               </Text>
             </TouchableOpacity>
@@ -578,7 +570,6 @@ export default function CreateGatheringScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   loadingContainer: {
     justifyContent: 'center',
@@ -587,7 +578,6 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 12,
     fontSize: 14,
-    color: COLORS.textMuted,
   },
   header: {
     flexDirection: 'row',
@@ -596,23 +586,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
   },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: COLORS.surface,
     justifyContent: 'center',
     alignItems: 'center',
   },
   headerTitle: {
     fontSize: 17,
     fontWeight: '600',
-    color: COLORS.text,
   },
   submitButton: {
-    backgroundColor: COLORS.primary,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
@@ -634,7 +620,6 @@ const styles = StyleSheet.create({
   hostInfoBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.surface,
     padding: 16,
     borderRadius: 12,
     marginBottom: 24,
@@ -653,7 +638,6 @@ const styles = StyleSheet.create({
   hostName: {
     fontSize: 15,
     fontWeight: '600',
-    color: COLORS.text,
   },
   hostAssets: {
     fontSize: 13,
@@ -666,30 +650,24 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 13,
     fontWeight: '600',
-    color: COLORS.textSecondary,
     marginBottom: 10,
   },
   input: {
-    backgroundColor: COLORS.inputBg,
     borderRadius: 12,
     padding: 16,
     fontSize: 15,
-    color: COLORS.text,
     borderWidth: 1,
-    borderColor: COLORS.border,
   },
   textArea: {
     minHeight: 120,
   },
   charCount: {
     fontSize: 11,
-    color: COLORS.textMuted,
     textAlign: 'right',
     marginTop: 6,
   },
   helperText: {
     fontSize: 12,
-    color: COLORS.textMuted,
     marginTop: 8,
   },
   optionsGrid: {
@@ -700,21 +678,14 @@ const styles = StyleSheet.create({
   optionCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.surface,
     paddingHorizontal: 14,
     paddingVertical: 12,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: COLORS.border,
     gap: 8,
-  },
-  optionCardActive: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
   },
   optionLabel: {
     fontSize: 14,
-    color: COLORS.textSecondary,
     fontWeight: '500',
   },
   optionLabelActive: {
@@ -723,7 +694,6 @@ const styles = StyleSheet.create({
   },
   segmentedControl: {
     flexDirection: 'row',
-    backgroundColor: COLORS.surface,
     borderRadius: 10,
     padding: 4,
   },
@@ -736,12 +706,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     gap: 6,
   },
-  segmentActive: {
-    backgroundColor: COLORS.primary,
-  },
   segmentText: {
     fontSize: 14,
-    color: COLORS.textSecondary,
     fontWeight: '500',
   },
   segmentTextActive: {
@@ -756,25 +722,20 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.inputBg,
     padding: 14,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: COLORS.border,
     gap: 8,
   },
   dateTimeText: {
     fontSize: 14,
-    color: COLORS.text,
     fontWeight: '500',
   },
   capacityInput: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.inputBg,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: COLORS.border,
     paddingHorizontal: 8,
   },
   capacityButton: {
@@ -787,38 +748,31 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 18,
     fontWeight: '700',
-    color: COLORS.text,
     textAlign: 'center',
     padding: 12,
   },
   capacityUnit: {
     fontSize: 14,
-    color: COLORS.textMuted,
     marginRight: 8,
   },
   feeInput: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.inputBg,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: COLORS.border,
     paddingHorizontal: 16,
   },
   feeValue: {
     flex: 1,
     fontSize: 18,
     fontWeight: '700',
-    color: COLORS.text,
     padding: 14,
   },
   feeUnit: {
     fontSize: 16,
-    color: COLORS.textMuted,
     fontWeight: '500',
   },
   feeBreakdown: {
-    backgroundColor: COLORS.surfaceLight,
     borderRadius: 8,
     padding: 12,
     marginTop: 10,
@@ -826,12 +780,10 @@ const styles = StyleSheet.create({
   },
   feeBreakdownText: {
     fontSize: 12,
-    color: COLORS.textSecondary,
   },
   feeBreakdownTotal: {
     fontSize: 13,
     fontWeight: '700',
-    color: COLORS.primary,
     marginTop: 4,
   },
   // 권한 없음 화면
@@ -845,7 +797,6 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: COLORS.surface,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 24,
@@ -853,12 +804,10 @@ const styles = StyleSheet.create({
   noPermissionTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: COLORS.text,
     marginBottom: 12,
   },
   noPermissionDescription: {
     fontSize: 15,
-    color: COLORS.textSecondary,
     textAlign: 'center',
     lineHeight: 22,
     marginBottom: 32,
@@ -866,7 +815,6 @@ const styles = StyleSheet.create({
   verifyButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.primary,
     paddingHorizontal: 24,
     paddingVertical: 14,
     borderRadius: 12,
@@ -885,14 +833,10 @@ const styles = StyleSheet.create({
   tierOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.surface,
     padding: 14,
     borderRadius: 12,
     borderWidth: 1,
     gap: 12,
-  },
-  tierOptionActive: {
-    backgroundColor: COLORS.surfaceLight,
   },
   tierOptionIcon: {
     width: 36,
@@ -907,11 +851,9 @@ const styles = StyleSheet.create({
   tierOptionLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: COLORS.text,
   },
   tierOptionDesc: {
     fontSize: 11,
-    color: COLORS.textMuted,
     marginTop: 2,
   },
   // 불법 리딩방 금지 동의 스타일
@@ -933,20 +875,14 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: 4,
     borderWidth: 2,
-    borderColor: COLORS.error,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 1,
-  },
-  checkboxChecked: {
-    backgroundColor: COLORS.error,
-    borderColor: COLORS.error,
   },
   checkboxLabel: {
     flex: 1,
     fontSize: 14,
     fontWeight: '600',
-    color: COLORS.error,
     lineHeight: 20,
   },
   disclaimerWarning: {

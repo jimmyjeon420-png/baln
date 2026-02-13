@@ -35,7 +35,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
-import { COLORS } from '../../src/styles/theme';
 import { useTheme } from '../../src/hooks/useTheme';
 import supabase, { getCurrentUser } from '../../src/services/supabase';
 import { searchStocks, StockItem, getCategoryColor } from '../../src/data/stockList';
@@ -349,8 +348,9 @@ export default function OnboardingScreen() {
           key={i}
           style={[
             styles.dot,
-            i === currentStep && styles.dotActive,
-            i < currentStep && styles.dotCompleted,
+            { backgroundColor: colors.border },
+            i === currentStep && [styles.dotActive, { backgroundColor: colors.primary }],
+            i < currentStep && { backgroundColor: colors.primary + '60' },
           ]}
         />
       ))}
@@ -383,10 +383,10 @@ export default function OnboardingScreen() {
     return (
       <View style={styles.stepContent}>
         <Text style={styles.welcomeEmoji}>{'👋'}</Text>
-        <Text style={styles.heading}>
+        <Text style={[styles.heading, { color: colors.textPrimary }]}>
           bal<Text style={{ color: '#4CAF50' }}>n</Text>{'에 오신 걸\n환영합니다'}
         </Text>
-        <Text style={styles.subheading}>
+        <Text style={[styles.subheading, { color: colors.textSecondary }]}>
           {'매일 5분, 시장 맥락을 읽어보세요.\n자기만의 투자 기준이 생깁니다.'}
         </Text>
 
@@ -403,10 +403,10 @@ export default function OnboardingScreen() {
   function renderInvestorLevelStep() {
     return (
       <View style={styles.stepContent}>
-        <Text style={styles.heading}>
+        <Text style={[styles.heading, { color: colors.textPrimary }]}>
           {'투자 경험이\n어떻게 되시나요?'}
         </Text>
-        <Text style={styles.subheading}>
+        <Text style={[styles.subheading, { color: colors.textSecondary }]}>
           맞춤 콘텐츠를 제공하기 위해 물어볼게요.
         </Text>
 
@@ -416,7 +416,8 @@ export default function OnboardingScreen() {
               key={option.id}
               style={[
                 styles.optionCard,
-                investorLevel === option.id && styles.optionCardSelected,
+                { backgroundColor: colors.surface, borderColor: colors.surfaceLight },
+                investorLevel === option.id && [styles.optionCardSelected, { borderColor: colors.primary }],
               ]}
               onPress={() => setInvestorLevel(option.id)}
               activeOpacity={0.7}
@@ -425,20 +426,21 @@ export default function OnboardingScreen() {
               <View style={styles.optionTextContainer}>
                 <Text style={[
                   styles.optionLabel,
-                  investorLevel === option.id && styles.optionLabelSelected,
+                  { color: colors.textPrimary },
+                  investorLevel === option.id && { color: colors.primary },
                 ]}>
                   {option.label}
                 </Text>
-                <Text style={styles.optionDesc}>{option.description}</Text>
+                <Text style={[styles.optionDesc, { color: colors.textSecondary }]}>{option.description}</Text>
               </View>
               {investorLevel === option.id && (
-                <Ionicons name="checkmark-circle" size={24} color={COLORS.primary} />
+                <Ionicons name="checkmark-circle" size={24} color={colors.primary} />
               )}
             </TouchableOpacity>
           ))}
         </View>
 
-        <Text style={styles.skipHint}>선택하지 않아도 넘어갈 수 있어요</Text>
+        <Text style={[styles.skipHint, { color: colors.textTertiary }]}>선택하지 않아도 넘어갈 수 있어요</Text>
       </View>
     );
   }
@@ -447,10 +449,10 @@ export default function OnboardingScreen() {
   function renderInvestmentGoalStep() {
     return (
       <View style={styles.stepContent}>
-        <Text style={styles.heading}>
+        <Text style={[styles.heading, { color: colors.textPrimary }]}>
           {'투자 목표는\n무엇인가요?'}
         </Text>
-        <Text style={styles.subheading}>
+        <Text style={[styles.subheading, { color: colors.textSecondary }]}>
           목표에 맞는 분석을 제공해드릴게요.
         </Text>
 
@@ -460,7 +462,8 @@ export default function OnboardingScreen() {
               key={option.id}
               style={[
                 styles.optionCard,
-                investmentGoal === option.id && styles.optionCardSelected,
+                { backgroundColor: colors.surface, borderColor: colors.surfaceLight },
+                investmentGoal === option.id && [styles.optionCardSelected, { borderColor: colors.primary }],
               ]}
               onPress={() => setInvestmentGoal(option.id)}
               activeOpacity={0.7}
@@ -469,20 +472,21 @@ export default function OnboardingScreen() {
               <View style={styles.optionTextContainer}>
                 <Text style={[
                   styles.optionLabel,
-                  investmentGoal === option.id && styles.optionLabelSelected,
+                  { color: colors.textPrimary },
+                  investmentGoal === option.id && { color: colors.primary },
                 ]}>
                   {option.label}
                 </Text>
-                <Text style={styles.optionDesc}>{option.description}</Text>
+                <Text style={[styles.optionDesc, { color: colors.textSecondary }]}>{option.description}</Text>
               </View>
               {investmentGoal === option.id && (
-                <Ionicons name="checkmark-circle" size={24} color={COLORS.primary} />
+                <Ionicons name="checkmark-circle" size={24} color={colors.primary} />
               )}
             </TouchableOpacity>
           ))}
         </View>
 
-        <Text style={styles.skipHint}>선택하지 않아도 넘어갈 수 있어요</Text>
+        <Text style={[styles.skipHint, { color: colors.textTertiary }]}>선택하지 않아도 넘어갈 수 있어요</Text>
       </View>
     );
   }
@@ -500,57 +504,57 @@ export default function OnboardingScreen() {
         {/* iOS 숫자 키보드 "완료" 버튼 */}
         {Platform.OS === 'ios' && (
           <InputAccessoryView nativeID={ONBOARDING_ACCESSORY_ID}>
-            <View style={{ flexDirection: 'row', backgroundColor: '#2A2A2A', borderTopWidth: 1, borderTopColor: '#333', paddingHorizontal: 12, paddingVertical: 8 }}>
+            <View style={{ flexDirection: 'row', backgroundColor: colors.surfaceLight, borderTopWidth: 1, borderTopColor: colors.border, paddingHorizontal: 12, paddingVertical: 8 }}>
               <View style={{ flex: 1 }} />
               <TouchableOpacity onPress={() => Keyboard.dismiss()} style={{ paddingHorizontal: 16, paddingVertical: 6 }}>
-                <Text style={{ fontSize: 16, fontWeight: '600', color: COLORS.primary }}>완료</Text>
+                <Text style={{ fontSize: 16, fontWeight: '600', color: colors.primary }}>완료</Text>
               </TouchableOpacity>
             </View>
           </InputAccessoryView>
         )}
-        <Text style={styles.heading}>
+        <Text style={[styles.heading, { color: colors.textPrimary }]}>
           {'보유 자산을\n등록해볼까요?'}
         </Text>
-        <Text style={styles.subheading}>
+        <Text style={[styles.subheading, { color: colors.textSecondary }]}>
           등록하면 바로 포트폴리오 건강 점수를 알려드려요
         </Text>
 
         {/* 개인정보 수집 동의 */}
         <TouchableOpacity
-          style={styles.consentRow}
+          style={[styles.consentRow, { backgroundColor: colors.surface }]}
           onPress={() => setPrivacyConsent(!privacyConsent)}
           activeOpacity={0.7}
         >
           <Ionicons
             name={privacyConsent ? 'checkbox' : 'square-outline'}
             size={22}
-            color={privacyConsent ? COLORS.primary : '#666666'}
+            color={privacyConsent ? colors.primary : colors.textTertiary}
           />
-          <Text style={styles.consentText}>
+          <Text style={[styles.consentText, { color: colors.textPrimary }]}>
             개인정보 수집 및 이용에 동의합니다
           </Text>
           <TouchableOpacity
             onPress={() => router.push('/settings/privacy')}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Text style={styles.consentLink}>[전문 보기]</Text>
+            <Text style={[styles.consentLink, { color: colors.primary }]}>[전문 보기]</Text>
           </TouchableOpacity>
         </TouchableOpacity>
 
         {/* 동의 전에는 자산 등록 폼 비활성화 안내 */}
         {!privacyConsent && (
-          <Text style={styles.consentHint}>
+          <Text style={[styles.consentHint, { color: colors.textTertiary }]}>
             자산을 등록하려면 개인정보 수집에 동의해주세요
           </Text>
         )}
 
         {/* 검색바 (동의 후 활성화) */}
-        <View style={[styles.searchBarContainer, !privacyConsent && { opacity: 0.4 }]} pointerEvents={privacyConsent ? 'auto' : 'none'}>
-          <Ionicons name="search" size={18} color="#757575" style={{ marginRight: 8 }} />
+        <View style={[styles.searchBarContainer, { backgroundColor: colors.surface }, !privacyConsent && { opacity: 0.4 }]} pointerEvents={privacyConsent ? 'auto' : 'none'}>
+          <Ionicons name="search" size={18} color={colors.textTertiary} style={{ marginRight: 8 }} />
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, { color: colors.textPrimary }]}
             placeholder="삼성전자, NVDA, 비트코인..."
-            placeholderTextColor="#757575"
+            placeholderTextColor={colors.textTertiary}
             value={searchQuery}
             onChangeText={(text) => {
               setSearchQuery(text);
@@ -573,11 +577,11 @@ export default function OnboardingScreen() {
 
         {/* 검색 드롭다운 */}
         {showDropdown && (
-          <View style={styles.dropdown}>
+          <View style={[styles.dropdown, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             {searchResults.slice(0, 5).map((item) => (
               <TouchableOpacity
                 key={item.ticker}
-                style={styles.dropdownItem}
+                style={[styles.dropdownItem, { borderBottomColor: colors.surfaceLight }]}
                 onPress={() => selectStock(item)}
               >
                 <View style={[styles.catBadge, { backgroundColor: getCategoryColor(item.category) + '20' }]}>
@@ -586,8 +590,8 @@ export default function OnboardingScreen() {
                   </Text>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.dropdownName}>{item.name}</Text>
-                  <Text style={styles.dropdownTicker}>{item.ticker}</Text>
+                  <Text style={[styles.dropdownName, { color: colors.textPrimary }]}>{item.name}</Text>
+                  <Text style={[styles.dropdownTicker, { color: colors.textSecondary }]}>{item.ticker}</Text>
                 </View>
               </TouchableOpacity>
             ))}
@@ -596,18 +600,18 @@ export default function OnboardingScreen() {
 
         {/* 선택된 종목이 있으면 수량/가격 입력 */}
         {selectedStock && !showDropdown && (
-          <View style={styles.assetForm}>
-            <Text style={styles.selectedLabel}>
+          <View style={[styles.assetForm, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Text style={[styles.selectedLabel, { color: colors.primary }]}>
               {selectedStock.name} ({selectedStock.ticker})
             </Text>
 
             <View style={styles.inputRow}>
               <View style={styles.inputHalf}>
-                <Text style={styles.inputLabel}>수량</Text>
+                <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>수량</Text>
                 <TextInput
-                  style={styles.numInput}
+                  style={[styles.numInput, { backgroundColor: colors.surfaceLight, borderColor: colors.border, color: colors.textPrimary }]}
                   placeholder="예: 10"
-                  placeholderTextColor="#555"
+                  placeholderTextColor={colors.textTertiary}
                   value={assetQuantity}
                   onChangeText={(t) => setAssetQuantity(t.replace(/[^0-9.]/g, ''))}
                   keyboardType="decimal-pad"
@@ -616,13 +620,13 @@ export default function OnboardingScreen() {
               </View>
               <View style={styles.inputHalf}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <Text style={styles.inputLabel}>매수 단가</Text>
-                  {priceLoading && <ActivityIndicator size="small" color={COLORS.primary} />}
+                  <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>매수 단가</Text>
+                  {priceLoading && <ActivityIndicator size="small" color={colors.primary} />}
                 </View>
                 <TextInput
-                  style={styles.numInput}
+                  style={[styles.numInput, { backgroundColor: colors.surfaceLight, borderColor: colors.border, color: colors.textPrimary }]}
                   placeholder="0"
-                  placeholderTextColor="#555"
+                  placeholderTextColor={colors.textTertiary}
                   value={assetPrice}
                   onChangeText={(t) => setAssetPrice(t.replace(/[^0-9.]/g, ''))}
                   keyboardType="decimal-pad"
@@ -632,13 +636,13 @@ export default function OnboardingScreen() {
             </View>
 
             {totalValue > 0 && (
-              <Text style={styles.totalPreview}>
+              <Text style={[styles.totalPreview, { color: colors.primary }]}>
                 평가금액: {totalValue.toLocaleString()}
               </Text>
             )}
 
             <TouchableOpacity
-              style={[styles.addButton, !canAdd && styles.addButtonDisabled]}
+              style={[styles.addButton, { backgroundColor: colors.primary }, !canAdd && styles.addButtonDisabled]}
               onPress={handleAddAsset}
               disabled={!canAdd || addingAsset}
               activeOpacity={0.8}
@@ -654,12 +658,12 @@ export default function OnboardingScreen() {
 
         {/* 등록된 자산 목록 */}
         {registeredAssets.length > 0 && (
-          <View style={styles.registeredList}>
-            <Text style={styles.registeredTitle}>등록된 자산 ({registeredAssets.length})</Text>
+          <View style={[styles.registeredList, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.registeredTitle, { color: colors.textSecondary }]}>등록된 자산 ({registeredAssets.length})</Text>
             {registeredAssets.map((ra) => (
-              <View key={ra.ticker} style={styles.registeredRow}>
-                <Text style={styles.registeredName}>{ra.name}</Text>
-                <Text style={styles.registeredValue}>
+              <View key={ra.ticker} style={[styles.registeredRow, { borderBottomColor: colors.border }]}>
+                <Text style={[styles.registeredName, { color: colors.textPrimary }]}>{ra.name}</Text>
+                <Text style={[styles.registeredValue, { color: colors.textSecondary }]}>
                   {ra.quantity}{ra.category === 'crypto' ? '개' : '주'} / {(ra.quantity * ra.price).toLocaleString()}
                 </Text>
               </View>
@@ -667,7 +671,7 @@ export default function OnboardingScreen() {
           </View>
         )}
 
-        <Text style={styles.skipHint}>
+        <Text style={[styles.skipHint, { color: colors.textTertiary }]}>
           {registeredAssets.length === 0 ? '건너뛰어도 나중에 등록할 수 있어요' : '더 추가하거나 다음으로 넘어가세요'}
         </Text>
       </View>
@@ -682,17 +686,17 @@ export default function OnboardingScreen() {
       return (
         <View style={styles.stepContent}>
           <Text style={styles.startEmoji}>{'🚀'}</Text>
-          <Text style={styles.heading}>
+          <Text style={[styles.heading, { color: colors.textPrimary }]}>
             {'준비 완료!\n지금 시작하세요'}
           </Text>
-          <Text style={styles.subheading}>
+          <Text style={[styles.subheading, { color: colors.textSecondary }]}>
             {'매일 5분 투자로\n당신의 투자 기준을 만들어보세요.'}
           </Text>
-          <View style={styles.summaryCard}>
+          <View style={[styles.summaryCard, { backgroundColor: colors.surface }]}>
             {investorLevel && (
               <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>투자 경험</Text>
-                <Text style={styles.summaryValue}>
+                <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>투자 경험</Text>
+                <Text style={[styles.summaryValue, { color: colors.textPrimary }]}>
                   {INVESTOR_LEVELS.find(l => l.id === investorLevel)?.emoji}{' '}
                   {INVESTOR_LEVELS.find(l => l.id === investorLevel)?.label}
                 </Text>
@@ -700,14 +704,14 @@ export default function OnboardingScreen() {
             )}
             {investmentGoal && (
               <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>투자 목표</Text>
-                <Text style={styles.summaryValue}>
+                <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>투자 목표</Text>
+                <Text style={[styles.summaryValue, { color: colors.textPrimary }]}>
                   {INVESTMENT_GOALS.find(g => g.id === investmentGoal)?.emoji}{' '}
                   {INVESTMENT_GOALS.find(g => g.id === investmentGoal)?.label}
                 </Text>
               </View>
             )}
-            <Text style={styles.summaryEmpty}>
+            <Text style={[styles.summaryEmpty, { color: colors.textTertiary }]}>
               자산은 나중에 등록할 수 있어요
             </Text>
           </View>
@@ -719,8 +723,8 @@ export default function OnboardingScreen() {
     if (scoreLoading) {
       return (
         <View style={styles.stepContent}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
-          <Text style={[styles.subheading, { marginTop: 16 }]}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={[styles.subheading, { marginTop: 16, color: colors.textSecondary }]}>
             포트폴리오를 분석하고 있어요...
           </Text>
         </View>
@@ -739,22 +743,22 @@ export default function OnboardingScreen() {
           </Text>
         </View>
 
-        <Text style={styles.heading}>
+        <Text style={[styles.heading, { color: colors.textPrimary }]}>
           {score?.gradeLabel || '양호'}
         </Text>
-        <Text style={styles.scoreNumber}>
+        <Text style={[styles.scoreNumber, { color: colors.textSecondary }]}>
           {score?.totalScore ?? 70}점
         </Text>
 
         {/* 요약 카드 */}
-        <View style={styles.summaryCard}>
+        <View style={[styles.summaryCard, { backgroundColor: colors.surface }]}>
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>등록 자산</Text>
-            <Text style={styles.summaryValue}>{registeredAssets.length}개</Text>
+            <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>등록 자산</Text>
+            <Text style={[styles.summaryValue, { color: colors.textPrimary }]}>{registeredAssets.length}개</Text>
           </View>
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>총 평가금액</Text>
-            <Text style={styles.summaryValue}>
+            <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>총 평가금액</Text>
+            <Text style={[styles.summaryValue, { color: colors.textPrimary }]}>
               {registeredAssets.reduce((s, a) => s + a.quantity * a.price, 0).toLocaleString()}
             </Text>
           </View>
@@ -769,7 +773,7 @@ export default function OnboardingScreen() {
           )}
         </View>
 
-        <Text style={[styles.subheading, { marginTop: 16 }]}>
+        <Text style={[styles.subheading, { marginTop: 16, color: colors.textSecondary }]}>
           분석 탭에서 더 자세한 진단을 확인하세요
         </Text>
       </View>
@@ -789,7 +793,7 @@ export default function OnboardingScreen() {
       <View style={styles.topBar}>
         {currentStep > 0 ? (
           <TouchableOpacity onPress={goBack} style={styles.topBarButton}>
-            <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+            <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
           </TouchableOpacity>
         ) : (
           <View style={styles.topBarButton} />
@@ -798,7 +802,7 @@ export default function OnboardingScreen() {
         {renderProgressDots()}
 
         <TouchableOpacity onPress={handleSkip} style={styles.topBarButton}>
-          <Text style={styles.skipButtonText}>건너뛰기</Text>
+          <Text style={[styles.skipButtonText, { color: colors.textTertiary }]}>건너뛰기</Text>
         </TouchableOpacity>
       </View>
 
@@ -811,7 +815,7 @@ export default function OnboardingScreen() {
       <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
         {currentStep < TOTAL_STEPS - 1 ? (
           <TouchableOpacity
-            style={styles.nextButton}
+            style={[styles.nextButton, { backgroundColor: colors.primary }]}
             onPress={goNext}
             activeOpacity={0.8}
           >
@@ -822,7 +826,7 @@ export default function OnboardingScreen() {
           </TouchableOpacity>
         ) : (
           <TouchableOpacity
-            style={styles.startButton}
+            style={[styles.startButton, { backgroundColor: colors.primary }]}
             onPress={handleStart}
             activeOpacity={0.8}
           >
@@ -839,10 +843,11 @@ export default function OnboardingScreen() {
 // ============================================================================
 
 function FeatureItem({ emoji, text }: { emoji: string; text: string }) {
+  const { colors } = useTheme();
   return (
-    <View style={styles.featureItem}>
+    <View style={[styles.featureItem, { backgroundColor: colors.surface }]}>
       <Text style={styles.featureEmoji}>{emoji}</Text>
-      <Text style={styles.featureText}>{text}</Text>
+      <Text style={[styles.featureText, { color: colors.textPrimary }]}>{text}</Text>
     </View>
   );
 }
@@ -854,11 +859,8 @@ function FeatureItem({ emoji, text }: { emoji: string; text: string }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
     paddingHorizontal: 24,
   },
-
-  // 상단 바
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -871,10 +873,7 @@ const styles = StyleSheet.create({
   },
   skipButtonText: {
     fontSize: 14,
-    color: '#757575',
   },
-
-  // 진행률 점
   progressDots: {
     flexDirection: 'row',
     gap: 6,
@@ -884,23 +883,14 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#333333',
   },
   dotActive: {
     width: 24,
-    backgroundColor: COLORS.primary,
     borderRadius: 4,
   },
-  dotCompleted: {
-    backgroundColor: COLORS.primary + '60',
-  },
-
-  // 단계 컨테이너
   stepContainer: {
     flex: 1,
   },
-
-  // 단계 콘텐츠
   stepContent: {
     flex: 1,
     justifyContent: 'center',
@@ -910,8 +900,6 @@ const styles = StyleSheet.create({
   stepContentFull: {
     flex: 1,
   },
-
-  // 환영 이모지
   welcomeEmoji: {
     fontSize: 64,
     marginBottom: 24,
@@ -920,25 +908,19 @@ const styles = StyleSheet.create({
     fontSize: 64,
     marginBottom: 24,
   },
-
-  // 헤딩
   heading: {
     fontSize: 30,
     fontWeight: '700',
-    color: COLORS.textPrimary,
     lineHeight: 42,
     textAlign: 'center',
     marginBottom: 12,
   },
   subheading: {
     fontSize: 16,
-    color: '#AAAAAA',
     textAlign: 'center',
     lineHeight: 24,
     marginBottom: 32,
   },
-
-  // 피처 리스트
   featureList: {
     gap: 16,
     alignItems: 'center',
@@ -947,7 +929,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: COLORS.surface,
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderRadius: 14,
@@ -959,11 +940,8 @@ const styles = StyleSheet.create({
   },
   featureText: {
     fontSize: 16,
-    color: COLORS.textPrimary,
     fontWeight: '500',
   },
-
-  // 옵션 리스트 (경험/목표 선택)
   optionList: {
     gap: 12,
     width: '100%',
@@ -972,15 +950,12 @@ const styles = StyleSheet.create({
   optionCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.surface,
     borderRadius: 16,
     padding: 18,
     borderWidth: 2,
-    borderColor: '#2A2A2A',
   },
   optionCardSelected: {
-    borderColor: COLORS.primary,
-    backgroundColor: '#1A2A1A',
+    backgroundColor: 'rgba(76, 175, 80, 0.08)',
   },
   optionEmoji: {
     fontSize: 28,
@@ -992,28 +967,19 @@ const styles = StyleSheet.create({
   optionLabel: {
     fontSize: 18,
     fontWeight: '700',
-    color: COLORS.textPrimary,
     marginBottom: 2,
-  },
-  optionLabelSelected: {
-    color: COLORS.primary,
   },
   optionDesc: {
     fontSize: 13,
-    color: '#888888',
   },
   skipHint: {
     fontSize: 13,
-    color: '#666666',
     marginTop: 24,
     textAlign: 'center',
   },
-
-  // 검색바 (자산 선택 단계)
   searchBarContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.surface,
     borderRadius: 12,
     paddingHorizontal: 14,
     marginBottom: 20,
@@ -1023,15 +989,10 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 14,
     fontSize: 16,
-    color: COLORS.textPrimary,
   },
-
-  // 검색 드롭다운
   dropdown: {
-    backgroundColor: '#252525',
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#333',
     marginBottom: 12,
     maxHeight: 220,
     overflow: 'hidden',
@@ -1042,7 +1003,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#2A2A2A',
     gap: 10,
   },
   catBadge: {
@@ -1057,27 +1017,20 @@ const styles = StyleSheet.create({
   dropdownName: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#FFF',
   },
   dropdownTicker: {
     fontSize: 11,
-    color: '#888',
     marginTop: 1,
   },
-
-  // 자산 등록 폼
   assetForm: {
-    backgroundColor: COLORS.surface,
     borderRadius: 14,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#252525',
   },
   selectedLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: COLORS.primary,
     marginBottom: 12,
   },
   inputRow: {
@@ -1091,27 +1044,21 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#AAA',
     marginBottom: 6,
   },
   numInput: {
     height: 42,
-    backgroundColor: '#2A2A2A',
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#333',
     paddingHorizontal: 12,
     fontSize: 15,
-    color: '#FFFFFF',
   },
   totalPreview: {
     fontSize: 13,
-    color: COLORS.primary,
     fontWeight: '600',
     marginBottom: 10,
   },
   addButton: {
-    backgroundColor: COLORS.primary,
     borderRadius: 10,
     paddingVertical: 12,
     alignItems: 'center',
@@ -1125,10 +1072,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#FFFFFF',
   },
-
-  // 등록된 자산 목록
   registeredList: {
-    backgroundColor: COLORS.surface,
     borderRadius: 14,
     padding: 14,
     marginBottom: 8,
@@ -1136,7 +1080,6 @@ const styles = StyleSheet.create({
   registeredTitle: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#AAA',
     marginBottom: 8,
   },
   registeredRow: {
@@ -1145,19 +1088,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 6,
     borderBottomWidth: 1,
-    borderBottomColor: '#252525',
   },
   registeredName: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#FFF',
   },
   registeredValue: {
     fontSize: 13,
-    color: '#AAA',
   },
-
-  // 건강 점수 등급 원형
   gradeCircle: {
     width: 100,
     height: 100,
@@ -1174,11 +1112,8 @@ const styles = StyleSheet.create({
   scoreNumber: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#AAAAAA',
     marginBottom: 24,
   },
-
-  // 취약 팩터
   weakFactorRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -1202,10 +1137,7 @@ const styles = StyleSheet.create({
     color: '#CCCCCC',
     lineHeight: 18,
   },
-
-  // 시작 요약 카드
   summaryCard: {
-    backgroundColor: COLORS.surface,
     borderRadius: 16,
     padding: 18,
     width: '100%',
@@ -1219,32 +1151,24 @@ const styles = StyleSheet.create({
   },
   summaryLabel: {
     fontSize: 14,
-    color: '#888888',
   },
   summaryValue: {
     fontSize: 15,
     fontWeight: '700',
-    color: COLORS.textPrimary,
   },
   summaryEmpty: {
     fontSize: 14,
-    color: '#666666',
     textAlign: 'center',
   },
-
-  // 하단 영역
   footer: {
     paddingTop: 12,
     alignItems: 'center',
   },
-
-  // 다음 버튼
   nextButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: COLORS.primary,
     borderRadius: 12,
     paddingVertical: 16,
     width: '100%',
@@ -1254,10 +1178,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FFFFFF',
   },
-
-  // 시작하기 버튼
   startButton: {
-    backgroundColor: COLORS.primary,
     borderRadius: 12,
     paddingVertical: 16,
     width: '100%',
@@ -1268,13 +1189,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FFFFFF',
   },
-
-  // 개인정보 동의
   consentRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: COLORS.surface,
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 14,
@@ -1283,17 +1201,14 @@ const styles = StyleSheet.create({
   consentText: {
     flex: 1,
     fontSize: 14,
-    color: COLORS.textPrimary,
     fontWeight: '500',
   },
   consentLink: {
     fontSize: 13,
-    color: COLORS.primary,
     fontWeight: '600',
   },
   consentHint: {
     fontSize: 12,
-    color: '#666666',
     textAlign: 'center',
     marginBottom: 8,
   },

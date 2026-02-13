@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import * as Sentry from '@sentry/react-native';
 import supabase from './supabase';
 
 // ============================================================================
@@ -336,12 +337,21 @@ async function callGeminiSafe(
         continue;
       }
       if (err.name === 'AbortError') {
-        throw new Error(`AI 분석 시간 초과 (${timeoutMs / 1000}초). 다시 시도해주세요.`);
+        const timeoutErr = new Error(`AI 분석 시간 초과 (${timeoutMs / 1000}초). 다시 시도해주세요.`);
+        Sentry.captureException(timeoutErr, { tags: { service: 'gemini', type: 'timeout' } });
+        throw timeoutErr;
       }
+      // Gemini API 호출 실패를 Sentry에 기록
+      Sentry.captureException(err, {
+        tags: { service: 'gemini', type: 'api_error' },
+        extra: { attempt, maxRetries, timeoutMs },
+      });
       throw err;
     }
   }
-  throw new Error('AI 분석 실패. 잠시 후 다시 시도해주세요.');
+  const exhaustedErr = new Error('AI 분석 실패. 잠시 후 다시 시도해주세요.');
+  Sentry.captureException(exhaustedErr, { tags: { service: 'gemini', type: 'retries_exhausted' } });
+  throw exhaustedErr;
 }
 
 /** JSON 응답 안전 파싱 (Gemini의 markdown 코드블록 제거) */

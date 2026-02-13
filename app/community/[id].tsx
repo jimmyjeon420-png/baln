@@ -238,7 +238,7 @@ export default function PostDetailScreen() {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#4CAF50" />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       </SafeAreaView>
     );
@@ -248,16 +248,16 @@ export default function PostDetailScreen() {
   if (!post) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-        <View style={styles.header}>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
           <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons name="chevron-back" size={28} color="#4CAF50" />
+            <Ionicons name="chevron-back" size={28} color={colors.primary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>게시물</Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>게시물</Text>
           <View style={{ width: 28 }} />
         </View>
         <View style={styles.loadingContainer}>
-          <Ionicons name="alert-circle-outline" size={48} color="#666666" />
-          <Text style={styles.emptyText}>게시물을 찾을 수 없습니다</Text>
+          <Ionicons name="alert-circle-outline" size={48} color={colors.textTertiary} />
+          <Text style={[styles.emptyText, { color: colors.textTertiary }]}>게시물을 찾을 수 없습니다</Text>
         </View>
       </SafeAreaView>
     );
@@ -272,7 +272,7 @@ export default function PostDetailScreen() {
   // ── 게시물 헤더 (FlatList ListHeaderComponent) ──
   const renderHeader = () => (
     <View>
-      <View style={styles.postContainer}>
+      <View style={[styles.postContainer, { backgroundColor: colors.surface }]}>
         {/* 작성자 정보 */}
         <View style={styles.postHeader}>
           <View style={styles.postUserInfo}>
@@ -299,32 +299,32 @@ export default function PostDetailScreen() {
                 )}
               </View>
               {post.asset_mix ? (
-                <Text style={styles.postAssetMix}>{post.asset_mix}</Text>
+                <Text style={[styles.postAssetMix, { color: colors.textTertiary }]}>{post.asset_mix}</Text>
               ) : null}
             </View>
           </View>
-          <Text style={styles.postTime}>{getRelativeTime(post.created_at)}</Text>
+          <Text style={[styles.postTime, { color: colors.textTertiary }]}>{getRelativeTime(post.created_at)}</Text>
         </View>
 
         {/* 보유종목 칩 */}
         {holdings.length > 0 && (
           <View style={styles.holdingsSection}>
-            <Text style={styles.holdingsLabel}>보유종목</Text>
+            <Text style={[styles.holdingsLabel, { color: colors.textTertiary }]}>보유종목</Text>
             <View style={styles.holdingsRow}>
               {holdings.map((h: HoldingSnapshot, idx: number) => (
                 <View
                   key={`${h.ticker}-${idx}`}
                   style={[
                     styles.holdingChip,
-                    { borderColor: (HOLDING_TYPE_COLORS[h.type] || '#888') + '40' },
+                    { borderColor: (HOLDING_TYPE_COLORS[h.type] || colors.textTertiary) + '40', backgroundColor: colors.surfaceLight },
                   ]}
                 >
                   <View style={[
                     styles.holdingDot,
-                    { backgroundColor: HOLDING_TYPE_COLORS[h.type] || '#888' },
+                    { backgroundColor: HOLDING_TYPE_COLORS[h.type] || colors.textTertiary },
                   ]} />
-                  <Text style={styles.holdingTicker}>{h.ticker}</Text>
-                  <Text style={styles.holdingName}>{h.name}</Text>
+                  <Text style={[styles.holdingTicker, { color: colors.textSecondary }]}>{h.ticker}</Text>
+                  <Text style={[styles.holdingName, { color: colors.textTertiary }]}>{h.name}</Text>
                 </View>
               ))}
             </View>
@@ -332,7 +332,7 @@ export default function PostDetailScreen() {
         )}
 
         {/* 본문 */}
-        <Text style={styles.postContent}>{post.content}</Text>
+        <Text style={[styles.postContent, { color: colors.textPrimary }]}>{post.content}</Text>
 
         {/* 첨부 이미지 갤러리 */}
         {post.image_urls && post.image_urls.length > 0 && (
@@ -347,13 +347,12 @@ export default function PostDetailScreen() {
                 key={index}
                 style={styles.imageItem}
                 onPress={() => {
-                  // TODO: 이미지 확대 모달 (향후 구현)
                   Alert.alert('이미지', `이미지 ${index + 1}/${post.image_urls!.length}`);
                 }}
               >
                 <Image
                   source={{ uri: url }}
-                  style={styles.postImage}
+                  style={[styles.postImage, { backgroundColor: colors.surface }]}
                   resizeMode="cover"
                 />
               </TouchableOpacity>
@@ -362,7 +361,7 @@ export default function PostDetailScreen() {
         )}
 
         {/* 좋아요 + 댓글 수 */}
-        <View style={styles.postFooter}>
+        <View style={[styles.postFooter, { borderTopColor: colors.border }]}>
           <TouchableOpacity
             style={styles.postActionButton}
             onPress={() => likePost.mutate(post.id)}
@@ -370,16 +369,16 @@ export default function PostDetailScreen() {
             <Ionicons
               name={isLiked ? 'heart' : 'heart-outline'}
               size={20}
-              color={isLiked ? '#CF6679' : '#888888'}
+              color={isLiked ? colors.error : colors.textTertiary}
             />
-            <Text style={[styles.postActionText, isLiked && { color: '#CF6679' }]}>
+            <Text style={[styles.postActionText, { color: colors.textTertiary }, isLiked && { color: colors.error }]}>
               {post.likes_count || 0}
             </Text>
           </TouchableOpacity>
 
           <View style={styles.postActionButton}>
-            <Ionicons name="chatbubble-outline" size={18} color="#888888" />
-            <Text style={styles.postActionText}>{post.comments_count || 0}</Text>
+            <Ionicons name="chatbubble-outline" size={18} color={colors.textTertiary} />
+            <Text style={[styles.postActionText, { color: colors.textTertiary }]}>{post.comments_count || 0}</Text>
           </View>
 
           {/* 북마크 */}
@@ -390,9 +389,9 @@ export default function PostDetailScreen() {
             <Ionicons
               name={isBookmarked ? 'bookmark' : 'bookmark-outline'}
               size={18}
-              color={isBookmarked ? '#4CAF50' : '#888888'}
+              color={isBookmarked ? colors.primary : colors.textTertiary}
             />
-            <Text style={[styles.postActionText, isBookmarked && { color: '#4CAF50' }]}>
+            <Text style={[styles.postActionText, { color: colors.textTertiary }, isBookmarked && { color: colors.primary }]}>
               {isBookmarked ? '저장됨' : '저장'}
             </Text>
           </TouchableOpacity>
@@ -402,29 +401,29 @@ export default function PostDetailScreen() {
             style={styles.postActionButton}
             onPress={() => handleAuthorPress(post.user_id)}
           >
-            <Ionicons name="person-outline" size={18} color="#888888" />
-            <Text style={styles.postActionText}>프로필</Text>
+            <Ionicons name="person-outline" size={18} color={colors.textTertiary} />
+            <Text style={[styles.postActionText, { color: colors.textTertiary }]}>프로필</Text>
           </TouchableOpacity>
         </View>
       </View>
 
       {/* 댓글 섹션 헤더 */}
       <View style={styles.commentsHeader}>
-        <Text style={styles.commentsTitle}>
+        <Text style={[styles.commentsTitle, { color: colors.textPrimary }]}>
           댓글 {comments?.length || 0}
         </Text>
       </View>
 
       {commentsLoading && (
         <View style={styles.commentsLoading}>
-          <ActivityIndicator size="small" color="#4CAF50" />
+          <ActivityIndicator size="small" color={colors.primary} />
         </View>
       )}
 
       {!commentsLoading && (!comments || comments.length === 0) && (
         <View style={styles.emptyComments}>
-          <Ionicons name="chatbubble-ellipses-outline" size={32} color="#444444" />
-          <Text style={styles.emptyCommentsText}>첫 번째 댓글을 남겨보세요!</Text>
+          <Ionicons name="chatbubble-ellipses-outline" size={32} color={colors.textTertiary} />
+          <Text style={[styles.emptyCommentsText, { color: colors.textTertiary }]}>첫 번째 댓글을 남겨보세요!</Text>
         </View>
       )}
     </View>
@@ -437,20 +436,20 @@ export default function PostDetailScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         {/* 헤더 */}
-        <View style={styles.header}>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
           <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons name="chevron-back" size={28} color="#4CAF50" />
+            <Ionicons name="chevron-back" size={28} color={colors.primary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>게시물</Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>게시물</Text>
           {post && (
             <TouchableOpacity onPress={() => handleReport('post', post.id)}>
-              <Ionicons name="ellipsis-vertical" size={24} color="#888888" />
+              <Ionicons name="ellipsis-vertical" size={24} color={colors.textTertiary} />
             </TouchableOpacity>
           )}
           {!post && <View style={{ width: 28 }} />}
         </View>
 
-        {/* 댓글 목록 (최상위 댓글만 — 대댓글은 각 아이템 내에서 렌더링) */}
+        {/* 댓글 목록 (최상위 댓글만 -- 대댓글은 각 아이템 내에서 렌더링) */}
         <FlatList
           data={comments?.filter((c) => !c.parent_id) || []}
           keyExtractor={(item) => item.id}
@@ -458,12 +457,6 @@ export default function PostDetailScreen() {
           ListHeaderComponent={renderHeader}
           contentContainerStyle={styles.listContent}
 
-          // ━━━ 성능 최적화: 100개+ 댓글 게시물에서 부드러운 스크롤 ━━━
-          // windowSize: 화면 밖 렌더링 범위 (10배)
-          // maxToRenderPerBatch: 한 번에 렌더링할 최대 개수
-          // updateCellsBatchingPeriod: 배치 업데이트 주기 (ms)
-          // removeClippedSubviews: 화면 밖 뷰 제거 (Android 메모리 절약)
-          // initialNumToRender: 초기 렌더링 수
           windowSize={10}
           maxToRenderPerBatch={5}
           updateCellsBatchingPeriod={50}
@@ -474,29 +467,29 @@ export default function PostDetailScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor="#4CAF50"
+              tintColor={colors.primary}
             />
           }
         />
 
         {/* 하단: 댓글 입력 or 제한 안내 */}
         {eligibility.canComment ? (
-          <View style={styles.commentInputContainer}>
+          <View style={[styles.commentInputContainer, { borderTopColor: colors.border, backgroundColor: colors.surface }]}>
             {/* 대댓글 모드 헤더 */}
             {replyToId && (
               <View style={styles.replyModeHeader}>
-                <Ionicons name="return-down-forward" size={14} color="#4CAF50" />
-                <Text style={styles.replyModeText}>답글 작성 중</Text>
+                <Ionicons name="return-down-forward" size={14} color={colors.primary} />
+                <Text style={[styles.replyModeText, { color: colors.primary }]}>답글 작성 중</Text>
                 <TouchableOpacity onPress={handleCancelReply} style={styles.replyModeCancel}>
-                  <Ionicons name="close" size={16} color="#888888" />
+                  <Ionicons name="close" size={16} color={colors.textTertiary} />
                 </TouchableOpacity>
               </View>
             )}
             <View style={styles.commentInputRow}>
               <TextInput
-                style={styles.commentInput}
+                style={[styles.commentInput, { backgroundColor: colors.surfaceElevated, color: colors.textPrimary }]}
                 placeholder={replyToId ? "답글을 입력하세요..." : "댓글을 입력하세요..."}
-                placeholderTextColor="#666666"
+                placeholderTextColor={colors.textTertiary}
                 maxLength={300}
                 value={commentText}
                 onChangeText={setCommentText}
@@ -505,7 +498,7 @@ export default function PostDetailScreen() {
               <TouchableOpacity
                 style={[
                   styles.commentSendButton,
-                  { opacity: commentText.trim() ? 1 : 0.4 },
+                  { backgroundColor: colors.primary, opacity: commentText.trim() ? 1 : 0.4 },
                 ]}
                 onPress={handleSubmitComment}
                 disabled={!commentText.trim() || createComment.isPending}
@@ -519,9 +512,9 @@ export default function PostDetailScreen() {
             </View>
           </View>
         ) : (
-          <View style={styles.commentLockedBar}>
-            <Ionicons name="lock-closed" size={16} color="#FFC107" />
-            <Text style={styles.commentLockedText}>
+          <View style={[styles.commentLockedBar, { borderTopColor: colors.border, backgroundColor: colors.warning + '10' }]}>
+            <Ionicons name="lock-closed" size={16} color={colors.warning} />
+            <Text style={[styles.commentLockedText, { color: colors.warning }]}>
               댓글 작성은 자산 1,000만원 이상 회원만 가능합니다
             </Text>
           </View>
@@ -550,7 +543,6 @@ export default function PostDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
   },
   loadingContainer: {
     flex: 1,
@@ -560,7 +552,6 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 14,
-    color: '#888888',
   },
   header: {
     flexDirection: 'row',
@@ -569,12 +560,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#2A2A2A',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#FFFFFF',
   },
   listContent: {
     paddingBottom: 16,
@@ -582,7 +571,6 @@ const styles = StyleSheet.create({
 
   // ── 게시물 원본 ──
   postContainer: {
-    backgroundColor: '#1E1E1E',
     padding: 16,
     margin: 16,
     marginBottom: 0,
@@ -631,12 +619,10 @@ const styles = StyleSheet.create({
   },
   postAssetMix: {
     fontSize: 11,
-    color: '#888888',
     marginTop: 2,
   },
   postTime: {
     fontSize: 11,
-    color: '#666666',
   },
 
   // ── 보유종목 ──
@@ -645,7 +631,6 @@ const styles = StyleSheet.create({
   },
   holdingsLabel: {
     fontSize: 11,
-    color: '#777',
     marginBottom: 6,
     fontWeight: '600',
   },
@@ -662,7 +647,6 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 10,
     borderWidth: 1,
-    backgroundColor: '#161616',
   },
   holdingDot: {
     width: 5,
@@ -672,17 +656,14 @@ const styles = StyleSheet.create({
   holdingTicker: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#CCC',
   },
   holdingName: {
     fontSize: 10,
-    color: '#888',
   },
 
   // ── 본문 + 푸터 ──
   postContent: {
     fontSize: 16,
-    color: '#FFFFFF',
     lineHeight: 26,
     marginBottom: 16,
   },
@@ -702,14 +683,12 @@ const styles = StyleSheet.create({
     width: Dimensions.get('window').width * 0.7, // 화면 너비의 70%
     height: 240,
     borderRadius: 12,
-    backgroundColor: '#1E1E1E',
   },
   postFooter: {
     flexDirection: 'row',
     gap: 16,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#2A2A2A',
   },
   postActionButton: {
     flexDirection: 'row',
@@ -720,7 +699,6 @@ const styles = StyleSheet.create({
   },
   postActionText: {
     fontSize: 13,
-    color: '#888888',
   },
 
   // ── 댓글 섹션 ──
@@ -732,7 +710,6 @@ const styles = StyleSheet.create({
   commentsTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#FFFFFF',
   },
   commentsLoading: {
     paddingVertical: 20,
@@ -745,7 +722,6 @@ const styles = StyleSheet.create({
   },
   emptyCommentsText: {
     fontSize: 13,
-    color: '#666666',
   },
 
 
@@ -754,8 +730,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderTopWidth: 1,
-    borderTopColor: '#2A2A2A',
-    backgroundColor: '#1E1E1E',
   },
   replyModeHeader: {
     flexDirection: 'row',
@@ -766,7 +740,6 @@ const styles = StyleSheet.create({
   replyModeText: {
     flex: 1,
     fontSize: 12,
-    color: '#4CAF50',
     fontWeight: '600',
   },
   replyModeCancel: {
@@ -779,19 +752,16 @@ const styles = StyleSheet.create({
   },
   commentInput: {
     flex: 1,
-    backgroundColor: '#2A2A2A',
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 10,
     fontSize: 14,
-    color: '#FFFFFF',
     maxHeight: 100,
   },
   commentSendButton: {
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: '#4CAF50',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -804,12 +774,9 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 14,
     borderTopWidth: 1,
-    borderTopColor: '#2A2A2A',
-    backgroundColor: '#1A1A0E',
   },
   commentLockedText: {
     fontSize: 13,
-    color: '#FFC107',
     fontWeight: '500',
   },
 });

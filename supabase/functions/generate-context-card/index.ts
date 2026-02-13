@@ -25,7 +25,7 @@ async function callGemini(prompt: string, timeoutMs: number = 30000): Promise<st
     contents: [{ parts: [{ text: prompt }] }],
     tools: [{ google_search: {} }],
     generationConfig: {
-      temperature: 0.7,
+      temperature: 0.5,
       maxOutputTokens: 4096,
     },
   };
@@ -97,29 +97,58 @@ serve(async (req: Request) => {
     console.log(`[맥락 카드 생성] 시작: ${today}`);
 
     // Step 1: Gemini로 4겹 맥락 분석
-    const prompt = `
-당신은 baln(발른) 앱의 시장 분석 AI입니다.
-오늘(${today}) 글로벌 금융 시장의 핵심 맥락을 분석해주세요.
+    const prompt = `당신은 baln(발른) 앱의 맥락 카드 AI입니다.
+오늘(${today}) 글로벌 금융 시장의 핵심 맥락을 분석하여 한국 개인투자자가 쉽게 이해할 수 있도록 설명하세요.
 
-다음 JSON 형식으로 응답하세요:
+[핵심 원칙]
+- "안심을 판다, 불안을 팔지 않는다." — 하락장에서도 맥락으로 이해를 돕는다.
+- "급락", "폭락", "공포" 같은 감정적 표현 대신 "조정", "하락", "변동성 확대"를 사용한다.
+- 과거 사례를 들 때는 회복 경험을 반드시 포함한다.
+- 쉬운 한국어로 작성한다.
+
+[응답 형식 — 아래 JSON만 출력. 설명문, 마크다운, 코드블록 금지.]
 {
-  "headline": "오늘의 핵심 시장 이벤트 한 줄 요약 (20자 이내)",
+  "headline": "시장 핵심 한 줄 (20자 이내)",
   "sentiment": "calm 또는 caution 또는 alert 중 하나",
-  "historical_context": "과거 유사 상황 설명 (2-3문장, 안심 톤)",
+  "historical_context": "과거 유사 상황과 이후 회복 과정 2~3문장 (안심 톤)",
   "macro_chain": ["원인 이벤트", "중간 영향", "최종 결과", "투자자 시사점"],
-  "institutional_behavior": "기관 투자자 동향 요약 (1-2문장)",
-  "market_summary": "오늘의 주요 지수 동향 요약 (1-2문장)"
+  "institutional_behavior": "기관 투자자 동향 1~2문장",
+  "market_summary": "주요 지수 동향 1~2문장"
 }
 
-원칙:
-- "안심을 판다, 불안을 팔지 않는다" (워렌 버핏)
-- 공포 마케팅 금지, 맥락 제공으로 이해를 돕는 톤
-- 한국어로 작성
-- 반드시 유효한 JSON으로만 응답
+[예시]
+{
+  "headline": "CPI 둔화에 시장 안도",
+  "sentiment": "calm",
+  "historical_context": "2023년 7월에도 CPI가 예상을 하회하면서 S&P 500이 한 달간 5% 상승한 적이 있습니다. 물가 안정 신호는 역사적으로 시장에 긍정적이었습니다.",
+  "macro_chain": ["미국 CPI 3개월 연속 둔화", "금리 인하 기대 강화", "기술주 매수세 유입", "나스닥 1.2% 상승"],
+  "institutional_behavior": "외국인이 코스피에서 이틀 연속 순매수를 기록하며 위험자산 선호 심리가 회복되고 있습니다.",
+  "market_summary": "S&P 500 +0.8%, 나스닥 +1.2% 상승 마감. 코스피는 외국인 매수에 힘입어 2,680선 회복."
+}
+
+[중요] 위 예시는 구조 참고용입니다. 반드시 오늘(${today})의 실제 시장 상황을 기반으로 작성하세요.
 `;
 
-    const raw = await callGemini(prompt);
-    const card = JSON.parse(raw);
+    let card: Record<string, unknown>;
+    try {
+      const raw = await callGemini(prompt);
+      card = JSON.parse(raw);
+    } catch (parseErr) {
+      console.error('[맥락 카드 생성] Gemini 응답 파싱 실패 — 기본값 사용:', parseErr);
+      card = {
+        headline: '시장 분석 업데이트 중',
+        sentiment: 'calm',
+        historical_context: '시장 데이터를 수집하고 있습니다. 잠시 후 다시 확인해주세요.',
+        macro_chain: ['데이터 수집 중'],
+        institutional_behavior: '기관 투자자 동향을 분석 중입니다.',
+        market_summary: '시장 데이터를 불러오는 중입니다.',
+      };
+    }
+
+    // 필수 필드 검증
+    if (!card.headline || typeof card.headline !== 'string') card.headline = '오늘의 시장 분석';
+    if (!['calm', 'caution', 'alert'].includes(card.sentiment as string)) card.sentiment = 'calm';
+    if (!Array.isArray(card.macro_chain) || (card.macro_chain as unknown[]).length === 0) card.macro_chain = ['시장 데이터 수집 중'];
 
     console.log('[맥락 카드 생성] Gemini 응답 성공:', card.headline);
 

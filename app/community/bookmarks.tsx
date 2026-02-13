@@ -24,10 +24,11 @@ import { useBookmarkedPosts, useMyBookmarks, useToggleBookmark } from '../../src
 import { useMyLikes, useLikePost } from '../../src/hooks/useCommunity';
 import { CommunityPost, TIER_COLORS, CATEGORY_INFO } from '../../src/types/community';
 import { getTierFromAssets, getTierIcon, getRelativeTime } from '../../src/utils/communityUtils';
-import { COLORS } from '../../src/styles/theme';
+import { useTheme } from '../../src/hooks/useTheme';
 
 export default function BookmarksScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   const { data: posts, isLoading, isError, refetch } = useBookmarkedPosts();
   const { data: myLikes } = useMyLikes();
   const { data: myBookmarks } = useMyBookmarks();
@@ -53,7 +54,7 @@ export default function BookmarksScreen() {
 
     return (
       <TouchableOpacity
-        style={styles.postCard}
+        style={[styles.postCard, { backgroundColor: colors.surface }]}
         onPress={() => router.push(`/community/${item.id}` as any)}
         activeOpacity={0.7}
       >
@@ -61,7 +62,7 @@ export default function BookmarksScreen() {
         <View style={styles.postHeader}>
           <View style={styles.postUserRow}>
             <View style={[styles.tierBadge, { backgroundColor: tierColor }]}>
-              <Ionicons name={tierIcon} size={10} color="#000" />
+              <Ionicons name={tierIcon} size={10} color={colors.background} />
             </View>
             <Text style={[styles.displayTag, { color: tierColor }]}>
               {item.display_tag}
@@ -74,16 +75,16 @@ export default function BookmarksScreen() {
               </View>
             )}
           </View>
-          <Text style={styles.timeText}>{getRelativeTime(item.created_at)}</Text>
+          <Text style={[styles.timeText, { color: colors.textTertiary }]}>{getRelativeTime(item.created_at)}</Text>
         </View>
 
         {/* 본문 미리보기 */}
-        <Text style={styles.contentPreview} numberOfLines={3}>
+        <Text style={[styles.contentPreview, { color: colors.textPrimary }]} numberOfLines={3}>
           {item.content}
         </Text>
 
         {/* 푸터: 좋아요 + 댓글 + 북마크 */}
-        <View style={styles.postFooter}>
+        <View style={[styles.postFooter, { borderTopColor: colors.border }]}>
           <TouchableOpacity
             style={styles.actionBtn}
             onPress={() => likePost.mutate(item.id)}
@@ -91,16 +92,16 @@ export default function BookmarksScreen() {
             <Ionicons
               name={isLiked ? 'heart' : 'heart-outline'}
               size={16}
-              color={isLiked ? '#CF6679' : '#888'}
+              color={isLiked ? colors.sell : colors.textSecondary}
             />
-            <Text style={[styles.actionText, isLiked && { color: '#CF6679' }]}>
+            <Text style={[styles.actionText, { color: colors.textSecondary }, isLiked && { color: colors.sell }]}>
               {item.likes_count || 0}
             </Text>
           </TouchableOpacity>
 
           <View style={styles.actionBtn}>
-            <Ionicons name="chatbubble-outline" size={14} color="#888" />
-            <Text style={styles.actionText}>{item.comments_count || 0}</Text>
+            <Ionicons name="chatbubble-outline" size={14} color={colors.textSecondary} />
+            <Text style={[styles.actionText, { color: colors.textSecondary }]}>{item.comments_count || 0}</Text>
           </View>
 
           <TouchableOpacity
@@ -110,7 +111,7 @@ export default function BookmarksScreen() {
             <Ionicons
               name={isBookmarked ? 'bookmark' : 'bookmark-outline'}
               size={16}
-              color={isBookmarked ? COLORS.primary : '#888'}
+              color={isBookmarked ? colors.primary : colors.textSecondary}
             />
           </TouchableOpacity>
         </View>
@@ -119,29 +120,29 @@ export default function BookmarksScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* 헤더 */}
-      <View style={styles.header}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={28} color={COLORS.primary} />
+          <Ionicons name="chevron-back" size={28} color={colors.primary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>내 북마크</Text>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>내 북마크</Text>
         <View style={{ width: 28 }} />
       </View>
 
       {/* 로딩 */}
       {isLoading && (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       )}
 
       {/* 에러 */}
       {!isLoading && isError && (
         <View style={styles.emptyContainer}>
-          <Ionicons name="cloud-offline-outline" size={48} color="#444" />
-          <Text style={styles.emptyTitle}>불러오기 실패</Text>
-          <Text style={styles.emptyDesc}>
+          <Ionicons name="cloud-offline-outline" size={48} color={colors.textQuaternary} />
+          <Text style={[styles.emptyTitle, { color: colors.textSecondary }]}>불러오기 실패</Text>
+          <Text style={[styles.emptyDesc, { color: colors.textTertiary }]}>
             네트워크 연결을 확인하고{'\n'}아래로 당겨서 새로고침해주세요
           </Text>
         </View>
@@ -158,14 +159,14 @@ export default function BookmarksScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor={COLORS.primary}
+              tintColor={colors.primary}
             />
           }
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <Ionicons name="bookmark-outline" size={48} color="#444" />
-              <Text style={styles.emptyTitle}>북마크가 없습니다</Text>
-              <Text style={styles.emptyDesc}>
+              <Ionicons name="bookmark-outline" size={48} color={colors.textQuaternary} />
+              <Text style={[styles.emptyTitle, { color: colors.textSecondary }]}>북마크가 없습니다</Text>
+              <Text style={[styles.emptyDesc, { color: colors.textTertiary }]}>
                 게시글에서 북마크 아이콘을 탭하면{'\n'}여기에 저장됩니다
               </Text>
             </View>
@@ -179,7 +180,6 @@ export default function BookmarksScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   header: {
     flexDirection: 'row',
@@ -188,12 +188,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#2A2A2A',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: COLORS.textPrimary,
   },
   loadingContainer: {
     flex: 1,
@@ -207,7 +205,6 @@ const styles = StyleSheet.create({
 
   // 게시글 카드
   postCard: {
-    backgroundColor: COLORS.surface,
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
@@ -246,11 +243,9 @@ const styles = StyleSheet.create({
   },
   timeText: {
     fontSize: 11,
-    color: '#666',
   },
   contentPreview: {
     fontSize: 14,
-    color: COLORS.textPrimary,
     lineHeight: 22,
     marginBottom: 12,
   },
@@ -259,7 +254,6 @@ const styles = StyleSheet.create({
     gap: 16,
     paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: '#2A2A2A',
   },
   actionBtn: {
     flexDirection: 'row',
@@ -269,7 +263,6 @@ const styles = StyleSheet.create({
   },
   actionText: {
     fontSize: 12,
-    color: '#888',
   },
 
   // 빈 상태
@@ -281,11 +274,9 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#888',
   },
   emptyDesc: {
     fontSize: 13,
-    color: '#666',
     textAlign: 'center',
     lineHeight: 20,
   },

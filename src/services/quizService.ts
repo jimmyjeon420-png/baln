@@ -128,17 +128,26 @@ async function generateQuizWithGemini(): Promise<{
     const genAI = new GoogleGenerativeAI(API_KEY);
     const model = genAI.getGenerativeModel({ model: MODEL_NAME });
 
-    const prompt = `당신은 한국 투자 교육 전문가입니다. "${categoryLabel}" 카테고리의 4지선다 퀴즈를 1개 만들어주세요.
+    const prompt = `당신은 baln(발른) 앱의 투자 퀴즈 AI입니다.
+"${categoryLabel}" 카테고리의 4지선다 퀴즈를 1개 만들어주세요.
 
-요구사항:
-- 한국어로 작성
-- 초~중급 투자자 대상
-- 실용적이고 재미있는 문제
+[퀴즈 설계 원칙]
+- 초보 투자자(20~30대, 투자 경험 1년 미만)도 풀 수 있는 수준으로 작성한다.
+- 실생활에서 바로 쓸 수 있는 실용적 지식을 묻는다.
+- 정답이 아닌 보기도 그럴듯해야 한다 (너무 뻔한 오답 금지).
+- 하지만 보기끼리 너무 비슷하면 안 된다 (명확한 구분 필요).
+- 해설은 "왜 정답인지"와 "왜 오답인지"를 모두 설명한다.
+- 한국어로 자연스럽게 작성한다.
 - 오늘 날짜: ${getTodayDate()}
 
-반드시 아래 JSON 형식으로만 응답하세요 (다른 텍스트 없이):
+[난이도 기준]
+- difficulty 1 (쉬움): 기본 용어, 상식 수준. 투자 입문자도 맞힐 수 있음.
+- difficulty 2 (보통): 약간의 배경지식 필요. 뉴스를 가끔 보는 사람이 맞힐 수 있음.
+- difficulty 3 (어려움): 전문 지식 필요. 투자 경험자도 고민이 필요한 수준.
+
+[응답 형식 — 아래 JSON만 출력. 설명문, 마크다운, 코드블록 금지.]
 {
-  "question": "질문 내용",
+  "question": "질문 내용 (한 줄, 명확하게)",
   "options": [
     {"id": "A", "text": "선택지 A"},
     {"id": "B", "text": "선택지 B"},
@@ -146,7 +155,21 @@ async function generateQuizWithGemini(): Promise<{
     {"id": "D", "text": "선택지 D"}
   ],
   "correct_option": "A",
-  "explanation": "정답 해설 (2-3문장)",
+  "explanation": "정답 해설 2~3문장. 정답인 이유와 오답인 이유를 모두 간단히 설명.",
+  "difficulty": 1
+}
+
+[좋은 퀴즈 예시]
+{
+  "question": "주식시장에서 '시가총액'이란 무엇인가요?",
+  "options": [
+    {"id": "A", "text": "회사의 총 매출액"},
+    {"id": "B", "text": "주가 x 발행주식 총수"},
+    {"id": "C", "text": "회사가 보유한 현금"},
+    {"id": "D", "text": "회사의 순이익 합계"}
+  ],
+  "correct_option": "B",
+  "explanation": "시가총액은 현재 주가에 발행주식 총수를 곱한 값으로, 시장이 평가하는 기업의 전체 가치입니다. 매출액(A)이나 순이익(D)은 손익계산서 항목이고, 보유 현금(C)은 재무상태표 항목이므로 시가총액과 다릅니다.",
   "difficulty": 1
 }`;
 
@@ -166,13 +189,26 @@ async function generateQuizWithGemini(): Promise<{
     }
     const parsed = JSON.parse(jsonStr);
 
+    // 필수 필드 검증
+    if (!parsed.question || !Array.isArray(parsed.options) || parsed.options.length !== 4 || !parsed.correct_option) {
+      console.warn('[Quiz] Gemini 응답 필수 필드 누락 — 폴백 사용');
+      return getFallbackQuiz();
+    }
+
+    // correct_option 유효성 검증 (A, B, C, D 중 하나)
+    const validOptions = ['A', 'B', 'C', 'D'];
+    if (!validOptions.includes(parsed.correct_option)) {
+      console.warn(`[Quiz] 잘못된 correct_option: ${parsed.correct_option} — 폴백 사용`);
+      return getFallbackQuiz();
+    }
+
     return {
       category,
       question: parsed.question,
       options: parsed.options,
       correct_option: parsed.correct_option,
-      explanation: parsed.explanation,
-      difficulty: parsed.difficulty || 1,
+      explanation: parsed.explanation || '해설을 불러오지 못했습니다.',
+      difficulty: [1, 2, 3].includes(parsed.difficulty) ? parsed.difficulty : 1,
     };
   } catch (err) {
     console.error('[Quiz] Gemini 퀴즈 생성 실패:', err);

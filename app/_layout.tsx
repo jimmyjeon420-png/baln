@@ -1,4 +1,4 @@
-import { Stack, useRouter, useSegments } from 'expo-router';
+import { Stack, useRouter, useSegments, useNavigationContainerRef } from 'expo-router';
 import { View, AppState, AppStateStatus, Alert } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -28,6 +28,44 @@ import { useDeepLink } from '../src/hooks/useDeepLink';
 import { useAnalyticsInit } from '../src/hooks/useAnalytics';
 import { usePrefetchCheckup } from '../src/hooks/usePrefetchCheckup';
 import queryClient from '../src/services/queryClient';
+import * as Sentry from '@sentry/react-native';
+
+// ============================================================================
+// [Sentry] 에러 모니터링 초기화
+// DSN이 없으면 Sentry 비활성 — 앱 정상 동작 보장
+// ============================================================================
+const SENTRY_DSN = process.env.EXPO_PUBLIC_SENTRY_DSN || '';
+
+const routingInstrumentation = Sentry.reactNavigationIntegration({
+  enableTimeToInitialDisplay: true,
+});
+
+if (SENTRY_DSN && !__DEV__) {
+  Sentry.init({
+    dsn: SENTRY_DSN,
+    tracesSampleRate: 0.2, // 프로덕션 성능 트레이싱 20%
+    integrations: [routingInstrumentation],
+    enableAutoSessionTracking: true,
+    enableNativeFramesTracking: true,
+    // 개인정보 보호: 사용자 입력값 마스킹
+    beforeSend(event) {
+      // 민감한 breadcrumb 데이터 제거
+      if (event.breadcrumbs) {
+        event.breadcrumbs = event.breadcrumbs.map((bc) => {
+          if (bc.category === 'ui.input') {
+            return { ...bc, data: undefined };
+          }
+          return bc;
+        });
+      }
+      return event;
+    },
+  });
+} else if (__DEV__) {
+  console.log('[Sentry] 개발 모드 — Sentry 비활성');
+} else if (!SENTRY_DSN) {
+  console.log('[Sentry] DSN 미설정 — Sentry 비활성');
+}
 
 // AsyncStorage 기반 영속 캐시 — 앱 재시작 시에도 데이터 즉시 표시
 const asyncStoragePersister = createAsyncStoragePersister({
@@ -74,7 +112,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     if (welcomeBonus.data?.granted && welcomeBonus.data?.creditsEarned) {
       AsyncStorage.getItem('@baln:welcome_modal_shown').then((shown) => {
         if (shown !== 'true') {
-          setWelcomeCredits(welcomeBonus.data!.creditsEarned!);
+          setWelcomeCredits(welcomeBonus.data?.creditsEarned ?? 0);
           setShowWelcomeModal(true);
           AsyncStorage.setItem('@baln:welcome_modal_shown', 'true').catch((err) =>
             console.warn('[AuthGate] 웰컴 모달 상태 저장 실패:', err)
@@ -136,14 +174,22 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 // 알림 핸들러 설정 (컴포넌트 외부에서 1회 실행)
 configureNotificationHandler();
 
-export default function RootLayout() {
+function RootLayout() {
   useAnalyticsInit();  // Analytics 초기화 (앱 실행 시 1회)
+  const ref = useNavigationContainerRef();
   const notificationListener = useRef<Notifications.EventSubscription>(null);
   const responseListener = useRef<Notifications.EventSubscription>(null);
   const [isLocked, setIsLocked] = useState(false);
   const isLockedRef = useRef(false); // 클로저 내부에서 최신 상태 접근용
   const [showSplash, setShowSplash] = useState(true); // 브랜드 스플래시 표시 여부
   const appState = useRef(AppState.currentState);
+
+  // Sentry 네비게이션 추적 (expo-router 호환)
+  useEffect(() => {
+    if (ref?.current) {
+      routingInstrumentation.registerNavigationContainer(ref);
+    }
+  }, [ref]);
 
   // isLocked 변경 시 ref 동기화
   useEffect(() => {
@@ -256,7 +302,14 @@ export default function RootLayout() {
           <ThemeProvider>
             {/* 테마 적용 배경 (다크/라이트 모드 자동 전환) */}
             <ThemedAppContainer>
-              <ErrorBoundary>
+              <ErrorBoundary onError={(error, errorInfo) => {
+                // Sentry에 React 컴포넌트 에러 전달 (DSN 없으면 무시됨)
+                if (SENTRY_DSN && !__DEV__) {
+                  Sentry.captureException(error, {
+                    contexts: { react: { componentStack: errorInfo.componentStack ?? undefined } },
+                  });
+                }
+              }}>
                 <AuthGate>
               <Stack screenOptions={{ headerShown: false }}>
                 {/* 로그인 화면 */}
@@ -374,3 +427,9 @@ export default function RootLayout() {
     </PersistQueryClientProvider>
   );
 }
+
+// ============================================================================
+// [Sentry] Sentry.wrap()으로 앱 최상위 래핑
+// DSN이 없으면 wrap()은 원본 컴포넌트를 그대로 반환 (no-op)
+// ============================================================================
+export default Sentry.wrap(RootLayout);

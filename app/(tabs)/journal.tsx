@@ -12,7 +12,8 @@ import {
   SectionList,
   SafeAreaView,
 } from 'react-native';
-import { COLORS, SIZES, TYPOGRAPHY } from '../../src/styles/theme';
+import { SIZES, TYPOGRAPHY } from '../../src/styles/theme';
+import { useTheme } from '../../src/hooks/useTheme';
 import i18n from '../../src/i18n';
 
 interface DailySummary {
@@ -56,67 +57,68 @@ const MOCK_DAILY_SUMMARIES: DailySummary[] = [
   },
 ];
 
-// 감정 점수에 따른 색상
-const getSentimentColor = (score: number): string => {
-  if (score > 30) return COLORS.buy;
-  if (score < -30) return COLORS.sell;
-  return COLORS.neutral;
-};
-
-// 요약 카드 컴포넌트
-const SummaryCard: React.FC<{ summary: DailySummary }> = ({ summary }) => (
-  <TouchableOpacity
-    style={[styles.card, { borderLeftColor: getSentimentColor(summary.sentimentScore) }]}
-  >
-    <View style={styles.cardHeader}>
-      <Text style={styles.dateText}>{summary.date}</Text>
-      <View
-        style={[
-          styles.sentimentBadge,
-          { backgroundColor: getSentimentColor(summary.sentimentScore) },
-        ]}
-      >
-        <Text style={styles.sentimentText}>{summary.sentimentScore > 0 ? '+' : ''}{summary.sentimentScore}</Text>
-      </View>
-    </View>
-
-    <View style={styles.cardBody}>
-      <View style={styles.statRow}>
-        <Text style={styles.label}>포트폴리오 가치</Text>
-        <Text style={styles.value}>₩{Math.floor(summary.portfolioValue).toLocaleString()}</Text>
-      </View>
-      <View style={styles.statRow}>
-        <Text style={styles.label}>일일 변화</Text>
-        <Text
-          style={[
-            styles.value,
-            { color: summary.dayChange > 0 ? COLORS.buy : COLORS.sell },
-          ]}
-        >
-          {summary.dayChange > 0 ? '+' : ''}{summary.dayChange}%
-        </Text>
-      </View>
-      <View style={styles.statRow}>
-        <Text style={styles.label}>거래</Text>
-        <Text style={styles.value}>{summary.transactions}건</Text>
-      </View>
-    </View>
-
-    <View style={styles.recommendationBox}>
-      <Text style={styles.recommendationLabel}>📊 진단</Text>
-      <Text style={styles.recommendationText}>{summary.recommendation}</Text>
-    </View>
-  </TouchableOpacity>
-);
-
 export default function JournalScreen() {
+  const { colors } = useTheme();
   const [summaries] = useState<DailySummary[]>(MOCK_DAILY_SUMMARIES);
 
+  // 감정 점수에 따른 색상
+  const getSentimentColor = (score: number): string => {
+    if (score > 30) return colors.buy;
+    if (score < -30) return colors.sell;
+    return colors.neutral;
+  };
+
+  const renderSummaryCard = (summary: DailySummary) => (
+    <TouchableOpacity
+      key={summary.id}
+      style={[styles.card, { backgroundColor: colors.surface, borderLeftColor: getSentimentColor(summary.sentimentScore) }]}
+    >
+      <View style={styles.cardHeader}>
+        <Text style={[styles.dateText, { color: colors.textPrimary }]}>{summary.date}</Text>
+        <View
+          style={[
+            styles.sentimentBadge,
+            { backgroundColor: getSentimentColor(summary.sentimentScore) },
+          ]}
+        >
+          <Text style={[styles.sentimentText, { color: colors.textPrimary }]}>{summary.sentimentScore > 0 ? '+' : ''}{summary.sentimentScore}</Text>
+        </View>
+      </View>
+
+      <View style={styles.cardBody}>
+        <View style={styles.statRow}>
+          <Text style={[styles.label, { color: colors.textSecondary }]}>포트폴리오 가치</Text>
+          <Text style={[styles.value, { color: colors.textPrimary }]}>₩{Math.floor(summary.portfolioValue).toLocaleString()}</Text>
+        </View>
+        <View style={styles.statRow}>
+          <Text style={[styles.label, { color: colors.textSecondary }]}>일일 변화</Text>
+          <Text
+            style={[
+              styles.value,
+              { color: summary.dayChange > 0 ? colors.buy : colors.sell },
+            ]}
+          >
+            {summary.dayChange > 0 ? '+' : ''}{summary.dayChange}%
+          </Text>
+        </View>
+        <View style={styles.statRow}>
+          <Text style={[styles.label, { color: colors.textSecondary }]}>거래</Text>
+          <Text style={[styles.value, { color: colors.textPrimary }]}>{summary.transactions}건</Text>
+        </View>
+      </View>
+
+      <View style={[styles.recommendationBox, { backgroundColor: colors.surfaceLight }]}>
+        <Text style={[styles.recommendationLabel, { color: colors.textSecondary }]}>📊 진단</Text>
+        <Text style={[styles.recommendationText, { color: colors.textPrimary }]}>{summary.recommendation}</Text>
+      </View>
+    </TouchableOpacity>
+  );
+
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>포트폴리오 기록</Text>
-        <Text style={styles.headerSubtitle}>과거 일일 요약 및 거래 기록</Text>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>포트폴리오 기록</Text>
+        <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>과거 일일 요약 및 거래 기록</Text>
       </View>
 
       <ScrollView
@@ -124,13 +126,11 @@ export default function JournalScreen() {
         style={styles.scrollView}
       >
         <View style={styles.summaryList}>
-          {summaries.map((summary) => (
-            <SummaryCard key={summary.id} summary={summary} />
-          ))}
+          {summaries.map((summary) => renderSummaryCard(summary))}
         </View>
 
         <View style={styles.footer}>
-          <Text style={styles.footerText}>
+          <Text style={[styles.footerText, { color: colors.textTertiary }]}>
             🔒 모든 데이터는 암호화되어 저장됩니다
           </Text>
         </View>
@@ -142,22 +142,18 @@ export default function JournalScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   header: {
     paddingHorizontal: SIZES.lg,
     paddingVertical: SIZES.lg,
-    borderBottomColor: COLORS.border,
     borderBottomWidth: 1,
   },
   headerTitle: {
     ...TYPOGRAPHY.headingLarge,
-    color: COLORS.textPrimary,
     marginBottom: SIZES.xs,
   },
   headerSubtitle: {
     ...TYPOGRAPHY.bodyMedium,
-    color: COLORS.textSecondary,
   },
   scrollView: {
     flex: 1,
@@ -168,7 +164,6 @@ const styles = StyleSheet.create({
     gap: SIZES.lg,
   },
   card: {
-    backgroundColor: COLORS.surface,
     borderRadius: SIZES.rLg,
     padding: SIZES.lg,
     borderLeftWidth: 4,
@@ -181,7 +176,6 @@ const styles = StyleSheet.create({
   },
   dateText: {
     ...TYPOGRAPHY.labelLarge,
-    color: COLORS.textPrimary,
   },
   sentimentBadge: {
     paddingHorizontal: SIZES.md,
@@ -190,7 +184,6 @@ const styles = StyleSheet.create({
   },
   sentimentText: {
     ...TYPOGRAPHY.labelSmall,
-    color: COLORS.textPrimary,
     fontWeight: '700',
   },
   cardBody: {
@@ -203,27 +196,22 @@ const styles = StyleSheet.create({
   },
   label: {
     ...TYPOGRAPHY.bodyMedium,
-    color: COLORS.textSecondary,
   },
   value: {
     ...TYPOGRAPHY.labelMedium,
-    color: COLORS.textPrimary,
     fontWeight: '600',
   },
   recommendationBox: {
-    backgroundColor: COLORS.surfaceLight,
     borderRadius: SIZES.rMd,
     padding: SIZES.md,
     marginTop: SIZES.sm,
   },
   recommendationLabel: {
     ...TYPOGRAPHY.labelSmall,
-    color: COLORS.textSecondary,
     marginBottom: SIZES.xs,
   },
   recommendationText: {
     ...TYPOGRAPHY.bodySmall,
-    color: COLORS.textPrimary,
     lineHeight: 18,
   },
   footer: {
@@ -233,7 +221,6 @@ const styles = StyleSheet.create({
   },
   footerText: {
     ...TYPOGRAPHY.bodySmall,
-    color: COLORS.textTertiary,
     textAlign: 'center',
   },
 });

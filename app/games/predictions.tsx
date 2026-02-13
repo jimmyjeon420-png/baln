@@ -42,7 +42,7 @@ import {
   PREDICTION_DISCLAIMER,
   PREDICTION_REWARDS,
 } from '../../src/types/prediction';
-import { COLORS } from '../../src/styles/theme';
+import { useTheme } from '../../src/hooks/useTheme';
 
 // 3탭: 투표하기 / 내 기록 / 리더보드
 type TabType = 'vote' | 'history' | 'leaderboard';
@@ -58,6 +58,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 export default function PredictionsScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { colors } = useTheme();
   const [activeTab, setActiveTab] = useState<TabType>('vote');
   const [categoryFilter, setCategoryFilter] = useState<PollCategoryFilter>('all');
 
@@ -131,19 +132,19 @@ export default function PredictionsScreen() {
         {/* 어제의 결과 복기 (습관 루프 강화) */}
         {yesterdayPolls && yesterdayPolls.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{'📝 어제의 결과'}</Text>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{'📝 어제의 결과'}</Text>
 
             {/* 요약 배너 */}
-            <View style={styles.yesterdaySummary}>
+            <View style={[styles.yesterdaySummary, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <View style={styles.summaryLeft}>
                 <Text style={styles.summaryEmoji}>
                   {yesterdaySummary.accuracyRate >= 60 ? '🎉' : '💪'}
                 </Text>
                 <View>
-                  <Text style={styles.summaryTitle}>
+                  <Text style={[styles.summaryTitle, { color: colors.textPrimary }]}>
                     {yesterdaySummary.totalVoted}개 중 {yesterdaySummary.totalCorrect}개 적중
                   </Text>
-                  <Text style={styles.summarySubtitle}>
+                  <Text style={[styles.summarySubtitle, { color: colors.textTertiary }]}>
                     적중률 {yesterdaySummary.accuracyRate}%
                   </Text>
                 </View>
@@ -184,6 +185,7 @@ export default function PredictionsScreen() {
                 key={key}
                 style={[
                   styles.filterChip,
+                  { backgroundColor: colors.surface, borderColor: colors.border },
                   isActive && { backgroundColor: info.color, borderColor: info.color },
                 ]}
                 onPress={() => setCategoryFilter(key)}
@@ -192,6 +194,7 @@ export default function PredictionsScreen() {
                 <Text
                   style={[
                     styles.filterChipText,
+                    { color: colors.textSecondary },
                     isActive && { color: '#000000', fontWeight: '700' },
                   ]}
                 >
@@ -204,16 +207,16 @@ export default function PredictionsScreen() {
 
         {/* 오늘의 투표 카드 */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{'🎯 오늘의 예측'}</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{'🎯 오늘의 예측'}</Text>
           {activeLoading ? (
             <View style={styles.loadingState}>
-              <Text style={styles.loadingText}>투표를 불러오는 중...</Text>
+              <Text style={[styles.loadingText, { color: colors.textTertiary }]}>투표를 불러오는 중...</Text>
             </View>
           ) : filteredActive.length === 0 ? (
             <View style={styles.emptyState}>
               <Text style={styles.emptyEmoji}>{'🔮'}</Text>
-              <Text style={styles.emptyTitle}>아직 예측 질문이 없습니다</Text>
-              <Text style={styles.emptyDescription}>
+              <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>아직 예측 질문이 없습니다</Text>
+              <Text style={[styles.emptyDescription, { color: colors.textTertiary }]}>
                 {'매일 아침 7시에 새로운 투자 예측 질문이\n자동으로 생성됩니다.'}
               </Text>
             </View>
@@ -225,11 +228,11 @@ export default function PredictionsScreen() {
                   <View style={styles.pollCategoryBadge}>
                     <View style={[
                       styles.categoryDot,
-                      { backgroundColor: CATEGORY_COLORS[poll.category] || COLORS.primary },
+                      { backgroundColor: CATEGORY_COLORS[poll.category] || '#4CAF50' },
                     ]} />
                     <Text style={[
                       styles.categoryBadgeText,
-                      { color: CATEGORY_COLORS[poll.category] || COLORS.primary },
+                      { color: CATEGORY_COLORS[poll.category] || '#4CAF50' },
                     ]}>
                       {POLL_CATEGORY_INFO[poll.category as PollCategoryFilter]?.label || poll.category}
                     </Text>
@@ -244,10 +247,10 @@ export default function PredictionsScreen() {
 
               {/* 모두 투표 완료 시 안내 메시지 */}
               {allVoted && (
-                <View style={styles.allVotedBanner}>
+                <View style={[styles.allVotedBanner, { backgroundColor: colors.primary + '15', borderColor: colors.primary + '40' }]}>
                   <Text style={styles.allVotedEmoji}>{'🎯'}</Text>
-                  <Text style={styles.allVotedTitle}>모든 투표 완료!</Text>
-                  <Text style={styles.allVotedDesc}>
+                  <Text style={[styles.allVotedTitle, { color: colors.primary }]}>모든 투표 완료!</Text>
+                  <Text style={[styles.allVotedDesc, { color: colors.textSecondary }]}>
                     내일 아침 결과를 확인하세요.{'\n'}적중하면 크레딧 보상이 지급됩니다!
                   </Text>
                 </View>
@@ -281,27 +284,27 @@ export default function PredictionsScreen() {
         )}
 
         {/* 이번 달 적중률 요약 카드 */}
-        <View style={styles.monthSummaryCard}>
-          <Text style={styles.monthSummaryTitle}>{'📅 이번 달 기록'}</Text>
+        <View style={[styles.monthSummaryCard, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.monthSummaryTitle, { color: colors.textPrimary }]}>{'📅 이번 달 기록'}</Text>
           <View style={styles.monthStatsRow}>
             <View style={styles.monthStatItem}>
-              <Text style={styles.monthStatValue}>{monthAccuracy}%</Text>
-              <Text style={styles.monthStatLabel}>적중률</Text>
+              <Text style={[styles.monthStatValue, { color: colors.textPrimary }]}>{monthAccuracy}%</Text>
+              <Text style={[styles.monthStatLabel, { color: colors.textTertiary }]}>적중률</Text>
             </View>
-            <View style={styles.monthStatDivider} />
+            <View style={[styles.monthStatDivider, { backgroundColor: colors.border }]} />
             <View style={styles.monthStatItem}>
-              <Text style={styles.monthStatValue}>{monthCorrect}/{monthTotal}</Text>
-              <Text style={styles.monthStatLabel}>적중/투표</Text>
+              <Text style={[styles.monthStatValue, { color: colors.textPrimary }]}>{monthCorrect}/{monthTotal}</Text>
+              <Text style={[styles.monthStatLabel, { color: colors.textTertiary }]}>적중/투표</Text>
             </View>
-            <View style={styles.monthStatDivider} />
+            <View style={[styles.monthStatDivider, { backgroundColor: colors.border }]} />
             <View style={styles.monthStatItem}>
               <Text style={[
                 styles.monthStatValue,
-                { color: myStats?.current_streak && myStats.current_streak >= 3 ? '#FF9800' : COLORS.textPrimary },
+                { color: myStats?.current_streak && myStats.current_streak >= 3 ? '#FF9800' : colors.textPrimary },
               ]}>
                 {myStats?.current_streak || 0}회
               </Text>
-              <Text style={styles.monthStatLabel}>연속 적중</Text>
+              <Text style={[styles.monthStatLabel, { color: colors.textTertiary }]}>연속 적중</Text>
             </View>
           </View>
         </View>
@@ -327,16 +330,16 @@ export default function PredictionsScreen() {
 
         {/* 최근 기록 리스트 */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{'📊 최근 기록'}</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{'📊 최근 기록'}</Text>
           {resolvedLoading ? (
             <View style={styles.loadingState}>
-              <Text style={styles.loadingText}>기록을 불러오는 중...</Text>
+              <Text style={[styles.loadingText, { color: colors.textTertiary }]}>기록을 불러오는 중...</Text>
             </View>
           ) : !resolvedPolls || resolvedPolls.length === 0 ? (
             <View style={styles.emptyState}>
               <Text style={styles.emptyEmoji}>{'📋'}</Text>
-              <Text style={styles.emptyTitle}>아직 기록이 없습니다</Text>
-              <Text style={styles.emptyDescription}>
+              <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>아직 기록이 없습니다</Text>
+              <Text style={[styles.emptyDescription, { color: colors.textTertiary }]}>
                 예측에 참여하면 여기에 기록이 쌓입니다.
               </Text>
             </View>
@@ -345,10 +348,10 @@ export default function PredictionsScreen() {
               .filter(p => p.myVote !== null) // 내가 투표한 것만
               .slice(0, 20) // 최근 20개
               .map((poll) => (
-                <View key={poll.id} style={styles.historyItem}>
+                <View key={poll.id} style={[styles.historyItem, { backgroundColor: colors.surface }]}>
                   <View style={styles.historyLeft}>
                     {/* 날짜 */}
-                    <Text style={styles.historyDate}>
+                    <Text style={[styles.historyDate, { color: colors.textTertiary }]}>
                       {poll.resolved_at
                         ? new Date(poll.resolved_at).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' })
                         : '-'}
@@ -361,7 +364,7 @@ export default function PredictionsScreen() {
                   </View>
                   {/* 질문 */}
                   <View style={styles.historyCenter}>
-                    <Text style={styles.historyQuestion} numberOfLines={1}>
+                    <Text style={[styles.historyQuestion, { color: colors.textPrimary }]} numberOfLines={1}>
                       {poll.question}
                     </Text>
                   </View>
@@ -401,22 +404,22 @@ export default function PredictionsScreen() {
         <View style={styles.rewardInfo}>
           <Text style={styles.rewardInfoTitle}>보상 안내</Text>
           <View style={styles.rewardRow}>
-            <Text style={styles.rewardLabel}>적중 시</Text>
-            <Text style={styles.rewardValue}>
+            <Text style={[styles.rewardLabel]}>적중 시</Text>
+            <Text style={[styles.rewardValue, { color: colors.textPrimary }]}>
               +{PREDICTION_REWARDS.correct} 크레딧 (구독자 {PREDICTION_REWARDS.correct * PREDICTION_REWARDS.subscriberMultiplier})
             </Text>
           </View>
           <View style={styles.rewardRow}>
-            <Text style={styles.rewardLabel}>5연속 적중</Text>
-            <Text style={styles.rewardValue}>+{PREDICTION_REWARDS.streak5Bonus} 보너스 크레딧</Text>
+            <Text style={[styles.rewardLabel]}>5연속 적중</Text>
+            <Text style={[styles.rewardValue, { color: colors.textPrimary }]}>+{PREDICTION_REWARDS.streak5Bonus} 보너스 크레딧</Text>
           </View>
           <View style={styles.rewardRow}>
-            <Text style={styles.rewardLabel}>10연속 적중</Text>
-            <Text style={styles.rewardValue}>+{PREDICTION_REWARDS.streak10Bonus} 보너스 크레딧</Text>
+            <Text style={[styles.rewardLabel]}>10연속 적중</Text>
+            <Text style={[styles.rewardValue, { color: colors.textPrimary }]}>+{PREDICTION_REWARDS.streak10Bonus} 보너스 크레딧</Text>
           </View>
           <View style={styles.rewardRow}>
             <Text style={styles.rewardLabel}>참여 비용</Text>
-            <Text style={[styles.rewardValue, { color: COLORS.primary }]}>무료</Text>
+            <Text style={[styles.rewardValue, { color: colors.primary }]}>무료</Text>
           </View>
         </View>
       </>
@@ -427,13 +430,13 @@ export default function PredictionsScreen() {
   // 메인 렌더링
   // ============================================================================
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
       {/* 헤더 */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+          <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.title}>투자 예측</Text>
+        <Text style={[styles.title, { color: colors.textPrimary }]}>투자 예측</Text>
         {myStats && myStats.total_votes >= 5 && (
           <View style={styles.accuracyBadge}>
             <Text style={styles.accuracyBadgeText}>
@@ -444,17 +447,17 @@ export default function PredictionsScreen() {
       </View>
 
       {/* 3탭 헤더: 투표하기 / 내 기록 / 리더보드 */}
-      <View style={styles.tabHeader}>
+      <View style={[styles.tabHeader, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
         <TouchableOpacity
-          style={[styles.tabButton, activeTab === 'vote' && styles.tabButtonActive]}
+          style={[styles.tabButton, activeTab === 'vote' && { backgroundColor: colors.surfaceLight }]}
           onPress={() => setActiveTab('vote')}
         >
           <Ionicons
             name="hand-left-outline"
             size={16}
-            color={activeTab === 'vote' ? COLORS.primary : '#888888'}
+            color={activeTab === 'vote' ? colors.primary : colors.textTertiary}
           />
-          <Text style={[styles.tabText, activeTab === 'vote' && styles.tabTextActive]}>
+          <Text style={[styles.tabText, { color: colors.textTertiary }, activeTab === 'vote' && { color: colors.primary, fontWeight: '700' }]}>
             투표하기
           </Text>
           {activePolls && activePolls.length > 0 && (
@@ -465,29 +468,29 @@ export default function PredictionsScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.tabButton, activeTab === 'history' && styles.tabButtonActive]}
+          style={[styles.tabButton, activeTab === 'history' && { backgroundColor: colors.surfaceLight }]}
           onPress={() => setActiveTab('history')}
         >
           <Ionicons
             name="time-outline"
             size={16}
-            color={activeTab === 'history' ? COLORS.primary : '#888888'}
+            color={activeTab === 'history' ? colors.primary : colors.textTertiary}
           />
-          <Text style={[styles.tabText, activeTab === 'history' && styles.tabTextActive]}>
+          <Text style={[styles.tabText, { color: colors.textTertiary }, activeTab === 'history' && { color: colors.primary, fontWeight: '700' }]}>
             내 기록
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.tabButton, activeTab === 'leaderboard' && styles.tabButtonActive]}
+          style={[styles.tabButton, activeTab === 'leaderboard' && { backgroundColor: colors.surfaceLight }]}
           onPress={() => setActiveTab('leaderboard')}
         >
           <Ionicons
             name="trophy-outline"
             size={16}
-            color={activeTab === 'leaderboard' ? COLORS.primary : '#888888'}
+            color={activeTab === 'leaderboard' ? colors.primary : colors.textTertiary}
           />
-          <Text style={[styles.tabText, activeTab === 'leaderboard' && styles.tabTextActive]}>
+          <Text style={[styles.tabText, { color: colors.textTertiary }, activeTab === 'leaderboard' && { color: colors.primary, fontWeight: '700' }]}>
             리더보드
           </Text>
         </TouchableOpacity>
@@ -500,7 +503,7 @@ export default function PredictionsScreen() {
           <RefreshControl
             refreshing={isRefetching}
             onRefresh={onRefresh}
-            tintColor={COLORS.primary}
+            tintColor={colors.primary}
           />
         }
       >
@@ -509,8 +512,8 @@ export default function PredictionsScreen() {
 
         {/* 면책 조항 (모든 탭 공통) */}
         <View style={styles.disclaimer}>
-          <Ionicons name="warning-outline" size={14} color="#666666" />
-          <Text style={styles.disclaimerText}>{PREDICTION_DISCLAIMER}</Text>
+          <Ionicons name="warning-outline" size={14} color={colors.textTertiary} />
+          <Text style={[styles.disclaimerText, { color: colors.textTertiary }]}>{PREDICTION_DISCLAIMER}</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -524,7 +527,6 @@ export default function PredictionsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   header: {
     flexDirection: 'row',
@@ -540,10 +542,9 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 20,
     fontWeight: 'bold',
-    color: COLORS.textPrimary,
   },
   accuracyBadge: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: '#4CAF50',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 10,
@@ -553,15 +554,11 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#000000',
   },
-
-  // 탭 헤더 (3탭: 투표하기 / 내 기록 / 리더보드)
   tabHeader: {
     flexDirection: 'row',
     paddingHorizontal: 16,
     paddingVertical: 8,
-    backgroundColor: '#1A1A1A',
     borderBottomWidth: 1,
-    borderBottomColor: '#2A2A2A',
     gap: 6,
   },
   tabButton: {
@@ -573,20 +570,12 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 8,
   },
-  tabButtonActive: {
-    backgroundColor: '#2A2A2A',
-  },
   tabText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#888888',
-  },
-  tabTextActive: {
-    color: COLORS.primary,
-    fontWeight: '700',
   },
   tabBadge: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: '#4CAF50',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 8,
@@ -598,7 +587,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#000000',
   },
-
   content: {
     flex: 1,
   },
@@ -606,8 +594,6 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 80,
   },
-
-  // 카테고리 뱃지 (투표하기 탭 카드 위)
   pollCategoryBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -624,16 +610,12 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
   },
-
-  // 모두 투표 완료 배너
   allVotedBanner: {
     alignItems: 'center',
-    backgroundColor: '#1A2A1A',
     borderRadius: 16,
     padding: 24,
     marginTop: 8,
     borderWidth: 1,
-    borderColor: COLORS.primary + '40',
   },
   allVotedEmoji: {
     fontSize: 40,
@@ -642,19 +624,14 @@ const styles = StyleSheet.create({
   allVotedTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: COLORS.primary,
     marginBottom: 8,
   },
   allVotedDesc: {
     fontSize: 14,
-    color: '#AAAAAA',
     textAlign: 'center',
     lineHeight: 21,
   },
-
-  // 이번 달 기록 요약
   monthSummaryCard: {
-    backgroundColor: COLORS.surface,
     borderRadius: 16,
     padding: 18,
     marginBottom: 16,
@@ -662,7 +639,6 @@ const styles = StyleSheet.create({
   monthSummaryTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: COLORS.textPrimary,
     marginBottom: 16,
   },
   monthStatsRow: {
@@ -676,24 +652,18 @@ const styles = StyleSheet.create({
   monthStatDivider: {
     width: 1,
     height: 32,
-    backgroundColor: '#333333',
   },
   monthStatValue: {
     fontSize: 20,
     fontWeight: '800',
-    color: COLORS.textPrimary,
     marginBottom: 4,
   },
   monthStatLabel: {
     fontSize: 11,
-    color: '#888888',
   },
-
-  // 내 기록 리스트 아이템
   historyItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.surface,
     borderRadius: 12,
     padding: 14,
     marginBottom: 8,
@@ -707,7 +677,6 @@ const styles = StyleSheet.create({
   },
   historyDate: {
     fontSize: 12,
-    color: '#888888',
     fontWeight: '500',
   },
   historyDot: {
@@ -721,7 +690,6 @@ const styles = StyleSheet.create({
   },
   historyQuestion: {
     fontSize: 14,
-    color: COLORS.textPrimary,
     fontWeight: '500',
   },
   historyRight: {
@@ -737,7 +705,7 @@ const styles = StyleSheet.create({
   historyCorrectText: {
     fontSize: 12,
     fontWeight: '700',
-    color: COLORS.primary,
+    color: '#4CAF50',
   },
   historyWrongBadge: {
     backgroundColor: '#CF667920',
@@ -748,15 +716,13 @@ const styles = StyleSheet.create({
   historyWrongText: {
     fontSize: 12,
     fontWeight: '700',
-    color: COLORS.error,
+    color: '#CF6679',
   },
   historyCreditText: {
     fontSize: 11,
     fontWeight: '600',
-    color: COLORS.primary,
+    color: '#4CAF50',
   },
-
-  // 필터 칩
   filterRow: {
     marginBottom: 16,
   },
@@ -772,36 +738,28 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
     borderColor: '#333333',
-    backgroundColor: COLORS.surface,
   },
   filterEmoji: {
     fontSize: 12,
   },
   filterChipText: {
     fontSize: 13,
-    color: '#AAAAAA',
     fontWeight: '500',
   },
-
-  // 섹션
   section: {
     marginBottom: 24,
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: COLORS.textPrimary,
     marginBottom: 12,
   },
-
-  // 로딩/빈 상태
   loadingState: {
     alignItems: 'center',
     paddingVertical: 40,
   },
   loadingText: {
     fontSize: 14,
-    color: '#666666',
   },
   emptyState: {
     alignItems: 'center',
@@ -814,27 +772,21 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: COLORS.textPrimary,
     marginBottom: 8,
   },
   emptyDescription: {
     fontSize: 14,
-    color: '#888888',
     textAlign: 'center',
     lineHeight: 20,
   },
-
-  // 어제의 결과 요약 배너
   yesterdaySummary: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: COLORS.surface,
     borderRadius: 14,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#2A2A2A',
   },
   summaryLeft: {
     flexDirection: 'row',
@@ -848,12 +800,10 @@ const styles = StyleSheet.create({
   summaryTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: COLORS.textPrimary,
     marginBottom: 3,
   },
   summarySubtitle: {
     fontSize: 13,
-    color: '#888888',
   },
   summaryStreak: {
     backgroundColor: '#2A1A1A',
@@ -866,8 +816,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#FF9800',
   },
-
-  // 보상 안내
   rewardInfo: {
     backgroundColor: '#1A2A1A',
     borderRadius: 14,
@@ -879,7 +827,7 @@ const styles = StyleSheet.create({
   rewardInfoTitle: {
     fontSize: 13,
     fontWeight: '600',
-    color: COLORS.primary,
+    color: '#4CAF50',
     marginBottom: 12,
   },
   rewardRow: {
@@ -893,23 +841,18 @@ const styles = StyleSheet.create({
   },
   rewardValue: {
     fontSize: 13,
-    color: COLORS.textPrimary,
     fontWeight: '600',
   },
-
-  // 면책 조항
   disclaimer: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 8,
-    backgroundColor: '#1A1A1A',
     borderRadius: 10,
     padding: 12,
   },
   disclaimerText: {
     flex: 1,
     fontSize: 11,
-    color: '#666666',
     lineHeight: 16,
   },
 });

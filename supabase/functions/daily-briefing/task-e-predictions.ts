@@ -94,80 +94,112 @@ export async function generatePredictionPolls(): Promise<PredictionGenerationRes
   const todayDate = new Date();
   const dateStr = `${todayDate.getFullYear()}년 ${todayDate.getMonth() + 1}월 ${todayDate.getDate()}일`;
 
-  const prompt = `
-당신은 투자 예측 게임 MC입니다. 오늘(${dateStr}) 투자/경제 예측 질문 3개를 만드세요.
+  const prompt = `당신은 baln(발른) 앱의 예측 게임 AI입니다.
+오늘(${dateStr}) 투자 예측 질문 3개를 생성하세요.
 
-**[중요] Google Search로 최신 시장 뉴스를 검색하세요:**
-- "stock market news today ${todayDate.getMonth() + 1}월"
-- "cryptocurrency price today"
-- "경제 뉴스 오늘 ${dateStr}"
-- "나스닥 종가", "비트코인 가격", "원달러 환율"
+[핵심 원칙]
+- 초보 투자자도 재미있게 참여할 수 있는 질문을 만든다.
+- YES/NO로 명확히 답할 수 있어야 한다 (애매한 질문 금지).
+- 24~48시간 내 객관적으로 결과를 확인할 수 있어야 한다.
+- 한국어로 자연스럽게 작성한다.
 
-**질문 설계 원칙 (습관 루프 핵심!):**
-1. YES/NO로 명확히 답할 수 있는 질문만 (애매한 질문 금지)
-2. 24~48시간 내 결과 확인 가능한 단기 예측
-3. 카테고리 배분: stocks 1개, crypto 1개, macro 또는 event 1개
-4. 구체적 수치/기준 포함 (예: "나스닥이 오늘 종가 기준 1% 이상 상승할까?")
-5. 한국어로 작성
-6. **난이도 배분**: easy 1개(초보자도 판단 가능), medium 1개, hard 1개(전문가도 고민)
-7. **맥락 힌트**: 복기(review) 시 학습 포인트가 되는 배경 설명 추가
-8. **관련 종목**: 질문과 가장 관련 있는 대표 종목 티커 1개
-9. **[NEW] 오를/내릴 근거**: 각 질문마다 YES(오를) 근거와 NO(내릴) 근거를 뉴스 기반으로 한 줄씩 작성
-   - 예: "up_reason": "CPI 3개월 연속 상승 (블룸버그)"
-   - 예: "down_reason": "실업률 4.2% → 경기 둔화 우려 (WSJ)"
+[Google Search 검색]
+- "stock market today", "bitcoin price today", "경제 뉴스 오늘"
 
-**출력 형식 (JSON만, 마크다운 금지):**
+[질문 설계 규칙]
+- 카테고리 배분: stocks 1개, crypto 1개, macro 1개
+- 난이도 배분: easy 1개, medium 1개, hard 1개
+- 구체적 수치/기준 포함 (예: "1% 이상 상승", "$100,000 돌파")
+- 맥락 힌트(context_hint): 결과 복기 시 학습이 되는 배경 설명 2~3문장
+- up_reason / down_reason: 각각 뉴스 기반 근거 한 줄씩
+
+[응답 형식 — 아래 JSON만 출력. 설명문, 마크다운, 코드블록 금지.]
 {
   "questions": [
     {
       "question": "오늘 S&P 500이 전일 종가 대비 상승 마감할까요?",
-      "description": "어제 미국 고용지표가 예상을 상회하며 시장 낙관론이 확산. CPI 발표를 앞두고 투자자들이 관망세.",
+      "description": "어제 고용지표 호조로 시장 낙관론 확산. CPI 발표를 앞두고 관망세도 있음.",
       "category": "stocks",
       "yes_label": "상승 마감",
       "no_label": "하락 마감",
       "deadline_hours": 24,
       "difficulty": "easy",
-      "context_hint": "고용지표가 좋으면 단기적으로 주가가 상승하지만, 금리 인상 우려로 이어질 수 있어요. 이런 '좋은 뉴스가 나쁜 뉴스'인 상황이 2024년 자주 반복됐습니다.",
+      "context_hint": "고용지표가 좋으면 단기적으로 주가 상승 요인이지만, 금리 인상 우려로 이어질 수 있어요. 이런 '좋은 뉴스가 나쁜 뉴스'인 역설이 최근 시장의 특징입니다.",
       "related_ticker": "SPY",
-      "up_reason": "고용지표 호조로 경기 낙관론 확산 (블룸버그)",
+      "up_reason": "고용지표 호조로 경기 낙관론 확산 (Bloomberg)",
       "down_reason": "금리 인상 우려로 기술주 매도 압력 (WSJ)"
     },
     {
       "question": "비트코인이 내일까지 $100,000를 돌파할까요?",
-      "description": "BTC ETF 순유입이 3일 연속 증가하며 매수세 강화. 트럼프의 암호화폐 우호 정책 기대감.",
+      "description": "BTC ETF 순유입 3일 연속 증가. 기관 매수세 강화 흐름.",
       "category": "crypto",
       "yes_label": "돌파한다",
       "no_label": "못한다",
       "deadline_hours": 48,
       "difficulty": "medium",
-      "context_hint": "ETF 유입은 기관 매수 신호이지만, 심리적 저항선($100K)에서는 차익 실현 매물이 쏟아지는 경우가 많아요. 2024년에도 $70K 돌파 시 3번 실패 후 성공했습니다.",
+      "context_hint": "ETF 유입은 기관 매수 신호이지만, 심리적 저항선에서는 차익 실현 매물이 나오기 쉬워요. 큰 숫자(10만 달러 같은) 앞에서 시장은 한 번 쉬어가는 경우가 많습니다.",
       "related_ticker": "BTC",
-      "up_reason": "BTC ETF 3일 연속 순유입, 기관 매수세 (코인데스크)",
-      "down_reason": "심리적 저항선 $100K에서 차익 실현 우려 (블룸버그)"
+      "up_reason": "BTC ETF 3일 연속 순유입, 기관 매수세 (CoinDesk)",
+      "down_reason": "심리적 저항선 $100K에서 차익 실현 우려 (Bloomberg)"
     },
     {
       "question": "이번 주 원/달러 환율이 1,400원 아래로 내려갈까요?",
-      "description": "한은 개입 가능성과 달러 약세 흐름 주목. 미 국채 금리 하락세가 원화 강세 요인.",
+      "description": "한은 개입 가능성과 달러 약세 흐름이 주목받는 상황.",
       "category": "macro",
       "yes_label": "내려간다",
       "no_label": "유지/상승",
       "deadline_hours": 48,
       "difficulty": "hard",
-      "context_hint": "환율은 금리차, 경상수지, 자본흐름이 복합적으로 작용합니다. 한국 수출이 호조면 경상수지 흑자로 원화 강세, 반대로 미국 금리가 높으면 자본 유출로 원화 약세가 됩니다.",
+      "context_hint": "환율은 금리차, 경상수지, 자본흐름이 복합적으로 작용합니다. 한국 수출 호조는 원화 강세, 미국 고금리는 원화 약세 요인이에요.",
       "related_ticker": "KRW=X",
       "up_reason": "미 국채 금리 하락, 원화 강세 요인 (연합뉴스)",
-      "down_reason": "미중 무역 갈등 심화, 달러 수요 증가 (WSJ)"
+      "down_reason": "무역 갈등 심화, 달러 수요 증가 (WSJ)"
     }
   ]
 }
+
+[중요] 위 예시는 구조 참고용입니다. 반드시 오늘(${dateStr})의 실제 시장 상황을 검색한 뒤, 그에 맞는 새 질문을 만드세요.
 `;
 
   console.log('[Task E-1] 예측 질문 생성 시작...');
-  const responseText = await callGeminiWithSearch(prompt);
-  const cleanJson = cleanJsonResponse(responseText);
-  const parsed = JSON.parse(cleanJson);
+  let questions: PredictionQuestion[] = [];
+  try {
+    const responseText = await callGeminiWithSearch(prompt);
+    const cleanJson = cleanJsonResponse(responseText);
+    const parsed = JSON.parse(cleanJson);
+    questions = parsed.questions || [];
+  } catch (parseErr) {
+    console.error('[Task E-1] Gemini 응답 파싱 실패 — 기본 질문 사용:', parseErr);
+    questions = [
+      {
+        question: `오늘(${dateStr}) S&P 500이 전일 대비 상승 마감할까요?`,
+        description: '시장 데이터를 자동으로 불러오지 못해 기본 질문이 생성되었습니다.',
+        category: 'stocks',
+        yes_label: '상승 마감',
+        no_label: '하락 마감',
+        deadline_hours: 24,
+        difficulty: 'easy',
+        context_hint: '미국 증시는 장기적으로 우상향 추세를 보여왔습니다. 하루하루의 등락보다 큰 흐름을 보는 눈을 기르는 것이 중요해요.',
+        related_ticker: 'SPY',
+      },
+    ];
+  }
 
-  const questions: PredictionQuestion[] = parsed.questions || [];
+  if (!questions || questions.length === 0) {
+    console.warn('[Task E-1] 생성된 질문이 0개 — 기본 질문으로 대체');
+    questions = [
+      {
+        question: `오늘(${dateStr}) 나스닥이 전일 대비 상승 마감할까요?`,
+        description: '기본 질문입니다.',
+        category: 'stocks',
+        yes_label: '상승',
+        no_label: '하락',
+        deadline_hours: 24,
+        difficulty: 'easy',
+        related_ticker: 'QQQ',
+      },
+    ];
+  }
   let created = 0;
 
   for (const q of questions.slice(0, 3)) {

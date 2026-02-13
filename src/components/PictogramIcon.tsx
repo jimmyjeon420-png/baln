@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { COLORS } from '../styles/theme';
+import { useTheme } from '../hooks/useTheme';
 
 interface PictogramIconProps {
   name: 'home' | 'invest' | 'strategy' | 'journal' | 'menu';
@@ -18,7 +18,8 @@ const PictogramIcon: React.FC<PictogramIconProps> = ({
   size = 24,
   focused = false,
 }) => {
-  const iconColor = focused ? COLORS.textPrimary : COLORS.textSecondary;
+  const { colors } = useTheme();
+  const iconColor = focused ? colors.textPrimary : colors.textSecondary;
 
   switch (name) {
     case 'home': // 집 모양
@@ -50,7 +51,7 @@ const PictogramIcon: React.FC<PictogramIconProps> = ({
             style={{
               width: 2,
               height: size * 0.2,
-              backgroundColor: COLORS.surface,
+              backgroundColor: colors.surface,
               position: 'absolute',
               bottom: size * 0.05,
             }}

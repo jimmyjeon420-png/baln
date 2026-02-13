@@ -10,7 +10,8 @@ import {
   Text
 } from 'react-native';
 import { TaxImpact } from '../types/asset';
-import { COLORS, SIZES, TYPOGRAPHY } from '../styles/theme';
+import { SIZES } from '../styles/theme';
+import { useTheme } from '../hooks/useTheme';
 
 interface Props {
   taxImpact: TaxImpact;
@@ -19,6 +20,7 @@ interface Props {
 
 export const TaxImpactBadge: React.FC<Props> = ({ taxImpact, showDetails = false }) => {
   const [expanded, setExpanded] = useState(showDetails);
+  const { colors } = useTheme();
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -35,68 +37,68 @@ export const TaxImpactBadge: React.FC<Props> = ({ taxImpact, showDetails = false
 
   return (
     <TouchableOpacity
-      style={styles.container}
+      style={[styles.container, { backgroundColor: colors.surface, borderLeftColor: colors.sell }]}
       onPress={() => setExpanded(!expanded)}
       activeOpacity={0.7}
     >
       {/* Compact view */}
       <View style={styles.compactRow}>
-        <Text style={styles.label}>🧾 Tax ({(taxImpact.effectiveTaxRate ?? 0).toFixed(1)}%)</Text>
+        <Text style={[styles.label, { color: colors.textSecondary }]}>🧾 Tax ({(taxImpact.effectiveTaxRate ?? 0).toFixed(1)}%)</Text>
         <View style={styles.amountGroup}>
-          <Text style={styles.taxAmount}>-{formatCurrency(taxImpact.taxAmount)}</Text>
-          <Text style={styles.netAmount}>→ {formatCurrency(taxImpact.netProceeds)}</Text>
+          <Text style={[styles.taxAmount, { color: colors.sell }]}>-{formatCurrency(taxImpact.taxAmount)}</Text>
+          <Text style={[styles.netAmount, { color: colors.textSecondary }]}>→ {formatCurrency(taxImpact.netProceeds)}</Text>
         </View>
       </View>
 
       {/* Expanded view */}
       {expanded && (
-        <View style={styles.expandedContainer}>
+        <View style={[styles.expandedContainer, { borderTopColor: colors.border }]}>
           <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Gross Proceeds</Text>
-            <Text style={styles.detailValue}>
+            <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Gross Proceeds</Text>
+            <Text style={[styles.detailValue, { color: colors.textPrimary }]}>
               {formatCurrency(taxImpact.netProceeds + taxImpact.taxAmount + taxImpact.tradeFee)}
             </Text>
           </View>
 
           <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Capital Gains</Text>
+            <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Capital Gains</Text>
             <Text style={[
               styles.detailValue,
-              taxImpact.capitalGains >= 0 ? styles.positive : styles.negative
+              { color: taxImpact.capitalGains >= 0 ? colors.buy : colors.sell }
             ]}>
               {formatCurrency(taxImpact.capitalGains)}
             </Text>
           </View>
 
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
           <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Tax ({(taxImpact.effectiveTaxRate ?? 0).toFixed(1)}%)</Text>
-            <Text style={styles.negative}>
+            <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Tax ({(taxImpact.effectiveTaxRate ?? 0).toFixed(1)}%)</Text>
+            <Text style={{ color: colors.sell }}>
               -{formatCurrency(taxImpact.taxAmount)}
             </Text>
           </View>
 
           <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Trade Fee</Text>
-            <Text style={styles.negative}>
+            <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Trade Fee</Text>
+            <Text style={{ color: colors.sell }}>
               -{formatCurrency(taxImpact.tradeFee)}
             </Text>
           </View>
 
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
           <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Net Proceeds</Text>
-            <Text style={[styles.detailValue, styles.highlight]}>
+            <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Net Proceeds</Text>
+            <Text style={[styles.detailValue, { color: colors.buy, fontSize: 13, fontWeight: '700' }]}>
               {formatCurrency(taxImpact.netProceeds)}
             </Text>
           </View>
 
           {taxImpact.holdingPeriodDays !== undefined && (
             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Holding Period</Text>
-              <Text style={styles.detailValue}>
+              <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Holding Period</Text>
+              <Text style={[styles.detailValue, { color: colors.textPrimary }]}>
                 {taxImpact.holdingPeriodDays} days
               </Text>
             </View>
@@ -109,12 +111,10 @@ export const TaxImpactBadge: React.FC<Props> = ({ taxImpact, showDetails = false
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: COLORS.surface,
     borderRadius: 8,
     padding: SIZES.md,
     marginVertical: SIZES.sm,
     borderLeftWidth: 3,
-    borderLeftColor: COLORS.sell,
   },
   compactRow: {
     flexDirection: 'row',
@@ -124,7 +124,6 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 13,
     fontWeight: '600',
-    color: COLORS.textSecondary,
     flex: 1,
   },
   amountGroup: {
@@ -133,18 +132,15 @@ const styles = StyleSheet.create({
   taxAmount: {
     fontSize: 13,
     fontWeight: '700',
-    color: COLORS.sell,
   },
   netAmount: {
     fontSize: 12,
-    color: COLORS.textSecondary,
     marginTop: 2,
   },
   expandedContainer: {
     marginTop: SIZES.md,
     paddingTop: SIZES.md,
     borderTopWidth: 1,
-    borderTopColor: COLORS.border,
   },
   detailRow: {
     flexDirection: 'row',
@@ -154,29 +150,15 @@ const styles = StyleSheet.create({
   },
   detailLabel: {
     fontSize: 12,
-    color: COLORS.textSecondary,
     flex: 1,
   },
   detailValue: {
     fontSize: 12,
     fontWeight: '600',
-    color: COLORS.textPrimary,
     textAlign: 'right',
-  },
-  positive: {
-    color: COLORS.buy,
-  },
-  negative: {
-    color: COLORS.sell,
-  },
-  highlight: {
-    color: COLORS.buy,
-    fontSize: 13,
-    fontWeight: '700',
   },
   divider: {
     height: 1,
-    backgroundColor: COLORS.border,
     marginVertical: SIZES.xs,
   },
 });

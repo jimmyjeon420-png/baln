@@ -36,7 +36,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQueryClient } from '@tanstack/react-query';
 
 import supabase, { getCurrentUser } from '../src/services/supabase';
-import { COLORS } from '../src/styles/theme';
 import { useTheme } from '../src/hooks/useTheme';
 import { searchStocks, StockItem, getCategoryLabel, getCategoryColor } from '../src/data/stockList';
 import { priceService } from '../src/services/PriceService';
@@ -494,13 +493,13 @@ export default function AddAssetScreen() {
       {/* iOS 숫자 키보드 위에 "완료" 버튼 추가 */}
       {Platform.OS === 'ios' && (
         <InputAccessoryView nativeID={INPUT_ACCESSORY_ID}>
-          <View style={styles.keyboardToolbar}>
+          <View style={[styles.keyboardToolbar, { backgroundColor: colors.surfaceLight, borderTopColor: colors.border }]}>
             <View style={{ flex: 1 }} />
             <TouchableOpacity
               onPress={() => Keyboard.dismiss()}
               style={styles.keyboardDoneButton}
             >
-              <Text style={styles.keyboardDoneText}>완료</Text>
+              <Text style={[styles.keyboardDoneText, { color: colors.primary }]}>완료</Text>
             </TouchableOpacity>
           </View>
         </InputAccessoryView>
@@ -518,45 +517,45 @@ export default function AddAssetScreen() {
         {/* 헤더 */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons name="chevron-back" size={28} color={COLORS.primary} />
+            <Ionicons name="chevron-back" size={28} color={colors.primary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>자산 추가</Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>자산 추가</Text>
           <View style={{ width: 28 }} />
         </View>
 
         {/* 부동산 등록 바로가기 */}
         <TouchableOpacity
-          style={styles.realEstateShortcut}
+          style={[styles.realEstateShortcut, { backgroundColor: colors.surface, borderColor: colors.border }]}
           onPress={() => router.push('/add-realestate')}
         >
-          <View style={styles.realEstateIcon}>
-            <Ionicons name="home" size={22} color={COLORS.primary} />
+          <View style={[styles.realEstateIcon, { backgroundColor: colors.surfaceLight }]}>
+            <Ionicons name="home" size={22} color={colors.primary} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.realEstateTitle}>부동산 자산 등록</Text>
-            <Text style={styles.realEstateDesc}>아파트 검색 → 시세 확인 → 포트폴리오 추가</Text>
+            <Text style={[styles.realEstateTitle, { color: colors.primary }]}>부동산 자산 등록</Text>
+            <Text style={[styles.realEstateDesc, { color: colors.textSecondary }]}>아파트 검색 → 시세 확인 → 포트폴리오 추가</Text>
           </View>
-          <Ionicons name="chevron-forward" size={20} color="#888" />
+          <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
         </TouchableOpacity>
 
         {/* ─── 빠른 추가 섹션 ─── */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>
+        <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
             {editingAsset ? '자산 수정' : '빠른 추가'}
           </Text>
-          <Text style={styles.sectionSubtitle}>
+          <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
             {editingAsset ? '수량과 가격을 수정하세요' : '종목 검색 → 수량 입력 → 등록 (30초)'}
           </Text>
 
           {/* 1. 종목 검색 */}
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>종목 검색</Text>
-            <View style={styles.searchContainer}>
-              <Ionicons name="search" size={18} color="#888" style={styles.searchIcon} />
+            <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>종목 검색</Text>
+            <View style={[styles.searchContainer, { backgroundColor: colors.surfaceLight, borderColor: colors.border }]}>
+              <Ionicons name="search" size={18} color={colors.textSecondary} style={styles.searchIcon} />
               <TextInput
-                style={styles.searchInput}
+                style={[styles.searchInput, { color: colors.textPrimary }]}
                 placeholder="삼성전자, NVDA, 비트코인..."
-                placeholderTextColor="#555"
+                placeholderTextColor={colors.textTertiary}
                 value={searchQuery}
                 onChangeText={(text) => {
                   setSearchQuery(text);
@@ -582,18 +581,18 @@ export default function AddAssetScreen() {
                   }}
                   style={styles.clearButton}
                 >
-                  <Ionicons name="close-circle" size={18} color="#666" />
+                  <Ionicons name="close-circle" size={18} color={colors.textTertiary} />
                 </TouchableOpacity>
               )}
             </View>
 
             {/* 검색 드롭다운 */}
             {showDropdown && (
-              <View style={styles.dropdown}>
+              <View style={[styles.dropdown, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 {searchResults.map((item) => (
                   <TouchableOpacity
                     key={item.ticker}
-                    style={styles.dropdownItem}
+                    style={[styles.dropdownItem, { borderBottomColor: colors.surfaceLight }]}
                     onPress={() => selectStock(item)}
                   >
                     <View style={[styles.categoryBadge, { backgroundColor: getCategoryColor(item.category) + '20' }]}>
@@ -602,8 +601,8 @@ export default function AddAssetScreen() {
                       </Text>
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.dropdownName}>{item.name}</Text>
-                      <Text style={styles.dropdownTicker}>{item.ticker}</Text>
+                      <Text style={[styles.dropdownName, { color: colors.textPrimary }]}>{item.name}</Text>
+                      <Text style={[styles.dropdownTicker, { color: colors.textSecondary }]}>{item.ticker}</Text>
                     </View>
                   </TouchableOpacity>
                 ))}
@@ -615,18 +614,18 @@ export default function AddAssetScreen() {
           {selectedStock && (
             <View style={styles.selectedBadge}>
               <View style={[styles.selectedBadgeDot, { backgroundColor: getCategoryColor(selectedStock.category) }]} />
-              <Text style={styles.selectedBadgeName}>{selectedStock.name}</Text>
-              <Text style={styles.selectedBadgeTicker}>({selectedStock.ticker})</Text>
+              <Text style={[styles.selectedBadgeName, { color: colors.textPrimary }]}>{selectedStock.name}</Text>
+              <Text style={[styles.selectedBadgeTicker, { color: colors.textSecondary }]}>({selectedStock.ticker})</Text>
             </View>
           )}
 
           {/* 2. 수량 입력 */}
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>보유 수량</Text>
+            <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>보유 수량</Text>
             <TextInput
-              style={styles.numberInput}
+              style={[styles.numberInput, { backgroundColor: colors.surfaceLight, borderColor: colors.border, color: colors.textPrimary }]}
               placeholder="예: 100"
-              placeholderTextColor="#555"
+              placeholderTextColor={colors.textTertiary}
               value={quantity}
               onChangeText={(text) => setQuantity(text.replace(/[^0-9.]/g, ''))}
               keyboardType="decimal-pad"
@@ -639,27 +638,27 @@ export default function AddAssetScreen() {
           <View style={styles.inputGroup}>
             <View style={styles.priceLabelRow}>
               <View style={styles.priceLabelGroup}>
-                <Text style={styles.inputLabel}>매수 단가</Text>
-                <Text style={styles.priceHelp}>내가 산 평균 가격</Text>
+                <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>매수 단가</Text>
+                <Text style={[styles.priceHelp, { color: colors.textTertiary }]}>내가 산 평균 가격</Text>
               </View>
               {priceLoading && (
                 <View style={styles.priceLoadingRow}>
-                  <ActivityIndicator size="small" color={COLORS.primary} />
-                  <Text style={styles.priceLoadingText}>현재가 조회 중...</Text>
+                  <ActivityIndicator size="small" color={colors.primary} />
+                  <Text style={[styles.priceLoadingText, { color: colors.primary }]}>현재가 조회 중...</Text>
                 </View>
               )}
               {priceAuto && !priceLoading && (
                 <View style={styles.autoTag}>
-                  <Text style={styles.autoTagText}>자동</Text>
+                  <Text style={[styles.autoTagText, { color: colors.primary }]}>자동</Text>
                 </View>
               )}
             </View>
-            <View style={styles.priceInputRow}>
-              <Text style={styles.currencySymbol}>{currencySymbol}</Text>
+            <View style={[styles.priceInputRow, { backgroundColor: colors.surfaceLight, borderColor: colors.border }]}>
+              <Text style={[styles.currencySymbol, { color: colors.textSecondary }]}>{currencySymbol}</Text>
               <TextInput
-                style={styles.priceInput}
+                style={[styles.priceInput, { color: colors.textPrimary }]}
                 placeholder="0"
-                placeholderTextColor="#555"
+                placeholderTextColor={colors.textTertiary}
                 value={price}
                 onChangeText={(text) => {
                   setPrice(text.replace(/[^0-9.]/g, ''));
@@ -671,7 +670,7 @@ export default function AddAssetScreen() {
               />
             </View>
             {!priceLoading && !priceAuto && selectedStock && (
-              <Text style={styles.priceHint}>
+              <Text style={[styles.priceHint, { color: colors.textSecondary }]}>
                 현재가를 가져올 수 없습니다. 직접 입력해주세요.
               </Text>
             )}
@@ -680,8 +679,8 @@ export default function AddAssetScreen() {
           {/* 4. 평가금액 */}
           {totalValue > 0 && (
             <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>평가금액</Text>
-              <Text style={styles.totalValue}>
+              <Text style={[styles.totalLabel, { color: colors.textSecondary }]}>평가금액</Text>
+              <Text style={[styles.totalValue, { color: colors.primary }]}>
                 {currencySymbol}{totalValue.toLocaleString()}
               </Text>
             </View>
@@ -691,7 +690,8 @@ export default function AddAssetScreen() {
           <TouchableOpacity
             style={[
               styles.saveButton,
-              (!selectedStock || !quantity || !price) && styles.saveButtonDisabled,
+              { backgroundColor: colors.primary },
+              (!selectedStock || !quantity || !price) && [styles.saveButtonDisabled, { backgroundColor: colors.surfaceLight }],
             ]}
             onPress={handleSave}
             disabled={saving || !selectedStock || !quantity || !price}
@@ -714,24 +714,24 @@ export default function AddAssetScreen() {
               style={styles.cancelEditButton}
               onPress={resetForm}
             >
-              <Text style={styles.cancelEditText}>수정 취소</Text>
+              <Text style={[styles.cancelEditText, { color: colors.textSecondary }]}>수정 취소</Text>
             </TouchableOpacity>
           )}
         </View>
 
         {/* ─── 최근 추가 종목 ─── */}
         {recentAssets.length > 0 && !editingAsset && (
-          <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>최근 추가 종목</Text>
+          <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>최근 추가 종목</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.recentScroll}>
               {recentAssets.map((recent) => (
                 <TouchableOpacity
                   key={recent.ticker}
-                  style={styles.recentChip}
+                  style={[styles.recentChip, { backgroundColor: colors.surfaceLight }]}
                   onPress={() => selectRecentAsset(recent)}
                 >
                   <View style={[styles.recentDot, { backgroundColor: getCategoryColor(recent.category) }]} />
-                  <Text style={styles.recentChipText}>{recent.name}</Text>
+                  <Text style={[styles.recentChipText, { color: colors.textSecondary }]}>{recent.name}</Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -739,70 +739,70 @@ export default function AddAssetScreen() {
         )}
 
         {/* ─── 보유 자산 목록 ─── */}
-        <View style={styles.sectionCard}>
+        <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.existingHeader}>
-            <Text style={styles.sectionTitle}>보유 자산</Text>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>보유 자산</Text>
             {existingAssets.length > 0 && (
-              <Text style={styles.assetCount}>{existingAssets.length}개</Text>
+              <Text style={[styles.assetCount, { color: colors.textSecondary }]}>{existingAssets.length}개</Text>
             )}
           </View>
 
           {loadingAssets ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="small" color={COLORS.primary} />
-              <Text style={styles.loadingText}>자산 불러오는 중...</Text>
+              <ActivityIndicator size="small" color={colors.primary} />
+              <Text style={[styles.loadingText, { color: colors.textSecondary }]}>자산 불러오는 중...</Text>
             </View>
           ) : authFailed ? (
             <View style={styles.emptyContainer}>
-              <Ionicons name="log-in-outline" size={40} color="#CF6679" />
-              <Text style={styles.emptyText}>로그인이 필요합니다</Text>
-              <Text style={styles.emptySubtext}>자산을 불러오려면 로그인해주세요</Text>
+              <Ionicons name="log-in-outline" size={40} color={colors.error} />
+              <Text style={[styles.emptyText, { color: colors.textSecondary }]}>로그인이 필요합니다</Text>
+              <Text style={[styles.emptySubtext, { color: colors.textTertiary }]}>자산을 불러오려면 로그인해주세요</Text>
               <TouchableOpacity
                 style={styles.retryButton}
                 onPress={() => loadExistingAssets()}
               >
-                <Text style={styles.retryButtonText}>다시 시도</Text>
+                <Text style={[styles.retryButtonText, { color: colors.primary }]}>다시 시도</Text>
               </TouchableOpacity>
             </View>
           ) : existingAssets.length === 0 ? (
             <View style={styles.emptyContainer}>
-              <Ionicons name="wallet-outline" size={40} color="#444" />
-              <Text style={styles.emptyText}>등록된 자산이 없습니다</Text>
-              <Text style={styles.emptySubtext}>위에서 종목을 검색하여 추가하세요</Text>
+              <Ionicons name="wallet-outline" size={40} color={colors.textTertiary} />
+              <Text style={[styles.emptyText, { color: colors.textSecondary }]}>등록된 자산이 없습니다</Text>
+              <Text style={[styles.emptySubtext, { color: colors.textTertiary }]}>위에서 종목을 검색하여 추가하세요</Text>
             </View>
           ) : (
             existingAssets.map((asset) => (
-              <View key={asset.id} style={styles.assetRow}>
+              <View key={asset.id} style={[styles.assetRow, { borderBottomColor: colors.border }]}>
                 <TouchableOpacity
                   style={styles.assetInfo}
                   onPress={() => startEditAsset(asset)}
                   activeOpacity={0.7}
                 >
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.assetName}>{asset.name}</Text>
-                    <Text style={styles.assetTicker}>{asset.ticker}</Text>
+                    <Text style={[styles.assetName, { color: colors.textPrimary }]}>{asset.name}</Text>
+                    <Text style={[styles.assetTicker, { color: colors.textSecondary }]}>{asset.ticker}</Text>
                   </View>
                   <View style={styles.assetValues}>
-                    <Text style={styles.assetValue}>
+                    <Text style={[styles.assetValue, { color: colors.textPrimary }]}>
                       {formatKRW(asset.current_value)}
                     </Text>
-                    <Text style={styles.assetQuantity}>
+                    <Text style={[styles.assetQuantity, { color: colors.textSecondary }]}>
                       {asset.quantity}주 / {getCurrencySymbol(asset.ticker)}{(asset.avg_price || 0).toLocaleString()}
                     </Text>
                   </View>
                 </TouchableOpacity>
                 <View style={styles.assetActions}>
                   <TouchableOpacity
-                    style={styles.editBtn}
+                    style={[styles.editBtn, { backgroundColor: colors.surfaceLight }]}
                     onPress={() => startEditAsset(asset)}
                   >
-                    <Ionicons name="create-outline" size={16} color="#888" />
+                    <Ionicons name="create-outline" size={16} color={colors.textSecondary} />
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={styles.deleteBtn}
                     onPress={() => deleteAsset(asset)}
                   >
-                    <Ionicons name="trash-outline" size={16} color="#CF6679" />
+                    <Ionicons name="trash-outline" size={16} color={colors.error} />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -823,13 +823,10 @@ export default function AddAssetScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    // backgroundColor는 동적으로 적용됨 (colors.background)
   },
   scrollContent: {
     padding: 16,
   },
-
-  // 헤더
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -839,62 +836,46 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#FFFFFF',
   },
-
-  // 부동산 바로가기
   realEstateShortcut: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1A2A1A',
     borderRadius: 12,
     padding: 14,
     marginBottom: 16,
     gap: 12,
     borderWidth: 1,
-    borderColor: '#2A3A2A',
   },
   realEstateIcon: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#1E3E1E',
     justifyContent: 'center',
     alignItems: 'center',
   },
   realEstateTitle: {
     fontSize: 15,
     fontWeight: '600',
-    color: COLORS.primary,
   },
   realEstateDesc: {
     fontSize: 12,
-    color: '#888',
     marginTop: 2,
   },
-
-  // 섹션 카드
   sectionCard: {
-    backgroundColor: COLORS.surface,
     borderRadius: 16,
     padding: 18,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: '#252525',
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#FFFFFF',
     marginBottom: 4,
   },
   sectionSubtitle: {
     fontSize: 12,
-    color: '#888',
     marginBottom: 16,
   },
-
-  // 입력 그룹
   inputGroup: {
     marginBottom: 14,
     zIndex: 1,
@@ -902,18 +883,13 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#AAA',
     marginBottom: 6,
   },
-
-  // 검색 인풋
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#2A2A2A',
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#333',
   },
   searchIcon: {
     marginLeft: 12,
@@ -923,18 +899,13 @@ const styles = StyleSheet.create({
     height: 44,
     paddingHorizontal: 10,
     fontSize: 15,
-    color: '#FFFFFF',
   },
   clearButton: {
     padding: 10,
   },
-
-  // 드롭다운
   dropdown: {
-    backgroundColor: '#252525',
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#333',
     marginTop: 4,
     maxHeight: 240,
     overflow: 'hidden',
@@ -945,7 +916,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#2A2A2A',
     gap: 10,
   },
   categoryBadge: {
@@ -960,15 +930,11 @@ const styles = StyleSheet.create({
   dropdownName: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#FFF',
   },
   dropdownTicker: {
     fontSize: 11,
-    color: '#888',
     marginTop: 1,
   },
-
-  // 선택된 종목 뱃지
   selectedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -989,26 +955,17 @@ const styles = StyleSheet.create({
   selectedBadgeName: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#FFF',
   },
   selectedBadgeTicker: {
     fontSize: 12,
-    color: '#888',
   },
-
-  // 수량 입력
   numberInput: {
     height: 44,
-    backgroundColor: '#2A2A2A',
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#333',
     paddingHorizontal: 14,
     fontSize: 15,
-    color: '#FFFFFF',
   },
-
-  // 가격 입력
   priceLabelRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1022,7 +979,6 @@ const styles = StyleSheet.create({
   },
   priceHelp: {
     fontSize: 11,
-    color: '#666',
   },
   priceLoadingRow: {
     flexDirection: 'row',
@@ -1031,7 +987,6 @@ const styles = StyleSheet.create({
   },
   priceLoadingText: {
     fontSize: 11,
-    color: COLORS.primary,
   },
   autoTag: {
     backgroundColor: 'rgba(76, 175, 80, 0.12)',
@@ -1041,20 +996,16 @@ const styles = StyleSheet.create({
   },
   autoTagText: {
     fontSize: 10,
-    color: COLORS.primary,
     fontWeight: '700',
   },
   priceInputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#2A2A2A',
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#333',
   },
   currencySymbol: {
     fontSize: 15,
-    color: '#888',
     paddingLeft: 14,
     fontWeight: '600',
   },
@@ -1063,16 +1014,12 @@ const styles = StyleSheet.create({
     height: 44,
     paddingHorizontal: 8,
     fontSize: 15,
-    color: '#FFFFFF',
   },
   priceHint: {
     fontSize: 11,
-    color: '#888',
     marginTop: 4,
     fontStyle: 'italic',
   },
-
-  // 평가금액
   totalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1087,27 +1034,21 @@ const styles = StyleSheet.create({
   },
   totalLabel: {
     fontSize: 13,
-    color: '#AAA',
     fontWeight: '600',
   },
   totalValue: {
     fontSize: 18,
     fontWeight: '800',
-    color: COLORS.primary,
   },
-
-  // 저장 버튼
   saveButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: COLORS.primary,
     paddingVertical: 14,
     borderRadius: 12,
   },
   saveButtonDisabled: {
-    backgroundColor: '#444',
     opacity: 0.6,
   },
   saveButtonText: {
@@ -1115,8 +1056,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
   },
-
-  // 수정 취소
   cancelEditButton: {
     alignItems: 'center',
     paddingVertical: 10,
@@ -1124,17 +1063,13 @@ const styles = StyleSheet.create({
   },
   cancelEditText: {
     fontSize: 13,
-    color: '#888',
   },
-
-  // 최근 종목
   recentScroll: {
     marginTop: 8,
   },
   recentChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#2A2A2A',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 20,
@@ -1148,11 +1083,8 @@ const styles = StyleSheet.create({
   },
   recentChipText: {
     fontSize: 13,
-    color: '#CCC',
     fontWeight: '500',
   },
-
-  // 보유 자산 목록
   existingHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1161,7 +1093,6 @@ const styles = StyleSheet.create({
   },
   assetCount: {
     fontSize: 12,
-    color: '#888',
     fontWeight: '600',
   },
   loadingContainer: {
@@ -1173,7 +1104,6 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 13,
-    color: '#888',
   },
   emptyContainer: {
     alignItems: 'center',
@@ -1182,21 +1112,16 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 14,
-    color: '#888',
     fontWeight: '600',
   },
   emptySubtext: {
     fontSize: 12,
-    color: '#555',
   },
-
-  // 자산 행
   assetRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#252525',
   },
   assetInfo: {
     flex: 1,
@@ -1206,11 +1131,9 @@ const styles = StyleSheet.create({
   assetName: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#FFF',
   },
   assetTicker: {
     fontSize: 11,
-    color: '#888',
     marginTop: 2,
   },
   assetValues: {
@@ -1220,11 +1143,9 @@ const styles = StyleSheet.create({
   assetValue: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#FFF',
   },
   assetQuantity: {
     fontSize: 11,
-    color: '#888',
     marginTop: 2,
   },
   assetActions: {
@@ -1235,7 +1156,6 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 8,
-    backgroundColor: '#2A2A2A',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1247,14 +1167,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-
-  // 키보드 툴바 (iOS 숫자 키보드 위 "완료" 버튼)
   keyboardToolbar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#2A2A2A',
     borderTopWidth: 1,
-    borderTopColor: '#333',
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
@@ -1265,7 +1181,6 @@ const styles = StyleSheet.create({
   keyboardDoneText: {
     fontSize: 16,
     fontWeight: '600',
-    color: COLORS.primary,
   },
   retryButton: {
     marginTop: 12,
@@ -1277,6 +1192,5 @@ const styles = StyleSheet.create({
   retryButtonText: {
     fontSize: 13,
     fontWeight: '600',
-    color: COLORS.primary,
   },
 });

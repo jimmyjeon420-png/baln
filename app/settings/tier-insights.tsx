@@ -63,12 +63,13 @@ const getTier = (totalAssets: number): 'SILVER' | 'GOLD' | 'PLATINUM' | 'DIAMOND
 function WeightBar({ label, weight, color, maxWeight }: {
   label: string; weight: number; color: string; maxWeight: number;
 }) {
+  const { colors } = useTheme();
   const barWidth = maxWeight > 0 ? Math.max((weight / maxWeight) * 100, 2) : 2;
 
   return (
     <View style={styles.weightBarRow}>
-      <Text style={styles.weightBarLabel}>{label}</Text>
-      <View style={styles.weightBarTrack}>
+      <Text style={[styles.weightBarLabel, { color: colors.textSecondary }]}>{label}</Text>
+      <View style={[styles.weightBarTrack, { backgroundColor: colors.surfaceLight }]}>
         <View style={[styles.weightBarFill, { width: `${barWidth}%`, backgroundColor: color }]} />
       </View>
       <Text style={[styles.weightBarValue, { color }]}>{weight.toFixed(1)}%</Text>
@@ -78,6 +79,7 @@ function WeightBar({ label, weight, color, maxWeight }: {
 
 // 등급별 배분 카드 컴포넌트
 function TierAllocationCard({ stat, isMyTier }: { stat: TierAllocationStat; isMyTier: boolean }) {
+  const { colors } = useTheme();
   const tierColor = TIER_COLORS[stat.tier] || '#FFFFFF';
   const tierLabel = TIER_LABELS[stat.tier] || stat.tier;
   const maxWeight = Math.max(
@@ -86,19 +88,19 @@ function TierAllocationCard({ stat, isMyTier }: { stat: TierAllocationStat; isMy
   );
 
   return (
-    <View style={[styles.tierCard, isMyTier && { borderColor: tierColor, borderWidth: 1 }]}>
+    <View style={[styles.tierCard, { backgroundColor: colors.surface }, isMyTier && { borderColor: tierColor, borderWidth: 1 }]}>
       {/* 헤더 */}
       <View style={styles.tierCardHeader}>
         <View style={styles.tierCardTitle}>
           <View style={[styles.tierDot, { backgroundColor: tierColor }]} />
           <Text style={[styles.tierCardName, { color: tierColor }]}>{tierLabel}</Text>
           {isMyTier && (
-            <View style={styles.myBadge}>
+            <View style={[styles.myBadge, { backgroundColor: colors.primary }]}>
               <Text style={styles.myBadgeText}>MY</Text>
             </View>
           )}
         </View>
-        <Text style={styles.tierCardUsers}>{stat.user_count}명</Text>
+        <Text style={[styles.tierCardUsers, { color: colors.textTertiary }]}>{stat.user_count}명</Text>
       </View>
 
       {/* 배분 비중 바 차트 */}
@@ -115,23 +117,23 @@ function TierAllocationCard({ stat, isMyTier }: { stat: TierAllocationStat; isMy
 
       {/* BTC 비중 (있는 경우) */}
       {stat.avg_btc_weight > 0.1 && (
-        <View style={styles.btcRow}>
-          <Text style={styles.btcLabel}>BTC 비중</Text>
+        <View style={[styles.btcRow, { borderTopColor: colors.surfaceLight }]}>
+          <Text style={[styles.btcLabel, { color: colors.textSecondary }]}>BTC 비중</Text>
           <Text style={[styles.btcValue, { color: ASSET_COLORS.btc }]}>{stat.avg_btc_weight.toFixed(1)}%</Text>
         </View>
       )}
 
       {/* 인기 종목 TOP 5 */}
       {stat.top_holdings && stat.top_holdings.length > 0 && (
-        <View style={styles.topHoldingsSection}>
-          <Text style={styles.topHoldingsTitle}>인기 종목</Text>
+        <View style={[styles.topHoldingsSection, { borderTopColor: colors.surfaceLight }]}>
+          <Text style={[styles.topHoldingsTitle, { color: colors.textSecondary }]}>인기 종목</Text>
           <View style={styles.topHoldingsList}>
             {stat.top_holdings.slice(0, 5).map((h, i) => (
               <View key={h.ticker} style={styles.topHoldingItem}>
-                <Text style={styles.topHoldingRank}>{i + 1}</Text>
-                <Text style={styles.topHoldingTicker}>{h.ticker}</Text>
-                <Text style={styles.topHoldingHolders}>{h.holders}명</Text>
-                <Text style={styles.topHoldingWeight}>{h.avg_weight.toFixed(1)}%</Text>
+                <Text style={[styles.topHoldingRank, { color: colors.textTertiary }]}>{i + 1}</Text>
+                <Text style={[styles.topHoldingTicker, { color: colors.textPrimary }]}>{h.ticker}</Text>
+                <Text style={[styles.topHoldingHolders, { color: colors.textTertiary }]}>{h.holders}명</Text>
+                <Text style={[styles.topHoldingWeight, { color: colors.primary }]}>{h.avg_weight.toFixed(1)}%</Text>
               </View>
             ))}
           </View>
@@ -221,14 +223,14 @@ export default function TierInsightsScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* 헤더 */}
-      <View style={styles.header}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={28} color="#4CAF50" />
+          <Ionicons name="chevron-back" size={28} color={colors.primary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>투자 DNA</Text>
-        <View style={styles.creditBadge}>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>투자 DNA</Text>
+        <View style={[styles.creditBadge, { backgroundColor: colors.surfaceLight }]}>
           <Ionicons name="diamond" size={14} color="#7C4DFF" />
-          <Text style={styles.creditBadgeText}>{credits?.balance || 0}</Text>
+          <Text style={[styles.creditBadgeText, { color: colors.textPrimary }]}>{credits?.balance || 0}</Text>
         </View>
       </View>
 
@@ -236,8 +238,8 @@ export default function TierInsightsScreen() {
         {/* 히어로 섹션: Hook 텍스트 */}
         <View style={styles.heroSection}>
           <Text style={styles.heroEmoji}>🧬</Text>
-          <Text style={styles.heroTitle}>등급별 투자 DNA</Text>
-          <Text style={styles.heroSubtitle}>
+          <Text style={[styles.heroTitle, { color: colors.textPrimary }]}>등급별 투자 DNA</Text>
+          <Text style={[styles.heroSubtitle, { color: colors.textTertiary }]}>
             같은 등급 회원들은 어떤 자산에 투자하고 있을까요?
           </Text>
         </View>
@@ -245,8 +247,8 @@ export default function TierInsightsScreen() {
         {/* 무료 티저: 내 등급 배분 */}
         {myLoading ? (
           <View style={styles.loadingBox}>
-            <ActivityIndicator size="large" color="#4CAF50" />
-            <Text style={styles.loadingText}>내 등급 데이터 불러오는 중...</Text>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={[styles.loadingText, { color: colors.textTertiary }]}>내 등급 데이터 불러오는 중...</Text>
           </View>
         ) : myTierData ? (
           <View>
@@ -261,23 +263,23 @@ export default function TierInsightsScreen() {
 
             {/* 소셜 프루프 */}
             <View style={styles.socialProof}>
-              <Ionicons name="people" size={14} color="#888888" />
-              <Text style={styles.socialProofText}>
+              <Ionicons name="people" size={14} color={colors.textTertiary} />
+              <Text style={[styles.socialProofText, { color: colors.textTertiary }]}>
                 {myTierData.user_count}명의 {TIER_LABELS[myTier]} 회원 데이터 기반
               </Text>
             </View>
           </View>
         ) : (
           <View style={styles.noDataBox}>
-            <Ionicons name="analytics-outline" size={48} color="#444444" />
-            <Text style={styles.noDataText}>아직 데이터가 수집되지 않았습니다</Text>
-            <Text style={styles.noDataSubtext}>내일부터 등급별 통계가 표시됩니다</Text>
+            <Ionicons name="analytics-outline" size={48} color={colors.textTertiary} />
+            <Text style={[styles.noDataText, { color: colors.textPrimary }]}>아직 데이터가 수집되지 않았습니다</Text>
+            <Text style={[styles.noDataSubtext, { color: colors.textTertiary }]}>내일부터 등급별 통계가 표시됩니다</Text>
           </View>
         )}
 
         {/* 잠금 구간: 다른 등급 비교 */}
         {!isUnlocked ? (
-          <View style={styles.lockedSection}>
+          <View style={[styles.lockedSection, { backgroundColor: colors.surface }]}>
             <View style={styles.lockedHeader}>
               <Ionicons name="lock-closed" size={20} color="#FFC107" />
               <Text style={styles.lockedTitle}>전체 등급 비교</Text>
@@ -293,18 +295,19 @@ export default function TierInsightsScreen() {
                     key={tier}
                     style={[
                       styles.previewCard,
+                      { backgroundColor: colors.surfaceLight, borderColor: colors.border },
                       isMyTierItem && { borderColor: tierColor, borderWidth: 1 },
                     ]}
                   >
                     <View style={[styles.previewDot, { backgroundColor: tierColor }]} />
-                    <Text style={[styles.previewTier, { color: isMyTierItem ? tierColor : '#888' }]}>
+                    <Text style={[styles.previewTier, { color: isMyTierItem ? tierColor : colors.textTertiary }]}>
                       {TIER_LABELS[tier]}
                     </Text>
                     {isMyTierItem ? (
-                      <Text style={styles.previewUnlocked}>내 등급</Text>
+                      <Text style={[styles.previewUnlocked, { color: colors.primary }]}>내 등급</Text>
                     ) : (
-                      <View style={styles.previewBlur}>
-                        <Text style={styles.previewBlurText}>??%</Text>
+                      <View style={[styles.previewBlur, { backgroundColor: colors.border }]}>
+                        <Text style={[styles.previewBlurText, { color: colors.textTertiary }]}>??%</Text>
                       </View>
                     )}
                   </View>
@@ -313,7 +316,7 @@ export default function TierInsightsScreen() {
             </View>
 
             {/* CTA: 궁금증 유발 */}
-            <Text style={styles.lockedCta}>
+            <Text style={[styles.lockedCta, { color: colors.textPrimary }]}>
               다이아몬드 회원들은 비트코인을 얼마나 담고 있을까?
             </Text>
 
@@ -341,7 +344,7 @@ export default function TierInsightsScreen() {
             </TouchableOpacity>
 
             {/* 안내 */}
-            <Text style={styles.lockedNote}>
+            <Text style={[styles.lockedNote, { color: colors.textTertiary }]}>
               * 데이터는 매일 07:00에 업데이트됩니다
             </Text>
           </View>
@@ -349,18 +352,18 @@ export default function TierInsightsScreen() {
           /* 잠금 해제 후: 전체 등급 비교 */
           <View style={styles.unlockedSection}>
             <View style={styles.unlockedHeader}>
-              <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
-              <Text style={styles.unlockedTitle}>전체 등급 비교</Text>
+              <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
+              <Text style={[styles.unlockedTitle, { color: colors.primary }]}>전체 등급 비교</Text>
             </View>
 
             {allLoading ? (
               <View style={styles.loadingBox}>
-                <ActivityIndicator size="large" color="#4CAF50" />
+                <ActivityIndicator size="large" color={colors.primary} />
               </View>
             ) : allTierData && allTierData.length > 0 ? (
               <>
                 {/* 비트코인 비중 하이라이트 */}
-                <View style={styles.btcHighlight}>
+                <View style={[styles.btcHighlight, { backgroundColor: colors.surface }]}>
                   <Text style={styles.btcHighlightTitle}>등급별 비트코인 비중</Text>
                   <View style={styles.btcBarsContainer}>
                     {allTierData.map((stat) => {
@@ -371,10 +374,10 @@ export default function TierInsightsScreen() {
                       const barW = Math.max((stat.avg_btc_weight / maxBtc) * 100, 3);
                       return (
                         <View key={stat.tier} style={styles.btcBarRow}>
-                          <Text style={[styles.btcBarLabel, isMe && { color: tierColor, fontWeight: '700' }]}>
+                          <Text style={[styles.btcBarLabel, { color: colors.textSecondary }, isMe && { color: tierColor, fontWeight: '700' }]}>
                             {tierLabel}{isMe ? ' (나)' : ''}
                           </Text>
-                          <View style={styles.btcBarTrack}>
+                          <View style={[styles.btcBarTrack, { backgroundColor: colors.surfaceLight }]}>
                             <View style={[styles.btcBarFill, { width: `${barW}%`, backgroundColor: ASSET_COLORS.btc }]} />
                           </View>
                           <Text style={[styles.btcBarValue, { color: ASSET_COLORS.btc }]}>
@@ -397,23 +400,23 @@ export default function TierInsightsScreen() {
 
                 {/* 총 데이터 기반 */}
                 <View style={styles.socialProof}>
-                  <Ionicons name="people" size={14} color="#888888" />
-                  <Text style={styles.socialProofText}>
+                  <Ionicons name="people" size={14} color={colors.textTertiary} />
+                  <Text style={[styles.socialProofText, { color: colors.textTertiary }]}>
                     총 {allTierData.reduce((s, t) => s + t.user_count, 0)}명의 회원 데이터 기반
                   </Text>
                 </View>
               </>
             ) : (
               <View style={styles.noDataBox}>
-                <Text style={styles.noDataText}>데이터가 아직 준비되지 않았습니다</Text>
+                <Text style={[styles.noDataText, { color: colors.textPrimary }]}>데이터가 아직 준비되지 않았습니다</Text>
               </View>
             )}
           </View>
         )}
 
         {/* 면책 문구 */}
-        <View style={styles.disclaimerBox}>
-          <Text style={styles.disclaimer}>
+        <View style={[styles.disclaimerBox, { borderColor: colors.border }]}>
+          <Text style={[styles.disclaimer, { color: colors.textTertiary }]}>
             본 통계는 익명화된 사용자 데이터를 기반으로 한 참고 정보이며, 투자자문업에 해당하지 않습니다. 개인 식별 정보는 포함되지 않으며, 과거 데이터가 미래 수익을 보장하지 않습니다. 특정 종목의 매수·매도를 권유하는 것이 아닙니다. 투자 결정은 본인의 판단과 책임 하에 이루어져야 합니다.
           </Text>
         </View>
@@ -425,7 +428,6 @@ export default function TierInsightsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
   },
   header: {
     flexDirection: 'row',
@@ -434,18 +436,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#2A2A2A',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#FFFFFF',
   },
   creditBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#2A2A2A',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
@@ -453,7 +452,6 @@ const styles = StyleSheet.create({
   creditBadgeText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#FFFFFF',
   },
   scrollContent: {
     padding: 16,
@@ -472,12 +470,10 @@ const styles = StyleSheet.create({
   heroTitle: {
     fontSize: 22,
     fontWeight: '700',
-    color: '#FFFFFF',
     marginBottom: 6,
   },
   heroSubtitle: {
     fontSize: 14,
-    color: '#888888',
     textAlign: 'center',
   },
 
@@ -507,7 +503,6 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 13,
-    color: '#888888',
   },
 
   // 데이터 없음
@@ -519,11 +514,9 @@ const styles = StyleSheet.create({
   noDataText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#FFFFFF',
   },
   noDataSubtext: {
     fontSize: 13,
-    color: '#888888',
   },
 
   // 소셜 프루프
@@ -536,12 +529,10 @@ const styles = StyleSheet.create({
   },
   socialProofText: {
     fontSize: 12,
-    color: '#888888',
   },
 
   // 등급 카드
   tierCard: {
-    backgroundColor: '#1E1E1E',
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
@@ -567,7 +558,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   myBadge: {
-    backgroundColor: '#4CAF50',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 6,
@@ -579,7 +569,6 @@ const styles = StyleSheet.create({
   },
   tierCardUsers: {
     fontSize: 12,
-    color: '#888888',
   },
 
   // 비중 바 차트
@@ -594,12 +583,10 @@ const styles = StyleSheet.create({
   weightBarLabel: {
     width: 40,
     fontSize: 12,
-    color: '#AAAAAA',
   },
   weightBarTrack: {
     flex: 1,
     height: 8,
-    backgroundColor: '#2A2A2A',
     borderRadius: 4,
     overflow: 'hidden',
   },
@@ -622,11 +609,9 @@ const styles = StyleSheet.create({
     marginTop: 10,
     paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: '#2A2A2A',
   },
   btcLabel: {
     fontSize: 12,
-    color: '#AAAAAA',
   },
   btcValue: {
     fontSize: 13,
@@ -638,12 +623,10 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#2A2A2A',
   },
   topHoldingsTitle: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#AAAAAA',
     marginBottom: 8,
   },
   topHoldingsList: {
@@ -658,23 +641,19 @@ const styles = StyleSheet.create({
   topHoldingRank: {
     width: 16,
     fontSize: 11,
-    color: '#666666',
     fontWeight: '700',
   },
   topHoldingTicker: {
     flex: 1,
     fontSize: 13,
-    color: '#FFFFFF',
     fontWeight: '600',
   },
   topHoldingHolders: {
     fontSize: 11,
-    color: '#888888',
   },
   topHoldingWeight: {
     width: 40,
     fontSize: 12,
-    color: '#4CAF50',
     fontWeight: '600',
     textAlign: 'right',
   },
@@ -682,7 +661,6 @@ const styles = StyleSheet.create({
   // 잠금 구간
   lockedSection: {
     marginTop: 24,
-    backgroundColor: '#1E1E1E',
     borderRadius: 16,
     padding: 20,
     alignItems: 'center',
@@ -706,13 +684,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   previewCard: {
-    backgroundColor: '#2A2A2A',
     borderRadius: 10,
     padding: 10,
     alignItems: 'center',
     width: 75,
     borderWidth: 1,
-    borderColor: '#333333',
   },
   previewDot: {
     width: 8,
@@ -727,24 +703,20 @@ const styles = StyleSheet.create({
   },
   previewUnlocked: {
     fontSize: 9,
-    color: '#4CAF50',
     fontWeight: '700',
   },
   previewBlur: {
-    backgroundColor: '#333333',
     borderRadius: 4,
     paddingHorizontal: 8,
     paddingVertical: 2,
   },
   previewBlurText: {
     fontSize: 11,
-    color: '#555555',
     fontWeight: '600',
   },
   lockedCta: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#FFFFFF',
     textAlign: 'center',
     marginBottom: 16,
     lineHeight: 22,
@@ -778,7 +750,6 @@ const styles = StyleSheet.create({
   },
   lockedNote: {
     fontSize: 11,
-    color: '#666666',
     marginTop: 12,
   },
 
@@ -795,12 +766,10 @@ const styles = StyleSheet.create({
   unlockedTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#4CAF50',
   },
 
   // BTC 하이라이트
   btcHighlight: {
-    backgroundColor: '#1E1E1E',
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
@@ -822,12 +791,10 @@ const styles = StyleSheet.create({
   btcBarLabel: {
     width: 80,
     fontSize: 12,
-    color: '#AAAAAA',
   },
   btcBarTrack: {
     flex: 1,
     height: 8,
-    backgroundColor: '#2A2A2A',
     borderRadius: 4,
     overflow: 'hidden',
   },
@@ -849,11 +816,9 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 14,
     borderWidth: 0.5,
-    borderColor: 'rgba(255,255,255,0.06)',
   },
   disclaimer: {
     fontSize: 10,
-    color: '#555555',
     textAlign: 'center',
     lineHeight: 16,
   },

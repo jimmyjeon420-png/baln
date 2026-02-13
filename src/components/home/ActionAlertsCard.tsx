@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, SIZES } from '../../styles/theme';
+import { SIZES } from '../../styles/theme';
+import { useTheme } from '../../hooks/useTheme';
 
 // ============================================================================
 // 타입 정의
@@ -20,13 +21,6 @@ interface ActionAlertsCardProps {
   isLoading: boolean;
 }
 
-// 타입별 색상
-const ALERT_COLORS: Record<AlertItem['type'], string> = {
-  danger: COLORS.error,      // #CF6679
-  warning: '#FFB74D',
-  opportunity: COLORS.primary, // #4CAF50
-};
-
 // ============================================================================
 // ActionAlertsCard — 핵심 알림 카드 (긴급 알림 대시보드 역할)
 // ============================================================================
@@ -36,50 +30,59 @@ const ActionAlertsCard = ({
   onPressCTA,
   isLoading,
 }: ActionAlertsCardProps) => {
+  const { colors } = useTheme();
+
+  // 타입별 색상 (테마 동적)
+  const alertColors: Record<AlertItem['type'], string> = {
+    danger: colors.error,
+    warning: '#FFB74D',
+    opportunity: colors.primary,
+  };
+
   if (isLoading) return null;
 
   // 알림 0건 → 안정 상태 표시
   if (alerts.length === 0) {
     return (
-      <View style={styles.card}>
+      <View style={[styles.card, { backgroundColor: colors.surface }]}>
         <View style={styles.calmState}>
-          <Ionicons name="checkmark-circle" size={32} color={COLORS.primary} />
-          <Text style={styles.calmTitle}>포트폴리오가 안정적이에요</Text>
-          <Text style={styles.calmDesc}>현재 긴급한 알림이 없습니다</Text>
+          <Ionicons name="checkmark-circle" size={32} color={colors.primary} />
+          <Text style={[styles.calmTitle, { color: colors.textPrimary }]}>포트폴리오가 안정적이에요</Text>
+          <Text style={[styles.calmDesc, { color: colors.textSecondary }]}>현재 긴급한 알림이 없습니다</Text>
         </View>
       </View>
     );
   }
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: colors.surface }]}>
       {/* 헤더 */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.title}>주의 알림</Text>
-          <Text style={styles.subtitle}>Action Alerts</Text>
+          <Text style={[styles.title, { color: colors.textPrimary }]}>주의 알림</Text>
+          <Text style={[styles.subtitle, { color: colors.textTertiary }]}>Action Alerts</Text>
         </View>
         <View style={styles.countBadge}>
-          <Text style={styles.countText}>{alerts.length}건</Text>
+          <Text style={[styles.countText, { color: colors.error }]}>{alerts.length}건</Text>
         </View>
       </View>
 
       {/* 알림 리스트 */}
-      <View style={styles.alertList}>
+      <View style={[styles.alertList, { backgroundColor: colors.background }]}>
         {alerts.map((alert, index) => (
           <View
             key={index}
             style={[
               styles.alertRow,
-              index > 0 && styles.alertRowBorder,
+              index > 0 && [styles.alertRowBorder, { borderTopColor: colors.borderLight }],
             ]}
           >
             {/* 왼쪽 색상 바 */}
-            <View style={[styles.colorBar, { backgroundColor: ALERT_COLORS[alert.type] }]} />
+            <View style={[styles.colorBar, { backgroundColor: alertColors[alert.type] }]} />
             <Text style={styles.alertIcon}>{alert.icon}</Text>
             <View style={styles.alertContent}>
-              <Text style={styles.alertTitle} numberOfLines={1}>{alert.title}</Text>
-              <Text style={styles.alertSubtitle} numberOfLines={1}>{alert.subtitle}</Text>
+              <Text style={[styles.alertTitle, { color: colors.textPrimary }]} numberOfLines={1}>{alert.title}</Text>
+              <Text style={[styles.alertSubtitle, { color: colors.textSecondary }]} numberOfLines={1}>{alert.subtitle}</Text>
             </View>
           </View>
         ))}
@@ -87,8 +90,8 @@ const ActionAlertsCard = ({
 
       {/* CTA 버튼 */}
       <TouchableOpacity style={styles.ctaBtn} onPress={onPressCTA} activeOpacity={0.7}>
-        <Text style={styles.ctaText}>처방전 보기</Text>
-        <Ionicons name="arrow-forward" size={16} color={COLORS.primary} />
+        <Text style={[styles.ctaText, { color: colors.primary }]}>처방전 보기</Text>
+        <Ionicons name="arrow-forward" size={16} color={colors.primary} />
       </TouchableOpacity>
     </View>
   );
@@ -126,7 +129,6 @@ export default React.memo(ActionAlertsCard, (prev, next) => {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: COLORS.surface,
     borderRadius: SIZES.rXl,
     padding: SIZES.xl,
     marginBottom: SIZES.lg,
@@ -140,11 +142,9 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 16,
     fontWeight: '700',
-    color: COLORS.textPrimary,
   },
   subtitle: {
     fontSize: 11,
-    color: COLORS.textTertiary,
     marginTop: 2,
   },
   countBadge: {
@@ -156,10 +156,8 @@ const styles = StyleSheet.create({
   countText: {
     fontSize: 12,
     fontWeight: '700',
-    color: COLORS.error,
   },
   alertList: {
-    backgroundColor: COLORS.background,
     borderRadius: 12,
     overflow: 'hidden',
   },
@@ -171,7 +169,6 @@ const styles = StyleSheet.create({
   },
   alertRowBorder: {
     borderTopWidth: 1,
-    borderTopColor: COLORS.borderLight,
   },
   colorBar: {
     width: 3,
@@ -187,11 +184,9 @@ const styles = StyleSheet.create({
   alertTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: COLORS.textPrimary,
   },
   alertSubtitle: {
     fontSize: 12,
-    color: COLORS.textSecondary,
     marginTop: 2,
   },
   ctaBtn: {
@@ -207,7 +202,6 @@ const styles = StyleSheet.create({
   ctaText: {
     fontSize: 14,
     fontWeight: '700',
-    color: COLORS.primary,
   },
   // Calm state (알림 0건)
   calmState: {
@@ -217,12 +211,10 @@ const styles = StyleSheet.create({
   calmTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: COLORS.textPrimary,
     marginTop: 10,
   },
   calmDesc: {
     fontSize: 13,
-    color: COLORS.textSecondary,
     marginTop: 4,
   },
 });

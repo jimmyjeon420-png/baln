@@ -26,7 +26,6 @@ import {
   Animated,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { COLORS } from '../../styles/theme';
 import { useTheme } from '../../hooks/useTheme';
 import { selection } from '../../services/hapticService';
 
@@ -146,8 +145,8 @@ export default function CardSwipeContainer({
             <RefreshControl
               refreshing={refreshing || false}
               onRefresh={onRefresh}
-              tintColor={COLORS.textSecondary}
-              colors={[COLORS.primary]}
+              tintColor={colors.textSecondary}
+              colors={[colors.primary]}
             />
           ) : undefined
         }
@@ -188,7 +187,7 @@ export default function CardSwipeContainer({
               style={[
                 styles.indicator,
                 { backgroundColor: colors.border },
-                index === currentPage && styles.indicatorActive,
+                index === currentPage && [styles.indicatorActive, { backgroundColor: colors.primary }],
               ]}
             />
           </View>
@@ -236,17 +235,14 @@ const styles = StyleSheet.create({
     width: 24,
     height: 3,
     borderRadius: 1.5,
-    backgroundColor: COLORS.primary,
   },
   label: {
     fontSize: 13,
     fontWeight: '500',
-    color: COLORS.textTertiary,
     letterSpacing: 0.5,
   },
   labelActive: {
     fontWeight: '700',
-    color: COLORS.textPrimary,
   },
   scrollView: {
     flex: 1,
@@ -279,7 +275,6 @@ const styles = StyleSheet.create({
   pageCounterText: {
     fontSize: 11,
     fontWeight: '500',
-    color: COLORS.textTertiary,
     letterSpacing: 1,
   },
 });

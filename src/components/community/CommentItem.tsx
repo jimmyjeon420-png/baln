@@ -14,7 +14,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert, TextInput, ActivityInd
 import { Ionicons } from '@expo/vector-icons';
 import { CommunityComment, TIER_COLORS } from '../../types/community';
 import { getTierFromAssets, getTierIcon, getRelativeTime } from '../../utils/communityUtils';
-import { COLORS } from '../../styles/theme';
+import { useTheme } from '../../hooks/useTheme';
 
 interface CommentItemProps {
   comment: CommunityComment;
@@ -43,6 +43,7 @@ export default function CommentItem({
   isUpdating = false,
   isDeleting = false,
 }: CommentItemProps) {
+  const { colors } = useTheme();
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(comment.content);
 
@@ -90,11 +91,11 @@ export default function CommentItem({
   };
 
   return (
-    <View style={[styles.container, isReply && styles.containerReply]}>
+    <View style={[styles.container, { borderBottomColor: colors.border }, isReply && [styles.containerReply, { backgroundColor: colors.background + '80' }]]}>
       {/* 대댓글 인디케이터 */}
       {isReply && (
         <View style={styles.replyIndicator}>
-          <Ionicons name="return-down-forward" size={14} color={COLORS.textSecondary} />
+          <Ionicons name="return-down-forward" size={14} color={colors.textSecondary} />
         </View>
       )}
 
@@ -115,9 +116,9 @@ export default function CommentItem({
               {comment.display_tag}
             </Text>
           </TouchableOpacity>
-          <Text style={styles.time}>{getRelativeTime(comment.created_at)}</Text>
+          <Text style={[styles.time, { color: colors.textSecondary }]}>{getRelativeTime(comment.created_at)}</Text>
           {comment.updated_at && (
-            <Text style={styles.edited}>(수정됨)</Text>
+            <Text style={[styles.edited, { color: colors.textSecondary }]}>(수정됨)</Text>
           )}
         </View>
 
@@ -125,7 +126,7 @@ export default function CommentItem({
         {isEditing ? (
           <View style={styles.editBox}>
             <TextInput
-              style={styles.editInput}
+              style={[styles.editInput, { backgroundColor: colors.surface, color: colors.textPrimary }]}
               value={editContent}
               onChangeText={setEditContent}
               multiline
@@ -134,13 +135,13 @@ export default function CommentItem({
             />
             <View style={styles.editButtons}>
               <TouchableOpacity
-                style={[styles.editButton, styles.editButtonCancel]}
+                style={[styles.editButton, { backgroundColor: colors.surface }]}
                 onPress={handleCancelEdit}
               >
-                <Text style={styles.editButtonTextCancel}>취소</Text>
+                <Text style={[styles.editButtonTextCancel, { color: colors.textPrimary }]}>취소</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.editButton, styles.editButtonSave]}
+                style={[styles.editButton, { backgroundColor: colors.primary }]}
                 onPress={handleSaveEdit}
                 disabled={isUpdating}
               >
@@ -153,7 +154,7 @@ export default function CommentItem({
             </View>
           </View>
         ) : (
-          <Text style={styles.text}>{comment.content}</Text>
+          <Text style={[styles.text, { color: colors.textPrimary }]}>{comment.content}</Text>
         )}
 
         {/* 액션 버튼 */}
@@ -164,9 +165,9 @@ export default function CommentItem({
               <Ionicons
                 name={isLiked ? 'heart' : 'heart-outline'}
                 size={16}
-                color={isLiked ? '#CF6679' : COLORS.textSecondary}
+                color={isLiked ? '#CF6679' : colors.textSecondary}
               />
-              <Text style={[styles.actionText, isLiked && { color: '#CF6679' }]}>
+              <Text style={[styles.actionText, { color: colors.textSecondary }, isLiked && { color: '#CF6679' }]}>
                 {comment.likes_count || 0}
               </Text>
             </TouchableOpacity>
@@ -177,8 +178,8 @@ export default function CommentItem({
                 style={styles.actionButton}
                 onPress={() => onReply(comment.id)}
               >
-                <Ionicons name="chatbubble-outline" size={14} color={COLORS.textSecondary} />
-                <Text style={styles.actionText}>답글</Text>
+                <Ionicons name="chatbubble-outline" size={14} color={colors.textSecondary} />
+                <Text style={[styles.actionText, { color: colors.textSecondary }]}>답글</Text>
               </TouchableOpacity>
             )}
 
@@ -188,8 +189,8 @@ export default function CommentItem({
                 style={styles.actionButton}
                 onPress={() => setIsEditing(true)}
               >
-                <Ionicons name="create-outline" size={14} color={COLORS.textSecondary} />
-                <Text style={styles.actionText}>수정</Text>
+                <Ionicons name="create-outline" size={14} color={colors.textSecondary} />
+                <Text style={[styles.actionText, { color: colors.textSecondary }]}>수정</Text>
               </TouchableOpacity>
             )}
 
@@ -201,11 +202,11 @@ export default function CommentItem({
                 disabled={isDeleting}
               >
                 {isDeleting ? (
-                  <ActivityIndicator size="small" color={COLORS.error} />
+                  <ActivityIndicator size="small" color={colors.error} />
                 ) : (
                   <>
-                    <Ionicons name="trash-outline" size={14} color={COLORS.error} />
-                    <Text style={[styles.actionText, { color: COLORS.error }]}>삭제</Text>
+                    <Ionicons name="trash-outline" size={14} color={colors.error} />
+                    <Text style={[styles.actionText, { color: colors.error }]}>삭제</Text>
                   </>
                 )}
               </TouchableOpacity>
@@ -217,8 +218,8 @@ export default function CommentItem({
                 style={styles.actionButton}
                 onPress={() => onReport(comment.id)}
               >
-                <Ionicons name="flag-outline" size={14} color={COLORS.textSecondary} />
-                <Text style={styles.actionText}>신고</Text>
+                <Ionicons name="flag-outline" size={14} color={colors.textSecondary} />
+                <Text style={[styles.actionText, { color: colors.textSecondary }]}>신고</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -235,11 +236,9 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     gap: 10,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
   },
   containerReply: {
     paddingLeft: 46,
-    backgroundColor: COLORS.background + '80',
   },
   replyIndicator: {
     position: 'absolute',
@@ -269,16 +268,13 @@ const styles = StyleSheet.create({
   },
   time: {
     fontSize: 10,
-    color: COLORS.textSecondary,
   },
   edited: {
     fontSize: 10,
-    color: COLORS.textSecondary,
     fontStyle: 'italic',
   },
   text: {
     fontSize: 14,
-    color: COLORS.textPrimary,
     lineHeight: 20,
     marginBottom: 8,
   },
@@ -289,11 +285,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   editInput: {
-    backgroundColor: COLORS.surface,
     borderRadius: 8,
     padding: 10,
     fontSize: 14,
-    color: COLORS.textPrimary,
     minHeight: 60,
     lineHeight: 20,
   },
@@ -307,16 +301,9 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 8,
   },
-  editButtonCancel: {
-    backgroundColor: COLORS.surface,
-  },
-  editButtonSave: {
-    backgroundColor: COLORS.primary,
-  },
   editButtonTextCancel: {
     fontSize: 13,
     fontWeight: '600',
-    color: COLORS.textPrimary,
   },
   editButtonTextSave: {
     fontSize: 13,
@@ -337,6 +324,5 @@ const styles = StyleSheet.create({
   },
   actionText: {
     fontSize: 12,
-    color: COLORS.textSecondary,
   },
 });

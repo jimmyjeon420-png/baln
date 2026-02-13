@@ -1,12 +1,12 @@
 /**
- * CrisisBanner.tsx - 시장 위기 경고 배너
+ * CrisisBanner.tsx - 시장 위기 경고 배너 (VIX + 급락 감지)
  *
  * 역할: "오늘 탭 긴급 경보 배너"
- * - 시장 급락 감지 시 최상단에 표시
+ * - 시장 급락(-3%+) 또는 VIX 30+ 감지 시 최상단에 표시
  * - moderate: 주황 배경 + caution 아이콘
- * - severe/extreme: 빨강 배경 + alert 아이콘
- * - 터치하면 맥락 카드로 스크롤 또는 Premium 유도
- * - 슬라이드인 애니메이션
+ * - severe/extreme: 빨강 배경 + alert 아이콘 + 펄스 애니메이션
+ * - 터치하면 맥락 카드(alert sentiment)로 이동
+ * - 다크모드 지원 (useTheme)
  *
  * [사용처]
  * - app/(tabs)/index.tsx 오늘 탭 최상단
@@ -28,6 +28,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useHaptics } from '../../hooks/useHaptics';
+import { useTheme } from '../../hooks/useTheme';
 import {
   getCrisisBannerStyle,
   type CrisisLevel,
@@ -42,6 +43,8 @@ interface CrisisBannerProps {
   primaryMarket: string | null;
   /** 변동률 */
   primaryChange: number | null;
+  /** VIX 수치 (옵션) */
+  vixLevel?: number | null;
   /** 터치 시 스크롤할 ref (옵션) */
   onPress?: () => void;
 }
@@ -51,11 +54,14 @@ export default function CrisisBanner({
   message,
   primaryMarket,
   primaryChange,
+  vixLevel,
   onPress,
 }: CrisisBannerProps) {
   const router = useRouter();
   const { mediumTap } = useHaptics();
-  const slideAnim = useRef(new Animated.Value(-60)).current; // 초기 위치: 화면 위
+  const { colors } = useTheme();
+  const slideAnim = useRef(new Animated.Value(-80)).current;
+  const pulseAnim = useRef(new Animated.Value(1)).current;
 
   // 위기 감지 시 슬라이드인 애니메이션
   useEffect(() => {
@@ -66,14 +72,32 @@ export default function CrisisBanner({
         tension: 50,
         friction: 7,
       }).start();
+
+      // severe/extreme일 때 아이콘 펄스 애니메이션
+      if (crisisLevel === 'severe' || crisisLevel === 'extreme') {
+        Animated.loop(
+          Animated.sequence([
+            Animated.timing(pulseAnim, {
+              toValue: 1.2,
+              duration: 600,
+              useNativeDriver: true,
+            }),
+            Animated.timing(pulseAnim, {
+              toValue: 1,
+              duration: 600,
+              useNativeDriver: true,
+            }),
+          ])
+        ).start();
+      }
     } else {
       Animated.timing(slideAnim, {
-        toValue: -60,
+        toValue: -80,
         duration: 200,
         useNativeDriver: true,
       }).start();
     }
-  }, [crisisLevel, slideAnim]);
+  }, [crisisLevel, slideAnim, pulseAnim]);
 
   // 위기 없으면 렌더링 안 함
   if (crisisLevel === 'none') {
@@ -88,14 +112,27 @@ export default function CrisisBanner({
     mediumTap();
 
     if (onPress) {
-      // 커스텀 핸들러 (맥락 카드로 스크롤)
       onPress();
     } else {
-      // 기본 동작: Premium 유도
-      // TODO: Premium 페이월 또는 맥락 카드 화면으로 이동
       router.push('/subscription/paywall');
     }
   };
+
+  // VIX 레이블 생성
+  const vixLabel = vixLevel != null && vixLevel >= 30
+    ? `VIX ${vixLevel.toFixed(1)}`
+    : null;
+
+  // 서브텍스트 생성
+  const subParts: string[] = [];
+  if (primaryMarket && primaryChange !== null) {
+    subParts.push(`${primaryMarket} ${primaryChange.toFixed(2)}%`);
+  }
+  if (vixLabel) {
+    subParts.push(vixLabel);
+  }
+  subParts.push('터치하여 맥락 확인');
+  const subText = subParts.join(' \u00B7 ');
 
   return (
     <Animated.View
@@ -115,20 +152,20 @@ export default function CrisisBanner({
       >
         {/* 왼쪽: 아이콘 + 메시지 */}
         <View style={styles.content}>
-          <Ionicons
-            name={bannerStyle.iconName}
-            size={20}
-            color={bannerStyle.iconColor}
-          />
+          <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+            <Ionicons
+              name={bannerStyle.iconName}
+              size={20}
+              color={bannerStyle.iconColor}
+            />
+          </Animated.View>
           <View style={styles.textContainer}>
             <Text style={[styles.message, { color: bannerStyle.textColor }]}>
               {message}
             </Text>
-            {primaryMarket && primaryChange !== null && (
-              <Text style={styles.subText}>
-                {primaryMarket} {primaryChange.toFixed(2)}% • 터치하여 확인
-              </Text>
-            )}
+            <Text style={[styles.subText, { color: colors.textTertiary }]}>
+              {subText}
+            </Text>
           </View>
         </View>
 
@@ -180,7 +217,6 @@ const styles = StyleSheet.create({
   },
   subText: {
     fontSize: 11,
-    color: '#888888',
     marginTop: 2,
   },
 });

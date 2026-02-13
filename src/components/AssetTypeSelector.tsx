@@ -10,7 +10,8 @@ import {
   Text
 } from 'react-native';
 import { AssetType } from '../types/asset';
-import { COLORS, SIZES, TYPOGRAPHY } from '../styles/theme';
+import { SIZES } from '../styles/theme';
+import { useTheme } from '../hooks/useTheme';
 
 interface Props {
   selected: AssetType;
@@ -18,20 +19,24 @@ interface Props {
 }
 
 export const AssetTypeSelector: React.FC<Props> = ({ selected, onSelect }) => {
+  const { colors } = useTheme();
+
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>Asset Type</Text>
+      <Text style={[styles.label, { color: colors.textPrimary }]}>Asset Type</Text>
       <View style={styles.toggleGroup}>
         <TouchableOpacity
           style={[
             styles.option,
-            selected === AssetType.LIQUID && styles.optionActive
+            { borderColor: colors.border, backgroundColor: colors.surface },
+            selected === AssetType.LIQUID && { borderColor: colors.primary, backgroundColor: colors.surfaceLight },
           ]}
           onPress={() => onSelect(AssetType.LIQUID)}
         >
           <Text style={[
             styles.optionText,
-            selected === AssetType.LIQUID && styles.optionTextActive
+            { color: colors.textSecondary },
+            selected === AssetType.LIQUID && { color: colors.primary },
           ]}>
             💧 Liquid
           </Text>
@@ -40,19 +45,21 @@ export const AssetTypeSelector: React.FC<Props> = ({ selected, onSelect }) => {
         <TouchableOpacity
           style={[
             styles.option,
-            selected === AssetType.ILLIQUID && styles.optionActive
+            { borderColor: colors.border, backgroundColor: colors.surface },
+            selected === AssetType.ILLIQUID && { borderColor: colors.primary, backgroundColor: colors.surfaceLight },
           ]}
           onPress={() => onSelect(AssetType.ILLIQUID)}
         >
           <Text style={[
             styles.optionText,
-            selected === AssetType.ILLIQUID && styles.optionTextActive
+            { color: colors.textSecondary },
+            selected === AssetType.ILLIQUID && { color: colors.primary },
           ]}>
             🏠 Illiquid
           </Text>
         </TouchableOpacity>
       </View>
-      <Text style={styles.hint}>
+      <Text style={[styles.hint, { color: colors.textTertiary }]}>
         {selected === AssetType.LIQUID
           ? 'Can be quickly sold (stocks, ETFs, crypto)'
           : 'Takes time to sell (real estate, art)'}
@@ -68,7 +75,6 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: COLORS.textPrimary,
     marginBottom: SIZES.sm,
   },
   toggleGroup: {
@@ -81,25 +87,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: SIZES.md,
     borderRadius: 8,
     borderWidth: 2,
-    borderColor: COLORS.border,
-    backgroundColor: COLORS.surface,
     alignItems: 'center',
-  },
-  optionActive: {
-    borderColor: COLORS.primary,
-    backgroundColor: COLORS.surfaceLight,
   },
   optionText: {
     fontSize: 14,
     fontWeight: '600',
-    color: COLORS.textSecondary,
-  },
-  optionTextActive: {
-    color: COLORS.primary,
   },
   hint: {
     fontSize: 12,
-    color: COLORS.textTertiary,
     marginTop: SIZES.sm,
     fontStyle: 'italic',
   },

@@ -29,20 +29,7 @@ import {
   canAccessTier,
 } from '../../src/hooks/useGatherings';
 import { GATHERING_CATEGORY_LABELS, UserTier } from '../../src/types/database';
-
-// 컬러 팔레트
-const COLORS = {
-  background: '#121212',
-  surface: '#1E1E1E',
-  surfaceLight: '#2A2A2A',
-  primary: '#4CAF50',
-  error: '#CF6679',
-  warning: '#FFB74D',
-  text: '#FFFFFF',
-  textSecondary: '#B0B0B0',
-  textMuted: '#888888',
-  border: '#333333',
-};
+import { useTheme } from '../../src/hooks/useTheme';
 
 // 티어 아이콘
 const getTierIcon = (tier: UserTier): keyof typeof Ionicons.glyphMap => {
@@ -78,6 +65,7 @@ export default function GatheringDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { colors: themeColors } = useTheme();
   const [joining, setJoining] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [warningDismissed, setWarningDismissed] = useState(false);
@@ -178,10 +166,10 @@ export default function GatheringDetailScreen() {
 
   if (gatheringLoading || !gathering) {
     return (
-      <View style={[styles.container, styles.loadingContainer]}>
+      <View style={[styles.container, styles.loadingContainer, { backgroundColor: themeColors.background }]}>
         <Stack.Screen options={{ headerShown: false }} />
-        <ActivityIndicator size="large" color={COLORS.primary} />
-        <Text style={styles.loadingText}>모임 정보를 불러오는 중...</Text>
+        <ActivityIndicator size="large" color={themeColors.primary} />
+        <Text style={[styles.loadingText, { color: themeColors.textTertiary }]}>모임 정보를 불러오는 중...</Text>
       </View>
     );
   }
@@ -192,18 +180,18 @@ export default function GatheringDetailScreen() {
   const isBlockedByTier = !canJoinByTier && !isParticipant;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: themeColors.background }]}>
       <Stack.Screen options={{ headerShown: false }} />
 
       {/* 헤더 */}
-      <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 10, borderBottomColor: themeColors.border }]}>
         <TouchableOpacity
-          style={styles.backButton}
+          style={[styles.backButton, { backgroundColor: themeColors.surface }]}
           onPress={() => router.back()}
         >
-          <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+          <Ionicons name="arrow-back" size={24} color={themeColors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>모임 상세</Text>
+        <Text style={[styles.headerTitle, { color: themeColors.textPrimary }]}>모임 상세</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -234,18 +222,18 @@ export default function GatheringDetailScreen() {
         {/* 카테고리 & 상태 */}
         <View style={styles.topBadges}>
           <View style={styles.categoryBadge}>
-            <Ionicons name="bookmark" size={14} color={COLORS.primary} />
-            <Text style={styles.categoryText}>
+            <Ionicons name="bookmark" size={14} color={themeColors.primary} />
+            <Text style={[styles.categoryText, { color: themeColors.primary }]}>
               {GATHERING_CATEGORY_LABELS[gathering.category]}
             </Text>
           </View>
           {isFull && (
             <View style={styles.fullBadge}>
-              <Text style={styles.fullBadgeText}>마감</Text>
+              <Text style={[styles.fullBadgeText, { color: themeColors.error }]}>마감</Text>
             </View>
           )}
           {isParticipant && (
-            <View style={styles.participatingBadge}>
+            <View style={[styles.participatingBadge, { backgroundColor: themeColors.primary }]}>
               <Ionicons name="checkmark-circle" size={14} color="#000000" />
               <Text style={styles.participatingBadgeText}>참가중</Text>
             </View>
@@ -253,15 +241,15 @@ export default function GatheringDetailScreen() {
         </View>
 
         {/* 제목 */}
-        <Text style={styles.title}>{gathering.title}</Text>
+        <Text style={[styles.title, { color: themeColors.textPrimary }]}>{gathering.title}</Text>
 
         {/* 호스트 정보 카드 */}
-        <View style={styles.hostCard}>
+        <View style={[styles.hostCard, { backgroundColor: themeColors.surface }]}>
           <View style={styles.hostHeader}>
-            <Text style={styles.sectionLabel}>호스트</Text>
+            <Text style={[styles.sectionLabel, { color: themeColors.textTertiary }]}>호스트</Text>
             <View style={styles.verifiedBadge}>
-              <Ionicons name="shield-checkmark" size={14} color={COLORS.primary} />
-              <Text style={styles.verifiedText}>인증된 호스트</Text>
+              <Ionicons name="shield-checkmark" size={14} color={themeColors.primary} />
+              <Text style={[styles.verifiedText, { color: themeColors.primary }]}>인증된 호스트</Text>
             </View>
           </View>
           <View style={styles.hostInfo}>
@@ -269,7 +257,7 @@ export default function GatheringDetailScreen() {
               <Ionicons name={getTierIcon(gathering.host_tier)} size={16} color="#000000" />
             </View>
             <View style={styles.hostDetails}>
-              <Text style={styles.hostName}>{gathering.host_display_name || '익명'}</Text>
+              <Text style={[styles.hostName, { color: themeColors.textPrimary }]}>{gathering.host_display_name || '익명'}</Text>
               <Text style={[styles.hostAssets, { color: TIER_COLORS[gathering.host_tier] }]}>
                 [자산: {formatAssetInBillion(gathering.host_verified_assets)} 인증]
               </Text>
@@ -278,43 +266,43 @@ export default function GatheringDetailScreen() {
         </View>
 
         {/* 모임 정보 */}
-        <View style={styles.infoCard}>
-          <Text style={styles.sectionLabel}>모임 정보</Text>
+        <View style={[styles.infoCard, { backgroundColor: themeColors.surface }]}>
+          <Text style={[styles.sectionLabel, { color: themeColors.textTertiary }]}>모임 정보</Text>
 
-          <View style={styles.infoRow}>
+          <View style={[styles.infoRow, { borderBottomColor: themeColors.surfaceLight }]}>
             <View style={styles.infoIcon}>
-              <Ionicons name="calendar" size={18} color={COLORS.primary} />
+              <Ionicons name="calendar" size={18} color={themeColors.primary} />
             </View>
             <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>일시</Text>
-              <Text style={styles.infoValue}>{formatEventDateFull(gathering.event_date)}</Text>
+              <Text style={[styles.infoLabel, { color: themeColors.textTertiary }]}>일시</Text>
+              <Text style={[styles.infoValue, { color: themeColors.textPrimary }]}>{formatEventDateFull(gathering.event_date)}</Text>
             </View>
           </View>
 
-          <View style={styles.infoRow}>
+          <View style={[styles.infoRow, { borderBottomColor: themeColors.surfaceLight }]}>
             <View style={styles.infoIcon}>
               <Ionicons
                 name={gathering.location_type === 'online' ? 'videocam' : 'location'}
                 size={18}
-                color={COLORS.primary}
+                color={themeColors.primary}
               />
             </View>
             <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>장소</Text>
-              <Text style={styles.infoValue}>
+              <Text style={[styles.infoLabel, { color: themeColors.textTertiary }]}>장소</Text>
+              <Text style={[styles.infoValue, { color: themeColors.textPrimary }]}>
                 {gathering.location_type === 'online' ? '온라인 (링크는 참가 후 공개)' : gathering.location}
               </Text>
             </View>
           </View>
 
-          <View style={styles.infoRow}>
+          <View style={[styles.infoRow, { borderBottomColor: themeColors.surfaceLight }]}>
             <View style={styles.infoIcon}>
-              <Ionicons name="people" size={18} color={COLORS.primary} />
+              <Ionicons name="people" size={18} color={themeColors.primary} />
             </View>
             <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>참가 현황</Text>
-              <Text style={styles.infoValue}>
-                <Text style={isFull ? styles.capacityFull : styles.capacityCurrent}>
+              <Text style={[styles.infoLabel, { color: themeColors.textTertiary }]}>참가 현황</Text>
+              <Text style={[styles.infoValue, { color: themeColors.textPrimary }]}>
+                <Text style={{ color: isFull ? themeColors.error : themeColors.primary, fontWeight: '700' }}>
                   {gathering.current_capacity}
                 </Text>
                 /{gathering.max_capacity}명
@@ -322,13 +310,13 @@ export default function GatheringDetailScreen() {
             </View>
           </View>
 
-          <View style={styles.infoRow}>
+          <View style={[styles.infoRow, { borderBottomColor: themeColors.surfaceLight }]}>
             <View style={styles.infoIcon}>
-              <Ionicons name="cash" size={18} color={COLORS.primary} />
+              <Ionicons name="cash" size={18} color={themeColors.primary} />
             </View>
             <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>참가비</Text>
-              <Text style={[styles.infoValue, styles.feeValue]}>
+              <Text style={[styles.infoLabel, { color: themeColors.textTertiary }]}>참가비</Text>
+              <Text style={[styles.infoValue, styles.feeValue, { color: themeColors.primary }]}>
                 {formatCurrency(gathering.entry_fee)}
               </Text>
             </View>
@@ -340,18 +328,18 @@ export default function GatheringDetailScreen() {
               <Ionicons name={getTierIcon(requiredTier)} size={18} color={TIER_COLORS[requiredTier]} />
             </View>
             <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>최소 입장 조건</Text>
+              <Text style={[styles.infoLabel, { color: themeColors.textTertiary }]}>최소 입장 조건</Text>
               <Text style={[styles.infoValue, { color: TIER_COLORS[requiredTier] }]}>
                 {TIER_LABELS[requiredTier]} 등급 이상
               </Text>
             </View>
             {canJoinByTier ? (
               <View style={styles.tierCheckBadge}>
-                <Ionicons name="checkmark-circle" size={16} color={COLORS.primary} />
+                <Ionicons name="checkmark-circle" size={16} color={themeColors.primary} />
               </View>
             ) : (
               <View style={styles.tierBlockBadge}>
-                <Ionicons name="lock-closed" size={16} color={COLORS.error} />
+                <Ionicons name="lock-closed" size={16} color={themeColors.error} />
               </View>
             )}
           </View>
@@ -360,10 +348,10 @@ export default function GatheringDetailScreen() {
         {/* 티어 제한 경고 */}
         {isBlockedByTier && (
           <View style={styles.tierWarningCard}>
-            <Ionicons name="alert-circle" size={20} color={COLORS.warning} />
+            <Ionicons name="alert-circle" size={20} color={themeColors.warning} />
             <View style={styles.tierWarningContent}>
-              <Text style={styles.tierWarningTitle}>등급 제한 모임</Text>
-              <Text style={styles.tierWarningText}>
+              <Text style={[styles.tierWarningTitle, { color: themeColors.warning }]}>등급 제한 모임</Text>
+              <Text style={[styles.tierWarningText, { color: themeColors.textSecondary }]}>
                 이 모임은 {TIER_LABELS[requiredTier]} 등급 이상만 참가 가능합니다.{'\n'}
                 현재 회원님의 등급: {TIER_LABELS[userTier]}
               </Text>
@@ -373,23 +361,23 @@ export default function GatheringDetailScreen() {
 
         {/* 모임 설명 */}
         {gathering.description && (
-          <View style={styles.descriptionCard}>
-            <Text style={styles.sectionLabel}>모임 소개</Text>
-            <Text style={styles.description}>{gathering.description}</Text>
+          <View style={[styles.descriptionCard, { backgroundColor: themeColors.surface }]}>
+            <Text style={[styles.sectionLabel, { color: themeColors.textTertiary }]}>모임 소개</Text>
+            <Text style={[styles.description, { color: themeColors.textSecondary }]}>{gathering.description}</Text>
           </View>
         )}
 
         {/* 참가자 목록 */}
         {participants && participants.length > 0 && (
-          <View style={styles.participantsCard}>
-            <Text style={styles.sectionLabel}>참가자 ({participants.length}명)</Text>
+          <View style={[styles.participantsCard, { backgroundColor: themeColors.surface }]}>
+            <Text style={[styles.sectionLabel, { color: themeColors.textTertiary }]}>참가자 ({participants.length}명)</Text>
             <View style={styles.participantsList}>
               {participants.slice(0, 5).map((participant) => (
                 <View key={participant.id} style={styles.participantItem}>
                   <View style={[styles.participantTier, { backgroundColor: TIER_COLORS[participant.participant_tier] }]}>
                     <Ionicons name={getTierIcon(participant.participant_tier)} size={12} color="#000000" />
                   </View>
-                  <Text style={styles.participantName}>
+                  <Text style={[styles.participantName, { color: themeColors.textPrimary }]}>
                     {participant.participant_display_name || '익명'}
                   </Text>
                   <Text style={[styles.participantAssets, { color: TIER_COLORS[participant.participant_tier] }]}>
@@ -398,7 +386,7 @@ export default function GatheringDetailScreen() {
                 </View>
               ))}
               {participants.length > 5 && (
-                <Text style={styles.moreParticipants}>
+                <Text style={[styles.moreParticipants, { color: themeColors.textTertiary }]}>
                   +{participants.length - 5}명 더
                 </Text>
               )}
@@ -411,32 +399,32 @@ export default function GatheringDetailScreen() {
       </ScrollView>
 
       {/* 하단 버튼 */}
-      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 16 }]}>
+      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 16, backgroundColor: themeColors.background, borderTopColor: themeColors.border }]}>
         {isParticipant ? (
           <TouchableOpacity
-            style={styles.cancelButton}
+            style={[styles.cancelButton, { borderColor: themeColors.error }]}
             onPress={handleCancel}
             disabled={cancelling}
           >
             {cancelling ? (
-              <ActivityIndicator size="small" color={COLORS.error} />
+              <ActivityIndicator size="small" color={themeColors.error} />
             ) : (
               <>
-                <Ionicons name="close-circle" size={20} color={COLORS.error} />
-                <Text style={styles.cancelButtonText}>참가 취소</Text>
+                <Ionicons name="close-circle" size={20} color={themeColors.error} />
+                <Text style={[styles.cancelButtonText, { color: themeColors.error }]}>참가 취소</Text>
               </>
             )}
           </TouchableOpacity>
         ) : isBlockedByTier ? (
-          <View style={styles.tierBlockedButton}>
-            <Ionicons name="lock-closed" size={20} color={COLORS.warning} />
-            <Text style={styles.tierBlockedButtonText}>
+          <View style={[styles.tierBlockedButton, { borderColor: themeColors.warning }]}>
+            <Ionicons name="lock-closed" size={20} color={themeColors.warning} />
+            <Text style={[styles.tierBlockedButtonText, { color: themeColors.warning }]}>
               {TIER_LABELS[requiredTier]} 등급 이상만 참가 가능
             </Text>
           </View>
         ) : canJoin ? (
           <TouchableOpacity
-            style={styles.joinButton}
+            style={[styles.joinButton, { backgroundColor: themeColors.primary }]}
             onPress={handleJoin}
             disabled={joining}
           >
@@ -454,9 +442,9 @@ export default function GatheringDetailScreen() {
             )}
           </TouchableOpacity>
         ) : (
-          <View style={styles.closedButton}>
-            <Ionicons name="lock-closed" size={20} color={COLORS.textMuted} />
-            <Text style={styles.closedButtonText}>
+          <View style={[styles.closedButton, { backgroundColor: themeColors.surface }]}>
+            <Ionicons name="lock-closed" size={20} color={themeColors.textTertiary} />
+            <Text style={[styles.closedButtonText, { color: themeColors.textTertiary }]}>
               {isFull ? '정원이 가득 찼습니다' : '모집이 마감되었습니다'}
             </Text>
           </View>
@@ -469,7 +457,6 @@ export default function GatheringDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   loadingContainer: {
     justifyContent: 'center',
@@ -478,7 +465,6 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 12,
     fontSize: 14,
-    color: COLORS.textMuted,
   },
   header: {
     flexDirection: 'row',
@@ -487,20 +473,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
   },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: COLORS.surface,
     justifyContent: 'center',
     alignItems: 'center',
   },
   headerTitle: {
     fontSize: 17,
     fontWeight: '600',
-    color: COLORS.text,
   },
   content: {
     flex: 1,
@@ -524,7 +507,6 @@ const styles = StyleSheet.create({
   },
   categoryText: {
     fontSize: 13,
-    color: COLORS.primary,
     fontWeight: '600',
   },
   fullBadge: {
@@ -535,13 +517,11 @@ const styles = StyleSheet.create({
   },
   fullBadgeText: {
     fontSize: 13,
-    color: COLORS.error,
     fontWeight: '600',
   },
   participatingBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.primary,
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 12,
@@ -555,20 +535,17 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: '800',
-    color: COLORS.text,
     marginBottom: 20,
     lineHeight: 32,
   },
   sectionLabel: {
     fontSize: 12,
     fontWeight: '600',
-    color: COLORS.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 12,
   },
   hostCard: {
-    backgroundColor: COLORS.surface,
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
@@ -586,7 +563,6 @@ const styles = StyleSheet.create({
   },
   verifiedText: {
     fontSize: 12,
-    color: COLORS.primary,
     fontWeight: '500',
   },
   hostInfo: {
@@ -607,7 +583,6 @@ const styles = StyleSheet.create({
   hostName: {
     fontSize: 16,
     fontWeight: '700',
-    color: COLORS.text,
     marginBottom: 2,
   },
   hostAssets: {
@@ -615,7 +590,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   infoCard: {
-    backgroundColor: COLORS.surface,
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
@@ -625,7 +599,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.surfaceLight,
   },
   infoIcon: {
     width: 36,
@@ -641,40 +614,26 @@ const styles = StyleSheet.create({
   },
   infoLabel: {
     fontSize: 12,
-    color: COLORS.textMuted,
     marginBottom: 2,
   },
   infoValue: {
     fontSize: 15,
-    color: COLORS.text,
     fontWeight: '500',
   },
   feeValue: {
     fontSize: 17,
     fontWeight: '700',
-    color: COLORS.primary,
-  },
-  capacityCurrent: {
-    color: COLORS.primary,
-    fontWeight: '700',
-  },
-  capacityFull: {
-    color: COLORS.error,
-    fontWeight: '700',
   },
   descriptionCard: {
-    backgroundColor: COLORS.surface,
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
   },
   description: {
     fontSize: 15,
-    color: COLORS.textSecondary,
     lineHeight: 24,
   },
   participantsCard: {
-    backgroundColor: COLORS.surface,
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
@@ -697,7 +656,6 @@ const styles = StyleSheet.create({
   participantName: {
     flex: 1,
     fontSize: 14,
-    color: COLORS.text,
     fontWeight: '500',
   },
   participantAssets: {
@@ -706,7 +664,6 @@ const styles = StyleSheet.create({
   },
   moreParticipants: {
     fontSize: 13,
-    color: COLORS.textMuted,
     textAlign: 'center',
     marginTop: 8,
   },
@@ -717,15 +674,12 @@ const styles = StyleSheet.create({
     right: 0,
     padding: 16,
     paddingTop: 12,
-    backgroundColor: COLORS.background,
     borderTopWidth: 1,
-    borderTopColor: COLORS.border,
   },
   joinButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.primary,
     paddingVertical: 16,
     borderRadius: 12,
     gap: 8,
@@ -744,18 +698,15 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     gap: 8,
     borderWidth: 1,
-    borderColor: COLORS.error,
   },
   cancelButtonText: {
     fontSize: 16,
     fontWeight: '700',
-    color: COLORS.error,
   },
   closedButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.surface,
     paddingVertical: 16,
     borderRadius: 12,
     gap: 8,
@@ -763,7 +714,6 @@ const styles = StyleSheet.create({
   closedButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: COLORS.textMuted,
   },
   // 티어 기반 접근 제어 (TBAC) 스타일
   tierCheckBadge: {
@@ -788,12 +738,10 @@ const styles = StyleSheet.create({
   tierWarningTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: COLORS.warning,
     marginBottom: 4,
   },
   tierWarningText: {
     fontSize: 12,
-    color: COLORS.textSecondary,
     lineHeight: 18,
   },
   tierBlockedButton: {
@@ -805,12 +753,10 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     gap: 8,
     borderWidth: 1,
-    borderColor: COLORS.warning,
   },
   tierBlockedButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: COLORS.warning,
   },
   // 사기 경고 배너
   scamWarningBanner: {

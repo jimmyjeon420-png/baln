@@ -21,7 +21,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAuth, OAuthProvider } from '../src/context/AuthContext';
-import { COLORS, SIZES } from '../src/styles/theme';
+import { SIZES } from '../src/styles/theme';
 import { useTheme } from '../src/hooks/useTheme';
 import queryClient from '../src/services/queryClient';
 
@@ -273,7 +273,7 @@ export default function LoginScreen() {
               disabled={isAnyLoading}
             >
               {isLoading ? (
-                <ActivityIndicator color={COLORS.background} size="small" />
+                <ActivityIndicator color={colors.background} size="small" />
               ) : (
                 <Text style={styles.primaryButtonText}>
                   {isSignUpMode ? '회원가입' : '로그인'}
@@ -316,7 +316,6 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   scrollContent: {
     flexGrow: 1,
@@ -332,13 +331,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: SIZES.fXxxl,
     fontWeight: '700',
-    color: COLORS.textPrimary,
     marginBottom: SIZES.md,
     textAlign: 'center',
   },
   subtitle: {
     fontSize: SIZES.fBase,
-    color: COLORS.textSecondary,
     textAlign: 'center',
   },
 
@@ -410,11 +407,9 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: COLORS.border,
   },
   dividerText: {
     fontSize: SIZES.fSm,
-    color: COLORS.textTertiary,
   },
 
   // 입력 폼 섹션
@@ -428,17 +423,13 @@ const styles = StyleSheet.create({
   label: {
     fontSize: SIZES.fSm,
     fontWeight: '600',
-    color: COLORS.textPrimary,
   },
   input: {
     borderWidth: 1,
-    borderColor: COLORS.border,
     borderRadius: SIZES.rMd,
     paddingVertical: SIZES.md,
     paddingHorizontal: SIZES.md,
     fontSize: SIZES.fBase,
-    color: COLORS.textPrimary,
-    backgroundColor: COLORS.surface,
   },
 
   // 버튼 섹션
@@ -446,7 +437,7 @@ const styles = StyleSheet.create({
     gap: SIZES.lg,
   },
   primaryButton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: '#4CAF50',
     paddingVertical: SIZES.md,
     borderRadius: SIZES.rMd,
     alignItems: 'center',
@@ -458,7 +449,7 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     fontSize: SIZES.fBase,
     fontWeight: '600',
-    color: COLORS.background,
+    color: '#FFFFFF',
   },
 
   // 토글 섹션
@@ -470,12 +461,11 @@ const styles = StyleSheet.create({
   },
   toggleText: {
     fontSize: SIZES.fSm,
-    color: COLORS.textSecondary,
   },
   toggleButton: {
     fontSize: SIZES.fSm,
     fontWeight: '600',
-    color: COLORS.primary,
+    color: '#4CAF50',
   },
 
   // 하단 섹션
@@ -484,7 +474,6 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: SIZES.fXs,
-    color: COLORS.textTertiary,
     textAlign: 'center',
     lineHeight: 18,
   },

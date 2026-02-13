@@ -3,14 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native
 import { Tabs, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-// 컬러 팔레트 - Fintech 스타일
-const COLORS = {
-  background: '#121212',
-  tabBar: '#1A1F2C',
-  active: '#FFFFFF',
-  inactive: '#6B7280',
-};
+import { useTheme } from '../../src/hooks/useTheme';
 
 // 표시할 탭 목록 (3탭 구조: 오늘/분석/전체)
 const VISIBLE_TABS = ['index', 'rebalance', 'profile'];
@@ -19,6 +12,7 @@ const VISIBLE_TABS = ['index', 'rebalance', 'profile'];
 function CustomTabBar({ state, descriptors, navigation }: any) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { colors } = useTheme();
 
   // 표시할 탭만 필터링
   const visibleRoutes = state.routes.filter((route: any) =>
@@ -26,7 +20,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
   );
 
   return (
-    <View style={[styles.tabBarContainer, { paddingBottom: insets.bottom }]}>
+    <View style={[styles.tabBarContainer, { paddingBottom: insets.bottom, backgroundColor: colors.surface }]}>
       <View style={styles.tabBar}>
         {visibleRoutes.map((route: any) => {
           const { options } = descriptors[route.key];
@@ -63,12 +57,12 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
               <Ionicons
                 name={iconName}
                 size={24}
-                color={isFocused ? COLORS.active : COLORS.inactive}
+                color={isFocused ? colors.textPrimary : colors.textTertiary}
               />
               <Text
                 style={[
                   styles.tabLabelText,
-                  { color: isFocused ? COLORS.active : COLORS.inactive },
+                  { color: isFocused ? colors.textPrimary : colors.textTertiary },
                 ]}
               >
                 {label}
@@ -156,7 +150,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: COLORS.tabBar,
+    // backgroundColor applied inline via colors.surface
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     ...Platform.select({

@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { COLORS, SIZES } from '../../styles/theme';
+import { SIZES } from '../../styles/theme';
+import { useTheme } from '../../hooks/useTheme';
 import { SkeletonBlock } from '../SkeletonLoader';
 
 // ============================================================================
@@ -13,15 +14,15 @@ interface DailyBriefingCardProps {
   isLoading: boolean;
 }
 
-// 센티먼트 → 한국어 + 색상
-function getSentimentChip(sentiment: 'BULLISH' | 'BEARISH' | 'NEUTRAL') {
+// 센티먼트 → 한국어 + 색상 (시맨틱 컬러 - 테마에서 동적으로 가져옴)
+function getSentimentChip(sentiment: 'BULLISH' | 'BEARISH' | 'NEUTRAL', themeColors: { primary: string; error: string; neutral: string }) {
   switch (sentiment) {
     case 'BULLISH':
-      return { label: '강세', color: COLORS.primary, bgColor: 'rgba(76,175,80,0.15)' };
+      return { label: '강세', color: themeColors.primary, bgColor: 'rgba(76,175,80,0.15)' };
     case 'BEARISH':
-      return { label: '약세', color: COLORS.error, bgColor: 'rgba(207,102,121,0.15)' };
+      return { label: '약세', color: themeColors.error, bgColor: 'rgba(207,102,121,0.15)' };
     default:
-      return { label: '보합', color: COLORS.neutral, bgColor: 'rgba(158,158,158,0.15)' };
+      return { label: '보합', color: themeColors.neutral, bgColor: 'rgba(158,158,158,0.15)' };
   }
 }
 
@@ -34,10 +35,12 @@ const DailyBriefingCard = ({
   sentiment,
   isLoading,
 }: DailyBriefingCardProps) => {
+  const { colors } = useTheme();
+
   // 로딩 중 → 스켈레톤
   if (isLoading) {
     return (
-      <View style={styles.card}>
+      <View style={[styles.card, { backgroundColor: colors.surface }]}>
         <SkeletonBlock width={120} height={16} />
         <SkeletonBlock width="100%" height={40} style={{ marginTop: 10 }} />
       </View>
@@ -47,17 +50,17 @@ const DailyBriefingCard = ({
   // 데이터 없음 → 표시하지 않음
   if (!cfoWeather && !sentiment) return null;
 
-  const chip = sentiment ? getSentimentChip(sentiment) : null;
+  const chip = sentiment ? getSentimentChip(sentiment, colors) : null;
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: colors.surface }]}>
       {/* 헤더: 이모지 + 타이틀 + 센티먼트 칩 */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.title}>
+          <Text style={[styles.title, { color: colors.textPrimary }]}>
             {cfoWeather?.emoji || '📊'} 오늘의 브리핑
           </Text>
-          <Text style={styles.subtitle}>Daily Briefing</Text>
+          <Text style={[styles.subtitle, { color: colors.textTertiary }]}>Daily Briefing</Text>
         </View>
         {chip && (
           <View style={[styles.chip, { backgroundColor: chip.bgColor }]}>
@@ -70,7 +73,7 @@ const DailyBriefingCard = ({
 
       {/* 투자 날씨 메시지 */}
       {cfoWeather?.message && (
-        <Text style={styles.message} numberOfLines={3}>
+        <Text style={[styles.message, { color: colors.textSecondary }]} numberOfLines={3}>
           "{cfoWeather.message}"
         </Text>
       )}
@@ -106,7 +109,6 @@ export default React.memo(DailyBriefingCard, (prev, next) => {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: COLORS.surface,
     borderRadius: SIZES.rXl,
     padding: SIZES.xl,
     marginBottom: SIZES.lg,
@@ -119,11 +121,9 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 16,
     fontWeight: '700',
-    color: COLORS.textPrimary,
   },
   subtitle: {
     fontSize: 11,
-    color: COLORS.textTertiary,
     marginTop: 2,
   },
   chip: {
@@ -137,7 +137,6 @@ const styles = StyleSheet.create({
   },
   message: {
     fontSize: 14,
-    color: COLORS.textSecondary,
     lineHeight: 22,
     marginTop: 12,
     fontStyle: 'italic',

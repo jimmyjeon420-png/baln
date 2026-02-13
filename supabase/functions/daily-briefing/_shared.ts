@@ -186,8 +186,9 @@ export async function callGeminiWithSearch(prompt: string, timeoutMs: number = 3
     contents: [{ parts: [{ text: prompt }] }],
     tools: [{ google_search: {} }],
     generationConfig: {
-      temperature: 0.7,
+      temperature: 0.5,
       maxOutputTokens: 4096,
+      responseMimeType: 'text/plain',
     },
   };
 

@@ -25,18 +25,10 @@ import { usePollsWithMyVotes, useMyPredictionStats } from '../../src/hooks/usePr
 import { useGuruInsights } from '../../src/hooks/useSharedAnalysis';
 import { useMyTierAllocation } from '../../src/hooks/useTierAllocation';
 import { useSharedPortfolio } from '../../src/hooks/useSharedPortfolio';
+import { useTheme } from '../../src/hooks/useTheme';
 
-// 컬러 팔레트
-const COLORS = {
-  background: '#121212',
-  surface: '#1E1E1E',
-  surfaceLight: '#2A2A2A',
-  primary: '#4CAF50',
-  error: '#CF6679',
-  text: '#FFFFFF',
-  textSecondary: '#B0B0B0',
-  textMuted: '#888888',
-  border: '#333333',
+// 기능별 특수 색상 (브랜드 색상으로 테마와 무관)
+const FEATURE_COLORS = {
   prediction: '#7C4DFF',
   dna: '#00BCD4',
   guru: '#FF9800',
@@ -53,6 +45,7 @@ const SENTIMENT_COLORS: Record<string, string> = {
 export default function InsightsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
 
   // 훅 호출
@@ -89,10 +82,10 @@ export default function InsightsScreen() {
     : [];
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.background }]}>
       {/* 헤더 */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>인사이트</Text>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>인사이트</Text>
         <View style={styles.headerBadge}>
           <Ionicons name="bulb" size={14} color="#FFD700" />
           <Text style={styles.headerBadgeText}>AI</Text>
@@ -107,78 +100,78 @@ export default function InsightsScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={COLORS.primary}
-            colors={[COLORS.primary]}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
           />
         }
       >
         {/* 카드 1: 투자 예측 게임 (최상단 - MAU 핵심) */}
         <TouchableOpacity
-          style={styles.card}
+          style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
           activeOpacity={0.7}
           onPress={() => router.push('/games/predictions')}
         >
           {/* 카드 헤더 */}
           <View style={styles.cardHeader}>
-            <View style={[styles.cardIconContainer, { backgroundColor: COLORS.prediction + '20' }]}>
-              <Ionicons name="game-controller" size={20} color={COLORS.prediction} />
+            <View style={[styles.cardIconContainer, { backgroundColor: FEATURE_COLORS.prediction + '20' }]}>
+              <Ionicons name="game-controller" size={20} color={FEATURE_COLORS.prediction} />
             </View>
             <View style={styles.cardHeaderText}>
-              <Text style={styles.cardTitle}>투자 예측 게임</Text>
-              <Text style={styles.cardSubtitle}>맞추면 크레딧 보상!</Text>
+              <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>투자 예측 게임</Text>
+              <Text style={[styles.cardSubtitle, { color: colors.textSecondary }]}>맞추면 크레딧 보상!</Text>
             </View>
             {unvotedCount > 0 && (
-              <View style={styles.unvotedBadge}>
+              <View style={[styles.unvotedBadge, { backgroundColor: FEATURE_COLORS.prediction }]}>
                 <Text style={styles.unvotedBadgeText}>{unvotedCount}</Text>
               </View>
             )}
-            <Ionicons name="chevron-forward" size={18} color={COLORS.textMuted} />
+            <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
           </View>
 
           {/* 카드 바디 */}
           {pollsLoading ? (
             <View style={styles.cardLoading}>
-              <ActivityIndicator size="small" color={COLORS.prediction} />
+              <ActivityIndicator size="small" color={FEATURE_COLORS.prediction} />
             </View>
           ) : previewPoll ? (
-            <View style={styles.pollPreview}>
-              <Text style={styles.pollQuestion} numberOfLines={2}>
+            <View style={[styles.pollPreview, { backgroundColor: colors.surfaceLight }]}>
+              <Text style={[styles.pollQuestion, { color: colors.textPrimary }]} numberOfLines={2}>
                 {previewPoll.question}
               </Text>
               {previewPoll.myVote === null ? (
                 <View style={styles.pollVoteHint}>
-                  <Ionicons name="hand-left-outline" size={14} color={COLORS.prediction} />
-                  <Text style={styles.pollVoteHintText}>투표하러 가기</Text>
+                  <Ionicons name="hand-left-outline" size={14} color={FEATURE_COLORS.prediction} />
+                  <Text style={[styles.pollVoteHintText, { color: FEATURE_COLORS.prediction }]}>투표하러 가기</Text>
                 </View>
               ) : (
                 <View style={styles.pollVotedTag}>
-                  <Ionicons name="checkmark-circle" size={14} color={COLORS.primary} />
-                  <Text style={styles.pollVotedText}>투표 완료</Text>
+                  <Ionicons name="checkmark-circle" size={14} color={colors.primary} />
+                  <Text style={[styles.pollVotedText, { color: colors.primary }]}>투표 완료</Text>
                 </View>
               )}
             </View>
           ) : (
             <View style={styles.emptyPreview}>
-              <Text style={styles.emptyText}>오늘의 예측 질문이 곧 업데이트됩니다</Text>
+              <Text style={[styles.emptyText, { color: colors.textTertiary }]}>오늘의 예측 질문이 곧 업데이트됩니다</Text>
             </View>
           )}
 
           {/* 내 통계 한줄 요약 */}
           {!statsLoading && myStats && myStats.total_votes > 0 && (
-            <View style={styles.statsRow}>
+            <View style={[styles.statsRow, { borderTopColor: colors.surfaceLight }]}>
               <View style={styles.statItem}>
-                <Text style={styles.statLabel}>정확도</Text>
-                <Text style={styles.statValue}>{myStats.accuracy_rate.toFixed(0)}%</Text>
+                <Text style={[styles.statLabel, { color: colors.textTertiary }]}>정확도</Text>
+                <Text style={[styles.statValue, { color: colors.textPrimary }]}>{myStats.accuracy_rate.toFixed(0)}%</Text>
               </View>
-              <View style={styles.statDivider} />
+              <View style={[styles.statDivider, { backgroundColor: colors.surfaceLight }]} />
               <View style={styles.statItem}>
-                <Text style={styles.statLabel}>연속</Text>
-                <Text style={styles.statValue}>{myStats.current_streak}회</Text>
+                <Text style={[styles.statLabel, { color: colors.textTertiary }]}>연속</Text>
+                <Text style={[styles.statValue, { color: colors.textPrimary }]}>{myStats.current_streak}회</Text>
               </View>
-              <View style={styles.statDivider} />
+              <View style={[styles.statDivider, { backgroundColor: colors.surfaceLight }]} />
               <View style={styles.statItem}>
-                <Text style={styles.statLabel}>획득</Text>
-                <Text style={styles.statValue}>{myStats.total_credits_earned}C</Text>
+                <Text style={[styles.statLabel, { color: colors.textTertiary }]}>획득</Text>
+                <Text style={[styles.statValue, { color: colors.textPrimary }]}>{myStats.total_credits_earned}C</Text>
               </View>
             </View>
           )}
@@ -186,31 +179,31 @@ export default function InsightsScreen() {
 
         {/* 카드 2: 투자 DNA */}
         <TouchableOpacity
-          style={styles.card}
+          style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
           activeOpacity={0.7}
           onPress={() => router.push('/settings/tier-insights')}
         >
           {/* 카드 헤더 */}
           <View style={styles.cardHeader}>
-            <View style={[styles.cardIconContainer, { backgroundColor: COLORS.dna + '20' }]}>
-              <Ionicons name="bar-chart" size={20} color={COLORS.dna} />
+            <View style={[styles.cardIconContainer, { backgroundColor: FEATURE_COLORS.dna + '20' }]}>
+              <Ionicons name="bar-chart" size={20} color={FEATURE_COLORS.dna} />
             </View>
             <View style={styles.cardHeaderText}>
-              <Text style={styles.cardTitle}>투자 DNA</Text>
-              <Text style={styles.cardSubtitle}>{userTier} 등급 평균 배분</Text>
+              <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>투자 DNA</Text>
+              <Text style={[styles.cardSubtitle, { color: colors.textSecondary }]}>{userTier} 등급 평균 배분</Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={COLORS.textMuted} />
+            <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
           </View>
 
           {/* 배분 비중 바 */}
           {tierLoading ? (
             <View style={styles.cardLoading}>
-              <ActivityIndicator size="small" color={COLORS.dna} />
+              <ActivityIndicator size="small" color={FEATURE_COLORS.dna} />
             </View>
           ) : allocations.length > 0 ? (
             <View style={styles.allocationContainer}>
               {/* 시각적 배분 바 */}
-              <View style={styles.allocationBar}>
+              <View style={[styles.allocationBar, { backgroundColor: colors.surfaceLight }]}>
                 {allocations
                   .filter((a) => a.value > 0)
                   .map((alloc, idx) => (
@@ -235,54 +228,54 @@ export default function InsightsScreen() {
                 {allocations.map((alloc, idx) => (
                   <View key={idx} style={styles.legendItem}>
                     <View style={[styles.legendDot, { backgroundColor: alloc.color }]} />
-                    <Text style={styles.legendLabel}>{alloc.label}</Text>
-                    <Text style={styles.legendValue}>{alloc.value.toFixed(0)}%</Text>
+                    <Text style={[styles.legendLabel, { color: colors.textSecondary }]}>{alloc.label}</Text>
+                    <Text style={[styles.legendValue, { color: colors.textPrimary }]}>{alloc.value.toFixed(0)}%</Text>
                   </View>
                 ))}
               </View>
             </View>
           ) : (
             <View style={styles.emptyPreview}>
-              <Text style={styles.emptyText}>데이터 수집 중...</Text>
+              <Text style={[styles.emptyText, { color: colors.textTertiary }]}>데이터 수집 중...</Text>
             </View>
           )}
         </TouchableOpacity>
 
         {/* 카드 3: 거장 인사이트 */}
         <TouchableOpacity
-          style={styles.card}
+          style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
           activeOpacity={0.7}
           onPress={() => router.push('/settings/gurus')}
         >
           {/* 카드 헤더 */}
           <View style={styles.cardHeader}>
-            <View style={[styles.cardIconContainer, { backgroundColor: COLORS.guru + '20' }]}>
-              <Ionicons name="telescope" size={20} color={COLORS.guru} />
+            <View style={[styles.cardIconContainer, { backgroundColor: FEATURE_COLORS.guru + '20' }]}>
+              <Ionicons name="telescope" size={20} color={FEATURE_COLORS.guru} />
             </View>
             <View style={styles.cardHeaderText}>
-              <Text style={styles.cardTitle}>거장 인사이트</Text>
-              <Text style={styles.cardSubtitle}>오늘의 투자 거장 분석</Text>
+              <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>거장 인사이트</Text>
+              <Text style={[styles.cardSubtitle, { color: colors.textSecondary }]}>오늘의 투자 거장 분석</Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={COLORS.textMuted} />
+            <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
           </View>
 
           {/* 거장 리스트 */}
           {guruLoading ? (
             <View style={styles.cardLoading}>
-              <ActivityIndicator size="small" color={COLORS.guru} />
+              <ActivityIndicator size="small" color={FEATURE_COLORS.guru} />
             </View>
           ) : topGurus.length > 0 ? (
             <View style={styles.guruList}>
               {topGurus.map((guru, idx) => (
-                <View key={idx} style={styles.guruItem}>
+                <View key={idx} style={[styles.guruItem, { backgroundColor: colors.surfaceLight }]}>
                   <View
                     style={[
                       styles.sentimentDot,
                       { backgroundColor: SENTIMENT_COLORS[guru.sentiment] || SENTIMENT_COLORS.NEUTRAL },
                     ]}
                   />
-                  <Text style={styles.guruName}>{guru.guruName}</Text>
-                  <Text style={styles.guruTopic} numberOfLines={1}>
+                  <Text style={[styles.guruName, { color: colors.textPrimary }]}>{guru.guruName}</Text>
+                  <Text style={[styles.guruTopic, { color: colors.textSecondary }]} numberOfLines={1}>
                     {guru.topic}
                   </Text>
                 </View>
@@ -290,7 +283,7 @@ export default function InsightsScreen() {
             </View>
           ) : (
             <View style={styles.emptyPreview}>
-              <Text style={styles.emptyText}>거장 인사이트가 곧 업데이트됩니다</Text>
+              <Text style={[styles.emptyText, { color: colors.textTertiary }]}>거장 인사이트가 곧 업데이트됩니다</Text>
             </View>
           )}
         </TouchableOpacity>
@@ -305,7 +298,6 @@ export default function InsightsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   header: {
     flexDirection: 'row',
@@ -317,7 +309,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 24,
     fontWeight: '800',
-    color: COLORS.text,
   },
   headerBadge: {
     flexDirection: 'row',
@@ -343,12 +334,10 @@ const styles = StyleSheet.create({
 
   // 카드 공통
   card: {
-    backgroundColor: COLORS.surface,
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: COLORS.border,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -369,11 +358,9 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 17,
     fontWeight: '700',
-    color: COLORS.text,
   },
   cardSubtitle: {
     fontSize: 12,
-    color: COLORS.textSecondary,
     marginTop: 2,
   },
   cardLoading: {
@@ -383,7 +370,6 @@ const styles = StyleSheet.create({
 
   // 미투표 배지
   unvotedBadge: {
-    backgroundColor: COLORS.prediction,
     minWidth: 22,
     height: 22,
     borderRadius: 11,
@@ -400,13 +386,11 @@ const styles = StyleSheet.create({
 
   // 투표 미리보기
   pollPreview: {
-    backgroundColor: COLORS.surfaceLight,
     borderRadius: 12,
     padding: 14,
   },
   pollQuestion: {
     fontSize: 14,
-    color: COLORS.text,
     lineHeight: 20,
     marginBottom: 8,
   },
@@ -418,7 +402,6 @@ const styles = StyleSheet.create({
   pollVoteHintText: {
     fontSize: 12,
     fontWeight: '600',
-    color: COLORS.prediction,
   },
   pollVotedTag: {
     flexDirection: 'row',
@@ -428,7 +411,6 @@ const styles = StyleSheet.create({
   pollVotedText: {
     fontSize: 12,
     fontWeight: '600',
-    color: COLORS.primary,
   },
 
   // 통계 행
@@ -438,7 +420,6 @@ const styles = StyleSheet.create({
     marginTop: 14,
     paddingTop: 14,
     borderTopWidth: 1,
-    borderTopColor: COLORS.surfaceLight,
   },
   statItem: {
     flex: 1,
@@ -446,18 +427,15 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontSize: 11,
-    color: COLORS.textMuted,
     marginBottom: 2,
   },
   statValue: {
     fontSize: 16,
     fontWeight: '700',
-    color: COLORS.text,
   },
   statDivider: {
     width: 1,
     height: 28,
-    backgroundColor: COLORS.surfaceLight,
   },
 
   // 배분 비중
@@ -469,7 +447,6 @@ const styles = StyleSheet.create({
     height: 12,
     borderRadius: 4,
     overflow: 'hidden',
-    backgroundColor: COLORS.surfaceLight,
   },
   allocationSegment: {
     height: '100%',
@@ -491,12 +468,10 @@ const styles = StyleSheet.create({
   },
   legendLabel: {
     fontSize: 12,
-    color: COLORS.textSecondary,
   },
   legendValue: {
     fontSize: 12,
     fontWeight: '600',
-    color: COLORS.text,
   },
 
   // 거장 리스트
@@ -506,7 +481,6 @@ const styles = StyleSheet.create({
   guruItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.surfaceLight,
     borderRadius: 10,
     paddingVertical: 10,
     paddingHorizontal: 14,
@@ -520,14 +494,12 @@ const styles = StyleSheet.create({
   guruName: {
     fontSize: 14,
     fontWeight: '600',
-    color: COLORS.text,
     marginRight: 10,
     minWidth: 50,
   },
   guruTopic: {
     flex: 1,
     fontSize: 13,
-    color: COLORS.textSecondary,
   },
 
   // 빈 상태
@@ -537,6 +509,5 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 13,
-    color: COLORS.textMuted,
   },
 });

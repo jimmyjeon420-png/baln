@@ -8,12 +8,14 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { authenticateWithBiometric, getBiometricTypeName } from '../services/biometric';
+import { useTheme } from '../hooks/useTheme';
 
 interface BiometricLockScreenProps {
   onUnlock: () => void;
 }
 
 export default function BiometricLockScreen({ onUnlock }: BiometricLockScreenProps) {
+  const { colors } = useTheme();
   const [biometricName, setBiometricName] = useState('생체 인증');
   const [authFailed, setAuthFailed] = useState(false);
   const isAuthenticating = useRef(false); // 중복 인증 방지 가드
@@ -41,22 +43,22 @@ export default function BiometricLockScreen({ onUnlock }: BiometricLockScreenPro
   }, [onUnlock]);
 
   return (
-    <View style={styles.overlay}>
+    <View style={[styles.overlay, { backgroundColor: colors.background }]}>
       {/* 앱 로고 영역 */}
       <View style={styles.logoArea}>
-        <View style={styles.iconCircle}>
-          <Ionicons name="lock-closed" size={48} color="#4CAF50" />
+        <View style={[styles.iconCircle, { backgroundColor: colors.surface, borderColor: colors.primary }]}>
+          <Ionicons name="lock-closed" size={48} color={colors.primary} />
         </View>
-        <Text style={styles.appName}>bal<Text style={{ color: '#4CAF50' }}>n</Text></Text>
-        <Text style={styles.subtitle}>앱이 잠겨 있습니다</Text>
+        <Text style={[styles.appName, { color: colors.textPrimary }]}>bal<Text style={{ color: colors.primary }}>n</Text></Text>
+        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>앱이 잠겨 있습니다</Text>
       </View>
 
       {/* 인증 버튼 */}
       <View style={styles.actionArea}>
         {authFailed && (
-          <Text style={styles.errorText}>인증에 실패했습니다</Text>
+          <Text style={[styles.errorText, { color: colors.error }]}>인증에 실패했습니다</Text>
         )}
-        <TouchableOpacity style={styles.unlockButton} onPress={handleAuthenticate}>
+        <TouchableOpacity style={[styles.unlockButton, { backgroundColor: colors.primary }]} onPress={handleAuthenticate}>
           <Ionicons
             name={biometricName === 'Face ID' ? 'scan-outline' : 'finger-print-outline'}
             size={28}
@@ -74,7 +76,6 @@ export default function BiometricLockScreen({ onUnlock }: BiometricLockScreenPro
 const styles = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#121212',
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 9999,
@@ -87,35 +88,29 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: '#1E1E1E',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
     borderWidth: 2,
-    borderColor: '#4CAF50',
   },
   appName: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#FFFFFF',
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: '#888888',
   },
   actionArea: {
     alignItems: 'center',
   },
   errorText: {
     fontSize: 14,
-    color: '#CF6679',
     marginBottom: 16,
   },
   unlockButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#4CAF50',
     paddingHorizontal: 24,
     paddingVertical: 14,
     borderRadius: 12,

@@ -131,13 +131,13 @@ export default function AICFOChatScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* 헤더 */}
-      <View style={styles.header}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7}>
-          <Ionicons name="arrow-back" size={22} color="#FFF" />
+          <Ionicons name="arrow-back" size={22} color={colors.textPrimary} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>AI 버핏 티타임</Text>
-          <Text style={styles.headerSubtitle}>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>AI 버핏 티타임</Text>
+          <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
             메시지당 {discountedCost} 크레딧
           </Text>
         </View>
@@ -158,9 +158,9 @@ export default function AICFOChatScreen() {
           {/* 환영 메시지 */}
           {chatMessages.length === 0 && !messages.isLoading && (
             <View style={styles.welcomeContainer}>
-              <Ionicons name="sparkles" size={40} color="#7C4DFF" />
-              <Text style={styles.welcomeTitle}>AI 버핏에게 물어보세요</Text>
-              <Text style={styles.welcomeDesc}>
+              <Ionicons name="sparkles" size={40} color={colors.premium.purple} />
+              <Text style={[styles.welcomeTitle, { color: colors.textPrimary }]}>AI 버핏에게 물어보세요</Text>
+              <Text style={[styles.welcomeDesc, { color: colors.textSecondary }]}>
                 포트폴리오 맞춤 재무 상담을 제공합니다.{'\n'}
                 투자 전략, 리스크 관리, 자산 배분 등{'\n'}
                 무엇이든 질문하세요.
@@ -175,14 +175,14 @@ export default function AICFOChatScreen() {
                 ].map((q, i) => (
                   <TouchableOpacity
                     key={i}
-                    style={styles.suggestionChip}
+                    style={[styles.suggestionChip, { backgroundColor: colors.surface, borderColor: colors.borderStrong }]}
                     onPress={() => {
                       mediumTap();
                       setInputText(q);
                     }}
                     activeOpacity={0.7}
                   >
-                    <Text style={styles.suggestionText}>{q}</Text>
+                    <Text style={[styles.suggestionText, { color: colors.textSecondary }]}>{q}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -205,24 +205,24 @@ export default function AICFOChatScreen() {
           {sendMessage.isPending && (
             <View style={styles.typingIndicator}>
               <View style={styles.typingAvatar}>
-                <Ionicons name="sparkles" size={12} color="#7C4DFF" />
+                <Ionicons name="sparkles" size={12} color={colors.premium.purple} />
               </View>
-              <View style={styles.typingBubble}>
-                <ActivityIndicator size="small" color="#7C4DFF" />
-                <Text style={styles.typingText}>AI 버핏이 답변 중...</Text>
+              <View style={[styles.typingBubble, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderStrong }]}>
+                <ActivityIndicator size="small" color={colors.premium.purple} />
+                <Text style={[styles.typingText, { color: colors.textSecondary }]}>AI 버핏이 답변 중...</Text>
               </View>
             </View>
           )}
         </ScrollView>
 
         {/* 입력창 */}
-        <View style={styles.inputContainer}>
+        <View style={[styles.inputContainer, { borderTopColor: colors.border, backgroundColor: colors.surfaceLight }]}>
           <TextInput
-            style={styles.textInput}
+            style={[styles.textInput, { backgroundColor: colors.surfaceElevated, color: colors.textPrimary, borderColor: colors.borderStrong }]}
             value={inputText}
             onChangeText={setInputText}
             placeholder="재무 질문을 입력하세요..."
-            placeholderTextColor="#555"
+            placeholderTextColor={colors.textQuaternary}
             multiline
             maxLength={500}
             editable={!sendMessage.isPending}
@@ -245,7 +245,7 @@ export default function AICFOChatScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#121212' },
+  container: { flex: 1 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -253,11 +253,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 0.5,
-    borderBottomColor: '#2A2A2A',
   },
   headerCenter: { alignItems: 'center' },
-  headerTitle: { color: '#FFF', fontSize: 17, fontWeight: '700' },
-  headerSubtitle: { color: '#888', fontSize: 11, marginTop: 2 },
+  headerTitle: { fontSize: 17, fontWeight: '700' },
+  headerSubtitle: { fontSize: 11, marginTop: 2 },
   chatContainer: { flex: 1 },
   messageList: { flex: 1 },
   messageContent: { paddingVertical: 16 },
@@ -267,17 +266,15 @@ const styles = StyleSheet.create({
     paddingTop: 40,
     paddingBottom: 20,
   },
-  welcomeTitle: { color: '#FFF', fontSize: 20, fontWeight: '700', marginTop: 12 },
-  welcomeDesc: { color: '#888', fontSize: 14, textAlign: 'center', lineHeight: 22, marginTop: 8 },
+  welcomeTitle: { fontSize: 20, fontWeight: '700', marginTop: 12 },
+  welcomeDesc: { fontSize: 14, textAlign: 'center', lineHeight: 22, marginTop: 8 },
   suggestedQuestions: { gap: 8, marginTop: 24, width: '100%' },
   suggestionChip: {
-    backgroundColor: '#1E1E1E',
     borderRadius: 12,
     padding: 14,
     borderWidth: 1,
-    borderColor: '#333',
   },
-  suggestionText: { color: '#CCC', fontSize: 14, textAlign: 'center' },
+  suggestionText: { fontSize: 14, textAlign: 'center' },
   typingIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -297,34 +294,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#252525',
     borderRadius: 16,
     padding: 12,
     borderWidth: 1,
-    borderColor: '#333',
   },
-  typingText: { color: '#888', fontSize: 13 },
+  typingText: { fontSize: 13 },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderTopWidth: 0.5,
-    borderTopColor: '#2A2A2A',
-    backgroundColor: '#1A1A1A',
     gap: 8,
   },
   textInput: {
     flex: 1,
-    backgroundColor: '#252525',
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 10,
-    color: '#FFF',
     fontSize: 14,
     maxHeight: 100,
     borderWidth: 1,
-    borderColor: '#333',
   },
   sendButton: {
     width: 40,

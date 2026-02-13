@@ -21,7 +21,7 @@ import {
   Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../../styles/theme';
+import { useTheme } from '../../hooks/useTheme';
 import { CommunityComment } from '../../types/community';
 import CommentItem from './CommentItem';
 
@@ -63,6 +63,7 @@ export default function ReplySection({
   isUpdating,
   isDeleting,
 }: ReplySectionProps) {
+  const { colors } = useTheme();
   // 접기/펼치기 상태
   const [expanded, setExpanded] = useState(false);
 
@@ -76,7 +77,7 @@ export default function ReplySection({
   return (
     <View style={styles.container}>
       {/* 왼쪽 초록 바 (디자인 인디케이터) */}
-      <View style={styles.greenBar} />
+      <View style={[styles.greenBar, { backgroundColor: colors.primary }]} />
 
       <View style={styles.content}>
         {/* 접기/펼치기 토글 버튼 */}
@@ -88,9 +89,9 @@ export default function ReplySection({
           <Ionicons
             name={expanded ? 'chevron-up' : 'chevron-down'}
             size={14}
-            color={COLORS.primary}
+            color={colors.primary}
           />
-          <Text style={styles.toggleText}>
+          <Text style={[styles.toggleText, { color: colors.primary }]}>
             {expanded ? '답글 접기' : `답글 ${replies.length}개 보기`}
           </Text>
         </TouchableOpacity>
@@ -129,7 +130,6 @@ const styles = StyleSheet.create({
   // 왼쪽 초록색 인디케이터 바
   greenBar: {
     width: 2,
-    backgroundColor: COLORS.primary,
     borderRadius: 1,
     marginRight: 0,
   },
@@ -147,7 +147,6 @@ const styles = StyleSheet.create({
   toggleText: {
     fontSize: 13,
     fontWeight: '600',
-    color: COLORS.primary,
   },
   // 답글 목록 영역
   repliesList: {

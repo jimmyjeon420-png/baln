@@ -102,37 +102,37 @@ export default function DeepDiveScreen() {
         {/* 헤더 */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7}>
-            <Ionicons name="arrow-back" size={22} color="#FFF" />
+            <Ionicons name="arrow-back" size={22} color={colors.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>AI 종목 딥다이브</Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>AI 종목 딥다이브</Text>
           <View style={{ width: 22 }} />
         </View>
 
         {/* 종목 입력 */}
         <View style={styles.inputSection}>
-          <Text style={styles.inputLabel}>종목 코드</Text>
+          <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>종목 코드</Text>
           <TextInput
-            style={styles.textInput}
+            style={[styles.textInput, { backgroundColor: colors.surface, color: colors.textPrimary, borderColor: colors.borderStrong }]}
             value={ticker}
             onChangeText={setTicker}
             placeholder="예: AAPL, TSLA, 005930"
-            placeholderTextColor="#555"
+            placeholderTextColor={colors.textQuaternary}
             autoCapitalize="characters"
           />
-          <Text style={styles.inputLabel}>종목명 (선택)</Text>
+          <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>종목명 (선택)</Text>
           <TextInput
-            style={styles.textInput}
+            style={[styles.textInput, { backgroundColor: colors.surface, color: colors.textPrimary, borderColor: colors.borderStrong }]}
             value={name}
             onChangeText={setName}
             placeholder="예: 애플, 테슬라"
-            placeholderTextColor="#555"
+            placeholderTextColor={colors.textQuaternary}
           />
         </View>
 
         {/* 보유 종목 빠른 선택 */}
         {portfolio.length > 0 && (
           <View style={styles.quickSelect}>
-            <Text style={styles.quickLabel}>내 보유 종목</Text>
+            <Text style={[styles.quickLabel, { color: colors.textSecondary }]}>내 보유 종목</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <View style={styles.chipRow}>
                 {portfolio
@@ -142,6 +142,7 @@ export default function DeepDiveScreen() {
                       key={i}
                       style={[
                         styles.chip,
+                        { backgroundColor: colors.surface, borderColor: colors.borderStrong },
                         ticker === p.ticker && styles.chipActive,
                       ]}
                       onPress={() => handleSelectStock(p)}
@@ -150,6 +151,7 @@ export default function DeepDiveScreen() {
                       <Text
                         style={[
                           styles.chipText,
+                          { color: colors.textSecondary },
                           ticker === p.ticker && styles.chipTextActive,
                         ]}
                       >
@@ -194,7 +196,7 @@ export default function DeepDiveScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#121212' },
+  container: { flex: 1 },
   scrollContent: { padding: 16, paddingBottom: 40 },
   header: {
     flexDirection: 'row',
@@ -202,31 +204,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
-  headerTitle: { color: '#FFF', fontSize: 18, fontWeight: '700' },
+  headerTitle: { fontSize: 18, fontWeight: '700' },
   inputSection: { marginBottom: 16 },
-  inputLabel: { color: '#888', fontSize: 13, marginBottom: 6, marginTop: 10 },
+  inputLabel: { fontSize: 13, marginBottom: 6, marginTop: 10 },
   textInput: {
-    backgroundColor: '#1E1E1E',
     borderRadius: 12,
     padding: 14,
-    color: '#FFF',
     fontSize: 15,
     borderWidth: 1,
-    borderColor: '#333',
   },
   quickSelect: { marginBottom: 16 },
-  quickLabel: { color: '#888', fontSize: 13, marginBottom: 8 },
+  quickLabel: { fontSize: 13, marginBottom: 8 },
   chipRow: { flexDirection: 'row', gap: 8 },
   chip: {
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: '#1E1E1E',
     borderWidth: 1,
-    borderColor: '#333',
   },
   chipActive: { backgroundColor: '#7C4DFF20', borderColor: '#7C4DFF' },
-  chipText: { color: '#888', fontSize: 13, fontWeight: '600' },
+  chipText: { fontSize: 13, fontWeight: '600' },
   chipTextActive: { color: '#7C4DFF' },
   analyzeButton: {
     flexDirection: 'row',

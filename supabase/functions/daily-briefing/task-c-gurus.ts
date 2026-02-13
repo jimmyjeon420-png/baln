@@ -75,30 +75,33 @@ async function analyzeGuruInsight(guru: typeof GURU_LIST[0]): Promise<GuruInsigh
   const today = new Date();
   const dateStr = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`;
 
-  const prompt = `
-당신은 Bloomberg 수석 글로벌 투자 전략가입니다.
-오늘(${dateStr}) **${guru.nameEn}(${guru.name})** 투자 거장의 최근 동향을 분석하세요.
+  const prompt = `당신은 baln(발른) 앱의 투자 거장 분석 AI입니다.
+오늘(${dateStr}) ${guru.nameEn}(${guru.name})의 최근 투자 동향을 분석하세요.
 
-**[중요] Google Search로 최신 정보를 검색하세요:**
-- "${guru.nameEn} portfolio changes 2026"
-- "${guru.nameEn} recent news investment"
+[핵심 원칙]
+- 한국 개인투자자가 거장의 행보를 통해 시장을 이해하도록 돕는다.
+- 확인된 사실만 서술한다. 추측은 "~로 추정됩니다"로 표현한다.
+- 한국어로 자연스럽게 작성한다.
 
-**분석 항목:**
-1. recentAction: 최근 포트폴리오 변동, 거래, 또는 주목할 행동 (한글, 구체적 수치 포함)
-2. quote: 최근 공개 발언이나 유명 인용구 (한글)
-3. sentiment: BULLISH / BEARISH / NEUTRAL / CAUTIOUS (현재 시장에 대한 입장)
-4. reasoning: AI 분석 2-3문장 (한글, 왜 이런 입장인지)
-5. relevantAssets: 관련 주요 티커 (최대 5개)
-6. source: 주요 뉴스 출처
+[Google Search 검색]
+- "${guru.nameEn} portfolio 2026", "${guru.nameEn} latest news"
 
-**출력 형식 (JSON만, 마크다운 금지):**
+[분석 항목]
+1. recentAction: 최근 포트폴리오 변동이나 주목할 행동 (구체적 수치 포함, 한국어)
+2. quote: 최근 공개 발언 또는 대표 명언 (한국어 번역)
+3. sentiment: BULLISH / BEARISH / NEUTRAL / CAUTIOUS 중 하나
+4. reasoning: 왜 이런 입장인지 2~3문장으로 설명 (한국어)
+5. relevantAssets: 관련 티커 최대 5개 (문자열 배열)
+6. source: 뉴스 출처명
+
+[응답 형식 — 아래 JSON만 출력. 설명문, 마크다운 금지.]
 {
   "guruName": "${guru.name}",
   "guruNameEn": "${guru.nameEn}",
-  "recentAction": "Apple 주식 25% 매도, 현금 보유고 $334B 도달",
-  "quote": "좋은 거래를 찾기 어려운 시기다",
+  "recentAction": "애플 주식 25% 매도, 현금 보유 $334B 도달",
+  "quote": "좋은 거래를 찾기 어려운 시기입니다",
   "sentiment": "CAUTIOUS",
-  "reasoning": "버핏은 현재 시장 고평가를 우려하며...",
+  "reasoning": "현재 시장 밸류에이션이 역사적 평균을 크게 상회하고 있어, 새로운 대형 매수보다 현금 확보에 집중하는 모습입니다. 다만 이는 위기 대비가 아니라 더 좋은 기회를 기다리는 전략으로 해석됩니다.",
   "relevantAssets": ["AAPL", "BRK.B", "OXY"],
   "source": "Bloomberg"
 }

@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { COLORS, SIZES } from '../../styles/theme';
+import { SIZES } from '../../styles/theme';
+import { useTheme } from '../../hooks/useTheme';
 import { useHaptics } from '../../hooks/useHaptics';
 
 // ============================================================================
@@ -30,6 +31,7 @@ const QuickActionsBar = ({
   onPrediction,
 }: QuickActionsBarProps) => {
   const haptics = useHaptics();
+  const { colors } = useTheme();
 
   const handlers: Record<string, () => void> = {
     add: onAddAsset,
@@ -49,10 +51,10 @@ const QuickActionsBar = ({
           }}
           activeOpacity={0.7}
         >
-          <View style={styles.iconCircle}>
+          <View style={[styles.iconCircle, { backgroundColor: colors.surfaceLight }]}>
             <Text style={styles.iconText}>{action.icon}</Text>
           </View>
-          <Text style={styles.label}>{action.label}</Text>
+          <Text style={[styles.label, { color: colors.textSecondary }]}>{action.label}</Text>
         </TouchableOpacity>
       ))}
     </View>
@@ -90,7 +92,6 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: COLORS.surfaceLight,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 6,
@@ -101,6 +102,5 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 12,
     fontWeight: '600',
-    color: COLORS.textSecondary,
   },
 });

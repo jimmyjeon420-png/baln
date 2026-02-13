@@ -26,7 +26,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, SIZES } from '../src/styles/theme';
+import { SIZES } from '../src/styles/theme';
 import { useTheme } from '../src/hooks/useTheme';
 import {
   NotificationItem,
@@ -116,7 +116,7 @@ export default function NotificationCenterScreen() {
 
     return (
       <TouchableOpacity
-        style={[styles.notifCard, !item.isRead && styles.notifCardUnread]}
+        style={[styles.notifCard, { borderBottomColor: colors.borderLight }, !item.isRead && styles.notifCardUnread]}
         onPress={() => handleTapNotification(item)}
         activeOpacity={0.7}
       >
@@ -132,14 +132,14 @@ export default function NotificationCenterScreen() {
         <View style={styles.notifContent}>
           <View style={styles.notifHeader}>
             <Text
-              style={[styles.notifTitle, !item.isRead && styles.notifTitleUnread]}
+              style={[styles.notifTitle, { color: colors.textSecondary }, !item.isRead && [styles.notifTitleUnread, { color: colors.textPrimary }]]}
               numberOfLines={1}
             >
               {item.title}
             </Text>
-            <Text style={styles.notifTime}>{getRelativeTime(item.createdAt)}</Text>
+            <Text style={[styles.notifTime, { color: colors.textTertiary }]}>{getRelativeTime(item.createdAt)}</Text>
           </View>
-          <Text style={styles.notifBody} numberOfLines={2}>
+          <Text style={[styles.notifBody, { color: colors.textSecondary }]} numberOfLines={2}>
             {item.body}
           </Text>
           {/* 카테고리 라벨 */}
@@ -158,7 +158,7 @@ export default function NotificationCenterScreen() {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       </SafeAreaView>
     );
@@ -167,18 +167,18 @@ export default function NotificationCenterScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* 헤더 */}
-      <View style={styles.header}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={28} color={COLORS.primary} />
+          <Ionicons name="chevron-back" size={28} color={colors.primary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>알림</Text>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>알림</Text>
         <View style={styles.headerActions}>
           {unreadCount > 0 && (
             <TouchableOpacity
               onPress={handleMarkAllAsRead}
-              style={styles.markAllBtn}
+              style={[styles.markAllBtn, { backgroundColor: colors.primary + '20' }]}
             >
-              <Text style={styles.markAllText}>모두 읽음</Text>
+              <Text style={[styles.markAllText, { color: colors.primary }]}>모두 읽음</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -194,19 +194,19 @@ export default function NotificationCenterScreen() {
           return (
             <TouchableOpacity
               key={cat}
-              style={[styles.filterChip, isActive && styles.filterChipActive]}
+              style={[styles.filterChip, { backgroundColor: colors.surface, borderColor: colors.border }, isActive && styles.filterChipActive]}
               onPress={() => setActiveFilter(cat)}
             >
               <Ionicons
                 name={info.icon as any}
                 size={14}
-                color={isActive ? '#000' : COLORS.textSecondary}
+                color={isActive ? '#000' : colors.textSecondary}
               />
-              <Text style={[styles.filterChipText, isActive && styles.filterChipTextActive]}>
+              <Text style={[styles.filterChipText, { color: colors.textSecondary }, isActive && styles.filterChipTextActive]}>
                 {info.label}
               </Text>
               {count > 0 && (
-                <View style={[styles.filterBadge, isActive && styles.filterBadgeActive]}>
+                <View style={[styles.filterBadge, { backgroundColor: colors.error }, isActive && styles.filterBadgeActive]}>
                   <Text style={[styles.filterBadgeText, isActive && styles.filterBadgeTextActive]}>
                     {count}
                   </Text>
@@ -227,27 +227,27 @@ export default function NotificationCenterScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={COLORS.primary}
+            tintColor={colors.primary}
           />
         }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Ionicons name="notifications-off-outline" size={48} color="#444" />
-            <Text style={styles.emptyTitle}>
+            <Ionicons name="notifications-off-outline" size={48} color={colors.textQuaternary} />
+            <Text style={[styles.emptyTitle, { color: colors.textSecondary }]}>
               {activeFilter === 'all' ? '알림이 없습니다' : `${NOTIFICATION_CATEGORIES[activeFilter].label} 알림이 없습니다`}
             </Text>
-            <Text style={styles.emptyDesc}>
+            <Text style={[styles.emptyDesc, { color: colors.textTertiary }]}>
               새로운 알림이 오면 여기에 표시됩니다
             </Text>
 
             {/* 개발용: 샘플 알림 생성 */}
             {notifications.length === 0 && (
               <TouchableOpacity
-                style={styles.sampleBtn}
+                style={[styles.sampleBtn, { backgroundColor: colors.primary + '15' }]}
                 onPress={handleCreateSamples}
               >
-                <Ionicons name="add-circle" size={18} color={COLORS.primary} />
-                <Text style={styles.sampleBtnText}>[DEV] 샘플 알림 생성</Text>
+                <Ionicons name="add-circle" size={18} color={colors.primary} />
+                <Text style={[styles.sampleBtnText, { color: colors.primary }]}>[DEV] 샘플 알림 생성</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -260,7 +260,6 @@ export default function NotificationCenterScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   loadingContainer: {
     flex: 1,
@@ -276,12 +275,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#2A2A2A',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: COLORS.textPrimary,
   },
   headerActions: {
     minWidth: 80,
@@ -291,12 +288,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 8,
-    backgroundColor: COLORS.primary + '20',
   },
   markAllText: {
     fontSize: 12,
     fontWeight: '600',
-    color: COLORS.primary,
   },
 
   // 필터 칩
@@ -313,18 +308,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: COLORS.surface,
     borderWidth: 1,
-    borderColor: '#2A2A2A',
   },
   filterChipActive: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
+    backgroundColor: '#4CAF50',
+    borderColor: '#4CAF50',
   },
   filterChipText: {
     fontSize: 13,
     fontWeight: '600',
-    color: COLORS.textSecondary,
   },
   filterChipTextActive: {
     color: '#000',
@@ -333,7 +325,6 @@ const styles = StyleSheet.create({
     minWidth: 18,
     height: 18,
     borderRadius: 9,
-    backgroundColor: COLORS.error,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 4,
@@ -347,7 +338,7 @@ const styles = StyleSheet.create({
     color: '#FFF',
   },
   filterBadgeTextActive: {
-    color: COLORS.primary,
+    color: '#4CAF50',
   },
 
   // 알림 목록
@@ -360,11 +351,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#1A1A1A',
     gap: 12,
   },
   notifCardUnread: {
-    backgroundColor: '#1A2A1A', // 살짝 초록 배경
+    backgroundColor: 'rgba(76,175,80,0.05)',
   },
   unreadDot: {
     position: 'absolute',
@@ -373,7 +363,7 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: COLORS.primary,
+    backgroundColor: '#4CAF50',
   },
   notifIcon: {
     width: 40,
@@ -394,21 +384,17 @@ const styles = StyleSheet.create({
   notifTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: COLORS.textSecondary,
     flex: 1,
     marginRight: 8,
   },
   notifTitleUnread: {
-    color: COLORS.textPrimary,
     fontWeight: '700',
   },
   notifTime: {
     fontSize: 11,
-    color: '#666',
   },
   notifBody: {
     fontSize: 13,
-    color: COLORS.textSecondary,
     lineHeight: 19,
     marginBottom: 6,
   },
@@ -435,11 +421,9 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#888',
   },
   emptyDesc: {
     fontSize: 13,
-    color: '#666',
     textAlign: 'center',
   },
   sampleBtn: {
@@ -450,11 +434,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 10,
-    backgroundColor: COLORS.primary + '15',
   },
   sampleBtnText: {
     fontSize: 13,
     fontWeight: '600',
-    color: COLORS.primary,
   },
 });

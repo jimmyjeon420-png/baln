@@ -13,7 +13,7 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Svg, { Path, Circle, G } from 'react-native-svg';
-import { COLORS } from '../../styles/theme';
+import { useTheme } from '../../hooks/useTheme';
 
 // ── 타입 정의 ──
 
@@ -103,6 +103,7 @@ export default function AllocationPieChart({
   showLegend = true,
   formatCurrency = defaultFormatCurrency,
 }: AllocationPieChartProps) {
+  const { colors } = useTheme();
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
   // 0 이상인 슬라이스만 필터링
@@ -149,7 +150,7 @@ export default function AllocationPieChart({
             cx={center}
             cy={center}
             r={radius}
-            stroke="#2A2A2A"
+            stroke={colors.surfaceLight}
             strokeWidth={strokeWidth}
             fill="none"
           />
@@ -182,19 +183,19 @@ export default function AllocationPieChart({
             // 선택된 슬라이스 정보
             <>
               <Text style={styles.centerIcon}>{selectedSlice.icon || ''}</Text>
-              <Text style={styles.centerLabel}>{selectedSlice.label}</Text>
-              <Text style={styles.centerValue}>
+              <Text style={[styles.centerLabel, { color: colors.textSecondary }]}>{selectedSlice.label}</Text>
+              <Text style={[styles.centerValue, { color: colors.textPrimary }]}>
                 {formatCurrency(selectedSlice.value)}
               </Text>
-              <Text style={styles.centerPercent}>
+              <Text style={[styles.centerPercent, { color: colors.primary }]}>
                 {selectedSlice.percentage.toFixed(1)}%
               </Text>
             </>
           ) : (
             // 기본: 총 자산
             <>
-              <Text style={styles.centerSmallLabel}>총 자산</Text>
-              <Text style={styles.centerTotalValue}>
+              <Text style={[styles.centerSmallLabel, { color: colors.textTertiary }]}>총 자산</Text>
+              <Text style={[styles.centerTotalValue, { color: colors.textPrimary }]}>
                 {formatCurrency(totalValue)}
               </Text>
             </>
@@ -210,16 +211,17 @@ export default function AllocationPieChart({
               key={arc.key}
               style={[
                 styles.legendItem,
-                selectedIndex === i && styles.legendItemSelected,
+                { backgroundColor: colors.surface },
+                selectedIndex === i && { backgroundColor: colors.surfaceLight, borderWidth: 1, borderColor: colors.border },
               ]}
               onPress={() => setSelectedIndex(selectedIndex === i ? null : i)}
               activeOpacity={0.7}
             >
               <View style={[styles.legendDot, { backgroundColor: arc.color }]} />
-              <Text style={styles.legendLabel} numberOfLines={1}>
+              <Text style={[styles.legendLabel, { color: colors.textSecondary }]} numberOfLines={1}>
                 {arc.icon ? `${arc.icon} ` : ''}{arc.label}
               </Text>
-              <Text style={styles.legendPercent}>
+              <Text style={[styles.legendPercent, { color: colors.textPrimary }]}>
                 {arc.percentage.toFixed(1)}%
               </Text>
             </TouchableOpacity>
@@ -247,13 +249,11 @@ const styles = StyleSheet.create({
   },
   centerSmallLabel: {
     fontSize: 11,
-    color: '#888',
     marginBottom: 2,
   },
   centerTotalValue: {
     fontSize: 18,
     fontWeight: '800',
-    color: COLORS.textPrimary,
   },
   centerIcon: {
     fontSize: 16,
@@ -261,18 +261,15 @@ const styles = StyleSheet.create({
   },
   centerLabel: {
     fontSize: 12,
-    color: '#CCC',
     fontWeight: '600',
   },
   centerValue: {
     fontSize: 16,
     fontWeight: '800',
-    color: COLORS.textPrimary,
     marginTop: 2,
   },
   centerPercent: {
     fontSize: 11,
-    color: COLORS.primary,
     fontWeight: '700',
     marginTop: 1,
   },
@@ -288,16 +285,10 @@ const styles = StyleSheet.create({
   legendItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1E1E1E',
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
     gap: 5,
-  },
-  legendItemSelected: {
-    backgroundColor: '#2A2A2A',
-    borderWidth: 1,
-    borderColor: '#444',
   },
   legendDot: {
     width: 8,
@@ -306,12 +297,10 @@ const styles = StyleSheet.create({
   },
   legendLabel: {
     fontSize: 11,
-    color: '#CCC',
     maxWidth: 80,
   },
   legendPercent: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#FFF',
   },
 });
