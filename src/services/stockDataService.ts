@@ -85,7 +85,7 @@ export async function fetchExchangeRate(): Promise<number> {
         params: { interval: '1d', range: '1d' },
         timeout: 10000,
         headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; SmartRebalancer/1.0)',
+          'User-Agent': 'Mozilla/5.0 (compatible; Baln/1.0)',
         },
       }
     );
@@ -156,7 +156,7 @@ export async function fetchStockFundamentals(
         params: { modules },
         timeout: 15000,
         headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; SmartRebalancer/1.0)',
+          'User-Agent': 'Mozilla/5.0 (compatible; Baln/1.0)',
         },
       }
     );

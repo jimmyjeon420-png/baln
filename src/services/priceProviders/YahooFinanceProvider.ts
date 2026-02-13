@@ -77,7 +77,7 @@ export class YahooFinanceProvider {
           },
           timeout: this.timeout,
           headers: {
-            'User-Agent': 'Mozilla/5.0 (compatible; SmartRebalancer/1.0)',
+            'User-Agent': 'Mozilla/5.0 (compatible; Baln/1.0)',
           },
         }
       );

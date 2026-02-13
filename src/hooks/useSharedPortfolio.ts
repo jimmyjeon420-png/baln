@@ -60,13 +60,13 @@ async function fetchSharedPortfolio(): Promise<SharedPortfolioData> {
   // 홈 탭용 Asset 배열
   const assets = data.map(transformDbRowToAsset);
 
-  // 부동산 자산 필터링 (RE_ 티커)
-  const realEstateAssets = assets.filter(a => a.ticker?.startsWith('RE_'));
+  // 부동산 자산 필터링 (RE_ 티커) — ticker undefined 방어
+  const realEstateAssets = assets.filter(a => a.ticker && a.ticker.startsWith('RE_'));
   const totalRealEstate = realEstateAssets.reduce((sum, a) => sum + a.currentValue, 0);
 
   // 진단/처방전용 PortfolioAsset 배열 (부동산 제외 — Gemini에 전달하지 않음)
   const portfolioAssets: PortfolioAsset[] = data
-    .filter((item: any) => !item.ticker?.startsWith('RE_'))
+    .filter((item: any) => !item.ticker || !item.ticker.startsWith('RE_'))
     .map((item: any) => ({
     ticker: item.ticker || 'UNKNOWN',
     name: item.name || '알 수 없는 자산',

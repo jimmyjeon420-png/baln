@@ -110,8 +110,8 @@ function mapSignals(
       p => p.ticker === asset.ticker || p.name === asset.name
     );
 
-    // 포트폴리오에 없으면 green
-    if (!portfolioAsset) {
+    // 포트폴리오에 없거나 currentValue 없으면 green
+    if (!portfolioAsset || portfolioAsset.currentValue == null) {
       return { ...asset, signal: 'green' as const };
     }
 

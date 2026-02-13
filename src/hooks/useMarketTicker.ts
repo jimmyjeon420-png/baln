@@ -50,7 +50,7 @@ async function fetchYahooQuote(symbol: string): Promise<{
     const timeoutId = setTimeout(() => controller.abort(), 8000);
 
     const resp = await fetch(url, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; SmartRebalancer/1.0)' },
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Baln/1.0)' },
       signal: controller.signal,
     });
     clearTimeout(timeoutId);

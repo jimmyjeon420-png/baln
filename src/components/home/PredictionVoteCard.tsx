@@ -142,8 +142,9 @@ export default function PredictionVoteCard({
   const completeFade = React.useRef(new Animated.Value(0)).current;
 
   // 질문 목록: polls prop 우선, 없으면 currentPoll을 배열로 래핑
+  // polls가 undefined일 수 있으므로 빈 배열 fallback 보장
   const allPolls: PollItem[] = React.useMemo(() => {
-    if (pollsProp && pollsProp.length > 0) return pollsProp;
+    if (Array.isArray(pollsProp) && pollsProp.length > 0) return pollsProp;
     if (currentPoll) return [currentPoll];
     return [];
   }, [pollsProp, currentPoll]);

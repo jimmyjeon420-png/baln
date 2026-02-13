@@ -94,22 +94,28 @@ export function useContextCard(options?: { retryCount?: number }) {
   const [cachedData, setCachedData] = useState<ContextCardWithImpact | null>(null);
   const [lastUpdated, setLastUpdated] = useState<number | null>(null);
   const isCacheLoaded = useRef(false);
+  const isCacheLoading = useRef(false);
 
-  // 앱 실행 시 캐시를 한 번만 로드
+  // 앱 실행 시 캐시를 한 번만 로드 (race condition 방지: 이중 guard)
   useEffect(() => {
-    if (isCacheLoaded.current) return;
-    isCacheLoaded.current = true;
+    if (isCacheLoaded.current || isCacheLoading.current) return;
+    isCacheLoading.current = true;
 
     (async () => {
-      const [cached, timestamp] = await Promise.all([
-        getCachedCard(),
-        getCachedCardTimestamp(),
-      ]);
-      if (cached) {
-        setCachedData(cached);
-      }
-      if (timestamp) {
-        setLastUpdated(timestamp);
+      try {
+        const [cached, timestamp] = await Promise.all([
+          getCachedCard(),
+          getCachedCardTimestamp(),
+        ]);
+        if (cached) {
+          setCachedData(cached);
+        }
+        if (timestamp) {
+          setLastUpdated(timestamp);
+        }
+      } finally {
+        isCacheLoaded.current = true;
+        isCacheLoading.current = false;
       }
     })();
   }, []);
