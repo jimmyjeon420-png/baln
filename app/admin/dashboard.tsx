@@ -5,13 +5,15 @@
  *
  * 비유: "회사의 실시간 성적표"
  *   - 상단 4장 카드 = 가장 중요한 핵심 지표 (유저수, 활성, 신규, 프리미엄)
+ *     + 어제 대비 변화량 화살표 (DeltaIndicator)
  *   - 중단 4장 카드 = 운영 건강 지표 (주간활성, 크레딧, 예측참여, 이탈위험)
- *   - 하단 피드 = 최근 15건 사용자 활동 로그
+ *   - 활동 요약 바 = 투표/카드/조회 건수 한줄 요약
+ *   - 하단 피드 = 시간대별 그룹으로 분류된 최근 활동 로그
  *
  * 진입점: profile.tsx 관리자 메뉴 → "대시보드"
  */
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -24,7 +26,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useAdminOverview, useRecentActivity } from '../../src/hooks/useAdminDashboard';
+import {
+  useAdminOverview,
+  useRecentActivity,
+  useAdminDailyComparison,
+} from '../../src/hooks/useAdminDashboard';
+import DeltaIndicator from '../../src/components/admin/DeltaIndicator';
 import { COLORS } from '../../src/styles/theme';
 
 // ─── 타입 정의 ─────────────────────────────────────────────
@@ -37,6 +44,18 @@ interface KpiCardConfig {
   color: string;
   getValue: (data: any) => string;
   getSubLabel?: (data: any) => string;
+  /** comparison 데이터에서 delta를 꺼내기 위한 키 */
+  comparisonKey?: string;
+  /** delta 옆에 붙는 접미사 (예: "명", "건") */
+  deltaSuffix?: string;
+}
+
+interface ActivityEvent {
+  event_name: string;
+  properties: Record<string, any> | null;
+  user_id: string | null;
+  email: string | null;
+  created_at: string;
 }
 
 // ─── 이벤트 이름 한국어 매핑 ──────────────────────────────────
@@ -84,6 +103,90 @@ function getRelativeTime(dateString: string): string {
   return date.toLocaleDateString('ko-KR');
 }
 
+// ─── 시간대 그룹 분류 유틸 ───────────────────────────────────
+
+type TimeGroup = '방금' | '1시간 이내' | '오늘' | '어제' | '이전';
+
+function getTimeGroup(dateString: string): TimeGroup {
+  const now = new Date();
+  const date = new Date(dateString);
+  const diffMs = now.getTime() - date.getTime();
+  const diffMinutes = Math.floor(diffMs / (1000 * 60));
+  const diffHours = Math.floor(diffMinutes / 60);
+
+  // "방금" — 5분 미만
+  if (diffMinutes < 5) return '방금';
+
+  // "1시간 이내" — 5분~60분
+  if (diffMinutes < 60) return '1시간 이내';
+
+  // "오늘" — 같은 날
+  const nowDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const eventDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  if (nowDate.getTime() === eventDate.getTime()) return '오늘';
+
+  // "어제" — 하루 전
+  const yesterdayDate = new Date(nowDate);
+  yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+  if (yesterdayDate.getTime() === eventDate.getTime()) return '어제';
+
+  // "이전" — 그 이전
+  return '이전';
+}
+
+/** 시간대별로 활동 이벤트를 그룹화합니다. 그룹 순서는 고정입니다. */
+function groupActivitiesByTime(
+  activities: ActivityEvent[],
+): { group: TimeGroup; items: ActivityEvent[] }[] {
+  const ORDER: TimeGroup[] = ['방금', '1시간 이내', '오늘', '어제', '이전'];
+  const buckets = new Map<TimeGroup, ActivityEvent[]>();
+
+  for (const group of ORDER) {
+    buckets.set(group, []);
+  }
+
+  for (const event of activities) {
+    const group = getTimeGroup(event.created_at);
+    buckets.get(group)!.push(event);
+  }
+
+  // 비어있는 그룹은 제외
+  return ORDER.filter((g) => buckets.get(g)!.length > 0).map((g) => ({
+    group: g,
+    items: buckets.get(g)!,
+  }));
+}
+
+// ─── 활동 요약 카운트 ────────────────────────────────────────
+
+interface ActivitySummary {
+  votes: number;
+  cards: number;
+  views: number;
+}
+
+function computeActivitySummary(activities: ActivityEvent[]): ActivitySummary {
+  let votes = 0;
+  let cards = 0;
+  let views = 0;
+
+  for (const event of activities) {
+    switch (event.event_name) {
+      case 'prediction_vote':
+        votes++;
+        break;
+      case 'context_card_read':
+        cards++;
+        break;
+      case 'screen_view':
+        views++;
+        break;
+    }
+  }
+
+  return { votes, cards, views };
+}
+
 // ─── KPI 카드 설정 ───────────────────────────────────────────
 
 const PRIMARY_KPIS: KpiCardConfig[] = [
@@ -103,6 +206,8 @@ const PRIMARY_KPIS: KpiCardConfig[] = [
       const pct = ((d.dau / d.total_users) * 100).toFixed(1);
       return `전체의 ${pct}%`;
     },
+    comparisonKey: 'dau',
+    deltaSuffix: '명',
   },
   {
     label: '신규 가입',
@@ -110,6 +215,8 @@ const PRIMARY_KPIS: KpiCardConfig[] = [
     color: COLORS.primaryLight,
     getValue: (d) => `${formatNumber(d.new_today)}명`,
     getSubLabel: (d) => `이번 주 ${formatNumber(d.new_this_week)}명`,
+    comparisonKey: 'signups',
+    deltaSuffix: '명',
   },
   {
     label: 'Premium',
@@ -138,6 +245,8 @@ const SECONDARY_KPIS: KpiCardConfig[] = [
     color: COLORS.primary,
     getValue: (d) => formatCredits(d.credits_issued_today),
     getSubLabel: (d) => `(${CREDIT_SYMBOL}${formatNumber(d.credits_issued_today * 100)})`,
+    comparisonKey: 'credits_issued',
+    deltaSuffix: 'C',
   },
   {
     label: '예측 참여',
@@ -145,6 +254,8 @@ const SECONDARY_KPIS: KpiCardConfig[] = [
     color: COLORS.warning,
     getValue: (d) => `${formatNumber(d.predictions_today)}건`,
     getSubLabel: () => '오늘',
+    comparisonKey: 'votes',
+    deltaSuffix: '건',
   },
   {
     label: '이탈 위험',
@@ -157,19 +268,27 @@ const SECONDARY_KPIS: KpiCardConfig[] = [
 
 // ─── 컴포넌트 ────────────────────────────────────────────────
 
-/** KPI 카드 단일 컴포넌트 */
+/** KPI 카드 단일 컴포넌트 (어제 대비 delta 표시 포함) */
 function KpiCard({
   config,
   data,
   large,
+  comparison,
 }: {
   config: KpiCardConfig;
   data: any;
   large?: boolean;
+  comparison?: any;
 }) {
   if (!data) return null;
   const value = config.getValue(data);
   const subLabel = config.getSubLabel?.(data);
+
+  // comparison 데이터에서 delta 추출
+  const delta =
+    comparison && config.comparisonKey && comparison[config.comparisonKey]
+      ? comparison[config.comparisonKey].delta
+      : null;
 
   return (
     <View style={[styles.kpiCard, large && styles.kpiCardLarge]}>
@@ -184,6 +303,16 @@ function KpiCard({
       <Text style={[styles.kpiValue, large && styles.kpiValueLarge, { color: config.color }]}>
         {value}
       </Text>
+      {/* 어제 대비 변화량 — comparison 데이터가 있을 때만 표시 */}
+      {delta !== null && delta !== undefined && (
+        <View style={styles.deltaContainer}>
+          <DeltaIndicator
+            delta={delta}
+            suffix={config.deltaSuffix}
+            compact={!large}
+          />
+        </View>
+      )}
       {subLabel && (
         <Text style={styles.kpiSubLabel}>{subLabel}</Text>
       )}
@@ -192,17 +321,7 @@ function KpiCard({
 }
 
 /** 최근 활동 아이템 컴포넌트 */
-function ActivityItem({
-  event,
-}: {
-  event: {
-    event_name: string;
-    properties: Record<string, any> | null;
-    user_id: string | null;
-    email: string | null;
-    created_at: string;
-  };
-}) {
+function ActivityItem({ event }: { event: ActivityEvent }) {
   const mapped = EVENT_LABEL_MAP[event.event_name];
   const label = mapped?.label ?? event.event_name;
   const icon = mapped?.icon ?? ('ellipse-outline' as IoniconsName);
@@ -229,6 +348,44 @@ function ActivityItem({
   );
 }
 
+/** 시간대 그룹 섹션 헤더 */
+function TimeGroupHeader({ group }: { group: TimeGroup }) {
+  return (
+    <View style={styles.timeGroupHeader}>
+      <View style={styles.timeGroupDot} />
+      <Text style={styles.timeGroupText}>{group}</Text>
+    </View>
+  );
+}
+
+/** 활동 요약 바 — 투표/카드/조회 건수 한줄 요약 */
+function ActivitySummaryBar({ summary }: { summary: ActivitySummary }) {
+  return (
+    <View style={styles.summaryBar}>
+      <View style={styles.summaryItem}>
+        <Ionicons name="help-circle-outline" size={14} color={COLORS.textSecondary} />
+        <Text style={styles.summaryText}>
+          투표 <Text style={styles.summaryCount}>{summary.votes}건</Text>
+        </Text>
+      </View>
+      <View style={styles.summaryDivider} />
+      <View style={styles.summaryItem}>
+        <Ionicons name="newspaper-outline" size={14} color={COLORS.textSecondary} />
+        <Text style={styles.summaryText}>
+          카드 <Text style={styles.summaryCount}>{summary.cards}건</Text>
+        </Text>
+      </View>
+      <View style={styles.summaryDivider} />
+      <View style={styles.summaryItem}>
+        <Ionicons name="eye-outline" size={14} color={COLORS.textSecondary} />
+        <Text style={styles.summaryText}>
+          조회 <Text style={styles.summaryCount}>{summary.views}건</Text>
+        </Text>
+      </View>
+    </View>
+  );
+}
+
 // ─── 메인 화면 ───────────────────────────────────────────────
 
 export default function AdminDashboardScreen() {
@@ -248,16 +405,33 @@ export default function AdminDashboardScreen() {
     refetch: refetchActivities,
   } = useRecentActivity(15);
 
+  const {
+    data: comparison,
+    refetch: refetchComparison,
+  } = useAdminDailyComparison();
+
   const isLoading = overviewLoading && !overview;
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      await Promise.all([refetchOverview(), refetchActivities()]);
+      await Promise.all([refetchOverview(), refetchActivities(), refetchComparison()]);
     } finally {
       setRefreshing(false);
     }
-  }, [refetchOverview, refetchActivities]);
+  }, [refetchOverview, refetchActivities, refetchComparison]);
+
+  // 활동 피드를 시간대별로 그룹화
+  const groupedActivities = useMemo(() => {
+    if (!activities || activities.length === 0) return [];
+    return groupActivitiesByTime(activities);
+  }, [activities]);
+
+  // 활동 요약 카운트 계산
+  const activitySummary = useMemo(() => {
+    if (!activities || activities.length === 0) return null;
+    return computeActivitySummary(activities);
+  }, [activities]);
 
   // ─── 로딩 상태 ─────────────────────────────────
 
@@ -341,7 +515,13 @@ export default function AdminDashboardScreen() {
 
         <View style={styles.kpiGrid}>
           {PRIMARY_KPIS.map((kpi) => (
-            <KpiCard key={kpi.label} config={kpi} data={overview} large />
+            <KpiCard
+              key={kpi.label}
+              config={kpi}
+              data={overview}
+              large
+              comparison={comparison}
+            />
           ))}
         </View>
 
@@ -353,7 +533,12 @@ export default function AdminDashboardScreen() {
 
         <View style={styles.kpiGrid}>
           {SECONDARY_KPIS.map((kpi) => (
-            <KpiCard key={kpi.label} config={kpi} data={overview} />
+            <KpiCard
+              key={kpi.label}
+              config={kpi}
+              data={overview}
+              comparison={comparison}
+            />
           ))}
         </View>
 
@@ -392,15 +577,30 @@ export default function AdminDashboardScreen() {
           <Text style={styles.sectionSubtitle}>최근 15건</Text>
         </View>
 
+        {/* 활동 요약 바 — 투표/카드/조회 건수 */}
+        {activitySummary && (
+          <ActivitySummaryBar summary={activitySummary} />
+        )}
+
         {activitiesLoading && !activities ? (
           <View style={styles.activityLoadingContainer}>
             <ActivityIndicator size="small" color={COLORS.primary} />
             <Text style={styles.activityLoadingText}>활동 내역 불러오는 중...</Text>
           </View>
-        ) : activities && activities.length > 0 ? (
+        ) : groupedActivities.length > 0 ? (
           <View style={styles.activityList}>
-            {activities.map((event, index) => (
-              <ActivityItem key={`${event.created_at}-${index}`} event={event} />
+            {groupedActivities.map((section) => (
+              <React.Fragment key={section.group}>
+                {/* 시간대 그룹 헤더 */}
+                <TimeGroupHeader group={section.group} />
+                {/* 해당 그룹의 활동 아이템들 */}
+                {section.items.map((event, index) => (
+                  <ActivityItem
+                    key={`${section.group}-${event.created_at}-${index}`}
+                    event={event}
+                  />
+                ))}
+              </React.Fragment>
             ))}
           </View>
         ) : (
@@ -561,6 +761,9 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     marginTop: 4,
   },
+  deltaContainer: {
+    marginTop: 4,
+  },
 
   // 정보 배너
   infoBanner: {
@@ -590,6 +793,58 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: COLORS.textPrimary,
+  },
+
+  // 활동 요약 바
+  summaryBar: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.surface,
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginBottom: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  summaryItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  summaryText: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+  },
+  summaryCount: {
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+  },
+  summaryDivider: {
+    width: 1,
+    height: 14,
+    backgroundColor: COLORS.border,
+    marginHorizontal: 12,
+  },
+
+  // 시간대 그룹 헤더
+  timeGroupHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    backgroundColor: COLORS.surfaceLight,
+  },
+  timeGroupDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: COLORS.primary,
+    marginRight: 8,
+  },
+  timeGroupText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: COLORS.textSecondary,
   },
 
   // 최근 활동 피드

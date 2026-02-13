@@ -2,14 +2,16 @@
  * 관리자용 신고 처리 화면
  *
  * 기능:
- * - 신고 목록 표시 (필터링: 전체/대기/승인/거부)
+ * - 신고 목록 표시 (필터링: 전체/대기/승인/거부) + 건수 배지
+ * - 요약 배너 (총 건수, 대기 건수, 처리율)
+ * - 24시간 초과 대기 긴급 표시
  * - 신고 상세 정보 모달
  * - 액션: 콘텐츠 삭제 / 신고 승인 / 신고 거부
  *
  * 진입점: profile.tsx 개발 모드 메뉴 (추후 관리자 인증 추가)
  */
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -38,13 +40,39 @@ export default function AdminReportsScreen() {
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
   const [selectedReport, setSelectedReport] = useState<ReportWithContent | null>(null);
 
-  // 쿼리
-  const queryOptions = filterStatus === 'all' ? {} : { status: filterStatus as ReportStatus };
-  const { data: reports, isLoading, error, refetch } = useReports(queryOptions);
+  // 쿼리 — 항상 전체 데이터를 가져온 뒤 클라이언트에서 필터링
+  const { data: allReports, isLoading, error, refetch } = useReports();
 
   // 뮤테이션
   const updateStatusMutation = useUpdateReportStatus();
   const deleteContentMutation = useDeleteReportedContent();
+
+  // ================================================================
+  // 클라이언트 사이드 필터링 + 상태별 건수 계산
+  // ================================================================
+
+  const statusCounts = useMemo(() => {
+    const reports = allReports ?? [];
+    return {
+      all: reports.length,
+      pending: reports.filter((r) => r.status === 'pending').length,
+      resolved: reports.filter((r) => r.status === 'resolved').length,
+      rejected: reports.filter((r) => r.status === 'rejected').length,
+    };
+  }, [allReports]);
+
+  const filteredReports = useMemo(() => {
+    const reports = allReports ?? [];
+    if (filterStatus === 'all') return reports;
+    return reports.filter((r) => r.status === filterStatus);
+  }, [allReports, filterStatus]);
+
+  // 요약 배너 데이터
+  const summaryRate = useMemo(() => {
+    const total = statusCounts.all;
+    if (total === 0) return 0;
+    return Math.round(((statusCounts.resolved + statusCounts.rejected) / total) * 100);
+  }, [statusCounts]);
 
   // 필터 버튼
   const filters: { key: FilterStatus; label: string }[] = [
@@ -121,6 +149,15 @@ export default function AdminReportsScreen() {
   };
 
   // ================================================================
+  // 긴급도 판별 (24시간 초과 대기)
+  // ================================================================
+
+  const isUrgent = (item: ReportWithContent): boolean => {
+    if (item.status !== 'pending') return false;
+    return Date.now() - new Date(item.created_at).getTime() > 86400000;
+  };
+
+  // ================================================================
   // 렌더링 헬퍼
   // ================================================================
 
@@ -144,6 +181,7 @@ export default function AdminReportsScreen() {
   const renderReportItem = ({ item }: { item: ReportWithContent }) => {
     const targetContent = item.target_content as any;
     const contentPreview = targetContent?.content?.substring(0, 50) || '(삭제된 콘텐츠)';
+    const urgent = isUrgent(item);
 
     return (
       <TouchableOpacity style={styles.reportItem} onPress={() => setSelectedReport(item)}>
@@ -155,6 +193,12 @@ export default function AdminReportsScreen() {
               color={COLORS.textSecondary}
             />
             <Text style={styles.reportReason}>{REPORT_REASON_LABELS[item.reason]}</Text>
+            {/* 긴급 표시: 24시간 초과 대기 */}
+            {urgent && (
+              <View style={styles.urgentBadge}>
+                <Text style={styles.urgentBadgeText}>!!</Text>
+              </View>
+            )}
           </View>
           {renderStatusBadge(item.status)}
         </View>
@@ -194,28 +238,61 @@ export default function AdminReportsScreen() {
         <View style={{ width: 24 }} />
       </View>
 
-      {/* 필터 칩 */}
+      {/* 필터 칩 + 건수 배지 */}
       <View style={styles.filterContainer}>
-        {filters.map((filter) => (
-          <TouchableOpacity
-            key={filter.key}
-            style={[
-              styles.filterChip,
-              filterStatus === filter.key && styles.filterChipActive,
-            ]}
-            onPress={() => setFilterStatus(filter.key)}
-          >
-            <Text
+        {filters.map((filter) => {
+          const count = statusCounts[filter.key];
+          const isPending = filter.key === 'pending';
+          const hasPendingItems = isPending && count > 0;
+
+          return (
+            <TouchableOpacity
+              key={filter.key}
               style={[
-                styles.filterChipText,
-                filterStatus === filter.key && styles.filterChipTextActive,
+                styles.filterChip,
+                filterStatus === filter.key && styles.filterChipActive,
               ]}
+              onPress={() => setFilterStatus(filter.key)}
             >
-              {filter.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
+              <Text
+                style={[
+                  styles.filterChipText,
+                  filterStatus === filter.key && styles.filterChipTextActive,
+                ]}
+              >
+                {filter.label}
+              </Text>
+              {count > 0 && (
+                <View
+                  style={[
+                    styles.filterCountBadge,
+                    hasPendingItems && styles.filterCountBadgeUrgent,
+                    filterStatus === filter.key && !hasPendingItems && styles.filterCountBadgeActive,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.filterCountText,
+                      (hasPendingItems || filterStatus === filter.key) && styles.filterCountTextActive,
+                    ]}
+                  >
+                    {count}
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          );
+        })}
       </View>
+
+      {/* 요약 배너 */}
+      {!isLoading && !error && statusCounts.all > 0 && (
+        <View style={styles.summaryBanner}>
+          <Text style={styles.summaryText}>
+            총 {statusCounts.all}건 | 대기 {statusCounts.pending}건 | 처리율 {summaryRate}%
+          </Text>
+        </View>
+      )}
 
       {/* 신고 목록 */}
       {isLoading ? (
@@ -228,7 +305,7 @@ export default function AdminReportsScreen() {
         </View>
       ) : (
         <FlatList
-          data={reports}
+          data={filteredReports}
           renderItem={renderReportItem}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
@@ -385,10 +462,13 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   filterChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
     backgroundColor: COLORS.surface,
+    gap: 6,
   },
   filterChipActive: {
     backgroundColor: COLORS.primary,
@@ -401,6 +481,47 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontWeight: '600',
   },
+  filterCountBadge: {
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: COLORS.surfaceLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 5,
+  },
+  filterCountBadgeUrgent: {
+    backgroundColor: COLORS.error,
+  },
+  filterCountBadgeActive: {
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  filterCountText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: COLORS.textSecondary,
+  },
+  filterCountTextActive: {
+    color: '#FFF',
+  },
+
+  // 요약 배너
+  summaryBanner: {
+    marginHorizontal: 16,
+    marginBottom: 8,
+    backgroundColor: COLORS.surface,
+    borderRadius: 12,
+    padding: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  summaryText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.textSecondary,
+  },
+
   listContent: {
     padding: 16,
   },
@@ -426,6 +547,23 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: COLORS.textPrimary,
   },
+
+  // 긴급 뱃지 (24시간 초과 대기)
+  urgentBadge: {
+    minWidth: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: COLORS.error,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  urgentBadgeText: {
+    fontSize: 11,
+    fontWeight: '900',
+    color: '#FFF',
+  },
+
   statusBadge: {
     paddingHorizontal: 8,
     paddingVertical: 4,

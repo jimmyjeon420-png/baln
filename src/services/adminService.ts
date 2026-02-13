@@ -265,3 +265,110 @@ export async function adminCancelGathering(gatheringId: string): Promise<AdminAc
   if (error) throw new Error(error.message);
   return data as AdminActionResult;
 }
+
+// ─── 고도화: 비교 지표, 유저 상세, 차단 ──────────────────
+
+/** 어제 vs 오늘 비교 지표 (6개 항목) */
+export interface DailyComparisonMetric {
+  today: number;
+  yesterday: number;
+  delta: number;
+}
+
+export interface DailyComparisonData {
+  dau: DailyComparisonMetric;
+  signups: DailyComparisonMetric;
+  votes: DailyComparisonMetric;
+  posts: DailyComparisonMetric;
+  credits_issued: DailyComparisonMetric;
+  credits_spent: DailyComparisonMetric;
+}
+
+/** 유저 상세 프로필 */
+export interface AdminUserDetail {
+  profile: {
+    id: string;
+    email: string | null;
+    plan_type: string;
+    tier: string;
+    total_assets: number;
+    created_at: string;
+    is_banned: boolean;
+    banned_at: string | null;
+    ban_reason: string | null;
+    display_name: string | null;
+  };
+  credits: {
+    balance: number;
+    recent_transactions: {
+      type: string;
+      amount: number;
+      description: string | null;
+      created_at: string;
+    }[];
+  };
+  badges: {
+    badge_id: string;
+    earned_at: string;
+  }[];
+  predictions: {
+    accuracy_rate: number | null;
+    total_votes: number;
+    correct_votes: number;
+    current_streak: number;
+    best_streak: number;
+    recent_votes: {
+      question_id: string;
+      choice: string;
+      is_correct: boolean | null;
+      created_at: string;
+    }[];
+  };
+  streak: {
+    current_streak: number;
+    longest_streak: number;
+    last_active_date: string | null;
+  };
+  recent_activities: {
+    event_name: string;
+    properties: Record<string, any> | null;
+    created_at: string;
+  }[];
+}
+
+/** 유저 차단 결과 */
+export interface BanUserResult {
+  success: boolean;
+  is_banned?: boolean;
+  user_id?: string;
+  error?: string;
+}
+
+/** 어제 vs 오늘 비교 데이터 조회 */
+export async function fetchAdminDailyComparison(): Promise<DailyComparisonData> {
+  const { data, error } = await supabase.rpc('admin_get_daily_comparison');
+  if (error) throw new Error(error.message);
+  return data as DailyComparisonData;
+}
+
+/** 유저 상세 프로필 조회 */
+export async function fetchAdminUserDetail(userId: string): Promise<AdminUserDetail> {
+  const { data, error } = await supabase.rpc('admin_get_user_detail', {
+    p_user_id: userId,
+  });
+  if (error) throw new Error(error.message);
+  return data as AdminUserDetail;
+}
+
+/** 유저 차단/해제 토글 */
+export async function adminBanUser(params: {
+  userId: string;
+  reason?: string;
+}): Promise<BanUserResult> {
+  const { data, error } = await supabase.rpc('admin_ban_user', {
+    p_user_id: params.userId,
+    p_reason: params.reason || null,
+  });
+  if (error) throw new Error(error.message);
+  return data as BanUserResult;
+}

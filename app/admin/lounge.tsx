@@ -4,13 +4,15 @@
  * 기능:
  * - 게시글 관리: 목록 표시, 삭제, 고정/해제, 필터링 (전체/신고됨/고정됨)
  * - 모임 관리: 목록 표시, 취소, 필터링 (전체/진행중/마감/취소됨)
+ * - 일괄 선택 모드: 게시글 다중 선택 후 일괄 삭제/고정
+ * - 게시글 본문 더보기/접기
  *
  * 비유: "커뮤니티 운영 관리실" — 게시글과 모임을 한눈에 보고 관리하는 화면
  *
  * 진입점: 관리자 허브 → 라운지 관리
  */
 
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -100,6 +102,13 @@ export default function AdminLoungeScreen() {
   const [postFilter, setPostFilter] = useState<PostFilter>('all');
   const [gatheringFilter, setGatheringFilter] = useState<GatheringFilter>('all');
 
+  // ── Enhancement 2: 더보기/접기 상태 ──
+  const [expandedPosts, setExpandedPosts] = useState<Set<string>>(new Set());
+
+  // ── Enhancement 3: 일괄 선택 모드 상태 ──
+  const [isSelecting, setIsSelecting] = useState(false);
+  const [selectedPostIds, setSelectedPostIds] = useState<Set<string>>(new Set());
+
   // ── 게시글 쿼리 & 뮤테이션 ──
   const {
     data: postsData,
@@ -134,6 +143,131 @@ export default function AdminLoungeScreen() {
   });
 
   const cancelGatheringMutation = useAdminCancelGathering();
+
+  // ── Enhancement 4: 신고된 게시글 수 계산 ──
+  const reportedPostCount = useMemo(() => {
+    if (!postsData?.posts) return 0;
+    return postsData.posts.filter((p) => p.report_count > 0).length;
+  }, [postsData?.posts]);
+
+  // ================================================================
+  // 더보기/접기 토글
+  // ================================================================
+
+  const toggleExpandPost = useCallback((postId: string) => {
+    setExpandedPosts((prev) => {
+      const next = new Set(prev);
+      if (next.has(postId)) {
+        next.delete(postId);
+      } else {
+        next.add(postId);
+      }
+      return next;
+    });
+  }, []);
+
+  // ================================================================
+  // 일괄 선택 모드 핸들러
+  // ================================================================
+
+  const enterSelectionMode = useCallback(() => {
+    setIsSelecting(true);
+    setSelectedPostIds(new Set());
+  }, []);
+
+  const exitSelectionMode = useCallback(() => {
+    setIsSelecting(false);
+    setSelectedPostIds(new Set());
+  }, []);
+
+  const togglePostSelection = useCallback((postId: string) => {
+    setSelectedPostIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(postId)) {
+        next.delete(postId);
+      } else {
+        next.add(postId);
+      }
+      return next;
+    });
+  }, []);
+
+  // ================================================================
+  // 일괄 삭제 핸들러
+  // ================================================================
+
+  const handleBatchDelete = useCallback(() => {
+    const count = selectedPostIds.size;
+    if (count === 0) return;
+
+    Alert.alert(
+      '일괄 삭제',
+      `선택한 ${count}건의 게시글을 삭제하시겠습니까?`,
+      [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '삭제',
+          style: 'destructive',
+          onPress: async () => {
+            const ids = Array.from(selectedPostIds);
+            const results = await Promise.allSettled(
+              ids.map((id) => deletePostMutation.mutateAsync(id))
+            );
+            const successCount = results.filter(
+              (r) => r.status === 'fulfilled' && r.value.success
+            ).length;
+            const failCount = count - successCount;
+
+            exitSelectionMode();
+
+            if (failCount > 0) {
+              Alert.alert('결과', `${successCount}건 처리됨, ${failCount}건 실패`);
+            } else {
+              Alert.alert('완료', `${successCount}건 처리됨`);
+            }
+          },
+        },
+      ]
+    );
+  }, [selectedPostIds, deletePostMutation, exitSelectionMode]);
+
+  // ================================================================
+  // 일괄 고정 핸들러
+  // ================================================================
+
+  const handleBatchPin = useCallback(() => {
+    const count = selectedPostIds.size;
+    if (count === 0) return;
+
+    Alert.alert(
+      '일괄 고정',
+      `선택한 ${count}건의 게시글을 고정/해제하시겠습니까?`,
+      [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '고정 토글',
+          onPress: async () => {
+            const ids = Array.from(selectedPostIds);
+            const results = await Promise.allSettled(
+              ids.map((id) => togglePinMutation.mutateAsync(id))
+            );
+            const successCount = results.filter(
+              (r) => r.status === 'fulfilled' && r.value.success
+            ).length;
+            const failCount = count - successCount;
+
+            exitSelectionMode();
+
+            if (failCount > 0) {
+              Alert.alert('결과', `${successCount}건 처리됨, ${failCount}건 실패`);
+            } else {
+              Alert.alert('완료', `${successCount}건 처리됨`);
+            }
+          },
+        },
+      ]
+    );
+  }, [selectedPostIds, togglePinMutation, exitSelectionMode]);
 
   // ================================================================
   // 게시글 액션 핸들러
@@ -228,98 +362,145 @@ export default function AdminLoungeScreen() {
     const isPinning = togglePinMutation.isPending && mutatingPostId.current === item.id;
     const isDeleting = deletePostMutation.isPending && mutatingPostId.current === item.id;
     const isMutating = isPinning || isDeleting;
+    const isExpanded = expandedPosts.has(item.id);
+    const isLongContent = item.content.length > 100;
+    const isSelected = selectedPostIds.has(item.id);
 
     return (
       <View style={styles.itemCard}>
-        {/* 헤더: 카테고리 + 고정 뱃지 + 신고 뱃지 */}
-        <View style={styles.itemHeader}>
-          <View style={styles.itemHeaderLeft}>
-            {item.is_pinned && (
-              <View style={[styles.badge, { backgroundColor: COLORS.primary + '20' }]}>
-                <Ionicons name="pin" size={10} color={COLORS.primary} />
-                <Text style={[styles.badgeText, { color: COLORS.primary }]}>고정</Text>
+        <View style={{ flexDirection: 'row' }}>
+          {/* 선택 모드: 체크박스 */}
+          {isSelecting && (
+            <TouchableOpacity
+              style={styles.checkboxContainer}
+              onPress={() => togglePostSelection(item.id)}
+              activeOpacity={0.6}
+            >
+              <Ionicons
+                name={isSelected ? 'checkbox' : 'checkbox-outline'}
+                size={22}
+                color={isSelected ? COLORS.primary : COLORS.textTertiary}
+              />
+            </TouchableOpacity>
+          )}
+
+          <View style={{ flex: 1 }}>
+            {/* 헤더: 카테고리 + 고정 뱃지 + 신고 뱃지 */}
+            <View style={styles.itemHeader}>
+              <View style={styles.itemHeaderLeft}>
+                {item.is_pinned && (
+                  <View style={[styles.badge, { backgroundColor: COLORS.primary + '20' }]}>
+                    <Ionicons name="pin" size={10} color={COLORS.primary} />
+                    <Text style={[styles.badgeText, { color: COLORS.primary }]}>고정</Text>
+                  </View>
+                )}
+                <View style={[styles.badge, { backgroundColor: COLORS.info + '20' }]}>
+                  <Text style={[styles.badgeText, { color: COLORS.info }]}>
+                    {CATEGORY_LABELS[item.category] || item.category}
+                  </Text>
+                </View>
+                {item.report_count > 0 && (
+                  <View style={[styles.badge, { backgroundColor: COLORS.error + '20' }]}>
+                    <Ionicons name="flag" size={10} color={COLORS.error} />
+                    <Text style={[styles.badgeText, { color: COLORS.error }]}>
+                      신고 {item.report_count}건
+                    </Text>
+                  </View>
+                )}
               </View>
-            )}
-            <View style={[styles.badge, { backgroundColor: COLORS.info + '20' }]}>
-              <Text style={[styles.badgeText, { color: COLORS.info }]}>
-                {CATEGORY_LABELS[item.category] || item.category}
-              </Text>
+              <Text style={styles.itemDate}>{getRelativeTime(item.created_at)}</Text>
             </View>
-            {item.report_count > 0 && (
-              <View style={[styles.badge, { backgroundColor: COLORS.error + '20' }]}>
-                <Ionicons name="flag" size={10} color={COLORS.error} />
-                <Text style={[styles.badgeText, { color: COLORS.error }]}>
-                  신고 {item.report_count}건
+
+            {/* 작성자 이메일 */}
+            <Text style={styles.itemAuthor} numberOfLines={1}>
+              {item.email || item.display_tag || '알 수 없음'}
+            </Text>
+
+            {/* 본문 미리보기 (Enhancement 2: 더보기/접기) */}
+            <Text
+              style={styles.itemContent}
+              numberOfLines={isExpanded ? 10 : 3}
+            >
+              {item.content}
+            </Text>
+            {isLongContent && (
+              <TouchableOpacity
+                onPress={() => toggleExpandPost(item.id)}
+                activeOpacity={0.6}
+              >
+                <Text style={styles.expandToggleText}>
+                  {isExpanded ? '접기' : '더보기'}
                 </Text>
+              </TouchableOpacity>
+            )}
+
+            {/* 통계 */}
+            <View style={styles.itemStats}>
+              <View style={styles.statItem}>
+                <Ionicons name="heart" size={12} color={COLORS.textTertiary} />
+                <Text style={styles.statText}>{item.likes_count}</Text>
+              </View>
+              <View style={styles.statItem}>
+                <Ionicons name="chatbubble" size={12} color={COLORS.textTertiary} />
+                <Text style={styles.statText}>{item.comments_count}</Text>
+              </View>
+            </View>
+
+            {/* 액션 버튼 — 선택 모드가 아닐 때만 표시 */}
+            {!isSelecting && (
+              <View style={styles.actionRow}>
+                <TouchableOpacity
+                  style={[styles.actionBtn, styles.pinBtn]}
+                  onPress={() => handleTogglePin(item)}
+                  disabled={isMutating}
+                >
+                  {isPinning ? (
+                    <ActivityIndicator size="small" color={COLORS.primary} />
+                  ) : (
+                    <>
+                      <Ionicons
+                        name={item.is_pinned ? 'pin-outline' : 'pin'}
+                        size={14}
+                        color={COLORS.primary}
+                      />
+                      <Text style={[styles.actionBtnText, { color: COLORS.primary }]}>
+                        {item.is_pinned ? '고정 해제' : '고정'}
+                      </Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.actionBtn, styles.deleteBtn]}
+                  onPress={() => handleDeletePost(item)}
+                  disabled={isMutating}
+                >
+                  {isDeleting ? (
+                    <ActivityIndicator size="small" color={COLORS.error} />
+                  ) : (
+                    <>
+                      <Ionicons name="trash-outline" size={14} color={COLORS.error} />
+                      <Text style={[styles.actionBtnText, { color: COLORS.error }]}>삭제</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
               </View>
             )}
           </View>
-          <Text style={styles.itemDate}>{getRelativeTime(item.created_at)}</Text>
-        </View>
-
-        {/* 작성자 이메일 */}
-        <Text style={styles.itemAuthor} numberOfLines={1}>
-          {item.email || item.display_tag || '알 수 없음'}
-        </Text>
-
-        {/* 본문 미리보기 */}
-        <Text style={styles.itemContent} numberOfLines={3}>
-          {item.content}
-        </Text>
-
-        {/* 통계 */}
-        <View style={styles.itemStats}>
-          <View style={styles.statItem}>
-            <Ionicons name="heart" size={12} color={COLORS.textTertiary} />
-            <Text style={styles.statText}>{item.likes_count}</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Ionicons name="chatbubble" size={12} color={COLORS.textTertiary} />
-            <Text style={styles.statText}>{item.comments_count}</Text>
-          </View>
-        </View>
-
-        {/* 액션 버튼 */}
-        <View style={styles.actionRow}>
-          <TouchableOpacity
-            style={[styles.actionBtn, styles.pinBtn]}
-            onPress={() => handleTogglePin(item)}
-            disabled={isMutating}
-          >
-            {isPinning ? (
-              <ActivityIndicator size="small" color={COLORS.primary} />
-            ) : (
-              <>
-                <Ionicons
-                  name={item.is_pinned ? 'pin-outline' : 'pin'}
-                  size={14}
-                  color={COLORS.primary}
-                />
-                <Text style={[styles.actionBtnText, { color: COLORS.primary }]}>
-                  {item.is_pinned ? '고정 해제' : '고정'}
-                </Text>
-              </>
-            )}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.actionBtn, styles.deleteBtn]}
-            onPress={() => handleDeletePost(item)}
-            disabled={isMutating}
-          >
-            {isDeleting ? (
-              <ActivityIndicator size="small" color={COLORS.error} />
-            ) : (
-              <>
-                <Ionicons name="trash-outline" size={14} color={COLORS.error} />
-                <Text style={[styles.actionBtnText, { color: COLORS.error }]}>삭제</Text>
-              </>
-            )}
-          </TouchableOpacity>
         </View>
       </View>
     );
-  }, [handleDeletePost, handleTogglePin, deletePostMutation.isPending, togglePinMutation.isPending]);
+  }, [
+    handleDeletePost,
+    handleTogglePin,
+    deletePostMutation.isPending,
+    togglePinMutation.isPending,
+    expandedPosts,
+    isSelecting,
+    selectedPostIds,
+    togglePostSelection,
+    toggleExpandPost,
+  ]);
 
   // ================================================================
   // 모임 카드 렌더링
@@ -418,12 +599,12 @@ export default function AdminLoungeScreen() {
   }, [handleCancelGathering, cancelGatheringMutation.isPending]);
 
   // ================================================================
-  // 게시글 필터 칩
+  // 게시글 필터 칩 (Enhancement 4: 신고됨 카운트 뱃지)
   // ================================================================
 
   const postFilters: { key: PostFilter; label: string }[] = [
     { key: 'all', label: '전체' },
-    { key: 'reported', label: '신고됨' },
+    { key: 'reported', label: reportedPostCount > 0 ? `신고됨 (${reportedPostCount})` : '신고됨' },
     { key: 'pinned', label: '고정됨' },
   ];
 
@@ -491,20 +672,51 @@ export default function AdminLoungeScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* 헤더 */}
+      {/* 헤더 (Enhancement 3: 선택 모드 대응) */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="chevron-back" size={24} color={COLORS.textPrimary} />
+        <TouchableOpacity
+          onPress={() => {
+            if (isSelecting) {
+              exitSelectionMode();
+            } else {
+              router.back();
+            }
+          }}
+          style={styles.backButton}
+        >
+          <Ionicons
+            name={isSelecting ? 'close' : 'chevron-back'}
+            size={24}
+            color={COLORS.textPrimary}
+          />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>라운지 관리</Text>
-        <View style={{ width: 24 }} />
+        <Text style={styles.headerTitle}>
+          {isSelecting
+            ? `${selectedPostIds.size}건 선택됨`
+            : '라운지 관리'}
+        </Text>
+        {/* Enhancement 3: 선택 모드 진입/취소 버튼 */}
+        {isSelecting ? (
+          <TouchableOpacity onPress={exitSelectionMode} style={styles.headerRightBtn}>
+            <Text style={styles.headerRightBtnText}>취소</Text>
+          </TouchableOpacity>
+        ) : segment === 'posts' ? (
+          <TouchableOpacity onPress={enterSelectionMode} style={styles.headerRightBtn}>
+            <Text style={styles.headerRightBtnText}>선택</Text>
+          </TouchableOpacity>
+        ) : (
+          <View style={{ width: 40 }} />
+        )}
       </View>
 
-      {/* 세그먼트 컨트롤 */}
+      {/* 세그먼트 컨트롤 (Enhancement 1: 카운트 표시) */}
       <View style={styles.segmentContainer}>
         <TouchableOpacity
           style={[styles.segmentBtn, segment === 'posts' && styles.segmentBtnActive]}
-          onPress={() => setSegment('posts')}
+          onPress={() => {
+            setSegment('posts');
+            if (isSelecting) exitSelectionMode();
+          }}
         >
           <Ionicons
             name="document-text"
@@ -517,12 +729,15 @@ export default function AdminLoungeScreen() {
               segment === 'posts' && styles.segmentBtnTextActive,
             ]}
           >
-            게시글
+            게시글 ({postsData?.total_count ?? 0})
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.segmentBtn, segment === 'gatherings' && styles.segmentBtnActive]}
-          onPress={() => setSegment('gatherings')}
+          onPress={() => {
+            setSegment('gatherings');
+            if (isSelecting) exitSelectionMode();
+          }}
         >
           <Ionicons
             name="people"
@@ -535,33 +750,42 @@ export default function AdminLoungeScreen() {
               segment === 'gatherings' && styles.segmentBtnTextActive,
             ]}
           >
-            모임
+            모임 ({gatheringsData?.total_count ?? 0})
           </Text>
         </TouchableOpacity>
       </View>
 
-      {/* 필터 칩 */}
+      {/* 필터 칩 (Enhancement 4: 신고됨 카운트 + 빨간 강조) */}
       <View style={styles.filterContainer}>
         {segment === 'posts'
-          ? postFilters.map((filter) => (
-              <TouchableOpacity
-                key={filter.key}
-                style={[
-                  styles.filterChip,
-                  postFilter === filter.key && styles.filterChipActive,
-                ]}
-                onPress={() => setPostFilter(filter.key)}
-              >
-                <Text
+          ? postFilters.map((filter) => {
+              const isReportedChipHighlighted =
+                filter.key === 'reported' &&
+                reportedPostCount > 0 &&
+                postFilter !== 'reported';
+
+              return (
+                <TouchableOpacity
+                  key={filter.key}
                   style={[
-                    styles.filterChipText,
-                    postFilter === filter.key && styles.filterChipTextActive,
+                    styles.filterChip,
+                    postFilter === filter.key && styles.filterChipActive,
+                    isReportedChipHighlighted && styles.filterChipReportedHighlight,
                   ]}
+                  onPress={() => setPostFilter(filter.key)}
                 >
-                  {filter.label}
-                </Text>
-              </TouchableOpacity>
-            ))
+                  <Text
+                    style={[
+                      styles.filterChipText,
+                      postFilter === filter.key && styles.filterChipTextActive,
+                      isReportedChipHighlighted && styles.filterChipTextReportedHighlight,
+                    ]}
+                  >
+                    {filter.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })
           : gatheringFilters.map((filter) => (
               <TouchableOpacity
                 key={filter.key}
@@ -612,7 +836,10 @@ export default function AdminLoungeScreen() {
           data={postsData?.posts ?? []}
           renderItem={renderPostItem}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[
+            styles.listContent,
+            isSelecting && { paddingBottom: 100 },
+          ]}
           refreshControl={
             <RefreshControl
               refreshing={postsLoading}
@@ -650,6 +877,26 @@ export default function AdminLoungeScreen() {
           showsVerticalScrollIndicator={false}
         />
       )}
+
+      {/* Enhancement 3: 일괄 액션 하단 바 */}
+      {isSelecting && selectedPostIds.size > 0 && (
+        <View style={styles.batchActionBar}>
+          <TouchableOpacity
+            style={styles.batchDeleteBtn}
+            onPress={handleBatchDelete}
+          >
+            <Ionicons name="trash-outline" size={16} color="#FFFFFF" />
+            <Text style={styles.batchBtnText}>일괄 삭제</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.batchPinBtn}
+            onPress={handleBatchPin}
+          >
+            <Ionicons name="pin" size={16} color="#FFFFFF" />
+            <Text style={styles.batchBtnText}>일괄 고정</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -682,6 +929,15 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     color: COLORS.textPrimary,
+  },
+  headerRightBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  headerRightBtnText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.info,
   },
 
   // ── 세그먼트 컨트롤 ──
@@ -731,12 +987,20 @@ const styles = StyleSheet.create({
   filterChipActive: {
     backgroundColor: COLORS.primary,
   },
+  filterChipReportedHighlight: {
+    borderWidth: 1,
+    borderColor: COLORS.error,
+  },
   filterChipText: {
     fontSize: 13,
     color: COLORS.textSecondary,
   },
   filterChipTextActive: {
     color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  filterChipTextReportedHighlight: {
+    color: COLORS.error,
     fontWeight: '600',
   },
 
@@ -809,13 +1073,30 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.textPrimary,
     lineHeight: 20,
-    marginBottom: 8,
+    marginBottom: 4,
+  },
+
+  // ── 더보기/접기 버튼 ──
+  expandToggleText: {
+    fontSize: 12,
+    color: COLORS.info,
+    marginTop: 4,
+    marginBottom: 4,
+  },
+
+  // ── 체크박스 (선택 모드) ──
+  checkboxContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingRight: 10,
+    paddingTop: 2,
   },
 
   // ── 게시글 통계 ──
   itemStats: {
     flexDirection: 'row',
     gap: 12,
+    marginTop: 4,
     marginBottom: 10,
   },
   statItem: {
@@ -877,6 +1158,47 @@ const styles = StyleSheet.create({
   actionBtnText: {
     fontSize: 13,
     fontWeight: '600',
+  },
+
+  // ── 일괄 액션 하단 바 ──
+  batchActionBar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    gap: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    paddingBottom: 34,
+    backgroundColor: COLORS.surface,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
+  batchDeleteBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: COLORS.error,
+    gap: 6,
+  },
+  batchPinBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: COLORS.primary,
+    gap: 6,
+  },
+  batchBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
 
   // ── 상태 화면 (로딩/에러/빈 상태) ──

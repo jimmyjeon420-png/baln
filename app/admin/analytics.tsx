@@ -8,9 +8,9 @@
  *       차트와 숫자로 보여주는 화면입니다.
  *
  * 섹션 구성:
- *   1. 리텐션율 카드 (D1 / D7 / D30)
- *   2. 7일간 가입 추이 (수평 바 차트)
- *   3. 7일간 DAU 추이 (수평 바 차트)
+ *   1. 리텐션율 카드 (D1 / D7 / D30) + 진행 바
+ *   2. 7일간 가입 추이 (수평 바 차트) + 오늘 하이라이트 + 합계/평균 + 전일 대비
+ *   3. 7일간 DAU 추이 (수평 바 차트) + 오늘 하이라이트 + 합계/평균 + 전일 대비
  *   4. 등급별 유저 분포 (SILVER / GOLD / PLATINUM / DIAMOND)
  *   5. 플랜별 유저 분포 (무료 / 프리미엄)
  *   6. 자산 구간별 분포 (B1 ~ B5)
@@ -63,6 +63,9 @@ const PLAN_LABELS: Record<string, string> = {
 
 // ================================================================
 // 수평 바 컴포넌트 — 단일 행 (라벨 + 바 + 값)
+// isToday: 오늘 행 하이라이트 여부
+// changeText: 전일 대비 변화율 텍스트 (e.g., "+33%")
+// changeColor: 변화율 색상 (green/red)
 // ================================================================
 
 function HorizontalBar({
@@ -71,17 +74,35 @@ function HorizontalBar({
   maxValue,
   color,
   suffix,
+  isToday,
+  changeText,
+  changeColor,
 }: {
   label: string;
   value: number;
   maxValue: number;
   color: string;
   suffix?: string;
+  isToday?: boolean;
+  changeText?: string;
+  changeColor?: string;
 }) {
   const width = maxValue > 0 ? Math.max(4, (value / maxValue) * 100) : 4;
 
   return (
-    <View style={barStyles.row}>
+    <View
+      style={[
+        barStyles.row,
+        isToday && {
+          borderLeftWidth: 3,
+          borderLeftColor: COLORS.primary,
+          backgroundColor: COLORS.surfaceLight,
+          paddingLeft: 8,
+          marginLeft: -8,
+          borderRadius: 4,
+        },
+      ]}
+    >
       <Text style={barStyles.label} numberOfLines={1}>
         {label}
       </Text>
@@ -93,10 +114,17 @@ function HorizontalBar({
           ]}
         />
       </View>
-      <Text style={barStyles.value}>
-        {value.toLocaleString('ko-KR')}
-        {suffix || ''}
-      </Text>
+      <View style={barStyles.valueContainer}>
+        <Text style={barStyles.value}>
+          {value.toLocaleString('ko-KR')}
+          {suffix || ''}
+        </Text>
+        {changeText ? (
+          <Text style={[barStyles.changeText, { color: changeColor || COLORS.textTertiary }]}>
+            {changeText}
+          </Text>
+        ) : null}
+      </View>
     </View>
   );
 }
@@ -125,13 +153,22 @@ const barStyles = StyleSheet.create({
     borderRadius: 4,
     minWidth: 4,
   },
+  valueContainer: {
+    width: 80,
+    marginLeft: 8,
+    alignItems: 'flex-end',
+  },
   value: {
-    width: 64,
     fontSize: 13,
     fontWeight: '600',
     color: COLORS.textPrimary,
     textAlign: 'right',
-    marginLeft: 8,
+  },
+  changeText: {
+    fontSize: 10,
+    fontWeight: '600',
+    textAlign: 'right',
+    marginTop: 1,
   },
 });
 
@@ -229,6 +266,27 @@ function formatDateShort(dateStr: string): string {
     return `${parts[1]}/${parts[2]}`;
   }
   return dateStr;
+}
+
+// ================================================================
+// 전일 대비 변화율 계산 헬퍼
+// ================================================================
+
+function getDayOverDayChange(
+  entries: { date: string; count: number }[],
+  index: number,
+): { text: string; color: string } | null {
+  if (index < 1) return null;
+  const current = entries[index].count;
+  const previous = entries[index - 1].count;
+  if (previous === 0) {
+    if (current === 0) return null;
+    return { text: '+∞', color: COLORS.primary };
+  }
+  const changePercent = Math.round(((current - previous) / previous) * 100);
+  if (changePercent === 0) return { text: '0%', color: COLORS.textTertiary };
+  if (changePercent > 0) return { text: `+${changePercent}%`, color: COLORS.primary };
+  return { text: `${changePercent}%`, color: COLORS.error };
 }
 
 // ================================================================
@@ -349,6 +407,14 @@ export default function AdminAnalyticsScreen() {
     1,
   );
 
+  // Signup totals & averages
+  const signupSum = data.daily_signups_7d.reduce((sum, d) => sum + d.count, 0);
+  const signupAvg = data.daily_signups_7d.length > 0 ? Math.round(signupSum / data.daily_signups_7d.length) : 0;
+
+  // DAU totals & averages
+  const dauSum = data.daily_dau_7d.reduce((sum, d) => sum + d.count, 0);
+  const dauAvg = data.daily_dau_7d.length > 0 ? Math.round(dauSum / data.daily_dau_7d.length) : 0;
+
   // Tier distribution
   const tierEntries = Object.entries(data.tier_distribution);
   const maxTierCount = Math.max(...tierEntries.map(([, v]) => v), 1);
@@ -395,7 +461,7 @@ export default function AdminAnalyticsScreen() {
         }
       >
         {/* ============================================================ */}
-        {/* Section 1: 리텐션율 카드 (D1, D7, D30) */}
+        {/* Section 1: 리텐션율 카드 (D1, D7, D30) + 진행 바 */}
         {/* ============================================================ */}
         <Text style={styles.sectionTitle}>리텐션율</Text>
         <Text style={styles.sectionSubtitle}>
@@ -414,6 +480,18 @@ export default function AdminAnalyticsScreen() {
             >
               {data.d1_retention.toFixed(1)}%
             </Text>
+            {/* Progress Bar */}
+            <View style={styles.retentionProgressBg}>
+              <View
+                style={[
+                  styles.retentionProgressFill,
+                  {
+                    width: `${Math.min(data.d1_retention, 100)}%`,
+                    backgroundColor: getRetentionColor(data.d1_retention),
+                  },
+                ]}
+              />
+            </View>
             <Text style={styles.retentionCount}>
               {data.d1_count.toLocaleString('ko-KR')}명 / {data.total_signups.toLocaleString('ko-KR')}명
             </Text>
@@ -430,6 +508,18 @@ export default function AdminAnalyticsScreen() {
             >
               {data.d7_retention.toFixed(1)}%
             </Text>
+            {/* Progress Bar */}
+            <View style={styles.retentionProgressBg}>
+              <View
+                style={[
+                  styles.retentionProgressFill,
+                  {
+                    width: `${Math.min(data.d7_retention, 100)}%`,
+                    backgroundColor: getRetentionColor(data.d7_retention),
+                  },
+                ]}
+              />
+            </View>
             <Text style={styles.retentionCount}>
               {data.d7_count.toLocaleString('ko-KR')}명 / {data.total_signups.toLocaleString('ko-KR')}명
             </Text>
@@ -446,6 +536,18 @@ export default function AdminAnalyticsScreen() {
             >
               {data.d30_retention.toFixed(1)}%
             </Text>
+            {/* Progress Bar */}
+            <View style={styles.retentionProgressBg}>
+              <View
+                style={[
+                  styles.retentionProgressFill,
+                  {
+                    width: `${Math.min(data.d30_retention, 100)}%`,
+                    backgroundColor: getRetentionColor(data.d30_retention),
+                  },
+                ]}
+              />
+            </View>
             <Text style={styles.retentionCount}>
               {data.d30_count.toLocaleString('ko-KR')}명 / {data.total_signups.toLocaleString('ko-KR')}명
             </Text>
@@ -459,20 +561,35 @@ export default function AdminAnalyticsScreen() {
           7일간 가입 추이
         </Text>
         <View style={styles.chartCard}>
-          {data.daily_signups_7d.map((day) => (
-            <HorizontalBar
-              key={`signup-${day.date}`}
-              label={formatDateShort(day.date)}
-              value={day.count}
-              maxValue={maxSignup}
-              color={COLORS.primary}
-              suffix="명"
-            />
-          ))}
+          {data.daily_signups_7d.map((day, index) => {
+            const isToday = index === data.daily_signups_7d.length - 1;
+            const change = isToday ? getDayOverDayChange(data.daily_signups_7d, index) : null;
+            return (
+              <HorizontalBar
+                key={`signup-${day.date}`}
+                label={formatDateShort(day.date)}
+                value={day.count}
+                maxValue={maxSignup}
+                color={COLORS.primary}
+                suffix="명"
+                isToday={isToday}
+                changeText={change?.text}
+                changeColor={change?.color}
+              />
+            );
+          })}
           {data.daily_signups_7d.length === 0 && (
             <Text style={styles.noDataText}>데이터 없음</Text>
           )}
         </View>
+        {/* 합계 / 일평균 */}
+        {data.daily_signups_7d.length > 0 && (
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryText}>
+              합계 {signupSum.toLocaleString('ko-KR')}명 (일평균 {signupAvg.toLocaleString('ko-KR')}명)
+            </Text>
+          </View>
+        )}
 
         {/* ============================================================ */}
         {/* Section 3: 7일간 DAU 추이 */}
@@ -481,20 +598,35 @@ export default function AdminAnalyticsScreen() {
           7일간 DAU 추이
         </Text>
         <View style={styles.chartCard}>
-          {data.daily_dau_7d.map((day) => (
-            <HorizontalBar
-              key={`dau-${day.date}`}
-              label={formatDateShort(day.date)}
-              value={day.count}
-              maxValue={maxDau}
-              color={COLORS.info}
-              suffix="명"
-            />
-          ))}
+          {data.daily_dau_7d.map((day, index) => {
+            const isToday = index === data.daily_dau_7d.length - 1;
+            const change = isToday ? getDayOverDayChange(data.daily_dau_7d, index) : null;
+            return (
+              <HorizontalBar
+                key={`dau-${day.date}`}
+                label={formatDateShort(day.date)}
+                value={day.count}
+                maxValue={maxDau}
+                color={COLORS.info}
+                suffix="명"
+                isToday={isToday}
+                changeText={change?.text}
+                changeColor={change?.color}
+              />
+            );
+          })}
           {data.daily_dau_7d.length === 0 && (
             <Text style={styles.noDataText}>데이터 없음</Text>
           )}
         </View>
+        {/* 합계 / 일평균 */}
+        {data.daily_dau_7d.length > 0 && (
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryText}>
+              합계 {dauSum.toLocaleString('ko-KR')}명 (일평균 {dauAvg.toLocaleString('ko-KR')}명)
+            </Text>
+          </View>
+        )}
 
         {/* ============================================================ */}
         {/* Section 4: 등급별 유저 분포 */}
@@ -721,6 +853,18 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     marginBottom: 6,
   },
+  retentionProgressBg: {
+    width: '100%',
+    height: 4,
+    backgroundColor: COLORS.surfaceLight,
+    borderRadius: 2,
+    overflow: 'hidden',
+    marginBottom: 8,
+  },
+  retentionProgressFill: {
+    height: '100%',
+    borderRadius: 2,
+  },
   retentionCount: {
     fontSize: 11,
     color: COLORS.textTertiary,
@@ -733,6 +877,23 @@ const styles = StyleSheet.create({
     padding: 16,
     borderWidth: 1,
     borderColor: COLORS.border,
+  },
+
+  // 합계/평균 요약 행
+  summaryRow: {
+    marginTop: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: COLORS.surface,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    alignItems: 'center',
+  },
+  summaryText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.textSecondary,
   },
 
   // 데이터 없음

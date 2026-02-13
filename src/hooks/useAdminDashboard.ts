@@ -23,6 +23,9 @@ import {
   adminTogglePinPost,
   fetchAdminGatherings,
   adminCancelGathering,
+  fetchAdminDailyComparison,
+  fetchAdminUserDetail,
+  adminBanUser,
 } from '../services/adminService';
 
 /** 현재 유저가 관리자인지 확인 */
@@ -156,6 +159,42 @@ export function useAdminCancelGathering() {
     mutationFn: adminCancelGathering,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'gatherings'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'overview'] });
+    },
+  });
+}
+
+// ─── 고도화: 비교 지표, 유저 상세, 차단 ──────────────────
+
+/** 어제 vs 오늘 비교 데이터 (60초 캐시 + 자동 갱신) */
+export function useAdminDailyComparison() {
+  return useQuery({
+    queryKey: ['admin', 'daily-comparison'],
+    queryFn: fetchAdminDailyComparison,
+    staleTime: 60 * 1000,
+    refetchInterval: 60 * 1000,
+  });
+}
+
+/** 유저 상세 프로필 (30초 캐시, userId가 있을 때만 실행) */
+export function useAdminUserDetail(userId: string | null) {
+  return useQuery({
+    queryKey: ['admin', 'user-detail', userId],
+    queryFn: () => fetchAdminUserDetail(userId!),
+    staleTime: 30 * 1000,
+    enabled: !!userId,
+  });
+}
+
+/** 유저 차단/해제 토글 (Mutation) */
+export function useAdminBanUser() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: adminBanUser,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'user-detail'] });
       queryClient.invalidateQueries({ queryKey: ['admin', 'overview'] });
     },
   });
