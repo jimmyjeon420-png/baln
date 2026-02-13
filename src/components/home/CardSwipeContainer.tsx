@@ -247,7 +247,7 @@ const styles = StyleSheet.create({
   },
   swipeHint: {
     position: 'absolute',
-    bottom: 80,
+    top: 90,
     alignSelf: 'center',
     backgroundColor: 'rgba(76, 175, 80, 0.9)',
     paddingHorizontal: 16,

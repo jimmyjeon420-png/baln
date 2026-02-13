@@ -1,3 +1,13 @@
+/**
+ * @deprecated 이 파일은 더 이상 사용하지 않습니다.
+ * 대신 src/locales/index.ts를 사용하세요.
+ * 글로벌 버전 준비 시 이 파일을 삭제할 예정입니다.
+ *
+ * Migration: import { t } from '../locales' 로 교체
+ *
+ * 현재 이 파일을 import하는 곳:
+ * - app/(tabs)/journal.tsx (→ import { t } from '../../src/locales' 로 전환 필요)
+ */
 import { getLocales } from 'expo-localization';
 import { I18n } from 'i18n-js';
 

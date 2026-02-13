@@ -24,6 +24,9 @@ import {
   TextInput,
   FlatList,
   Keyboard,
+  TouchableWithoutFeedback,
+  Platform,
+  InputAccessoryView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -431,13 +434,32 @@ export default function AddAssetScreen() {
     setEditingAsset(null);
   };
 
+  // ─── 숫자 키보드 "완료" 버튼 (iOS decimal-pad에는 return 키가 없음) ───
+  const INPUT_ACCESSORY_ID = 'baln-number-done';
+
   // ─── 렌더링 ───
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* iOS 숫자 키보드 위에 "완료" 버튼 추가 */}
+      {Platform.OS === 'ios' && (
+        <InputAccessoryView nativeID={INPUT_ACCESSORY_ID}>
+          <View style={styles.keyboardToolbar}>
+            <View style={{ flex: 1 }} />
+            <TouchableOpacity
+              onPress={() => Keyboard.dismiss()}
+              style={styles.keyboardDoneButton}
+            >
+              <Text style={styles.keyboardDoneText}>완료</Text>
+            </TouchableOpacity>
+          </View>
+        </InputAccessoryView>
+      )}
+
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
       >
         {/* 헤더 */}
         <View style={styles.header}>
@@ -555,6 +577,7 @@ export default function AddAssetScreen() {
               onChangeText={(text) => setQuantity(text.replace(/[^0-9.]/g, ''))}
               keyboardType="decimal-pad"
               selectTextOnFocus
+              inputAccessoryViewID={INPUT_ACCESSORY_ID}
             />
           </View>
 
@@ -590,6 +613,7 @@ export default function AddAssetScreen() {
                 }}
                 keyboardType="decimal-pad"
                 selectTextOnFocus
+                inputAccessoryViewID={INPUT_ACCESSORY_ID}
               />
             </View>
             {!priceLoading && !priceAuto && selectedStock && (
@@ -1155,5 +1179,25 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(207, 102, 121, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+
+  // 키보드 툴바 (iOS 숫자 키보드 위 "완료" 버튼)
+  keyboardToolbar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#2A2A2A',
+    borderTopWidth: 1,
+    borderTopColor: '#333',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  keyboardDoneButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+  },
+  keyboardDoneText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.primary,
   },
 });

@@ -22,7 +22,7 @@ export const REWARD_AMOUNTS = {
   emotionCheck: 5,    // 감정 기록: 5크레딧 (₩500)
   welcomeBonus: 10,   // 신규 가입: 10크레딧 (₩1,000)
   assetRegistration: 20, // 자산 3개+ 등록: 20크레딧 (₩2,000)
-  referral: 50,       // 친구 추천: 50크레딧 (₩5,000)
+  referral: 20,       // 친구 추천: 20크레딧 (₩2,000) — 이승건 결재: 어뷰징 방지로 50→20 하향
 } as const;
 
 /**
@@ -498,7 +498,7 @@ export async function getMyReferralCode(): Promise<string> {
   }
 }
 
-/** 추천 코드 입력 → 추천인에게 50크레딧 보상 */
+/** 추천 코드 입력 → 추천인에게 20크레딧 보상 (조건: 피추천인 3일 연속 접속 후 지급) */
 export async function applyReferralCode(code: string): Promise<{
   success: boolean;
   message: string;
@@ -532,27 +532,26 @@ export async function applyReferralCode(code: string): Promise<{
 
     const referrerId = profiles[0].id;
 
-    // 추천인에게 50크레딧 지급
-    const referrerResult = await grantRewardCredits(referrerId, REWARD_AMOUNTS.referral, 'referral_reward', {
-      referred_user_id: user.id,
-      code,
-    });
-
-    // 피추천인(나)에게도 10크레딧 보너스
+    // 피추천인(나)에게 즉시 10크레딧 보너스
     await grantRewardCredits(user.id, 10, 'referral_bonus', {
       referrer_id: referrerId,
       code,
     });
 
-    if (referrerResult.success) {
-      await AsyncStorage.setItem('@baln:referral_used', 'true');
-    }
+    // 추천인 보상은 피추천인 3일 연속 접속 후 지급 (pending으로 기록)
+    // → 실제 지급은 daily-briefing Edge Function에서 streak 3일 확인 후 처리
+    await AsyncStorage.setItem('@baln:referral_used', 'true');
+    await AsyncStorage.setItem('@baln:referral_pending', JSON.stringify({
+      referrerId,
+      referredUserId: user.id,
+      code,
+      registeredAt: new Date().toISOString(),
+      streakRequired: 3,
+    }));
 
     return {
-      success: referrerResult.success,
-      message: referrerResult.success
-        ? '추천 코드가 적용되었습니다! 10크레딧을 받았어요.'
-        : '추천 코드 적용에 실패했습니다.',
+      success: true,
+      message: '추천 코드가 적용되었습니다! 10크레딧을 받았어요.\n추천인에게는 3일 연속 접속 후 보상이 지급됩니다.',
     };
   } catch (err) {
     console.warn('[Reward] 추천 코드 적용 실패:', err);

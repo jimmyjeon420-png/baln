@@ -25,6 +25,9 @@ import {
   Animated,
   ActivityIndicator,
   Keyboard,
+  Platform,
+  InputAccessoryView,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -482,12 +485,26 @@ export default function OnboardingScreen() {
   }
 
   // 슬라이드 4: 자산 등록 (실제 포트폴리오에 저장)
+  const ONBOARDING_ACCESSORY_ID = 'onboarding-number-done';
+
   function renderAssetSelectionStep() {
     const totalValue = (parseFloat(assetQuantity) || 0) * (parseFloat(assetPrice) || 0);
     const canAdd = selectedStock && assetQuantity && assetPrice && totalValue > 0;
 
     return (
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <View style={styles.stepContentFull}>
+        {/* iOS 숫자 키보드 "완료" 버튼 */}
+        {Platform.OS === 'ios' && (
+          <InputAccessoryView nativeID={ONBOARDING_ACCESSORY_ID}>
+            <View style={{ flexDirection: 'row', backgroundColor: '#2A2A2A', borderTopWidth: 1, borderTopColor: '#333', paddingHorizontal: 12, paddingVertical: 8 }}>
+              <View style={{ flex: 1 }} />
+              <TouchableOpacity onPress={() => Keyboard.dismiss()} style={{ paddingHorizontal: 16, paddingVertical: 6 }}>
+                <Text style={{ fontSize: 16, fontWeight: '600', color: COLORS.primary }}>완료</Text>
+              </TouchableOpacity>
+            </View>
+          </InputAccessoryView>
+        )}
         <Text style={styles.heading}>
           {'보유 자산을\n등록해볼까요?'}
         </Text>
@@ -591,6 +608,7 @@ export default function OnboardingScreen() {
                   value={assetQuantity}
                   onChangeText={(t) => setAssetQuantity(t.replace(/[^0-9.]/g, ''))}
                   keyboardType="decimal-pad"
+                  inputAccessoryViewID={ONBOARDING_ACCESSORY_ID}
                 />
               </View>
               <View style={styles.inputHalf}>
@@ -605,6 +623,7 @@ export default function OnboardingScreen() {
                   value={assetPrice}
                   onChangeText={(t) => setAssetPrice(t.replace(/[^0-9.]/g, ''))}
                   keyboardType="decimal-pad"
+                  inputAccessoryViewID={ONBOARDING_ACCESSORY_ID}
                 />
               </View>
             </View>
@@ -649,6 +668,7 @@ export default function OnboardingScreen() {
           {registeredAssets.length === 0 ? '건너뛰어도 나중에 등록할 수 있어요' : '더 추가하거나 다음으로 넘어가세요'}
         </Text>
       </View>
+      </TouchableWithoutFeedback>
     );
   }
 

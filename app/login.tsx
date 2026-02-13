@@ -144,11 +144,11 @@ export default function LoginScreen() {
         >
           {/* 헤더 */}
           <View style={styles.headerSection}>
-            <Text style={styles.title}>스마트 리밸런서</Text>
+            <Text style={styles.title}>baln</Text>
             <Text style={styles.subtitle}>
               {isSignUpMode
                 ? '계정을 만들어 시작하세요'
-                : '포트폴리오 최적화를 시작하세요'}
+                : '매일 5분, 바른 투자 습관'}
             </Text>
           </View>
 

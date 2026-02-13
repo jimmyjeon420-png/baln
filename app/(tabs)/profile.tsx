@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
+  Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -98,27 +99,17 @@ export default function ProfileScreen() {
         },
         {
           icon: 'trophy-outline',
-          label: '나의 성취 & 레벨',
+          label: '성취 & 감정 기록',
           onPress: () => router.push('/achievements'),
           badge: unlockedCount > 0 ? `${unlockedCount}/${totalCount}` : undefined,
           badgeColor: COLORS.primary,
         },
         {
-          icon: 'heart-outline',
-          label: '투자 감정 히스토리',
-          onPress: () => router.push('/journal/emotion-history'),
-          badge: 'NEW',
+          icon: 'gift-outline',
+          label: '친구 초대',
+          onPress: () => router.push('/settings/referral'),
+          badge: '20C',
           badgeColor: COLORS.primary,
-        },
-        {
-          icon: 'bookmark-outline',
-          label: '내 북마크',
-          onPress: () => router.push('/community/bookmarks'),
-        },
-        {
-          icon: 'notifications-outline',
-          label: '알림 센터',
-          onPress: () => router.push('/notifications'),
         },
       ],
     },
@@ -133,16 +124,16 @@ export default function ProfileScreen() {
           onPress: () => router.push('/community'),
         },
         {
+          icon: 'bookmark-outline',
+          label: '내 북마크',
+          onPress: () => router.push('/community/bookmarks'),
+        },
+        {
           icon: 'help-circle-outline',
           label: '오늘의 퀴즈',
           onPress: () => router.push('/settings/daily-quiz'),
           badge: 'NEW',
           badgeColor: COLORS.primary,
-        },
-        {
-          icon: 'add-circle-outline',
-          label: '나의 자산 추가',
-          onPress: () => router.push('/add-asset'),
         },
       ],
     },
@@ -191,27 +182,10 @@ export default function ProfileScreen() {
   ];
 
   // ---------------------------------------------------------------------------
-  // 테마 섹션 정의 (별도 섹션)
+  // 다크모드 토글 (헤더 우측 스위치에서 사용)
   // ---------------------------------------------------------------------------
-  const themeSection: MenuSection = {
-    title: '테마 설정',
-    items: [
-      {
-        icon: 'sunny-outline',
-        label: '라이트 모드',
-        onPress: () => handleThemeChange('light'),
-        badge: themeMode === 'light' ? '✓' : undefined,
-        badgeColor: colors.primary,
-      },
-      {
-        icon: 'moon-outline',
-        label: '다크 모드',
-        onPress: () => handleThemeChange('dark'),
-        badge: themeMode === 'dark' ? '✓' : undefined,
-        badgeColor: colors.primary,
-      },
-    ],
-  };
+  const isDarkMode = themeMode === 'dark';
+  const toggleTheme = () => handleThemeChange(isDarkMode ? 'light' : 'dark');
 
   // ---------------------------------------------------------------------------
   // DEV 전용 섹션 (개발 모드에서만 노출)
@@ -273,9 +247,23 @@ export default function ProfileScreen() {
   // ---------------------------------------------------------------------------
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
-      {/* 헤더 */}
+      {/* 헤더 — 우측에 다크/라이트 모드 스위치 */}
       <View style={styles.header}>
         <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>전체</Text>
+        <View style={styles.themeToggle}>
+          <Ionicons
+            name={isDarkMode ? 'moon' : 'sunny'}
+            size={16}
+            color={isDarkMode ? '#FFD54F' : '#FF9800'}
+          />
+          <Switch
+            value={isDarkMode}
+            onValueChange={toggleTheme}
+            trackColor={{ false: '#767577', true: '#4CAF50' }}
+            thumbColor={isDarkMode ? '#FFF' : '#F4F3F4'}
+            style={{ transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }] }}
+          />
+        </View>
       </View>
 
       <ScrollView
@@ -312,9 +300,6 @@ export default function ProfileScreen() {
             <CreditDisplay />
           </View>
         )}
-
-        {/* ── 테마 설정 섹션 ── */}
-        {renderSection(themeSection, -1)}
 
         {/* ── 3개 메뉴 섹션 ── */}
         {sections.map((section, idx) => renderSection(section, idx))}
@@ -354,6 +339,9 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingTop: SIZES.xl,
     paddingHorizontal: SIZES.xl,
     paddingBottom: SIZES.lg,
@@ -362,6 +350,11 @@ const styles = StyleSheet.create({
     fontSize: SIZES.fXxxl,
     fontWeight: '700',
     color: COLORS.textPrimary,
+  },
+  themeToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   scrollView: {
     flex: 1,

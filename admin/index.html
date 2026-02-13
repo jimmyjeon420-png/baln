@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>baln Admin Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <style>
+    :root {
+      --bg: #0D0D0D;
+      --surface: #1A1A1A;
+      --surface2: #242424;
+      --border: #333;
+      --text: #F5F5F5;
+      --text2: #9E9E9E;
+      --text3: #666;
+      --green: #4CAF50;
+      --green-dim: rgba(76, 175, 80, 0.15);
+      --red: #CF6679;
+      --yellow: #FFC107;
+      --blue: #2196F3;
+      --purple: #9C27B0;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Login Screen ── */
+    #login-screen {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .login-card {
+      background: var(--surface);
+      border-radius: 16px;
+      padding: 40px;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+
+    .login-card h1 {
+      font-size: 24px;
+      margin-bottom: 8px;
+      color: var(--green);
+    }
+
+    .login-card p {
+      color: var(--text2);
+      margin-bottom: 24px;
+      font-size: 14px;
+    }
+
+    .login-card input {
+      width: 100%;
+      padding: 12px 16px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 14px;
+      margin-bottom: 12px;
+      outline: none;
+    }
+
+    .login-card input:focus {
+      border-color: var(--green);
+    }
+
+    .login-card button {
+      width: 100%;
+      padding: 14px;
+      background: var(--green);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .login-card button:hover { opacity: 0.9; }
+    .login-card button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .login-error {
+      color: var(--red);
+      font-size: 13px;
+      margin-top: 8px;
+    }
+
+    /* ── Dashboard Layout ── */
+    #dashboard { display: none; }
+
+    .topbar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .topbar h1 {
+      font-size: 18px;
+      color: var(--green);
+    }
+
+    .topbar .badge {
+      background: var(--green-dim);
+      color: var(--green);
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .refresh-btn, .logout-btn {
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: opacity 0.2s;
+    }
+
+    .refresh-btn {
+      background: var(--surface2);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .logout-btn {
+      background: rgba(207, 102, 121, 0.15);
+      color: var(--red);
+    }
+
+    .refresh-btn:hover, .logout-btn:hover { opacity: 0.8; }
+
+    /* ── Tab Navigation ── */
+    .tab-nav {
+      display: flex;
+      gap: 4px;
+      padding: 12px 24px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+    }
+
+    .tab-btn {
+      padding: 8px 16px;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--text2);
+      border: none;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+
+    .tab-btn.active {
+      background: var(--green-dim);
+      color: var(--green);
+    }
+
+    .tab-btn:hover:not(.active) {
+      background: var(--surface2);
+    }
+
+    /* ── Content Area ── */
+    .content {
+      padding: 24px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* ── Cards Grid ── */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .metric-card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 20px;
+      border: 1px solid var(--border);
+    }
+
+    .metric-label {
+      font-size: 12px;
+      color: var(--text2);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .metric-value {
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    .metric-sub {
+      font-size: 12px;
+      color: var(--text3);
+      margin-top: 4px;
+    }
+
+    .metric-value.green { color: var(--green); }
+    .metric-value.blue { color: var(--blue); }
+    .metric-value.yellow { color: var(--yellow); }
+    .metric-value.red { color: var(--red); }
+    .metric-value.purple { color: var(--purple); }
+
+    /* ── Section Cards ── */
+    .section-card {
+      background: var(--surface);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      margin-bottom: 24px;
+      overflow: hidden;
+    }
+
+    .section-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .section-body {
+      padding: 20px;
+    }
+
+    /* ── Data Table ── */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .data-table th {
+      text-align: left;
+      padding: 10px 12px;
+      color: var(--text2);
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .data-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(51, 51, 51, 0.5);
+    }
+
+    .data-table tr:hover td {
+      background: rgba(76, 175, 80, 0.05);
+    }
+
+    .tier-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .tier-free { background: rgba(158, 158, 158, 0.2); color: #9E9E9E; }
+    .tier-premium { background: rgba(255, 193, 7, 0.2); color: #FFC107; }
+
+    /* ── Chart Container ── */
+    .chart-container {
+      position: relative;
+      height: 300px;
+      padding: 10px;
+    }
+
+    /* ── Search Box ── */
+    .search-box {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .search-box input {
+      flex: 1;
+      padding: 10px 16px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 14px;
+      outline: none;
+    }
+
+    .search-box input:focus {
+      border-color: var(--green);
+    }
+
+    /* ── Loading Spinner ── */
+    .spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--border);
+      border-top-color: var(--green);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-overlay {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      gap: 12px;
+      color: var(--text2);
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .content { padding: 16px; }
+      .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+      .metric-value { font-size: 22px; }
+    }
+
+    /* ── Empty State ── */
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text3);
+    }
+
+    .empty-state p {
+      font-size: 14px;
+    }
+
+    /* ── Last Updated ── */
+    .last-updated {
+      font-size: 11px;
+      color: var(--text3);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- LOGIN SCREEN                                                -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div id="login-screen">
+    <div class="login-card">
+      <h1>baln Admin</h1>
+      <p>관리자 대시보드에 접속합니다</p>
+      <input type="url" id="supabase-url" placeholder="Supabase URL (https://xxx.supabase.co)" />
+      <input type="password" id="service-key" placeholder="Service Role Key" />
+      <button onclick="handleLogin()" id="login-btn">로그인</button>
+      <p class="login-error" id="login-error"></p>
+      <p style="margin-top:16px; font-size:11px; color:var(--text3);">
+        Supabase Dashboard &gt; Settings &gt; API 에서<br/>service_role key를 복사하세요
+      </p>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- DASHBOARD                                                    -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div id="dashboard">
+    <!-- Top Bar -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <h1>baln Admin</h1>
+        <span class="badge" id="env-badge">Production</span>
+        <span class="last-updated" id="last-updated"></span>
+      </div>
+      <div class="topbar-right">
+        <button class="refresh-btn" onclick="refreshAll()">
+          <span id="refresh-icon">&#x21BB;</span> 새로고침
+        </button>
+        <button class="logout-btn" onclick="handleLogout()">로그아웃</button>
+      </div>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="tab-nav">
+      <button class="tab-btn active" data-tab="overview">Overview</button>
+      <button class="tab-btn" data-tab="users">유저 관리</button>
+      <button class="tab-btn" data-tab="credits">크레딧 경제</button>
+      <button class="tab-btn" data-tab="engagement">인게이지먼트</button>
+      <button class="tab-btn" data-tab="content">콘텐츠</button>
+      <button class="tab-btn" data-tab="analytics">이벤트 로그</button>
+    </div>
+
+    <div class="content">
+
+      <!-- ═══ TAB: OVERVIEW ═══ -->
+      <div class="tab-content active" id="tab-overview">
+        <div class="metrics-grid" id="overview-metrics">
+          <div class="loading-overlay"><div class="spinner"></div> 데이터 로딩 중...</div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+          <div class="section-card">
+            <div class="section-header"><span class="section-title">일별 가입자 추이</span></div>
+            <div class="section-body"><div class="chart-container"><canvas id="chart-signups"></canvas></div></div>
+          </div>
+          <div class="section-card">
+            <div class="section-header"><span class="section-title">크레딧 흐름 (지급 vs 소비)</span></div>
+            <div class="section-body"><div class="chart-container"><canvas id="chart-credits"></canvas></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ TAB: USERS ═══ -->
+      <div class="tab-content" id="tab-users">
+        <div class="search-box">
+          <input type="text" id="user-search" placeholder="이메일 또는 ID로 검색..." oninput="searchUsers(this.value)" />
+        </div>
+        <div class="section-card">
+          <div class="section-header">
+            <span class="section-title">전체 유저 (<span id="user-count">0</span>명)</span>
+          </div>
+          <div class="section-body" style="padding:0; overflow-x:auto;">
+            <table class="data-table" id="users-table">
+              <thead>
+                <tr>
+                  <th>가입일</th>
+                  <th>이메일</th>
+                  <th>플랜</th>
+                  <th>크레딧</th>
+                  <th>스트릭</th>
+                  <th>예측 적중률</th>
+                  <th>자산 규모</th>
+                </tr>
+              </thead>
+              <tbody id="users-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ TAB: CREDITS ═══ -->
+      <div class="tab-content" id="tab-credits">
+        <div class="metrics-grid" id="credit-metrics"></div>
+        <div class="section-card">
+          <div class="section-header">
+            <span class="section-title">최근 크레딧 거래</span>
+          </div>
+          <div class="section-body" style="padding:0; overflow-x:auto;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>시간</th>
+                  <th>유저</th>
+                  <th>유형</th>
+                  <th>금액</th>
+                  <th>잔액</th>
+                  <th>기능</th>
+                </tr>
+              </thead>
+              <tbody id="credits-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ TAB: ENGAGEMENT ═══ -->
+      <div class="tab-content" id="tab-engagement">
+        <div class="metrics-grid" id="engagement-metrics"></div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+          <div class="section-card">
+            <div class="section-header"><span class="section-title">예측 게임 참여</span></div>
+            <div class="section-body"><div class="chart-container"><canvas id="chart-predictions"></canvas></div></div>
+          </div>
+          <div class="section-card">
+            <div class="section-header"><span class="section-title">스트릭 분포</span></div>
+            <div class="section-body"><div class="chart-container"><canvas id="chart-streaks"></canvas></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ TAB: CONTENT ═══ -->
+      <div class="tab-content" id="tab-content">
+        <div class="metrics-grid" id="content-metrics"></div>
+        <div class="section-card">
+          <div class="section-header">
+            <span class="section-title">최근 맥락 카드</span>
+          </div>
+          <div class="section-body" style="padding:0; overflow-x:auto;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>날짜</th>
+                  <th>헤드라인</th>
+                  <th>감정</th>
+                  <th>조회수</th>
+                </tr>
+              </thead>
+              <tbody id="context-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ TAB: ANALYTICS ═══ -->
+      <div class="tab-content" id="tab-analytics">
+        <div class="section-card">
+          <div class="section-header">
+            <span class="section-title">최근 이벤트 로그 (100건)</span>
+          </div>
+          <div class="section-body" style="padding:0; overflow-x:auto;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>시간</th>
+                  <th>유저</th>
+                  <th>이벤트</th>
+                  <th>속성</th>
+                </tr>
+              </thead>
+              <tbody id="analytics-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- JAVASCRIPT                                                   -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <script>
+    let sb = null; // Supabase client
+    let allUsers = [];
+    let charts = {};
+
+    // ── Auto-fill saved credentials ──
+    window.addEventListener('DOMContentLoaded', () => {
+      const saved = localStorage.getItem('baln_admin_creds');
+      if (saved) {
+        try {
+          const { url, key } = JSON.parse(saved);
+          document.getElementById('supabase-url').value = url;
+          document.getElementById('service-key').value = key;
+          // Auto-login
+          handleLogin();
+        } catch { /* ignore */ }
+      }
+
+      // Tab switching
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+          document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+          btn.classList.add('active');
+          document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
+        });
+      });
+    });
+
+    // ══════════════════════════════════════════════════════════════
+    // AUTH
+    // ══════════════════════════════════════════════════════════════
+
+    async function handleLogin() {
+      const url = document.getElementById('supabase-url').value.trim();
+      const key = document.getElementById('service-key').value.trim();
+      const errEl = document.getElementById('login-error');
+      const btn = document.getElementById('login-btn');
+
+      if (!url || !key) {
+        errEl.textContent = 'URL과 Service Key를 모두 입력하세요.';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = '연결 중...';
+      errEl.textContent = '';
+
+      try {
+        sb = window.supabase.createClient(url, key, {
+          auth: { autoRefreshToken: false, persistSession: false },
+        });
+
+        // Test connection
+        const { count, error } = await sb.from('profiles').select('*', { count: 'exact', head: true });
+        if (error) throw error;
+
+        // Save credentials
+        localStorage.setItem('baln_admin_creds', JSON.stringify({ url, key }));
+
+        // Show dashboard
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('dashboard').style.display = 'block';
+
+        // Load data
+        refreshAll();
+      } catch (err) {
+        errEl.textContent = `연결 실패: ${err.message || '키를 확인하세요'}`;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '로그인';
+      }
+    }
+
+    function handleLogout() {
+      localStorage.removeItem('baln_admin_creds');
+      sb = null;
+      document.getElementById('dashboard').style.display = 'none';
+      document.getElementById('login-screen').style.display = 'flex';
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    // DATA LOADING
+    // ══════════════════════════════════════════════════════════════
+
+    async function refreshAll() {
+      document.getElementById('last-updated').textContent = `마지막 갱신: ${new Date().toLocaleTimeString('ko')}`;
+
+      await Promise.all([
+        loadOverview(),
+        loadUsers(),
+        loadCredits(),
+        loadEngagement(),
+        loadContent(),
+        loadAnalytics(),
+      ]);
+    }
+
+    // ── OVERVIEW TAB ──
+
+    async function loadOverview() {
+      try {
+        const [
+          { count: totalUsers },
+          { count: premiumUsers },
+          { data: credits },
+          { data: recentSignups },
+          { data: todayEvents },
+          { data: creditTx },
+        ] = await Promise.all([
+          sb.from('profiles').select('*', { count: 'exact', head: true }),
+          sb.from('profiles').select('*', { count: 'exact', head: true }).neq('plan_type', 'free').not('plan_type', 'is', null),
+          sb.from('user_credits').select('balance, lifetime_spent'),
+          sb.from('profiles').select('created_at').order('created_at', { ascending: false }).limit(30),
+          sb.from('analytics_events').select('id', { count: 'exact', head: true }).gte('created_at', new Date(Date.now() - 86400000).toISOString()),
+          sb.from('credit_transactions').select('type, amount, created_at').order('created_at', { ascending: false }).limit(500),
+        ]);
+
+        const totalCreditsInCirculation = (credits || []).reduce((sum, c) => sum + (c.balance || 0), 0);
+        const totalSpent = (credits || []).reduce((sum, c) => sum + (c.lifetime_spent || 0), 0);
+        const conversionRate = totalUsers > 0 ? ((premiumUsers || 0) / totalUsers * 100).toFixed(1) : '0';
+        const todayDAU = todayEvents?.count || 0;
+
+        document.getElementById('overview-metrics').innerHTML = `
+          <div class="metric-card">
+            <div class="metric-label">총 유저</div>
+            <div class="metric-value green">${(totalUsers || 0).toLocaleString()}</div>
+            <div class="metric-sub">가입자 전체</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Premium 유저</div>
+            <div class="metric-value yellow">${(premiumUsers || 0).toLocaleString()}</div>
+            <div class="metric-sub">전환율 ${conversionRate}%</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">오늘 활성 이벤트</div>
+            <div class="metric-value blue">${todayDAU.toLocaleString()}</div>
+            <div class="metric-sub">최근 24시간</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">유통 크레딧</div>
+            <div class="metric-value purple">${totalCreditsInCirculation.toLocaleString()}C</div>
+            <div class="metric-sub">잔액 합계 (${(totalCreditsInCirculation * 100).toLocaleString()}원)</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">소비된 크레딧</div>
+            <div class="metric-value">${totalSpent.toLocaleString()}C</div>
+            <div class="metric-sub">${(totalSpent * 100).toLocaleString()}원 상당</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">예상 월 매출</div>
+            <div class="metric-value green">${((premiumUsers || 0) * 4900).toLocaleString()}원</div>
+            <div class="metric-sub">Premium ${premiumUsers || 0}명 x 4,900원</div>
+          </div>
+        `;
+
+        // Signup chart
+        renderSignupChart(recentSignups || []);
+
+        // Credit flow chart
+        renderCreditFlowChart(creditTx || []);
+      } catch (err) {
+        console.error('[Overview]', err);
+        document.getElementById('overview-metrics').innerHTML = `<div class="empty-state"><p>데이터 로딩 실패: ${err.message}</p></div>`;
+      }
+    }
+
+    function renderSignupChart(signups) {
+      const days = {};
+      signups.forEach(s => {
+        const day = s.created_at?.split('T')[0];
+        if (day) days[day] = (days[day] || 0) + 1;
+      });
+      const labels = Object.keys(days).reverse();
+      const data = labels.map(d => days[d]);
+
+      if (charts.signups) charts.signups.destroy();
+      charts.signups = new Chart(document.getElementById('chart-signups'), {
+        type: 'bar',
+        data: {
+          labels: labels.map(d => d.slice(5)),
+          datasets: [{
+            label: '가입자',
+            data,
+            backgroundColor: 'rgba(76, 175, 80, 0.6)',
+            borderRadius: 4,
+          }]
+        },
+        options: chartOptions('일별 가입자'),
+      });
+    }
+
+    function renderCreditFlowChart(transactions) {
+      const days = {};
+      transactions.forEach(tx => {
+        const day = tx.created_at?.split('T')[0];
+        if (!day) return;
+        if (!days[day]) days[day] = { granted: 0, spent: 0 };
+        if (tx.type === 'bonus' || tx.type === 'purchase') days[day].granted += tx.amount;
+        else if (tx.type === 'spend') days[day].spent += Math.abs(tx.amount);
+      });
+      const labels = Object.keys(days).sort().slice(-14);
+
+      if (charts.credits) charts.credits.destroy();
+      charts.credits = new Chart(document.getElementById('chart-credits'), {
+        type: 'line',
+        data: {
+          labels: labels.map(d => d.slice(5)),
+          datasets: [
+            {
+              label: '지급',
+              data: labels.map(d => days[d]?.granted || 0),
+              borderColor: '#4CAF50',
+              backgroundColor: 'rgba(76, 175, 80, 0.1)',
+              fill: true,
+              tension: 0.3,
+            },
+            {
+              label: '소비',
+              data: labels.map(d => days[d]?.spent || 0),
+              borderColor: '#CF6679',
+              backgroundColor: 'rgba(207, 102, 121, 0.1)',
+              fill: true,
+              tension: 0.3,
+            },
+          ]
+        },
+        options: chartOptions('크레딧'),
+      });
+    }
+
+    // ── USERS TAB ──
+
+    async function loadUsers() {
+      try {
+        const { data: profiles, error } = await sb
+          .from('profiles')
+          .select('id, email, created_at, plan_type, total_assets')
+          .order('created_at', { ascending: false })
+          .limit(500);
+
+        if (error) throw error;
+
+        // Load credits and prediction stats
+        const userIds = (profiles || []).map(p => p.id);
+
+        const [{ data: credits }, { data: predStats }] = await Promise.all([
+          sb.from('user_credits').select('user_id, balance').in('user_id', userIds.slice(0, 100)),
+          sb.from('prediction_user_stats').select('user_id, accuracy_pct, total_predictions').in('user_id', userIds.slice(0, 100)),
+        ]);
+
+        const creditMap = {};
+        (credits || []).forEach(c => { creditMap[c.user_id] = c.balance; });
+
+        const predMap = {};
+        (predStats || []).forEach(p => { predMap[p.user_id] = p; });
+
+        allUsers = (profiles || []).map(p => ({
+          ...p,
+          credits: creditMap[p.id] || 0,
+          accuracy: predMap[p.id]?.accuracy_pct || 0,
+          predictions: predMap[p.id]?.total_predictions || 0,
+        }));
+
+        document.getElementById('user-count').textContent = allUsers.length;
+        renderUsersTable(allUsers);
+      } catch (err) {
+        console.error('[Users]', err);
+      }
+    }
+
+    function renderUsersTable(users) {
+      const tbody = document.getElementById('users-tbody');
+      tbody.innerHTML = users.map(u => `
+        <tr>
+          <td>${formatDate(u.created_at)}</td>
+          <td>${u.email || u.id.slice(0, 8)}</td>
+          <td><span class="tier-badge ${u.plan_type && u.plan_type !== 'free' ? 'tier-premium' : 'tier-free'}">
+            ${u.plan_type || 'free'}
+          </span></td>
+          <td>${u.credits}C</td>
+          <td>-</td>
+          <td>${u.predictions > 0 ? `${u.accuracy}% (${u.predictions}회)` : '-'}</td>
+          <td>${u.total_assets ? formatKRW(u.total_assets) : '-'}</td>
+        </tr>
+      `).join('');
+    }
+
+    function searchUsers(query) {
+      const q = query.toLowerCase();
+      const filtered = allUsers.filter(u =>
+        (u.email && u.email.toLowerCase().includes(q)) ||
+        u.id.toLowerCase().includes(q)
+      );
+      renderUsersTable(filtered);
+    }
+
+    // ── CREDITS TAB ──
+
+    async function loadCredits() {
+      try {
+        const [{ data: summary }, { data: recentTx }] = await Promise.all([
+          sb.from('user_credits').select('balance, lifetime_purchased, lifetime_spent'),
+          sb.from('credit_transactions')
+            .select('created_at, user_id, type, amount, balance_after, feature_type')
+            .order('created_at', { ascending: false })
+            .limit(50),
+        ]);
+
+        const total = (summary || []).reduce((acc, c) => ({
+          balance: acc.balance + (c.balance || 0),
+          purchased: acc.purchased + (c.lifetime_purchased || 0),
+          spent: acc.spent + (c.lifetime_spent || 0),
+        }), { balance: 0, purchased: 0, spent: 0 });
+
+        document.getElementById('credit-metrics').innerHTML = `
+          <div class="metric-card">
+            <div class="metric-label">총 유통 잔액</div>
+            <div class="metric-value green">${total.balance.toLocaleString()}C</div>
+            <div class="metric-sub">${(total.balance * 100).toLocaleString()}원</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">총 구매(충전)</div>
+            <div class="metric-value blue">${total.purchased.toLocaleString()}C</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">총 소비</div>
+            <div class="metric-value red">${total.spent.toLocaleString()}C</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">소비율</div>
+            <div class="metric-value yellow">${total.balance + total.spent > 0 ? (total.spent / (total.balance + total.spent) * 100).toFixed(1) : 0}%</div>
+          </div>
+        `;
+
+        document.getElementById('credits-tbody').innerHTML = (recentTx || []).map(tx => `
+          <tr>
+            <td>${formatDateTime(tx.created_at)}</td>
+            <td>${tx.user_id?.slice(0, 8) || '-'}</td>
+            <td><span class="tier-badge ${tx.type === 'spend' ? 'tier-free' : 'tier-premium'}">
+              ${txTypeLabel(tx.type)}
+            </span></td>
+            <td style="color:${tx.amount >= 0 ? 'var(--green)' : 'var(--red)'}">${tx.amount > 0 ? '+' : ''}${tx.amount}C</td>
+            <td>${tx.balance_after || 0}C</td>
+            <td>${tx.feature_type || '-'}</td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        console.error('[Credits]', err);
+      }
+    }
+
+    // ── ENGAGEMENT TAB ──
+
+    async function loadEngagement() {
+      try {
+        const [
+          { data: predStats },
+          { count: totalVotes },
+          { data: badges },
+          { data: recentPolls },
+        ] = await Promise.all([
+          sb.from('prediction_user_stats').select('accuracy_pct, total_predictions, correct_predictions'),
+          sb.from('prediction_votes').select('*', { count: 'exact', head: true }),
+          sb.from('user_badges').select('badge_id'),
+          sb.from('prediction_polls').select('*').order('date', { ascending: false }).limit(7),
+        ]);
+
+        const avgAccuracy = (predStats || []).length > 0
+          ? ((predStats || []).reduce((s, p) => s + (p.accuracy_pct || 0), 0) / predStats.length).toFixed(1)
+          : 0;
+
+        const badgeCounts = {};
+        (badges || []).forEach(b => { badgeCounts[b.badge_id] = (badgeCounts[b.badge_id] || 0) + 1; });
+
+        document.getElementById('engagement-metrics').innerHTML = `
+          <div class="metric-card">
+            <div class="metric-label">총 예측 투표</div>
+            <div class="metric-value blue">${(totalVotes || 0).toLocaleString()}</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">평균 적중률</div>
+            <div class="metric-value green">${avgAccuracy}%</div>
+            <div class="metric-sub">${(predStats || []).length}명 참여</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">발급된 뱃지</div>
+            <div class="metric-value yellow">${(badges || []).length}</div>
+            <div class="metric-sub">${Object.keys(badgeCounts).length}종</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">최근 퀴즈/예측</div>
+            <div class="metric-value">${(recentPolls || []).length}</div>
+            <div class="metric-sub">최근 7일</div>
+          </div>
+        `;
+
+        // Prediction chart
+        renderPredictionChart(recentPolls || []);
+
+        // Streak distribution (simplified)
+        renderStreakChart(predStats || []);
+      } catch (err) {
+        console.error('[Engagement]', err);
+      }
+    }
+
+    function renderPredictionChart(polls) {
+      const labels = polls.map(p => p.date?.slice(5) || '?').reverse();
+      // Simplified: just show poll count per day
+      if (charts.predictions) charts.predictions.destroy();
+      charts.predictions = new Chart(document.getElementById('chart-predictions'), {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            label: '예측 질문',
+            data: labels.map(() => 1),
+            backgroundColor: 'rgba(33, 150, 243, 0.6)',
+            borderRadius: 4,
+          }]
+        },
+        options: chartOptions('예측'),
+      });
+    }
+
+    function renderStreakChart(predStats) {
+      // Group by prediction ranges
+      const ranges = { '0-5': 0, '6-20': 0, '21-50': 0, '51-100': 0, '100+': 0 };
+      predStats.forEach(p => {
+        const t = p.total_predictions || 0;
+        if (t <= 5) ranges['0-5']++;
+        else if (t <= 20) ranges['6-20']++;
+        else if (t <= 50) ranges['21-50']++;
+        else if (t <= 100) ranges['51-100']++;
+        else ranges['100+']++;
+      });
+
+      if (charts.streaks) charts.streaks.destroy();
+      charts.streaks = new Chart(document.getElementById('chart-streaks'), {
+        type: 'doughnut',
+        data: {
+          labels: Object.keys(ranges),
+          datasets: [{
+            data: Object.values(ranges),
+            backgroundColor: ['#9E9E9E', '#2196F3', '#4CAF50', '#FFC107', '#CF6679'],
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'right', labels: { color: '#9E9E9E', padding: 12 } },
+          },
+        },
+      });
+    }
+
+    // ── CONTENT TAB ──
+
+    async function loadContent() {
+      try {
+        const [
+          { data: cards, count: cardCount },
+          { count: postCount },
+          { data: quizzes },
+        ] = await Promise.all([
+          sb.from('context_cards').select('*', { count: 'exact' }).order('date', { ascending: false }).limit(20),
+          sb.from('community_posts').select('*', { count: 'exact', head: true }),
+          sb.from('daily_quizzes').select('*', { count: 'exact', head: true }),
+        ]);
+
+        document.getElementById('content-metrics').innerHTML = `
+          <div class="metric-card">
+            <div class="metric-label">맥락 카드</div>
+            <div class="metric-value green">${cardCount || 0}</div>
+            <div class="metric-sub">생성된 카드 수</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">커뮤니티 게시글</div>
+            <div class="metric-value blue">${(postCount || 0).toLocaleString()}</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">퀴즈</div>
+            <div class="metric-value yellow">${quizzes?.count || 0}</div>
+          </div>
+        `;
+
+        document.getElementById('context-tbody').innerHTML = (cards || []).map(c => `
+          <tr>
+            <td>${c.date || '-'}</td>
+            <td>${c.headline || '(제목 없음)'}</td>
+            <td><span class="tier-badge ${c.sentiment === 'calm' ? 'tier-premium' : 'tier-free'}">${c.sentiment || '-'}</span></td>
+            <td>-</td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        console.error('[Content]', err);
+      }
+    }
+
+    // ── ANALYTICS TAB ──
+
+    async function loadAnalytics() {
+      try {
+        const { data: events } = await sb
+          .from('analytics_events')
+          .select('created_at, user_id, event_name, properties')
+          .order('created_at', { ascending: false })
+          .limit(100);
+
+        document.getElementById('analytics-tbody').innerHTML = (events || []).map(e => `
+          <tr>
+            <td>${formatDateTime(e.created_at)}</td>
+            <td>${e.user_id?.slice(0, 8) || 'anon'}</td>
+            <td><strong>${e.event_name}</strong></td>
+            <td style="font-size:11px; color:var(--text3); max-width:300px; overflow:hidden; text-overflow:ellipsis;">${JSON.stringify(e.properties || {}).slice(0, 80)}</td>
+          </tr>
+        `).join('') || '<tr><td colspan="4"><div class="empty-state"><p>아직 이벤트가 없습니다</p></div></td></tr>';
+      } catch (err) {
+        console.error('[Analytics]', err);
+      }
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    // UTILITIES
+    // ══════════════════════════════════════════════════════════════
+
+    function formatDate(iso) {
+      if (!iso) return '-';
+      const d = new Date(iso);
+      return `${d.getMonth() + 1}/${d.getDate()}`;
+    }
+
+    function formatDateTime(iso) {
+      if (!iso) return '-';
+      const d = new Date(iso);
+      return `${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
+    }
+
+    function formatKRW(amount) {
+      if (!amount) return '-';
+      if (amount >= 100000000) return `${(amount / 100000000).toFixed(1)}억`;
+      if (amount >= 10000) return `${(amount / 10000).toFixed(0)}만원`;
+      return `${amount.toLocaleString()}원`;
+    }
+
+    function txTypeLabel(type) {
+      const labels = { bonus: '지급', spend: '소비', purchase: '충전', refund: '환불' };
+      return labels[type] || type;
+    }
+
+    function chartOptions(title) {
+      return {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+        },
+        scales: {
+          x: { ticks: { color: '#666' }, grid: { color: 'rgba(51,51,51,0.5)' } },
+          y: { ticks: { color: '#666' }, grid: { color: 'rgba(51,51,51,0.5)' } },
+        },
+      };
+    }
+  </script>
+</body>
+</html>

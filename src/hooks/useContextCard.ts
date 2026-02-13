@@ -5,8 +5,16 @@
  * 오늘의 맥락 카드를 조회하고, 유저별 포트폴리오 영향도를 병합
  * Central Kitchen 패턴: DB only (< 100ms), 라이브 폴백 없음
  *
+ * [개선 사항 - 2026-02-13]
+ * 1. AsyncStorage 캐시: 앱 재시작 시 이전 카드를 즉시 표시 후 백그라운드 갱신
+ * 2. 정적 폴백: DB도 캐시도 없으면 투자 원칙 교육 카드 표시
+ * 3. 데이터 신선도: isStale(6시간), lastUpdated 타임스탬프 제공
+ * 4. 지수 백오프 재시도: 1초, 3초 간격으로 2회 재시도
+ * 5. freshnessLabel: "어제의 분석" 등 날짜 라벨 자동 계산
+ *
  * [캐시 전략]
- * - staleTime: 5분 → 자주 갱신할 필요 없음 (하루 1회 Edge Function 생성)
+ * - React Query staleTime: 5분 (TanStack Query 인메모리 캐시)
+ * - AsyncStorage: 앱 종료 후에도 유지 (마지막 성공 카드)
  * - Pull-to-refresh 시에만 강제 갱신
  *
  * [사용처]
@@ -14,12 +22,19 @@
  * - 예측 게임: 복기 시 어제/그저께 맥락 카드 표시
  */
 
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import supabase from '../services/supabase';
 import {
   getTodayContextCard,
   getRecentContextCards,
   getQuickContextSentiment,
+  getCachedCard,
+  setCachedCard,
+  getCachedCardTimestamp,
+  isCardStale,
+  getCardFreshnessLabel,
+  FALLBACK_CONTEXT_CARD,
   type ContextCardWithImpact,
   type ContextCardSentiment,
 } from '../services/contextCardService';
@@ -35,21 +50,70 @@ export const CONTEXT_CARDS_RECENT_KEY = (days: number) => ['contextCards', 'rece
 export const CONTEXT_SENTIMENT_KEY = ['contextCard', 'sentiment'];
 
 // ============================================================================
+// 설정 상수
+// ============================================================================
+
+/** 데이터 신선도 기준: 이 시간(시) 이상 오래되면 stale로 판단 */
+const STALE_THRESHOLD_HOURS = 6;
+
+/** 기본 재시도 횟수 */
+const DEFAULT_RETRY_COUNT = 2;
+
+// ============================================================================
 // 훅: 오늘의 맥락 카드
 // ============================================================================
 
 /**
  * 오늘의 맥락 카드 + 유저 영향도 조회
  *
+ * 개선된 동작:
+ * 1. 앱 실행 시 AsyncStorage 캐시를 먼저 읽어 즉시 표시
+ * 2. 백그라운드로 DB에서 최신 데이터 fetch
+ * 3. DB 실패 시 캐시 유지, 캐시도 없으면 정적 폴백 카드 표시
+ * 4. 데이터 신선도(isStale, freshnessLabel) 정보 제공
+ *
+ * @param options.retryCount - 재시도 횟수 (기본 2)
  * @returns {
  *   data: ContextCardWithImpact | null,
  *   isLoading: boolean,
  *   isError: boolean,
  *   error: Error | null,
- *   refetch: () => void
+ *   refetch: () => void,
+ *   isEmpty: boolean,          // 의미 있는 데이터가 없는 상태 (폴백 표시 중)
+ *   isStale: boolean,          // 6시간 이상 오래된 데이터
+ *   isFallback: boolean,       // 정적 폴백 카드를 표시 중
+ *   lastUpdated: number | null, // 마지막 성공적 fetch 시각 (ms)
+ *   freshnessLabel: string | null, // "어제의 분석" 등 날짜 라벨
+ *   effectiveData: ContextCardWithImpact, // 항상 non-null (폴백 포함)
  * }
  */
-export function useContextCard() {
+export function useContextCard(options?: { retryCount?: number }) {
+  const retryCount = options?.retryCount ?? DEFAULT_RETRY_COUNT;
+
+  // AsyncStorage 캐시 상태
+  const [cachedData, setCachedData] = useState<ContextCardWithImpact | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<number | null>(null);
+  const isCacheLoaded = useRef(false);
+
+  // 앱 실행 시 캐시를 한 번만 로드
+  useEffect(() => {
+    if (isCacheLoaded.current) return;
+    isCacheLoaded.current = true;
+
+    (async () => {
+      const [cached, timestamp] = await Promise.all([
+        getCachedCard(),
+        getCachedCardTimestamp(),
+      ]);
+      if (cached) {
+        setCachedData(cached);
+      }
+      if (timestamp) {
+        setLastUpdated(timestamp);
+      }
+    })();
+  }, []);
+
   const query = useQuery<ContextCardWithImpact | null>({
     queryKey: CONTEXT_CARD_TODAY_KEY,
     queryFn: async () => {
@@ -62,20 +126,71 @@ export function useContextCard() {
 
       // 2. 오늘의 맥락 카드 조회
       const result = await getTodayContextCard(user.id);
+
+      // 3. 성공 시 캐시 업데이트
+      if (result) {
+        setCachedData(result);
+        const now = Date.now();
+        setLastUpdated(now);
+        // AsyncStorage 캐시도 서비스 레이어에서 이미 저장됨
+      }
+
       return result;
     },
     staleTime: 5 * 60 * 1000, // 5분 (Edge Function이 매일 07:00에 1회 생성하므로 자주 갱신 불필요)
     gcTime: 30 * 60 * 1000,   // 30분 동안 메모리 유지
-    retry: 2,                 // 실패 시 2번 재시도 (네트워크 불안정 대응)
+
+    // 지수 백오프 재시도: 1초, 3초 간격
+    retry: retryCount,
+    retryDelay: (attemptIndex) => {
+      // attemptIndex: 0 -> 1000ms, 1 -> 3000ms
+      const delays = [1000, 3000, 5000];
+      return delays[attemptIndex] ?? 5000;
+    },
+
+    // 캐시 데이터가 있으면 placeholder로 사용 (로딩 시 빈 화면 방지)
+    placeholderData: cachedData ?? undefined,
   });
 
-  // 데이터 상태 구분: 로딩 / 에러 / 데이터 없음 / 데이터 있음
-  const isEmpty = !query.isLoading && !query.isError && query.data === null;
+  // ── 데이터 상태 계산 ──
+
+  // DB/네트워크에서 가져온 최신 데이터
+  const freshData = query.data;
+
+  // 실제로 사용자에게 보여줄 데이터: 최신 > 캐시 > 폴백
+  const effectiveData: ContextCardWithImpact =
+    freshData ?? cachedData ?? FALLBACK_CONTEXT_CARD;
+
+  // 정적 폴백 카드를 표시 중인지
+  const isFallback = !freshData && !cachedData;
+
+  // 로딩 완료했지만 맥락 카드 데이터가 없는 상태 (DB에 카드 미생성, 캐시도 없음)
+  const isEmpty = !query.isLoading && !freshData && !cachedData;
+
+  // 데이터 신선도 체크: 카드 날짜 기준 6시간 이상 오래됨
+  const isStale = effectiveData
+    ? isCardStale(effectiveData.card.created_at, STALE_THRESHOLD_HOURS)
+    : false;
+
+  // 날짜 라벨: "어제의 분석" 등
+  const freshnessLabel = effectiveData
+    ? getCardFreshnessLabel(effectiveData.card.date)
+    : null;
 
   return {
     ...query,
     /** 로딩 완료했지만 맥락 카드 데이터가 없는 상태 (DB에 카드 미생성) */
     isEmpty,
+    /** 6시간 이상 오래된 데이터 */
+    isStale,
+    /** 정적 폴백 카드를 표시 중 (DB도 캐시도 없음) */
+    isFallback,
+    /** 마지막 성공적 데이터 fetch 시각 (ms timestamp) */
+    lastUpdated,
+    /** "어제의 분석" 등 날짜 기반 신선도 라벨 (오늘이면 null) */
+    freshnessLabel,
+    /** 항상 non-null인 데이터 (최신 > 캐시 > 정적 폴백 순) */
+    effectiveData,
   };
 }
 

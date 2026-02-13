@@ -263,7 +263,60 @@ export const EXTREME_SCENARIOS: ExtremeScenario[] = [
     },
   },
 
-  // ── 5. 수도권 대지진 ──
+  // ── 5. AGI 도래 ──
+  {
+    id: 'agi_mass_unemployment',
+    emoji: '🧠',
+    title: '2년 안에 AGI가 온다면?',
+    subtitle: 'AI가 대부분의 일자리를 대체하는 세상',
+    category: 'tech',
+    categoryLabel: '기술',
+    shareTitle: 'AGI 시대, 내 포트폴리오는 살아남을까?',
+    impactChain: [
+      'AI가 AGI 수준 달성 선언 (범용 인공지능)',
+      '화이트칼라 직종 대규모 자동화 시작',
+      '실업률 급등 → 소비 위축 → 경기 침체 우려',
+      'AI 기업 시총 폭등 vs 전통 기업 대규모 구조조정',
+      '각국 정부 기본소득(UBI) 논의 가속',
+      'AI 인프라(전력·데이터센터·반도체) 수요 폭발',
+    ],
+    marketImpact: {
+      kospi: '-10~20% (전통 업종 중심)',
+      usdkrw: '+100~200원',
+      upSectors: [
+        { name: 'AI 플랫폼 (NVDA, MSFT, GOOG)', change: '+50~100%' },
+        { name: '전력·에너지 인프라', change: '+30~50%' },
+        { name: '로봇·자동화', change: '+40~80%' },
+      ],
+      downSectors: [
+        { name: '금융·회계·법률 서비스', change: '-30~50%' },
+        { name: '콜센터·BPO', change: '-50~70%' },
+        { name: '전통 미디어·콘텐츠', change: '-20~40%' },
+      ],
+    },
+    historicalParallel: {
+      event: '산업혁명 (1760~1840)',
+      year: '1760-1840',
+      initialDrop: '수공업자 대규모 실직, 러다이트 운동',
+      recoveryTime: '20~30년 후 새로운 직종 창출, 생활수준 2배 향상',
+      lesson: '기술 혁명은 단기적으로 고통스럽지만, 역사적으로 항상 더 많은 부와 새로운 직업을 창출했습니다. 핵심은 "대체되는 쪽"이 아닌 "활용하는 쪽"에 투자하는 것.',
+    },
+    actionGuide: [
+      'AI 수혜주(인프라·플랫폼·반도체) 비중 확대 검토',
+      '순수 인력 의존 기업 비중 축소 고려',
+      '로봇·자동화·전력 인프라는 AGI 시대 필수 인프라',
+      'AI를 활용하는 기업 vs AI에 대체되는 기업을 구분',
+      '본인의 커리어도 AI 활용 방향으로 전환 준비',
+    ],
+    whatIfInput: {
+      scenario: 'custom',
+      description:
+        'AGI(범용 인공지능) 2년 내 도래 시나리오: AI가 인간 수준의 범용 지능을 달성하여 화이트칼라 직종 대부분이 자동화됨. 대규모 실업, 소비 위축, 경기 침체 우려. 반면 AI 인프라·플랫폼·로봇 기업은 폭등. 각 보유 종목별 영향을 분석해주세요.',
+      magnitude: -15,
+    },
+  },
+
+  // ── 6. 수도권 대지진 ──
   {
     id: 'seoul_earthquake',
     emoji: '🏚️',

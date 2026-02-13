@@ -11,7 +11,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 // 환경변수
 // ============================================================================
 const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')!;
-const GEMINI_MODEL = 'gemini-2.0-flash';
+const GEMINI_MODEL = 'gemini-2.5-flash';
 
 // ============================================================================
 // 타입 정의
@@ -133,9 +133,9 @@ type GeminiProxyRequest = MorningBriefingRequest | DeepDiveRequest | CFOChatRequ
 
 /**
  * Gemini API 직접 호출 (Google Search 그라운딩 활성화)
- * [수정 2026-02-13] 타임아웃 추가 (30초), 재시도 로직 (1회)
+ * [수정 2026-02-13] gemini-2.5-flash + 타임아웃 (30초) + 재시도 로직 (1회)
  */
-async function callGeminiWithSearch(prompt: string, timeoutMs: number = 30000): Promise<string> {
+async function callGeminiWithSearch(prompt: string, timeoutMs: number = 30000, maxRetries: number = 1): Promise<string> {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
 
   const body = {
@@ -147,56 +147,84 @@ async function callGeminiWithSearch(prompt: string, timeoutMs: number = 30000): 
     },
   };
 
-  // AbortController로 타임아웃 구현
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    // AbortController로 타임아웃 구현
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-  try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-      signal: controller.signal,
-    });
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Gemini API Error (${response.status}): ${errorText.substring(0, 200)}`);
-    }
+      if (!response.ok) {
+        const errorText = await response.text();
+        const statusCode = response.status;
 
-    const json = await response.json();
+        // 429/503은 재시도 가능
+        if (attempt < maxRetries && (statusCode === 429 || statusCode === 503)) {
+          const delay = Math.pow(2, attempt) * 1000;
+          console.log(`[Gemini Proxy] 재시도 ${attempt + 1}/${maxRetries} (HTTP ${statusCode}, ${delay}ms 후)`);
+          clearTimeout(timeoutId);
+          await new Promise(r => setTimeout(r, delay));
+          continue;
+        }
 
-    // Gemini 응답 구조 방어적 파싱 (candidates 배열이 비어있을 수 있음)
-    const candidates = json.candidates;
-    if (!candidates || candidates.length === 0) {
-      const blockReason = json.promptFeedback?.blockReason;
-      if (blockReason) {
-        throw new Error(`Gemini API 콘텐츠 차단: ${blockReason}`);
+        throw new Error(`Gemini API Error (${statusCode}): ${errorText.substring(0, 200)}`);
       }
-      throw new Error('Gemini API returned no candidates');
-    }
 
-    const text = candidates[0]?.content?.parts?.[0]?.text;
+      const json = await response.json();
 
-    if (!text) {
-      const finishReason = candidates[0]?.finishReason;
-      throw new Error(`Gemini API returned empty response (finishReason: ${finishReason || 'unknown'})`);
-    }
+      // Gemini 응답 구조 방어적 파싱 (candidates 배열이 비어있을 수 있음)
+      const candidates = json.candidates;
+      if (!candidates || candidates.length === 0) {
+        const blockReason = json.promptFeedback?.blockReason;
+        if (blockReason) {
+          throw new Error(`Gemini API 콘텐츠 차단: ${blockReason}`);
+        }
+        throw new Error('Gemini API returned no candidates');
+      }
 
-    return text;
-  } catch (err: any) {
-    // AbortController 타임아웃 에러를 사용자 친화적 메시지로 변환
-    if (err.name === 'AbortError') {
-      throw new Error(`Gemini API 타임아웃: ${timeoutMs / 1000}초 내에 응답하지 않았습니다.`);
+      const text = candidates[0]?.content?.parts?.[0]?.text;
+
+      if (!text) {
+        const finishReason = candidates[0]?.finishReason;
+        throw new Error(`Gemini API returned empty response (finishReason: ${finishReason || 'unknown'})`);
+      }
+
+      return text;
+    } catch (err: any) {
+      clearTimeout(timeoutId);
+
+      // 타임아웃/네트워크 에러는 재시도 가능
+      if (attempt < maxRetries && (
+        err.name === 'AbortError' ||
+        err.message?.includes('RESOURCE_EXHAUSTED')
+      )) {
+        const delay = Math.pow(2, attempt) * 1000;
+        console.log(`[Gemini Proxy] 재시도 ${attempt + 1}/${maxRetries} (${err.name}, ${delay}ms 후)`);
+        await new Promise(r => setTimeout(r, delay));
+        continue;
+      }
+
+      // AbortController 타임아웃 에러를 사용자 친화적 메시지로 변환
+      if (err.name === 'AbortError') {
+        throw new Error(`Gemini API 타임아웃: ${timeoutMs / 1000}초 내에 응답하지 않았습니다.`);
+      }
+      throw err;
+    } finally {
+      clearTimeout(timeoutId);
     }
-    throw err;
-  } finally {
-    clearTimeout(timeoutId);
   }
+
+  throw new Error('Gemini API 호출 실패. 잠시 후 다시 시도해주세요.');
 }
 
 /**
- * Gemini 응답에서 순수 JSON만 추출
+ * Gemini 응답에서 순수 JSON만 추출 (강화된 파서)
  */
 function cleanJsonResponse(text: string): any {
   let cleaned = text
@@ -205,18 +233,35 @@ function cleanJsonResponse(text: string): any {
     .replace(/```\s*/g, '')
     .trim();
 
+  // 마크다운 기호 제거 (JSON 문자열 내부의 *, _, # 등)
+  cleaned = cleaned
+    .replace(/\*{1,3}([^*]+)\*{1,3}/g, '$1')
+    .replace(/_{1,2}([^_]+)_{1,2}/g, '$1')
+    .replace(/^#+\s*/gm, '');
+
+  // JSON 객체 경계 찾기
   const jsonStart = cleaned.indexOf('{');
   const jsonEnd = cleaned.lastIndexOf('}');
 
   if (jsonStart === -1 || jsonEnd === -1 || jsonEnd <= jsonStart) {
-    console.error('[cleanJsonResponse] JSON 객체를 찾을 수 없음. 원본 앞 200자:', text.substring(0, 200));
-    throw new Error(`Gemini 응답이 JSON 형식이 아닙니다: "${text.substring(0, 80)}..."`);
+    // 배열 형태 시도
+    const arrStart = cleaned.indexOf('[');
+    const arrEnd = cleaned.lastIndexOf(']');
+    if (arrStart !== -1 && arrEnd !== -1 && arrEnd > arrStart) {
+      cleaned = cleaned.substring(arrStart, arrEnd + 1);
+    } else {
+      console.error('[cleanJsonResponse] JSON 객체를 찾을 수 없음. 원본 앞 200자:', text.substring(0, 200));
+      throw new Error(`Gemini 응답이 JSON 형식이 아닙니다: "${text.substring(0, 80)}..."`);
+    }
+  } else {
+    cleaned = cleaned.substring(jsonStart, jsonEnd + 1);
   }
-
-  cleaned = cleaned.substring(jsonStart, jsonEnd + 1);
 
   // trailing comma 제거 (Gemini가 종종 ,} 또는 ,] 형태로 응답)
   cleaned = cleaned.replace(/,\s*([\]}])/g, '$1');
+
+  // ₩ 기호 처리 — JSON 숫자 필드 앞의 ₩ 제거
+  cleaned = cleaned.replace(/:\s*₩\s*([0-9])/g, ': $1');
 
   return JSON.parse(cleaned);
 }

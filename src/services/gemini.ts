@@ -20,7 +20,7 @@ import type {
 //    프로덕션에서는 Supabase Edge Function 등 서버 사이드 프록시를 통해 호출하는 것을 권장합니다.
 //    절대 API 키를 소스 코드에 하드코딩하지 마세요. 반드시 .env 파일을 통해 주입하세요.
 const API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY || '';
-const MODEL_NAME = process.env.EXPO_PUBLIC_GEMINI_MODEL || 'gemini-2.0-flash';
+const MODEL_NAME = process.env.EXPO_PUBLIC_GEMINI_MODEL || 'gemini-2.5-flash';
 
 // 🔍 디버그: API 키 로드 확인
 if (!API_KEY) {
@@ -270,7 +270,7 @@ export const validateAssetData = (
 
 const genAI = new GoogleGenerativeAI(API_KEY);
 
-// 환경변수로 모델 설정 (기본값: gemini-2.0-flash)
+// 환경변수로 모델 설정 (기본값: gemini-2.5-flash)
 const model = genAI.getGenerativeModel({ model: MODEL_NAME });
 
 // ============================================================================
@@ -280,7 +280,7 @@ const model = genAI.getGenerativeModel({ model: MODEL_NAME });
 // 참고: https://cloud.google.com/vertex-ai/generative-ai/docs/model-reference/gemini
 
 // ⚠️ TEMPORARY FIX: google_search 도구가 네트워크 에러를 일으키면 임시로 제거
-// TODO: Gemini 2.0-flash의 올바른 google_search 형식 확인 후 재활성화
+// TODO: Gemini 2.5-flash의 올바른 google_search 형식 확인 후 재활성화
 const USE_GOOGLE_SEARCH = true; // true로 변경하면 google_search 활성화
 
 const modelWithSearch = genAI.getGenerativeModel(
@@ -289,7 +289,7 @@ const modelWithSearch = genAI.getGenerativeModel(
         model: MODEL_NAME,
         tools: [
           {
-            // @ts-ignore - Gemini 2.0 Google Search Tool (google_search_retrieval은 deprecated)
+            // @ts-ignore - Gemini 2.5 Google Search Tool (google_search_retrieval은 deprecated)
             google_search: {},
           },
         ],
@@ -297,11 +297,92 @@ const modelWithSearch = genAI.getGenerativeModel(
     : { model: MODEL_NAME } // google_search 비활성화 시 일반 모델 사용
 );
 
+// ============================================================================
+// [유틸리티] Gemini 호출 래퍼 + JSON 파서 (2.5 업그레이드)
+// ============================================================================
+
+/** Gemini 호출 + 타임아웃 + 재시도 래퍼 */
+async function callGeminiSafe(
+  targetModel: any,
+  prompt: string | any[],
+  options?: { timeoutMs?: number; maxRetries?: number }
+): Promise<string> {
+  const timeoutMs = options?.timeoutMs ?? 30000;
+  const maxRetries = options?.maxRetries ?? 1;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+      const result = await targetModel.generateContent(prompt, { signal: controller.signal });
+      clearTimeout(timer);
+
+      const text = result.response.text();
+      if (!text || text.trim().length === 0) {
+        throw new Error('빈 응답');
+      }
+      return text;
+    } catch (err: any) {
+      if (attempt < maxRetries && (
+        err.name === 'AbortError' ||
+        err.message?.includes('429') ||
+        err.message?.includes('503') ||
+        err.message?.includes('RESOURCE_EXHAUSTED')
+      )) {
+        const delay = Math.pow(2, attempt) * 1000;
+        console.log(`[Gemini] 재시도 ${attempt + 1}/${maxRetries} (${delay}ms 후)`);
+        await new Promise(r => setTimeout(r, delay));
+        continue;
+      }
+      if (err.name === 'AbortError') {
+        throw new Error(`AI 분석 시간 초과 (${timeoutMs / 1000}초). 다시 시도해주세요.`);
+      }
+      throw err;
+    }
+  }
+  throw new Error('AI 분석 실패. 잠시 후 다시 시도해주세요.');
+}
+
+/** JSON 응답 안전 파싱 (Gemini의 markdown 코드블록 제거) */
+function parseGeminiJson<T = any>(text: string): T {
+  let cleaned = text.trim();
+  // Remove markdown code blocks
+  cleaned = cleaned.replace(/^```(?:json|javascript)?\s*/i, '').replace(/\s*```$/i, '');
+  // Remove all remaining code block markers
+  cleaned = cleaned.replace(/```json\s*/gi, '').replace(/```javascript\s*/gi, '').replace(/```\s*/g, '');
+  cleaned = cleaned.trim();
+  // Remove markdown formatting inside JSON strings (*, _, #)
+  cleaned = cleaned
+    .replace(/\*{1,3}([^*]+)\*{1,3}/g, '$1')
+    .replace(/_{1,2}([^_]+)_{1,2}/g, '$1')
+    .replace(/^#+\s*/gm, '');
+  // Find JSON boundaries
+  const jsonStart = cleaned.indexOf('{');
+  const jsonEnd = cleaned.lastIndexOf('}');
+  if (jsonStart === -1 || jsonEnd === -1 || jsonEnd <= jsonStart) {
+    // Try array
+    const arrStart = cleaned.indexOf('[');
+    const arrEnd = cleaned.lastIndexOf(']');
+    if (arrStart !== -1 && arrEnd !== -1 && arrEnd > arrStart) {
+      cleaned = cleaned.substring(arrStart, arrEnd + 1);
+    } else {
+      throw new Error('JSON 형식을 찾을 수 없습니다');
+    }
+  } else {
+    cleaned = cleaned.substring(jsonStart, jsonEnd + 1);
+  }
+  // Fix trailing commas
+  cleaned = cleaned.replace(/,\s*([\]}])/g, '$1');
+  // Fix ₩ symbols before numbers in JSON number fields
+  cleaned = cleaned.replace(/:\s*₩\s*([0-9])/g, ': $1');
+  return JSON.parse(cleaned) as T;
+}
+
 export const getPortfolioAdvice = async (prompt: any) => {
   try {
     const msg = typeof prompt === 'string' ? prompt : JSON.stringify(prompt);
-    const result = await model.generateContent(msg);
-    return result.response.text();
+    return await callGeminiSafe(model, msg);
   } catch (error) {
     console.error("Gemini Text Error:", error);
     return "AI 응답 오류. 잠시 후 다시 시도해주세요.";
@@ -909,38 +990,11 @@ ${JSON.stringify(portfolioWithAllocation.map(p => ({
 }
 `;
 
-    // [핵심] Google Search 그라운딩이 활성화된 모델 사용
-    const result = await modelWithSearch.generateContent(prompt);
-    const responseText = result.response.text();
+    // [핵심] Google Search 그라운딩이 활성화된 모델 사용 + 타임아웃/재시도
+    const responseText = await callGeminiSafe(modelWithSearch, prompt, { timeoutMs: 30000, maxRetries: 1 });
 
-    // JSON 정제 (Gemini 마크다운 응답 대응)
-    let cleanText = responseText
-      .replace(/```json\s*/gi, '')
-      .replace(/```javascript\s*/gi, '')
-      .replace(/```\s*/g, '')
-      .trim();
-
-    const jsonStart = cleanText.indexOf('{');
-    const jsonEnd = cleanText.lastIndexOf('}');
-
-    // JSON 객체가 응답에 없는 경우 방어 (429 에러, 텍스트 응답 등)
-    if (jsonStart === -1 || jsonEnd === -1 || jsonEnd <= jsonStart) {
-      console.error('[Gemini] JSON 객체를 찾을 수 없음. 원본 응답 앞 200자:', responseText.substring(0, 200));
-      throw new Error(`Gemini 응답이 JSON 형식이 아닙니다: "${responseText.substring(0, 100)}"`);
-    }
-
-    cleanText = cleanText.substring(jsonStart, jsonEnd + 1);
-
-    // 마크다운 기호 제거 (JSON 문자열 내부의 *, _, # 등)
-    cleanText = cleanText
-      .replace(/\*{1,3}([^*]+)\*{1,3}/g, '$1')  // *bold* → bold
-      .replace(/_{1,2}([^_]+)_{1,2}/g, '$1')     // _italic_ → italic
-      .replace(/^#+\s*/gm, '');                    // # header → header
-
-    // trailing comma 제거 (Gemini가 종종 ,} 또는 ,] 형태로 응답)
-    cleanText = cleanText.replace(/,\s*([\]}])/g, '$1');
-
-    const analysisResult = JSON.parse(cleanText);
+    // JSON 정제 및 파싱 (통합 파서 사용)
+    const analysisResult = parseGeminiJson(responseText);
 
     // 총 손익 계산
     const totalCostBasis = portfolio.reduce(
@@ -1121,27 +1175,10 @@ ${JSON.stringify(assetsSummary, null, 2)}
 중요: 유효한 JSON만 반환. 마크다운 금지. 한국어 작성.
 `;
 
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
+    const text = await callGeminiSafe(model, prompt);
 
-    // JSON 정제
-    let cleanText = text
-      .replace(/```json\s*/gi, '')
-      .replace(/```\s*/g, '')
-      .trim();
-
-    const jsonStart = cleanText.indexOf('{');
-    const jsonEnd = cleanText.lastIndexOf('}');
-    if (jsonStart === -1 || jsonEnd === -1 || jsonEnd <= jsonStart) {
-      console.error('[Gemini] JSON 객체를 찾을 수 없음. 원본 응답 앞 200자:', text.substring(0, 200));
-      throw new Error(`Gemini 응답이 JSON 형식이 아닙니다: "${text.substring(0, 100)}"`);
-    }
-    cleanText = cleanText.substring(jsonStart, jsonEnd + 1);
-
-    // trailing comma 제거
-    cleanText = cleanText.replace(/,\s*([\]}])/g, '$1');
-
-    const optimizationResult = JSON.parse(cleanText);
+    // JSON 정제 및 파싱 (통합 파서 사용)
+    const optimizationResult = parseGeminiJson(text);
 
     return {
       ...optimizationResult,
@@ -1432,51 +1469,19 @@ ${hasFundamentals ? '12. API 제공 데이터(시가총액, PER, PBR, ROE 등)�
 `;
 
   try {
-    const result = await modelWithSearch.generateContent(prompt);
-    const text = result.response.text();
+    // Gemini 호출 (타임아웃 45초 — 딥다이브는 응답이 길어서 여유있게 설정)
+    const text = await callGeminiSafe(modelWithSearch, prompt, { timeoutMs: 45000, maxRetries: 1 });
 
     if (__DEV__) {
       console.log('[DeepDive] Gemini 원본 응답 길이:', text.length);
       console.log('[DeepDive] 응답 앞 200자:', text.substring(0, 200));
     }
 
-    // Step 1: 마크다운 코드블록 제거
-    let cleaned = text
-      .replace(/```json\s*/gi, '')
-      .replace(/```javascript\s*/gi, '')
-      .replace(/```\s*/g, '')
-      .trim();
-
-    // Step 2: JSON 객체 추출 (가장 바깥 { } 매칭)
-    const jsonStart = cleaned.indexOf('{');
-    const jsonEnd = cleaned.lastIndexOf('}');
-
-    if (jsonStart === -1 || jsonEnd === -1 || jsonEnd <= jsonStart) {
-      console.error('[DeepDive] JSON 객체를 찾을 수 없음. 원본 응답:', text.substring(0, 500));
-      throw new Error('Gemini 응답에서 JSON을 찾을 수 없습니다');
-    }
-
-    cleaned = cleaned.substring(jsonStart, jsonEnd + 1);
-
-    // Step 3: 마크다운 기호 제거 (JSON 문자열 내부의 *, _, # 등)
-    cleaned = cleaned
-      .replace(/\*{1,3}([^*]+)\*{1,3}/g, '$1')
-      .replace(/_{1,2}([^_]+)_{1,2}/g, '$1')
-      .replace(/^#+\s*/gm, '');
-
-    // Step 4: trailing comma 제거 (Gemini가 종종 ,} 또는 ,] 형태로 응답)
-    cleaned = cleaned.replace(/,\s*([\]}])/g, '$1');
-
-    // Step 5: ₩ 기호 처리 — JSON 숫자 필드 앞의 ₩ 제거
-    // 예: "marketCap": ₩1600000 → "marketCap": 1600000
-    // 문자열 내부의 ₩는 유지 (예: "value": "₩1,600조원")
-    cleaned = cleaned.replace(/:\s*₩\s*([0-9])/g, ': $1');
-
-    // Step 6: JSON 파싱
+    // JSON 정제 및 파싱 (통합 파서 사용)
     try {
-      return JSON.parse(cleaned) as DeepDiveResult;
+      return parseGeminiJson<DeepDiveResult>(text);
     } catch (parseErr) {
-      console.error('[DeepDive] JSON 파싱 실패. 정제된 응답 앞 500자:', cleaned.substring(0, 500));
+      console.error('[DeepDive] JSON 파싱 실패. 원본 응답 앞 500자:', text.substring(0, 500));
       console.error('[DeepDive] JSON 파싱 에러:', parseErr);
       throw new Error('Gemini 응답 JSON 파싱에 실패했습니다. 다시 시도해주세요.');
     }
@@ -1486,6 +1491,9 @@ ${hasFundamentals ? '12. API 제공 데이터(시가총액, PER, PBR, ROE 등)�
     // 원인별 사용자 메시지
     if (error.message?.includes('JSON')) {
       throw error; // JSON 파싱 에러는 그대로 전달
+    }
+    if (error.message?.includes('시간 초과')) {
+      throw new Error('AI 분석 시간이 초과되었습니다. 다시 시도해주세요.');
     }
     if (error.message?.includes('429') || error.message?.includes('RESOURCE_EXHAUSTED')) {
       throw new Error('AI 분석 요청이 너무 많습니다. 잠시 후 다시 시도해주세요.');
@@ -1587,13 +1595,8 @@ ${portfolioStr}
 `;
 
   try {
-    const result = await modelWithSearch.generateContent(prompt);
-    const text = result.response.text();
-    let cleaned = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
-    const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
-    if (jsonMatch) cleaned = jsonMatch[0];
-    cleaned = cleaned.replace(/,\s*([\]}])/g, '$1');
-    return JSON.parse(cleaned) as WhatIfResult;
+    const text = await callGeminiSafe(modelWithSearch, prompt, { timeoutMs: 30000, maxRetries: 1 });
+    return parseGeminiJson<WhatIfResult>(text);
   } catch (error) {
     console.error('What-If 시뮬레이션 오류:', error);
     throw new Error('What-If 시뮬레이션에 실패했습니다');
@@ -1676,13 +1679,8 @@ ${input.residency === 'KR' ?
 `;
 
   try {
-    const result = await modelWithSearch.generateContent(prompt);
-    const text = result.response.text();
-    let cleaned = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
-    const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
-    if (jsonMatch) cleaned = jsonMatch[0];
-    cleaned = cleaned.replace(/,\s*([\]}])/g, '$1');
-    return JSON.parse(cleaned) as TaxReportResult;
+    const text = await callGeminiSafe(modelWithSearch, prompt, { timeoutMs: 30000, maxRetries: 1 });
+    return parseGeminiJson<TaxReportResult>(text);
   } catch (error) {
     console.error('세금 리포트 생성 오류:', error);
     throw new Error('세금 최적화 리포트 생성에 실패했습니다');
@@ -1732,8 +1730,7 @@ ${input.message}
 `;
 
   try {
-    const result = await modelWithSearch.generateContent(prompt);
-    return result.response.text();
+    return await callGeminiSafe(modelWithSearch, prompt, { timeoutMs: 30000, maxRetries: 1 });
   } catch (error) {
     console.error('AI 버핏 응답 오류:', error);
     throw new Error('AI 버핏 응답 생성에 실패했습니다');

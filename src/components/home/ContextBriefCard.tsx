@@ -296,7 +296,7 @@ function LayerSection({
           <View style={styles.lockedCTA}>
             <Ionicons name="star" size={14} color={COLORS.premium.gold} />
             <Text style={styles.lockedCTAText}>Premium으로 전체 보기</Text>
-            <Text style={styles.lockedCTAPrice}>월 2,900</Text>
+            <Text style={styles.lockedCTAPrice}>월 4,900</Text>
           </View>
         </TouchableOpacity>
       )}

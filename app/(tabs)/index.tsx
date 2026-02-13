@@ -175,19 +175,28 @@ export default function HomeScreen() {
   // ──────────────────────────────────────────────────────────────────────
   // 2. 맥락 브리핑 카드 데이터
   // ──────────────────────────────────────────────────────────────────────
-  const { data: contextData, isLoading: contextLoading } = useContextCard();
+  const { data: contextData, isLoading: contextLoading, effectiveData: contextEffective } = useContextCard();
   const { isPremium } = useSubscriptionStatus();
   const { mutate: shareContext } = useShareContextCard();
 
   const contextBriefProps = React.useMemo(() => {
     if (!contextData) {
+      // DB 데이터 없어도 effectiveData(폴백 포함)를 사용해 빈 화면 방지
+      const fallbackCard = contextEffective?.card;
+      const fallbackBriefing = fallbackCard ? convertContextToBriefing({
+        headline: fallbackCard.headline || '시장은 늘 변동합니다',
+        macroChain: fallbackCard.macro_chain || [],
+        portfolioImpact: { message: '' },
+        sentiment: fallbackCard.sentiment || 'calm',
+      }) : null;
+
       return {
-        fact: null,
-        mechanism: null,
-        impact: null,
-        sentiment: 'calm' as const,
-        sentimentLabel: '안정',
-        date: '',
+        fact: fallbackBriefing?.fact || '시장은 늘 변동하지만, 맥락을 알면 불안은 줄어듭니다',
+        mechanism: fallbackBriefing?.mechanism || '매일 아침 7시, 새로운 시장 분석이 도착합니다',
+        impact: fallbackBriefing?.impact || null,
+        sentiment: (fallbackBriefing?.sentiment || 'calm') as 'calm' | 'caution' | 'alert',
+        sentimentLabel: fallbackBriefing?.sentimentLabel || '안정',
+        date: new Date().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' }),
         onLearnMore: () => router.push('/marketplace'),
         isPremium: isPremium || false,
         onShare: undefined,
@@ -239,7 +248,7 @@ export default function HomeScreen() {
         message: userImpact.impact_message || '',
       } : null,
     };
-  }, [contextData, contextLoading, isPremium, router, shareContext, showToast]);
+  }, [contextData, contextEffective, contextLoading, isPremium, router, shareContext, showToast]);
 
   // ──────────────────────────────────────────────────────────────────────
   // 3. 예측 투표 카드 데이터 (3개 질문 지원)

@@ -410,7 +410,7 @@ export default function CreditsScreen() {
                       <Text style={styles.referralShareText}>공유하기</Text>
                     </TouchableOpacity>
                   </View>
-                  <Text style={styles.referralHint}>친구가 이 코드로 가입하면 나에게 50C, 친구에게 10C!</Text>
+                  <Text style={styles.referralHint}>친구가 가입하고 3일 접속하면 나에게 20C, 친구에게 즉시 10C!</Text>
                 </View>
 
                 {/* 친구 코드 입력 */}

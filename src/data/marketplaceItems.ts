@@ -15,7 +15,7 @@ export interface MarketplaceItem {
   priceKRW: number; // 원화 환산 (1C = ₩100)
   icon: string;
   tier: 'instant' | 'experience' | 'loyalty';
-  category: 'analysis' | 'premium' | 'community' | 'badge';
+  category: 'analysis' | 'premium' | 'community' | 'badge' | 'utility';
   requiresPremium?: boolean;
   stock?: number; // 한정 상품 (null이면 무제한)
   enabled: boolean; // 출시 전 비활성화 가능
@@ -48,6 +48,18 @@ const TIER_INSTANT: MarketplaceItem[] = [
     icon: '📊',
     tier: 'instant',
     category: 'analysis',
+    enabled: true,
+  },
+  {
+    id: 'streak_freeze',
+    name: '스트릭 보호',
+    nameEn: 'Streak Shield',
+    description: '하루 미접속 시 스트릭이 유지됩니다 (1회)',
+    price: 3,
+    priceKRW: 300,
+    icon: '🛡️',
+    tier: 'instant',
+    category: 'utility',
     enabled: true,
   },
 ];

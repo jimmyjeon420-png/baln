@@ -113,6 +113,7 @@ export default function DeepDiveScreen() {
   const [selectedStock, setSelectedStock] = useState<StockItem | null>(null);
   const [result, setResult] = useState<DeepDiveResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
@@ -143,6 +144,7 @@ export default function DeepDiveScreen() {
     if (!targetName) return;
 
     setIsLoading(true);
+    setLoadingMessage('재무 데이터 조회 중...');
     setError(null);
     setResult(null);
 
@@ -162,6 +164,7 @@ export default function DeepDiveScreen() {
       }
 
       // [Step 2] Gemini AI 분석 (팩트 데이터 주입)
+      setLoadingMessage('AI 분석 중...');
       console.log(`[DeepDive] Step 2: AI 분석 시작`);
       const input: DeepDiveInput = {
         ticker: targetTicker,
@@ -268,7 +271,7 @@ export default function DeepDiveScreen() {
           {isLoading ? (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <ActivityIndicator color="#FFFFFF" />
-              <Text style={s.analyzeButtonText}>AI가 분석 중... (10~20초)</Text>
+              <Text style={s.analyzeButtonText}>{loadingMessage || 'AI가 분석 중...'}</Text>
             </View>
           ) : (
             <Text style={s.analyzeButtonText}>AI 분석 시작</Text>

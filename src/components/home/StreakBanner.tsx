@@ -8,12 +8,18 @@
  * - 7일 마일스톤마다 특별 배경 그라데이션
  * - 터치하면 상세 모달 (longestStreak, 마일스톤 목록)
  *
+ * 스트릭 보호 (Streak Freeze):
+ * - 프리즈 보유 수 표시 (배너에 방패 아이콘)
+ * - 모달 내 프리즈 구매 버튼 (3C)
+ * - 미접속 후 복귀 시 프리즈 자동 소모 → 스트릭 유지
+ *
  * 비즈니스 효과:
  * - 연속 기록 시각화 → 매일 방문 동기 부여
  * - 손실 회피 심리 → "127일을 잃기 싫어서" 매일 접속
+ * - 프리즈 구매 → 크레딧 순환 경제 활성화
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -21,18 +27,77 @@ import {
   TouchableOpacity,
   Modal,
   ScrollView,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useStreak } from '../../hooks/useStreak';
+import { useStreakFreeze } from '../../hooks/useStreakFreeze';
 import { useHaptics } from '../../hooks/useHaptics';
 import { useTheme } from '../../hooks/useTheme';
 
 export default function StreakBanner() {
-  const { currentStreak, longestStreak, streakMessage, isLoading } = useStreak();
-  const { mediumTap } = useHaptics();
+  const { currentStreak, longestStreak, streakMessage, isNewStreak, isLoading } = useStreak();
+  const {
+    hasActiveFreeze,
+    freezeCount,
+    lastUsedDate,
+    isLoading: freezeLoading,
+    purchaseFreeze,
+    useFreeze,
+  } = useStreakFreeze();
+  const { mediumTap, lightTap } = useHaptics();
   const { colors } = useTheme();
   const [showModal, setShowModal] = useState(false);
+  const [isPurchasing, setIsPurchasing] = useState(false);
+  const [freezeUsedToast, setFreezeUsedToast] = useState(false);
+
+  // ─── 프리즈 자동 적용 로직 ───
+  // isNewStreak === true이면 어제 미접속 → 스트릭이 리셋되려 하는 상황
+  // 이때 프리즈가 있으면 자동 소모하여 스트릭을 보호
+  const handleAutoFreeze = useCallback(async () => {
+    if (!isNewStreak || freezeLoading) return;
+
+    // 프리즈가 있으면 사용
+    if (hasActiveFreeze) {
+      const result = await useFreeze();
+      if (result.success && result.freezeUsed) {
+        setFreezeUsedToast(true);
+        // 3초 후 토스트 숨김
+        setTimeout(() => setFreezeUsedToast(false), 3000);
+      }
+    }
+  }, [isNewStreak, freezeLoading, hasActiveFreeze, useFreeze]);
+
+  useEffect(() => {
+    handleAutoFreeze();
+  }, [handleAutoFreeze]);
+
+  // ─── 프리즈 구매 핸들러 ───
+  const handlePurchaseFreeze = async () => {
+    lightTap();
+    setIsPurchasing(true);
+    try {
+      const result = await purchaseFreeze();
+      if (result.success) {
+        mediumTap();
+        Alert.alert(
+          '스트릭 보호 구매 완료',
+          `보호권 ${result.newFreezeCount}개 보유 중\n잔여 크레딧: ${result.newCreditBalance}C`,
+        );
+      } else {
+        Alert.alert(
+          '구매 실패',
+          result.errorMessage || '크레딧이 부족합니다. (필요: 3C)',
+        );
+      }
+    } catch {
+      Alert.alert('오류', '구매 중 문제가 발생했습니다.');
+    } finally {
+      setIsPurchasing(false);
+    }
+  };
 
   // 로딩 중이면 표시 안 함
   if (isLoading || currentStreak === 0) {
@@ -49,6 +114,15 @@ export default function StreakBanner() {
 
   return (
     <>
+      {/* 프리즈 사용 토스트 */}
+      {freezeUsedToast && (
+        <View style={[styles.freezeToast, { backgroundColor: '#1565C0' }]}>
+          <Text style={styles.freezeToastText}>
+            {'\u{1F6E1}\uFE0F'} 스트릭 보호가 사용되었습니다!
+          </Text>
+        </View>
+      )}
+
       {/* 배너 */}
       <TouchableOpacity
         activeOpacity={0.8}
@@ -68,6 +142,14 @@ export default function StreakBanner() {
             <Text style={[styles.text, { color: colors.textSecondary }]}>
               <Text style={[styles.number, { color: colors.primary }]}>{currentStreak}일</Text> 연속 방문 중
             </Text>
+            {/* 프리즈 보유 수 표시 */}
+            {freezeCount > 0 && (
+              <View style={styles.freezeBadge}>
+                <Text style={styles.freezeBadgeText}>
+                  {'\u{1F6E1}\uFE0F'} {freezeCount}
+                </Text>
+              </View>
+            )}
           </View>
           <Ionicons name="chevron-forward" size={18} color={colors.primary} />
         </LinearGradient>
@@ -105,6 +187,45 @@ export default function StreakBanner() {
               <Text style={[styles.currentLabel, { color: colors.textSecondary }]}>연속 방문 중</Text>
               <Text style={[styles.currentMessage, { color: colors.textTertiary }]}>{streakMessage.message}</Text>
             </LinearGradient>
+
+            {/* 스트릭 보호 섹션 */}
+            <View style={[styles.freezeSection, { backgroundColor: '#1565C0' + '14', borderColor: '#1565C0' + '33' }]}>
+              <View style={styles.freezeHeader}>
+                <View style={styles.freezeTitleRow}>
+                  <Text style={styles.freezeIcon}>{'\u{1F6E1}\uFE0F'}</Text>
+                  <Text style={[styles.freezeTitle, { color: colors.textPrimary }]}>스트릭 보호</Text>
+                </View>
+                <Text style={[styles.freezeCountLabel, { color: '#1565C0' }]}>
+                  {freezeCount}개 보유
+                </Text>
+              </View>
+              <Text style={[styles.freezeDesc, { color: colors.textTertiary }]}>
+                하루 미접속 시 자동으로 스트릭을 보호합니다.
+              </Text>
+              {lastUsedDate && (
+                <Text style={[styles.freezeLastUsed, { color: colors.textTertiary }]}>
+                  마지막 사용: {lastUsedDate}
+                </Text>
+              )}
+              <TouchableOpacity
+                style={[
+                  styles.freezePurchaseButton,
+                  { backgroundColor: '#1565C0' + '1A', borderColor: '#1565C0' + '40' },
+                  isPurchasing && { opacity: 0.5 },
+                ]}
+                onPress={handlePurchaseFreeze}
+                disabled={isPurchasing}
+                activeOpacity={0.7}
+              >
+                {isPurchasing ? (
+                  <ActivityIndicator size="small" color="#1565C0" />
+                ) : (
+                  <Text style={[styles.freezePurchaseText, { color: '#1565C0' }]}>
+                    보호권 구매  3C ({'\u20A9'}300)
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
 
             {/* 역대 최장 기록 */}
             {longestStreak > currentStreak && (
@@ -175,7 +296,8 @@ export default function StreakBanner() {
             <View style={[styles.infoBox, { backgroundColor: colors.primary + '0F', borderColor: colors.primary + '1A' }]}>
               <Text style={[styles.infoText, { color: colors.textTertiary }]}>
                 매일 앱에 접속하면 연속 기록이 쌓입니다.{'\n'}
-                하루라도 건너뛰면 1일부터 다시 시작됩니다.
+                하루라도 건너뛰면 1일부터 다시 시작됩니다.{'\n'}
+                {'\u{1F6E1}\uFE0F'} 스트릭 보호권이 있으면 하루를 건너뛰어도 기록이 유지됩니다.
               </Text>
             </View>
           </ScrollView>
@@ -226,6 +348,20 @@ function MilestoneItem({
 }
 
 const styles = StyleSheet.create({
+  // ─── 프리즈 사용 토스트 ───
+  freezeToast: {
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    marginBottom: 8,
+    alignItems: 'center',
+  },
+  freezeToastText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+
   // ─── 배너 ───
   banner: {
     height: 40,
@@ -252,6 +388,20 @@ const styles = StyleSheet.create({
   number: {
     fontSize: 16,
     fontWeight: '700',
+  },
+
+  // ─── 프리즈 배지 (배너 내) ───
+  freezeBadge: {
+    marginLeft: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    backgroundColor: '#1565C0' + '26',
+  },
+  freezeBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#64B5F6',
   },
 
   // ─── 모달 ───
@@ -303,6 +453,58 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: 12,
     textAlign: 'center',
+  },
+
+  // ─── 스트릭 보호 섹션 ───
+  freezeSection: {
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+  },
+  freezeHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  freezeTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  freezeIcon: {
+    fontSize: 18,
+  },
+  freezeTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  freezeCountLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  freezeDesc: {
+    fontSize: 12,
+    marginBottom: 4,
+    lineHeight: 18,
+  },
+  freezeLastUsed: {
+    fontSize: 11,
+    marginBottom: 10,
+  },
+  freezePurchaseButton: {
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    marginTop: 4,
+  },
+  freezePurchaseText: {
+    fontSize: 13,
+    fontWeight: '600',
   },
 
   // ─── 역대 최장 기록 ───

@@ -354,7 +354,7 @@ export default function AddRealEstateScreen() {
         {/* Step 2: 면적/동호 입력 */}
         {/* ============================================================ */}
         {step === 'area' && selectedComplex && (
-          <ScrollView style={styles.stepContainer} contentContainerStyle={{ paddingBottom: 40 }}>
+          <ScrollView style={styles.stepContainer} contentContainerStyle={{ paddingBottom: 40 }} keyboardDismissMode="interactive" keyboardShouldPersistTaps="handled">
             <Text style={styles.stepTitle}>{selectedComplex.complexName}</Text>
             <Text style={styles.stepDesc}>{selectedComplex.address}</Text>
 
@@ -422,7 +422,7 @@ export default function AddRealEstateScreen() {
         {/* Step 3: 시세 확인 */}
         {/* ============================================================ */}
         {step === 'price' && selectedComplex && selectedArea && (
-          <ScrollView style={styles.stepContainer} contentContainerStyle={{ paddingBottom: 40 }}>
+          <ScrollView style={styles.stepContainer} contentContainerStyle={{ paddingBottom: 40 }} keyboardDismissMode="interactive" keyboardShouldPersistTaps="handled">
             <Text style={styles.stepTitle}>시세 확인</Text>
             <Text style={styles.stepDesc}>
               {selectedComplex.complexName} {selectedArea}㎡ ({Math.round(sqmToPyeong(selectedArea))}평)
@@ -516,7 +516,7 @@ export default function AddRealEstateScreen() {
         {/* Step 4: 확인 및 저장 */}
         {/* ============================================================ */}
         {step === 'confirm' && selectedComplex && selectedArea && selectedAreaSummary && (
-          <ScrollView style={styles.stepContainer} contentContainerStyle={{ paddingBottom: 40 }}>
+          <ScrollView style={styles.stepContainer} contentContainerStyle={{ paddingBottom: 40 }} keyboardDismissMode="interactive" keyboardShouldPersistTaps="handled">
             <Text style={styles.stepTitle}>등록 확인</Text>
 
             {/* 요약 카드 */}
@@ -589,7 +589,7 @@ export default function AddRealEstateScreen() {
         {/* Step: 직접 입력 */}
         {/* ============================================================ */}
         {step === 'manual' && (
-          <ScrollView style={styles.stepContainer} contentContainerStyle={{ paddingBottom: 40 }}>
+          <ScrollView style={styles.stepContainer} contentContainerStyle={{ paddingBottom: 40 }} keyboardDismissMode="interactive" keyboardShouldPersistTaps="handled">
             <Text style={styles.stepTitle}>부동산 직접 입력</Text>
             <Text style={styles.stepDesc}>
               검색되지 않는 건물도 직접 정보를 입력하여 등록할 수 있어요

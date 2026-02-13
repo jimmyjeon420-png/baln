@@ -101,7 +101,7 @@ export default function LogTradeScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
       >
-        <ScrollView contentContainerStyle={s.scroll}>
+        <ScrollView contentContainerStyle={s.scroll} keyboardDismissMode="interactive" keyboardShouldPersistTaps="handled">
           {/* 헤더 */}
           <View style={s.header}>
             <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
