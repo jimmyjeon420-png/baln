@@ -30,9 +30,8 @@ node_modules/
 .DS_Store
 Thumbs.db
 
-# Environment — .env는 EAS Secrets로 관리 (eas secret:create 사용)
-# 빌드에 .env 파일을 직접 포함하면 보안 위험 → EAS Secrets 권장
-.env
+# Environment — .env는 빌드에 포함 (EXPO_PUBLIC_* 변수가 Metro 번들에 인라인됨)
+# .env.local과 .env.*.local만 제외
 .env.local
 .env.*.local
 
