@@ -169,18 +169,26 @@ export default function AddAssetScreen() {
     } catch {}
   };
 
-  // 보유 자산 로드
+  // 보유 자산 로드 (15초 타임아웃 추가 — 무한 로딩 방지)
   const loadExistingAssets = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await withTimeout(
+        supabase.auth.getUser(),
+        15000,
+        'timeout',
+      );
       if (!user) { setLoadingAssets(false); return; }
 
-      const { data, error } = await supabase
-        .from('portfolios')
-        .select('id, ticker, name, quantity, avg_price, current_value')
-        .eq('user_id', user.id)
-        .not('ticker', 'like', 'RE_%')  // 부동산 제외
-        .order('current_value', { ascending: false });
+      const { data, error } = await withTimeout(
+        supabase
+          .from('portfolios')
+          .select('id, ticker, name, quantity, avg_price, current_value')
+          .eq('user_id', user.id)
+          .not('ticker', 'like', 'RE_%')  // 부동산 제외
+          .order('current_value', { ascending: false }),
+        15000,
+        'timeout',
+      );
 
       if (!error && data) {
         setExistingAssets(data);
@@ -332,8 +340,8 @@ export default function AddAssetScreen() {
     try {
       const { data: { user } } = await withTimeout(
         supabase.auth.getUser(),
-        10000,
-        '서버 연결 시간이 초과되었습니다.',
+        20000,
+        '서버 연결이 느립니다. WiFi 연결을 확인하고 다시 시도해주세요.',
       );
 
       if (!user) throw new Error('로그인이 필요합니다.');
@@ -366,8 +374,8 @@ export default function AddAssetScreen() {
             ignoreDuplicates: false,
           })
           .select(),
-        15000,
-        'DB 저장 시간이 초과되었습니다.',
+        25000,
+        '저장 시간이 초과되었습니다. WiFi 연결을 확인하고 다시 시도해주세요.',
       );
 
       if (upsertError) throw upsertError;

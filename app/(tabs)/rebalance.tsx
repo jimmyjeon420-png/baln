@@ -137,6 +137,7 @@ export default function CheckupScreen() {
     totalAssets,
     isLoading: portfolioLoading,
     isFetched: initialCheckDone,
+    isError: portfolioError,
     hasAssets,
     refresh: refreshPortfolio,
   } = useSharedPortfolio();
@@ -285,21 +286,38 @@ export default function CheckupScreen() {
   }
 
   if (initialCheckDone && totalAssets === 0 && portfolio.length === 0) {
+    // 네트워크 에러로 데이터를 못 가져온 경우 vs 실제로 자산이 없는 경우 구분
+    const isNetworkIssue = portfolioError;
     return (
       <SafeAreaView style={s.container} edges={['top']}>
         <View style={s.emptyContainer}>
           <View style={s.emptyIcon}>
-            <Ionicons name="analytics-outline" size={48} color="#4CAF50" />
+            <Ionicons
+              name={isNetworkIssue ? 'cloud-offline-outline' : 'analytics-outline'}
+              size={48}
+              color={isNetworkIssue ? '#FF9800' : '#4CAF50'}
+            />
           </View>
-          <Text style={[s.emptyTitle, { color: colors.textPrimary }]}>포트폴리오를 등록해주세요</Text>
-          <Text style={s.emptyDesc}>
-            보유 자산을 등록하시면{'\n'}
-            <Text style={{ color: '#4CAF50', fontWeight: '700' }}>AI 진단 + 맞춤 처방전</Text>을 받아보실 수 있습니다
+          <Text style={[s.emptyTitle, { color: colors.textPrimary }]}>
+            {isNetworkIssue ? '데이터를 불러올 수 없습니다' : '포트폴리오를 등록해주세요'}
           </Text>
-          <TouchableOpacity style={s.emptyButton} onPress={() => router.push('/add-asset')}>
-            <Ionicons name="add-circle" size={20} color="#000" />
-            <Text style={s.emptyButtonText}>자산 등록하기</Text>
-          </TouchableOpacity>
+          <Text style={s.emptyDesc}>
+            {isNetworkIssue
+              ? 'WiFi 연결을 확인하고\n아래 버튼을 눌러 다시 시도해주세요'
+              : <>보유 자산을 등록하시면{'\n'}<Text style={{ color: '#4CAF50', fontWeight: '700' }}>AI 진단 + 맞춤 처방전</Text>을 받아보실 수 있습니다</>
+            }
+          </Text>
+          {isNetworkIssue ? (
+            <TouchableOpacity style={[s.emptyButton, { backgroundColor: '#FF9800' }]} onPress={() => refreshPortfolio()}>
+              <Ionicons name="refresh" size={20} color="#000" />
+              <Text style={s.emptyButtonText}>다시 시도</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity style={s.emptyButton} onPress={() => router.push('/add-asset')}>
+              <Ionicons name="add-circle" size={20} color="#000" />
+              <Text style={s.emptyButtonText}>자산 등록하기</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </SafeAreaView>
     );

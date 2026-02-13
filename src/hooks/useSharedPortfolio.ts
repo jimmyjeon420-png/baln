@@ -110,6 +110,8 @@ export function useSharedPortfolio() {
     staleTime: 1000 * 60 * 3,        // 3분: 탭 전환 시 재요청 안 함
     gcTime: 1000 * 60 * 30,          // 30분: 메모리 최적화 (기존 24시간 → 30분)
     placeholderData: keepPreviousData, // 갱신 중에도 이전 데이터 유지
+    retry: 1,                         // 네트워크 실패 시 1회 재시도 (무한 로딩 방지)
+    retryDelay: 2000,                 // 2초 후 재시도
   });
 
   /** Pull-to-refresh 시 호출 — 캐시 즉시 무효화 + 재조회 */
