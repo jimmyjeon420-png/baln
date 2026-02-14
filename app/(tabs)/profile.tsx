@@ -197,13 +197,7 @@ export default function ProfileScreen() {
   // ---------------------------------------------------------------------------
   const devSection: MenuSection = {
     title: 'DEV 메뉴',
-    items: [
-      {
-        icon: 'shield',
-        label: '관리자 허브',
-        onPress: () => router.push('/admin'),
-      },
-    ],
+    items: [],
   };
 
   // ---------------------------------------------------------------------------
@@ -327,8 +321,8 @@ export default function ProfileScreen() {
         {/* ── 3개 메뉴 섹션 ── */}
         {sections.map((section, idx) => renderSection(section, idx))}
 
-        {/* ── DEV 메뉴 (개발 모드 전용) ── */}
-        {__DEV__ && renderSection(devSection, sections.length)}
+        {/* ── DEV 메뉴 (개발 모드 전용, 항목 있을 때만) ── */}
+        {__DEV__ && devSection.items.length > 0 && renderSection(devSection, sections.length)}
 
         {/* ── 로그아웃 버튼 ── */}
         {user && (

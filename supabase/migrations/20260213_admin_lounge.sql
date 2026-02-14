@@ -162,7 +162,7 @@ BEGIN
   DELETE FROM community_likes WHERE target_id = p_post_id::text AND target_type = 'post';
 
   -- 북마크 삭제
-  DELETE FROM community_bookmarks WHERE post_id = p_post_id;
+  DELETE FROM post_bookmarks WHERE post_id = p_post_id;
 
   -- 게시글 삭제
   DELETE FROM community_posts WHERE id = p_post_id;
