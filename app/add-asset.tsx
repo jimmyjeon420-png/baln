@@ -470,63 +470,32 @@ export default function AddAssetScreen() {
       // 한국주식: KRW, 그 외: USD
       const currency = (ticker.endsWith('.KS') || ticker.endsWith('.KQ')) ? 'KRW' : 'USD';
 
-      // ★ 기존 자산 확인 → insert 또는 update (upsert 대신 안정적인 2단계)
-      const { data: existing } = await withTimeout(
+      const upsertData = {
+        user_id: user.id,
+        ticker,
+        name,
+        quantity: q,
+        avg_price: p,
+        current_price: p,
+        current_value: currentValue,
+        target_allocation: 0,
+        asset_type: 'liquid',
+        currency,
+      };
+
+      const { data: savedData, error: upsertError } = await withTimeout(
         supabase
           .from('portfolios')
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('name', name)
-          .limit(1),
-        10000,
-        `DB 조회 타임아웃 (user: ${user.id.substring(0, 8)}...)`,
+          .upsert(upsertData, {
+            onConflict: 'user_id,name',
+            ignoreDuplicates: false,
+          })
+          .select(),
+        15000,
+        '저장 시간이 초과되었습니다. 다시 시도해주세요.',
       );
 
-      let savedData;
-      let upsertError;
-
-      if (existing && existing.length > 0) {
-        // 기존 자산 업데이트
-        const result = await withTimeout(
-          supabase
-            .from('portfolios')
-            .update({ quantity: q, avg_price: p, current_price: p, current_value: currentValue, currency })
-            .eq('id', existing[0].id)
-            .select(),
-          10000,
-          `DB 업데이트 타임아웃 (id: ${existing[0].id.substring(0, 8)}...)`,
-        );
-        savedData = result.data;
-        upsertError = result.error;
-      } else {
-        // 신규 자산 추가
-        const result = await withTimeout(
-          supabase
-            .from('portfolios')
-            .insert({
-              user_id: user.id,
-              ticker,
-              name,
-              quantity: q,
-              avg_price: p,
-              current_price: p,
-              current_value: currentValue,
-              target_allocation: 0,
-              asset_type: 'liquid',
-              currency,
-            })
-            .select(),
-          10000,
-          `DB 추가 타임아웃 (user: ${user.id.substring(0, 8)}...)`,
-        );
-        savedData = result.data;
-        upsertError = result.error;
-      }
-
-      if (upsertError) {
-        // ★ 실제 DB 에러 메시지 표시 (이전: 일반적인 "저장 실패"만 표시)
-        throw new Error(`DB 에러: ${upsertError.message} (code: ${upsertError.code})`);
-      }
+      if (upsertError) throw upsertError;
 
       // 진단 트리거 설정
       const today = new Date().toISOString().split('T')[0];
