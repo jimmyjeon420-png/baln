@@ -174,7 +174,7 @@ export default function PostDetailScreen() {
       setCommentText('');
       setReplyToId(null);
     } catch (error: any) {
-      console.error('[Community] 댓글 작성 실패:', error);
+      console.warn('[Community] 댓글 작성 실패:', error);
       const errorMsg = error?.message || error?.code || '알 수 없는 오류';
       Alert.alert('오류', `댓글 등록에 실패했습니다.\n\n상세: ${errorMsg}`);
     }

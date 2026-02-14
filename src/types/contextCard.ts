@@ -30,7 +30,7 @@ export interface UserContextImpact {
   percent_change: number | null;        // 수익률 변화 (예: -1.2)
   health_score_change: number | null;   // 건강 점수 변화 (예: -5.0)
   impact_message: string | null;        // "당신의 포트폴리오는 -1.2% 영향"
-  created_at: string;
+  calculated_at: string;
 }
 
 /** 맥락 카드 + 유저 영향도 통합 결과 */

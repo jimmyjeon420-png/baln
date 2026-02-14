@@ -824,7 +824,7 @@ export default React.forwardRef<View, ContextBriefCardProps>(
               />
             ) : (
               <Text style={styles.layerBodyText}>
-                {impact || '내일 아침 업데이트 시 영향도가 반영됩니다'}
+                매일 아침 7시에 내 포트폴리오 영향도가 업데이트됩니다
               </Text>
             )}
           </LayerSection>

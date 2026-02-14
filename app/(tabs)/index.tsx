@@ -245,10 +245,11 @@ export default function HomeScreen() {
     if (!contextData) {
       // DB 데이터 없어도 effectiveData(폴백 포함)를 사용해 빈 화면 방지
       const fallbackCard = contextEffective?.card;
+      const fallbackImpact = contextEffective?.userImpact;
       const fallbackBriefing = fallbackCard ? convertContextToBriefing({
         headline: fallbackCard.headline || '시장은 늘 변동합니다',
         macroChain: fallbackCard.macro_chain || [],
-        portfolioImpact: { message: '' },
+        portfolioImpact: { message: fallbackImpact?.impact_message || '' },
         sentiment: fallbackCard.sentiment || 'calm',
       }) : null;
 
@@ -263,6 +264,16 @@ export default function HomeScreen() {
         isPremium: isPremium || false,
         onShare: undefined,
         isLoading: contextLoading,
+        // 4겹 레이어 데이터 (effectiveData에서 추출)
+        historicalContext: fallbackCard?.historical_context,
+        macroChain: fallbackCard?.macro_chain,
+        institutionalBehavior: fallbackCard?.institutional_behavior,
+        portfolioImpact: fallbackImpact ? {
+          percentChange: fallbackImpact.percent_change ?? 0,
+          healthScoreChange: fallbackImpact.health_score_change ?? 0,
+          message: fallbackImpact.impact_message || '오늘의 시장 변동에 따른 영향을 분석했습니다.',
+          isCalculating: false,
+        } : null,
       };
     }
 

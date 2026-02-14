@@ -252,7 +252,7 @@ export async function getTodayContextCard(
               percent_change: latestImpact.percent_change,
               health_score_change: latestImpact.health_score_change,
               impact_message: latestImpact.impact_message,
-              created_at: latestImpact.created_at,
+              calculated_at: latestImpact.calculated_at,
             }
           : null
       );
@@ -307,7 +307,7 @@ export async function getTodayContextCard(
             percent_change: impactData.percent_change,
             health_score_change: impactData.health_score_change,
             impact_message: impactData.impact_message,
-            created_at: impactData.created_at,
+            calculated_at: impactData.calculated_at,
           }
         : null
     );
@@ -401,7 +401,7 @@ export async function getRecentContextCards(
         percent_change: impact.percent_change,
         health_score_change: impact.health_score_change,
         impact_message: impact.impact_message,
-        created_at: impact.created_at,
+        calculated_at: impact.calculated_at,
       });
     });
 

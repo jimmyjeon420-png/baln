@@ -22,11 +22,11 @@ import type { CommunityPost } from '../types/community';
  * - 게시글 카드에서 북마크 아이콘 토글 판별에 사용
  */
 export function useMyBookmarks() {
-  return useQuery({
+  const query = useQuery({
     queryKey: ['myBookmarks'],
-    queryFn: async () => {
+    queryFn: async (): Promise<string[]> => {
       const user = await getCurrentUser();
-      if (!user) return new Set<string>();
+      if (!user) return [];
 
       const { data, error } = await supabase
         .from('post_bookmarks')
@@ -35,14 +35,18 @@ export function useMyBookmarks() {
 
       if (error) {
         console.warn('[북마크] 목록 조회 실패:', error.message);
-        return new Set<string>();
+        return [];
       }
 
-      return new Set((data || []).map(d => d.post_id));
+      return (data || []).map(d => d.post_id);
     },
     staleTime: 60000, // 1분
     retry: 1,         // 실패 시 1회만 재시도 (무한 로딩 방지)
   });
+
+  // React Query의 structuredClone이 Set을 파괴하므로 배열로 저장 후 Set 변환
+  const safeArray = Array.isArray(query.data) ? query.data : [];
+  return { ...query, data: new Set(safeArray) };
 }
 
 // ============================================================================
@@ -89,20 +93,21 @@ export function useToggleBookmark() {
       }
     },
 
-    // 낙관적 업데이트
+    // 낙관적 업데이트 (배열로 저장 — Set은 structuredClone에 의해 파괴됨)
     onMutate: async (postId: string) => {
       await queryClient.cancelQueries({ queryKey: ['myBookmarks'] });
 
-      const prevBookmarks = queryClient.getQueryData<Set<string>>(['myBookmarks']);
-      const currentBookmarks = new Set(prevBookmarks ?? []);
+      const prevBookmarks = queryClient.getQueryData<string[]>(['myBookmarks']);
+      const currentArray = Array.isArray(prevBookmarks) ? [...prevBookmarks] : [];
 
-      if (currentBookmarks.has(postId)) {
-        currentBookmarks.delete(postId);
+      const idx = currentArray.indexOf(postId);
+      if (idx >= 0) {
+        currentArray.splice(idx, 1);
       } else {
-        currentBookmarks.add(postId);
+        currentArray.push(postId);
       }
 
-      queryClient.setQueryData(['myBookmarks'], currentBookmarks);
+      queryClient.setQueryData(['myBookmarks'], currentArray);
       return { prevBookmarks };
     },
 

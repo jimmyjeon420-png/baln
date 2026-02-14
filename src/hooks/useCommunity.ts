@@ -269,12 +269,12 @@ export const useCreatePost = () => {
 
 /** 내가 좋아요한 게시물 ID 목록 조회 */
 export const useMyLikes = () => {
-  return useQuery({
+  const query = useQuery({
     queryKey: ['myLikes'],
     queryFn: async () => {
       try {
         const user = await getCurrentUser();
-        if (!user) return new Set<string>();
+        if (!user) return [] as string[];
 
         const { data, error } = await supabase
           .from('community_likes')
@@ -283,16 +283,20 @@ export const useMyLikes = () => {
 
         if (error) {
           console.warn('[Community] 좋아요 목록 조회 실패:', error.message);
-          return new Set<string>();
+          return [] as string[];
         }
-        return new Set((data || []).map(d => d.post_id));
+        return (data || []).map(d => d.post_id);
       } catch (err) {
         console.warn('[Community] 좋아요 목록 조회 예외:', err);
-        return new Set<string>();
+        return [] as string[];
       }
     },
     staleTime: 60000,
   });
+
+  // React Query의 structuredClone이 Set을 파괴하므로 배열로 저장 후 Set 변환
+  const safeArray = Array.isArray(query.data) ? query.data : [];
+  return { ...query, data: new Set(safeArray) };
 };
 
 /** 좋아요 토글 (RPC + 낙관적 업데이트) */
@@ -617,12 +621,12 @@ export const useDeleteComment = (postId: string) => {
 
 /** 댓글 좋아요 (내가 좋아요한 댓글 ID 목록) */
 export const useMyCommentLikes = () => {
-  return useQuery({
+  const query = useQuery({
     queryKey: ['myCommentLikes'],
     queryFn: async () => {
       try {
         const user = await getCurrentUser();
-        if (!user) return new Set<string>();
+        if (!user) return [] as string[];
 
         const { data, error } = await supabase
           .from('community_comment_likes')
@@ -631,16 +635,20 @@ export const useMyCommentLikes = () => {
 
         if (error) {
           console.warn('[Community] 댓글 좋아요 목록 조회 실패:', error.message);
-          return new Set<string>();
+          return [] as string[];
         }
-        return new Set((data || []).map(d => d.comment_id));
+        return (data || []).map(d => d.comment_id);
       } catch (err) {
         console.warn('[Community] 댓글 좋아요 목록 조회 예외:', err);
-        return new Set<string>();
+        return [] as string[];
       }
     },
     staleTime: 60000,
   });
+
+  // React Query의 structuredClone이 Set을 파괴하므로 배열로 저장 후 Set 변환
+  const safeArray = Array.isArray(query.data) ? query.data : [];
+  return { ...query, data: new Set(safeArray) };
 };
 
 /** 댓글 좋아요 토글 */
