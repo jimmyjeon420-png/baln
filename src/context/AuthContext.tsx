@@ -91,6 +91,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   /**
+   * access_token JWT 만료 여부 확인
+   * JWT의 exp 클레임을 디코딩하여 만료 시간 비교
+   */
+  const isAccessTokenExpired = (sessionToCheck: Session): boolean => {
+    try {
+      const token = sessionToCheck.access_token;
+      if (!token) return true;
+
+      // JWT payload 디코딩 (base64)
+      const parts = token.split('.');
+      if (parts.length !== 3) return true;
+
+      const payload = JSON.parse(atob(parts[1]));
+      const exp = payload.exp;
+      if (!exp) return true;
+
+      // 현재 시간 + 60초 여유 (만료 1분 전이면 갱신)
+      const nowInSeconds = Math.floor(Date.now() / 1000);
+      const isExpired = nowInSeconds >= (exp - 60);
+
+      if (isExpired) {
+        const expiredAgo = nowInSeconds - exp;
+        console.log(`[AuthContext] 토큰 ${expiredAgo > 0 ? `${expiredAgo}초 전 만료` : '곧 만료'}`);
+      }
+
+      return isExpired;
+    } catch {
+      console.warn('[AuthContext] JWT 디코딩 실패 → 만료 처리');
+      return true;
+    }
+  };
+
+  /**
    * 세션 건강 체크 (Session Health Check)
    *
    * TestFlight 업데이트 후 이전 빌드의 세션 토큰이 남아있으면
@@ -190,7 +223,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   /**
-   * 앱 초기화 시: Supabase의 기존 세션 복구 + 건강 체크
+   * 앱 초기화 시: 세션 복구 + 만료된 토큰 즉시 갱신
+   *
+   * ★ 핵심 수정: getSession()만으로는 만료된 access_token이 그대로 사용됨
+   * → 만료 여부 확인 후 refreshSession()으로 새 토큰 발급
+   * → 이후 모든 API 호출이 유효한 토큰으로 동작
    */
   useEffect(() => {
     const initAuth = async () => {
@@ -201,17 +238,53 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } = await supabase.auth.getSession();
 
         if (existingSession) {
-          // 2단계: 세션이 있으면 서버에 실제 요청을 보내 유효성 확인
-          const isHealthy = await verifySessionHealth(existingSession);
+          // 2단계: access_token 만료 여부 확인
+          const isTokenExpired = isAccessTokenExpired(existingSession);
 
-          if (isHealthy) {
-            setSession(existingSession);
-            setUser(existingSession.user || null);
+          if (isTokenExpired) {
+            // ★ 토큰 만료 → 즉시 갱신 (이전: 건강체크만 하고 만료된 토큰 사용)
+            console.log('[AuthContext] access_token 만료됨 → refreshSession 시도');
+            try {
+              const refreshResult = await Promise.race([
+                supabase.auth.refreshSession(),
+                new Promise<null>((resolve) => setTimeout(() => resolve(null), 10000)),
+              ]);
+
+              if (refreshResult && 'data' in refreshResult) {
+                const { data: refreshData, error: refreshError } = refreshResult;
+                if (!refreshError && refreshData.session) {
+                  console.log('[AuthContext] 토큰 갱신 성공 → 새 세션 적용');
+                  setSession(refreshData.session);
+                  setUser(refreshData.session.user || null);
+                } else {
+                  // refresh_token도 만료 → 재로그인 필요
+                  console.warn('[AuthContext] 토큰 갱신 실패 → 재로그인 필요');
+                  await supabase.auth.signOut().catch(() => {});
+                  setSession(null);
+                  setUser(null);
+                }
+              } else {
+                // 타임아웃 → 오프라인 모드 (만료된 세션이라도 유지)
+                console.warn('[AuthContext] 토큰 갱신 타임아웃 → 오프라인 허용');
+                setSession(existingSession);
+                setUser(existingSession.user || null);
+              }
+            } catch {
+              console.warn('[AuthContext] 토큰 갱신 예외 → 기존 세션 유지');
+              setSession(existingSession);
+              setUser(existingSession.user || null);
+            }
           } else {
-            // 건강 체크 실패 → 로그인 화면으로 보냄 (session=null)
-            console.warn('[AuthContext] 세션 건강 체크 실패 → 로그인 필요');
-            setSession(null);
-            setUser(null);
+            // 토큰 유효 → 건강 체크만 수행
+            const isHealthy = await verifySessionHealth(existingSession);
+            if (isHealthy) {
+              setSession(existingSession);
+              setUser(existingSession.user || null);
+            } else {
+              console.warn('[AuthContext] 세션 건강 체크 실패 → 로그인 필요');
+              setSession(null);
+              setUser(null);
+            }
           }
         } else {
           setSession(null);
