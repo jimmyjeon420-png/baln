@@ -290,10 +290,11 @@ const modelWithSearch = genAI.getGenerativeModel(
         model: MODEL_NAME,
         tools: [
           {
-            // Gemini 2.5 Google Search Tool — SDK v0.24+ 에서 camelCase 필수
-            // (google_search_retrieval은 deprecated, google_search는 snake_case라 SDK에서 무시됨)
-            // @ts-ignore - googleSearch 타입이 SDK 버전에 따라 다를 수 있음
-            googleSearch: {},
+            // SDK v0.24는 타입에 google_search가 없지만, tools 배열을 그대로
+            // JSON으로 직렬화해서 REST API에 전달하므로 snake_case가 올바름
+            // REST API: google_search: {} (snake_case 필수)
+            // @ts-ignore - SDK 타입에는 없지만 REST API에서 인식함
+            google_search: {},
           },
         ],
       }
@@ -1486,50 +1487,31 @@ overallScore, financial.score, technical.score, quality.score는 반드시 아�
 ${hasFundamentals ? '12. API 제공 데이터(시가총액, PER, PBR, ROE 등)는 반드시 그대로 사용하세요. 임의로 수정하지 마세요.' : ''}
 `;
 
+  // ★ Google Search 모델 → 실패 시 일반 모델 폴백 (2단계 시도)
+  let text: string;
   try {
-    // Gemini 호출 (타임아웃 60초 — 딥다이브는 응답이 길어서 여유있게 설정)
-    const text = await callGeminiSafe(modelWithSearch, prompt, { timeoutMs: 60000, maxRetries: 1 });
+    // 1차: Google Search 그라운딩 활성화 모델 (60초)
+    console.log('[DeepDive] 1차 시도: Google Search 모델');
+    text = await callGeminiSafe(modelWithSearch, prompt, { timeoutMs: 60000, maxRetries: 0 });
+  } catch (searchErr: any) {
+    console.warn('[DeepDive] Google Search 모델 실패:', searchErr.message?.substring(0, 100));
+    console.log('[DeepDive] 2차 시도: 일반 모델 (Google Search 없이)');
+    // 2차: 일반 모델 폴백 (Google Search 없이, 60초)
+    text = await callGeminiSafe(model, prompt, { timeoutMs: 60000, maxRetries: 1 });
+  }
 
+  try {
     if (__DEV__) {
       console.log('[DeepDive] Gemini 원본 응답 길이:', text.length);
       console.log('[DeepDive] 응답 앞 200자:', text.substring(0, 200));
     }
 
     // JSON 정제 및 파싱 (통합 파서 사용)
-    try {
-      return parseGeminiJson<DeepDiveResult>(text);
-    } catch (parseErr) {
-      console.error('[DeepDive] JSON 파싱 실패. 원본 응답 앞 500자:', text.substring(0, 500));
-      console.error('[DeepDive] JSON 파싱 에러:', parseErr);
-      console.error('[DeepDive] 원본 응답 끝 200자:', text.substring(text.length - 200));
-      throw new Error('AI 응답 형식 오류 — 재시도해주세요');
-    }
-  } catch (error: any) {
-    console.error('[DeepDive] 분석 오류:', error);
-    console.error('[DeepDive] 에러 이름:', error.name);
-    console.error('[DeepDive] 에러 메시지:', error.message);
-    console.error('[DeepDive] 에러 스택:', error.stack?.substring(0, 300));
-
-    // 원인별 사용자 메시지 (구체적 안내)
-    if (error.message?.includes('AI 응답 형식 오류')) {
-      throw error; // JSON 파싱 에러는 그대로 전달
-    }
-    if (error.message?.includes('시간 초과') || error.name === 'AbortError') {
-      throw new Error('분석 시간 초과 (60초) — 네트워크를 확인하세요');
-    }
-    if (error.message?.includes('429') || error.message?.includes('RESOURCE_EXHAUSTED')) {
-      throw new Error('AI 요청 한도 초과 — 1분 후 다시 시도하세요');
-    }
-    if (error.message?.includes('403') || error.message?.includes('PERMISSION_DENIED')) {
-      throw new Error('API 키 권한 오류 — 관리자에게 문의하세요');
-    }
-    if (error.message?.includes('Network') || error.message?.includes('network') || error.message?.includes('fetch')) {
-      throw new Error('네트워크 연결 실패 — Wi-Fi/데이터를 확인하세요');
-    }
-    if (error.message?.includes('빈 응답')) {
-      throw new Error('AI가 빈 응답을 반환했습니다 — 재시도해주세요');
-    }
-    throw new Error(`딥다이브 분석 실패: ${error.message?.substring(0, 80) || '알 수 없는 오류'}`);
+    return parseGeminiJson<DeepDiveResult>(text);
+  } catch (parseErr) {
+    console.error('[DeepDive] JSON 파싱 실패. 원본 응답 앞 500자:', text.substring(0, 500));
+    console.error('[DeepDive] JSON 파싱 에러:', parseErr);
+    throw new Error('AI 응답 형식 오류 — 재시도해주세요');
   }
 };
 
