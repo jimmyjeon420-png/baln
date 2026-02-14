@@ -304,12 +304,7 @@ export default function HomeScreen() {
       historicalContext: card.historical_context,
       macroChain: card.macro_chain,
       institutionalBehavior: card.institutional_behavior,
-      portfolioImpact: userImpact ? {
-        percentChange: userImpact.percent_change ?? 0,
-        healthScoreChange: userImpact.health_score_change ?? 0,
-        message: userImpact.impact_message || '',
-        isCalculating: userImpact.percent_change == null || userImpact.impact_message == null,
-      } : null,
+      portfolioImpact: null, // 영향도 기능 준비 중 — 추후 활성화
     };
   }, [contextData, contextEffective, contextLoading, isPremium, router, shareContext, showToast]);
 

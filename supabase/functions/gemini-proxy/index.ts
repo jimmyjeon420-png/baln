@@ -140,7 +140,7 @@ async function callGeminiWithSearch(prompt: string, timeoutMs: number = 30000, m
 
   const body = {
     contents: [{ parts: [{ text: prompt }] }],
-    tools: [{ google_search: {} }],
+    // google_search 비활성화 — Gemini 2.5-flash에서 불안정 (타임아웃 발생)
     generationConfig: {
       temperature: 0.7,
       maxOutputTokens: 4096,
