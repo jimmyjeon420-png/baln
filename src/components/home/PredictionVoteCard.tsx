@@ -529,7 +529,7 @@ export default function PredictionVoteCard({
 // 스타일
 // ============================================================================
 
-const CARD_HEIGHT = SCREEN_HEIGHT * 0.78;
+const CARD_HEIGHT = SCREEN_HEIGHT * 0.68;
 
 function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
   return StyleSheet.create({
@@ -538,9 +538,7 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       marginHorizontal: 16,
       backgroundColor: colors.surface,
       borderRadius: 24,
-      paddingHorizontal: 20,
-      paddingTop: 20,
-      paddingBottom: 16,
+      padding: 20,
       justifyContent: 'space-between',
       borderWidth: 1,
       borderColor: colors.border,
