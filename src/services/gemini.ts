@@ -284,7 +284,7 @@ const model = genAI.getGenerativeModel({ model: MODEL_NAME });
 
 // ⚠️ TEMPORARY FIX: google_search 도구가 네트워크 에러를 일으키면 임시로 제거
 // TODO: Gemini 2.5-flash의 올바른 google_search 형식 확인 후 재활성화
-const USE_GOOGLE_SEARCH = true; // true로 변경하면 google_search 활성화
+const USE_GOOGLE_SEARCH = false; // Gemini 2.5-flash에서 google_search 불안정 → 비활성화
 
 const modelWithSearch = genAI.getGenerativeModel(
   USE_GOOGLE_SEARCH
