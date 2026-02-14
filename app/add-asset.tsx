@@ -110,6 +110,83 @@ function getCurrencySymbol(ticker: string): string {
   return '$';
 }
 
+// ── 진단 함수 (Supabase 연결 테스트) ──
+
+async function runDiagnostic() {
+  const results: string[] = [];
+  const startTotal = Date.now();
+
+  // 1. raw fetch 테스트 (SDK 우회)
+  try {
+    const t1 = Date.now();
+    const res = await Promise.race([
+      fetch('https://ruqeinfcqhgexrckonsy.supabase.co/rest/v1/', {
+        headers: {
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1cWVpbmZjcWhnZXhyY2tvbnN5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkyMTE4MDksImV4cCI6MjA4NDc4NzgwOX0.NJmOH_uF59nYaSmjebGMNHlBwvqx5MHIwXOoqzITsXc',
+        },
+      }),
+      new Promise<null>((r) => setTimeout(() => r(null), 5000)),
+    ]);
+    if (res) {
+      results.push(`1. fetch: ${res.status} (${Date.now() - t1}ms)`);
+    } else {
+      results.push(`1. fetch: TIMEOUT 5s`);
+    }
+  } catch (e: any) {
+    results.push(`1. fetch ERROR: ${e.message}`);
+  }
+
+  // 2. getSession 테스트
+  try {
+    const t2 = Date.now();
+    const { data } = await supabase.auth.getSession();
+    const hasSession = !!data?.session;
+    const token = data?.session?.access_token;
+    let expInfo = 'no token';
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const exp = payload.exp;
+        const now = Math.floor(Date.now() / 1000);
+        expInfo = exp > now ? `valid (${exp - now}s left)` : `EXPIRED (${now - exp}s ago)`;
+      } catch { expInfo = 'parse error'; }
+    }
+    results.push(`2. session: ${hasSession ? 'YES' : 'NO'} / ${expInfo} (${Date.now() - t2}ms)`);
+  } catch (e: any) {
+    results.push(`2. session ERROR: ${e.message}`);
+  }
+
+  // 3. DB 쿼리 테스트 (Supabase SDK)
+  try {
+    const t3 = Date.now();
+    const { data, error } = await Promise.race([
+      supabase.from('portfolios').select('id').limit(1),
+      new Promise<{ data: null; error: { message: string } }>((r) =>
+        setTimeout(() => r({ data: null, error: { message: 'SDK TIMEOUT 5s' } }), 5000)
+      ),
+    ]) as any;
+    if (error) {
+      results.push(`3. DB query: ERROR ${error.message} (${Date.now() - t3}ms)`);
+    } else {
+      results.push(`3. DB query: OK rows=${data?.length ?? 0} (${Date.now() - t3}ms)`);
+    }
+  } catch (e: any) {
+    results.push(`3. DB query ERROR: ${e.message}`);
+  }
+
+  // 4. getCurrentUser 테스트
+  try {
+    const t4 = Date.now();
+    const u = await getCurrentUser();
+    results.push(`4. getCurrentUser: ${u ? u.id.substring(0, 8) + '...' : 'NULL'} (${Date.now() - t4}ms)`);
+  } catch (e: any) {
+    results.push(`4. getCurrentUser ERROR: ${e.message}`);
+  }
+
+  const totalMs = Date.now() - startTotal;
+  Alert.alert('진단 결과', results.join('\n') + `\n\n총: ${totalMs}ms`);
+}
+
 // ── 메인 컴포넌트 ──
 
 export default function AddAssetScreen() {
@@ -393,32 +470,63 @@ export default function AddAssetScreen() {
       // 한국주식: KRW, 그 외: USD
       const currency = (ticker.endsWith('.KS') || ticker.endsWith('.KQ')) ? 'KRW' : 'USD';
 
-      const upsertData = {
-        user_id: user.id,
-        ticker,
-        name,
-        quantity: q,
-        avg_price: p,
-        current_price: p,
-        current_value: currentValue,
-        target_allocation: 0,
-        asset_type: 'liquid',
-        currency,
-      };
-
-      const { data: savedData, error: upsertError } = await withTimeout(
+      // ★ 기존 자산 확인 → insert 또는 update (upsert 대신 안정적인 2단계)
+      const { data: existing } = await withTimeout(
         supabase
           .from('portfolios')
-          .upsert(upsertData, {
-            onConflict: 'user_id,name',
-            ignoreDuplicates: false,
-          })
-          .select(),
-        25000,
-        '저장 시간이 초과되었습니다. WiFi 연결을 확인하고 다시 시도해주세요.',
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('name', name)
+          .limit(1),
+        10000,
+        `DB 조회 타임아웃 (user: ${user.id.substring(0, 8)}...)`,
       );
 
-      if (upsertError) throw upsertError;
+      let savedData;
+      let upsertError;
+
+      if (existing && existing.length > 0) {
+        // 기존 자산 업데이트
+        const result = await withTimeout(
+          supabase
+            .from('portfolios')
+            .update({ quantity: q, avg_price: p, current_price: p, current_value: currentValue, currency })
+            .eq('id', existing[0].id)
+            .select(),
+          10000,
+          `DB 업데이트 타임아웃 (id: ${existing[0].id.substring(0, 8)}...)`,
+        );
+        savedData = result.data;
+        upsertError = result.error;
+      } else {
+        // 신규 자산 추가
+        const result = await withTimeout(
+          supabase
+            .from('portfolios')
+            .insert({
+              user_id: user.id,
+              ticker,
+              name,
+              quantity: q,
+              avg_price: p,
+              current_price: p,
+              current_value: currentValue,
+              target_allocation: 0,
+              asset_type: 'liquid',
+              currency,
+            })
+            .select(),
+          10000,
+          `DB 추가 타임아웃 (user: ${user.id.substring(0, 8)}...)`,
+        );
+        savedData = result.data;
+        upsertError = result.error;
+      }
+
+      if (upsertError) {
+        // ★ 실제 DB 에러 메시지 표시 (이전: 일반적인 "저장 실패"만 표시)
+        throw new Error(`DB 에러: ${upsertError.message} (code: ${upsertError.code})`);
+      }
 
       // 진단 트리거 설정
       const today = new Date().toISOString().split('T')[0];
@@ -522,7 +630,9 @@ export default function AddAssetScreen() {
             <Ionicons name="chevron-back" size={28} color={colors.primary} />
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>자산 추가</Text>
-          <View style={{ width: 28 }} />
+          <TouchableOpacity onPress={runDiagnostic}>
+            <Ionicons name="pulse-outline" size={24} color={colors.primary} />
+          </TouchableOpacity>
         </View>
 
         {/* 부동산 등록 바로가기 */}

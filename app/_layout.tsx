@@ -43,10 +43,10 @@ const routingInstrumentation = Sentry.reactNavigationIntegration({
 if (SENTRY_DSN && !__DEV__) {
   Sentry.init({
     dsn: SENTRY_DSN,
-    tracesSampleRate: 0.2, // 프로덕션 성능 트레이싱 20%
+    tracesSampleRate: 0, // ★ 비활성화: fetch 간섭 방지 (네트워크 타임아웃 원인 조사 중)
     integrations: [routingInstrumentation],
     enableAutoSessionTracking: true,
-    enableNativeFramesTracking: true,
+    enableNativeFramesTracking: false, // ★ 비활성화: 성능 부하 줄임
     // 개인정보 보호: 사용자 입력값 마스킹
     beforeSend(event) {
       // 민감한 breadcrumb 데이터 제거
