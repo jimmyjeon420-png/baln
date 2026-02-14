@@ -202,26 +202,22 @@ function RootLayout() {
     return () => subscription.remove();
   }, []);
 
-  // OTA 업데이트 자동 확인 & 적용
+  // OTA 업데이트 자동 확인 & 즉시 적용 (사용자 확인 불필요)
   useEffect(() => {
     const checkForOTAUpdate = async () => {
       try {
-        if (!Updates.isEnabled) return; // 개발 모드에서는 스킵
+        if (!Updates.isEnabled) {
+          console.log('[Updates] 개발 모드 — OTA 비활성화');
+          return;
+        }
         const update = await Updates.checkForUpdateAsync();
         if (update.isAvailable) {
+          console.log('[Updates] 새 업데이트 발견 — 다운로드 시작');
           await Updates.fetchUpdateAsync();
-          // 업데이트 다운로드 완료 → 앱 재시작하여 적용
-          Alert.alert(
-            '업데이트 완료',
-            '새로운 버전이 준비되었습니다. 지금 적용할까요?',
-            [
-              { text: '나중에', style: 'cancel' },
-              { text: '적용', onPress: () => Updates.reloadAsync() },
-            ]
-          );
+          console.log('[Updates] 다운로드 완료 — 즉시 적용');
+          await Updates.reloadAsync();
         }
       } catch (err) {
-        // 업데이트 체크 실패 시 무시 (네트워크 오류 등)
         console.warn('[Updates] OTA 업데이트 확인 실패 (무시):', err);
       }
     };

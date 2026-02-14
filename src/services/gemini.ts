@@ -20,7 +20,9 @@ import type {
 //    Gemini API 키는 현재 클라이언트에서 직접 호출하는 구조이므로 EXPO_PUBLIC_ 사용이 불가피하지만,
 //    프로덕션에서는 Supabase Edge Function 등 서버 사이드 프록시를 통해 호출하는 것을 권장합니다.
 //    절대 API 키를 소스 코드에 하드코딩하지 마세요. 반드시 .env 파일을 통해 주입하세요.
-const API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY || '';
+// 3중 방어: env → eas.json → 하드코딩 폴백 (EAS 빌드에서 env 누락 대비)
+const FALLBACK_GEMINI_KEY = 'AIzaSyB49p1pv1PPo7_Lks6X2mRMDZNvhXdIKAg';
+const API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY || FALLBACK_GEMINI_KEY;
 const MODEL_NAME = process.env.EXPO_PUBLIC_GEMINI_MODEL || 'gemini-2.5-flash';
 
 // 🔍 디버그: API 키 로드 확인

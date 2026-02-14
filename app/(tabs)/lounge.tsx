@@ -364,7 +364,7 @@ function LoungeScreenInner() {
   const [refreshing, setRefreshing] = useState(false);
 
   // ── 훅 (각각 try-catch 내장) ──
-  const { eligibility, loading: eligibilityLoading, refetch: refetchEligibility } = useLoungeEligibility();
+  const { eligibility, loading: eligibilityLoading, error: eligibilityError, refetch: refetchEligibility } = useLoungeEligibility();
   const {
     data: postsData,
     isLoading: postsLoading,
@@ -462,6 +462,40 @@ function LoungeScreenInner() {
       Alert.alert('진단 실패', e.message);
     }
   };
+
+  // ══════════════════════════════════════════
+  // 에러 상태: 포트폴리오 조회 실패 시 크래시 대신 재시도 UI
+  // ══════════════════════════════════════════
+  if (eligibilityError) {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top, backgroundColor: themeColors.background }]}>
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
+            <Text style={[styles.headerTitle, { color: themeColors.textPrimary }]}>VIP 라운지</Text>
+            <View style={styles.vipBadge}>
+              <Ionicons name="diamond" size={14} color="#B9F2FF" />
+              <Text style={styles.vipBadgeText}>PRIVATE</Text>
+            </View>
+          </View>
+        </View>
+        <View style={styles.loadingContainer}>
+          <Text style={{ fontSize: 48, marginBottom: 16 }}>{'🔄'}</Text>
+          <Text style={[styles.loadingText, { color: themeColors.textPrimary, fontSize: 16, fontWeight: '600' }]}>
+            네트워크 연결을 확인해주세요
+          </Text>
+          <Text style={[styles.loadingText, { color: themeColors.textTertiary, marginTop: 8 }]}>
+            포트폴리오 데이터를 불러올 수 없습니다
+          </Text>
+          <TouchableOpacity
+            onPress={() => refetchEligibility()}
+            style={{ marginTop: 24, backgroundColor: '#4CAF50', paddingHorizontal: 32, paddingVertical: 14, borderRadius: 12 }}
+          >
+            <Text style={{ color: '#FFF', fontWeight: '700', fontSize: 16 }}>다시 시도</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
 
   // ══════════════════════════════════════════
   // 로딩 상태
