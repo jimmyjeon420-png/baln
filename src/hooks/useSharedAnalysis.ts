@@ -97,12 +97,20 @@ export async function fetchAIAnalysis(
     try {
       const cached = await getTodayPrescription(userId, portfolioHash);
       if (cached) {
-        // 캐시 히트 → 즉시 반환 (새로고침해도 같은 내용)
-        return {
-          morningBriefing: cached.morningBriefing,
-          riskAnalysis: cached.riskAnalysis,
-          source: cached.source,
-        };
+        // 캐시된 morningBriefing이 에러 폴백 데이터인지 검증
+        const cachedTitle = cached.morningBriefing?.macroSummary?.title;
+        const isErrorFallback = cachedTitle === '시장 분석 중...' || cachedTitle === '분석 중';
+
+        if (!isErrorFallback) {
+          // 정상 캐시 히트 → 즉시 반환
+          return {
+            morningBriefing: cached.morningBriefing,
+            riskAnalysis: cached.riskAnalysis,
+            source: cached.source,
+          };
+        }
+        // 에러 폴백 캐시 → 무시하고 라이브 재생성
+        if (__DEV__) console.log('[공유분석] 에러 폴백 캐시 감지 → 라이브 재생성');
       }
     } catch (err) {
       console.warn('[공유분석] 처방전 캐시 조회 실패, 라이브 진행:', err);

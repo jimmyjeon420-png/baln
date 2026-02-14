@@ -818,6 +818,9 @@ serve(async (req: Request) => {
       );
     }
 
+    // 요청 body 파싱
+    const body = await req.json() as GeminiProxyRequest;
+
     // ========================================================================
     // 인증 확인: 로그인한 사용자만 Gemini API 호출 허용
     // Supabase 클라이언트가 자동으로 Authorization 헤더에 JWT를 포함하므로
@@ -845,9 +848,6 @@ serve(async (req: Request) => {
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    // 요청 body 파싱
-    const body = await req.json() as GeminiProxyRequest;
 
     console.log(`[Gemini Proxy] 요청 타입: ${body.type}, 사용자: ${authUser.id}`);
 

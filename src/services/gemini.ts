@@ -858,29 +858,9 @@ export const generateMorningBriefing = async (
 
   } catch (error) {
     console.error("Morning Briefing Error:", error);
-
-    // 에러 시 기본값 반환
-    return {
-      macroSummary: {
-        title: "시장 분석 중...",
-        highlights: ["데이터를 불러오는 중입니다", "잠시 후 다시 시도해주세요"],
-        interestRateProbability: "분석 중",
-        marketSentiment: 'NEUTRAL',
-      },
-      portfolioActions: portfolio.map(p => ({
-        ticker: p.ticker,
-        name: p.name,
-        action: 'HOLD' as const,
-        reason: "분석 데이터 로딩 중",
-        priority: 'LOW' as const,
-      })),
-      cfoWeather: {
-        emoji: "🔄",
-        status: "분석 중",
-        message: "네트워크 연결을 확인해주세요",
-      },
-      generatedAt: new Date().toISOString(),
-    };
+    // 에러를 그대로 전파 — 호출자가 null로 처리하도록 함
+    // (에러 폴백 데이터를 반환하면 DB 캐시에 저장되어 반복적으로 에러 상태가 됨)
+    throw error;
   }
 };
 

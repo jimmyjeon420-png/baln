@@ -12,22 +12,26 @@ import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSharedPortfolio, SHARED_PORTFOLIO_KEY } from './useSharedPortfolio';
 import { AI_ANALYSIS_KEY, fetchAIAnalysis } from './useSharedAnalysis';
+import { computePortfolioHash } from '../services/centralKitchen';
 
 export function usePrefetchCheckup() {
   const queryClient = useQueryClient();
   const { portfolioAssets, hasAssets } = useSharedPortfolio();
 
+  // useSharedAnalysis와 동일한 해시 기반 키 사용
+  const portfolioHash = hasAssets ? computePortfolioHash(portfolioAssets) : '';
+
   useEffect(() => {
     if (!hasAssets || portfolioAssets.length === 0) return;
 
     // AI 분석 캐시가 없을 때만 prefetch (이미 있으면 스킵)
-    const existing = queryClient.getQueryData([...AI_ANALYSIS_KEY, portfolioAssets.length]);
+    const existing = queryClient.getQueryData([...AI_ANALYSIS_KEY, portfolioHash]);
     if (existing) return;
 
     queryClient.prefetchQuery({
-      queryKey: [...AI_ANALYSIS_KEY, portfolioAssets.length],
+      queryKey: [...AI_ANALYSIS_KEY, portfolioHash],
       queryFn: () => fetchAIAnalysis(portfolioAssets),
       staleTime: 1000 * 60 * 5,
     });
-  }, [hasAssets, portfolioAssets.length]);
+  }, [hasAssets, portfolioHash]);
 }
