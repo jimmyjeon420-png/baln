@@ -298,25 +298,71 @@ export const useLikePost = () => {
 
   return useMutation({
     mutationFn: async (postId: string) => {
+      console.log('[Community] 좋아요 토글 시작:', postId);
+
       const { data, error } = await supabase.rpc('toggle_post_like', {
         p_post_id: postId,
       });
 
       if (error) {
-        // RPC 함수 미존재 시 폴백
-        const { data: post } = await supabase
-          .from('community_posts')
-          .select('likes_count')
-          .eq('id', postId)
-          .single();
+        console.warn('[Community] toggle_post_like RPC 에러, 폴백 시도:', error.message);
 
-        if (post) {
+        // RPC 함수 미존재 시 폴백: community_likes 직접 조작
+        const user = await getCurrentUser();
+        if (!user) throw new Error('로그인이 필요합니다.');
+
+        // 기존 좋아요 확인
+        const { data: existing } = await supabase
+          .from('community_likes')
+          .select('user_id')
+          .eq('user_id', user.id)
+          .eq('post_id', postId)
+          .maybeSingle();
+
+        if (existing) {
+          // 좋아요 취소
           await supabase
+            .from('community_likes')
+            .delete()
+            .eq('user_id', user.id)
+            .eq('post_id', postId);
+
+          const { data: post } = await supabase
             .from('community_posts')
-            .update({ likes_count: (post.likes_count || 0) + 1 })
-            .eq('id', postId);
+            .select('likes_count')
+            .eq('id', postId)
+            .single();
+          if (post) {
+            await supabase
+              .from('community_posts')
+              .update({ likes_count: Math.max((post.likes_count || 0) - 1, 0) })
+              .eq('id', postId);
+          }
+          return false;
+        } else {
+          // 좋아요 추가
+          const { error: insertErr } = await supabase
+            .from('community_likes')
+            .insert({ user_id: user.id, post_id: postId });
+
+          if (insertErr) {
+            console.error('[Community] 좋아요 폴백 INSERT 실패:', insertErr.message);
+            throw insertErr;
+          }
+
+          const { data: post } = await supabase
+            .from('community_posts')
+            .select('likes_count')
+            .eq('id', postId)
+            .single();
+          if (post) {
+            await supabase
+              .from('community_posts')
+              .update({ likes_count: (post.likes_count || 0) + 1 })
+              .eq('id', postId);
+          }
+          return true;
         }
-        return true;
       }
 
       return data as boolean; // true=좋아요, false=취소
@@ -429,6 +475,8 @@ export const useCreateComment = (postId: string) => {
 
   return useMutation({
     mutationFn: async (input: { content: string; displayTag: string; totalAssets: number; parentId?: string }) => {
+      console.log('[Community] 댓글 작성 시작:', { postId, contentLength: input.content.length, totalAssets: input.totalAssets, isFreePeriod: isFreePeriod() });
+
       const user = await getCurrentUser();
       if (!user) throw new Error('로그인이 필요합니다.');
 
@@ -438,26 +486,37 @@ export const useCreateComment = (postId: string) => {
       }
 
       // 댓글 저장 (parent_id 포함 = 대댓글)
+      const insertPayload = {
+        post_id: postId,
+        user_id: user.id,
+        content: input.content,
+        display_tag: input.displayTag,
+        total_assets_at_comment: input.totalAssets,
+        parent_id: input.parentId || null,
+      };
+      console.log('[Community] 댓글 INSERT payload:', insertPayload);
+
       const { data, error } = await supabase
         .from('community_comments')
-        .insert({
-          post_id: postId,
-          user_id: user.id,
-          content: input.content,
-          display_tag: input.displayTag,
-          total_assets_at_comment: input.totalAssets,
-          parent_id: input.parentId || null,
-        })
+        .insert(insertPayload)
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('[Community] 댓글 INSERT 실패:', error.code, error.message, error.details, error.hint);
+        throw error;
+      }
+
+      console.log('[Community] 댓글 저장 성공:', data?.id);
 
       // 댓글 수 원자적 증가 (대댓글도 카운트) — RPC 실패 시 무시 (댓글은 이미 저장됨)
       try {
-        await supabase.rpc('increment_comment_count', { p_post_id: postId });
-      } catch {
-        console.warn('[Community] increment_comment_count RPC 실패 (무시)');
+        const { error: rpcError } = await supabase.rpc('increment_comment_count', { p_post_id: postId });
+        if (rpcError) {
+          console.warn('[Community] increment_comment_count RPC 에러 (무시):', rpcError.message);
+        }
+      } catch (rpcErr) {
+        console.warn('[Community] increment_comment_count RPC 실패 (무시):', rpcErr);
       }
 
       return data;
@@ -537,9 +596,12 @@ export const useDeleteComment = (postId: string) => {
 
       // 댓글 수 감소 — RPC 실패 시 무시 (댓글은 이미 삭제됨)
       try {
-        await supabase.rpc('increment_comment_count', { p_post_id: postId, p_delta: -1 });
-      } catch {
-        console.warn('[Community] increment_comment_count (감소) RPC 실패 (무시)');
+        const { error: rpcError } = await supabase.rpc('increment_comment_count', { p_post_id: postId, p_delta: -1 });
+        if (rpcError) {
+          console.warn('[Community] increment_comment_count (감소) RPC 에러 (무시):', rpcError.message);
+        }
+      } catch (rpcErr) {
+        console.warn('[Community] increment_comment_count (감소) RPC 실패 (무시):', rpcErr);
       }
     },
     onSuccess: () => {
@@ -555,16 +617,24 @@ export const useMyCommentLikes = () => {
   return useQuery({
     queryKey: ['myCommentLikes'],
     queryFn: async () => {
-      const user = await getCurrentUser();
-      if (!user) return new Set<string>();
+      try {
+        const user = await getCurrentUser();
+        if (!user) return new Set<string>();
 
-      const { data, error } = await supabase
-        .from('community_comment_likes')
-        .select('comment_id')
-        .eq('user_id', user.id);
+        const { data, error } = await supabase
+          .from('community_comment_likes')
+          .select('comment_id')
+          .eq('user_id', user.id);
 
-      if (error) return new Set<string>();
-      return new Set((data || []).map(d => d.comment_id));
+        if (error) {
+          console.warn('[Community] 댓글 좋아요 목록 조회 실패:', error.message);
+          return new Set<string>();
+        }
+        return new Set((data || []).map(d => d.comment_id));
+      } catch (err) {
+        console.warn('[Community] 댓글 좋아요 목록 조회 예외:', err);
+        return new Set<string>();
+      }
     },
     staleTime: 60000,
   });
@@ -579,20 +649,32 @@ export const useLikeComment = (postId: string) => {
       const user = await getCurrentUser();
       if (!user) throw new Error('로그인이 필요합니다.');
 
-      // 기존 좋아요 확인
-      const { data: existing } = await supabase
+      console.log('[Community] 댓글 좋아요 토글:', commentId);
+
+      // 기존 좋아요 확인 (maybeSingle: 없으면 null, 에러 없음)
+      const { data: existing, error: checkError } = await supabase
         .from('community_comment_likes')
         .select('id')
         .eq('user_id', user.id)
         .eq('comment_id', commentId)
-        .single();
+        .maybeSingle();
+
+      if (checkError) {
+        console.warn('[Community] 댓글 좋아요 확인 실패:', checkError.message);
+        // 테이블 자체가 없을 수 있음 — 조용히 실패
+        throw checkError;
+      }
 
       if (existing) {
         // 좋아요 취소
-        await supabase
+        const { error: deleteErr } = await supabase
           .from('community_comment_likes')
           .delete()
           .eq('id', existing.id);
+
+        if (deleteErr) {
+          console.warn('[Community] 댓글 좋아요 삭제 실패:', deleteErr.message);
+        }
 
         // 좋아요 수 감소
         const { data: comment } = await supabase
@@ -611,9 +693,14 @@ export const useLikeComment = (postId: string) => {
         return false;
       } else {
         // 좋아요 추가
-        await supabase
+        const { error: insertErr } = await supabase
           .from('community_comment_likes')
           .insert({ user_id: user.id, comment_id: commentId });
+
+        if (insertErr) {
+          console.error('[Community] 댓글 좋아요 INSERT 실패:', insertErr.message);
+          throw insertErr;
+        }
 
         // 좋아요 수 증가
         const { data: comment } = await supabase

@@ -308,6 +308,7 @@ export default function HomeScreen() {
         percentChange: userImpact.percent_change ?? 0,
         healthScoreChange: userImpact.health_score_change ?? 0,
         message: userImpact.impact_message || '',
+        isCalculating: userImpact.percent_change == null || userImpact.impact_message == null,
       } : null,
     };
   }, [contextData, contextEffective, contextLoading, isPremium, router, shareContext, showToast]);

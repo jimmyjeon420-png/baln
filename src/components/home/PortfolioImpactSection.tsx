@@ -3,10 +3,15 @@
  *
  * 역할: 오늘 맥락이 내 자산에 미친 영향을 시각화
  * 비유: 건강검진 결과처럼 "당신에게는 이렇게 영향을 줬습니다" 보여주는 섹션
+ *
+ * [개선 - 2026-02-14]
+ * - isCalculating 상태 지원: "영향도 계산 중" 표시
+ * - 30초 타임아웃: 30초 후에도 계산 중이면 폴백 메시지 표시
+ * - 재시도 버튼: 사용자가 직접 다시 시도할 수 있는 경로
  */
 
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
 
@@ -17,12 +22,19 @@ interface PortfolioImpactData {
   healthScoreChange: number;
   /** 영향도 메시지 */
   message: string;
+  /** 영향도 계산 중 여부 (null 필드 존재) */
+  isCalculating?: boolean;
 }
 
 interface PortfolioImpactSectionProps {
   /** 포트폴리오 영향도 데이터 */
   data: PortfolioImpactData;
+  /** 재시도 콜백 (pull-to-refresh와 동일) */
+  onRetry?: () => void;
 }
+
+/** 타임아웃 시간 (30초) */
+const CALCULATING_TIMEOUT_MS = 30_000;
 
 /**
  * 포트폴리오 영향도 섹션 컴포넌트
@@ -33,13 +45,98 @@ interface PortfolioImpactSectionProps {
  *   data={{
  *     percentChange: -1.2,
  *     healthScoreChange: 0,
- *     message: '당신의 포트폴리오는 -1.2% 영향, 건강 점수 변동 없음'
+ *     message: '당신의 포트폴리오는 -1.2% 영향, 건강 점수 변동 없음',
+ *     isCalculating: false,
  *   }}
+ *   onRetry={() => refetch()}
  * />
  * ```
  */
-export function PortfolioImpactSection({ data }: PortfolioImpactSectionProps) {
+export function PortfolioImpactSection({ data, onRetry }: PortfolioImpactSectionProps) {
   const { colors } = useTheme();
+  const [timedOut, setTimedOut] = useState(false);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // 30초 타임아웃: isCalculating이 true인 채 30초 지나면 폴백 표시
+  useEffect(() => {
+    if (data.isCalculating) {
+      setTimedOut(false);
+      timeoutRef.current = setTimeout(() => {
+        setTimedOut(true);
+      }, CALCULATING_TIMEOUT_MS);
+    } else {
+      setTimedOut(false);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    }
+
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    };
+  }, [data.isCalculating]);
+
+  // ── 상태 1: 계산 중 + 타임아웃 발생 → 폴백 메시지 ──
+  if (data.isCalculating && timedOut) {
+    return (
+      <View style={[s.container, { backgroundColor: 'rgba(255, 152, 0, 0.08)' }]}>
+        <View style={s.headerRow}>
+          <Ionicons name="analytics-outline" size={18} color="#FF9800" />
+          <Text style={[s.headerText, { color: colors.textSecondary }]}>
+            오늘 맥락이 내 자산에 미친 영향
+          </Text>
+        </View>
+
+        <View style={[s.fallbackBox, { backgroundColor: colors.surface }]}>
+          <Ionicons name="time-outline" size={32} color="#FF9800" />
+          <Text style={[s.fallbackTitle, { color: colors.textPrimary }]}>
+            영향도 데이터를 가져올 수 없습니다
+          </Text>
+          <Text style={[s.fallbackDesc, { color: colors.textSecondary }]}>
+            서버에서 영향도 계산이 아직 완료되지 않았습니다.{'\n'}내일 아침 다시 확인해주세요.
+          </Text>
+
+          {onRetry && (
+            <TouchableOpacity
+              style={[s.retryButton, { borderColor: '#FF9800' }]}
+              onPress={onRetry}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="refresh" size={16} color="#FF9800" />
+              <Text style={[s.retryText, { color: '#FF9800' }]}>다시 시도</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+    );
+  }
+
+  // ── 상태 2: 계산 중 (타임아웃 전) → 로딩 UI ──
+  if (data.isCalculating) {
+    return (
+      <View style={[s.container, { backgroundColor: 'rgba(33, 150, 243, 0.08)' }]}>
+        <View style={s.headerRow}>
+          <Ionicons name="analytics-outline" size={18} color="#2196F3" />
+          <Text style={[s.headerText, { color: colors.textSecondary }]}>
+            오늘 맥락이 내 자산에 미친 영향
+          </Text>
+        </View>
+
+        <View style={[s.calculatingBox, { backgroundColor: colors.surface }]}>
+          <ActivityIndicator size="small" color="#2196F3" />
+          <Text style={[s.calculatingText, { color: colors.textSecondary }]}>
+            영향도 계산 중...
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
+  // ── 상태 3: 정상 데이터 표시 ──
 
   // 수익률 변화 색상
   const changeColor = data.percentChange >= 0 ? colors.buy : colors.sell;
@@ -183,5 +280,50 @@ const s = StyleSheet.create({
     lineHeight: 20,
     marginLeft: 8,
     flex: 1,
+  },
+  // 계산 중 상태
+  calculatingBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 8,
+    padding: 20,
+    gap: 12,
+  },
+  calculatingText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  // 타임아웃 폴백 상태
+  fallbackBox: {
+    alignItems: 'center',
+    borderRadius: 12,
+    padding: 24,
+    gap: 8,
+  },
+  fallbackTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  fallbackDesc: {
+    fontSize: 13,
+    lineHeight: 20,
+    textAlign: 'center',
+  },
+  retryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginTop: 8,
+  },
+  retryText: {
+    fontSize: 13,
+    fontWeight: '600',
   },
 });

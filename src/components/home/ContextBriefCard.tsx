@@ -130,6 +130,7 @@ interface ContextBriefCardProps {
     percentChange: number;
     healthScoreChange: number;
     message: string;
+    isCalculating?: boolean;
   } | null;
 }
 
@@ -396,13 +397,59 @@ const PortfolioImpactVisual = React.memo(function PortfolioImpactVisual({
   percentChange,
   healthScoreChange,
   message,
+  isCalculating,
 }: {
   percentChange: number;
   healthScoreChange: number;
   message: string;
+  isCalculating?: boolean;
 }) {
   const { colors } = useTheme();
   const styles = React.useMemo(() => createStyles(colors), [colors]);
+  const [timedOut, setTimedOut] = React.useState(false);
+  const timeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // 30초 타임아웃: isCalculating이 true인 채 30초 지나면 폴백 표시
+  React.useEffect(() => {
+    if (isCalculating) {
+      setTimedOut(false);
+      timeoutRef.current = setTimeout(() => setTimedOut(true), 30_000);
+    } else {
+      setTimedOut(false);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    }
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    };
+  }, [isCalculating]);
+
+  // 계산 중 + 타임아웃 → 폴백 메시지
+  if (isCalculating && timedOut) {
+    return (
+      <View style={styles.impactContainer}>
+        <Ionicons name="time-outline" size={28} color="#FF9800" />
+        <Text style={[styles.impactMessage, { textAlign: 'center', marginTop: 8 }]}>
+          영향도 데이터를 가져올 수 없습니다.{'\n'}내일 아침 다시 확인해주세요.
+        </Text>
+      </View>
+    );
+  }
+
+  // 계산 중 (타임아웃 전) → 로딩
+  if (isCalculating) {
+    return (
+      <View style={[styles.impactContainer, { alignItems: 'center', paddingVertical: 16 }]}>
+        <Text style={styles.impactMessage}>영향도 계산 중...</Text>
+      </View>
+    );
+  }
+
   const isPositive = percentChange >= 0;
   const changeColor = isPositive ? colors.buy : colors.sell;
 
@@ -709,6 +756,7 @@ export default React.forwardRef<View, ContextBriefCardProps>(
                 percentChange={portfolioImpact.percentChange}
                 healthScoreChange={portfolioImpact.healthScoreChange}
                 message={portfolioImpact.message}
+                isCalculating={portfolioImpact.isCalculating}
               />
             ) : (
               <Text style={styles.layerBodyText}>

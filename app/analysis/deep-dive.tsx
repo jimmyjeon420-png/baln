@@ -30,6 +30,7 @@ import { generateDeepDive } from '../../src/services/gemini';
 import { fetchStockFundamentals } from '../../src/services/stockDataService';
 import DeepDiveReport from '../../src/components/deep-dive/DeepDiveReport';
 import type { DeepDiveInput, DeepDiveResult } from '../../src/types/marketplace';
+import supabase, { getCurrentUser } from '../../src/services/supabase';
 
 // ============================================================================
 // 한국 주요 종목 + 글로벌 인기 종목 DB (오프라인 검색용)
@@ -102,6 +103,100 @@ const STOCK_DB: StockItem[] = [
   { ticker: 'PLTR', name: '팔란티어', nameEn: 'Palantir', market: 'NASDAQ' },
   { ticker: 'SOFI', name: '소파이', nameEn: 'SoFi Technologies', market: 'NASDAQ' },
 ];
+
+// ============================================================================
+// 진단 함수 (딥다이브 분석 환경 점검)
+// ============================================================================
+
+async function runDeepDiveDiagnostic() {
+  const results: string[] = [];
+  const startTotal = Date.now();
+
+  // 1. raw fetch to Supabase (연결 테스트)
+  try {
+    const t1 = Date.now();
+    const res = await Promise.race([
+      fetch('https://ruqeinfcqhgexrckonsy.supabase.co/rest/v1/', {
+        headers: {
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1cWVpbmZjcWhnZXhyY2tvbnN5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkyMTE4MDksImV4cCI6MjA4NDc4NzgwOX0.NJmOH_uF59nYaSmjebGMNHlBwvqx5MHIwXOoqzITsXc',
+        },
+      }),
+      new Promise<null>((r) => setTimeout(() => r(null), 5000)),
+    ]);
+    if (res) {
+      results.push(`1. Supabase: ${res.status} (${Date.now() - t1}ms)`);
+    } else {
+      results.push(`1. Supabase: TIMEOUT 5s`);
+    }
+  } catch (e: any) {
+    results.push(`1. Supabase ERROR: ${e.message}`);
+  }
+
+  // 2. Auth 세션 체크
+  try {
+    const t2 = Date.now();
+    const { data } = await supabase.auth.getSession();
+    const hasSession = !!data?.session;
+    const token = data?.session?.access_token;
+    let expInfo = 'no token';
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const exp = payload.exp;
+        const now = Math.floor(Date.now() / 1000);
+        expInfo = exp > now ? `valid (${exp - now}s left)` : `EXPIRED (${now - exp}s ago)`;
+      } catch { expInfo = 'parse error'; }
+    }
+    results.push(`2. Auth: ${hasSession ? 'YES' : 'NO'} / ${expInfo} (${Date.now() - t2}ms)`);
+  } catch (e: any) {
+    results.push(`2. Auth ERROR: ${e.message}`);
+  }
+
+  // 3. Gemini API 프록시 헬스 체크 (Edge Function)
+  try {
+    const t3 = Date.now();
+    const { data, error } = await Promise.race([
+      supabase.functions.invoke('gemini-proxy', {
+        body: { type: 'health-check' },
+      }),
+      new Promise<{ data: null; error: { message: string } }>((r) =>
+        setTimeout(() => r({ data: null, error: { message: 'TIMEOUT 5s' } }), 5000)
+      ),
+    ]) as any;
+    if (error) {
+      results.push(`3. Gemini proxy: ERROR ${error.message} (${Date.now() - t3}ms)`);
+    } else {
+      results.push(`3. Gemini proxy: OK (${Date.now() - t3}ms)`);
+    }
+  } catch (e: any) {
+    results.push(`3. Gemini proxy ERROR: ${e.message}`);
+  }
+
+  // 4. Gemini API 키 확인
+  try {
+    const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+    const modelName = process.env.EXPO_PUBLIC_GEMINI_MODEL || 'gemini-2.5-flash';
+    if (apiKey && apiKey.length > 0) {
+      results.push(`4. Gemini KEY: loaded (${apiKey.length}chars) / model: ${modelName}`);
+    } else {
+      results.push(`4. Gemini KEY: MISSING`);
+    }
+  } catch (e: any) {
+    results.push(`4. Gemini KEY ERROR: ${e.message}`);
+  }
+
+  // 5. getCurrentUser 체크
+  try {
+    const t5 = Date.now();
+    const u = await getCurrentUser();
+    results.push(`5. User: ${u ? u.id.substring(0, 8) + '...' : 'NULL'} (${Date.now() - t5}ms)`);
+  } catch (e: any) {
+    results.push(`5. User ERROR: ${e.message}`);
+  }
+
+  const totalMs = Date.now() - startTotal;
+  Alert.alert('딥다이브 진단 결과', results.join('\n') + `\n\n총: ${totalMs}ms`);
+}
 
 // ============================================================================
 // 메인 화면
@@ -178,9 +273,19 @@ export default function DeepDiveScreen() {
 
     } catch (err: any) {
       console.error('[DeepDive] 분석 실패:', err);
+      console.error('[DeepDive] 에러 이름:', err.name);
+      console.error('[DeepDive] 에러 메시지:', err.message);
+      console.error('[DeepDive] 에러 코드:', err.code);
       const errorMsg = err.message || '알 수 없는 오류가 발생했습니다';
       setError(errorMsg);
-      Alert.alert('분석 실패', errorMsg);
+      Alert.alert(
+        '분석 실패',
+        errorMsg,
+        [
+          { text: '확인', style: 'cancel' },
+          { text: '진단 실행', onPress: runDeepDiveDiagnostic },
+        ]
+      );
     } finally {
       setIsLoading(false);
     }
@@ -195,7 +300,14 @@ export default function DeepDiveScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-      <HeaderBar title="종목 딥다이브" />
+      <HeaderBar
+        title="종목 딥다이브"
+        rightElement={
+          <TouchableOpacity onPress={runDeepDiveDiagnostic} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+            <Ionicons name="pulse-outline" size={24} color={colors.primary} />
+          </TouchableOpacity>
+        }
+      />
       <ScrollView
         style={[s.container, { backgroundColor: colors.background }]}
         contentContainerStyle={s.content}

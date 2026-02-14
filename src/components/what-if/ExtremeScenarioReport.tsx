@@ -8,10 +8,15 @@
  * - 행동 가이드 (조언)
  * - 포트폴리오 시뮬레이션 CTA (2크레딧)
  * - AI 시뮬레이션 결과 표시
+ *
+ * [수정 2026-02-14] 인스타그램 공유 이미지 개선:
+ * - 기존: ViewShot이 전체 리포트를 캡처 → 매우 긴 이미지
+ * - 변경: 별도 9:16 (1080x1920) 공유 카드 모달로 분리
+ * - 가장 흥미로운 데이터만 요약하여 인스타 스토리 최적화
  */
 
 import React, { useRef, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
@@ -246,25 +251,31 @@ const SimulationResultSection: React.FC<{
 );
 
 // ============================================================================
-// 메인 컴포넌트
+// 9:16 인스타그램 스토리 공유 카드 (모달)
 // ============================================================================
 
-export const ExtremeScenarioReport: React.FC<ExtremeScenarioReportProps> = ({
-  scenario,
-  simulationResult,
-  isSimulating,
-  simulationError,
-  onSimulate,
-  hasAssets,
-}) => {
-  const { colors } = useTheme();
-  const catColor = CATEGORY_COLORS[scenario.category];
+const ShareStoryModal: React.FC<{
+  visible: boolean;
+  onClose: () => void;
+  scenario: ExtremeScenario;
+  simulationResult: WhatIfResult | null;
+}> = ({ visible, onClose, scenario, simulationResult }) => {
   const viewShotRef = useRef<ViewShot>(null);
   const [sharing, setSharing] = useState(false);
   const [rewardMessage, setRewardMessage] = useState<string | null>(null);
   const { rewarded, claimReward } = useShareReward();
+  const catColor = CATEGORY_COLORS[scenario.category];
 
-  const handleShare = useCallback(async () => {
+  // 상위 수혜/피해 섹터 (각 2개씩만)
+  const topUp = (scenario.marketImpact.upSectors ?? []).slice(0, 2);
+  const topDown = (scenario.marketImpact.downSectors ?? []).slice(0, 2);
+
+  // 시뮬레이션 결과가 있으면 핵심 수치 포함
+  const hasSimResult = !!simulationResult;
+  const simChangePercent = simulationResult?.totalImpact?.changePercent ?? 0;
+  const simChangeAmount = simulationResult?.totalImpact?.changeAmount ?? 0;
+
+  const handleShareCapture = useCallback(async () => {
     setSharing(true);
     try {
       const isAvailable = await Sharing.isAvailableAsync();
@@ -282,7 +293,7 @@ export const ExtremeScenarioReport: React.FC<ExtremeScenarioReportProps> = ({
         dialogTitle: `baln 위기 시뮬레이터 — ${scenario.title}`,
         UTI: 'public.png',
       });
-      // 공유 성공 → 크레딧 보상
+      // 공유 성공 -> 크레딧 보상
       const result = await claimReward();
       if (result.success) {
         setRewardMessage(`+${result.creditsEarned} 크레딧 획득!`);
@@ -295,13 +306,228 @@ export const ExtremeScenarioReport: React.FC<ExtremeScenarioReportProps> = ({
     }
   }, [scenario.title, claimReward]);
 
+  // 카드 콘텐츠 (캡처 대상 - 9:16 비율)
+  const cardContent = (
+    <View style={shareStyles.captureArea}>
+      {/* 배경 글로우 */}
+      <View style={[shareStyles.bgGlow, { backgroundColor: catColor, opacity: 0.06 }]} />
+      <View style={[shareStyles.bgGlowBottom, { backgroundColor: '#10B981', opacity: 0.04 }]} />
+
+      {/* 상단: baln.logic 로고 + 카테고리 */}
+      <View style={shareStyles.topRow}>
+        <View style={shareStyles.logoArea}>
+          <View style={shareStyles.logoRow}>
+            <Text style={shareStyles.logoBaln}>bal<Text style={{ color: '#4CAF50' }}>n</Text></Text>
+            <Text style={shareStyles.logoDot}>.logic</Text>
+          </View>
+          <Text style={shareStyles.logoSub}>AI 위기 시뮬레이터</Text>
+        </View>
+        <View style={[shareStyles.catBadge, { backgroundColor: catColor + '25', borderColor: catColor + '50' }]}>
+          <Text style={[shareStyles.catBadgeText, { color: catColor }]}>
+            {scenario.categoryLabel}
+          </Text>
+        </View>
+      </View>
+
+      {/* 바이럴 훅 */}
+      <View style={shareStyles.viralHookBox}>
+        <Text style={shareStyles.viralHookText}>만약 이게 실제로 일어난다면?</Text>
+      </View>
+
+      {/* 시나리오 헤더: 이모지 + 제목 */}
+      <View style={shareStyles.scenarioHeader}>
+        <Text style={shareStyles.scenarioEmoji}>{scenario.emoji}</Text>
+        <Text style={shareStyles.scenarioTitle}>{scenario.title}</Text>
+        <Text style={shareStyles.scenarioSubtitle}>{scenario.subtitle}</Text>
+      </View>
+
+      {/* 구분선 */}
+      <View style={shareStyles.divider} />
+
+      {/* 핵심 시장 영향 (KOSPI + 환율) */}
+      <View style={shareStyles.impactRow}>
+        <View style={[shareStyles.impactBox, { backgroundColor: '#EF444412' }]}>
+          <Text style={shareStyles.impactLabel}>KOSPI</Text>
+          <Text style={[shareStyles.impactValue, { color: '#EF4444' }]}>
+            {scenario.marketImpact.kospi}
+          </Text>
+        </View>
+        <View style={[shareStyles.impactBox, { backgroundColor: '#F59E0B12' }]}>
+          <Text style={shareStyles.impactLabel}>원/달러</Text>
+          <Text style={[shareStyles.impactValue, { color: '#F59E0B' }]}>
+            {scenario.marketImpact.usdkrw}
+          </Text>
+        </View>
+      </View>
+
+      {/* 수혜/피해 섹터 요약 */}
+      <View style={shareStyles.sectorSummary}>
+        <View style={shareStyles.sectorCol}>
+          <Text style={[shareStyles.sectorHeader, { color: '#10B981' }]}>수혜 섹터</Text>
+          {topUp.map((s, i) => (
+            <View key={i} style={shareStyles.sectorItem}>
+              <Text style={shareStyles.sectorName}>{s.name}</Text>
+              <Text style={[shareStyles.sectorChange, { color: '#10B981' }]}>{s.change}</Text>
+            </View>
+          ))}
+        </View>
+        <View style={shareStyles.sectorDivider} />
+        <View style={shareStyles.sectorCol}>
+          <Text style={[shareStyles.sectorHeader, { color: '#EF4444' }]}>피해 섹터</Text>
+          {topDown.map((s, i) => (
+            <View key={i} style={shareStyles.sectorItem}>
+              <Text style={shareStyles.sectorName}>{s.name}</Text>
+              <Text style={[shareStyles.sectorChange, { color: '#EF4444' }]}>{s.change}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
+
+      {/* 포트폴리오 시뮬레이션 결과 (있는 경우에만) */}
+      {hasSimResult && (
+        <View style={shareStyles.simResultBox}>
+          <Text style={shareStyles.simResultLabel}>내 포트폴리오 예상 영향</Text>
+          <Text style={[shareStyles.simResultValue, { color: simChangePercent >= 0 ? '#10B981' : '#EF4444' }]}>
+            {simChangePercent > 0 ? '+' : ''}{simChangePercent.toFixed(1)}%
+          </Text>
+          <Text style={shareStyles.simResultAmount}>
+            {simChangeAmount > 0 ? '+' : ''}{Math.round(simChangeAmount).toLocaleString()}원
+          </Text>
+        </View>
+      )}
+
+      {/* 역사적 선례 요약 (시뮬레이션 결과 없을 때만 - 공간 확보) */}
+      {!hasSimResult && (
+        <View style={shareStyles.histBox}>
+          <View style={shareStyles.histHeader}>
+            <Ionicons name="time-outline" size={14} color="#4CAF50" />
+            <Text style={shareStyles.histTitle}>역사적 선례</Text>
+          </View>
+          <Text style={shareStyles.histEvent}>{scenario.historicalParallel.event}</Text>
+          <View style={shareStyles.histMetrics}>
+            <View style={shareStyles.histMetric}>
+              <Text style={shareStyles.histMetricLabel}>초기 하락</Text>
+              <Text style={[shareStyles.histMetricValue, { color: '#EF4444' }]}>
+                {scenario.historicalParallel.initialDrop}
+              </Text>
+            </View>
+            <View style={shareStyles.histMetric}>
+              <Text style={shareStyles.histMetricLabel}>회복 기간</Text>
+              <Text style={[shareStyles.histMetricValue, { color: '#10B981' }]}>
+                {scenario.historicalParallel.recoveryTime}
+              </Text>
+            </View>
+          </View>
+        </View>
+      )}
+
+      {/* 안심 메시지 */}
+      <View style={shareStyles.reassureBox}>
+        <Text style={shareStyles.reassureText}>
+          위기를 미리 시뮬레이션하면, 패닉 대신 이해로 대응할 수 있습니다.
+        </Text>
+      </View>
+
+      {/* 하단 CTA */}
+      <View style={shareStyles.ctaContainer}>
+        <View style={shareStyles.ctaBox}>
+          <Ionicons name="open-outline" size={16} color="#4CAF50" />
+          <Text style={shareStyles.ctaText}>
+            bal<Text style={{ color: '#4CAF50' }}>n</Text>.app에서 무료 시뮬레이션
+          </Text>
+        </View>
+      </View>
+
+      {/* 워터마크 */}
+      <View style={shareStyles.watermarkRow}>
+        <View style={shareStyles.watermarkLine} />
+        <Text style={shareStyles.watermarkBaln}>bal<Text style={{ color: '#4CAF50' }}>n</Text></Text>
+        <Text style={shareStyles.watermarkDot}>.logic</Text>
+        <View style={shareStyles.watermarkLine} />
+      </View>
+    </View>
+  );
+
+  return (
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={onClose}
+    >
+      <View style={shareStyles.modalContainer}>
+        {/* 모달 헤더 */}
+        <View style={shareStyles.modalHeader}>
+          <Text style={shareStyles.modalTitle}>인스타 스토리 공유</Text>
+          <TouchableOpacity onPress={onClose} style={shareStyles.closeButton}>
+            <Ionicons name="close" size={24} color="#888888" />
+          </TouchableOpacity>
+        </View>
+
+        {/* 프리뷰 */}
+        <View style={shareStyles.previewContainer}>
+          <ViewShot
+            ref={viewShotRef}
+            options={{ format: 'png', quality: 1.0 }}
+          >
+            {cardContent}
+          </ViewShot>
+        </View>
+
+        {/* 보상 토스트 */}
+        {rewardMessage && (
+          <View style={shareStyles.rewardToast}>
+            <Ionicons name="gift" size={14} color="#4CAF50" />
+            <Text style={shareStyles.rewardToastText}>{rewardMessage}</Text>
+          </View>
+        )}
+
+        {/* 공유 버튼 */}
+        <View style={shareStyles.buttonContainer}>
+          <TouchableOpacity
+            style={shareStyles.shareButton}
+            onPress={handleShareCapture}
+            disabled={sharing}
+            activeOpacity={0.7}
+          >
+            {sharing ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <>
+                <Ionicons name="share-social" size={18} color="#FFFFFF" />
+                <Text style={shareStyles.shareButtonText}>인스타그램 공유</Text>
+                {!rewarded && (
+                  <View style={shareStyles.rewardHint}>
+                    <Text style={shareStyles.rewardHintText}>+{REWARD_AMOUNTS.shareCard}C</Text>
+                  </View>
+                )}
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+};
+
+// ============================================================================
+// 메인 컴포넌트
+// ============================================================================
+
+export const ExtremeScenarioReport: React.FC<ExtremeScenarioReportProps> = ({
+  scenario,
+  simulationResult,
+  isSimulating,
+  simulationError,
+  onSimulate,
+  hasAssets,
+}) => {
+  const { colors } = useTheme();
+  const catColor = CATEGORY_COLORS[scenario.category];
+  const [showShareModal, setShowShareModal] = useState(false);
+
   return (
     <View style={styles.container}>
-      <ViewShot
-        ref={viewShotRef}
-        options={{ format: 'png', quality: 1.0 }}
-        style={{ backgroundColor: colors.background, padding: 8, borderRadius: 16 }}
-      >
       {/* 바이럴 훅 — 드라마틱한 질문 */}
       <View style={styles.viralHook}>
         <Text style={styles.viralHookText}>만약 이게 실제로 일어난다면?</Text>
@@ -378,49 +604,34 @@ export const ExtremeScenarioReport: React.FC<ExtremeScenarioReportProps> = ({
       {/* 안심 메시지 (버핏 철학) */}
       <View style={[styles.reassureBox, { backgroundColor: '#10B98110' }]}>
         <Text style={[styles.reassureText, { color: colors.textSecondary }]}>
-          💡 이 시뮬레이션은 교육 목적입니다. 극단적 시나리오를 미리 생각해두면
+          이 시뮬레이션은 교육 목적입니다. 극단적 시나리오를 미리 생각해두면
           실제 위기 시 패닉 대신 이해로 대응할 수 있습니다.
         </Text>
       </View>
 
-      {/* baln 워터마크 + CTA (캡처용) */}
-      <View style={styles.watermark}>
-        <Text style={styles.watermarkText}>bal<Text style={{ color: '#4CAF50' }}>n</Text>.logic</Text>
-        <Text style={styles.watermarkCTA}>나도 시뮬레이션 해보기 → baln.app</Text>
-      </View>
-      </ViewShot>
-
       {/* 인스타 공유 버튼 */}
       <TouchableOpacity
         style={[styles.shareButton, { backgroundColor: colors.primary }]}
-        onPress={handleShare}
-        disabled={sharing}
+        onPress={() => setShowShareModal(true)}
         activeOpacity={0.8}
       >
         <Ionicons name="share-social" size={18} color="#FFFFFF" />
-        <Text style={styles.shareButtonText}>
-          {sharing ? '캡처 중...' : '인스타그램에 공유하기'}
-        </Text>
-        {!rewarded && (
-          <View style={styles.rewardHint}>
-            <Text style={styles.rewardHintText}>+{REWARD_AMOUNTS.shareCard}C</Text>
-          </View>
-        )}
+        <Text style={styles.shareButtonText}>인스타그램에 공유하기</Text>
       </TouchableOpacity>
 
-      {/* 보상 토스트 */}
-      {rewardMessage && (
-        <View style={styles.rewardToast}>
-          <Ionicons name="gift" size={14} color="#4CAF50" />
-          <Text style={styles.rewardToastText}>{rewardMessage}</Text>
-        </View>
-      )}
+      {/* 인스타 스토리 공유 모달 (9:16) */}
+      <ShareStoryModal
+        visible={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        scenario={scenario}
+        simulationResult={simulationResult}
+      />
     </View>
   );
 };
 
 // ============================================================================
-// 스타일
+// 스타일 (리포트 본문)
 // ============================================================================
 
 const styles = StyleSheet.create({
@@ -514,24 +725,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 20,
   },
-  watermark: {
-    alignItems: 'center',
-    paddingTop: 16,
-    paddingBottom: 12,
-    gap: 4,
-  },
-  watermarkText: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: '#777777',
-    letterSpacing: 1,
-  },
-  watermarkCTA: {
-    fontSize: 11,
-    fontWeight: '500',
-    color: '#999999',
-    letterSpacing: 0.3,
-  },
   shareButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -546,25 +739,366 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
   },
-  rewardHint: {
-    backgroundColor: '#FFD700',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
+});
+
+// ============================================================================
+// 스타일 (9:16 인스타 스토리 공유 카드)
+// ============================================================================
+
+const shareStyles = StyleSheet.create({
+  // ─── 모달 ───
+  modalContainer: {
+    flex: 1,
+    backgroundColor: '#0A0A0A',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.06)',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  closeButton: {
+    padding: 8,
+  },
+  previewContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+
+  // ─── 캡처 영역 (9:16 인스타 스토리 비율) ───
+  captureArea: {
+    width: 320,
+    aspectRatio: 9 / 16,
+    backgroundColor: '#1A1F2C',
+    borderRadius: 20,
+    padding: 22,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  bgGlow: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 250,
+    borderRadius: 20,
+  },
+  bgGlowBottom: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 200,
+    borderRadius: 20,
+  },
+
+  // ─── 상단: 로고 + 카테고리 ───
+  topRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 14,
+    zIndex: 10,
+  },
+  logoArea: {},
+  logoRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+  },
+  logoBaln: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: 1,
+  },
+  logoDot: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: '#4CAF50',
+    letterSpacing: 1,
+  },
+  logoSub: {
+    fontSize: 8,
+    color: '#666666',
+    letterSpacing: 2,
+    marginTop: 2,
+    textTransform: 'uppercase',
+  },
+  catBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderRadius: 10,
+    borderWidth: 1,
+  },
+  catBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+  },
+
+  // ─── 바이럴 훅 ───
+  viralHookBox: {
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    marginBottom: 12,
+    backgroundColor: '#EF444412',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#EF444425',
+    zIndex: 10,
+  },
+  viralHookText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#EF4444',
+    letterSpacing: 0.3,
+  },
+
+  // ─── 시나리오 헤더 ───
+  scenarioHeader: {
+    alignItems: 'center',
+    marginBottom: 14,
+    zIndex: 10,
+  },
+  scenarioEmoji: {
+    fontSize: 48,
+    marginBottom: 6,
+  },
+  scenarioTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  scenarioSubtitle: {
+    fontSize: 11,
+    color: '#AAAAAA',
+    textAlign: 'center',
+  },
+
+  // ─── 구분선 ───
+  divider: {
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    marginBottom: 14,
+  },
+
+  // ─── 핵심 시장 영향 ───
+  impactRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 12,
+    zIndex: 10,
+  },
+  impactBox: {
+    flex: 1,
+    borderRadius: 12,
+    padding: 12,
+    alignItems: 'center',
+  },
+  impactLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#999999',
+    marginBottom: 4,
+  },
+  impactValue: {
+    fontSize: 16,
+    fontWeight: '800',
+  },
+
+  // ─── 섹터 요약 ───
+  sectorSummary: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+    zIndex: 10,
+  },
+  sectorCol: {
+    flex: 1,
+  },
+  sectorDivider: {
+    width: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    marginHorizontal: 10,
+  },
+  sectorHeader: {
+    fontSize: 10,
+    fontWeight: '700',
+    marginBottom: 6,
+    letterSpacing: 0.5,
+  },
+  sectorItem: {
+    marginBottom: 4,
+  },
+  sectorName: {
+    fontSize: 10,
+    color: '#CCCCCC',
+    lineHeight: 14,
+  },
+  sectorChange: {
+    fontSize: 10,
+    fontWeight: '700',
+  },
+
+  // ─── 포트폴리오 시뮬레이션 결과 ───
+  simResultBox: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(239, 68, 68, 0.08)',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.2)',
+    zIndex: 10,
+  },
+  simResultLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#999999',
+    marginBottom: 4,
+  },
+  simResultValue: {
+    fontSize: 28,
+    fontWeight: '900',
+  },
+  simResultAmount: {
+    fontSize: 12,
+    color: '#BBBBBB',
+    marginTop: 2,
+  },
+
+  // ─── 역사적 선례 ───
+  histBox: {
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+    zIndex: 10,
+  },
+  histHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  histTitle: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#CCCCCC',
     marginLeft: 4,
   },
-  rewardHintText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#1A1A1A',
+  histEvent: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 8,
   },
+  histMetrics: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  histMetric: {
+    flex: 1,
+  },
+  histMetricLabel: {
+    fontSize: 9,
+    color: '#888888',
+    marginBottom: 2,
+  },
+  histMetricValue: {
+    fontSize: 11,
+    fontWeight: '600',
+    lineHeight: 15,
+  },
+
+  // ─── 안심 메시지 ───
+  reassureBox: {
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 10,
+    backgroundColor: 'rgba(16, 185, 129, 0.08)',
+    zIndex: 10,
+  },
+  reassureText: {
+    fontSize: 10,
+    color: '#AAAAAA',
+    lineHeight: 15,
+    textAlign: 'center',
+  },
+
+  // ─── 하단 CTA ───
+  ctaContainer: {
+    marginTop: 'auto',
+    paddingTop: 8,
+    zIndex: 10,
+  },
+  ctaBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(76, 175, 80, 0.15)',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(76, 175, 80, 0.3)',
+  },
+  ctaText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#4CAF50',
+    marginLeft: 6,
+  },
+
+  // ─── 워터마크 ───
+  watermarkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 10,
+    gap: 6,
+    zIndex: 10,
+  },
+  watermarkLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+  },
+  watermarkBaln: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#555555',
+    letterSpacing: 1,
+  },
+  watermarkDot: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#3A7D3E',
+    letterSpacing: 1,
+  },
+
+  // ─── 보상 토스트 ───
   rewardToast: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    marginTop: 8,
-    paddingVertical: 8,
+    marginHorizontal: 20,
+    marginBottom: 12,
+    paddingVertical: 10,
     paddingHorizontal: 16,
     backgroundColor: 'rgba(76, 175, 80, 0.15)',
     borderRadius: 20,
@@ -573,6 +1107,37 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     color: '#4CAF50',
+  },
+
+  // ─── 공유 버튼 ───
+  buttonContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: 24,
+  },
+  shareButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    backgroundColor: '#4CAF50',
+    borderRadius: 12,
+  },
+  shareButtonText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  rewardHint: {
+    backgroundColor: '#FFD700',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  rewardHintText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#1A1A1A',
   },
 });
 

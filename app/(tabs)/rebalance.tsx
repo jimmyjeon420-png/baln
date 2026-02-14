@@ -29,6 +29,7 @@ import {
   TouchableOpacity,
   AppState,
   Animated as RNAnimated,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -48,6 +49,7 @@ import { useEmotionCheck } from '../../src/hooks/useEmotionCheck';
 import { useTheme } from '../../src/hooks/useTheme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DisclaimerBanner from '../../src/components/common/DisclaimerBanner';
+import supabase, { getCurrentUser } from '../../src/services/supabase';
 
 // ── 레벨별 뷰 컴포넌트 ──
 import BeginnerCheckupView from '../../src/components/checkup/BeginnerCheckupView';
@@ -121,6 +123,111 @@ function formatTodayDate(): string {
 }
 
 const DISCLAIMER_STORAGE_KEY = '@baln:disclaimer_dismissed';
+
+// ── 분석 탭 진단 함수 (맥박 버튼) ──
+
+async function runAnalysisDiagnostic() {
+  const results: string[] = [];
+  const startTotal = Date.now();
+
+  // 1. Supabase raw fetch 테스트 (SDK 우회)
+  try {
+    const t1 = Date.now();
+    const res = await Promise.race([
+      fetch('https://ruqeinfcqhgexrckonsy.supabase.co/rest/v1/', {
+        headers: {
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1cWVpbmZjcWhnZXhyY2tvbnN5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkyMTE4MDksImV4cCI6MjA4NDc4NzgwOX0.NJmOH_uF59nYaSmjebGMNHlBwvqx5MHIwXOoqzITsXc',
+        },
+      }),
+      new Promise<null>((r) => setTimeout(() => r(null), 5000)),
+    ]);
+    if (res) {
+      results.push(`1. Supabase fetch: ${res.status} (${Date.now() - t1}ms)`);
+    } else {
+      results.push(`1. Supabase fetch: TIMEOUT 5s`);
+    }
+  } catch (e: any) {
+    results.push(`1. Supabase fetch ERROR: ${e.message}`);
+  }
+
+  // 2. Auth 세션 상태
+  try {
+    const t2 = Date.now();
+    const { data } = await supabase.auth.getSession();
+    const hasSession = !!data?.session;
+    const token = data?.session?.access_token;
+    let expInfo = 'no token';
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const exp = payload.exp;
+        const now = Math.floor(Date.now() / 1000);
+        expInfo = exp > now ? `valid (${exp - now}s left)` : `EXPIRED (${now - exp}s ago)`;
+      } catch { expInfo = 'parse error'; }
+    }
+    results.push(`2. Auth: ${hasSession ? 'OK' : 'NO'} / ${expInfo} (${Date.now() - t2}ms)`);
+  } catch (e: any) {
+    results.push(`2. Auth ERROR: ${e.message}`);
+  }
+
+  // 3. Gemini 프록시 Edge Function 헬스 체크
+  try {
+    const t3 = Date.now();
+    const { data: sessionData } = await supabase.auth.getSession();
+    const accessToken = sessionData?.session?.access_token;
+    const res = await Promise.race([
+      fetch('https://ruqeinfcqhgexrckonsy.supabase.co/functions/v1/gemini-proxy', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken || ''}`,
+        },
+        body: JSON.stringify({ prompt: 'ping', action: 'health-check' }),
+      }),
+      new Promise<null>((r) => setTimeout(() => r(null), 8000)),
+    ]);
+    if (res) {
+      const text = await res.text().catch(() => '');
+      results.push(`3. Gemini proxy: ${res.status} (${Date.now() - t3}ms) ${text.substring(0, 60)}`);
+    } else {
+      results.push(`3. Gemini proxy: TIMEOUT 8s`);
+    }
+  } catch (e: any) {
+    results.push(`3. Gemini proxy ERROR: ${e.message}`);
+  }
+
+  // 4. 포트폴리오 데이터 존재 여부
+  try {
+    const t4 = Date.now();
+    const user = await getCurrentUser();
+    if (!user) {
+      results.push(`4. Portfolio: user=NULL (${Date.now() - t4}ms)`);
+    } else {
+      const { data: portfolioData, error } = await Promise.race([
+        supabase
+          .from('portfolios')
+          .select('id, name')
+          .eq('user_id', user.id)
+          .limit(10),
+        new Promise<{ data: null; error: { message: string } }>((r) =>
+          setTimeout(() => r({ data: null, error: { message: 'TIMEOUT 5s' } }), 5000)
+        ),
+      ]) as any;
+      if (error) {
+        results.push(`4. Portfolio: ERROR ${error.message} (${Date.now() - t4}ms)`);
+      } else {
+        const count = portfolioData?.length ?? 0;
+        const names = (portfolioData || []).slice(0, 3).map((p: any) => p.name).join(', ');
+        results.push(`4. Portfolio: ${count}개 [${names}${count > 3 ? '...' : ''}] (${Date.now() - t4}ms)`);
+      }
+    }
+  } catch (e: any) {
+    results.push(`4. Portfolio ERROR: ${e.message}`);
+  }
+
+  const totalMs = Date.now() - startTotal;
+  Alert.alert('분석 탭 진단', results.join('\n') + `\n\n총: ${totalMs}ms`);
+}
 
 export default function CheckupScreen() {
   useScreenTracking('checkup');
@@ -343,6 +450,14 @@ export default function CheckupScreen() {
     <SafeAreaView style={[s.container, { backgroundColor: colors.background }]} edges={['top']}>
       {/* 새로고침 완료 토스트 */}
       <RefreshToast key={toastKeyRef.current} visible={showToast} />
+
+      {/* 진단 헤더 (맥박 버튼) */}
+      <View style={s.diagnosticHeader}>
+        <View style={{ flex: 1 }} />
+        <TouchableOpacity onPress={runAnalysisDiagnostic} style={s.diagnosticButton}>
+          <Ionicons name="pulse-outline" size={22} color={colors.primary} />
+        </TouchableOpacity>
+      </View>
 
       <ScrollView
         contentContainerStyle={s.scroll}
@@ -676,6 +791,16 @@ const s = StyleSheet.create({
     lineHeight: 16,
   },
   // ── AI 심화 분석 섹션 (인라인 스타일 → StyleSheet 추출) ──
+  diagnosticHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 4,
+    paddingBottom: 0,
+  },
+  diagnosticButton: {
+    padding: 6,
+  },
   freeBannerWrap: {
     paddingHorizontal: 16,
     paddingTop: 8,

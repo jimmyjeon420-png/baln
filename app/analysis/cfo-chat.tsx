@@ -9,6 +9,10 @@
  * - 로컬 폴백 응답 (네트워크/서버 에러 시 캐릭터별 안내)
  * - 에러 메시지를 대화 버블로 표시 (빨간 테두리 + 다시 시도 버튼)
  * - 네트워크 에러와 서버 에러 구분 안내
+ *
+ * [수정 2026-02-14] 인스타그램 공유 9:16 스토리 카드 전환:
+ * - 기존: ViewShot이 대화 버블 전체를 캡처 → 매우 긴 이미지
+ * - 변경: 별도 9:16 공유 카드 모달로 분리, 요약된 투자자 의견 표시
  */
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
@@ -23,6 +27,7 @@ import {
   Platform,
   ActivityIndicator,
   Alert,
+  Modal,
 } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -114,6 +119,193 @@ const QUICK_QUESTIONS = [
   '배당주 추천해주세요',
 ];
 
+// ============================================================================
+// 9:16 인스타그램 스토리 공유 카드 모달
+// ============================================================================
+
+const CFOShareModal: React.FC<{
+  visible: boolean;
+  onClose: () => void;
+  question: string;
+  debate: { warren: string; dalio: string; wood: string; summary: string };
+}> = ({ visible, onClose, question, debate }) => {
+  const viewShotRef = useRef<ViewShot>(null);
+  const [sharing, setSharing] = useState(false);
+  const [rewardMessage, setRewardMessage] = useState<string | null>(null);
+  const { rewarded, claimReward } = useShareReward();
+
+  // 텍스트를 최대 길이로 자르기
+  const truncate = (text: string, max: number) =>
+    text.length > max ? text.slice(0, max) + '...' : text;
+
+  const handleShareCapture = useCallback(async () => {
+    setSharing(true);
+    try {
+      const isAvailable = await Sharing.isAvailableAsync();
+      if (!isAvailable) {
+        Alert.alert('공유 불가', '이 기기에서는 공유 기능을 사용할 수 없습니다.');
+        return;
+      }
+      if (!viewShotRef.current?.capture) {
+        Alert.alert('오류', '캡처 영역을 찾을 수 없습니다.');
+        return;
+      }
+      const uri = await viewShotRef.current.capture();
+      await Sharing.shareAsync(uri, {
+        mimeType: 'image/png',
+        dialogTitle: 'AI 버핏과 티타임 공유',
+        UTI: 'public.png',
+      });
+      const result = await claimReward();
+      if (result.success) {
+        setRewardMessage(`+${result.creditsEarned} 크레딧 획득!`);
+        setTimeout(() => setRewardMessage(null), 3000);
+      }
+    } catch (err) {
+      console.error('[AI 버핏과 티타임] 공유 실패:', err);
+    } finally {
+      setSharing(false);
+    }
+  }, [claimReward]);
+
+  const cardContent = (
+    <View style={cfoShareStyles.captureArea}>
+      {/* 배경 글로우 */}
+      <View style={cfoShareStyles.bgGlow} />
+
+      {/* 상단: baln.logic 로고 */}
+      <View style={cfoShareStyles.topRow}>
+        <View>
+          <View style={cfoShareStyles.logoRow}>
+            <Text style={cfoShareStyles.logoBaln}>bal<Text style={{ color: '#4CAF50' }}>n</Text></Text>
+            <Text style={cfoShareStyles.logoDot}>.logic</Text>
+          </View>
+          <Text style={cfoShareStyles.logoSub}>AI 버핏과 티타임</Text>
+        </View>
+      </View>
+
+      {/* 사용자 질문 */}
+      <View style={cfoShareStyles.questionBox}>
+        <Text style={cfoShareStyles.questionLabel}>Q.</Text>
+        <Text style={cfoShareStyles.questionText} numberOfLines={2}>
+          {question}
+        </Text>
+      </View>
+
+      {/* 구분선 */}
+      <View style={cfoShareStyles.divider} />
+
+      {/* 워렌 버핏 */}
+      <View style={[cfoShareStyles.investorCard, { borderLeftColor: '#2196F3' }]}>
+        <Text style={[cfoShareStyles.investorName, { color: '#64B5F6' }]}>워렌 버핏</Text>
+        <Text style={cfoShareStyles.investorText} numberOfLines={3}>
+          {truncate(debate.warren, 120)}
+        </Text>
+      </View>
+
+      {/* 레이 달리오 */}
+      <View style={[cfoShareStyles.investorCard, { borderLeftColor: '#9C27B0' }]}>
+        <Text style={[cfoShareStyles.investorName, { color: '#CE93D8' }]}>레이 달리오</Text>
+        <Text style={cfoShareStyles.investorText} numberOfLines={3}>
+          {truncate(debate.dalio, 120)}
+        </Text>
+      </View>
+
+      {/* 캐시 우드 */}
+      <View style={[cfoShareStyles.investorCard, { borderLeftColor: '#E91E63' }]}>
+        <Text style={[cfoShareStyles.investorName, { color: '#F48FB1' }]}>캐시 우드</Text>
+        <Text style={cfoShareStyles.investorText} numberOfLines={3}>
+          {truncate(debate.wood, 120)}
+        </Text>
+      </View>
+
+      {/* 워렌의 한마디 (핵심) */}
+      <View style={cfoShareStyles.summaryBox}>
+        <Text style={cfoShareStyles.summaryLabel}>워렌의 한마디</Text>
+        <Text style={cfoShareStyles.summaryText} numberOfLines={4}>
+          {truncate(debate.summary, 160)}
+        </Text>
+      </View>
+
+      {/* 하단 CTA */}
+      <View style={cfoShareStyles.ctaContainer}>
+        <View style={cfoShareStyles.ctaBox}>
+          <Ionicons name="open-outline" size={14} color="#7C4DFF" />
+          <Text style={cfoShareStyles.ctaText}>
+            bal<Text style={{ color: '#4CAF50' }}>n</Text>.app에서 버핏과 대화하기
+          </Text>
+        </View>
+      </View>
+
+      {/* 워터마크 */}
+      <View style={cfoShareStyles.watermarkRow}>
+        <View style={cfoShareStyles.watermarkLine} />
+        <Text style={cfoShareStyles.watermarkBaln}>bal<Text style={{ color: '#4CAF50' }}>n</Text></Text>
+        <Text style={cfoShareStyles.watermarkDot}>.logic</Text>
+        <View style={cfoShareStyles.watermarkLine} />
+      </View>
+    </View>
+  );
+
+  return (
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={onClose}
+    >
+      <View style={cfoShareStyles.modalContainer}>
+        <View style={cfoShareStyles.modalHeader}>
+          <Text style={cfoShareStyles.modalTitle}>인스타 스토리 공유</Text>
+          <TouchableOpacity onPress={onClose} style={cfoShareStyles.closeButton}>
+            <Ionicons name="close" size={24} color="#888888" />
+          </TouchableOpacity>
+        </View>
+
+        <View style={cfoShareStyles.previewContainer}>
+          <ViewShot ref={viewShotRef} options={{ format: 'png', quality: 1.0 }}>
+            {cardContent}
+          </ViewShot>
+        </View>
+
+        {rewardMessage && (
+          <View style={cfoShareStyles.rewardToast}>
+            <Ionicons name="gift" size={14} color="#4CAF50" />
+            <Text style={cfoShareStyles.rewardToastText}>{rewardMessage}</Text>
+          </View>
+        )}
+
+        <View style={cfoShareStyles.buttonContainer}>
+          <TouchableOpacity
+            style={cfoShareStyles.shareButton}
+            onPress={handleShareCapture}
+            disabled={sharing}
+            activeOpacity={0.7}
+          >
+            {sharing ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <>
+                <Ionicons name="share-social" size={18} color="#FFFFFF" />
+                <Text style={cfoShareStyles.shareButtonText}>인스타그램 공유</Text>
+                {!rewarded && (
+                  <View style={cfoShareStyles.rewardHint}>
+                    <Text style={cfoShareStyles.rewardHintText}>+{REWARD_AMOUNTS.shareCard}C</Text>
+                  </View>
+                )}
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+};
+
+// ============================================================================
+// 메인 화면
+// ============================================================================
+
 export default function CFOChatScreen() {
   const { colors } = useTheme();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -125,32 +317,30 @@ export default function CFOChatScreen() {
   const chatCost = FEATURE_COSTS.ai_cfo_chat; // 1크레딧
   const { rewarded, claimReward } = useShareReward();
   const [shareRewardMsg, setShareRewardMsg] = useState<string | null>(null);
-  const debateRefs = useRef<Record<string, ViewShot | null>>({});
 
-  const handleShareDebate = useCallback(async (msgId: string) => {
-    try {
-      const isAvailable = await Sharing.isAvailableAsync();
-      if (!isAvailable) {
-        Alert.alert('공유 불가', '이 기기에서는 공유 기능을 사용할 수 없습니다.');
-        return;
-      }
-      const ref = debateRefs.current[msgId];
-      if (!ref?.capture) return;
-      const uri = await ref.capture();
-      await Sharing.shareAsync(uri, {
-        mimeType: 'image/png',
-        dialogTitle: 'AI 버핏과 티타임 공유',
-        UTI: 'public.png',
-      });
-      const result = await claimReward();
-      if (result.success) {
-        setShareRewardMsg(`+${result.creditsEarned} 크레딧 획득!`);
-        setTimeout(() => setShareRewardMsg(null), 3000);
-      }
-    } catch (err) {
-      console.error('[AI 버핏과 티타임] 공유 실패:', err);
-    }
-  }, [claimReward]);
+  // 공유 모달 state
+  const [shareModalVisible, setShareModalVisible] = useState(false);
+  const [shareModalData, setShareModalData] = useState<{
+    question: string;
+    debate: { warren: string; dalio: string; wood: string; summary: string };
+  } | null>(null);
+
+  const handleShareDebate = useCallback((msgId: string) => {
+    // 해당 메시지와 사용자 질문 찾기
+    const targetMsg = messages.find(m => m.id === msgId);
+    if (!targetMsg?.debate) return;
+
+    const prevMsg = messages.find((m, idx) => {
+      const nextIdx = messages.indexOf(targetMsg);
+      return m.role === 'user' && idx === nextIdx - 1;
+    });
+
+    setShareModalData({
+      question: prevMsg?.text ?? '',
+      debate: targetMsg.debate,
+    });
+    setShareModalVisible(true);
+  }, [messages]);
 
   useEffect(() => {
     // 환영 메시지
@@ -340,12 +530,9 @@ export default function CFOChatScreen() {
 
       return (
         <View style={[s.messageContainer, s.aiMessageContainer]}>
-          <ViewShot
-            ref={(ref) => { debateRefs.current[item.id] = ref; }}
-            options={{ format: 'png', quality: 1.0 }}
+          <View
             style={[
               { backgroundColor: '#1A1A2E', padding: 16, borderRadius: 20 },
-              // 에러 시 빨간 테두리 표시
               item.isError && { borderWidth: 2, borderColor: '#FF5252' },
             ]}
           >
@@ -359,13 +546,13 @@ export default function CFOChatScreen() {
             </View>
           )}
 
-          {/* baln 브랜딩 (강화) */}
+          {/* baln 브랜딩 */}
           <View style={s.shareBrandRow}>
             <Text style={s.shareBrandText}>bal<Text style={{ color: '#4CAF50' }}>n</Text>.logic</Text>
             <Text style={s.shareBrandSub}>AI 버핏과 티타임</Text>
           </View>
 
-          {/* 사용자 질문 (캡처에 포함) */}
+          {/* 사용자 질문 */}
           {prevMsg && (
             <View style={s.captureQuestion}>
               <Text style={s.captureQuestionLabel}>Q.</Text>
@@ -403,7 +590,7 @@ export default function CFOChatScreen() {
               <Text style={s.captureCTAText}>{'나도 버핏과 대화하기 → baln.app'}</Text>
             </View>
           )}
-          </ViewShot>
+          </View>
 
           {/* 다시 시도 버튼 (에러 시만 표시) */}
           {item.isError && item.retryQuestion && (
@@ -417,7 +604,7 @@ export default function CFOChatScreen() {
             </TouchableOpacity>
           )}
 
-          {/* 공유 버튼 (에러가 아닐 때만) */}
+          {/* 공유 버튼 (에러가 아닐 때만) → 9:16 모달 열기 */}
           {!item.isError && (
             <TouchableOpacity
               style={s.shareDebateButton}
@@ -588,6 +775,19 @@ export default function CFOChatScreen() {
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
+
+      {/* 9:16 인스타 스토리 공유 모달 */}
+      {shareModalData && (
+        <CFOShareModal
+          visible={shareModalVisible}
+          onClose={() => {
+            setShareModalVisible(false);
+            setShareModalData(null);
+          }}
+          question={shareModalData.question}
+          debate={shareModalData.debate}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -853,5 +1053,269 @@ const s = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: '#FFFFFF',
+  },
+});
+
+// ============================================================================
+// 9:16 인스타 스토리 공유 카드 스타일
+// ============================================================================
+
+const cfoShareStyles = StyleSheet.create({
+  // ─── 모달 ───
+  modalContainer: {
+    flex: 1,
+    backgroundColor: '#0A0A0A',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.06)',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  closeButton: {
+    padding: 8,
+  },
+  previewContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+
+  // ─── 캡처 영역 (9:16 인스타 스토리 비율) ───
+  captureArea: {
+    width: 320,
+    aspectRatio: 9 / 16,
+    backgroundColor: '#1A1A2E',
+    borderRadius: 20,
+    padding: 22,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  bgGlow: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 200,
+    backgroundColor: '#7C4DFF',
+    opacity: 0.05,
+    borderRadius: 20,
+  },
+
+  // ─── 상단: 로고 ───
+  topRow: {
+    marginBottom: 14,
+    zIndex: 10,
+  },
+  logoRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+  },
+  logoBaln: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: 1,
+  },
+  logoDot: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: '#4CAF50',
+    letterSpacing: 1,
+  },
+  logoSub: {
+    fontSize: 8,
+    color: '#666666',
+    letterSpacing: 2,
+    marginTop: 2,
+    textTransform: 'uppercase',
+  },
+
+  // ─── 사용자 질문 ───
+  questionBox: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    backgroundColor: 'rgba(124, 77, 255, 0.12)',
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(124, 77, 255, 0.25)',
+    zIndex: 10,
+  },
+  questionLabel: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#7C4DFF',
+  },
+  questionText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    flex: 1,
+    lineHeight: 19,
+  },
+
+  // ─── 구분선 ───
+  divider: {
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    marginBottom: 12,
+  },
+
+  // ─── 투자자 카드 ───
+  investorCard: {
+    borderLeftWidth: 3,
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    zIndex: 10,
+  },
+  investorName: {
+    fontSize: 11,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  investorText: {
+    fontSize: 11,
+    color: '#CCCCCC',
+    lineHeight: 16,
+  },
+
+  // ─── 워렌의 한마디 ───
+  summaryBox: {
+    backgroundColor: 'rgba(251, 192, 45, 0.1)',
+    borderRadius: 12,
+    padding: 12,
+    marginTop: 4,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(251, 192, 45, 0.25)',
+    zIndex: 10,
+  },
+  summaryLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#FBC02D',
+    marginBottom: 6,
+  },
+  summaryText: {
+    fontSize: 12,
+    color: '#EEEEEE',
+    lineHeight: 18,
+    fontWeight: '500',
+  },
+
+  // ─── 하단 CTA ───
+  ctaContainer: {
+    marginTop: 'auto',
+    paddingTop: 8,
+    zIndex: 10,
+  },
+  ctaBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(124, 77, 255, 0.15)',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(124, 77, 255, 0.3)',
+  },
+  ctaText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#7C4DFF',
+    marginLeft: 6,
+  },
+
+  // ─── 워터마크 ───
+  watermarkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 10,
+    gap: 6,
+    zIndex: 10,
+  },
+  watermarkLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+  },
+  watermarkBaln: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#555555',
+    letterSpacing: 1,
+  },
+  watermarkDot: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#3A7D3E',
+    letterSpacing: 1,
+  },
+
+  // ─── 보상 토스트 ───
+  rewardToast: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginHorizontal: 20,
+    marginBottom: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    backgroundColor: 'rgba(76, 175, 80, 0.15)',
+    borderRadius: 20,
+  },
+  rewardToastText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#4CAF50',
+  },
+
+  // ─── 공유 버튼 ───
+  buttonContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: 24,
+  },
+  shareButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    backgroundColor: '#7C4DFF',
+    borderRadius: 12,
+  },
+  shareButtonText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  rewardHint: {
+    backgroundColor: '#FFD700',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  rewardHintText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#1A1A1A',
   },
 });
