@@ -337,9 +337,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           queryClient.clear();
         }
 
-        // 토큰 갱신 성공 로그
+        // 토큰 갱신 성공 → 만료 토큰으로 캐시된 빈 데이터를 즉시 무효화
+        // ★ 핵심 수정: 이전에는 로그만 찍고 캐시를 안 지워서,
+        //   만료 토큰으로 조회된 빈 데이터가 5~30분간 유지되는 버그가 있었음
         if (event === 'TOKEN_REFRESHED') {
-          console.log('[AuthContext] 토큰 자동 갱신 성공');
+          console.log('[AuthContext] 토큰 자동 갱신 성공 → 캐시 무효화');
+          queryClient.invalidateQueries();
         }
       }
     );

@@ -25,11 +25,32 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 });
 
 /**
- * 현재 로그인한 사용자를 반환 (5초 타임아웃 포함)
+ * access_token 만료 여부 확인 (JWT exp 클레임 기반)
+ * 만료 60초 전부터 "만료됨"으로 판단 (갱신 여유 시간)
+ */
+function isTokenExpired(accessToken: string): boolean {
+  try {
+    const payload = JSON.parse(atob(accessToken.split('.')[1]));
+    const now = Math.floor(Date.now() / 1000);
+    return payload.exp < now + 60; // 60초 여유
+  } catch {
+    return true; // 파싱 실패 시 만료로 간주
+  }
+}
+
+/** refreshSession 동시 호출 방지 (싱글톤) */
+let pendingRefresh: Promise<any> | null = null;
+
+/**
+ * 현재 로그인한 사용자를 반환 (5초 타임아웃 + 토큰 만료 검증)
  *
  * ⚠️ supabase.auth.getUser() 대신 이 함수를 사용하세요!
  * - getUser(): 매번 서버에 HTTP 요청 → 타임아웃 위험
- * - getCurrentUser(): getSession() + 5초 타임아웃 → 절대 멈추지 않음
+ * - getCurrentUser(): getSession() + 만료 검증 + 5초 타임아웃
+ *
+ * ★ 핵심 수정: 만료된 토큰의 user를 반환하면 Supabase RLS가 빈 결과를 주고,
+ *   그 빈 결과가 React Query에 "성공"으로 캐시되어 30분간 데이터가 안 보이는 버그가 있었음.
+ *   이제 만료 토큰이면 refreshSession()을 먼저 호출한 후 user를 반환함.
  */
 export async function getCurrentUser() {
   try {
@@ -42,17 +63,27 @@ export async function getCurrentUser() {
     if (!result) {
       console.warn('[Supabase] getSession 5초 타임아웃 — refreshSession 시도');
     } else {
-      const user = (result as any).data?.session?.user ?? null;
-      if (user) return user;
+      const session = (result as any).data?.session;
+      if (session?.user) {
+        // ★ 토큰 만료 검증: 만료됐으면 user를 바로 반환하지 않고 갱신 시도
+        if (session.access_token && !isTokenExpired(session.access_token)) {
+          return session.user; // 유효한 토큰 → 바로 반환
+        }
+        console.warn('[Supabase] access_token 만료됨 → refreshSession 시도');
+        // 만료된 경우 아래 refreshSession으로 진행
+      }
     }
 
-    // 2차: 로컬 세션이 없으면 서버에서 토큰 갱신 시도
-    // (세션이 만료되었거나 AsyncStorage 읽기가 느린 경우 복구)
-    console.log('[Supabase] 로컬 세션 없음 → refreshSession 시도');
-    const refreshResult = await Promise.race([
-      supabase.auth.refreshSession(),
-      new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000)),
-    ]);
+    // 2차: 세션 없거나 토큰 만료 → 서버에서 갱신
+    // 동시 호출 방지: 이미 진행 중이면 기존 Promise 대기
+    if (!pendingRefresh) {
+      pendingRefresh = Promise.race([
+        supabase.auth.refreshSession(),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000)),
+      ]).finally(() => { pendingRefresh = null; });
+    }
+
+    const refreshResult = await pendingRefresh;
 
     if (!refreshResult) {
       console.warn('[Supabase] refreshSession 8초 타임아웃');
@@ -61,7 +92,7 @@ export async function getCurrentUser() {
 
     const refreshedUser = (refreshResult as any).data?.session?.user ?? null;
     if (refreshedUser) {
-      console.log('[Supabase] refreshSession 성공 — 세션 복구됨');
+      console.log('[Supabase] refreshSession 성공 — 유효한 세션 복구됨');
     }
     return refreshedUser;
   } catch (err) {

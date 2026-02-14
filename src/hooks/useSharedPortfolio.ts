@@ -17,6 +17,7 @@
 
 import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import supabase, { getCurrentUser } from '../services/supabase';
+import { useAuth } from '../context/AuthContext';
 import { Asset, AssetType } from '../types/asset';
 import { transformDbRowToAsset } from '../utils/assetTransform';
 import { determineTier, syncUserProfileTier } from './useGatherings';
@@ -177,10 +178,15 @@ async function fetchSharedPortfolio(
 
 export function useSharedPortfolio() {
   const queryClient = useQueryClient();
+  const { user, loading } = useAuth();
 
   const query = useQuery({
     queryKey: SHARED_PORTFOLIO_KEY,
     queryFn: ({ signal }) => fetchSharedPortfolio({ signal }),
+    // ★ 핵심 수정: Auth 세션이 준비된 후에만 쿼리 실행
+    // 이전: 세션 없어도 즉시 실행 → 빈 데이터가 "성공"으로 캐시 → 30분간 유지
+    // 이후: user 존재 + loading 완료 시에만 실행 → 만료 토큰 조기 실행 방지
+    enabled: !loading && !!user,
     staleTime: 1000 * 60 * 5,        // 5분: 탭 전환 시 재요청 안 함 (캐시 우선)
     gcTime: 1000 * 60 * 30,          // 30분: 이 기간 내 캐시 데이터를 fallback으로 사용
     placeholderData: keepPreviousData, // 갱신 중에도 이전 데이터 유지 (로딩 방지)
