@@ -36,6 +36,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQueryClient } from '@tanstack/react-query';
 
 import supabase, { getCurrentUser } from '../src/services/supabase';
+import { useAuth } from '../src/context/AuthContext';
 import { useTheme } from '../src/hooks/useTheme';
 import { searchStocks, StockItem, getCategoryLabel, getCategoryColor } from '../src/data/stockList';
 import { priceService } from '../src/services/PriceService';
@@ -115,6 +116,7 @@ export default function AddAssetScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { colors } = useTheme();
+  const { user: authUser } = useAuth();
 
   // --- 검색 상태 ---
   const [searchQuery, setSearchQuery] = useState('');
@@ -199,13 +201,13 @@ export default function AddAssetScreen() {
     }
   };
 
-  // 보유 자산 로드 (getSession으로 즉시 로컬 세션 조회)
+  // 보유 자산 로드 (AuthContext 유저 우선, 폴백으로 getCurrentUser)
   const loadExistingAssets = async () => {
     try {
       setLoadingAssets(true);
-      const user = await getCurrentUser();
+      const user = authUser ?? await getCurrentUser();
       if (!user) {
-        console.warn('[AddAsset] 인증 실패 — 로그인 필요');
+        console.warn('[AddAsset] 인증 실패 — AuthContext와 getCurrentUser 모두 null');
         setAuthFailed(true);
         setLoadingAssets(false);
         return;
@@ -380,7 +382,7 @@ export default function AddAssetScreen() {
 
     setSaving(true);
     try {
-      const user = await getCurrentUser();
+      const user = authUser ?? await getCurrentUser();
 
       if (!user) throw new Error('로그인이 필요합니다. 앱을 재시작하고 다시 로그인해주세요.');
 

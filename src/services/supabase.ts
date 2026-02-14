@@ -33,17 +33,37 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey, {
  */
 export async function getCurrentUser() {
   try {
+    // 1차: 로컬 세션 조회 (AsyncStorage, 빠름)
     const result = await Promise.race([
       supabase.auth.getSession(),
       new Promise<null>((resolve) => setTimeout(() => resolve(null), 5000)),
     ]);
 
     if (!result) {
-      console.warn('[Supabase] getSession 5초 타임아웃 — 세션 없음 처리');
+      console.warn('[Supabase] getSession 5초 타임아웃 — refreshSession 시도');
+    } else {
+      const user = (result as any).data?.session?.user ?? null;
+      if (user) return user;
+    }
+
+    // 2차: 로컬 세션이 없으면 서버에서 토큰 갱신 시도
+    // (세션이 만료되었거나 AsyncStorage 읽기가 느린 경우 복구)
+    console.log('[Supabase] 로컬 세션 없음 → refreshSession 시도');
+    const refreshResult = await Promise.race([
+      supabase.auth.refreshSession(),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000)),
+    ]);
+
+    if (!refreshResult) {
+      console.warn('[Supabase] refreshSession 8초 타임아웃');
       return null;
     }
 
-    return (result as any).data?.session?.user ?? null;
+    const refreshedUser = (refreshResult as any).data?.session?.user ?? null;
+    if (refreshedUser) {
+      console.log('[Supabase] refreshSession 성공 — 세션 복구됨');
+    }
+    return refreshedUser;
   } catch (err) {
     console.warn('[Supabase] getCurrentUser 에러:', err);
     return null;
