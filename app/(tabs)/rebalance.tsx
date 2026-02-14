@@ -182,7 +182,7 @@ async function runAnalysisDiagnostic() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${accessToken || ''}`,
         },
-        body: JSON.stringify({ prompt: 'ping', action: 'health-check' }),
+        body: JSON.stringify({ type: 'health-check' }),
       }),
       new Promise<null>((r) => setTimeout(() => r(null), 8000)),
     ]);

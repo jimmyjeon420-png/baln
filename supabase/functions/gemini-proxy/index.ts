@@ -877,6 +877,10 @@ serve(async (req: Request) => {
         result = await generateInvestmentReport(body.data);
         break;
 
+      case 'health-check':
+        result = { status: 'ok', timestamp: new Date().toISOString(), model: GEMINI_MODEL };
+        break;
+
       default:
         throw new Error(`Unknown request type: ${(body as any).type}`);
     }
