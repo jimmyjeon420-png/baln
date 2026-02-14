@@ -274,11 +274,19 @@ async function calculateUserImpacts(contextCardId: string): Promise<{
     // 영향도 클램프 (-10 ~ +10)
     const clampedImpact = Math.max(-10, Math.min(10, avgImpact));
 
+    // ★ DB 컬럼명은 percent_change / health_score_change / impact_message
+    // (20240209_context_cards.sql 마이그레이션 기준)
+    const roundedImpact = Math.round(clampedImpact * 100) / 100;
+    const impactMsg = clampedImpact >= 0
+      ? `오늘 시장이 회원님 포트폴리오에 +${clampedImpact.toFixed(1)}% 긍정적 영향을 주고 있습니다`
+      : `오늘 시장이 회원님 포트폴리오에 ${clampedImpact.toFixed(1)}% 영향을 주고 있지만, 장기적 관점에서는 일시적 조정입니다`;
+
     impactRows.push({
       user_id: userId,
       context_card_id: contextCardId,
-      portfolio_impact_pct: Math.round(clampedImpact * 100) / 100,
-      calculated_at: new Date().toISOString(),
+      percent_change: roundedImpact,
+      health_score_change: Math.round(clampedImpact * -0.5 * 100) / 100,
+      impact_message: impactMsg,
     });
 
     totalImpact += clampedImpact;

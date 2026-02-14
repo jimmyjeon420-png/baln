@@ -50,14 +50,13 @@ import {
   LOUNGE_POST_THRESHOLD,
 } from '../../src/types/community';
 import { formatAssetAmount } from '../../src/utils/communityUtils';
-import { Gathering, GATHERING_CATEGORY_LABELS } from '../../src/types/database';
+import { Gathering } from '../../src/types/database';
 import { useTheme } from '../../src/hooks/useTheme';
+import supabase, { getCurrentUser } from '../../src/services/supabase';
 
 // ══════════════════════════════════════════
 // 상수
 // ══════════════════════════════════════════
-
-// Local COLORS removed - using themeColors from useTheme()
 
 type Segment = 'community' | 'gatherings';
 
@@ -78,10 +77,272 @@ const GATHERING_CATEGORY_FILTERS: { key: Gathering['category'] | 'all'; label: s
 ];
 
 // ══════════════════════════════════════════
+// 진단 함수
+// ══════════════════════════════════════════
+
+async function runLoungeDiagnostic(): Promise<string> {
+  const results: string[] = [];
+  const ts = new Date().toLocaleTimeString('ko-KR');
+  results.push(`[VIP 라운지 진단] ${ts}\n`);
+
+  // 1. Auth 세션
+  try {
+    const user = await getCurrentUser();
+    results.push(`1. Auth: ${user ? 'OK (' + user.id.slice(0, 8) + '...)' : 'NO SESSION'}`);
+  } catch (e: any) {
+    results.push(`1. Auth: ERROR - ${e.message}`);
+  }
+
+  // 2. community_posts 테이블
+  try {
+    const { data, error } = await supabase
+      .from('community_posts')
+      .select('id')
+      .limit(1);
+    if (error) {
+      results.push(`2. community_posts: ERROR - ${error.message}`);
+    } else {
+      results.push(`2. community_posts: OK (${data?.length ?? 0} rows sample)`);
+    }
+  } catch (e: any) {
+    results.push(`2. community_posts: EXCEPTION - ${e.message}`);
+  }
+
+  // 3. community_likes 테이블
+  try {
+    const { data, error } = await supabase
+      .from('community_likes')
+      .select('post_id')
+      .limit(1);
+    if (error) {
+      results.push(`3. community_likes: ERROR - ${error.message}`);
+    } else {
+      results.push(`3. community_likes: OK`);
+    }
+  } catch (e: any) {
+    results.push(`3. community_likes: EXCEPTION - ${e.message}`);
+  }
+
+  // 4. gatherings 테이블
+  try {
+    const { data, error } = await supabase
+      .from('gatherings')
+      .select('id')
+      .limit(1);
+    if (error) {
+      results.push(`4. gatherings: ERROR - ${error.message}`);
+    } else {
+      results.push(`4. gatherings: OK (${data?.length ?? 0} rows sample)`);
+    }
+  } catch (e: any) {
+    results.push(`4. gatherings: EXCEPTION - ${e.message}`);
+  }
+
+  // 5. portfolios (자격확인용)
+  try {
+    const user = await getCurrentUser();
+    if (user) {
+      const { data, error } = await supabase
+        .from('portfolios')
+        .select('current_value')
+        .eq('user_id', user.id)
+        .limit(3);
+      if (error) {
+        results.push(`5. portfolios: ERROR - ${error.message}`);
+      } else {
+        const total = (data || []).reduce((s, r) => s + (r.current_value || 0), 0);
+        results.push(`5. portfolios: OK (${data?.length ?? 0} assets, total: ${total.toLocaleString()})`);
+      }
+    } else {
+      results.push(`5. portfolios: SKIP (no auth)`);
+    }
+  } catch (e: any) {
+    results.push(`5. portfolios: EXCEPTION - ${e.message}`);
+  }
+
+  // 6. profiles 테이블
+  try {
+    const user = await getCurrentUser();
+    if (user) {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('full_name, email')
+        .eq('id', user.id)
+        .maybeSingle();
+      if (error) {
+        results.push(`6. profiles: ERROR - ${error.message}`);
+      } else {
+        results.push(`6. profiles: OK (${data?.full_name || data?.email || 'no name'})`);
+      }
+    } else {
+      results.push(`6. profiles: SKIP (no auth)`);
+    }
+  } catch (e: any) {
+    results.push(`6. profiles: EXCEPTION - ${e.message}`);
+  }
+
+  return results.join('\n');
+}
+
+// ══════════════════════════════════════════
+// 최외곽 안전망 (Class Component — 외부 의존성 ZERO)
+// useSafeAreaInsets / useTheme 크래시도 잡음
+// Ionicons 등 외부 컴포넌트 사용 금지 (에러 UI가 또 크래시하면 안됨)
+// ══════════════════════════════════════════
+
+class SafeLoungeWrapper extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error: Error | null }
+> {
+  state = { hasError: false, error: null as Error | null };
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    console.error(
+      '[SafeLoungeWrapper] 라운지 전체 크래시:',
+      error.name, error.message,
+      '\nStack:', error.stack?.substring(0, 500),
+      '\nComponent:', info.componentStack?.substring(0, 500),
+    );
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0A0A0A', padding: 32, paddingTop: 60 }}>
+          <Text style={{ fontSize: 48 }}>{'⚠️'}</Text>
+          <Text style={{ color: '#FAFAFA', fontSize: 20, fontWeight: '700', marginTop: 16 }}>
+            VIP 라운지 오류
+          </Text>
+          <Text style={{ color: '#AAA', fontSize: 14, textAlign: 'center', marginTop: 8, lineHeight: 20 }}>
+            {this.state.error?.message || '알 수 없는 오류가 발생했습니다.'}
+          </Text>
+          <TouchableOpacity
+            onPress={() => this.setState({ hasError: false, error: null })}
+            style={{ marginTop: 24, backgroundColor: '#4CAF50', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8 }}
+          >
+            <Text style={{ color: '#FFF', fontWeight: '600', fontSize: 16 }}>재시도</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={async () => {
+              try {
+                const result = await runLoungeDiagnostic();
+                Alert.alert('VIP 라운지 진단', result);
+              } catch (e: any) {
+                Alert.alert('진단 실패', e.message);
+              }
+            }}
+            style={{ marginTop: 12, backgroundColor: '#2196F3', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8 }}
+          >
+            <Text style={{ color: '#FFF', fontWeight: '600', fontSize: 16 }}>진단</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+// ══════════════════════════════════════════
+// 로컬 에러 바운더리 (Class Component)
+// 에러 UI에 Ionicons 사용 금지 — 에러 렌더 자체가 크래시하면 안됨
+// ══════════════════════════════════════════
+
+interface LoungeErrorState {
+  hasError: boolean;
+  error: Error | null;
+  diagnosticResult: string | null;
+  isDiagnosing: boolean;
+}
+
+class LoungeErrorBoundary extends React.Component<
+  { children: React.ReactNode; themeColors: any; insets: any },
+  LoungeErrorState
+> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false, error: null, diagnosticResult: null, isDiagnosing: false };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    console.error(
+      '[LoungeErrorBoundary] 내부 크래시:',
+      error.name, error.message,
+      '\nStack:', error.stack?.substring(0, 500),
+      '\nComponent:', info.componentStack?.substring(0, 500),
+    );
+  }
+
+  handleRetry = () => {
+    this.setState({ hasError: false, error: null, diagnosticResult: null });
+  };
+
+  handleDiagnose = async () => {
+    this.setState({ isDiagnosing: true });
+    try {
+      const result = await runLoungeDiagnostic();
+      this.setState({ diagnosticResult: result, isDiagnosing: false });
+      Alert.alert('VIP 라운지 진단', result);
+    } catch (e: any) {
+      this.setState({ isDiagnosing: false });
+      Alert.alert('진단 실패', e.message);
+    }
+  };
+
+  render() {
+    if (this.state.hasError) {
+      const { insets } = this.props;
+      // 에러 UI: Ionicons 사용 금지, 인라인 스타일만 사용 (추가 크래시 방지)
+      return (
+        <View style={[styles.container, { paddingTop: insets?.top || 44, backgroundColor: '#0A0A0A' }]}>
+          <View style={styles.loadingContainer}>
+            <Text style={{ fontSize: 48 }}>{'⚠️'}</Text>
+            <Text style={{ color: '#FAFAFA', fontSize: 20, fontWeight: '700', marginTop: 16 }}>
+              라운지 로딩 중 오류
+            </Text>
+            <Text style={{ color: '#8A8A8A', textAlign: 'center', marginTop: 8, fontSize: 13, lineHeight: 20, paddingHorizontal: 32 }}>
+              {this.state.error?.message || '알 수 없는 오류가 발생했습니다.'}
+            </Text>
+
+            <View style={{ flexDirection: 'row', gap: 12, marginTop: 24 }}>
+              <TouchableOpacity
+                style={{ backgroundColor: '#4CAF50', paddingHorizontal: 20, paddingVertical: 12, borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 6 }}
+                onPress={this.handleRetry}
+              >
+                <Text style={{ color: '#FFF', fontWeight: '600', fontSize: 15 }}>재시도</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={{ backgroundColor: '#2196F3', paddingHorizontal: 20, paddingVertical: 12, borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 6 }}
+                onPress={this.handleDiagnose}
+                disabled={this.state.isDiagnosing}
+              >
+                <Text style={{ color: '#FFF', fontWeight: '600', fontSize: 15 }}>
+                  {this.state.isDiagnosing ? '진단 중...' : '진단'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+// ══════════════════════════════════════════
 // 메인 컴포넌트
 // ══════════════════════════════════════════
 
-export default function LoungeScreen() {
+function LoungeScreenInner() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors: themeColors } = useTheme();
@@ -102,7 +363,7 @@ export default function LoungeScreen() {
   // 공통 상태
   const [refreshing, setRefreshing] = useState(false);
 
-  // ── 훅 ──
+  // ── 훅 (각각 try-catch 내장) ──
   const { eligibility, loading: eligibilityLoading, refetch: refetchEligibility } = useLoungeEligibility();
   const {
     data: postsData,
@@ -120,19 +381,26 @@ export default function LoungeScreen() {
     gatheringCategory === 'all' ? undefined : gatheringCategory
   );
 
-  // 무한 스크롤 페이지 플래트닝
-  const posts = useMemo(
-    () => postsData?.pages?.flat() ?? [],
-    [postsData],
-  );
+  // 무한 스크롤 페이지 플래트닝 (방어적)
+  const posts = useMemo(() => {
+    try {
+      return postsData?.pages?.flat() ?? [];
+    } catch {
+      return [];
+    }
+  }, [postsData]);
 
   // ── 새로고침 (세그먼트별 분기) ──
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    if (activeSegment === 'community') {
-      await Promise.all([refetchEligibility(), refetchPosts()]);
-    } else {
-      await Promise.all([refetchEligibility(), refetchGatherings()]);
+    try {
+      if (activeSegment === 'community') {
+        await Promise.all([refetchEligibility(), refetchPosts()]);
+      } else {
+        await Promise.all([refetchEligibility(), refetchGatherings()]);
+      }
+    } catch (e) {
+      console.warn('[Lounge] 새로고침 실패:', e);
     }
     setRefreshing(false);
   }, [activeSegment, refetchEligibility, refetchPosts, refetchGatherings]);
@@ -151,9 +419,9 @@ export default function LoungeScreen() {
       await createPost.mutateAsync({
         content: newPostContent.trim(),
         category: postCategory,
-        displayTag: `[자산: ${(eligibility.totalAssets / 100000000).toFixed(1)}억]`,
+        displayTag: `[자산: ${((eligibility?.totalAssets ?? 0) / 100000000).toFixed(1)}억]`,
         assetMix: '주식 70%, 현금 30%',
-        totalAssets: eligibility.totalAssets,
+        totalAssets: eligibility?.totalAssets ?? 0,
       });
       setNewPostContent('');
       setPostCategory('stocks');
@@ -170,10 +438,10 @@ export default function LoungeScreen() {
   const handleAuthorPress = (userId: string) => router.push(`/community/author/${userId}` as any);
 
   const handleComposePress = () => {
-    if (!eligibility.canPost) {
+    if (!eligibility?.canPost) {
       Alert.alert(
         '글쓰기 제한',
-        `게시물 작성은 자산 1.5억 이상 회원만 가능합니다.\n\n현재 자산: ${formatAssetAmount(eligibility.totalAssets)}\n필요 자산: 1.5억`,
+        `게시물 작성은 자산 1.5억 이상 회원만 가능합니다.\n\n현재 자산: ${formatAssetAmount(eligibility?.totalAssets ?? 0)}\n필요 자산: 1.5억`,
         [{ text: '확인' }]
       );
       return;
@@ -185,7 +453,15 @@ export default function LoungeScreen() {
   const handleGatheringPress = (gathering: Gathering) => router.push(`/gatherings/${gathering.id}`);
   const handleCreateGathering = () => router.push('/gatherings/create');
 
-  // formatAssetAmount는 communityUtils에서 import
+  // ── 진단 ──
+  const handleDiagnose = async () => {
+    try {
+      const result = await runLoungeDiagnostic();
+      Alert.alert('VIP 라운지 맥박 진단', result);
+    } catch (e: any) {
+      Alert.alert('진단 실패', e.message);
+    }
+  };
 
   // ══════════════════════════════════════════
   // 로딩 상태
@@ -213,7 +489,7 @@ export default function LoungeScreen() {
   // ══════════════════════════════════════════
   // 잠금 화면: 100만원 미만
   // ══════════════════════════════════════════
-  if (!eligibility.isEligible) {
+  if (!eligibility?.isEligible) {
     return (
       <View style={[styles.container, { paddingTop: insets.top, backgroundColor: themeColors.background }]}>
         {/* 헤더 */}
@@ -225,6 +501,10 @@ export default function LoungeScreen() {
               <Text style={styles.vipBadgeText}>PRIVATE</Text>
             </View>
           </View>
+          {/* 진단 버튼 */}
+          <TouchableOpacity onPress={handleDiagnose} style={{ padding: 8 }}>
+            <Ionicons name="pulse" size={22} color={themeColors.textTertiary} />
+          </TouchableOpacity>
         </View>
 
         {/* 잠금 본문 */}
@@ -250,9 +530,9 @@ export default function LoungeScreen() {
                 <Text style={[styles.accessTierReq, { color: themeColors.textTertiary }]}>자산 100만원 이상</Text>
               </View>
               <Ionicons
-                name={eligibility.totalAssets >= LOUNGE_VIEW_THRESHOLD ? 'checkmark-circle' : 'ellipse-outline'}
+                name={(eligibility?.totalAssets ?? 0) >= LOUNGE_VIEW_THRESHOLD ? 'checkmark-circle' : 'ellipse-outline'}
                 size={18}
-                color={eligibility.totalAssets >= LOUNGE_VIEW_THRESHOLD ? '#4CAF50' : '#555'}
+                color={(eligibility?.totalAssets ?? 0) >= LOUNGE_VIEW_THRESHOLD ? '#4CAF50' : '#555'}
               />
             </View>
 
@@ -263,9 +543,9 @@ export default function LoungeScreen() {
                 <Text style={[styles.accessTierReq, { color: themeColors.textTertiary }]}>자산 1,000만원 이상</Text>
               </View>
               <Ionicons
-                name={eligibility.totalAssets >= LOUNGE_COMMENT_THRESHOLD ? 'checkmark-circle' : 'ellipse-outline'}
+                name={(eligibility?.totalAssets ?? 0) >= LOUNGE_COMMENT_THRESHOLD ? 'checkmark-circle' : 'ellipse-outline'}
                 size={18}
-                color={eligibility.totalAssets >= LOUNGE_COMMENT_THRESHOLD ? '#4CAF50' : '#555'}
+                color={(eligibility?.totalAssets ?? 0) >= LOUNGE_COMMENT_THRESHOLD ? '#4CAF50' : '#555'}
               />
             </View>
 
@@ -276,9 +556,9 @@ export default function LoungeScreen() {
                 <Text style={[styles.accessTierReq, { color: themeColors.textTertiary }]}>자산 1.5억 이상</Text>
               </View>
               <Ionicons
-                name={eligibility.totalAssets >= LOUNGE_POST_THRESHOLD ? 'checkmark-circle' : 'ellipse-outline'}
+                name={(eligibility?.totalAssets ?? 0) >= LOUNGE_POST_THRESHOLD ? 'checkmark-circle' : 'ellipse-outline'}
                 size={18}
-                color={eligibility.totalAssets >= LOUNGE_POST_THRESHOLD ? '#4CAF50' : '#555'}
+                color={(eligibility?.totalAssets ?? 0) >= LOUNGE_POST_THRESHOLD ? '#4CAF50' : '#555'}
               />
             </View>
           </View>
@@ -288,20 +568,20 @@ export default function LoungeScreen() {
             <View style={styles.progressHeader}>
               <Text style={[styles.progressLabel, { color: themeColors.textTertiary }]}>현재 자산</Text>
               <Text style={[styles.progressValue, { color: themeColors.primary }]}>
-                {formatAssetAmount(eligibility.totalAssets)}
+                {formatAssetAmount(eligibility?.totalAssets ?? 0)}
               </Text>
             </View>
             <View style={[styles.progressBarBg, { backgroundColor: themeColors.border }]}>
               <View
                 style={[
                   styles.progressBarFill,
-                  { width: `${Math.min((eligibility.totalAssets / LOUNGE_VIEW_THRESHOLD) * 100, 100)}%`, backgroundColor: themeColors.primary },
+                  { width: `${Math.min(((eligibility?.totalAssets ?? 0) / LOUNGE_VIEW_THRESHOLD) * 100, 100)}%`, backgroundColor: themeColors.primary },
                 ]}
               />
             </View>
             <Text style={styles.progressShortfall}>
-              {eligibility.shortfall > 0
-                ? `입장까지 ${formatAssetAmount(eligibility.shortfall)} 더 필요`
+              {(eligibility?.shortfall ?? 0) > 0
+                ? `입장까지 ${formatAssetAmount(eligibility?.shortfall ?? 0)} 더 필요`
                 : '조건 충족!'}
             </Text>
           </View>
@@ -340,6 +620,10 @@ export default function LoungeScreen() {
               <Text style={styles.vipBadgeText}>PRIVATE</Text>
             </View>
           </View>
+          {/* 맥박 진단 버튼 */}
+          <TouchableOpacity onPress={handleDiagnose} style={{ padding: 8 }}>
+            <Ionicons name="pulse" size={22} color={themeColors.textTertiary} />
+          </TouchableOpacity>
         </View>
 
         {/* 세그먼트 컨트롤 (토스 스타일 pill) */}
@@ -398,26 +682,27 @@ export default function LoungeScreen() {
             <View style={[styles.categoryTabContainer, { borderBottomColor: themeColors.surfaceLight }]}>
               {(Object.keys(CATEGORY_INFO) as CommunityCategoryFilter[]).map((key) => {
                 const info = CATEGORY_INFO[key];
+                if (!info) return null;
                 const isActive = communityCategory === key;
                 return (
                   <TouchableOpacity
                     key={key}
                     style={[
                       styles.categoryTab, { borderColor: themeColors.border, backgroundColor: themeColors.surface },
-                      isActive && { backgroundColor: info.color + '20', borderColor: info.color },
+                      isActive && { backgroundColor: (info.color || '#4CAF50') + '20', borderColor: info.color || '#4CAF50' },
                     ]}
                     onPress={() => setCommunityCategory(key)}
                   >
                     <Ionicons
-                      name={info.icon as any}
+                      name={(info.icon || 'apps') as any}
                       size={14}
-                      color={isActive ? info.color : themeColors.textTertiary}
+                      color={isActive ? (info.color || '#4CAF50') : themeColors.textTertiary}
                     />
                     <Text style={[
                       styles.categoryTabText,
-                      isActive && { color: info.color, fontWeight: '700' },
+                      isActive && { color: info.color || '#4CAF50', fontWeight: '700' },
                     ]}>
-                      {info.label}
+                      {info.label || key}
                     </Text>
                   </TouchableOpacity>
                 );
@@ -463,19 +748,20 @@ export default function LoungeScreen() {
                 <View style={styles.composeCategoryRow}>
                   {(['stocks', 'crypto', 'realestate'] as CommunityCategory[]).map((key) => {
                     const info = CATEGORY_INFO[key];
+                    if (!info) return null;
                     const isActive = postCategory === key;
                     return (
                       <TouchableOpacity
                         key={key}
                         style={[
                           styles.composeCategoryChip, { borderColor: themeColors.border, backgroundColor: themeColors.surface },
-                          isActive && { backgroundColor: info.color + '20', borderColor: info.color },
+                          isActive && { backgroundColor: (info.color || '#4CAF50') + '20', borderColor: info.color || '#4CAF50' },
                         ]}
                         onPress={() => setPostCategory(key)}
                       >
-                        <Ionicons name={info.icon as any} size={12} color={isActive ? info.color : themeColors.textTertiary} />
-                        <Text style={[styles.composeCategoryText, isActive && { color: info.color }]}>
-                          {info.label}
+                        <Ionicons name={(info.icon || 'apps') as any} size={12} color={isActive ? (info.color || '#4CAF50') : themeColors.textTertiary} />
+                        <Text style={[styles.composeCategoryText, isActive && { color: info.color || '#4CAF50' }]}>
+                          {info.label || key}
                         </Text>
                       </TouchableOpacity>
                     );
@@ -514,16 +800,19 @@ export default function LoungeScreen() {
             {/* 게시물 목록 (FlatList + 무한 스크롤) */}
             <FlatList
               data={posts}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => (
-                <CommunityPostCard
-                  post={item}
-                  isLiked={myLikes?.has(item.id) ?? false}
-                  onLike={handleLike}
-                  onPress={handlePostPress}
-                  onAuthorPress={handleAuthorPress}
-                />
-              )}
+              keyExtractor={(item) => item?.id || Math.random().toString()}
+              renderItem={({ item }) => {
+                if (!item) return null;
+                return (
+                  <CommunityPostCard
+                    post={item}
+                    isLiked={myLikes?.has(item.id) ?? false}
+                    onLike={handleLike}
+                    onPress={handlePostPress}
+                    onAuthorPress={handleAuthorPress}
+                  />
+                );
+              }}
               ListHeaderComponent={
                 <View style={styles.welcomeBanner}>
                   <View style={styles.welcomeTop}>
@@ -531,7 +820,7 @@ export default function LoungeScreen() {
                     <View style={{ flex: 1 }}>
                       <Text style={styles.welcomeText}>VIP 회원님, 환영합니다!</Text>
                       <Text style={[styles.welcomeSubtext, { color: themeColors.textTertiary }]}>
-                        현재 자산: {formatAssetAmount(eligibility.totalAssets)}
+                        현재 자산: {formatAssetAmount(eligibility?.totalAssets ?? 0)}
                       </Text>
                     </View>
                   </View>
@@ -542,34 +831,34 @@ export default function LoungeScreen() {
                     </View>
                     <View style={[
                       styles.accessBadgeItem,
-                      { backgroundColor: eligibility.canComment ? 'rgba(33,150,243,0.15)' : 'rgba(100,100,100,0.15)' },
+                      { backgroundColor: eligibility?.canComment ? 'rgba(33,150,243,0.15)' : 'rgba(100,100,100,0.15)' },
                     ]}>
                       <Ionicons
-                        name={eligibility.canComment ? 'chatbubble' : 'lock-closed'}
+                        name={eligibility?.canComment ? 'chatbubble' : 'lock-closed'}
                         size={12}
-                        color={eligibility.canComment ? '#2196F3' : '#666'}
+                        color={eligibility?.canComment ? '#2196F3' : '#666'}
                       />
                       <Text style={[
                         styles.accessBadgeLabel,
-                        { color: eligibility.canComment ? '#2196F3' : '#666' },
+                        { color: eligibility?.canComment ? '#2196F3' : '#666' },
                       ]}>
-                        댓글 {eligibility.canComment ? '' : '(1,000만+)'}
+                        댓글 {eligibility?.canComment ? '' : '(1,000만+)'}
                       </Text>
                     </View>
                     <View style={[
                       styles.accessBadgeItem,
-                      { backgroundColor: eligibility.canPost ? 'rgba(255,215,0,0.15)' : 'rgba(100,100,100,0.15)' },
+                      { backgroundColor: eligibility?.canPost ? 'rgba(255,215,0,0.15)' : 'rgba(100,100,100,0.15)' },
                     ]}>
                       <Ionicons
-                        name={eligibility.canPost ? 'create' : 'lock-closed'}
+                        name={eligibility?.canPost ? 'create' : 'lock-closed'}
                         size={12}
-                        color={eligibility.canPost ? '#FFD700' : '#666'}
+                        color={eligibility?.canPost ? '#FFD700' : '#666'}
                       />
                       <Text style={[
                         styles.accessBadgeLabel,
-                        { color: eligibility.canPost ? '#FFD700' : '#666' },
+                        { color: eligibility?.canPost ? '#FFD700' : '#666' },
                       ]}>
-                        글쓰기 {eligibility.canPost ? '' : '(1.5억+)'}
+                        글쓰기 {eligibility?.canPost ? '' : '(1.5억+)'}
                       </Text>
                     </View>
                   </View>
@@ -585,7 +874,7 @@ export default function LoungeScreen() {
                     <Ionicons name="chatbubbles-outline" size={48} color={themeColors.textTertiary} />
                     <Text style={[styles.emptyTitle, { color: themeColors.textPrimary }]}>아직 게시물이 없습니다</Text>
                     <Text style={[styles.emptyDescription, { color: themeColors.textTertiary }]}>
-                      {eligibility.canPost
+                      {eligibility?.canPost
                         ? '첫 번째 게시물을 작성해보세요!'
                         : '자산 1.5억 이상 회원이 게시물을 작성할 수 있습니다'}
                     </Text>
@@ -613,7 +902,7 @@ export default function LoungeScreen() {
             />
 
             {/* 글쓰기 FAB (1.5억+ 전용) */}
-            {eligibility.canPost && !isComposing && (
+            {eligibility?.canPost && !isComposing && (
               <TouchableOpacity
                 style={[styles.fab, { bottom: insets.bottom + 80 }]}
                 onPress={handleComposePress}
@@ -660,14 +949,17 @@ export default function LoungeScreen() {
             {/* 모임 목록 (FlatList) */}
             <FlatList
               data={gatherings ?? []}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => (
-                <GatheringCard
-                  gathering={item}
-                  onPress={() => handleGatheringPress(item)}
-                  userTier={hostingEligibility?.tier}
-                />
-              )}
+              keyExtractor={(item) => item?.id || Math.random().toString()}
+              renderItem={({ item }) => {
+                if (!item) return null;
+                return (
+                  <GatheringCard
+                    gathering={item}
+                    onPress={() => handleGatheringPress(item)}
+                    userTier={hostingEligibility?.tier}
+                  />
+                );
+              }}
               ListHeaderComponent={
                 <View style={[styles.gatheringWelcome, { backgroundColor: themeColors.surface }]}>
                   <View style={styles.gatheringWelcomeContent}>
@@ -679,16 +971,16 @@ export default function LoungeScreen() {
                   {hostingEligibility?.tier && (
                     <View style={[
                       styles.tierIndicator,
-                      { backgroundColor: TIER_COLORS[hostingEligibility.tier as keyof typeof TIER_COLORS] + '30' },
+                      { backgroundColor: (TIER_COLORS[hostingEligibility.tier as keyof typeof TIER_COLORS] || '#C0C0C0') + '30' },
                     ]}>
                       <Ionicons
                         name="shield-checkmark"
                         size={16}
-                        color={TIER_COLORS[hostingEligibility.tier as keyof typeof TIER_COLORS]}
+                        color={TIER_COLORS[hostingEligibility.tier as keyof typeof TIER_COLORS] || '#C0C0C0'}
                       />
                       <Text style={[
                         styles.tierText,
-                        { color: TIER_COLORS[hostingEligibility.tier as keyof typeof TIER_COLORS] },
+                        { color: TIER_COLORS[hostingEligibility.tier as keyof typeof TIER_COLORS] || '#C0C0C0' },
                       ]}>
                         {formatAssetInBillion(hostingEligibility.verifiedAssets)} 인증
                       </Text>
@@ -736,6 +1028,39 @@ export default function LoungeScreen() {
         )}
       </KeyboardAvoidingView>
     </View>
+  );
+}
+
+// ══════════════════════════════════════════
+// Export: 3중 안전망으로 감싸서 내보내기
+// SafeLoungeWrapper (hook 크래시 포착)
+//   → LoungeScreenContent (hook 호출)
+//     → LoungeErrorBoundary (렌더 크래시 포착)
+//       → LoungeScreenInner (실제 UI)
+// ══════════════════════════════════════════
+
+function LoungeScreenContent() {
+  const insets = useSafeAreaInsets();
+  let themeColors: any = {};
+  try {
+    const { colors } = useTheme();
+    themeColors = colors;
+  } catch {
+    themeColors = { background: '#0A0A0A', textPrimary: '#FFF', textTertiary: '#888' };
+  }
+
+  return (
+    <LoungeErrorBoundary themeColors={themeColors} insets={insets}>
+      <LoungeScreenInner />
+    </LoungeErrorBoundary>
+  );
+}
+
+export default function LoungeScreen() {
+  return (
+    <SafeLoungeWrapper>
+      <LoungeScreenContent />
+    </SafeLoungeWrapper>
   );
 }
 
@@ -799,7 +1124,6 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     gap: 6,
   },
-  segmentButtonActive: {},
   segmentText: {
     fontSize: 13,
     fontWeight: '600',
@@ -1112,7 +1436,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
   },
-  categoryChipActive: {},
   categoryChipText: {
     fontSize: 13,
     fontWeight: '600',

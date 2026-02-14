@@ -877,9 +877,50 @@ serve(async (req: Request) => {
         result = await generateInvestmentReport(body.data);
         break;
 
-      case 'health-check':
-        result = { status: 'ok', timestamp: new Date().toISOString(), model: GEMINI_MODEL };
+      case 'health-check': {
+        // [2026-02-14] 실제 Gemini API 호출 테스트 (단순 OK 반환 → 실제 검증으로 업그레이드)
+        const checks: Record<string, any> = {
+          timestamp: new Date().toISOString(),
+          model: GEMINI_MODEL,
+          apiKeySet: !!GEMINI_API_KEY,
+          apiKeyLength: GEMINI_API_KEY?.length || 0,
+        };
+
+        // 실제 Gemini API 미니 호출 (최소 토큰으로 테스트)
+        try {
+          const testUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+          const testBody = {
+            contents: [{ parts: [{ text: 'Reply with only the word OK' }] }],
+            generationConfig: { maxOutputTokens: 5 },
+          };
+          const testController = new AbortController();
+          const testTimeout = setTimeout(() => testController.abort(), 10000);
+          const testResp = await fetch(testUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(testBody),
+            signal: testController.signal,
+          });
+          clearTimeout(testTimeout);
+
+          if (testResp.ok) {
+            const testJson = await testResp.json();
+            const testText = testJson?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            checks.geminiApi = 'OK';
+            checks.geminiResponse = testText.substring(0, 50);
+          } else {
+            const errText = await testResp.text();
+            checks.geminiApi = `ERROR ${testResp.status}`;
+            checks.geminiError = errText.substring(0, 200);
+          }
+        } catch (testErr: any) {
+          checks.geminiApi = testErr.name === 'AbortError' ? 'TIMEOUT (10s)' : `EXCEPTION: ${testErr.message?.substring(0, 100)}`;
+        }
+
+        checks.status = checks.geminiApi === 'OK' ? 'ok' : 'degraded';
+        result = checks;
         break;
+      }
 
       default:
         throw new Error(`Unknown request type: ${(body as any).type}`);

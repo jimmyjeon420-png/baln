@@ -184,11 +184,18 @@ async function runAnalysisDiagnostic() {
         },
         body: JSON.stringify({ type: 'health-check' }),
       }),
-      new Promise<null>((r) => setTimeout(() => r(null), 8000)),
+      new Promise<null>((r) => setTimeout(() => r(null), 15000)),
     ]);
     if (res) {
-      const text = await res.text().catch(() => '');
-      results.push(`3. Gemini proxy: ${res.status} (${Date.now() - t3}ms) ${text.substring(0, 60)}`);
+      const json = await res.json().catch(() => null);
+      const hc = json?.data;
+      if (hc?.geminiApi === 'OK') {
+        results.push(`3. Gemini proxy: OK ✅ API실제호출 성공 (${Date.now() - t3}ms)`);
+      } else if (hc?.geminiApi) {
+        results.push(`3. Gemini proxy: ⚠️ ${hc.geminiApi} ${hc.geminiError?.substring(0, 60) || ''} (${Date.now() - t3}ms)`);
+      } else {
+        results.push(`3. Gemini proxy: ${res.status} (${Date.now() - t3}ms) ${JSON.stringify(json).substring(0, 60)}`);
+      }
     } else {
       results.push(`3. Gemini proxy: TIMEOUT 8s`);
     }
@@ -223,6 +230,41 @@ async function runAnalysisDiagnostic() {
     }
   } catch (e: any) {
     results.push(`4. Portfolio ERROR: ${e.message}`);
+  }
+
+  // 5. 클라이언트 Gemini SDK 직접 테스트 (딥다이브/리스크 분석에서 사용)
+  try {
+    const t5 = Date.now();
+    const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY || '';
+    const model = process.env.EXPO_PUBLIC_GEMINI_MODEL || 'gemini-2.5-flash';
+    if (!apiKey) {
+      results.push(`5. Gemini SDK: NO API KEY`);
+    } else {
+      const testUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      const testRes = await Promise.race([
+        fetch(testUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: 'Reply OK' }] }],
+            generationConfig: { maxOutputTokens: 5 },
+          }),
+        }),
+        new Promise<null>((r) => setTimeout(() => r(null), 10000)),
+      ]);
+      if (!testRes) {
+        results.push(`5. Gemini SDK: TIMEOUT 10s`);
+      } else if (testRes.ok) {
+        const json = await testRes.json();
+        const txt = json?.candidates?.[0]?.content?.parts?.[0]?.text || 'empty';
+        results.push(`5. Gemini SDK: OK "${txt.substring(0, 20)}" (${Date.now() - t5}ms)`);
+      } else {
+        const errText = await testRes.text().catch(() => '');
+        results.push(`5. Gemini SDK: ERROR ${testRes.status} ${errText.substring(0, 80)} (${Date.now() - t5}ms)`);
+      }
+    }
+  } catch (e: any) {
+    results.push(`5. Gemini SDK ERROR: ${e.message?.substring(0, 80)}`);
   }
 
   const totalMs = Date.now() - startTotal;

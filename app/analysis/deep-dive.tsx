@@ -160,13 +160,20 @@ async function runDeepDiveDiagnostic() {
         body: { type: 'health-check' },
       }),
       new Promise<{ data: null; error: { message: string } }>((r) =>
-        setTimeout(() => r({ data: null, error: { message: 'TIMEOUT 5s' } }), 5000)
+        setTimeout(() => r({ data: null, error: { message: 'TIMEOUT 15s' } }), 15000)
       ),
     ]) as any;
     if (error) {
       results.push(`3. Gemini proxy: ERROR ${error.message} (${Date.now() - t3}ms)`);
     } else {
-      results.push(`3. Gemini proxy: OK (${Date.now() - t3}ms)`);
+      const hc = data?.data;
+      if (hc?.geminiApi === 'OK') {
+        results.push(`3. Gemini proxy: OK ✅ API실제호출 성공 (${Date.now() - t3}ms)`);
+      } else if (hc?.geminiApi) {
+        results.push(`3. Gemini proxy: ⚠️ ${hc.geminiApi} ${hc.geminiError?.substring(0, 60) || ''} (${Date.now() - t3}ms)`);
+      } else {
+        results.push(`3. Gemini proxy: OK (${Date.now() - t3}ms)`);
+      }
     }
   } catch (e: any) {
     results.push(`3. Gemini proxy ERROR: ${e.message}`);
@@ -192,6 +199,41 @@ async function runDeepDiveDiagnostic() {
     results.push(`5. User: ${u ? u.id.substring(0, 8) + '...' : 'NULL'} (${Date.now() - t5}ms)`);
   } catch (e: any) {
     results.push(`5. User ERROR: ${e.message}`);
+  }
+
+  // 6. 클라이언트 Gemini API 직접 호출 테스트 (딥다이브에서 실제 사용하는 경로)
+  try {
+    const t6 = Date.now();
+    const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY || '';
+    const model = process.env.EXPO_PUBLIC_GEMINI_MODEL || 'gemini-2.5-flash';
+    if (!apiKey) {
+      results.push(`6. Gemini 직접호출: NO API KEY`);
+    } else {
+      const testUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      const testRes = await Promise.race([
+        fetch(testUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: 'Reply OK' }] }],
+            generationConfig: { maxOutputTokens: 5 },
+          }),
+        }),
+        new Promise<null>((r) => setTimeout(() => r(null), 10000)),
+      ]);
+      if (!testRes) {
+        results.push(`6. Gemini 직접호출: TIMEOUT 10s`);
+      } else if (testRes.ok) {
+        const json = await testRes.json();
+        const txt = json?.candidates?.[0]?.content?.parts?.[0]?.text || 'empty';
+        results.push(`6. Gemini 직접호출: OK "${txt.substring(0, 20)}" (${Date.now() - t6}ms)`);
+      } else {
+        const errText = await testRes.text().catch(() => '');
+        results.push(`6. Gemini 직접호출: ERROR ${testRes.status} ${errText.substring(0, 80)} (${Date.now() - t6}ms)`);
+      }
+    }
+  } catch (e: any) {
+    results.push(`6. Gemini 직접호출 ERROR: ${e.message?.substring(0, 80)}`);
   }
 
   const totalMs = Date.now() - startTotal;
@@ -245,8 +287,14 @@ export default function DeepDiveScreen() {
 
     try {
       // [Step 1] Yahoo Finance API로 실제 재무 데이터 조회
+      // fetchStockFundamentals가 예외를 던져도 딥다이브 자체는 계속 진행
       console.log(`[DeepDive] Step 1: 재무 데이터 조회 — ${targetName} (${targetTicker})`);
-      const fundamentals = await fetchStockFundamentals(targetTicker, targetName);
+      let fundamentals: Awaited<ReturnType<typeof fetchStockFundamentals>> = null;
+      try {
+        fundamentals = await fetchStockFundamentals(targetTicker, targetName);
+      } catch (fundErr: any) {
+        console.warn(`[DeepDive] 재무 데이터 조회 중 예외 발생 — Gemini 단독 분석으로 fallback:`, fundErr.message);
+      }
 
       if (fundamentals) {
         console.log(`[DeepDive] 재무 데이터 조회 성공:`, {
@@ -255,7 +303,7 @@ export default function DeepDiveScreen() {
           PB: fundamentals.priceToBook,
         });
       } else {
-        console.log(`[DeepDive] 재무 데이터 조회 실패 — Gemini 단독 분석으로 fallback`);
+        console.log(`[DeepDive] 재무 데이터 없음 — Gemini 단독 분석으로 fallback`);
       }
 
       // [Step 2] Gemini AI 분석 (팩트 데이터 주입)
@@ -276,13 +324,33 @@ export default function DeepDiveScreen() {
       console.error('[DeepDive] 에러 이름:', err.name);
       console.error('[DeepDive] 에러 메시지:', err.message);
       console.error('[DeepDive] 에러 코드:', err.code);
-      const errorMsg = err.message || '알 수 없는 오류가 발생했습니다';
-      setError(errorMsg);
+
+      // 사용자 친화적 에러 메시지 생성
+      let userMsg: string;
+      const rawMsg = err.message || '';
+      if (rawMsg.includes('시간 초과') || err.name === 'AbortError') {
+        userMsg = 'AI 분석 시간이 초과되었습니다 (60초).\n네트워크 상태를 확인하고 다시 시도해주세요.';
+      } else if (rawMsg.includes('429') || rawMsg.includes('RESOURCE_EXHAUSTED') || rawMsg.includes('한도 초과')) {
+        userMsg = 'AI 요청 한도를 초과했습니다.\n1분 후 다시 시도해주세요.';
+      } else if (rawMsg.includes('Network') || rawMsg.includes('network') || rawMsg.includes('fetch failed')) {
+        userMsg = '네트워크 연결에 실패했습니다.\nWi-Fi 또는 모바일 데이터를 확인해주세요.';
+      } else if (rawMsg.includes('JSON') || rawMsg.includes('응답 형식')) {
+        userMsg = 'AI 응답을 해석하지 못했습니다.\n다시 시도하면 해결될 수 있습니다.';
+      } else if (rawMsg.includes('403') || rawMsg.includes('PERMISSION')) {
+        userMsg = 'API 접근 권한 오류입니다.\n관리자에게 문의해주세요.';
+      } else if (rawMsg.includes('빈 응답')) {
+        userMsg = 'AI가 빈 응답을 반환했습니다.\n다시 시도해주세요.';
+      } else {
+        userMsg = rawMsg.length > 0 ? rawMsg.substring(0, 120) : '알 수 없는 오류가 발생했습니다';
+      }
+
+      setError(userMsg);
       Alert.alert(
-        '분석 실패',
-        errorMsg,
+        '딥다이브 분석 실패',
+        userMsg,
         [
           { text: '확인', style: 'cancel' },
+          { text: '다시 시도', onPress: handleAnalyze },
           { text: '진단 실행', onPress: runDeepDiveDiagnostic },
         ]
       );

@@ -290,8 +290,10 @@ const modelWithSearch = genAI.getGenerativeModel(
         model: MODEL_NAME,
         tools: [
           {
-            // @ts-ignore - Gemini 2.5 Google Search Tool (google_search_retrieval은 deprecated)
-            google_search: {},
+            // Gemini 2.5 Google Search Tool — SDK v0.24+ 에서 camelCase 필수
+            // (google_search_retrieval은 deprecated, google_search는 snake_case라 SDK에서 무시됨)
+            // @ts-ignore - googleSearch 타입이 SDK 버전에 따라 다를 수 있음
+            googleSearch: {},
           },
         ],
       }
@@ -1485,8 +1487,8 @@ ${hasFundamentals ? '12. API 제공 데이터(시가총액, PER, PBR, ROE 등)�
 `;
 
   try {
-    // Gemini 호출 (타임아웃 45초 — 딥다이브는 응답이 길어서 여유있게 설정)
-    const text = await callGeminiSafe(modelWithSearch, prompt, { timeoutMs: 45000, maxRetries: 1 });
+    // Gemini 호출 (타임아웃 60초 — 딥다이브는 응답이 길어서 여유있게 설정)
+    const text = await callGeminiSafe(modelWithSearch, prompt, { timeoutMs: 60000, maxRetries: 1 });
 
     if (__DEV__) {
       console.log('[DeepDive] Gemini 원본 응답 길이:', text.length);
@@ -1513,7 +1515,7 @@ ${hasFundamentals ? '12. API 제공 데이터(시가총액, PER, PBR, ROE 등)�
       throw error; // JSON 파싱 에러는 그대로 전달
     }
     if (error.message?.includes('시간 초과') || error.name === 'AbortError') {
-      throw new Error('분석 시간 초과 (45초) — 네트워크를 확인하세요');
+      throw new Error('분석 시간 초과 (60초) — 네트워크를 확인하세요');
     }
     if (error.message?.includes('429') || error.message?.includes('RESOURCE_EXHAUSTED')) {
       throw new Error('AI 요청 한도 초과 — 1분 후 다시 시도하세요');

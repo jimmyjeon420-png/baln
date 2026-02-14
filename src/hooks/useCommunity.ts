@@ -88,7 +88,7 @@ const computeEligibility = (totalAssets: number, hasAssets: boolean): LoungeElig
 
 /** useSharedPortfolio 캐시 기반 자격 확인 (독립 Supabase 쿼리 제거) */
 export const useLoungeEligibility = () => {
-  const { totalAssets, hasAssets, isLoading, isError, refresh } = useSharedPortfolio();
+  const { totalAssets, hasAssets, isLoading, isPending, isError, refresh } = useSharedPortfolio();
 
   // 에러 발생 시 기본값 반환 (자격 미달로 잠기지 않도록 무료 기간 기준만 적용)
   if (isError) {
@@ -100,9 +100,12 @@ export const useLoungeEligibility = () => {
     };
   }
 
+  // ★ isPending도 포함: Auth 세션 로딩 중(enabled=false)일 때
+  // TanStack Query v5에서 isLoading=false이지만 isPending=true
+  // → 불완전한 데이터로 렌더링하지 않고 로딩 스피너 표시
   return {
     eligibility: computeEligibility(totalAssets, hasAssets),
-    loading: isLoading,
+    loading: isLoading || isPending,
     error: false,
     refetch: refresh,
   };
