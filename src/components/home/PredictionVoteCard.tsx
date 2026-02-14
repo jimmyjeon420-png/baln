@@ -31,7 +31,7 @@ import { useTheme } from '../../hooks/useTheme';
 import { useTrackEvent } from '../../hooks/useAnalytics';
 import { useHabitLoopTracking } from '../../hooks/useHabitLoopTracking';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // 카드 내부 질문 슬라이드 너비 (카드 padding 고려)
 const POLL_SLIDE_WIDTH = SCREEN_WIDTH - 32 - 48; // 카드 marginHorizontal 16*2 + padding 24*2
@@ -529,12 +529,10 @@ export default function PredictionVoteCard({
 // 스타일
 // ============================================================================
 
-const CARD_HEIGHT = SCREEN_HEIGHT * 0.68;
-
 function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
   return StyleSheet.create({
     card: {
-      height: CARD_HEIGHT,
+      flex: 1,
       marginHorizontal: 16,
       backgroundColor: colors.surface,
       borderRadius: 24,

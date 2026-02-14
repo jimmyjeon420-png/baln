@@ -24,6 +24,7 @@ import {
   NativeScrollEvent,
   RefreshControl,
   Animated,
+  LayoutChangeEvent,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../hooks/useTheme';
@@ -72,6 +73,7 @@ export default function CardSwipeContainer({
   refreshing,
 }: CardSwipeContainerProps) {
   const [currentPage, setCurrentPage] = useState(initialIndex);
+  const [scrollViewHeight, setScrollViewHeight] = useState(0);
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const [showSwipeHint, setShowSwipeHint] = useState(true);
@@ -133,6 +135,7 @@ export default function CardSwipeContainer({
         pagingEnabled
         showsHorizontalScrollIndicator={false}
         onMomentumScrollEnd={handleScrollEnd}
+        onLayout={(e: LayoutChangeEvent) => setScrollViewHeight(e.nativeEvent.layout.height)}
         scrollEventThrottle={16}
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -152,7 +155,7 @@ export default function CardSwipeContainer({
         }
       >
         {childArray.map((child, index) => (
-          <View key={index} style={styles.cardWrapper}>
+          <View key={index} style={[styles.cardWrapper, scrollViewHeight > 0 && { height: scrollViewHeight }]}>
             {child}
           </View>
         ))}

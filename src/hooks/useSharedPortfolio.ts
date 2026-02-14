@@ -16,7 +16,7 @@
  */
 
 import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
-import supabase, { getCurrentUser } from '../services/supabase';
+import supabase from '../services/supabase';
 import { useAuth } from '../context/AuthContext';
 import { Asset, AssetType } from '../types/asset';
 import { transformDbRowToAsset } from '../utils/assetTransform';
@@ -76,15 +76,11 @@ function withTimeout<T>(
 
 /** Supabase에서 포트폴리오 조회 + 두 가지 형식으로 변환 */
 async function fetchSharedPortfolio(
+  userId: string,
   options?: { signal?: AbortSignal },
 ): Promise<SharedPortfolioData> {
   // AbortController 시그널이 이미 취소되었으면 즉시 빈 데이터 반환
   if (options?.signal?.aborted) {
-    return EMPTY_PORTFOLIO;
-  }
-
-  const user = await getCurrentUser();
-  if (!user) {
     return EMPTY_PORTFOLIO;
   }
 
@@ -97,7 +93,7 @@ async function fetchSharedPortfolio(
       supabase
         .from('portfolios')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .order('current_value', { ascending: false }),
       10000,
       'portfolios query',
@@ -167,7 +163,7 @@ async function fetchSharedPortfolio(
     .map(a => a.ticker!);
 
   // 프로필 티어 동기화 (백그라운드, 실패 무시)
-  syncUserProfileTier(user.id).catch(() => {});
+  syncUserProfileTier(userId).catch(() => {});
 
   return { assets, portfolioAssets, totalAssets, userTier, liquidTickers, realEstateAssets, totalRealEstate };
 }
@@ -181,8 +177,8 @@ export function useSharedPortfolio() {
   const { user, loading } = useAuth();
 
   const query = useQuery({
-    queryKey: SHARED_PORTFOLIO_KEY,
-    queryFn: ({ signal }) => fetchSharedPortfolio({ signal }),
+    queryKey: [...SHARED_PORTFOLIO_KEY, user?.id],
+    queryFn: ({ signal }) => fetchSharedPortfolio(user!.id, { signal }),
     // ★ 핵심 수정: Auth 세션이 준비된 후에만 쿼리 실행
     // 이전: 세션 없어도 즉시 실행 → 빈 데이터가 "성공"으로 캐시 → 30분간 유지
     // 이후: user 존재 + loading 완료 시에만 실행 → 만료 토큰 조기 실행 방지

@@ -351,7 +351,7 @@ export default function TodayActionsSection({
 
         // 포트폴리오에서 해당 종목 찾기
         const matchedAsset = portfolio.find(
-          a => a.ticker.toUpperCase() === action.ticker.toUpperCase()
+          a => a.ticker?.toUpperCase() === action.ticker?.toUpperCase()
         );
 
         // 실시간 가격

@@ -19,13 +19,11 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  Dimensions,
   ActivityIndicator,
   Modal,
 } from 'react-native';
 import { useTheme } from '../../hooks/useTheme';
 
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 // ============================================================================
 // Props 인터페이스
@@ -364,11 +362,9 @@ export default HealthSignalCard;
 // 스타일
 // ============================================================================
 
-const CARD_HEIGHT = SCREEN_HEIGHT * 0.78;
-
 const styles = StyleSheet.create({
   card: {
-    height: CARD_HEIGHT,
+    flex: 1,
     marginHorizontal: 16,
     borderRadius: 24,
     padding: 24,

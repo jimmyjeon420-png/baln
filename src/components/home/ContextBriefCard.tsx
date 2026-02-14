@@ -21,7 +21,6 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  Dimensions,
   Animated,
   LayoutAnimation,
   Platform,
@@ -42,7 +41,6 @@ if (
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 // ============================================================================
 // 무료 체험 기간 상수
@@ -777,12 +775,10 @@ export default React.forwardRef<View, ContextBriefCardProps>(
 // 스타일
 // ============================================================================
 
-const CARD_HEIGHT = SCREEN_HEIGHT * 0.78;
-
 const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
   // ── 카드 전체 ──
   card: {
-    height: CARD_HEIGHT,
+    flex: 1,
     marginHorizontal: 16,
     backgroundColor: COLORS.surface,
     borderRadius: 24,
