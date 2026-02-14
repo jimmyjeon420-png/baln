@@ -383,18 +383,19 @@ export const useLikePost = () => {
       await queryClient.cancelQueries({ queryKey: ['communityPost'] });
 
       // 캐시 스냅샷 저장 (롤백용)
-      const prevMyLikes = queryClient.getQueryData<Set<string>>(['myLikes']);
+      const prevMyLikes = queryClient.getQueryData<string[]>(['myLikes']);
       const prevPostsQueries = queryClient.getQueriesData({ queryKey: ['communityPosts'] });
 
-      // myLikes 토글
-      const currentLikes = new Set(prevMyLikes ?? []);
-      const isCurrentlyLiked = currentLikes.has(postId);
+      // myLikes 토글 (배열로 저장 — Set은 structuredClone에 의해 파괴됨)
+      const currentArray = Array.isArray(prevMyLikes) ? [...prevMyLikes] : [];
+      const likeIdx = currentArray.indexOf(postId);
+      const isCurrentlyLiked = likeIdx >= 0;
       if (isCurrentlyLiked) {
-        currentLikes.delete(postId);
+        currentArray.splice(likeIdx, 1);
       } else {
-        currentLikes.add(postId);
+        currentArray.push(postId);
       }
-      queryClient.setQueryData(['myLikes'], currentLikes);
+      queryClient.setQueryData(['myLikes'], currentArray);
 
       // communityPosts (useInfiniteQuery pages[][] 구조) 업데이트
       queryClient.setQueriesData(
@@ -731,21 +732,21 @@ export const useLikeComment = (postId: string) => {
       }
     },
     onMutate: async (commentId: string) => {
-      // 낙관적 업데이트
+      // 낙관적 업데이트 (배열로 저장 — Set은 structuredClone에 의해 파괴됨)
       await queryClient.cancelQueries({ queryKey: ['communityComments', postId] });
       await queryClient.cancelQueries({ queryKey: ['myCommentLikes'] });
 
-      const prevLikes = queryClient.getQueryData<Set<string>>(['myCommentLikes']);
-      const currentLikes = new Set(prevLikes ?? []);
-      const isLiked = currentLikes.has(commentId);
+      const prevLikes = queryClient.getQueryData<string[]>(['myCommentLikes']);
+      const currentArray = Array.isArray(prevLikes) ? [...prevLikes] : [];
+      const idx = currentArray.indexOf(commentId);
 
-      if (isLiked) {
-        currentLikes.delete(commentId);
+      if (idx >= 0) {
+        currentArray.splice(idx, 1);
       } else {
-        currentLikes.add(commentId);
+        currentArray.push(commentId);
       }
 
-      queryClient.setQueryData(['myCommentLikes'], currentLikes);
+      queryClient.setQueryData(['myCommentLikes'], currentArray);
 
       return { prevLikes };
     },

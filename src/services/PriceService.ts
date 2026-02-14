@@ -40,7 +40,7 @@ export class PriceService {
     if (assetClass === AssetClass.CRYPTO) {
       try {
         const price = await coinGeckoProvider.fetchPrice(ticker, currency);
-        priceCache.set(ticker, price, 300); // 5-minute cache
+        priceCache.set(ticker, price, 120); // 2분 캐시 (24시간 시장)
         return price;
       } catch (error) {
         this.logError(error, ticker);
@@ -127,7 +127,7 @@ export class PriceService {
         try {
           fetched = await coinGeckoProvider.fetchPrices(uncached, currency);
           fetched.forEach((price) => {
-            priceCache.set(price.ticker, price, 300);
+            priceCache.set(price.ticker, price, 120); // 2분 캐시 (24시간 시장)
           });
         } catch (error) {
           console.warn('[PriceService] Batch fetch failed:', error);

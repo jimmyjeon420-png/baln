@@ -90,8 +90,8 @@ function getRefreshInterval(tickers: string[]): number {
   }
 
   if (hasCrypto) {
-    // 암호화폐: 항상 5분
-    return 5 * 60 * 1000;
+    // 암호화폐: 24시간 시장이므로 주식 장중과 동일하게 2분
+    return 2 * 60 * 1000;
   }
 
   // 장외/주말: 10분

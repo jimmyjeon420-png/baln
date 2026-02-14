@@ -54,7 +54,7 @@ async function searchApartmentsKakao(query: string): Promise<ApartmentComplex[]>
   // 검색어에 "아파트"가 포함되지 않으면 추가 (검색 정확도 향상)
   const searchQuery = query.includes('아파트') ? query : `${query} 아파트`;
 
-  const url = `https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(searchQuery)}&size=15`;
+  const url = `https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(searchQuery)}&size=45`;
 
   const response = await fetch(url, {
     headers: { Authorization: `KakaoAK ${KAKAO_API_KEY}` },
@@ -72,9 +72,10 @@ async function searchApartmentsKakao(query: string): Promise<ApartmentComplex[]>
   const apartmentPlaces = data.documents.filter(doc =>
     doc.category_name.includes('아파트') ||
     doc.category_name.includes('부동산') ||
+    doc.category_name.includes('주거') ||
     doc.place_name.includes('아파트') ||
     // 주요 아파트 브랜드명 포함 시 통과
-    /래미안|자이|힐스테이트|롯데캐슬|e편한|푸르지오|아크로|엘리|더샵|파크리오|리센츠|엘스|트리마제|레미안|SK뷰/.test(doc.place_name)
+    /래미안|자이|힐스테이트|롯데캐슬|e편한|푸르지오|아크로|엘리|더샵|파크리오|리센츠|엘스|트리마제|SK뷰|현대|대림|한화|두산위브|쌍용|동아|우방|금호|한신|삼성|대우|코오롱|LG|포스코|위브|센트럴|삼환|벽산|동부|한라|우성|신동아|주공/.test(doc.place_name)
   );
 
   // 중복 제거 (같은 단지명 + 같은 구/군)
@@ -83,7 +84,10 @@ async function searchApartmentsKakao(query: string): Promise<ApartmentComplex[]>
 
   for (const place of apartmentPlaces) {
     const lawdCd = extractLawdCd(place.address_name);
-    if (!lawdCd) continue;
+    if (!lawdCd) {
+      if (__DEV__) console.log('[부동산] lawdCd 매칭 실패 (건너뜀):', place.address_name, place.place_name);
+      continue;
+    }
 
     const dedupeKey = `${lawdCd}-${place.place_name}`;
     if (seen.has(dedupeKey)) continue;
