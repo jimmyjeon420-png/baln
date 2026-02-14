@@ -34,36 +34,13 @@ import * as Sentry from '@sentry/react-native';
 // [Sentry] 에러 모니터링 초기화
 // DSN이 없으면 Sentry 비활성 — 앱 정상 동작 보장
 // ============================================================================
-const SENTRY_DSN = process.env.EXPO_PUBLIC_SENTRY_DSN || '';
+// ★★★ Sentry 완전 비활성화 (네트워크 차단 원인 조사 중) ★★★
+// Sentry.init()을 호출하지 않으면 네트워크 패칭도 안 됨
+const SENTRY_DSN = ''; // 강제 비활성화
+console.log('[Sentry] ★ 네트워크 디버깅 중 — Sentry 완전 비활성화');
 
-const routingInstrumentation = Sentry.reactNavigationIntegration({
-  enableTimeToInitialDisplay: true,
-});
-
-if (SENTRY_DSN && !__DEV__) {
-  Sentry.init({
-    dsn: SENTRY_DSN,
-    tracesSampleRate: 0, // ★ 비활성화: fetch 간섭 방지 (네트워크 타임아웃 원인 조사 중)
-    integrations: [routingInstrumentation],
-    enableAutoSessionTracking: true,
-    enableNativeFramesTracking: false, // ★ 비활성화: 성능 부하 줄임
-    // 개인정보 보호: 사용자 입력값 마스킹
-    beforeSend(event) {
-      // 민감한 breadcrumb 데이터 제거
-      if (event.breadcrumbs) {
-        event.breadcrumbs = event.breadcrumbs.map((bc) => {
-          if (bc.category === 'ui.input') {
-            return { ...bc, data: undefined };
-          }
-          return bc;
-        });
-      }
-      return event;
-    },
-  });
-} else if (__DEV__) {
-  console.log('[Sentry] 개발 모드 — Sentry 비활성');
-} else if (!SENTRY_DSN) {
+if (false) {
+  // 아래 코드는 Sentry 원인 확인 후 복구 예정
   console.log('[Sentry] DSN 미설정 — Sentry 비활성');
 }
 
@@ -184,12 +161,12 @@ function RootLayout() {
   const [showSplash, setShowSplash] = useState(true); // 브랜드 스플래시 표시 여부
   const appState = useRef(AppState.currentState);
 
-  // Sentry 네비게이션 추적 (expo-router 호환)
-  useEffect(() => {
-    if (ref?.current) {
-      routingInstrumentation.registerNavigationContainer(ref);
-    }
-  }, [ref]);
+  // Sentry 네비게이션 추적 — 현재 비활성화 (네트워크 디버깅 중)
+  // useEffect(() => {
+  //   if (ref?.current) {
+  //     routingInstrumentation.registerNavigationContainer(ref);
+  //   }
+  // }, [ref]);
 
   // isLocked 변경 시 ref 동기화
   useEffect(() => {
