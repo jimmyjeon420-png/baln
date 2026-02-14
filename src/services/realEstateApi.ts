@@ -51,56 +51,91 @@ interface KakaoSearchResponse {
  * - 주소에서 법정동코드 자동 추출
  */
 async function searchApartmentsKakao(query: string): Promise<ApartmentComplex[]> {
-  // 검색어에 "아파트"가 포함되지 않으면 추가 (검색 정확도 향상)
-  const searchQuery = query.includes('아파트') ? query : `${query} 아파트`;
-
-  const url = `https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(searchQuery)}&size=45`;
-
-  const response = await fetch(url, {
-    headers: { Authorization: `KakaoAK ${KAKAO_API_KEY}` },
-    signal: AbortSignal.timeout(8000),
-  });
-
-  if (!response.ok) {
-    console.warn('[부동산] 카카오 API 에러:', response.status);
-    return searchApartmentsMock(query); // 에러 시 Mock 폴백
+  // 검색어 변형: 원본 + "아파트" 붙인 버전 병렬 검색 (결과 극대화)
+  const queries: string[] = [query];
+  if (!query.includes('아파트')) {
+    queries.push(`${query} 아파트`);
   }
 
-  const data: KakaoSearchResponse = await response.json();
+  // 각 검색어 × 3페이지 병렬 조회 (카카오 최대 size=45, page=1~3)
+  const fetchPage = async (q: string, page: number): Promise<KakaoPlace[]> => {
+    const url = `https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(q)}&size=45&page=${page}`;
+    try {
+      const response = await fetch(url, {
+        headers: { Authorization: `KakaoAK ${KAKAO_API_KEY}` },
+        signal: AbortSignal.timeout(8000),
+      });
+      if (!response.ok) return [];
+      const data: KakaoSearchResponse = await response.json();
+      return data.documents;
+    } catch {
+      return [];
+    }
+  };
 
-  // 아파트/부동산 관련 결과만 필터
-  const apartmentPlaces = data.documents.filter(doc =>
-    doc.category_name.includes('아파트') ||
-    doc.category_name.includes('부동산') ||
-    doc.category_name.includes('주거') ||
-    doc.place_name.includes('아파트') ||
-    // 주요 아파트 브랜드명 포함 시 통과
-    /래미안|자이|힐스테이트|롯데캐슬|e편한|푸르지오|아크로|엘리|더샵|파크리오|리센츠|엘스|트리마제|SK뷰|현대|대림|한화|두산위브|쌍용|동아|우방|금호|한신|삼성|대우|코오롱|LG|포스코|위브|센트럴|삼환|벽산|동부|한라|우성|신동아|주공/.test(doc.place_name)
-  );
+  // 검색어별 페이지 1~2 병렬 요청 (총 최대 4개 요청)
+  const allRequests = queries.flatMap(q => [fetchPage(q, 1), fetchPage(q, 2)]);
+  const pageResults = await Promise.all(allRequests);
+  const allDocuments = pageResults.flat();
+
+  if (allDocuments.length === 0) {
+    console.warn('[부동산] 카카오 API 결과 없음');
+    return searchApartmentsMock(query);
+  }
+
+  // 아파트 브랜드 정규식 (최대한 넓게)
+  const BRAND_REGEX = /래미안|자이|힐스테이트|롯데캐슬|e편한|푸르지오|아크로|엘리|더샵|파크리오|리센츠|엘스|트리마제|SK뷰|현대|대림|한화|두산위브|쌍용|동아|우방|금호|한신|삼성|대우|코오롱|LG|포스코|위브|센트럴|삼환|벽산|동부|한라|우성|신동아|주공|호반|중흥|부영|계룡|태영|동원|일신|극동|경남|유림|세영|청구|장미|동문|아이파크|더프라임|꿈에그린|한양|미래|대방|대성|태왕|남양|진흥|동진|럭키|한일|쌍떼빌|이편한|피렌체|프레스티지|메이저|그랑시티|하이츠|빌리브|디에이치/;
+
+  // 아파트/부동산 관련 결과 필터 (최대한 관대하게)
+  const apartmentPlaces = allDocuments.filter(doc => {
+    // 카테고리 기반 (가장 정확)
+    if (doc.category_name.includes('아파트')) return true;
+    if (doc.category_name.includes('부동산')) return true;
+    if (doc.category_name.includes('주거')) return true;
+    if (doc.category_name.includes('주택')) return true;
+
+    // 장소명 기반
+    if (doc.place_name.includes('아파트')) return true;
+    if (doc.place_name.includes('단지')) return true;
+    if (doc.place_name.includes('타운')) return true;
+    if (doc.place_name.includes('빌라')) return true;
+    if (doc.place_name.includes('맨션')) return true;
+
+    // 브랜드명 매칭
+    if (BRAND_REGEX.test(doc.place_name)) return true;
+
+    return false;
+  });
 
   // 중복 제거 (같은 단지명 + 같은 구/군)
   const seen = new Set<string>();
   const results: ApartmentComplex[] = [];
 
   for (const place of apartmentPlaces) {
-    const lawdCd = extractLawdCd(place.address_name);
+    // address_name과 road_address_name 모두 시도
+    let lawdCd = extractLawdCd(place.address_name);
+    if (!lawdCd && place.road_address_name) {
+      lawdCd = extractLawdCd(place.road_address_name);
+    }
     if (!lawdCd) {
       if (__DEV__) console.log('[부동산] lawdCd 매칭 실패 (건너뜀):', place.address_name, place.place_name);
       continue;
     }
 
-    const dedupeKey = `${lawdCd}-${place.place_name}`;
+    const cleanName = place.place_name
+      .replace(/\s*아파트\s*$/, '')
+      .replace(/\s*\d+단지\s*아파트\s*$/, '')
+      .trim() || place.place_name;
+
+    const dedupeKey = `${lawdCd}-${cleanName}`;
     if (seen.has(dedupeKey)) continue;
     seen.add(dedupeKey);
 
     results.push({
       lawdCd,
       address: place.address_name,
-      complexName: place.place_name
-        .replace(/\s*아파트\s*$/, '') // 끝에 붙은 "아파트" 제거
-        .replace(/\s*\d+단지\s*아파트\s*$/, '') // "3단지 아파트" → 제거
-        .trim() || place.place_name,
-      areas: [], // 국토부 API에서 추출 (Step 2에서 로딩)
+      complexName: cleanName,
+      areas: [],
     });
   }
 
@@ -182,23 +217,25 @@ async function getRecentTransactionsMolit(
     months.push(ym);
   }
 
-  // 6개월 병렬 조회
+  // 6개월 병렬 조회 (월별 2페이지씩 — 거래 500건 초과 지역 대응)
+  const fetchMolitPage = async (ym: string, pageNo: number): Promise<RealEstateTransaction[]> => {
+    const url = `https://apis.data.go.kr/1613000/RTMSDataSvcAptTradeDev/getRTMSDataSvcAptTradeDev?serviceKey=${encodeURIComponent(MOLIT_API_KEY)}&LAWD_CD=${lawdCd}&DEAL_YMD=${ym}&numOfRows=1000&pageNo=${pageNo}`;
+
+    const response = await fetch(url, {
+      signal: AbortSignal.timeout(10000),
+    });
+
+    if (!response.ok) {
+      console.warn(`[부동산] 국토부 API 에러 (${ym}, p${pageNo}):`, response.status);
+      return [];
+    }
+
+    const xml = await response.text();
+    return parseMolitXml(xml, complexName);
+  };
+
   const results = await Promise.allSettled(
-    months.map(async (ym) => {
-      const url = `https://apis.data.go.kr/1613000/RTMSDataSvcAptTradeDev/getRTMSDataSvcAptTradeDev?serviceKey=${encodeURIComponent(MOLIT_API_KEY)}&LAWD_CD=${lawdCd}&DEAL_YMD=${ym}&numOfRows=500&pageNo=1`;
-
-      const response = await fetch(url, {
-        signal: AbortSignal.timeout(10000),
-      });
-
-      if (!response.ok) {
-        console.warn(`[부동산] 국토부 API 에러 (${ym}):`, response.status);
-        return [];
-      }
-
-      const xml = await response.text();
-      return parseMolitXml(xml, complexName);
-    })
+    months.map(ym => fetchMolitPage(ym, 1))
   );
 
   // 성공한 결과만 합치기
