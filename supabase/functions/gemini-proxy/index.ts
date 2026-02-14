@@ -132,7 +132,7 @@ type GeminiProxyRequest = MorningBriefingRequest | DeepDiveRequest | CFOChatRequ
 // ============================================================================
 
 /**
- * Gemini API 직접 호출 (Google Search 그라운딩 활성화)
+ * Gemini API 직접 호출 (내부 지식 기반 분석)
  * [수정 2026-02-13] gemini-2.5-flash + 타임아웃 (30초) + 재시도 로직 (1회)
  */
 async function callGeminiWithSearch(prompt: string, timeoutMs: number = 30000, maxRetries: number = 1): Promise<string> {
@@ -299,12 +299,6 @@ async function generateMorningBriefing(reqData: MorningBriefingRequest['data']) 
   const prompt = `
 당신은 한국의 고액자산가 전담 투자 어드바이저입니다. 오늘(${dateStr}) 아침 브리핑을 작성해주세요.
 
-**[중요] 실시간 정보 활용 지침:**
-- Google Search를 통해 *지난 24시간* 이내의 최신 뉴스를 반드시 검색하세요
-- 검색 키워드 예시: "오늘 나스닥 종가", "Fed 금리 전망 ${today.getMonth() + 1}월", "Kevin Warsh 연준", "S&P 500 overnight"
-- 각 종목(${portfolioWithProfitLoss.map(p => p.ticker).join(', ')})의 최신 뉴스도 검색하세요
-- 검색 결과를 바탕으로 구체적인 수치와 이벤트를 인용하세요
-
 **포트폴리오 (수익률 포함):**
 ${JSON.stringify(portfolioWithProfitLoss, null, 2)}
 
@@ -318,22 +312,22 @@ ${JSON.stringify(portfolioWithProfitLoss, null, 2)}
 **브리핑 작성 규칙:**
 
 1. **거시경제 요약 (macroSummary)**
-   - *오늘 실제로 발생한* 글로벌 이슈 3가지 (Google Search 결과 기반)
-   - 미국 금리 인하/동결/인상 확률 예측 (CME FedWatch 참조)
+   - 현재 글로벌 시장에 영향을 주는 주요 이슈 3가지
+   - 미국 금리 인하/동결/인상 확률 예측
    - 시장 심리 (BULLISH/NEUTRAL/BEARISH)
-   - 구체적 수치 포함 (예: "나스닥 전일 종가 -1.2%", "10년물 국채 4.25%")
+   - 구체적 수치 포함 (예: "금리 동결 65%", "인플레이션 둔화 추세")
 
 2. **포트폴리오 액션 (portfolioActions)**
    - 각 보유 종목별 오늘의 권장 행동
    - action: BUY(추가 매수), HOLD(보유), SELL(매도 검토), WATCH(관찰)
    - priority: HIGH(즉시 행동), MEDIUM(이번 주), LOW(참고)
    - **수익률 반영**: profit_loss_rate가 높은 종목은 익절, 낮은 종목은 손절 관점
-   - 최신 뉴스 기반 근거 (예: "어젯밤 NVDA 실적 발표 - 예상치 상회")
+   - 종목 펀더멘털 기반 근거
 
 3. **투자 날씨 (cfoWeather)**
    - emoji: 포트폴리오 상태를 나타내는 이모지 (☀️/⛅/🌧️/⛈️/❄️)
    - status: 한 줄 상태 (예: "맑음: 안정적")
-   - message: 오늘의 한 마디 조언 (실시간 뉴스 반영)
+   - message: 오늘의 한 마디 조언
 
 ${(options?.includeRealEstate && options?.realEstateContext) ? `
 4. **부동산 인사이트 (realEstateInsight)**
@@ -341,25 +335,25 @@ ${(options?.includeRealEstate && options?.realEstateContext) ? `
    - 분석: 해당 부동산의 시세 동향 및 투자 관점 분석
    - 권장사항: 보유/매도/추가매수 관점 조언
 ` : `
-**[금지] realEstateInsight 필드를 절대 생성하지 마세요. 포트폴리오에 부동산 자산이 있더라도 무시하세요.**
+**[금지] realEstateInsight 필드를 절대 생성하지 마세요.**
 `}
 
 **출력 형식 (JSON만, 마크다운 금지):**
 {
   "macroSummary": {
-    "title": "오늘의 시장 핵심",
-    "highlights": ["[실시간] 구체적 이슈1", "[실시간] 구체적 이슈2", "[실시간] 구체적 이슈3"],
+    "title": "오늘의 시장 핵심 (한 줄 제목)",
+    "highlights": ["주요 이슈1", "주요 이슈2", "주요 이슈3"],
     "interestRateProbability": "동결 65% / 인하 30% / 인상 5%",
     "marketSentiment": "NEUTRAL"
   },
   "portfolioActions": [
-    {"ticker": "NVDA", "name": "엔비디아", "action": "HOLD", "reason": "[실시간 뉴스 기반] 구체적 근거", "priority": "LOW"}
+    {"ticker": "NVDA", "name": "엔비디아", "action": "HOLD", "reason": "구체적 근거", "priority": "LOW"}
   ],
   "realEstateInsight": null,
   "cfoWeather": {
     "emoji": "⛅",
     "status": "구름 조금: 관망 필요",
-    "message": "[오늘 시장 상황 반영] 구체적 조언"
+    "message": "구체적 조언"
   }
 }
 `;
@@ -388,17 +382,17 @@ ${(options?.includeRealEstate && options?.realEstateContext) ? `
 async function generateDeepDive(reqData: DeepDiveRequest['data']) {
   const { ticker, currentPrice, previousPrice, percentChange } = reqData;
 
-  // 가격 정보가 있으면 포함, 없으면 Gemini가 Google Search로 찾도록
+  // 가격 정보가 있으면 포함
   const priceInfo = currentPrice
     ? `현재 가격: ${currentPrice.toLocaleString()}원/달러 (어제 대비 ${percentChange?.toFixed(2)}%)`
-    : '최신 가격 정보를 Google Search로 찾아주세요.';
+    : '보유 중인 학습 데이터를 기반으로 최신 정보를 분석해주세요.';
 
-  const prompt = `당신은 전문 투자 분석가입니다. 다음 종목을 Google Search로 최신 정보를 찾아 분석하고, JSON 형식으로 응답하세요.
+  const prompt = `당신은 전문 투자 분석가입니다. 다음 종목을 분석하고, JSON 형식으로 응답하세요.
 
 **종목: ${ticker}**
 ${priceInfo}
 
-Google Search로 찾아야 할 정보:
+분석해야 할 정보:
 1. 종목 정식 명칭 (한글/영문)
 2. 현재 주가 (최신)
 3. 시가총액
@@ -452,16 +446,16 @@ async function generateInvestmentReport(reqData: InvestmentReportRequest['data']
 
   const priceInfo = currentPrice
     ? `현재 가격: ${currentPrice.toLocaleString()}원/달러`
-    : '최신 가격 정보를 Google Search로 찾아주세요.';
+    : '보유 중인 학습 데이터를 기반으로 최신 정보를 분석해주세요.';
 
   const prompt = `당신은 블랙록(BlackRock) Aladdin 팀의 시니어 애널리스트입니다. 한국 증권사 리서치센터 스타일로 전문 투자심사보고서를 작성하세요.
 
 **종목: ${ticker}**
 ${priceInfo}
 
-**[CRITICAL] Google Search 필수 정보:**
+**분석에 반드시 포함할 정보:**
 1. 기업 공식 IR 자료 (최근 분기 실적, 재무제표)
-2. 최신 뉴스 (24시간 이내)
+2. 최신 뉴스 및 시장 동향
 3. 증권사 리포트 (목표주가, 컨센서스)
 4. 경쟁사 비교 (시가총액, 밸류에이션)
 5. 업종 평균 PER/PBR
@@ -477,7 +471,7 @@ ${priceInfo}
 "executiveSummary": {
   "recommendation": "BUY" or "SELL" or "HOLD",
   "rating": 1~5 (5=매우 긍정, 1=매우 부정),
-  "targetPrice": 목표주가 (숫자, Google Search로 증권사 컨센서스 반영),
+  "targetPrice": 목표주가 (숫자, 증권사 컨센서스 반영),
   "expectedReturn": 기대수익률 (%, 숫자),
   "keyPoints": [
     "핵심 투자 포인트 1 (구체적 근거)",
@@ -544,7 +538,7 @@ ${priceInfo}
   "per": 현재 PER (숫자),
   "pbr": 현재 PBR (숫자),
   "psr": 현재 PSR (숫자),
-  "industryAvgPer": 업종 평균 PER (Google Search로 확인, 숫자)
+  "industryAvgPer": 업종 평균 PER (숫자)
 }
 \`\`\`
 
@@ -570,7 +564,7 @@ ${priceInfo}
   "ceoRating": CEO 평가 (1-5, 5=탁월한 리더십),
   "shareholderFriendly": "주주친화 정책 (배당, 자사주 매입, 소수주주 보호 등, 2-3문장)",
   "dividendYield": 배당수익률 (%, 숫자),
-  "esgRating": "ESG 등급 (예: MSCI A등급, Google Search로 확인)"
+  "esgRating": "ESG 등급 (예: MSCI A등급)"
 }
 \`\`\`
 
@@ -608,7 +602,7 @@ ${priceInfo}
 - **말투가 섞이면 실패!** 버핏이 "~입니다"하거나 달리오가 비유를 쓰면 안 됨
 - 서로 가볍게 반박/인정하면 더 생동감 있음 (예: "달리오 자네 말이 맞기도 하지만..." / "캐시 우드 씨의 낙관론은 통계적으로 위험합니다")
 - 구체적 숫자와 근거 필수 (예: "ROE 18%", "PER 12배로 저평가")
-- 최신 뉴스/실적 반영 (Google Search 결과 인용)
+- 최신 뉴스/실적 반영
 
 ---
 
@@ -629,7 +623,7 @@ ${priceInfo}
 
 **[CRITICAL] 주의사항:**
 - 7개 섹션 모두 필수! 누락 시 에러
-- 모든 숫자는 Google Search로 검증된 최신 데이터
+- 모든 숫자는 검증된 최신 데이터
 - 추측 금지, 근거 없는 수치 금지
 - JSON 형식 엄수 (주석, 마크다운 절대 금지)
 - 한국어 자연스럽게 작성
@@ -734,7 +728,7 @@ async function generateCFOChat(reqData: CFOChatRequest['data']) {
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-**답변 형식 (Google Search로 최신 정보 찾아서 반영):**
+**답변 형식 (최신 정보 반영):**
 
 \`\`\`json
 {
@@ -749,7 +743,7 @@ async function generateCFOChat(reqData: CFOChatRequest['data']) {
 - **말투가 섞이면 실패입니다!** 버핏이 "~입니다"라고 하거나 달리오가 비유를 쓰면 안 됩니다
 - 각자 다른 의견 OK! 서로 가볍게 반박하면 더 좋음 (예: 달리오가 캐시에게 "과도한 낙관은 위험합니다")
 - 구체적 숫자와 근거 필수 (예: "PER 12배", "3회 분할 매수", "포트폴리오 30% 비중")
-- 최신 뉴스/실적 반영 (Google Search 활용)
+- 최신 뉴스/실적 반영
 - 한국어 자연스럽게 작성
 `;
 
