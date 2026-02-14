@@ -63,7 +63,7 @@ const NewsTimeline: React.FC<NewsTimelineProps> = ({
   recentNews,
 }) => {
   const { colors } = useTheme();
-  const config = SENTIMENT_CONFIG[sentiment];
+  const config = SENTIMENT_CONFIG[sentiment] ?? SENTIMENT_CONFIG.NEUTRAL;
   const sentimentColor = colors[config.colorKey];
 
   return (

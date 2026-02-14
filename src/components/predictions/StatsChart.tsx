@@ -270,14 +270,14 @@ function AccuracyChart({ data }: AccuracyChartProps) {
         ))}
 
         {/* X축 레이블 (첫날, 중간, 마지막) */}
-        {[0, Math.floor(data.length / 2), data.length - 1].map(i => {
+        {Array.from(new Set([0, Math.floor(data.length / 2), data.length - 1])).map(i => {
           if (i >= data.length) return null;
           const point = points[i];
           const date = new Date(data[i].date);
           const label = `${date.getMonth() + 1}/${date.getDate()}`;
           return (
             <SvgText
-              key={i}
+              key={`x-label-${i}`}
               x={point.x}
               y={height - padding + 20}
               fontSize={10}
@@ -516,14 +516,14 @@ function CreditsChart({ data }: CreditsChartProps) {
         ))}
 
         {/* X축 레이블 */}
-        {[0, Math.floor(data.length / 2), data.length - 1].map(i => {
+        {Array.from(new Set([0, Math.floor(data.length / 2), data.length - 1])).map(i => {
           if (i >= data.length) return null;
           const point = points[i];
           const date = new Date(data[i].date);
           const label = `${date.getMonth() + 1}/${date.getDate()}`;
           return (
             <SvgText
-              key={i}
+              key={`x-label-${i}`}
               x={point.x}
               y={height - padding + 20}
               fontSize={10}

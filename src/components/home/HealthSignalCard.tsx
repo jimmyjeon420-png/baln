@@ -21,6 +21,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   Modal,
+  ScrollView,
 } from 'react-native';
 import { useTheme } from '../../hooks/useTheme';
 
@@ -181,7 +182,7 @@ const HealthSignalCard = React.memo(({
           <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>자산을 하트해주세요</Text>
           {onAddAssets && (
             <TouchableOpacity style={[styles.addButton, { backgroundColor: colors.primary }]} onPress={onAddAssets}>
-              <Text style={[styles.addButtonText, { color: colors.textPrimary }]}>자산 추가하기</Text>
+              <Text style={[styles.addButtonText, { color: '#FFFFFF' }]}>자산 추가하기</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -201,10 +202,10 @@ const HealthSignalCard = React.memo(({
       </View>
 
       {/* 중앙: 거대 신호등 */}
-      <TouchableOpacity style={styles.centerArea} onPress={() => setShowDetail(true)} activeOpacity={0.7}>
+      <TouchableOpacity style={styles.centerArea} onPress={() => setShowDetail(true)} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={`건강 점수 ${healthScore}점, ${gradeLabel} ${healthGrade}등급. 탭하여 상세 보기`}>
         <Text style={styles.signalEmoji}>{signalEmoji}</Text>
         <Text style={[styles.gradeLabel, { color: signalColor }]}>
-          {gradeLabel} ({healthGrade}등급)
+          {gradeLabel || '분석 중'} {healthGrade ? `(${healthGrade}등급)` : ''}
         </Text>
         <View style={styles.scoreRow}>
           <Text style={[styles.scoreNumber, { color: signalColor }]}>
@@ -243,7 +244,7 @@ const HealthSignalCard = React.memo(({
           <View style={styles.assetsList}>
             {assetSignals.slice(0, 5).map((asset, index) => (
               <View key={index} style={[styles.assetChip, { backgroundColor: colors.surfaceLight }]}>
-                <Text style={[styles.assetName, { color: colors.textPrimary }]}>{asset.name}</Text>
+                <Text style={[styles.assetName, { color: colors.textPrimary }]} numberOfLines={1}>{asset.name}</Text>
                 <Text style={styles.assetSignal}>
                   {getMiniSignalEmoji(asset.signal)}
                 </Text>
@@ -253,14 +254,11 @@ const HealthSignalCard = React.memo(({
         )}
         {onAddAssets && (
           <TouchableOpacity style={[styles.addAssetChip, { backgroundColor: colors.primary }]} onPress={onAddAssets}>
-            <Text style={[styles.addAssetChipIcon, { color: colors.textPrimary }]}>+</Text>
-            <Text style={[styles.addAssetChipText, { color: colors.textPrimary }]}>자산 추가</Text>
+            <Text style={[styles.addAssetChipIcon, { color: '#FFFFFF' }]}>+</Text>
+            <Text style={[styles.addAssetChipText, { color: '#FFFFFF' }]}>자산 추가</Text>
           </TouchableOpacity>
         )}
       </View>
-
-      {/* 스와이프 힌트 */}
-      <Text style={[styles.swipeHint, { color: colors.textSecondary }]}>스와이프하여 다음 카드 →</Text>
 
       {/* 상세 모달 */}
       <Modal
@@ -271,42 +269,44 @@ const HealthSignalCard = React.memo(({
       >
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
-            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>건강 점수 상세</Text>
-            <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>
-              6팩터 기반 복합 점수입니다
-            </Text>
-            <View style={styles.modalScoreBox}>
-              <Text style={[styles.modalScore, { color: colors.textPrimary }]}>{healthScore}</Text>
-              <Text style={[styles.modalGrade, { color: colors.textSecondary }]}>{gradeLabel} ({healthGrade}등급)</Text>
-            </View>
-
-            {/* 6팩터 상세 */}
-            {healthFactors && healthFactors.length > 0 && (
-              <View style={[styles.factorsContainer, { borderTopColor: colors.border }]}>
-                <Text style={[styles.factorsTitle, { color: colors.textPrimary }]}>6팩터 상세</Text>
-                {healthFactors.map((factor, index) => (
-                  <View key={index} style={styles.factorRow}>
-                    <View style={styles.factorLeft}>
-                      <Text style={[styles.factorLabel, { color: colors.textPrimary }]}>{factor.label}</Text>
-                      <Text style={[styles.factorWeight, { color: colors.textSecondary }]}>가중치 {factor.weight}%</Text>
-                    </View>
-                    <Text style={[
-                      styles.factorScore,
-                      { color: factor.score >= 70 ? '#4CAF50' : factor.score >= 50 ? '#FFB74D' : '#CF6679' }
-                    ]}>
-                      {factor.score}점
-                    </Text>
-                  </View>
-                ))}
+            <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
+              <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>건강 점수 상세</Text>
+              <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>
+                6팩터 기반 복합 점수입니다
+              </Text>
+              <View style={styles.modalScoreBox}>
+                <Text style={[styles.modalScore, { color: colors.textPrimary }]}>{healthScore}</Text>
+                <Text style={[styles.modalGrade, { color: colors.textSecondary }]}>{gradeLabel || '분석 중'} {healthGrade ? `(${healthGrade}등급)` : ''}</Text>
               </View>
-            )}
 
-            <TouchableOpacity
-              style={[styles.modalCloseButton, { backgroundColor: colors.primary }]}
-              onPress={() => setShowDetail(false)}
-            >
-              <Text style={[styles.modalCloseText, { color: colors.textPrimary }]}>닫기</Text>
-            </TouchableOpacity>
+              {/* 6팩터 상세 */}
+              {healthFactors && healthFactors.length > 0 && (
+                <View style={[styles.factorsContainer, { borderTopColor: colors.border }]}>
+                  <Text style={[styles.factorsTitle, { color: colors.textPrimary }]}>6팩터 상세</Text>
+                  {healthFactors.map((factor, index) => (
+                    <View key={index} style={styles.factorRow}>
+                      <View style={styles.factorLeft}>
+                        <Text style={[styles.factorLabel, { color: colors.textPrimary }]}>{factor.label}</Text>
+                        <Text style={[styles.factorWeight, { color: colors.textSecondary }]}>가중치 {factor.weight}%</Text>
+                      </View>
+                      <Text style={[
+                        styles.factorScore,
+                        { color: factor.score >= 70 ? '#4CAF50' : factor.score >= 50 ? '#FFB74D' : '#CF6679' }
+                      ]}>
+                        {factor.score}점
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+
+              <TouchableOpacity
+                style={[styles.modalCloseButton, { backgroundColor: colors.primary }]}
+                onPress={() => setShowDetail(false)}
+              >
+                <Text style={[styles.modalCloseText, { color: '#FFFFFF' }]}>닫기</Text>
+              </TouchableOpacity>
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -378,6 +378,7 @@ const styles = StyleSheet.create({
   },
   dateText: {
     fontSize: 14,
+    flexShrink: 1,
   },
   cardLogo: {
     fontSize: 16,
@@ -446,6 +447,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    flexWrap: 'wrap',
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 12,
@@ -478,10 +480,12 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 12,
     gap: 6,
+    maxWidth: 140,
   },
   assetName: {
     fontSize: 14,
     fontWeight: '500',
+    flexShrink: 1,
   },
   assetSignal: {
     fontSize: 16,
@@ -491,10 +495,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     alignSelf: 'center',
     borderRadius: 20,
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingHorizontal: 20,
     gap: 6,
     marginTop: 12,
+    minHeight: 44,
   },
   addAssetChipIcon: {
     fontSize: 18,
@@ -504,13 +509,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
-  swipeHint: {
-    fontSize: 12,
-    fontWeight: '500',
-    textAlign: 'center',
-    marginTop: 8,
-    opacity: 0.7,
-  },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.7)',
@@ -519,6 +517,7 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     width: '85%',
+    maxHeight: '80%',
     borderRadius: 20,
     padding: 24,
   },
@@ -548,6 +547,9 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 12,
     alignItems: 'center',
+    minHeight: 44,
+    justifyContent: 'center',
+    marginTop: 16,
   },
   modalCloseText: {
     fontSize: 16,

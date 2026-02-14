@@ -22,7 +22,6 @@ import {
   Dimensions,
   NativeSyntheticEvent,
   NativeScrollEvent,
-  RefreshControl,
   Animated,
   LayoutChangeEvent,
 } from 'react-native';
@@ -139,20 +138,7 @@ export default function CardSwipeContainer({
         scrollEventThrottle={16}
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
-        decelerationRate="fast"
-        snapToInterval={SCREEN_WIDTH}
-        snapToAlignment="center"
         removeClippedSubviews={true}
-        refreshControl={
-          onRefresh ? (
-            <RefreshControl
-              refreshing={refreshing || false}
-              onRefresh={onRefresh}
-              tintColor={colors.textSecondary}
-              colors={[colors.primary]}
-            />
-          ) : undefined
-        }
       >
         {childArray.map((child, index) => (
           <View key={index} style={[styles.cardWrapper, scrollViewHeight > 0 && { height: scrollViewHeight }]}>
@@ -198,7 +184,7 @@ export default function CardSwipeContainer({
       </View>
 
       {/* 페이지 카운터 (1/3 형태) */}
-      <View style={styles.pageCounter}>
+      <View style={[styles.pageCounter, { paddingBottom: insets.bottom + 68 }]}>
         <Text style={[styles.pageCounterText, { color: colors.textTertiary }]}>
           {currentPage + 1} / {childCount}
         </Text>
@@ -230,14 +216,14 @@ const styles = StyleSheet.create({
   },
   indicator: {
     width: 6,
-    height: 3,
-    borderRadius: 1.5,
+    height: 4,
+    borderRadius: 2,
     // backgroundColor는 동적으로 적용됨 (colors.border)
   },
   indicatorActive: {
     width: 24,
-    height: 3,
-    borderRadius: 1.5,
+    height: 4,
+    borderRadius: 2,
   },
   label: {
     fontSize: 13,
@@ -258,12 +244,13 @@ const styles = StyleSheet.create({
   },
   swipeHint: {
     position: 'absolute',
-    top: 90,
+    bottom: 120,
     alignSelf: 'center',
     backgroundColor: 'rgba(76, 175, 80, 0.9)',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
+    zIndex: 10,
   },
   swipeHintText: {
     color: '#FFFFFF',
@@ -273,7 +260,7 @@ const styles = StyleSheet.create({
   },
   pageCounter: {
     alignItems: 'center',
-    paddingBottom: 80,
+    // paddingBottom is applied dynamically via insets.bottom + 68 (tab bar height + 8px buffer)
   },
   pageCounterText: {
     fontSize: 11,

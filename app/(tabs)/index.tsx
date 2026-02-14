@@ -38,7 +38,8 @@ import ContextCard from '../../src/components/home/ContextCard';
 
 // 데이터 훅
 import { useHeartAssets } from '../../src/hooks/useHeartAssets';
-import { useContextCard, useShareContextCard } from '../../src/hooks/useContextCard';
+import { useContextCard } from '../../src/hooks/useContextCard';
+import ContextShareCard from '../../src/components/home/ContextShareCard';
 import {
   useActivePolls,
   useMyVotes,
@@ -72,7 +73,6 @@ export default function HomeScreen() {
 
   const router = useRouter();
   const queryClient = useQueryClient();
-  const contextCardRef = React.useRef(null);
   const { colors } = useTheme();
 
   // ──────────────────────────────────────────────────────────────────────
@@ -239,7 +239,7 @@ export default function HomeScreen() {
   // ──────────────────────────────────────────────────────────────────────
   const { data: contextData, isLoading: contextLoading, effectiveData: contextEffective } = useContextCard();
   const { isPremium } = useSubscriptionStatus();
-  const { mutate: shareContext } = useShareContextCard();
+  const [shareModalVisible, setShareModalVisible] = React.useState(false);
 
   const contextBriefProps = React.useMemo(() => {
     if (!contextData) {
@@ -286,19 +286,7 @@ export default function HomeScreen() {
       date: new Date().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' }),
       onLearnMore: () => setContextModalVisible(true), // 모달 열기
       isPremium: isPremium || false,
-      onShare: () => {
-        shareContext(
-          { viewRef: contextCardRef },
-          {
-            onSuccess: () => {
-              showToast('맥락 카드를 공유했습니다!', 'success');
-            },
-            onError: () => {
-              showToast('공유에 실패했습니다. 다시 시도해주세요.', 'error');
-            },
-          }
-        );
-      },
+      onShare: () => setShareModalVisible(true),
       isLoading: contextLoading,
       // 4겹 레이어 데이터 전달
       historicalContext: card.historical_context,
@@ -308,10 +296,12 @@ export default function HomeScreen() {
         percentChange: userImpact.percent_change ?? 0,
         healthScoreChange: userImpact.health_score_change ?? 0,
         message: userImpact.impact_message || '',
-        isCalculating: userImpact.percent_change == null || userImpact.impact_message == null,
+        // Edge Function이 row를 UPSERT했으면 계산 완료
+        // '데이터 수집 중'은 sanitizeImpact 기본값 → 아직 실제 메시지 없음
+        isCalculating: !userImpact.impact_message || userImpact.impact_message === '데이터 수집 중',
       } : null,
     };
-  }, [contextData, contextEffective, contextLoading, isPremium, router, shareContext, showToast]);
+  }, [contextData, contextEffective, contextLoading, isPremium, router, showToast]);
 
   // ──────────────────────────────────────────────────────────────────────
   // 3. 예측 투표 카드 데이터 (3개 질문 지원)
@@ -501,7 +491,7 @@ export default function HomeScreen() {
 
         {/* 카드 2: 맥락 브리핑 */}
         <ErrorBoundary>
-          <ContextBriefCard ref={contextCardRef} {...contextBriefProps} />
+          <ContextBriefCard {...contextBriefProps} />
         </ErrorBoundary>
 
         {/* 카드 3: 예측 투표 (3개 질문 수평 스크롤) */}
@@ -544,6 +534,15 @@ export default function HomeScreen() {
         visible={milestoneToShow !== null}
         onClose={() => setMilestoneToShow(null)}
       />
+
+      {/* 맥락 카드 공유 모달 (인스타 스토리 포맷) */}
+      {fullContextCardData && (
+        <ContextShareCard
+          data={fullContextCardData}
+          visible={shareModalVisible}
+          onClose={() => setShareModalVisible(false)}
+        />
+      )}
 
       {/* Toast 알림 */}
       <Toast

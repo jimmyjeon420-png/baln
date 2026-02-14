@@ -34,7 +34,7 @@ import { useHabitLoopTracking } from '../../hooks/useHabitLoopTracking';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // 카드 내부 질문 슬라이드 너비 (카드 padding 고려)
-const POLL_SLIDE_WIDTH = SCREEN_WIDTH - 32 - 48; // 카드 marginHorizontal 16*2 + padding 24*2
+const POLL_SLIDE_WIDTH = SCREEN_WIDTH - 32 - 40; // 카드 marginHorizontal 16*2 + padding 20*2
 
 // ============================================================================
 // 카테고리 정보 (색상 + 라벨)
@@ -266,7 +266,7 @@ export default function PredictionVoteCard({
 
         {/* 질문 텍스트 */}
         <View style={styles.pollQuestionArea}>
-          <Text style={styles.questionText} numberOfLines={4}>
+          <Text style={styles.questionText} numberOfLines={3} adjustsFontSizeToFit minimumFontScale={0.8}>
             {item.question}
           </Text>
         </View>
@@ -279,7 +279,7 @@ export default function PredictionVoteCard({
                 <Text style={styles.reasonIcon}>📰</Text>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.reasonLabel}>오를 근거</Text>
-                  <Text style={styles.reasonText}>{item.upReason}</Text>
+                  <Text style={styles.reasonText} numberOfLines={2}>{item.upReason}</Text>
                 </View>
               </View>
             )}
@@ -288,7 +288,7 @@ export default function PredictionVoteCard({
                 <Text style={styles.reasonIcon}>📰</Text>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.reasonLabel}>내릴 근거</Text>
-                  <Text style={styles.reasonText}>{item.downReason}</Text>
+                  <Text style={styles.reasonText} numberOfLines={2}>{item.downReason}</Text>
                 </View>
               </View>
             )}
@@ -323,7 +323,7 @@ export default function PredictionVoteCard({
                 style={[
                   styles.voteButton,
                   styles.voteButtonNo,
-                  pollVote === 'NO' && styles.voteButtonSelected,
+                  pollVote === 'NO' && styles.voteButtonNoSelected,
                   { flex: Math.max(item.noPercentage, 10) / 100 },
                 ]}
               >
@@ -341,12 +341,16 @@ export default function PredictionVoteCard({
               <TouchableOpacity
                 style={[styles.voteButton, styles.voteButtonYes]}
                 onPress={() => handleVote(item.id, 'YES')}
+                accessibilityRole="button"
+                accessibilityLabel={`${item.question} 예측에 YES 투표`}
               >
                 <Text style={styles.voteButtonText}>👍 YES</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.voteButton, styles.voteButtonNo]}
                 onPress={() => handleVote(item.id, 'NO')}
+                accessibilityRole="button"
+                accessibilityLabel={`${item.question} 예측에 NO 투표`}
               >
                 <Text style={styles.voteButtonText}>👎 NO</Text>
               </TouchableOpacity>
@@ -407,10 +411,11 @@ export default function PredictionVoteCard({
       <ScrollView
         ref={scrollRef}
         horizontal
-        pagingEnabled
         showsHorizontalScrollIndicator={false}
         snapToInterval={POLL_SLIDE_WIDTH}
         decelerationRate="fast"
+        nestedScrollEnabled
+        disableIntervalMomentum
         onMomentumScrollEnd={(e) => {
           const page = Math.round(e.nativeEvent.contentOffset.x / POLL_SLIDE_WIDTH);
           setCurrentIndex(page);
@@ -516,7 +521,7 @@ export default function PredictionVoteCard({
 
       {/* 하단: [전체 기록 보기] 프리미엄 게이트 */}
       {onViewHistory && (
-        <TouchableOpacity style={styles.historyButton} onPress={() => { track('prediction_history_viewed'); onViewHistory(); }}>
+        <TouchableOpacity style={styles.historyButton} onPress={() => { track('prediction_history_viewed'); onViewHistory(); }} accessibilityRole="button" accessibilityLabel="상세 통계 보기">
           <Text style={styles.historyText}>📊 상세 통계 보기</Text>
           <Ionicons name="arrow-forward" size={18} color={colors.textSecondary} />
         </TouchableOpacity>
@@ -616,7 +621,7 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       flex: 1,
     },
     pollFlatListContent: {
-      // 질문 슬라이드들이 정렬되도록
+      alignItems: 'stretch',
     },
     // 개별 질문 슬라이드
     pollSlide: {
@@ -690,11 +695,13 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
     },
     voteRow: {
       flexDirection: 'row',
-      gap: 12,
+      gap: 10,
+      paddingHorizontal: 2,
     },
     resultsRow: {
       flexDirection: 'row',
       gap: 8,
+      paddingHorizontal: 2,
     },
     voteButton: {
       flex: 1,
@@ -716,13 +723,17 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       backgroundColor: colors.primary,
       borderColor: colors.primary,
     },
+    voteButtonNoSelected: {
+      backgroundColor: colors.error,
+      borderColor: colors.error,
+    },
     voteButtonText: {
       fontSize: 16,
       fontWeight: '600',
       color: colors.textPrimary,
     },
     voteButtonTextSelected: {
-      color: colors.textPrimary,
+      color: '#FFFFFF',
     },
     votePercentage: {
       fontSize: 14,
@@ -730,7 +741,7 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       marginTop: 4,
     },
     votePercentageSelected: {
-      color: colors.textPrimary,
+      color: 'rgba(255, 255, 255, 0.85)',
     },
     // 모두 투표 완료 배너
     allVotedBanner: {
@@ -741,6 +752,7 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       paddingVertical: 10,
       paddingHorizontal: 16,
       alignItems: 'center',
+      marginTop: 12,
     },
     allVotedText: {
       fontSize: 14,
@@ -749,7 +761,7 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
     },
     // 복기 섹션
     reviewArea: {
-      gap: 12,
+      gap: 8,
       paddingVertical: 12,
       borderTopWidth: 1,
       borderTopColor: colors.border,
@@ -764,6 +776,8 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 8,
+      minHeight: 44,
+      paddingVertical: 6,
     },
     reviewEmoji: {
       fontSize: 16,
@@ -815,10 +829,11 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      paddingVertical: 12,
+      paddingVertical: 14,
       paddingHorizontal: 16,
       backgroundColor: colors.surfaceLight,
       borderRadius: 12,
+      minHeight: 48,
     },
     historyText: {
       fontSize: 15,

@@ -326,7 +326,7 @@ function LayerSection({
 function getLastNodeColor(percentChange: number | undefined | null): string {
   if (percentChange == null) return '#888888';
   if (percentChange >= 0) return '#4CAF50';
-  if (percentChange > -3) return '#FFC107';
+  if (percentChange > -3) return '#E6A700'; // 라이트 모드에서도 대비 확보 (was #FFC107)
   return '#FF5252';
 }
 
@@ -501,6 +501,77 @@ const PortfolioImpactVisual = React.memo(function PortfolioImpactVisual({
 });
 
 // ============================================================================
+// 헤드라인 섹션 서브 컴포넌트 (메커니즘 펼치기/접기)
+// ============================================================================
+
+function HeadlineSection({
+  fact,
+  mechanism,
+  styles,
+}: {
+  fact: string | null;
+  mechanism: string | null;
+  styles: any;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const [needsExpand, setNeedsExpand] = useState(false);
+  const measuredRef = useRef(false);
+
+  // onTextLayout으로 잘린 텍스트의 실제 줄 수를 측정하면 numberOfLines에 의해
+  // 이미 클램프된 줄 수만 보고하므로 정확하지 않음.
+  // 대신: 숨겨진 Text로 실제 줄 수를 측정한 뒤 2줄 초과 시 버튼을 표시함.
+  const handleMeasureLayout = useCallback((e: any) => {
+    if (measuredRef.current) return;
+    if (e.nativeEvent.lines && e.nativeEvent.lines.length > 2) {
+      measuredRef.current = true;
+      setNeedsExpand(true);
+    }
+  }, []);
+
+  const toggle = useCallback(() => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setExpanded((prev) => !prev);
+  }, []);
+
+  return (
+    <View style={styles.headlineSection} accessibilityLabel="오늘의 시장 헤드라인" accessibilityRole="header">
+      <Text style={styles.headlineText}>{fact || '시장 데이터 준비 중'}</Text>
+      {mechanism ? (
+        <View>
+          {/* 숨겨진 측정 텍스트: numberOfLines 없이 렌더링하여 실제 줄 수를 측정 */}
+          {!needsExpand && (
+            <Text
+              style={[styles.mechanismSummary, { position: 'absolute', opacity: 0 }]}
+              onTextLayout={handleMeasureLayout}
+            >
+              {mechanism}
+            </Text>
+          )}
+          <Text
+            style={styles.mechanismSummary}
+            numberOfLines={expanded ? undefined : 2}
+          >
+            {mechanism}
+          </Text>
+          {needsExpand && (
+            <TouchableOpacity
+              onPress={toggle}
+              activeOpacity={0.7}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              style={styles.expandToggleButton}
+            >
+              <Text style={styles.expandToggle}>
+                {expanded ? '접기' : '더보기'}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+// ============================================================================
 // 메인 컴포넌트
 // ============================================================================
 
@@ -661,16 +732,11 @@ export default React.forwardRef<View, ContextBriefCardProps>(
         </View>
 
         {/* ── 헤드라인 ── */}
-        <View style={styles.headlineSection} accessibilityLabel="오늘의 시장 헤드라인" accessibilityRole="header">
-          <Text style={styles.headlineText}>
-            {fact || '시장 데이터 준비 중'}
-          </Text>
-          {mechanism ? (
-            <Text style={styles.mechanismSummary} numberOfLines={2}>
-              {mechanism}
-            </Text>
-          ) : null}
-        </View>
+        <HeadlineSection
+          fact={fact}
+          mechanism={mechanism}
+          styles={styles}
+        />
 
         {/* ── 4겹 레이어 (스크롤 가능) ── */}
         <ScrollView
@@ -758,14 +824,12 @@ export default React.forwardRef<View, ContextBriefCardProps>(
               />
             ) : (
               <Text style={styles.layerBodyText}>
-                {impact || '포트폴리오 영향도를 계산 중입니다...'}
+                {impact || '내일 아침 업데이트 시 영향도가 반영됩니다'}
               </Text>
             )}
           </LayerSection>
         </ScrollView>
 
-        {/* 스와이프 힌트 */}
-        <Text style={styles.swipeHint}>스와이프하여 다음 카드 →</Text>
       </View>
     );
   }
@@ -856,13 +920,21 @@ const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
     fontWeight: '700',
     color: COLORS.textPrimary,
     lineHeight: 24,
-    marginBottom: 2,
+    marginBottom: 4,
   },
   mechanismSummary: {
     fontSize: 13,
     fontWeight: '400',
     color: COLORS.textSecondary,
     lineHeight: 18,
+  },
+  expandToggleButton: {
+    paddingVertical: 6,
+  },
+  expandToggle: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: COLORS.primary,
   },
 
   // ── 콘텐츠 영역 (로딩/빈 상태) ──
@@ -880,8 +952,8 @@ const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
     flex: 1,
   },
   layersContent: {
-    gap: 4,
-    paddingBottom: 4,
+    gap: 6,
+    paddingBottom: 8,
   },
 
   // 레이어 컨테이너
@@ -896,8 +968,9 @@ const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingHorizontal: 12,
+    minHeight: 44,
   },
   layerHeaderLeft: {
     flexDirection: 'row',
@@ -930,10 +1003,10 @@ const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
     lineHeight: 17,
   },
   layerSubtitle: {
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: '400',
     color: COLORS.textTertiary,
-    lineHeight: 12,
+    lineHeight: 14,
     letterSpacing: 0.3,
   },
 
@@ -1065,7 +1138,7 @@ const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
     lineHeight: 26,
   },
   impactBigLabel: {
-    fontSize: 9,
+    fontSize: 11,
     color: COLORS.textTertiary,
     marginTop: 1,
     fontWeight: '500',
@@ -1088,7 +1161,7 @@ const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
     fontSize: 12,
     color: COLORS.textSecondary,
     lineHeight: 18,
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    backgroundColor: COLORS.surfaceLight,
     paddingVertical: 6,
     paddingHorizontal: 8,
     borderRadius: 8,
@@ -1111,12 +1184,12 @@ const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
     color: COLORS.textTertiary,
   },
   swipeHint: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '500',
-    color: COLORS.textSecondary,
+    color: COLORS.textTertiary,
     textAlign: 'center',
-    marginTop: 6,
-    opacity: 0.7,
+    marginTop: 4,
+    opacity: 0.5,
   },
 
   // ── 스켈레톤 ──

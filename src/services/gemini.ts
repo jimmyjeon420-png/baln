@@ -992,7 +992,7 @@ ${JSON.stringify(portfolioWithAllocation.map(p => ({
 `;
 
     // [핵심] Google Search 그라운딩이 활성화된 모델 사용 + 타임아웃/재시도
-    const responseText = await callGeminiSafe(modelWithSearch, prompt, { timeoutMs: 30000, maxRetries: 1 });
+    const responseText = await callGeminiSafe(modelWithSearch, prompt, { timeoutMs: 60000, maxRetries: 1 });
 
     // JSON 정제 및 파싱 (통합 파서 사용)
     const analysisResult = parseGeminiJson(responseText);
@@ -1027,17 +1027,11 @@ ${JSON.stringify(portfolioWithAllocation.map(p => ({
     };
 
   } catch (error) {
-    console.error("Portfolio Risk Analysis Error:", error);
-
-    // 🔍 상세 에러 로그 (디버깅용)
-    if (error instanceof Error) {
-      console.error('에러 메시지:', error.message);
-      console.error('에러 스택:', error.stack);
-    }
+    console.warn("[Portfolio Risk] 분석 실패 (폴백값 사용):", error instanceof Error ? error.message : error);
 
     // API 키 확인
     if (!API_KEY) {
-      console.error('❌ API 키가 없습니다. .env 파일을 확인하고 앱을 재시작하세요.');
+      console.warn('[Portfolio Risk] API 키가 없습니다. .env 파일을 확인하세요.');
     }
 
     // 에러 시 기본값 반환

@@ -1,19 +1,20 @@
 /**
  * ContextShareCard.tsx - 맥락 카드 인스타그램 스토리 공유 전용 컴포넌트
  *
- * 역할: 맥락 카드 내용을 1080x1920 인스타 스토리 포맷으로 변환
+ * 역할: 맥락 카드 4겹 레이어 전체를 1080x1920 인스타 스토리 포맷으로 변환
  * 비유: "오늘의 시장 뉴스레터"를 예쁜 이미지로 포장
  *
  * 레이아웃:
- * - 상단: baln.logic 로고 + 날짜
- * - 센티먼트 배지 (calm/caution/alert)
- * - 헤드라인 (2줄)
- * - 거시경제 체인 (화살표 연결)
- * - 역사적 맥락 요약
- * - 하단: "baln.app에서 전체 분석 보기" CTA
+ * - 상단: baln.logic 로고 + 날짜 + 센티먼트 배지
+ * - 헤드라인
+ * - Layer 1: 역사적 맥락
+ * - Layer 2: 거시경제 체인 (화살표 연결)
+ * - Layer 3: 기관 행동
+ * - Layer 4: 포트폴리오 영향
+ * - 하단: "baln.app에서 전체 분석 보기" CTA + 워터마크
  *
  * 기술:
- * - react-native-view-shot: 네이티브 캡처
+ * - react-native-view-shot: 네이티브 캡처 (1080x1920)
  * - expo-sharing: 공유 기능
  * - 공유 성공 시 3크레딧 보상 (useShareReward)
  */
@@ -28,6 +29,7 @@ import {
   Platform,
   Modal,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import ViewShot from 'react-native-view-shot';
@@ -43,12 +45,20 @@ import {
 } from '../../types/contextCard';
 import { REWARD_AMOUNTS } from '../../services/rewardService';
 
+// ============================================================================
+// 레이어 색상 (ContextBriefCard와 동일)
+// ============================================================================
+
+const LAYER_COLORS = {
+  historical: '#4CAF50',
+  macro: '#29B6F6',
+  institutional: '#FF9800',
+  portfolio: '#7C4DFF',
+} as const;
+
 interface ContextShareCardProps {
-  /** 맥락 카드 데이터 */
   data: ContextCardData;
-  /** 모달 표시 여부 */
   visible: boolean;
-  /** 모달 닫기 핸들러 */
   onClose: () => void;
 }
 
@@ -58,7 +68,6 @@ export default function ContextShareCard({
   onClose,
 }: ContextShareCardProps) {
   const viewShotRef = useRef<ViewShot>(null);
-  const webCaptureRef = useRef<View>(null);
   const [sharing, setSharing] = useState(false);
   const [rewardMessage, setRewardMessage] = useState<string | null>(null);
   const { heavyTap, success, error: errorHaptic } = useHaptics();
@@ -69,13 +78,11 @@ export default function ContextShareCard({
   const sentimentIcon = SENTIMENT_ICONS[data.sentiment];
   const sentimentLabel = SENTIMENT_LABELS[data.sentiment];
 
-  // 날짜 포맷 (2026-02-08 → 2026년 2월 8일)
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
     return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일`;
   };
 
-  /** 공유 성공 후 크레딧 보상 지급 */
   const handleRewardAfterShare = useCallback(async () => {
     try {
       const result = await claimReward();
@@ -88,106 +95,63 @@ export default function ContextShareCard({
     }
   }, [claimReward]);
 
-  /** 웹 전용: html-to-image로 캡처 */
-  const handleWebShare = useCallback(async () => {
-    const { toPng } = await import('html-to-image');
-
-    const element = webCaptureRef.current as unknown as HTMLElement;
-    if (!element) throw new Error('캡처 영역을 찾을 수 없습니다.');
-
-    const dataUrl = await toPng(element, {
-      quality: 1.0,
-      pixelRatio: 2,
-    });
-
-    const res = await fetch(dataUrl);
-    const blob = await res.blob();
-    const fileName = `baln_context_${data.date}.png`;
-
-    if (typeof navigator !== 'undefined' && navigator.share && navigator.canShare) {
-      const file = new File([blob], fileName, { type: 'image/png' });
-      if (navigator.canShare({ files: [file] })) {
-        await navigator.share({ title: 'baln.logic 맥락 카드', files: [file] });
-        return;
-      }
-    }
-
-    // Web Share API 미지원 시 다운로드
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }, [data.date]);
-
-  /** 네이티브 전용: ViewShot 캡처 → expo-sharing */
-  const handleNativeShare = useCallback(async () => {
-    const isAvailable = await Sharing.isAvailableAsync();
-    if (!isAvailable) {
-      Alert.alert('공유 불가', '이 기기에서는 공유 기능을 사용할 수 없습니다.');
-      return;
-    }
-
-    if (!viewShotRef.current?.capture) {
-      throw new Error('캡처 컴포넌트를 찾을 수 없습니다.');
-    }
-
-    const uri = await viewShotRef.current.capture();
-    await Sharing.shareAsync(uri, {
-      mimeType: 'image/png',
-      dialogTitle: 'baln.logic 맥락 카드 공유',
-      UTI: 'public.png',
-    });
-  }, []);
-
-  /** 카드 캡처 → 공유 → 보상 지급 */
   const handleShare = useCallback(async () => {
     heavyTap();
     setSharing(true);
 
     try {
       if (Platform.OS === 'web') {
-        await handleWebShare();
-      } else {
-        await handleNativeShare();
+        Alert.alert('알림', '웹에서는 이미지 공유가 지원되지 않습니다.');
+        return;
       }
+
+      const isAvailable = await Sharing.isAvailableAsync();
+      if (!isAvailable) {
+        Alert.alert('공유 불가', '이 기기에서는 공유 기능을 사용할 수 없습니다.');
+        return;
+      }
+
+      if (!viewShotRef.current?.capture) {
+        throw new Error('캡처 컴포넌트를 찾을 수 없습니다.');
+      }
+
+      const uri = await viewShotRef.current.capture();
+      await Sharing.shareAsync(uri, {
+        mimeType: 'image/png',
+        dialogTitle: 'baln.logic 맥락 카드 공유',
+        UTI: 'public.png',
+      });
+
       success();
-
-      // 이벤트 추적: 맥락 카드 공유 완료
       track('share_card', { source: 'context_share_modal', sentiment: data.sentiment, date: data.date });
-
-      // 공유 성공 → 크레딧 보상 지급
       await handleRewardAfterShare();
     } catch (err) {
-      console.error('Share error:', err);
+      console.warn('[Share] 공유 실패:', err);
       errorHaptic();
       Alert.alert('공유 실패', '카드 공유 중 오류가 발생했습니다.');
     } finally {
       setSharing(false);
     }
-  }, [heavyTap, success, errorHaptic, handleWebShare, handleNativeShare, handleRewardAfterShare, track, data.sentiment, data.date]);
+  }, [heavyTap, success, errorHaptic, handleRewardAfterShare, track, data.sentiment, data.date]);
 
-  // 거시경제 체인 최대 4개만 표시
-  const displayChain = data.macroChain.slice(0, 4);
+  // 거시경제 체인 최대 5개
+  const displayChain = data.macroChain.slice(0, 5);
 
-  // 역사적 맥락 2줄로 제한
-  const historicalSummary =
-    data.historicalContext.length > 100
-      ? data.historicalContext.slice(0, 100) + '...'
-      : data.historicalContext;
+  // 포트폴리오 영향 포맷
+  const pct = data.portfolioImpact.percentChange;
+  const isPositive = pct >= 0;
+  const pctColor = isPositive ? '#4CAF50' : '#FF5252';
+  const pctText = `${isPositive ? '+' : ''}${pct.toFixed(1)}%`;
 
-  // 카드 콘텐츠 (캡처 대상 영역)
+  // ── 캡처 대상: 인스타 스토리 카드 (9:16) ──
   const cardContent = (
     <View style={styles.captureArea}>
-      {/* 배경 그라데이션 효과 */}
-      <View style={[styles.backgroundGlow, { backgroundColor: sentimentColor, opacity: 0.05 }]} />
+      {/* 배경 글로우 */}
+      <View style={[styles.backgroundGlow, { backgroundColor: sentimentColor }]} />
 
-      {/* 상단: baln.logic 로고 + 날짜 */}
+      {/* 상단: 로고 + 날짜 */}
       <View style={styles.topRow}>
-        <View style={styles.logoArea}>
+        <View>
           <View style={styles.logoRow}>
             <Text style={styles.logoBaln}>bal<Text style={{ color: '#4CAF50' }}>n</Text></Text>
             <Text style={styles.logoDot}>.logic</Text>
@@ -199,69 +163,101 @@ export default function ContextShareCard({
 
       {/* 센티먼트 배지 */}
       <View style={[styles.sentimentBadge, { borderColor: sentimentColor }]}>
-        <Ionicons name={sentimentIcon} size={18} color={sentimentColor} />
-        <Text style={[styles.sentimentLabel, { color: sentimentColor }]}>
-          {sentimentLabel}
-        </Text>
+        <Ionicons name={sentimentIcon} size={16} color={sentimentColor} />
+        <Text style={[styles.sentimentLabel, { color: sentimentColor }]}>{sentimentLabel}</Text>
       </View>
 
       {/* 헤드라인 */}
-      <Text style={styles.headline} numberOfLines={2}>
-        {data.headline}
-      </Text>
+      <Text style={styles.headline} numberOfLines={3}>{data.headline}</Text>
 
-      {/* 구분선 */}
       <View style={styles.divider} />
 
-      {/* 거시경제 체인 */}
-      <View style={styles.sectionContainer}>
-        <View style={styles.sectionHeader}>
-          <Ionicons name="git-network-outline" size={18} color="#2196F3" />
-          <Text style={styles.sectionTitle}>거시경제 체인</Text>
+      {/* Layer 1: 역사적 맥락 */}
+      <View style={styles.layerSection}>
+        <View style={styles.layerHeader}>
+          <View style={[styles.layerBadge, { backgroundColor: LAYER_COLORS.historical }]}>
+            <Text style={styles.layerNum}>1</Text>
+          </View>
+          <Ionicons name="time-outline" size={14} color={LAYER_COLORS.historical} />
+          <Text style={styles.layerTitle}>역사적 맥락</Text>
+        </View>
+        <Text style={styles.layerBody} numberOfLines={3}>{data.historicalContext}</Text>
+      </View>
+
+      {/* Layer 2: 거시경제 체인 */}
+      <View style={styles.layerSection}>
+        <View style={styles.layerHeader}>
+          <View style={[styles.layerBadge, { backgroundColor: LAYER_COLORS.macro }]}>
+            <Text style={styles.layerNum}>2</Text>
+          </View>
+          <Ionicons name="git-network-outline" size={14} color={LAYER_COLORS.macro} />
+          <Text style={styles.layerTitle}>거시경제 체인</Text>
         </View>
         <View style={styles.chainContainer}>
           {displayChain.map((step, index) => (
-            <View key={index}>
-              <View style={styles.chainStep}>
-                <View style={styles.chainDot} />
-                <Text style={styles.chainText} numberOfLines={2}>
-                  {step}
-                </Text>
-              </View>
+            <View key={index} style={styles.chainRow}>
+              <View style={[
+                styles.chainDot,
+                { backgroundColor: index === 0 ? LAYER_COLORS.macro : '#888' },
+              ]} />
+              <Text style={styles.chainText} numberOfLines={1}>{step}</Text>
               {index < displayChain.length - 1 && (
-                <View style={styles.chainArrow}>
-                  <Ionicons name="arrow-down" size={16} color="#616161" />
-                </View>
+                <Ionicons name="chevron-forward" size={10} color="#616161" style={styles.chainArrow} />
               )}
             </View>
           ))}
         </View>
       </View>
 
-      {/* 역사적 맥락 요약 */}
-      <View style={styles.sectionContainer}>
-        <View style={styles.sectionHeader}>
-          <Ionicons name="time-outline" size={18} color="#4CAF50" />
-          <Text style={styles.sectionTitle}>역사적 맥락</Text>
+      {/* Layer 3: 기관 행동 */}
+      <View style={styles.layerSection}>
+        <View style={styles.layerHeader}>
+          <View style={[styles.layerBadge, { backgroundColor: LAYER_COLORS.institutional }]}>
+            <Text style={styles.layerNum}>3</Text>
+          </View>
+          <Ionicons name="business-outline" size={14} color={LAYER_COLORS.institutional} />
+          <Text style={styles.layerTitle}>기관 행동</Text>
         </View>
-        <Text style={styles.historicalText} numberOfLines={3}>
-          {historicalSummary}
-        </Text>
+        <Text style={styles.layerBody} numberOfLines={3}>{data.institutionalBehavior}</Text>
+      </View>
+
+      {/* Layer 4: 포트폴리오 영향 */}
+      <View style={styles.layerSection}>
+        <View style={styles.layerHeader}>
+          <View style={[styles.layerBadge, { backgroundColor: LAYER_COLORS.portfolio }]}>
+            <Text style={styles.layerNum}>4</Text>
+          </View>
+          <Ionicons name="wallet-outline" size={14} color={LAYER_COLORS.portfolio} />
+          <Text style={styles.layerTitle}>포트폴리오 영향</Text>
+        </View>
+        <View style={styles.impactRow}>
+          <View style={[styles.impactBox, { borderColor: pctColor }]}>
+            <Text style={[styles.impactNumber, { color: pctColor }]}>{pctText}</Text>
+            <Text style={styles.impactLabel}>자산 변동</Text>
+          </View>
+          <Text style={styles.impactMessage} numberOfLines={2}>
+            {data.portfolioImpact.message || '영향도 분석 완료'}
+          </Text>
+        </View>
       </View>
 
       {/* 하단 CTA */}
       <View style={styles.ctaContainer}>
         <View style={styles.ctaBox}>
-          <Ionicons name="open-outline" size={16} color="#4CAF50" />
-          <Text style={styles.ctaText}>bal<Text style={{ color: '#4CAF50' }}>n</Text>.app에서 전체 분석 보기</Text>
+          <Ionicons name="open-outline" size={14} color="#4CAF50" />
+          <Text style={styles.ctaText}>
+            bal<Text style={{ color: '#4CAF50' }}>n</Text>.app에서 전체 분석 보기
+          </Text>
         </View>
       </View>
 
-      {/* 워터마크: baln.logic 브랜딩 */}
+      {/* 워터마크 */}
       <View style={styles.watermarkRow}>
         <View style={styles.watermarkLine} />
-        <Text style={styles.watermarkBaln}>bal<Text style={{ color: '#4CAF50' }}>n</Text></Text>
-        <Text style={styles.watermarkDot}>.logic</Text>
+        <Text style={styles.watermarkText}>
+          bal<Text style={{ color: '#4CAF50' }}>n</Text>
+          <Text style={{ color: '#3A7D3E' }}>.logic</Text>
+        </Text>
         <View style={styles.watermarkLine} />
       </View>
     </View>
@@ -278,31 +274,30 @@ export default function ContextShareCard({
         {/* 모달 헤더 */}
         <View style={styles.modalHeader}>
           <Text style={styles.modalTitle}>맥락 카드 공유</Text>
-          <TouchableOpacity
-            onPress={() => {
-              onClose();
-            }}
-            style={styles.closeButton}
-          >
+          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
             <Ionicons name="close" size={24} color="#888888" />
           </TouchableOpacity>
         </View>
 
-        {/* 캡처 영역 */}
-        <View style={styles.previewContainer}>
-          {Platform.OS === 'web' ? (
-            <View ref={webCaptureRef}>{cardContent}</View>
-          ) : (
-            <ViewShot
-              ref={viewShotRef}
-              options={{ format: 'png', quality: 1.0 }}
-            >
-              {cardContent}
-            </ViewShot>
-          )}
-        </View>
+        {/* 프리뷰 + 캡처 영역 */}
+        <ScrollView
+          contentContainerStyle={styles.previewScroll}
+          showsVerticalScrollIndicator={false}
+        >
+          <ViewShot
+            ref={viewShotRef}
+            options={{
+              format: 'png',
+              quality: 1.0,
+              width: 1080,
+              height: 1920,
+            }}
+          >
+            {cardContent}
+          </ViewShot>
+        </ScrollView>
 
-        {/* 보상 토스트 메시지 */}
+        {/* 보상 토스트 */}
         {rewardMessage && (
           <View style={styles.rewardToast}>
             <Ionicons name="gift" size={14} color="#4CAF50" />
@@ -310,7 +305,7 @@ export default function ContextShareCard({
           </View>
         )}
 
-        {/* 공유 버튼 + 보상 힌트 */}
+        {/* 공유 버튼 */}
         <View style={styles.buttonContainer}>
           <TouchableOpacity
             style={styles.shareButton}
@@ -322,15 +317,8 @@ export default function ContextShareCard({
               <ActivityIndicator color="#FFFFFF" />
             ) : (
               <>
-                <Ionicons
-                  name={Platform.OS === 'web' ? 'download-outline' : 'share-social'}
-                  size={18}
-                  color="#FFFFFF"
-                />
-                <Text style={styles.shareButtonText}>
-                  {Platform.OS === 'web' ? '이미지 저장' : '인스타그램 공유'}
-                </Text>
-                {/* 보상 힌트 (아직 오늘 보상 안 받았으면 표시) */}
+                <Ionicons name="share-social" size={18} color="#FFFFFF" />
+                <Text style={styles.shareButtonText}>인스타그램 스토리 공유</Text>
                 {!rewarded && (
                   <View style={styles.rewardHint}>
                     <Text style={styles.rewardHintText}>+{REWARD_AMOUNTS.shareCard}</Text>
@@ -345,7 +333,12 @@ export default function ContextShareCard({
   );
 }
 
+// ============================================================================
+// 스타일 (인스타 스토리 9:16 비율 최적화)
+// ============================================================================
+
 const styles = StyleSheet.create({
+  // ─── 모달 ───
   modalContainer: {
     flex: 1,
     backgroundColor: '#0A0A0A',
@@ -367,30 +360,32 @@ const styles = StyleSheet.create({
   closeButton: {
     padding: 8,
   },
-  previewContainer: {
-    flex: 1,
+  previewScroll: {
+    flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
   },
 
-  // ─── 캡처 영역 (1080x1920 비율) ───
+  // ─── 캡처 영역 (9:16 인스타 스토리) ───
   captureArea: {
     width: 320,
-    aspectRatio: 9 / 16, // 인스타 스토리 비율
+    aspectRatio: 9 / 16,
     backgroundColor: '#1A1F2C',
     borderRadius: 20,
-    padding: 24,
+    paddingHorizontal: 20,
+    paddingVertical: 22,
     overflow: 'hidden',
-    position: 'relative',
+    justifyContent: 'space-between',
   },
   backgroundGlow: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    height: 200,
-    borderRadius: 20,
+    height: 160,
+    opacity: 0.06,
   },
 
   // ─── 상단: 로고 + 날짜 ───
@@ -398,36 +393,35 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 20,
-    zIndex: 10,
+    marginBottom: 12,
   },
-  logoArea: {},
   logoRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
   },
   logoBaln: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '900',
     color: '#FFFFFF',
     letterSpacing: 1,
   },
   logoDot: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '900',
     color: '#4CAF50',
     letterSpacing: 1,
   },
   logoSubtext: {
-    fontSize: 8,
+    fontSize: 7,
     color: '#666666',
     letterSpacing: 2,
-    marginTop: 2,
+    marginTop: 1,
     textTransform: 'uppercase',
   },
   dateText: {
-    fontSize: 10,
+    fontSize: 9,
     color: '#888888',
+    marginTop: 4,
   },
 
   // ─── 센티먼트 배지 ───
@@ -435,137 +429,164 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 14,
     borderWidth: 1.5,
-    marginBottom: 16,
-    zIndex: 10,
+    marginBottom: 10,
   },
   sentimentLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
-    marginLeft: 6,
+    marginLeft: 5,
   },
 
   // ─── 헤드라인 ───
   headline: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
     color: '#FFFFFF',
-    lineHeight: 24,
-    marginBottom: 16,
-    zIndex: 10,
+    lineHeight: 22,
+    marginBottom: 10,
   },
 
-  // ─── 구분선 ───
   divider: {
     height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    marginBottom: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    marginBottom: 10,
   },
 
-  // ─── 섹션 공통 ───
-  sectionContainer: {
-    marginBottom: 16,
-    zIndex: 10,
+  // ─── 레이어 공통 ───
+  layerSection: {
+    marginBottom: 10,
   },
-  sectionHeader: {
+  layerHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 5,
+    gap: 5,
   },
-  sectionTitle: {
-    fontSize: 13,
+  layerBadge: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  layerNum: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  layerTitle: {
+    fontSize: 11,
     fontWeight: '600',
     color: '#E0E0E0',
-    marginLeft: 6,
+  },
+  layerBody: {
+    fontSize: 11,
+    color: '#BDBDBD',
+    lineHeight: 16,
+    paddingLeft: 21,
   },
 
-  // ─── 거시경제 체인 ───
+  // ─── 거시경제 체인 (가로 배치) ───
   chainContainer: {
-    paddingLeft: 4,
+    paddingLeft: 21,
+    gap: 3,
   },
-  chainStep: {
+  chainRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 6,
+    alignItems: 'center',
   },
   chainDot: {
-    width: 6,
-    height: 6,
+    width: 5,
+    height: 5,
     borderRadius: 3,
-    backgroundColor: '#2196F3',
-    marginRight: 8,
-    marginTop: 6,
+    marginRight: 6,
   },
   chainText: {
-    fontSize: 12,
+    fontSize: 10,
     color: '#BDBDBD',
+    lineHeight: 15,
     flex: 1,
-    lineHeight: 18,
   },
   chainArrow: {
-    marginLeft: 3,
-    marginBottom: 4,
+    marginLeft: 2,
   },
 
-  // ─── 역사적 맥락 ───
-  historicalText: {
-    fontSize: 12,
+  // ─── 포트폴리오 영향 ───
+  impactRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingLeft: 21,
+    gap: 10,
+  },
+  impactBox: {
+    borderWidth: 1.5,
+    borderRadius: 8,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    alignItems: 'center',
+    minWidth: 70,
+  },
+  impactNumber: {
+    fontSize: 16,
+    fontWeight: '800',
+    lineHeight: 20,
+  },
+  impactLabel: {
+    fontSize: 8,
+    color: '#888888',
+    marginTop: 1,
+  },
+  impactMessage: {
+    fontSize: 10,
     color: '#BDBDBD',
-    lineHeight: 18,
-    paddingLeft: 4,
+    lineHeight: 15,
+    flex: 1,
   },
 
   // ─── 하단 CTA ───
   ctaContainer: {
     marginTop: 'auto',
-    paddingTop: 16,
-    zIndex: 10,
+    paddingTop: 8,
   },
   ctaBox: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(76, 175, 80, 0.15)',
-    paddingVertical: 10,
-    paddingHorizontal: 14,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: 'rgba(76, 175, 80, 0.3)',
+    gap: 5,
   },
   ctaText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
     color: '#4CAF50',
-    marginLeft: 6,
   },
 
-  // ─── 워터마크: baln.logic 브랜딩 ───
+  // ─── 워터마크 ───
   watermarkRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 12,
+    marginTop: 8,
     gap: 6,
-    zIndex: 10,
   },
   watermarkLine: {
     flex: 1,
     height: 1,
     backgroundColor: 'rgba(255,255,255,0.06)',
   },
-  watermarkBaln: {
-    fontSize: 10,
+  watermarkText: {
+    fontSize: 9,
     fontWeight: '700',
     color: '#555555',
-    letterSpacing: 1,
-  },
-  watermarkDot: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#3A7D3E',
     letterSpacing: 1,
   },
 
@@ -607,7 +628,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#FFFFFF',
   },
-  // 보상 힌트 배지 (공유 버튼 옆 "+3" 표시)
   rewardHint: {
     backgroundColor: '#FFD700',
     paddingHorizontal: 6,

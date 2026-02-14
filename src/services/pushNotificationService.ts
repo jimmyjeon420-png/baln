@@ -63,12 +63,27 @@ export async function registerForPushNotifications(): Promise<string | null> {
       return null;
     }
 
-    // Expo Push Token 획득
-    const tokenData = await Notifications.getExpoPushTokenAsync({
-      projectId: '0d967ba4-ad89-4a20-87fc-8d4cd28a5658',
-    });
+    // Expo Push Token 획득 (간헐적 실패 대비 재시도)
+    let token: string | null = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const tokenData = await Notifications.getExpoPushTokenAsync({
+          projectId: '0d967ba4-ad89-4a20-87fc-8d4cd28a5658',
+        });
+        token = tokenData.data;
+        break;
+      } catch (tokenError) {
+        if (attempt < 2) {
+          if (__DEV__) console.warn(`[Push] 토큰 획득 ${attempt + 1}차 실패, 재시도...`);
+          await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+        } else {
+          console.warn('[Push] 토큰 획득 3회 실패 (기능 영향 없음):', tokenError);
+          return null;
+        }
+      }
+    }
 
-    const token = tokenData.data;
+    if (!token) return null;
     if (__DEV__) console.log('[Push] 토큰 획득:', token);
 
     // Android 채널 설정
@@ -92,7 +107,7 @@ export async function registerForPushNotifications(): Promise<string | null> {
 
     return token;
   } catch (error) {
-    console.error('[Push] 토큰 획득 실패:', error);
+    console.warn('[Push] 토큰 획득 실패 (기능 영향 없음):', error);
     return null;
   }
 }
