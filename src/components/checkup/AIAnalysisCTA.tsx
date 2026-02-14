@@ -42,8 +42,6 @@ const AI_FEATURES: AIFeatureItem[] = [
     description: '보유 종목 심층 분석',
     color: FEATURE_COLOR_DEEP_DIVE,
     route: '/marketplace?feature=deep_dive',
-    comingSoon: true,
-    comingSoonDate: '2월 말',
   },
   {
     icon: 'git-branch-outline',
@@ -59,8 +57,6 @@ const AI_FEATURES: AIFeatureItem[] = [
     description: '양도세·증여세 계산',
     color: FEATURE_COLOR_TAX_REPORT,
     route: '/marketplace?feature=tax_report',
-    comingSoon: true,
-    comingSoonDate: '2월 말',
   },
   {
     icon: 'chatbubbles-outline',
@@ -68,8 +64,6 @@ const AI_FEATURES: AIFeatureItem[] = [
     description: '실시간 투자 상담',
     color: FEATURE_COLOR_AI_BUFFETT,
     route: '/marketplace?feature=ai_cfo_chat',
-    comingSoon: true,
-    comingSoonDate: '2월 말',
   },
 ];
 

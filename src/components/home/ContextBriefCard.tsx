@@ -688,7 +688,7 @@ export default React.forwardRef<View, ContextBriefCardProps>(
           </View>
           <View style={styles.centerArea}>
             <Ionicons name="analytics-outline" size={64} color={COLORS.textTertiary} />
-            <Text style={styles.emptyText}>오늘의 맥락을 준비 중이에요</Text>
+            <Text style={styles.emptyText}>오늘의 맥락을 분석하고 있어요</Text>
             <Text style={styles.emptySubtext}>
               매일 오전 7시에 새로운 분석이 도착합니다
             </Text>

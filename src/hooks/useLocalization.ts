@@ -125,7 +125,7 @@ export const useLocalization = (): UseLocalizationReturn => {
           initializeLocalization(defaultLanguage);
         }
       } catch (error) {
-        console.error('로컬라이제이션 로드 실패:', error);
+        console.warn('로컬라이제이션 로드 실패:', error);
         setSettings(null);
       } finally {
         setIsLoading(false);
@@ -168,7 +168,7 @@ export const useLocalization = (): UseLocalizationReturn => {
 
         return newSettings;
       } catch (error) {
-        console.error('Failed to update localization:', error);
+        console.warn('Failed to update localization:', error);
         throw error;
       }
     },
@@ -188,7 +188,7 @@ export const useLocalization = (): UseLocalizationReturn => {
         setLanguage(newSettings.language);
         setSettings(newSettings);
       } catch (error) {
-        console.error('Failed to set localization:', error);
+        console.warn('Failed to set localization:', error);
         throw error;
       }
     },

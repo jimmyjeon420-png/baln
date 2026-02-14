@@ -229,13 +229,10 @@ export default function CommunityMainScreen() {
           <View style={{ width: 28 }} />
         </View>
         <View style={styles.comingSoonContainer}>
-          <Ionicons name="people-outline" size={48} color="#555" />
-          <Text style={[styles.comingSoonTitle, { color: colors.textPrimary }]}>VIP 라운지 준비 중</Text>
+          <Ionicons name="wifi-outline" size={48} color="#555" />
+          <Text style={[styles.comingSoonTitle, { color: colors.textPrimary }]}>연결에 실패했습니다</Text>
           <Text style={[styles.comingSoonDescription, { color: colors.textSecondary }]}>
-            곧 투자 고수들의 커뮤니티가 열립니다!
-          </Text>
-          <Text style={[styles.comingSoonHint, { color: colors.textSecondary }]}>
-            매일 출석하고 크레딧을 모아보세요
+            네트워크 상태를 확인하고 다시 시도해주세요.
           </Text>
           <TouchableOpacity style={styles.comingSoonButton} onPress={() => router.back()}>
             <Text style={styles.comingSoonButtonText}>돌아가기</Text>
@@ -313,13 +310,10 @@ export default function CommunityMainScreen() {
         </View>
       ) : posts.length === 0 ? (
         <View style={styles.comingSoonContainer}>
-          <Ionicons name="people-outline" size={48} color="#555" />
-          <Text style={[styles.comingSoonTitle, { color: colors.textPrimary }]}>VIP 라운지 준비 중</Text>
+          <Ionicons name="chatbubble-ellipses-outline" size={48} color="#555" />
+          <Text style={[styles.comingSoonTitle, { color: colors.textPrimary }]}>아직 게시물이 없습니다</Text>
           <Text style={[styles.comingSoonDescription, { color: colors.textSecondary }]}>
-            곧 투자 고수들의 커뮤니티가 열립니다!
-          </Text>
-          <Text style={[styles.comingSoonHint, { color: colors.textSecondary }]}>
-            매일 출석하고 크레딧을 모아보세요
+            첫 번째 투자 인사이트를 공유해보세요!
           </Text>
           {eligibility?.canPost && (
             <TouchableOpacity style={styles.emptyButton} onPress={handleCreatePost}>

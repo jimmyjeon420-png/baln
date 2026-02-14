@@ -50,7 +50,7 @@ export function useStreak(): UseStreakReturn {
       setIsNewDay(result.updated);
       setIsNewStreak(result.isNewStreak);
     } catch (error) {
-      console.error('[useStreak] checkStreak 에러:', error);
+      console.warn('[useStreak] checkStreak 에러:', error);
       // 에러 시 기존 데이터 조회
       const fallbackData = await getStreakData();
       setData(fallbackData);
@@ -104,7 +104,7 @@ export function useStreakData(): {
           setData(streakData);
         }
       } catch (error) {
-        console.error('[useStreakData] 에러:', error);
+        console.warn('[useStreakData] 에러:', error);
       } finally {
         if (isMounted) {
           setIsLoading(false);

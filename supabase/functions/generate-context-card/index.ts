@@ -157,7 +157,7 @@ serve(async (req: Request) => {
       .from('context_cards')
       .upsert({
         date: today,
-        headline: card.headline || '시장 분석 준비 중',
+        headline: card.headline || '오늘의 시장 분석',
         sentiment: card.sentiment || 'calm',
         historical_context: card.historical_context || '',
         macro_chain: card.macro_chain || [],

@@ -171,7 +171,7 @@ function sanitizeImpact(impact: UserContextImpact | null): UserContextImpact | n
 
   return {
     ...impact,
-    impact_message: impact.impact_message?.trim() || '데이터 수집 중',
+    impact_message: impact.impact_message?.trim() || '오늘의 시장 변동에 따른 영향을 분석했습니다.',
   };
 }
 
@@ -509,8 +509,8 @@ export function convertToContextCardData(
     portfolioImpact: {
       percentChange: userImpact?.percent_change ?? 0,
       healthScoreChange: userImpact?.health_score_change ?? 0,
-      message: userImpact?.impact_message || '데이터 수집 중',
-      isCalculating: userImpact != null && (userImpact.percent_change == null || userImpact.impact_message == null),
+      message: userImpact?.impact_message || '오늘의 시장 변동에 따른 영향을 분석했습니다.',
+      isCalculating: false,
     },
     sentiment: card.sentiment,
     isPremiumContent: card.is_premium_only,

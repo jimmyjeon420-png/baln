@@ -61,7 +61,7 @@ export const usePortfolio = (): UsePortfolioReturn => {
         setAssets(savedAssets);
         setTaxSettings(settings);
       } catch (error) {
-        console.error('Failed to load data:', error);
+        console.warn('Failed to load data:', error);
       } finally {
         setIsLoading(false);
       }
@@ -103,7 +103,7 @@ export const usePortfolio = (): UsePortfolioReturn => {
         setAssets(updatedAssets);
         return true;
       } catch (error) {
-        console.error('Failed to add asset:', error);
+        console.warn('Failed to add asset:', error);
         return false;
       }
     },
@@ -127,7 +127,7 @@ export const usePortfolio = (): UsePortfolioReturn => {
         await saveAssets(updatedAssets);
         setAssets(updatedAssets);
       } catch (error) {
-        console.error('Failed to update asset:', error);
+        console.warn('Failed to update asset:', error);
         throw error;
       }
     },
@@ -143,7 +143,7 @@ export const usePortfolio = (): UsePortfolioReturn => {
         await saveAssets(updatedAssets);
         setAssets(updatedAssets);
       } catch (error) {
-        console.error('Failed to delete asset:', error);
+        console.warn('Failed to delete asset:', error);
         throw error;
       }
     },
@@ -156,7 +156,7 @@ export const usePortfolio = (): UsePortfolioReturn => {
       await saveAssets([]);
       setAssets([]);
     } catch (error) {
-      console.error('Failed to clear assets:', error);
+      console.warn('Failed to clear assets:', error);
       throw error;
     }
   }, []);
@@ -167,7 +167,7 @@ export const usePortfolio = (): UsePortfolioReturn => {
       await saveTaxSettings(settings);
       setTaxSettings(settings);
     } catch (error) {
-      console.error('Failed to update tax settings:', error);
+      console.warn('Failed to update tax settings:', error);
       throw error;
     }
   }, []);

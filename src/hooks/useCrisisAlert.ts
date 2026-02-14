@@ -159,7 +159,7 @@ export function useCrisisAlert(): CrisisAlertState {
     // 위기 감지 시 레벨별 알림 발송
     if (result.isInCrisis) {
       sendCrisisNotificationByLevel(result).catch((err) => {
-        console.error('[위기 알림] 발송 실패:', err);
+        console.warn('[위기 알림] 발송 실패:', err);
       });
     }
   }, [btcPrice, btcLoading]);
@@ -276,7 +276,7 @@ async function sendCrisisNotificationByLevel(
       crisis.primaryMarket
     );
   } catch (err) {
-    console.error('[위기 알림] 발송 에러:', err);
+    console.warn('[위기 알림] 발송 에러:', err);
     throw err;
   }
 }

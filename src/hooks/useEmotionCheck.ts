@@ -102,7 +102,7 @@ export function useEmotionCheck(): EmotionCheckResult {
         console.warn('[감정 체크] 보상 지급 실패 (무시):', err);
       }
     } catch (error) {
-      console.error('[감정 체크] 감정 저장 실패:', error);
+      console.warn('[감정 체크] 감정 저장 실패:', error);
     }
   }, [todayEmotion, todayMemo]);
 

@@ -136,7 +136,7 @@ export default function LoginScreen() {
       if (errorMessage.includes('업데이트')) {
         displayMessage = '현재 빌드에서 Apple 로그인을 사용할 수 없습니다.\n앱을 최신 버전으로 업데이트해주세요.';
       } else if (errorMessage.includes('활성화')) {
-        displayMessage = 'Apple 로그인이 아직 준비 중입니다.\n다른 로그인 방법을 이용해주세요.';
+        displayMessage = 'Apple 로그인을 사용할 수 없습니다.\n다른 로그인 방법을 이용해주세요.';
       }
 
       Alert.alert('Apple 로그인 오류', displayMessage);

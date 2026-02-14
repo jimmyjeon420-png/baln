@@ -295,10 +295,8 @@ export default function HomeScreen() {
       portfolioImpact: userImpact ? {
         percentChange: userImpact.percent_change ?? 0,
         healthScoreChange: userImpact.health_score_change ?? 0,
-        message: userImpact.impact_message || '',
-        // Edge Function이 row를 UPSERT했으면 계산 완료
-        // '데이터 수집 중'은 sanitizeImpact 기본값 → 아직 실제 메시지 없음
-        isCalculating: !userImpact.impact_message || userImpact.impact_message === '데이터 수집 중',
+        message: userImpact.impact_message || '오늘의 시장 변동에 따른 영향을 분석했습니다.',
+        isCalculating: false,
       } : null,
     };
   }, [contextData, contextEffective, contextLoading, isPremium, router, showToast]);

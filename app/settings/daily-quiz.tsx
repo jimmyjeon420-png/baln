@@ -115,8 +115,8 @@ export default function DailyQuizScreen() {
         {!isLoading && !quiz && !quizError && (
           <View style={styles.emptyBox}>
             <Text style={styles.emptyIcon}>📝</Text>
-            <Text style={styles.emptyTitle}>오늘의 퀴즈를 준비 중입니다</Text>
-            <Text style={styles.emptySubtitle}>잠시 후 다시 시도해주세요</Text>
+            <Text style={styles.emptyTitle}>오늘의 퀴즈가 아직 도착하지 않았어요</Text>
+            <Text style={styles.emptySubtitle}>잠시 후 다시 확인해주세요</Text>
           </View>
         )}
 

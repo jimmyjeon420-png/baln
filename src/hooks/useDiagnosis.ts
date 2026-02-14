@@ -75,7 +75,7 @@ export const useDiagnosis = (): UseDiagnosisReturn => {
         setLatestResult(latest);
         setDiagnosisHistory(history);
       } catch (error) {
-        console.error('[useDiagnosis] Failed to load previous data:', error);
+        console.warn('[useDiagnosis] Failed to load previous data:', error);
       } finally {
         setIsLoading(false);
       }
@@ -171,7 +171,7 @@ export const useDiagnosis = (): UseDiagnosisReturn => {
 
         return result;
       } catch (error) {
-        console.error('[useDiagnosis] Diagnosis failed:', error);
+        console.warn('[useDiagnosis] Diagnosis failed:', error);
         throw error;
       } finally {
         setIsProcessing(false);
@@ -191,7 +191,7 @@ export const useDiagnosis = (): UseDiagnosisReturn => {
         setLatestResult(result);
       }
     } catch (error) {
-      console.error('[useDiagnosis] Failed to load latest:', error);
+      console.warn('[useDiagnosis] Failed to load latest:', error);
     } finally {
       setIsLoading(false);
     }
@@ -206,7 +206,7 @@ export const useDiagnosis = (): UseDiagnosisReturn => {
       const results = await loadDiagnosisHistory();
       setDiagnosisHistory(results);
     } catch (error) {
-      console.error('[useDiagnosis] Failed to load history:', error);
+      console.warn('[useDiagnosis] Failed to load history:', error);
     } finally {
       setIsLoading(false);
     }

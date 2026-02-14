@@ -39,7 +39,7 @@ const NOTIFICATION_ID = 'prediction-daily-result';
 export function usePredictionNotification() {
   useEffect(() => {
     schedulePredictionResultNotification().catch((err) => {
-      console.error('[예측 알림] 예약 실패:', err);
+      console.warn('[예측 알림] 예약 실패:', err);
     });
   }, []);
 }
@@ -99,7 +99,7 @@ async function schedulePredictionResultNotification(): Promise<void> {
 
     if (__DEV__) console.log('[예측 알림] 매일 08:00 알림 예약 완료');
   } catch (err) {
-    console.error('[예측 알림] 예약 에러:', err);
+    console.warn('[예측 알림] 예약 에러:', err);
     throw err;
   }
 }

@@ -100,7 +100,7 @@ export async function pickImages(maxImages: number = MAX_IMAGES): Promise<Picked
     // 4. 최대 개수 제한
     return pickedImages.slice(0, maxImages);
   } catch (error) {
-    console.error('Image picker error:', error);
+    console.warn('Image picker error:', error);
     throw error;
   }
 }
@@ -201,7 +201,7 @@ export async function uploadToSupabase(
       });
 
     if (error) {
-      console.error('Supabase upload error:', error);
+      console.warn('Supabase upload error:', error);
 
       // 버킷이 없는 경우 Mock URL 반환 (개발용)
       if (error.message.includes('not found') || error.message.includes('Bucket')) {
@@ -228,7 +228,7 @@ export async function uploadToSupabase(
       url: urlData.publicUrl,
     };
   } catch (error: any) {
-    console.error('Upload error:', error);
+    console.warn('Upload error:', error);
 
     // 네트워크 에러 등의 경우 Mock URL 반환 (개발용)
     const mockPath = `${userId}/${postId}/${Date.now()}.jpg`;

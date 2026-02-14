@@ -320,10 +320,7 @@ export default function DeepDiveScreen() {
       setResult(analysisResult);
 
     } catch (err: any) {
-      console.error('[DeepDive] 분석 실패:', err);
-      console.error('[DeepDive] 에러 이름:', err.name);
-      console.error('[DeepDive] 에러 메시지:', err.message);
-      console.error('[DeepDive] 에러 코드:', err.code);
+      console.warn('[DeepDive] 분석 실패:', err.name, err.message, err.code);
 
       // 사용자 친화적 에러 메시지 생성
       let userMsg: string;

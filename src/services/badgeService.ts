@@ -139,7 +139,7 @@ export async function loadUserBadges(): Promise<UserBadge[]> {
     if (!json) return [];
     return JSON.parse(json) as UserBadge[];
   } catch (error) {
-    console.error('[badgeService] loadUserBadges 실패:', error);
+    console.warn('[badgeService] loadUserBadges 실패:', error);
     return [];
   }
 }
@@ -151,7 +151,7 @@ export async function saveUserBadges(badges: UserBadge[]): Promise<void> {
   try {
     await AsyncStorage.setItem(BADGE_STORAGE_KEY, JSON.stringify(badges));
   } catch (error) {
-    console.error('[badgeService] saveUserBadges 실패:', error);
+    console.warn('[badgeService] saveUserBadges 실패:', error);
   }
 }
 

@@ -126,8 +126,8 @@ export default function PaywallScreen() {
   const handleSubscribe = (period: 'monthly' | 'yearly') => {
     heavyTap();
     Alert.alert(
-      '결제 준비 중',
-      '인앱 결제 시스템을 준비 중입니다.\n곧 서비스가 시작됩니다!',
+      '무료 체험 기간',
+      '현재 모든 프리미엄 기능을 무료로 체험하실 수 있습니다.\n5월 31일까지 무제한 이용 가능합니다!',
       [{ text: '확인' }]
     );
   };

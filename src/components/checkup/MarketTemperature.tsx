@@ -59,7 +59,7 @@ export default function MarketTemperature({ morningBriefing, isAILoading }: Mark
     return (
       <View style={[styles.card, shadows.sm]}>
         <Text style={styles.cardTitle}>시장 온도계</Text>
-        <Text style={styles.emptyText}>시장 데이터 준비 중</Text>
+        <Text style={styles.emptyText}>시장 데이터를 불러오는 중입니다</Text>
       </View>
     );
   }

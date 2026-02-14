@@ -221,8 +221,8 @@ export default function PremiumScreen() {
       // TODO: 실제 IAP 구매 로직 연동
       // await purchaseProduct(product.id);
       Alert.alert(
-        '결제 준비 중',
-        `${product.label} (${product.priceLabel}${product.period})\n\n인앱 결제 시스템을 준비 중입니다.\n곧 서비스가 시작됩니다!`,
+        '무료 체험 기간',
+        `${product.label} (${product.priceLabel}${product.period})\n\n현재 모든 프리미엄 기능을 무료로 체험하실 수 있습니다.\n5월 31일까지 무제한 이용 가능합니다!`,
       );
     } catch (err) {
       console.error('[Premium] 구매 실패:', err);

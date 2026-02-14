@@ -121,12 +121,12 @@ export async function fetchAIAnalysis(
   const [kitchenResult, riskResult] = await Promise.all([
     loadMorningBriefing(portfolioAssets, { includeRealEstate: false })
       .catch((err) => {
-        console.error('[공유분석] Morning Briefing 실패:', err);
+        console.warn('[공유분석] Morning Briefing 실패:', err);
         return null;
       }),
     analyzePortfolioRisk(portfolioAssets)
       .catch((err) => {
-        console.error('[공유분석] Risk Analysis 실패:', err);
+        console.warn('[공유분석] Risk Analysis 실패:', err);
         return null;
       }),
   ]);

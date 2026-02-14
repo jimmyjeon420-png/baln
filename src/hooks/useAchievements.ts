@@ -80,7 +80,7 @@ export function useAchievements(): UseAchievementsReturn {
       setAchievements(achievementsData);
       setUnlockedCount(countData.unlocked);
     } catch (error) {
-      console.error('[useAchievements] 데이터 로드 에러:', error);
+      console.warn('[useAchievements] 데이터 로드 에러:', error);
     } finally {
       setIsLoading(false);
     }
@@ -119,7 +119,7 @@ export function useAchievements(): UseAchievementsReturn {
 
         return newBadges;
       } catch (error) {
-        console.error('[useAchievements] 자동 해금 체크 에러:', error);
+        console.warn('[useAchievements] 자동 해금 체크 에러:', error);
         return [];
       }
     },
@@ -171,7 +171,7 @@ export function useAchievementCount(): {
           setUnlockedCount(data.unlocked);
         }
       } catch (error) {
-        console.error('[useAchievementCount] 에러:', error);
+        console.warn('[useAchievementCount] 에러:', error);
       } finally {
         if (isMounted) {
           setIsLoading(false);

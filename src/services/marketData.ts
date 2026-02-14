@@ -63,7 +63,7 @@ export async function searchTicker(query: string): Promise<TickerResult[]> {
 
     return results;
   } catch (error) {
-    console.error('티커 검색 오류:', error);
+    console.warn('티커 검색 오류:', error);
     return [];
   }
 }
@@ -93,7 +93,7 @@ export async function getRealTimePrice(ticker: string): Promise<PriceData | null
 
     return null;
   } catch (error) {
-    console.error('가격 조회 오류:', error);
+    console.warn('가격 조회 오류:', error);
     return null;
   }
 }
@@ -145,7 +145,7 @@ async function searchStocks(query: string): Promise<TickerResult[]> {
 
     return results;
   } catch (error) {
-    console.error('주식 검색 오류:', error);
+    console.warn('주식 검색 오류:', error);
     return [];
   }
 }
@@ -175,7 +175,7 @@ async function searchCrypto(query: string): Promise<TickerResult[]> {
       currency: 'USD',
     }));
   } catch (error) {
-    console.error('CoinGecko 암호화폐 검색 오류:', error);
+    console.warn('CoinGecko 암호화폐 검색 오류:', error);
     return [];
   }
 }
@@ -196,7 +196,7 @@ async function getStockPrice(ticker: string): Promise<PriceData | null> {
 
     return mockPrices[ticker] || null;
   } catch (error) {
-    console.error('주식 가격 조회 오류:', error);
+    console.warn('주식 가격 조회 오류:', error);
     return null;
   }
 }
@@ -239,7 +239,7 @@ async function getCryptoPrice(ticker: string): Promise<PriceData | null> {
 
     return null;
   } catch (error) {
-    console.error('암호화폐 가격 조회 오류:', error);
+    console.warn('암호화폐 가격 조회 오류:', error);
     return null;
   }
 }

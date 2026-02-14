@@ -180,7 +180,7 @@ export async function upgradeToPaid(
 ): Promise<{ success: boolean; error?: string }> {
   // TODO: RevenueCat 연동
   if (__DEV__) console.log(`[구독] 유료 전환 요청: userId=${userId}, period=${period}`);
-  return { success: false, error: '결제 시스템 준비 중입니다. 곧 출시됩니다!' };
+  return { success: false, error: '현재 무료 체험 기간입니다. 모든 기능을 무료로 이용하실 수 있습니다!' };
 }
 
 // ============================================================================

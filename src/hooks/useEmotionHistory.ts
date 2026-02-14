@@ -147,7 +147,7 @@ export function useEmotionHistory(): EmotionHistoryResult {
         setHistory([]);
       }
     } catch (error) {
-      console.error('Failed to load emotion history:', error);
+      console.warn('Failed to load emotion history:', error);
       setHistory([]);
     } finally {
       setIsLoading(false);

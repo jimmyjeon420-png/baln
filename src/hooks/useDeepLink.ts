@@ -67,7 +67,7 @@ function handleDeepLink(url: string, router: any) {
         break;
     }
   } catch (e) {
-    console.error('[DeepLink] URL 파싱 실패:', e);
+    console.warn('[DeepLink] URL 파싱 실패:', e);
   }
 }
 

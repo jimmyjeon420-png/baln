@@ -349,7 +349,7 @@ export const useLikePost = () => {
             .insert({ user_id: user.id, post_id: postId });
 
           if (insertErr) {
-            console.error('[Community] 좋아요 폴백 INSERT 실패:', insertErr.message);
+            console.warn('[Community] 좋아요 폴백 INSERT 실패:', insertErr.message);
             throw insertErr;
           }
 
@@ -506,7 +506,7 @@ export const useCreateComment = (postId: string) => {
         .single();
 
       if (error) {
-        console.error('[Community] 댓글 INSERT 실패:', error.code, error.message, error.details, error.hint);
+        console.warn('[Community] 댓글 INSERT 실패:', error.code, error.message);
         throw error;
       }
 
@@ -701,7 +701,7 @@ export const useLikeComment = (postId: string) => {
           .insert({ user_id: user.id, comment_id: commentId });
 
         if (insertErr) {
-          console.error('[Community] 댓글 좋아요 INSERT 실패:', insertErr.message);
+          console.warn('[Community] 댓글 좋아요 INSERT 실패:', insertErr.message);
           throw insertErr;
         }
 

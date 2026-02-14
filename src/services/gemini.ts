@@ -27,10 +27,7 @@ const MODEL_NAME = process.env.EXPO_PUBLIC_GEMINI_MODEL || 'gemini-2.5-flash';
 
 // 🔍 디버그: API 키 로드 확인
 if (!API_KEY) {
-  console.error('❌ Gemini API 키가 로드되지 않았습니다!');
-  console.error('  1. .env 파일 확인');
-  console.error('  2. npx expo start --clear 실행');
-  console.error('  3. 앱 완전히 재시작');
+  console.warn('⚠️ Gemini API 키가 로드되지 않았습니다. .env 파일을 확인하세요.');
 } else {
   // API 키가 정상적으로 로드됨 (보안상 키 내용은 로그에 출력하지 않음)
   console.log('✅ Gemini API 키 로드됨');
@@ -399,7 +396,7 @@ export const getPortfolioAdvice = async (prompt: any) => {
     const msg = typeof prompt === 'string' ? prompt : JSON.stringify(prompt);
     return await callGeminiSafe(model, msg);
   } catch (error) {
-    console.error("Gemini Text Error:", error);
+    console.warn("Gemini Text Error:", error);
     return "AI 응답 오류. 잠시 후 다시 시도해주세요.";
   }
 };
@@ -560,7 +557,7 @@ ETF:
       cleanText = cleanText.substring(arrStart, arrEnd + 1);
     } else {
       // JSON 구조를 찾을 수 없는 경우 방어
-      console.error('[Gemini] JSON 구조를 찾을 수 없음. 원본 응답 앞 200자:', cleanText.substring(0, 200));
+      console.warn('[Gemini] JSON 구조를 찾을 수 없음. 원본 응답 앞 200자:', cleanText.substring(0, 200));
       throw new Error(`Gemini 응답이 JSON 형식이 아닙니다: "${cleanText.substring(0, 100)}"`);
     }
 
@@ -663,7 +660,7 @@ ETF:
     };
 
   } catch (error) {
-    console.error("Gemini Analysis Error:", error);
+    console.warn("Gemini Analysis Error:", error);
     const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
     return {
       error: `이미지 분석 실패: ${errorMessage}`,
@@ -840,24 +837,24 @@ export const generateMorningBriefing = async (
     const { data, error } = invokeResult;
 
     if (error) {
-      console.error('[Edge Function] Error object:', JSON.stringify(error, null, 2));
+      console.warn('[Edge Function] Error:', error.message || error);
       throw new Error(`Edge Function Error: ${error.message || JSON.stringify(error)}`);
     }
 
     if (!data) {
-      console.error('[Edge Function] No data returned');
+      console.warn('[Edge Function] No data returned');
       throw new Error('Edge Function returned no data');
     }
 
     if (!data.success) {
-      console.error('[Edge Function] Unsuccessful response:', JSON.stringify(data, null, 2));
+      console.warn('[Edge Function] Unsuccessful response:', data.error || 'Unknown error');
       throw new Error(`Edge Function Error: ${data.error || 'Unknown error'}`);
     }
 
     return data.data as MorningBriefingResult;
 
   } catch (error) {
-    console.error("Morning Briefing Error:", error);
+    console.warn("Morning Briefing Error:", error);
     // 에러를 그대로 전파 — 호출자가 null로 처리하도록 함
     // (에러 폴백 데이터를 반환하면 DB 캐시에 저장되어 반복적으로 에러 상태가 됨)
     throw error;
@@ -1181,7 +1178,7 @@ ${JSON.stringify(assetsSummary, null, 2)}
     };
 
   } catch (error) {
-    console.error('배분 최적화 생성 오류:', error);
+    console.warn('배분 최적화 생성 오류:', error);
     throw new Error('배분 최적화 분석에 실패했습니다');
   }
 };
@@ -1485,8 +1482,7 @@ ${hasFundamentals ? '12. API 제공 데이터(시가총액, PER, PBR, ROE 등)�
     // JSON 정제 및 파싱 (통합 파서 사용)
     return parseGeminiJson<DeepDiveResult>(text);
   } catch (parseErr) {
-    console.error('[DeepDive] JSON 파싱 실패. 원본 응답 앞 500자:', text.substring(0, 500));
-    console.error('[DeepDive] JSON 파싱 에러:', parseErr);
+    console.warn('[DeepDive] JSON 파싱 실패:', parseErr);
     throw new Error('AI 응답 형식 오류 — 재시도해주세요');
   }
 };
@@ -1584,7 +1580,7 @@ ${portfolioStr}
     const text = await callGeminiSafe(modelWithSearch, prompt, { timeoutMs: 30000, maxRetries: 1 });
     return parseGeminiJson<WhatIfResult>(text);
   } catch (error) {
-    console.error('What-If 시뮬레이션 오류:', error);
+    console.warn('What-If 시뮬레이션 오류:', error);
     throw new Error('What-If 시뮬레이션에 실패했습니다');
   }
 };
@@ -1668,7 +1664,7 @@ ${input.residency === 'KR' ?
     const text = await callGeminiSafe(modelWithSearch, prompt, { timeoutMs: 30000, maxRetries: 1 });
     return parseGeminiJson<TaxReportResult>(text);
   } catch (error) {
-    console.error('세금 리포트 생성 오류:', error);
+    console.warn('세금 리포트 생성 오류:', error);
     throw new Error('세금 최적화 리포트 생성에 실패했습니다');
   }
 };
@@ -1718,7 +1714,7 @@ ${input.message}
   try {
     return await callGeminiSafe(modelWithSearch, prompt, { timeoutMs: 30000, maxRetries: 1 });
   } catch (error) {
-    console.error('AI 버핏 응답 오류:', error);
+    console.warn('AI 버핏 응답 오류:', error);
     throw new Error('AI 버핏 응답 생성에 실패했습니다');
   }
 };

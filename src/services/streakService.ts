@@ -68,7 +68,7 @@ export async function getStreakData(): Promise<StreakData> {
     }
     return JSON.parse(json) as StreakData;
   } catch (error) {
-    console.error('[streakService] getStreakData 에러:', error);
+    console.warn('[streakService] getStreakData 에러:', error);
     return DEFAULT_STREAK;
   }
 }
@@ -80,7 +80,7 @@ async function saveStreakData(data: StreakData): Promise<void> {
   try {
     await AsyncStorage.setItem(STREAK_KEY, JSON.stringify(data));
   } catch (error) {
-    console.error('[streakService] saveStreakData 에러:', error);
+    console.warn('[streakService] saveStreakData 에러:', error);
   }
 }
 
@@ -194,6 +194,6 @@ export async function resetStreak(): Promise<void> {
   try {
     await AsyncStorage.removeItem(STREAK_KEY);
   } catch (error) {
-    console.error('[streakService] resetStreak 에러:', error);
+    console.warn('[streakService] resetStreak 에러:', error);
   }
 }
