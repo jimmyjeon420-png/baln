@@ -14,7 +14,7 @@
         "EXPO_PUBLIC_GEMINI_MODEL": "gemini-2.5-flash",
         "EXPO_PUBLIC_KAKAO_REST_API_KEY": "842910915081de088c80a50f91bb54a5",
         "EXPO_PUBLIC_MOLIT_API_KEY": "625808d41b2788c26cf8824006131127ebde55b431eeb403c8bd6d8d83523d72",
-        "EXPO_PUBLIC_SENTRY_DSN": ""
+        "EXPO_PUBLIC_SENTRY_DSN": "https://a5b9401d27285d5ffc8e96542bfdb4a8@o4510881343864832.ingest.us.sentry.io/4510881347665920"
       },
       "ios": {
         "simulator": true
@@ -30,7 +30,7 @@
         "EXPO_PUBLIC_GEMINI_MODEL": "gemini-2.5-flash",
         "EXPO_PUBLIC_KAKAO_REST_API_KEY": "842910915081de088c80a50f91bb54a5",
         "EXPO_PUBLIC_MOLIT_API_KEY": "625808d41b2788c26cf8824006131127ebde55b431eeb403c8bd6d8d83523d72",
-        "EXPO_PUBLIC_SENTRY_DSN": ""
+        "EXPO_PUBLIC_SENTRY_DSN": "https://a5b9401d27285d5ffc8e96542bfdb4a8@o4510881343864832.ingest.us.sentry.io/4510881347665920"
       },
       "ios": {
         "buildConfiguration": "Release"
@@ -46,8 +46,7 @@
         "EXPO_PUBLIC_GEMINI_MODEL": "gemini-2.5-flash",
         "EXPO_PUBLIC_KAKAO_REST_API_KEY": "842910915081de088c80a50f91bb54a5",
         "EXPO_PUBLIC_MOLIT_API_KEY": "625808d41b2788c26cf8824006131127ebde55b431eeb403c8bd6d8d83523d72",
-        "EXPO_PUBLIC_SENTRY_DSN": "",
-        "SENTRY_AUTH_TOKEN": ""
+        "EXPO_PUBLIC_SENTRY_DSN": "https://a5b9401d27285d5ffc8e96542bfdb4a8@o4510881343864832.ingest.us.sentry.io/4510881347665920"
       },
       "ios": {
         "buildConfiguration": "Release"

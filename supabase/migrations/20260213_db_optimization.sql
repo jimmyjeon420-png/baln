@@ -1,661 +1,298 @@
 -- ============================================================================
 -- baln DB 최적화 마이그레이션 (2026-02-13)
---
--- 3가지 영역:
---   1. RLS (Row Level Security) 정책 보완
---   2. 인덱스 최적화 (앱 쿼리 패턴 기반)
---   3. 데이터 무결성 강화 (FK, NOT NULL, DEFAULT)
---
--- 원칙: 기존 데이터 삭제/컬럼 제거 절대 금지. 추가/개선만 수행.
+-- 모든 테이블/컬럼 참조 전 존재 여부 확인
 -- ============================================================================
 
--- ============================================================================
 -- ========== PART 1: RLS 정책 보완 ==========================================
--- ============================================================================
 
--- ----------------------------------------------------------------------------
--- 1-1. profiles 테이블: INSERT 정책 누락
--- 문제: 신규 유저 가입 시 프로필 생성이 RLS에 의해 차단될 수 있음
--- 해결: 본인 프로필 INSERT 정책 추가
--- ----------------------------------------------------------------------------
+-- 1-1. profiles: INSERT 정책
 DO $$ BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies
-    WHERE tablename = 'profiles' AND policyname = 'profiles_insert_own'
-  ) THEN
-    CREATE POLICY profiles_insert_own ON profiles
-      FOR INSERT
-      WITH CHECK (auth.uid() = id);
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='profiles') THEN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='profiles' AND policyname='profiles_insert_own') THEN
+      CREATE POLICY profiles_insert_own ON profiles FOR INSERT WITH CHECK (auth.uid() = id);
+    END IF;
   END IF;
 END $$;
 
--- ----------------------------------------------------------------------------
--- 1-2. user_credits 테이블: INSERT/UPDATE 정책 누락
--- 문제: RPC(spend_credits, add_credits)가 SECURITY DEFINER라 작동하지만,
---       클라이언트에서 직접 INSERT 시도 시 차단됨
--- 해결: 본인 레코드에 대한 INSERT 정책 추가 (초기 생성용)
--- ----------------------------------------------------------------------------
+-- 1-2. user_credits: INSERT 정책
 DO $$ BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies
-    WHERE tablename = 'user_credits' AND policyname = 'user_credits_insert_own'
-  ) THEN
-    CREATE POLICY user_credits_insert_own ON user_credits
-      FOR INSERT
-      WITH CHECK (auth.uid() = user_id);
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='user_credits') THEN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='user_credits' AND policyname='user_credits_insert_own') THEN
+      CREATE POLICY user_credits_insert_own ON user_credits FOR INSERT WITH CHECK (auth.uid() = user_id);
+    END IF;
   END IF;
 END $$;
 
--- ----------------------------------------------------------------------------
--- 1-3. credit_transactions 테이블: INSERT 정책 누락
--- 문제: 기존에 SELECT만 있음. RPC 경유 시 SECURITY DEFINER로 우회하지만
---       직접 INSERT가 필요한 경우 차단됨
--- 해결: 본인 거래 INSERT 정책 추가
--- ----------------------------------------------------------------------------
+-- 1-3. credit_transactions: INSERT 정책
 DO $$ BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies
-    WHERE tablename = 'credit_transactions' AND policyname = 'credit_transactions_insert_own'
-  ) THEN
-    CREATE POLICY credit_transactions_insert_own ON credit_transactions
-      FOR INSERT
-      WITH CHECK (auth.uid() = user_id);
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='credit_transactions') THEN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='credit_transactions' AND policyname='credit_transactions_insert_own') THEN
+      CREATE POLICY credit_transactions_insert_own ON credit_transactions FOR INSERT WITH CHECK (auth.uid() = user_id);
+    END IF;
   END IF;
 END $$;
 
--- ----------------------------------------------------------------------------
--- 1-4. prediction_votes 테이블: INSERT 정책 누락
--- 문제: SELECT만 있고 INSERT 정책이 없음 (RPC로 우회하지만 안전장치 필요)
--- 해결: 본인 투표만 INSERT 가능
--- ----------------------------------------------------------------------------
+-- 1-4. prediction_votes: INSERT 정책
 DO $$ BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies
-    WHERE tablename = 'prediction_votes' AND policyname = 'prediction_votes_insert_own'
-  ) THEN
-    CREATE POLICY prediction_votes_insert_own ON prediction_votes
-      FOR INSERT
-      WITH CHECK (auth.uid() = user_id);
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='prediction_votes') THEN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='prediction_votes' AND policyname='prediction_votes_insert_own') THEN
+      CREATE POLICY prediction_votes_insert_own ON prediction_votes FOR INSERT WITH CHECK (auth.uid() = user_id);
+    END IF;
   END IF;
 END $$;
 
--- ----------------------------------------------------------------------------
--- 1-5. analytics_events 테이블: Service Role 전체 접근 정책 추가
--- 문제: Service Role이 analytics_events를 조회할 때 RLS에 의해 제한될 수 있음
---       (admin RPC에서 전체 이벤트를 집계할 때 필요)
--- ----------------------------------------------------------------------------
+-- 1-5~13. service_role 전체 접근 (테이블 존재 시에만)
+DO $$
+DECLARE
+  tbl TEXT;
+  pol TEXT;
+BEGIN
+  FOR tbl, pol IN VALUES
+    ('analytics_events', 'service_all_analytics_events'),
+    ('user_daily_prescriptions', 'service_all_user_daily_prescriptions'),
+    ('user_goals', 'service_all_user_goals'),
+    ('health_score_history', 'service_all_health_score_history'),
+    ('app_metrics', 'service_all_app_metrics'),
+    ('feature_flags', 'service_all_feature_flags'),
+    ('prediction_polls', 'service_all_prediction_polls'),
+    ('prediction_user_stats', 'service_all_prediction_user_stats'),
+    ('daily_quizzes', 'service_all_daily_quizzes'),
+    ('post_reports', 'service_all_post_reports')
+  LOOP
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name=tbl) THEN
+      IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename=tbl AND policyname=pol) THEN
+        EXECUTE format('CREATE POLICY %I ON %I FOR ALL TO service_role USING (true) WITH CHECK (true)', pol, tbl);
+      END IF;
+    END IF;
+  END LOOP;
+END $$;
+
+-- 1-14. referral_pending_rewards: RLS 활성화 + 정책
 DO $$ BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies
-    WHERE tablename = 'analytics_events' AND policyname = 'service_all_analytics_events'
-  ) THEN
-    CREATE POLICY service_all_analytics_events ON analytics_events
-      FOR ALL TO service_role
-      USING (true)
-      WITH CHECK (true);
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='referral_pending_rewards') THEN
+    ALTER TABLE referral_pending_rewards ENABLE ROW LEVEL SECURITY;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='referral_pending_rewards' AND policyname='referral_rewards_read_own') THEN
+      CREATE POLICY referral_rewards_read_own ON referral_pending_rewards FOR SELECT USING (auth.uid() = referrer_id OR auth.uid() = referred_user_id);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='referral_pending_rewards' AND policyname='service_all_referral_rewards') THEN
+      CREATE POLICY service_all_referral_rewards ON referral_pending_rewards FOR ALL TO service_role USING (true) WITH CHECK (true);
+    END IF;
   END IF;
 END $$;
 
--- ----------------------------------------------------------------------------
--- 1-6. user_daily_prescriptions 테이블: Service Role 쓰기 정책 추가
--- 문제: Edge Function(service_role)이 처방전을 생성/업데이트 시 RLS 차단 가능
--- 해결: service_role에 대한 전체 접근 정책 추가
--- ----------------------------------------------------------------------------
+-- 1-15. community_posts: UPDATE WITH CHECK
 DO $$ BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies
-    WHERE tablename = 'user_daily_prescriptions' AND policyname = 'service_all_user_daily_prescriptions'
-  ) THEN
-    CREATE POLICY service_all_user_daily_prescriptions ON user_daily_prescriptions
-      FOR ALL TO service_role
-      USING (true)
-      WITH CHECK (true);
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='community_posts') THEN
+    DROP POLICY IF EXISTS "community_posts_update" ON community_posts;
+    CREATE POLICY "community_posts_update" ON community_posts FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
   END IF;
 END $$;
 
--- ----------------------------------------------------------------------------
--- 1-7. referral_pending_rewards 테이블: RLS 활성화 + 정책 추가
--- 문제: RLS가 활성화되지 않아 누구나 접근 가능
--- 해결: RLS 활성화 + 본인 레코드만 조회 + service_role 전체 접근
--- ----------------------------------------------------------------------------
-ALTER TABLE referral_pending_rewards ENABLE ROW LEVEL SECURITY;
-
+-- 1-16. gatherings: UPDATE WITH CHECK
 DO $$ BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies
-    WHERE tablename = 'referral_pending_rewards' AND policyname = 'referral_rewards_read_own'
-  ) THEN
-    CREATE POLICY referral_rewards_read_own ON referral_pending_rewards
-      FOR SELECT
-      USING (auth.uid() = referrer_id OR auth.uid() = referred_user_id);
-  END IF;
-
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies
-    WHERE tablename = 'referral_pending_rewards' AND policyname = 'service_all_referral_rewards'
-  ) THEN
-    CREATE POLICY service_all_referral_rewards ON referral_pending_rewards
-      FOR ALL TO service_role
-      USING (true)
-      WITH CHECK (true);
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='gatherings') THEN
+    DROP POLICY IF EXISTS "gatherings_update" ON gatherings;
+    CREATE POLICY "gatherings_update" ON gatherings FOR UPDATE USING (auth.uid() = host_id) WITH CHECK (auth.uid() = host_id);
   END IF;
 END $$;
 
--- ----------------------------------------------------------------------------
--- 1-8. user_goals 테이블: Service Role 접근 정책 추가
--- 문제: Edge Function에서 user_goals를 집계할 때 차단될 수 있음
--- ----------------------------------------------------------------------------
+-- 1-17. community_reports: RLS + 정책
 DO $$ BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies
-    WHERE tablename = 'user_goals' AND policyname = 'service_all_user_goals'
-  ) THEN
-    CREATE POLICY service_all_user_goals ON user_goals
-      FOR ALL TO service_role
-      USING (true)
-      WITH CHECK (true);
-  END IF;
-END $$;
-
--- ----------------------------------------------------------------------------
--- 1-9. health_score_history 테이블: Service Role 접근 정책 추가
--- 문제: Edge Function에서 건강 점수를 기록할 때 차단될 수 있음
--- ----------------------------------------------------------------------------
-DO $$ BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies
-    WHERE tablename = 'health_score_history' AND policyname = 'service_all_health_score_history'
-  ) THEN
-    CREATE POLICY service_all_health_score_history ON health_score_history
-      FOR ALL TO service_role
-      USING (true)
-      WITH CHECK (true);
-  END IF;
-END $$;
-
--- ----------------------------------------------------------------------------
--- 1-10. app_metrics 테이블: Service Role 쓰기 정책 추가
--- 문제: Edge Function에서 메트릭을 업데이트할 때 RLS 차단 가능
--- ----------------------------------------------------------------------------
-DO $$ BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies
-    WHERE tablename = 'app_metrics' AND policyname = 'service_all_app_metrics'
-  ) THEN
-    CREATE POLICY service_all_app_metrics ON app_metrics
-      FOR ALL TO service_role
-      USING (true)
-      WITH CHECK (true);
-  END IF;
-END $$;
-
--- ----------------------------------------------------------------------------
--- 1-11. feature_flags 테이블: Service Role 쓰기 정책 추가
--- 문제: feature flag 업데이트 시 차단 가능
--- ----------------------------------------------------------------------------
-DO $$ BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies
-    WHERE tablename = 'feature_flags' AND policyname = 'service_all_feature_flags'
-  ) THEN
-    CREATE POLICY service_all_feature_flags ON feature_flags
-      FOR ALL TO service_role
-      USING (true)
-      WITH CHECK (true);
-  END IF;
-END $$;
-
--- ----------------------------------------------------------------------------
--- 1-12. prediction_polls 테이블: Service Role 전체 접근 정책 추가
--- 문제: resolve_poll RPC가 SECURITY DEFINER이지만, Edge Function에서 직접
---       prediction_polls를 INSERT/UPDATE할 때 RLS 차단 가능
--- ----------------------------------------------------------------------------
-DO $$ BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies
-    WHERE tablename = 'prediction_polls' AND policyname = 'service_all_prediction_polls'
-  ) THEN
-    CREATE POLICY service_all_prediction_polls ON prediction_polls
-      FOR ALL TO service_role
-      USING (true)
-      WITH CHECK (true);
-  END IF;
-END $$;
-
--- ----------------------------------------------------------------------------
--- 1-13. prediction_user_stats 테이블: Service Role 접근 정책 추가
--- 문제: resolve_poll 함수가 prediction_user_stats를 UPDATE하는데,
---       service_role 경유 시 RLS 차단 가능
--- ----------------------------------------------------------------------------
-DO $$ BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies
-    WHERE tablename = 'prediction_user_stats' AND policyname = 'service_all_prediction_user_stats'
-  ) THEN
-    CREATE POLICY service_all_prediction_user_stats ON prediction_user_stats
-      FOR ALL TO service_role
-      USING (true)
-      WITH CHECK (true);
-  END IF;
-END $$;
-
--- ----------------------------------------------------------------------------
--- 1-14. community_posts: UPDATE 정책에 WITH CHECK 추가
--- 문제: 기존 UPDATE 정책에 WITH CHECK가 없어 다른 유저 ID로 소유권 변경 가능
--- 해결: 기존 정책 드롭 후 WITH CHECK 포함하여 재생성
--- ----------------------------------------------------------------------------
-DROP POLICY IF EXISTS "community_posts_update" ON community_posts;
-CREATE POLICY "community_posts_update" ON community_posts
-  FOR UPDATE
-  USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
-
--- ----------------------------------------------------------------------------
--- 1-15. gatherings: UPDATE 정책에 WITH CHECK 추가
--- 문제: 기존 UPDATE 정책에 WITH CHECK 없음
--- ----------------------------------------------------------------------------
-DROP POLICY IF EXISTS "gatherings_update" ON gatherings;
-CREATE POLICY "gatherings_update" ON gatherings
-  FOR UPDATE
-  USING (auth.uid() = host_id)
-  WITH CHECK (auth.uid() = host_id);
-
--- ----------------------------------------------------------------------------
--- 1-16. daily_quizzes: Service Role 쓰기 정책 추가
--- 문제: 퀴즈는 Edge Function이 생성하는데 service_role 정책이 없음
--- ----------------------------------------------------------------------------
-DO $$ BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies
-    WHERE tablename = 'daily_quizzes' AND policyname = 'service_all_daily_quizzes'
-  ) THEN
-    CREATE POLICY service_all_daily_quizzes ON daily_quizzes
-      FOR ALL TO service_role
-      USING (true)
-      WITH CHECK (true);
-  END IF;
-END $$;
-
--- ============================================================================
--- ========== PART 2: 인덱스 최적화 ==========================================
--- ============================================================================
-
--- ----------------------------------------------------------------------------
--- 2-1. portfolios 테이블: 복합 인덱스 (user_id + current_value DESC)
--- 사용처: useSharedPortfolio, useCreatePost (가장 빈번한 쿼리)
---   .from('portfolios').select('*').eq('user_id', uid).order('current_value', { ascending: false })
--- ----------------------------------------------------------------------------
-CREATE INDEX IF NOT EXISTS idx_portfolios_user_value
-  ON portfolios(user_id, current_value DESC);
-
--- ----------------------------------------------------------------------------
--- 2-2. portfolios 테이블: 부동산 자산 필터링 인덱스
--- 사용처: useSharedPortfolio (부동산 자산 분리 조회)
---   ticker LIKE 'RE_%' 패턴으로 부동산 필터
--- 기존 idx_portfolios_realestate가 있지만 부분 인덱스이므로 보완
--- ----------------------------------------------------------------------------
--- (이미 20240217_realestate_support.sql에서 생성됨, 스킵)
-
--- ----------------------------------------------------------------------------
--- 2-3. community_posts: 고정 게시물 + 최신순 복합 인덱스
--- 사용처: useCommunityPosts (무한 스크롤)
---   .from('community_posts').select('*').order('created_at', { ascending: false })
---   + 카테고리 필터, is_pinned DESC 정렬
--- ----------------------------------------------------------------------------
-CREATE INDEX IF NOT EXISTS idx_community_posts_category_pinned_created
-  ON community_posts(category, is_pinned DESC NULLS LAST, created_at DESC);
-
--- ----------------------------------------------------------------------------
--- 2-4. community_posts: 인기순 정렬 인덱스
--- 사용처: useCommunityPosts (sortBy === 'popular')
---   .order('likes_count', { ascending: false })
--- ----------------------------------------------------------------------------
-CREATE INDEX IF NOT EXISTS idx_community_posts_likes_desc
-  ON community_posts(likes_count DESC, created_at DESC);
-
--- ----------------------------------------------------------------------------
--- 2-5. community_posts: 핫 정렬 인덱스 (댓글순)
--- 사용처: useCommunityPosts (sortBy === 'hot')
---   .order('comments_count', { ascending: false })
--- ----------------------------------------------------------------------------
-CREATE INDEX IF NOT EXISTS idx_community_posts_comments_desc
-  ON community_posts(comments_count DESC, created_at DESC);
-
--- ----------------------------------------------------------------------------
--- 2-6. community_likes: 사용자별 좋아요 목록 조회 인덱스
--- 사용처: useMyLikes
---   .from('community_likes').select('post_id').eq('user_id', uid)
--- ----------------------------------------------------------------------------
-CREATE INDEX IF NOT EXISTS idx_community_likes_user
-  ON community_likes(user_id);
-
--- ----------------------------------------------------------------------------
--- 2-7. user_daily_prescriptions: 날짜별 조회 인덱스 (처방전 히스토리)
--- 사용처: useRebalanceHistory
---   .from('user_daily_prescriptions').select('*').eq('user_id', uid)
---    .order('date', { ascending: false })
--- 기존 idx_udp_user_date가 있지만 추가 커버링 확인
--- ----------------------------------------------------------------------------
--- (이미 20240211_user_daily_prescriptions.sql에서 생성됨, 스킵)
-
--- ----------------------------------------------------------------------------
--- 2-8. rebalance_executions: 사용자별 최근 실행 조회 인덱스
--- 사용처: useRebalanceHistory
---   .from('rebalance_executions').select('*').eq('user_id', uid)
---    .order('executed_at', { ascending: false })
--- ----------------------------------------------------------------------------
-CREATE INDEX IF NOT EXISTS idx_rebalance_executions_user_executed
-  ON rebalance_executions(user_id, executed_at DESC);
-
--- ----------------------------------------------------------------------------
--- 2-9. ai_chat_messages: 사용자별 세션 목록 조회 인덱스
--- 사용처: aiMarketplace.getChatSessions
---   .from('ai_chat_messages').select(...).eq('user_id', uid).eq('role', 'user')
---    .order('created_at', { ascending: false })
--- ----------------------------------------------------------------------------
-CREATE INDEX IF NOT EXISTS idx_ai_chat_messages_user_role
-  ON ai_chat_messages(user_id, role, created_at DESC);
-
--- ----------------------------------------------------------------------------
--- 2-10. ai_feature_results: 사용자별 결과 목록 조회 인덱스
--- 사용처: aiMarketplace.getAnalysisHistory
---   .from('ai_feature_results').select('*').eq('user_id', uid)
---    .order('created_at', { ascending: false })
--- ----------------------------------------------------------------------------
-CREATE INDEX IF NOT EXISTS idx_ai_feature_results_user_created
-  ON ai_feature_results(user_id, created_at DESC);
-
--- ----------------------------------------------------------------------------
--- 2-11. post_bookmarks: 사용자별 + 게시물별 중복 확인 인덱스
--- 사용처: useBookmarks
---   .from('post_bookmarks').select('id').eq('user_id', uid).eq('post_id', pid)
--- (이미 UNIQUE(user_id, post_id)이므로 별도 불필요, 스킵)
--- ----------------------------------------------------------------------------
-
--- ----------------------------------------------------------------------------
--- 2-12. credit_transactions: 사용자별 타입별 조회 인덱스
--- 사용처: admin_get_overview, admin_get_daily_comparison
---   .from('credit_transactions').where type IN (...) AND created_at >= ...
--- ----------------------------------------------------------------------------
-CREATE INDEX IF NOT EXISTS idx_credit_transactions_type_created
-  ON credit_transactions(type, created_at DESC);
-
--- ----------------------------------------------------------------------------
--- 2-13. analytics_events: 복합 인덱스 (user_id + created_at)
--- 사용처: admin_get_overview, admin_get_retention (DAU/WAU 집계)
---   COUNT(DISTINCT user_id) WHERE created_at >= ...
--- ----------------------------------------------------------------------------
-CREATE INDEX IF NOT EXISTS idx_analytics_events_user_created
-  ON analytics_events(user_id, created_at DESC)
-  WHERE user_id IS NOT NULL;
-
--- ----------------------------------------------------------------------------
--- 2-14. profiles: created_at 인덱스 (가입일 기반 쿼리)
--- 사용처: admin_get_overview, admin_get_retention (신규 가입 집계)
---   WHERE created_at >= CURRENT_DATE
--- ----------------------------------------------------------------------------
-CREATE INDEX IF NOT EXISTS idx_profiles_created_at
-  ON profiles(created_at DESC);
-
--- ----------------------------------------------------------------------------
--- 2-15. profiles: email 인덱스 (관리자 유저 검색)
--- 사용처: admin_get_user_list (이메일 검색)
---   WHERE email ILIKE '%search%'
--- pg_trgm 확장 없이도 접두사 검색(ILIKE 'abc%')은 B-tree로 커버 가능
--- ----------------------------------------------------------------------------
-CREATE INDEX IF NOT EXISTS idx_profiles_email
-  ON profiles(email);
-
--- ----------------------------------------------------------------------------
--- 2-16. realestate_price_cache: 법정동+단지+면적 조회 인덱스
--- 사용처: centralKitchen.getCachedRealEstatePrice
---   .eq('lawd_cd', ...).eq('complex_name', ...).order('updated_at', { ascending: false })
--- UNIQUE 제약이 있지만 updated_at 정렬을 포함하는 인덱스 추가
--- ----------------------------------------------------------------------------
-CREATE INDEX IF NOT EXISTS idx_realestate_cache_full_lookup
-  ON realestate_price_cache(lawd_cd, complex_name, unit_area, updated_at DESC);
-
--- ----------------------------------------------------------------------------
--- 2-17. stock_quant_reports: 종목+날짜 조회 인덱스
--- 사용처: centralKitchen.getQuantReport
---   .from('stock_quant_reports').eq('ticker', t).eq('date', today)
--- (이미 PK(ticker, date) 또는 UNIQUE(date, ticker)가 있으므로 스킵)
--- ----------------------------------------------------------------------------
-
--- ----------------------------------------------------------------------------
--- 2-18. prediction_votes: 사용자별 최신 투표 조회 인덱스
--- 사용처: usePredictions (내 투표 기록 조회)
--- ----------------------------------------------------------------------------
-CREATE INDEX IF NOT EXISTS idx_prediction_votes_user_created
-  ON prediction_votes(user_id, created_at DESC);
-
--- ----------------------------------------------------------------------------
--- 2-19. community_comments: 사용자별 댓글 조회 + 생성일 정렬
--- 사용처: accountDeletion (유저 데이터 조회)
--- ----------------------------------------------------------------------------
-CREATE INDEX IF NOT EXISTS idx_community_comments_user_created
-  ON community_comments(user_id, created_at DESC);
-
--- ----------------------------------------------------------------------------
--- 2-20. user_badges: 사용자별 + 배지ID 복합 조회
--- 사용처: badgeService (뱃지 존재 여부 확인)
--- (이미 UNIQUE(user_id, badge_id)가 있으므로 스킵)
--- ----------------------------------------------------------------------------
-
--- ============================================================================
--- ========== PART 3: 데이터 무결성 강화 =====================================
--- ============================================================================
-
--- ----------------------------------------------------------------------------
--- 3-1. community_posts: created_at DEFAULT NOW() 보장
--- 문제: INSERT 시 created_at이 NULL이 될 수 있음
--- ----------------------------------------------------------------------------
-ALTER TABLE community_posts
-  ALTER COLUMN created_at SET DEFAULT NOW();
-
--- ----------------------------------------------------------------------------
--- 3-2. community_posts: updated_at DEFAULT NOW() 보장
--- ----------------------------------------------------------------------------
-ALTER TABLE community_posts
-  ALTER COLUMN updated_at SET DEFAULT NOW();
-
--- ----------------------------------------------------------------------------
--- 3-3. community_comments: created_at NOT NULL 제약 추가 안전 처리
--- 기존 데이터에 NULL이 있을 수 있으므로 먼저 채운 후 제약 추가
--- ----------------------------------------------------------------------------
-UPDATE community_comments SET created_at = NOW() WHERE created_at IS NULL;
-ALTER TABLE community_comments ALTER COLUMN created_at SET NOT NULL;
-ALTER TABLE community_comments ALTER COLUMN created_at SET DEFAULT NOW();
-
--- ----------------------------------------------------------------------------
--- 3-4. deposit_events: created_at DEFAULT NOW() 보장
--- ----------------------------------------------------------------------------
-ALTER TABLE deposit_events
-  ALTER COLUMN created_at SET DEFAULT NOW();
-
--- ----------------------------------------------------------------------------
--- 3-5. edge_function_logs: function_name NOT NULL 보장 (이미 NOT NULL이지만 확인)
--- 3-6. edge_function_logs: executed_at DEFAULT NOW() 보장
--- ----------------------------------------------------------------------------
-ALTER TABLE edge_function_logs
-  ALTER COLUMN executed_at SET DEFAULT NOW();
-
--- ----------------------------------------------------------------------------
--- 3-7. user_goals: user_id NOT NULL 제약 추가 (FK는 있지만 NULL 허용 상태)
--- ----------------------------------------------------------------------------
-DO $$ BEGIN
-  -- user_id가 NULL인 행이 있으면 삭제 (FK 위반 데이터)
-  DELETE FROM user_goals WHERE user_id IS NULL;
-  -- NOT NULL 제약 추가
-  ALTER TABLE user_goals ALTER COLUMN user_id SET NOT NULL;
-EXCEPTION WHEN others THEN
-  RAISE NOTICE 'user_goals.user_id NOT NULL 설정 스킵 (이미 설정되었거나 다른 이유): %', SQLERRM;
-END $$;
-
--- ----------------------------------------------------------------------------
--- 3-8. referral_pending_rewards: created_at DEFAULT NOW() + NOT NULL
--- ----------------------------------------------------------------------------
-ALTER TABLE referral_pending_rewards
-  ALTER COLUMN created_at SET DEFAULT NOW();
-
-DO $$ BEGIN
-  UPDATE referral_pending_rewards SET created_at = NOW() WHERE created_at IS NULL;
-  ALTER TABLE referral_pending_rewards ALTER COLUMN created_at SET NOT NULL;
-EXCEPTION WHEN others THEN
-  RAISE NOTICE 'referral_pending_rewards.created_at NOT NULL 설정 스킵: %', SQLERRM;
-END $$;
-
--- ----------------------------------------------------------------------------
--- 3-9. profiles: updated_at 자동 갱신 트리거 확인/추가
--- 문제: profiles 테이블에 updated_at 컬럼은 있지만 자동 갱신 트리거가 없을 수 있음
--- ----------------------------------------------------------------------------
-DROP TRIGGER IF EXISTS trigger_profiles_updated_at ON profiles;
-CREATE TRIGGER trigger_profiles_updated_at
-  BEFORE UPDATE ON profiles
-  FOR EACH ROW
-  EXECUTE FUNCTION update_updated_at_column();
-
--- ----------------------------------------------------------------------------
--- 3-10. community_posts: updated_at 자동 갱신 트리거 확인/추가
--- ----------------------------------------------------------------------------
-DROP TRIGGER IF EXISTS trigger_community_posts_updated_at ON community_posts;
-CREATE TRIGGER trigger_community_posts_updated_at
-  BEFORE UPDATE ON community_posts
-  FOR EACH ROW
-  EXECUTE FUNCTION update_updated_at_column();
-
--- ----------------------------------------------------------------------------
--- 3-11. user_credits: updated_at 자동 갱신 트리거
--- ----------------------------------------------------------------------------
-DROP TRIGGER IF EXISTS trigger_user_credits_updated_at ON user_credits;
-CREATE TRIGGER trigger_user_credits_updated_at
-  BEFORE UPDATE ON user_credits
-  FOR EACH ROW
-  EXECUTE FUNCTION update_updated_at_column();
-
--- ----------------------------------------------------------------------------
--- 3-12. realestate_price_cache: updated_at 자동 갱신 트리거
--- ----------------------------------------------------------------------------
-DROP TRIGGER IF EXISTS trigger_realestate_cache_updated_at ON realestate_price_cache;
-CREATE TRIGGER trigger_realestate_cache_updated_at
-  BEFORE UPDATE ON realestate_price_cache
-  FOR EACH ROW
-  EXECUTE FUNCTION update_updated_at_column();
-
--- ----------------------------------------------------------------------------
--- 3-13. prediction_polls: created_at NOT NULL 보장
--- ----------------------------------------------------------------------------
-ALTER TABLE prediction_polls
-  ALTER COLUMN created_at SET DEFAULT NOW();
-
--- ----------------------------------------------------------------------------
--- 3-14. post_reports: reporter_id NOT NULL 보장 (이미 NOT NULL이지만 확인)
---        + Service Role 접근 정책 (관리자가 신고 처리 시 필요)
--- ----------------------------------------------------------------------------
-DO $$ BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies
-    WHERE tablename = 'post_reports' AND policyname = 'service_all_post_reports'
-  ) THEN
-    CREATE POLICY service_all_post_reports ON post_reports
-      FOR ALL TO service_role
-      USING (true)
-      WITH CHECK (true);
-  END IF;
-END $$;
-
--- ----------------------------------------------------------------------------
--- 3-15. community_reports 테이블: RLS 활성화 확인 + Service Role 정책
--- admin_get_overview에서 community_reports를 조회하는데, RLS 정책이 필요
--- ----------------------------------------------------------------------------
-DO $$ BEGIN
-  -- community_reports 테이블이 존재하는 경우에만 실행
-  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'community_reports') THEN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='community_reports') THEN
     ALTER TABLE community_reports ENABLE ROW LEVEL SECURITY;
-
-    IF NOT EXISTS (
-      SELECT 1 FROM pg_policies
-      WHERE tablename = 'community_reports' AND policyname = 'service_all_community_reports'
-    ) THEN
-      EXECUTE 'CREATE POLICY service_all_community_reports ON community_reports
-        FOR ALL TO service_role
-        USING (true)
-        WITH CHECK (true)';
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='community_reports' AND policyname='service_all_community_reports') THEN
+      EXECUTE 'CREATE POLICY service_all_community_reports ON community_reports FOR ALL TO service_role USING (true) WITH CHECK (true)';
     END IF;
-
-    IF NOT EXISTS (
-      SELECT 1 FROM pg_policies
-      WHERE tablename = 'community_reports' AND policyname = 'community_reports_insert_own'
-    ) THEN
-      EXECUTE 'CREATE POLICY community_reports_insert_own ON community_reports
-        FOR INSERT
-        WITH CHECK (auth.uid() IS NOT NULL)';
-    END IF;
-
-    IF NOT EXISTS (
-      SELECT 1 FROM pg_policies
-      WHERE tablename = 'community_reports' AND policyname = 'community_reports_read_own'
-    ) THEN
-      EXECUTE 'CREATE POLICY community_reports_read_own ON community_reports
-        FOR SELECT
-        USING (auth.uid() IS NOT NULL)';
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='community_reports' AND policyname='community_reports_insert_own') THEN
+      EXECUTE 'CREATE POLICY community_reports_insert_own ON community_reports FOR INSERT WITH CHECK (auth.uid() IS NOT NULL)';
     END IF;
   END IF;
 END $$;
 
--- ============================================================================
+-- ========== PART 2: 인덱스 최적화 ==========================================
+-- 모든 인덱스: 테이블+컬럼 존재 확인 후 생성
+
+DO $$
+BEGIN
+  -- portfolios(user_id, current_value)
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='portfolios' AND column_name='current_value') THEN
+    CREATE INDEX IF NOT EXISTS idx_portfolios_user_value ON portfolios(user_id, current_value DESC);
+  END IF;
+
+  -- community_posts 인덱스 3개
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='community_posts' AND column_name='category') THEN
+    CREATE INDEX IF NOT EXISTS idx_community_posts_category_pinned_created ON community_posts(category, is_pinned DESC NULLS LAST, created_at DESC);
+  END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='community_posts' AND column_name='likes_count') THEN
+    CREATE INDEX IF NOT EXISTS idx_community_posts_likes_desc ON community_posts(likes_count DESC, created_at DESC);
+  END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='community_posts' AND column_name='comments_count') THEN
+    CREATE INDEX IF NOT EXISTS idx_community_posts_comments_desc ON community_posts(comments_count DESC, created_at DESC);
+  END IF;
+
+  -- community_likes(user_id)
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='community_likes') THEN
+    CREATE INDEX IF NOT EXISTS idx_community_likes_user ON community_likes(user_id);
+  END IF;
+
+  -- rebalance_executions(user_id, executed_at)
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='rebalance_executions' AND column_name='executed_at') THEN
+    CREATE INDEX IF NOT EXISTS idx_rebalance_executions_user_executed ON rebalance_executions(user_id, executed_at DESC);
+  END IF;
+
+  -- ai_chat_messages(user_id, role, created_at)
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='ai_chat_messages') THEN
+    CREATE INDEX IF NOT EXISTS idx_ai_chat_messages_user_role ON ai_chat_messages(user_id, role, created_at DESC);
+  END IF;
+
+  -- ai_feature_results(user_id, created_at)
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='ai_feature_results') THEN
+    CREATE INDEX IF NOT EXISTS idx_ai_feature_results_user_created ON ai_feature_results(user_id, created_at DESC);
+  END IF;
+
+  -- credit_transactions(type, created_at)
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='credit_transactions' AND column_name='type') THEN
+    CREATE INDEX IF NOT EXISTS idx_credit_transactions_type_created ON credit_transactions(type, created_at DESC);
+  END IF;
+
+  -- analytics_events(user_id, created_at)
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='analytics_events') THEN
+    CREATE INDEX IF NOT EXISTS idx_analytics_events_user_created ON analytics_events(user_id, created_at DESC) WHERE user_id IS NOT NULL;
+  END IF;
+
+  -- profiles(created_at), profiles(email) - 컬럼 존재 시에만
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='profiles' AND column_name='created_at') THEN
+    CREATE INDEX IF NOT EXISTS idx_profiles_created_at ON profiles(created_at DESC);
+  END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='profiles' AND column_name='email') THEN
+    CREATE INDEX IF NOT EXISTS idx_profiles_email ON profiles(email);
+  END IF;
+
+  -- realestate_price_cache
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='realestate_price_cache' AND column_name='lawd_cd') THEN
+    CREATE INDEX IF NOT EXISTS idx_realestate_cache_full_lookup ON realestate_price_cache(lawd_cd, complex_name, unit_area, updated_at DESC);
+  END IF;
+
+  -- prediction_votes(user_id, created_at)
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='prediction_votes') THEN
+    CREATE INDEX IF NOT EXISTS idx_prediction_votes_user_created ON prediction_votes(user_id, created_at DESC);
+  END IF;
+
+  -- community_comments(user_id, created_at)
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='community_comments') THEN
+    CREATE INDEX IF NOT EXISTS idx_community_comments_user_created ON community_comments(user_id, created_at DESC);
+  END IF;
+END $$;
+
+-- ========== PART 3: 데이터 무결성 강화 =====================================
+-- 모든 ALTER TABLE: 테이블+컬럼 존재 확인
+
+DO $$ BEGIN
+  -- community_posts: DEFAULT NOW()
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='community_posts' AND column_name='created_at') THEN
+    ALTER TABLE community_posts ALTER COLUMN created_at SET DEFAULT NOW();
+  END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='community_posts' AND column_name='updated_at') THEN
+    ALTER TABLE community_posts ALTER COLUMN updated_at SET DEFAULT NOW();
+  END IF;
+EXCEPTION WHEN others THEN
+  RAISE NOTICE 'community_posts DEFAULT 설정 스킵: %', SQLERRM;
+END $$;
+
+DO $$ BEGIN
+  -- community_comments: NOT NULL + DEFAULT
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='community_comments' AND column_name='created_at') THEN
+    UPDATE community_comments SET created_at = NOW() WHERE created_at IS NULL;
+    ALTER TABLE community_comments ALTER COLUMN created_at SET NOT NULL;
+    ALTER TABLE community_comments ALTER COLUMN created_at SET DEFAULT NOW();
+  END IF;
+EXCEPTION WHEN others THEN
+  RAISE NOTICE 'community_comments 수정 스킵: %', SQLERRM;
+END $$;
+
+DO $$ BEGIN
+  -- deposit_events: DEFAULT NOW()
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='deposit_events' AND column_name='created_at') THEN
+    ALTER TABLE deposit_events ALTER COLUMN created_at SET DEFAULT NOW();
+  END IF;
+EXCEPTION WHEN others THEN
+  RAISE NOTICE 'deposit_events 수정 스킵: %', SQLERRM;
+END $$;
+
+DO $$ BEGIN
+  -- edge_function_logs: DEFAULT NOW()
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='edge_function_logs' AND column_name='executed_at') THEN
+    ALTER TABLE edge_function_logs ALTER COLUMN executed_at SET DEFAULT NOW();
+  END IF;
+EXCEPTION WHEN others THEN
+  RAISE NOTICE 'edge_function_logs 수정 스킵: %', SQLERRM;
+END $$;
+
+DO $$ BEGIN
+  -- user_goals: user_id NOT NULL
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='user_goals' AND column_name='user_id') THEN
+    DELETE FROM user_goals WHERE user_id IS NULL;
+    ALTER TABLE user_goals ALTER COLUMN user_id SET NOT NULL;
+  END IF;
+EXCEPTION WHEN others THEN
+  RAISE NOTICE 'user_goals 수정 스킵: %', SQLERRM;
+END $$;
+
+DO $$ BEGIN
+  -- referral_pending_rewards: created_at DEFAULT + NOT NULL
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='referral_pending_rewards' AND column_name='created_at') THEN
+    ALTER TABLE referral_pending_rewards ALTER COLUMN created_at SET DEFAULT NOW();
+    UPDATE referral_pending_rewards SET created_at = NOW() WHERE created_at IS NULL;
+    ALTER TABLE referral_pending_rewards ALTER COLUMN created_at SET NOT NULL;
+  END IF;
+EXCEPTION WHEN others THEN
+  RAISE NOTICE 'referral_pending_rewards 수정 스킵: %', SQLERRM;
+END $$;
+
+DO $$ BEGIN
+  -- prediction_polls: DEFAULT NOW()
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='prediction_polls' AND column_name='created_at') THEN
+    ALTER TABLE prediction_polls ALTER COLUMN created_at SET DEFAULT NOW();
+  END IF;
+EXCEPTION WHEN others THEN
+  RAISE NOTICE 'prediction_polls 수정 스킵: %', SQLERRM;
+END $$;
+
+-- updated_at 자동 갱신 함수 생성 (없으면 새로 만들기)
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- updated_at 자동 갱신 트리거
+DO $$ BEGIN
+  IF TRUE THEN
+
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='profiles' AND column_name='updated_at') THEN
+      DROP TRIGGER IF EXISTS trigger_profiles_updated_at ON profiles;
+      CREATE TRIGGER trigger_profiles_updated_at BEFORE UPDATE ON profiles FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='community_posts' AND column_name='updated_at') THEN
+      DROP TRIGGER IF EXISTS trigger_community_posts_updated_at ON community_posts;
+      CREATE TRIGGER trigger_community_posts_updated_at BEFORE UPDATE ON community_posts FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='user_credits' AND column_name='updated_at') THEN
+      DROP TRIGGER IF EXISTS trigger_user_credits_updated_at ON user_credits;
+      CREATE TRIGGER trigger_user_credits_updated_at BEFORE UPDATE ON user_credits FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='realestate_price_cache' AND column_name='updated_at') THEN
+      DROP TRIGGER IF EXISTS trigger_realestate_cache_updated_at ON realestate_price_cache;
+      CREATE TRIGGER trigger_realestate_cache_updated_at BEFORE UPDATE ON realestate_price_cache FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+    END IF;
+
+  END IF;
+END $$;
+
 -- ========== PART 4: PostgREST 스키마 캐시 갱신 ============================
--- ============================================================================
-
--- 스키마 변경 후 PostgREST에게 리로드 알림
 SELECT pg_notify('pgrst', 'reload schema');
-
--- ============================================================================
--- 마이그레이션 완료 요약
--- ============================================================================
---
--- [RLS 정책 보완] 16개 정책 추가/수정
---   - profiles: INSERT 정책 추가
---   - user_credits: INSERT 정책 추가
---   - credit_transactions: INSERT 정책 추가
---   - prediction_votes: INSERT 정책 추가
---   - analytics_events: service_role 전체 접근
---   - user_daily_prescriptions: service_role 전체 접근
---   - referral_pending_rewards: RLS 활성화 + 정책 추가
---   - user_goals: service_role 전체 접근
---   - health_score_history: service_role 전체 접근
---   - app_metrics: service_role 전체 접근
---   - feature_flags: service_role 전체 접근
---   - prediction_polls: service_role 전체 접근
---   - prediction_user_stats: service_role 전체 접근
---   - community_posts: UPDATE 정책에 WITH CHECK 추가
---   - gatherings: UPDATE 정책에 WITH CHECK 추가
---   - daily_quizzes: service_role 전체 접근
---
--- [인덱스 최적화] 12개 인덱스 추가
---   - portfolios: (user_id, current_value DESC)
---   - community_posts: (category, is_pinned, created_at), (likes_count), (comments_count)
---   - community_likes: (user_id)
---   - rebalance_executions: (user_id, executed_at)
---   - ai_chat_messages: (user_id, role, created_at)
---   - ai_feature_results: (user_id, created_at)
---   - credit_transactions: (type, created_at)
---   - analytics_events: (user_id, created_at)
---   - profiles: (created_at), (email)
---   - realestate_price_cache: (lawd_cd, complex_name, unit_area, updated_at)
---   - prediction_votes: (user_id, created_at)
---   - community_comments: (user_id, created_at)
---
--- [데이터 무결성] 10개 개선
---   - community_posts: DEFAULT NOW() 보장
---   - community_comments: NOT NULL + DEFAULT NOW()
---   - deposit_events: DEFAULT NOW()
---   - edge_function_logs: DEFAULT NOW()
---   - user_goals: user_id NOT NULL
---   - referral_pending_rewards: DEFAULT + NOT NULL
---   - profiles: updated_at 자동 갱신 트리거
---   - community_posts: updated_at 자동 갱신 트리거
---   - user_credits: updated_at 자동 갱신 트리거
---   - realestate_price_cache: updated_at 자동 갱신 트리거
---
--- ============================================================================
