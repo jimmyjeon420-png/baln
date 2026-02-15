@@ -173,24 +173,50 @@ export function extractLawdCd(address: string): string | null {
     .replace('광역시', '')
     .replace('특별자치시', '')
     .replace('특별자치도', '')
+    // "경기도", "강원도" 등 일반 도 단위 → 약칭 변환
+    .replace(/(경기|강원|충청북|충청남|전라북|전라남|경상북|경상남|제주)도/g, '$1')
     .trim();
 
+  if (__DEV__) {
+    console.log('[lawdCd] 원본 주소:', address);
+    console.log('[lawdCd] 정규화 후:', normalized);
+  }
+
   const parts = normalized.split(/\s+/);
-  if (parts.length < 2) return null;
+  if (parts.length < 2) {
+    if (__DEV__) console.log('[lawdCd] 매칭 실패: 파트 개수 부족 (<2)');
+    return null;
+  }
+
+  if (__DEV__) {
+    console.log('[lawdCd] 파트 분리:', parts);
+  }
 
   // Case 1: 3단계 시군구 (예: "경기 성남시 분당구")
   if (parts.length >= 3) {
     const key3 = `${parts[0]} ${parts[1]} ${parts[2]}`;
-    if (LAWD_MAP[key3]) return LAWD_MAP[key3];
+    if (__DEV__) console.log('[lawdCd] 3단계 키 시도:', key3);
+    if (LAWD_MAP[key3]) {
+      if (__DEV__) console.log('[lawdCd] ✅ 3단계 매칭 성공:', LAWD_MAP[key3]);
+      return LAWD_MAP[key3];
+    }
   }
 
   // Case 2: 2단계 시군구 (예: "서울 강남구")
   const key2 = `${parts[0]} ${parts[1]}`;
-  if (LAWD_MAP[key2]) return LAWD_MAP[key2];
+  if (__DEV__) console.log('[lawdCd] 2단계 키 시도:', key2);
+  if (LAWD_MAP[key2]) {
+    if (__DEV__) console.log('[lawdCd] ✅ 2단계 매칭 성공:', LAWD_MAP[key2]);
+    return LAWD_MAP[key2];
+  }
 
   // Case 3: 세종특별자치시
-  if (address.includes('세종')) return '36110';
+  if (address.includes('세종')) {
+    if (__DEV__) console.log('[lawdCd] ✅ 세종시 매칭');
+    return '36110';
+  }
 
+  if (__DEV__) console.log('[lawdCd] ❌ 매칭 실패');
   return null;
 }
 
