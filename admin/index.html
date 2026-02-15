@@ -552,6 +552,7 @@
       <button class="tab-btn" data-tab="content">콘텐츠</button>
       <button class="tab-btn" data-tab="analytics">분석</button>
       <button class="tab-btn" data-tab="eventlog">이벤트 로그</button>
+      <button class="tab-btn" data-tab="wbs">📊 사업방향 WBS</button>
     </div>
 
     <div class="content">
@@ -776,6 +777,354 @@
             </table>
           </div>
         </div>
+      </div>
+
+      <!-- ═══ TAB: 사업방향 WBS ═══ -->
+      <div class="tab-content" id="tab-wbs">
+
+        <!-- 1차 GOAL -->
+        <div class="section-card">
+          <div class="section-header">
+            <span class="section-title">🎯 1차 GOAL - 앱의 존재 이유</span>
+          </div>
+          <div class="section-body">
+            <div style="display: grid; gap: 16px;">
+
+              <!-- 미션 -->
+              <div style="background: var(--surface2); padding: 16px; border-radius: 8px; border-left: 3px solid var(--green);">
+                <h3 style="font-size: 15px; margin-bottom: 8px; color: var(--green);">창업자 미션</h3>
+                <p style="color: var(--text2); font-size: 13px; line-height: 1.6;">
+                  <strong>타겟:</strong> 20~40대, 약 5천만원 모은 투자 입문자<br>
+                  <strong>핵심 문제:</strong> 시장 급락 시 패닉셀, 급등 시 FOMO 매수 → 자기만의 투자 기준이 없음<br>
+                  <strong>앱의 목적:</strong> 매일 5분 시장 맥락을 읽으며 "자기만의 투자 기준"을 형성하게 돕는 습관 앱<br>
+                  <strong>절대 원칙:</strong> "안심을 판다, 불안을 팔지 않는다" (버핏) — 공포 마케팅 금지
+                </p>
+              </div>
+
+              <!-- 핵심 철학 -->
+              <div style="background: var(--surface2); padding: 16px; border-radius: 8px;">
+                <h3 style="font-size: 15px; margin-bottom: 12px; color: var(--text);">핵심 철학 (3인 라운드테이블 합의)</h3>
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 120px;">인물</th>
+                      <th>핵심 주장</th>
+                      <th>앱 적용</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>이승건</strong><br><span style="color: var(--text3); font-size: 11px;">토스 CEO</span></td>
+                      <td>보상(크레딧)으로 교육을 감싸면 사용자는 성장하는 줄도 모르고 매일 온다</td>
+                      <td>매일 출석 보상 + 예측 게임 + 복기 루프</td>
+                    </tr>
+                    <tr>
+                      <td><strong>레이 달리오</strong><br><span style="color: var(--text3); font-size: 11px;">Bridgewater</span></td>
+                      <td>맥락(Context)을 제공하면 공포가 이해로 바뀐다</td>
+                      <td>맥락 카드: 역사/거시경제/기관행동/내 포트폴리오 4겹</td>
+                    </tr>
+                    <tr>
+                      <td><strong>워렌 버핏</strong><br><span style="color: var(--text3); font-size: 11px;">Berkshire</span></td>
+                      <td>매일 읽는 사람이 결국 이긴다. 복리는 지식에도 적용된다</td>
+                      <td>습관 루프: 읽기→예측→복기→기준 형성</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- 습관 루프 -->
+              <div style="background: var(--surface2); padding: 16px; border-radius: 8px;">
+                <h3 style="font-size: 15px; margin-bottom: 12px; color: var(--text);">습관 루프 (Habit Loop) — 앱의 핵심 엔진</h3>
+                <div style="background: var(--bg); padding: 16px; border-radius: 8px; font-family: monospace; font-size: 13px; color: var(--green); text-align: center; line-height: 2;">
+                  맥락 카드 읽기 (교육) → 예측 투표 (참여) → 복기 & 정답 확인 (학습)<br>
+                  → 자기 기준 형성 (성장) → 패닉셀 방지 (최종 목표)
+                </div>
+                <p style="color: var(--text2); font-size: 13px; margin-top: 12px; line-height: 1.6;">
+                  <strong>매일 반복:</strong> 아침 맥락 카드 → 예측 질문 투표 → 다음날 결과 복기<br>
+                  <strong>보상 감싸기:</strong> 출석 2C + 적중 2C → 교육을 게임으로 포장<br>
+                  <strong>궁극 목표:</strong> 12개월 후 "시장이 -5% 빠져도 맥락을 이해하니 패닉셀 안 한다"
+                </p>
+              </div>
+
+              <!-- 3탭 구조 -->
+              <div style="background: var(--surface2); padding: 16px; border-radius: 8px;">
+                <h3 style="font-size: 15px; margin-bottom: 12px; color: var(--text);">3-Tab 구조 (목표 아키텍처)</h3>
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 80px;">탭</th>
+                      <th style="width: 120px;">이름</th>
+                      <th>역할</th>
+                      <th style="width: 120px;">체류시간 목표</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>1</strong></td>
+                      <td><strong>오늘 (Today)</strong></td>
+                      <td>맥락 카드 + 예측 투표 + Pulse 요약</td>
+                      <td>3~5분/일</td>
+                    </tr>
+                    <tr>
+                      <td><strong>2</strong></td>
+                      <td><strong>분석 (Checkup)</strong></td>
+                      <td>AI 진단 + 처방전 + 건강 점수</td>
+                      <td>필요 시</td>
+                    </tr>
+                    <tr>
+                      <td><strong>3</strong></td>
+                      <td><strong>전체 (More)</strong></td>
+                      <td>커뮤니티 + 설정 + 크레딧 + 부동산</td>
+                      <td>탐색</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- 6월 MAU 목표 -->
+        <div class="section-card" style="margin-top: 16px;">
+          <div class="section-header">
+            <span class="section-title">📈 6월 MAU 목표 달성 전략</span>
+          </div>
+          <div class="section-body">
+            <div style="display: grid; gap: 16px;">
+
+              <!-- KPI 정의 -->
+              <div style="background: var(--surface2); padding: 16px; border-radius: 8px; border-left: 3px solid var(--blue);">
+                <h3 style="font-size: 15px; margin-bottom: 8px; color: var(--blue);">목표 KPI (2026년 6월)</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-top: 12px;">
+                  <div style="background: var(--bg); padding: 12px; border-radius: 8px;">
+                    <div style="font-size: 24px; font-weight: 700; color: var(--green);">500</div>
+                    <div style="font-size: 12px; color: var(--text2);">MAU (월간 활성 유저)</div>
+                  </div>
+                  <div style="background: var(--bg); padding: 12px; border-radius: 8px;">
+                    <div style="font-size: 24px; font-weight: 700; color: var(--green);">40%+</div>
+                    <div style="font-size: 12px; color: var(--text2);">D7 리텐션</div>
+                  </div>
+                  <div style="background: var(--bg); padding: 12px; border-radius: 8px;">
+                    <div style="font-size: 24px; font-weight: 700; color: var(--green);">30%</div>
+                    <div style="font-size: 12px; color: var(--text2);">Daily Active 비율</div>
+                  </div>
+                  <div style="background: var(--bg); padding: 12px; border-radius: 8px;">
+                    <div style="font-size: 24px; font-weight: 700; color: var(--green);">5%</div>
+                    <div style="font-size: 12px; color: var(--text2);">무료→유료 전환율</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 핵심 인사이트 -->
+              <div style="background: rgba(255, 193, 7, 0.1); padding: 16px; border-radius: 8px; border-left: 3px solid var(--yellow);">
+                <h3 style="font-size: 15px; margin-bottom: 8px; color: var(--yellow);">⚠️ 이승건: "첫 7일이 전부입니다"</h3>
+                <p style="color: var(--text2); font-size: 13px; line-height: 1.6;">
+                  사용자가 7일 안에 습관을 만들지 못하면 영원히 안 돌아옵니다.<br><br>
+                  <strong>현재 문제:</strong><br>
+                  ❌ 5탭 구조 → 사용자가 어디 가야 할지 모름<br>
+                  ❌ 맥락 카드가 "오늘" 탭에 없고 흩어져 있음<br>
+                  ❌ 예측 투표 → 복기 연결이 약함 (다음날 알림 없음)<br>
+                  ❌ "또래 비교" 넛지 없음 (동기부여 부족)
+                </p>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- Phase 9-12 실행 계획 -->
+        <div class="section-card" style="margin-top: 16px;">
+          <div class="section-header">
+            <span class="section-title">🗓 Phase 9-12 실행 계획</span>
+          </div>
+          <div class="section-body">
+            <div style="display: grid; gap: 16px;">
+
+              <!-- Phase 9 -->
+              <div style="background: var(--surface2); padding: 16px; border-radius: 8px; border-left: 3px solid var(--green);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                  <h3 style="font-size: 15px; color: var(--green);">Phase 9: 출시 준비</h3>
+                  <span style="background: var(--green-dim); color: var(--green); padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">2월 3주차 (D-7)</span>
+                </div>
+                <p style="color: var(--text2); font-size: 13px; margin-bottom: 8px;"><strong>목표:</strong> TestFlight → App Store 제출</p>
+                <ul style="color: var(--text2); font-size: 13px; line-height: 1.8; padding-left: 20px;">
+                  <li>5탭 → 3탭 전환 (app/(tabs)/_layout.tsx)</li>
+                  <li>"오늘" 탭 리디자인 (맥락 카드 UI 컴포넌트)</li>
+                  <li>온보딩 개선 (첫 자산 등록 → 첫 맥락 카드 경험)</li>
+                  <li>Premium 페이월 연결 (맥락 카드 4겹 중 2겹만 무료)</li>
+                  <li>iOS 빌드 → TestFlight 제출 → 내부 테스트 (3명 이상)</li>
+                </ul>
+              </div>
+
+              <!-- Phase 10 -->
+              <div style="background: var(--surface2); padding: 16px; border-radius: 8px; border-left: 3px solid var(--blue);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                  <h3 style="font-size: 15px; color: var(--blue);">Phase 10: 리텐션 최적화</h3>
+                  <span style="background: rgba(33, 150, 243, 0.15); color: var(--blue); padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">출시 후 1주일</span>
+                </div>
+                <p style="color: var(--text2); font-size: 13px; margin-bottom: 8px;"><strong>목표:</strong> D7 리텐션 40% 달성</p>
+                <ul style="color: var(--text2); font-size: 13px; line-height: 1.8; padding-left: 20px;">
+                  <li>아침 7:30 푸시: "어제 예측 결과 + 오늘 맥락"</li>
+                  <li>3일 미접속 시: "시장이 -2% 급락했어요. 맥락 확인하세요"</li>
+                  <li>연속 기록 (스트릭): "7일 연속 출석 달성! +10C"</li>
+                  <li>같은 자산 구간 평균 건강 점수 계산</li>
+                  <li>"또래보다 +5점 높아요!" 넛지 카드</li>
+                  <li>복기 루프 강화: 어제 예측 vs 실제 결과 비교 UI</li>
+                </ul>
+              </div>
+
+              <!-- Phase 11 -->
+              <div style="background: var(--surface2); padding: 16px; border-radius: 8px; border-left: 3px solid var(--purple);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                  <h3 style="font-size: 15px; color: var(--purple);">Phase 11: 바이럴 루프</h3>
+                  <span style="background: rgba(156, 39, 176, 0.15); color: var(--purple); padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">출시 후 2주</span>
+                </div>
+                <p style="color: var(--text2); font-size: 13px; margin-bottom: 8px;"><strong>목표:</strong> 자연 유입 50명/주</p>
+                <ul style="color: var(--text2); font-size: 13px; line-height: 1.8; padding-left: 20px;">
+                  <li>건강 점수 카드 이미지 생성 (OG Image)</li>
+                  <li>카카오톡 공유 → 5C 보상</li>
+                  <li>공유 클릭 → 가입 추적</li>
+                  <li>초대 코드 생성</li>
+                  <li>친구 초대 → 양쪽 각 10C</li>
+                  <li>초대 리더보드 (상위 10명 Premium 1개월 무료)</li>
+                </ul>
+              </div>
+
+              <!-- Phase 12 -->
+              <div style="background: var(--surface2); padding: 16px; border-radius: 8px; border-left: 3px solid var(--yellow);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                  <h3 style="font-size: 15px; color: var(--yellow);">Phase 12: Premium 전환</h3>
+                  <span style="background: rgba(255, 193, 7, 0.15); color: var(--yellow); padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">출시 후 1개월</span>
+                </div>
+                <p style="color: var(--text2); font-size: 13px; margin-bottom: 8px;"><strong>목표:</strong> 무료→유료 전환율 5%</p>
+                <ul style="color: var(--text2); font-size: 13px; line-height: 1.8; padding-left: 20px;">
+                  <li>위기 전환: 시장 -3% 급락 시 "기관들은 뭘 하고 있을까?" → Premium 잠금</li>
+                  <li>손실 회피: "해지하면 27일 연속 기록 사라집니다" 경고</li>
+                  <li>가치 비교 화면: 무료 vs Premium (4겹 맥락, 3회 AI 진단 등)</li>
+                  <li>3일 체험권: 5C로 구매 가능</li>
+                  <li>가격 A/B 테스트: A그룹 ₩4,900/월 vs B그룹 ₩3,900/월 (첫 달 50% 할인)</li>
+                </ul>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- 시뮬레이션 -->
+        <div class="section-card" style="margin-top: 16px;">
+          <div class="section-header">
+            <span class="section-title">📊 6월 목표 시뮬레이션</span>
+          </div>
+          <div class="section-body" style="padding:0; overflow-x:auto;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>주차</th>
+                  <th>MAU</th>
+                  <th>D7 리텐션</th>
+                  <th>유료 전환</th>
+                  <th>MRR</th>
+                  <th>비고</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>W1 (출시)</strong></td>
+                  <td>50</td>
+                  <td>30%</td>
+                  <td>0%</td>
+                  <td>₩0</td>
+                  <td>TestFlight → App Store</td>
+                </tr>
+                <tr>
+                  <td><strong>W4</strong></td>
+                  <td>120</td>
+                  <td>35%</td>
+                  <td>2%</td>
+                  <td>₩11,760</td>
+                  <td>알림 시스템 가동</td>
+                </tr>
+                <tr>
+                  <td><strong>W8</strong></td>
+                  <td>250</td>
+                  <td>38%</td>
+                  <td>3%</td>
+                  <td>₩36,750</td>
+                  <td>공유 기능 활성화</td>
+                </tr>
+                <tr>
+                  <td><strong>W12</strong></td>
+                  <td>400</td>
+                  <td>40%</td>
+                  <td>4%</td>
+                  <td>₩78,400</td>
+                  <td>또래 비교 넛지</td>
+                </tr>
+                <tr style="background: var(--green-dim);">
+                  <td><strong>W16 (6월)</strong></td>
+                  <td style="color: var(--green); font-weight: 700;">500</td>
+                  <td style="color: var(--green); font-weight: 700;">40%</td>
+                  <td style="color: var(--green); font-weight: 700;">5%</td>
+                  <td style="color: var(--green); font-weight: 700;">₩122,500</td>
+                  <td style="color: var(--green); font-weight: 700;">🎯 목표 달성</td>
+                </tr>
+              </tbody>
+            </table>
+            <div style="padding: 16px;">
+              <p style="color: var(--text2); font-size: 13px; line-height: 1.6;">
+                <strong>손익 분기:</strong> M8 (4월) 달성 예상 (고정비용 ₩88,000/월)<br>
+                <strong>6월 순수익:</strong> ₩122,500 - ₩88,000 = <span style="color: var(--green); font-weight: 700;">₩34,500/월</span>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 최종 의사결정 -->
+        <div class="section-card" style="margin-top: 16px;">
+          <div class="section-header">
+            <span class="section-title">✅ 최종 의사결정 (3인 라운드테이블)</span>
+          </div>
+          <div class="section-body">
+            <div style="display: grid; gap: 16px;">
+
+              <div style="background: var(--surface2); padding: 16px; border-radius: 8px;">
+                <h3 style="font-size: 15px; margin-bottom: 8px; color: var(--green);">이승건: "결재합니다. 조건 3가지"</h3>
+                <ol style="color: var(--text2); font-size: 13px; line-height: 1.8; padding-left: 20px;">
+                  <li>Phase 9는 2월 안에 완료 (3월 1일 출시)</li>
+                  <li>Phase 10 실패 시 (D7 < 30%) 즉시 피벗 (알림 시간/맥락 카드 형식 변경)</li>
+                  <li>6월 MAU 500 미달성 시 Premium 가격 인하 금지 (가치 개선 집중)</li>
+                </ol>
+              </div>
+
+              <div style="background: var(--surface2); padding: 16px; border-radius: 8px;">
+                <h3 style="font-size: 15px; margin-bottom: 8px; color: var(--blue);">달리오: "동의합니다. 단, 맥락 카드 품질이 전부입니다"</h3>
+                <ul style="color: var(--text2); font-size: 13px; line-height: 1.8; padding-left: 20px;">
+                  <li>Edge Function Task G (맥락 카드 생성) 정확도 검증 필수</li>
+                  <li>4겹 레이어 중 Layer 4 (내 포트폴리오 영향) 연결이 핵심</li>
+                </ul>
+              </div>
+
+              <div style="background: var(--surface2); padding: 16px; border-radius: 8px;">
+                <h3 style="font-size: 15px; margin-bottom: 8px; color: var(--purple);">버핏: "간결함을 유지하면 성공합니다"</h3>
+                <ul style="color: var(--text2); font-size: 13px; line-height: 1.8; padding-left: 20px;">
+                  <li>신기능 추가 요청은 모두 거절</li>
+                  <li>기존 기능 완성도 80% → 95% 올리기</li>
+                </ul>
+              </div>
+
+              <div style="background: var(--surface2); padding: 16px; border-radius: 8px;">
+                <h3 style="font-size: 15px; margin-bottom: 8px; color: var(--yellow);">캐시 우드: "데이터를 믿으세요"</h3>
+                <ul style="color: var(--text2); font-size: 13px; line-height: 1.8; padding-left: 20px;">
+                  <li>매주 Analytics 리포트 확인</li>
+                  <li>A/B 테스트 결과로만 의사결정</li>
+                </ul>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
       </div>
 
     </div>
