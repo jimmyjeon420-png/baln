@@ -18,6 +18,8 @@ import {
   callGeminiWithSearch,
   cleanJsonResponse,
   logTaskResult,
+  getKSTDate,
+  getKSTDateStr,
 } from './_shared.ts';
 
 // ============================================================================
@@ -60,8 +62,7 @@ export interface MacroAnalysisResult {
  */
 export async function analyzeMacroAndBitcoin(): Promise<MacroAnalysisResult> {
   const startTime = Date.now();
-  const today = new Date();
-  const dateStr = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`;
+  const dateStr = getKSTDateStr();
 
   const prompt = `당신은 baln(발른) 앱의 글로벌 매크로 전략 AI입니다.
 오늘(${dateStr}) 시장 상황을 한국 개인투자자에게 설명합니다.
@@ -138,7 +139,7 @@ export async function analyzeMacroAndBitcoin(): Promise<MacroAnalysisResult> {
         {"factor": "근거 설명", "type": "supporting 또는 opposing", "weight": "strong 또는 medium 또는 weak"}
       ]
     },
-    "generatedAt": "${today.toISOString()}"
+    "generatedAt": "${new Date().toISOString()}"
   }
 }
 
@@ -151,12 +152,39 @@ export async function analyzeMacroAndBitcoin(): Promise<MacroAnalysisResult> {
   try {
     console.log('[Task A] 거시경제 & 비트코인 분석 시작...');
     let parsed: Record<string, unknown>;
-    try {
-      const responseText = await callGeminiWithSearch(prompt);
-      const cleanJson = cleanJsonResponse(responseText);
-      parsed = JSON.parse(cleanJson);
-    } catch (parseErr) {
-      console.error('[Task A] Gemini 응답 파싱 실패 — 기본값 사용:', parseErr);
+
+    // 최대 2회 시도 (첫 실패 시 1회 재시도)
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        const responseText = await callGeminiWithSearch(prompt);
+        // cleanJsonResponse가 이미 _shared에서 호출됨 — 추가 정제 시도
+        let jsonText = responseText;
+        try {
+          jsonText = cleanJsonResponse(responseText);
+        } catch {
+          // 이미 clean된 JSON이거나 raw text → 그대로 파싱 시도
+        }
+        parsed = JSON.parse(jsonText);
+
+        // 파싱 성공 시 실제 데이터인지 검증
+        if (parsed.macroSummary?.title && parsed.macroSummary.title !== '시장 데이터 수집 중') {
+          console.log(`[Task A] Gemini 파싱 성공 (시도 ${attempt}/2): ${parsed.macroSummary.title}`);
+          break;
+        }
+        throw new Error('Gemini가 플레이스홀더 데이터를 반환함');
+      } catch (parseErr) {
+        console.error(`[Task A] Gemini 파싱 실패 (시도 ${attempt}/2):`, parseErr);
+        if (attempt < 2) {
+          console.log('[Task A] 3초 후 재시도...');
+          await new Promise(r => setTimeout(r, 3000));
+          continue;
+        }
+      }
+    }
+
+    // 2회 모두 실패 시 기본값
+    if (!parsed! || !parsed.macroSummary?.title || parsed.macroSummary.title === '시장 데이터 수집 중') {
+      console.error('[Task A] 2회 시도 모두 실패 — 기본값 사용');
       parsed = {
         macroSummary: {
           title: '시장 데이터 수집 중',
@@ -192,7 +220,7 @@ export async function analyzeMacroAndBitcoin(): Promise<MacroAnalysisResult> {
     }
 
     // ── DB 저장: daily_market_insights UPSERT ──
-    const todayDate = today.toISOString().split('T')[0];
+    const todayDate = getKSTDate();
     const { error: upsertError } = await supabase
       .from('daily_market_insights')
       .upsert({

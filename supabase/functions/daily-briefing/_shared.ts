@@ -176,8 +176,9 @@ export async function sleep(ms: number): Promise<void> {
 /**
  * Gemini API 직접 호출 (Google Search 그라운딩 활성화)
  * - Rate Limit 방지: 호출 전 자동 1초 대기
+ * - JSON 정제 실패 시 원본 텍스트 반환 (호출자가 직접 파싱)
  */
-export async function callGeminiWithSearch(prompt: string, timeoutMs: number = 30000): Promise<string> {
+export async function callGeminiWithSearch(prompt: string, timeoutMs: number = 60000): Promise<string> {
   // Rate Limit 방지: 호출 전 1초 대기
   await sleep(1000);
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
@@ -187,7 +188,7 @@ export async function callGeminiWithSearch(prompt: string, timeoutMs: number = 3
     tools: [{ google_search: {} }],
     generationConfig: {
       temperature: 0.5,
-      maxOutputTokens: 4096,
+      maxOutputTokens: 8192,
       responseMimeType: 'text/plain',
     },
   };
@@ -216,15 +217,20 @@ export async function callGeminiWithSearch(prompt: string, timeoutMs: number = 3
       throw new Error('Gemini API가 빈 응답을 반환했습니다');
     }
 
-    const rawText = data.candidates[0]?.content?.parts?.[0]?.text || '';
+    // ★ 모든 parts의 텍스트를 합쳐서 반환 (그라운딩 응답에 여러 part가 있을 수 있음)
+    const allParts = data.candidates[0]?.content?.parts || [];
+    const rawText = allParts.map((p: any) => p.text || '').join('');
     if (!rawText) {
       throw new Error('Gemini API 응답에 텍스트가 없습니다');
     }
 
-    // JSON 정제 (사족 제거)
-    const cleanedText = cleanJsonResponse(rawText);
-
-    return cleanedText;
+    // JSON 정제 시도 — 실패해도 원본 반환 (호출자가 직접 파싱 가능)
+    try {
+      return cleanJsonResponse(rawText);
+    } catch {
+      console.warn('[Gemini] cleanJsonResponse 실패 — 원본 텍스트 반환 (호출자가 직접 파싱)');
+      return rawText;
+    }
   } catch (err: any) {
     if (err.name === 'AbortError') {
       throw new Error(`Gemini API ${timeoutMs / 1000}초 타임아웃. 다시 시도해주세요.`);
@@ -238,6 +244,26 @@ export async function callGeminiWithSearch(prompt: string, timeoutMs: number = 3
 // ============================================================================
 // 유틸리티 함수
 // ============================================================================
+
+/**
+ * 한국 시간(KST, UTC+9) 기준 오늘 날짜 반환
+ * Edge Function은 UTC 서버에서 실행되지만, 앱 타겟 유저가 한국이므로 KST 기준 사용
+ * 예: 22:00 UTC (=07:00 KST 다음날) → KST 날짜 반환
+ * @returns YYYY-MM-DD (KST)
+ */
+export function getKSTDate(): string {
+  const kst = new Date(Date.now() + 9 * 60 * 60 * 1000);
+  return kst.toISOString().split('T')[0];
+}
+
+/**
+ * 한국 시간(KST) 기준 사람이 읽을 수 있는 날짜 문자열
+ * @returns "2026년 2월 15일" 형태
+ */
+export function getKSTDateStr(): string {
+  const kst = new Date(Date.now() + 9 * 60 * 60 * 1000);
+  return `${kst.getUTCFullYear()}년 ${kst.getUTCMonth() + 1}월 ${kst.getUTCDate()}일`;
+}
 
 /**
  * 자산 구간 결정 (DB 함수 get_asset_bracket과 동일 로직)

@@ -23,6 +23,8 @@ import {
   callGeminiWithSearch,
   cleanJsonResponse,
   logTaskResult,
+  getKSTDate,
+  getKSTDateStr,
 } from './_shared.ts';
 
 // ============================================================================
@@ -207,7 +209,7 @@ export async function analyzeStockSubset(startIdx: number, endIdx: number): Prom
   }
 
   // DB 저장
-  const todayDate = new Date().toISOString().split('T')[0];
+  const todayDate = getKSTDate();
   let savedCount = 0;
   for (const result of allResults) {
     const { error: upsertError } = await supabase
@@ -281,7 +283,7 @@ export async function analyzeAllStocks(): Promise<StockQuantResult[]> {
     }
 
     // ── DB 저장: stock_quant_reports UPSERT ──
-    const todayDate = new Date().toISOString().split('T')[0];
+    const todayDate = getKSTDate();
     let savedCount = 0;
 
     for (const result of allResults) {

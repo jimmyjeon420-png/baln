@@ -18,6 +18,8 @@ import {
   callGeminiWithSearch,
   cleanJsonResponse,
   logTaskResult,
+  getKSTDate,
+  getKSTDateStr,
 } from './_shared.ts';
 
 // ============================================================================
@@ -58,9 +60,8 @@ async function generateContextCard(): Promise<{
   contextCardId: string;
   cardData: ContextCardData;
 }> {
-  const today = new Date();
-  const dateStr = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`;
-  const todayDate = today.toISOString().split('T')[0];
+  const dateStr = getKSTDateStr();
+  const todayDate = getKSTDate();
 
   // Task A 결과 참조 (이미 실행 완료 → DB에 저장됨)
   let macroContext = '';
@@ -209,7 +210,7 @@ async function calculateUserImpacts(contextCardId: string): Promise<{
   avgImpact: number;
 }> {
   console.log('[Task G-2] 사용자별 영향도 계산 시작...');
-  const today = new Date().toISOString().split('T')[0];
+  const today = getKSTDate();
 
   // 1. 모든 포트폴리오 조회
   const { data: allPortfolios, error: portError } = await supabase

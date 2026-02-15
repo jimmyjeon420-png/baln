@@ -21,6 +21,15 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,
+    // ★ React Native 교착상태(deadlock) 방지:
+    // Supabase JS v2.39+에서 Web Locks API를 사용하는데,
+    // React Native에는 이 API가 없어서 폴링 기반 fallback이 작동함.
+    // OAuth setSession() → 내부 getSession() 호출 시 락이 해제 안 되어
+    // 모든 DB 쿼리가 무한 대기하는 버그 발생.
+    // RN은 단일 JS 스레드이므로 락 없이도 안전함.
+    lock: async (_name: string, _acquireTimeout: number, fn: () => Promise<any>) => {
+      return fn();
+    },
   },
 });
 

@@ -19,6 +19,15 @@ import type {
   UserContextImpact,
 } from '../types/contextCard';
 
+/**
+ * 로컬 날짜를 YYYY-MM-DD 형식으로 반환
+ * UTC가 아닌 기기 로컬 시간 기준 (한국 기기 = KST)
+ */
+function getLocalDate(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+}
+
 // Re-export types for convenience
 export type {
   ContextCard,
@@ -47,7 +56,7 @@ const CACHE_TIMESTAMP_KEY = '@baln_context_card_cache_ts';
 export const FALLBACK_CONTEXT_CARD: ContextCardWithImpact = {
   card: {
     id: 'fallback-static',
-    date: new Date().toISOString().split('T')[0],
+    date: getLocalDate(),
     headline: '시장은 늘 변동합니다',
     historical_context:
       '역사적으로 S&P 500은 연평균 약 10% 수익을 기록했습니다. 1987년 블랙먼데이(-22.6%), 2008년 금융위기(-38.5%), 2020년 팬데믹(-33.9%) 이후에도 시장은 매번 회복했습니다. 단기 변동에 흔들리지 않는 것이 장기 수익의 핵심입니다.',
@@ -128,13 +137,13 @@ export function isCardStale(cardDate: string, hoursThreshold: number = 12): bool
 
 /** 카드의 날짜가 오늘이 아닌 경우 "어제의 분석" 라벨을 반환 */
 export function getCardFreshnessLabel(cardDate: string): string | null {
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalDate();
   if (cardDate === today) return null;
 
   // 어제인지 확인
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayStr = yesterday.toISOString().split('T')[0];
+  const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
 
   if (cardDate === yesterdayStr) return '어제의 분석';
   return '이전 분석';
@@ -195,7 +204,7 @@ function sanitizeImpact(impact: UserContextImpact | null): UserContextImpact | n
 export async function getTodayContextCard(
   userId: string
 ): Promise<ContextCardWithImpact | null> {
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalDate();
 
   try {
     // 1단계: 오늘의 맥락 카드 조회
@@ -358,8 +367,9 @@ export async function getRecentContextCards(
   const startDate = new Date();
   startDate.setDate(endDate.getDate() - days);
 
-  const startDateStr = startDate.toISOString().split('T')[0];
-  const endDateStr = endDate.toISOString().split('T')[0];
+  const fmt = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const startDateStr = fmt(startDate);
+  const endDateStr = fmt(endDate);
 
   try {
     // 1단계: 최근 N일 맥락 카드 조회
@@ -446,7 +456,7 @@ export async function getQuickContextSentiment(): Promise<{
   headline: string;
 } | null> {
   try {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getLocalDate();
 
     const { data, error } = await supabase
       .from('context_cards')

@@ -14,6 +14,16 @@ import {
   type RiskAnalysisResult,
 } from './gemini';
 
+/**
+ * 로컬 날짜를 YYYY-MM-DD 형식으로 반환
+ * UTC가 아닌 기기 로컬 시간 기준 (한국 기기 = KST)
+ * Edge Function도 KST 기준으로 저장하므로 매칭됨
+ */
+function getLocalDate(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+}
+
 // ============================================================================
 // 타입 정의
 // ============================================================================
@@ -160,7 +170,7 @@ export interface CentralKitchenResult {
  * @returns DailyMarketInsight 또는 null (데이터 없음)
  */
 export async function getTodayMarketInsight(): Promise<DailyMarketInsight | null> {
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalDate();
 
   const { data, error } = await supabase
     .from('daily_market_insights')
@@ -186,7 +196,7 @@ export async function getTodayStockReports(
 ): Promise<StockQuantReport[]> {
   if (tickers.length === 0) return [];
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalDate();
 
   const { data, error } = await supabase
     .from('stock_quant_reports')
@@ -360,7 +370,7 @@ export async function getQuickMarketSentiment(): Promise<{
   sentiment: 'BULLISH' | 'BEARISH' | 'NEUTRAL';
   cfoWeather: { emoji: string; status: string; message: string } | null;
 } | null> {
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalDate();
 
   const { data, error } = await supabase
     .from('daily_market_insights')
@@ -406,7 +416,7 @@ export async function savePanicScoreToSnapshot(score: number): Promise<void> {
 export async function getQuickStockSignal(
   ticker: string
 ): Promise<{ signal: string; score: number; analysis: string } | null> {
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalDate();
 
   const { data, error } = await supabase
     .from('stock_quant_reports')
@@ -461,7 +471,7 @@ export async function getTodayPrescription(
   userId: string,
   portfolioHash: string
 ): Promise<{ morningBriefing: MorningBriefingResult | null; riskAnalysis: RiskAnalysisResult | null; source: string } | null> {
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalDate();
 
   const { data, error } = await supabase
     .from('user_daily_prescriptions')
@@ -500,7 +510,7 @@ export async function savePrescription(
   riskAnalysis: RiskAnalysisResult | null,
   source: string
 ): Promise<void> {
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalDate();
 
   const { error } = await supabase
     .from('user_daily_prescriptions')
@@ -533,7 +543,7 @@ export async function savePrescription(
  * @returns RateCycleEvidence 또는 null (데이터 없음 또는 07:00 이전)
  */
 export async function getTodayRateCycleEvidence(): Promise<RateCycleEvidence | null> {
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalDate();
 
   const { data, error } = await supabase
     .from('daily_market_insights')
@@ -555,7 +565,7 @@ export async function getTodayRateCycleEvidence(): Promise<RateCycleEvidence | n
  * @returns GuruInsightsData 또는 null (데이터 없음)
  */
 export async function getTodayGuruInsights(): Promise<GuruInsightsData | null> {
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalDate();
 
   const { data, error } = await supabase
     .from('guru_insights')
