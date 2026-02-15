@@ -30,7 +30,7 @@ export function usePrefetchCheckup() {
 
     queryClient.prefetchQuery({
       queryKey: [...AI_ANALYSIS_KEY, portfolioHash],
-      queryFn: () => fetchAIAnalysis(portfolioAssets),
+      queryFn: () => fetchAIAnalysis(portfolioAssets, queryClient),
       staleTime: 1000 * 60 * 5,
     });
   }, [hasAssets, portfolioHash]);

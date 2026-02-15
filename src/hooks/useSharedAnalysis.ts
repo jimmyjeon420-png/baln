@@ -17,7 +17,7 @@
  * - Bitcoin Intelligence는 별도 비동기 (선택적)
  */
 
-import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
+import { useQuery, useQueryClient, keepPreviousData, type QueryClient } from '@tanstack/react-query';
 import {
   loadMorningBriefing,
   computePortfolioHash,
@@ -79,7 +79,8 @@ interface AIAnalysisData {
  * 3-B. 캐시 미스 → Gemini 병렬 호출 → DB 저장 → 반환
  */
 export async function fetchAIAnalysis(
-  portfolioAssets: PortfolioAsset[]
+  portfolioAssets: PortfolioAsset[],
+  queryClient: QueryClient
 ): Promise<AIAnalysisData> {
   if (portfolioAssets.length === 0) {
     return { morningBriefing: null, riskAnalysis: null, source: '' };
@@ -97,23 +98,29 @@ export async function fetchAIAnalysis(
     try {
       const cached = await getTodayPrescription(userId, portfolioHash);
       if (cached) {
-        // 캐시된 morningBriefing이 에러 폴백 데이터인지 검증
-        const cachedTitle = cached.morningBriefing?.macroSummary?.title;
-        const isErrorFallback = cachedTitle === '시장 분석 중...' || cachedTitle === '분석 중';
+        // [이승건: 캐시 검증 강화] morningBriefing이 null이면 무효
+        if (!cached.morningBriefing || !cached.morningBriefing.macroSummary) {
+          if (__DEV__) console.log('[처방전 캐시] NULL 캐시 감지 → 라이브 재생성');
+        } else {
+          // 캐시된 morningBriefing이 에러 폴백 데이터인지 검증
+          const cachedTitle = cached.morningBriefing?.macroSummary?.title;
+          const isErrorFallback = cachedTitle === '시장 분석 중...' || cachedTitle === '분석 중';
 
-        if (!isErrorFallback) {
-          // 정상 캐시 히트 → 즉시 반환
-          return {
-            morningBriefing: cached.morningBriefing,
-            riskAnalysis: cached.riskAnalysis,
-            source: cached.source,
-          };
+          if (!isErrorFallback) {
+            // 정상 캐시 히트 → 즉시 반환
+            if (__DEV__) console.log('[처방전 캐시] ✅ 유효한 캐시 사용:', cachedTitle);
+            return {
+              morningBriefing: cached.morningBriefing,
+              riskAnalysis: cached.riskAnalysis,
+              source: cached.source,
+            };
+          }
+          // 에러 폴백 캐시 → 무시하고 라이브 재생성
+          if (__DEV__) console.log('[처방전 캐시] 에러 폴백 캐시 감지 → 라이브 재생성');
         }
-        // 에러 폴백 캐시 → 무시하고 라이브 재생성
-        if (__DEV__) console.log('[공유분석] 에러 폴백 캐시 감지 → 라이브 재생성');
       }
     } catch (err) {
-      console.warn('[공유분석] 처방전 캐시 조회 실패, 라이브 진행:', err);
+      console.warn('[처방전 캐시] 조회 실패, 라이브 진행:', err);
     }
   }
 
@@ -157,15 +164,38 @@ export async function fetchAIAnalysis(
     source: kitchenResult?.source ?? 'failed',
   };
 
-  // 5) 결과를 DB에 저장 (백그라운드, 실패해도 무시)
+  // [이승건: 최종 디버그] 반환값 확인
+  if (__DEV__) {
+    console.log('[fetchAIAnalysis 반환]', {
+      hasBriefing: !!result.morningBriefing,
+      hasTitle: !!result.morningBriefing?.macroSummary?.title,
+      title: result.morningBriefing?.macroSummary?.title,
+      source: result.source,
+    });
+  }
+
+  // 5) 결과를 DB에 저장 (안정적인 3단 안전장치)
   if (userId && (result.morningBriefing || result.riskAnalysis)) {
-    savePrescription(
-      userId,
-      portfolioHash,
-      result.morningBriefing,
-      result.riskAnalysis,
-      result.source
-    ).catch(err => console.warn('[공유분석] 처방전 저장 실패:', err));
+    try {
+      // 5-1) DB 저장 완료까지 대기 (타이밍 이슈 방지)
+      await savePrescription(
+        userId,
+        portfolioHash,
+        result.morningBriefing,
+        result.riskAnalysis,
+        result.source
+      );
+
+      // 5-2) queryClient 캐시도 즉시 업데이트 (다음 로드 0ms)
+      const queryKey = [...AI_ANALYSIS_KEY, portfolioHash];
+      queryClient.setQueryData(queryKey, result);
+
+      if (__DEV__) {
+        console.log('[처방전 저장] ✅ DB + 캐시 동기화 완료');
+      }
+    } catch (err) {
+      console.warn('[처방전 저장] ⚠️ 실패 (UI는 정상 동작):', err);
+    }
   }
 
   // 6) Panic Shield 점수를 오늘 스냅샷에 저장 (백그라운드, fire-and-forget)
@@ -190,13 +220,14 @@ export function useSharedAnalysis(portfolioAssets: PortfolioAsset[]) {
   const portfolioHash = hasAssets ? computePortfolioHash(portfolioAssets) : '';
 
   const query = useQuery({
-    queryKey: [...AI_ANALYSIS_KEY, portfolioHash], // length 대신 hash 사용
-    queryFn: () => fetchAIAnalysis(portfolioAssets),
-    enabled: hasAssets,                // 자산 없으면 실행 안 함
-    staleTime: 1000 * 60 * 5,         // 5분: Gemini 결과는 자주 바뀌지 않음
-    gcTime: 1000 * 60 * 15,           // 15분: 메모리 최적화 (기존 24시간 → 15분)
-    retry: 1,                          // 1회 재시도
-    // placeholderData 제거: stale data 방지
+    queryKey: [...AI_ANALYSIS_KEY, portfolioHash],
+    queryFn: () => fetchAIAnalysis(portfolioAssets, queryClient),
+    enabled: hasAssets,
+    staleTime: 0,                      // 항상 최신 데이터 조회
+    gcTime: 1000 * 60 * 15,
+    retry: 1,
+    refetchOnMount: true,              // [이승건: 마운트 시 항상 새로고침]
+    refetchOnWindowFocus: false,       // 포커스 시 재조회 방지
   });
 
   const refresh = () => {
