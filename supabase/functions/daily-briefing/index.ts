@@ -132,10 +132,25 @@ serve(async (req: Request) => {
       await sleep(delayMs);
     }
 
-    // Task B: 종목별 퀀트 분석 (Gemini, 배치 5개씩)
+    // Task B: 종목별 퀀트 분석 (Gemini, 배치 7개씩)
+    // ⚠️ Task B는 150초 타임아웃에 걸릴 수 있으므로 B1(전반) + B2(후반)로 분할
     if (shouldRun('B')) {
       console.log('[Task B] 시작: 종목 분석 (35개)...');
       stocksResult = await safe(analyzeAllStocks);
+      await sleep(delayMs);
+    }
+    // Task B 전반부만 (B1): 종목 0~17
+    if (shouldRun('B1')) {
+      console.log('[Task B1] 시작: 종목 분석 전반부 (18개)...');
+      const { analyzeStockSubset } = await import('./task-b-stocks.ts');
+      stocksResult = await safe(() => analyzeStockSubset(0, 18));
+      await sleep(delayMs);
+    }
+    // Task B 후반부만 (B2): 종목 18~34
+    if (shouldRun('B2')) {
+      console.log('[Task B2] 시작: 종목 분석 후반부 (17개)...');
+      const { analyzeStockSubset } = await import('./task-b-stocks.ts');
+      stocksResult = await safe(() => analyzeStockSubset(18, 35));
       await sleep(delayMs);
     }
 
@@ -214,7 +229,7 @@ serve(async (req: Request) => {
 
     const summary: Record<string, any> = {};
     if (shouldRun('A')) summary.macro = { status: st(macroResult) };
-    if (shouldRun('B')) summary.stocks = { status: st(stocksResult), count: `${val(stocksResult, v => v.length, 0)}/${STOCK_LIST.length}` };
+    if (shouldRun('B') || shouldRun('B1') || shouldRun('B2')) summary.stocks = { status: st(stocksResult), count: val(stocksResult, v => v.length, 0) };
     if (shouldRun('C')) summary.gurus = { status: st(gurusResult), count: `${val(gurusResult, v => v.count, 0)}/10` };
     if (shouldRun('D')) summary.snapshots = { status: st(snapshotsResult), count: val(snapshotsResult, v => v.snapshotsCreated, 0) };
     if (shouldRun('E') || shouldRun('E1') || shouldRun('E-1')) summary.predictions = { status: st(predictionsResult), created: val(predictionsResult, v => v.created, 0) };
@@ -230,7 +245,7 @@ serve(async (req: Request) => {
     }
     console.log('========================================');
 
-    return new Response(
+    const response = new Response(
       JSON.stringify({
         success: true,
         mode: runAll ? 'full' : `selective: ${[...selectedTasks!].join(',')}`,
@@ -243,6 +258,8 @@ serve(async (req: Request) => {
         status: 200,
       }
     );
+
+    return response;
   } catch (error) {
     console.error('[Central Kitchen] 치명적 오류:', error);
     return new Response(

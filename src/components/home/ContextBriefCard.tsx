@@ -690,7 +690,7 @@ export default React.forwardRef<View, ContextBriefCardProps>(
             <Ionicons name="analytics-outline" size={64} color={COLORS.textTertiary} />
             <Text style={styles.emptyText}>오늘의 맥락을 분석하고 있어요</Text>
             <Text style={styles.emptySubtext}>
-              매일 오전 7시에 새로운 분석이 도착합니다
+              새로운 분석을 준비하고 있어요
             </Text>
           </View>
         </View>
@@ -823,9 +823,16 @@ export default React.forwardRef<View, ContextBriefCardProps>(
                 isCalculating={portfolioImpact.isCalculating}
               />
             ) : (
-              <Text style={styles.layerBodyText}>
-                매일 아침 7시에 내 포트폴리오 영향도가 업데이트됩니다
-              </Text>
+              <View style={{ alignItems: 'center', paddingVertical: 8, gap: 6 }}>
+                <Ionicons name="analytics-outline" size={24} color={LAYER_COLORS.portfolio} />
+                <Text style={[styles.layerBodyText, { textAlign: 'center' }]}>
+                  {sentiment === 'calm'
+                    ? '시장이 안정적입니다. 포트폴리오에 큰 변동이 없을 것으로 보입니다.'
+                    : sentiment === 'caution'
+                      ? '시장에 주의 신호가 있습니다. 포트폴리오 점검을 권장합니다.'
+                      : '시장이 경계 상태입니다. 포트폴리오 점검이 필요합니다.'}
+                </Text>
+              </View>
             )}
           </LayerSection>
         </ScrollView>

@@ -54,12 +54,13 @@ export default function MarketTemperature({ morningBriefing, isAILoading }: Mark
     );
   }
 
-  // 데이터 없음
+  // 데이터 없음 (AI 분석 실패 또는 데이터 미생성)
   if (!morningBriefing) {
     return (
       <View style={[styles.card, shadows.sm]}>
         <Text style={styles.cardTitle}>시장 온도계</Text>
-        <Text style={styles.emptyText}>시장 데이터를 불러오는 중입니다</Text>
+        <Text style={styles.emptyText}>시장 데이터를 가져올 수 없습니다</Text>
+        <Text style={styles.emptySubText}>화면을 아래로 당겨 새로고침해 주세요</Text>
       </View>
     );
   }
@@ -135,6 +136,11 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   emptyText: {
     fontSize: 14,
     color: colors.textSecondary,
+  },
+  emptySubText: {
+    fontSize: 12,
+    color: colors.textTertiary,
+    marginTop: 4,
   },
   gaugeRow: {
     flexDirection: 'row',

@@ -164,9 +164,87 @@ async function analyzeStockBatch(
  *
  * @returns StockQuantResult[] (전체 35개 종목)
  */
+/**
+ * 종목 리스트의 부분 집합만 분석 (B1/B2 분할 실행용)
+ * @param startIdx - 시작 인덱스 (inclusive)
+ * @param endIdx - 종료 인덱스 (exclusive)
+ */
+export async function analyzeStockSubset(startIdx: number, endIdx: number): Promise<StockQuantResult[]> {
+  const subset = STOCK_LIST.slice(startIdx, endIdx);
+  console.log(`[Task B subset] ${startIdx}~${endIdx}: ${subset.length}개 종목 (${subset.map(s => s.ticker).join(', ')})`);
+
+  const startTime = Date.now();
+  const BATCH_SIZE = 7;
+  const allResults: StockQuantResult[] = [];
+
+  for (let i = 0; i < subset.length; i += BATCH_SIZE) {
+    const batch = subset.slice(i, i + BATCH_SIZE);
+    const batchNum = Math.floor(i / BATCH_SIZE) + 1;
+    const totalBatches = Math.ceil(subset.length / BATCH_SIZE);
+
+    console.log(`[Task B subset] 배치 ${batchNum}/${totalBatches}: ${batch.map(s => s.ticker).join(', ')}`);
+
+    try {
+      const results = await analyzeStockBatch(batch);
+      allResults.push(...results);
+    } catch (error) {
+      console.error(`[Task B subset] 배치 ${batchNum} 실패:`, error);
+      batch.forEach(stock => {
+        allResults.push({
+          ticker: stock.ticker,
+          valuationScore: 50,
+          signal: 'HOLD',
+          analysis: '분석 데이터를 불러오지 못했습니다.',
+          metrics: {},
+          sector: stock.sector,
+        });
+      });
+    }
+
+    if (i + BATCH_SIZE < subset.length) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+  }
+
+  // DB 저장
+  const todayDate = new Date().toISOString().split('T')[0];
+  let savedCount = 0;
+  for (const result of allResults) {
+    const { error: upsertError } = await supabase
+      .from('stock_quant_reports')
+      .upsert({
+        date: todayDate,
+        ticker: result.ticker,
+        valuation_score: result.valuationScore,
+        signal: result.signal,
+        analysis: result.analysis,
+        metrics: result.metrics,
+        sector: result.sector,
+      }, { onConflict: 'date,ticker' });
+    if (upsertError) {
+      console.warn(`[Task B subset] ${result.ticker} UPSERT 실패:`, upsertError.message);
+    } else {
+      savedCount++;
+    }
+  }
+
+  const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+  console.log(`[Task B subset] ${savedCount}/${allResults.length}개 저장 완료 (${elapsed}초)`);
+
+  await logTaskResult({
+    functionName: 'daily-briefing',
+    taskName: `Task B (subset ${startIdx}-${endIdx})`,
+    status: 'SUCCESS',
+    elapsedMs: Date.now() - startTime,
+    resultSummary: { analyzed: allResults.length, saved: savedCount },
+  });
+
+  return allResults;
+}
+
 export async function analyzeAllStocks(): Promise<StockQuantResult[]> {
   const startTime = Date.now();
-  const BATCH_SIZE = 5;
+  const BATCH_SIZE = 7;  // 5→7로 증가: 배치 수 7→5로 줄여서 150s 타임아웃 방지
   const allResults: StockQuantResult[] = [];
 
   try {
@@ -195,10 +273,10 @@ export async function analyzeAllStocks(): Promise<StockQuantResult[]> {
         });
       }
 
-      // Rate limit 방지: 배치 간 2.5초 대기 (429 에러 방지)
+      // Rate limit 방지: 배치 간 1초 대기 (타임아웃 방지 위해 단축)
       if (i + BATCH_SIZE < STOCK_LIST.length) {
-        console.log(`[Task B] 다음 배치까지 2.5초 대기...`);
-        await new Promise(resolve => setTimeout(resolve, 2500));
+        console.log(`[Task B] 다음 배치까지 1초 대기...`);
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
     }
 

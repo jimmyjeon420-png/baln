@@ -1488,6 +1488,179 @@ ${hasFundamentals ? '12. API 제공 데이터(시가총액, PER, PBR, ROE 등)�
 };
 
 // ============================================================================
+// [마켓플레이스] What-If — Beta 기반 클라이언트 폴백 계산
+// ============================================================================
+
+/**
+ * 시나리오별 자산 클래스 Beta 매트릭스
+ *
+ * 각 시나리오에서 자산 클래스가 다르게 반응하는 현실을 반영.
+ * 예: 금리 인상 시 채권은 크게 하락하지만, 시장 폭락 시 채권은 오히려 상승.
+ *
+ * 키 = 자산 클래스 분류 함수에서 반환하는 클래스명
+ * 값 = 시나리오별 beta (기준 변동폭에 곱하는 계수)
+ */
+type AssetClass = 'crypto' | 'high_vol_tech' | 'gold' | 'bond' | 'defensive' | 'korean' | 'reit' | 'energy' | 'large_value';
+
+const BETA_MATRIX: Record<string, Record<AssetClass, number>> = {
+  // 시장 전체 폭락: 암호화폐 > 기술주 순 하락, 금/채권 역상관
+  market_crash: {
+    crypto: 1.8, high_vol_tech: 1.4, gold: -0.3, bond: -0.2,
+    defensive: 0.6, korean: 1.2, reit: 0.9, energy: 0.8, large_value: 0.95,
+  },
+  // 금리 인상: 채권/리츠 가장 민감, 금도 하락, 은행주는 수혜
+  interest_rate_change: {
+    crypto: 0.8, high_vol_tech: 1.1, gold: 0.4, bond: 1.6,
+    defensive: 0.3, korean: 0.7, reit: 1.4, energy: 0.5, large_value: 0.6,
+  },
+  // 특정 종목 폭락: 해당 섹터만 직격, 나머지 간접 영향
+  stock_crash: {
+    crypto: 0.3, high_vol_tech: 0.8, gold: -0.1, bond: -0.1,
+    defensive: 0.2, korean: 0.5, reit: 0.3, energy: 0.4, large_value: 0.6,
+  },
+  // 환율 변동 (원화 약세 = 달러 강세): 한국주식 타격, 수출주 수혜
+  currency_change: {
+    crypto: 0.5, high_vol_tech: 0.3, gold: 0.6, bond: 0.2,
+    defensive: 0.2, korean: 1.5, reit: 0.8, energy: 0.7, large_value: 0.3,
+  },
+  // 자유 시나리오: market_crash와 동일한 기본값 사용
+  custom: {
+    crypto: 1.8, high_vol_tech: 1.4, gold: -0.3, bond: -0.2,
+    defensive: 0.6, korean: 1.2, reit: 0.9, energy: 0.8, large_value: 0.95,
+  },
+};
+
+/** 티커 → 자산 클래스 분류 */
+function classifyAsset(ticker: string): AssetClass {
+  const t = ticker.toUpperCase();
+  if (['BTC', 'ETH', 'XRP', 'SOL', 'DOGE', 'ADA', 'BNB', 'AVAX', 'DOT', 'MATIC'].includes(t)) return 'crypto';
+  if (['NVDA', 'TSLA', 'META', 'AMD', 'PLTR', 'COIN', 'SHOP', 'SQ', 'SNOW'].includes(t)) return 'high_vol_tech';
+  if (['GLD', 'IAU', 'GOLD', 'SLV', 'PPLT'].includes(t)) return 'gold';
+  if (['TLT', 'AGG', 'BND', 'SHY', 'IEF', 'LQD', 'HYG', 'TIPS'].includes(t)) return 'bond';
+  if (['BRK.B', 'JNJ', 'KO', 'PG', 'WMT', 'PEP', 'CL', 'MCD'].includes(t)) return 'defensive';
+  if (['VNQ', 'O', 'IYR', 'XLRE', 'SPG'].includes(t)) return 'reit';
+  if (['XOM', 'CVX', 'CEG', 'OXY', 'COP', 'SLB'].includes(t)) return 'energy';
+  if (t.match(/^\d{6}$/) || ['삼성전자', '005930', 'SK하이닉스', '000660'].includes(t)) return 'korean';
+  return 'large_value';
+}
+
+/** 시나리오 + 티커 → 해당 시나리오에 맞는 Beta 반환 */
+function getAssetBeta(ticker: string, scenario: string = 'market_crash'): number {
+  const assetClass = classifyAsset(ticker);
+  const matrix = BETA_MATRIX[scenario] || BETA_MATRIX.market_crash;
+  return matrix[assetClass];
+}
+
+function getImpactLevel(changePercent: number): 'HIGH' | 'MEDIUM' | 'LOW' {
+  const abs = Math.abs(changePercent);
+  if (abs >= 15) return 'HIGH';
+  if (abs >= 5) return 'MEDIUM';
+  return 'LOW';
+}
+
+/** 시나리오 + 자산 클래스에 맞는 설명 텍스트 생성 */
+function getScenarioExplanation(scenario: string, assetClass: AssetClass, beta: number): string {
+  const explanations: Record<string, Partial<Record<AssetClass, string>>> = {
+    market_crash: {
+      crypto: '암호화폐는 위험자산 선호 후퇴 시 가장 크게 하락하는 경향',
+      high_vol_tech: '고변동 기술주는 시장 폭락 시 평균 이상 하락',
+      gold: '금은 대표적 안전자산으로 위기 시 가치 상승',
+      bond: '채권은 안전자산 수요 증가로 소폭 상승 경향',
+      defensive: '방어주는 필수소비재 특성상 상대적으로 안정적',
+      reit: '부동산은 경기침체 우려로 하락하지만 시장보다는 덜',
+      korean: '한국 주식은 외국인 자금 유출로 추가 하락 압력',
+    },
+    interest_rate_change: {
+      crypto: '암호화폐는 금리 변동에 간접적으로만 영향',
+      high_vol_tech: '기술주는 미래 수익 할인율 상승으로 하락 압력',
+      gold: '금은 금리 인상 시 기회비용 증가로 소폭 하락',
+      bond: '채권은 금리 변동에 가장 민감한 자산, 가격 하락',
+      defensive: '배당 안정주는 금리 영향이 상대적으로 적음',
+      reit: '리츠/부동산은 이자비용 증가로 큰 타격',
+      korean: '금리 인상은 신흥국 자금 유출을 유발, 한국 주식 하락',
+    },
+    stock_crash: {
+      crypto: '개별 종목 이슈는 암호화폐에 미미한 영향',
+      high_vol_tech: '같은 섹터 종목은 심리적 연쇄 하락 가능',
+      gold: '개별 종목 이슈와 무관한 안전자산',
+      bond: '개별 종목 이슈와 무관한 채권',
+      defensive: '방어주는 개별 종목 폭락의 간접 영향 제한적',
+      korean: '한국 시장은 글로벌 개별주 이슈에 제한적 영향',
+    },
+    currency_change: {
+      crypto: '암호화폐는 달러 기반이라 환율 영향 중간 수준',
+      high_vol_tech: '미국 기술주는 원화 환산 시 환율 이익/손실 발생',
+      gold: '금은 달러 표시 자산으로 환율 반영 직접 영향',
+      bond: '채권은 환율 변동에 상대적으로 적은 영향',
+      defensive: '미국 방어주도 환율 환산 영향은 제한적',
+      reit: '리츠는 환율과 금리 모두에 민감',
+      korean: '원화 약세 시 한국 주식은 외국인 매도 압력 증가',
+    },
+  };
+  const scenarioMap = explanations[scenario] || explanations.market_crash;
+  if (scenarioMap[assetClass]) return scenarioMap[assetClass]!;
+  // 기본 폴백
+  return beta < 0
+    ? '이 시나리오에서 방어적으로 작용하는 자산'
+    : beta >= 1.5
+      ? '이 시나리오에서 가장 크게 영향받는 자산'
+      : beta <= 0.7
+        ? '이 시나리오에서 상대적으로 안정적인 자산'
+        : '이 시나리오에서 중간 수준의 영향';
+}
+
+/** AI 실패 시 Beta 기반 클라이언트 계산 폴백 */
+function computeWhatIfFallback(input: WhatIfInput, magnitude: number): WhatIfResult {
+  const currentTotal = input.portfolio.reduce((s, a) => s + a.currentValue, 0);
+
+  const assetImpacts = input.portfolio.map(a => {
+    const beta = getAssetBeta(a.ticker, input.scenario);
+    const changePercent = Math.round(magnitude * beta * 10) / 10;
+    const projectedValue = Math.round(a.currentValue * (1 + changePercent / 100));
+    return {
+      ticker: a.ticker,
+      name: a.name,
+      currentValue: a.currentValue,
+      projectedValue,
+      changePercent,
+      impactLevel: getImpactLevel(changePercent),
+      explanation: getScenarioExplanation(input.scenario, classifyAsset(a.ticker), beta),
+    };
+  });
+
+  const projectedTotal = assetImpacts.reduce((s, a) => s + a.projectedValue, 0);
+  const changeAmount = projectedTotal - currentTotal;
+  const changePercent = currentTotal > 0
+    ? Math.round((changeAmount / currentTotal) * 1000) / 10
+    : 0;
+
+  // 취약점/헤지 분석
+  const highImpactAssets = assetImpacts.filter(a => a.impactLevel === 'HIGH');
+  const safeAssets = assetImpacts.filter(a => a.changePercent > 0);
+
+  return {
+    scenario: input.description,
+    summary: `이 시나리오에서 포트폴리오는 약 ${changePercent > 0 ? '+' : ''}${changePercent}% 영향을 받을 것으로 추정됩니다. ${
+      highImpactAssets.length > 0
+        ? `${highImpactAssets.map(a => a.name).join(', ')}이(가) 가장 큰 영향을 받습니다.`
+        : '전체적으로 안정적인 구성입니다.'
+    }`,
+    totalImpact: { currentTotal, projectedTotal, changePercent, changeAmount },
+    assetImpacts,
+    riskAssessment: {
+      overallRisk: Math.abs(changePercent) >= 15 ? 'HIGH' : Math.abs(changePercent) >= 5 ? 'MEDIUM' : 'LOW',
+      vulnerabilities: highImpactAssets.length > 0
+        ? [`${highImpactAssets.map(a => a.name).join(', ')} — 고변동 자산 비중 주의`]
+        : ['현재 포트폴리오는 비교적 안정적 구성'],
+      hedgingSuggestions: safeAssets.length > 0
+        ? [`${safeAssets.map(a => a.name).join(', ')} 등 안전자산이 방어 역할`]
+        : ['금(GLD) 또는 채권(TLT) ETF 추가를 고려해 보세요'],
+    },
+    generatedAt: new Date().toISOString(),
+  };
+}
+
+// ============================================================================
 // [마켓플레이스] What-If 시뮬레이터 — 시나리오별 포트폴리오 영향 분석
 // ============================================================================
 
@@ -1499,6 +1672,30 @@ export const generateWhatIf = async (
     .join('\n');
 
   const magnitude = input.magnitude || -20;
+
+  // 시나리오에 맞는 Beta 테이블을 동적으로 생성
+  const scenarioKey = input.scenario === 'custom' ? 'market_crash' : input.scenario;
+  const betaTable = BETA_MATRIX[scenarioKey] || BETA_MATRIX.market_crash;
+
+  const scenarioLabels: Record<string, string> = {
+    market_crash: '시장 폭락',
+    interest_rate_change: '금리 변동',
+    stock_crash: '종목 폭락',
+    currency_change: '환율 변동',
+  };
+  const scenarioLabel = scenarioLabels[scenarioKey] || '시장 변동';
+
+  const betaGuideStr = [
+    `- 고변동 기술주 (NVDA, TSLA, META): beta ${betaTable.high_vol_tech}`,
+    `- 대형 가치주 (AAPL, MSFT, GOOGL): beta ${betaTable.large_value}`,
+    `- 방어주/가치주 (BRK.B, JNJ, KO): beta ${betaTable.defensive}`,
+    `- 금/금ETF (GLD, IAU): beta ${betaTable.gold}`,
+    `- 채권ETF (TLT, AGG, BND): beta ${betaTable.bond}`,
+    `- 암호화폐 (BTC, ETH, XRP): beta ${betaTable.crypto}`,
+    `- 에너지 (XOM, CEG): beta ${betaTable.energy}`,
+    `- 리츠/부동산 (VNQ, O): beta ${betaTable.reit}`,
+    `- 한국주식 (삼성전자, SK하이닉스): beta ${betaTable.korean}`,
+  ].join('\n');
 
   const prompt = `
 당신은 골드만삭스 출신 리스크 관리 전문가(CRM)입니다.
@@ -1512,31 +1709,23 @@ export const generateWhatIf = async (
 [현재 포트폴리오]
 ${portfolioStr}
 
-[★★★ 핵심 규칙: 자산 클래스별 감응도(Beta) ★★★]
+[★★★ 핵심 규칙: 자산 클래스별 감응도(Beta) — ${scenarioLabel} 시나리오 기준 ★★★]
 시나리오의 기준 변동폭(${magnitude}%)을 자산 클래스별 beta로 곱해서 각각 다르게 계산하세요.
 절대로 모든 자산에 동일한 퍼센트를 적용하지 마세요.
 
-자산 클래스별 감응도 참고표 (시장 폭락 시나리오 기준):
-- 고변동 기술주 (NVDA, TSLA, META): beta 1.3~1.5 → 시장보다 더 크게 하락
-- 대형 가치주 (AAPL, MSFT, GOOGL): beta 0.9~1.1 → 시장과 유사
-- 방어주/가치주 (BRK.B, JNJ, KO): beta 0.5~0.7 → 시장보다 덜 하락
-- 금/금ETF (GLD, IAU): beta -0.2~-0.4 → 반대로 상승
-- 채권ETF (TLT, AGG, BND): beta -0.1~-0.3 → 소폭 상승
-- 암호화폐 (BTC, ETH, XRP): beta 1.5~2.0 → 가장 크게 하락
-- 에너지 (XOM, CEG): beta 0.7~1.0 → 시나리오 따라 다름
-- 리츠/부동산 (VNQ, O): beta 0.8~1.0 → 금리 시나리오에 민감
-- 삼성전자/한국주식: beta 1.0~1.3 → 신흥국 프리미엄 반영
+자산 클래스별 감응도 참고표 (${scenarioLabel} 시나리오 기준):
+${betaGuideStr}
 
-계산 예시 (시장 폭락 ${magnitude}% 시나리오):
-- NVDA(기술주): ${magnitude}% × 1.4 = ${(magnitude * 1.4).toFixed(1)}%
-- BRK.B(가치주): ${magnitude}% × 0.6 = ${(magnitude * 0.6).toFixed(1)}%
-- GLD(금): ${magnitude}% × -0.3 = ${(magnitude * -0.3).toFixed(1)}% (상승!)
-- BTC(암호화폐): ${magnitude}% × 1.8 = ${(magnitude * 1.8).toFixed(1)}%
+계산 예시 (${scenarioLabel} ${magnitude}% 시나리오):
+- 기술주: ${magnitude}% × ${betaTable.high_vol_tech} = ${(magnitude * betaTable.high_vol_tech).toFixed(1)}%
+- 방어주: ${magnitude}% × ${betaTable.defensive} = ${(magnitude * betaTable.defensive).toFixed(1)}%
+- 금: ${magnitude}% × ${betaTable.gold} = ${(magnitude * betaTable.gold).toFixed(1)}%${betaTable.gold < 0 ? ' (역상관!)' : ''}
+- 암호화폐: ${magnitude}% × ${betaTable.crypto} = ${(magnitude * betaTable.crypto).toFixed(1)}%
 
 [★ 절대 규칙 ★]
 1. 각 자산의 changePercent가 모두 동일하면 실패입니다
-2. 금/채권은 시장 폭락 시 반드시 양수(상승)여야 합니다
-3. 암호화폐는 기술주보다 더 크게 하락해야 합니다
+2. beta가 음수인 자산은 시나리오 방향과 반대로 움직여야 합니다
+3. beta가 높을수록 더 큰 변동폭을 가져야 합니다
 4. projectedValue = currentValue × (1 + changePercent/100) 으로 정확히 계산
 
 [분석 항목]
@@ -1578,10 +1767,22 @@ ${portfolioStr}
 
   try {
     const text = await callGeminiSafe(modelWithSearch, prompt, { timeoutMs: 30000, maxRetries: 1 });
-    return parseGeminiJson<WhatIfResult>(text);
-  } catch (error) {
+    try {
+      return parseGeminiJson<WhatIfResult>(text);
+    } catch (parseErr) {
+      console.warn('[What-If] JSON 파싱 실패, 클라이언트 폴백 계산:', parseErr);
+      // JSON 파싱 실패 시 Beta 기반 클라이언트 계산으로 폴백
+      return computeWhatIfFallback(input, magnitude);
+    }
+  } catch (error: any) {
     console.warn('What-If 시뮬레이션 오류:', error);
-    throw new Error('What-If 시뮬레이션에 실패했습니다');
+    // 타임아웃/API 에러 시에도 클라이언트 폴백 시도
+    try {
+      return computeWhatIfFallback(input, magnitude);
+    } catch {
+      // 폴백도 실패하면 원본 에러 메시지 전달
+      throw new Error(error.message || 'What-If 시뮬레이션에 실패했습니다');
+    }
   }
 };
 
