@@ -80,6 +80,8 @@ export interface RealEstatePortfolioInput {
   purchasePrice: number;
   /** 현재 시세 (원, 최근 3건 평균) */
   currentPrice: number;
+  /** 대출 잔액 (원, Phase 1: 부동산만) */
+  debtAmount?: number;
 }
 
 /** ㎡ → 평 변환 (3.3058로 나눔) */

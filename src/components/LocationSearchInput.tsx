@@ -1,6 +1,6 @@
 /**
  * 장소 검색 입력 컴포넌트
- * 카카오 API 자동완성 + 지도 미리보기
+ * 네이버 지역 검색 API 자동완성 + 지도 미리보기
  * (모임 생성 시 오프라인 장소 선택에 사용)
  *
  * react-native-maps가 없으면 (Expo Go 등)
@@ -19,7 +19,7 @@ import {
   Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { searchPlaces, ParsedPlace } from '../services/kakaoLocalSearch';
+import { searchPlaces, ParsedPlace } from '../services/naverLocalSearch';
 
 // react-native-maps를 안전하게 로드 (Expo Go / 웹에서는 사용 불가)
 let MapView: any = null;
@@ -134,10 +134,10 @@ export default function LocationSearchInput({
     setShowResults(false);
   }, [onChangeText]);
 
-  // 카카오맵 앱/웹으로 열기
-  const openInKakaoMap = useCallback(() => {
+  // 네이버 지도 앱/웹으로 열기
+  const openInNaverMap = useCallback(() => {
     if (!selectedPlace) return;
-    const url = `https://map.kakao.com/link/map/${encodeURIComponent(selectedPlace.name)},${selectedPlace.latitude},${selectedPlace.longitude}`;
+    const url = `https://map.naver.com/p/search/${encodeURIComponent(selectedPlace.name)}`;
     Linking.openURL(url);
   }, [selectedPlace]);
 
@@ -170,7 +170,7 @@ export default function LocationSearchInput({
         <View style={styles.apiHint}>
           <Ionicons name="information-circle-outline" size={14} color={COLORS.textMuted} />
           <Text style={styles.apiHintText}>
-            장소 자동완성이 작동하지 않습니다. Expo 개발 서버를 재시작(npx expo start --clear)하거나, 카카오 개발자 콘솔에서 REST API 키 설정을 확인해주세요. 직접 입력도 가능합니다.
+            장소 자동완성이 작동하지 않습니다. Expo 개발 서버를 재시작(npx expo start --clear)하거나, 네이버 개발자 센터에서 Client ID/Secret 설정을 확인해주세요. 직접 입력도 가능합니다.
           </Text>
         </View>
       )}
@@ -229,10 +229,10 @@ export default function LocationSearchInput({
             </MapView>
           ) : (
             // Expo Go 등 → 지도 대신 장소 카드 표시
-            <TouchableOpacity style={styles.mapFallback} onPress={openInKakaoMap}>
+            <TouchableOpacity style={styles.mapFallback} onPress={openInNaverMap}>
               <Ionicons name="map" size={32} color={COLORS.primary} />
               <Text style={styles.mapFallbackTitle}>{selectedPlace.name}</Text>
-              <Text style={styles.mapFallbackHint}>터치하면 카카오맵에서 열립니다</Text>
+              <Text style={styles.mapFallbackHint}>터치하면 네이버 지도에서 열립니다</Text>
             </TouchableOpacity>
           )}
 

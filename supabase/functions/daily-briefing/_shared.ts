@@ -174,6 +174,48 @@ export async function sleep(ms: number): Promise<void> {
 }
 
 /**
+ * Phase 3-2: 재시도 로직 (Exponential Backoff)
+ * - 최대 3번 재시도
+ * - 재시도 간격: 10초 → 30초 → 60초
+ * - 로그 기록
+ */
+export async function retryWithBackoff<T>(
+  taskName: string,
+  fn: () => Promise<T>,
+  maxRetries: number = 3
+): Promise<T> {
+  const delays = [10000, 30000, 60000]; // 10초, 30초, 60초
+  let lastError: any;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      if (attempt > 0) {
+        const delayMs = delays[attempt - 1] || 60000;
+        console.log(`[재시도] ${taskName} - ${attempt}/${maxRetries} (${delayMs / 1000}초 후)`);
+        await sleep(delayMs);
+      }
+
+      const result = await fn();
+      if (attempt > 0) {
+        console.log(`[재시도 성공] ${taskName} - ${attempt}번째 시도에서 성공`);
+      }
+      return result;
+
+    } catch (error) {
+      lastError = error;
+      console.error(`[재시도 ${attempt + 1}/${maxRetries + 1}] ${taskName} 실패:`, error.message);
+
+      if (attempt >= maxRetries) {
+        console.error(`[재시도 포기] ${taskName} - ${maxRetries + 1}번 모두 실패`);
+        throw error;
+      }
+    }
+  }
+
+  throw lastError;
+}
+
+/**
  * Gemini API 직접 호출 (Google Search 그라운딩 활성화)
  * - Rate Limit 방지: 호출 전 자동 1초 대기
  * - JSON 정제 실패 시 원본 텍스트 반환 (호출자가 직접 파싱)

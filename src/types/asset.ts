@@ -31,6 +31,11 @@ export interface Asset {
   // Metadata
   currency?: string;
   notes?: string;
+
+  // 레버리지 정보 (Phase 1: 부동산 대출만)
+  debtAmount?: number;           // 대출 잔액 (원화)
+  debtInterestRate?: number;     // 금리 % (Premium 기능용, 현재 미사용)
+  debtMonthlyPayment?: number;   // 월 상환액 (Premium 기능용, 현재 미사용)
 }
 
 export interface TaxImpact {

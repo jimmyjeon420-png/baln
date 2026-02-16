@@ -130,6 +130,9 @@ async function runAnalysisDiagnostic() {
   const results: string[] = [];
   const startTotal = Date.now();
 
+  // [이승건: 캐시 무효화 단축키 추가]
+  // 맥박 버튼 2초 길게 누르면 캐시 삭제
+
   // 1. Supabase raw fetch 테스트 (SDK 우회)
   try {
     const t1 = Date.now();
@@ -168,6 +171,32 @@ async function runAnalysisDiagnostic() {
     results.push(`2. Auth: ${hasSession ? 'OK' : 'NO'} / ${expInfo} (${Date.now() - t2}ms)`);
   } catch (e: any) {
     results.push(`2. Auth ERROR: ${e.message}`);
+  }
+
+  // 2.5. DB 직접 조회: daily_market_insights (이승건: 데이터가 실제로 있는지 확인)
+  try {
+    const t25 = Date.now();
+    const kst = new Date(Date.now() + 9 * 60 * 60 * 1000);
+    const todayKST = kst.toISOString().split('T')[0];
+    const { data: dbData, error: dbError } = await supabase
+      .from('daily_market_insights')
+      .select('date, market_sentiment, macro_summary')
+      .eq('date', todayKST)
+      .single();
+
+    if (dbError) {
+      results.push(`2.5. DB 조회 (${todayKST}): ERROR ${dbError.message} (${Date.now() - t25}ms)`);
+    } else if (dbData) {
+      const isMacroString = typeof dbData.macro_summary === 'string';
+      const title = isMacroString
+        ? (JSON.parse(dbData.macro_summary as string))?.title || 'NO TITLE'
+        : (dbData.macro_summary as any)?.title || 'NO TITLE';
+      results.push(`2.5. DB 조회 (${todayKST}): ✅ ${dbData.market_sentiment} "${title}" ${isMacroString ? '(문자열)' : '(객체)'} (${Date.now() - t25}ms)`);
+    } else {
+      results.push(`2.5. DB 조회 (${todayKST}): 데이터 없음 (${Date.now() - t25}ms)`);
+    }
+  } catch (e: any) {
+    results.push(`2.5. DB 조회 ERROR: ${e.message}`);
   }
 
   // 3. Gemini 프록시 Edge Function 헬스 체크
@@ -230,6 +259,39 @@ async function runAnalysisDiagnostic() {
     }
   } catch (e: any) {
     results.push(`4. Portfolio ERROR: ${e.message}`);
+  }
+
+  // 4.5. loadMorningBriefing() 실제 호출 테스트 (이승건: 근본 원인 파악)
+  try {
+    const t45 = Date.now();
+    // 포트폴리오 데이터 가져오기
+    const user = await getCurrentUser();
+    if (!user) {
+      results.push(`4.5. loadMorningBriefing: user=NULL`);
+    } else {
+      const { data: portfolioData } = await supabase
+        .from('portfolios')
+        .select('ticker, name, quantity, avg_price, current_price, current_value')
+        .eq('user_id', user.id)
+        .limit(10);
+
+      const testPortfolio = (portfolioData || []).map((p: any) => ({
+        ticker: p.ticker,
+        name: p.name,
+        quantity: p.quantity || 0,
+        avgPrice: p.avg_price || 0,
+        currentPrice: p.current_price || 0,
+      }));
+
+      const { loadMorningBriefing } = await import('../../src/services/centralKitchen');
+      const result = await loadMorningBriefing(testPortfolio);
+      const hasBriefing = !!result.morningBriefing;
+      const hasTitle = !!result.morningBriefing?.macroSummary?.title;
+      const title = result.morningBriefing?.macroSummary?.title || 'NO TITLE';
+      results.push(`4.5. loadMorningBriefing: ${hasBriefing ? '✅' : '❌'} title=${hasTitle ? `"${title}"` : 'MISSING'} source=${result.source} (${Date.now() - t45}ms)`);
+    }
+  } catch (e: any) {
+    results.push(`4.5. loadMorningBriefing ERROR: ${e.message?.substring(0, 60)}`);
   }
 
   // 5. 클라이언트 Gemini SDK 직접 테스트 (딥다이브/리스크 분석에서 사용)

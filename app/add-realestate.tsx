@@ -18,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import {
   useRealEstateSearch,
   useSaveRealEstate,
+  useMyRealEstate,
 } from '../src/hooks/useRealEstate';
 import { formatPrice } from '../src/services/realEstateApi';
 import { sqmToPyeong } from '../src/types/realestate';
@@ -41,8 +42,13 @@ export default function AddRealEstateScreen() {
   const [customAreaPyeong, setCustomAreaPyeong] = useState('');
   const [purchasePrice, setPurchasePrice] = useState('');
 
+  // 대출 정보 (Phase 1: 부동산만)
+  const [hasDebt, setHasDebt] = useState(false);
+  const [debtAmount, setDebtAmount] = useState('');
+
   // 훅
   const { data: searchResults, isLoading: searching } = useRealEstateSearch(query);
+  const { data: myRealEstates } = useMyRealEstate();
   const saveMutation = useSaveRealEstate();
 
   // Step 1 → Step 2: 단지 선택
@@ -51,6 +57,8 @@ export default function AddRealEstateScreen() {
     setCustomArea('');
     setCustomAreaPyeong('');
     setPurchasePrice('');
+    setHasDebt(false);
+    setDebtAmount('');
     setStep('input');
   }, []);
 
@@ -77,6 +85,20 @@ export default function AddRealEstateScreen() {
       return;
     }
 
+    // 대출 검증 (선택 사항)
+    let debtValue = 0;
+    if (hasDebt) {
+      debtValue = parseInt(debtAmount.replace(/[^0-9]/g, ''), 10) * 10000;
+      if (!debtValue || debtValue <= 0) {
+        Alert.alert('입력 오류', '올바른 대출 금액을 입력해주세요.');
+        return;
+      }
+      if (debtValue >= priceValue) {
+        Alert.alert('입력 오류', '대출 금액이 시세보다 클 수 없습니다.');
+        return;
+      }
+    }
+
     try {
       await saveMutation.mutateAsync({
         lawdCd: selectedComplex.lawdCd || '00000',
@@ -85,11 +107,18 @@ export default function AddRealEstateScreen() {
         unitDetail: undefined,
         purchasePrice: priceValue,
         currentPrice: priceValue, // 입력한 시세를 현재가로 사용
+        debtAmount: debtValue, // 대출 정보 추가
       });
+
+      // 순자산 계산
+      const netValue = priceValue - debtValue;
+      const ltvText = debtValue > 0
+        ? `\n대출: ${formatPrice(debtValue)} (LTV ${((debtValue / priceValue) * 100).toFixed(0)}%)\n순자산: ${formatPrice(netValue)}`
+        : '';
 
       Alert.alert(
         '등록 완료',
-        `${selectedComplex.complexName} ${Math.round(area)}㎡\n시세: ${formatPrice(priceValue)}\n\n포트폴리오에 추가되었습니다.`,
+        `${selectedComplex.complexName} ${Math.round(area)}㎡\n시세: ${formatPrice(priceValue)}${ltvText}\n\n포트폴리오에 추가되었습니다.`,
         [
           {
             text: '포트폴리오 보기',
@@ -104,7 +133,7 @@ export default function AddRealEstateScreen() {
     } catch (error: any) {
       Alert.alert('저장 실패', error.message || '부동산 자산 저장 중 오류가 발생했습니다.');
     }
-  }, [selectedComplex, customArea, purchasePrice, saveMutation, router]);
+  }, [selectedComplex, customArea, purchasePrice, hasDebt, debtAmount, saveMutation, router]);
 
 
   return (
@@ -224,6 +253,69 @@ export default function AddRealEstateScreen() {
                 )
               }
             />
+
+            {/* 내 부동산 목록 (수정 가능) */}
+            {myRealEstates && myRealEstates.length > 0 && (
+              <View style={styles.myRealEstateSection}>
+                <View style={styles.sectionHeader}>
+                  <Ionicons name="home" size={20} color="#4CAF50" />
+                  <Text style={styles.sectionHeaderText}>내 부동산 자산</Text>
+                </View>
+                {myRealEstates.map((asset) => {
+                  const unitArea = asset.unit_area || 0;
+                  const debtAmount = asset.debt_amount || 0;
+                  const currentPrice = asset.current_price || 0;
+                  const ltv = currentPrice > 0 ? (debtAmount / currentPrice) * 100 : 0;
+                  const netValue = currentPrice - debtAmount;
+
+                  return (
+                    <View key={asset.id} style={styles.myRealEstateCard}>
+                      <View style={styles.myRealEstateInfo}>
+                        <Text style={styles.myRealEstateName}>{asset.name}</Text>
+                        {unitArea > 0 && (
+                          <Text style={styles.myRealEstateArea}>
+                            {unitArea.toFixed(1)}㎡ ({Math.round(sqmToPyeong(unitArea))}평)
+                          </Text>
+                        )}
+                        <View style={styles.myRealEstatePriceRow}>
+                          <Text style={styles.myRealEstatePrice}>
+                            {formatPrice(currentPrice)}
+                          </Text>
+                          {debtAmount > 0 && (
+                            <Text style={styles.myRealEstateLTV}>
+                              LTV {ltv.toFixed(0)}%
+                            </Text>
+                          )}
+                        </View>
+                        {debtAmount > 0 && (
+                          <Text style={styles.myRealEstateNet}>
+                            순자산 {formatPrice(netValue)}
+                          </Text>
+                        )}
+                      </View>
+                      <TouchableOpacity
+                        style={styles.editButton}
+                        onPress={() => {
+                          router.push({
+                            pathname: '/edit-realestate',
+                            params: {
+                              id: asset.id,
+                              name: asset.name,
+                              currentPrice: currentPrice.toString(),
+                              debtAmount: debtAmount.toString(),
+                              unitArea: unitArea.toString(),
+                            },
+                          });
+                        }}
+                      >
+                        <Ionicons name="pencil" size={16} color="#4CAF50" />
+                        <Text style={styles.editButtonText}>수정</Text>
+                      </TouchableOpacity>
+                    </View>
+                  );
+                })}
+              </View>
+            )}
           </View>
         )}
 
@@ -313,12 +405,65 @@ export default function AddRealEstateScreen() {
               </Text>
             ) : null}
 
+            {/* 대출 정보 (선택) */}
+            <View style={styles.debtSection}>
+              <TouchableOpacity
+                style={styles.debtCheckbox}
+                onPress={() => {
+                  setHasDebt(!hasDebt);
+                  if (hasDebt) setDebtAmount('');
+                }}
+              >
+                <Ionicons
+                  name={hasDebt ? 'checkbox' : 'square-outline'}
+                  size={24}
+                  color={hasDebt ? '#4CAF50' : '#666'}
+                />
+                <Text style={styles.debtCheckboxLabel}>이 부동산에 대출이 있어요</Text>
+              </TouchableOpacity>
+
+              {hasDebt && (
+                <View style={styles.debtInputContainer}>
+                  <Text style={styles.sectionLabel}>대출 잔액</Text>
+                  <Text style={styles.sectionHint}>만원 단위로 입력하세요</Text>
+                  <TextInput
+                    style={styles.priceInput}
+                    placeholder="예: 20000 (= 2억)"
+                    placeholderTextColor="#666"
+                    keyboardType="numeric"
+                    value={debtAmount}
+                    onChangeText={setDebtAmount}
+                  />
+                  {debtAmount && purchasePrice ? (
+                    <View style={styles.debtPreview}>
+                      <Text style={styles.debtPreviewText}>
+                        대출: {formatPrice(parseInt(debtAmount.replace(/[^0-9]/g, ''), 10) * 10000 || 0)}
+                      </Text>
+                      <Text style={styles.debtPreviewLTV}>
+                        LTV: {(
+                          (parseInt(debtAmount.replace(/[^0-9]/g, ''), 10) /
+                            parseInt(purchasePrice.replace(/[^0-9]/g, ''), 10)) * 100
+                        ).toFixed(0)}%
+                      </Text>
+                      <Text style={styles.debtPreviewNet}>
+                        순자산: {formatPrice(
+                          (parseInt(purchasePrice.replace(/[^0-9]/g, ''), 10) -
+                            parseInt(debtAmount.replace(/[^0-9]/g, ''), 10)) * 10000
+                        )}
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
+              )}
+            </View>
+
             {/* 안내 문구 */}
             <View style={styles.infoBox}>
               <Ionicons name="information-circle" size={16} color="#888" />
               <Text style={styles.infoText}>
-                입력하신 정보는 포트폴리오 분석에 사용됩니다.
-                정확한 면적과 가격을 입력해주세요.
+                {hasDebt
+                  ? '대출 정보를 입력하면 순자산 기준으로 정확한 포트폴리오 분석을 받을 수 있어요.'
+                  : '입력하신 정보는 포트폴리오 분석에 사용됩니다. 정확한 면적과 가격을 입력해주세요.'}
               </Text>
             </View>
 
@@ -836,6 +981,49 @@ const styles = StyleSheet.create({
     color: '#888',
     lineHeight: 18,
   },
+  // 대출 정보 (Phase 1)
+  debtSection: {
+    marginTop: 20,
+    marginBottom: 12,
+  },
+  debtCheckbox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 12,
+  },
+  debtCheckboxLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  debtInputContainer: {
+    marginTop: 12,
+    paddingLeft: 34,
+  },
+  debtPreview: {
+    marginTop: 8,
+    padding: 12,
+    backgroundColor: '#1A2A1A',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#2A4A2A',
+    gap: 4,
+  },
+  debtPreviewText: {
+    fontSize: 13,
+    color: '#AAA',
+  },
+  debtPreviewLTV: {
+    fontSize: 13,
+    color: '#FFB74D',
+    fontWeight: '600',
+  },
+  debtPreviewNet: {
+    fontSize: 15,
+    color: '#4CAF50',
+    fontWeight: '700',
+  },
   // 저장 버튼
   saveButton: {
     flexDirection: 'row',
@@ -889,5 +1077,83 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#888',
     lineHeight: 18,
+  },
+  // 내 부동산 목록
+  myRealEstateSection: {
+    marginTop: 24,
+    paddingBottom: 16,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  sectionHeaderText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  myRealEstateCard: {
+    flexDirection: 'row',
+    backgroundColor: '#1E1E1E',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#333',
+    gap: 12,
+  },
+  myRealEstateInfo: {
+    flex: 1,
+  },
+  myRealEstateName: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 4,
+  },
+  myRealEstateArea: {
+    fontSize: 13,
+    color: '#888',
+    marginBottom: 6,
+  },
+  myRealEstatePriceRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 8,
+    marginBottom: 4,
+  },
+  myRealEstatePrice: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#4CAF50',
+  },
+  myRealEstateLTV: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#FFB74D',
+  },
+  myRealEstateNet: {
+    fontSize: 13,
+    color: '#AAA',
+  },
+  editButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    backgroundColor: '#1B4D1B',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderColor: '#4CAF50',
+  },
+  editButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#4CAF50',
   },
 });

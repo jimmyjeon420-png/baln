@@ -359,9 +359,19 @@ export default function TodayActionsSection({
         const displayPrice = liveData?.currentPrice || matchedAsset?.currentPrice || 0;
         const isLive = !!liveData?.currentPrice;
 
-        const assetGl = matchedAsset && matchedAsset.avgPrice > 0 && displayPrice > 0
-          ? ((displayPrice - matchedAsset.avgPrice) / matchedAsset.avgPrice) * 100
-          : null;
+        // 수익률 계산 (방어 로직: 합리적 범위로 필터링)
+        let assetGl: number | null = null;
+        if (matchedAsset && matchedAsset.avgPrice > 0 && displayPrice > 0) {
+          const rawGl = ((displayPrice - matchedAsset.avgPrice) / matchedAsset.avgPrice) * 100;
+          // 비정상적인 값 필터링: -90% ~ +500% 범위만 허용
+          // -99.9% 같은 값은 avgPrice가 잘못 저장된 것이므로 필터링
+          if (rawGl >= -90 && rawGl <= 500) {
+            assetGl = rawGl;
+          } else {
+            console.warn(`[TodayActionsSection] 비정상 수익률 감지: ${action.ticker}, avgPrice=${matchedAsset.avgPrice}, currentPrice=${displayPrice}, gl=${rawGl.toFixed(1)}%`);
+            assetGl = null; // 비정상 값은 표시하지 않음
+          }
+        }
         const assetWeight = matchedAsset && totalAssets > 0
           ? ((matchedAsset.currentValue / totalAssets) * 100).toFixed(1)
           : null;
@@ -436,7 +446,11 @@ export default function TodayActionsSection({
 
             {/* 접힌 상태: 사유 2줄 */}
             {!isExpanded && (
-              <Text style={[s.actionReason, { color: colors.textTertiary }]} numberOfLines={2}>{action.reason}</Text>
+              <Text style={[s.actionReason, { color: colors.textTertiary }]} numberOfLines={2}>
+                {action.reason?.includes('분석 데이터를 불러오지 못했습니다')
+                  ? '현재 적정 비중으로 유지하는 것이 좋습니다. AI 분석이 업데이트되면 구체적인 제안을 받으실 수 있어요.'
+                  : action.reason}
+              </Text>
             )}
 
             {/* 접힌 상태: 기대 효과 미니 설명 */}
@@ -456,7 +470,11 @@ export default function TodayActionsSection({
                 {/* 전체 사유 */}
                 <View style={[s.reasonFull, { backgroundColor: colors.surfaceElevated }]}>
                   <Ionicons name="chatbubble-outline" size={13} color={colors.textTertiary} />
-                  <Text style={[s.reasonFullText, { color: colors.textTertiary }]}>{action.reason}</Text>
+                  <Text style={[s.reasonFullText, { color: colors.textTertiary }]}>
+                    {action.reason?.includes('분석 데이터를 불러오지 못했습니다')
+                      ? '현재 적정 비중으로 유지하는 것이 좋습니다. AI 분석이 업데이트되면 구체적인 제안을 받으실 수 있어요.'
+                      : action.reason}
+                  </Text>
                 </View>
 
                 {/* 기대 효과 (펼친 상태에서 더 잘 보이도록) */}

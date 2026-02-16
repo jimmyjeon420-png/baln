@@ -93,9 +93,12 @@ export async function generatePredictionPolls(): Promise<PredictionGenerationRes
 
   const todayDate = new Date();
   const dateStr = `${todayDate.getFullYear()}년 ${todayDate.getMonth() + 1}월 ${todayDate.getDate()}일`;
+  const todayISO = todayDate.toISOString().split('T')[0]; // YYYY-MM-DD
 
   const prompt = `당신은 baln(발른) 앱의 예측 게임 AI입니다.
-오늘(${dateStr}) 투자 예측 질문 3개를 생성하세요.
+**오늘 날짜: ${dateStr} (${todayISO})**
+
+투자 예측 질문 3개를 생성하세요.
 
 [핵심 원칙]
 - 초보 투자자도 재미있게 참여할 수 있는 질문을 만든다.
@@ -103,13 +106,20 @@ export async function generatePredictionPolls(): Promise<PredictionGenerationRes
 - 24~48시간 내 객관적으로 결과를 확인할 수 있어야 한다.
 - 한국어로 자연스럽게 작성한다.
 
-[Google Search 검색]
-- "stock market today", "bitcoin price today", "경제 뉴스 오늘"
+[CRITICAL - Google Search 필수]
+다음 검색어로 **오늘(${todayISO})의 실시간 시장 데이터를 반드시 검색**하세요:
+- "KOSPI 200 price ${todayISO}" (한국 주식)
+- "S&P 500 current price" (미국 주식)
+- "Bitcoin price today" (암호화폐)
+- "USD KRW exchange rate" (환율)
+
+**주의**: 과거 데이터(1주일 전 등)를 사용하면 안 됩니다. 반드시 최신 종가를 확인하세요.
+예시: 만약 코스피가 현재 2,600이라면, "2,500 돌파" 질문은 이미 의미가 없습니다. 현재 가격 기준으로 적절한 목표치를 설정하세요.
 
 [질문 설계 규칙]
 - 카테고리 배분: stocks 1개, crypto 1개, macro 1개
 - 난이도 배분: easy 1개, medium 1개, hard 1개
-- 구체적 수치/기준 포함 (예: "1% 이상 상승", "$100,000 돌파")
+- 구체적 수치/기준 포함 (예: "전일 대비 1% 이상 상승", "심리적 저항선 돌파")
 - 맥락 힌트(context_hint): 결과 복기 시 학습이 되는 배경 설명 2~3문장
 - up_reason / down_reason: 각각 뉴스 기반 근거 한 줄씩
 
@@ -117,7 +127,7 @@ export async function generatePredictionPolls(): Promise<PredictionGenerationRes
 {
   "questions": [
     {
-      "question": "오늘 S&P 500이 전일 종가 대비 상승 마감할까요?",
+      "question": "S&P 500이 오늘 전일 종가 대비 상승 마감할까요?",
       "description": "어제 고용지표 호조로 시장 낙관론 확산. CPI 발표를 앞두고 관망세도 있음.",
       "category": "stocks",
       "yes_label": "상승 마감",
@@ -130,8 +140,8 @@ export async function generatePredictionPolls(): Promise<PredictionGenerationRes
       "down_reason": "금리 인상 우려로 기술주 매도 압력 (WSJ)"
     },
     {
-      "question": "비트코인이 내일까지 $100,000를 돌파할까요?",
-      "description": "BTC ETF 순유입 3일 연속 증가. 기관 매수세 강화 흐름.",
+      "question": "비트코인이 내일까지 $105,000를 돌파할까요?",
+      "description": "BTC ETF 순유입 3일 연속 증가. 기관 매수세 강화 흐름. (현재가: $102,340)",
       "category": "crypto",
       "yes_label": "돌파한다",
       "no_label": "못한다",
@@ -140,11 +150,11 @@ export async function generatePredictionPolls(): Promise<PredictionGenerationRes
       "context_hint": "ETF 유입은 기관 매수 신호이지만, 심리적 저항선에서는 차익 실현 매물이 나오기 쉬워요. 큰 숫자(10만 달러 같은) 앞에서 시장은 한 번 쉬어가는 경우가 많습니다.",
       "related_ticker": "BTC",
       "up_reason": "BTC ETF 3일 연속 순유입, 기관 매수세 (CoinDesk)",
-      "down_reason": "심리적 저항선 $100K에서 차익 실현 우려 (Bloomberg)"
+      "down_reason": "심리적 저항선에서 차익 실현 우려 (Bloomberg)"
     },
     {
-      "question": "이번 주 원/달러 환율이 1,400원 아래로 내려갈까요?",
-      "description": "한은 개입 가능성과 달러 약세 흐름이 주목받는 상황.",
+      "question": "이번 주 원/달러 환율이 1,350원 아래로 내려갈까요?",
+      "description": "한은 개입 가능성과 달러 약세 흐름이 주목받는 상황. (현재: 1,372원)",
       "category": "macro",
       "yes_label": "내려간다",
       "no_label": "유지/상승",
@@ -158,7 +168,11 @@ export async function generatePredictionPolls(): Promise<PredictionGenerationRes
   ]
 }
 
-[중요] 위 예시는 구조 참고용입니다. 반드시 오늘(${dateStr})의 실제 시장 상황을 검색한 뒤, 그에 맞는 새 질문을 만드세요.
+[CRITICAL] 위 예시는 구조 참고용입니다. 반드시:
+1. Google Search로 **오늘(${todayISO})의 실시간 시장 데이터**를 검색
+2. 현재 가격을 description에 명시 (예: "현재가: $102,340")
+3. 현재 가격 대비 **의미 있는 목표치**를 질문에 사용
+4. 질문 텍스트에 "오늘(${dateStr})" 같은 절대 날짜를 넣지 말 것 (상대 표현 사용: "오늘", "내일", "이번 주")
 `;
 
   console.log('[Task E-1] 예측 질문 생성 시작...');
@@ -172,7 +186,7 @@ export async function generatePredictionPolls(): Promise<PredictionGenerationRes
     console.error('[Task E-1] Gemini 응답 파싱 실패 — 기본 질문 사용:', parseErr);
     questions = [
       {
-        question: `오늘(${dateStr}) S&P 500이 전일 대비 상승 마감할까요?`,
+        question: 'S&P 500이 오늘 전일 대비 상승 마감할까요?',
         description: '시장 데이터를 자동으로 불러오지 못해 기본 질문이 생성되었습니다.',
         category: 'stocks',
         yes_label: '상승 마감',
@@ -189,7 +203,7 @@ export async function generatePredictionPolls(): Promise<PredictionGenerationRes
     console.warn('[Task E-1] 생성된 질문이 0개 — 기본 질문으로 대체');
     questions = [
       {
-        question: `오늘(${dateStr}) 나스닥이 전일 대비 상승 마감할까요?`,
+        question: '나스닥이 오늘 전일 대비 상승 마감할까요?',
         description: '기본 질문입니다.',
         category: 'stocks',
         yes_label: '상승',

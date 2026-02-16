@@ -157,6 +157,8 @@ export function useSaveRealEstate() {
             unit_detail: input.unitDetail || null,
             purchase_price_krw: input.purchasePrice,
             last_price_updated_at: new Date().toISOString(),
+            // 레버리지 정보 (Phase 1)
+            debt_amount: input.debtAmount || 0,
           },
           { onConflict: 'user_id,ticker' },
         )

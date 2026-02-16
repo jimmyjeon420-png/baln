@@ -37,7 +37,7 @@ import { runContextCardGeneration } from './task-g-context-card.ts';
 import { checkCrisisAlert } from './task-h-crisis-alert.ts';
 
 // 공통 유틸 import
-import { supabase, STOCK_LIST, GURU_LIST, sleep } from './_shared.ts';
+import { supabase, STOCK_LIST, GURU_LIST, sleep, retryWithBackoff } from './_shared.ts';
 
 // ============================================================================
 // 메인 핸들러
@@ -121,78 +121,78 @@ serve(async (req: Request) => {
     // Task D: 포트폴리오 스냅샷 (Gemini 미사용, DB only)
     if (shouldRun('D')) {
       console.log('[Task D] 시작: 포트폴리오 스냅샷...');
-      snapshotsResult = await safe(takePortfolioSnapshots);
+      snapshotsResult = await safe(() => retryWithBackoff('Task D', takePortfolioSnapshots));
       await sleep(delayMs);
     }
 
-    // Task A: 거시경제 & 비트코인 (Gemini + Search)
+    // Task A: 거시경제 & 비트코인 (Gemini + Search) — ★ 재시도 적용
     if (shouldRun('A')) {
       console.log('[Task A] 시작: 거시경제 & 비트코인...');
-      macroResult = await safe(analyzeMacroAndBitcoin);
+      macroResult = await safe(() => retryWithBackoff('Task A', analyzeMacroAndBitcoin));
       await sleep(delayMs);
     }
 
-    // Task B: 종목별 퀀트 분석 (Gemini, 배치 7개씩)
+    // Task B: 종목별 퀀트 분석 (Gemini, 배치 7개씩) — ★ 재시도 적용
     // ⚠️ Task B는 150초 타임아웃에 걸릴 수 있으므로 B1(전반) + B2(후반)로 분할
     if (shouldRun('B')) {
       console.log('[Task B] 시작: 종목 분석 (35개)...');
-      stocksResult = await safe(analyzeAllStocks);
+      stocksResult = await safe(() => retryWithBackoff('Task B', analyzeAllStocks));
       await sleep(delayMs);
     }
     // Task B 전반부만 (B1): 종목 0~17
     if (shouldRun('B1')) {
       console.log('[Task B1] 시작: 종목 분석 전반부 (18개)...');
       const { analyzeStockSubset } = await import('./task-b-stocks.ts');
-      stocksResult = await safe(() => analyzeStockSubset(0, 18));
+      stocksResult = await safe(() => retryWithBackoff('Task B1', () => analyzeStockSubset(0, 18)));
       await sleep(delayMs);
     }
     // Task B 후반부만 (B2): 종목 18~34
     if (shouldRun('B2')) {
       console.log('[Task B2] 시작: 종목 분석 후반부 (17개)...');
       const { analyzeStockSubset } = await import('./task-b-stocks.ts');
-      stocksResult = await safe(() => analyzeStockSubset(18, 35));
+      stocksResult = await safe(() => retryWithBackoff('Task B2', () => analyzeStockSubset(18, 35)));
       await sleep(delayMs);
     }
 
-    // Task C: 투자 거장 인사이트 (Gemini)
+    // Task C: 투자 거장 인사이트 (Gemini) — ★ 재시도 적용
     if (shouldRun('C')) {
       console.log('[Task C] 시작: 투자 거장 인사이트...');
-      gurusResult = await safe(runGuruInsightsAnalysis);
+      gurusResult = await safe(() => retryWithBackoff('Task C', runGuruInsightsAnalysis));
       await sleep(delayMs);
     }
 
-    // Task E-1: 예측 질문 생성 (Gemini)
+    // Task E-1: 예측 질문 생성 (Gemini) — ★ 재시도 적용
     if (shouldRun('E') || shouldRun('E1') || shouldRun('E-1')) {
       console.log('[Task E-1] 시작: 예측 질문 생성...');
-      predictionsResult = await safe(generatePredictionPolls);
+      predictionsResult = await safe(() => retryWithBackoff('Task E-1', generatePredictionPolls));
       await sleep(delayMs);
     }
 
-    // Task E-2: 예측 정답 판정 (Gemini)
+    // Task E-2: 예측 정답 판정 (Gemini) — ★ 재시도 적용
     if (shouldRun('E') || shouldRun('E2') || shouldRun('E-2')) {
       console.log('[Task E-2] 시작: 예측 정답 판정...');
-      resolveResult = await safe(resolvePredictionPolls);
+      resolveResult = await safe(() => retryWithBackoff('Task E-2', resolvePredictionPolls));
       await sleep(delayMs);
     }
 
-    // Task G: 맥락 카드 생성 (Gemini)
+    // Task G: 맥락 카드 생성 (Gemini) — ★ 재시도 적용
     if (shouldRun('G')) {
       console.log('[Task G] 시작: 맥락 카드 생성...');
-      contextCardResult = await safe(runContextCardGeneration);
+      contextCardResult = await safe(() => retryWithBackoff('Task G', runContextCardGeneration));
       await sleep(delayMs);
     }
 
-    // Task F: 부동산 시세 업데이트 (국토부 API, 옵셔널)
+    // Task F: 부동산 시세 업데이트 (국토부 API, 옵셔널) — ★ 재시도 적용
     if (shouldRun('F')) {
       console.log('[Task F] 시작: 부동산 시세...');
-      realEstateResult = await safe(updateRealEstatePrices);
+      realEstateResult = await safe(() => retryWithBackoff('Task F', updateRealEstatePrices));
       await sleep(delayMs);
     }
 
-    // Task H: 위기 알림 감지 (Gemini + Search)
+    // Task H: 위기 알림 감지 (Gemini + Search) — ★ 재시도 적용
     if (shouldRun('H')) {
       console.log('[Task H] 시작: 위기 알림 감지...');
-      crisisResult = await safe(checkCrisisAlert);
+      crisisResult = await safe(() => retryWithBackoff('Task H', checkCrisisAlert));
     }
 
     // ========================================================================

@@ -15,13 +15,14 @@ import {
 } from './gemini';
 
 /**
- * 로컬 날짜를 YYYY-MM-DD 형식으로 반환
- * UTC가 아닌 기기 로컬 시간 기준 (한국 기기 = KST)
- * Edge Function도 KST 기준으로 저장하므로 매칭됨
+ * KST 기준 날짜를 YYYY-MM-DD 형식으로 반환
+ * Edge Function과 동일한 KST 기준 사용 → 날짜 불일치 방지
+ * (이승건: "서버와 클라이언트는 같은 시간대를 써야 한다")
  */
 function getLocalDate(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  // UTC + 9시간 = KST
+  const kst = new Date(Date.now() + 9 * 60 * 60 * 1000);
+  return kst.toISOString().split('T')[0];
 }
 
 // ============================================================================
@@ -183,6 +184,7 @@ export async function getTodayMarketInsight(): Promise<DailyMarketInsight | null
     return null;
   }
 
+  // Supabase는 JSONB를 자동 파싱함 (진단 결과: 객체로 반환 확인)
   return data as DailyMarketInsight;
 }
 
@@ -321,15 +323,20 @@ export async function loadMorningBriefing(
     ]);
 
     // Central Kitchen 데이터가 있으면 병합하여 반환
+    if (__DEV__) console.log('[디버그] insight:', !!insight, 'macro_summary:', insight?.macro_summary, 'title:', insight?.macro_summary?.title);
+
     if (insight && insight.macro_summary?.title) {
-      if (__DEV__) console.log('[Central Kitchen] DB 데이터 사용 (빠른 경로)');
+      if (__DEV__) console.log('[Central Kitchen] ✅ DB 데이터 사용 (빠른 경로)');
       const briefing = buildBriefingFromKitchen(insight, stockReports, portfolio);
+      if (__DEV__) console.log('[디버그] briefing.macroSummary:', briefing.macroSummary);
       return {
         source: 'central-kitchen',
         morningBriefing: briefing,
         stockReports,
         marketInsight: insight,
       };
+    } else {
+      if (__DEV__) console.log('[Central Kitchen] ❌ DB 검증 실패 → 라이브 폴백');
     }
   } catch (err) {
     console.warn('[Central Kitchen] DB 조회 실패, 라이브 폴백:', err);

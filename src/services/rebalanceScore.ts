@@ -147,16 +147,37 @@ function getAssetValue(asset: Asset): number {
 }
 
 /**
- * 팩터 1: 배분 이탈도 (30%)
+ * 자산의 순자산 (총자산 - 대출)
+ * Phase 1: 부동산 대출만 지원
+ */
+export function getNetAssetValue(asset: Asset): number {
+  const grossValue = getAssetValue(asset);
+  const debt = asset.debtAmount || 0;
+  return Math.max(0, grossValue - debt);
+}
+
+/**
+ * LTV (Loan-to-Value) 계산
+ * 대출 잔액 / 자산 가치 × 100
+ */
+export function calculateLTV(asset: Asset): number {
+  const grossValue = getAssetValue(asset);
+  const debt = asset.debtAmount || 0;
+  if (grossValue === 0 || debt === 0) return 0;
+  return (debt / grossValue) * 100;
+}
+
+/**
+ * 팩터 1: 배분 이탈도 (25%) - 가중치 하향 조정
  * Σ|실제% - 목표%| / 2 → ×4 패널티
  */
 function calcDriftPenalty(assets: Asset[], total: number): FactorResult {
   if (total === 0) {
-    return { label: '배분 이탈도', icon: '🎯', rawPenalty: 0, weight: 0.30, weightedPenalty: 0, score: 100, comment: '자산을 추가해보세요' };
+    return { label: '배분 이탈도', icon: '🎯', rawPenalty: 0, weight: 0.25, weightedPenalty: 0, score: 100, comment: '자산을 추가해보세요' };
   }
 
   const drift = assets.reduce((sum, asset) => {
-    const actualPct = (getAssetValue(asset) / total) * 100;
+    const actualPct = (getNetAssetValue(asset) / total) * 100; // 순자산 사용
     const targetPct = asset.targetAllocation || 0;
     return sum + Math.abs(actualPct - targetPct);
   }, 0) / 2;
@@ -167,49 +188,64 @@ function calcDriftPenalty(assets: Asset[], total: number): FactorResult {
     ? '목표 배분에 잘 맞고 있어요'
     : `목표에서 ${drift.toFixed(1)}% 벗어났어요`;
 
-  return { label: '배분 이탈도', icon: '🎯', rawPenalty: penalty, weight: 0.30, weightedPenalty: penalty * 0.30, score, comment };
+  return { label: '배분 이탈도', icon: '🎯', rawPenalty: penalty, weight: 0.25, weightedPenalty: penalty * 0.25, score, comment };
 }
 
 /**
- * 팩터 2: 자산 집중도 (25%)
- * HHI (Herfindahl-Hirschman Index) 정규화
- * 0 = 균등 분산, 100 = 단일 자산 올인
+ * 팩터 2: 위험 집중도 (20%) - 달리오 Risk Parity
+ * 금액이 아니라 위험 기여도로 집중도 측정
+ * 위험 기여도 = 자산 가치 × 변동성
  */
-function calcConcentrationPenalty(assets: Asset[], total: number): FactorResult {
+function calcRiskWeightedConcentration(assets: Asset[], total: number): FactorResult {
   if (total === 0 || assets.length === 0) {
-    return { label: '자산 집중도', icon: '📊', rawPenalty: 0, weight: 0.25, weightedPenalty: 0, score: 100, comment: '자산을 추가해보세요' };
+    return { label: '위험 집중도', icon: '⚖️', rawPenalty: 0, weight: 0.20, weightedPenalty: 0, score: 100, comment: '자산을 추가해보세요' };
   }
 
-  // HHI 계산: Σ(비중²)
-  const hhi = assets.reduce((sum, asset) => {
-    const weight = getAssetValue(asset) / total;
-    return sum + weight * weight;
+  // 1. 각 자산의 위험 기여도 계산
+  const riskContributions: number[] = [];
+  let totalRisk = 0;
+
+  for (const asset of assets) {
+    const value = getNetAssetValue(asset); // 순자산 (부동산은 대출 차감)
+    const vol = VOLATILITY_MAP[classifyAsset(asset)] / 100;
+    const risk = value * vol;
+    riskContributions.push(risk);
+    totalRisk += risk;
+  }
+
+  if (totalRisk === 0) {
+    return { label: '위험 집중도', icon: '⚖️', rawPenalty: 0, weight: 0.20, weightedPenalty: 0, score: 100, comment: '위험 측정 불가' };
+  }
+
+  // 2. 위험 가중 HHI 계산
+  const riskHHI = riskContributions.reduce((sum, risk) => {
+    const riskWeight = risk / totalRisk;
+    return sum + riskWeight * riskWeight;
   }, 0);
 
-  // 정규화: (HHI - 1/n) / (1 - 1/n) × 100
+  // 3. 정규화
   const n = assets.length;
   const minHHI = 1 / n;
-  const normalizedHHI = n === 1 ? 100 : ((hhi - minHHI) / (1 - minHHI)) * 100;
+  const normalizedHHI = n === 1 ? 100 : ((riskHHI - minHHI) / (1 - minHHI)) * 100;
   const penalty = Math.min(100, Math.max(0, normalizedHHI));
   const score = Math.round(100 - penalty);
 
-  // 가장 큰 비중 종목 찾기
-  let maxAsset = assets[0];
-  let maxValue = 0;
-  for (const asset of assets) {
-    const val = getAssetValue(asset);
-    if (val > maxValue) {
-      maxValue = val;
-      maxAsset = asset;
+  // 4. 가장 큰 위험 기여 자산 찾기
+  let maxRiskAsset = assets[0];
+  let maxRisk = 0;
+  for (let i = 0; i < assets.length; i++) {
+    if (riskContributions[i] > maxRisk) {
+      maxRisk = riskContributions[i];
+      maxRiskAsset = assets[i];
     }
   }
-  const maxPct = (maxValue / total) * 100;
+  const maxRiskPct = (maxRisk / totalRisk) * 100;
 
   const comment = penalty < 20
-    ? '자산이 잘 분산되어 있어요'
-    : `${maxAsset.ticker || maxAsset.name}에 ${maxPct.toFixed(0)}% 집중!`;
+    ? '위험이 잘 분산되어 있어요'
+    : `${maxRiskAsset.ticker || maxRiskAsset.name}에 위험 ${maxRiskPct.toFixed(0)}% 집중!`;
 
-  return { label: '자산 집중도', icon: '📊', rawPenalty: penalty, weight: 0.25, weightedPenalty: penalty * 0.25, score, comment };
+  return { label: '위험 집중도', icon: '⚖️', rawPenalty: penalty, weight: 0.20, weightedPenalty: penalty * 0.20, score, comment };
 }
 
 /**
@@ -221,13 +257,13 @@ function calcCorrelationPenalty(assets: Asset[], total: number): FactorResult {
     return { label: '상관관계', icon: '🔗', rawPenalty: 0, weight: 0.15, weightedPenalty: 0, score: 100, comment: '자산을 추가해보세요' };
   }
 
-  // 카테고리별 비중 계산
+  // 카테고리별 비중 계산 (순자산 기준)
   const categoryWeights: Record<AssetCategory, number> = {
     cash: 0, bond: 0, large_cap: 0, realestate: 0, bitcoin: 0, altcoin: 0,
   };
   for (const asset of assets) {
     const cat = classifyAsset(asset);
-    categoryWeights[cat] += getAssetValue(asset) / total;
+    categoryWeights[cat] += getNetAssetValue(asset) / total;
   }
 
   // 포트폴리오 가중 평균 상관계수
@@ -275,11 +311,11 @@ function calcVolatilityPenalty(assets: Asset[], total: number): FactorResult {
     return { label: '변동성', icon: '📈', rawPenalty: 0, weight: 0.15, weightedPenalty: 0, score: 100, comment: '자산을 추가해보세요' };
   }
 
-  // 가중평균 변동성 계산
+  // 가중평균 변동성 계산 (순자산 기준)
   let weightedVol = 0;
   for (const asset of assets) {
     const cat = classifyAsset(asset);
-    const weight = getAssetValue(asset) / total;
+    const weight = getNetAssetValue(asset) / total;
     weightedVol += VOLATILITY_MAP[cat] * weight;
   }
 
@@ -369,6 +405,59 @@ function calcTaxEfficiencyPenalty(assets: Asset[], total: number): FactorResult 
   return { label: '세금 효율', icon: '💰', rawPenalty: penalty, weight: 0.05, weightedPenalty: penalty * 0.05, score, comment };
 }
 
+/**
+ * 팩터 7: 레버리지 건전성 (10%) - 신규 추가
+ * 레버리지 위험 = LTV × 변동성 × 자산 가치
+ * 달리오: "레버리지는 리스크를 증폭시킨다"
+ */
+function calcLeveragePenalty(assets: Asset[], total: number): FactorResult {
+  if (total === 0) {
+    return { label: '레버리지 건전성', icon: '💳', rawPenalty: 0, weight: 0.10, weightedPenalty: 0, score: 100, comment: '자산을 추가해보세요' };
+  }
+
+  let totalLeverageRisk = 0;
+  let debtCount = 0;
+
+  for (const asset of assets) {
+    const value = getAssetValue(asset);
+    const debt = asset.debtAmount || 0;
+
+    if (debt > 0 && value > 0) {
+      const ltv = debt / value;
+      const volatility = VOLATILITY_MAP[classifyAsset(asset)] / 100;
+
+      // 레버리지 위험 = LTV × 변동성 × 자산 가치
+      // 예: 부동산 10억, 대출 4억, 변동성 15%
+      //    → 0.4 × 0.15 × 10억 = 6,000만
+      const leverageRisk = ltv * volatility * value;
+      totalLeverageRisk += leverageRisk;
+      debtCount++;
+    }
+  }
+
+  if (debtCount === 0) {
+    return { label: '레버리지 건전성', icon: '💳', rawPenalty: 0, weight: 0.10, weightedPenalty: 0, score: 100, comment: '대출이 없어요 (안전!)' };
+  }
+
+  // 포트폴리오 전체 대비 레버리지 위험 비율
+  const leverageRiskRatio = (totalLeverageRisk / total) * 100;
+
+  // 패널티 계산
+  // 0-5%: 안전 (패널티 0-50)
+  // 5-10%: 주의 (패널티 50-100)
+  // 10%+: 위험 (패널티 100)
+  const penalty = Math.min(100, leverageRiskRatio * 10);
+  const score = Math.round(100 - penalty);
+
+  const comment = penalty < 20
+    ? '대출이 안전하게 관리되고 있어요'
+    : penalty < 50
+    ? `레버리지 위험도 ${leverageRiskRatio.toFixed(1)}%`
+    : `⚠️ 레버리지 위험 높음 (${leverageRiskRatio.toFixed(1)}%)`;
+
+  return { label: '레버리지 건전성', icon: '💳', rawPenalty: penalty, weight: 0.10, weightedPenalty: penalty * 0.10, score, comment };
+}
+
 // ============================================================================
 // 등급 판정
 // ============================================================================
@@ -386,21 +475,25 @@ function getGrade(score: number): HealthGrade {
 // ============================================================================
 
 /**
- * 포트폴리오 건강 점수 계산 (6팩터 종합)
+ * 포트폴리오 건강 점수 계산 (7팩터 종합 - 달리오 Risk Parity)
  *
- * @param assets 전체 자산 배열
- * @param totalAssets 총 평가금액
- * @returns HealthScoreResult (종합 점수, 등급, 6팩터 상세)
+ * @param assets 전체 자산 배열 (부동산 포함)
+ * @param totalAssets 총 평가금액 (순자산 기준)
+ * @returns HealthScoreResult (종합 점수, 등급, 7팩터 상세)
  */
 export function calculateHealthScore(assets: Asset[], totalAssets: number): HealthScoreResult {
-  // 6팩터 계산
+  // 순자산 기준으로 총 자산 재계산
+  const totalNetAssets = assets.reduce((sum, a) => sum + getNetAssetValue(a), 0);
+
+  // 7팩터 계산 (달리오 Risk Parity + 레버리지)
   const factors: FactorResult[] = [
-    calcDriftPenalty(assets, totalAssets),
-    calcConcentrationPenalty(assets, totalAssets),
-    calcCorrelationPenalty(assets, totalAssets),
-    calcVolatilityPenalty(assets, totalAssets),
-    calcDownsidePenalty(assets, totalAssets),
-    calcTaxEfficiencyPenalty(assets, totalAssets),
+    calcDriftPenalty(assets, totalNetAssets),
+    calcRiskWeightedConcentration(assets, totalNetAssets), // 금액 → 위험 가중
+    calcCorrelationPenalty(assets, totalNetAssets),
+    calcVolatilityPenalty(assets, totalNetAssets),
+    calcDownsidePenalty(assets, totalNetAssets),
+    calcTaxEfficiencyPenalty(assets, totalNetAssets),
+    calcLeveragePenalty(assets, totalNetAssets), // 신규 팩터
   ];
 
   // 종합 점수: 100 - Σ(rawPenalty × weight)
