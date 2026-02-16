@@ -23,7 +23,7 @@ import type {
 // 3중 방어: env → eas.json → 하드코딩 폴백 (EAS 빌드에서 env 누락 대비)
 const FALLBACK_GEMINI_KEY = 'AIzaSyB49p1pv1PPo7_Lks6X2mRMDZNvhXdIKAg';
 const API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY || FALLBACK_GEMINI_KEY;
-const MODEL_NAME = process.env.EXPO_PUBLIC_GEMINI_MODEL || 'gemini-2.5-flash';
+const MODEL_NAME = process.env.EXPO_PUBLIC_GEMINI_MODEL || 'gemini-3-flash-preview';
 
 // 🔍 디버그: API 키 로드 확인
 if (!API_KEY) {
@@ -270,7 +270,7 @@ export const validateAssetData = (
 
 const genAI = new GoogleGenerativeAI(API_KEY);
 
-// 환경변수로 모델 설정 (기본값: gemini-2.5-flash)
+// 환경변수로 모델 설정 (기본값: gemini-3-flash-preview)
 const model = genAI.getGenerativeModel({ model: MODEL_NAME });
 
 // ============================================================================
@@ -280,8 +280,8 @@ const model = genAI.getGenerativeModel({ model: MODEL_NAME });
 // 참고: https://cloud.google.com/vertex-ai/generative-ai/docs/model-reference/gemini
 
 // ⚠️ TEMPORARY FIX: google_search 도구가 네트워크 에러를 일으키면 임시로 제거
-// TODO: Gemini 2.5-flash의 올바른 google_search 형식 확인 후 재활성화
-const USE_GOOGLE_SEARCH = false; // Gemini 2.5-flash에서 google_search 불안정 → 비활성화
+// TODO: Gemini 3-flash-preview의 올바른 google_search 형식 확인 후 재활성화
+const USE_GOOGLE_SEARCH = false; // Gemini 3-flash-preview에서 google_search 불안정 → 비활성화
 
 const modelWithSearch = genAI.getGenerativeModel(
   USE_GOOGLE_SEARCH

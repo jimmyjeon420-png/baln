@@ -103,8 +103,15 @@ export async function fetchAIAnalysis(
           if (__DEV__) console.log('[처방전 캐시] NULL 캐시 감지 → 라이브 재생성');
         } else {
           // 캐시된 morningBriefing이 에러 폴백 데이터인지 검증
-          const cachedTitle = cached.morningBriefing?.macroSummary?.title;
-          const isErrorFallback = cachedTitle === '시장 분석 중...' || cachedTitle === '분석 중';
+          const cachedTitle = cached.morningBriefing?.macroSummary?.title || '';
+          const cachedCfoMessage = cached.morningBriefing?.cfoWeather?.message || '';
+          const isErrorFallback =
+            cachedTitle === '시장 분석 중...' ||
+            cachedTitle === '분석 중' ||
+            cachedTitle === '오늘의 시장 분석' ||
+            cachedTitle === '시장 분석 업데이트 중' ||
+            cachedCfoMessage.includes('업데이트됩니다') ||
+            cachedCfoMessage.includes('데이터 수집 중');
 
           if (!isErrorFallback) {
             // 정상 캐시 히트 → 즉시 반환

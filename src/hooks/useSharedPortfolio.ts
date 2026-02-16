@@ -34,6 +34,8 @@ interface SharedPortfolioData {
   portfolioAssets: PortfolioAsset[];
   /** 총 자산 (KRW) */
   totalAssets: number;
+  /** 유동 자산 총액 (부동산 제외, 건강 점수 계산 기준) */
+  liquidTotal: number;
   /** 자산 기반 티어 */
   userTier: UserTier;
   /** 유동 자산 티커 목록 (Central Kitchen 조회용) */
@@ -49,6 +51,7 @@ const EMPTY_PORTFOLIO: SharedPortfolioData = {
   assets: [],
   portfolioAssets: [],
   totalAssets: 0,
+  liquidTotal: 0,
   userTier: 'SILVER',
   liquidTickers: [],
   realEstateAssets: [],
@@ -155,6 +158,9 @@ async function fetchSharedPortfolio(
     return sum + (Number.isFinite(value) ? value : 0);
   }, 0);
 
+  // 유동 자산 총액 (부동산 제외 — 건강 점수 계산 기준)
+  const liquidTotal = totalAssets - totalRealEstate;
+
   const userTier = determineTier(totalAssets);
 
   // 유동 자산 티커 목록
@@ -165,7 +171,7 @@ async function fetchSharedPortfolio(
   // 프로필 티어 동기화 (백그라운드, 실패 무시)
   syncUserProfileTier(userId).catch(() => {});
 
-  return { assets, portfolioAssets, totalAssets, userTier, liquidTickers, realEstateAssets, totalRealEstate };
+  return { assets, portfolioAssets, totalAssets, liquidTotal, userTier, liquidTickers, realEstateAssets, totalRealEstate };
 }
 
 // ============================================================================
@@ -203,6 +209,7 @@ export function useSharedPortfolio() {
     assets: query.data?.assets ?? [],
     portfolioAssets: query.data?.portfolioAssets ?? [],
     totalAssets: query.data?.totalAssets ?? 0,
+    liquidTotal: query.data?.liquidTotal ?? 0,
     userTier: (query.data?.userTier ?? 'SILVER') as UserTier,
     liquidTickers: query.data?.liquidTickers ?? [],
     realEstateAssets: query.data?.realEstateAssets ?? [],

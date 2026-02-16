@@ -6,7 +6,7 @@
  * - 종목 검색 자동완성 (한글/영문/티커 모두 지원)
  * - 현재가 자동 로드 (Yahoo Finance + CoinGecko)
  * - 최근 추가 종목 빠른 재추가
- * - 보유 자산 수정/삭제
+ * - 유동자산 (주식·ETF·크립토) 수정/삭제
  *
  * 이승건(토스 CEO): "OCR이 1번이라도 틀리면 앱 전체 신뢰를 잃는다"
  * → 결론: 수동 입력을 극도로 편하게 만든다
@@ -822,7 +822,7 @@ export default function AddAssetScreen() {
         {/* ─── 보유 자산 목록 ─── */}
         <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.existingHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>보유 자산</Text>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>유동자산 (주식·ETF·크립토)</Text>
             {existingAssets.length > 0 && (
               <Text style={[styles.assetCount, { color: colors.textSecondary }]}>{existingAssets.length}개</Text>
             )}

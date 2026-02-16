@@ -182,7 +182,7 @@ async function runDeepDiveDiagnostic() {
   // 4. Gemini API 키 확인
   try {
     const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
-    const modelName = process.env.EXPO_PUBLIC_GEMINI_MODEL || 'gemini-2.5-flash';
+    const modelName = process.env.EXPO_PUBLIC_GEMINI_MODEL || 'gemini-3-flash-preview';
     if (apiKey && apiKey.length > 0) {
       results.push(`4. Gemini KEY: loaded (${apiKey.length}chars) / model: ${modelName}`);
     } else {
@@ -205,7 +205,7 @@ async function runDeepDiveDiagnostic() {
   try {
     const t6 = Date.now();
     const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY || '';
-    const model = process.env.EXPO_PUBLIC_GEMINI_MODEL || 'gemini-2.5-flash';
+    const model = process.env.EXPO_PUBLIC_GEMINI_MODEL || 'gemini-3-flash-preview';
     if (!apiKey) {
       results.push(`6. Gemini 직접호출: NO API KEY`);
     } else {

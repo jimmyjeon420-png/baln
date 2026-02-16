@@ -1,5 +1,5 @@
 /**
- * 보유 자산 섹션 — 접기/펼치기 + 포트폴리오 스냅샷 + 종목 리스트
+ * 유동자산 (주식·ETF·크립토) 섹션 — 접기/펼치기 + 포트폴리오 스냅샷 + 종목 리스트
  */
 
 import React, { useState } from 'react';
@@ -41,7 +41,7 @@ export default function HoldingsSection({
       >
         <View style={styles.collapsibleLeft}>
           <Ionicons name="pie-chart-outline" size={16} color={colors.primary} />
-          <Text style={[styles.collapsibleTitle, { color: colors.textPrimary }]}>보유 자산</Text>
+          <Text style={[styles.collapsibleTitle, { color: colors.textPrimary }]}>유동자산 (주식·ETF·크립토)</Text>
           <Text style={[styles.collapsibleCount, { color: colors.textTertiary }]}>{portfolio.length}개</Text>
         </View>
         <Ionicons name={showAssets ? 'chevron-up' : 'chevron-down'} size={16} color={colors.textTertiary} />

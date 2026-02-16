@@ -527,7 +527,7 @@ export default function DiagnosisScreen() {
         {/* 보유 자산 리스트 */}
         <View style={styles.assetListContainer}>
           <Text style={styles.assetListTitle}>
-            📦 보유 자산 ({portfolio.length}개)
+            📦 유동자산 ({portfolio.length}개)
           </Text>
           {portfolio.map((asset, idx) => {
             const gainLoss = asset.currentPrice - asset.avgPrice;

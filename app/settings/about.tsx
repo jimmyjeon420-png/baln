@@ -18,7 +18,7 @@ export default function AboutScreen() {
     { label: '버전', value: '2.0.0' },
     { label: '빌드', value: '2026.02.04' },
     { label: '프레임워크', value: 'Expo SDK 54' },
-    { label: 'AI 엔진', value: 'Google Gemini' },
+    { label: 'AI 엔진', value: 'Gemini 3 Flash' },
   ];
 
   const links = [

@@ -9,7 +9,7 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import type { FactorResult } from '../../../services/rebalanceScore';
-import type { Asset } from '../../../types/asset';
+import { Asset, AssetType } from '../../../types/asset';
 import FactorExplanationModal from '../FactorExplanationModal';
 import { getFactorType, FACTOR_EXPLANATIONS } from '../../../data/factorExplanations';
 import { useTheme } from '../../../hooks/useTheme';
@@ -32,28 +32,34 @@ const LABEL_MAP: Record<string, string> = {
 function getStoryMessage(factor: FactorResult, allAssets?: Asset[]): string | null {
   if (!allAssets || allAssets.length === 0) return null;
 
+  // 부동산(비유동)은 리밸런싱 대상이 아님 → 유동 자산만으로 분석
+  const liquidAssets = allAssets.filter(a => a.assetType !== AssetType.ILLIQUID);
+  if (liquidAssets.length === 0) return null;
+
   switch (factor.label) {
     case '배분 이탈도': {
-      const maxDrift = allAssets.reduce((worst, a) => {
-        const drift = Math.abs((a.currentValue / allAssets.reduce((s, x) => s + x.currentValue, 0)) * 100 - a.targetAllocation);
+      const liquidTotal = liquidAssets.reduce((s, x) => s + x.currentValue, 0);
+      if (liquidTotal === 0) return null;
+      const maxDrift = liquidAssets.reduce((worst, a) => {
+        const drift = Math.abs((a.currentValue / liquidTotal) * 100 - a.targetAllocation);
         return drift > worst.drift ? { name: a.name, drift } : worst;
       }, { name: '', drift: 0 });
       if (maxDrift.name) return `${maxDrift.name}이(가) 목표 비중보다 ${Math.round(maxDrift.drift)}%p 차이나요`;
       return null;
     }
     case '자산 집중도': {
-      const total = allAssets.reduce((s, a) => s + a.currentValue, 0);
+      const total = liquidAssets.reduce((s, a) => s + a.currentValue, 0);
       if (total === 0) return null;
-      const top = allAssets.reduce((max, a) => a.currentValue > max.currentValue ? a : max, allAssets[0]);
+      const top = liquidAssets.reduce((max, a) => a.currentValue > max.currentValue ? a : max, liquidAssets[0]);
       const pct = Math.round((top.currentValue / total) * 100);
-      return `전체 자산의 ${pct}%가 ${top.name}에 몰려있어요`;
+      return `전체 유동자산의 ${pct}%가 ${top.name}에 몰려있어요`;
     }
     case '상관관계':
       return '보유 종목들이 비슷하게 움직이고 있어요';
     case '변동성':
       return '최근 가격 변동이 평소보다 큰 편이에요';
     case '하방 리스크': {
-      const lossCount = allAssets.filter(a => {
+      const lossCount = liquidAssets.filter(a => {
         const avg = a.avgPrice ?? 0;
         const cur = a.currentPrice ?? 0;
         return avg > 0 && cur > 0 && cur < avg;

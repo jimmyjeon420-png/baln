@@ -11,7 +11,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 // 환경변수
 // ============================================================================
 const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')!;
-const GEMINI_MODEL = 'gemini-2.5-flash';
+const GEMINI_MODEL = 'gemini-3-flash-preview';
 
 // ============================================================================
 // 타입 정의
@@ -133,14 +133,14 @@ type GeminiProxyRequest = MorningBriefingRequest | DeepDiveRequest | CFOChatRequ
 
 /**
  * Gemini API 직접 호출 (내부 지식 기반 분석)
- * [수정 2026-02-13] gemini-2.5-flash + 타임아웃 (30초) + 재시도 로직 (1회)
+ * [수정 2026-02-16] gemini-3-flash-preview + 타임아웃 (30초) + 재시도 로직 (1회)
  */
 async function callGeminiWithSearch(prompt: string, timeoutMs: number = 30000, maxRetries: number = 1): Promise<string> {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
 
   const body = {
     contents: [{ parts: [{ text: prompt }] }],
-    // google_search 비활성화 — Gemini 2.5-flash에서 불안정 (타임아웃 발생)
+    // google_search 비활성화 — Gemini 3-flash-preview에서 불안정 (타임아웃 발생)
     generationConfig: {
       temperature: 0.7,
       maxOutputTokens: 4096,

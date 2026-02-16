@@ -9,7 +9,7 @@ import { getTodayMarketInsight } from './centralKitchen';
 
 // ⚠️ 보안: EXPO_PUBLIC_ 키는 클라이언트 번들에 포함됩니다. 프로덕션에서는 서버 프록시 권장.
 const API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY || '';
-const MODEL_NAME = process.env.EXPO_PUBLIC_GEMINI_MODEL || 'gemini-2.0-flash';
+const MODEL_NAME = process.env.EXPO_PUBLIC_GEMINI_MODEL || 'gemini-3-flash-preview';
 
 // ============================================================================
 // 타입 정의

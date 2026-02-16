@@ -26,7 +26,7 @@ export const extractAssetsFromScreenshot = async (
   base64Image: string
 ): Promise<{ items: OcrExtractedItem[]; total: number }> => {
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: process.env.EXPO_PUBLIC_GEMINI_MODEL || 'gemini-3-flash-preview' });
 
     const prompt = `
 이 증권사/은행 앱 스크린샷에서 자산 정보를 추출해주세요.

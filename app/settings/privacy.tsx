@@ -150,7 +150,7 @@ export default function PrivacyScreen() {
             <Text style={[styles.tableCell, { flex: 1, color: colors.textSecondary }]}>미국</Text>
           </View>
           <View style={[styles.tableRow, { borderBottomColor: colors.border }]}>
-            <Text style={[styles.tableCell, { flex: 2, color: colors.textSecondary }]}>Google LLC{'\n'}(Gemini AI)</Text>
+            <Text style={[styles.tableCell, { flex: 2, color: colors.textSecondary }]}>Google LLC{'\n'}(Gemini 3 Flash)</Text>
             <Text style={[styles.tableCell, { flex: 2, color: colors.textSecondary }]}>AI 분석{'\n'}처리</Text>
             <Text style={[styles.tableCell, { flex: 1, color: colors.textSecondary }]}>미국</Text>
           </View>

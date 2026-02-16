@@ -30,6 +30,15 @@ export interface FactorResult {
   comment: string;     // 한 줄 코멘트
 }
 
+/** 부동산 요약 정보 */
+export interface RealEstateSummary {
+  totalValue: number;      // 부동산 총 평가금액
+  totalDebt: number;       // 부동산 총 대출
+  netValue: number;        // 순자산 (평가 - 대출)
+  ratioOfTotal: number;    // 전체 자산 대비 비율 (%)
+  message: string;         // 긍정적 메시지
+}
+
 /** 종합 건강 점수 결과 */
 export interface HealthScoreResult {
   totalScore: number;      // 종합 점수 (0~100)
@@ -37,13 +46,14 @@ export interface HealthScoreResult {
   gradeColor: string;      // 등급 색상
   gradeBgColor: string;    // 등급 배경색
   gradeLabel: string;      // 한국어 라벨 ("최적"/"양호"/...)
-  factors: FactorResult[]; // 6개 팩터 상세
+  factors: FactorResult[]; // 7개 팩터 상세
   summary: string;         // 가장 취약 팩터 중심 한 줄 요약
   driftStatus: {           // 기존 배너 호환용
     label: string;
     color: string;
     bgColor: string;
   };
+  realEstateSummary?: RealEstateSummary; // 부동산 별도 요약 (비유동 자산이 있을 때만)
 }
 
 // ============================================================================
@@ -477,23 +487,34 @@ function getGrade(score: number): HealthGrade {
 /**
  * 포트폴리오 건강 점수 계산 (7팩터 종합 - 달리오 Risk Parity)
  *
+ * 부동산(ILLIQUID)은 리밸런싱 대상에서 제외됩니다.
+ * 달리오: "비유동 자산은 리밸런싱 대상이 아니라 기준점"
+ * 이승건: "행동 불가능한 정보로 불안 유발 금지"
+ *
  * @param assets 전체 자산 배열 (부동산 포함)
- * @param totalAssets 총 평가금액 (순자산 기준)
- * @returns HealthScoreResult (종합 점수, 등급, 7팩터 상세)
+ * @param totalAssets 총 평가금액 (참고용 — 내부에서 재계산)
+ * @returns HealthScoreResult (종합 점수, 등급, 7팩터 상세, 부동산 요약)
  */
 export function calculateHealthScore(assets: Asset[], totalAssets: number): HealthScoreResult {
-  // 순자산 기준으로 총 자산 재계산
+  // ── 부동산(비유동) 자산 분리 ──
+  const liquidAssets = assets.filter(a => a.assetType !== AssetType.ILLIQUID);
+  const illiquidAssets = assets.filter(a => a.assetType === AssetType.ILLIQUID);
+
+  // 유동 자산의 순자산 합계 (7팩터 계산 기준)
+  const liquidNetTotal = liquidAssets.reduce((sum, a) => sum + getNetAssetValue(a), 0);
+
+  // 전체 순자산 (부동산 비율 계산용)
   const totalNetAssets = assets.reduce((sum, a) => sum + getNetAssetValue(a), 0);
 
-  // 7팩터 계산 (달리오 Risk Parity + 레버리지)
+  // 7팩터 계산 — 유동 자산만 대상 (달리오 Risk Parity)
   const factors: FactorResult[] = [
-    calcDriftPenalty(assets, totalNetAssets),
-    calcRiskWeightedConcentration(assets, totalNetAssets), // 금액 → 위험 가중
-    calcCorrelationPenalty(assets, totalNetAssets),
-    calcVolatilityPenalty(assets, totalNetAssets),
-    calcDownsidePenalty(assets, totalNetAssets),
-    calcTaxEfficiencyPenalty(assets, totalNetAssets),
-    calcLeveragePenalty(assets, totalNetAssets), // 신규 팩터
+    calcDriftPenalty(liquidAssets, liquidNetTotal),
+    calcRiskWeightedConcentration(liquidAssets, liquidNetTotal),
+    calcCorrelationPenalty(liquidAssets, liquidNetTotal),
+    calcVolatilityPenalty(liquidAssets, liquidNetTotal),
+    calcDownsidePenalty(liquidAssets, liquidNetTotal),
+    calcTaxEfficiencyPenalty(liquidAssets, liquidNetTotal),
+    calcLeveragePenalty(liquidAssets, liquidNetTotal),
   ];
 
   // 종합 점수: 100 - Σ(rawPenalty × weight)
@@ -521,6 +542,24 @@ export function calculateHealthScore(assets: Asset[], totalAssets: number): Heal
     ? { label: '주의', color: '#FFB74D', bgColor: 'rgba(255,183,77,0.15)' }
     : { label: '조정 필요', color: '#CF6679', bgColor: 'rgba(207,102,121,0.15)' };
 
+  // ── 부동산 요약 정보 ──
+  const realEstateGrossValue = illiquidAssets.reduce((sum, a) => sum + getAssetValue(a), 0);
+  const realEstateDebt = illiquidAssets.reduce((sum, a) => sum + (a.debtAmount || 0), 0);
+  const realEstateNetValue = realEstateGrossValue - realEstateDebt;
+  const realEstateRatio = totalNetAssets > 0 ? (realEstateNetValue / totalNetAssets) * 100 : 0;
+
+  const realEstateSummary: RealEstateSummary | undefined = illiquidAssets.length > 0
+    ? {
+        totalValue: realEstateGrossValue,
+        totalDebt: realEstateDebt,
+        netValue: realEstateNetValue,
+        ratioOfTotal: realEstateRatio,
+        message: realEstateRatio >= 50
+          ? '부동산이 포트폴리오의 안정적 기반이 되고 있어요'
+          : '부동산이 장기 자산으로 기반을 잡아주고 있어요',
+      }
+    : undefined;
+
   return {
     totalScore,
     grade,
@@ -530,5 +569,6 @@ export function calculateHealthScore(assets: Asset[], totalAssets: number): Heal
     factors,
     summary,
     driftStatus,
+    realEstateSummary,
   };
 }

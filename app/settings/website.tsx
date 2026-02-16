@@ -26,7 +26,7 @@ export default function WebsiteScreen() {
     {
       icon: 'camera' as const,
       title: 'AI 스크린샷 분석',
-      desc: '증권사 앱 캡처 한 장으로 포트폴리오 자동 등록. Google Gemini AI가 종목·수량·가격을 즉시 인식합니다.',
+      desc: '증권사 앱 캡처 한 장으로 포트폴리오 자동 등록. Gemini 3 Flash AI가 종목·수량·가격을 즉시 인식합니다.',
     },
     {
       icon: 'analytics' as const,
@@ -46,7 +46,7 @@ export default function WebsiteScreen() {
     {
       icon: 'newspaper' as const,
       title: 'AI 모닝 브리핑',
-      desc: '매일 아침 7시, Gemini AI가 거시경제·보유 종목 분석 리포트를 자동 생성합니다.',
+      desc: '매일 아침 7시, Gemini 3 Flash AI가 거시경제·보유 종목 분석 리포트를 자동 생성합니다.',
     },
     {
       icon: 'shield-checkmark' as const,
@@ -70,6 +70,7 @@ export default function WebsiteScreen() {
     { date: '2025.12', event: 'AI OCR 엔진 (Gemini) 통합 완료' },
     { date: '2026.01', event: 'Beta 출시 및 사용자 피드백 수집' },
     { date: '2026.02', event: 'v2.0 정식 출시 (Central Kitchen 시스템)' },
+    { date: '2026.02', event: 'Gemini 3 Flash AI 엔진 업그레이드' },
   ];
 
   return (
@@ -154,7 +155,7 @@ export default function WebsiteScreen() {
               <Text style={styles.techBadgeText}>Supabase</Text>
             </View>
             <View style={styles.techBadge}>
-              <Text style={styles.techBadgeText}>Google Gemini</Text>
+              <Text style={styles.techBadgeText}>Gemini 3 Flash</Text>
             </View>
             <View style={styles.techBadge}>
               <Text style={styles.techBadgeText}>TanStack Query</Text>

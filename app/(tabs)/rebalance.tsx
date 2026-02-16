@@ -281,6 +281,7 @@ async function runAnalysisDiagnostic() {
         quantity: p.quantity || 0,
         avgPrice: p.avg_price || 0,
         currentPrice: p.current_price || 0,
+        currentValue: p.current_value || 0,
       }));
 
       const { loadMorningBriefing } = await import('../../src/services/centralKitchen');
@@ -298,7 +299,7 @@ async function runAnalysisDiagnostic() {
   try {
     const t5 = Date.now();
     const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY || '';
-    const model = process.env.EXPO_PUBLIC_GEMINI_MODEL || 'gemini-2.5-flash';
+    const model = process.env.EXPO_PUBLIC_GEMINI_MODEL || 'gemini-3-flash-preview';
     if (!apiKey) {
       results.push(`5. Gemini SDK: NO API KEY`);
     } else {

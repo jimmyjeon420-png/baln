@@ -78,7 +78,7 @@ const LICENSE_DATA: LicenseCategory[] = [
         version: '0.24.1',
         license: 'Apache-2.0',
         url: 'https://github.com/google/generative-ai-js',
-        description: 'Google Gemini AI SDK — OCR 분석 및 AI 진단 엔진',
+        description: 'Google Gemini 3 Flash SDK — OCR 분석 및 AI 진단 엔진',
       },
       {
         name: '@supabase/supabase-js',

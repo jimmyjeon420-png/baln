@@ -25,7 +25,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { Asset } from '../../types/asset';
-import { classifyAsset, AssetCategory } from '../../services/rebalanceScore';
+import { classifyAsset, AssetCategory, getNetAssetValue, calculateLTV } from '../../services/rebalanceScore';
 import AllocationPieChart, { PieSlice } from '../charts/AllocationPieChart';
 import { useTheme } from '../../hooks/useTheme';
 import { ThemeColors } from '../../styles/colors';
@@ -39,23 +39,24 @@ interface CategoryConfig {
   color: string;
 }
 
+// 유동 자산 5개 카테고리 (부동산은 비유동 → 별도 표시)
 const CATEGORIES: CategoryConfig[] = [
   { key: 'large_cap', label: '주식', icon: '📈', color: '#4CAF50' },
   { key: 'bond',      label: '채권', icon: '🏛️', color: '#64B5F6' },
   { key: 'bitcoin',   label: '비트코인', icon: '₿', color: '#F7931A' },
   { key: 'altcoin',   label: '알트코인', icon: '🪙', color: '#9C27B0' },
-  { key: 'realestate', label: '부동산', icon: '🏠', color: '#FF7043' },
   { key: 'cash',      label: '현금', icon: '💵', color: '#78909C' },
 ];
 
-// 기본 목표 배분 (변경 전 기본값)
+// 기본 목표 배분 — 유동 자산만 (부동산 제외, 합계 100%)
+// 달리오: "비유동 자산은 리밸런싱 대상이 아니라 기준점"
 const DEFAULT_TARGET: Record<AssetCategory, number> = {
-  large_cap: 50,
+  large_cap: 55,
   bond: 20,
   bitcoin: 10,
   altcoin: 5,
-  realestate: 10,
-  cash: 5,
+  realestate: 0,  // 비유동 → 리밸런싱 제외
+  cash: 10,
 };
 
 const STORAGE_KEY = '@target_allocation';
@@ -189,10 +190,26 @@ export default function AllocationDriftSection({
     });
   }, []);
 
-  // 이탈도 계산
+  // ── 부동산(비유동) 분리 ──
+  const realEstateInfo = useMemo(() => {
+    const reAssets = assets.filter(a => classifyAsset(a) === 'realestate');
+    const grossValue = reAssets.reduce((sum, a) => sum + (a.currentValue || 0), 0);
+    const totalDebt = reAssets.reduce((sum, a) => sum + (a.debtAmount || 0), 0);
+    const netValue = grossValue - totalDebt;
+    const avgLtv = reAssets.length > 0
+      ? reAssets.reduce((sum, a) => sum + calculateLTV(a), 0) / reAssets.length
+      : 0;
+    return { assets: reAssets, grossValue, totalDebt, netValue, avgLtv, count: reAssets.length };
+  }, [assets]);
+
+  // 유동 자산 총액 (부동산 제외 — 비중 계산 기준)
+  const liquidTotal = useMemo(() => totalAssets - realEstateInfo.grossValue, [totalAssets, realEstateInfo.grossValue]);
+  const realEstateRatio = totalAssets > 0 ? (realEstateInfo.grossValue / totalAssets) * 100 : 0;
+
+  // 이탈도 계산 — 유동 자산 기준
   const driftItems = useMemo(
-    () => calculateDrift(assets, totalAssets, target),
-    [assets, totalAssets, target],
+    () => calculateDrift(assets, liquidTotal, target),
+    [assets, liquidTotal, target],
   );
 
   // 총 이탈도 (절대값 합/2 → 한쪽 방향)
@@ -214,7 +231,7 @@ export default function AllocationDriftSection({
     [driftItems, totalDrift],
   );
 
-  // 파이 차트 슬라이스 데이터 (현재 배분 기준)
+  // 파이 차트 슬라이스 데이터 (유동 자산만)
   const pieSlices: PieSlice[] = useMemo(() => {
     const currentMap: Record<AssetCategory, number> = {
       cash: 0, bond: 0, large_cap: 0, realestate: 0, bitcoin: 0, altcoin: 0,
@@ -224,7 +241,7 @@ export default function AllocationDriftSection({
       currentMap[cat] += asset.currentValue;
     });
 
-    return CATEGORIES
+    return CATEGORIES  // CATEGORIES에 realestate 없으므로 자동 제외
       .filter(cat => currentMap[cat.key] > 0)
       .map(cat => ({
         key: cat.key,
@@ -343,7 +360,7 @@ export default function AllocationDriftSection({
         <View style={s.pieContainer}>
           <AllocationPieChart
             slices={pieSlices}
-            totalValue={totalAssets}
+            totalValue={liquidTotal}
             size={180}
             strokeWidth={28}
             showLegend={true}
@@ -464,6 +481,33 @@ export default function AllocationDriftSection({
                 <Text style={s.editSaveText}>저장</Text>
               </TouchableOpacity>
             </View>
+          </View>
+        </View>
+      )}
+
+      {/* ── 안정 자산 기반 (부동산) ── */}
+      {realEstateInfo.count > 0 && (
+        <View style={s.realEstateCard}>
+          <View style={s.realEstateHeader}>
+            <Text style={s.realEstateIcon}>🏠</Text>
+            <Text style={[s.realEstateTitle, { color: colors.inverseText }]}>안정 자산 기반</Text>
+            <Text style={[s.realEstateSubtitle, { color: colors.textTertiary }]}>Stable Foundation</Text>
+          </View>
+          <View style={s.realEstateBody}>
+            <Text style={[s.realEstateValue, { color: colors.inverseText }]}>
+              부동산 ₩{(realEstateInfo.grossValue / 100000000).toFixed(1)}억
+              <Text style={[s.realEstateRatio, { color: colors.textSecondary }]}>
+                {' '}(전체 자산의 {realEstateRatio.toFixed(1)}%)
+              </Text>
+            </Text>
+            {realEstateInfo.totalDebt > 0 && (
+              <Text style={[s.realEstateDebt, { color: colors.textTertiary }]}>
+                대출 ₩{(realEstateInfo.totalDebt / 100000000).toFixed(1)}억 (LTV {realEstateInfo.avgLtv.toFixed(0)}%)
+              </Text>
+            )}
+            <Text style={[s.realEstateMessage, { color: colors.success }]}>
+              장기 자산이 포트폴리오의 기반을 잡아줍니다
+            </Text>
           </View>
         </View>
       )}
@@ -599,4 +643,26 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
 
   // 파이 차트 컨테이너
   pieContainer: { alignItems: 'center', paddingVertical: 8 },
+
+  // ── 안정 자산 기반 (부동산) ──
+  realEstateCard: {
+    marginTop: 14,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  realEstateHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 8,
+  },
+  realEstateIcon: { fontSize: 16 },
+  realEstateTitle: { fontSize: 14, fontWeight: '700' },
+  realEstateSubtitle: { fontSize: 10, letterSpacing: 0.5, textTransform: 'uppercase' as const },
+  realEstateBody: { gap: 4 },
+  realEstateValue: { fontSize: 14, fontWeight: '600' },
+  realEstateRatio: { fontSize: 12, fontWeight: '400' },
+  realEstateDebt: { fontSize: 12 },
+  realEstateMessage: { fontSize: 12, fontWeight: '500', marginTop: 4 },
 });

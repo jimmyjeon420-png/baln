@@ -19,7 +19,7 @@ export default function HelpScreen() {
     },
     {
       question: 'AI 분석은 어떻게 작동하나요?',
-      answer: 'Google Gemini AI를 활용하여 증권사 앱 스크린샷에서 자산 정보를 자동으로 추출합니다. OCR 기술과 AI 분석을 결합하여 정확한 데이터를 제공합니다.',
+      answer: 'Google Gemini 3 Flash AI를 활용하여 증권사 앱 스크린샷에서 자산 정보를 자동으로 추출합니다. OCR 기술과 AI 분석을 결합하여 정확한 데이터를 제공합니다.',
     },
     {
       question: '세금 최적화는 어떻게 되나요?',
