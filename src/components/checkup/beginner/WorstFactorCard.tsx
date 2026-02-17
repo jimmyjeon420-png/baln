@@ -21,7 +21,7 @@ interface WorstFactorCardProps {
 }
 
 const LABEL_MAP: Record<string, string> = {
-  '배분 이탈도': '계획이랑 달라졌어요',
+  '배분 이탈도': '비중이 달라졌어요',
   '자산 집중도': '한 곳에 몰려있어요',
   '상관관계': '자산들이 같이 움직여요',
   '변동성': '가격 변동이 큰 편이에요',
@@ -41,10 +41,17 @@ function getStoryMessage(factor: FactorResult, allAssets?: Asset[]): string | nu
       const liquidTotal = liquidAssets.reduce((s, x) => s + x.currentValue, 0);
       if (liquidTotal === 0) return null;
       const maxDrift = liquidAssets.reduce((worst, a) => {
-        const drift = Math.abs((a.currentValue / liquidTotal) * 100 - a.targetAllocation);
-        return drift > worst.drift ? { name: a.name, drift } : worst;
-      }, { name: '', drift: 0 });
-      if (maxDrift.name) return `${maxDrift.name}이(가) 목표 비중보다 ${Math.round(maxDrift.drift)}%p 차이나요`;
+        const actualPct = (a.currentValue / liquidTotal) * 100;
+        const targetPct = a.targetAllocation || 0;
+        const signedDrift = actualPct - targetPct; // 양수 = 목표보다 많음, 음수 = 적음
+        return Math.abs(signedDrift) > Math.abs(worst.signedDrift)
+          ? { name: a.name, signedDrift }
+          : worst;
+      }, { name: '', signedDrift: 0 });
+      if (maxDrift.name && Math.abs(maxDrift.signedDrift) > 1) {
+        const direction = maxDrift.signedDrift > 0 ? '많아요' : '적어요';
+        return `${maxDrift.name}이 목표보다 ${Math.round(Math.abs(maxDrift.signedDrift))}% ${direction}`;
+      }
       return null;
     }
     case '자산 집중도': {
@@ -132,6 +139,16 @@ export default function WorstFactorCard({ factors, allAssets }: WorstFactorCardP
 
       <Text style={styles.comment}>{getStoryMessage(worst, allAssets) ?? worst.comment}</Text>
 
+      {/* 조정 효과 힌트 (배분 이탈도일 때만) */}
+      {worst.label === '배분 이탈도' && worst.score < 70 && (
+        <View style={styles.improveHint}>
+          <Text style={styles.improveIcon}>✨</Text>
+          <Text style={styles.improveText}>
+            분석 탭에서 조정하면 건강 점수가 올라가요
+          </Text>
+        </View>
+      )}
+
       {/* 역사적 맥락 */}
       {historicalContext && (
         <View style={styles.contextContainer}>
@@ -212,6 +229,25 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     lineHeight: 22,
     marginBottom: 12,
     color: colors.textSecondary,
+  },
+  improveHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginBottom: 12,
+    backgroundColor: `${colors.primary}15`,
+  },
+  improveIcon: {
+    fontSize: 14,
+  },
+  improveText: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.primary,
   },
   contextContainer: {
     flexDirection: 'row',

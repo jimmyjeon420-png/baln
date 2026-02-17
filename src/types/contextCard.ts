@@ -15,7 +15,8 @@ export interface ContextCard {
   headline: string;                     // "오늘 당신의 자산이 -1.2% 빠진 이유"
   historical_context: string | null;    // 역사적 맥락 (레이어 1)
   macro_chain: string[];                // 거시경제 체인 (레이어 2)
-  institutional_behavior: string | null; // 기관 행동 (레이어 3, Premium)
+  political_context: string | null;     // 정치 맥락 (레이어 3, 무료)
+  institutional_behavior: string | null; // 기관 행동 (레이어 4, Premium)
   sentiment: ContextCardSentiment;      // 심리 상태
   is_premium_only: boolean;             // 프리미엄 잠금 여부
   market_data: Record<string, any>;     // 추가 시장 데이터
@@ -60,10 +61,13 @@ export interface ContextCardData {
   /** 2번 레이어: 거시경제 체인 - "A 때문에 B가 되고, B 때문에 C가 됐다" */
   macroChain: string[]; // 예: ["미국 CPI 3.2% 발표", "금리 인상 우려", "기술주 하락", "삼성전자 연동 하락"]
 
-  /** 3번 레이어: 기관 행동 - "큰손들은 지금 뭘 하고 있나" (Premium 전용) */
+  /** 3번 레이어: 정치 맥락 - "미국 정치가 내 자산에 미치는 영향" (무료) */
+  politicalContext: string; // 예: "트럼프 관세 발표 — 1930년 스무트-홀리 이후 유사 패턴, 당신 포트폴리오 영향은 제한적"
+
+  /** 4번 레이어: 기관 행동 - "큰손들은 지금 뭘 하고 있나" (Premium 전용) */
   institutionalBehavior: string; // 예: "외국인 3일 연속 순매도 (패닉 아닌 리밸런싱 시즌)"
 
-  /** 4번 레이어: 포트폴리오 영향 - "이게 내 자산에 어떤 영향?" (Premium 전용) */
+  /** 5번 레이어: 포트폴리오 영향 - "이게 내 자산에 어떤 영향?" (Premium 전용) */
   portfolioImpact: {
     percentChange: number; // 예: -1.2 (%)
     healthScoreChange: number; // 예: 0 (건강 점수 변동)

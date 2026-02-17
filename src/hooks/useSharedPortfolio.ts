@@ -125,6 +125,12 @@ async function fetchSharedPortfolio(
   // 부동산 자산 필터링 (RE_ 티커) — ticker undefined 방어
   const realEstateAssets = assets.filter(a => a.ticker && a.ticker.startsWith('RE_'));
   const totalRealEstate = realEstateAssets.reduce((sum, a) => sum + (Number.isFinite(a.currentValue) ? a.currentValue : 0), 0);
+  // 부동산 순자산 (대출 차감) — 달리오 원칙: 비유동 자산은 순자산 기준으로 표시
+  const realEstateNetTotal = realEstateAssets.reduce((sum, a) => {
+    const gross = Number.isFinite(a.currentValue) ? a.currentValue : 0;
+    const debt = Number.isFinite(a.debtAmount) ? (a.debtAmount || 0) : 0;
+    return sum + (gross - debt);
+  }, 0);
 
   // 진단/처방전용 PortfolioAsset 배열 (부동산 제외 — Gemini에 전달하지 않음)
   const portfolioAssets: PortfolioAsset[] = data
@@ -148,18 +154,19 @@ async function fetchSharedPortfolio(
     };
   });
 
-  // 총 자산 계산 (getAssetValue와 동일한 로직 — 일관성 보장)
-  // quantity * currentPrice가 둘 다 양수면 실시간 계산, 아니면 DB의 currentValue 사용
-  const totalAssets = assets.reduce((sum, asset) => {
-    const value = (asset.quantity != null && asset.quantity > 0 && asset.currentPrice != null && asset.currentPrice > 0)
-      ? asset.quantity * asset.currentPrice
-      : asset.currentValue;
-    // NaN/Infinity 방어: 비정상 값은 0으로 처리
-    return sum + (Number.isFinite(value) ? value : 0);
-  }, 0);
-
   // 유동 자산 총액 (부동산 제외 — 건강 점수 계산 기준)
-  const liquidTotal = totalAssets - totalRealEstate;
+  const liquidTotal = assets
+    .filter(a => !a.ticker || !a.ticker.startsWith('RE_'))
+    .reduce((sum, asset) => {
+      const value = (asset.quantity != null && asset.quantity > 0 && asset.currentPrice != null && asset.currentPrice > 0)
+        ? asset.quantity * asset.currentPrice
+        : asset.currentValue;
+      return sum + (Number.isFinite(value) ? value : 0);
+    }, 0);
+
+  // 총 순자산 = 유동 자산 + 부동산 순자산 (대출 차감)
+  // 달리오 원칙: 부동산은 gross가 아닌 순자산(대출 차감)으로 표시
+  const totalAssets = liquidTotal + realEstateNetTotal;
 
   const userTier = determineTier(totalAssets);
 

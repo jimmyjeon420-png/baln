@@ -112,10 +112,22 @@ export const POPULAR_STOCKS: StockItem[] = [
   { ticker: 'LTC', name: '라이트코인', nameEn: 'Litecoin', category: 'crypto' },
   { ticker: 'NEAR', name: '니어프로토콜', nameEn: 'NEAR Protocol', category: 'crypto' },
 
-  // ─── 채권/현금 (5개) ───
+  // ─── 현금 (3개) ───
+  { ticker: 'CASH_KRW', name: '원화 현금', nameEn: 'KRW Cash', category: 'cash' },
+  { ticker: 'CASH_USD', name: '달러 예금', nameEn: 'USD Deposit', category: 'cash' },
+  { ticker: 'CASH_CMA', name: 'CMA·MMF', nameEn: 'CMA / Money Market Fund', category: 'cash' },
+
+  // ─── 채권 (8개) ───
   { ticker: 'TLT', name: '미국 장기국채 ETF', nameEn: 'iShares 20+ Year Treasury Bond', category: 'bond' },
   { ticker: 'SHY', name: '미국 단기국채 ETF', nameEn: 'iShares 1-3 Year Treasury Bond', category: 'bond' },
   { ticker: 'BND', name: '뱅가드 채권 ETF', nameEn: 'Vanguard Total Bond Market', category: 'bond' },
+  { ticker: 'AGG', name: '미국 종합채권 ETF', nameEn: 'iShares Core US Aggregate Bond', category: 'bond' },
+  { ticker: 'IEF', name: '미국 중기국채 ETF', nameEn: 'iShares 7-10 Year Treasury Bond', category: 'bond' },
+  { ticker: '148070.KS', name: 'KODEX 국채3년', nameEn: 'KODEX KTB 3Y', category: 'bond' },
+  { ticker: '114820.KS', name: 'KODEX 단기채권', nameEn: 'KODEX Short-term Bond', category: 'bond' },
+  { ticker: '136340.KS', name: 'KODEX 회사채', nameEn: 'KODEX Corporate Bond', category: 'bond' },
+
+  // ─── 스테이블코인 ───
   { ticker: 'USDT', name: '테더', nameEn: 'Tether (USDT)', category: 'crypto' },
   { ticker: 'USDC', name: 'USD코인', nameEn: 'USD Coin', category: 'crypto' },
 ];

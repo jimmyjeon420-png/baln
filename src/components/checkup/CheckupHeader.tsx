@@ -98,11 +98,11 @@ export default function CheckupHeader({
     if (!panicScore) return '';
 
     if (panicScore >= 70) {
-      return '현금 비중과 분산이 안정적';
+      return '시장이 급락해도 버틸 수 있는 안정적인 구조예요';
     } else if (panicScore >= 50) {
-      return '일부 개선 여지 있음';
+      return '괜찮은 편이지만, 현금이나 채권을 조금 더 늘리면 안심이 돼요';
     } else {
-      return '현금 확보 또는 분산 필요';
+      return '급락 시 불안해질 수 있어요. 현금이나 채권 비중을 늘려보세요';
     }
   };
 
@@ -145,15 +145,17 @@ export default function CheckupHeader({
         <View style={styles.panicSection}>
           <View style={styles.panicRow}>
             <Ionicons name="shield-checkmark-outline" size={16} color={colors.primaryDark ?? colors.primary} />
-            <Text style={styles.panicLabel}>Panic Shield</Text>
+            <Text style={styles.panicLabel}>시장 위기 대비력</Text>
             <Text style={[styles.panicScore, { color: colors.primaryDark ?? colors.primary }]}>
               {Math.round(panicScore)}점
             </Text>
-            <Text style={styles.panicDesc}>
-              {panicScore >= 70 ? '강함' : panicScore >= 50 ? '보통' : '취약'}
+            <Text style={[styles.panicDesc, {
+              color: panicScore >= 70 ? '#4CAF50' : panicScore >= 50 ? '#FFB74D' : '#CF6679'
+            }]}>
+              {panicScore >= 70 ? '안정' : panicScore >= 50 ? '보통' : '주의'}
             </Text>
           </View>
-          {/* 점수 이유 (달리오: 맥락 제공) */}
+          {/* 점수 이유 — 일반인 언어로 설명 */}
           <Text style={styles.panicReason}>
             {getPanicReason()}
           </Text>

@@ -264,9 +264,10 @@ export default function HomeScreen() {
         isPremium: isPremium || false,
         onShare: undefined,
         isLoading: contextLoading,
-        // 4겹 레이어 데이터 (effectiveData에서 추출)
+        // 5겹 레이어 데이터 (effectiveData에서 추출)
         historicalContext: fallbackCard?.historical_context,
         macroChain: fallbackCard?.macro_chain,
+        politicalContext: fallbackCard?.political_context,
         institutionalBehavior: fallbackCard?.institutional_behavior,
         portfolioImpact: fallbackImpact ? {
           percentChange: fallbackImpact.percent_change ?? 0,
@@ -299,9 +300,10 @@ export default function HomeScreen() {
       isPremium: isPremium || false,
       onShare: () => setShareModalVisible(true),
       isLoading: contextLoading,
-      // 4겹 레이어 데이터 전달
+      // 5겹 레이어 데이터 전달
       historicalContext: card.historical_context,
       macroChain: card.macro_chain,
+      politicalContext: card.political_context,
       institutionalBehavior: card.institutional_behavior,
       portfolioImpact: userImpact ? {
         percentChange: userImpact.percent_change ?? 0,

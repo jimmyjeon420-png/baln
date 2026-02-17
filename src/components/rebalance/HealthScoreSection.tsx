@@ -32,7 +32,7 @@ interface HealthScoreSectionProps {
 
 /** 팩터별 설명 텍스트 (툴팁용) */
 const FACTOR_DESCRIPTIONS: Record<string, string> = {
-  '배분 이탈도': '목표 배분과 현재 배분의 차이입니다. 0%에 가까울수록 좋습니다.\n\n이탈도가 낮으면 당신의 투자 전략이 잘 유지되고 있다는 신호예요.',
+  '배분 이탈도': '처음 목표로 세운 비중과 지금 실제 비중의 차이예요.\n\n주식이 많이 오르면 그 비중이 자연스럽게 커지게 돼요. 이걸 원래 계획으로 되돌리는 게 리밸런싱이에요.',
   '자산 집중도': '특정 자산에 쏠림 정도입니다. 분산이 잘 되어 있을수록 높은 점수를 받습니다.\n\n집중도가 낮으면 한 종목의 폭락에도 포트폴리오 전체가 안정적이에요.',
   '상관관계': '자산 간 움직임의 유사도입니다. 낮을수록 분산 효과가 큽니다.\n\n낮은 상관관계는 한 자산이 떨어질 때 다른 자산이 오를 수 있다는 뜻이에요.',
   '변동성': '자산 가치의 변동 폭입니다. 낮을수록 안정적입니다.\n\n변동성이 낮으면 심리적으로 편안하게 투자를 지속할 수 있어요.',
@@ -42,7 +42,7 @@ const FACTOR_DESCRIPTIONS: Record<string, string> = {
 
 /** 팩터별 개선 제안 (40점 미만 시) */
 const FACTOR_SUGGESTIONS: Record<string, string> = {
-  '배분 이탈도': '목표 배분 대비 이탈이 큽니다.\n\n아래 "오늘의 액션"을 참고해 리밸런싱을 해보세요.',
+  '배분 이탈도': '일부 종목의 비중이 많이 달라졌어요.\n\n아래 "오늘의 액션"에서 어떤 종목을 얼마나 조정하면 좋은지 알려드려요.',
   '자산 집중도': '특정 자산에 쏠려 있습니다.\n\n분산 투자를 고려해보세요. 채권이나 현금 비중을 늘리면 안정성이 높아져요.',
   '상관관계': '자산들이 비슷하게 움직입니다.\n\n상관관계가 낮은 자산(채권, 현금, 비트코인 등)을 추가하면 분산 효과가 커져요.',
   '변동성': '포트폴리오 변동성이 높습니다.\n\n안정적인 자산(채권, 현금)의 비중을 늘리면 변동폭을 줄일 수 있어요.',
@@ -75,34 +75,45 @@ const GRADE_ICONS: Record<string, string> = {
  * 예: "자산 집중도와 변동성이 낮아서 전체 점수가 내려갔어요."
  * 예: "모든 팩터가 양호합니다. 현재 전략을 유지하세요."
  */
+// 팩터 이름 → 일반인 친화적 표현
+const FACTOR_PLAIN: Record<string, string> = {
+  '배분 이탈도': '종목 비중',
+  '위험 집중도': '집중 위험',
+  '상관관계': '분산 효과',
+  '변동성': '가격 변동',
+  '하방 리스크': '손실 위험',
+  '세금 효율': '절세 기회',
+};
+
 function generateWhyExplanation(healthScore: HealthScoreResult): string {
-  const { factors, totalScore, grade } = healthScore;
+  const { factors, totalScore } = healthScore;
 
   // 모든 팩터가 70점 이상이면 → 긍정 메시지
   const weakFactors = factors.filter((f: FactorResult) => f.score < 70);
   if (weakFactors.length === 0) {
-    return '모든 지표가 고르게 양호합니다. 현재 투자 전략이 잘 작동하고 있어요.';
+    return '모든 지표가 고르게 양호해요. 현재 투자 전략이 잘 작동하고 있어요.';
   }
 
   // 가장 취약한 순으로 정렬 (점수 낮은 순)
   const sorted = [...weakFactors].sort((a, b) => a.score - b.score);
 
-  // 가장 낮은 팩터
+  // 가장 낮은 팩터 (친화적 이름으로)
   const worst = sorted[0];
-  const worstScore = worst.score;
+  const worstName = FACTOR_PLAIN[worst.label] || worst.label;
 
   if (sorted.length === 1) {
-    return `${worst.label} 점수가 ${worstScore}점으로 전체 점수를 끌어내리고 있어요.`;
+    return `${worstName}이 달라져서 전체 점수가 낮아졌어요. 분석 탭에서 조정할 수 있어요.`;
   }
 
   // 2개 이상 취약
   const secondWorst = sorted[1];
+  const secondName = FACTOR_PLAIN[secondWorst.label] || secondWorst.label;
   if (sorted.length === 2) {
-    return `${worst.label}(${worstScore}점)과 ${secondWorst.label}(${secondWorst.score}점)이 전체 점수를 낮추는 주요 원인이에요.`;
+    return `${worstName}과 ${secondName}을 조정하면 점수가 올라가요.`;
   }
 
   // 3개 이상 취약
-  return `${worst.label}(${worstScore}점) 외 ${sorted.length - 1}개 지표가 부진해 전체 점수가 ${totalScore}점이에요.`;
+  return `${worstName}을 포함해 ${sorted.length}개 항목을 조정하면 ${Math.min(totalScore + 15, 100)}점까지 올릴 수 있어요.`;
 }
 
 /**

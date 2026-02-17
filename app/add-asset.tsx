@@ -41,6 +41,7 @@ import { useTheme } from '../src/hooks/useTheme';
 import { searchStocks, StockItem, getCategoryLabel, getCategoryColor } from '../src/data/stockList';
 import { priceService } from '../src/services/PriceService';
 import { AssetClass, PriceData } from '../src/types/price';
+import { fetchExchangeRate } from '../src/services/stockDataService';
 import { SHARED_PORTFOLIO_KEY } from '../src/hooks/useSharedPortfolio';
 import { grantAssetRegistrationReward, REWARD_AMOUNTS } from '../src/services/rewardService';
 
@@ -195,6 +196,13 @@ export default function AddAssetScreen() {
   const { colors } = useTheme();
   const { user: authUser } = useAuth();
 
+  // --- 자산 유형 탭 ---
+  const [assetCategory, setAssetCategory] = useState<'stock' | 'cash' | 'bond'>('stock');
+  // 현금 전용 상태
+  const [cashType, setCashType] = useState<'CASH_KRW' | 'CASH_USD' | 'CASH_CMA'>('CASH_KRW');
+  const [cashAmount, setCashAmount] = useState('');
+  const [cashSaving, setCashSaving] = useState(false);
+
   // --- 검색 상태 ---
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<StockItem[]>([]);
@@ -206,6 +214,9 @@ export default function AddAssetScreen() {
   const [price, setPrice] = useState('');
   const [priceLoading, setPriceLoading] = useState(false);
   const [priceAuto, setPriceAuto] = useState(false); // 자동 로드된 가격인지
+  const [exchangeRate, setExchangeRate] = useState<number>(0); // USD→KRW 환율 (0이면 미적용)
+  const [originalUsdPrice, setOriginalUsdPrice] = useState<number>(0); // USD 원가 (참고용)
+  const [priceUnit, setPriceUnit] = useState<'KRW' | 'USD'>('KRW'); // 사용자 선택 통화
 
   // --- 저장 상태 ---
   const [saving, setSaving] = useState(false);
@@ -331,26 +342,48 @@ export default function AddAssetScreen() {
     setSelectedStock(stock);
     setSearchQuery(stock.name);
     setShowDropdown(false);
+    setExchangeRate(0);
+    setOriginalUsdPrice(0);
+    setPrice('');
     Keyboard.dismiss();
+
+    const isKrStock = stock.ticker.endsWith('.KS') || stock.ticker.endsWith('.KQ');
+    const isCrypto = stock.category === 'crypto';
+    // 미국주식·ETF → 달러 기본값, 한국주식·크립토 → 원화
+    const defaultUnit: 'KRW' | 'USD' = (!isKrStock && !isCrypto) ? 'USD' : 'KRW';
+    setPriceUnit(defaultUnit);
 
     // 현재가 자동 로드
     setPriceLoading(true);
     setPriceAuto(false);
     try {
       const assetClass = inferAssetClassFromTicker(stock.ticker);
-      const currency = stock.ticker.endsWith('.KS') || stock.ticker.endsWith('.KQ') ? 'KRW' : 'USD';
+      const fetchCurrency = isKrStock ? 'KRW' : 'USD';
       const priceData = await withTimeout(
-        priceService.fetchPrice(stock.ticker, assetClass, currency),
+        priceService.fetchPrice(stock.ticker, assetClass, fetchCurrency),
         10000,
         '가격 조회 시간 초과'
       );
       if (priceData && priceData.currentPrice > 0) {
-        setPrice(String(priceData.currentPrice));
+        // 항상 환율 가져오기 (미리보기용)
+        if (!isKrStock) {
+          try {
+            const rate = await fetchExchangeRate();
+            setExchangeRate(rate);
+          } catch { /* 환율 실패 무시 */ }
+        }
+        if (defaultUnit === 'USD') {
+          // 달러 단위로 그대로 표시
+          setPrice(String(priceData.currentPrice));
+          setOriginalUsdPrice(priceData.currentPrice);
+        } else {
+          // 원화 단위로 표시 (한국주식·크립토)
+          setPrice(String(priceData.currentPrice));
+        }
         setPriceAuto(true);
       }
     } catch (err) {
       console.warn('[AddAsset] 현재가 자동 로드 실패:', err);
-      // 실패해도 사용자가 직접 입력 가능
     } finally {
       setPriceLoading(false);
     }
@@ -424,10 +457,93 @@ export default function AddAssetScreen() {
     return q * p;
   }, [quantity, price]);
 
-  const currencySymbol = useMemo(
-    () => selectedStock ? getCurrencySymbol(selectedStock.ticker) : '₩',
-    [selectedStock],
-  );
+  // USD 입력 시 원화 환산 금액 (미리보기용)
+  const totalValueKrw = useMemo(() => {
+    if (priceUnit !== 'USD' || exchangeRate <= 0) return 0;
+    return Math.round(totalValue * exchangeRate);
+  }, [priceUnit, totalValue, exchangeRate]);
+
+  // 사용자 선택 통화 심볼
+  const currencySymbol = priceUnit === 'USD' ? '$' : '₩';
+
+  // 기존 동일 종목 찾기 (평균 단가 미리 계산 안내용)
+  const matchingExisting = useMemo(() => {
+    if (!selectedStock) return null;
+    return existingAssets.find(
+      a => a.ticker === selectedStock.ticker || a.name === selectedStock.name
+    ) ?? null;
+  }, [selectedStock, existingAssets]);
+
+  // ─── 현금 저장 ───
+
+  const CASH_META: Record<string, { name: string; symbol: string }> = {
+    CASH_KRW: { name: '원화 현금', symbol: '₩' },
+    CASH_USD: { name: '달러 예금', symbol: '$' },
+    CASH_CMA: { name: 'CMA·MMF', symbol: '₩' },
+  };
+
+  const handleCashSave = async () => {
+    const amount = parseFloat(cashAmount.replace(/,/g, ''));
+    if (!amount || amount <= 0) {
+      Alert.alert('금액 입력', '보유 금액을 입력해주세요.');
+      return;
+    }
+    if (cashSaving) return;
+    setCashSaving(true);
+    try {
+      const user = authUser ?? await getCurrentUser();
+      if (!user) throw new Error('로그인이 필요합니다.');
+
+      let krwAmount = amount;
+      // 달러 예금은 환율 변환
+      if (cashType === 'CASH_USD') {
+        const rate = await fetchExchangeRate().catch(() => 1450);
+        krwAmount = Math.round(amount * rate);
+      }
+
+      const meta = CASH_META[cashType];
+      const upsertData = {
+        user_id: user.id,
+        ticker: cashType,
+        name: meta.name,
+        quantity: 1,
+        avg_price: krwAmount,
+        current_price: krwAmount,
+        current_value: krwAmount,
+        target_allocation: 0,
+        asset_type: 'liquid' as const,
+        currency: 'KRW' as const,
+      };
+
+      const { error } = await withTimeout(
+        supabase
+          .from('portfolios')
+          .upsert(upsertData, { onConflict: 'user_id,ticker', ignoreDuplicates: false })
+          .select(),
+        15000,
+        '저장 시간이 초과되었습니다.',
+      );
+      if (error) throw error;
+
+      await AsyncStorage.setItem(NEEDS_DIAGNOSIS_KEY, 'true');
+      queryClient.invalidateQueries({ queryKey: SHARED_PORTFOLIO_KEY });
+      await loadExistingAssets();
+      setCashAmount('');
+
+      Alert.alert(
+        '등록 완료',
+        `${meta.name} ₩${krwAmount.toLocaleString()}이(가) 등록되었습니다.`,
+        [
+          { text: '처방전 보기', onPress: () => router.push('/(tabs)/rebalance') },
+          { text: '더 추가하기', style: 'cancel' },
+        ],
+      );
+    } catch (err) {
+      Alert.alert('저장 실패', err instanceof Error ? err.message : '저장 중 오류가 발생했습니다.');
+    } finally {
+      setCashSaving(false);
+    }
+  };
 
   // ─── 등록 버튼 ───
 
@@ -443,17 +559,11 @@ export default function AddAssetScreen() {
     }
 
     const q = parseFloat(quantity);
-    const p = parseFloat(price);
+    const p = price.trim() ? (parseFloat(price) || 0) : 0;
 
     if (!q || q <= 0) {
       savingRef.current = false;
       Alert.alert('수량 입력', '보유 수량을 입력해주세요.');
-      return;
-    }
-
-    if (!p || p <= 0) {
-      savingRef.current = false;
-      Alert.alert('가격 입력', '매수 단가를 입력해주세요.');
       return;
     }
 
@@ -465,18 +575,42 @@ export default function AddAssetScreen() {
 
       const ticker = selectedStock.ticker.trim();
       const name = selectedStock.name.trim();
-      const currentValue = q * p;
 
-      // 한국주식: KRW, 그 외: USD
-      const currency = (ticker.endsWith('.KS') || ticker.endsWith('.KQ')) ? 'KRW' : 'USD';
+      // USD 입력이면 환율 변환해서 KRW로 변환
+      let krwPrice = p;
+      if (priceUnit === 'USD' && p > 0) {
+        const rate = exchangeRate > 0 ? exchangeRate : await fetchExchangeRate().catch(() => 1450);
+        krwPrice = Math.round(p * rate);
+      }
+
+      // 평균 단가 자동 계산: 기존 보유분이 있으면 가중 평균
+      const existing = existingAssets.find(a => a.ticker === ticker || a.name === name);
+      let finalQuantity = q;
+      let finalAvgPrice = krwPrice;
+      if (existing && krwPrice > 0 && existing.avg_price > 0) {
+        finalQuantity = existing.quantity + q;
+        finalAvgPrice = Math.round(
+          (existing.quantity * existing.avg_price + q * krwPrice) / finalQuantity
+        );
+      } else if (existing && krwPrice <= 0) {
+        // 단가 미입력 시 기존 평단 유지, 수량만 합산
+        finalQuantity = existing.quantity + q;
+        finalAvgPrice = existing.avg_price;
+      }
+
+      // 단가가 0이면 current_value는 0으로 저장 (분석 제한 없음)
+      const currentValue = finalAvgPrice > 0 ? finalQuantity * finalAvgPrice : 0;
+
+      // 항상 KRW로 저장 (USD 종목은 selectStock에서 이미 환율 변환됨)
+      const currency = 'KRW';
 
       const upsertData = {
         user_id: user.id,
         ticker,
         name,
-        quantity: q,
-        avg_price: p,
-        current_price: p,
+        quantity: finalQuantity,
+        avg_price: finalAvgPrice,
+        current_price: finalAvgPrice,
         current_value: currentValue,
         target_allocation: 0,
         asset_type: 'liquid',
@@ -526,9 +660,11 @@ export default function AddAssetScreen() {
         console.warn('[AddAsset] 자산 등록 보상 확인 실패:', err);
       }
 
+      const unit = selectedStock.category === 'crypto' ? '개' : '주';
+      const valueInfo = currentValue > 0 ? ` (₩${currentValue.toLocaleString()})` : '';
       Alert.alert(
         '등록 완료',
-        `${name} ${q}${selectedStock.category === 'crypto' ? '개' : '주'} (${currencySymbol}${currentValue.toLocaleString()})이(가) 등록되었습니다.${rewardMsg}`,
+        `${name} ${finalQuantity}${unit}${valueInfo}이(가) 등록되었습니다.${rewardMsg}`,
         [
           {
             text: '처방전 보기',
@@ -560,6 +696,9 @@ export default function AddAssetScreen() {
     setPrice('');
     setPriceAuto(false);
     setEditingAsset(null);
+    setExchangeRate(0);
+    setOriginalUsdPrice(0);
+    setPriceUnit('KRW');
   };
 
   // ─── 숫자 키보드 "완료" 버튼 (iOS decimal-pad에는 return 키가 없음) ───
@@ -619,14 +758,174 @@ export default function AddAssetScreen() {
           <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
         </TouchableOpacity>
 
+        {/* ─── 자산 유형 탭 ─── */}
+        {!editingAsset && (
+          <View style={[styles.assetCategoryRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            {(
+              [
+                { key: 'stock', label: '주식·ETF·크립토', icon: 'trending-up-outline' },
+                { key: 'cash', label: '현금', icon: 'wallet-outline' },
+                { key: 'bond', label: '채권', icon: 'document-text-outline' },
+              ] as const
+            ).map(({ key, label, icon }) => (
+              <TouchableOpacity
+                key={key}
+                style={[
+                  styles.assetCategoryTab,
+                  assetCategory === key && { backgroundColor: colors.primary + '20', borderColor: colors.primary },
+                  { borderColor: colors.border },
+                ]}
+                onPress={() => {
+                  setAssetCategory(key);
+                  resetForm();
+                  setCashAmount('');
+                }}
+              >
+                <Ionicons
+                  name={icon}
+                  size={14}
+                  color={assetCategory === key ? colors.primary : colors.textSecondary}
+                />
+                <Text style={[
+                  styles.assetCategoryTabText,
+                  { color: assetCategory === key ? colors.primary : colors.textSecondary },
+                ]}>
+                  {label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
         {/* ─── 빠른 추가 섹션 ─── */}
         <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-            {editingAsset ? '자산 수정' : '빠른 추가'}
+            {editingAsset ? '자산 수정' : assetCategory === 'cash' ? '현금 등록' : assetCategory === 'bond' ? '채권 등록' : '빠른 추가'}
           </Text>
           <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
-            {editingAsset ? '수량과 가격을 수정하세요' : '종목 검색 → 수량 입력 → 등록 (30초)'}
+            {editingAsset ? '수량과 가격을 수정하세요' : assetCategory === 'cash' ? '보유 현금 금액을 입력하세요' : assetCategory === 'bond' ? '채권 ETF 검색 또는 아래에서 빠르게 선택하세요' : '종목 검색 → 수량 입력 → 등록 (30초)'}
           </Text>
+
+          {/* ─── 현금 전용 UI ─── */}
+          {assetCategory === 'cash' && !editingAsset && (
+            <View>
+              {/* 현금 종류 선택 */}
+              <View style={styles.inputGroup}>
+                <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>현금 종류</Text>
+                <View style={styles.cashTypeRow}>
+                  {([
+                    { key: 'CASH_KRW', label: '원화 현금', desc: '은행 예금·현금' },
+                    { key: 'CASH_USD', label: '달러 예금', desc: '외화 예금·달러' },
+                    { key: 'CASH_CMA', label: 'CMA·MMF', desc: '단기 금융 상품' },
+                  ] as const).map(({ key, label, desc }) => (
+                    <TouchableOpacity
+                      key={key}
+                      style={[
+                        styles.cashTypeBtn,
+                        cashType === key
+                          ? { backgroundColor: colors.primary, borderColor: colors.primary }
+                          : { backgroundColor: colors.surfaceLight, borderColor: colors.border },
+                      ]}
+                      onPress={() => setCashType(key)}
+                    >
+                      <Text style={[styles.cashTypeBtnLabel, { color: cashType === key ? '#fff' : colors.textPrimary }]}>
+                        {label}
+                      </Text>
+                      <Text style={[styles.cashTypeBtnDesc, { color: cashType === key ? 'rgba(255,255,255,0.8)' : colors.textTertiary }]}>
+                        {desc}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              {/* 보유 금액 */}
+              <View style={styles.inputGroup}>
+                <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
+                  보유 금액{cashType === 'CASH_USD' ? ' (달러)' : ' (원화)'}
+                </Text>
+                <View style={[styles.priceInputRow, { backgroundColor: colors.surfaceLight, borderColor: colors.border }]}>
+                  <Text style={[styles.currencySymbol, { color: colors.textSecondary }]}>
+                    {cashType === 'CASH_USD' ? '$' : '₩'}
+                  </Text>
+                  <TextInput
+                    style={[styles.priceInput, { color: colors.textPrimary }]}
+                    placeholder="0"
+                    placeholderTextColor={colors.textTertiary}
+                    value={cashAmount}
+                    onChangeText={(t) => setCashAmount(t.replace(/[^0-9.]/g, ''))}
+                    keyboardType="decimal-pad"
+                    selectTextOnFocus
+                    inputAccessoryViewID={INPUT_ACCESSORY_ID}
+                  />
+                </View>
+                {cashType === 'CASH_USD' && parseFloat(cashAmount) > 0 && (
+                  <Text style={[styles.krwPreview, { color: colors.textSecondary }]}>
+                    ≈ ₩{Math.round(parseFloat(cashAmount) * 1450).toLocaleString()} (환율 1,450원 기준)
+                  </Text>
+                )}
+              </View>
+
+              {/* 현금 등록 버튼 */}
+              <TouchableOpacity
+                style={[
+                  styles.saveButton,
+                  { backgroundColor: colors.primary },
+                  (!cashAmount || parseFloat(cashAmount) <= 0) && [styles.saveButtonDisabled, { backgroundColor: colors.surfaceLight }],
+                ]}
+                onPress={handleCashSave}
+                disabled={cashSaving || !cashAmount || parseFloat(cashAmount) <= 0}
+              >
+                {cashSaving ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <>
+                    <Ionicons name="add-circle" size={20} color="#FFFFFF" />
+                    <Text style={styles.saveButtonText}>현금 등록</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* ─── 채권 빠른 선택 ─── */}
+          {assetCategory === 'bond' && !editingAsset && (
+            <View style={styles.inputGroup}>
+              <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>인기 채권 빠른 선택</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {[
+                  { ticker: 'TLT', name: '미국 장기국채' },
+                  { ticker: 'SHY', name: '미국 단기국채' },
+                  { ticker: 'BND', name: '뱅가드채권' },
+                  { ticker: 'AGG', name: '미국종합채권' },
+                  { ticker: '148070.KS', name: 'KODEX국채3년' },
+                  { ticker: '114820.KS', name: 'KODEX단기채권' },
+                ].map((bond) => (
+                  <TouchableOpacity
+                    key={bond.ticker}
+                    style={[
+                      styles.bondChip,
+                      selectedStock?.ticker === bond.ticker
+                        ? { backgroundColor: '#64B5F620', borderColor: '#64B5F6' }
+                        : { backgroundColor: colors.surfaceLight, borderColor: colors.border },
+                    ]}
+                    onPress={() => selectStock({
+                      ticker: bond.ticker,
+                      name: bond.name,
+                      nameEn: bond.ticker,
+                      category: 'bond',
+                    })}
+                  >
+                    <Text style={[styles.bondChipTicker, { color: '#64B5F6' }]}>{bond.ticker}</Text>
+                    <Text style={[styles.bondChipName, { color: colors.textSecondary }]}>{bond.name}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          )}
+
+          {/* ─── 주식·ETF·크립토·채권 공통 검색 폼 ─── */}
+          {(assetCategory !== 'cash' || editingAsset) && (<>
 
           {/* 1. 종목 검색 */}
           <View style={styles.inputGroup}>
@@ -689,6 +988,31 @@ export default function AddAssetScreen() {
                 ))}
               </View>
             )}
+
+            {/* 검색 결과 없을 때 직접 입력 버튼 */}
+            {searchQuery.trim().length > 0 && searchResults.length === 0 && !selectedStock && (
+              <TouchableOpacity
+                style={[styles.directInputBtn, { backgroundColor: colors.surfaceLight, borderColor: colors.border }]}
+                onPress={() => {
+                  const ticker = searchQuery.trim().toUpperCase();
+                  const manualStock: StockItem = {
+                    ticker,
+                    name: ticker,
+                    nameEn: ticker,
+                    category: 'us_stock',
+                  };
+                  selectStock(manualStock);
+                }}
+              >
+                <Ionicons name="add-circle-outline" size={16} color={colors.primary} />
+                <Text style={[styles.directInputText, { color: colors.primary }]}>
+                  "{searchQuery.trim().toUpperCase()}" 직접 입력
+                </Text>
+                <Text style={[styles.directInputHint, { color: colors.textTertiary }]}>
+                  목록에 없는 종목
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* 선택된 종목 정보 뱃지 */}
@@ -715,24 +1039,57 @@ export default function AddAssetScreen() {
             />
           </View>
 
-          {/* 3. 현재가 */}
+          {/* 3. 매수 단가 */}
           <View style={styles.inputGroup}>
             <View style={styles.priceLabelRow}>
               <View style={styles.priceLabelGroup}>
                 <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>매수 단가</Text>
-                <Text style={[styles.priceHelp, { color: colors.textTertiary }]}>내가 산 평균 가격</Text>
+                <Text style={[styles.priceHelp, { color: colors.textTertiary }]}>선택사항</Text>
               </View>
-              {priceLoading && (
-                <View style={styles.priceLoadingRow}>
-                  <ActivityIndicator size="small" color={colors.primary} />
-                  <Text style={[styles.priceLoadingText, { color: colors.primary }]}>현재가 조회 중...</Text>
-                </View>
-              )}
-              {priceAuto && !priceLoading && (
-                <View style={styles.autoTag}>
-                  <Text style={[styles.autoTagText, { color: colors.primary }]}>자동</Text>
-                </View>
-              )}
+              <View style={styles.priceLabelRight}>
+                {priceLoading && (
+                  <View style={styles.priceLoadingRow}>
+                    <ActivityIndicator size="small" color={colors.primary} />
+                    <Text style={[styles.priceLoadingText, { color: colors.primary }]}>현재가 조회 중...</Text>
+                  </View>
+                )}
+                {priceAuto && !priceLoading && (
+                  <View style={styles.autoTag}>
+                    <Text style={[styles.autoTagText, { color: colors.primary }]}>자동</Text>
+                  </View>
+                )}
+                {/* ₩ / $ 토글 — 미국주식·ETF일 때만 표시 */}
+                {selectedStock && selectedStock.category !== 'kr_stock' && selectedStock.category !== 'crypto' && (
+                  <View style={[styles.unitToggle, { backgroundColor: colors.surfaceLight, borderColor: colors.border }]}>
+                    <TouchableOpacity
+                      style={[styles.unitBtn, priceUnit === 'KRW' && { backgroundColor: colors.primary }]}
+                      onPress={() => {
+                        if (priceUnit === 'USD' && price && exchangeRate > 0) {
+                          // 달러 → 원화 변환
+                          setPrice(String(Math.round(parseFloat(price) * exchangeRate)));
+                        }
+                        setPriceUnit('KRW');
+                        setPriceAuto(false);
+                      }}
+                    >
+                      <Text style={[styles.unitBtnText, { color: priceUnit === 'KRW' ? '#fff' : colors.textSecondary }]}>₩</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.unitBtn, priceUnit === 'USD' && { backgroundColor: colors.primary }]}
+                      onPress={() => {
+                        if (priceUnit === 'KRW' && price && exchangeRate > 0) {
+                          // 원화 → 달러 변환
+                          setPrice(String((parseFloat(price) / exchangeRate).toFixed(2)));
+                        }
+                        setPriceUnit('USD');
+                        setPriceAuto(false);
+                      }}
+                    >
+                      <Text style={[styles.unitBtnText, { color: priceUnit === 'USD' ? '#fff' : colors.textSecondary }]}>$</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
             </View>
             <View style={[styles.priceInputRow, { backgroundColor: colors.surfaceLight, borderColor: colors.border }]}>
               <Text style={[styles.currencySymbol, { color: colors.textSecondary }]}>{currencySymbol}</Text>
@@ -750,6 +1107,16 @@ export default function AddAssetScreen() {
                 inputAccessoryViewID={INPUT_ACCESSORY_ID}
               />
             </View>
+            {/* 달러 입력 시 원화 환산 미리보기 */}
+            {priceUnit === 'USD' && parseFloat(price) > 0 && exchangeRate > 0 && (
+              <Text style={[styles.krwPreview, { color: colors.textSecondary }]}>
+                ≈ ₩{Math.round(parseFloat(price) * exchangeRate).toLocaleString()}
+                {'  '}
+                <Text style={{ color: colors.textTertiary }}>
+                  (환율 {Math.round(exchangeRate).toLocaleString()}원)
+                </Text>
+              </Text>
+            )}
             {!priceLoading && !priceAuto && selectedStock && (
               <Text style={[styles.priceHint, { color: colors.textSecondary }]}>
                 현재가를 가져올 수 없습니다. 직접 입력해주세요.
@@ -757,13 +1124,43 @@ export default function AddAssetScreen() {
             )}
           </View>
 
+          {/* 기존 보유 종목 추가 시 평균 단가 계산 안내 */}
+          {matchingExisting && parseFloat(quantity) > 0 && parseFloat(price) > 0 && (
+            <View style={[styles.avgCalcCard, { backgroundColor: colors.surfaceLight, borderColor: colors.border }]}>
+              <Ionicons name="calculator-outline" size={14} color={colors.primary} />
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.avgCalcTitle, { color: colors.textPrimary }]}>평균 단가 자동 계산</Text>
+                <Text style={[styles.avgCalcDetail, { color: colors.textSecondary }]}>
+                  기존 {matchingExisting.quantity}주 @₩{matchingExisting.avg_price.toLocaleString()}
+                  {' '}+ 이번 {parseFloat(quantity) || 0}주 @₩{(parseFloat(price) || 0).toLocaleString()}
+                </Text>
+                <Text style={[styles.avgCalcResult, { color: colors.primary }]}>
+                  → 새 평단 ₩{matchingExisting.avg_price > 0
+                    ? Math.round(
+                        (matchingExisting.quantity * matchingExisting.avg_price + (parseFloat(quantity) || 0) * (parseFloat(price) || 0))
+                        / (matchingExisting.quantity + (parseFloat(quantity) || 0))
+                      ).toLocaleString()
+                    : (parseFloat(price) || 0).toLocaleString()
+                  } ({matchingExisting.quantity + (parseFloat(quantity) || 0)}주)
+                </Text>
+              </View>
+            </View>
+          )}
+
           {/* 4. 평가금액 */}
           {totalValue > 0 && (
             <View style={styles.totalRow}>
-              <Text style={[styles.totalLabel, { color: colors.textSecondary }]}>평가금액</Text>
-              <Text style={[styles.totalValue, { color: colors.primary }]}>
-                {currencySymbol}{totalValue.toLocaleString()}
-              </Text>
+              <Text style={[styles.totalLabel, { color: colors.textSecondary }]}>평가금액 (예상)</Text>
+              <View style={{ alignItems: 'flex-end' }}>
+                <Text style={[styles.totalValue, { color: colors.primary }]}>
+                  {currencySymbol}{totalValue.toLocaleString()}
+                </Text>
+                {totalValueKrw > 0 && (
+                  <Text style={[styles.totalValueKrw, { color: colors.textSecondary }]}>
+                    ≈ ₩{totalValueKrw.toLocaleString()}
+                  </Text>
+                )}
+              </View>
             </View>
           )}
 
@@ -772,10 +1169,10 @@ export default function AddAssetScreen() {
             style={[
               styles.saveButton,
               { backgroundColor: colors.primary },
-              (!selectedStock || !quantity || !price) && [styles.saveButtonDisabled, { backgroundColor: colors.surfaceLight }],
+              (!selectedStock || !quantity) && [styles.saveButtonDisabled, { backgroundColor: colors.surfaceLight }],
             ]}
             onPress={handleSave}
-            disabled={saving || !selectedStock || !quantity || !price}
+            disabled={saving || !selectedStock || !quantity}
           >
             {saving ? (
               <ActivityIndicator size="small" color="#FFFFFF" />
@@ -798,6 +1195,7 @@ export default function AddAssetScreen() {
               <Text style={[styles.cancelEditText, { color: colors.textSecondary }]}>수정 취소</Text>
             </TouchableOpacity>
           )}
+          </>)}
         </View>
 
         {/* ─── 최근 추가 종목 ─── */}
@@ -822,7 +1220,7 @@ export default function AddAssetScreen() {
         {/* ─── 보유 자산 목록 ─── */}
         <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.existingHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>유동자산 (주식·ETF·크립토)</Text>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>유동자산 목록</Text>
             {existingAssets.length > 0 && (
               <Text style={[styles.assetCount, { color: colors.textSecondary }]}>{existingAssets.length}개</Text>
             )}
@@ -1273,5 +1671,147 @@ const styles = StyleSheet.create({
   retryButtonText: {
     fontSize: 13,
     fontWeight: '600',
+  },
+  directInputBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 10,
+    borderWidth: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginTop: 6,
+    gap: 8,
+  },
+  directInputText: {
+    fontSize: 14,
+    fontWeight: '600',
+    flex: 1,
+  },
+  directInputHint: {
+    fontSize: 11,
+  },
+  autoTagRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  exchangeRateText: {
+    fontSize: 10,
+  },
+  priceLabelRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  unitToggle: {
+    flexDirection: 'row',
+    borderRadius: 8,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  unitBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  unitBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  krwPreview: {
+    fontSize: 12,
+    marginTop: 5,
+    fontWeight: '500',
+  },
+  totalValueKrw: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  avgCalcCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    borderRadius: 10,
+    borderWidth: 1,
+    padding: 12,
+    marginBottom: 12,
+    gap: 8,
+  },
+  avgCalcTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  avgCalcDetail: {
+    fontSize: 11,
+    marginBottom: 2,
+  },
+  avgCalcResult: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  // ── 자산 유형 탭 ──
+  assetCategoryRow: {
+    flexDirection: 'row',
+    marginHorizontal: 16,
+    marginBottom: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 6,
+    gap: 6,
+  },
+  assetCategoryTab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 4,
+  },
+  assetCategoryTabText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  // ── 현금 UI ──
+  cashTypeRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  cashTypeBtn: {
+    flex: 1,
+    borderRadius: 10,
+    borderWidth: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    alignItems: 'center',
+  },
+  cashTypeBtnLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  cashTypeBtnDesc: {
+    fontSize: 10,
+    textAlign: 'center',
+  },
+  // ── 채권 빠른 선택 ──
+  bondChip: {
+    borderRadius: 10,
+    borderWidth: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    marginRight: 8,
+    alignItems: 'center',
+    minWidth: 90,
+  },
+  bondChipTicker: {
+    fontSize: 12,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  bondChipName: {
+    fontSize: 10,
   },
 });

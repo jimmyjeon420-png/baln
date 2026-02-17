@@ -73,6 +73,7 @@ function getDaysRemaining(): number {
 const LAYER_COLORS = {
   historical: '#4CAF50',     // 초록 - 역사적 맥락
   macro: '#29B6F6',          // 라이트 블루 - 거시경제 체인
+  political: '#7E57C2',      // 보라 - 정치 맥락
   institutional: '#FF9800',  // 주황 - 기관 행동
   portfolio: '#7C4DFF',      // 퍼플 - 내 포트폴리오
 } as const;
@@ -120,10 +121,13 @@ interface ContextBriefCardProps {
   /** Layer 2: 거시경제 체인 (화살표 연결 배열) */
   macroChain?: string[] | null;
 
-  /** Layer 3: 기관 행동 [Premium] */
+  /** Layer 3: 정치 맥락 [무료] */
+  politicalContext?: string | null;
+
+  /** Layer 4: 기관 행동 [Premium] */
   institutionalBehavior?: string | null;
 
-  /** Layer 4: 포트폴리오 영향 [Premium] */
+  /** Layer 5: 포트폴리오 영향 [Premium] */
   portfolioImpact?: {
     percentChange: number;
     healthScoreChange: number;
@@ -296,7 +300,7 @@ function LayerSection({
         >
           <View style={styles.lockedBlur}>
             <Text style={styles.lockedBlurText}>
-              {layerNum === 3
+              {layerNum === 4
                 ? '기관 투자자의 움직임과 의미를...'
                 : '당신의 포트폴리오에 미치는 영향을...'}
             </Text>
@@ -590,6 +594,7 @@ export default React.forwardRef<View, ContextBriefCardProps>(
       isLoading,
       historicalContext,
       macroChain,
+      politicalContext,
       institutionalBehavior,
       portfolioImpact,
     }: ContextBriefCardProps,
@@ -627,7 +632,7 @@ export default React.forwardRef<View, ContextBriefCardProps>(
       setExpandedLayer((prev) => {
         const isExpanding = prev !== layerNum;
         if (isExpanding) {
-          const layerNames = ['', 'historical', 'macro', 'institutional', 'portfolio'];
+          const layerNames = ['', 'historical', 'macro', 'political', 'institutional', 'portfolio'];
           track('context_layer_expanded', { layer: layerNum, name: layerNames[layerNum] });
         }
         return prev === layerNum ? null : layerNum;
@@ -640,6 +645,7 @@ export default React.forwardRef<View, ContextBriefCardProps>(
       2: expandedLayer === 2,
       3: expandedLayer === 3,
       4: expandedLayer === 4,
+      5: expandedLayer === 5,
     };
 
     // 4겹 데이터 존재 여부 확인
@@ -786,12 +792,28 @@ export default React.forwardRef<View, ContextBriefCardProps>(
 
           <LayerSection
             layerNum={3}
+            icon="flag-outline"
+            title="정치 맥락"
+            subtitle="Political Context"
+            color={LAYER_COLORS.political}
+            isExpanded={expandedLayers[3]}
+            onToggle={() => toggleLayer(3)}
+            styles={styles}
+            COLORS={COLORS}
+          >
+            <Text style={styles.layerBodyText}>
+              {politicalContext || '역사적으로 정치 이벤트는 단기 시장 변동을 만들었지만, 장기 투자 관점에서 영향은 제한적이었습니다.'}
+            </Text>
+          </LayerSection>
+
+          <LayerSection
+            layerNum={4}
             icon="business-outline"
             title="기관 행동"
             subtitle="Institutional Flow"
             color={LAYER_COLORS.institutional}
-            isExpanded={expandedLayers[3]}
-            onToggle={() => toggleLayer(3)}
+            isExpanded={expandedLayers[4]}
+            onToggle={() => toggleLayer(4)}
             isLocked={!effectivePremium}
             onPressPremium={onLearnMore}
             styles={styles}
@@ -803,13 +825,13 @@ export default React.forwardRef<View, ContextBriefCardProps>(
           </LayerSection>
 
           <LayerSection
-            layerNum={4}
+            layerNum={5}
             icon="wallet-outline"
             title="내 포트폴리오 영향"
             subtitle="Portfolio Impact"
             color={LAYER_COLORS.portfolio}
-            isExpanded={expandedLayers[4]}
-            onToggle={() => toggleLayer(4)}
+            isExpanded={expandedLayers[5]}
+            onToggle={() => toggleLayer(5)}
             isLocked={!effectivePremium}
             onPressPremium={onLearnMore}
             styles={styles}

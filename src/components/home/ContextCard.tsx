@@ -1,16 +1,17 @@
 /**
  * 맥락 카드 (Context Card) - 메인 컴포넌트
  *
- * 역할: 시장 변동의 "왜"를 4겹 레이어 아코디언으로 시각화
+ * 역할: 시장 변동의 "왜"를 5겹 레이어 아코디언으로 시각화
  * 비유: 일기예보처럼 "오늘 시장이 왜 이렇게 움직였는지" 5분 안에 이해시키는 카드
  *
- * 4겹 레이어 구조:
+ * 5겹 레이어 구조:
  * 1. 역사적 맥락 — "2008년에도 이런 패턴이 있었고, 6개월 후 회복했습니다" (무료)
- * 2. 거시경제 체인 — "미국 CPI 발표 → 금리 인상 우려 → 기술주 하락" (Premium)
- * 3. 기관 행동 — "외국인 3일 연속 순매도 중 (리밸런싱 시즌)" (Premium)
- * 4. 내 포트폴리오 영향 — "포트폴리오 -1.2%, 건강 점수 변동 없음" (Premium)
+ * 2. 거시경제 체인 — "미국 CPI 발표 → 금리 인상 우려 → 기술주 하락" (무료)
+ * 3. 정치 맥락 — "트럼프 관세 발표 — 역사적 사례와 영향 제한적" (무료)
+ * 4. 기관 행동 — "외국인 3일 연속 순매도 중 (리밸런싱 시즌)" (Premium)
+ * 5. 내 포트폴리오 영향 — "포트폴리오 -1.2%, 건강 점수 변동 없음" (Premium)
  *
- * 무료 사용자: 1번 레이어만 열람 가능, 2~4번은 Premium 잠금
+ * 무료 사용자: 1~3번 레이어 열람 가능, 4~5번은 Premium 잠금
  *
  * 두 가지 사용 방식 지원:
  * 1. 새 방식 (플랫 Props): historicalContext, macroChain 등 개별 전달
@@ -52,6 +53,8 @@ interface ContextCardFlatProps {
   historicalContext: string;
   /** 거시경제 인과 체인 (단계별 배열) */
   macroChain: string[];
+  /** 정치 맥락 텍스트 (신규) */
+  politicalContext?: string;
   /** 기관 행동 텍스트 */
   institutionalAction: string;
   /** 포트폴리오 영향 */
@@ -81,6 +84,7 @@ interface ContextCardLegacyProps {
   onClose?: () => void;
   historicalContext?: never;
   macroChain?: never;
+  politicalContext?: never;
   institutionalAction?: never;
   portfolioImpact?: never;
   date?: never;
@@ -105,6 +109,7 @@ function formatDate(dateStr: string): string {
 interface NormalizedData {
   historicalContext: string;
   macroChain: string[];
+  politicalContext: string;
   institutionalAction: string;
   portfolioImpact: { changePercent: number; healthScoreChange: string };
   isPremium: boolean;
@@ -121,6 +126,7 @@ function normalizeProps(props: ContextCardProps): NormalizedData {
     return {
       historicalContext: d.historicalContext,
       macroChain: d.macroChain,
+      politicalContext: d.politicalContext ?? '',
       institutionalAction: d.institutionalBehavior,
       portfolioImpact: {
         changePercent: d.portfolioImpact.percentChange,
@@ -140,6 +146,7 @@ function normalizeProps(props: ContextCardProps): NormalizedData {
   return {
     historicalContext: props.historicalContext,
     macroChain: props.macroChain,
+    politicalContext: props.politicalContext ?? '',
     institutionalAction: props.institutionalAction,
     portfolioImpact: props.portfolioImpact,
     isPremium: props.isPremium,
@@ -157,6 +164,7 @@ export default function ContextCard(props: ContextCardProps) {
   const {
     historicalContext,
     macroChain,
+    politicalContext,
     institutionalAction,
     portfolioImpact,
     isPremium,
@@ -193,7 +201,7 @@ export default function ContextCard(props: ContextCardProps) {
         </Text>
       </View>
 
-      {/* 4겹 레이어 */}
+      {/* 5겹 레이어 */}
       <View style={s.layers}>
         {/* 1번 레이어: 역사적 맥락 (무료 — 기본 펼침) */}
         <ContextLayerCard
@@ -207,13 +215,11 @@ export default function ContextCard(props: ContextCardProps) {
           </Text>
         </ContextLayerCard>
 
-        {/* 2번 레이어: 거시경제 체인 (Premium) */}
+        {/* 2번 레이어: 거시경제 체인 (무료) */}
         <ContextLayerCard
           icon="git-network-outline"
           title="거시경제 체인"
           color={colors.info}
-          isLocked={!isPremium}
-          onPressPremium={onPressPremium}
         >
           <View style={s.chainContainer}>
             {macroChain.map((step, index) => (
@@ -238,7 +244,18 @@ export default function ContextCard(props: ContextCardProps) {
           </View>
         </ContextLayerCard>
 
-        {/* 3번 레이어: 기관 행동 (Premium) */}
+        {/* 3번 레이어: 정치 맥락 (무료 — 역사로 감싼 안심 톤) */}
+        <ContextLayerCard
+          icon="flag-outline"
+          title="정치 맥락"
+          color="#7E57C2"
+        >
+          <Text style={[s.layerText, { color: colors.textSecondary }]}>
+            {politicalContext || '역사적으로 정치 이벤트는 단기 변동을 만들었지만, 장기 투자 관점에서 영향은 제한적이었습니다.'}
+          </Text>
+        </ContextLayerCard>
+
+        {/* 4번 레이어: 기관 행동 (Premium) */}
         <ContextLayerCard
           icon="business-outline"
           title="기관 행동"
@@ -251,7 +268,7 @@ export default function ContextCard(props: ContextCardProps) {
           </Text>
         </ContextLayerCard>
 
-        {/* 4번 레이어: 내 포트폴리오 영향 (Premium) */}
+        {/* 5번 레이어: 내 포트폴리오 영향 (Premium) */}
         <ContextLayerCard
           icon="pie-chart-outline"
           title="내 포트폴리오 영향"

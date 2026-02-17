@@ -87,6 +87,7 @@ export interface Database {
           verified_value: number | null; // 검증 당시 KRW 가치
           input_type: 'self_declared' | 'ocr_verified';
           // 부동산 메타데이터 (ticker가 RE_로 시작하는 자산)
+          debt_amount?: number | null;           // 대출 잔액 (원화, 부동산만 해당)
           lawd_cd: string | null;
           complex_name: string | null;
           unit_area: number | null;
@@ -118,6 +119,7 @@ export interface Database {
           verified_value?: number | null;
           input_type?: 'self_declared' | 'ocr_verified';
           // 부동산 메타데이터
+          debt_amount?: number | null;
           lawd_cd?: string | null;
           complex_name?: string | null;
           unit_area?: number | null;
@@ -149,6 +151,7 @@ export interface Database {
           verified_value?: number | null;
           input_type?: 'self_declared' | 'ocr_verified';
           // 부동산 메타데이터
+          debt_amount?: number | null;
           lawd_cd?: string | null;
           complex_name?: string | null;
           unit_area?: number | null;

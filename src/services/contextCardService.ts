@@ -66,6 +66,8 @@ export const FALLBACK_CONTEXT_CARD: ContextCardWithImpact = {
       '금리 변동이 기업 가치 평가에 영향을 줍니다',
       '매일 맥락을 읽으면 공포가 이해로 바뀝니다',
     ],
+    political_context:
+      '미국 정치 변화는 역사적으로 단기 시장 변동을 만들었지만, 장기 우량 기업의 가치는 정치 사이클을 초월했습니다. 버핏은 지난 14번의 대선 동안 매수를 유지했습니다. 당신의 분산된 포트폴리오에 미치는 영향은 제한적입니다.',
     institutional_behavior:
       '기관 투자자들은 패닉에 빠지지 않습니다. 그들은 정해진 규칙에 따라 리밸런싱할 뿐입니다. 우리도 자기만의 기준이 있으면 흔들리지 않습니다.',
     sentiment: 'calm' as ContextCardSentiment,
@@ -168,6 +170,9 @@ function sanitizeCardContent(card: ContextCard): ContextCard {
       card.macro_chain && card.macro_chain.length > 0
         ? card.macro_chain
         : ['거시경제 데이터 수집 중'],
+    political_context:
+      card.political_context?.trim() ||
+      '정치 동향 데이터를 수집하고 있습니다. 역사적으로 정치 이벤트는 단기 변동을 만들었지만, 장기 투자 관점에서 영향은 제한적이었습니다.',
     institutional_behavior:
       card.institutional_behavior?.trim() ||
       '기관 투자자 행동 데이터를 수집하고 있습니다. 기관은 규칙에 따라 리밸런싱하며, 패닉 매도는 하지 않습니다.',
@@ -245,6 +250,7 @@ export async function getTodayContextCard(
         headline: latestCard.headline,
         historical_context: latestCard.historical_context,
         macro_chain: latestCard.macro_chain || [],
+        political_context: latestCard.political_context ?? null,
         institutional_behavior: latestCard.institutional_behavior,
         sentiment: latestCard.sentiment as ContextCardSentiment,
         is_premium_only: latestCard.is_premium_only,
@@ -300,6 +306,7 @@ export async function getTodayContextCard(
       headline: cardData.headline,
       historical_context: cardData.historical_context,
       macro_chain: cardData.macro_chain || [],
+      political_context: cardData.political_context ?? null,
       institutional_behavior: cardData.institutional_behavior,
       sentiment: cardData.sentiment as ContextCardSentiment,
       is_premium_only: cardData.is_premium_only,
@@ -423,6 +430,7 @@ export async function getRecentContextCards(
         headline: cardData.headline,
         historical_context: cardData.historical_context,
         macro_chain: cardData.macro_chain || [],
+        political_context: cardData.political_context ?? null,
         institutional_behavior: cardData.institutional_behavior,
         sentiment: cardData.sentiment as ContextCardSentiment,
         is_premium_only: cardData.is_premium_only,
@@ -498,6 +506,7 @@ export function convertToContextCardData(
   headline: string;
   historicalContext: string;
   macroChain: string[];
+  politicalContext: string;
   institutionalBehavior: string;
   portfolioImpact: {
     percentChange: number;
@@ -515,6 +524,7 @@ export function convertToContextCardData(
     headline: card.headline || '오늘의 시장 맥락을 분석 중입니다',
     historicalContext: card.historical_context || '역사적 맥락 데이터가 없습니다.',
     macroChain: card.macro_chain || [],
+    politicalContext: card.political_context || '역사적으로 정치 이벤트는 단기 시장 변동을 만들었지만, 장기 우량 기업의 가치는 정치 사이클을 초월했습니다. 당신의 분산된 포트폴리오에 미치는 영향은 제한적입니다.',
     institutionalBehavior: card.institutional_behavior || '기관 행동 데이터가 없습니다.',
     portfolioImpact: {
       percentChange: userImpact?.percent_change ?? 0,

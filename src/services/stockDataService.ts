@@ -56,19 +56,54 @@ async function rateLimit(): Promise<void> {
 }
 
 // ============================================================================
-// 실시간 환율 조회 (USD/KRW) — 30분 캐시
+// 실시간 환율 조회 (USD/KRW) — 10분 캐시, 3중 백업
 // ============================================================================
 
-const FALLBACK_RATE = 1450; // API 실패 시 폴백 환율
 let cachedRate: number | null = null;
 let cachedRateTime = 0;
-const RATE_CACHE_TTL = 30 * 60 * 1000; // 30분
+const RATE_CACHE_TTL = 10 * 60 * 1000; // 10분 (기존 30분 → 더 자주 갱신)
+
+/** Yahoo Finance (1순위) */
+async function fetchRateYahoo(): Promise<number> {
+  const res = await axios.get(
+    'https://query1.finance.yahoo.com/v8/finance/chart/USDKRW=X',
+    {
+      params: { interval: '1d', range: '1d' },
+      timeout: 8000,
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Baln/1.0)' },
+    }
+  );
+  const rate = res.data?.chart?.result?.[0]?.meta?.regularMarketPrice;
+  if (rate && rate > 1000) return rate;
+  throw new Error('Yahoo: invalid rate');
+}
+
+/** ExchangeRate-API (2순위, 인증 불필요) */
+async function fetchRateExchangeRateApi(): Promise<number> {
+  const res = await axios.get(
+    'https://open.er-api.com/v6/latest/USD',
+    { timeout: 8000 }
+  );
+  const rate = res.data?.rates?.KRW;
+  if (rate && rate > 1000) return rate;
+  throw new Error('ExchangeRateAPI: invalid rate');
+}
+
+/** Frankfurter (3순위, ECB 데이터 기반) */
+async function fetchRateFrankfurter(): Promise<number> {
+  const res = await axios.get(
+    'https://api.frankfurter.app/latest?from=USD&to=KRW',
+    { timeout: 8000 }
+  );
+  const rate = res.data?.rates?.KRW;
+  if (rate && rate > 1000) return rate;
+  throw new Error('Frankfurter: invalid rate');
+}
 
 /**
- * Yahoo Finance에서 실시간 USD/KRW 환율 조회
- * USDKRW=X 심볼로 v8 Chart API 사용 (가장 안정적)
- *
- * @returns USD/KRW 환율 (예: 1452.30)
+ * USD/KRW 실시간 환율 조회 — 3중 백업 구조
+ * 1순위: Yahoo Finance, 2순위: ExchangeRate-API, 3순위: Frankfurter
+ * 캐시: 10분 (앱 실행 중 자동 갱신)
  */
 export async function fetchExchangeRate(): Promise<number> {
   // 캐시 유효하면 그대로 반환
@@ -76,35 +111,30 @@ export async function fetchExchangeRate(): Promise<number> {
     return cachedRate;
   }
 
-  try {
-    await rateLimit();
+  const fetchers = [
+    { name: 'Yahoo Finance', fn: fetchRateYahoo },
+    { name: 'ExchangeRate-API', fn: fetchRateExchangeRateApi },
+    { name: 'Frankfurter', fn: fetchRateFrankfurter },
+  ];
 
-    const response = await axios.get(
-      'https://query1.finance.yahoo.com/v8/finance/chart/USDKRW=X',
-      {
-        params: { interval: '1d', range: '1d' },
-        timeout: 10000,
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; Baln/1.0)',
-        },
-      }
-    );
-
-    const rate = response.data?.chart?.result?.[0]?.meta?.regularMarketPrice;
-    if (rate && rate > 0) {
+  for (const { name, fn } of fetchers) {
+    try {
+      const rate = await fn();
       cachedRate = rate;
       cachedRateTime = Date.now();
       if (__DEV__) {
-        console.log(`[ExchangeRate] USD/KRW = ${rate.toFixed(2)} (실시간)`);
+        console.log(`[ExchangeRate] USD/KRW = ${rate.toFixed(2)} (${name})`);
       }
       return rate;
+    } catch (err: any) {
+      console.warn(`[ExchangeRate] ${name} 실패:`, err.message);
     }
-
-    throw new Error('Invalid rate data');
-  } catch (error: any) {
-    console.warn(`[ExchangeRate] 실시간 조회 실패, 폴백 ${FALLBACK_RATE}원 사용:`, error.message);
-    return cachedRate || FALLBACK_RATE;
   }
+
+  // 3곳 모두 실패 시 캐시 or 최후 폴백
+  const fallback = cachedRate ?? 1450;
+  console.warn(`[ExchangeRate] 모든 API 실패, 폴백 ${fallback}원 사용`);
+  return fallback;
 }
 
 // ============================================================================

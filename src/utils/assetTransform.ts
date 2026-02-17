@@ -45,6 +45,9 @@ export const transformDbRowToAsset = (row: PortfolioRow): Asset => {
     purchaseDate: row.purchase_date ? new Date(row.purchase_date).getTime() : undefined,
     customTaxRate: safeOptionalNumber(row.custom_tax_rate),
 
+    // 부동산 레버리지
+    debtAmount: safeOptionalNumber(row.debt_amount),
+
     // 메타데이터
     currency: row.currency,
     notes: row.notes ?? undefined,

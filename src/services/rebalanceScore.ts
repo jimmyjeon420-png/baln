@@ -73,8 +73,11 @@ const STABLECOIN_TICKERS = new Set(['USDT', 'USDC', 'DAI', 'BUSD', 'TUSD']);
 
 /** 채권 ETF 티커 */
 const BOND_TICKERS = new Set([
+  // 미국 채권 ETF
   'AGG', 'BND', 'TLT', 'IEF', 'SHY', 'LQD', 'HYG', 'TIP', 'VCIT', 'GOVT',
   'VGSH', 'SCHO', 'MUB', 'BNDX', 'EMB',
+  // 국내 채권 ETF (KODEX 시리즈)
+  '148070.KS', '114820.KS', '136340.KS',
 ]);
 
 /** 자산군별 연간 변동성 (학술 데이터 기반, %) */
@@ -127,6 +130,9 @@ export function classifyAsset(asset: Asset): AssetCategory {
 
   // 비유동 자산 → 부동산
   if (asset.assetType === AssetType.ILLIQUID) return 'realestate';
+
+  // CASH_ 접두사 → 원화현금/달러예금/CMA
+  if (ticker.startsWith('CASH_')) return 'cash';
 
   // 스테이블코인 → 현금 등가
   if (STABLECOIN_TICKERS.has(ticker)) return 'cash';
@@ -196,7 +202,11 @@ function calcDriftPenalty(assets: Asset[], total: number): FactorResult {
   const score = Math.round(100 - penalty);
   const comment = drift < 3
     ? '목표 배분에 잘 맞고 있어요'
-    : `목표에서 ${drift.toFixed(1)}% 벗어났어요`;
+    : drift < 10
+      ? '비중이 조금 달라졌어요'
+      : drift < 20
+        ? '일부 종목 비중이 늘었어요'
+        : '비중 조정이 필요해요';
 
   return { label: '배분 이탈도', icon: '🎯', rawPenalty: penalty, weight: 0.25, weightedPenalty: penalty * 0.25, score, comment };
 }
@@ -525,15 +535,24 @@ export function calculateHealthScore(assets: Asset[], totalAssets: number): Heal
   const grade = getGrade(totalScore);
   const gradeConfig = GRADE_CONFIG[grade];
 
-  // 가장 취약한 팩터 → summary 생성
+  // 가장 취약한 팩터 → summary 생성 (일반인 친화적 언어)
   const worstFactor = [...factors].sort((a, b) => b.rawPenalty - a.rawPenalty)[0];
+  const FACTOR_FRIENDLY_LABEL: Record<string, string> = {
+    '배분 이탈도': '일부 종목 비중',
+    '위험 집중도': '집중 위험',
+    '상관관계': '분산 효과',
+    '변동성': '가격 변동',
+    '하방 리스크': '손실 위험',
+    '세금 효율': '절세 기회',
+  };
+  const friendlyLabel = FACTOR_FRIENDLY_LABEL[worstFactor.label] || worstFactor.label;
   const summary = totalScore >= 85
     ? '포트폴리오가 매우 건강해요!'
     : totalScore >= 70
-    ? `대체로 양호해요. ${worstFactor.label}만 개선하면 완벽!`
+    ? `전반적으로 양호해요. ${friendlyLabel}만 조정하면 더 좋아져요`
     : totalScore >= 55
-    ? `${worstFactor.label} 개선이 필요해요: ${worstFactor.comment}`
-    : `포트폴리오 점검이 필요해요: ${worstFactor.comment}`;
+    ? `${friendlyLabel}이 달라졌어요. 분석 탭에서 조정하면 점수가 올라가요`
+    : `포트폴리오 점검이 필요해요. 분석 탭에서 확인해보세요`;
 
   // driftStatus 호환 (기존 배너용)
   const driftStatus = totalScore >= 75
