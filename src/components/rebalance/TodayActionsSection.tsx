@@ -407,17 +407,52 @@ export default function TodayActionsSection({
       catNetTotals[cat] = (catNetTotals[cat] || 0) + getNetAssetValue(asset);
     }
 
-    // 처방전 실행 후 시뮬레이션: 각 자산을 목표 배분 비중으로 스케일 조정
-    const simulatedAssets = liquidAssets.map(asset => {
+    // ── 시뮬레이션 핵심 수정 ──
+    // getAssetValue()는 quantity × currentPrice 우선 사용 → currentValue 변경이 무시됨
+    // 해결: quantity/currentPrice를 undefined로 지워서 currentValue가 쓰이게 함
+    const simulatedAssets: typeof liquidAssets = liquidAssets.map(asset => {
       const cat = classifyAsset(asset);
       const currentCatNet = catNetTotals[cat] || 0;
       const targetPct = selectedTarget[cat as AssetCategory] || 0;
       const targetNetAmt = liquidTotal * (targetPct / 100);
-      if (currentCatNet <= 0) return { ...asset, currentValue: targetNetAmt };
-      const scale = targetNetAmt / currentCatNet;
+      const scale = currentCatNet > 0 ? targetNetAmt / currentCatNet : 0;
       const newNet = Math.max(0, getNetAssetValue(asset) * scale);
-      return { ...asset, currentValue: newNet + (asset.debtAmount || 0) };
+      return {
+        ...asset,
+        currentValue: newNet + (asset.debtAmount || 0),
+        quantity: undefined,     // ← getAssetValue가 currentValue를 쓰도록
+        currentPrice: undefined, // ← getAssetValue가 currentValue를 쓰도록
+      };
     });
+
+    // 보유 자산 없는 카테고리 → 가상 자산 추가 (처방전 매수 시뮬레이션)
+    // 예: 채권 0% → 40% 처방이면 채권 ETF 구매 효과를 가상 자산으로 반영
+    const CAT_TICKER: Partial<Record<AssetCategory, string>> = {
+      bond: 'TLT', gold: 'GLD', commodity: 'DJP',
+      large_cap: 'SPY', cash: 'CASH_KRW', altcoin: 'ETH', bitcoin: 'BTC',
+    };
+    const LIQUID_CATS: AssetCategory[] = ['cash', 'bond', 'large_cap', 'bitcoin', 'altcoin', 'gold', 'commodity'];
+    const templateAsset = liquidAssets[0];
+    if (templateAsset) {
+      for (const cat of LIQUID_CATS) {
+        const targetPct = selectedTarget[cat] || 0;
+        if (targetPct > 0 && (catNetTotals[cat] || 0) === 0) {
+          // 해당 카테고리에 보유 자산이 없을 때 가상 포지션 추가
+          simulatedAssets.push({
+            ...templateAsset,
+            id: `virtual_${cat}`,
+            name: `Virtual ${cat}`,
+            ticker: CAT_TICKER[cat] ?? 'SPY',
+            currentValue: liquidTotal * (targetPct / 100),
+            quantity: undefined,
+            currentPrice: undefined,
+            debtAmount: 0,
+            avgPrice: undefined,
+            costBasis: undefined,
+          });
+        }
+      }
+    }
 
     const projectedScore = calculateHealthScore(simulatedAssets, liquidTotal, selectedTarget).totalScore;
     const change = projectedScore - currentScore;
