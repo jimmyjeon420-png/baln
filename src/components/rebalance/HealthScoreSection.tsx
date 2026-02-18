@@ -154,6 +154,14 @@ const GRADE_ICONS: Record<string, string> = {
   'D': '🚨',
 };
 
+/** 점수 → 행동 언어 상태 설명 */
+function getConditionLabel(score: number): string {
+  if (score >= 80) return '균형 잡힌 상태예요';
+  if (score >= 60) return '약간 무리한 상태예요';
+  if (score >= 40) return '조정이 필요한 상태예요';
+  return '지금 리밸런싱이 필요해요';
+}
+
 /**
  * "왜 이 점수인가" 요약 생성
  *
@@ -330,16 +338,20 @@ export default function HealthScoreSection({ healthScore, onScoreImproved }: Hea
               {healthScore.totalScore}
             </Text>
           </View>
-          <View>
+          <View style={{ flex: 1 }}>
+            {/* 행동 언어 — 숫자보다 먼저 눈에 들어오도록 */}
+            <Text style={[s.conditionStatus, { color: healthScore.gradeColor }]}>
+              {getConditionLabel(healthScore.totalScore)}
+            </Text>
             <View style={s.titleRow}>
-              <Text style={[s.cardLabel, { color: colors.textPrimary }]}>건강 점수</Text>
+              <Text style={[s.cardLabel, { color: colors.textPrimary }]}>포트폴리오 컨디션</Text>
               <View style={[s.gradeBadge, { backgroundColor: healthScore.gradeBgColor }]}>
                 <Text style={[s.gradeText, { color: healthScore.gradeColor }]}>
-                  {healthScore.grade} {healthScore.gradeLabel}
+                  {healthScore.grade}등급
                 </Text>
               </View>
             </View>
-            <Text style={[s.cardLabelEn, { color: colors.textSecondary }]}>Health Score</Text>
+            <Text style={[s.cardLabelEn, { color: colors.textTertiary }]}>Health Score · {healthScore.totalScore}점</Text>
           </View>
         </View>
         <Ionicons name={showDetail ? 'chevron-up' : 'chevron-down'} size={14} color={colors.textSecondary} />
@@ -602,6 +614,11 @@ const s = StyleSheet.create({
   scoreNumber: {
     fontSize: 18,
     fontWeight: '800',
+  },
+  conditionStatus: {
+    fontSize: 15,
+    fontWeight: '700',
+    marginBottom: 2,
   },
   titleRow: {
     flexDirection: 'row',

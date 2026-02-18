@@ -111,10 +111,8 @@ export default function AdvancedCheckupView({
 
   return (
     <>
-      {/* 0. 코스톨라니 달걀 모형 — 처방전의 서문 (시장 국면) */}
-      <KostolalyPhaseCard onApplyPhase={handleApplyKostolalyPhase} />
-
       {/* 1. 처방전 — 결론 먼저 (이승건 원칙: 헤드라인 최상단) */}
+      {/* 처방전 헤더 내에 코스톨라니 서문(단계+신뢰도+설명) 내장됨 */}
       <TodayActionsSection
         sortedActions={sortedActions}
         portfolio={portfolio}
@@ -126,7 +124,10 @@ export default function AdvancedCheckupView({
         kostolalyPhase={kostolalyPhase}
       />
 
-      {/* 2. 안심 배너 */}
+      {/* 2. 코스톨라니 달걀 모형 — 처방전 근거 카드 ("왜 이런 처방전인가?") */}
+      <KostolalyPhaseCard onApplyPhase={handleApplyKostolalyPhase} />
+
+      {/* 3. 안심 배너 */}
       <ReassuranceBanner totalGainLoss={totalGainLoss} cfoWeather={cfoWeather} />
 
       {/* 3. Hero — total assets + cost-basis P&L + daily change + tier */}

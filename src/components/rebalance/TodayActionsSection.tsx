@@ -21,7 +21,8 @@ import { useTheme } from '../../hooks/useTheme';
 import { ThemeColors } from '../../styles/colors';
 import type { PortfolioAction, RebalancePortfolioAsset, LivePriceData } from '../../types/rebalanceTypes';
 import type { Asset } from '../../types/asset';
-import { classifyAsset, AssetCategory, getNetAssetValue, KostolalyPhase, KOSTOLANY_PHASE_NAMES } from '../../services/rebalanceScore';
+import { classifyAsset, AssetCategory, getNetAssetValue, KostolalyPhase, KOSTOLANY_PHASE_NAMES, KOSTOLANY_PHASE_EMOJIS, KOSTOLANY_PHASE_DESCRIPTIONS } from '../../services/rebalanceScore';
+import { useKostolalyPhase } from '../../hooks/useKostolalyPhase';
 
 // ── ETF 추천 맵 (없는 카테고리에 ETF 제안) ──
 const ETF_RECOMMENDATIONS: Partial<Record<AssetCategory, { tickers: string[]; note: string }>> = {
@@ -273,6 +274,11 @@ interface TodayActionsSectionProps {
   kostolalyPhase?: KostolalyPhase | null;
 }
 
+// 국면별 색상 (KostolalyPhaseCard와 동일)
+const PHASE_COLORS: Record<KostolalyPhase, string> = {
+  A: '#4CAF50', B: '#66BB6A', C: '#FF5722', D: '#FF8A65', E: '#CF6679', F: '#78909C',
+};
+
 export default function TodayActionsSection({
   sortedActions,
   portfolio,
@@ -284,6 +290,10 @@ export default function TodayActionsSection({
   kostolalyPhase,
 }: TodayActionsSectionProps) {
   const { colors, shadows } = useTheme();
+
+  // 코스톨라니 서문 데이터 (TanStack Query 캐시 공유 — 추가 API 호출 없음)
+  const { data: phaseData, phase: hookPhase } = useKostolalyPhase();
+  const activePhase = kostolalyPhase ?? hookPhase;
   const router = useRouter();
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
   const [showCompletionBanner, setShowCompletionBanner] = useState(false);
@@ -432,15 +442,43 @@ export default function TodayActionsSection({
         </View>
       </View>
 
-      {/* 근거 출처 — 처방전 목표가 어디서 왔는지 한 줄 */}
-      <View style={[s.basisRow, { backgroundColor: `${colors.textTertiary}0D`, borderColor: `${colors.textTertiary}20` }]}>
-        <Ionicons name="compass-outline" size={11} color={colors.textTertiary} />
-        <Text style={[s.basisText, { color: colors.textTertiary }]}>
-          {kostolalyPhase
-            ? `코스톨라니 ${kostolalyPhase}단계 (${KOSTOLANY_PHASE_NAMES[kostolalyPhase]}) · 달리오/버핏 합의안 기준`
-            : '달리오/버핏 합의안 기준'}
-        </Text>
-      </View>
+      {/* 코스톨라니 서문 카드 — 처방전의 시장 맥락 */}
+      {activePhase ? (
+        <View style={[s.phasePreview, {
+          backgroundColor: `${PHASE_COLORS[activePhase]}12`,
+          borderColor: `${PHASE_COLORS[activePhase]}30`,
+        }]}>
+          <View style={s.phasePreviewHeader}>
+            <View style={[s.phasePreviewTag, {
+              backgroundColor: `${PHASE_COLORS[activePhase]}20`,
+              borderColor: `${PHASE_COLORS[activePhase]}50`,
+            }]}>
+              <Text style={[s.phasePreviewTagText, { color: PHASE_COLORS[activePhase] }]}>
+                {KOSTOLANY_PHASE_EMOJIS[activePhase]} {activePhase}단계 · {KOSTOLANY_PHASE_NAMES[activePhase]}
+              </Text>
+            </View>
+            {phaseData?.confidence != null && (
+              <Text style={[s.phaseConfidence, { color: colors.textTertiary }]}>
+                신뢰도 {phaseData.confidence}%
+              </Text>
+            )}
+          </View>
+          <Text style={[s.phasePreviewDesc, { color: colors.textSecondary }]} numberOfLines={2}>
+            {KOSTOLANY_PHASE_DESCRIPTIONS[activePhase]}
+          </Text>
+          <View style={s.phaseBasisRow}>
+            <Ionicons name="compass-outline" size={10} color={colors.textTertiary} />
+            <Text style={[s.phaseBasisText, { color: colors.textTertiary }]}>
+              코스톨라니 {activePhase}단계 기준 · 달리오/버핏 합의안 적용
+            </Text>
+          </View>
+        </View>
+      ) : (
+        <View style={[s.basisRow, { backgroundColor: `${colors.textTertiary}0D`, borderColor: `${colors.textTertiary}20` }]}>
+          <Ionicons name="compass-outline" size={11} color={colors.textTertiary} />
+          <Text style={[s.basisText, { color: colors.textTertiary }]}>달리오/버핏 합의안 기준</Text>
+        </View>
+      )}
 
       {/* ── NEW: 카테고리 기반 실행 계획서 ── */}
       {categoryRebalancePlan.length > 0 && (
@@ -914,7 +952,34 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginBottom: 8,
   },
 
-  // 근거 출처 한 줄
+  // 코스톨라니 서문 카드
+  phasePreview: {
+    borderRadius: 10,
+    padding: 12,
+    borderWidth: 1,
+    marginBottom: 10,
+    gap: 6,
+  },
+  phasePreviewHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  phasePreviewTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  phasePreviewTagText: { fontSize: 11, fontWeight: '800' },
+  phaseConfidence: { fontSize: 10, fontWeight: '500' },
+  phasePreviewDesc: { fontSize: 12, lineHeight: 18 },
+  phaseBasisRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
+  phaseBasisText: { fontSize: 10, fontWeight: '500' },
+
+  // 근거 출처 한 줄 (코스톨라니 없을 때 fallback)
   basisRow: {
     flexDirection: 'row',
     alignItems: 'center',
