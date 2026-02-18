@@ -23,6 +23,7 @@ import type { PortfolioAction, RebalancePortfolioAsset, LivePriceData } from '..
 import type { Asset } from '../../types/asset';
 import { classifyAsset, AssetCategory, getNetAssetValue, KostolalyPhase, KOSTOLANY_PHASE_NAMES, KOSTOLANY_PHASE_EMOJIS, KOSTOLANY_PHASE_DESCRIPTIONS, calculateHealthScore } from '../../services/rebalanceScore';
 import { useKostolalyPhase } from '../../hooks/useKostolalyPhase';
+import { usePrescriptionResults } from '../../hooks/usePrescriptionResults';
 
 // ── ETF 추천 맵 (없는 카테고리에 ETF 제안) ──
 const ETF_RECOMMENDATIONS: Partial<Record<AssetCategory, { tickers: string[]; note: string }>> = {
@@ -301,6 +302,23 @@ export default function TodayActionsSection({
   const [showAIActions, setShowAIActions] = useState(false);
   const { checked, toggle } = useActionChecklist();
 
+  // 완료 카운트 (처방전 결과 동기화에 사용)
+  const completedCount = sortedActions.filter(a => checked[a.ticker]).length;
+  const isAllCompleted = completedCount === sortedActions.length && sortedActions.length > 0;
+
+  // P1-1: 처방전 월별 결과 추적
+  const {
+    lastMonthResult,
+    lastMonthRate,
+    lastMonthScoreChange,
+    syncCompleted,
+  } = usePrescriptionResults({
+    currentPhase: activePhase,
+    actionsCount: sortedActions.length,
+    completedCount,
+    currentScore: 0, // healthScore는 props 없음 — HealthScoreSection이 별도 관리
+  });
+
   // ── 카테고리 리밸런싱 계획 계산 ──
   const categoryRebalancePlan = useMemo<CategoryRebalanceAction[]>(() => {
     if (!allAssets || !selectedTarget || totalAssets <= 0) return [];
@@ -409,10 +427,6 @@ export default function TodayActionsSection({
     return { currentScore, projectedScore, change };
   }, [allAssets, selectedTarget, categoryRebalancePlan]);
 
-  // 완료 카운트
-  const completedCount = sortedActions.filter(a => checked[a.ticker]).length;
-  const isAllCompleted = completedCount === sortedActions.length && sortedActions.length > 0;
-
   // 전체 요약 + 우선순위 가이드 계산
   const actionsSummary = useMemo(() => generateActionsSummary(sortedActions), [sortedActions]);
   const priorityGuidance = useMemo(() => generatePriorityGuidance(sortedActions), [sortedActions]);
@@ -480,6 +494,48 @@ export default function TodayActionsSection({
         </View>
       </View>
 
+      {/* P1-1: 지난달 처방전 결과 카드 */}
+      {lastMonthResult && lastMonthResult.actions_recommended > 0 && (
+        <View style={[s.lastMonthCard, {
+          backgroundColor: `${colors.textTertiary}0A`,
+          borderColor: `${colors.textTertiary}20`,
+        }]}>
+          <View style={s.lastMonthHeader}>
+            <Ionicons name="calendar-outline" size={11} color={colors.textTertiary} />
+            <Text style={[s.lastMonthTitle, { color: colors.textTertiary }]}>
+              지난달 처방전 결과 ({lastMonthResult.month})
+            </Text>
+          </View>
+          <View style={s.lastMonthStats}>
+            {/* 실행률 */}
+            <View style={s.lastMonthStat}>
+              <Text style={[s.lastMonthStatValue, {
+                color: lastMonthRate != null && lastMonthRate >= 60 ? colors.success : colors.warning,
+              }]}>
+                {lastMonthRate != null ? `${lastMonthRate}%` : '-'}
+              </Text>
+              <Text style={[s.lastMonthStatLabel, { color: colors.textTertiary }]}>
+                {lastMonthResult.actions_completed}/{lastMonthResult.actions_recommended}건 실행
+              </Text>
+            </View>
+            {/* 건강 점수 변화 */}
+            {lastMonthScoreChange != null && (
+              <View style={[s.lastMonthDivider, { backgroundColor: colors.border }]} />
+            )}
+            {lastMonthScoreChange != null && (
+              <View style={s.lastMonthStat}>
+                <Text style={[s.lastMonthStatValue, {
+                  color: lastMonthScoreChange >= 0 ? colors.success : colors.error,
+                }]}>
+                  {lastMonthScoreChange >= 0 ? '+' : ''}{lastMonthScoreChange}점
+                </Text>
+                <Text style={[s.lastMonthStatLabel, { color: colors.textTertiary }]}>건강 점수 변화</Text>
+              </View>
+            )}
+          </View>
+        </View>
+      )}
+
       {/* 코스톨라니 서문 카드 — 처방전의 시장 맥락 */}
       {activePhase ? (
         <View style={[s.phasePreview, {
@@ -504,11 +560,43 @@ export default function TodayActionsSection({
           <Text style={[s.phasePreviewDesc, { color: colors.textSecondary }]} numberOfLines={2}>
             {KOSTOLANY_PHASE_DESCRIPTIONS[activePhase]}
           </Text>
+
+          {/* P0-1: 코스톨라니 판정 근거 지표 (최대 3개) */}
+          {phaseData?.reasoning && phaseData.reasoning.length > 0 && (
+            <View style={s.phaseReasoningList}>
+              {phaseData.reasoning.slice(0, 3).map((reason, i) => (
+                <View key={i} style={s.phaseReasoningItem}>
+                  <Text style={[s.phaseReasoningDot, { color: PHASE_COLORS[activePhase] }]}>•</Text>
+                  <Text style={[s.phaseReasoningText, { color: colors.textSecondary }]}>{reason}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* P0-3: 낮은 신뢰도 경고 (80% 미만) */}
+          {phaseData?.confidence != null && phaseData.confidence < 80 && (
+            <View style={[s.phaseNuanceRow, {
+              backgroundColor: `${colors.warning}0F`,
+              borderColor: `${colors.warning}30`,
+            }]}>
+              <Ionicons name="alert-circle-outline" size={10} color={colors.warning} />
+              <Text style={[s.phaseNuanceText, { color: colors.warning }]}>
+                {phaseData.confidence >= 70 ? '시장 해석이 다소 엇갈려요' : '시장 신호가 불분명해요'}
+              </Text>
+            </View>
+          )}
+
           <View style={s.phaseBasisRow}>
             <Ionicons name="compass-outline" size={10} color={colors.textTertiary} />
             <Text style={[s.phaseBasisText, { color: colors.textTertiary }]}>
               코스톨라니 {activePhase}단계 기준 · 달리오/버핏 합의안 적용
             </Text>
+            {/* P0-2: 데이터 신선도 타임스탬프 */}
+            {phaseData?.updated_at && (
+              <Text style={[s.phaseBasisText, { color: colors.textTertiary }]}>
+                {' '}· 판정: {new Date(phaseData.updated_at).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' })}
+              </Text>
+            )}
           </View>
         </View>
       ) : (
@@ -1037,6 +1125,45 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginBottom: 8,
   },
 
+  // P1-1: 지난달 처방전 결과 카드
+  lastMonthCard: {
+    borderRadius: 10,
+    padding: 10,
+    borderWidth: 1,
+    marginBottom: 8,
+  },
+  lastMonthHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 8,
+  },
+  lastMonthTitle: {
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  lastMonthStats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  lastMonthStat: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  lastMonthStatValue: {
+    fontSize: 18,
+    fontWeight: '800',
+    marginBottom: 2,
+  },
+  lastMonthStatLabel: {
+    fontSize: 10,
+  },
+  lastMonthDivider: {
+    width: 1,
+    height: 32,
+  },
+
   // 코스톨라니 서문 카드
   phasePreview: {
     borderRadius: 10,
@@ -1061,8 +1188,20 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   phasePreviewTagText: { fontSize: 11, fontWeight: '800' },
   phaseConfidence: { fontSize: 10, fontWeight: '500' },
   phasePreviewDesc: { fontSize: 12, lineHeight: 18 },
-  phaseBasisRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
+  phaseBasisRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2, flexWrap: 'wrap' },
   phaseBasisText: { fontSize: 10, fontWeight: '500' },
+  // P0-1: 근거 지표 목록
+  phaseReasoningList: { gap: 3, marginTop: 2 },
+  phaseReasoningItem: { flexDirection: 'row', alignItems: 'flex-start', gap: 5 },
+  phaseReasoningDot: { fontSize: 11, fontWeight: '800', marginTop: 0 },
+  phaseReasoningText: { flex: 1, fontSize: 11, lineHeight: 16 },
+  // P0-3: 낮은 신뢰도 경고
+  phaseNuanceRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: 8, paddingVertical: 5,
+    borderRadius: 6, borderWidth: 1, marginTop: 2,
+  },
+  phaseNuanceText: { fontSize: 10, fontWeight: '600' },
 
   // 근거 출처 한 줄 (코스톨라니 없을 때 fallback)
   basisRow: {

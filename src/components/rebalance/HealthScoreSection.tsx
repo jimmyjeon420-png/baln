@@ -20,10 +20,12 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, Animated, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { LineChart } from 'react-native-chart-kit';
 import HealthScoreDetail from '../HealthScoreDetail';
 import type { HealthScoreResult, FactorResult } from '../../services/rebalanceScore';
 import { useTheme } from '../../hooks/useTheme';
 import { saveHealthScore, loadPreviousHealthScore } from '../../utils/storage';
+import { useHealthScoreHistory } from '../../hooks/useHealthScoreHistory';
 
 interface HealthScoreSectionProps {
   healthScore: HealthScoreResult;
@@ -246,6 +248,12 @@ export default function HealthScoreSection({ healthScore, onScoreImproved }: Hea
   const improveOpacity = useRef(new Animated.Value(0)).current;
   const scoreLoadedRef = useRef(false);
 
+  // P1-2: 건강 점수 이력 (스파크라인)
+  const { sparklineData, sparklineLabels, trend, hasHistory } = useHealthScoreHistory(
+    healthScore.totalScore,
+    healthScore.grade,
+  );
+
   // "왜 이 점수인가" + "지금 할 수 있는 것" 계산
   const whyExplanation = useMemo(() => generateWhyExplanation(healthScore), [healthScore]);
   const actionGuidance = useMemo(() => generateActionGuidance(healthScore), [healthScore]);
@@ -356,6 +364,51 @@ export default function HealthScoreSection({ healthScore, onScoreImproved }: Hea
         </View>
         <Ionicons name={showDetail ? 'chevron-up' : 'chevron-down'} size={14} color={colors.textSecondary} />
       </TouchableOpacity>
+
+      {/* P1-2: 건강 점수 추이 스파크라인 (2일 이상 데이터 있을 때만) */}
+      {hasHistory && sparklineData.length >= 2 && (
+        <View style={s.sparklineContainer}>
+          <View style={s.sparklineHeader}>
+            <Ionicons
+              name={trend === 'up' ? 'trending-up' : trend === 'down' ? 'trending-down' : 'remove-outline'}
+              size={12}
+              color={trend === 'up' ? colors.success : trend === 'down' ? colors.error : colors.textTertiary}
+            />
+            <Text style={[s.sparklineLabel, {
+              color: trend === 'up' ? colors.success : trend === 'down' ? colors.error : colors.textTertiary,
+            }]}>
+              {trend === 'up' ? '최근 상승 추세' : trend === 'down' ? '최근 하락 추세' : '최근 보합'}
+            </Text>
+            <Text style={[s.sparklinePeriod, { color: colors.textTertiary }]}>최근 {sparklineData.length}일</Text>
+          </View>
+          <LineChart
+            data={{
+              labels: sparklineLabels.filter((_, i) => i % Math.ceil(sparklineLabels.length / 4) === 0 || i === sparklineLabels.length - 1),
+              datasets: [{ data: sparklineData }],
+            }}
+            width={Dimensions.get('window').width - 68}
+            height={64}
+            withDots={false}
+            withInnerLines={false}
+            withOuterLines={false}
+            withVerticalLabels={false}
+            withHorizontalLabels={false}
+            withShadow={false}
+            chartConfig={{
+              backgroundColor: 'transparent',
+              backgroundGradientFrom: 'transparent',
+              backgroundGradientTo: 'transparent',
+              backgroundGradientFromOpacity: 0,
+              backgroundGradientToOpacity: 0,
+              decimalPlaces: 0,
+              color: () => healthScore.gradeColor,
+              strokeWidth: 2,
+            }}
+            bezier
+            style={{ marginLeft: -16, marginTop: 4 }}
+          />
+        </View>
+      )}
 
       {/* 등급별 상세 해석 */}
       <Text style={[s.summary, { color: healthScore.gradeColor }]}>
@@ -643,6 +696,26 @@ const s = StyleSheet.create({
     fontWeight: '500',
     lineHeight: 20,
     marginBottom: 12,
+  },
+
+  // P1-2: 건강 점수 스파크라인
+  sparklineContainer: {
+    marginBottom: 10,
+    marginTop: -4,
+  },
+  sparklineHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 2,
+  },
+  sparklineLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  sparklinePeriod: {
+    fontSize: 10,
+    marginLeft: 'auto',
   },
 
   // [NEW] 역사적 맥락 비교 섹션 — 달리오 철학
