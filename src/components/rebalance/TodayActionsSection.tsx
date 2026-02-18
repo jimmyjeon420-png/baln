@@ -21,7 +21,7 @@ import { useTheme } from '../../hooks/useTheme';
 import { ThemeColors } from '../../styles/colors';
 import type { PortfolioAction, RebalancePortfolioAsset, LivePriceData } from '../../types/rebalanceTypes';
 import type { Asset } from '../../types/asset';
-import { classifyAsset, AssetCategory, getNetAssetValue } from '../../services/rebalanceScore';
+import { classifyAsset, AssetCategory, getNetAssetValue, KostolalyPhase, KOSTOLANY_PHASE_NAMES } from '../../services/rebalanceScore';
 
 // ── ETF 추천 맵 (없는 카테고리에 ETF 제안) ──
 const ETF_RECOMMENDATIONS: Partial<Record<AssetCategory, { tickers: string[]; note: string }>> = {
@@ -269,6 +269,8 @@ interface TodayActionsSectionProps {
   /** 코스톨라니/철학 기반 처방전 계산용 */
   allAssets?: Asset[];
   selectedTarget?: Record<AssetCategory, number>;
+  /** 처방전 근거 출처 표시용 — 현재 코스톨라니 단계 */
+  kostolalyPhase?: KostolalyPhase | null;
 }
 
 export default function TodayActionsSection({
@@ -279,6 +281,7 @@ export default function TodayActionsSection({
   isAILoading,
   allAssets,
   selectedTarget,
+  kostolalyPhase,
 }: TodayActionsSectionProps) {
   const { colors, shadows } = useTheme();
   const router = useRouter();
@@ -427,6 +430,16 @@ export default function TodayActionsSection({
             <Text style={[s.actionCountText, { color: colors.primaryDark ?? colors.primary }]}>{sortedActions.length}건</Text>
           </View>
         </View>
+      </View>
+
+      {/* 근거 출처 — 처방전 목표가 어디서 왔는지 한 줄 */}
+      <View style={[s.basisRow, { backgroundColor: `${colors.textTertiary}0D`, borderColor: `${colors.textTertiary}20` }]}>
+        <Ionicons name="compass-outline" size={11} color={colors.textTertiary} />
+        <Text style={[s.basisText, { color: colors.textTertiary }]}>
+          {kostolalyPhase
+            ? `코스톨라니 ${kostolalyPhase}단계 (${KOSTOLANY_PHASE_NAMES[kostolalyPhase]}) · 달리오/버핏 합의안 기준`
+            : '달리오/버핏 합의안 기준'}
+        </Text>
       </View>
 
       {/* ── NEW: 카테고리 기반 실행 계획서 ── */}
@@ -898,7 +911,24 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 8,
+  },
+
+  // 근거 출처 한 줄
+  basisRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
     marginBottom: 10,
+  },
+  basisText: {
+    fontSize: 10,
+    fontWeight: '500',
+    letterSpacing: 0.2,
   },
 
   // "왜 이 액션들이 나왔는가" 섹션

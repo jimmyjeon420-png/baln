@@ -22,6 +22,7 @@ import RiskDashboardSection from '../rebalance/RiskDashboardSection';
 import LevelSwitcher from './LevelSwitcher';
 
 import type { HealthScoreResult, FactorResult } from '../../services/rebalanceScore';
+import { DEFAULT_TARGET } from '../../services/rebalanceScore';
 import type { RiskAnalysisResult, MorningBriefingResult } from '../../services/gemini';
 import type { Asset } from '../../types/asset';
 import type { PortfolioAsset } from '../../services/gemini';
@@ -147,6 +148,8 @@ export default function IntermediateCheckupView({
         livePrices={livePrices}
         totalAssets={totalAssets}
         isAILoading={isAILoading}
+        allAssets={allAssets}
+        selectedTarget={DEFAULT_TARGET}
       />
 
       {/* 6. What-If 시뮬레이터 */}

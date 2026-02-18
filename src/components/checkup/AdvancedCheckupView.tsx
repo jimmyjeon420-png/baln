@@ -1,7 +1,8 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 
 import type { HealthScoreResult } from '../../services/rebalanceScore';
 import { DEFAULT_TARGET, AssetCategory, KostolalyPhase } from '../../services/rebalanceScore';
+import { useKostolalyPhase } from '../../hooks/useKostolalyPhase';
 import type {
   RiskAnalysisResult,
   MorningBriefingResult,
@@ -88,6 +89,17 @@ export default function AdvancedCheckupView({
   const [kostolalyTarget, setKostolalyTarget] = useState<Record<AssetCategory, number> | null>(null);
   const [kostolalyPhase, setKostolalyPhase] = useState<KostolalyPhase | null>(null);
 
+  // DB에서 현재 코스톨라니 단계 자동 로드 → selectedTarget 자동 연동
+  const { phase: autoPhase, target: autoTarget } = useKostolalyPhase();
+  useEffect(() => {
+    // 사용자가 아직 수동으로 "배분 적용"을 누르지 않았을 때만 자동 적용
+    if (autoTarget && autoPhase && kostolalyPhase === null) {
+      setKostolalyTarget(autoTarget);
+      setKostolalyPhase(autoPhase);
+      setSelectedTarget(autoTarget);
+    }
+  }, [autoTarget, autoPhase]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleApplyKostolalyPhase = useCallback((
     target: Record<AssetCategory, number>,
     phase: KostolalyPhase,
@@ -99,13 +111,25 @@ export default function AdvancedCheckupView({
 
   return (
     <>
-      {/* 0. 코스톨라니 달걀 모형 (최최상단 — 시장 국면 파악) */}
+      {/* 0. 코스톨라니 달걀 모형 — 처방전의 서문 (시장 국면) */}
       <KostolalyPhaseCard onApplyPhase={handleApplyKostolalyPhase} />
 
-      {/* 0.5 안심 배너 */}
+      {/* 1. 처방전 — 결론 먼저 (이승건 원칙: 헤드라인 최상단) */}
+      <TodayActionsSection
+        sortedActions={sortedActions}
+        portfolio={portfolio}
+        livePrices={livePrices}
+        totalAssets={totalAssets}
+        isAILoading={isAILoading}
+        allAssets={allAssets}
+        selectedTarget={selectedTarget}
+        kostolalyPhase={kostolalyPhase}
+      />
+
+      {/* 2. 안심 배너 */}
       <ReassuranceBanner totalGainLoss={totalGainLoss} cfoWeather={cfoWeather} />
 
-      {/* 1. Hero — total assets + cost-basis P&L + daily change + tier */}
+      {/* 3. Hero — total assets + cost-basis P&L + daily change + tier */}
       <HeroSection
         dateString={dateString}
         tierLabel={tierLabel}
@@ -116,17 +140,17 @@ export default function AdvancedCheckupView({
         holdingLabel={holdingLabel}
       />
 
-      {/* 1.5 시장 온도계 */}
+      {/* 4. 시장 온도계 */}
       <MarketTemperature morningBriefing={morningBriefing ?? null} isAILoading={isAILoading} />
 
-      {/* 2. Checkup header — health score grade + panic score */}
+      {/* 5. Checkup header — health score grade + panic score */}
       <CheckupHeader
         healthScore={healthScore}
         panicScore={panicScore}
         totalAssets={totalAssets}
       />
 
-      {/* 3. Six-factor health score breakdown */}
+      {/* 6. Six-factor health score breakdown */}
       <HealthScoreSection
         healthScore={healthScore}
         onScoreImproved={(improvement) => {
@@ -134,7 +158,7 @@ export default function AdvancedCheckupView({
         }}
       />
 
-      {/* 5. Target vs current allocation drift — 코스톨라니 연동 */}
+      {/* 7. Target vs current allocation drift — 코스톨라니 연동 */}
       <AllocationDriftSection
         assets={allAssets}
         totalAssets={totalAssets}
@@ -143,7 +167,7 @@ export default function AdvancedCheckupView({
         kostolalyPhase={kostolalyPhase}
       />
 
-      {/* 6. Portfolio adjustment simulation — 배분 이탈도와 같은 철학 기준 공유 */}
+      {/* 8. Portfolio adjustment simulation — 배분 이탈도와 같은 철학 기준 공유 */}
       <WhatIfSimulator
         assets={allAssets}
         totalAssets={totalAssets}
@@ -151,21 +175,10 @@ export default function AdvancedCheckupView({
         philosophyTarget={selectedTarget}
       />
 
-      {/* 7. Asset correlation matrix */}
+      {/* 9. Asset correlation matrix */}
       <CorrelationHeatmapSection assets={allAssets} totalAssets={totalAssets} />
 
-      {/* 8. Today's actions — 처방전 (카테고리 계획 + AI 추천) */}
-      <TodayActionsSection
-        sortedActions={sortedActions}
-        portfolio={portfolio}
-        livePrices={livePrices}
-        totalAssets={totalAssets}
-        isAILoading={isAILoading}
-        allAssets={allAssets}
-        selectedTarget={selectedTarget}
-      />
-
-      {/* 9. Panic Shield + FOMO Vaccine */}
+      {/* 10. Panic Shield + FOMO Vaccine */}
       <RiskDashboardSection
         analysisResult={analysisResult}
         peerPanicData={peerPanicData}
