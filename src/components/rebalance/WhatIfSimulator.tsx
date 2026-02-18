@@ -199,8 +199,9 @@ export default function WhatIfSimulator({
 
       const result = await generateOptimalAllocation({ assets: portfolioAssets, currentHealthScore });
 
-      // AI 제안 → 카테고리 목표로 변환
-      const aiCatTargets: Record<string, number> = { ...catTargets };
+      // AI 제안 → 카테고리 목표로 변환 (baseTarget에서 시작 — philosophyTarget 기준)
+      const aiCatTargets: Record<string, number> = {};
+      for (const cat of SIM_CATEGORIES) aiCatTargets[cat.key] = baseTarget[cat.key] ?? 0;
       for (const rec of result.recommendations) {
         const asset = liquidAssets.find(a => a.ticker === rec.ticker || a.name === rec.name);
         if (asset) {

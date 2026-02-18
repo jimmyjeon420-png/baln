@@ -20,6 +20,29 @@ import { formatCurrency } from '../../utils/formatters';
 import { useTheme } from '../../hooks/useTheme';
 import { ThemeColors } from '../../styles/colors';
 import type { PortfolioAction, RebalancePortfolioAsset, LivePriceData } from '../../types/rebalanceTypes';
+import type { Asset } from '../../types/asset';
+import { classifyAsset, AssetCategory, getNetAssetValue } from '../../services/rebalanceScore';
+
+// ── ETF 추천 맵 (없는 카테고리에 ETF 제안) ──
+const ETF_RECOMMENDATIONS: Partial<Record<AssetCategory, { tickers: string[]; note: string }>> = {
+  bond:      { tickers: ['TLT', 'AGG'],                     note: '미국 국채/종합채권 ETF' },
+  gold:      { tickers: ['GLD', 'IAU', 'KODEX골드선물'],    note: '금 현물 ETF (한국: KODEX 골드선물)' },
+  commodity: { tickers: ['DJP', 'PDBC'],                    note: '광범위 원자재 ETF' },
+  large_cap: { tickers: ['SPY', 'QQQ', 'KODEX200'],        note: 'S&P500 / 나스닥100 / 코스피200' },
+};
+
+// ── 카테고리 한국어 라벨 ──
+const CAT_LABEL: Record<AssetCategory, string> = {
+  large_cap: '주식', bond: '채권', bitcoin: '비트코인',
+  gold: '금/귀금속', commodity: '원자재', altcoin: '알트코인',
+  cash: '현금', realestate: '부동산',
+};
+
+const CAT_ICON: Record<AssetCategory, string> = {
+  large_cap: '📈', bond: '🏛️', bitcoin: '₿',
+  gold: '🥇', commodity: '🛢️', altcoin: '🪙',
+  cash: '💵', realestate: '🏠',
+};
 
 /** 티커 기반 통화 판별 — 6자리 숫자 또는 .KS/.KQ 접미사면 KRW, 아니면 USD */
 function getCurrency(ticker: string): 'KRW' | 'USD' {
@@ -227,12 +250,25 @@ function generateActionEffect(action: PortfolioAction, assetWeight: string | nul
   return '현재 적정 비중이므로 유지하는 것이 좋습니다.';
 }
 
+// ── 카테고리별 리밸런싱 액션 ──
+interface CategoryRebalanceAction {
+  category: AssetCategory;
+  currentPct: number;
+  targetPct: number;
+  drift: number;        // currentPct - targetPct (양수: 초과 → 매도, 음수: 부족 → 매수)
+  driftAmount: number;  // 금액 (원)
+  assets: (RebalancePortfolioAsset & { returnPct: number | null })[]; // 보유 자산 (수익률 기준 정렬)
+}
+
 interface TodayActionsSectionProps {
   sortedActions: PortfolioAction[];
   portfolio: RebalancePortfolioAsset[];
   livePrices: Record<string, LivePriceData | undefined>;
   totalAssets: number;
   isAILoading: boolean;
+  /** 코스톨라니/철학 기반 처방전 계산용 */
+  allAssets?: Asset[];
+  selectedTarget?: Record<AssetCategory, number>;
 }
 
 export default function TodayActionsSection({
@@ -241,13 +277,86 @@ export default function TodayActionsSection({
   livePrices,
   totalAssets,
   isAILoading,
+  allAssets,
+  selectedTarget,
 }: TodayActionsSectionProps) {
   const { colors, shadows } = useTheme();
   const router = useRouter();
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
   const [showCompletionBanner, setShowCompletionBanner] = useState(false);
   const [completionBannerKey, setCompletionBannerKey] = useState(0);
+  const [showAIActions, setShowAIActions] = useState(false);
   const { checked, toggle } = useActionChecklist();
+
+  // ── 카테고리 리밸런싱 계획 계산 ──
+  const categoryRebalancePlan = useMemo<CategoryRebalanceAction[]>(() => {
+    if (!allAssets || !selectedTarget || totalAssets <= 0) return [];
+
+    // 유동 자산만 (부동산 제외)
+    const liquidAssets = allAssets.filter(a => classifyAsset(a) !== 'realestate');
+    const liquidTotal = liquidAssets.reduce((sum, a) => sum + getNetAssetValue(a), 0);
+    if (liquidTotal <= 0) return [];
+
+    // 카테고리별 현재 금액/비중 계산
+    const catAmount: Record<AssetCategory, number> = {
+      cash: 0, bond: 0, large_cap: 0, realestate: 0,
+      bitcoin: 0, altcoin: 0, gold: 0, commodity: 0,
+    };
+    for (const asset of liquidAssets) {
+      const cat = classifyAsset(asset);
+      catAmount[cat] += getNetAssetValue(asset);
+    }
+
+    const LIQUID_CATS: AssetCategory[] = ['cash', 'bond', 'large_cap', 'bitcoin', 'altcoin', 'gold', 'commodity'];
+    const result: CategoryRebalanceAction[] = [];
+
+    for (const cat of LIQUID_CATS) {
+      const currentAmt = catAmount[cat] || 0;
+      const currentPct = (currentAmt / liquidTotal) * 100;
+      const targetPct = selectedTarget[cat] || 0;
+      const drift = currentPct - targetPct;
+      const driftAmount = (drift / 100) * liquidTotal; // 양수: 초과(매도), 음수: 부족(매수)
+
+      // 이탈도 3%p 미만은 무시
+      if (Math.abs(drift) < 3) continue;
+
+      // 해당 카테고리의 보유 자산 찾기 (포트폴리오 match)
+      const catAssets = liquidAssets
+        .filter(a => classifyAsset(a) === cat)
+        .map(a => {
+          const matched = portfolio.find(p =>
+            p.ticker?.toUpperCase() === a.ticker?.toUpperCase()
+          );
+          const currentPrice = matched?.currentPrice || 0;
+          const avgPrice = matched?.avgPrice || a.avgPrice || 0;
+          let returnPct: number | null = null;
+          if (avgPrice > 0 && currentPrice > 0) {
+            const raw = ((currentPrice - avgPrice) / avgPrice) * 100;
+            if (raw >= -90 && raw <= 500) returnPct = raw;
+          }
+          return {
+            ticker: a.ticker || '',
+            name: a.name || '',
+            quantity: matched?.quantity,
+            currentPrice,
+            avgPrice,
+            currentValue: getNetAssetValue(a),
+            returnPct,
+          };
+        })
+        .sort((a, b) => {
+          // 매도 순서: 수익률 높은 순 (수익 실현 우선)
+          if (drift > 0) return (b.returnPct ?? 0) - (a.returnPct ?? 0);
+          // 매수 순서: 수익률 낮은 순 (추가 매수)
+          return (a.returnPct ?? 0) - (b.returnPct ?? 0);
+        });
+
+      result.push({ category: cat, currentPct, targetPct, drift, driftAmount, assets: catAssets });
+    }
+
+    // 매도 먼저, 매수 나중
+    return result.sort((a, b) => b.drift - a.drift);
+  }, [allAssets, selectedTarget, totalAssets, portfolio]);
 
   // 완료 카운트
   const completedCount = sortedActions.filter(a => checked[a.ticker]).length;
@@ -320,30 +429,189 @@ export default function TodayActionsSection({
         </View>
       </View>
 
-      {/* "왜 이 액션들이 나왔는가" 전체 요약 */}
-      <View style={[s.whySection, { backgroundColor: colors.surfaceElevated }]}>
-        <View style={s.whyRow}>
-          <Ionicons name="help-circle-outline" size={14} color={colors.textSecondary} />
-          <Text style={[s.whyLabel, { color: colors.textSecondary }]}>왜 이 액션들이 나왔나요?</Text>
-        </View>
-        <Text style={[s.whyText, { color: colors.textSecondary }]}>{actionsSummary}</Text>
-      </View>
+      {/* ── NEW: 카테고리 기반 실행 계획서 ── */}
+      {categoryRebalancePlan.length > 0 && (
+        <View style={s.rebalancePlan}>
+          {/* STEP 1: 매도 */}
+          {categoryRebalancePlan.filter(a => a.drift > 0).length > 0 && (
+            <View style={s.planStep}>
+              <View style={[s.planStepHeader, { backgroundColor: `${colors.error}15`, borderColor: `${colors.error}30` }]}>
+                <View style={[s.planStepNum, { backgroundColor: colors.error }]}>
+                  <Text style={s.planStepNumText}>1</Text>
+                </View>
+                <Text style={[s.planStepTitle, { color: colors.error }]}>초과 자산 매도 (현금 확보)</Text>
+              </View>
+              {categoryRebalancePlan
+                .filter(a => a.drift > 0)
+                .map(item => {
+                  const amtStr = Math.abs(item.driftAmount) >= 100000000
+                    ? `${(Math.abs(item.driftAmount) / 100000000).toFixed(1)}억`
+                    : `${Math.round(Math.abs(item.driftAmount) / 10000)}만원`;
+                  return (
+                    <View key={item.category} style={[s.planCatItem, { borderColor: `${colors.error}20` }]}>
+                      <View style={s.planCatHeader}>
+                        <Text style={s.planCatIcon}>{CAT_ICON[item.category]}</Text>
+                        <Text style={[s.planCatLabel, { color: colors.textPrimary }]}>{CAT_LABEL[item.category]}</Text>
+                        <Text style={[s.planCatDrift, { color: colors.textTertiary }]}>
+                          {item.currentPct.toFixed(0)}% → {item.targetPct}%
+                        </Text>
+                        <View style={[s.planCatAmtBadge, { backgroundColor: `${colors.error}20` }]}>
+                          <Text style={[s.planCatAmtText, { color: colors.error }]}>▼ 매도 {amtStr}</Text>
+                        </View>
+                      </View>
+                      {/* 매도 추천 자산 (수익률 높은 순) */}
+                      {item.assets.slice(0, 3).map((a, idx) => (
+                        <View key={idx} style={[s.planAssetRow, { borderTopColor: colors.border }]}>
+                          <Text style={[s.planAssetTicker, { color: colors.textPrimary }]}>{a.ticker || a.name}</Text>
+                          {a.returnPct !== null && (
+                            <Text style={[s.planAssetReturn, { color: a.returnPct >= 0 ? colors.success : colors.error }]}>
+                              {a.returnPct >= 0 ? '+' : ''}{a.returnPct.toFixed(1)}%
+                            </Text>
+                          )}
+                          <Text style={[s.planAssetHint, { color: colors.textTertiary }]}>
+                            {idx === 0 ? '수익 실현 우선' : idx === 1 ? '일부 매도 검토' : '참고'}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+                  );
+                })}
+            </View>
+          )}
 
-      {/* "어떤 순서로 실행할까" 우선순위 가이드 */}
-      {priorityGuidance && (
-        <View style={[s.actionGuideSection, { backgroundColor: `${colors.success}1A`, borderLeftColor: `${colors.success}4D` }]}>
-          <View style={s.actionGuideRow}>
-            <Ionicons name="arrow-forward-circle-outline" size={14} color={colors.success} />
-            <Text style={[s.actionGuideLabel, { color: colors.primaryDark ?? colors.primary }]}>실행 순서 가이드</Text>
-          </View>
-          <Text style={[s.actionGuideText, { color: colors.textSecondary }]}>{priorityGuidance}</Text>
+          {/* STEP 2: 매수 */}
+          {categoryRebalancePlan.filter(a => a.drift < 0).length > 0 && (
+            <View style={s.planStep}>
+              <View style={[s.planStepHeader, { backgroundColor: `${colors.success}15`, borderColor: `${colors.success}30` }]}>
+                <View style={[s.planStepNum, { backgroundColor: colors.success }]}>
+                  <Text style={s.planStepNumText}>2</Text>
+                </View>
+                <Text style={[s.planStepTitle, { color: colors.success }]}>부족 자산 매수 (비중 보강)</Text>
+              </View>
+              {categoryRebalancePlan
+                .filter(a => a.drift < 0)
+                .map(item => {
+                  const amtStr = Math.abs(item.driftAmount) >= 100000000
+                    ? `${(Math.abs(item.driftAmount) / 100000000).toFixed(1)}억`
+                    : `${Math.round(Math.abs(item.driftAmount) / 10000)}만원`;
+                  const etfRec = ETF_RECOMMENDATIONS[item.category];
+                  const hasHolding = item.assets.length > 0;
+                  return (
+                    <View key={item.category} style={[s.planCatItem, { borderColor: `${colors.success}20` }]}>
+                      <View style={s.planCatHeader}>
+                        <Text style={s.planCatIcon}>{CAT_ICON[item.category]}</Text>
+                        <Text style={[s.planCatLabel, { color: colors.textPrimary }]}>{CAT_LABEL[item.category]}</Text>
+                        <Text style={[s.planCatDrift, { color: colors.textTertiary }]}>
+                          {item.currentPct.toFixed(0)}% → {item.targetPct}%
+                        </Text>
+                        <View style={[s.planCatAmtBadge, { backgroundColor: `${colors.success}20` }]}>
+                          <Text style={[s.planCatAmtText, { color: colors.success }]}>▲ 매수 {amtStr}</Text>
+                        </View>
+                      </View>
+                      {/* 기존 보유 자산이 있으면 추가 매수 */}
+                      {hasHolding && item.assets.slice(0, 2).map((a, idx) => (
+                        <View key={idx} style={[s.planAssetRow, { borderTopColor: colors.border }]}>
+                          <Text style={[s.planAssetTicker, { color: colors.textPrimary }]}>{a.ticker || a.name}</Text>
+                          {a.returnPct !== null && (
+                            <Text style={[s.planAssetReturn, { color: a.returnPct >= 0 ? colors.success : colors.error }]}>
+                              {a.returnPct >= 0 ? '+' : ''}{a.returnPct.toFixed(1)}%
+                            </Text>
+                          )}
+                          <Text style={[s.planAssetHint, { color: colors.textTertiary }]}>추가 매수</Text>
+                        </View>
+                      ))}
+                      {/* 없는 카테고리 → ETF 추천 */}
+                      {!hasHolding && etfRec && (
+                        <View style={[s.etfRec, { borderTopColor: colors.border, backgroundColor: `${colors.warning}0A` }]}>
+                          <Ionicons name="information-circle-outline" size={12} color={colors.warning} />
+                          <View style={{ flex: 1 }}>
+                            <Text style={[s.etfRecLabel, { color: colors.warning }]}>ETF 추천</Text>
+                            <Text style={[s.etfRecTickers, { color: colors.textPrimary }]}>
+                              {etfRec.tickers.join(' · ')}
+                            </Text>
+                            <Text style={[s.etfRecNote, { color: colors.textTertiary }]}>{etfRec.note}</Text>
+                          </View>
+                        </View>
+                      )}
+                    </View>
+                  );
+                })}
+            </View>
+          )}
         </View>
       )}
 
-      {/* 전체 완료 축하 배너 */}
-      <CompletionBanner key={completionBannerKey} visible={showCompletionBanner} />
+      {/* ── AI 맞춤 추천 (접기/펼치기) ── */}
+      {sortedActions.length > 0 && (
+        <TouchableOpacity
+          style={[s.aiToggleBtn, { borderColor: colors.border }]}
+          onPress={() => setShowAIActions(!showAIActions)}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="sparkles-outline" size={13} color={colors.premium ? colors.premium.purple : colors.textSecondary} />
+          <Text style={[s.aiToggleBtnText, { color: colors.textSecondary }]}>
+            AI 맞춤 추천 ({sortedActions.length}건)
+          </Text>
+          <Ionicons
+            name={showAIActions ? 'chevron-up' : 'chevron-down'}
+            size={12}
+            color={colors.textTertiary}
+            style={{ marginLeft: 'auto' }}
+          />
+        </TouchableOpacity>
+      )}
 
-      {sortedActions.slice(0, 5).map((action, idx) => {
+      {showAIActions && (
+        <>
+          {/* "왜 이 액션들이 나왔는가" 전체 요약 */}
+          <View style={[s.whySection, { backgroundColor: colors.surfaceElevated }]}>
+            <View style={s.whyRow}>
+              <Ionicons name="help-circle-outline" size={14} color={colors.textSecondary} />
+              <Text style={[s.whyLabel, { color: colors.textSecondary }]}>왜 이 액션들이 나왔나요?</Text>
+            </View>
+            <Text style={[s.whyText, { color: colors.textSecondary }]}>{actionsSummary}</Text>
+          </View>
+
+          {/* "어떤 순서로 실행할까" 우선순위 가이드 */}
+          {priorityGuidance && (
+            <View style={[s.actionGuideSection, { backgroundColor: `${colors.success}1A`, borderLeftColor: `${colors.success}4D` }]}>
+              <View style={s.actionGuideRow}>
+                <Ionicons name="arrow-forward-circle-outline" size={14} color={colors.success} />
+                <Text style={[s.actionGuideLabel, { color: colors.primaryDark ?? colors.primary }]}>실행 순서 가이드</Text>
+              </View>
+              <Text style={[s.actionGuideText, { color: colors.textSecondary }]}>{priorityGuidance}</Text>
+            </View>
+          )}
+
+          {/* 전체 완료 축하 배너 */}
+          <CompletionBanner key={completionBannerKey} visible={showCompletionBanner} />
+        </>
+      )}
+
+      {/* categoryRebalancePlan 없을 때 기존 요약 표시 */}
+      {categoryRebalancePlan.length === 0 && (
+        <>
+          <View style={[s.whySection, { backgroundColor: colors.surfaceElevated }]}>
+            <View style={s.whyRow}>
+              <Ionicons name="help-circle-outline" size={14} color={colors.textSecondary} />
+              <Text style={[s.whyLabel, { color: colors.textSecondary }]}>왜 이 액션들이 나왔나요?</Text>
+            </View>
+            <Text style={[s.whyText, { color: colors.textSecondary }]}>{actionsSummary}</Text>
+          </View>
+          {priorityGuidance && (
+            <View style={[s.actionGuideSection, { backgroundColor: `${colors.success}1A`, borderLeftColor: `${colors.success}4D` }]}>
+              <View style={s.actionGuideRow}>
+                <Ionicons name="arrow-forward-circle-outline" size={14} color={colors.success} />
+                <Text style={[s.actionGuideLabel, { color: colors.primaryDark ?? colors.primary }]}>실행 순서 가이드</Text>
+              </View>
+              <Text style={[s.actionGuideText, { color: colors.textSecondary }]}>{priorityGuidance}</Text>
+            </View>
+          )}
+          <CompletionBanner key={completionBannerKey} visible={showCompletionBanner} />
+        </>
+      )}
+
+      {(showAIActions || categoryRebalancePlan.length === 0) && sortedActions.slice(0, 5).map((action, idx) => {
         const ac = ACTION_COLORS[action.action] || ACTION_COLORS.HOLD;
         const isHighPriority = action.priority === 'HIGH';
         const isExpanded = expandedIdx === idx;
@@ -762,6 +1030,58 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   deepDiveText: { fontSize: 12, fontWeight: '600' },
   suggestBox: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 9, borderRadius: 8, gap: 8, borderWidth: 1 },
   suggestText: { flex: 1, fontSize: 12, fontWeight: '500', lineHeight: 18 },
+
+  // ── 카테고리 리밸런싱 계획 ──
+  rebalancePlan: { gap: 10, marginBottom: 4 },
+  planStep: { gap: 6 },
+  planStepHeader: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    paddingHorizontal: 12, paddingVertical: 10,
+    borderRadius: 10, borderWidth: 1,
+  },
+  planStepNum: {
+    width: 22, height: 22, borderRadius: 11,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  planStepNumText: { fontSize: 12, fontWeight: '900', color: '#fff' },
+  planStepTitle: { fontSize: 13, fontWeight: '700', flex: 1 },
+  planCatItem: {
+    borderRadius: 10, borderWidth: 1,
+    overflow: 'hidden',
+    backgroundColor: 'transparent',
+  },
+  planCatHeader: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    paddingHorizontal: 12, paddingVertical: 10,
+  },
+  planCatIcon: { fontSize: 14 },
+  planCatLabel: { fontSize: 13, fontWeight: '700' },
+  planCatDrift: { fontSize: 10, marginLeft: 4 },
+  planCatAmtBadge: { marginLeft: 'auto', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+  planCatAmtText: { fontSize: 11, fontWeight: '700' },
+  planAssetRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    paddingHorizontal: 12, paddingVertical: 8,
+    borderTopWidth: 1,
+  },
+  planAssetTicker: { fontSize: 12, fontWeight: '700', minWidth: 60 },
+  planAssetReturn: { fontSize: 11, fontWeight: '600' },
+  planAssetHint: { fontSize: 10, marginLeft: 'auto' },
+  etfRec: {
+    flexDirection: 'row', gap: 8, alignItems: 'flex-start',
+    paddingHorizontal: 12, paddingVertical: 10,
+    borderTopWidth: 1,
+  },
+  etfRecLabel: { fontSize: 10, fontWeight: '700', marginBottom: 2 },
+  etfRecTickers: { fontSize: 12, fontWeight: '700' },
+  etfRecNote: { fontSize: 10, marginTop: 2 },
+  // AI 액션 토글 버튼
+  aiToggleBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    paddingHorizontal: 14, paddingVertical: 10,
+    borderRadius: 10, borderWidth: 1,
+  },
+  aiToggleBtnText: { fontSize: 12, fontWeight: '600', flex: 1 },
 
   // 세금/수수료 시뮬레이션
   taxBox: {

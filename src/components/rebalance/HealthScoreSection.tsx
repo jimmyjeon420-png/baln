@@ -17,7 +17,7 @@
  */
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, Animated } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, Animated, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import HealthScoreDetail from '../HealthScoreDetail';
@@ -30,14 +30,100 @@ interface HealthScoreSectionProps {
   onScoreImproved?: (improvement: number) => void;
 }
 
-/** 팩터별 설명 텍스트 (툴팁용) */
-const FACTOR_DESCRIPTIONS: Record<string, string> = {
-  '배분 이탈도': '처음 목표로 세운 비중과 지금 실제 비중의 차이예요.\n\n주식이 많이 오르면 그 비중이 자연스럽게 커지게 돼요. 이걸 원래 계획으로 되돌리는 게 리밸런싱이에요.',
-  '자산 집중도': '특정 자산에 쏠림 정도입니다. 분산이 잘 되어 있을수록 높은 점수를 받습니다.\n\n집중도가 낮으면 한 종목의 폭락에도 포트폴리오 전체가 안정적이에요.',
-  '상관관계': '자산 간 움직임의 유사도입니다. 낮을수록 분산 효과가 큽니다.\n\n낮은 상관관계는 한 자산이 떨어질 때 다른 자산이 오를 수 있다는 뜻이에요.',
-  '변동성': '자산 가치의 변동 폭입니다. 낮을수록 안정적입니다.\n\n변동성이 낮으면 심리적으로 편안하게 투자를 지속할 수 있어요.',
-  '하방 리스크': '손실 가능성입니다. 낮을수록 안전합니다.\n\n현재 손실 중인 종목이 많으면 하방 리스크 점수가 낮아져요.',
-  '세금 효율': '세금 최적화 정도입니다. 높을수록 절세 효과가 큽니다.\n\n5% 이상 손실 종목이 있으면 절세 매도(TLH) 기회가 있다는 신호예요.',
+/** 팩터별 직관적 한글 라벨 (이모티콘 옆에 표시) */
+const FACTOR_LABELS: Record<string, string> = {
+  '배분 이탈도': '비중 균형 상태',
+  '자산 집중도': '위험 분산도',
+  '위험 집중도': '위험 분산도',
+  '상관관계': '자산 독립성',
+  '변동성': '가격 안정성',
+  '하방 리스크': '손실 방어력',
+  '세금 효율': '절세 효율',
+  '레버리지 건전성': '부채 건전성',
+};
+
+/** 팩터 점수 → 상태 라벨 */
+function getFactorStatus(score: number): { label: string; color: string } {
+  if (score >= 70) return { label: '좋음', color: '#4CAF50' };
+  if (score >= 40) return { label: '주의', color: '#FF9800' };
+  return { label: '개선 필요', color: '#CF6679' };
+}
+
+/** 팩터 상세 설명 (ⓘ 툴팁용) */
+interface FactorDetail {
+  summary: string;
+  whenHigh: string;
+  whenLow: string;
+  formula: string;
+  dataSource: string;
+  tip: string;
+}
+
+const FACTOR_DETAILS: Record<string, FactorDetail> = {
+  '배분 이탈도': {
+    summary: '각 자산의 비중이 처음 매수 시점 또는 설정한 목표와 얼마나 달라졌는지 측정해요.',
+    whenHigh: '각 자산의 비중이 목표와 5% 이내로 유지되고 있어요.\n포트폴리오가 원래 전략대로 운영되고 있는 상태예요.',
+    whenLow: '아직 목표 비중을 설정하지 않았거나, 특정 자산이 크게 오르내려 비중이 많이 달라진 상태예요.\n⚠️ 목표 비중 미설정 시 0점으로 계산돼요.',
+    formula: '각 자산의 (실제 비중 - 목표 비중) 절댓값 합계 ÷ 2\n→ 이탈이 0%면 100점, 25% 이상이면 0점',
+    dataSource: '내가 직접 입력한 자산 가격 + 각 자산에 설정한 목표 비중(%)',
+    tip: '분석 탭의 각 자산 상세에서 목표 비중(%)을 입력하면 이 점수가 올라가요.',
+  },
+  '자산 집중도': {
+    summary: '위험이 특정 자산 하나에 집중되지 않고 고르게 분산되어 있는지 측정해요.',
+    whenHigh: '어떤 한 자산도 전체 위험의 40% 미만을 차지해요.\n한 종목이 폭락해도 전체 포트폴리오 피해가 제한돼요.',
+    whenLow: '특정 자산 하나가 전체 위험의 절반 이상을 담당하고 있어요.\n그 자산이 -30% 내리면 포트폴리오 전체가 크게 흔들려요.',
+    formula: '자산별 위험 기여도(자산가치 × 변동성)의 HHI 집중도 지수\n→ 고르게 분산될수록 100점, 한 자산 집중일수록 0점',
+    dataSource: '내가 입력한 자산 가격 + 자산 유형별 기준 변동성\n(예: 국내주식 30%, 코인 80%, 채권 5%)',
+    tip: '비중이 가장 높은 자산을 일부 줄이고 채권, 현금, 다른 자산군을 추가하세요.',
+  },
+  '위험 집중도': {
+    summary: '위험이 특정 자산 하나에 집중되지 않고 고르게 분산되어 있는지 측정해요.',
+    whenHigh: '어떤 한 자산도 전체 위험의 40% 미만을 차지해요.\n한 종목이 폭락해도 전체 포트폴리오 피해가 제한돼요.',
+    whenLow: '특정 자산 하나가 전체 위험의 절반 이상을 담당하고 있어요.\n그 자산이 -30% 내리면 포트폴리오 전체가 크게 흔들려요.',
+    formula: '자산별 위험 기여도(자산가치 × 변동성)의 HHI 집중도 지수\n→ 고르게 분산될수록 100점, 한 자산 집중일수록 0점',
+    dataSource: '내가 입력한 자산 가격 + 자산 유형별 기준 변동성\n(예: 국내주식 30%, 코인 80%, 채권 5%)',
+    tip: '비중이 가장 높은 자산을 일부 줄이고 채권, 현금, 다른 자산군을 추가하세요.',
+  },
+  '상관관계': {
+    summary: '각 자산이 서로 다른 방향으로 움직이는지 측정해요. 따로 움직일수록 진짜 분산이에요.',
+    whenHigh: '주식이 내릴 때 채권이 오르는 것처럼, 자산들이 서로 독립적으로 움직여요.\n시장이 나빠져도 일부 자산이 완충 역할을 해요.',
+    whenLow: '보유한 자산들이 모두 같은 방향으로 움직여요.\n주식, 코인, 성장주만 보유하면 전부 동시에 올라가거나 내려가요.',
+    formula: '자산 유형별 기준 상관계수를 보유 비중으로 가중 평균\n→ 상관계수 -0.3 이하면 100점, 0.8 이상이면 0점',
+    dataSource: '자산 유형 조합별 역사적 상관계수 (앱 내 기준값)\n예: 주식↔채권 -0.1, 주식↔코인 +0.5, 주식↔금 +0.1',
+    tip: '주식 외에 채권, 금, 현금처럼 반대로 움직이는 자산을 포트폴리오에 추가하세요.',
+  },
+  '변동성': {
+    summary: '포트폴리오 전체의 가격이 얼마나 크게 출렁이는지 측정해요.',
+    whenHigh: '연간 가격 변동폭이 18% 미만이에요.\n시장이 출렁여도 내 자산이 비교적 안정적으로 유지돼요.',
+    whenLow: '연간 가격 변동폭이 30% 이상이에요.\n코인, 성장주 비중이 높아 심리적 압박이 크고 패닉셀 위험이 높아요.',
+    formula: '자산 유형별 연간 기준 변동성 × 보유 비중의 가중 평균\n→ 18% 미만이면 100점, 30% 이상이면 0점',
+    dataSource: '자산 유형별 기준 연간 변동성 (앱 내 기준값)\n예: 국내주식 30% / 채권 5% / 코인 80% / 현금 0%',
+    tip: '암호화폐, 개별 성장주 비중을 줄이고 채권 ETF, 현금 비중을 늘려 변동폭을 줄이세요.',
+  },
+  '하방 리스크': {
+    summary: '현재 손실 중인 자산이 얼마나 있는지 측정해요.',
+    whenHigh: '손실 중인 자산이 없거나 매우 적어요.\n포트폴리오 대부분이 수익 또는 원금 유지 상태예요.',
+    whenLow: '손실 중인 자산이 포트폴리오의 상당 부분을 차지해요.\n추가 하락 시 손실이 복리로 커질 수 있어요.',
+    formula: '손실 자산의 (취득가 - 현재가) ÷ 취득가 × 보유 비중 가중 평균\n→ 손실 없으면 100점, 가중 손실 33% 이상이면 0점',
+    dataSource: '내가 직접 입력한 취득가(매입가) + 현재 자산 평가액',
+    tip: '장기 보유 전략이라면 손실 자산의 평균 매입가 낮추기를, 단기라면 손절 기준을 명확히 정하세요.',
+  },
+  '세금 효율': {
+    summary: '절세할 수 있는 기회를 얼마나 활용하고 있는지 측정해요.',
+    whenHigh: '5% 이상 손실 중인 자산이 없거나, 절세 매도를 이미 활용했어요.\n세금 효율이 최적화된 상태예요.',
+    whenLow: '5% 이상 손실 중인 자산이 여럿 있어요.\n이 자산들을 연말 전에 매도하면 다른 수익과 상계해 세금을 줄일 수 있어요.',
+    formula: '5% 이상 손실 자산 수 ÷ 전체 유동자산 수\n→ 절세 기회 없으면 100점, 절반 이상이 기회 자산이면 0점',
+    dataSource: '내가 직접 입력한 취득가(매입가) + 현재 자산 평가액',
+    tip: '손실 자산 매도 후 비슷한 다른 자산을 즉시 매수하면, 투자 포지션은 유지하면서 절세 혜택을 받을 수 있어요.',
+  },
+  '레버리지 건전성': {
+    summary: '대출이나 레버리지를 안전한 수준으로 사용하고 있는지 측정해요.',
+    whenHigh: '부채가 없거나, 안정 자산(부동산 등) 기반 LTV가 60% 미만이에요.\n자산 가치가 내려도 반대매매 위험이 없어요.',
+    whenLow: '고변동 자산(코인, 성장주)에 레버리지를 사용 중이에요.\n자산 가치가 급락하면 강제 청산(반대매매)이 발생할 수 있어요.',
+    formula: 'LTV × 자산 변동성 × 자산가치의 총합 ÷ 전체 자산\n→ 위험 수치 10% 미만이면 100점, 높을수록 0점에 가까워짐',
+    dataSource: '내가 입력한 대출액(LTV) + 자산 가격 + 자산 유형별 기준 변동성',
+    tip: '레버리지는 부동산처럼 안정적인 자산에만 제한적으로 사용하세요. 변동성 큰 자산의 레버리지는 매우 위험해요.',
+  },
 };
 
 /** 팩터별 개선 제안 (40점 미만 시) */
@@ -147,7 +233,7 @@ export default function HealthScoreSection({ healthScore, onScoreImproved }: Hea
   const { colors, shadows } = useTheme();
   const [showDetail, setShowDetail] = useState(false);
   const [tooltipVisible, setTooltipVisible] = useState(false);
-  const [tooltipContent, setTooltipContent] = useState({ title: '', description: '' });
+  const [tooltipFactorKey, setTooltipFactorKey] = useState<string>('');
   const [improveToast, setImproveToast] = useState<{ show: boolean; improvement: number; credits: number }>({ show: false, improvement: 0, credits: 0 });
   const improveOpacity = useRef(new Animated.Value(0)).current;
   const scoreLoadedRef = useRef(false);
@@ -205,10 +291,7 @@ export default function HealthScoreSection({ healthScore, onScoreImproved }: Hea
     } catch (e) {
       // 햅틱 미지원 디바이스 무시
     }
-    setTooltipContent({
-      title: factorLabel,
-      description: FACTOR_DESCRIPTIONS[factorLabel] || '설명이 없습니다.',
-    });
+    setTooltipFactorKey(factorLabel);
     setTooltipVisible(true);
   };
 
@@ -267,26 +350,40 @@ export default function HealthScoreSection({ healthScore, onScoreImproved }: Hea
         {GRADE_ICONS[healthScore.grade]} {GRADE_INTERPRETATIONS[healthScore.grade]}
       </Text>
 
-      {/* [NEW] 역사적 맥락 비교 — 달리오 철학: "2008년 금융위기 때는 30점이었어요" */}
+      {/* [NEW] 역사적 맥락 비교 — 달리오 철학 */}
       <View style={[s.historicalContext, { backgroundColor: colors.surfaceElevated }]}>
         <View style={s.historicalRow}>
           <Ionicons name="time-outline" size={14} color={colors.textSecondary} />
-          <Text style={[s.historicalLabel, { color: colors.textSecondary }]}>역사적 비교</Text>
+          <Text style={[s.historicalLabel, { color: colors.textSecondary }]}>역사적 기준점 — 레이 달리오 원칙</Text>
         </View>
+        <Text style={[s.historicalIntro, { color: colors.textSecondary }]}>
+          과거 금융위기 때 대부분의 투자자 점수는 아래와 같았어요.{'\n'}당신의 점수는 그 위기 때보다 얼마나 안전한지 확인하세요.
+        </Text>
         <View style={s.historicalComparison}>
-          <Text style={[s.historicalText, { color: colors.textSecondary }]}>
-            📊 2008년 금융위기: 평균 35점
-          </Text>
-          <Text style={[s.historicalText, { color: colors.textSecondary }]}>
-            📊 2020년 코로나 팬데믹: 평균 42점
-          </Text>
-          <Text style={[s.currentComparison, { color: healthScore.gradeColor }]}>
-            → 현재 당신의 점수는 {healthScore.totalScore}점입니다
-          </Text>
-          <Text style={[s.historicalNote, { color: colors.textSecondary }]}>
-            위기 속에서도 투자자들이 견디어낸 점수들입니다. 안심하세요.
-          </Text>
+          {/* 2008년 비교 */}
+          <View style={[s.historicalCompareRow, { borderColor: colors.border }]}>
+            <View style={s.historicalLeft}>
+              <Text style={[s.historicalCrisisLabel, { color: colors.textSecondary }]}>📉 2008년 금융위기 당시</Text>
+              <Text style={[s.historicalCrisisScore, { color: colors.textSecondary }]}>평균 <Text style={{ fontWeight: '800' }}>35점</Text></Text>
+            </View>
+            <View style={[s.historicalDiffBadge, { backgroundColor: colors.success + '22' }]}>
+              <Text style={[s.historicalDiffText, { color: colors.success }]}>내 점수 +{healthScore.totalScore - 35}점 ↑</Text>
+            </View>
+          </View>
+          {/* 2020년 비교 */}
+          <View style={[s.historicalCompareRow, { borderColor: colors.border }]}>
+            <View style={s.historicalLeft}>
+              <Text style={[s.historicalCrisisLabel, { color: colors.textSecondary }]}>🦠 2020년 코로나 팬데믹 당시</Text>
+              <Text style={[s.historicalCrisisScore, { color: colors.textSecondary }]}>평균 <Text style={{ fontWeight: '800' }}>42점</Text></Text>
+            </View>
+            <View style={[s.historicalDiffBadge, { backgroundColor: colors.success + '22' }]}>
+              <Text style={[s.historicalDiffText, { color: colors.success }]}>내 점수 +{healthScore.totalScore - 42}점 ↑</Text>
+            </View>
+          </View>
         </View>
+        <Text style={[s.historicalNote, { color: colors.textSecondary }]}>
+          💡 저 점수들은 시장이 극도로 불안할 때도 버텨낸 기준이에요.{'\n'}현재 당신은 그보다 높으니 패닉셀 할 이유가 없어요.
+        </Text>
       </View>
 
       {/* [NEW] "왜 이 점수인가" 요약 — 어떤 팩터가 점수를 끌어내렸는지 설명 */}
@@ -309,18 +406,29 @@ export default function HealthScoreSection({ healthScore, onScoreImproved }: Hea
         </View>
       )}
 
-      {/* 6팩터 미니 바 (접힌 상태) — 툴팁 추가 */}
+      {/* 6팩터 미니 바 (접힌 상태) */}
       {!showDetail && (
         <View style={s.miniFactors}>
+          {/* 헤더: 높을수록 좋다는 안내 */}
+          <View style={[s.factorHeaderRow, { borderBottomColor: colors.border }]}>
+            <Text style={[s.factorHeaderLabel, { color: colors.textSecondary }]}>지표</Text>
+            <Text style={[s.factorHeaderHint, { color: colors.textSecondary }]}>← 낮음 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 높을수록 좋음 →</Text>
+          </View>
           {healthScore.factors.map((factor, idx) => {
             const barColor = factor.score >= 70 ? colors.success : factor.score >= 40 ? colors.warning : colors.error;
+            const status = getFactorStatus(factor.score);
+            const friendlyLabel = FACTOR_LABELS[factor.label] || factor.label;
             return (
               <View key={idx} style={s.miniFactor}>
                 <Text style={s.miniIcon}>{factor.icon}</Text>
+                <Text style={[s.miniLabel, { color: colors.textSecondary }]}>{friendlyLabel}</Text>
                 <View style={[s.miniBarBg, { backgroundColor: colors.surfaceElevated }]}>
                   <View style={[s.miniBarFill, { width: `${factor.score}%`, backgroundColor: barColor }]} />
                 </View>
                 <Text style={[s.miniScore, { color: barColor }]}>{factor.score}</Text>
+                <View style={[s.miniStatusBadge, { backgroundColor: barColor + '22' }]}>
+                  <Text style={[s.miniStatusText, { color: barColor }]}>{status.label}</Text>
+                </View>
 
                 {/* 툴팁 아이콘 */}
                 <TouchableOpacity
@@ -355,7 +463,7 @@ export default function HealthScoreSection({ healthScore, onScoreImproved }: Hea
         </View>
       )}
 
-      {/* 툴팁 모달 */}
+      {/* 팩터 상세 툴팁 모달 */}
       <Modal
         visible={tooltipVisible}
         transparent
@@ -367,17 +475,58 @@ export default function HealthScoreSection({ healthScore, onScoreImproved }: Hea
           activeOpacity={1}
           onPress={() => setTooltipVisible(false)}
         >
-          <View style={[s.tooltipModal, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={[s.tooltipHeader, { borderBottomColor: colors.border }]}>
-              <Text style={[s.tooltipTitle, { color: colors.textPrimary }]}>{tooltipContent.title}</Text>
-              <TouchableOpacity onPress={() => setTooltipVisible(false)}>
-                <Ionicons name="close" size={20} color={colors.textSecondary} />
-              </TouchableOpacity>
-            </View>
-            <ScrollView style={s.tooltipScroll}>
-              <Text style={[s.tooltipDescription, { color: colors.textTertiary }]}>{tooltipContent.description}</Text>
-            </ScrollView>
-          </View>
+          <TouchableOpacity activeOpacity={1} style={[s.tooltipModal, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            {(() => {
+              const detail = FACTOR_DETAILS[tooltipFactorKey];
+              const friendlyLabel = FACTOR_LABELS[tooltipFactorKey] || tooltipFactorKey;
+              if (!detail) return null;
+              return (
+                <>
+                  {/* 헤더 */}
+                  <View style={[s.tooltipHeader, { borderBottomColor: colors.border }]}>
+                    <Text style={[s.tooltipTitle, { color: colors.textPrimary }]}>{friendlyLabel}</Text>
+                    <TouchableOpacity onPress={() => setTooltipVisible(false)}>
+                      <Ionicons name="close" size={20} color={colors.textSecondary} />
+                    </TouchableOpacity>
+                  </View>
+                  <ScrollView style={s.tooltipScroll} showsVerticalScrollIndicator={true} contentContainerStyle={{ paddingBottom: 16 }}>
+                    {/* 한 줄 요약 */}
+                    <Text style={[s.tooltipSummary, { color: colors.textSecondary }]}>{detail.summary}</Text>
+
+                    {/* 높을 때 */}
+                    <View style={[s.tooltipSection, { backgroundColor: '#4CAF5015', borderLeftColor: '#4CAF50' }]}>
+                      <Text style={[s.tooltipSectionTitle, { color: '#4CAF50' }]}>✅ 점수가 높을 때 (70점 이상)</Text>
+                      <Text style={[s.tooltipSectionText, { color: colors.textSecondary }]}>{detail.whenHigh}</Text>
+                    </View>
+
+                    {/* 낮을 때 */}
+                    <View style={[s.tooltipSection, { backgroundColor: '#CF667915', borderLeftColor: '#CF6679' }]}>
+                      <Text style={[s.tooltipSectionTitle, { color: '#CF6679' }]}>⚠️ 점수가 낮을 때 (40점 미만)</Text>
+                      <Text style={[s.tooltipSectionText, { color: colors.textSecondary }]}>{detail.whenLow}</Text>
+                    </View>
+
+                    {/* 계산 공식 */}
+                    <View style={[s.tooltipSection, { backgroundColor: colors.surfaceElevated, borderLeftColor: colors.border }]}>
+                      <Text style={[s.tooltipSectionTitle, { color: colors.textSecondary }]}>📐 계산 방식</Text>
+                      <Text style={[s.tooltipSectionText, { color: colors.textSecondary, fontFamily: 'monospace' }]}>{detail.formula}</Text>
+                    </View>
+
+                    {/* 데이터 소스 */}
+                    <View style={[s.tooltipSection, { backgroundColor: colors.surfaceElevated, borderLeftColor: colors.border }]}>
+                      <Text style={[s.tooltipSectionTitle, { color: colors.textSecondary }]}>📊 데이터 출처</Text>
+                      <Text style={[s.tooltipSectionText, { color: colors.textSecondary }]}>{detail.dataSource}</Text>
+                    </View>
+
+                    {/* 개선 팁 */}
+                    <View style={[s.tooltipSection, { backgroundColor: colors.success + '15', borderLeftColor: colors.success }]}>
+                      <Text style={[s.tooltipSectionTitle, { color: colors.success }]}>💡 개선 방법</Text>
+                      <Text style={[s.tooltipSectionText, { color: colors.textSecondary }]}>{detail.tip}</Text>
+                    </View>
+                  </ScrollView>
+                </>
+              );
+            })()}
+          </TouchableOpacity>
         </TouchableOpacity>
       </Modal>
     </View>
@@ -489,14 +638,49 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    marginBottom: 8,
+    marginBottom: 6,
   },
   historicalLabel: {
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '700',
+  },
+  historicalIntro: {
+    fontSize: 11,
+    lineHeight: 16,
+    marginBottom: 10,
   },
   historicalComparison: {
-    gap: 6,
+    gap: 8,
+    marginBottom: 10,
+  },
+  historicalCompareRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  historicalLeft: {
+    flex: 1,
+  },
+  historicalCrisisLabel: {
+    fontSize: 11,
+    marginBottom: 2,
+  },
+  historicalCrisisScore: {
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  historicalDiffBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+  },
+  historicalDiffText: {
+    fontSize: 12,
+    fontWeight: '700',
   },
   historicalText: {
     fontSize: 12,
@@ -510,9 +694,8 @@ const s = StyleSheet.create({
   },
   historicalNote: {
     fontSize: 11,
-    lineHeight: 16,
-    marginTop: 6,
-    fontStyle: 'italic',
+    lineHeight: 17,
+    marginTop: 2,
   },
 
   // [NEW] "왜 이 점수인가" 섹션
@@ -594,12 +777,32 @@ const s = StyleSheet.create({
 
   // 미니 팩터 바 (접힌 상태)
   miniFactors: {
-    gap: 6,
+    gap: 8,
+  },
+  factorHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingBottom: 6,
+    marginBottom: 2,
+    borderBottomWidth: 1,
+  },
+  factorHeaderLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  factorHeaderHint: {
+    fontSize: 10,
   },
   miniFactor: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
+  },
+  miniLabel: {
+    fontSize: 11,
+    width: 72,
+    flexShrink: 0,
   },
   miniIcon: {
     fontSize: 12,
@@ -625,12 +828,21 @@ const s = StyleSheet.create({
   },
   miniScore: {
     fontSize: 11,
-    fontWeight: '600',
-    width: 24,
+    fontWeight: '700',
+    width: 22,
     textAlign: 'right',
   },
+  miniStatusBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  miniStatusText: {
+    fontSize: 10,
+    fontWeight: '600',
+  },
   infoIcon: {
-    marginLeft: 4,
+    marginLeft: 2,
   },
   detailContainer: {
     marginTop: 4,
@@ -687,7 +899,7 @@ const s = StyleSheet.create({
     borderRadius: 16,
     padding: 20,
     width: '100%',
-    maxHeight: '70%',
+    maxHeight: Dimensions.get('window').height * 0.80,
     borderWidth: 1,
   },
   // tooltipHeader: {
@@ -717,15 +929,26 @@ const s = StyleSheet.create({
     fontWeight: '700',
   },
   tooltipScroll: {
-    maxHeight: 300,
+    flexGrow: 1,
   },
-  // tooltipDescription: {
-  //   fontSize: 14,
-  //   color: '#CCCCCC',
-  //   lineHeight: 22,
-  // },
-  tooltipDescription: {
-    fontSize: 14,
-    lineHeight: 22,
+  tooltipSummary: {
+    fontSize: 13,
+    lineHeight: 20,
+    marginBottom: 12,
+  },
+  tooltipSection: {
+    borderRadius: 8,
+    borderLeftWidth: 3,
+    padding: 12,
+    marginBottom: 8,
+  },
+  tooltipSectionTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    marginBottom: 5,
+  },
+  tooltipSectionText: {
+    fontSize: 12,
+    lineHeight: 18,
   },
 });

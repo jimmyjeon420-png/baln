@@ -84,13 +84,14 @@ function createArcPath(
 // ── 기본 통화 포맷 ──
 
 function defaultFormatCurrency(value: number): string {
-  if (value >= 100000000) {
-    return `${(value / 100000000).toFixed(1)}억`;
+  const abs = Math.abs(value);
+  if (abs >= 100000000) {
+    return `${Math.round(value / 100000000).toLocaleString()}억원`;
   }
-  if (value >= 10000) {
-    return `${(value / 10000).toFixed(0)}만`;
+  if (abs >= 10000) {
+    return `${Math.round(value / 10000).toLocaleString()}만원`;
   }
-  return value.toLocaleString();
+  return `${Math.round(value).toLocaleString()}원`;
 }
 
 // ── 컴포넌트 ──

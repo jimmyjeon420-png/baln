@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 
 import type { HealthScoreResult } from '../../services/rebalanceScore';
+import { DEFAULT_TARGET, AssetCategory, KostolalyPhase } from '../../services/rebalanceScore';
 import type {
   RiskAnalysisResult,
   MorningBriefingResult,
@@ -23,6 +24,7 @@ import TodayActionsSection from '../rebalance/TodayActionsSection';
 import RiskDashboardSection from '../rebalance/RiskDashboardSection';
 import AIAnalysisCTA from './AIAnalysisCTA';
 import LevelSwitcher from './LevelSwitcher';
+import KostolalyPhaseCard from './KostolalyPhaseCard';
 
 interface AdvancedCheckupViewProps {
   healthScore: HealthScoreResult;
@@ -79,9 +81,28 @@ export default function AdvancedCheckupView({
   emotionRewardCredits,
   onLevelChange,
 }: AdvancedCheckupViewProps) {
+  // AllocationDriftSection에서 선택된 철학 목표 → WhatIfSimulator + TodayActionsSection 전달
+  const [selectedTarget, setSelectedTarget] = useState<Record<AssetCategory, number>>(DEFAULT_TARGET);
+
+  // KostolalyPhaseCard에서 "배분 적용" 클릭 시 → AllocationDriftSection으로 전달
+  const [kostolalyTarget, setKostolalyTarget] = useState<Record<AssetCategory, number> | null>(null);
+  const [kostolalyPhase, setKostolalyPhase] = useState<KostolalyPhase | null>(null);
+
+  const handleApplyKostolalyPhase = useCallback((
+    target: Record<AssetCategory, number>,
+    phase: KostolalyPhase,
+  ) => {
+    setKostolalyTarget(target);
+    setKostolalyPhase(phase);
+    setSelectedTarget(target); // WhatIfSimulator도 동기화
+  }, []);
+
   return (
     <>
-      {/* 0. 안심 배너 (최상단) */}
+      {/* 0. 코스톨라니 달걀 모형 (최최상단 — 시장 국면 파악) */}
+      <KostolalyPhaseCard onApplyPhase={handleApplyKostolalyPhase} />
+
+      {/* 0.5 안심 배너 */}
       <ReassuranceBanner totalGainLoss={totalGainLoss} cfoWeather={cfoWeather} />
 
       {/* 1. Hero — total assets + cost-basis P&L + daily change + tier */}
@@ -113,26 +134,35 @@ export default function AdvancedCheckupView({
         }}
       />
 
-      {/* 5. Target vs current allocation drift */}
-      <AllocationDriftSection assets={allAssets} totalAssets={totalAssets} />
+      {/* 5. Target vs current allocation drift — 코스톨라니 연동 */}
+      <AllocationDriftSection
+        assets={allAssets}
+        totalAssets={totalAssets}
+        onTargetChange={setSelectedTarget}
+        kostolalyTarget={kostolalyTarget}
+        kostolalyPhase={kostolalyPhase}
+      />
 
-      {/* 6. Portfolio adjustment simulation */}
+      {/* 6. Portfolio adjustment simulation — 배분 이탈도와 같은 철학 기준 공유 */}
       <WhatIfSimulator
         assets={allAssets}
         totalAssets={totalAssets}
         currentHealthScore={healthScore.totalScore}
+        philosophyTarget={selectedTarget}
       />
 
       {/* 7. Asset correlation matrix */}
       <CorrelationHeatmapSection assets={allAssets} totalAssets={totalAssets} />
 
-      {/* 8. Today's actions — full list */}
+      {/* 8. Today's actions — 처방전 (카테고리 계획 + AI 추천) */}
       <TodayActionsSection
         sortedActions={sortedActions}
         portfolio={portfolio}
         livePrices={livePrices}
         totalAssets={totalAssets}
         isAILoading={isAILoading}
+        allAssets={allAssets}
+        selectedTarget={selectedTarget}
       />
 
       {/* 9. Panic Shield + FOMO Vaccine */}

@@ -21,12 +21,14 @@ import type { ActiveTheme } from '../../contexts/ThemeContext';
 // ── 상관 계수 매트릭스 (rebalanceScore.ts와 동일, 직접 참조 대신 복사 — export 안 됨) ──
 
 const CORR: Record<AssetCategory, Record<AssetCategory, number>> = {
-  cash:      { cash: 1.00, bond: 0.10, large_cap: -0.05, realestate: 0.05, bitcoin: 0.00, altcoin: 0.00 },
-  bond:      { cash: 0.10, bond: 1.00, large_cap: -0.20, realestate: 0.15, bitcoin: 0.05, altcoin: 0.05 },
-  large_cap: { cash: -0.05, bond: -0.20, large_cap: 1.00, realestate: 0.55, bitcoin: 0.35, altcoin: 0.45 },
-  realestate:{ cash: 0.05, bond: 0.15, large_cap: 0.55, realestate: 1.00, bitcoin: 0.15, altcoin: 0.15 },
-  bitcoin:   { cash: 0.00, bond: 0.05, large_cap: 0.35, realestate: 0.15, bitcoin: 1.00, altcoin: 0.85 },
-  altcoin:   { cash: 0.00, bond: 0.05, large_cap: 0.45, realestate: 0.15, altcoin: 1.00, bitcoin: 0.85 },
+  cash:      { cash: 1.00, bond: 0.10, large_cap: -0.05, realestate: 0.05, bitcoin: 0.00, altcoin: 0.00, gold: 0.05,  commodity: 0.00 },
+  bond:      { cash: 0.10, bond: 1.00, large_cap: -0.20, realestate: 0.15, bitcoin: 0.05, altcoin: 0.05, gold: 0.10,  commodity: -0.10 },
+  large_cap: { cash: -0.05, bond: -0.20, large_cap: 1.00, realestate: 0.55, bitcoin: 0.35, altcoin: 0.45, gold: 0.00, commodity: 0.25 },
+  realestate:{ cash: 0.05, bond: 0.15, large_cap: 0.55, realestate: 1.00, bitcoin: 0.20, altcoin: 0.25, gold: 0.15,  commodity: 0.30 },
+  bitcoin:   { cash: 0.00, bond: 0.05, large_cap: 0.35, realestate: 0.20, bitcoin: 1.00, altcoin: 0.80, gold: 0.15,  commodity: 0.10 },
+  altcoin:   { cash: 0.00, bond: 0.05, large_cap: 0.45, realestate: 0.25, bitcoin: 0.80, altcoin: 1.00, gold: 0.05,  commodity: 0.05 },
+  gold:      { cash: 0.05, bond: 0.10, large_cap: 0.00,  realestate: 0.15, bitcoin: 0.15, altcoin: 0.05, gold: 1.00,  commodity: 0.60 },
+  commodity: { cash: 0.00, bond: -0.10, large_cap: 0.25, realestate: 0.30, bitcoin: 0.10, altcoin: 0.05, gold: 0.60,  commodity: 1.00 },
 };
 
 const CATEGORY_LABELS: Record<AssetCategory, string> = {
@@ -36,6 +38,8 @@ const CATEGORY_LABELS: Record<AssetCategory, string> = {
   realestate: '부동산',
   bitcoin: 'BTC',
   altcoin: '알트',
+  gold: '금',
+  commodity: '원자재',
 };
 
 const CATEGORY_SHORT: Record<AssetCategory, string> = {
@@ -45,6 +49,8 @@ const CATEGORY_SHORT: Record<AssetCategory, string> = {
   realestate: '부산',
   bitcoin: 'BTC',
   altcoin: '알트',
+  gold: '금',
+  commodity: '원자재',
 };
 
 // ── 상관 계수 → 색상 변환 (테마 인식) ──

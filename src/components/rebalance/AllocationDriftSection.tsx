@@ -21,11 +21,14 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
+  Modal,
+  ScrollView,
+  Dimensions,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { Asset } from '../../types/asset';
-import { classifyAsset, AssetCategory, getNetAssetValue, calculateLTV } from '../../services/rebalanceScore';
+import { classifyAsset, AssetCategory, getNetAssetValue, calculateLTV, calcRealEstateDiversificationBonus, DEFAULT_TARGET, DALIO_TARGET, BUFFETT_TARGET, KostolalyPhase, KOSTOLANY_PHASE_NAMES, KOSTOLANY_PHASE_EMOJIS } from '../../services/rebalanceScore';
 import AllocationPieChart, { PieSlice } from '../charts/AllocationPieChart';
 import { useTheme } from '../../hooks/useTheme';
 import { ThemeColors } from '../../styles/colors';
@@ -39,27 +42,118 @@ interface CategoryConfig {
   color: string;
 }
 
-// 유동 자산 5개 카테고리 (부동산은 비유동 → 별도 표시)
-const CATEGORIES: CategoryConfig[] = [
-  { key: 'large_cap', label: '주식', icon: '📈', color: '#4CAF50' },
-  { key: 'bond',      label: '채권', icon: '🏛️', color: '#64B5F6' },
-  { key: 'bitcoin',   label: '비트코인', icon: '₿', color: '#F7931A' },
-  { key: 'altcoin',   label: '알트코인', icon: '🪙', color: '#9C27B0' },
-  { key: 'cash',      label: '현금', icon: '💵', color: '#78909C' },
-];
+// ── 자산군별 상세 정보 (ⓘ 버튼 탭 시 표시) ──
+interface CategoryDetail {
+  title: string;
+  role: string;       // 포트폴리오에서의 역할
+  dalio: string;      // 달리오 All Weather 관점
+  buffett: string;    // 버핏 Berkshire 관점
+  whenGood: string;   // 이 자산이 좋을 때 (어떤 경제 환경)
+  whenBad: string;    // 이 자산이 나쁠 때
+  tip: string;        // 두 거장 합의 실용 팁
+}
 
-// 기본 목표 배분 — 유동 자산만 (부동산 제외, 합계 100%)
-// 달리오: "비유동 자산은 리밸런싱 대상이 아니라 기준점"
-const DEFAULT_TARGET: Record<AssetCategory, number> = {
-  large_cap: 55,
-  bond: 20,
-  bitcoin: 10,
-  altcoin: 5,
-  realestate: 0,  // 비유동 → 리밸런싱 제외
-  cash: 10,
+const CATEGORY_DETAILS: Record<AssetCategory, CategoryDetail> = {
+  large_cap: {
+    title: '📈 주식 (대형주)',
+    role: '포트폴리오의 성장 엔진. 기업 이익에 참여하는 생산적 자산',
+    dalio: '달리오: "성장+물가안정 환경에서 최강. 하지만 경기침체 시 50%+ 하락 가능 — 분산이 필수"',
+    buffett: '버핏: "주식은 가장 위대한 자산. S&P500 인덱스 펀드에 90%를 넣어라. 10년 이상 보유하면 거의 무조건 이긴다"',
+    whenGood: '경제 성장기, 금리 안정기, 기업 실적 호조 시',
+    whenBad: '경기침체, 급격한 금리 인상, 신용위기 시 (2008: -50%, 2022: -25%)',
+    tip: '두 거장 모두 주식 보유에 동의. 목표 40% 유지. 버핏은 더 높여도 된다고 하지만, 달리오는 분산을 위해 40%가 적정선',
+  },
+  bond: {
+    title: '🏛️ 채권',
+    role: '포트폴리오의 안전판. 주식 하락 시 반대로 오르는 경향',
+    dalio: '달리오: "경기침체·디플레이션 환경의 최강자. All Weather 포트폴리오의 핵심 — 55% 권장"',
+    buffett: '버핏: "채권은 지금 끔찍한 투자다. 인플레이션이 오면 채권 투자자는 세금도 내고 구매력도 잃는 이중 손실을 본다"',
+    whenGood: '경기침체, 디플레이션, 금리 하락기 (금리↓ = 채권가격↑)',
+    whenBad: '인플레이션, 금리 급등기 (2022년: 채권 -17%, 역사적 최악)',
+    tip: '달리오는 55%, 버핏은 최소화를 원함. 합의점 15% — 극단적 침체 시 완충재로만 보유',
+  },
+  bitcoin: {
+    title: '₿ 비트코인',
+    role: '디지털 금. 공급량 제한(2,100만개)으로 인플레이션 헤지 + 고위험 성장 자산',
+    dalio: '달리오(2024): "비트코인을 소량 보유하는 것이 합리적. 디지털 가치 저장 수단으로 인정"',
+    buffett: '버핏: "쥐약의 제곱(Rat poison squared). 아무것도 생산하지 않는다. 100달러를 줘도 사지 않겠다" — 2024년에도 입장 변화 없음',
+    whenGood: '유동성 풍부기, 인플레이션 우려 시, 기관 투자자 진입 시',
+    whenBad: '금리 급등, 규제 강화, 시장 전반 패닉 시 (높은 베타)',
+    tip: '두 거장이 가장 크게 대립하는 자산. 달리오 1-3% vs 버핏 0%. 현실적 합의 10% — 위험 허용도 스스로 판단 필수',
+  },
+  altcoin: {
+    title: '🪙 알트코인',
+    role: '고위험·고수익 투기적 자산. 비트코인보다 3-5배 변동성',
+    dalio: '달리오: "직접 언급 없음. 단, 투기적 자산은 전체의 5% 이하로 엄격히 제한해야 한다"',
+    buffett: '버핏: "내가 이해할 수 없는 것에는 투자하지 않는다. 알트코인은 카지노와 다를 바 없다. 생산하는 것이 없다"',
+    whenGood: '강세장(Bull market), 비트코인 강세 후 알트시즌 도래 시',
+    whenBad: '약세장 시 비트코인보다 훨씬 큰 폭 하락 (90%+ 손실 가능)',
+    tip: '두 거장 모두 강하게 반대. 5% 상한선 고수 — 손실 시 세금 절세(TLH) 기회로만 활용',
+  },
+  gold: {
+    title: '🥇 금/귀금속',
+    role: '5,000년의 가치 저장 수단. 달러 약세·인플레이션·지정학적 위기 시 상승',
+    dalio: '달리오: "모든 포트폴리오에 금이 있어야 한다. 지폐가 아닌 유일한 진짜 화폐. 인플레이션과 위기의 궁극적 헤지"',
+    buffett: '버핏: "금은 아무것도 생산하지 않는다. 그냥 창고에 앉아 있을 뿐. 같은 돈으로 미국 농경지 전체를 사거나 엑슨모빌을 살 수 있다 — 금은 절대 안 산다"',
+    whenGood: '인플레이션, 달러 약세, 지정학적 위기, 중앙은행 불신 시 (스태그플레이션 최강)',
+    whenBad: '달러 강세, 실질금리 급등 시 (금은 이자가 없어 기회비용 발생)',
+    tip: '달리오 완승. 버핏의 "생산 없음" 비판은 맞지만, 분산 효과와 위기 헤지 가치는 검증됨. 12% 유지',
+  },
+  commodity: {
+    title: '🛢️ 원자재',
+    role: '인플레이션을 직접 반영하는 자산. 원유·농산물·광물 포함',
+    dalio: '달리오 All Weather: "원자재 7.5% 보유. 인플레이션이 오면 원자재가 포트폴리오를 지켜준다"',
+    buffett: '버핏: "원자재 ETF는 사지 않는다. 단, 에너지 기업(Chevron, Occidental)은 보유 — 원자재보다 그 기업의 이익이 더 중요하다"',
+    whenGood: '인플레이션, 공급망 충격, 달러 약세, 지정학적 분쟁 시',
+    whenBad: '경기침체·디플레이션 시 (수요 감소 → 원자재 가격 하락)',
+    tip: '버핏은 ETF 대신 에너지 기업 주식을 선호. 원자재 ETF(PDBC, DJP)는 달리오 방식 — 8% 목표',
+  },
+  cash: {
+    title: '💵 현금',
+    role: '기회 포착의 실탄. 시장 급락 시 저가 매수 자금. 단기 유동성 확보',
+    dalio: '달리오: "현금은 쓰레기다(Cash is trash). 장기 보유 시 인플레이션이 가치를 갉아먹는다 — 최소한만 보유"',
+    buffett: '버핏: "버크셔는 항상 최소 200억 달러 이상 현금을 유지한다. 공포가 최대일 때 현금이 있는 사람이 이긴다"',
+    whenGood: '시장 급락 직전, 투자 기회 대기 시, 단기 지출 예정 시',
+    whenBad: '인플레이션 시 (현금의 실질 구매력이 매년 감소)',
+    tip: '버핏이 승. 기회 실탄으로 10% 유지. 달리오는 최소화를 원하지만 급락 시 매수 기회를 위해 10%는 필요',
+  },
+  realestate: {
+    title: '🏠 부동산',
+    role: '비유동 장기 자산. 리밸런싱 대상이 아닌 포트폴리오의 기반',
+    dalio: '달리오: "실물 자산은 금융 위기 시 완충재. 인플레이션 환경에서 구매력 보존 — 단, LTV 관리가 핵심"',
+    buffett: '버핏: "부동산은 좋은 투자이지만 내 전문이 아니다. 직접 부동산보다 훌륭한 기업 주식이 더 낫다. 자택 구매는 훌륭한 재정적 결정"',
+    whenGood: '인플레이션, 저금리, 인구 증가 지역 (실질 가치 보존)',
+    whenBad: '금리 급등, 인구 감소, 신용 위기 (LTV 높으면 강제 매각 위험)',
+    tip: '두 거장 모두 자택 보유는 인정. 유동 자산 리밸런싱에서 제외하고 별도 관리. LTV 60% 이하 유지 권장',
+  },
 };
 
+// 유동 자산 7개 카테고리 (부동산은 비유동 → 별도 표시)
+// 달리오 All Weather 철학 기반 분류
+const CATEGORIES: CategoryConfig[] = [
+  { key: 'large_cap', label: '주식',     icon: '📈', color: '#4CAF50' },
+  { key: 'bond',      label: '채권',     icon: '🏛️', color: '#64B5F6' },
+  { key: 'bitcoin',   label: '비트코인', icon: '₿',  color: '#F7931A' },
+  { key: 'gold',      label: '금/귀금속',icon: '🥇', color: '#FFD700' },
+  { key: 'commodity', label: '원자재',   icon: '🛢️', color: '#FF8A65' },
+  { key: 'altcoin',   label: '알트코인', icon: '🪙', color: '#9C27B0' },
+  { key: 'cash',      label: '현금',     icon: '💵', color: '#78909C' },
+];
+
+// DEFAULT_TARGET은 rebalanceScore.ts에서 import (건강 점수 엔진과 동일한 기준 사용)
+// 달리오 All Weather × 버핏 Berkshire 합성 최종안: 주식40 채권15 BTC10 금12 원자재8 알트5 현금10
+
 const STORAGE_KEY = '@target_allocation';
+const PHILOSOPHY_STORAGE_KEY = '@investment_philosophy';
+
+export type InvestmentPhilosophy = 'dalio' | 'consensus' | 'buffett' | 'custom' | 'kostolany';
+
+const PHILOSOPHY_CONFIG: Record<Exclude<InvestmentPhilosophy, 'kostolany'>, { label: string; emoji: string; target: Record<AssetCategory, number>; desc: string }> = {
+  dalio:     { label: '달리오',  emoji: '🌊', target: DALIO_TARGET,    desc: 'All Weather — 분산·안정 중심' },
+  consensus: { label: '합의안', emoji: '⚖️', target: DEFAULT_TARGET,  desc: '달리오+버핏 균형 (권장)' },
+  buffett:   { label: '버핏',   emoji: '🔴', target: BUFFETT_TARGET,  desc: 'Berkshire — 주식·현금 중심' },
+  custom:    { label: '직접설정', emoji: '✏️', target: DEFAULT_TARGET,  desc: '내가 직접 목표 설정' },
+};
 
 // ── 이탈도 계산 ──
 
@@ -77,7 +171,7 @@ function calculateDrift(
 ): DriftItem[] {
   // 현재 배분 계산
   const currentMap: Record<AssetCategory, number> = {
-    cash: 0, bond: 0, large_cap: 0, realestate: 0, bitcoin: 0, altcoin: 0,
+    cash: 0, bond: 0, large_cap: 0, realestate: 0, bitcoin: 0, altcoin: 0, gold: 0, commodity: 0,
   };
 
   assets.forEach(asset => {
@@ -102,6 +196,11 @@ function calculateDrift(
 interface AllocationDriftSectionProps {
   assets: Asset[];
   totalAssets: number;
+  onTargetChange?: (target: Record<AssetCategory, number>) => void;
+  /** KostolalyPhaseCard에서 "배분 적용" 클릭 시 전달되는 코스톨라니 목표 */
+  kostolalyTarget?: Record<AssetCategory, number> | null;
+  /** 현재 코스톨라니 국면 (탭 라벨 표시용) */
+  kostolalyPhase?: KostolalyPhase | null;
 }
 
 // ── 뷰 모드: 텍스트(바 차트) vs 파이 차트 ──
@@ -173,22 +272,79 @@ function generateDriftActionGuidance(driftItems: DriftItem[], totalDrift: number
 export default function AllocationDriftSection({
   assets,
   totalAssets,
+  onTargetChange,
+  kostolalyTarget,
+  kostolalyPhase,
 }: AllocationDriftSectionProps) {
   const { colors } = useTheme();
   const [showDetail, setShowDetail] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('bar');
+  const [philosophy, setPhilosophy] = useState<InvestmentPhilosophy>('consensus');
   const [target, setTarget] = useState<Record<AssetCategory, number>>(DEFAULT_TARGET);
   const [editValues, setEditValues] = useState<Record<AssetCategory, string>>({} as any);
 
-  // AsyncStorage에서 목표 배분 로드
+  // ── ⓘ 카테고리 상세 정보 모달 ──
+  const [infoKey, setInfoKey] = useState<AssetCategory | null>(null);
+  const infoDetail = infoKey ? CATEGORY_DETAILS[infoKey] : null;
+
+  // AsyncStorage에서 철학 + 목표 배분 로드
   useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY).then(stored => {
-      if (stored) {
-        try { setTarget(JSON.parse(stored)); } catch (err) { console.warn('[배분이탈] 목표 배분 파싱 실패:', err); }
+    Promise.all([
+      AsyncStorage.getItem(PHILOSOPHY_STORAGE_KEY),
+      AsyncStorage.getItem(STORAGE_KEY),
+    ]).then(([storedPhil, storedTarget]) => {
+      if (storedPhil && (storedPhil === 'dalio' || storedPhil === 'consensus' || storedPhil === 'buffett' || storedPhil === 'custom')) {
+        const phil = storedPhil as InvestmentPhilosophy;
+        setPhilosophy(phil);
+        if (phil !== 'custom') {
+          const t = PHILOSOPHY_CONFIG[phil as Exclude<InvestmentPhilosophy, 'kostolany'>].target;
+          setTarget(t);
+          onTargetChange?.(t);
+        }
+      }
+      if (storedTarget) {
+        try {
+          const parsed = JSON.parse(storedTarget);
+          // custom 모드일 때만 저장된 target 사용
+          if (storedPhil === 'custom') {
+            setTarget(parsed);
+            onTargetChange?.(parsed);
+          }
+        } catch (err) { console.warn('[배분이탈] 목표 배분 파싱 실패:', err); }
       }
     });
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // KostolalyPhaseCard에서 "배분 적용" 클릭 시 → 'kostolany' 철학으로 전환
+  useEffect(() => {
+    if (kostolalyTarget) {
+      setPhilosophy('kostolany');
+      setTarget(kostolalyTarget);
+      onTargetChange?.(kostolalyTarget);
+    }
+  }, [kostolalyTarget]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 철학 선택 핸들러
+  const handlePhilosophyChange = useCallback(async (phil: InvestmentPhilosophy) => {
+    setPhilosophy(phil);
+    if (phil === 'kostolany') {
+      // 코스톨라니: kostolalyTarget이 있으면 사용, 없으면 현재 target 유지
+      if (kostolalyTarget) {
+        setTarget(kostolalyTarget);
+        onTargetChange?.(kostolalyTarget);
+      }
+      return; // AsyncStorage 저장 생략 (외부 주입 방식)
+    }
+    await AsyncStorage.setItem(PHILOSOPHY_STORAGE_KEY, phil);
+    if (phil !== 'custom') {
+      const t = PHILOSOPHY_CONFIG[phil as Exclude<InvestmentPhilosophy, 'kostolany'>].target;
+      setTarget(t);
+      onTargetChange?.(t);
+    } else {
+      setIsEditing(true);
+    }
+  }, [onTargetChange, kostolalyTarget]);
 
   // ── 부동산(비유동) 분리 ──
   const realEstateInfo = useMemo(() => {
@@ -202,9 +358,24 @@ export default function AllocationDriftSection({
     return { assets: reAssets, grossValue, totalDebt, netValue, avgLtv, count: reAssets.length };
   }, [assets]);
 
-  // 유동 자산 총액 (부동산 제외 — 비중 계산 기준)
-  const liquidTotal = useMemo(() => totalAssets - realEstateInfo.grossValue, [totalAssets, realEstateInfo.grossValue]);
+  // 유동 자산 총액 — 부동산 직접 제외 후 합산 (totalAssets에서 빼면 순자산 기준 불일치로 음수 발생)
+  const liquidTotal = useMemo(
+    () => assets
+      .filter(a => classifyAsset(a) !== 'realestate')
+      .reduce((sum, a) => sum + (a.currentValue || 0), 0),
+    [assets],
+  );
   const realEstateRatio = totalAssets > 0 ? (realEstateInfo.grossValue / totalAssets) * 100 : 0;
+
+  // 부동산 분산 보너스 계산 (달리오 All Weather 원칙)
+  const totalNetAssets = useMemo(
+    () => assets.reduce((sum, a) => sum + getNetAssetValue(a), 0),
+    [assets],
+  );
+  const realEstateBonus = useMemo(
+    () => calcRealEstateDiversificationBonus(realEstateInfo.assets, totalNetAssets),
+    [realEstateInfo.assets, totalNetAssets],
+  );
 
   // 이탈도 계산 — 유동 자산 기준
   const driftItems = useMemo(
@@ -234,7 +405,7 @@ export default function AllocationDriftSection({
   // 파이 차트 슬라이스 데이터 (유동 자산만)
   const pieSlices: PieSlice[] = useMemo(() => {
     const currentMap: Record<AssetCategory, number> = {
-      cash: 0, bond: 0, large_cap: 0, realestate: 0, bitcoin: 0, altcoin: 0,
+      cash: 0, bond: 0, large_cap: 0, realestate: 0, bitcoin: 0, altcoin: 0, gold: 0, commodity: 0,
     };
     assets.forEach(asset => {
       const cat = classifyAsset(asset);
@@ -276,9 +447,12 @@ export default function AllocationDriftSection({
     }
 
     setTarget(newTarget);
+    onTargetChange?.(newTarget);
+    setPhilosophy('custom');
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newTarget));
+    await AsyncStorage.setItem(PHILOSOPHY_STORAGE_KEY, 'custom');
     setIsEditing(false);
-  }, [editValues]);
+  }, [editValues, onTargetChange]);
 
   // 편집 합계
   const editSum = useMemo(() => {
@@ -291,8 +465,83 @@ export default function AllocationDriftSection({
   if (totalAssets === 0) return null;
 
   const s = createStyles(colors);
+  const { height: SCREEN_H } = Dimensions.get('window');
 
   return (
+    <>
+    {/* ── ⓘ 자산군 상세 정보 모달 ── */}
+    <Modal
+      visible={infoKey !== null}
+      transparent
+      animationType="fade"
+      onRequestClose={() => setInfoKey(null)}
+    >
+      <TouchableOpacity
+        style={s.modalOverlay}
+        activeOpacity={1}
+        onPress={() => setInfoKey(null)}
+      >
+        <TouchableOpacity
+          activeOpacity={1}
+          style={[s.infoModal, { maxHeight: SCREEN_H * 0.78 }]}
+          onPress={() => {}}
+        >
+          {infoDetail && (
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: 16 }}
+            >
+              {/* 제목 */}
+              <Text style={[s.infoModalTitle, { color: colors.textPrimary }]}>{infoDetail.title}</Text>
+
+              {/* 역할 */}
+              <View style={[s.infoSection, { backgroundColor: colors.surfaceLight }]}>
+                <Text style={[s.infoSectionLabel, { color: colors.textTertiary }]}>포트폴리오 역할</Text>
+                <Text style={[s.infoSectionText, { color: colors.textPrimary }]}>{infoDetail.role}</Text>
+              </View>
+
+              {/* 달리오 관점 */}
+              <View style={[s.infoSection, { backgroundColor: '#4CAF5015' }]}>
+                <Text style={[s.infoSectionLabel, { color: '#4CAF50' }]}>🌊 레이 달리오 (All Weather)</Text>
+                <Text style={[s.infoSectionText, { color: colors.textSecondary }]}>{infoDetail.dalio}</Text>
+              </View>
+
+              {/* 버핏 관점 */}
+              <View style={[s.infoSection, { backgroundColor: '#FFB74D15' }]}>
+                <Text style={[s.infoSectionLabel, { color: '#FFB74D' }]}>🔴 워렌 버핏 (Berkshire)</Text>
+                <Text style={[s.infoSectionText, { color: colors.textSecondary }]}>{infoDetail.buffett}</Text>
+              </View>
+
+              {/* 좋을 때 */}
+              <View style={[s.infoSection, { backgroundColor: '#66BB6A15' }]}>
+                <Text style={[s.infoSectionLabel, { color: '#66BB6A' }]}>✅ 유리한 환경</Text>
+                <Text style={[s.infoSectionText, { color: colors.textSecondary }]}>{infoDetail.whenGood}</Text>
+              </View>
+
+              {/* 나쁠 때 */}
+              <View style={[s.infoSection, { backgroundColor: '#FF8A6515' }]}>
+                <Text style={[s.infoSectionLabel, { color: '#FF8A65' }]}>⚠️ 불리한 환경</Text>
+                <Text style={[s.infoSectionText, { color: colors.textSecondary }]}>{infoDetail.whenBad}</Text>
+              </View>
+
+              {/* 실용 팁 */}
+              <View style={[s.infoSection, { backgroundColor: '#64B5F615' }]}>
+                <Text style={[s.infoSectionLabel, { color: '#64B5F6' }]}>💡 실용 팁</Text>
+                <Text style={[s.infoSectionText, { color: colors.textSecondary }]}>{infoDetail.tip}</Text>
+              </View>
+
+              <TouchableOpacity
+                style={[s.infoCloseBtn, { backgroundColor: colors.surfaceElevated }]}
+                onPress={() => setInfoKey(null)}
+              >
+                <Text style={[s.infoCloseBtnText, { color: colors.textSecondary }]}>닫기</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          )}
+        </TouchableOpacity>
+      </TouchableOpacity>
+    </Modal>
+
     <View style={[s.card, { backgroundColor: colors.inverseSurface, borderColor: colors.border }]}>
       {/* 헤더 */}
       <TouchableOpacity
@@ -314,6 +563,47 @@ export default function AllocationDriftSection({
           <Ionicons name={showDetail ? 'chevron-up' : 'chevron-down'} size={14} color={colors.textTertiary} />
         </View>
       </TouchableOpacity>
+
+      {/* 철학 선택 탭 */}
+      <View style={s.philosophyRow}>
+        {(['dalio', 'consensus', 'buffett', 'custom'] as Exclude<InvestmentPhilosophy, 'kostolany'>[]).map(phil => {
+          const cfg = PHILOSOPHY_CONFIG[phil];
+          const isActive = philosophy === phil;
+          return (
+            <TouchableOpacity
+              key={phil}
+              style={[s.philosophyBtn, isActive && { backgroundColor: colors.success + '30', borderColor: colors.success }]}
+              onPress={() => handlePhilosophyChange(phil)}
+              activeOpacity={0.7}
+            >
+              <Text style={s.philosophyEmoji}>{cfg.emoji}</Text>
+              <Text style={[s.philosophyBtnText, isActive && { color: colors.success, fontWeight: '700' }]}>
+                {cfg.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+        {/* 코스톨라니 국면 탭 (kostolalyTarget이 있을 때만 표시) */}
+        {kostolalyTarget && kostolalyPhase && (
+          <TouchableOpacity
+            key="kostolany"
+            style={[s.philosophyBtn, philosophy === 'kostolany' && { backgroundColor: '#9C27B030', borderColor: '#9C27B0' }]}
+            onPress={() => handlePhilosophyChange('kostolany')}
+            activeOpacity={0.7}
+          >
+            <Text style={s.philosophyEmoji}>{KOSTOLANY_PHASE_EMOJIS[kostolalyPhase]}</Text>
+            <Text style={[s.philosophyBtnText, philosophy === 'kostolany' && { color: '#9C27B0', fontWeight: '700' }]}>
+              {kostolalyPhase}국면
+            </Text>
+          </TouchableOpacity>
+        )}
+      </View>
+      {/* 선택된 철학 설명 */}
+      <Text style={[s.philosophyDesc, { color: colors.textTertiary }]}>
+        {philosophy === 'kostolany' && kostolalyPhase
+          ? `${KOSTOLANY_PHASE_NAMES[kostolalyPhase]} — 코스톨라니 달걀 모형`
+          : PHILOSOPHY_CONFIG[philosophy as Exclude<InvestmentPhilosophy, 'kostolany'>]?.desc ?? ''}
+      </Text>
 
       {/* "왜 이탈이 생겼는가" 설명 */}
       <View style={s.whySection}>
@@ -380,7 +670,17 @@ export default function AllocationDriftSection({
 
               return (
                 <View key={item.category.key} style={s.driftRow}>
-                  <Text style={s.driftIcon}>{item.category.icon}</Text>
+                  {/* 이모티콘 + 자산 이름 + ⓘ 버튼 */}
+                  <View style={s.driftLabelGroup}>
+                    <Text style={s.driftIcon}>{item.category.icon}</Text>
+                    <Text style={[s.driftLabel, { color: colors.textSecondary }]} numberOfLines={1}>{item.category.label}</Text>
+                    <TouchableOpacity
+                      onPress={() => setInfoKey(item.category.key)}
+                      hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                    >
+                      <Text style={[s.infoBtn, { color: colors.textTertiary }]}>ⓘ</Text>
+                    </TouchableOpacity>
+                  </View>
                   <View style={s.driftBarContainer}>
                     {/* 목표 바 (배경) */}
                     <View style={[s.driftBarTarget, { width: `${targetWidth}%`, borderColor: item.category.color + '40' }]} />
@@ -438,11 +738,6 @@ export default function AllocationDriftSection({
             );
           })}
 
-          {/* 목표 수정 버튼 */}
-          <TouchableOpacity style={s.editButton} onPress={startEditing} activeOpacity={0.7}>
-            <Ionicons name="settings-outline" size={14} color={colors.textTertiary} />
-            <Text style={s.editButtonText}>목표 배분 수정</Text>
-          </TouchableOpacity>
         </View>
       )}
 
@@ -492,12 +787,20 @@ export default function AllocationDriftSection({
             <Text style={s.realEstateIcon}>🏠</Text>
             <Text style={[s.realEstateTitle, { color: colors.inverseText }]}>안정 자산 기반</Text>
             <Text style={[s.realEstateSubtitle, { color: colors.textTertiary }]}>Stable Foundation</Text>
+            {/* 부동산도 ⓘ 버튼 */}
+            <TouchableOpacity
+              onPress={() => setInfoKey('realestate')}
+              style={{ marginLeft: 'auto' }}
+              hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+            >
+              <Text style={[s.infoBtn, { color: colors.textTertiary, fontSize: 16 }]}>ⓘ</Text>
+            </TouchableOpacity>
           </View>
           <View style={s.realEstateBody}>
             <Text style={[s.realEstateValue, { color: colors.inverseText }]}>
-              부동산 ₩{(realEstateInfo.grossValue / 100000000).toFixed(1)}억
+              부동산 ₩{Math.round(realEstateInfo.grossValue / 100000000)}억
               <Text style={[s.realEstateRatio, { color: colors.textSecondary }]}>
-                {' '}(전체 자산의 {realEstateRatio.toFixed(1)}%)
+                {' '}(전체 자산의 {realEstateRatio.toFixed(0)}%)
               </Text>
             </Text>
             {realEstateInfo.totalDebt > 0 && (
@@ -505,13 +808,29 @@ export default function AllocationDriftSection({
                 대출 ₩{(realEstateInfo.totalDebt / 100000000).toFixed(1)}억 (LTV {realEstateInfo.avgLtv.toFixed(0)}%)
               </Text>
             )}
-            <Text style={[s.realEstateMessage, { color: colors.success }]}>
-              장기 자산이 포트폴리오의 기반을 잡아줍니다
-            </Text>
+
+            {/* 달리오 보너스: 건강 점수 기여 표시 */}
+            {realEstateBonus.bonus > 0 ? (
+              <View style={s.realEstateBonusRow}>
+                <View style={[s.realEstateBonusBadge, { backgroundColor: colors.success + '22' }]}>
+                  <Text style={[s.realEstateBonusText, { color: colors.success }]}>
+                    +{realEstateBonus.bonus}점 건강 점수 기여
+                  </Text>
+                </View>
+                <Text style={[s.realEstateBonusReason, { color: colors.textSecondary }]}>
+                  {realEstateBonus.reason}
+                </Text>
+              </View>
+            ) : (
+              <Text style={[s.realEstateMessage, { color: colors.textTertiary }]}>
+                {realEstateBonus.reason || 'LTV를 낮추거나 비중을 조정하면 건강 점수에 기여할 수 있어요'}
+              </Text>
+            )}
           </View>
         </View>
       )}
     </View>
+    </>
   );
 }
 
@@ -535,6 +854,28 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   driftBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10, gap: 6 },
   driftDot: { width: 6, height: 6, borderRadius: 3 },
   driftText: { fontSize: 12, fontWeight: '700' },
+
+  // 철학 선택
+  philosophyRow: {
+    flexDirection: 'row',
+    gap: 6,
+    marginBottom: 6,
+  },
+  philosophyBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 3,
+    paddingVertical: 7,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: `${colors.textTertiary}0A`,
+  },
+  philosophyEmoji: { fontSize: 11 },
+  philosophyBtnText: { fontSize: 10, color: colors.textSecondary, fontWeight: '600' },
+  philosophyDesc: { fontSize: 10, textAlign: 'center', marginBottom: 10 },
 
   // "왜 이탈이 생겼는가" 섹션
   whySection: {
@@ -587,9 +928,11 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
 
   // 이탈도 바 차트
-  driftChart: { gap: 8 },
+  driftChart: { gap: 10 },
   driftRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  driftIcon: { fontSize: 14, width: 22, textAlign: 'center' },
+  driftLabelGroup: { flexDirection: 'row', alignItems: 'center', width: 72, gap: 4, flexShrink: 0 },
+  driftIcon: { fontSize: 13 },
+  driftLabel: { fontSize: 11, flex: 1 },
   driftBarContainer: { flex: 1, height: 14, backgroundColor: colors.surfaceElevated, borderRadius: 7, overflow: 'hidden', justifyContent: 'center' },
   driftBarTarget: { position: 'absolute', height: 14, borderRadius: 7, borderWidth: 1, borderStyle: 'dashed' },
   driftBarCurrent: { height: 8, borderRadius: 4, marginHorizontal: 3 },
@@ -665,4 +1008,56 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   realEstateRatio: { fontSize: 12, fontWeight: '400' },
   realEstateDebt: { fontSize: 12 },
   realEstateMessage: { fontSize: 12, fontWeight: '500', marginTop: 4 },
+  realEstateBonusRow: { marginTop: 8, gap: 4 },
+  realEstateBonusBadge: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
+  realEstateBonusText: { fontSize: 12, fontWeight: '700' },
+  realEstateBonusReason: { fontSize: 11, lineHeight: 16 },
+
+  // ── ⓘ 버튼 & 모달 ──
+  infoBtn: { fontSize: 11, fontWeight: '700' },
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  infoModal: {
+    width: '100%',
+    backgroundColor: colors.surface,
+    borderRadius: 20,
+    padding: 20,
+  },
+  infoModalTitle: {
+    fontSize: 17,
+    fontWeight: '800',
+    marginBottom: 14,
+  },
+  infoSection: {
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 8,
+  },
+  infoSectionLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    marginBottom: 4,
+    textTransform: 'uppercase' as const,
+    letterSpacing: 0.5,
+  },
+  infoSectionText: {
+    fontSize: 13,
+    lineHeight: 20,
+  },
+  infoCloseBtn: {
+    marginTop: 8,
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  infoCloseBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
 });
