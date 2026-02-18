@@ -1,177 +1,234 @@
 /**
- * What-if 시뮬레이터 — "만약 삼성전자를 50% 더 사면?" 시뮬레이션
+ * What-if 시뮬레이터 — 자산군 카테고리 단위 배분 시뮬레이션
  *
- * 역할 (비유): "투자 시뮬레이터" — 자산 비중을 가상으로 조정해서 건강 점수 변화 예측
- * 사용자 흐름: 슬라이더로 비중 조정 → 건강 점수 변화 확인 → [AI 분석] 버튼 → 유료 분석
+ * 역할: "만약 주식을 10% 더 늘리면?" 카테고리 단위로 배분 조정 → 건강 점수 변화 예측
  *
- * 데이터 흐름:
- * 1. 현재 포트폴리오 → 슬라이더로 비중 조정
- * 2. 조정된 포트폴리오 → calculateHealthScore 재계산
- * 3. before/after 건강 점수 비교
- * 4. [AI 분석 받기] → /marketplace?feature=what_if (3크레딧)
+ * 개선 사항:
+ * - 부동산(비유동) 제거 — 리밸런싱 불가 자산
+ * - 개별 종목 슬라이더 → 7개 자산군 카테고리 슬라이더
+ * - 선택된 철학(달리오/합의/버핏)과 연동 — philosophyTarget prop
+ * - 시뮬레이션: 각 카테고리 내 자산을 비율적으로 스케일
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, InteractionManager, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import Slider from '@react-native-community/slider';
 import * as Haptics from 'expo-haptics';
 import { Asset } from '../../types/asset';
-import { calculateHealthScore } from '../../services/rebalanceScore';
+import { calculateHealthScore, classifyAsset, AssetCategory, DEFAULT_TARGET } from '../../services/rebalanceScore';
 import { generateOptimalAllocation, type PortfolioAsset } from '../../services/gemini';
 import { useTheme } from '../../hooks/useTheme';
 import { ThemeColors } from '../../styles/colors';
 import { useMyCredits, useSpendCredits } from '../../hooks/useCredits';
 import { FEATURE_COSTS } from '../../types/marketplace';
 
+// ── 카테고리 표시 설정 (부동산 제외) ──
+interface CatConfig { key: AssetCategory; label: string; icon: string; color: string }
+const SIM_CATEGORIES: CatConfig[] = [
+  { key: 'large_cap', label: '주식',     icon: '📈', color: '#4CAF50' },
+  { key: 'bond',      label: '채권',     icon: '🏛️', color: '#64B5F6' },
+  { key: 'bitcoin',   label: '비트코인', icon: '₿',  color: '#F7931A' },
+  { key: 'gold',      label: '금/귀금속',icon: '🥇', color: '#FFD700' },
+  { key: 'commodity', label: '원자재',   icon: '🛢️', color: '#FF8A65' },
+  { key: 'altcoin',   label: '알트코인', icon: '🪙', color: '#9C27B0' },
+  { key: 'cash',      label: '현금',     icon: '💵', color: '#78909C' },
+];
+
 interface WhatIfSimulatorProps {
   assets: Asset[];
   totalAssets: number;
   currentHealthScore: number;
+  philosophyTarget?: Record<AssetCategory, number>; // AllocationDriftSection에서 선택된 목표
 }
 
-export default function WhatIfSimulator({ assets, totalAssets, currentHealthScore }: WhatIfSimulatorProps) {
+export default function WhatIfSimulator({
+  assets,
+  totalAssets,
+  currentHealthScore,
+  philosophyTarget,
+}: WhatIfSimulatorProps) {
   const router = useRouter();
   const { colors } = useTheme();
   const { data: credits } = useMyCredits();
   const spendMutation = useSpendCredits();
   const [showSimulator, setShowSimulator] = useState(false);
-  const [isOptimizing, setIsOptimizing] = useState(false); // 추천 조정 계산 중
+  const [isOptimizing, setIsOptimizing] = useState(false);
 
-  // 자산별 비중 조정 (퍼센트) — 초기값 0% (변화 없음)
-  const [adjustments, setAdjustments] = useState<Record<string, number>>({});
+  // 유동 자산만 (부동산 제외)
+  const liquidAssets = useMemo(
+    () => assets.filter(a => classifyAsset(a) !== 'realestate'),
+    [assets],
+  );
+  const liquidTotal = useMemo(
+    () => liquidAssets.reduce((sum, a) => sum + (a.currentValue || 0), 0),
+    [liquidAssets],
+  );
 
-  // 시뮬레이션된 포트폴리오 (비중 조정 적용)
-  // currentValue + currentPrice 모두 조정해야 calculateHealthScore의 getAssetValue()가 반영
+  // 현재 카테고리별 실제 비중 (%)
+  const currentCatPct = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const cat of SIM_CATEGORIES) map[cat.key] = 0;
+    if (liquidTotal <= 0) return map;
+    for (const asset of liquidAssets) {
+      const cat = classifyAsset(asset);
+      if (cat !== 'realestate') {
+        map[cat] = (map[cat] || 0) + (asset.currentValue || 0) / liquidTotal * 100;
+      }
+    }
+    return map;
+  }, [liquidAssets, liquidTotal]);
+
+  // philosophyTarget이 바뀌면 catTargets 업데이트
+  const baseTarget = philosophyTarget ?? DEFAULT_TARGET;
+
+  // 카테고리 목표 비중 (슬라이더로 조정)
+  const [catTargets, setCatTargets] = useState<Record<string, number>>(() => {
+    const init: Record<string, number> = {};
+    for (const cat of SIM_CATEGORIES) init[cat.key] = baseTarget[cat.key] ?? 0;
+    return init;
+  });
+
+  // philosophyTarget이 변경되면 catTargets도 동기화
+  useEffect(() => {
+    const newTargets: Record<string, number> = {};
+    for (const cat of SIM_CATEGORIES) newTargets[cat.key] = baseTarget[cat.key] ?? 0;
+    setCatTargets(newTargets);
+  }, [philosophyTarget]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 합계
+  const catSum = useMemo(
+    () => SIM_CATEGORIES.reduce((sum, c) => sum + (catTargets[c.key] || 0), 0),
+    [catTargets],
+  );
+
+  // 조정이 있는지: catTargets vs currentCatPct
+  const hasAdjustments = useMemo(
+    () => SIM_CATEGORIES.some(c => Math.abs((catTargets[c.key] || 0) - (currentCatPct[c.key] || 0)) > 0.5),
+    [catTargets, currentCatPct],
+  );
+
+  // 시뮬레이션된 포트폴리오: 유동자산 총액 고정 + 카테고리 비율로 재배분
+  // catTargets 합계가 100%가 아닐 경우 정규화하여 항상 liquidTotal을 유지
   const simulatedAssets = useMemo(() => {
+    if (liquidTotal <= 0) return assets;
+    const norm = catSum > 0 ? 100 / catSum : 1; // 정규화 계수 (합계 100% 강제)
     return assets.map(asset => {
-      const key = asset.ticker || asset.id;
-      const adjustment = adjustments[key] || 0;
-      const multiplier = 1 + adjustment / 100;
-      const adjustedValue = (asset.currentValue || 0) * multiplier;
-      const adjustedPrice = (asset.currentPrice ?? 0) > 0
-        ? (asset.currentPrice as number) * multiplier
-        : undefined;
-      return {
-        ...asset,
-        currentValue: adjustedValue,
-        ...(adjustedPrice !== undefined && { currentPrice: adjustedPrice }),
-      };
+      const cat = classifyAsset(asset);
+      if (cat === 'realestate') return asset; // 부동산 변경 없음
+
+      const curPct = currentCatPct[cat] || 0;
+      const tgtPct = (catTargets[cat] || 0) * norm; // 정규화된 목표 비중
+      const ratio = curPct > 0 ? tgtPct / curPct : 0;
+      const newValue = (asset.currentValue || 0) * ratio;
+      const newPrice = (asset.currentPrice != null && (asset.currentPrice as number) > 0)
+        ? (asset.currentPrice as number) * ratio
+        : asset.currentPrice;
+      return { ...asset, currentValue: newValue, currentPrice: newPrice };
     });
-  }, [assets, adjustments]);
+  }, [assets, catTargets, currentCatPct, liquidTotal, catSum]);
 
-  // 시뮬레이션된 총자산 (NaN 방어)
-  const simulatedTotal = useMemo(() => {
-    const total = simulatedAssets.reduce((sum, a) => sum + (a.currentValue || 0), 0);
-    return Number.isFinite(total) ? total : 0;
-  }, [simulatedAssets]);
+  // 시뮬레이션된 총자산
+  const simulatedTotal = useMemo(
+    () => simulatedAssets.reduce((sum, a) => sum + (a.currentValue || 0), 0),
+    [simulatedAssets],
+  );
 
-  // 시뮬레이션된 건강 점수 (에러 방어)
+  // 시뮬레이션된 건강 점수
   const simulatedHealthScore = useMemo(() => {
-    if (simulatedTotal === 0) return currentHealthScore;
+    if (simulatedTotal === 0 || catSum < 95 || catSum > 105) return currentHealthScore;
     try {
-      return calculateHealthScore(simulatedAssets, simulatedTotal).totalScore;
+      return calculateHealthScore(simulatedAssets, simulatedTotal, philosophyTarget).totalScore;
     } catch {
       return currentHealthScore;
     }
-  }, [simulatedAssets, simulatedTotal, currentHealthScore]);
+  }, [simulatedAssets, simulatedTotal, currentHealthScore, catSum, philosophyTarget]);
 
-  // 건강 점수 변화
   const healthDelta = simulatedHealthScore - currentHealthScore;
 
-  // 총자산 변화량
-  const totalDelta = simulatedTotal - totalAssets;
+  // 초기화
+  const handleReset = useCallback(() => {
+    const init: Record<string, number> = {};
+    for (const cat of SIM_CATEGORIES) init[cat.key] = baseTarget[cat.key] ?? 0;
+    setCatTargets(init);
+  }, [baseTarget]);
 
-  // 조정이 있는지 확인
-  const hasAdjustments = Object.values(adjustments).some(v => v !== 0);
-
-  // 리셋
-  const handleReset = () => {
-    setAdjustments({});
-  };
-
-  // AI 분석 받기
+  // AI 분석
   const handleAIAnalysis = () => {
     router.push({
       pathname: '/marketplace',
       params: {
         feature: 'what_if',
-        adjustments: JSON.stringify(adjustments),
+        adjustments: JSON.stringify(catTargets),
       },
     });
   };
 
-  // 추천 조정 (AI 기반 최적 배분 계산) — 1크레딧 소모
-  const cost = FEATURE_COSTS.what_if; // 1C
+  // AI 최적 배분
+  const cost = FEATURE_COSTS.what_if;
   const currentBalance = credits?.balance ?? 0;
 
   const handleRecommendedAdjustment = async () => {
-    // 잔액 부족 체크
     if (currentBalance < cost) {
-      Alert.alert(
-        '크레딧 부족',
-        `AI 배분 최적화에는 ${cost}C가 필요합니다.\n현재 잔액: ${currentBalance}C`,
-        [
-          { text: '취소', style: 'cancel' },
-          { text: '충전하기', onPress: () => router.push('/marketplace/credits') },
-        ]
-      );
+      Alert.alert('크레딧 부족', `AI 배분 최적화에는 ${cost}C가 필요합니다.\n현재 잔액: ${currentBalance}C`, [
+        { text: '취소', style: 'cancel' },
+        { text: '충전하기', onPress: () => router.push('/marketplace/credits') },
+      ]);
       return;
     }
-
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       setIsOptimizing(true);
-
-      // 크레딧 차감 (AI 호출 전에 먼저 차감)
       await spendMutation.mutateAsync({
         amount: cost,
         featureType: 'what_if',
         featureRefId: `whatif_optimize_${Date.now()}`,
       });
+      await new Promise<void>(resolve => { InteractionManager.runAfterInteractions(() => resolve()); });
 
-      // UI 렌더 완료 후 AI 계산 시작
-      await new Promise<void>(resolve => {
-        InteractionManager.runAfterInteractions(() => resolve());
-      });
-
-      // Asset[] → PortfolioAsset[] 변환
-      const portfolioAssets: PortfolioAsset[] = assets.map(a => ({
+      const portfolioAssets: PortfolioAsset[] = liquidAssets.map(a => ({
         ticker: a.ticker || 'UNKNOWN',
         name: a.name || 'Unknown Asset',
         quantity: a.quantity || 1,
         avgPrice: a.avgPrice || 0,
         currentPrice: (a.currentPrice as number) || 0,
         currentValue: a.currentValue || 0,
-        allocation: totalAssets > 0 ? ((a.currentValue || 0) / totalAssets) * 100 : 0,
+        allocation: liquidTotal > 0 ? ((a.currentValue || 0) / liquidTotal) * 100 : 0,
       }));
 
-      // Gemini AI 호출
-      const result = await generateOptimalAllocation({
-        assets: portfolioAssets,
-        currentHealthScore,
-      });
+      const result = await generateOptimalAllocation({ assets: portfolioAssets, currentHealthScore });
 
-      // AI 제안을 adjustments로 변환
-      const aiAdjustments: Record<string, number> = {};
+      // AI 제안 → 카테고리 목표로 변환
+      const aiCatTargets: Record<string, number> = { ...catTargets };
       for (const rec of result.recommendations) {
-        const asset = assets.find(a => a.ticker === rec.ticker || a.name === rec.name);
+        const asset = liquidAssets.find(a => a.ticker === rec.ticker || a.name === rec.name);
         if (asset) {
-          const key = asset.ticker || asset.id;
-          aiAdjustments[key] = rec.adjustmentPercent;
+          const cat = classifyAsset(asset);
+          if (cat !== 'realestate') {
+            const curW = liquidTotal > 0 ? (asset.currentValue || 0) / liquidTotal * 100 : 0;
+            aiCatTargets[cat] = Math.max(0, Math.min(100, (aiCatTargets[cat] || 0) + rec.adjustmentPercent * curW / 100));
+          }
         }
       }
-
-      // 조정 적용
-      if (Object.keys(aiAdjustments).length > 0) {
-        setAdjustments(aiAdjustments);
-        // 성공 햅틱
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      } else {
-        // 개선 여지가 없으면 가벼운 햅틱
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      // AI 제안 후 합계가 100%가 아닐 수 있으므로 정규화
+      const aiSum = SIM_CATEGORIES.reduce((s, c) => s + (aiCatTargets[c.key] || 0), 0);
+      if (aiSum > 0 && Math.abs(aiSum - 100) > 0.5) {
+        const normFactor = 100 / aiSum;
+        SIM_CATEGORIES.forEach(c => {
+          aiCatTargets[c.key] = Math.round((aiCatTargets[c.key] || 0) * normFactor);
+        });
+        // 반올림 오차 보정 — 가장 큰 카테고리에 적용
+        const finalSum = SIM_CATEGORIES.reduce((s, c) => s + (aiCatTargets[c.key] || 0), 0);
+        if (finalSum !== 100) {
+          const maxCat = SIM_CATEGORIES.reduce((a, b) =>
+            (aiCatTargets[a.key] || 0) >= (aiCatTargets[b.key] || 0) ? a : b
+          );
+          aiCatTargets[maxCat.key] = (aiCatTargets[maxCat.key] || 0) + (100 - finalSum);
+        }
       }
+      setCatTargets(aiCatTargets);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error) {
       console.error('AI 배분 최적화 실패:', error);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -180,19 +237,15 @@ export default function WhatIfSimulator({ assets, totalAssets, currentHealthScor
     }
   };
 
-  // 자산 없으면 표시 안 함
-  if (assets.length === 0) return null;
+  if (liquidAssets.length === 0) return null;
 
   const s = createStyles(colors);
+  const sumOk = catSum >= 98 && catSum <= 102;
 
   return (
     <View style={[s.card, { backgroundColor: colors.inverseSurface, borderColor: colors.border }]}>
       {/* 헤더 */}
-      <TouchableOpacity
-        style={s.headerRow}
-        onPress={() => setShowSimulator(!showSimulator)}
-        activeOpacity={0.7}
-      >
+      <TouchableOpacity style={s.headerRow} onPress={() => setShowSimulator(!showSimulator)} activeOpacity={0.7}>
         <View>
           <View style={s.titleRow}>
             <Ionicons name="flask-outline" size={16} color={colors.premium.purple} />
@@ -210,83 +263,71 @@ export default function WhatIfSimulator({ assets, totalAssets, currentHealthScor
         </View>
       </TouchableOpacity>
 
-      {/* 접힌 상태: 간단 설명 */}
       {!showSimulator && (
         <Text style={s.collapsedDesc}>
-          자산 비중을 가상으로 조정해서 건강 점수 변화를 미리 확인하세요
+          자산군 비중을 가상으로 조정해서 건강 점수 변화를 미리 확인하세요
         </Text>
       )}
 
-      {/* 펼친 상태: 시뮬레이터 */}
       {showSimulator && (
         <View style={s.simulatorContainer}>
-          {/* 건강 점수 변화 미리보기 */}
+          {/* 건강 점수 미리보기 */}
           <View style={[s.healthPreview, { backgroundColor: colors.surfaceElevated }]}>
             <View style={s.healthItem}>
               <Text style={s.healthLabel}>현재</Text>
               <Text style={[s.healthValue, { color: colors.textTertiary }]}>{currentHealthScore}</Text>
             </View>
-
-            {/* 동적 화살표 */}
             <Ionicons
-              name={
-                healthDelta > 2 ? 'arrow-up' :
-                healthDelta < -2 ? 'arrow-down' :
-                'arrow-forward'
-              }
+              name={healthDelta > 2 ? 'arrow-up' : healthDelta < -2 ? 'arrow-down' : 'arrow-forward'}
               size={20}
-              color={
-                healthDelta > 2 ? colors.success :
-                healthDelta < -2 ? colors.error :
-                colors.textTertiary
-              }
+              color={healthDelta > 2 ? colors.success : healthDelta < -2 ? colors.error : colors.textTertiary}
             />
-
             <View style={s.healthItem}>
               <Text style={s.healthLabel}>예상</Text>
-              <Text style={[
-                s.healthValue,
-                { color: healthDelta > 0 ? colors.success : healthDelta < 0 ? colors.error : colors.textTertiary },
-              ]}>
+              <Text style={[s.healthValue, { color: healthDelta > 0 ? colors.success : healthDelta < 0 ? colors.error : colors.textTertiary }]}>
                 {simulatedHealthScore}
               </Text>
             </View>
-
-            {/* 점수 변화 + 개선/악화 텍스트 */}
             {healthDelta !== 0 && (
-              <View style={[
-                s.healthDelta,
-                { backgroundColor: healthDelta > 0 ? `${colors.success}20` : `${colors.error}20` },
-              ]}>
-                <Text style={[
-                  s.healthDeltaText,
-                  { color: healthDelta > 0 ? colors.success : colors.error },
-                ]}>
+              <View style={[s.healthDelta, { backgroundColor: healthDelta > 0 ? `${colors.success}20` : `${colors.error}20` }]}>
+                <Text style={[s.healthDeltaText, { color: healthDelta > 0 ? colors.success : colors.error }]}>
                   {healthDelta > 0 ? '+' : ''}{healthDelta.toFixed(0)}점 {healthDelta > 0 ? '개선' : '악화'}
                 </Text>
               </View>
             )}
           </View>
 
-          {/* 총자산 변화량 표시 */}
-          {hasAdjustments && totalDelta !== 0 && (
-            <View style={[s.totalDeltaRow, { backgroundColor: colors.surfaceElevated }]}>
-              <Ionicons name="cash-outline" size={14} color={colors.textTertiary} />
-              <Text style={s.totalDeltaText}>
-                총자산 {totalDelta > 0 ? '+' : ''}
-                {totalDelta.toLocaleString('ko-KR', { style: 'currency', currency: 'KRW', maximumFractionDigits: 0 })}{' '}
-                {totalDelta > 0 ? '증가' : '감소'} 예상
-              </Text>
+          {/* 리밸런싱 가이드 — 유동자산 총액 유지, 카테고리 간 매수/매도 금액 표시 */}
+          {hasAdjustments && sumOk && (
+            <View style={[s.tradeGuideSection, { backgroundColor: colors.surfaceElevated }]}>
+              <View style={s.tradeGuideHeader}>
+                <Ionicons name="swap-horizontal-outline" size={13} color={colors.textSecondary} />
+                <Text style={[s.tradeGuideTitle, { color: colors.textSecondary }]}>리밸런싱 가이드</Text>
+                <Text style={[s.tradeGuideSub, { color: colors.textTertiary }]}>유동자산 총액 유지</Text>
+              </View>
+              {SIM_CATEGORIES.map(cat => {
+                const curAmt = liquidTotal * (currentCatPct[cat.key] || 0) / 100;
+                const tgtAmt = liquidTotal * (catTargets[cat.key] || 0) / 100;
+                const delta = tgtAmt - curAmt;
+                if (Math.abs(delta) < liquidTotal * 0.003) return null; // 0.3% 미만 무시
+                const amtStr = Math.abs(delta) >= 100000000
+                  ? `${(Math.abs(delta) / 100000000).toFixed(1)}억`
+                  : `${Math.round(Math.abs(delta) / 10000)}만원`;
+                return (
+                  <View key={cat.key} style={s.tradeRow}>
+                    <Text style={s.tradeIcon}>{cat.icon}</Text>
+                    <Text style={[s.tradeName, { color: colors.textSecondary }]}>{cat.label}</Text>
+                    <Text style={[s.tradeAmount, { color: delta > 0 ? colors.success : colors.error }]}>
+                      {delta > 0 ? '▲ 매수' : '▼ 매도'} {amtStr}
+                    </Text>
+                  </View>
+                );
+              })}
             </View>
           )}
 
-          {/* 추천 조정 버튼 */}
-          <TouchableOpacity
-            style={s.recommendButton}
-            onPress={handleRecommendedAdjustment}
-            activeOpacity={0.7}
-            disabled={isOptimizing}
-          >
+          {/* AI 최적화 버튼 */}
+          <TouchableOpacity style={s.recommendButton} onPress={handleRecommendedAdjustment} activeOpacity={0.7} disabled={isOptimizing}>
             {isOptimizing ? (
               <ActivityIndicator size="small" color={colors.inverseText} />
             ) : (
@@ -297,54 +338,60 @@ export default function WhatIfSimulator({ assets, totalAssets, currentHealthScor
             )}
           </TouchableOpacity>
 
-          {/* 자산별 슬라이더 */}
-          <ScrollView style={s.assetsScroll} nestedScrollEnabled>
-            {assets.slice(0, 5).map(asset => {
-              const key = asset.ticker || asset.id;
-              const displayName = asset.ticker || asset.name || 'unknown';
-              const currentWeight = totalAssets > 0 ? ((asset.currentValue || 0) / totalAssets) * 100 : 0;
-              const adjustment = adjustments[key] || 0;
-              const simulatedWeight = simulatedTotal > 0
-                ? (((asset.currentValue || 0) * (1 + adjustment / 100)) / simulatedTotal) * 100
-                : 0;
+          {/* 합계 표시 */}
+          <View style={[s.sumRow, { backgroundColor: sumOk ? `${colors.success}15` : `${colors.warning}15` }]}>
+            <Text style={[s.sumLabel, { color: colors.textSecondary }]}>목표 합계</Text>
+            <Text style={[s.sumValue, { color: sumOk ? colors.success : colors.warning }]}>
+              {catSum.toFixed(0)}% {sumOk ? '✓' : '⚠️ 100%가 되어야 해요'}
+            </Text>
+          </View>
+
+          {/* 카테고리 슬라이더 */}
+          <ScrollView style={s.assetsScroll} nestedScrollEnabled showsVerticalScrollIndicator={false}>
+            {SIM_CATEGORIES.map(cat => {
+              const curPct = currentCatPct[cat.key] || 0;
+              const tgtPct = catTargets[cat.key] || 0;
+              const delta = tgtPct - curPct;
 
               return (
-                <View key={asset.id} style={s.assetRow}>
-                  <View style={s.assetHeader}>
-                    <Text style={s.assetTicker}>{displayName}</Text>
-                    <Text style={s.assetWeight}>
-                      {currentWeight.toFixed(1)}% → {simulatedWeight.toFixed(1)}%
-                    </Text>
+                <View key={cat.key} style={s.catRow}>
+                  <View style={s.catHeader}>
+                    <View style={s.catNameRow}>
+                      <Text style={s.catIcon}>{cat.icon}</Text>
+                      <Text style={[s.catLabel, { color: colors.textPrimary }]}>{cat.label}</Text>
+                    </View>
+                    <View style={s.catWeightRow}>
+                      <Text style={[s.catCurrentPct, { color: colors.textTertiary }]}>
+                        현재 {curPct.toFixed(0)}%
+                      </Text>
+                      <Text style={[s.catArrow, { color: colors.textTertiary }]}> → </Text>
+                      <Text style={[s.catTargetPct, { color: cat.color, fontWeight: '700' }]}>
+                        목표 {tgtPct.toFixed(0)}%
+                      </Text>
+                      {delta !== 0 && (
+                        <Text style={[s.catDelta, { color: delta > 0 ? colors.success : colors.error }]}>
+                          {' '}({delta > 0 ? '+' : ''}{delta.toFixed(0)}%p)
+                        </Text>
+                      )}
+                    </View>
                   </View>
                   <View style={s.sliderRow}>
-                    <Text style={s.sliderLabel}>-50%</Text>
+                    <Text style={s.sliderLabel}>0%</Text>
                     <Slider
                       style={s.slider}
-                      minimumValue={-50}
+                      minimumValue={0}
                       maximumValue={100}
-                      step={5}
-                      value={adjustment}
-                      onValueChange={(val) => {
+                      step={1}
+                      value={tgtPct}
+                      onValueChange={val => {
                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        setAdjustments(prev => ({ ...prev, [key]: val }));
+                        setCatTargets(prev => ({ ...prev, [cat.key]: val }));
                       }}
-                      minimumTrackTintColor={colors.premium.purple}
+                      minimumTrackTintColor={cat.color}
                       maximumTrackTintColor={colors.borderStrong}
-                      thumbTintColor={colors.premium.purple}
+                      thumbTintColor={cat.color}
                     />
-                    <Text style={s.sliderLabel}>+100%</Text>
-                  </View>
-                  {/* 조정값 + 금액 변화 */}
-                  <View style={s.adjustmentRow}>
-                    <Text style={s.adjustmentValue}>
-                      {adjustment > 0 ? '+' : ''}{adjustment.toFixed(0)}%
-                    </Text>
-                    {adjustment !== 0 && (
-                      <Text style={s.adjustmentAmount}>
-                        ({adjustment > 0 ? '+' : ''}
-                        {(asset.currentValue * adjustment / 100).toLocaleString('ko-KR', { maximumFractionDigits: 0 })}원)
-                      </Text>
-                    )}
+                    <Text style={s.sliderLabel}>100%</Text>
                   </View>
                 </View>
               );
@@ -353,28 +400,25 @@ export default function WhatIfSimulator({ assets, totalAssets, currentHealthScor
 
           {/* 버튼 그룹 */}
           <View style={s.buttonGroup}>
-            {hasAdjustments && (
-              <TouchableOpacity style={s.resetButton} onPress={handleReset} activeOpacity={0.7}>
-                <Ionicons name="refresh" size={14} color={colors.textTertiary} />
-                <Text style={s.resetButtonText}>초기화</Text>
-              </TouchableOpacity>
-            )}
+            <TouchableOpacity style={s.resetButton} onPress={handleReset} activeOpacity={0.7}>
+              <Ionicons name="refresh" size={14} color={colors.textTertiary} />
+              <Text style={s.resetButtonText}>초기화</Text>
+            </TouchableOpacity>
             <TouchableOpacity
-              style={[s.aiButton, !hasAdjustments && s.aiButtonDisabled]}
+              style={[s.aiButton, (!hasAdjustments || !sumOk) && s.aiButtonDisabled]}
               onPress={handleAIAnalysis}
               activeOpacity={0.7}
-              disabled={!hasAdjustments}
+              disabled={!hasAdjustments || !sumOk}
             >
-              <Ionicons name="sparkles" size={14} color={hasAdjustments ? colors.inverseText : colors.disabledText} />
-              <Text style={[s.aiButtonText, !hasAdjustments && s.aiButtonTextDisabled]}>
+              <Ionicons name="sparkles" size={14} color={(hasAdjustments && sumOk) ? colors.inverseText : colors.disabledText} />
+              <Text style={[s.aiButtonText, (!hasAdjustments || !sumOk) && s.aiButtonTextDisabled]}>
                 AI 분석 받기 (3C)
               </Text>
             </TouchableOpacity>
           </View>
 
-          {/* 안내 */}
           <Text style={s.hint}>
-            AI 배분 최적화 버튼을 누르면 건강 점수를 최대화하는 배분을 자동으로 제안합니다
+            슬라이더로 목표 비중을 조정하고 합계를 100%로 맞추면 건강 점수 변화를 확인할 수 있어요
           </Text>
         </View>
       )}
@@ -390,11 +434,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     padding: 18,
     borderWidth: 1,
   },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 },
   cardLabel: { fontSize: 15, fontWeight: '700', color: colors.textPrimary },
   cardLabelEn: { fontSize: 10, color: colors.textTertiary, marginTop: 1, letterSpacing: 0.5, textTransform: 'uppercase' },
@@ -402,17 +442,12 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   activeBadgeText: { fontSize: 10, color: colors.premium.purple, fontWeight: '700' },
   collapsedDesc: { marginTop: 8, fontSize: 12, color: colors.textSecondary, lineHeight: 18 },
 
-  // 시뮬레이터
-  simulatorContainer: { marginTop: 14, paddingTop: 14, borderTopWidth: 1, borderTopColor: colors.border, gap: 14 },
+  simulatorContainer: { marginTop: 14, paddingTop: 14, borderTopWidth: 1, borderTopColor: colors.border, gap: 12 },
 
-  // 건강 점수 미리보기
+  // 건강 점수
   healthPreview: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 12,
-    padding: 16,
-    gap: 12,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    borderRadius: 12, padding: 16, gap: 12,
   },
   healthItem: { alignItems: 'center' },
   healthLabel: { fontSize: 10, color: colors.textTertiary, marginBottom: 4 },
@@ -420,69 +455,69 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   healthDelta: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 },
   healthDeltaText: { fontSize: 12, fontWeight: '700' },
 
-  // 총자산 변화량
-  totalDeltaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 8,
-    borderRadius: 8,
+  // 리밸런싱 가이드
+  tradeGuideSection: {
+    borderRadius: 10, padding: 12, gap: 8,
   },
-  totalDeltaText: { fontSize: 12, color: colors.textSecondary, fontWeight: '600' },
+  tradeGuideHeader: {
+    flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 4,
+  },
+  tradeGuideTitle: { fontSize: 12, fontWeight: '700' },
+  tradeGuideSub: { fontSize: 10, marginLeft: 'auto' },
+  tradeRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+  },
+  tradeIcon: { fontSize: 13, width: 20, textAlign: 'center' },
+  tradeName: { fontSize: 12, flex: 1 },
+  tradeAmount: { fontSize: 12, fontWeight: '700' },
 
-  // 추천 조정 버튼
   recommendButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.primary,
-    paddingVertical: 14,
-    borderRadius: 12,
-    gap: 8,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: colors.primary, paddingVertical: 14, borderRadius: 12, gap: 8,
   },
   recommendButtonText: { fontSize: 14, color: colors.inverseText, fontWeight: '700' },
 
-  // 자산 리스트
-  assetsScroll: { maxHeight: 300 },
-  assetRow: { marginBottom: 16, backgroundColor: colors.surfaceElevated, borderRadius: 10, padding: 12 },
-  assetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  assetTicker: { fontSize: 14, fontWeight: '700', color: colors.textPrimary },
-  assetWeight: { fontSize: 11, color: colors.premium.purple, fontWeight: '600' },
+  // 합계 표시
+  sumRow: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10,
+  },
+  sumLabel: { fontSize: 12, fontWeight: '600' },
+  sumValue: { fontSize: 12, fontWeight: '700' },
+
+  // 카테고리 슬라이더
+  assetsScroll: { maxHeight: 420 },
+  catRow: {
+    marginBottom: 12, backgroundColor: colors.surfaceElevated,
+    borderRadius: 10, padding: 12,
+  },
+  catHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  catNameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  catIcon: { fontSize: 16 },
+  catLabel: { fontSize: 14, fontWeight: '700' },
+  catWeightRow: { flexDirection: 'row', alignItems: 'center' },
+  catCurrentPct: { fontSize: 11 },
+  catArrow: { fontSize: 11 },
+  catTargetPct: { fontSize: 12 },
+  catDelta: { fontSize: 11, fontWeight: '600' },
   sliderRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  sliderLabel: { fontSize: 10, color: colors.textTertiary, width: 36, textAlign: 'center' },
+  sliderLabel: { fontSize: 10, color: colors.textTertiary, width: 30, textAlign: 'center' },
   slider: { flex: 1, height: 32 },
-  adjustmentRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 6, gap: 6 },
-  adjustmentValue: { fontSize: 13, color: colors.premium.purple, fontWeight: '700' },
-  adjustmentAmount: { fontSize: 11, color: colors.textTertiary, fontWeight: '500' },
 
   // 버튼
   buttonGroup: { flexDirection: 'row', gap: 8 },
   resetButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.surfaceElevated,
-    paddingVertical: 12,
-    borderRadius: 10,
-    gap: 6,
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: colors.surfaceElevated, paddingVertical: 12, borderRadius: 10, gap: 6,
   },
   resetButtonText: { fontSize: 13, color: colors.textTertiary, fontWeight: '600' },
   aiButton: {
-    flex: 2,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.premium.purple,
-    paddingVertical: 12,
-    borderRadius: 10,
-    gap: 6,
+    flex: 2, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: colors.premium.purple, paddingVertical: 12, borderRadius: 10, gap: 6,
   },
   aiButtonDisabled: { backgroundColor: colors.disabled },
   aiButtonText: { fontSize: 13, color: colors.inverseText, fontWeight: '700' },
   aiButtonTextDisabled: { color: colors.disabledText },
 
-  // 안내
   hint: { fontSize: 11, color: colors.textTertiary, lineHeight: 16, textAlign: 'center' },
 });
