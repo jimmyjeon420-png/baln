@@ -195,6 +195,24 @@ serve(async (req: Request) => {
       crisisResult = await safe(() => retryWithBackoff('Task H', checkCrisisAlert));
     }
 
+    // Task I: 코스톨라니 국면 감지 (주 1회 — 매주 월요일 자동 실행)
+    const todayKST = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
+    const isMonday = todayKST.getDay() === 1;
+    let kostolalyResult: TaskResult<any> = null;
+    if (shouldRun('I') || (runAll && isMonday)) {
+      console.log('[Task I] 시작: 코스톨라니 국면 감지 (주 1회)...');
+      kostolalyResult = await safe(async () => {
+        const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
+        const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+        const res = await fetch(`${SUPABASE_URL}/functions/v1/kostolany-detector`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${SERVICE_KEY}` },
+        });
+        if (!res.ok) throw new Error(`kostolany-detector ${res.status}`);
+        return await res.json();
+      });
+    }
+
     // ========================================================================
     // 결과 로깅 및 통계 집계
     // ========================================================================
@@ -215,6 +233,7 @@ serve(async (req: Request) => {
     logTask('Task F', realEstateResult, v => v.skipped ? '스킵 (API 키 미설정)' : `성공: 캐시 ${v.cacheUpdated}건, 포트폴리오 ${v.assetsUpdated}건 업데이트`);
     logTask('Task G', contextCardResult, v => `성공: 맥락 카드 생성 (${v.sentiment}), ${v.usersCalculated}명 영향도 계산 (평균 ${v.avgImpact}%)`);
     logTask('Task H', crisisResult, v => v.crisisDetected ? `위기 감지: ${v.alertsCreated}건 알림 생성` : `정상 — 위기 미감지 (${v.marketsChecked.length}개 시장 확인)`);
+    logTask('Task I', kostolalyResult, v => `코스톨라니 국면: ${v.action} — ${v.phase ?? v.newPhase ?? ''}`);
 
     // ========================================================================
     // 응답 생성

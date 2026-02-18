@@ -21,6 +21,7 @@ import {
   getKSTDate,
   getKSTDateStr,
 } from './_shared.ts';
+import { fetchRealMarketData, buildRealDataContext, type RealMarketData } from './task-real-data.ts';
 
 // ============================================================================
 // 타입 정의
@@ -64,8 +65,18 @@ export async function analyzeMacroAndBitcoin(): Promise<MacroAnalysisResult> {
   const startTime = Date.now();
   const dateStr = getKSTDateStr();
 
+  // ── 실시간 시장 데이터 수집 (Yahoo Finance) ──
+  let realData: RealMarketData | null = null;
+  try {
+    realData = await fetchRealMarketData();
+  } catch (e) {
+    console.warn('[Task A] 실데이터 수집 실패 (Gemini Search로 대체):', e);
+  }
+  const realDataContext = realData ? buildRealDataContext(realData) : '';
+
   const prompt = `당신은 baln(발른) 앱의 글로벌 매크로 전략 AI입니다.
 오늘(${dateStr}) 시장 상황을 한국 개인투자자에게 설명합니다.
+${realDataContext}
 
 [핵심 원칙]
 - "안심을 판다, 불안을 팔지 않는다" — 공포 표현 대신 맥락으로 이해를 돕는다.
@@ -229,9 +240,10 @@ export async function analyzeMacroAndBitcoin(): Promise<MacroAnalysisResult> {
         bitcoin_analysis: parsed.bitcoinAnalysis || {},
         cfo_weather: parsed.cfoWeather || {},
         market_sentiment: parsed.macroSummary?.marketSentiment || 'NEUTRAL',
-        vix_level: parsed.vixLevel ?? null,
+        vix_level: realData?.vix ?? parsed.vixLevel ?? null,  // 실데이터 우선
         global_liquidity: parsed.globalLiquidity || '',
         rate_cycle_evidence: rateCycleEvidence,
+        real_market_data: realData ?? null,  // Yahoo Finance 실데이터 저장
         updated_at: new Date().toISOString(),
       }, { onConflict: 'date' });
 
