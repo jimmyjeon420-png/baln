@@ -95,10 +95,9 @@ reasoning은 현재 시장 데이터에 기반한 구체적 근거 3~5개.`;
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          tools: [{ googleSearch: {} }],  // Google Search Grounding for real-time data
           generationConfig: {
             temperature: 0.3,
-            maxOutputTokens: 1024,
+            maxOutputTokens: 2048,
             responseMimeType: 'application/json',
           },
         }),
@@ -108,15 +107,15 @@ reasoning은 현재 시장 데이터에 기반한 구체적 근거 3~5개.`;
     if (!response.ok) {
       const errorText = await response.text();
       console.error('[kostolany-detector] Gemini API 오류:', response.status, errorText);
-      return null;
+      throw new Error(`Gemini API ${response.status}: ${errorText}`);
     }
 
     const data = await response.json();
     const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
 
     if (!text) {
-      console.error('[kostolany-detector] Gemini 응답 비어있음');
-      return null;
+      console.error('[kostolany-detector] Gemini 응답 비어있음', JSON.stringify(data));
+      throw new Error(`Gemini 응답 비어있음: ${JSON.stringify(data)}`);
     }
 
     // JSON 파싱
@@ -126,13 +125,13 @@ reasoning은 현재 시장 데이터에 기반한 구체적 근거 3~5개.`;
     // 유효성 검사
     if (!['A', 'B', 'C', 'D', 'E', 'F'].includes(parsed.phase)) {
       console.error('[kostolany-detector] 유효하지 않은 국면:', parsed.phase);
-      return null;
+      throw new Error(`유효하지 않은 국면: ${parsed.phase}`);
     }
 
     return parsed;
   } catch (err) {
     console.error('[kostolany-detector] 분석 실패:', err);
-    return null;
+    throw err;
   }
 }
 

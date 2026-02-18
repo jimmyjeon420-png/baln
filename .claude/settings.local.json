@@ -266,7 +266,15 @@
       "Bash(git merge:*)",
       "Bash(git clone:*)",
       "Bash(supabase sql:*)",
-      "Bash(supabase:*)"
+      "Bash(supabase:*)",
+      "Bash(/tmp/run_g2.sh:*)",
+      "Bash(bash /tmp/run_g2.sh)",
+      "Bash(/tmp/run_g_final.sh:*)",
+      "Bash(bash /tmp/run_g_final.sh)",
+      "Bash(/tmp/run_a.sh:*)",
+      "Bash(bash /tmp/run_a.sh)",
+      "Bash(/tmp/run_g_v2.sh:*)",
+      "Bash(bash /tmp/run_g_v2.sh)"
     ]
   },
   "enableAllProjectMcpServers": true,
