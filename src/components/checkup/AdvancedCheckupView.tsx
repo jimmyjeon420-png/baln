@@ -24,7 +24,6 @@ import CorrelationHeatmapSection from '../rebalance/CorrelationHeatmapSection';
 import TodayActionsSection from '../rebalance/TodayActionsSection';
 import RiskDashboardSection from '../rebalance/RiskDashboardSection';
 import AIAnalysisCTA from './AIAnalysisCTA';
-import LevelSwitcher from './LevelSwitcher';
 import KostolalyPhaseCard from './KostolalyPhaseCard';
 
 interface AdvancedCheckupViewProps {
@@ -199,9 +198,6 @@ export default function AdvancedCheckupView({
           rewardCredits={emotionRewardCredits}
         />
       )}
-
-      {/* 12. Level switcher */}
-      <LevelSwitcher currentLevel="advanced" onLevelChange={onLevelChange} />
     </>
   );
 }

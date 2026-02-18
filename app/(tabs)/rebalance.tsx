@@ -51,9 +51,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import DisclaimerBanner from '../../src/components/common/DisclaimerBanner';
 import supabase, { getCurrentUser } from '../../src/services/supabase';
 
-// ── 레벨별 뷰 컴포넌트 ──
-import BeginnerCheckupView from '../../src/components/checkup/BeginnerCheckupView';
-import IntermediateCheckupView from '../../src/components/checkup/IntermediateCheckupView';
+// ── 단일 통합 뷰 컴포넌트 (P2-A) ──
 import AdvancedCheckupView from '../../src/components/checkup/AdvancedCheckupView';
 
 
@@ -608,50 +606,8 @@ export default function CheckupScreen() {
           </View>
         )}
 
-        {/* ══ 레벨별 뷰 전환 ══ */}
-        {hasAssets && level === 'beginner' && (
-          <BeginnerCheckupView
-            healthScore={healthScore}
-            morningBriefing={morningBriefing}
-            totalGainLoss={totalGainLoss}
-            cfoWeather={cfoWeather}
-            isAILoading={isAILoading}
-            allAssets={allAssets}
-            todayEmotion={todayEmotion}
-            todayMemo={todayMemo}
-            onEmotionSelect={setEmotion}
-            onMemoChange={setMemo}
-            onEmotionSave={saveEmotionWithMemo}
-            emotionRewardCredits={emotionRewardCredits}
-            onLevelChange={setLevel}
-          />
-        )}
-
-        {hasAssets && level === 'intermediate' && (
-          <IntermediateCheckupView
-            healthScore={healthScore}
-            allAssets={allAssets}
-            totalAssets={totalAssets}
-            morningBriefing={morningBriefing}
-            analysisResult={analysisResult}
-            sortedActions={sortedActions}
-            portfolio={portfolio}
-            livePrices={livePrices}
-            isAILoading={isAILoading}
-            peerPanicData={peerPanicData}
-            totalGainLoss={totalGainLoss}
-            cfoWeather={cfoWeather}
-            todayEmotion={todayEmotion}
-            todayMemo={todayMemo}
-            onEmotionSelect={setEmotion}
-            onMemoChange={setMemo}
-            onEmotionSave={saveEmotionWithMemo}
-            emotionRewardCredits={emotionRewardCredits}
-            onLevelChange={setLevel}
-          />
-        )}
-
-        {hasAssets && level === 'advanced' && (
+        {/* ══ 단일 통합 뷰 (P2-A: 레벨 시스템 제거) ══ */}
+        {hasAssets && (
           <AdvancedCheckupView
             healthScore={healthScore}
             allAssets={allAssets}

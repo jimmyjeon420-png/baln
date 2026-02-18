@@ -21,7 +21,7 @@ import { useTheme } from '../../hooks/useTheme';
 import { ThemeColors } from '../../styles/colors';
 import type { PortfolioAction, RebalancePortfolioAsset, LivePriceData } from '../../types/rebalanceTypes';
 import type { Asset } from '../../types/asset';
-import { classifyAsset, AssetCategory, getNetAssetValue, KostolalyPhase, KOSTOLANY_PHASE_NAMES, KOSTOLANY_PHASE_EMOJIS, KOSTOLANY_PHASE_DESCRIPTIONS } from '../../services/rebalanceScore';
+import { classifyAsset, AssetCategory, getNetAssetValue, KostolalyPhase, KOSTOLANY_PHASE_NAMES, KOSTOLANY_PHASE_EMOJIS, KOSTOLANY_PHASE_DESCRIPTIONS, calculateHealthScore } from '../../services/rebalanceScore';
 import { useKostolalyPhase } from '../../hooks/useKostolalyPhase';
 
 // ── ETF 추천 맵 (없는 카테고리에 ETF 제안) ──
@@ -371,6 +371,44 @@ export default function TodayActionsSection({
     return result.sort((a, b) => b.drift - a.drift);
   }, [allAssets, selectedTarget, totalAssets, portfolio]);
 
+  // ── 처방전 실행 시 예상 건강 점수 변화 (P2-B) ──
+  const expectedScoreChange = useMemo(() => {
+    if (!allAssets || !selectedTarget || categoryRebalancePlan.length === 0) return null;
+
+    const liquidAssets = allAssets.filter(a => classifyAsset(a) !== 'realestate');
+    const liquidTotal = liquidAssets.reduce((sum, a) => sum + getNetAssetValue(a), 0);
+    if (liquidTotal <= 0) return null;
+
+    // 현재 점수
+    const currentScore = calculateHealthScore(liquidAssets, liquidTotal, selectedTarget).totalScore;
+
+    // 카테고리별 현재 순자산 합계
+    const catNetTotals: Partial<Record<AssetCategory, number>> = {};
+    for (const asset of liquidAssets) {
+      const cat = classifyAsset(asset);
+      catNetTotals[cat] = (catNetTotals[cat] || 0) + getNetAssetValue(asset);
+    }
+
+    // 처방전 실행 후 시뮬레이션: 각 자산을 목표 배분 비중으로 스케일 조정
+    const simulatedAssets = liquidAssets.map(asset => {
+      const cat = classifyAsset(asset);
+      const currentCatNet = catNetTotals[cat] || 0;
+      const targetPct = selectedTarget[cat as AssetCategory] || 0;
+      const targetNetAmt = liquidTotal * (targetPct / 100);
+      if (currentCatNet <= 0) return { ...asset, currentValue: targetNetAmt };
+      const scale = targetNetAmt / currentCatNet;
+      const newNet = Math.max(0, getNetAssetValue(asset) * scale);
+      return { ...asset, currentValue: newNet + (asset.debtAmount || 0) };
+    });
+
+    const projectedScore = calculateHealthScore(simulatedAssets, liquidTotal, selectedTarget).totalScore;
+    const change = projectedScore - currentScore;
+
+    if (Math.abs(change) < 1) return null; // 변화 미미하면 숨김
+
+    return { currentScore, projectedScore, change };
+  }, [allAssets, selectedTarget, categoryRebalancePlan]);
+
   // 완료 카운트
   const completedCount = sortedActions.filter(a => checked[a.ticker]).length;
   const isAllCompleted = completedCount === sortedActions.length && sortedActions.length > 0;
@@ -589,6 +627,53 @@ export default function TodayActionsSection({
                 })}
             </View>
           )}
+        </View>
+      )}
+
+      {/* ── P2-B: 처방전 실행 시 예상 건강 점수 변화 ── */}
+      {expectedScoreChange && (
+        <View style={[s.scorePreview, {
+          backgroundColor: expectedScoreChange.change > 0
+            ? `${colors.success}12`
+            : `${colors.warning}12`,
+          borderColor: expectedScoreChange.change > 0
+            ? `${colors.success}30`
+            : `${colors.warning}30`,
+        }]}>
+          <View style={s.scorePreviewHeader}>
+            <Ionicons
+              name="trending-up-outline"
+              size={13}
+              color={expectedScoreChange.change > 0 ? colors.success : colors.warning}
+            />
+            <Text style={[s.scorePreviewLabel, {
+              color: expectedScoreChange.change > 0 ? colors.success : colors.warning,
+            }]}>
+              처방전 전체 실행 시 예상 변화
+            </Text>
+          </View>
+          <View style={s.scorePreviewRow}>
+            <Text style={[s.scorePreviewCurrent, { color: colors.textSecondary }]}>
+              현재 {expectedScoreChange.currentScore}점
+            </Text>
+            <Ionicons name="arrow-forward" size={12} color={colors.textTertiary} />
+            <Text style={[s.scorePreviewProjected, {
+              color: expectedScoreChange.change > 0 ? colors.success : colors.warning,
+            }]}>
+              {expectedScoreChange.projectedScore}점 예상
+            </Text>
+            <View style={[s.scorePreviewBadge, {
+              backgroundColor: expectedScoreChange.change > 0
+                ? `${colors.success}20`
+                : `${colors.warning}20`,
+            }]}>
+              <Text style={[s.scorePreviewBadgeText, {
+                color: expectedScoreChange.change > 0 ? colors.success : colors.warning,
+              }]}>
+                {expectedScoreChange.change > 0 ? '+' : ''}{expectedScoreChange.change}점
+              </Text>
+            </View>
+          </View>
         </View>
       )}
 
@@ -1170,6 +1255,48 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   etfRecLabel: { fontSize: 10, fontWeight: '700', marginBottom: 2 },
   etfRecTickers: { fontSize: 12, fontWeight: '700' },
   etfRecNote: { fontSize: 10, marginTop: 2 },
+  // P2-B: 처방전 실행 예상 점수 카드
+  scorePreview: {
+    borderRadius: 10,
+    padding: 12,
+    borderWidth: 1,
+    marginTop: 6,
+    marginBottom: 4,
+  },
+  scorePreviewHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginBottom: 8,
+  },
+  scorePreviewLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  scorePreviewRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  scorePreviewCurrent: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  scorePreviewProjected: {
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  scorePreviewBadge: {
+    marginLeft: 'auto',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+  },
+  scorePreviewBadgeText: {
+    fontSize: 13,
+    fontWeight: '800',
+  },
+
   // AI 액션 토글 버튼
   aiToggleBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
