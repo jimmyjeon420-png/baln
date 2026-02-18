@@ -153,6 +153,7 @@ export default function AdvancedCheckupView({
       {/* 6. Six-factor health score breakdown */}
       <HealthScoreSection
         healthScore={healthScore}
+        totalAssets={totalAssets}
         onScoreImproved={(improvement) => {
           // 향후 크레딧 적립 로직 추가 가능 (부모에서 처리)
         }}

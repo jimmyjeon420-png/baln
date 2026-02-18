@@ -26,10 +26,12 @@ import type { HealthScoreResult, FactorResult } from '../../services/rebalanceSc
 import { useTheme } from '../../hooks/useTheme';
 import { saveHealthScore, loadPreviousHealthScore } from '../../utils/storage';
 import { useHealthScoreHistory } from '../../hooks/useHealthScoreHistory';
+import { useBracketPerformance } from '../../hooks/useBracketPerformance';
 
 interface HealthScoreSectionProps {
   healthScore: HealthScoreResult;
   onScoreImproved?: (improvement: number) => void;
+  totalAssets?: number;
 }
 
 /** 팩터별 직관적 한글 라벨 (이모티콘 옆에 표시) */
@@ -239,7 +241,7 @@ function generateActionGuidance(healthScore: HealthScoreResult): string | null {
   return ACTION_MAP[worst.label] || '아래 상세 내역을 펼쳐서 각 팩터별 개선점을 확인해보세요.';
 }
 
-export default function HealthScoreSection({ healthScore, onScoreImproved }: HealthScoreSectionProps) {
+export default function HealthScoreSection({ healthScore, onScoreImproved, totalAssets }: HealthScoreSectionProps) {
   const { colors, shadows } = useTheme();
   const [showDetail, setShowDetail] = useState(false);
   const [tooltipVisible, setTooltipVisible] = useState(false);
@@ -253,6 +255,9 @@ export default function HealthScoreSection({ healthScore, onScoreImproved }: Hea
     healthScore.totalScore,
     healthScore.grade,
   );
+
+  // P2-B: 또래 비교 (자산 구간 평균)
+  const { peerData, bracketLabel } = useBracketPerformance(totalAssets ?? 0);
 
   // "왜 이 점수인가" + "지금 할 수 있는 것" 계산
   const whyExplanation = useMemo(() => generateWhyExplanation(healthScore), [healthScore]);
@@ -459,6 +464,42 @@ export default function HealthScoreSection({ healthScore, onScoreImproved }: Hea
         </View>
         <Text style={[s.whyText, { color: colors.textSecondary }]}>{whyExplanation}</Text>
       </View>
+
+      {/* P2-B: 또래 비교 카드 */}
+      {peerData && peerData.userCount > 0 && totalAssets && totalAssets > 0 && (
+        <View style={[s.peerCard, { backgroundColor: colors.surfaceElevated }]}>
+          <View style={s.peerHeader}>
+            <Ionicons name="people-outline" size={13} color={colors.textSecondary} />
+            <Text style={[s.peerLabel, { color: colors.textSecondary }]}>
+              같은 {bracketLabel} 구간 평균
+            </Text>
+          </View>
+          <View style={s.peerStats}>
+            <View style={s.peerStat}>
+              <Text style={[s.peerStatValue, {
+                color: peerData.avgReturnRate >= 0 ? colors.success : colors.error,
+              }]}>
+                {peerData.avgReturnRate >= 0 ? '+' : ''}{peerData.avgReturnRate.toFixed(1)}%
+              </Text>
+              <Text style={[s.peerStatLabel, { color: colors.textTertiary }]}>구간 평균 수익률</Text>
+            </View>
+            {peerData.top10ReturnRate > 0 && (
+              <>
+                <View style={[s.peerDivider, { backgroundColor: colors.border }]} />
+                <View style={s.peerStat}>
+                  <Text style={[s.peerStatValue, { color: colors.success }]}>
+                    +{peerData.top10ReturnRate.toFixed(1)}%
+                  </Text>
+                  <Text style={[s.peerStatLabel, { color: colors.textTertiary }]}>상위 10%</Text>
+                </View>
+              </>
+            )}
+          </View>
+          <Text style={[s.peerNote, { color: colors.textTertiary }]}>
+            {peerData.userCount.toLocaleString()}명의 {bracketLabel} 투자자 기준 · {peerData.statDate}
+          </Text>
+        </View>
+      )}
 
       {/* [NEW] "지금 할 수 있는 것" 액션 가이드 — S등급이면 표시 안 함 */}
       {actionGuidance && (
@@ -787,6 +828,17 @@ const s = StyleSheet.create({
     lineHeight: 17,
     marginTop: 2,
   },
+
+  // P2-B: 또래 비교 카드
+  peerCard: { borderRadius: 10, padding: 12, marginBottom: 12 },
+  peerHeader: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 8 },
+  peerLabel: { fontSize: 11, fontWeight: '700' },
+  peerStats: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
+  peerStat: { flex: 1, alignItems: 'center' },
+  peerStatValue: { fontSize: 18, fontWeight: '800', marginBottom: 2 },
+  peerStatLabel: { fontSize: 10 },
+  peerDivider: { width: 1, height: 32, marginHorizontal: 12 },
+  peerNote: { fontSize: 9, textAlign: 'center' as const },
 
   // [NEW] "왜 이 점수인가" 섹션
   // whySection: {

@@ -64,6 +64,46 @@ const PHASE_COLORS: Record<KostolalyPhase, string> = {
   F: '#78909C',   // 회색 — 극비관
 };
 
+// ── 단계별 역사적 참고 성과 (달리오/버핏 합의안 기반 하드코딩) ──
+interface PhaseHistoricalPerf {
+  annualReturn: string;    // 연간 기대 수익률 범위
+  maxDrawdown: string;     // 최대 낙폭 기준
+  note: string;            // 역사적 사례 한 줄
+}
+
+const PHASE_HISTORICAL_PERF: Record<KostolalyPhase, PhaseHistoricalPerf> = {
+  A: {
+    annualReturn: '+12~18%',
+    maxDrawdown: '-8%',
+    note: '2009년 3월, 2020년 3월 이후 1년 — S&P500 +68%, +75%',
+  },
+  B: {
+    annualReturn: '+8~15%',
+    maxDrawdown: '-12%',
+    note: '2009~2010년, 2020~2021년 상승기 — 달리오 All-Weather 연 +10.5%',
+  },
+  C: {
+    annualReturn: '+3~7%',
+    maxDrawdown: '-20%',
+    note: '2000년 초, 2021년 말 — 방어 포지션이 MDD 절반으로 줄임',
+  },
+  D: {
+    annualReturn: '-3~+4%',
+    maxDrawdown: '-25%',
+    note: '2001~2002년, 2022년 금리 인상기 — 채권·금 비중이 손실 방어',
+  },
+  E: {
+    annualReturn: '-5~+2%',
+    maxDrawdown: '-35%',
+    note: '2008년 9~12월, 2020년 3월 — 현금 비중이 생명선',
+  },
+  F: {
+    annualReturn: '+5~12%',
+    maxDrawdown: '-10%',
+    note: '2009년 초, 2022년 말 — 바닥 매수 시 12개월 내 반등 패턴',
+  },
+};
+
 // 자산 카테고리 한국어 라벨
 const CAT_LABEL: Record<AssetCategory, string> = {
   large_cap: '주식', bond: '채권', bitcoin: 'BTC',
@@ -268,6 +308,39 @@ export default function KostolalyPhaseCard({ onApplyPhase }: KostolalyPhaseCardP
         </View>
       )}
 
+      {/* P2-A: 역사적 참고 성과 */}
+      {showDetail && (() => {
+        const perf = PHASE_HISTORICAL_PERF[phase];
+        return (
+          <View style={[s.histPerf, { backgroundColor: phaseColor + '0E', borderColor: phaseColor + '25' }]}>
+            <View style={s.histPerfHeader}>
+              <Ionicons name="bar-chart-outline" size={12} color={phaseColor} />
+              <Text style={[s.histPerfTitle, { color: phaseColor }]}>
+                {phase}국면 배분의 역사적 참고 성과
+              </Text>
+            </View>
+            <View style={s.histPerfStats}>
+              <View style={s.histPerfStat}>
+                <Text style={[s.histPerfStatValue, { color: colors.success }]}>{perf.annualReturn}</Text>
+                <Text style={[s.histPerfStatLabel, { color: colors.textTertiary }]}>연간 기대 수익률</Text>
+              </View>
+              <View style={[s.histPerfDivider, { backgroundColor: colors.border }]} />
+              <View style={s.histPerfStat}>
+                <Text style={[s.histPerfStatValue, { color: colors.error }]}>{perf.maxDrawdown}</Text>
+                <Text style={[s.histPerfStatLabel, { color: colors.textTertiary }]}>최대 낙폭 기준</Text>
+              </View>
+            </View>
+            <View style={[s.histPerfNote, { backgroundColor: colors.surfaceElevated }]}>
+              <Ionicons name="time-outline" size={10} color={colors.textTertiary} />
+              <Text style={[s.histPerfNoteText, { color: colors.textTertiary }]}>{perf.note}</Text>
+            </View>
+            <Text style={[s.histPerfDisclaimer, { color: colors.textTertiary }]}>
+              * 과거 성과가 미래를 보장하지 않습니다. 참고 목적의 역사적 데이터입니다.
+            </Text>
+          </View>
+        );
+      })()}
+
       {/* "이 국면에 맞는 배분 적용" 버튼 */}
       {onApplyPhase && (
         <TouchableOpacity
@@ -368,6 +441,19 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   targetCat: { fontSize: 9, fontWeight: '600' },
   targetPct: { fontSize: 13, fontWeight: '800' },
+
+  // P2-A: 역사적 참고 성과
+  histPerf: { borderRadius: 10, padding: 12, borderWidth: 1 },
+  histPerfHeader: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 10 },
+  histPerfTitle: { fontSize: 11, fontWeight: '700' },
+  histPerfStats: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
+  histPerfStat: { flex: 1, alignItems: 'center' },
+  histPerfStatValue: { fontSize: 18, fontWeight: '800', marginBottom: 2 },
+  histPerfStatLabel: { fontSize: 10 },
+  histPerfDivider: { width: 1, height: 32, marginHorizontal: 12 },
+  histPerfNote: { flexDirection: 'row', alignItems: 'flex-start', gap: 5, padding: 8, borderRadius: 8, marginBottom: 6 },
+  histPerfNoteText: { flex: 1, fontSize: 11, lineHeight: 16 },
+  histPerfDisclaimer: { fontSize: 9, textAlign: 'center' },
 
   // 배분 적용 버튼
   applyButton: {

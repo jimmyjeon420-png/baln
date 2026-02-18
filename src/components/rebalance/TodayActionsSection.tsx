@@ -9,7 +9,7 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated as RNAnimated } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Animated as RNAnimated, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -118,6 +118,48 @@ function CompletionBanner({ visible }: { visible: boolean }) {
       </View>
     </RNAnimated.View>
   );
+}
+
+// ── 투자 일지 (월별 메모, AsyncStorage) ──
+
+const JOURNAL_KEY = '@investment_journal';
+
+function getMonthKey(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function useJournalMemo() {
+  const [memo, setMemo] = useState('');
+  const [isSaved, setIsSaved] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const raw = await AsyncStorage.getItem(JOURNAL_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          const key = getMonthKey();
+          if (parsed[key]) {
+            setMemo(parsed[key]);
+            setIsSaved(true);
+          }
+        }
+      } catch { /* ignore */ }
+    })();
+  }, []);
+
+  const saveMemo = useCallback(async (text: string) => {
+    try {
+      const raw = await AsyncStorage.getItem(JOURNAL_KEY) || '{}';
+      const parsed = JSON.parse(raw);
+      parsed[getMonthKey()] = text;
+      await AsyncStorage.setItem(JOURNAL_KEY, JSON.stringify(parsed));
+      setIsSaved(true);
+    } catch { /* ignore */ }
+  }, []);
+
+  return { memo, setMemo, saveMemo, isSaved };
 }
 
 // ── 액션 체크리스트 (오늘 날짜 기준 AsyncStorage) ──
@@ -318,6 +360,16 @@ export default function TodayActionsSection({
     completedCount,
     currentScore: 0, // healthScore는 props 없음 — HealthScoreSection이 별도 관리
   });
+
+  // P3-A: completedCount 변경 시 처방전 완료 수 자동 동기화
+  useEffect(() => {
+    if (sortedActions.length > 0 && completedCount >= 0) {
+      syncCompleted();
+    }
+  }, [completedCount]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // P3-B: 투자 일지 메모
+  const { memo, setMemo, saveMemo, isSaved } = useJournalMemo();
 
   // ── 카테고리 리밸런싱 계획 계산 ──
   const categoryRebalancePlan = useMemo<CategoryRebalanceAction[]>(() => {
@@ -868,6 +920,41 @@ export default function TodayActionsSection({
           )}
           <CompletionBanner key={completionBannerKey} visible={showCompletionBanner} />
         </>
+      )}
+
+      {/* P3-B: 투자 일지 — 모든 액션 완료 시 표시 */}
+      {isAllCompleted && (
+        <View style={[s.journalCard, { backgroundColor: colors.surfaceElevated, borderColor: `${colors.success}30` }]}>
+          <View style={s.journalHeader}>
+            <Ionicons name="journal-outline" size={13} color={colors.success} />
+            <Text style={[s.journalTitle, { color: colors.success }]}>이번 달 투자 일지</Text>
+            {isSaved && (
+              <View style={[s.journalSavedBadge, { backgroundColor: `${colors.success}20` }]}>
+                <Text style={[s.journalSavedText, { color: colors.success }]}>저장됨</Text>
+              </View>
+            )}
+          </View>
+          <TextInput
+            style={[s.journalInput, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: colors.surface }]}
+            multiline
+            numberOfLines={3}
+            placeholder="이번 달 처방전을 실행하며 느낀 점을 짧게 남겨보세요 (선택)"
+            placeholderTextColor={colors.textTertiary}
+            value={memo}
+            onChangeText={setMemo}
+            onBlur={() => { if (memo.trim()) saveMemo(memo); }}
+          />
+          {memo.trim().length > 0 && !isSaved && (
+            <TouchableOpacity
+              style={[s.journalSaveBtn, { backgroundColor: `${colors.success}20`, borderColor: `${colors.success}40` }]}
+              onPress={() => saveMemo(memo)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="checkmark-outline" size={13} color={colors.success} />
+              <Text style={[s.journalSaveBtnText, { color: colors.success }]}>저장</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       )}
 
       {(showAIActions || categoryRebalancePlan.length === 0) && sortedActions.slice(0, 5).map((action, idx) => {
@@ -1469,6 +1556,56 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   scorePreviewBadgeText: {
     fontSize: 13,
     fontWeight: '800',
+  },
+
+  // P3-B: 투자 일지 카드
+  journalCard: {
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    marginBottom: 10,
+    gap: 8,
+  },
+  journalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  journalTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    flex: 1,
+  },
+  journalSavedBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  journalSavedText: {
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  journalInput: {
+    borderRadius: 8,
+    borderWidth: 1,
+    padding: 10,
+    fontSize: 13,
+    lineHeight: 20,
+    minHeight: 72,
+    textAlignVertical: 'top' as const,
+  },
+  journalSaveBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  journalSaveBtnText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
 
   // AI 액션 토글 버튼
