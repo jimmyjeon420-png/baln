@@ -121,6 +121,7 @@ interface InvestmentReport {
     warren: string;
     dalio: string;
     wood: string;
+    kostolany?: string;
     summary: string;
   };
 }
@@ -589,12 +590,18 @@ ${priceInfo}
 - 🗣️ 말투: 친근한 존대("~예요!", "~거든요!"), 흥분된 도입("와, 이건 정말 exciting해요!"), 영어 감탄사(incredible!, game-changer!), "우리 ARK에서는...", 미래 시제, 느낌표 많이!
 - ❌ 금지: 비관론, 느긋한 태도, 과거 중심 분석
 
+**4️⃣ 앙드레 코스톨라니** — 유럽의 냉소적 철학자 투기꾼
+- 관점: 달걀 모형(6단계 사이클), 시장 심리 읽기, 대중의 반대편, 금리와 주식의 역관계, 인내의 미학
+- 🗣️ 말투: 유럽 귀족 지식인("나의 경험으로 보건대...", "그렇죠, 하지만..."), 냉소적 관찰("대중은 항상 틀립니다"), 프랑스어/독일어 단어 자연스럽게("mon ami", "Ja, ja", "mais oui"), 달걀 모형 인용("지금은 제N국면"), 잔인한 역설("손실이 두려우면 투자하지 마십시오. 하지만 그러면 인플레이션이 훔쳐갑니다")
+- ❌ 금지: 구체적 수치 집착, 흥분된 말투, 기술적 전문용어 남발
+
 \`\`\`json
 "debate": {
-  "warren": "워렌 버핏 (4-5문장, 반말+존대 할아버지 말투, 비유 필수, '허허' 도입)",
-  "dalio": "레이 달리오 (4-5문장, 격식체 기계 말투, 원칙 번호 + 역사 인용)",
-  "wood": "캐시 우드 (4-5문장, 흥분 에너지 말투, 영어 섞기 + 미래 비전 + 느낌표!)",
-  "summary": "워렌 버핏 정리 (4-5문장, '달리오 친구 말도 일리가 있고, 캐시 아가씨 열정도 대단하지만...' 식으로 종합)"
+  "warren": "워렌 버핏 (3-4문장, 반말+존대 할아버지 말투, 비유 필수, '허허' 도입)",
+  "dalio": "레이 달리오 (3-4문장, 격식체 기계 말투, 원칙 번호 + 역사 인용)",
+  "wood": "캐시 우드 (3-4문장, 흥분 에너지 말투, 영어 섞기 + 미래 비전 + 느낌표!)",
+  "kostolany": "앙드레 코스톨라니 (3-4문장, 유럽 냉소 귀족 말투, mon ami + 달걀모형 + 대중심리 반대)",
+  "summary": "워렌 버핏 정리 (3-4문장, '달리오 친구 말도 일리가 있고, 캐시 아가씨 열정도 대단하고, 코스톨라니 노인장 말씀도 새겨들을 만하지만...' 식으로 종합)"
 }
 \`\`\`
 
@@ -657,7 +664,7 @@ async function generateCFOChat(reqData: CFOChatRequest['data']) {
     });
   }
 
-  const prompt = `당신은 세 명의 투자 거장을 완벽하게 연기하는 배우입니다. 사용자의 질문에 **세 사람이 실제로 대화하는 것처럼** 각자의 독특한 말투로 답변하세요.${conversationContext}
+  const prompt = `당신은 네 명의 투자 거장을 완벽하게 연기하는 배우입니다. 사용자의 질문에 **네 사람이 실제로 대화하는 것처럼** 각자의 독특한 말투로 답변하세요.${conversationContext}
 
 **현재 질문: ${question}**
 
@@ -735,7 +742,8 @@ async function generateCFOChat(reqData: CFOChatRequest['data']) {
   "warren": "워렌 버핏 (3-4문장, 위 예시처럼 할아버지 반말 + 비유 + 자기비하 유머)",
   "dalio": "레이 달리오 (3-4문장, 위 예시처럼 원칙 번호 + 역사 인용 + 냉정한 격식체)",
   "wood": "캐시 우드 (3-4문장, 위 예시처럼 흥분 + 영어 섞기 + 미래 비전 + 느낌표!)",
-  "summary": "워렌 버핏의 정리 (3-4문장, 세 관점 종합하되 할아버지 톤 유지, '달리오 친구 말이 맞기도 하고, 캐시 아가씨 말도 일리가 있지...' 식으로)"
+  "kostolany": "앙드레 코스톨라니 (3-4문장, 유럽 냉소 귀족 + mon ami + 달걀모형 + 대중심리 반대 + 인내의 미학)",
+  "summary": "워렌 버핏의 정리 (3-4문장, 네 관점 종합하되 할아버지 톤 유지, '달리오 친구 말이 맞기도 하고, 캐시 아가씨 말도 일리가 있고, 코스톨라니 노인장 말씀도 새기면서...' 식으로)"
 }
 \`\`\`
 
@@ -766,6 +774,9 @@ async function generateCFOChat(reqData: CFOChatRequest['data']) {
     if (!chatResponse.wood || chatResponse.wood.trim().length === 0) {
       chatResponse.wood = '이 주제에 대해 더 분석이 필요해요! 하지만 disruptive innovation 관점에서 보면 항상 기회가 있답니다!';
     }
+    if (!chatResponse.kostolany || chatResponse.kostolany.trim().length === 0) {
+      chatResponse.kostolany = 'Mon ami, 나의 경험으로 보건대 이 질문은 달걀 모형으로 설명됩니다. 대중이 두려워할 때 용감하고, 대중이 용감할 때 두려워하십시오. Ja, ja. 인내심만이 답입니다.';
+    }
     if (!chatResponse.summary || chatResponse.summary.trim().length === 0) {
       chatResponse.summary = chatResponse.warren; // warren 응답으로 대체
     }
@@ -773,14 +784,15 @@ async function generateCFOChat(reqData: CFOChatRequest['data']) {
     // Gemini가 JSON 대신 일반 텍스트를 반환한 경우 → 구조화된 폴백
     console.warn('[AI 버핏과 티타임] JSON 파싱 실패, 구조화된 폴백 응답 생성:', parseError);
 
-    // 텍스트를 3등분하여 각 캐릭터에 배분 (빈칸 방지)
+    // 텍스트를 4등분하여 각 캐릭터에 배분 (빈칸 방지)
     const trimmedText = responseText.trim();
-    const third = Math.ceil(trimmedText.length / 3);
+    const quarter = Math.ceil(trimmedText.length / 4);
 
     chatResponse = {
-      warren: trimmedText.slice(0, third) || '허허, 잠시 생각을 정리하고 있다네. 곧 답변을 드리겠네.',
-      dalio: trimmedText.slice(third, third * 2) || '시스템적으로 재분석이 필요합니다. 잠시 후 다시 시도하십시오.',
-      wood: trimmedText.slice(third * 2) || 'Hmm, 잠시 기술적인 이슈가 있어요! 곧 돌아올게요!',
+      warren: trimmedText.slice(0, quarter) || '허허, 잠시 생각을 정리하고 있다네. 곧 답변을 드리겠네.',
+      dalio: trimmedText.slice(quarter, quarter * 2) || '시스템적으로 재분석이 필요합니다. 잠시 후 다시 시도하십시오.',
+      wood: trimmedText.slice(quarter * 2, quarter * 3) || 'Hmm, 잠시 기술적인 이슈가 있어요! 곧 돌아올게요!',
+      kostolany: trimmedText.slice(quarter * 3) || 'Mon ami, 잠시 생각을 정리하고 있습니다. 인내심을 가지십시오.',
       summary: trimmedText.length > 0
         ? trimmedText.slice(0, 500)
         : '응답 처리 중 문제가 발생했습니다. 다시 시도해주세요.',

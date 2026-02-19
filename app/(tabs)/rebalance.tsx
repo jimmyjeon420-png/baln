@@ -32,13 +32,14 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { DiagnosisSkeletonLoader } from '../../src/components/SkeletonLoader';
 import { useSharedPortfolio } from '../../src/hooks/useSharedPortfolio';
 import { useSharedAnalysis } from '../../src/hooks/useSharedAnalysis';
 import { usePeerPanicScore, getAssetBracket } from '../../src/hooks/usePortfolioSnapshots';
-import { calculateHealthScore } from '../../src/services/rebalanceScore';
+import { calculateHealthScore, DALIO_TARGET, BUFFETT_TARGET, CATHIE_WOOD_TARGET, KOSTOLANY_TARGETS, DEFAULT_TARGET } from '../../src/services/rebalanceScore';
+import type { AssetCategory } from '../../src/services/rebalanceScore';
 import FreePeriodBanner from '../../src/components/FreePeriodBanner';
 import { usePrices } from '../../src/hooks/usePrices';
 import { AssetType } from '../../src/types/asset';
@@ -349,6 +350,36 @@ export default function CheckupScreen() {
     });
   }, []);
 
+  // 저장된 구루 철학 로드 → 건강 점수 계산 기준 목표 배분
+  const [philosophyTarget, setPhilosophyTarget] = useState<Record<AssetCategory, number>>(DEFAULT_TARGET);
+
+  const loadPhilosophyTarget = useCallback(() => {
+    Promise.all([
+      AsyncStorage.getItem('@investment_philosophy'),
+      AsyncStorage.getItem('@baln:guru_style'),
+    ]).then(([storedPhil, guruStyle]) => {
+      // 우선순위: @baln:guru_style > @investment_philosophy > 'dalio'
+      const guruPhils = ['dalio', 'buffett', 'cathie_wood', 'kostolany'];
+      let phil: string | null = null;
+      if (guruStyle && guruPhils.includes(guruStyle)) phil = guruStyle;
+      if (!phil) phil = storedPhil === 'consensus' ? 'dalio' : storedPhil;
+      if (!phil) phil = 'dalio';
+
+      const targetMap: Record<string, Record<AssetCategory, number>> = {
+        dalio: DALIO_TARGET,
+        buffett: BUFFETT_TARGET,
+        cathie_wood: CATHIE_WOOD_TARGET,
+      };
+      setPhilosophyTarget(targetMap[phil] ?? DEFAULT_TARGET);
+    });
+  }, []);
+
+  // 초기 마운트 시 로드
+  useEffect(() => { loadPhilosophyTarget(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 분석 탭 포커스 시 재로드 — 전체 탭에서 구루 변경 후 돌아왔을 때 건강점수 즉시 반영
+  useFocusEffect(useCallback(() => { loadPhilosophyTarget(); }, [loadPhilosophyTarget]));
+
   // ══════════════════════════════════════════
   // 데이터 수집 (공유 훅)
   // ══════════════════════════════════════════
@@ -441,7 +472,11 @@ export default function CheckupScreen() {
   // ══════════════════════════════════════════
 
   // 6팩터 건강 점수 (순수 함수, AI 미사용, 즉시 계산)
-  const healthScore = useMemo(() => calculateHealthScore(allAssets, totalAssets), [allAssets, totalAssets]);
+  // philosophyTarget: 저장된 구루 철학(달리오/버핏/캐시우드)의 목표 배분 기준으로 이탈도 계산
+  const healthScore = useMemo(
+    () => calculateHealthScore(allAssets, totalAssets, philosophyTarget),
+    [allAssets, totalAssets, philosophyTarget],
+  );
 
   // 액션 정렬: HIGH → MEDIUM → LOW, SELL/WATCH → BUY → HOLD
   const sortedActions = useMemo(() =>
@@ -634,6 +669,7 @@ export default function CheckupScreen() {
             onEmotionSave={saveEmotionWithMemo}
             emotionRewardCredits={emotionRewardCredits}
             onLevelChange={setLevel}
+            onTargetUpdate={setPhilosophyTarget}
           />
         )}
 

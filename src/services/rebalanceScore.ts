@@ -187,6 +187,22 @@ export const BUFFETT_TARGET: Record<AssetCategory, number> = {
 };
 
 /**
+ * 캐시우드 ARK Invest 목표 배분 — 혁신 기술 + 암호화폐 집중
+ * 원칙: "혁신이 미래다. 파괴적 기술에 집중하라"
+ * BTC 25% + 혁신주 50% + 알트코인 10% + 현금 15%
+ */
+export const CATHIE_WOOD_TARGET: Record<AssetCategory, number> = {
+  large_cap:  50,   // 혁신주 (TSLA, NVDA, COIN 등 ARK 핵심 종목)
+  bond:        0,   // 고정수익 0% — 혁신 시대에 채권은 불필요
+  bitcoin:    25,   // BTC 강력 지지 ($1.5M 목표, ARK 주요 전략)
+  gold:        0,   // 전통 저장 수단 × — 혁신으로 대체 가능
+  commodity:   0,   // 원자재 0% — 혁신 주도 세상에서 불필요
+  altcoin:    10,   // ETH, DeFi, Web3 (ARK의 크립토 생태계 투자)
+  cash:       15,   // 변동성 기회 포착 실탄
+  realestate:  0,   // 비유동 → 별도 관리
+};
+
+/**
  * 기본 목표 배분 — 달리오 All Weather × 버핏 Berkshire 합성
  *
  * [3인 라운드테이블 최종 합의]

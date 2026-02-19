@@ -10,7 +10,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../../src/context/AuthContext';
 import { useAchievementCount } from '../../src/hooks/useAchievements';
 import { useScreenTracking } from '../../src/hooks/useAnalytics';
@@ -19,6 +20,7 @@ import RealEstatePreview from '../../src/components/more/RealEstatePreview';
 import { useTheme, ThemeMode } from '../../src/hooks/useTheme';
 import { CreditDisplay } from '../../src/components/common/CreditDisplay';
 import { useIsAdmin } from '../../src/hooks/useAdminDashboard';
+import { useGuruStyle, GURU_DISPLAY_NAME } from '../../src/hooks/useGuruStyle';
 
 // =============================================================================
 // 타입 정의
@@ -52,6 +54,18 @@ export default function ProfileScreen() {
   const { unlockedCount, totalCount } = useAchievementCount();
   const { themeMode, setThemeMode, colors } = useTheme();
   const { data: isAdmin } = useIsAdmin();
+  const { guruStyle } = useGuruStyle();
+
+  // 화면 포커스 시 AsyncStorage에서 최신 guru style 읽기 (guru-style.tsx 변경 후 즉시 반영)
+  const [latestGuruStyle, setLatestGuruStyle] = React.useState(guruStyle);
+  useFocusEffect(React.useCallback(() => {
+    AsyncStorage.getItem('@baln:guru_style').then(v => {
+      const valid = ['dalio', 'buffett', 'cathie_wood', 'kostolany'];
+      if (v && valid.includes(v)) {
+        setLatestGuruStyle(v as typeof guruStyle);
+      }
+    });
+  }, []));
 
   // ---------------------------------------------------------------------------
   // 로그아웃 처리 (useCallback으로 불필요한 재생성 방지)
@@ -130,13 +144,6 @@ export default function ProfileScreen() {
           label: '내 북마크',
           onPress: () => router.push('/community/bookmarks'),
         },
-        {
-          icon: 'help-circle-outline',
-          label: '오늘의 퀴즈',
-          onPress: () => router.push('/settings/daily-quiz'),
-          badge: 'NEW',
-          badgeColor: '#4CAF50',
-        },
       ],
     },
 
@@ -144,6 +151,13 @@ export default function ProfileScreen() {
     {
       title: '설정',
       items: [
+        {
+          icon: 'analytics-outline',
+          label: '투자 철학 변경',
+          onPress: () => router.push('/settings/guru-style'),
+          badge: GURU_DISPLAY_NAME[latestGuruStyle],
+          badgeColor: '#4CAF5033',
+        },
         {
           icon: 'person-outline',
           label: '프로필 설정',
@@ -181,7 +195,7 @@ export default function ProfileScreen() {
         },
       ],
     },
-  ], [router, unlockedCount, totalCount]);
+  ], [router, unlockedCount, totalCount, latestGuruStyle]);
 
   // ---------------------------------------------------------------------------
   // 다크모드 토글 (헤더 우측 스위치에서 사용)

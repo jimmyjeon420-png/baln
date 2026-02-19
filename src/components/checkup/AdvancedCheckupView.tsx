@@ -52,6 +52,8 @@ interface AdvancedCheckupViewProps {
   onEmotionSave?: () => void;
   emotionRewardCredits?: number;
   onLevelChange: (level: InvestorLevel) => void;
+  /** AllocationDriftSection에서 철학 탭이 바뀔 때 rebalance.tsx로 target 전파 (건강점수 재계산용) */
+  onTargetUpdate?: (target: Record<AssetCategory, number>) => void;
 }
 
 export default function AdvancedCheckupView({
@@ -80,22 +82,31 @@ export default function AdvancedCheckupView({
   onEmotionSave,
   emotionRewardCredits,
   onLevelChange,
+  onTargetUpdate,
 }: AdvancedCheckupViewProps) {
   // AllocationDriftSection에서 선택된 철학 목표 → WhatIfSimulator + TodayActionsSection 전달
   const [selectedTarget, setSelectedTarget] = useState<Record<AssetCategory, number>>(DEFAULT_TARGET);
+
+  // target 변경 시 자신의 state + 부모(rebalance.tsx)에 동시 전파 → 건강점수 재계산 연동
+  const handleTargetChange = useCallback((t: Record<AssetCategory, number>) => {
+    setSelectedTarget(t);
+    onTargetUpdate?.(t);
+  }, [onTargetUpdate]);
 
   // KostolalyPhaseCard에서 "배분 적용" 클릭 시 → AllocationDriftSection으로 전달
   const [kostolalyTarget, setKostolalyTarget] = useState<Record<AssetCategory, number> | null>(null);
   const [kostolalyPhase, setKostolalyPhase] = useState<KostolalyPhase | null>(null);
 
-  // DB에서 현재 코스톨라니 단계 자동 로드 → selectedTarget 자동 연동
+  // DB에서 현재 코스톨라니 단계 자동 로드 → AllocationDriftSection에 prop으로 전달
   const { phase: autoPhase, target: autoTarget } = useKostolalyPhase();
   useEffect(() => {
-    // 사용자가 아직 수동으로 "배분 적용"을 누르지 않았을 때만 자동 적용
+    // kostolalyTarget/Phase prop만 업데이트 — selectedTarget은 AllocationDriftSection이
+    // onTargetChange 콜백으로 직접 관리 (저장된 구루 철학 기준)
     if (autoTarget && autoPhase && kostolalyPhase === null) {
       setKostolalyTarget(autoTarget);
       setKostolalyPhase(autoPhase);
-      setSelectedTarget(autoTarget);
+      // setSelectedTarget(autoTarget) 제거:
+      // 코스톨라니 DB 로드가 사용자가 저장한 철학(달리오/버핏/캐시우드 등)을 덮어쓰는 버그 방지
     }
   }, [autoTarget, autoPhase]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -105,8 +116,8 @@ export default function AdvancedCheckupView({
   ) => {
     setKostolalyTarget(target);
     setKostolalyPhase(phase);
-    setSelectedTarget(target); // WhatIfSimulator도 동기화
-  }, []);
+    handleTargetChange(target); // WhatIfSimulator + rebalance.tsx 동기화
+  }, [handleTargetChange]);
 
   return (
     <>
@@ -163,7 +174,7 @@ export default function AdvancedCheckupView({
       <AllocationDriftSection
         assets={allAssets}
         totalAssets={totalAssets}
-        onTargetChange={setSelectedTarget}
+        onTargetChange={handleTargetChange}
         kostolalyTarget={kostolalyTarget}
         kostolalyPhase={kostolalyPhase}
       />

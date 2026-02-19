@@ -40,15 +40,64 @@ import supabase, { getCurrentUser } from '../../src/services/supabase';
 import { searchStocks, StockItem, getCategoryColor } from '../../src/data/stockList';
 import { priceService } from '../../src/services/PriceService';
 import { AssetClass } from '../../src/types/price';
-import { calculateHealthScore, HealthScoreResult } from '../../src/services/rebalanceScore';
+import { calculateHealthScore, HealthScoreResult, DALIO_TARGET, BUFFETT_TARGET, CATHIE_WOOD_TARGET } from '../../src/services/rebalanceScore';
+import type { GuruStyle } from '../../src/hooks/useGuruStyle';
 import { AssetType } from '../../src/types/asset';
 import type { Asset } from '../../src/types/asset';
 import { SHARED_PORTFOLIO_KEY } from '../../src/hooks/useSharedPortfolio';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-// 총 단계 수
-const TOTAL_STEPS = 5;
+// 총 단계 수 (구루 선택 Step 1 추가로 6단계)
+const TOTAL_STEPS = 6;
+
+// ============================================================================
+// 구루 선택 데이터
+// ============================================================================
+
+interface GuruOption {
+  id: GuruStyle;
+  emoji: string;
+  name: string;
+  tagline: string;
+  keyAlloc: string;
+  accentColor: string;
+}
+
+const GURU_OPTIONS: GuruOption[] = [
+  {
+    id: 'dalio',
+    emoji: '🌊',
+    name: '레이 달리오',
+    tagline: '"어떤 환경에도 생존"',
+    keyAlloc: '주식30 채권40 금10 원자재8',
+    accentColor: '#4CAF50',
+  },
+  {
+    id: 'buffett',
+    emoji: '🔴',
+    name: '워렌 버핏',
+    tagline: '"생산하는 자산만 투자"',
+    keyAlloc: '주식60 현금25 채권5',
+    accentColor: '#FF5722',
+  },
+  {
+    id: 'cathie_wood',
+    emoji: '🚀',
+    name: '캐시 우드',
+    tagline: '"혁신이 미래다"',
+    keyAlloc: '혁신주50 BTC25 알트10 현금15',
+    accentColor: '#9C27B0',
+  },
+  {
+    id: 'kostolany',
+    emoji: '📈',
+    name: '코스톨라니',
+    tagline: '"시장 사이클 따르기"',
+    keyAlloc: 'AI가 현재 국면 분석 자동 추천',
+    accentColor: '#FFB74D',
+  },
+];
 
 // ============================================================================
 // 온보딩 등록 자산 인터페이스
@@ -111,10 +160,11 @@ export default function OnboardingScreen() {
   const queryClient = useQueryClient();
   const { colors } = useTheme();
 
-  // 현재 단계 (0-indexed: 0=환영, 1=경험, 2=목표, 3=자산등록, 4=건강점수)
+  // 현재 단계 (0-indexed: 0=환영, 1=구루선택, 2=경험, 3=목표, 4=자산등록, 5=건강점수)
   const [currentStep, setCurrentStep] = useState(0);
 
   // 단계별 선택 상태
+  const [selectedGuru, setSelectedGuru] = useState<GuruStyle>('dalio');
   const [investorLevel, setInvestorLevel] = useState<string | null>(null);
   const [investmentGoal, setInvestmentGoal] = useState<string | null>(null);
 
@@ -257,8 +307,8 @@ export default function OnboardingScreen() {
   const goNext = () => {
     if (currentStep < TOTAL_STEPS - 1) {
       const nextStep = currentStep + 1;
-      // Step 4 (건강 점수) 진입 시 자동 계산
-      if (nextStep === 4 && registeredAssets.length > 0) {
+      // Step 5 (건강 점수) 진입 시 자동 계산 (TOTAL_STEPS 6으로 증가로 인해 5로 변경)
+      if (nextStep === 5 && registeredAssets.length > 0) {
         computeHealthScore();
       }
       Animated.timing(fadeAnim, {
@@ -297,7 +347,10 @@ export default function OnboardingScreen() {
   // 시작하기 (완료)
   const handleStart = async () => {
     try {
-      // 1. 투자 경험/목표 저장
+      // 1. 구루 스타일 저장
+      await AsyncStorage.setItem('@baln:guru_style', selectedGuru);
+
+      // 2. 투자 경험/목표 저장
       if (investorLevel) {
         await AsyncStorage.setItem('@baln:investor_level', investorLevel);
       }
@@ -324,6 +377,9 @@ export default function OnboardingScreen() {
   // 건너뛰기 핸들러
   const handleSkip = async () => {
     try {
+      // 구루 스타일 저장 (기본값 유지)
+      await AsyncStorage.setItem('@baln:guru_style', selectedGuru);
+
       // 투자 경험/목표 저장 (선택한 것만)
       if (investorLevel) {
         await AsyncStorage.setItem('@baln:investor_level', investorLevel);
@@ -366,12 +422,14 @@ export default function OnboardingScreen() {
       case 0:
         return renderWelcomeStep();
       case 1:
-        return renderInvestorLevelStep();
+        return renderGuruSelectionStep();
       case 2:
-        return renderInvestmentGoalStep();
+        return renderInvestorLevelStep();
       case 3:
-        return renderAssetSelectionStep();
+        return renderInvestmentGoalStep();
       case 4:
+        return renderAssetSelectionStep();
+      case 5:
         return renderStartStep();
       default:
         return null;
@@ -399,7 +457,66 @@ export default function OnboardingScreen() {
     );
   }
 
-  // 슬라이드 2: 투자 경험 선택
+  // 슬라이드 2: 구루 선택 (투자 스타일 선택)
+  function renderGuruSelectionStep() {
+    return (
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={styles.stepContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Text style={[styles.heading, { color: colors.textPrimary }]}>
+          {'나의 투자 스타일\n선택하기'}
+        </Text>
+        <Text style={[styles.subheading, { color: colors.textSecondary }]}>
+          어떤 거장의 철학을 따르시나요?{'\n'}선택한 철학이 기본 목표 배분이 됩니다.
+        </Text>
+
+        <View style={styles.guruGrid}>
+          {GURU_OPTIONS.map((guru) => {
+            const isSelected = selectedGuru === guru.id;
+            return (
+              <TouchableOpacity
+                key={guru.id}
+                style={[
+                  styles.guruCard,
+                  { backgroundColor: colors.surface, borderColor: isSelected ? guru.accentColor : colors.surfaceLight },
+                  isSelected && { borderWidth: 2 },
+                ]}
+                onPress={() => setSelectedGuru(guru.id)}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.guruEmojiWrap, { backgroundColor: guru.accentColor + '20' }]}>
+                  <Text style={styles.guruEmoji}>{guru.emoji}</Text>
+                </View>
+                <Text style={[styles.guruName, { color: isSelected ? guru.accentColor : colors.textPrimary }]}>
+                  {guru.name}
+                </Text>
+                <Text style={[styles.guruTagline, { color: colors.textTertiary }]} numberOfLines={2}>
+                  {guru.tagline}
+                </Text>
+                <Text style={[styles.guruAlloc, { color: colors.textTertiary }]} numberOfLines={2}>
+                  {guru.keyAlloc}
+                </Text>
+                {isSelected && (
+                  <View style={[styles.guruSelectedDot, { backgroundColor: guru.accentColor }]}>
+                    <Ionicons name="checkmark" size={10} color="#FFF" />
+                  </View>
+                )}
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        <Text style={[styles.skipHint, { color: colors.textTertiary }]}>
+          언제든지 전체 탭 → 투자 철학 변경에서 바꿀 수 있어요
+        </Text>
+      </ScrollView>
+    );
+  }
+
+  // 슬라이드 3: 투자 경험 선택
   function renderInvestorLevelStep() {
     return (
       <View style={styles.stepContent}>
@@ -976,6 +1093,61 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: 24,
     textAlign: 'center',
+  },
+  // ── 구루 선택 그리드 스타일 ──
+  guruGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    justifyContent: 'center',
+    width: '100%',
+    marginBottom: 8,
+  },
+  guruCard: {
+    width: '46%',
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    alignItems: 'center',
+    gap: 6,
+    position: 'relative',
+  },
+  guruEmojiWrap: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  guruEmoji: {
+    fontSize: 24,
+  },
+  guruName: {
+    fontSize: 13,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  guruTagline: {
+    fontSize: 11,
+    textAlign: 'center',
+    lineHeight: 15,
+    fontStyle: 'italic',
+  },
+  guruAlloc: {
+    fontSize: 10,
+    textAlign: 'center',
+    lineHeight: 14,
+  },
+  guruSelectedDot: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   searchBarContainer: {
     flexDirection: 'row',

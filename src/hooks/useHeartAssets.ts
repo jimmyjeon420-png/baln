@@ -12,15 +12,21 @@
  * - 보험 BM: 건강 점수는 무료, 상세 분석은 프리미엄
  */
 
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from 'expo-router';
 import type { HeartAsset, HeartAssetWithSignal, HeartAssetType } from '../types/heartAsset';
 import { useSharedPortfolio } from './useSharedPortfolio';
 import {
   calculateHealthScore,
   type HealthScoreResult,
   type HealthGrade,
+  type AssetCategory,
+  DALIO_TARGET,
+  BUFFETT_TARGET,
+  CATHIE_WOOD_TARGET,
+  DEFAULT_TARGET,
 } from '../services/rebalanceScore';
 import supabase, { getCurrentUser } from '../services/supabase';
 
@@ -154,6 +160,28 @@ function mapSignals(
  */
 export function useHeartAssets(): UseHeartAssetsReturn {
   const queryClient = useQueryClient();
+
+  // ── 구루 철학 타겟 (오늘 탭 건강 점수 연동) ──
+  const [guruTarget, setGuruTarget] = useState<Record<AssetCategory, number>>(DEFAULT_TARGET);
+
+  // 탭 포커스 시 AsyncStorage에서 저장된 구루 스타일 읽기
+  useFocusEffect(useCallback(() => {
+    Promise.all([
+      AsyncStorage.getItem('@baln:guru_style'),
+      AsyncStorage.getItem('@investment_philosophy'),
+    ]).then(([guruStyle, storedPhil]) => {
+      const raw = guruStyle || storedPhil || 'dalio';
+      const phil = raw === 'consensus' ? 'dalio' : raw;
+      const targetMap: Partial<Record<string, Record<AssetCategory, number>>> = {
+        dalio: DALIO_TARGET,
+        buffett: BUFFETT_TARGET,
+        cathie_wood: CATHIE_WOOD_TARGET,
+      };
+      setGuruTarget(targetMap[phil] ?? DEFAULT_TARGET);
+    }).catch(() => {
+      setGuruTarget(DEFAULT_TARGET);
+    });
+  }, []));
 
   // 포트폴리오 데이터 가져오기 (건강 점수 계산용)
   const { assets, portfolioAssets, totalAssets } = useSharedPortfolio();
@@ -309,7 +337,7 @@ export function useHeartAssets(): UseHeartAssetsReturn {
   let healthResult: HealthScoreResult | null = null;
 
   if (assets.length > 0 && totalAssets > 0) {
-    healthResult = calculateHealthScore(assets, totalAssets);
+    healthResult = calculateHealthScore(assets, totalAssets, guruTarget);
     portfolioHealthScore = healthResult.totalScore;
     portfolioGrade = healthResult.grade;
     portfolioGradeLabel = getGradeLabel(healthResult.grade);

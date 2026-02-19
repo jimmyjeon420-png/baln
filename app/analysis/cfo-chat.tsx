@@ -47,11 +47,12 @@ interface Message {
   role: 'user' | 'assistant';
   text: string;
   timestamp: Date;
-  // 토론 형식 (3명 투자자 + 정리)
+  // 토론 형식 (4명 투자자 + 정리)
   debate?: {
     warren: string;
     dalio: string;
     wood: string;
+    kostolany?: string;
     summary: string;
   };
   // 에러 상태 (에러 버블 표시용)
@@ -68,6 +69,7 @@ const LOCAL_FALLBACK_DEBATE = {
   warren: '허허, 자네. 지금 시장을 분석 중이라네. 체리콜라 한 잔 마시면서 잠시 기다려 주시게. 좋은 투자는 인내심에서 시작된다네.',
   dalio: '원칙 제1조: 인내심을 가지십시오. 시스템이 잠시 정비 중입니다. 이런 일시적 중단은 장기 성과에 영향을 주지 않습니다.',
   wood: 'Oh no! 기술적인 이슈가 있네요. 하지만 걱정 마세요, 곧 돌아올게요! Innovation은 멈추지 않으니까요!',
+  kostolany: 'Mon ami, 서두르지 마십시오. 시스템이 잠시 쉬고 있을 뿐입니다. 달걀 모형처럼, 모든 것은 사이클이 있습니다. 인내심 있는 자만이 살아남습니다.',
   summary: 'AI 분석 서버가 일시적으로 응답하지 않습니다. 잠시 후 다시 시도해주세요. 크레딧은 차감되지 않았습니다.',
 };
 
@@ -127,7 +129,7 @@ const CFOShareModal: React.FC<{
   visible: boolean;
   onClose: () => void;
   question: string;
-  debate: { warren: string; dalio: string; wood: string; summary: string };
+  debate: { warren: string; dalio: string; wood: string; kostolany?: string; summary: string };
 }> = ({ visible, onClose, question, debate }) => {
   const viewShotRef = useRef<ViewShot>(null);
   const [sharing, setSharing] = useState(false);
@@ -198,26 +200,36 @@ const CFOShareModal: React.FC<{
       {/* 워렌 버핏 */}
       <View style={[cfoShareStyles.investorCard, { borderLeftColor: '#2196F3' }]}>
         <Text style={[cfoShareStyles.investorName, { color: '#64B5F6' }]}>워렌 버핏</Text>
-        <Text style={cfoShareStyles.investorText} numberOfLines={3}>
-          {truncate(debate.warren, 120)}
+        <Text style={cfoShareStyles.investorText} numberOfLines={2}>
+          {truncate(debate.warren, 80)}
         </Text>
       </View>
 
       {/* 레이 달리오 */}
       <View style={[cfoShareStyles.investorCard, { borderLeftColor: '#9C27B0' }]}>
         <Text style={[cfoShareStyles.investorName, { color: '#CE93D8' }]}>레이 달리오</Text>
-        <Text style={cfoShareStyles.investorText} numberOfLines={3}>
-          {truncate(debate.dalio, 120)}
+        <Text style={cfoShareStyles.investorText} numberOfLines={2}>
+          {truncate(debate.dalio, 80)}
         </Text>
       </View>
 
       {/* 캐시 우드 */}
       <View style={[cfoShareStyles.investorCard, { borderLeftColor: '#E91E63' }]}>
         <Text style={[cfoShareStyles.investorName, { color: '#F48FB1' }]}>캐시 우드</Text>
-        <Text style={cfoShareStyles.investorText} numberOfLines={3}>
-          {truncate(debate.wood, 120)}
+        <Text style={cfoShareStyles.investorText} numberOfLines={2}>
+          {truncate(debate.wood, 80)}
         </Text>
       </View>
+
+      {/* 코스톨라니 (있을 때만) */}
+      {debate.kostolany ? (
+        <View style={[cfoShareStyles.investorCard, { borderLeftColor: '#FF8F00' }]}>
+          <Text style={[cfoShareStyles.investorName, { color: '#FFB74D' }]}>코스톨라니</Text>
+          <Text style={cfoShareStyles.investorText} numberOfLines={2}>
+            {truncate(debate.kostolany, 80)}
+          </Text>
+        </View>
+      ) : null}
 
       {/* 워렌의 한마디 (핵심) */}
       <View style={cfoShareStyles.summaryBox}>
@@ -347,7 +359,7 @@ export default function CFOChatScreen() {
     const welcomeMessage: Message = {
       id: 'welcome',
       role: 'assistant',
-      text: '안녕하세요, 자네! 워렌 버핏이라고 하네. 체리콜라 한 잔 하면서 투자 이야기 나눠보겠나? 오늘은 달리오와 캐시도 함께 있으니, 편하게 물어보시게.',
+      text: '안녕하세요, 자네! 워렌 버핏이라고 하네. 체리콜라 한 잔 하면서 투자 이야기 나눠보겠나? 오늘은 달리오, 캐시, 그리고 유럽의 현인 코스톨라니도 함께 있으니, 편하게 물어보시게.',
       timestamp: new Date(),
     };
     setMessages([welcomeMessage]);
@@ -431,6 +443,7 @@ export default function CFOChatScreen() {
         debateData?.dalio && debateData.dalio.length > 0 &&
         debateData?.wood && debateData.wood.length > 0 &&
         debateData?.summary && debateData.summary.length > 0;
+      // kostolany는 선택 필드 (구버전 API 호환)
 
       if (!hasValidDebate && !debateData?.answer) {
         throw new Error('AI 응답이 불완전합니다. 다시 시도해주세요.');
@@ -464,6 +477,7 @@ export default function CFOChatScreen() {
             warren: debateData.warren,
             dalio: debateData.dalio,
             wood: debateData.wood,
+            kostolany: debateData.kostolany ?? undefined,
             summary: debateData.summary,
           },
         };
@@ -577,6 +591,14 @@ export default function CFOChatScreen() {
             <Text style={[s.investorName, { color: '#C2185B' }]}>캐시 우드</Text>
             <Text style={[s.debateText, { color: '#2D2D2D' }]}>{item.debate.wood}</Text>
           </View>
+
+          {/* 코스톨라니 (있을 때만 표시) */}
+          {item.debate.kostolany ? (
+            <View style={[s.debateCard, { backgroundColor: '#FFF3E0', borderLeftColor: '#FF8F00' }]}>
+              <Text style={[s.investorName, { color: '#E65100' }]}>앙드레 코스톨라니</Text>
+              <Text style={[s.debateText, { color: '#2D2D2D' }]}>{item.debate.kostolany}</Text>
+            </View>
+          ) : null}
 
           {/* 워렌 버핏 최종 정리 */}
           <View style={[s.summaryCard, { backgroundColor: '#FFF9C4', borderColor: '#FBC02D' }]}>
