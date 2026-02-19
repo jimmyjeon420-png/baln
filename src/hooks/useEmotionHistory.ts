@@ -11,6 +11,7 @@
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { EmotionEntry } from './useEmotionCheck';
+import supabase from '../services/supabase';
 
 const STORAGE_KEY = '@baln:emotion_history';
 
@@ -130,6 +131,45 @@ function generateReminder(history: EmotionEntry[]): string | null {
   }
 }
 
+// ============================================================================
+// Supabase에서 감정 기록 로드 (앱 재설치 후 복원 / 크로스 디바이스 동기화)
+// ============================================================================
+
+async function loadFromSupabase(): Promise<EmotionEntry[]> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return [];
+
+    const { data, error } = await supabase
+      .from('user_emotions')
+      .select('date, emotion, memo, nasdaq_close, btc_close')
+      .eq('user_id', user.id)
+      .order('date', { ascending: false })
+      .limit(365); // 최대 1년치
+
+    if (error || !data) return [];
+
+    return data.map((row: any) => ({
+      date: row.date as string,
+      emotion: row.emotion as string,
+      memo: row.memo ?? '',
+      nasdaqClose: row.nasdaq_close != null ? Number(row.nasdaq_close) : undefined,
+      btcClose: row.btc_close != null ? Number(row.btc_close) : undefined,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+/** 로컬 + Supabase 기록을 병합 (날짜 기준 dedup, 최신 우선) */
+function mergeEntries(local: EmotionEntry[], remote: EmotionEntry[]): EmotionEntry[] {
+  const map = new Map<string, EmotionEntry>();
+  // remote 먼저 (클라우드 기준), 이후 local이 덮어씀 (디바이스 최신 반영)
+  for (const e of remote) map.set(e.date, e);
+  for (const e of local)  map.set(e.date, e);
+  return Array.from(map.values()).sort((a, b) => b.date.localeCompare(a.date));
+}
+
 export function useEmotionHistory(): EmotionHistoryResult {
   const [history, setHistory] = useState<EmotionEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -137,15 +177,24 @@ export function useEmotionHistory(): EmotionHistoryResult {
   const loadHistory = async () => {
     try {
       setIsLoading(true);
+
+      // 로컬 AsyncStorage 읽기
       const raw = await AsyncStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const data: EmotionEntry[] = JSON.parse(raw);
-        // 날짜 내림차순 정렬 (최신이 먼저)
-        data.sort((a, b) => b.date.localeCompare(a.date));
-        setHistory(data);
-      } else {
-        setHistory([]);
+      const localData: EmotionEntry[] = raw ? JSON.parse(raw) : [];
+
+      // Supabase에서 병렬로 읽기 (실패해도 로컬로 폴백)
+      const remoteData = await loadFromSupabase().catch(() => [] as EmotionEntry[]);
+
+      // 병합: 로컬 우선 (최신 데이터 우선)
+      const merged = mergeEntries(localData, remoteData);
+
+      // 병합 결과를 로컬에 다시 저장 (앱 재설치 후 Supabase 데이터 복원)
+      if (remoteData.length > 0) {
+        const limitedMerged = merged.slice(0, 60); // 60일 제한 유지
+        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(limitedMerged)).catch(() => {});
       }
+
+      setHistory(merged);
     } catch (error) {
       console.warn('Failed to load emotion history:', error);
       setHistory([]);
