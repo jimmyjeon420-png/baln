@@ -777,6 +777,60 @@ async function getLocalVotes(pollIds: string[]): Promise<PredictionVote[]> {
 }
 
 // ============================================================================
+// 전체 커뮤니티 예측 통계 (AI 트랙레코드 배너용)
+// ============================================================================
+
+/**
+ * 지난 30일간 종료된 투표의 커뮤니티 전체 예측 적중률
+ * - 신뢰도 배너("지난 30일 커뮤니티 적중률 N%")에 사용
+ * - 정답 선택 투표 수 / 전체 투표 수 집계
+ * - 데이터 없으면 null 반환 (초기 단계 무의미한 수치 방지)
+ */
+export const useGlobalPredictionStats = () => {
+  return useQuery({
+    queryKey: ['prediction', 'global_stats'] as const,
+    queryFn: async () => {
+      try {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+        const { data, error } = await supabase
+          .from('prediction_polls')
+          .select('yes_count, no_count, correct_answer, resolved_at')
+          .eq('status', 'resolved')
+          .not('correct_answer', 'is', null)
+          .gte('resolved_at', thirtyDaysAgo.toISOString());
+
+        if (error || !data || data.length === 0) return null;
+
+        let totalVotes = 0;
+        let correctVotes = 0;
+
+        for (const poll of data) {
+          const yesCount = Number(poll.yes_count) || 0;
+          const noCount = Number(poll.no_count) || 0;
+          const total = yesCount + noCount;
+          if (total === 0) continue;
+
+          totalVotes += total;
+          if (poll.correct_answer === 'YES') correctVotes += yesCount;
+          else if (poll.correct_answer === 'NO') correctVotes += noCount;
+        }
+
+        return {
+          resolvedCount: data.length,
+          accuracy: totalVotes > 0 ? Math.round((correctVotes / totalVotes) * 100) : null,
+          totalVotes,
+        };
+      } catch {
+        return null;
+      }
+    },
+    staleTime: 5 * 60 * 1000, // 5분
+  });
+};
+
+// ============================================================================
 // 유틸리티
 // ============================================================================
 

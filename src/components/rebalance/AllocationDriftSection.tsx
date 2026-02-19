@@ -13,7 +13,8 @@
  * - 설명 텍스트 레이어 (동적 테마 적용)
  */
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useFocusEffect } from 'expo-router';
 import {
   View,
   Text,
@@ -28,10 +29,11 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { Asset } from '../../types/asset';
-import { classifyAsset, AssetCategory, getNetAssetValue, calculateLTV, calcRealEstateDiversificationBonus, DEFAULT_TARGET, DALIO_TARGET, BUFFETT_TARGET, KostolalyPhase, KOSTOLANY_PHASE_NAMES, KOSTOLANY_PHASE_EMOJIS } from '../../services/rebalanceScore';
+import { classifyAsset, AssetCategory, getNetAssetValue, calculateLTV, calcRealEstateDiversificationBonus, DEFAULT_TARGET, DALIO_TARGET, BUFFETT_TARGET, CATHIE_WOOD_TARGET, KostolalyPhase, KOSTOLANY_PHASE_NAMES, KOSTOLANY_PHASE_EMOJIS } from '../../services/rebalanceScore';
 import AllocationPieChart, { PieSlice } from '../charts/AllocationPieChart';
 import { useTheme } from '../../hooks/useTheme';
 import { ThemeColors } from '../../styles/colors';
+import TermTooltip from '../common/TermTooltip';
 
 // ── 카테고리 설정 ──
 
@@ -146,13 +148,13 @@ const CATEGORIES: CategoryConfig[] = [
 const STORAGE_KEY = '@target_allocation';
 const PHILOSOPHY_STORAGE_KEY = '@investment_philosophy';
 
-export type InvestmentPhilosophy = 'dalio' | 'consensus' | 'buffett' | 'custom' | 'kostolany';
+export type InvestmentPhilosophy = 'dalio' | 'cathie_wood' | 'buffett' | 'custom' | 'kostolany';
 
 const PHILOSOPHY_CONFIG: Record<Exclude<InvestmentPhilosophy, 'kostolany'>, { label: string; emoji: string; target: Record<AssetCategory, number>; desc: string }> = {
-  dalio:     { label: '달리오',  emoji: '🌊', target: DALIO_TARGET,    desc: 'All Weather — 분산·안정 중심' },
-  consensus: { label: '합의안', emoji: '⚖️', target: DEFAULT_TARGET,  desc: '달리오+버핏 균형 (권장)' },
-  buffett:   { label: '버핏',   emoji: '🔴', target: BUFFETT_TARGET,  desc: 'Berkshire — 주식·현금 중심' },
-  custom:    { label: '직접설정', emoji: '✏️', target: DEFAULT_TARGET,  desc: '내가 직접 목표 설정' },
+  dalio:       { label: '달리오',   emoji: '🌊', target: DALIO_TARGET,        desc: 'All Weather — 분산·안정 중심' },
+  buffett:     { label: '버핏',     emoji: '🔴', target: BUFFETT_TARGET,      desc: 'Berkshire — 주식·현금 중심' },
+  cathie_wood: { label: '캐시우드', emoji: '🚀', target: CATHIE_WOOD_TARGET,  desc: 'ARK — 혁신·크립토 집중' },
+  custom:      { label: '직접설정', emoji: '✏️', target: DEFAULT_TARGET,      desc: '내가 직접 목표 설정' },
 };
 
 // ── 이탈도 계산 ──
@@ -280,7 +282,7 @@ export default function AllocationDriftSection({
   const [showDetail, setShowDetail] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('bar');
-  const [philosophy, setPhilosophy] = useState<InvestmentPhilosophy>('consensus');
+  const [philosophy, setPhilosophy] = useState<InvestmentPhilosophy>('dalio');
   const [target, setTarget] = useState<Record<AssetCategory, number>>(DEFAULT_TARGET);
   const [editValues, setEditValues] = useState<Record<AssetCategory, string>>({} as any);
 
@@ -288,26 +290,52 @@ export default function AllocationDriftSection({
   const [infoKey, setInfoKey] = useState<AssetCategory | null>(null);
   const infoDetail = infoKey ? CATEGORY_DETAILS[infoKey] : null;
 
-  // AsyncStorage에서 철학 + 목표 배분 로드
-  useEffect(() => {
+  // 로드된 철학을 ref로 추적 (kostolalyTarget useEffect에서 참조)
+  const storedPhilRef = useRef<InvestmentPhilosophy>('dalio');
+
+  // AsyncStorage에서 철학 + 목표 배분 로드 (초기 마운트 + 탭 포커스 시 재실행)
+  const loadFromStorage = useCallback(() => {
     Promise.all([
       AsyncStorage.getItem(PHILOSOPHY_STORAGE_KEY),
       AsyncStorage.getItem(STORAGE_KEY),
-    ]).then(([storedPhil, storedTarget]) => {
-      if (storedPhil && (storedPhil === 'dalio' || storedPhil === 'consensus' || storedPhil === 'buffett' || storedPhil === 'custom')) {
-        const phil = storedPhil as InvestmentPhilosophy;
-        setPhilosophy(phil);
-        if (phil !== 'custom') {
-          const t = PHILOSOPHY_CONFIG[phil as Exclude<InvestmentPhilosophy, 'kostolany'>].target;
-          setTarget(t);
-          onTargetChange?.(t);
+      AsyncStorage.getItem('@baln:guru_style'),
+    ]).then(([storedPhil, storedTarget, guruStyle]) => {
+      const validPhils: InvestmentPhilosophy[] = ['dalio', 'buffett', 'cathie_wood', 'custom', 'kostolany'];
+      const guruPhils = ['dalio', 'buffett', 'cathie_wood', 'kostolany'];
+
+      // 우선순위: @baln:guru_style (설정 화면 변경) > @investment_philosophy (탭 수동 선택) > 'dalio' 기본값
+      // → 두 키가 항상 동기화되므로(useGuruStyle + handlePhilosophyChange) 실질적으로 동일 값을 읽음
+      let phil: InvestmentPhilosophy | null = null;
+
+      // 1) guru_style이 유효한 구루 값이면 우선 사용 (설정화면 변경 즉시 반영)
+      if (guruStyle && guruPhils.includes(guruStyle)) {
+        phil = guruStyle as InvestmentPhilosophy;
+      }
+
+      // 2) guru_style 없거나 커스텀 처리 필요 → @investment_philosophy 사용
+      if (!phil) {
+        const normalized = storedPhil === 'consensus' ? 'dalio' : storedPhil;
+        if (normalized && validPhils.includes(normalized as InvestmentPhilosophy)) {
+          phil = normalized as InvestmentPhilosophy;
         }
       }
+
+      // 3) 아무것도 없으면 기본값
+      if (!phil) phil = 'dalio';
+
+      storedPhilRef.current = phil; // kostolalyTarget effect에서 조건 분기용
+      setPhilosophy(phil);
+
+      if (phil !== 'custom' && phil !== 'kostolany') {
+        const t = PHILOSOPHY_CONFIG[phil as Exclude<InvestmentPhilosophy, 'kostolany'>].target;
+        setTarget(t);
+        onTargetChange?.(t);
+      }
+
       if (storedTarget) {
         try {
           const parsed = JSON.parse(storedTarget);
-          // custom 모드일 때만 저장된 target 사용
-          if (storedPhil === 'custom') {
+          if (phil === 'custom') {
             setTarget(parsed);
             onTargetChange?.(parsed);
           }
@@ -316,9 +344,17 @@ export default function AllocationDriftSection({
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // KostolalyPhaseCard에서 "배분 적용" 클릭 시 → 'kostolany' 철학으로 전환
+  // 초기 마운트 시 로드
+  useEffect(() => { loadFromStorage(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 분석 탭 포커스 시 재로드 — 전체 탭에서 구루 변경 후 돌아왔을 때 반영
+  useFocusEffect(useCallback(() => { loadFromStorage(); }, [loadFromStorage]));
+
+  // kostolalyTarget prop이 도착했을 때:
+  // - 저장된 철학이 'kostolany'이면 → 자동으로 코스톨라니 탭으로 전환
+  // - 그 외에는 → 데이터만 캐싱 (사용자가 탭을 직접 누를 때 적용됨)
   useEffect(() => {
-    if (kostolalyTarget) {
+    if (kostolalyTarget && storedPhilRef.current === 'kostolany') {
       setPhilosophy('kostolany');
       setTarget(kostolalyTarget);
       onTargetChange?.(kostolalyTarget);
@@ -336,7 +372,13 @@ export default function AllocationDriftSection({
       }
       return; // AsyncStorage 저장 생략 (외부 주입 방식)
     }
-    await AsyncStorage.setItem(PHILOSOPHY_STORAGE_KEY, phil);
+    // @investment_philosophy + @baln:guru_style 동시 동기화
+    // → 프로필 배지, guru-style 설정화면과 항상 일치하도록
+    const guruKeys: InvestmentPhilosophy[] = ['dalio', 'buffett', 'cathie_wood'];
+    const storePairs: [string, string][] = [[PHILOSOPHY_STORAGE_KEY, phil]];
+    if (guruKeys.includes(phil)) storePairs.push(['@baln:guru_style', phil]);
+    await AsyncStorage.multiSet(storePairs);
+
     if (phil !== 'custom') {
       const t = PHILOSOPHY_CONFIG[phil as Exclude<InvestmentPhilosophy, 'kostolany'>].target;
       setTarget(t);
@@ -550,7 +592,10 @@ export default function AllocationDriftSection({
         activeOpacity={0.7}
       >
         <View>
-          <Text style={[s.cardLabel, { color: colors.inverseText }]}>배분 이탈도</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Text style={[s.cardLabel, { color: colors.inverseText }]}>배분 이탈도</Text>
+            <TermTooltip term="배분 이탈도" style={{ color: colors.textTertiary, fontSize: 12 }}>ⓘ</TermTooltip>
+          </View>
           <Text style={[s.cardLabelEn, { color: colors.textTertiary }]}>Allocation Drift</Text>
         </View>
         <View style={s.headerRight}>
@@ -564,9 +609,10 @@ export default function AllocationDriftSection({
         </View>
       </TouchableOpacity>
 
-      {/* 철학 선택 탭 */}
+      {/* 철학 선택 탭: 달리오 → 버핏 → 캐시우드 → 코스톨라니 → 직접설정 */}
       <View style={s.philosophyRow}>
-        {(['dalio', 'consensus', 'buffett', 'custom'] as Exclude<InvestmentPhilosophy, 'kostolany'>[]).map(phil => {
+        {/* 고정 탭 3개: 달리오, 버핏, 캐시우드 */}
+        {(['dalio', 'buffett', 'cathie_wood'] as const).map(phil => {
           const cfg = PHILOSOPHY_CONFIG[phil];
           const isActive = philosophy === phil;
           return (
@@ -597,6 +643,18 @@ export default function AllocationDriftSection({
             </Text>
           </TouchableOpacity>
         )}
+        {/* 직접설정: 항상 맨 오른쪽 */}
+        <TouchableOpacity
+          key="custom"
+          style={[s.philosophyBtn, philosophy === 'custom' && { backgroundColor: colors.success + '30', borderColor: colors.success }]}
+          onPress={() => handlePhilosophyChange('custom')}
+          activeOpacity={0.7}
+        >
+          <Text style={s.philosophyEmoji}>{PHILOSOPHY_CONFIG.custom.emoji}</Text>
+          <Text style={[s.philosophyBtnText, philosophy === 'custom' && { color: colors.success, fontWeight: '700' }]}>
+            {PHILOSOPHY_CONFIG.custom.label}
+          </Text>
+        </TouchableOpacity>
       </View>
       {/* 선택된 철학 설명 */}
       <Text style={[s.philosophyDesc, { color: colors.textTertiary }]}>

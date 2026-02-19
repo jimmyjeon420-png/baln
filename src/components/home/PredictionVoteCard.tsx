@@ -30,6 +30,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
 import { useTrackEvent } from '../../hooks/useAnalytics';
 import { useHabitLoopTracking } from '../../hooks/useHabitLoopTracking';
+import AITrackRecordBanner from './AITrackRecordBanner';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -111,6 +112,15 @@ interface PredictionVoteCardProps {
 
   /** 카테고리 변경 콜백 */
   onCategoryChange?: (category: string) => void;
+
+  /** 커뮤니티 전체 예측 적중률 (AI 트랙레코드 배너용, null이면 배너 숨김) */
+  globalAccuracy?: number | null;
+
+  /** 집계된 종료 투표 수 */
+  globalResolvedCount?: number;
+
+  /** 트랙레코드 배너 클릭 콜백 */
+  onTrackRecordPress?: () => void;
 }
 
 // ============================================================================
@@ -131,6 +141,9 @@ export default function PredictionVoteCard({
   isVoting,
   selectedCategory = 'all',
   onCategoryChange,
+  globalAccuracy = null,
+  globalResolvedCount = 0,
+  onTrackRecordPress,
 }: PredictionVoteCardProps) {
   const { colors } = useTheme();
   const track = useTrackEvent();
@@ -518,6 +531,13 @@ export default function PredictionVoteCard({
           )}
         </View>
       )}
+
+      {/* AI 트랙레코드 배너 (커뮤니티 전체 적중률) */}
+      <AITrackRecordBanner
+        accuracy={globalAccuracy}
+        resolvedCount={globalResolvedCount}
+        onPress={onTrackRecordPress}
+      />
 
       {/* 하단: [전체 기록 보기] 프리미엄 게이트 */}
       {onViewHistory && (

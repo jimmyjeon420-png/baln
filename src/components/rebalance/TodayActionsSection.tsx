@@ -24,6 +24,7 @@ import type { Asset } from '../../types/asset';
 import { classifyAsset, AssetCategory, getNetAssetValue, KostolalyPhase, KOSTOLANY_PHASE_NAMES, KOSTOLANY_PHASE_EMOJIS, KOSTOLANY_PHASE_DESCRIPTIONS, calculateHealthScore } from '../../services/rebalanceScore';
 import { useKostolalyPhase } from '../../hooks/useKostolalyPhase';
 import { usePrescriptionResults } from '../../hooks/usePrescriptionResults';
+import TermTooltip from '../common/TermTooltip';
 
 // ── ETF 추천 맵 (없는 카테고리에 ETF 제안) ──
 const ETF_RECOMMENDATIONS: Partial<Record<AssetCategory, { tickers: string[]; note: string }>> = {
@@ -565,7 +566,10 @@ export default function TodayActionsSection({
     <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
       <View style={s.headerRow}>
         <View>
-          <Text style={[s.cardLabel, { color: colors.textPrimary }]}>이번 달 처방전</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Text style={[s.cardLabel, { color: colors.textPrimary }]}>이번 달 처방전</Text>
+            <TermTooltip term="처방전" style={{ color: colors.textTertiary, fontSize: 12 }}>ⓘ</TermTooltip>
+          </View>
           <Text style={[s.cardLabelEn, { color: colors.textSecondary }]}>Monthly Prescription</Text>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -676,7 +680,7 @@ export default function TodayActionsSection({
           <View style={s.phaseBasisRow}>
             <Ionicons name="compass-outline" size={10} color={colors.textTertiary} />
             <Text style={[s.phaseBasisText, { color: colors.textTertiary }]}>
-              코스톨라니 {activePhase}단계 기준 · 달리오/버핏 합의안 적용
+              코스톨라니 {activePhase}단계 기준 · 달리오 All Weather 적용
             </Text>
             {/* P0-2: 데이터 신선도 타임스탬프 */}
             {phaseData?.updated_at && (
@@ -689,7 +693,7 @@ export default function TodayActionsSection({
       ) : (
         <View style={[s.basisRow, { backgroundColor: `${colors.textTertiary}0D`, borderColor: `${colors.textTertiary}20` }]}>
           <Ionicons name="compass-outline" size={11} color={colors.textTertiary} />
-          <Text style={[s.basisText, { color: colors.textTertiary }]}>달리오/버핏 합의안 기준</Text>
+          <Text style={[s.basisText, { color: colors.textTertiary }]}>달리오 All Weather 기준</Text>
         </View>
       )}
 

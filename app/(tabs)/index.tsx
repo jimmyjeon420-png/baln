@@ -46,6 +46,7 @@ import {
   useResolvedPolls,
   useSubmitVote,
   useMyPredictionStats,
+  useGlobalPredictionStats,
 } from '../../src/hooks/usePredictions';
 import { useSubscriptionStatus } from '../../src/hooks/useSubscription';
 import { useSharedPortfolio } from '../../src/hooks/useSharedPortfolio';
@@ -321,6 +322,7 @@ export default function HomeScreen() {
   const { data: resolvedPolls = [] } = useResolvedPolls(10);
   const { mutate: submitVote, isPending: isVoting } = useSubmitVote();
   const { data: myStats } = useMyPredictionStats();
+  const { data: globalStats } = useGlobalPredictionStats();
 
   // 오늘의 투표 (최대 3개)
   const todayPolls = activePolls.slice(0, 3);
@@ -454,8 +456,12 @@ export default function HomeScreen() {
       onViewHistory: () => router.push('/games/predictions'),
       isLoading: false,
       isVoting,
+      // AI 트랙레코드 배너
+      globalAccuracy: globalStats?.accuracy ?? null,
+      globalResolvedCount: globalStats?.resolvedCount ?? 0,
+      onTrackRecordPress: () => router.push('/games/predictions'),
     };
-  }, [currentPoll, pollsForCard, myVote, myVotesChoiceMap, recentResults, myStats, router, submitVote, showToast, isVoting]);
+  }, [currentPoll, pollsForCard, myVote, myVotesChoiceMap, recentResults, myStats, globalStats, router, submitVote, showToast, isVoting]);
 
   // ──────────────────────────────────────────────────────────────────────
   // 맥락 카드 전체 데이터 (모달용)

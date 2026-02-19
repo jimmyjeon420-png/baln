@@ -28,3 +28,6 @@ export {
 // 크레딧 시스템 컴포넌트
 export { CreditDisplay } from './CreditDisplay';
 export { CreditChip } from './CreditChip';
+
+// 용어 팝업 (투자 초보자 접근성)
+export { default as TermTooltip } from './TermTooltip';
