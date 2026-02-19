@@ -796,6 +796,47 @@ export interface MorningBriefingResult {
 }
 
 /**
+ * 미등록 티커 동적 분류 — Edge Function을 통해 Gemini에게 스타일/섹터 분류 요청
+ * 결과는 AsyncStorage에 캐시 저장 (offline 사용 가능)
+ *
+ * @param ticker - 분류할 티커 심볼 (예: "HIMS", "RKLB")
+ * @param name - 알고 있는 이름 (힌트, 선택)
+ * @returns 분류된 TickerProfile 또는 null
+ */
+export const classifyTicker = async (
+  ticker: string,
+  name?: string,
+): Promise<{ ticker: string; name: string; sector: string; style: string; geo: string } | null> => {
+  try {
+    const invokeResult = await Promise.race([
+      supabase.functions.invoke('gemini-proxy', {
+        body: {
+          type: 'classify-ticker',
+          data: { ticker, name },
+        },
+      }),
+      new Promise<{ data: null; error: { message: string } }>((resolve) =>
+        setTimeout(() => resolve({ data: null, error: { message: '타임아웃' } }), 15000)
+      ),
+    ]);
+
+    const { data, error } = invokeResult;
+    if (error || !data?.success) return null;
+
+    const profile = data.data;
+    if (!profile?.ticker || !profile?.style) return null;
+
+    // 동적 캐시에 저장 (다음번엔 API 없이 바로 조회)
+    const { saveDynamicProfile } = await import('../data/tickerProfile');
+    await saveDynamicProfile(profile as any);
+
+    return profile;
+  } catch {
+    return null;
+  }
+};
+
+/**
  * 시장 브리핑 생성
  * - 실시간 Google Search 그라운딩으로 최신 뉴스 반영
  * - 거시경제 요약
@@ -808,6 +849,7 @@ export const generateMorningBriefing = async (
   options?: {
     includeRealEstate?: boolean;
     realEstateContext?: string;
+    guruStyle?: string;
   }
 ): Promise<MorningBriefingResult> => {
   try {

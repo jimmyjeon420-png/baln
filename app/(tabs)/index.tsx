@@ -50,7 +50,7 @@ import {
 } from '../../src/hooks/usePredictions';
 import { useSubscriptionStatus } from '../../src/hooks/useSubscription';
 import { useSharedPortfolio } from '../../src/hooks/useSharedPortfolio';
-import { useMySnapshots } from '../../src/hooks/usePortfolioSnapshots';
+import { usePrices } from '../../src/hooks/usePrices';
 
 // 신호등 변환 서비스
 import {
@@ -160,18 +160,41 @@ export default function HomeScreen() {
   // ──────────────────────────────────────────────────────────────────────
   // 0. 포트폴리오 데이터 (총자산 Pulse용)
   // ──────────────────────────────────────────────────────────────────────
-  const { totalAssets } = useSharedPortfolio();
-  const { data: snapshots } = useMySnapshots(2); // 최근 2일 스냅샷
+  const { assets: allPortfolioAssets, totalAssets } = useSharedPortfolio();
 
-  // 전일 대비 수익률 계산
+  // 유동 자산만 필터링 (부동산 제외)
+  const liquidAssetsForHome = React.useMemo(
+    () => allPortfolioAssets.filter(a => a.ticker && !a.ticker.startsWith('RE_')),
+    [allPortfolioAssets]
+  );
+
+  // 라이브 가격 조회 — 24h 변화율 포함 (TanStack Query 캐시로 분석탭과 공유)
+  const { prices: homeLivePrices } = usePrices(liquidAssetsForHome, { currency: 'KRW' });
+
+  // 전일 대비 수익률: 보유 자산별 24h 변화율(percentChange24h) × 포트폴리오 비중 가중합
+  // ─ 스냅샷(DB 원가 기반)은 시장가 반영 안 됨 → percentChange24h 사용
   const dailyChangeRate = React.useMemo(() => {
-    if (!snapshots || snapshots.length < 2) return null;
-    const yesterday = snapshots[snapshots.length - 2];
-    const today = snapshots[snapshots.length - 1];
-    if (!yesterday || !today || yesterday.total_assets <= 0) return null;
-    const deposit = today.net_deposit_since_last || 0;
-    return ((today.total_assets - yesterday.total_assets - deposit) / yesterday.total_assets) * 100;
-  }, [snapshots]);
+    if (!liquidAssetsForHome.length || totalAssets <= 0) return null;
+
+    const liquidTotal = liquidAssetsForHome.reduce((s, a) => s + (a.currentValue || 0), 0);
+    if (liquidTotal <= 0) return null;
+
+    let weightedChange = 0;
+    let weightCovered = 0;
+
+    for (const asset of liquidAssetsForHome) {
+      if (!asset.ticker) continue;
+      const priceData = homeLivePrices[asset.ticker];
+      if (priceData?.percentChange24h == null) continue;
+      const w = (asset.currentValue || 0) / liquidTotal;
+      weightedChange += w * priceData.percentChange24h;
+      weightCovered += w;
+    }
+
+    // 포트폴리오의 30% 이상이 가격 데이터로 커버될 때만 표시 (신뢰도 기준)
+    if (weightCovered < 0.3) return null;
+    return weightedChange;
+  }, [liquidAssetsForHome, homeLivePrices, totalAssets]);
 
   // ──────────────────────────────────────────────────────────────────────
   // 1. 건강 신호등 카드 데이터

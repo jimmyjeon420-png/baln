@@ -8,6 +8,7 @@
  */
 
 import { Asset, AssetType } from '../types/asset';
+import { getStockComposition } from '../data/tickerProfile';
 
 // ============================================================================
 // 타입 정의
@@ -40,6 +41,14 @@ export interface RealEstateSummary {
   diversificationBonus: number; // 건강 점수 보너스 (+0~+10점)
   bonusReason: string;          // 보너스 이유 설명
   avgLtv: number;               // 평균 LTV (%)
+}
+
+/** 건강 점수 계산 옵션 */
+export interface HealthScoreOptions {
+  /** 선택 구루 스타일 ('dalio' | 'buffett' | 'cathie_wood' | 'kostolany') */
+  guruStyle?: string;
+  /** 현재 코스톨라니 국면 ('A'~'F') */
+  kostolalyPhase?: string;
 }
 
 /** 종합 건강 점수 결과 */
@@ -398,7 +407,7 @@ function calcDriftPenalty(
   customTarget?: Record<AssetCategory, number>,
 ): FactorResult {
   if (total === 0) {
-    return { label: '배분 이탈도', icon: '🎯', rawPenalty: 0, weight: 0.25, weightedPenalty: 0, score: 100, comment: '자산을 추가해보세요' };
+    return { label: '배분 이탈도', icon: '🎯', rawPenalty: 0, weight: 0.225, weightedPenalty: 0, score: 100, comment: '자산을 추가해보세요' };
   }
 
   const target = customTarget ?? DEFAULT_TARGET;
@@ -444,7 +453,7 @@ function calcDriftPenalty(
     ? `${CAT_LABEL[maxDriftCat] || maxDriftCat} 등 배분 조정이 필요해요`
     : '여러 자산군 비중 재조정이 필요해요';
 
-  return { label: '배분 이탈도', icon: '🎯', rawPenalty: penalty, weight: 0.25, weightedPenalty: penalty * 0.25, score, comment };
+  return { label: '배분 이탈도', icon: '🎯', rawPenalty: penalty, weight: 0.225, weightedPenalty: penalty * 0.225, score, comment };
 }
 
 /**
@@ -454,7 +463,7 @@ function calcDriftPenalty(
  */
 function calcRiskWeightedConcentration(assets: Asset[], total: number): FactorResult {
   if (total === 0 || assets.length === 0) {
-    return { label: '위험 집중도', icon: '⚖️', rawPenalty: 0, weight: 0.20, weightedPenalty: 0, score: 100, comment: '자산을 추가해보세요' };
+    return { label: '위험 집중도', icon: '⚖️', rawPenalty: 0, weight: 0.180, weightedPenalty: 0, score: 100, comment: '자산을 추가해보세요' };
   }
 
   // 1. 각 자산의 위험 기여도 계산
@@ -470,7 +479,7 @@ function calcRiskWeightedConcentration(assets: Asset[], total: number): FactorRe
   }
 
   if (totalRisk === 0) {
-    return { label: '위험 집중도', icon: '⚖️', rawPenalty: 0, weight: 0.20, weightedPenalty: 0, score: 100, comment: '위험 측정 불가' };
+    return { label: '위험 집중도', icon: '⚖️', rawPenalty: 0, weight: 0.180, weightedPenalty: 0, score: 100, comment: '위험 측정 불가' };
   }
 
   // 2. 위험 가중 HHI 계산
@@ -501,7 +510,7 @@ function calcRiskWeightedConcentration(assets: Asset[], total: number): FactorRe
     ? '위험이 잘 분산되어 있어요'
     : `${maxRiskAsset.ticker || maxRiskAsset.name}에 위험 ${maxRiskPct.toFixed(0)}% 집중!`;
 
-  return { label: '위험 집중도', icon: '⚖️', rawPenalty: penalty, weight: 0.20, weightedPenalty: penalty * 0.20, score, comment };
+  return { label: '위험 집중도', icon: '⚖️', rawPenalty: penalty, weight: 0.180, weightedPenalty: penalty * 0.180, score, comment };
 }
 
 /**
@@ -510,7 +519,7 @@ function calcRiskWeightedConcentration(assets: Asset[], total: number): FactorRe
  */
 function calcCorrelationPenalty(assets: Asset[], total: number): FactorResult {
   if (total === 0) {
-    return { label: '상관관계', icon: '🔗', rawPenalty: 0, weight: 0.15, weightedPenalty: 0, score: 100, comment: '자산을 추가해보세요' };
+    return { label: '상관관계', icon: '🔗', rawPenalty: 0, weight: 0.135, weightedPenalty: 0, score: 100, comment: '자산을 추가해보세요' };
   }
 
   // 카테고리별 비중 계산 (순자산 기준)
@@ -555,7 +564,7 @@ function calcCorrelationPenalty(assets: Asset[], total: number): FactorResult {
     ? '자산 간 분산이 잘 되어 있어요'
     : '상관관계가 적절해요';
 
-  return { label: '상관관계', icon: '🔗', rawPenalty: penalty, weight: 0.15, weightedPenalty: penalty * 0.15, score, comment };
+  return { label: '상관관계', icon: '🔗', rawPenalty: penalty, weight: 0.135, weightedPenalty: penalty * 0.135, score, comment };
 }
 
 /**
@@ -564,7 +573,7 @@ function calcCorrelationPenalty(assets: Asset[], total: number): FactorResult {
  */
 function calcVolatilityPenalty(assets: Asset[], total: number): FactorResult {
   if (total === 0) {
-    return { label: '변동성', icon: '📈', rawPenalty: 0, weight: 0.15, weightedPenalty: 0, score: 100, comment: '자산을 추가해보세요' };
+    return { label: '변동성', icon: '📈', rawPenalty: 0, weight: 0.135, weightedPenalty: 0, score: 100, comment: '자산을 추가해보세요' };
   }
 
   // 가중평균 변동성 계산 (순자산 기준)
@@ -588,7 +597,7 @@ function calcVolatilityPenalty(assets: Asset[], total: number): FactorResult {
     ? `변동성 ${weightedVol.toFixed(0)}%로 적정 수준이에요`
     : `변동성 ${weightedVol.toFixed(0)}%로 다소 높아요`;
 
-  return { label: '변동성', icon: '📈', rawPenalty: penalty, weight: 0.15, weightedPenalty: penalty * 0.15, score, comment };
+  return { label: '변동성', icon: '📈', rawPenalty: penalty, weight: 0.135, weightedPenalty: penalty * 0.135, score, comment };
 }
 
 /**
@@ -597,7 +606,7 @@ function calcVolatilityPenalty(assets: Asset[], total: number): FactorResult {
  */
 function calcDownsidePenalty(assets: Asset[], total: number): FactorResult {
   if (total === 0) {
-    return { label: '하방 리스크', icon: '🛡️', rawPenalty: 0, weight: 0.10, weightedPenalty: 0, score: 100, comment: '자산을 추가해보세요' };
+    return { label: '하방 리스크', icon: '🛡️', rawPenalty: 0, weight: 0.090, weightedPenalty: 0, score: 100, comment: '자산을 추가해보세요' };
   }
 
   let lossCount = 0;
@@ -621,7 +630,7 @@ function calcDownsidePenalty(assets: Asset[], total: number): FactorResult {
     ? '모든 종목이 수익 중이에요'
     : `${lossCount}개 종목이 손실 중이에요`;
 
-  return { label: '하방 리스크', icon: '🛡️', rawPenalty: penalty, weight: 0.10, weightedPenalty: penalty * 0.10, score, comment };
+  return { label: '하방 리스크', icon: '🛡️', rawPenalty: penalty, weight: 0.090, weightedPenalty: penalty * 0.090, score, comment };
 }
 
 /**
@@ -630,7 +639,7 @@ function calcDownsidePenalty(assets: Asset[], total: number): FactorResult {
  */
 function calcTaxEfficiencyPenalty(assets: Asset[], total: number): FactorResult {
   if (total === 0) {
-    return { label: '세금 효율', icon: '💰', rawPenalty: 0, weight: 0.05, weightedPenalty: 0, score: 100, comment: '자산을 추가해보세요' };
+    return { label: '세금 효율', icon: '💰', rawPenalty: 0, weight: 0.045, weightedPenalty: 0, score: 100, comment: '자산을 추가해보세요' };
   }
 
   let tlhCount = 0;
@@ -658,7 +667,7 @@ function calcTaxEfficiencyPenalty(assets: Asset[], total: number): FactorResult 
     ? '절세 기회가 없어요 (좋은 신호!)'
     : `${tlhCount}개 종목에서 절세 기회가 있어요`;
 
-  return { label: '세금 효율', icon: '💰', rawPenalty: penalty, weight: 0.05, weightedPenalty: penalty * 0.05, score, comment };
+  return { label: '세금 효율', icon: '💰', rawPenalty: penalty, weight: 0.045, weightedPenalty: penalty * 0.045, score, comment };
 }
 
 /**
@@ -668,7 +677,7 @@ function calcTaxEfficiencyPenalty(assets: Asset[], total: number): FactorResult 
  */
 function calcLeveragePenalty(assets: Asset[], total: number): FactorResult {
   if (total === 0) {
-    return { label: '레버리지 건전성', icon: '💳', rawPenalty: 0, weight: 0.10, weightedPenalty: 0, score: 100, comment: '자산을 추가해보세요' };
+    return { label: '레버리지 건전성', icon: '💳', rawPenalty: 0, weight: 0.090, weightedPenalty: 0, score: 100, comment: '자산을 추가해보세요' };
   }
 
   let totalLeverageRisk = 0;
@@ -692,7 +701,7 @@ function calcLeveragePenalty(assets: Asset[], total: number): FactorResult {
   }
 
   if (debtCount === 0) {
-    return { label: '레버리지 건전성', icon: '💳', rawPenalty: 0, weight: 0.10, weightedPenalty: 0, score: 100, comment: '대출이 없어요 (안전!)' };
+    return { label: '레버리지 건전성', icon: '💳', rawPenalty: 0, weight: 0.090, weightedPenalty: 0, score: 100, comment: '대출이 없어요 (안전!)' };
   }
 
   // 포트폴리오 전체 대비 레버리지 위험 비율
@@ -711,7 +720,73 @@ function calcLeveragePenalty(assets: Asset[], total: number): FactorResult {
     ? `레버리지 위험도 ${leverageRiskRatio.toFixed(1)}%`
     : `⚠️ 레버리지 위험 높음 (${leverageRiskRatio.toFixed(1)}%)`;
 
-  return { label: '레버리지 건전성', icon: '💳', rawPenalty: penalty, weight: 0.10, weightedPenalty: penalty * 0.10, score, comment };
+  return { label: '레버리지 건전성', icon: '💳', rawPenalty: penalty, weight: 0.090, weightedPenalty: penalty * 0.090, score, comment };
+}
+
+/**
+ * 팩터 8: 철학 정합도 (10%) — 신규
+ * 선택 구루 철학과 실제 보유 종목 스타일의 정합도 측정
+ *
+ * [버핏]: 가치주+배당주 비중 높을수록 고점
+ * [캐시우드]: 성장주 비중 높을수록 고점 (투기주 과다 시 감점)
+ * [달리오]: 성장/가치/배당 균형 잡힐수록 고점
+ * [코스톨라니]: 기본 75점 (국면별 동적 조정은 useHeartAssets에서)
+ */
+function calcPhilosophyAlignment(
+  assets: Asset[],
+  guruStyle: string,
+): FactorResult {
+  const stockAssets = assets.filter(a => classifyAsset(a) === 'large_cap');
+
+  // 주식 미보유 → 중립 (100점, 해당 없음)
+  if (stockAssets.length === 0) {
+    return {
+      label: '철학 정합도',
+      icon: '🧭',
+      rawPenalty: 0,
+      weight: 0.10,
+      weightedPenalty: 0,
+      score: 100,
+      comment: '주식 미보유 — 해당 없음',
+    };
+  }
+
+  const comp = getStockComposition(stockAssets);
+  let score = 0;
+
+  if (guruStyle === 'buffett') {
+    // 가치주 + 배당주 비중이 높을수록 고점
+    score = Math.min(100, (comp.value + comp.dividend) * 1.2);
+  } else if (guruStyle === 'cathie_wood') {
+    // 성장주 비중 높을수록 고점, 투기주 과다 시 감점
+    score = Math.min(100, Math.max(0, comp.growth * 1.3 - comp.speculative * 0.5));
+  } else if (guruStyle === 'kostolany') {
+    // 코스톨라니: 국면 의존 → 기본 75점 (Phase 3에서 동적 오버라이드)
+    score = 75;
+  } else {
+    // 달리오 기본: 성장/가치/배당 균형 → 편중 없을수록 고점
+    const deviation =
+      Math.abs(comp.growth - comp.value) +
+      Math.abs(comp.value - comp.dividend);
+    score = Math.max(0, 100 - deviation * 0.6);
+  }
+
+  score = Math.max(0, Math.min(100, Math.round(score)));
+  const rawPenalty = 100 - score;
+
+  return {
+    label: '철학 정합도',
+    icon: '🧭',
+    rawPenalty,
+    weight: 0.10,
+    weightedPenalty: rawPenalty * 0.10,
+    score,
+    comment: score >= 70
+      ? '포트폴리오가 투자 철학과 잘 맞습니다'
+      : score >= 40
+      ? '투자 철학에 맞는 종목 비중을 조금 조정해보세요'
+      : '투자 철학과 보유 종목이 많이 다릅니다. 분석 탭에서 구루를 확인해보세요',
+  };
 }
 
 // ============================================================================
@@ -769,20 +844,25 @@ export function calcRealEstateDiversificationBonus(
 
   // 비율이 너무 낮거나 너무 높으면 보너스 없음
   if (ratio < 0.1) return { bonus: 0, reason: '', avgLtv };
-  if (ratio > 0.8) return { bonus: 0, reason: '부동산 비중이 80% 초과 — 유동성 위험이 있어요', avgLtv };
+  if (ratio > 0.9) return { bonus: 0, reason: '부동산 비중이 90% 초과 — 유동성 위험이 있어요', avgLtv };
 
-  // 비율 점수: 20~40% 구간 최대, 그 외 선형 감소
+  // 비율 점수: 20~60% 구간 최대 (한국 실정 반영), 그 외 선형 감소
+  // 한국 40~50대는 부동산 비중이 50~70%인 경우가 흔하므로 구간 확대
   let ratioScore: number;
-  if (ratio >= 0.20 && ratio <= 0.40) {
+  if (ratio >= 0.20 && ratio <= 0.60) {
     ratioScore = 1.0;
   } else if (ratio < 0.20) {
     ratioScore = (ratio - 0.10) / 0.10;
   } else {
-    ratioScore = 1.0 - (ratio - 0.40) / 0.40;
+    // 60~90%: 선형 감소 (90%에서 0)
+    ratioScore = 1.0 - (ratio - 0.60) / 0.30;
   }
 
-  // LTV 점수: 낮을수록 안전 (0% = 1.0, 80% = 0.0)
-  const ltvScore = 1.0 - (avgLtv / 80);
+  // LTV 점수: 60% 이하면 만점, 60~80% 구간에서 선형 감소
+  // (한국 안심전환대출·DSR 기준 LTV 60% = 안전 레버리지)
+  const ltvScore = avgLtv <= 60
+    ? 1.0
+    : Math.max(0, (80 - avgLtv) / 20);
 
   const bonus = Math.max(1, Math.round(ratioScore * ltvScore * 10));
 
@@ -799,7 +879,7 @@ export function calcRealEstateDiversificationBonus(
 }
 
 /**
- * 포트폴리오 건강 점수 계산 (7팩터 종합 - 달리오 Risk Parity)
+ * 포트폴리오 건강 점수 계산 (8팩터 종합 - 달리오 Risk Parity + 철학 정합도)
  *
  * 부동산(ILLIQUID)은 리밸런싱 대상에서 제외됩니다.
  * 달리오: "비유동 자산은 리밸런싱 대상이 아니라 기준점"
@@ -808,12 +888,14 @@ export function calcRealEstateDiversificationBonus(
  * @param assets 전체 자산 배열 (부동산 포함)
  * @param totalAssets 총 평가금액 (참고용 — 내부에서 재계산)
  * @param customTarget 사용자 커스텀 목표 배분 (없으면 DEFAULT_TARGET 사용)
- * @returns HealthScoreResult (종합 점수, 등급, 7팩터 상세, 부동산 요약)
+ * @param options 건강 점수 옵션 (구루 스타일, 코스톨라니 국면)
+ * @returns HealthScoreResult (종합 점수, 등급, 8팩터 상세, 부동산 요약)
  */
 export function calculateHealthScore(
   assets: Asset[],
   totalAssets: number,
   customTarget?: Record<AssetCategory, number>,
+  options?: HealthScoreOptions,
 ): HealthScoreResult {
   // ── 부동산(비유동) 자산 분리 ──
   const liquidAssets = assets.filter(a => a.assetType !== AssetType.ILLIQUID);
@@ -825,7 +907,8 @@ export function calculateHealthScore(
   // 전체 순자산 (부동산 비율 계산용)
   const totalNetAssets = assets.reduce((sum, a) => sum + getNetAssetValue(a), 0);
 
-  // 7팩터 계산 — 유동 자산만 대상 (달리오 Risk Parity)
+  // 8팩터 계산 — 유동 자산만 대상 (달리오 Risk Parity + 철학 정합도)
+  const guruStyle = options?.guruStyle ?? 'dalio';
   const factors: FactorResult[] = [
     calcDriftPenalty(liquidAssets, liquidNetTotal, customTarget),
     calcRiskWeightedConcentration(liquidAssets, liquidNetTotal),
@@ -834,6 +917,7 @@ export function calculateHealthScore(
     calcDownsidePenalty(liquidAssets, liquidNetTotal),
     calcTaxEfficiencyPenalty(liquidAssets, liquidNetTotal),
     calcLeveragePenalty(liquidAssets, liquidNetTotal),
+    calcPhilosophyAlignment(liquidAssets, guruStyle),
   ];
 
   // 종합 점수: 100 - Σ(rawPenalty × weight)

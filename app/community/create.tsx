@@ -57,6 +57,15 @@ import supabase, { getCurrentUser } from '../../src/services/supabase';
 
 const MAX_CONTENT_LENGTH = 500;
 
+// assetType → 한국어 카테고리 매핑 (컴포넌트 외부에 상수로 선언)
+const ASSET_TYPE_KR: Record<string, string> = {
+  liquid: '금융자산',
+  LIQUID: '금융자산',
+  illiquid: '부동산',
+  ILLIQUID: '부동산',
+  other: '기타',
+};
+
 export default function CreatePostScreen() {
   const router = useRouter();
   const { colors } = useTheme();
@@ -76,10 +85,18 @@ export default function CreatePostScreen() {
   const [selectedImages, setSelectedImages] = useState<PickedImage[]>([]);
   const [isUploadingImages, setIsUploadingImages] = useState(false);
 
-  // 사용자 표시 정보
-  const displayInfo = useUserDisplayInfo(eligibility.totalAssets, 0);
+  // 총 평가손익 계산 (costBasis 있는 자산만)
+  const totalGain = React.useMemo(() => {
+    return assets.reduce((sum, a) => {
+      const cost = a.costBasis ?? a.currentValue;
+      return sum + (a.currentValue - cost);
+    }, 0);
+  }, [assets]);
 
-  // 자산 믹스 계산 (간단 버전)
+  // 사용자 표시 정보 (실제 손익 반영)
+  const displayInfo = useUserDisplayInfo(eligibility.totalAssets, totalGain);
+
+  // 자산 믹스 계산 (한국어 카테고리명)
   const assetMix = React.useMemo(() => {
     const categories: { category: string; percentage: number }[] = [];
     const total = totalAssets;
@@ -88,7 +105,8 @@ export default function CreatePostScreen() {
     // 포트폴리오에서 카테고리별 합산
     const byCategory: Record<string, number> = {};
     assets.forEach((asset) => {
-      const cat = asset.assetType || 'other';
+      const raw = (asset.assetType as string) || 'other';
+      const cat = ASSET_TYPE_KR[raw] ?? raw;
       byCategory[cat] = (byCategory[cat] || 0) + asset.currentValue;
     });
 

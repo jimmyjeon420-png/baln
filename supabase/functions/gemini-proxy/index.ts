@@ -31,6 +31,7 @@ interface MorningBriefingRequest {
     options?: {
       includeRealEstate?: boolean;
       realEstateContext?: string;
+      guruStyle?: string;
     };
   };
 }
@@ -61,6 +62,22 @@ interface InvestmentReportRequest {
   data: {
     ticker: string;
     currentPrice?: number;
+  };
+}
+
+interface ParseScreenshotRequest {
+  type: 'parse-screenshot';
+  data: {
+    imageBase64: string;
+    mimeType: string;  // 'image/jpeg' | 'image/png'
+  };
+}
+
+interface ClassifyTickerRequest {
+  type: 'classify-ticker';
+  data: {
+    ticker: string;
+    name?: string;  // 이미 알고 있는 이름 (힌트)
   };
 }
 
@@ -126,7 +143,7 @@ interface InvestmentReport {
   };
 }
 
-type GeminiProxyRequest = MorningBriefingRequest | DeepDiveRequest | CFOChatRequest | InvestmentReportRequest;
+type GeminiProxyRequest = MorningBriefingRequest | DeepDiveRequest | CFOChatRequest | InvestmentReportRequest | ParseScreenshotRequest | ClassifyTickerRequest;
 
 // ============================================================================
 // 유틸리티 함수
@@ -268,6 +285,36 @@ function cleanJsonResponse(text: string): any {
 }
 
 // ============================================================================
+// Classify Ticker: 동적 티커 스타일/섹터 분류
+// ============================================================================
+
+async function classifyTicker(reqData: ClassifyTickerRequest['data']) {
+  const { ticker, name } = reqData;
+
+  const prompt = `당신은 금융 데이터 전문가입니다. 아래 주식/ETF 티커를 분류하고 JSON으로 응답하세요.
+
+**티커: ${ticker}**${name ? `\n**알려진 이름: ${name}**` : ''}
+
+분류 기준:
+- sector: tech | finance | consumer | healthcare | energy | materials | telecom | industrial | etf_blend | crypto | commodity
+- style: growth(성장주) | value(가치주/안정주) | dividend(배당주) | speculative(투기/테마주) | index(인덱스ETF/패시브)
+- geo: us(미국) | kr(한국) | global(글로벌분산) | em(신흥국)
+
+판단 기준:
+- growth: 고성장 기술/혁신 기업, PER 높음, 배당 없음 (예: NVDA, TSLA, 카카오)
+- value: 안정적 수익, 합리적 밸류에이션, Moat 보유 (예: AAPL, 삼성전자, BRK.B)
+- dividend: 안정적 고배당, 성숙 산업 (예: KO, JNJ, 신한지주)
+- speculative: 변동성 높음, 테마/이슈 의존, 수익성 불확실 (예: PLTR, 개별 바이오)
+- index: ETF로 여러 종목 분산 (예: SPY, VOO, KODEX200)
+
+JSON만 반환 (설명 없이):
+{"ticker":"${ticker}","name":"한국어 회사명","sector":"...","style":"...","geo":"..."}`;
+
+  const responseText = await callGeminiWithSearch(prompt, 15000, 1);
+  return cleanJsonResponse(responseText);
+}
+
+// ============================================================================
 // Morning Briefing 생성
 // ============================================================================
 
@@ -302,6 +349,15 @@ async function generateMorningBriefing(reqData: MorningBriefingRequest['data']) 
 
 **포트폴리오 (수익률 포함):**
 ${JSON.stringify(portfolioWithProfitLoss, null, 2)}
+
+${options?.guruStyle ? `
+**[투자 철학 우선순위]** 이 사용자는 "${options.guruStyle}" 투자 철학을 선택했습니다.
+${options.guruStyle === 'buffett' ? '- 버핏 철학: 가치주(value)와 배당주(dividend) 종목을 우선 BUY/HOLD 추천. 투기주(PLTR, COIN 등)는 신중하게 WATCH 이하로 추천. 높은 ROE, 넓은 해자(Moat) 강조.' : ''}
+${options.guruStyle === 'cathie_wood' ? '- 캐시우드 철학: 파괴적 혁신 성장주(NVDA, TSLA, ARKK 등)를 우선 BUY 추천. 현금·채권은 최소화 지향. 5년 후 미래 기술 관점 분석.' : ''}
+${options.guruStyle === 'dalio' ? '- 달리오 철학: 자산군 균형(All Weather) 유지. 주식·채권·금·원자재·코인 분산 강조. 한 자산군 집중 시 리밸런싱 BUY/SELL 추천.' : ''}
+${options.guruStyle === 'kostolany' ? '- 코스톨라니 철학: 시장 사이클(달걀 모형) 기반. 극단적 비관론에서 매수(BUY), 대중이 흥분할 때 매도(SELL) 관점. 인내(HOLD)가 핵심.' : ''}
+portfolioActions의 action과 reason을 위 철학에 맞게 우선순위화하세요.
+` : ''}
 
 **수익률 기반 맞춤 조언 규칙:**
 각 종목의 profit_loss_rate를 확인하고:
@@ -649,6 +705,65 @@ ${priceInfo}
 }
 
 // ============================================================================
+// Screenshot Parser: 증권사 스크린샷 자동 파싱
+// ============================================================================
+
+async function parsePortfolioScreenshot(imageBase64: string, mimeType: string) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+
+  const body = {
+    contents: [{
+      parts: [
+        {
+          inline_data: {
+            mime_type: mimeType,
+            data: imageBase64,
+          }
+        },
+        {
+          text: `이 이미지는 증권사 또는 거래소 앱의 보유자산 스크린샷입니다.
+각 자산의 정보를 추출하여 JSON으로 반환하세요.
+
+필수 추출 정보:
+- name: 종목명 (한글 또는 영문)
+- ticker: 티커 (예: 005930, NVDA, BTC)
+- quantity: 보유 수량 (숫자)
+- totalCostKRW: 총 매수금액 또는 평균단가×수량 (원화, 숫자)
+- currentValueKRW: 현재 평가금액 (원화, 숫자, 없으면 null)
+
+반환 형식:
+{"assets": [{"name":"삼성전자","ticker":"005930","quantity":100,"totalCostKRW":7200000,"currentValueKRW":7500000}]}
+
+주의:
+- 달러 금액이 있으면 현재 환율 약 1450으로 원화 변환
+- 인식 불가한 자산은 제외
+- JSON만 반환 (설명 없이)`
+        }
+      ]
+    }],
+    generationConfig: { temperature: 0.1, maxOutputTokens: 2048 },
+  };
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30000);
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+    if (!resp.ok) throw new Error(`Gemini Vision Error: ${resp.status}`);
+    const json = await resp.json();
+    const text = json.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text) throw new Error('No response from Gemini Vision');
+    return cleanJsonResponse(text);
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+// ============================================================================
 // Warren Buffett Chat: 대화형 투자 조언
 // ============================================================================
 
@@ -881,6 +996,14 @@ serve(async (req: Request) => {
 
       case 'investment-report':
         result = await generateInvestmentReport(body.data);
+        break;
+
+      case 'parse-screenshot':
+        result = await parsePortfolioScreenshot(body.data.imageBase64, body.data.mimeType);
+        break;
+
+      case 'classify-ticker':
+        result = await classifyTicker((body as ClassifyTickerRequest).data);
         break;
 
       case 'health-check': {

@@ -311,7 +311,7 @@ function buildBriefingFromKitchen(
  */
 export async function loadMorningBriefing(
   portfolio: PortfolioAsset[],
-  options?: { includeRealEstate?: boolean; realEstateContext?: string }
+  options?: { includeRealEstate?: boolean; realEstateContext?: string; guruStyle?: string }
 ): Promise<CentralKitchenResult> {
   const tickers = portfolio.map(p => p.ticker);
 

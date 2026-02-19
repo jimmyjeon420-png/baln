@@ -22,6 +22,7 @@ import { ThemeColors } from '../../styles/colors';
 import type { PortfolioAction, RebalancePortfolioAsset, LivePriceData } from '../../types/rebalanceTypes';
 import type { Asset } from '../../types/asset';
 import { classifyAsset, AssetCategory, getNetAssetValue, KostolalyPhase, KOSTOLANY_PHASE_NAMES, KOSTOLANY_PHASE_EMOJIS, KOSTOLANY_PHASE_DESCRIPTIONS, calculateHealthScore } from '../../services/rebalanceScore';
+import { getTickerProfile, getCachedTickerProfile } from '../../data/tickerProfile';
 import { useKostolalyPhase } from '../../hooks/useKostolalyPhase';
 import { usePrescriptionResults } from '../../hooks/usePrescriptionResults';
 import TermTooltip from '../common/TermTooltip';
@@ -47,10 +48,8 @@ const CAT_ICON: Record<AssetCategory, string> = {
   cash: '💵', realestate: '🏠',
 };
 
-/** 티커 기반 통화 판별 — 6자리 숫자 또는 .KS/.KQ 접미사면 KRW, 아니면 USD */
-function getCurrency(ticker: string): 'KRW' | 'USD' {
-  return /^\d{6}(\.(KS|KQ))?$/i.test(ticker) ? 'KRW' : 'USD';
-}
+// ── getCurrency 제거됨 ──
+// liveData?.currency 를 직접 사용 (CoinGecko→KRW, Yahoo 한국주식→KRW, Yahoo 미국주식→USD)
 
 // ── 완료 축하 배너 ──
 
@@ -316,6 +315,8 @@ interface TodayActionsSectionProps {
   selectedTarget?: Record<AssetCategory, number>;
   /** 처방전 근거 출처 표시용 — 현재 코스톨라니 단계 */
   kostolalyPhase?: KostolalyPhase | null;
+  /** 선택된 투자 철학 — 처방전 카드 정렬 + 불일치 경고용 */
+  guruStyle?: string;
 }
 
 // 국면별 색상 (KostolalyPhaseCard와 동일)
@@ -332,8 +333,13 @@ export default function TodayActionsSection({
   allAssets,
   selectedTarget,
   kostolalyPhase,
+  guruStyle,
 }: TodayActionsSectionProps) {
   const { colors, shadows } = useTheme();
+
+  // USD/KRW 환율 — USDT KRW 가격으로 추정 (미국 주식 수익률 계산용)
+  // rebalance.tsx에서 priceTargets에 USDT를 항상 포함시켜 이 값을 보장함
+  const usdToKrw = (livePrices['USDT']?.currentPrice ?? 1450) as number;
 
   // 코스톨라니 서문 데이터 (TanStack Query 캐시 공유 — 추가 API 호출 없음)
   const { data: phaseData, phase: hookPhase } = useKostolalyPhase();
@@ -345,9 +351,32 @@ export default function TodayActionsSection({
   const [showAIActions, setShowAIActions] = useState(false);
   const { checked, toggle } = useActionChecklist();
 
+  // 투자 철학 정합 여부 판단 (guruStyle × 티커 스타일)
+  const isPhilosophyMismatch = useMemo(() => {
+    if (!guruStyle || guruStyle === 'dalio' || guruStyle === 'kostolany') return (_ticker: string) => false;
+    return (ticker: string): boolean => {
+      const profile = getCachedTickerProfile(ticker);
+      if (!profile) return false; // 미분류 종목은 경고 없음
+      const { style } = profile;
+      if (guruStyle === 'buffett') return style === 'speculative' || style === 'growth';
+      if (guruStyle === 'cathie_wood') return style === 'value' || style === 'dividend';
+      return false;
+    };
+  }, [guruStyle]);
+
+  // 구루 철학 기반 정렬: 철학 부합 종목(BUY/HOLD) → 나머지 → 불일치 종목 순
+  const philosophySortedActions = useMemo(() => {
+    if (!guruStyle || guruStyle === 'dalio') return sortedActions;
+    return [...sortedActions].sort((a, b) => {
+      const aMismatch = isPhilosophyMismatch(a.ticker) ? 1 : 0;
+      const bMismatch = isPhilosophyMismatch(b.ticker) ? 1 : 0;
+      return aMismatch - bMismatch;
+    });
+  }, [sortedActions, guruStyle, isPhilosophyMismatch]);
+
   // 완료 카운트 (처방전 결과 동기화에 사용)
-  const completedCount = sortedActions.filter(a => checked[a.ticker]).length;
-  const isAllCompleted = completedCount === sortedActions.length && sortedActions.length > 0;
+  const completedCount = philosophySortedActions.filter(a => checked[a.ticker]).length;
+  const isAllCompleted = completedCount === philosophySortedActions.length && philosophySortedActions.length > 0;
 
   // P1-1: 처방전 월별 결과 추적
   const {
@@ -411,11 +440,17 @@ export default function TodayActionsSection({
           const matched = portfolio.find(p =>
             p.ticker?.toUpperCase() === a.ticker?.toUpperCase()
           );
-          const currentPrice = matched?.currentPrice || 0;
+          // DB currentPrice = avg_price 이므로 반드시 라이브 가격 우선 사용
+          // 라이브 가격 없으면 returnPct = null (0% 오표시 방지)
+          // USD 자산(미국 주식): live USD 가격 × usdToKrw → KRW 환산 후 avgPrice(KRW)와 비교
+          const liveEntry = livePrices[a.ticker || ''];
+          const currentPrice = liveEntry?.currentPrice || matched?.currentPrice || 0;
           const avgPrice = matched?.avgPrice || a.avgPrice || 0;
           let returnPct: number | null = null;
-          if (avgPrice > 0 && currentPrice > 0) {
-            const raw = ((currentPrice - avgPrice) / avgPrice) * 100;
+          if (liveEntry && avgPrice > 0 && currentPrice > 0) {
+            const entCurrency = (liveEntry?.currency ?? 'KRW') as string;
+            const currentPriceKRW = entCurrency === 'USD' ? currentPrice * usdToKrw : currentPrice;
+            const raw = ((currentPriceKRW - avgPrice) / avgPrice) * 100;
             if (raw >= -90 && raw <= 500) returnPct = raw;
           }
           return {
@@ -541,6 +576,15 @@ export default function TodayActionsSection({
     SELL:  { bg: `${colors.error}26`, text: colors.error, label: '매도' },
     HOLD:  { bg: `${colors.textTertiary}26`, text: colors.textTertiary, label: '보유' },
     WATCH: { bg: `${colors.warning}26`, text: colors.warning, label: '주시' },
+  };
+
+  // 티커 스타일 뱃지 (tickerProfile 연동)
+  const STYLE_BADGE: Record<string, { label: string; color: string }> = {
+    growth:     { label: '성장주', color: '#4CAF50' },
+    value:      { label: '가치주', color: '#2196F3' },
+    dividend:   { label: '배당주', color: '#9C27B0' },
+    speculative:{ label: '투기주', color: '#FF5722' },
+    index:      { label: '인덱스', color: '#607D8B' },
   };
 
   // AI 로딩 중 스켈레톤
@@ -728,19 +772,27 @@ export default function TodayActionsSection({
                         </View>
                       </View>
                       {/* 매도 추천 자산 (수익률 높은 순) */}
-                      {item.assets.slice(0, 3).map((a, idx) => (
-                        <View key={idx} style={[s.planAssetRow, { borderTopColor: colors.border }]}>
-                          <Text style={[s.planAssetTicker, { color: colors.textPrimary }]}>{a.ticker || a.name}</Text>
-                          {a.returnPct !== null && (
-                            <Text style={[s.planAssetReturn, { color: a.returnPct >= 0 ? colors.success : colors.error }]}>
-                              {a.returnPct >= 0 ? '+' : ''}{a.returnPct.toFixed(1)}%
+                      {item.assets.slice(0, 3).map((a, idx) => {
+                        // 수익률 기반 힌트 — 손실 중인 자산에 "수익 실현 우선" 방지
+                        const sellHint = a.returnPct === null
+                          ? '매도 검토'
+                          : a.returnPct > 0
+                            ? (idx === 0 ? '수익 실현 우선' : '일부 매도 검토')
+                            : '비중 조정 매도';  // 손실이어도 비중 초과 → 리밸런싱 매도
+                        return (
+                          <View key={idx} style={[s.planAssetRow, { borderTopColor: colors.border }]}>
+                            <Text style={[s.planAssetTicker, { color: colors.textPrimary }]}>{a.ticker || a.name}</Text>
+                            {a.returnPct !== null && (
+                              <Text style={[s.planAssetReturn, { color: a.returnPct >= 0 ? colors.success : colors.error }]}>
+                                {a.returnPct >= 0 ? '+' : ''}{a.returnPct.toFixed(1)}%
+                              </Text>
+                            )}
+                            <Text style={[s.planAssetHint, { color: colors.textTertiary }]}>
+                              {sellHint}
                             </Text>
-                          )}
-                          <Text style={[s.planAssetHint, { color: colors.textTertiary }]}>
-                            {idx === 0 ? '수익 실현 우선' : idx === 1 ? '일부 매도 검토' : '참고'}
-                          </Text>
-                        </View>
-                      ))}
+                          </View>
+                        );
+                      })}
                     </View>
                   );
                 })}
@@ -961,11 +1013,12 @@ export default function TodayActionsSection({
         </View>
       )}
 
-      {(showAIActions || categoryRebalancePlan.length === 0) && sortedActions.slice(0, 5).map((action, idx) => {
+      {(showAIActions || categoryRebalancePlan.length === 0) && philosophySortedActions.slice(0, 5).map((action, idx) => {
         const ac = ACTION_COLORS[action.action] || ACTION_COLORS.HOLD;
         const isHighPriority = action.priority === 'HIGH';
         const isExpanded = expandedIdx === idx;
         const isDone = !!checked[action.ticker];
+        const hasMismatch = isPhilosophyMismatch(action.ticker);
 
         // 포트폴리오에서 해당 종목 찾기
         const matchedAsset = portfolio.find(
@@ -977,17 +1030,15 @@ export default function TodayActionsSection({
         const displayPrice = liveData?.currentPrice || matchedAsset?.currentPrice || 0;
         const isLive = !!liveData?.currentPrice;
 
-        // 수익률 계산 (방어 로직: 합리적 범위로 필터링)
+        // 수익률 계산 — 라이브 가격이 있을 때만 계산 (DB fallback 시 0% 오표시 방지)
+        // USD 자산: displayPrice(USD) × usdToKrw → KRW 환산 후 avgPrice(KRW)와 비교
         let assetGl: number | null = null;
-        if (matchedAsset && matchedAsset.avgPrice > 0 && displayPrice > 0) {
-          const rawGl = ((displayPrice - matchedAsset.avgPrice) / matchedAsset.avgPrice) * 100;
-          // 비정상적인 값 필터링: -90% ~ +500% 범위만 허용
-          // -99.9% 같은 값은 avgPrice가 잘못 저장된 것이므로 필터링
+        if (isLive && matchedAsset && matchedAsset.avgPrice > 0 && displayPrice > 0) {
+          const liveCurrency = (liveData?.currency ?? 'KRW') as string;
+          const displayPriceKRW = liveCurrency === 'USD' ? displayPrice * usdToKrw : displayPrice;
+          const rawGl = ((displayPriceKRW - matchedAsset.avgPrice) / matchedAsset.avgPrice) * 100;
           if (rawGl >= -90 && rawGl <= 500) {
             assetGl = rawGl;
-          } else {
-            console.warn(`[TodayActionsSection] 비정상 수익률 감지: ${action.ticker}, avgPrice=${matchedAsset.avgPrice}, currentPrice=${displayPrice}, gl=${rawGl.toFixed(1)}%`);
-            assetGl = null; // 비정상 값은 표시하지 않음
           }
         }
         const assetWeight = matchedAsset && totalAssets > 0
@@ -1024,6 +1075,21 @@ export default function TodayActionsSection({
                 <Text style={[s.actionBadgeText, { color: ac.text }]}>{ac.label}</Text>
               </View>
               <Text style={[s.actionTicker, { color: colors.textPrimary }]}>{isDone ? '✓ ' : ''}{action.ticker}</Text>
+              {(() => {
+                const profile = getCachedTickerProfile(action.ticker);
+                const badge = profile ? STYLE_BADGE[profile.style] : null;
+                if (!badge) return null;
+                return (
+                  <View style={[s.styleBadge, { backgroundColor: badge.color + '22', borderColor: badge.color + '55' }]}>
+                    <Text style={[s.styleBadgeText, { color: badge.color }]}>{badge.label}</Text>
+                  </View>
+                );
+              })()}
+              {hasMismatch && !isDone && (
+                <View style={[s.mismatchBadge]}>
+                  <Text style={s.mismatchBadgeText}>철학 불일치</Text>
+                </View>
+              )}
               <Text style={[s.actionName, { color: colors.textTertiary }]} numberOfLines={1}>{action.name}</Text>
               {isHighPriority && !isDone && (
                 <View style={[s.urgentDot, { backgroundColor: colors.error }]}>
@@ -1047,7 +1113,7 @@ export default function TodayActionsSection({
             {/* 현재가 + 등락률 (접힌 상태) */}
             {!isExpanded && displayPrice > 0 && (
               <View style={s.priceRow}>
-                <Text style={[s.priceText, { color: colors.textPrimary }]}>{formatCurrency(displayPrice, getCurrency(action.ticker))}</Text>
+                <Text style={[s.priceText, { color: colors.textPrimary }]}>{formatCurrency(displayPrice, (liveData?.currency as 'KRW' | 'USD' | undefined) ?? 'KRW')}</Text>
                 {assetGl !== null && (
                   <Text style={[s.changeText, { color: (assetGl ?? 0) >= 0 ? colors.success : colors.error }]}>
                     {(assetGl ?? 0) >= 0 ? '+' : ''}{(assetGl ?? 0).toFixed(1)}%
@@ -1111,7 +1177,7 @@ export default function TodayActionsSection({
                     <View style={s.portfolioRow}>
                       <View style={s.portfolioItem}>
                         <Text style={[s.portfolioLabel, { color: colors.textTertiary }]}>현재가{isLive ? ' (실시간)' : ''}</Text>
-                        <Text style={[s.portfolioValue, { color: colors.textPrimary }]}>{formatCurrency(displayPrice, getCurrency(action.ticker))}</Text>
+                        <Text style={[s.portfolioValue, { color: colors.textPrimary }]}>{formatCurrency(displayPrice, (liveData?.currency as 'KRW' | 'USD' | undefined) ?? 'KRW')}</Text>
                       </View>
                       <View style={[s.portfolioDivider, { backgroundColor: `${colors.success}4D` }]} />
                       <View style={s.portfolioItem}>
@@ -1217,8 +1283,8 @@ export default function TodayActionsSection({
                   style={[s.deepDiveBtn, { backgroundColor: `${colors.premium.purple}1A`, borderColor: `${colors.premium.purple}4D` }]}
                   activeOpacity={0.7}
                   onPress={() => router.push({
-                    pathname: '/marketplace',
-                    params: { ticker: action.ticker, feature: 'deep_dive' },
+                    pathname: '/analysis/deep-dive',
+                    params: { ticker: action.ticker, name: action.name },
                   })}
                 >
                   <Ionicons name="sparkles" size={14} color={colors.premium.purple} />
@@ -1430,6 +1496,10 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   actionBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
   actionBadgeText: { fontSize: 11, fontWeight: '800' },
   actionTicker: { fontSize: 14, fontWeight: '700' },
+  styleBadge: { paddingHorizontal: 5, paddingVertical: 2, borderRadius: 5, borderWidth: 1 },
+  styleBadgeText: { fontSize: 10, fontWeight: '700' },
+  mismatchBadge: { paddingHorizontal: 5, paddingVertical: 2, borderRadius: 5, backgroundColor: '#FF572222', borderWidth: 1, borderColor: '#FF572255' },
+  mismatchBadgeText: { fontSize: 10, fontWeight: '700', color: '#FF5722' },
   actionName: { flex: 1, fontSize: 12 },
   urgentDot: { width: 18, height: 18, borderRadius: 9, justifyContent: 'center', alignItems: 'center' },
   urgentDotText: { fontSize: 10, fontWeight: '800' },

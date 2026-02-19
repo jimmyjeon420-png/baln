@@ -49,6 +49,7 @@ import {
 } from '../services/centralKitchen';
 import supabase, { getCurrentUser } from '../services/supabase';
 import { validateAndCorrectRiskAnalysis, validatePortfolioActions } from '../utils/aiResponseValidator';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // 쿼리 키 (외부에서 invalidate 할 때 사용)
 export const AI_ANALYSIS_KEY = ['shared-ai-analysis'];
@@ -132,8 +133,15 @@ export async function fetchAIAnalysis(
   }
 
   // 4) 캐시 미스 → Gemini 병렬 호출 (기존 로직 유지)
+  // 구루 스타일 읽기 (Morning Briefing 프롬프트에 철학 주입)
+  let guruStyle: string | undefined;
+  try {
+    const raw = await AsyncStorage.getItem('@baln:guru_style') ?? await AsyncStorage.getItem('@investment_philosophy');
+    if (raw && raw !== 'consensus') guruStyle = raw;
+  } catch { /* 실패해도 무시 */ }
+
   const [kitchenResult, riskResult] = await Promise.all([
-    loadMorningBriefing(portfolioAssets, { includeRealEstate: false })
+    loadMorningBriefing(portfolioAssets, { includeRealEstate: false, guruStyle })
       .catch((err) => {
         console.warn('[공유분석] Morning Briefing 실패:', err);
         return null;

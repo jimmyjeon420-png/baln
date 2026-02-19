@@ -38,8 +38,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useTheme } from '../../src/hooks/useTheme';
 import supabase, { getCurrentUser } from '../../src/services/supabase';
 import { searchStocks, StockItem, getCategoryColor } from '../../src/data/stockList';
-import { priceService } from '../../src/services/PriceService';
-import { AssetClass } from '../../src/types/price';
 import { calculateHealthScore, HealthScoreResult, DALIO_TARGET, BUFFETT_TARGET, CATHIE_WOOD_TARGET } from '../../src/services/rebalanceScore';
 import type { GuruStyle } from '../../src/hooks/useGuruStyle';
 import { AssetType } from '../../src/types/asset';
@@ -111,22 +109,6 @@ interface RegisteredAsset {
   category: StockItem['category'];
 }
 
-/** 티커에서 자산 클래스 추론 */
-function inferAssetClass(ticker: string): AssetClass {
-  const upper = ticker.toUpperCase();
-  if (/^\d{6}(\.KS|\.KQ)?$/i.test(upper)) return AssetClass.STOCK;
-  const cryptos = ['BTC', 'ETH', 'USDC', 'SOL', 'XRP', 'DOGE', 'ADA', 'AVAX'];
-  if (cryptos.some(kw => upper.includes(kw))) return AssetClass.CRYPTO;
-  return AssetClass.STOCK;
-}
-
-/** 타임아웃 래퍼 */
-function withTimeout<T>(promise: PromiseLike<T>, ms: number, msg: string): Promise<T> {
-  return Promise.race([
-    Promise.resolve(promise),
-    new Promise<never>((_, reject) => setTimeout(() => reject(new Error(msg)), ms)),
-  ]);
-}
 
 // ============================================================================
 // 투자 경험 / 목표 옵션
@@ -175,8 +157,7 @@ export default function OnboardingScreen() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [selectedStock, setSelectedStock] = useState<StockItem | null>(null);
   const [assetQuantity, setAssetQuantity] = useState('');
-  const [assetPrice, setAssetPrice] = useState('');
-  const [priceLoading, setPriceLoading] = useState(false);
+  const [assetPrice, setAssetPrice] = useState(''); // 총 매수금액(원화)
   const [addingAsset, setAddingAsset] = useState(false);
   const [registeredAssets, setRegisteredAssets] = useState<RegisteredAsset[]>([]);
 
@@ -199,39 +180,24 @@ export default function OnboardingScreen() {
     setShowDropdown(results.length > 0);
   }, [searchQuery]);
 
-  // 종목 선택
-  const selectStock = useCallback(async (stock: StockItem) => {
+  // 종목 선택 (총 매수금액은 사용자만 알 수 있으므로 자동 채우기 없음)
+  const selectStock = useCallback((stock: StockItem) => {
     setSelectedStock(stock);
     setSearchQuery(stock.name);
     setShowDropdown(false);
+    setAssetPrice('');
     Keyboard.dismiss();
-
-    // 현재가 자동 로드
-    setPriceLoading(true);
-    try {
-      const assetClass = inferAssetClass(stock.ticker);
-      const currency = stock.ticker.endsWith('.KS') || stock.ticker.endsWith('.KQ') ? 'KRW' : 'USD';
-      const priceData = await withTimeout(
-        priceService.fetchPrice(stock.ticker, assetClass, currency),
-        20000,
-        '가격 조회 시간 초과'
-      );
-      if (priceData && priceData.currentPrice > 0) {
-        setAssetPrice(String(priceData.currentPrice));
-      }
-    } catch {
-      // 실패해도 수동 입력 가능
-    } finally {
-      setPriceLoading(false);
-    }
   }, []);
 
-  // 자산 등록 (Supabase에 저장)
+  // 자산 등록 (Supabase에 저장) — assetPrice = 총 매수금액(원화)
   const handleAddAsset = useCallback(async () => {
-    if (!selectedStock || !assetQuantity || !assetPrice) return;
+    if (!selectedStock || !assetQuantity) return;
     const q = parseFloat(assetQuantity);
-    const p = parseFloat(assetPrice);
-    if (!q || q <= 0 || !p || p <= 0) return;
+    if (!q || q <= 0) return;
+
+    // 총 매수금액 → 평균 단가 계산
+    const totalCost = parseFloat(assetPrice) || 0;
+    const avgPrice = totalCost > 0 && q > 0 ? Math.round(totalCost / q) : 0;
 
     setAddingAsset(true);
     try {
@@ -240,25 +206,24 @@ export default function OnboardingScreen() {
 
       const ticker = selectedStock.ticker.trim();
       const name = selectedStock.name.trim();
-      const currency = (ticker.endsWith('.KS') || ticker.endsWith('.KQ')) ? 'KRW' : 'USD';
 
       await supabase.from('portfolios').upsert({
         user_id: user.id,
         ticker,
         name,
         quantity: q,
-        avg_price: p,
-        current_price: p,
-        current_value: q * p,
+        avg_price: avgPrice,
+        current_price: avgPrice,
+        current_value: totalCost > 0 ? totalCost : 0,
         target_allocation: 0,
         asset_type: 'liquid',
-        currency,
+        currency: 'KRW',
       }, { onConflict: 'user_id,name', ignoreDuplicates: false });
 
       // 등록 목록에 추가
       setRegisteredAssets(prev => [
         ...prev.filter(a => a.ticker !== ticker),
-        { ticker, name, quantity: q, price: p, category: selectedStock.category },
+        { ticker, name, quantity: q, price: avgPrice, category: selectedStock.category },
       ]);
 
       // 폼 초기화
@@ -612,8 +577,9 @@ export default function OnboardingScreen() {
   const ONBOARDING_ACCESSORY_ID = 'onboarding-number-done';
 
   function renderAssetSelectionStep() {
-    const totalValue = (parseFloat(assetQuantity) || 0) * (parseFloat(assetPrice) || 0);
-    const canAdd = selectedStock && assetQuantity && assetPrice && totalValue > 0;
+    const totalCost = parseFloat(assetPrice) || 0;
+    const totalValue = totalCost; // 총 매수금액이 곧 평가금액 기준
+    const canAdd = selectedStock && assetQuantity && parseFloat(assetQuantity) > 0;
 
     return (
       <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
@@ -736,13 +702,10 @@ export default function OnboardingScreen() {
                 />
               </View>
               <View style={styles.inputHalf}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>매수 단가</Text>
-                  {priceLoading && <ActivityIndicator size="small" color={colors.primary} />}
-                </View>
+                <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>총 매수금액</Text>
                 <TextInput
                   style={[styles.numInput, { backgroundColor: colors.surfaceLight, borderColor: colors.border, color: colors.textPrimary }]}
-                  placeholder="0"
+                  placeholder="예: 1,500,000"
                   placeholderTextColor={colors.textTertiary}
                   value={assetPrice}
                   onChangeText={(t) => setAssetPrice(t.replace(/[^0-9.]/g, ''))}
@@ -754,7 +717,10 @@ export default function OnboardingScreen() {
 
             {totalValue > 0 && (
               <Text style={[styles.totalPreview, { color: colors.primary }]}>
-                평가금액: {totalValue.toLocaleString()}
+                총 매수금액: ₩{totalValue.toLocaleString()}
+                {parseFloat(assetQuantity) > 0
+                  ? ` (평단 ₩${Math.round(totalValue / parseFloat(assetQuantity)).toLocaleString()})`
+                  : ''}
               </Text>
             )}
 

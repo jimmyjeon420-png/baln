@@ -15,12 +15,13 @@ export interface FactorExplanation {
 }
 
 export type FactorType =
-  | 'allocation_drift'   // 배분 이탈도
-  | 'concentration'      // 자산 집중도
-  | 'correlation'        // 상관관계
-  | 'volatility'         // 변동성
-  | 'downside_risk'      // 하방 리스크
-  | 'tax_efficiency';    // 세금 효율
+  | 'allocation_drift'    // 배분 이탈도
+  | 'concentration'       // 자산 집중도
+  | 'correlation'         // 상관관계
+  | 'volatility'          // 변동성
+  | 'downside_risk'       // 하방 리스크
+  | 'tax_efficiency'      // 세금 효율
+  | 'philosophy_alignment'; // 철학 정합도 (신규)
 
 /**
  * 팩터 이름 → 팩터 타입 매핑
@@ -34,6 +35,9 @@ export function getFactorType(label: string): FactorType | null {
     '변동성': 'volatility',
     '하방 리스크': 'downside_risk',
     '세금 효율': 'tax_efficiency',
+    '위험 집중도': 'concentration',
+    '레버리지 건전성': 'concentration', // 레버리지는 집중도 설명으로 대응
+    '철학 정합도': 'philosophy_alignment',
   };
   return map[label] || null;
 }
@@ -91,5 +95,14 @@ export const FACTOR_EXPLANATIONS: Record<FactorType, FactorExplanation> = {
     example: '삼성전자를 1,000만원 어치 사서 800만원으로 떨어졌다고 가정해볼게요. 팔아서 200만원 손실을 확정하면, 다른 수익에서 세금을 22% 줄일 수 있어요. 그리고 비슷한 ETF를 사면 시장 노출은 유지돼요.',
     solution: '손실이 5% 이상인 자산이 있으면 연말 전에 팔아서 세금 혜택을 받으세요. 그리고 비슷한 자산(예: 삼성전자 → 한국 ETF)으로 바로 갈아타세요. 주의: 똑같은 자산을 30일 내 재매수하면 세금 혜택이 무효화돼요.',
     historicalContext: '미국 투자자들은 TLH로 평균 연 1.5% 추가 수익을 얻어요. 30년 복리로 따지면 60% 차이죠.',
+  },
+
+  philosophy_alignment: {
+    title: '철학 정합도',
+    icon: '🎯',
+    why: '선택한 투자 철학(버핏/달리오 등)에 맞는 종목을 보유해야 일관된 원칙으로 투자할 수 있습니다. 철학과 종목이 불일치하면 시장 급락 시 "왜 이 주식을 샀지?"라는 혼란이 생겨 패닉셀 가능성이 높아집니다.',
+    example: '버핏 철학 선택 후 ARKK·PLTR 위주 보유 → 고변동성 성장주가 떨어질 때 버핏의 "가치주 원칙"으로 버티기 어렵습니다. 일관성 없는 포트폴리오는 공포 상황에서 기준점이 사라집니다.',
+    solution: '선택 구루의 대표 스타일 종목 비중을 늘리거나, 철학을 재설정하세요. 버핏 → 가치주·배당주 비중 확대, 달리오 → 분산 균형, 캐시우드 → 성장주·비트코인 집중.',
+    historicalContext: '버핏은 1999~2000 닷컴 버블에서 성장주를 외면했지만, 2001~2003년 가치주로 큰 수익을 냈습니다. 일관된 철학이 장기 수익률의 핵심입니다.',
   },
 };

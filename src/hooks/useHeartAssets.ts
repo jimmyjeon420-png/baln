@@ -28,6 +28,8 @@ import {
   CATHIE_WOOD_TARGET,
   DEFAULT_TARGET,
 } from '../services/rebalanceScore';
+import { useKostolalyPhase } from './useKostolalyPhase';
+import { getTickerProfile } from '../data/tickerProfile';
 import supabase, { getCurrentUser } from '../services/supabase';
 
 // ============================================================================
@@ -83,25 +85,57 @@ function getGradeLabel(grade: HealthGrade): string {
 }
 
 /**
+ * HeartAsset의 ticker/type으로 자산 카테고리 간이 판단
+ * (classifyAsset은 Asset 전체 타입 필요 → HeartAsset용 경량 버전)
+ */
+function getHeartAssetCategory(asset: HeartAsset): string {
+  const ticker = (asset.ticker ?? '').toUpperCase();
+  if (ticker === 'BTC') return 'bitcoin';
+  if (asset.type === 'crypto') return 'altcoin';
+  if (ticker.startsWith('CASH_')) return 'cash';
+  // 주요 채권 ETF
+  const BOND_QUICK = new Set(['AGG', 'BND', 'TLT', 'IEF', 'SHY', 'LQD', 'HYG', 'GOVT', 'BNDX']);
+  if (BOND_QUICK.has(ticker)) return 'bond';
+  // 주요 금 ETF
+  const GOLD_QUICK = new Set(['GLD', 'IAU', 'GLDM', 'SGOL', 'SLV', 'BAR']);
+  if (GOLD_QUICK.has(ticker)) return 'gold';
+  // 현금 관련
+  const CASH_QUICK = new Set(['USDT', 'USDC', 'DAI', 'BUSD']);
+  if (CASH_QUICK.has(ticker)) return 'cash';
+  // 주식/ETF → large_cap
+  return 'large_cap';
+}
+
+/**
  * 하트 자산에 신호등 매핑
  *
  * @param heartAssets - 하트 자산 배열
  * @param healthResult - 건강 점수 결과
  * @param portfolioAssets - 포트폴리오 자산 배열
  * @param totalAssets - 총 자산 금액
+ * @param guruStyle - 선택 구루 스타일 (선택적)
+ * @param kostolalyPhase - 현재 코스톨라니 국면 (선택적)
  * @returns HeartAssetWithSignal[]
  *
- * [매핑 규칙]
+ * [기본 매핑 규칙]
  * - 포트폴리오에 없는 자산: green (데이터 부족)
  * - 전체 점수 75+: 모두 green
  * - 전체 점수 50-74: 비중 30%+ 자산 yellow, 나머지 green
  * - 전체 점수 49-: 비중 30%+ 자산 red, 15%+ yellow, 나머지 green
+ *
+ * [코스톨라니 국면 오버라이드]
+ * - D/C 국면: 주식·알트코인 경고 신호
+ * - F/A 국면: 비트코인·가치주 기회 신호
+ * - B 국면: 주식 전반 긍정
+ * - E 국면: 채권·금·현금 선호
  */
 function mapSignals(
   heartAssets: HeartAsset[],
   healthResult: HealthScoreResult | null,
   portfolioAssets: any[],
-  totalAssets: number
+  totalAssets: number,
+  guruStyle?: string,
+  kostolalyPhase?: string | null,
 ): HeartAssetWithSignal[] {
   // 데이터 없으면 모두 green (기본)
   if (!healthResult || portfolioAssets.length === 0 || totalAssets === 0) {
@@ -110,7 +144,8 @@ function mapSignals(
 
   const totalScore = healthResult.totalScore;
 
-  return heartAssets.map(asset => {
+  // 1단계: 기본 건강 점수 기반 신호 계산
+  const result: HeartAssetWithSignal[] = heartAssets.map(asset => {
     // 포트폴리오에서 해당 자산 찾기
     const portfolioAsset = portfolioAssets.find(
       p => p.ticker === asset.ticker || p.name === asset.name
@@ -140,6 +175,50 @@ function mapSignals(
       }
     }
   });
+
+  // 2단계: 코스톨라니 국면별 신호 오버라이드
+  if (kostolalyPhase) {
+    for (const item of result) {
+      const cat = getHeartAssetCategory(item);
+
+      if (kostolalyPhase === 'D' || kostolalyPhase === 'C') {
+        // D(하락초기)/C(과열): 주식·알트코인 경고
+        if (cat === 'large_cap' || cat === 'altcoin') {
+          item.signal = kostolalyPhase === 'D' ? 'red' : 'yellow';
+        }
+        if (cat === 'cash' || cat === 'bond') {
+          item.signal = 'green';
+        }
+      } else if (kostolalyPhase === 'F' || kostolalyPhase === 'A') {
+        // F(극비관)/A(바닥): 비트코인·가치주 기회
+        if (cat === 'bitcoin') {
+          item.signal = 'green';
+        }
+        if (cat === 'large_cap') {
+          // 가치주·배당주 → green, 나머지 유지
+          const profile = getTickerProfile(item.ticker ?? '');
+          if (profile?.style === 'value' || profile?.style === 'dividend') {
+            item.signal = 'green';
+          }
+        }
+      } else if (kostolalyPhase === 'B') {
+        // B(상승): 주식 전반 긍정
+        if (cat === 'large_cap') {
+          item.signal = 'green';
+        }
+      } else if (kostolalyPhase === 'E') {
+        // E(침체/패닉): 채권·금·현금 선호, 주식 경고 완화
+        if (cat === 'bond' || cat === 'gold' || cat === 'cash') {
+          item.signal = 'green';
+        }
+        if (cat === 'large_cap' && item.signal === 'red') {
+          item.signal = 'yellow'; // red → yellow로 완화
+        }
+      }
+    }
+  }
+
+  return result;
 }
 
 // ============================================================================
@@ -161,16 +240,20 @@ function mapSignals(
 export function useHeartAssets(): UseHeartAssetsReturn {
   const queryClient = useQueryClient();
 
-  // ── 구루 철학 타겟 (오늘 탭 건강 점수 연동) ──
+  // ── 구루 철학 타겟 + 스타일 (오늘 탭 건강 점수 연동) ──
   const [guruTarget, setGuruTarget] = useState<Record<AssetCategory, number>>(DEFAULT_TARGET);
+  const [guruStyle, setGuruStyle] = useState<string>('dalio');
+
+  // 코스톨라니 국면 (Supabase에서 실시간 조회)
+  const { phase: kostolalyPhase } = useKostolalyPhase();
 
   // 탭 포커스 시 AsyncStorage에서 저장된 구루 스타일 읽기
   useFocusEffect(useCallback(() => {
     Promise.all([
       AsyncStorage.getItem('@baln:guru_style'),
       AsyncStorage.getItem('@investment_philosophy'),
-    ]).then(([guruStyle, storedPhil]) => {
-      const raw = guruStyle || storedPhil || 'dalio';
+    ]).then(([storedGuruStyle, storedPhil]) => {
+      const raw = storedGuruStyle || storedPhil || 'dalio';
       const phil = raw === 'consensus' ? 'dalio' : raw;
       const targetMap: Partial<Record<string, Record<AssetCategory, number>>> = {
         dalio: DALIO_TARGET,
@@ -178,8 +261,10 @@ export function useHeartAssets(): UseHeartAssetsReturn {
         cathie_wood: CATHIE_WOOD_TARGET,
       };
       setGuruTarget(targetMap[phil] ?? DEFAULT_TARGET);
+      setGuruStyle(phil);
     }).catch(() => {
       setGuruTarget(DEFAULT_TARGET);
+      setGuruStyle('dalio');
     });
   }, []));
 
@@ -337,18 +422,23 @@ export function useHeartAssets(): UseHeartAssetsReturn {
   let healthResult: HealthScoreResult | null = null;
 
   if (assets.length > 0 && totalAssets > 0) {
-    healthResult = calculateHealthScore(assets, totalAssets, guruTarget);
+    healthResult = calculateHealthScore(assets, totalAssets, guruTarget, {
+      guruStyle,
+      kostolalyPhase: kostolalyPhase ?? undefined,
+    });
     portfolioHealthScore = healthResult.totalScore;
     portfolioGrade = healthResult.grade;
     portfolioGradeLabel = getGradeLabel(healthResult.grade);
   }
 
-  // 신호등 매핑
+  // 신호등 매핑 (코스톨라니 국면 오버라이드 포함)
   const heartAssetsWithSignal = mapSignals(
     heartAssets,
     healthResult,
     portfolioAssets,
-    totalAssets
+    totalAssets,
+    guruStyle,
+    kostolalyPhase,
   );
 
   // 새로고침

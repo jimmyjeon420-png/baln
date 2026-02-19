@@ -54,6 +54,8 @@ interface AdvancedCheckupViewProps {
   onLevelChange: (level: InvestorLevel) => void;
   /** AllocationDriftSection에서 철학 탭이 바뀔 때 rebalance.tsx로 target 전파 (건강점수 재계산용) */
   onTargetUpdate?: (target: Record<AssetCategory, number>) => void;
+  /** 선택된 투자 철학 (처방전 카드 정렬 + 불일치 경고용) */
+  guruStyle?: string;
 }
 
 export default function AdvancedCheckupView({
@@ -83,6 +85,7 @@ export default function AdvancedCheckupView({
   emotionRewardCredits,
   onLevelChange,
   onTargetUpdate,
+  guruStyle,
 }: AdvancedCheckupViewProps) {
   // AllocationDriftSection에서 선택된 철학 목표 → WhatIfSimulator + TodayActionsSection 전달
   const [selectedTarget, setSelectedTarget] = useState<Record<AssetCategory, number>>(DEFAULT_TARGET);
@@ -132,6 +135,7 @@ export default function AdvancedCheckupView({
         allAssets={allAssets}
         selectedTarget={selectedTarget}
         kostolalyPhase={kostolalyPhase}
+        guruStyle={guruStyle}
       />
 
       {/* 2. 코스톨라니 달걀 모형 — 처방전 근거 카드 ("왜 이런 처방전인가?") */}

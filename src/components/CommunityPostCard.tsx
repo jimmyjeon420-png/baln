@@ -112,7 +112,9 @@ export default function CommunityPostCard({
                 styles.holdingDot,
                 { backgroundColor: HOLDING_TYPE_COLORS[h.type] || '#888' },
               ]} />
-              <Text style={styles.holdingTicker}>{h.ticker}</Text>
+              <Text style={styles.holdingTicker}>
+                {h.ticker.startsWith('RE_') ? '부동산' : h.ticker}
+              </Text>
             </View>
           ))}
         </View>

@@ -23,10 +23,13 @@ interface WorstFactorCardProps {
 const LABEL_MAP: Record<string, string> = {
   '배분 이탈도': '비중이 달라졌어요',
   '자산 집중도': '한 곳에 몰려있어요',
+  '위험 집중도': '위험이 집중돼 있어요',
   '상관관계': '자산들이 같이 움직여요',
   '변동성': '가격 변동이 큰 편이에요',
   '하방 리스크': '손실 중인 자산이 있어요',
   '세금 효율': '절세 기회가 있어요',
+  '레버리지 건전성': '대출 부담이 있어요',
+  '철학 정합도': '투자 철학과 맞지 않아요',
 };
 
 function getStoryMessage(factor: FactorResult, allAssets?: Asset[]): string | null {
@@ -73,6 +76,8 @@ function getStoryMessage(factor: FactorResult, allAssets?: Asset[]): string | nu
       }).length;
       return lossCount > 0 ? `${lossCount}개 종목이 매입가 아래에 있어요` : null;
     }
+    case '철학 정합도':
+      return '현재 보유 종목 스타일과 선택 철학이 일치하지 않습니다. 분석 탭에서 구루 설정을 확인해보세요.';
     default:
       return null;
   }

@@ -352,6 +352,7 @@ export default function CheckupScreen() {
 
   // 저장된 구루 철학 로드 → 건강 점수 계산 기준 목표 배분
   const [philosophyTarget, setPhilosophyTarget] = useState<Record<AssetCategory, number>>(DEFAULT_TARGET);
+  const [selectedGuruStyle, setSelectedGuruStyle] = useState<string>('dalio');
 
   const loadPhilosophyTarget = useCallback(() => {
     Promise.all([
@@ -371,6 +372,7 @@ export default function CheckupScreen() {
         cathie_wood: CATHIE_WOOD_TARGET,
       };
       setPhilosophyTarget(targetMap[phil] ?? DEFAULT_TARGET);
+      setSelectedGuruStyle(phil);
     });
   }, []);
 
@@ -489,26 +491,51 @@ export default function CheckupScreen() {
     }),
   [morningBriefing]);
 
-  // 오늘의 액션 종목: 실시간 가격 조회
+  // 실시간 가격 조회: 전체 포트폴리오 + 처방전 종목
+  // catAssets(카테고리별 리밸런싱)도 라이브 가격이 필요하므로 allAssets 포함
   const priceTargets = useMemo(() => {
-    if (sortedActions.length === 0) return [];
     const seen = new Set<string>();
-    return sortedActions
-      .filter(a => {
-        if (!a.ticker || seen.has(a.ticker)) return false;
+    const result: typeof allAssets = [];
+
+    // 1. 전체 포트폴리오 유동 자산 (부동산 RE_ 제외)
+    for (const a of allAssets) {
+      if (a.ticker && !a.ticker.startsWith('RE_') && !seen.has(a.ticker)) {
         seen.add(a.ticker);
-        return true;
-      })
-      .map(a => ({
-        id: a.ticker,
-        name: a.name || a.ticker,
-        ticker: a.ticker,
+        result.push(a);
+      }
+    }
+
+    // 2. 처방전 종목 (포트폴리오에 없는 종목도 포함)
+    for (const a of sortedActions) {
+      if (a.ticker && !seen.has(a.ticker)) {
+        seen.add(a.ticker);
+        result.push({
+          id: a.ticker,
+          name: a.name || a.ticker,
+          ticker: a.ticker,
+          currentValue: 0,
+          targetAllocation: 0,
+          createdAt: Date.now(),
+          assetType: AssetType.LIQUID,
+        } as (typeof allAssets)[0]);
+      }
+    }
+
+    // 3. USDT — USD/KRW 환율 조회용 (미국 주식 수익률 계산에 필요)
+    if (!seen.has('USDT')) {
+      result.push({
+        id: 'USDT',
+        name: 'Tether (USD/KRW rate)',
+        ticker: 'USDT',
         currentValue: 0,
         targetAllocation: 0,
         createdAt: Date.now(),
         assetType: AssetType.LIQUID,
-      }));
-  }, [sortedActions]);
+      } as (typeof allAssets)[0]);
+    }
+
+    return result;
+  }, [sortedActions, allAssets]);
 
   const { prices: livePrices } = usePrices(priceTargets, {
     currency: 'KRW',
@@ -670,6 +697,7 @@ export default function CheckupScreen() {
             emotionRewardCredits={emotionRewardCredits}
             onLevelChange={setLevel}
             onTargetUpdate={setPhilosophyTarget}
+            guruStyle={selectedGuruStyle}
           />
         )}
 

@@ -28,7 +28,9 @@ import {
   Platform,
   InputAccessoryView,
   KeyboardAvoidingView,
+  Modal,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -44,6 +46,8 @@ import { AssetClass, PriceData } from '../src/types/price';
 import { fetchExchangeRate } from '../src/services/stockDataService';
 import { SHARED_PORTFOLIO_KEY } from '../src/hooks/useSharedPortfolio';
 import { grantAssetRegistrationReward, REWARD_AMOUNTS } from '../src/services/rewardService';
+import { classifyTicker } from '../src/services/gemini';
+import { getTickerProfile } from '../src/data/tickerProfile';
 
 // ── 상수 ──
 
@@ -68,6 +72,14 @@ interface ExistingAsset {
   quantity: number;
   avg_price: number;
   current_value: number;
+}
+
+interface ParsedAsset {
+  name: string;
+  ticker: string;
+  quantity: number;
+  totalCostKRW: number;
+  currentValueKRW?: number;
 }
 
 // ── 유틸리티 ──
@@ -211,12 +223,12 @@ export default function AddAssetScreen() {
   // --- 선택된 종목 상태 ---
   const [selectedStock, setSelectedStock] = useState<StockItem | null>(null);
   const [quantity, setQuantity] = useState('');
-  const [price, setPrice] = useState('');
-  const [priceLoading, setPriceLoading] = useState(false);
-  const [priceAuto, setPriceAuto] = useState(false); // 자동 로드된 가격인지
-  const [exchangeRate, setExchangeRate] = useState<number>(0); // USD→KRW 환율 (0이면 미적용)
-  const [originalUsdPrice, setOriginalUsdPrice] = useState<number>(0); // USD 원가 (참고용)
-  const [priceUnit, setPriceUnit] = useState<'KRW' | 'USD'>('KRW'); // 사용자 선택 통화
+  const [price, setPrice] = useState(''); // 총 매수금액 (원화)
+
+  // --- 배너/스크린샷 상태 ---
+  const [infoExpanded, setInfoExpanded] = useState(false);
+  const [screenshotParsing, setScreenshotParsing] = useState(false);
+  const [parsedAssets, setParsedAssets] = useState<ParsedAsset[] | null>(null);
 
   // --- 저장 상태 ---
   const [saving, setSaving] = useState(false);
@@ -338,55 +350,12 @@ export default function AddAssetScreen() {
 
   // ─── 종목 선택 ───
 
-  const selectStock = useCallback(async (stock: StockItem) => {
+  const selectStock = useCallback((stock: StockItem) => {
     setSelectedStock(stock);
     setSearchQuery(stock.name);
     setShowDropdown(false);
-    setExchangeRate(0);
-    setOriginalUsdPrice(0);
-    setPrice('');
+    setPrice(''); // 총 매수금액은 사용자만 알 수 있으므로 자동 채우기 없음
     Keyboard.dismiss();
-
-    const isKrStock = stock.ticker.endsWith('.KS') || stock.ticker.endsWith('.KQ');
-    const isCrypto = stock.category === 'crypto';
-    // 미국주식·ETF → 달러 기본값, 한국주식·크립토 → 원화
-    const defaultUnit: 'KRW' | 'USD' = (!isKrStock && !isCrypto) ? 'USD' : 'KRW';
-    setPriceUnit(defaultUnit);
-
-    // 현재가 자동 로드
-    setPriceLoading(true);
-    setPriceAuto(false);
-    try {
-      const assetClass = inferAssetClassFromTicker(stock.ticker);
-      const fetchCurrency = isKrStock ? 'KRW' : 'USD';
-      const priceData = await withTimeout(
-        priceService.fetchPrice(stock.ticker, assetClass, fetchCurrency),
-        10000,
-        '가격 조회 시간 초과'
-      );
-      if (priceData && priceData.currentPrice > 0) {
-        // 항상 환율 가져오기 (미리보기용)
-        if (!isKrStock) {
-          try {
-            const rate = await fetchExchangeRate();
-            setExchangeRate(rate);
-          } catch { /* 환율 실패 무시 */ }
-        }
-        if (defaultUnit === 'USD') {
-          // 달러 단위로 그대로 표시
-          setPrice(String(priceData.currentPrice));
-          setOriginalUsdPrice(priceData.currentPrice);
-        } else {
-          // 원화 단위로 표시 (한국주식·크립토)
-          setPrice(String(priceData.currentPrice));
-        }
-        setPriceAuto(true);
-      }
-    } catch (err) {
-      console.warn('[AddAsset] 현재가 자동 로드 실패:', err);
-    } finally {
-      setPriceLoading(false);
-    }
   }, []);
 
   // 최근 종목 탭으로 자동 입력
@@ -413,7 +382,7 @@ export default function AddAssetScreen() {
     });
     setSearchQuery(asset.name);
     setQuantity(String(asset.quantity || 0));
-    setPrice(String(asset.avg_price || 0));
+    setPrice(String(Math.round((asset.quantity || 0) * (asset.avg_price || 0)))); // 총 매수금액
     setEditingAsset(asset);
   }, []);
 
@@ -449,22 +418,11 @@ export default function AddAssetScreen() {
     );
   }, [queryClient]);
 
-  // ─── 평가금액 계산 ───
+  // ─── 총 매수금액 (= price state 자체) ───
 
   const totalValue = useMemo(() => {
-    const q = parseFloat(quantity) || 0;
-    const p = parseFloat(price) || 0;
-    return q * p;
-  }, [quantity, price]);
-
-  // USD 입력 시 원화 환산 금액 (미리보기용)
-  const totalValueKrw = useMemo(() => {
-    if (priceUnit !== 'USD' || exchangeRate <= 0) return 0;
-    return Math.round(totalValue * exchangeRate);
-  }, [priceUnit, totalValue, exchangeRate]);
-
-  // 사용자 선택 통화 심볼
-  const currencySymbol = priceUnit === 'USD' ? '$' : '₩';
+    return parseFloat(price) || 0;
+  }, [price]);
 
   // 기존 동일 종목 찾기 (평균 단가 미리 계산 안내용)
   const matchingExisting = useMemo(() => {
@@ -559,7 +517,7 @@ export default function AddAssetScreen() {
     }
 
     const q = parseFloat(quantity);
-    const p = price.trim() ? (parseFloat(price) || 0) : 0;
+    const totalCost = price.trim() ? (parseFloat(price) || 0) : 0; // 총 매수금액(KRW)
 
     if (!q || q <= 0) {
       savingRef.current = false;
@@ -576,24 +534,18 @@ export default function AddAssetScreen() {
       const ticker = selectedStock.ticker.trim();
       const name = selectedStock.name.trim();
 
-      // USD 입력이면 환율 변환해서 KRW로 변환
-      let krwPrice = p;
-      if (priceUnit === 'USD' && p > 0) {
-        const rate = exchangeRate > 0 ? exchangeRate : await fetchExchangeRate().catch(() => 1450);
-        krwPrice = Math.round(p * rate);
-      }
-
-      // 평균 단가 자동 계산: 기존 보유분이 있으면 가중 평균
+      // 총 매수금액 ÷ 수량 = 평균 단가 (단위 혼동 원천 차단)
       const existing = existingAssets.find(a => a.ticker === ticker || a.name === name);
       let finalQuantity = q;
-      let finalAvgPrice = krwPrice;
-      if (existing && krwPrice > 0 && existing.avg_price > 0) {
+      let finalAvgPrice = totalCost > 0 && q > 0 ? Math.round(totalCost / q) : 0;
+
+      if (existing && totalCost > 0 && existing.avg_price > 0) {
+        // 기존 보유분이 있으면 가중 평균: (기존총액 + 이번총액) / 합산수량
+        const existingTotalCost = existing.quantity * existing.avg_price;
         finalQuantity = existing.quantity + q;
-        finalAvgPrice = Math.round(
-          (existing.quantity * existing.avg_price + q * krwPrice) / finalQuantity
-        );
-      } else if (existing && krwPrice <= 0) {
-        // 단가 미입력 시 기존 평단 유지, 수량만 합산
+        finalAvgPrice = Math.round((existingTotalCost + totalCost) / finalQuantity);
+      } else if (existing && totalCost <= 0) {
+        // 총액 미입력 시 기존 평단 유지, 수량만 합산
         finalQuantity = existing.quantity + q;
         finalAvgPrice = existing.avg_price;
       }
@@ -635,6 +587,11 @@ export default function AddAssetScreen() {
       const today = new Date().toISOString().split('T')[0];
       await AsyncStorage.setItem(NEEDS_DIAGNOSIS_KEY, 'true');
       await AsyncStorage.setItem(LAST_SCAN_DATE_KEY, today);
+
+      // 미등록 티커 자동 분류 (fire-and-forget — 저장 흐름 블로킹 없음)
+      if (ticker && !getTickerProfile(ticker)) {
+        classifyTicker(ticker, name).catch(() => {/* 분류 실패 무시 */});
+      }
 
       // 최근 종목 저장
       await saveRecentAsset(selectedStock);
@@ -694,11 +651,92 @@ export default function AddAssetScreen() {
     setSearchQuery('');
     setQuantity('');
     setPrice('');
-    setPriceAuto(false);
     setEditingAsset(null);
-    setExchangeRate(0);
-    setOriginalUsdPrice(0);
-    setPriceUnit('KRW');
+  };
+
+  // ─── 스크린샷 파싱 ───
+
+  const handleScreenshotParse = async () => {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert('권한 필요', '사진 접근 권한이 필요합니다. 설정에서 허용해주세요.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: false,
+      quality: 0.8,
+      base64: true,
+    });
+    if (result.canceled || !result.assets[0].base64) return;
+
+    setScreenshotParsing(true);
+    try {
+      const session = await supabase.auth.getSession();
+      const token = session.data.session?.access_token;
+      const response = await fetch(
+        'https://ruqeinfcqhgexrckonsy.supabase.co/functions/v1/gemini-proxy',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            type: 'parse-screenshot',
+            data: {
+              imageBase64: result.assets[0].base64,
+              mimeType: result.assets[0].mimeType || 'image/jpeg',
+            },
+          }),
+        }
+      );
+      const json = await response.json();
+      if (!json.success || !json.data?.assets?.length) {
+        Alert.alert('파싱 실패', '자산 정보를 인식하지 못했어요. 다른 스크린샷을 시도해보세요.');
+        return;
+      }
+      setParsedAssets(json.data.assets);
+    } catch (err) {
+      Alert.alert('오류', '스크린샷 분석 중 오류가 발생했습니다.');
+    } finally {
+      setScreenshotParsing(false);
+    }
+  };
+
+  const handleBulkSave = async (assets: ParsedAsset[]) => {
+    const user = authUser ?? await getCurrentUser();
+    if (!user) {
+      Alert.alert('오류', '로그인이 필요합니다.');
+      return;
+    }
+    let successCount = 0;
+    for (const asset of assets) {
+      try {
+        const avgPrice = asset.totalCostKRW > 0 && asset.quantity > 0
+          ? Math.round(asset.totalCostKRW / asset.quantity)
+          : 0;
+        await supabase.from('portfolios').upsert({
+          user_id: user.id,
+          ticker: asset.ticker,
+          name: asset.name,
+          quantity: asset.quantity,
+          avg_price: avgPrice,
+          current_price: avgPrice,
+          current_value: asset.totalCostKRW,
+          target_allocation: 0,
+          asset_type: 'liquid',
+          currency: 'KRW',
+        }, { onConflict: 'user_id,name', ignoreDuplicates: false });
+        successCount++;
+      } catch (err) {
+        console.warn(`[AddAsset] 일괄 등록 실패 (${asset.name}):`, err);
+      }
+    }
+    setParsedAssets(null);
+    queryClient.invalidateQueries({ queryKey: SHARED_PORTFOLIO_KEY });
+    await loadExistingAssets();
+    Alert.alert('등록 완료', `${successCount}개 자산이 등록되었습니다.`);
   };
 
   // ─── 숫자 키보드 "완료" 버튼 (iOS decimal-pad에는 return 키가 없음) ───
@@ -795,6 +833,52 @@ export default function AddAssetScreen() {
               </TouchableOpacity>
             ))}
           </View>
+        )}
+
+        {/* ─── 수익률 차이 안내 배너 (주식·ETF·크립토 탭에서만) ─── */}
+        {assetCategory === 'stock' && !editingAsset && (
+          <TouchableOpacity
+            style={[styles.infoBanner, { backgroundColor: colors.surface, borderColor: colors.border }]}
+            onPress={() => setInfoExpanded(v => !v)}
+            activeOpacity={0.8}
+          >
+            <View style={styles.infoBannerHeader}>
+              <Ionicons name="information-circle-outline" size={16} color={colors.primary} />
+              <Text style={[styles.infoBannerTitle, { color: colors.textPrimary }]}>
+                증권사 수익률과 차이가 나나요?
+              </Text>
+              <Ionicons
+                name={infoExpanded ? 'chevron-up' : 'chevron-down'}
+                size={14}
+                color={colors.textSecondary}
+              />
+            </View>
+            {infoExpanded && (
+              <View style={styles.infoBannerBody}>
+                <Text style={[styles.infoBannerText, { color: colors.textSecondary }]}>
+                  {'1. 총 매수금액(원화)을 직접 입력하면 가장 정확합니다\n'}
+                  {'2. 환차익/환차손은 실시간으로 반영되지 않아 차이가 생길 수 있어요\n'}
+                  {'3. 코인은 거래소 가격과 글로벌 가격이 다를 수 있어요 (김치 프리미엄)'}
+                </Text>
+                <TouchableOpacity
+                  style={[styles.screenshotBtn, { backgroundColor: colors.primary + '15', borderColor: colors.primary }]}
+                  onPress={(e) => { e.stopPropagation(); handleScreenshotParse(); }}
+                  disabled={screenshotParsing}
+                >
+                  {screenshotParsing ? (
+                    <ActivityIndicator size="small" color={colors.primary} />
+                  ) : (
+                    <>
+                      <Ionicons name="camera-outline" size={15} color={colors.primary} />
+                      <Text style={[styles.screenshotBtnText, { color: colors.primary }]}>
+                        📸 스크린샷으로 한 번에 입력 (자동 파싱)
+                      </Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              </View>
+            )}
+          </TouchableOpacity>
         )}
 
         {/* ─── 빠른 추가 섹션 ─── */}
@@ -943,7 +1027,6 @@ export default function AddAssetScreen() {
                     // 사용자가 텍스트를 변경하면 선택 해제
                     setSelectedStock(null);
                     setPrice('');
-                    setPriceAuto(false);
                   }
                 }}
                 onFocus={() => {
@@ -957,7 +1040,6 @@ export default function AddAssetScreen() {
                     setSearchQuery('');
                     setSelectedStock(null);
                     setPrice('');
-                    setPriceAuto(false);
                   }}
                   style={styles.clearButton}
                 >
@@ -1039,89 +1121,27 @@ export default function AddAssetScreen() {
             />
           </View>
 
-          {/* 3. 매수 단가 */}
+          {/* 3. 총 매수금액 (원화) */}
           <View style={styles.inputGroup}>
             <View style={styles.priceLabelRow}>
               <View style={styles.priceLabelGroup}>
-                <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>매수 단가</Text>
-                <Text style={[styles.priceHelp, { color: colors.textTertiary }]}>선택사항</Text>
-              </View>
-              <View style={styles.priceLabelRight}>
-                {priceLoading && (
-                  <View style={styles.priceLoadingRow}>
-                    <ActivityIndicator size="small" color={colors.primary} />
-                    <Text style={[styles.priceLoadingText, { color: colors.primary }]}>현재가 조회 중...</Text>
-                  </View>
-                )}
-                {priceAuto && !priceLoading && (
-                  <View style={styles.autoTag}>
-                    <Text style={[styles.autoTagText, { color: colors.primary }]}>자동</Text>
-                  </View>
-                )}
-                {/* ₩ / $ 토글 — 미국주식·ETF일 때만 표시 */}
-                {selectedStock && selectedStock.category !== 'kr_stock' && selectedStock.category !== 'crypto' && (
-                  <View style={[styles.unitToggle, { backgroundColor: colors.surfaceLight, borderColor: colors.border }]}>
-                    <TouchableOpacity
-                      style={[styles.unitBtn, priceUnit === 'KRW' && { backgroundColor: colors.primary }]}
-                      onPress={() => {
-                        if (priceUnit === 'USD' && price && exchangeRate > 0) {
-                          // 달러 → 원화 변환
-                          setPrice(String(Math.round(parseFloat(price) * exchangeRate)));
-                        }
-                        setPriceUnit('KRW');
-                        setPriceAuto(false);
-                      }}
-                    >
-                      <Text style={[styles.unitBtnText, { color: priceUnit === 'KRW' ? '#fff' : colors.textSecondary }]}>₩</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[styles.unitBtn, priceUnit === 'USD' && { backgroundColor: colors.primary }]}
-                      onPress={() => {
-                        if (priceUnit === 'KRW' && price && exchangeRate > 0) {
-                          // 원화 → 달러 변환
-                          setPrice(String((parseFloat(price) / exchangeRate).toFixed(2)));
-                        }
-                        setPriceUnit('USD');
-                        setPriceAuto(false);
-                      }}
-                    >
-                      <Text style={[styles.unitBtnText, { color: priceUnit === 'USD' ? '#fff' : colors.textSecondary }]}>$</Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
+                <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>총 매수금액 (원화)</Text>
+                <Text style={[styles.priceHelp, { color: colors.textTertiary }]}>선택사항 · 입력 시 수익률 계산</Text>
               </View>
             </View>
             <View style={[styles.priceInputRow, { backgroundColor: colors.surfaceLight, borderColor: colors.border }]}>
-              <Text style={[styles.currencySymbol, { color: colors.textSecondary }]}>{currencySymbol}</Text>
+              <Text style={[styles.currencySymbol, { color: colors.textSecondary }]}>₩</Text>
               <TextInput
                 style={[styles.priceInput, { color: colors.textPrimary }]}
-                placeholder="0"
+                placeholder="예: 1,500,000 (증권사 총 매수금액)"
                 placeholderTextColor={colors.textTertiary}
                 value={price}
-                onChangeText={(text) => {
-                  setPrice(text.replace(/[^0-9.]/g, ''));
-                  setPriceAuto(false);
-                }}
+                onChangeText={(text) => setPrice(text.replace(/[^0-9.]/g, ''))}
                 keyboardType="decimal-pad"
                 selectTextOnFocus
                 inputAccessoryViewID={INPUT_ACCESSORY_ID}
               />
             </View>
-            {/* 달러 입력 시 원화 환산 미리보기 */}
-            {priceUnit === 'USD' && parseFloat(price) > 0 && exchangeRate > 0 && (
-              <Text style={[styles.krwPreview, { color: colors.textSecondary }]}>
-                ≈ ₩{Math.round(parseFloat(price) * exchangeRate).toLocaleString()}
-                {'  '}
-                <Text style={{ color: colors.textTertiary }}>
-                  (환율 {Math.round(exchangeRate).toLocaleString()}원)
-                </Text>
-              </Text>
-            )}
-            {!priceLoading && !priceAuto && selectedStock && (
-              <Text style={[styles.priceHint, { color: colors.textSecondary }]}>
-                현재가를 가져올 수 없습니다. 직접 입력해주세요.
-              </Text>
-            )}
           </View>
 
           {/* 기존 보유 종목 추가 시 평균 단가 계산 안내 */}
@@ -1131,33 +1151,33 @@ export default function AddAssetScreen() {
               <View style={{ flex: 1 }}>
                 <Text style={[styles.avgCalcTitle, { color: colors.textPrimary }]}>평균 단가 자동 계산</Text>
                 <Text style={[styles.avgCalcDetail, { color: colors.textSecondary }]}>
-                  기존 {matchingExisting.quantity}주 @₩{matchingExisting.avg_price.toLocaleString()}
-                  {' '}+ 이번 {parseFloat(quantity) || 0}주 @₩{(parseFloat(price) || 0).toLocaleString()}
+                  기존 {matchingExisting.quantity}주 평단 ₩{matchingExisting.avg_price.toLocaleString()}
+                  {' '}+ 이번 {parseFloat(quantity) || 0}주 총액 ₩{(parseFloat(price) || 0).toLocaleString()}
                 </Text>
                 <Text style={[styles.avgCalcResult, { color: colors.primary }]}>
-                  → 새 평단 ₩{matchingExisting.avg_price > 0
-                    ? Math.round(
-                        (matchingExisting.quantity * matchingExisting.avg_price + (parseFloat(quantity) || 0) * (parseFloat(price) || 0))
-                        / (matchingExisting.quantity + (parseFloat(quantity) || 0))
-                      ).toLocaleString()
-                    : (parseFloat(price) || 0).toLocaleString()
-                  } ({matchingExisting.quantity + (parseFloat(quantity) || 0)}주)
+                  {(() => {
+                    const newQty = matchingExisting.quantity + (parseFloat(quantity) || 0);
+                    const existingTotal = matchingExisting.quantity * matchingExisting.avg_price;
+                    const newTotal = parseFloat(price) || 0;
+                    const newAvg = newQty > 0 ? Math.round((existingTotal + newTotal) / newQty) : 0;
+                    return `→ 새 평단 ₩${newAvg.toLocaleString()} (${newQty}주)`;
+                  })()}
                 </Text>
               </View>
             </View>
           )}
 
-          {/* 4. 평가금액 */}
+          {/* 4. 총 매수금액 미리보기 */}
           {totalValue > 0 && (
             <View style={styles.totalRow}>
-              <Text style={[styles.totalLabel, { color: colors.textSecondary }]}>평가금액 (예상)</Text>
+              <Text style={[styles.totalLabel, { color: colors.textSecondary }]}>총 매수금액</Text>
               <View style={{ alignItems: 'flex-end' }}>
                 <Text style={[styles.totalValue, { color: colors.primary }]}>
-                  {currencySymbol}{totalValue.toLocaleString()}
+                  ₩{totalValue.toLocaleString()}
                 </Text>
-                {totalValueKrw > 0 && (
+                {parseFloat(quantity) > 0 && (
                   <Text style={[styles.totalValueKrw, { color: colors.textSecondary }]}>
-                    ≈ ₩{totalValueKrw.toLocaleString()}
+                    평단 ₩{Math.round(totalValue / (parseFloat(quantity) || 1)).toLocaleString()}
                   </Text>
                 )}
               </View>
@@ -1293,6 +1313,52 @@ export default function AddAssetScreen() {
         <View style={{ height: 40 }} />
       </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* 스크린샷 파싱 결과 모달 */}
+      <Modal
+        visible={parsedAssets !== null}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setParsedAssets(null)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContainer, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>📸 스크린샷 파싱 결과</Text>
+            <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>
+              {parsedAssets?.length}개 자산을 인식했어요. 확인 후 등록하세요
+            </Text>
+            <ScrollView style={{ maxHeight: 280 }}>
+              {parsedAssets?.map((asset, i) => (
+                <View key={i} style={[styles.parsedAssetRow, { borderBottomColor: colors.border }]}>
+                  <Ionicons name="checkmark-circle" size={16} color={colors.primary} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.parsedAssetName, { color: colors.textPrimary }]}>
+                      {asset.name} ({asset.ticker})
+                    </Text>
+                    <Text style={[styles.parsedAssetDetail, { color: colors.textSecondary }]}>
+                      {asset.quantity}개 · 총 ₩{asset.totalCostKRW.toLocaleString()}
+                    </Text>
+                  </View>
+                </View>
+              ))}
+            </ScrollView>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalCancelBtn, { borderColor: colors.border }]}
+                onPress={() => setParsedAssets(null)}
+              >
+                <Text style={[styles.modalCancelText, { color: colors.textSecondary }]}>취소</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalConfirmBtn, { backgroundColor: colors.primary }]}
+                onPress={() => parsedAssets && handleBulkSave(parsedAssets)}
+              >
+                <Text style={styles.modalConfirmText}>{parsedAssets?.length}개 전체 등록</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -1795,6 +1861,108 @@ const styles = StyleSheet.create({
   cashTypeBtnDesc: {
     fontSize: 10,
     textAlign: 'center',
+  },
+  // ── 수익률 안내 배너 ──
+  infoBanner: {
+    borderRadius: 10,
+    borderWidth: 1,
+    padding: 12,
+    marginHorizontal: 16,
+    marginBottom: 8,
+  },
+  infoBannerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  infoBannerTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    flex: 1,
+  },
+  infoBannerBody: {
+    marginTop: 10,
+  },
+  infoBannerText: {
+    fontSize: 12,
+    lineHeight: 18,
+    marginBottom: 10,
+  },
+  screenshotBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  screenshotBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  // ── 파싱 결과 모달 ──
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContainer: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    paddingBottom: 34,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  modalSubtitle: {
+    fontSize: 13,
+    marginBottom: 14,
+  },
+  parsedAssetRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    gap: 8,
+  },
+  parsedAssetName: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  parsedAssetDetail: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 16,
+  },
+  modalCancelBtn: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  modalCancelText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  modalConfirmBtn: {
+    flex: 2,
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  modalConfirmText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '700',
   },
   // ── 채권 빠른 선택 ──
   bondChip: {

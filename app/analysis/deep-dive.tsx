@@ -8,7 +8,7 @@
  * [수정] 한국어 기업명 검색 지원 (삼성전자, SK하이닉스 등)
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -21,7 +21,7 @@ import {
   FlatList,
   Keyboard,
 } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { HeaderBar } from '../../src/components/common/HeaderBar';
@@ -246,6 +246,8 @@ async function runDeepDiveDiagnostic() {
 
 export default function DeepDiveScreen() {
   const { colors } = useTheme();
+  const params = useLocalSearchParams<{ ticker?: string; name?: string }>();
+
   const [query, setQuery] = useState('');
   const [selectedStock, setSelectedStock] = useState<StockItem | null>(null);
   const [result, setResult] = useState<DeepDiveResult | null>(null);
@@ -253,6 +255,29 @@ export default function DeepDiveScreen() {
   const [loadingMessage, setLoadingMessage] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
+
+  // 처방전 카드에서 직접 진입 시 자동 분석
+  useEffect(() => {
+    const autoTicker = params.ticker;
+    const autoName = params.name;
+    if (!autoTicker) return;
+
+    const stock: StockItem = {
+      ticker: autoTicker,
+      name: autoName || autoTicker,
+      nameEn: '',
+      market: 'NASDAQ', // 기본값 (표시용, 분석에는 무관)
+    };
+    setSelectedStock(stock);
+    setQuery(autoName ? `${autoName} (${autoTicker})` : autoTicker);
+    setShowSuggestions(false);
+
+    // 약간 지연 후 자동 분석 시작 (화면 마운트 완료 후)
+    const timer = setTimeout(() => {
+      handleAnalyzeWithStock(stock);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 검색 필터 (한국어 이름, 영문 이름, 티커 모두 검색)
   const filteredStocks = query.trim().length > 0
@@ -272,6 +297,41 @@ export default function DeepDiveScreen() {
     setShowSuggestions(false);
     Keyboard.dismiss();
   }, []);
+
+  // stock 인자를 직접 받는 버전 (자동 분석용 — state가 아직 반영 안 됐을 때 사용)
+  const handleAnalyzeWithStock = async (stock: StockItem) => {
+    const targetName = stock.name;
+    const targetTicker = stock.ticker;
+    if (!targetName) return;
+
+    setIsLoading(true);
+    setLoadingMessage('재무 데이터 조회 중...');
+    setError(null);
+    setResult(null);
+
+    try {
+      console.log(`[DeepDive] Step 1: 재무 데이터 조회 — ${targetName} (${targetTicker})`);
+      let fundamentals: Awaited<ReturnType<typeof fetchStockFundamentals>> = null;
+      try {
+        fundamentals = await fetchStockFundamentals(targetTicker, targetName);
+      } catch (fundErr: any) {
+        console.warn(`[DeepDive] 재무 데이터 조회 중 예외 발생 — Gemini 단독 분석으로 fallback:`, fundErr.message);
+      }
+
+      setLoadingMessage('AI 분석 중...');
+      const input: DeepDiveInput = { ticker: targetTicker, name: targetName, fundamentals: fundamentals || undefined };
+      const analysisResult = await generateDeepDive(input);
+      setResult(analysisResult);
+    } catch (err: any) {
+      const rawMsg = err.message || '';
+      let userMsg = rawMsg.length > 0 ? rawMsg.substring(0, 120) : '알 수 없는 오류가 발생했습니다';
+      if (rawMsg.includes('시간 초과') || err.name === 'AbortError') userMsg = 'AI 분석 시간이 초과되었습니다 (60초).\n다시 시도해주세요.';
+      else if (rawMsg.includes('429') || rawMsg.includes('RESOURCE_EXHAUSTED')) userMsg = 'AI 요청 한도를 초과했습니다.\n1분 후 다시 시도해주세요.';
+      setError(userMsg);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleAnalyze = async () => {
     // 선택된 종목이 없으면 직접 입력된 텍스트를 종목명으로 사용

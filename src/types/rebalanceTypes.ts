@@ -57,6 +57,8 @@ export interface RebalancePortfolioAsset {
 // ── 실시간 가격 ──
 export interface LivePriceData {
   currentPrice: number;
+  /** 가격 통화 — CoinGecko KRW, Yahoo 한국주식 KRW, Yahoo 미국주식 USD */
+  currency?: string;
 }
 
 // ── 또래 비교 ──

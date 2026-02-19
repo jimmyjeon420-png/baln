@@ -101,11 +101,11 @@ export default function HealthScoreDetail({ result }: HealthScoreDetailProps) {
               70점 (기준)
             </SvgText>
 
-            {/* 6개 막대 */}
+            {/* 8개 막대 (barWidth=32, spacing=8 → 8×(32+8)+10=330px) */}
             {result.factors.map((factor, idx) => {
               const barColor = getBarColor(factor.score);
-              const barWidth = 40;
-              const spacing = 12;
+              const barWidth = 32;
+              const spacing = 8;
               const x = idx * (barWidth + spacing) + 10;
               const barHeight = Math.max(5, factor.score * 2.4); // 100점 → 240px
               const y = 260 - barHeight;
@@ -197,8 +197,8 @@ export default function HealthScoreDetail({ result }: HealthScoreDetailProps) {
       {showGuide && (
         <View style={styles.guideContainer}>
           <Text style={styles.guideIntro}>
-            6가지 관점에서 포트폴리오 건강 상태를 진단합니다.
-            브릿지워터 Risk Parity 철학을 기반으로 설계되었습니다.
+            8가지 관점에서 포트폴리오 건강 상태를 진단합니다.
+            브릿지워터 Risk Parity + 투자 철학 정합도를 기반으로 설계되었습니다.
           </Text>
           {result.factors.map((factor, idx) => (
             <View key={idx} style={styles.guideItem}>
