@@ -2,7 +2,7 @@
   "expo": {
     "name": "baln",
     "slug": "smart-rebalancer",
-    "version": "1.0.0",
+    "version": "1.0",
     "scheme": "baln",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -18,7 +18,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.smartrebalancer.app",
-      "buildNumber": "1",
+      "buildNumber": "66",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSFaceIDUsageDescription": "생체인증으로 앱을 보호합니다",
@@ -86,7 +86,7 @@
         "projectId": "0d967ba4-ad89-4a20-87fc-8d4cd28a5658"
       }
     },
-    "runtimeVersion": "1.0.0",
+    "runtimeVersion": "1.0",
     "updates": {
       "enabled": true,
       "fallbackToCacheTimeout": 3000,
