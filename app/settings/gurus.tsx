@@ -23,6 +23,16 @@ import { useQueryClient } from '@tanstack/react-query';
 import { GURU_INSIGHTS_KEY } from '../../src/hooks/useSharedAnalysis';
 import { useTheme } from '../../src/hooks/useTheme';
 
+// 구루 이름 → ID 변환 (딥다이브 네비게이션용)
+function guruNameToId(name: string): string | null {
+  const n = name.toLowerCase();
+  if (n.includes('달리오') || n.includes('dalio')) return 'dalio';
+  if (n.includes('버핏') || n.includes('buffett')) return 'buffett';
+  if (n.includes('캐시') || n.includes('cathie')) return 'cathie_wood';
+  if (n.includes('코스톨라니') || n.includes('kostolany')) return 'kostolany';
+  return null;
+}
+
 // 센티먼트 필터 옵션
 type SentimentFilter = 'ALL' | 'BULLISH' | 'BEARISH' | 'CAUTIOUS' | 'NEUTRAL';
 
@@ -179,9 +189,18 @@ export default function GuruInsightsScreen() {
             )}
 
             {/* 거장 카드 리스트 */}
-            {filteredInsights.map((guru: GuruInsight, index: number) => (
-              <GuruCard key={`${guru.guruNameEn}-${index}`} guru={guru} />
-            ))}
+            {filteredInsights.map((guru: GuruInsight, index: number) => {
+              const guruId = guruNameToId(guru.guruName);
+              return (
+                <TouchableOpacity
+                  key={`${guru.guruNameEn}-${index}`}
+                  onPress={() => guruId && router.push(`/settings/guru-detail/${guruId}` as any)}
+                  activeOpacity={guruId ? 0.75 : 1}
+                >
+                  <GuruCard guru={guru} />
+                </TouchableOpacity>
+              );
+            })}
 
             {/* 면책 조항 */}
             <View style={styles.disclaimer}>

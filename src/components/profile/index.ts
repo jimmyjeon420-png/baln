@@ -3,3 +3,4 @@
  */
 
 export { BadgeShowcase } from './BadgeShowcase';
+export { BadgeRow } from './BadgeRow';

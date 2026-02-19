@@ -24,6 +24,30 @@ import {
   ACHIEVEMENTS,
 } from '../services/achievementService';
 import { grantAchievementReward, ACHIEVEMENT_REWARDS } from '../services/rewardService';
+import supabase from '../services/supabase';
+
+// ============================================================================
+// Supabase 뱃지 동기화 (best-effort — 실패해도 앱 동작에 영향 없음)
+// ============================================================================
+
+async function syncBadgeToSupabase(badgeId: AchievementId): Promise<void> {
+  try {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const userId = sessionData?.session?.user?.id;
+    if (!userId) return;
+
+    const { error } = await supabase.from('user_badges').upsert(
+      { user_id: userId, badge_id: badgeId },
+      { onConflict: 'user_id,badge_id', ignoreDuplicates: true }
+    );
+
+    if (error) {
+      console.warn('[useAchievements] Supabase 동기화 실패 (무시됨):', error.message);
+    }
+  } catch (err) {
+    console.warn('[useAchievements] Supabase 동기화 예외 (무시됨):', err);
+  }
+}
 
 // ============================================================================
 // 훅 반환 타입
@@ -101,13 +125,15 @@ export function useAchievements(): UseAchievementsReturn {
           // 새로 해금된 배지 저장 (토스트 표시용)
           setNewlyUnlocked((prev) => [...prev, ...newBadges]);
 
-          // 배지 보상 크레딧 지급
+          // 배지 보상 크레딧 지급 + Supabase 동기화 (best-effort)
           let totalReward = 0;
           for (const badgeId of newBadges) {
             const result = await grantAchievementReward(badgeId);
             if (result.success) {
               totalReward += result.creditsEarned;
             }
+            // Supabase 동기화 — 실패해도 앱 동작에 영향 없음
+            syncBadgeToSupabase(badgeId);
           }
           if (totalReward > 0) {
             setRewardCreditsEarned(totalReward);

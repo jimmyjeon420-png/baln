@@ -13,7 +13,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../../src/context/AuthContext';
-import { useAchievementCount } from '../../src/hooks/useAchievements';
+import { useAchievementCount, useAchievements } from '../../src/hooks/useAchievements';
+import { BadgeRow } from '../../src/components/profile/BadgeRow';
 import { useScreenTracking } from '../../src/hooks/useAnalytics';
 import { SIZES } from '../../src/styles/theme';
 import RealEstatePreview from '../../src/components/more/RealEstatePreview';
@@ -52,6 +53,7 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { user, signOut } = useAuth();
   const { unlockedCount, totalCount } = useAchievementCount();
+  const { achievements: badgeAchievements, isLoading: badgeLoading } = useAchievements();
   const { themeMode, setThemeMode, colors } = useTheme();
   const { data: isAdmin } = useIsAdmin();
   const { guruStyle } = useGuruStyle();
@@ -303,6 +305,11 @@ export default function ProfileScreen() {
           </View>
           <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
         </TouchableOpacity>
+
+        {/* ── 뱃지 행 (획득한 배지 상위 3개) ── */}
+        {user && (
+          <BadgeRow achievements={badgeAchievements} isLoading={badgeLoading} />
+        )}
 
         {/* ── 부동산 보유 현황 (있을 때만 표시) ── */}
         {user && <RealEstatePreview />}

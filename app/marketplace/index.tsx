@@ -43,6 +43,8 @@ import { FEATURE_LABELS, TIER_DISCOUNTS } from '../../src/types/marketplace';
 import type { AIFeatureType } from '../../src/types/marketplace';
 import { getDiscountedCost } from '../../src/services/creditService';
 import { useTheme } from '../../src/hooks/useTheme';
+import { ItemPurchaseModal } from '../../src/components/marketplace/ItemPurchaseModal';
+import { type MarketplaceItem, getItemsByTier } from '../../src/data/marketplaceItems';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_GAP = 12;
@@ -184,6 +186,8 @@ export default function MarketplaceScreen() {
   const [portfolio, setPortfolio] = useState<any[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [initialLoaded, setInitialLoaded] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<MarketplaceItem | null>(null);
+  const [showPurchaseModal, setShowPurchaseModal] = useState(false);
 
   // 사용자 티어 + 포트폴리오 로드 (개인화 추천에 필요)
   useFocusEffect(
@@ -411,6 +415,33 @@ export default function MarketplaceScreen() {
           </View>
         )}
 
+        {/* ── 7.5. 크레딧 상점 (Tier 1/2 아이템) ── */}
+        <View style={s.shopSection}>
+          <Text style={s.sectionTitle}>크레딧 상점</Text>
+          {[...getItemsByTier('instant'), ...getItemsByTier('experience')].map((item) => (
+            <TouchableOpacity
+              key={item.id}
+              style={s.shopItem}
+              onPress={() => {
+                mediumTap();
+                setSelectedItem(item);
+                setShowPurchaseModal(true);
+              }}
+              activeOpacity={0.8}
+            >
+              <Text style={s.shopItemIcon}>{item.icon}</Text>
+              <View style={s.shopItemInfo}>
+                <Text style={s.shopItemName}>{item.name}</Text>
+                <Text style={s.shopItemDesc} numberOfLines={1}>{item.description}</Text>
+              </View>
+              <View style={s.shopItemPrice}>
+                <Ionicons name="diamond" size={11} color="#7C4DFF" />
+                <Text style={s.shopItemPriceText}>{item.price}C</Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
+
         {/* ── 8. 면책 문구 ── */}
         <View style={s.footerBox}>
           <Text style={s.footerNote}>
@@ -419,6 +450,22 @@ export default function MarketplaceScreen() {
         </View>
 
       </ScrollView>
+
+      {/* ── 아이템 구매 모달 ── */}
+      <ItemPurchaseModal
+        item={selectedItem}
+        visible={showPurchaseModal}
+        balance={balance}
+        onClose={() => {
+          setShowPurchaseModal(false);
+          setSelectedItem(null);
+        }}
+        onSuccess={() => {
+          setShowPurchaseModal(false);
+          setSelectedItem(null);
+          refetchCredits();
+        }}
+      />
     </SafeAreaView>
   );
 }
@@ -747,6 +794,51 @@ const s = StyleSheet.create({
   },
 
   // ── 푸터 면책 ──
+  // ── 크레딧 상점 ──
+  shopSection: {
+    marginHorizontal: 20,
+    marginBottom: 24,
+  },
+  shopItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#141414',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 8,
+  },
+  shopItemIcon: {
+    fontSize: 28,
+    marginRight: 12,
+  },
+  shopItemInfo: {
+    flex: 1,
+  },
+  shopItemName: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  shopItemDesc: {
+    color: '#6B7280',
+    fontSize: 11,
+  },
+  shopItemPrice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: '#7C4DFF20',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+  },
+  shopItemPriceText: {
+    color: '#7C4DFF',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+
   footerBox: {
     marginHorizontal: 20,
     marginTop: 28,
