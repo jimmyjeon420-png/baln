@@ -68,6 +68,10 @@ interface ContextCardFlatProps {
   date: string;
   /** Premium 구매 버튼 핸들러 */
   onPressPremium?: () => void;
+  /** 업데이트 시점 라벨 (예: "오전 6:03 업데이트") */
+  updateTimeLabel?: string;
+  /** 시간대 아이콘 이름 (Ionicons) */
+  timeSlotIcon?: string;
   data?: never;
   onClose?: never;
 }
@@ -82,6 +86,10 @@ interface ContextCardLegacyProps {
   onPressPremium?: () => void;
   /** 닫기 버튼 핸들러 (모달에서 사용) */
   onClose?: () => void;
+  /** 업데이트 시점 라벨 */
+  updateTimeLabel?: string;
+  /** 시간대 아이콘 이름 */
+  timeSlotIcon?: string;
   historicalContext?: never;
   macroChain?: never;
   politicalContext?: never;
@@ -116,6 +124,8 @@ interface NormalizedData {
   date: string;
   onPressPremium?: () => void;
   onClose?: () => void;
+  updateTimeLabel?: string;
+  timeSlotIcon?: string;
 }
 
 /** Props를 정규화된 내부 구조로 변환 */
@@ -139,6 +149,8 @@ function normalizeProps(props: ContextCardProps): NormalizedData {
       date: d.date,
       onPressPremium: props.onPressPremium,
       onClose: props.onClose,
+      updateTimeLabel: (props as any).updateTimeLabel,
+      timeSlotIcon: (props as any).timeSlotIcon,
     };
   }
 
@@ -152,6 +164,8 @@ function normalizeProps(props: ContextCardProps): NormalizedData {
     isPremium: props.isPremium,
     date: props.date,
     onPressPremium: props.onPressPremium,
+    updateTimeLabel: props.updateTimeLabel,
+    timeSlotIcon: props.timeSlotIcon,
   };
 }
 
@@ -171,6 +185,8 @@ export default function ContextCard(props: ContextCardProps) {
     date,
     onPressPremium,
     onClose,
+    updateTimeLabel,
+    timeSlotIcon,
   } = normalizeProps(props);
 
   return (
@@ -196,9 +212,21 @@ export default function ContextCard(props: ContextCardProps) {
             오늘의 맥락
           </Text>
         </View>
-        <Text style={[s.headerDate, { color: colors.textTertiary }]}>
-          {formatDate(date)}
-        </Text>
+        <View style={s.headerRight}>
+          {updateTimeLabel && (
+            <View style={[s.updateBadge, { backgroundColor: colors.primary + '15' }]}>
+              {timeSlotIcon && (
+                <Ionicons name={timeSlotIcon as any} size={12} color={colors.primary} />
+              )}
+              <Text style={[s.updateBadgeText, { color: colors.primary }]}>
+                {updateTimeLabel}
+              </Text>
+            </View>
+          )}
+          <Text style={[s.headerDate, { color: colors.textTertiary }]}>
+            {formatDate(date)}
+          </Text>
+        </View>
       </View>
 
       {/* 5겹 레이어 */}
@@ -359,6 +387,22 @@ const s = StyleSheet.create({
   },
   headerDate: {
     fontSize: 13,
+  },
+  headerRight: {
+    alignItems: 'flex-end',
+    gap: 2,
+  },
+  updateBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+  },
+  updateBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
   },
 
   // 레이어 컨테이너

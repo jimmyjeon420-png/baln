@@ -34,6 +34,7 @@ import {
   getCachedCardTimestamp,
   isCardStale,
   getCardFreshnessLabel,
+  formatCardUpdateTime,
   FALLBACK_CONTEXT_CARD,
   type ContextCardWithImpact,
   type ContextCardSentiment,
@@ -54,7 +55,7 @@ export const CONTEXT_SENTIMENT_KEY = ['contextCard', 'sentiment'];
 // ============================================================================
 
 /** 데이터 신선도 기준: 이 시간(시) 이상 오래되면 stale로 판단 */
-const STALE_THRESHOLD_HOURS = 6;
+const STALE_THRESHOLD_HOURS = 4;
 
 /** 기본 재시도 횟수 */
 const DEFAULT_RETRY_COUNT = 2;
@@ -143,7 +144,7 @@ export function useContextCard(options?: { retryCount?: number }) {
 
       return result;
     },
-    staleTime: 5 * 60 * 1000, // 5분 (Edge Function이 매일 07:00에 1회 생성하므로 자주 갱신 불필요)
+    staleTime: 3 * 60 * 1000, // 3분 (하루 3회 업데이트이므로 짧은 캐시)
     gcTime: 30 * 60 * 1000,   // 30분 동안 메모리 유지
 
     // 지수 백오프 재시도: 1초, 3초 간격
@@ -187,7 +188,7 @@ export function useContextCard(options?: { retryCount?: number }) {
     ...query,
     /** 로딩 완료했지만 맥락 카드 데이터가 없는 상태 (DB에 카드 미생성) */
     isEmpty,
-    /** 6시간 이상 오래된 데이터 */
+    /** 4시간 이상 오래된 데이터 */
     isStale,
     /** 정적 폴백 카드를 표시 중 (DB도 캐시도 없음) */
     isFallback,
@@ -197,6 +198,12 @@ export function useContextCard(options?: { retryCount?: number }) {
     freshnessLabel,
     /** 항상 non-null인 데이터 (최신 > 캐시 > 정적 폴백 순) */
     effectiveData,
+    /** "오전 6:03 업데이트" 형식의 시점 라벨 */
+    updateTimeLabel: effectiveData?.card?.created_at
+      ? formatCardUpdateTime(effectiveData.card.created_at)
+      : null,
+    /** 현재 카드의 시간대 */
+    timeSlot: (effectiveData?.card as any)?.time_slot as string | undefined,
   };
 }
 

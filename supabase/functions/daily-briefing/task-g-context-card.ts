@@ -58,13 +58,21 @@ export interface ContextCardResult {
  *
  * @returns { contextCardId, cardData }
  */
-async function generateContextCard(): Promise<{
+async function generateContextCard(timeSlot: string = 'morning'): Promise<{
   contextCardId: string;
   cardData: ContextCardData;
   realData: RealMarketData | null;
 }> {
   const dateStr = getKSTDateStr();
   const todayDate = getKSTDate();
+
+  // 시간대별 프롬프트 컨텍스트
+  const timeSlotContextMap: Record<string, string> = {
+    morning: '[시간대: 아침 6시] 오늘 하루 시장을 미리 전망합니다. 아시아 장 개장 전, 미국 장 마감 후 상황을 중심으로 분석하세요.',
+    afternoon: '[시간대: 오후 3시] 장중 흐름을 업데이트합니다. 코스피/코스닥 장중 흐름과 오늘 발생한 주요 이벤트를 반영하세요.',
+    evening: '[시간대: 저녁 7시] 오늘 시장 마감을 정리합니다. 한국 장 마감 결과와 미국 프리마켓 흐름을 반영하세요.',
+  };
+  const timeSlotContext = timeSlotContextMap[timeSlot] || timeSlotContextMap['morning'];
 
   // ── 실시간 시장 데이터 수집 ──
   // Task A가 이미 실행됐으면 DB에서 읽고, 없으면 직접 수집
@@ -116,6 +124,7 @@ async function generateContextCard(): Promise<{
   }
 
   const prompt = `당신은 baln(발른) 앱의 맥락 카드 AI입니다.
+${timeSlotContext}
 오늘(${dateStr}) 시장 상황을 5가지 관점으로 분석하여, 한국 개인투자자가 "오늘 내 자산이 왜 이렇게 움직였는지" 5분 안에 이해할 수 있도록 설명하세요.
 ${realDataContext}
 ${macroContext}
@@ -181,11 +190,13 @@ ${macroContext}
   // context_cards 테이블에 UPSERT (date가 Primary Key)
   // todayDate는 line 63에서 이미 선언됨 — 중복 선언 제거 (BOOT_ERROR 원인)
 
+  const slot = timeSlot || 'morning';
   const { data: insertedCard, error: upsertError } = await supabase
     .from('context_cards')
     .upsert(
       {
         date: todayDate,
+        time_slot: slot,
         headline: parsed.headline || '오늘의 시장 분석',
         historical_context: parsed.historical_context || '',
         macro_chain: parsed.macro_chain || [],
@@ -194,7 +205,7 @@ ${macroContext}
         sentiment: parsed.sentiment || 'calm',
         updated_at: new Date().toISOString(),
       },
-      { onConflict: 'date' }
+      { onConflict: 'date,time_slot' }
     )
     .select('id')
     .single();
@@ -395,14 +406,14 @@ async function calculateUserImpacts(
  *
  * @returns { contextCardId, sentiment, usersCalculated, avgImpact }
  */
-export async function runContextCardGeneration(): Promise<ContextCardResult> {
+export async function runContextCardGeneration(timeSlot?: string): Promise<ContextCardResult> {
   const startTime = Date.now();
 
   try {
     console.log('[Task G] 맥락 카드 생성 배치 시작...');
 
     // G-1: 맥락 카드 생성
-    const cardResult = await generateContextCard();
+    const cardResult = await generateContextCard(timeSlot);
 
     // G-2: 사용자별 영향도 계산 (실데이터 + sentiment 전달)
     const impactResult = await calculateUserImpacts(

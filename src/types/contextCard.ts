@@ -21,6 +21,8 @@ export interface ContextCard {
   is_premium_only: boolean;             // 프리미엄 잠금 여부
   market_data: Record<string, any>;     // 추가 시장 데이터
   created_at: string;
+  time_slot?: 'morning' | 'afternoon' | 'evening';  // 시간대 (하루 3회)
+  updated_at?: string;  // 마지막 업데이트 시각
 }
 
 /** 유저별 영향도 (user_context_impacts 테이블) */
@@ -80,6 +82,23 @@ export interface ContextCardData {
   /** Premium 콘텐츠 여부 (3-4번 레이어 잠금) */
   isPremiumContent: boolean;
 }
+
+/** 맥락 카드 시간대 */
+export type ContextCardTimeSlot = 'morning' | 'afternoon' | 'evening';
+
+/** 시간대별 라벨 */
+export const TIME_SLOT_LABELS: Record<ContextCardTimeSlot, string> = {
+  morning: '오전',
+  afternoon: '오후',
+  evening: '저녁',
+} as const;
+
+/** 시간대별 아이콘 (Ionicons) */
+export const TIME_SLOT_ICONS: Record<ContextCardTimeSlot, string> = {
+  morning: 'sunny-outline',
+  afternoon: 'partly-sunny-outline',
+  evening: 'moon-outline',
+} as const;
 
 /**
  * 센티먼트별 색상 매핑

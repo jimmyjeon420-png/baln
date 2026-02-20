@@ -86,6 +86,8 @@ serve(async (req: Request) => {
       } catch { /* body 파싱 실패 시 전체 실행 */ }
     }
 
+    const timeSlot = url.searchParams.get('time_slot') || undefined;
+
     const runAll = !selectedTasks;
     const shouldRun = (task: string) => runAll || selectedTasks!.has(task);
     // 선택 실행 시 Task 간 지연 단축 (전체 실행 시만 Rate Limit 방지)
@@ -178,7 +180,7 @@ serve(async (req: Request) => {
     // Task G: 맥락 카드 생성 (Gemini) — ★ 재시도 적용
     if (shouldRun('G')) {
       console.log('[Task G] 시작: 맥락 카드 생성...');
-      contextCardResult = await safe(() => retryWithBackoff('Task G', runContextCardGeneration));
+      contextCardResult = await safe(() => retryWithBackoff('Task G', () => runContextCardGeneration(timeSlot)));
       await sleep(delayMs);
     }
 

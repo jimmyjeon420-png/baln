@@ -126,7 +126,7 @@ export async function getCachedCardTimestamp(): Promise<number | null> {
 // ============================================================================
 
 /** 카드 데이터가 N시간 이상 오래됐는지 확인 */
-export function isCardStale(cardDate: string, hoursThreshold: number = 12): boolean {
+export function isCardStale(cardDate: string, hoursThreshold: number = 4): boolean {
   try {
     const cardTime = new Date(cardDate).getTime();
     const now = Date.now();
@@ -134,6 +134,37 @@ export function isCardStale(cardDate: string, hoursThreshold: number = 12): bool
     return diffHours >= hoursThreshold;
   } catch {
     return false;
+  }
+}
+
+/**
+ * 맥락 카드의 업데이트 시점을 사용자 친화적 문자열로 변환
+ * 예: "오전 6:03 업데이트", "오후 3:15 업데이트"
+ */
+export function formatCardUpdateTime(createdAt: string): string {
+  try {
+    const date = new Date(createdAt);
+    const hours = date.getHours();
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+
+    const period = hours < 12 ? '오전' : '오후';
+    const displayHour = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
+
+    return `${period} ${displayHour}:${minutes} 업데이트`;
+  } catch {
+    return '업데이트됨';
+  }
+}
+
+/**
+ * 맥락 카드의 시간대 라벨 반환
+ */
+export function getTimeSlotLabel(timeSlot?: string): string {
+  switch (timeSlot) {
+    case 'morning': return '아침 브리핑';
+    case 'afternoon': return '오후 업데이트';
+    case 'evening': return '저녁 마감 정리';
+    default: return '시장 분석';
   }
 }
 
@@ -212,12 +243,14 @@ export async function getTodayContextCard(
   const today = getLocalDate();
 
   try {
-    // 1단계: 오늘의 맥락 카드 조회
+    // 1단계: 오늘의 맥락 카드 조회 (최신 time_slot 우선)
     const { data: cardData, error: cardError } = await supabase
       .from('context_cards')
       .select('*')
       .eq('date', today)
-      .single();
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
     if (cardError || !cardData) {
       if (__DEV__) console.log('[맥락 카드] 오늘의 카드 없음 -> 최근 카드로 폴백');
@@ -379,13 +412,14 @@ export async function getRecentContextCards(
   const endDateStr = fmt(endDate);
 
   try {
-    // 1단계: 최근 N일 맥락 카드 조회
+    // 1단계: 최근 N일 맥락 카드 목록 (최신 time_slot 우선)
     const { data: cardsData, error: cardsError } = await supabase
       .from('context_cards')
       .select('*')
       .gte('date', startDateStr)
       .lte('date', endDateStr)
-      .order('date', { ascending: false });
+      .order('date', { ascending: false })
+      .order('created_at', { ascending: false });
 
     if (cardsError || !cardsData) {
       if (__DEV__) console.log('[맥락 카드] 최근 카드 조회 실패 또는 데이터 없음');
@@ -468,9 +502,11 @@ export async function getQuickContextSentiment(): Promise<{
 
     const { data, error } = await supabase
       .from('context_cards')
-      .select('sentiment, headline')
+      .select('sentiment, headline, created_at')
       .eq('date', today)
-      .single();
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
     if (error || !data) {
       return null;
