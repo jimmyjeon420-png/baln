@@ -437,11 +437,11 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 },
-  cardLabel: { fontSize: 16, fontWeight: '700', color: colors.textPrimary },
-  cardLabelEn: { fontSize: 11, color: colors.textTertiary, marginTop: 1, letterSpacing: 0.5, textTransform: 'uppercase' },
+  cardLabel: { fontSize: 17, fontWeight: '700', color: colors.textPrimary },
+  cardLabelEn: { fontSize: 12, color: colors.textTertiary, marginTop: 1, letterSpacing: 0.5, textTransform: 'uppercase' },
   activeBadge: { backgroundColor: `${colors.premium.purple}20`, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
-  activeBadgeText: { fontSize: 11, color: colors.premium.purple, fontWeight: '700' },
-  collapsedDesc: { marginTop: 8, fontSize: 13, color: colors.textSecondary, lineHeight: 19 },
+  activeBadgeText: { fontSize: 12, color: colors.premium.purple, fontWeight: '700' },
+  collapsedDesc: { marginTop: 8, fontSize: 14, color: colors.textSecondary, lineHeight: 20 },
 
   simulatorContainer: { marginTop: 14, paddingTop: 14, borderTopWidth: 1, borderTopColor: colors.border, gap: 12 },
 
@@ -451,10 +451,10 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderRadius: 12, padding: 16, gap: 12,
   },
   healthItem: { alignItems: 'center' },
-  healthLabel: { fontSize: 11, color: colors.textTertiary, marginBottom: 4 },
+  healthLabel: { fontSize: 12, color: colors.textTertiary, marginBottom: 4 },
   healthValue: { fontSize: 23, fontWeight: '800' },
   healthDelta: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 },
-  healthDeltaText: { fontSize: 13, fontWeight: '700' },
+  healthDeltaText: { fontSize: 14, fontWeight: '700' },
 
   // 리밸런싱 가이드
   tradeGuideSection: {
@@ -463,28 +463,28 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   tradeGuideHeader: {
     flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 4,
   },
-  tradeGuideTitle: { fontSize: 13, fontWeight: '700' },
-  tradeGuideSub: { fontSize: 11, marginLeft: 'auto' },
+  tradeGuideTitle: { fontSize: 14, fontWeight: '700' },
+  tradeGuideSub: { fontSize: 12, marginLeft: 'auto' },
   tradeRow: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
   },
-  tradeIcon: { fontSize: 14, width: 20, textAlign: 'center' },
-  tradeName: { fontSize: 13, flex: 1 },
-  tradeAmount: { fontSize: 13, fontWeight: '700' },
+  tradeIcon: { fontSize: 15, width: 20, textAlign: 'center' },
+  tradeName: { fontSize: 14, flex: 1 },
+  tradeAmount: { fontSize: 14, fontWeight: '700' },
 
   recommendButton: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     backgroundColor: colors.primary, paddingVertical: 14, borderRadius: 12, gap: 8,
   },
-  recommendButtonText: { fontSize: 15, color: colors.inverseText, fontWeight: '700' },
+  recommendButtonText: { fontSize: 16, color: colors.inverseText, fontWeight: '700' },
 
   // 합계 표시
   sumRow: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10,
   },
-  sumLabel: { fontSize: 13, fontWeight: '600' },
-  sumValue: { fontSize: 13, fontWeight: '700' },
+  sumLabel: { fontSize: 14, fontWeight: '600' },
+  sumValue: { fontSize: 14, fontWeight: '700' },
 
   // 카테고리 슬라이더
   assetsScroll: { maxHeight: 420 },
@@ -495,14 +495,14 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   catHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   catNameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   catIcon: { fontSize: 17 },
-  catLabel: { fontSize: 15, fontWeight: '700' },
+  catLabel: { fontSize: 16, fontWeight: '700' },
   catWeightRow: { flexDirection: 'row', alignItems: 'center' },
-  catCurrentPct: { fontSize: 12 },
-  catArrow: { fontSize: 12 },
-  catTargetPct: { fontSize: 13 },
-  catDelta: { fontSize: 12, fontWeight: '600' },
+  catCurrentPct: { fontSize: 13 },
+  catArrow: { fontSize: 13 },
+  catTargetPct: { fontSize: 14 },
+  catDelta: { fontSize: 13, fontWeight: '600' },
   sliderRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  sliderLabel: { fontSize: 11, color: colors.textTertiary, width: 30, textAlign: 'center' },
+  sliderLabel: { fontSize: 12, color: colors.textTertiary, width: 30, textAlign: 'center' },
   slider: { flex: 1, height: 32 },
 
   // 버튼
@@ -511,14 +511,14 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     backgroundColor: colors.surfaceElevated, paddingVertical: 12, borderRadius: 10, gap: 6,
   },
-  resetButtonText: { fontSize: 14, color: colors.textTertiary, fontWeight: '600' },
+  resetButtonText: { fontSize: 15, color: colors.textTertiary, fontWeight: '600' },
   aiButton: {
     flex: 2, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     backgroundColor: colors.premium.purple, paddingVertical: 12, borderRadius: 10, gap: 6,
   },
   aiButtonDisabled: { backgroundColor: colors.disabled },
-  aiButtonText: { fontSize: 14, color: colors.inverseText, fontWeight: '700' },
+  aiButtonText: { fontSize: 15, color: colors.inverseText, fontWeight: '700' },
   aiButtonTextDisabled: { color: colors.disabledText },
 
-  hint: { fontSize: 12, color: colors.textTertiary, lineHeight: 17, textAlign: 'center' },
+  hint: { fontSize: 13, color: colors.textTertiary, lineHeight: 18, textAlign: 'center' },
 });

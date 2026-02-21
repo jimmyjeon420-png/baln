@@ -113,11 +113,11 @@ const s = StyleSheet.create({
     marginLeft: 6,
   },
   chipLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '500',
   },
   chipValue: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
   },
 });

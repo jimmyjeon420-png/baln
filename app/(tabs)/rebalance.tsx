@@ -97,7 +97,7 @@ const toastStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(76,175,80,0.2)',
   },
-  text: { fontSize: 13, color: '#4CAF50', fontWeight: '600' },
+  text: { fontSize: 14, color: '#4CAF50', fontWeight: '600' },
 });
 
 // 포그라운드 복귀 자동 갱신 최소 간격 (5분)
@@ -835,10 +835,10 @@ const s = StyleSheet.create({
     marginBottom: 12,
   },
   emptyDesc: {
-    fontSize: 16,
+    fontSize: 17,
     color: '#9E9E9E',
     textAlign: 'center',
-    lineHeight: 23,
+    lineHeight: 24,
     marginBottom: 32,
   },
   emptyButton: {
@@ -851,7 +851,7 @@ const s = StyleSheet.create({
     gap: 8,
   },
   emptyButtonText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     color: '#000000',
   },
@@ -874,7 +874,7 @@ const s = StyleSheet.create({
     backgroundColor: '#4CAF50',
   },
   aiLoadingText: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#4CAF50',
     fontWeight: '600',
   },
@@ -891,7 +891,7 @@ const s = StyleSheet.create({
     gap: 12,
   },
   aiErrorText: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#CF6679',
     fontWeight: '600',
     flex: 1,
@@ -903,7 +903,7 @@ const s = StyleSheet.create({
     borderRadius: 8,
   },
   aiRetryText: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#CF6679',
     fontWeight: '600',
   },
@@ -917,9 +917,9 @@ const s = StyleSheet.create({
     borderColor: 'rgba(255, 193, 7, 0.2)',
   },
   disclaimer: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#9E9E9E',
-    lineHeight: 17,
+    lineHeight: 18,
   },
   // ── AI 심화 분석 섹션 (인라인 스타일 → StyleSheet 추출) ──
   diagnosticHeader: {
@@ -953,7 +953,7 @@ const s = StyleSheet.create({
     marginBottom: 4,
   },
   aiSectionSubtitle: {
-    fontSize: 14,
+    fontSize: 15,
     marginBottom: 16,
   },
   aiButtonList: {
@@ -973,11 +973,11 @@ const s = StyleSheet.create({
     flex: 1,
   },
   aiButtonTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
   },
   aiButtonDesc: {
-    fontSize: 13,
+    fontSize: 14,
     marginTop: 2,
   },
 });

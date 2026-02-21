@@ -136,7 +136,7 @@ export default function RiskDashboardSection({
           backgroundColor: `${colors.warning}20`,
         }}>
           <Ionicons name="information-circle" size={16} color={colors.warning} />
-          <Text style={{ flex: 1, fontSize: 12, lineHeight: 17, color: colors.textSecondary }}>
+          <Text style={{ flex: 1, fontSize: 13, lineHeight: 18, color: colors.textSecondary }}>
             {contextSentiment === 'calm' && panicLevel === 'DANGER'
               ? '시장 심리는 안정적이지만, 포트폴리오 위험 신호가 감지되었습니다. 배분 이탈도를 확인하세요.'
               : '시장에 경고 신호가 있지만, 당신의 포트폴리오는 안전합니다. 현재 기준을 유지하세요.'}
@@ -179,12 +179,12 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     gap: 8,
   },
   cardLabel: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     color: colors.textPrimary,
   },
   cardLabelEn: {
-    fontSize: 11,
+    fontSize: 12,
     marginTop: 1,
     letterSpacing: 0.5,
     textTransform: 'uppercase',
@@ -198,7 +198,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   expandButton: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   expandButtonText: {
-    fontSize: 13,
+    fontSize: 14,
     color: colors.textTertiary,
   },
   summaryRow: { flexDirection: 'row', gap: 10 },
@@ -211,15 +211,15 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     gap: 10,
   },
   summaryLabel: {
-    fontSize: 12,
+    fontSize: 13,
     marginBottom: 2,
     color: colors.textTertiary,
   },
-  summaryValue: { fontSize: 14, fontWeight: '700' },
+  summaryValue: { fontSize: 15, fontWeight: '700' },
   reasonText: {
-    fontSize: 12,
+    fontSize: 13,
     marginTop: 4,
-    lineHeight: 16,
+    lineHeight: 17,
     color: colors.textTertiary,
   },
   detailContainer: {
