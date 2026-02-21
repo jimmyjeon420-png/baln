@@ -1,19 +1,21 @@
 // @ts-nocheck
 // ============================================================================
-// Task J: 실시간 뉴스 수집 (News Collection)
-// 한국경제 RSS + Google News RSS → Gemini AI 태깅 → market_news UPSERT
+// Task J: 실시간 뉴스 수집 (News Collection) — Phase 1 토큰 최적화
 //
-// [흐름]
-// 1. RSS 피드 파싱 (한국경제, Google News 한국어 비즈니스)
-// 2. Gemini로 각 뉴스에 티커 태그 + 카테고리 + PiCK 여부 판별
-// 3. market_news 테이블에 UPSERT (source_url 기준 중복 방지)
-// 4. 30일 이상 된 뉴스 자동 삭제
+// [최적화 포인트]
+// 1. 기계적 선태깅: STOCK_LIST 37종목 기반 자동 태그/카테고리 (AI 전 선처리)
+// 2. 배치 크기 10→20 (API 호출 50% 절감)
+// 3. Google Search 비활성화 (뉴스 태깅에 불필요 → 그라운딩 토큰 절약)
+// 4. responseMimeType: 'application/json' (JSON 예시 프롬프트 제거)
+// 5. 프롬프트 길이 ~60% 단축
 // ============================================================================
 
 import {
   supabase,
-  callGeminiWithSearch,
-  cleanJsonResponse,
+  GEMINI_API_KEY,
+  GEMINI_MODEL,
+  STOCK_LIST,
+  sleep,
   logTaskResult,
 } from './_shared.ts';
 
@@ -48,6 +50,129 @@ const RSS_SOURCES = [
     maxItems: 15,
   },
 ];
+
+// ============================================================================
+// Phase 1: 기계적 선태깅 (AI 호출 전 자동 분류)
+// 비유: 우체부가 봉투에 적힌 부서명 보고 먼저 분류 → 애매한 것만 사장님(AI)한테
+// ============================================================================
+
+/** 매크로 경제 키워드 — 이 키워드가 제목에 있으면 category='macro' */
+const MACRO_KEYWORDS = [
+  '금리', 'cpi', '연준', 'fed', 'fomc', '기준금리', 'gdp', '실업률',
+  '환율', '달러', '인플레이션', '물가', '국채', '채권', '경기', '무역',
+  '관세', '재정', '통화정책', '양적', 'pce', '고용', '제조업', 'pmi',
+];
+
+interface PreTagResult {
+  tags: string[];
+  category: 'crypto' | 'stock' | 'macro' | 'general';
+}
+
+/**
+ * 뉴스 제목+설명에서 STOCK_LIST 기반 자동 태그/카테고리 추출
+ * AI 호출 없이 기계적으로 판단 → 토큰 절약
+ */
+function preTagNews(title: string, description?: string): PreTagResult {
+  const text = `${title} ${description || ''}`.toLowerCase();
+  const tags: string[] = [];
+  let category: PreTagResult['category'] = 'general';
+  let hasCrypto = false;
+  let hasStock = false;
+
+  // STOCK_LIST 37종목 매칭
+  for (const stock of STOCK_LIST) {
+    // 티커 매칭 (대소문자 무시, .KS 제거)
+    const tickerClean = stock.ticker.replace('.KS', '').toLowerCase();
+    // 한국어 이름 매칭
+    const nameLower = stock.name.toLowerCase();
+
+    if (text.includes(tickerClean) || text.includes(nameLower)) {
+      // 태그는 보기 좋은 형태로 (BTC, 삼성전자 등)
+      const displayTag = stock.sector === 'Crypto'
+        ? stock.ticker
+        : stock.ticker.includes('.KS')
+          ? stock.name  // 한국 주식은 한국어 이름
+          : stock.ticker; // 미국 주식/ETF는 티커
+
+      if (!tags.includes(displayTag)) tags.push(displayTag);
+
+      if (stock.sector === 'Crypto') hasCrypto = true;
+      else hasStock = true;
+    }
+  }
+
+  // 카테고리 결정: crypto > stock > macro > general
+  if (hasCrypto) category = 'crypto';
+  else if (hasStock) category = 'stock';
+  else {
+    // 매크로 키워드 체크
+    for (const kw of MACRO_KEYWORDS) {
+      if (text.includes(kw)) {
+        category = 'macro';
+        break;
+      }
+    }
+  }
+
+  return { tags: tags.slice(0, 5), category };
+}
+
+// ============================================================================
+// Phase 1: Gemini 직접 호출 (Google Search 제거 + JSON 강제)
+// 비유: 기존엔 "검색도 해봐" 시켰는데, 뉴스 분류엔 검색이 불필요 → 비용 절약
+// ============================================================================
+
+/**
+ * Gemini API 직접 호출 (Google Search 없이, JSON 출력 강제)
+ * - Google Search 그라운딩 제거 → 그라운딩 토큰 0
+ * - responseMimeType: 'application/json' → 프롬프트에서 JSON 예시 제거 가능
+ * - temperature 0.3 (태깅은 창의성 불필요, 일관성 중요)
+ */
+async function callGeminiDirect(prompt: string): Promise<string> {
+  await sleep(1000);
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+
+  const body = {
+    contents: [{ parts: [{ text: prompt }] }],
+    // ★ Google Search 도구 없음 → 그라운딩 토큰 절약
+    generationConfig: {
+      temperature: 0.3,
+      maxOutputTokens: 4096,
+      responseMimeType: 'application/json', // ★ JSON 출력 강제 → 파싱 에러 제거
+    },
+  };
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 90000); // 90초 (20개 배치 처리 시간 확보)
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Gemini API 에러 (${response.status}): ${errorText}`);
+    }
+
+    const data = await response.json();
+    if (!data.candidates?.[0]?.content?.parts) {
+      throw new Error('Gemini API 빈 응답');
+    }
+
+    return data.candidates[0].content.parts.map((p: any) => p.text || '').join('');
+  } catch (err: any) {
+    if (err.name === 'AbortError') {
+      throw new Error('Gemini API 90초 타임아웃');
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
 
 // ============================================================================
 // 제목 정규화 (중복 제거용)
@@ -175,62 +300,48 @@ interface TaggedNews {
 }
 
 /**
- * Gemini로 뉴스 배치 태깅
- * 10개씩 묶어서 한 번에 요청 (API 비용 절약)
+ * Phase 1 최적화 — Gemini 뉴스 배치 태깅
+ *
+ * [최적화 전] 배치 10개, 긴 프롬프트(~1200토큰), Google Search 사용
+ * [최적화 후] 배치 20개, 짧은 프롬프트(~400토큰), Google Search 제거, 선태깅 포함
+ *
+ * 비유: 이전엔 "이 편지들 전부 읽고 분류해줘" → 이제는 "봉투에 적힌 부서명은 이미 읽었어, 중요도만 판단해줘"
  */
 async function tagNewsWithGemini(items: RawNewsItem[]): Promise<TaggedNews[]> {
   if (items.length === 0) return [];
 
-  const BATCH_SIZE = 10;
+  const BATCH_SIZE = 20; // ← 10에서 20으로 (API 호출 50% 절감)
   const results: TaggedNews[] = [];
 
   for (let i = 0; i < items.length; i += BATCH_SIZE) {
     const batch = items.slice(i, i + BATCH_SIZE);
 
-    const newsList = batch.map((item, idx) =>
-      `[${idx}] 제목: ${item.title}\n    설명: ${item.description || '없음'}\n    출처: ${item.source}`
-    ).join('\n');
+    // ── Step 1: 기계적 선태깅 (AI 호출 없이 자동 분류) ──
+    const preTags = batch.map(item => preTagNews(item.title, item.description));
 
-    const prompt = `당신은 금융 뉴스 분석 AI입니다. 개인 투자자의 관점에서 뉴스를 분석합니다.
-아래 ${batch.length}개 뉴스를 분석하고 JSON 배열로 응답하세요.
+    // 뉴스 목록 (선태깅 결과 포함 → AI가 확인만 하면 됨)
+    const newsList = batch.map((item, idx) => {
+      const pt = preTags[idx];
+      const tagStr = pt.tags.length > 0 ? pt.tags.join(',') : '미감지';
+      return `[${idx}] ${item.title} | 태그:${tagStr} | 분류:${pt.category}`;
+    }).join('\n');
 
-[뉴스 목록]
+    // ── Step 2: 다이어트 프롬프트 (기존 대비 ~60% 짧음) ──
+    const prompt = `금융뉴스 ${batch.length}건 분석. 태그·분류는 사전감지됨. 확인·보완 후 영향도 추가.
 ${newsList}
-
-[분류 기준]
-- tags: 관련 티커/키워드 배열 (예: ["BTC","ETH"], ["삼성전자","SK하이닉스"], ["금리","CPI"])
-  - 암호화폐: BTC, ETH, SOL, XRP, DOGE 등
-  - 한국 주식: 삼성전자, SK하이닉스, 카카오, 네이버 등 (한국어 이름)
-  - 미국 주식: NVDA, TSLA, AAPL, MSFT 등 (티커)
-  - 비관련이면 빈 배열 []
-- category: "crypto" | "stock" | "macro" | "general"
-- summary: 1~2문장 한국어 요약 (50자 이내)
-- is_pick: 투자자가 반드시 읽어야 할 핵심 뉴스인지 (true/false, 배치당 최대 2개)
-- pick_reason: is_pick이 true일 때 이유 (20자 이내)
-- impact_summary: 이 뉴스가 관련 자산 보유자에게 미치는 영향 + 향후 전망을 한국어 1~2문장으로 작성 (80자 이내)
-  - 반드시 "~보유자" 관점으로 작성
-  - 단기(1~3일) 방향성과 이유를 포함
-  - 예: "BTC 보유자 주의. 기관 매도세 확대로 단기 하락 압력, 9만달러 지지선 주목"
-  - 예: "삼성전자 보유자 긍정. HBM 수주 확대로 실적 기대감 상승, 단기 상승 모멘텀"
-  - 예: "전체 포트폴리오 주의. CPI 상승으로 금리 인상 우려, 성장주 중심 조정 가능"
-- impact_score: 관련 자산 보유자 입장에서 영향 점수
-  - -2: 매우 부정적 (급락 가능성)
-  - -1: 부정적 (하락 압력)
-  - 0: 중립 (방향성 불명확)
-  - +1: 긍정적 (상승 기대)
-  - +2: 매우 긍정적 (급등 가능성)
-
-[응답 형식 — JSON 배열만 출력. 설명문·마크다운 절대 금지.]
-[
-  { "index": 0, "tags": ["BTC"], "category": "crypto", "summary": "...", "is_pick": false, "impact_summary": "...", "impact_score": -1 },
-  ...
-]
-`;
+각 항목 JSON 배열:
+- index: 번호
+- tags: 사전태그 확인/보완 (누락 추가, 오류 수정)
+- category: "crypto"|"stock"|"macro"|"general" (사전분류 확인/수정)
+- summary: 한국어 50자 요약
+- is_pick: 핵심뉴스 여부 (배치당 최대 2개)
+- impact_summary: "~보유자" 관점 영향+전망 80자
+- impact_score: -2(매우부정)~+2(매우긍정)`;
 
     try {
-      const response = await callGeminiWithSearch(prompt);
-      const cleaned = cleanJsonResponse(response);
-      const parsed = JSON.parse(cleaned) as Array<{
+      // ★ callGeminiDirect: Google Search 없음 + JSON 출력 강제
+      const response = await callGeminiDirect(prompt);
+      const parsed = JSON.parse(response) as Array<{
         index: number;
         tags: string[];
         category: string;
@@ -244,11 +355,17 @@ ${newsList}
       for (const tag of parsed) {
         const item = batch[tag.index];
         if (!item) continue;
+        const pt = preTags[tag.index];
 
         const validCategories = ['crypto', 'stock', 'macro', 'general'];
+        // AI 결과 우선, 실패 시 선태깅 결과 사용
         const category = validCategories.includes(tag.category)
           ? tag.category as TaggedNews['category']
-          : 'general';
+          : pt.category;
+
+        // 태그: AI 결과와 선태깅 결과 병합 (중복 제거)
+        const aiTags = Array.isArray(tag.tags) ? tag.tags : [];
+        const mergedTags = [...new Set([...aiTags, ...pt.tags])].slice(0, 5);
 
         // impact_score 범위 검증 (-2 ~ +2)
         let impactScore = typeof tag.impact_score === 'number' ? tag.impact_score : 0;
@@ -260,7 +377,7 @@ ${newsList}
           pubDate: item.pubDate,
           source: item.source,
           summary: tag.summary || item.description,
-          tags: Array.isArray(tag.tags) ? tag.tags.slice(0, 5) : [],
+          tags: mergedTags,
           category,
           is_pick: !!tag.is_pick,
           pick_reason: tag.pick_reason || undefined,
@@ -271,18 +388,20 @@ ${newsList}
 
       console.log(`[Task J] Gemini 태깅 완료: ${parsed.length}/${batch.length}건 (배치 ${Math.floor(i / BATCH_SIZE) + 1})`);
     } catch (err) {
-      console.warn(`[Task J] Gemini 태깅 실패 (배치 ${Math.floor(i / BATCH_SIZE) + 1}), 기본값 적용:`, err);
+      console.warn(`[Task J] Gemini 실패 (배치 ${Math.floor(i / BATCH_SIZE) + 1}), 선태깅 결과로 저장:`, err);
 
-      // 태깅 실패 시 기본값으로 삽입
-      for (const item of batch) {
+      // ★ AI 실패 시에도 선태깅 결과로 저장 (기존: 빈 태그/general)
+      for (let j = 0; j < batch.length; j++) {
+        const item = batch[j];
+        const pt = preTags[j];
         results.push({
           title: item.title,
           link: item.link,
           pubDate: item.pubDate,
           source: item.source,
           summary: item.description,
-          tags: [],
-          category: 'general',
+          tags: pt.tags,
+          category: pt.category,
           is_pick: false,
         });
       }
@@ -310,6 +429,8 @@ async function upsertNews(taggedItems: TaggedNews[]): Promise<number> {
 
     const rows = batch.map(item => ({
       title: item.title.substring(0, 500),
+      source: item.source, // ★ 원본 컬럼 (NOT NULL)
+      content: item.summary?.substring(0, 300) || item.title, // ★ 원본 컬럼 (NOT NULL)
       summary: item.summary?.substring(0, 300) || null,
       source_name: item.source,
       source_url: item.link,
@@ -406,8 +527,8 @@ export async function runNewsCollection(): Promise<NewsCollectionResult> {
 
     console.log(`[Task J] RSS 수집 완료 (원본): ${allItems.length}건`);
 
-    // ── 1시간 이내 뉴스만 통과 (실시간성 보장) ──
-    const FRESHNESS_MS = 60 * 60 * 1000; // 1시간
+    // ── 3시간 이내 뉴스만 통과 (30분 수집 주기에 맞춘 실시간성) ──
+    const FRESHNESS_MS = 3 * 60 * 60 * 1000; // 3시간
     const now = Date.now();
     const freshItems = allItems.filter(item => {
       const pubTime = new Date(item.pubDate).getTime();
@@ -415,18 +536,25 @@ export async function runNewsCollection(): Promise<NewsCollectionResult> {
       if (isNaN(pubTime)) return true;
       return age <= FRESHNESS_MS;
     });
-    console.log(`[Task J] 1시간 이내 뉴스: ${freshItems.length}/${allItems.length}건`);
+    console.log(`[Task J] 3시간 이내 뉴스: ${freshItems.length}/${allItems.length}건`);
+
+    // ── 금융 뉴스만 통과 (crypto/stock/macro — general 제외) ──
+    const financeItems = freshItems.filter(item => {
+      const pt = preTagNews(item.title, item.description);
+      return pt.category !== 'general'; // crypto, stock, macro만 통과
+    });
+    console.log(`[Task J] 금융뉴스 필터: ${freshItems.length} → ${financeItems.length}건 (general ${freshItems.length - financeItems.length}건 제외)`);
 
     // ── 제목 기반 중복 제거 (RSS 소스 간 동일 기사 필터링) ──
     const seenTitles = new Set<string>();
     const dedupedItems: RawNewsItem[] = [];
-    for (const item of freshItems) {
+    for (const item of financeItems) {
       if (!seenTitles.has(item.normalizedTitle)) {
         seenTitles.add(item.normalizedTitle);
         dedupedItems.push(item);
       }
     }
-    console.log(`[Task J] 제목 중복 제거: ${freshItems.length} → ${dedupedItems.length}건`);
+    console.log(`[Task J] 제목 중복 제거: ${financeItems.length} → ${dedupedItems.length}건`);
 
     // ── DB 기존 제목 체크 (최근 3일 뉴스의 제목과 비교) ──
     let existingTitles = new Set<string>();

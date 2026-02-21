@@ -81,8 +81,13 @@ serve(async (req: Request) => {
     if (!selectedTasks && req.method === 'POST') {
       try {
         const body = await req.clone().json();
-        if (body?.tasks && Array.isArray(body.tasks)) {
-          selectedTasks = new Set(body.tasks.map((t: string) => t.toUpperCase().trim()));
+        if (body?.tasks) {
+          // 배열 형식: {"tasks":["A","G"]} 또는 문자열 형식: {"tasks":"J"}
+          if (Array.isArray(body.tasks)) {
+            selectedTasks = new Set(body.tasks.map((t: string) => t.toUpperCase().trim()));
+          } else if (typeof body.tasks === 'string') {
+            selectedTasks = new Set(body.tasks.toUpperCase().split(',').map((t: string) => t.trim()));
+          }
         }
       } catch { /* body 파싱 실패 시 전체 실행 */ }
     }
