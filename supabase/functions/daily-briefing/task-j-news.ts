@@ -30,9 +30,42 @@ const RSS_SOURCES = [
   {
     name: 'Google News',
     url: 'https://news.google.com/rss/search?q=주식+OR+비트코인+OR+경제+OR+금리&hl=ko&gl=KR&ceid=KR:ko',
+    maxItems: 20,
+  },
+  {
+    name: '연합뉴스',
+    url: 'https://www.yna.co.kr/rss/economy.xml',
+    maxItems: 15,
+  },
+  {
+    name: '매일경제',
+    url: 'https://www.mk.co.kr/rss/30100041/',
+    maxItems: 15,
+  },
+  {
+    name: '코인데스크',
+    url: 'https://www.coindeskkorea.com/rss',
     maxItems: 15,
   },
 ];
+
+// ============================================================================
+// 제목 정규화 (중복 제거용)
+// ============================================================================
+
+/**
+ * 뉴스 제목을 정규화하여 중복 비교에 사용
+ * - 공백/특수문자 제거
+ * - 소문자 변환 (영어)
+ * - 출처 접미사 제거 (예: " - 한국경제", " | 조선일보")
+ */
+function normalizeTitle(title: string): string {
+  return title
+    .replace(/\s*[-–|·].*?(경제|일보|뉴스|신문|타임스|투데이|데일리|미디어|뉴시스|연합).*$/g, '')
+    .replace(/[\s\u200B\u00A0]+/g, '') // 공백·제로폭·NBSP 제거
+    .replace(/[^\w가-힣]/g, '')         // 특수문자 제거
+    .toLowerCase();
+}
 
 // ============================================================================
 // RSS 파싱 (외부 라이브러리 없음, regex 기반)
@@ -44,6 +77,7 @@ interface RawNewsItem {
   pubDate: string;
   source: string;
   description?: string;
+  normalizedTitle: string;
 }
 
 /**
@@ -81,6 +115,7 @@ function parseRSSItems(xml: string, sourceName: string, maxItems: number): RawNe
       pubDate: pubDateMatch?.[1] || new Date().toISOString(),
       source: sourceName,
       description: descMatch?.[1]?.trim().substring(0, 200) || undefined,
+      normalizedTitle: normalizeTitle(title),
     });
   }
 
@@ -133,6 +168,10 @@ interface TaggedNews {
   category: 'crypto' | 'stock' | 'macro' | 'general';
   is_pick: boolean;
   pick_reason?: string;
+  /** 투자자 관점 영향 분석 (예: "BTC 보유자 주의. 기관 매도세로 단기 하락 가능") */
+  impact_summary?: string;
+  /** -2(매우부정) ~ +2(매우긍정), 0=중립 */
+  impact_score?: number;
 }
 
 /**
@@ -152,7 +191,7 @@ async function tagNewsWithGemini(items: RawNewsItem[]): Promise<TaggedNews[]> {
       `[${idx}] 제목: ${item.title}\n    설명: ${item.description || '없음'}\n    출처: ${item.source}`
     ).join('\n');
 
-    const prompt = `당신은 금융 뉴스 분류 AI입니다.
+    const prompt = `당신은 금융 뉴스 분석 AI입니다. 개인 투자자의 관점에서 뉴스를 분석합니다.
 아래 ${batch.length}개 뉴스를 분석하고 JSON 배열로 응답하세요.
 
 [뉴스 목록]
@@ -165,17 +204,25 @@ ${newsList}
   - 미국 주식: NVDA, TSLA, AAPL, MSFT 등 (티커)
   - 비관련이면 빈 배열 []
 - category: "crypto" | "stock" | "macro" | "general"
-  - crypto: 암호화폐 관련
-  - stock: 개별 종목/ETF 관련
-  - macro: 금리/환율/GDP/CPI 등 거시경제
-  - general: 기타
 - summary: 1~2문장 한국어 요약 (50자 이내)
 - is_pick: 투자자가 반드시 읽어야 할 핵심 뉴스인지 (true/false, 배치당 최대 2개)
 - pick_reason: is_pick이 true일 때 이유 (20자 이내)
+- impact_summary: 이 뉴스가 관련 자산 보유자에게 미치는 영향 + 향후 전망을 한국어 1~2문장으로 작성 (80자 이내)
+  - 반드시 "~보유자" 관점으로 작성
+  - 단기(1~3일) 방향성과 이유를 포함
+  - 예: "BTC 보유자 주의. 기관 매도세 확대로 단기 하락 압력, 9만달러 지지선 주목"
+  - 예: "삼성전자 보유자 긍정. HBM 수주 확대로 실적 기대감 상승, 단기 상승 모멘텀"
+  - 예: "전체 포트폴리오 주의. CPI 상승으로 금리 인상 우려, 성장주 중심 조정 가능"
+- impact_score: 관련 자산 보유자 입장에서 영향 점수
+  - -2: 매우 부정적 (급락 가능성)
+  - -1: 부정적 (하락 압력)
+  - 0: 중립 (방향성 불명확)
+  - +1: 긍정적 (상승 기대)
+  - +2: 매우 긍정적 (급등 가능성)
 
 [응답 형식 — JSON 배열만 출력. 설명문·마크다운 절대 금지.]
 [
-  { "index": 0, "tags": ["BTC"], "category": "crypto", "summary": "비트코인...", "is_pick": false },
+  { "index": 0, "tags": ["BTC"], "category": "crypto", "summary": "...", "is_pick": false, "impact_summary": "...", "impact_score": -1 },
   ...
 ]
 `;
@@ -190,6 +237,8 @@ ${newsList}
         summary?: string;
         is_pick?: boolean;
         pick_reason?: string;
+        impact_summary?: string;
+        impact_score?: number;
       }>;
 
       for (const tag of parsed) {
@@ -201,6 +250,10 @@ ${newsList}
           ? tag.category as TaggedNews['category']
           : 'general';
 
+        // impact_score 범위 검증 (-2 ~ +2)
+        let impactScore = typeof tag.impact_score === 'number' ? tag.impact_score : 0;
+        impactScore = Math.max(-2, Math.min(2, Math.round(impactScore)));
+
         results.push({
           title: item.title,
           link: item.link,
@@ -211,6 +264,8 @@ ${newsList}
           category,
           is_pick: !!tag.is_pick,
           pick_reason: tag.pick_reason || undefined,
+          impact_summary: tag.impact_summary || undefined,
+          impact_score: impactScore,
         });
       }
 
@@ -264,6 +319,8 @@ async function upsertNews(taggedItems: TaggedNews[]): Promise<number> {
       category: item.category,
       is_pick: item.is_pick,
       pick_reason: item.pick_reason || null,
+      impact_summary: item.impact_summary?.substring(0, 200) || null,
+      impact_score: item.impact_score ?? 0,
     }));
 
     const { error } = await supabase
@@ -281,16 +338,16 @@ async function upsertNews(taggedItems: TaggedNews[]): Promise<number> {
 }
 
 /**
- * 30일 이상 된 뉴스 삭제 (스토리지 절약)
+ * 3일 이상 된 뉴스 삭제 (DB 과부하 방지)
  */
 async function cleanupOldNews(): Promise<number> {
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const threeDaysAgo = new Date();
+  threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
 
   const { data, error } = await supabase
     .from('market_news')
     .delete()
-    .lt('published_at', thirtyDaysAgo.toISOString())
+    .lt('published_at', threeDaysAgo.toISOString())
     .select('id');
 
   if (error) {
@@ -347,9 +404,50 @@ export async function runNewsCollection(): Promise<NewsCollectionResult> {
       }
     }
 
-    console.log(`[Task J] RSS 수집 완료: ${allItems.length}건`);
+    console.log(`[Task J] RSS 수집 완료 (원본): ${allItems.length}건`);
 
-    if (allItems.length === 0) {
+    // ── 1시간 이내 뉴스만 통과 (실시간성 보장) ──
+    const FRESHNESS_MS = 60 * 60 * 1000; // 1시간
+    const now = Date.now();
+    const freshItems = allItems.filter(item => {
+      const pubTime = new Date(item.pubDate).getTime();
+      const age = now - pubTime;
+      if (isNaN(pubTime)) return true;
+      return age <= FRESHNESS_MS;
+    });
+    console.log(`[Task J] 1시간 이내 뉴스: ${freshItems.length}/${allItems.length}건`);
+
+    // ── 제목 기반 중복 제거 (RSS 소스 간 동일 기사 필터링) ──
+    const seenTitles = new Set<string>();
+    const dedupedItems: RawNewsItem[] = [];
+    for (const item of freshItems) {
+      if (!seenTitles.has(item.normalizedTitle)) {
+        seenTitles.add(item.normalizedTitle);
+        dedupedItems.push(item);
+      }
+    }
+    console.log(`[Task J] 제목 중복 제거: ${freshItems.length} → ${dedupedItems.length}건`);
+
+    // ── DB 기존 제목 체크 (최근 3일 뉴스의 제목과 비교) ──
+    let existingTitles = new Set<string>();
+    try {
+      const threeDaysAgo = new Date();
+      threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+      const { data: existing } = await supabase
+        .from('market_news')
+        .select('title')
+        .gte('published_at', threeDaysAgo.toISOString());
+      if (existing) {
+        existingTitles = new Set(existing.map((r: any) => normalizeTitle(r.title)));
+      }
+    } catch (err) {
+      console.warn('[Task J] 기존 뉴스 조회 실패, 전체 upsert 진행:', err);
+    }
+
+    const newItems = dedupedItems.filter(item => !existingTitles.has(item.normalizedTitle));
+    console.log(`[Task J] DB 중복 제거 후: ${newItems.length}건 (기존 ${existingTitles.size}건 스킵)`);
+
+    if (newItems.length === 0) {
       const elapsed = Date.now() - startTime;
       await logTaskResult('news_collection', 'SUCCESS', elapsed, {
         totalFetched: 0,
@@ -359,8 +457,8 @@ export async function runNewsCollection(): Promise<NewsCollectionResult> {
       return { totalFetched: 0, totalUpserted: 0, totalDeleted: 0, sources: sourceCount };
     }
 
-    // 2. Gemini AI 태깅
-    const taggedItems = await tagNewsWithGemini(allItems);
+    // 2. Gemini AI 태깅 (새 뉴스만)
+    const taggedItems = await tagNewsWithGemini(newItems);
     console.log(`[Task J] AI 태깅 완료: ${taggedItems.length}건`);
 
     // 3. DB UPSERT

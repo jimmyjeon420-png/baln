@@ -5,8 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../src/hooks/useTheme';
 
-// 표시할 탭 목록 (3탭 구조: 오늘/분석/전체)
-const VISIBLE_TABS = ['index', 'rebalance', 'profile'];
+// 표시할 탭 목록 (5탭 구조: 오늘/분석/뉴스/라운지/전체)
+const VISIBLE_TABS = ['index', 'rebalance', 'news', 'lounge', 'profile'];
 
 // 커스텀 탭 바 컴포넌트 - 플로팅 스캔 버튼 포함
 function CustomTabBar({ state, descriptors, navigation }: any) {
@@ -56,7 +56,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
             >
               <Ionicons
                 name={iconName}
-                size={24}
+                size={22}
                 color={isFocused ? colors.textPrimary : colors.textTertiary}
               />
               <Text
@@ -75,11 +75,13 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
   );
 }
 
-// 탭별 아이콘 이름 반환 (3탭: 오늘/분석/전체)
+// 탭별 아이콘 이름 반환 (5탭: 오늘/분석/뉴스/라운지/전체)
 function getIconName(routeName: string, isFocused: boolean): keyof typeof Ionicons.glyphMap {
   const icons: Record<string, { active: string; inactive: string }> = {
     index: { active: 'today', inactive: 'today-outline' },
     rebalance: { active: 'analytics', inactive: 'analytics-outline' },
+    news: { active: 'newspaper', inactive: 'newspaper-outline' },
+    lounge: { active: 'diamond', inactive: 'diamond-outline' },
     profile: { active: 'grid', inactive: 'grid-outline' },
   };
 
@@ -87,11 +89,13 @@ function getIconName(routeName: string, isFocused: boolean): keyof typeof Ionico
   return (isFocused ? icon.active : icon.inactive) as keyof typeof Ionicons.glyphMap;
 }
 
-// 탭별 라벨 반환 (3탭: 오늘/분석/전체)
+// 탭별 라벨 반환 (5탭: 오늘/분석/뉴스/라운지/전체)
 function getLabel(routeName: string): string {
   const labels: Record<string, string> = {
     index: '오늘',
     rebalance: '분석',
+    news: '뉴스',
+    lounge: '라운지',
     profile: '전체',
   };
   return labels[routeName] || routeName;
@@ -105,7 +109,7 @@ export default function TabLayout() {
         headerShown: false,
       }}
     >
-      {/* ═══ 3탭 구조: 오늘 / 분석 / 전체 ═══ */}
+      {/* ═══ 5탭 구조: 오늘 / 분석 / 뉴스 / 라운지 / 전체 ═══ */}
 
       {/* 1. 오늘 (Today) — 맥락 카드 + 예측 + 스트릭 + 위기 배너 */}
       <Tabs.Screen
@@ -123,7 +127,23 @@ export default function TabLayout() {
         }}
       />
 
-      {/* 3. 전체 (More) — 프로필 + 커뮤니티/인사이트 미리보기 + 설정 */}
+      {/* 3. 뉴스 (News) — 실시간 시장 뉴스 + AI PiCK */}
+      <Tabs.Screen
+        name="news"
+        options={{
+          title: '뉴스',
+        }}
+      />
+
+      {/* 4. 라운지 (Lounge) — VIP 커뮤니티 + 모임 */}
+      <Tabs.Screen
+        name="lounge"
+        options={{
+          title: '라운지',
+        }}
+      />
+
+      {/* 5. 전체 (More) — 프로필 + 설정 + 크레딧 */}
       <Tabs.Screen
         name="profile"
         options={{
@@ -132,7 +152,6 @@ export default function TabLayout() {
       />
 
       {/* ═══ 숨김 탭들 (URL 직접 접근만 가능) ═══ */}
-      <Tabs.Screen name="lounge" options={{ href: null }} />
       <Tabs.Screen name="insights" options={{ href: null }} />
       <Tabs.Screen name="scan" options={{ href: null }} />
       <Tabs.Screen name="diagnosis" options={{ href: null }} />
@@ -179,9 +198,9 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   tabLabelText: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '600',
-    marginTop: 4,
-    letterSpacing: 0.2,
+    marginTop: 3,
+    letterSpacing: 0.1,
   },
 });

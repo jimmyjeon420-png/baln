@@ -28,6 +28,10 @@ export interface MarketNewsItem {
   category: 'crypto' | 'stock' | 'macro' | 'general';
   is_pick: boolean;
   pick_reason: string | null;
+  /** AI 투자 영향 분석 (예: "BTC 보유자 주의. 기관 매도세로 단기 하락 가능") */
+  impact_summary: string | null;
+  /** -2(매우부정) ~ +2(매우긍정), 0=중립 */
+  impact_score: number | null;
   created_at: string;
 }
 
@@ -73,7 +77,7 @@ export const useMarketNews = (category: NewsCategoryFilter = 'all') => {
       if (lastPage.length < NEWS_PAGE_SIZE) return undefined;
       return allPages.length * NEWS_PAGE_SIZE;
     },
-    staleTime: 60000, // 60초 캐시
+    staleTime: 30000, // 30초 캐시 (실시간성 강화)
   });
 };
 
@@ -104,7 +108,7 @@ export const usePickNews = () => {
         return [] as MarketNewsItem[];
       }
     },
-    staleTime: 60000,
+    staleTime: 30000,
   });
 };
 
@@ -113,7 +117,11 @@ export const usePickNews = () => {
 // ============================================================================
 
 /**
- * "N분 전", "N시간 전", "N일 전" 형식으로 변환
+ * 블루밍비트 스타일 시간 표시
+ * - 1시간 이내: "32분 전"
+ * - 오늘: "10:34"
+ * - 어제~7일: "3일 전"
+ * - 그 이상: "2월 13일"
  */
 export function getTimeAgo(dateString: string): string {
   const now = new Date();
@@ -126,11 +134,38 @@ export function getTimeAgo(dateString: string): string {
 
   if (minutes < 1) return '방금';
   if (minutes < 60) return `${minutes}분 전`;
+
+  // 오늘이면 시간만 표시 (블루밍비트 실시간 뉴스 스타일)
+  const isToday = now.getDate() === date.getDate()
+    && now.getMonth() === date.getMonth()
+    && now.getFullYear() === date.getFullYear();
+  if (isToday) {
+    const hh = date.getHours().toString().padStart(2, '0');
+    const mm = date.getMinutes().toString().padStart(2, '0');
+    return `${hh}:${mm}`;
+  }
+
   if (hours < 24) return `${hours}시간 전`;
   if (days < 7) return `${days}일 전`;
 
-  // 7일 이상이면 날짜 표시
-  const month = date.getMonth() + 1;
-  const day = date.getDate();
-  return `${month}/${day}`;
+  const m = date.getMonth() + 1;
+  const d = date.getDate();
+  return `${m}월 ${d}일`;
+}
+
+/**
+ * 30분 이내 뉴스인지 판별 (초록색 하이라이트 기준)
+ */
+export function isRecentNews(dateString: string): boolean {
+  const diffMs = Date.now() - new Date(dateString).getTime();
+  return diffMs < 30 * 60 * 1000; // 30분
+}
+
+/**
+ * "HH:MM" 형식 시간 반환 (마지막 업데이트 시간 표시용)
+ */
+export function formatUpdateTime(date: Date): string {
+  const h = date.getHours().toString().padStart(2, '0');
+  const m = date.getMinutes().toString().padStart(2, '0');
+  return `${h}:${m}`;
 }

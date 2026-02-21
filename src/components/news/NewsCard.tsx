@@ -19,7 +19,39 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
-import { MarketNewsItem, getTimeAgo } from '../../hooks/useMarketNews';
+import { MarketNewsItem, getTimeAgo, isRecentNews } from '../../hooks/useMarketNews';
+import { useNewsPortfolioMatch } from '../../hooks/useNewsPortfolioMatch';
+
+// ============================================================================
+// 카테고리 설정
+// ============================================================================
+
+// ============================================================================
+// 영향도 점수별 색상/아이콘
+// ============================================================================
+
+function getImpactColor(score: number | null): string {
+  if (!score) return '#9E9E9E';
+  if (score >= 2) return '#4CAF50';
+  if (score >= 1) return '#66BB6A';
+  if (score <= -2) return '#F44336';
+  if (score <= -1) return '#EF5350';
+  return '#FFC107'; // 중립
+}
+
+function getImpactBg(score: number | null): string {
+  if (!score) return '#9E9E9E10';
+  if (score >= 1) return '#4CAF5015';
+  if (score <= -1) return '#F4433615';
+  return '#FFC10710';
+}
+
+function getImpactIcon(score: number | null): keyof typeof Ionicons.glyphMap {
+  if (!score) return 'remove-circle-outline';
+  if (score >= 1) return 'trending-up';
+  if (score <= -1) return 'trending-down';
+  return 'remove-circle-outline';
+}
 
 // ============================================================================
 // 카테고리 설정
@@ -40,22 +72,33 @@ interface NewsCardProps {
   item: MarketNewsItem;
   /** 컴팩트 모드 (미리보기 위젯용) */
   compact?: boolean;
+  /** 커스텀 탭 핸들러 (없으면 원문 URL 열기) */
+  onPress?: (item: MarketNewsItem) => void;
 }
 
 // ============================================================================
 // 컴포넌트
 // ============================================================================
 
-export default function NewsCard({ item, compact = false }: NewsCardProps) {
+export default function NewsCard({ item, compact = false, onPress }: NewsCardProps) {
   const { colors } = useTheme();
   const catConfig = CATEGORY_CONFIG[item.category] || CATEGORY_CONFIG.general;
+  const recent = isRecentNews(item.published_at);
+  const { matchedAssets, hasMatch } = useNewsPortfolioMatch(item.tags ?? []);
 
   const handlePress = () => {
-    if (item.source_url) {
-      Linking.openURL(item.source_url).catch(() => {
-        console.warn('[NewsCard] URL 열기 실패:', item.source_url);
-      });
+    if (onPress) {
+      onPress(item);
+      return;
     }
+    const url = item.source_url;
+    if (!url) return;
+    // 바로 openURL — canOpenURL은 iOS에서 LSApplicationQueriesSchemes 필요해서 skip
+    Linking.openURL(url).catch(() => {
+      // Google News redirect URL 실패 시 → 제목으로 구글 검색
+      const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(item.title)}`;
+      Linking.openURL(searchUrl).catch(() => {});
+    });
   };
 
   // --- 컴팩트 모드 (미리보기 위젯용) ---
@@ -77,8 +120,8 @@ export default function NewsCard({ item, compact = false }: NewsCardProps) {
             <Text style={[styles.compactSource, { color: colors.textTertiary }]}>
               {item.source_name}
             </Text>
-            <View style={[styles.dot, { backgroundColor: colors.textTertiary }]} />
-            <Text style={[styles.compactTime, { color: colors.textTertiary }]}>
+            <View style={[styles.dot, { backgroundColor: recent ? '#4CAF50' : colors.textTertiary }]} />
+            <Text style={[styles.compactTime, { color: recent ? '#4CAF50' : colors.textTertiary, fontWeight: recent ? '700' : '400' }]}>
               {getTimeAgo(item.published_at)}
             </Text>
           </View>
@@ -121,18 +164,18 @@ export default function NewsCard({ item, compact = false }: NewsCardProps) {
         </Text>
       )}
 
-      {/* PiCK 이유 (있을 때만) */}
-      {item.is_pick && item.pick_reason && (
-        <View style={[styles.pickReasonBox, { backgroundColor: '#FFC10720' }]}>
-          <Ionicons name="bulb-outline" size={12} color="#FFC107" />
-          <Text style={[styles.pickReasonText, { color: '#FFC107' }]}>
-            {item.pick_reason}
+      {/* AI 영향도 분석 */}
+      {item.impact_summary && (
+        <View style={[styles.impactBox, { backgroundColor: getImpactBg(item.impact_score) }]}>
+          <Ionicons name={getImpactIcon(item.impact_score)} size={14} color={getImpactColor(item.impact_score)} />
+          <Text style={[styles.impactSummary, { color: getImpactColor(item.impact_score) }]} numberOfLines={2}>
+            {item.impact_summary}
           </Text>
         </View>
       )}
 
-      {/* 태그 칩 */}
-      {item.tags.length > 0 && (
+      {/* 태그 칩 + 내 자산 매칭 */}
+      {item.tags && item.tags.length > 0 && (
         <View style={styles.tagsRow}>
           {item.tags.slice(0, 3).map((tag) => (
             <View
@@ -144,6 +187,13 @@ export default function NewsCard({ item, compact = false }: NewsCardProps) {
               </Text>
             </View>
           ))}
+          {hasMatch && (
+            <View style={[styles.tagChip, { backgroundColor: '#4CAF5020' }]}>
+              <Text style={[styles.tagText, { color: '#4CAF50', fontWeight: '700' }]}>
+                내 자산 {matchedAssets.slice(0, 2).map(a => `${a.name} ${a.weight}%`).join(', ')}
+              </Text>
+            </View>
+          )}
         </View>
       )}
 
@@ -152,12 +202,10 @@ export default function NewsCard({ item, compact = false }: NewsCardProps) {
         <Text style={[styles.sourceName, { color: colors.textTertiary }]}>
           {item.source_name}
         </Text>
-        <View style={[styles.dot, { backgroundColor: colors.textTertiary }]} />
-        <Text style={[styles.timeAgo, { color: colors.textTertiary }]}>
+        <View style={[styles.dot, { backgroundColor: recent ? '#4CAF50' : colors.textTertiary }]} />
+        <Text style={[styles.timeAgo, { color: recent ? '#4CAF50' : colors.textTertiary, fontWeight: recent ? '700' : '400' }]} numberOfLines={1}>
           {getTimeAgo(item.published_at)}
         </Text>
-        <View style={{ flex: 1 }} />
-        <Ionicons name="open-outline" size={14} color={colors.textTertiary} />
       </View>
     </TouchableOpacity>
   );
@@ -241,6 +289,20 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '500',
   },
+  impactBox: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  impactSummary: {
+    fontSize: 12,
+    fontWeight: '600',
+    lineHeight: 17,
+    flex: 1,
+  },
   bottomRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -252,6 +314,7 @@ const styles = StyleSheet.create({
   },
   timeAgo: {
     fontSize: 11,
+    flexShrink: 1,
   },
   dot: {
     width: 3,
