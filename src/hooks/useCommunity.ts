@@ -620,6 +620,40 @@ export const useDeleteComment = (postId: string) => {
   });
 };
 
+/** 게시글 삭제 (본인 것만) */
+export const useDeletePost = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (postId: string) => {
+      const user = await getCurrentUser();
+      if (!user) throw new Error('로그인이 필요합니다.');
+
+      // 본인 게시글인지 확인
+      const { data: post } = await supabase
+        .from('community_posts')
+        .select('user_id')
+        .eq('id', postId)
+        .single();
+
+      if (post?.user_id !== user.id) {
+        throw new Error('본인의 게시글만 삭제할 수 있습니다.');
+      }
+
+      // 삭제
+      const { error } = await supabase
+        .from('community_posts')
+        .delete()
+        .eq('id', postId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['communityPosts'] });
+    },
+  });
+};
+
 /** 댓글 좋아요 (내가 좋아요한 댓글 ID 목록) */
 export const useMyCommentLikes = () => {
   const query = useQuery({

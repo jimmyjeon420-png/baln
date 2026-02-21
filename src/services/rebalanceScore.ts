@@ -45,7 +45,7 @@ export interface RealEstateSummary {
 
 /** 건강 점수 계산 옵션 */
 export interface HealthScoreOptions {
-  /** 선택 구루 스타일 ('dalio' | 'buffett' | 'cathie_wood' | 'kostolany') */
+  /** 선택 구루 스타일 ('dalio' | 'buffett' | 'cathie_wood') */
   guruStyle?: string;
   /** 현재 코스톨라니 국면 ('A'~'F') */
   kostolalyPhase?: string;
@@ -304,6 +304,44 @@ export const KOSTOLANY_TARGETS: Record<KostolalyPhase, Record<AssetCategory, num
   E: { large_cap: 20, bond: 30, bitcoin: 3,  gold: 25, commodity: 5,  altcoin: 2, cash: 15, realestate: 0 },
   F: { large_cap: 45, bond: 15, bitcoin: 8,  gold: 18, commodity: 5,  altcoin: 4, cash: 5,  realestate: 0 },
 };
+
+/**
+ * 국면 조정 목표 배분 계산
+ * 구루 기본 배분의 75% + 코스톨라니 국면 배분의 25% 합성
+ *
+ * @param guruTarget 구루 기본 목표 배분 (달리오/버핏/캐시우드)
+ * @param phase 현재 코스톨라니 국면 (null이면 기본 배분 그대로 반환)
+ * @returns 국면 반영된 조정 목표 배분 (합계 100% 보정됨)
+ */
+export function getPhaseAdjustedTarget(
+  guruTarget: Record<AssetCategory, number>,
+  phase: KostolalyPhase | null | undefined,
+): Record<AssetCategory, number> {
+  if (!phase) return guruTarget;
+
+  const phaseTarget = KOSTOLANY_TARGETS[phase];
+  const categories = Object.keys(guruTarget) as AssetCategory[];
+  const adjusted: Record<string, number> = {};
+  let sum = 0;
+
+  for (const cat of categories) {
+    const val = Math.round(guruTarget[cat] * 0.75 + phaseTarget[cat] * 0.25);
+    adjusted[cat] = val;
+    sum += val;
+  }
+
+  // 합계 100% 보정 — 가장 큰 카테고리에서 차이 조정
+  if (sum !== 100) {
+    let maxCat = categories[0];
+    let maxVal = 0;
+    for (const cat of categories) {
+      if (adjusted[cat] > maxVal) { maxVal = adjusted[cat]; maxCat = cat; }
+    }
+    adjusted[maxCat] += (100 - sum);
+  }
+
+  return adjusted as Record<AssetCategory, number>;
+}
 
 /** 등급 설정 */
 const GRADE_CONFIG: Record<HealthGrade, { color: string; bgColor: string; label: string }> = {
@@ -760,9 +798,6 @@ function calcPhilosophyAlignment(
   } else if (guruStyle === 'cathie_wood') {
     // 성장주 비중 높을수록 고점, 투기주 과다 시 감점
     score = Math.min(100, Math.max(0, comp.growth * 1.3 - comp.speculative * 0.5));
-  } else if (guruStyle === 'kostolany') {
-    // 코스톨라니: 국면 의존 → 기본 75점 (Phase 3에서 동적 오버라이드)
-    score = 75;
   } else {
     // 달리오 기본: 성장/가치/배당 균형 → 편중 없을수록 고점
     const deviation =

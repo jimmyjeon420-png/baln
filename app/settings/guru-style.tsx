@@ -19,8 +19,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useGuruStyle, GuruStyle } from '../../src/hooks/useGuruStyle';
 import { useTheme } from '../../src/hooks/useTheme';
-import { DALIO_TARGET, BUFFETT_TARGET, CATHIE_WOOD_TARGET, KOSTOLANY_TARGETS } from '../../src/services/rebalanceScore';
-import type { AssetCategory } from '../../src/services/rebalanceScore';
+import { DALIO_TARGET, BUFFETT_TARGET, CATHIE_WOOD_TARGET } from '../../src/services/rebalanceScore';
 
 // ── 구루 카드 데이터 ──
 
@@ -82,18 +81,6 @@ const GURU_CARDS: GuruCard[] = [
       { label: '알트코인', pct: CATHIE_WOOD_TARGET.altcoin, color: '#9C27B0' },
     ],
     accentColor: '#9C27B0',
-  },
-  {
-    id: 'kostolany',
-    emoji: '📈',
-    name: '코스톨라니',
-    subtitle: '시장 사이클',
-    tagline: '"시장은 사이클을 반복한다"',
-    description: '독일 투자 거장. 달걀 모형으로 시장 6단계 사이클 분석. AI가 현재 국면을 자동 감지해 최적 배분 추천.',
-    keyAlloc: [
-      { label: 'AI 분석', pct: 0, color: '#9C27B0' },
-    ],
-    accentColor: '#FFB74D',
   },
 ];
 
@@ -168,26 +155,24 @@ export default function GuruStyleScreen() {
               <Text style={[styles.description, { color: colors.textTertiary }]}>{card.description}</Text>
 
               {/* 핵심 배분 */}
-              {card.id !== 'kostolany' ? (
-                <View style={styles.allocRow}>
-                  {card.keyAlloc.map(alloc => (
-                    <View key={alloc.label} style={[styles.allocBadge, { backgroundColor: alloc.color + '20' }]}>
-                      <Text style={[styles.allocLabel, { color: alloc.color }]}>{alloc.label}</Text>
-                      <Text style={[styles.allocPct, { color: alloc.color }]}>{alloc.pct}%</Text>
-                    </View>
-                  ))}
-                </View>
-              ) : (
-                <View style={[styles.kostolanyBadge, { backgroundColor: card.accentColor + '15' }]}>
-                  <Ionicons name="analytics-outline" size={14} color={card.accentColor} />
-                  <Text style={[styles.kostolanyText, { color: card.accentColor }]}>
-                    AI가 현재 시장 국면을 분석해 자동 추천
-                  </Text>
-                </View>
-              )}
+              <View style={styles.allocRow}>
+                {card.keyAlloc.map(alloc => (
+                  <View key={alloc.label} style={[styles.allocBadge, { backgroundColor: alloc.color + '20' }]}>
+                    <Text style={[styles.allocLabel, { color: alloc.color }]}>{alloc.label}</Text>
+                    <Text style={[styles.allocPct, { color: alloc.color }]}>{alloc.pct}%</Text>
+                  </View>
+                ))}
+              </View>
             </TouchableOpacity>
           );
         })}
+
+        <View style={[styles.phaseNotice, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Ionicons name="analytics-outline" size={14} color={colors.textSecondary} />
+          <Text style={[styles.phaseNoticeText, { color: colors.textSecondary }]}>
+            코스톨라니 시장 사이클은 선택한 구루의 목표 배분에 자동 반영됩니다 (기본 75% + 국면 25%)
+          </Text>
+        </View>
 
         <View style={[styles.disclaimerBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Ionicons name="information-circle-outline" size={14} color={colors.textTertiary} />
@@ -316,17 +301,21 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '800',
   },
-  kostolanyBadge: {
+  phaseNotice: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    alignItems: 'flex-start',
+    gap: 8,
+    padding: 12,
     borderRadius: 10,
+    borderWidth: 1,
+    marginTop: 4,
+    marginBottom: 4,
   },
-  kostolanyText: {
+  phaseNoticeText: {
+    flex: 1,
     fontSize: 13,
-    fontWeight: '600',
+    lineHeight: 19,
+    fontWeight: '500',
   },
   disclaimerBox: {
     flexDirection: 'row',

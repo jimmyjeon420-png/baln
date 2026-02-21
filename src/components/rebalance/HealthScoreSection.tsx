@@ -32,6 +32,8 @@ interface HealthScoreSectionProps {
   healthScore: HealthScoreResult;
   onScoreImproved?: (improvement: number) => void;
   totalAssets?: number;
+  /** Panic Shield 점수 (0-100) — CheckupHeader에서 통합 */
+  panicScore?: number;
 }
 
 /** 팩터별 직관적 한글 라벨 (이모티콘 옆에 표시) */
@@ -241,7 +243,7 @@ function generateActionGuidance(healthScore: HealthScoreResult): string | null {
   return ACTION_MAP[worst.label] || '아래 상세 내역을 펼쳐서 각 팩터별 개선점을 확인해보세요.';
 }
 
-export default function HealthScoreSection({ healthScore, onScoreImproved, totalAssets }: HealthScoreSectionProps) {
+export default function HealthScoreSection({ healthScore, onScoreImproved, totalAssets, panicScore }: HealthScoreSectionProps) {
   const { colors, shadows } = useTheme();
   const [showDetail, setShowDetail] = useState(false);
   const [tooltipVisible, setTooltipVisible] = useState(false);
@@ -432,22 +434,22 @@ export default function HealthScoreSection({ healthScore, onScoreImproved, total
         <View style={s.historicalComparison}>
           {/* 2008년 비교 */}
           <View style={[s.historicalCompareRow, { borderColor: colors.border }]}>
-            <View style={s.historicalLeft}>
-              <Text style={[s.historicalCrisisLabel, { color: colors.textSecondary }]}>📉 2008년 금융위기 당시</Text>
+            <Text style={[s.historicalCrisisLabel, { color: colors.textSecondary }]}>📉 2008년 금융위기 당시</Text>
+            <View style={s.historicalScoreRow}>
               <Text style={[s.historicalCrisisScore, { color: colors.textSecondary }]}>평균 <Text style={{ fontWeight: '800' }}>35점</Text></Text>
-            </View>
-            <View style={[s.historicalDiffBadge, { backgroundColor: colors.success + '22' }]}>
-              <Text style={[s.historicalDiffText, { color: colors.success }]}>내 점수 +{healthScore.totalScore - 35}점 ↑</Text>
+              <View style={[s.historicalDiffBadge, { backgroundColor: colors.success + '22' }]}>
+                <Text style={[s.historicalDiffText, { color: colors.success }]}>+{healthScore.totalScore - 35}점 ↑</Text>
+              </View>
             </View>
           </View>
           {/* 2020년 비교 */}
           <View style={[s.historicalCompareRow, { borderColor: colors.border }]}>
-            <View style={s.historicalLeft}>
-              <Text style={[s.historicalCrisisLabel, { color: colors.textSecondary }]}>🦠 2020년 코로나 팬데믹 당시</Text>
+            <Text style={[s.historicalCrisisLabel, { color: colors.textSecondary }]}>🦠 2020년 코로나 팬데믹 당시</Text>
+            <View style={s.historicalScoreRow}>
               <Text style={[s.historicalCrisisScore, { color: colors.textSecondary }]}>평균 <Text style={{ fontWeight: '800' }}>42점</Text></Text>
-            </View>
-            <View style={[s.historicalDiffBadge, { backgroundColor: colors.success + '22' }]}>
-              <Text style={[s.historicalDiffText, { color: colors.success }]}>내 점수 +{healthScore.totalScore - 42}점 ↑</Text>
+              <View style={[s.historicalDiffBadge, { backgroundColor: colors.success + '22' }]}>
+                <Text style={[s.historicalDiffText, { color: colors.success }]}>+{healthScore.totalScore - 42}점 ↑</Text>
+              </View>
             </View>
           </View>
         </View>
@@ -509,6 +511,27 @@ export default function HealthScoreSection({ healthScore, onScoreImproved, total
             <Text style={[s.actionGuideLabel, { color: colors.success }]}>지금 할 수 있는 것</Text>
           </View>
           <Text style={[s.actionGuideText, { color: colors.textSecondary }]}>{actionGuidance}</Text>
+        </View>
+      )}
+
+      {/* Panic Shield — 위기 대비력 (CheckupHeader에서 통합) */}
+      {panicScore !== undefined && (
+        <View style={[s.panicShield, { backgroundColor: colors.surfaceElevated }]}>
+          <View style={s.panicShieldRow}>
+            <Ionicons name="shield-checkmark-outline" size={15} color={colors.primaryDark ?? colors.primary} />
+            <Text style={[s.panicShieldLabel, { color: colors.textSecondary }]}>시장 위기 대비력</Text>
+            <Text style={[s.panicShieldScore, { color: colors.primaryDark ?? colors.primary }]}>{Math.round(panicScore)}점</Text>
+            <Text style={[s.panicShieldStatus, {
+              color: panicScore >= 70 ? colors.success : panicScore >= 50 ? colors.warning : colors.error,
+            }]}>{panicScore >= 70 ? '안정' : panicScore >= 50 ? '보통' : '주의'}</Text>
+          </View>
+          <Text style={[s.panicShieldReason, { color: colors.textTertiary }]}>
+            {panicScore >= 70
+              ? '시장이 급락해도 버틸 수 있는 안정적인 구조예요'
+              : panicScore >= 50
+              ? '괜찮은 편이지만, 현금이나 채권을 조금 더 늘리면 안심이 돼요'
+              : '급락 시 불안해질 수 있어요. 현금이나 채권 비중을 늘려보세요'}
+          </Text>
         </View>
       )}
 
@@ -787,20 +810,19 @@ const s = StyleSheet.create({
     marginBottom: 10,
   },
   historicalCompareRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     paddingVertical: 8,
     paddingHorizontal: 10,
     borderRadius: 8,
     borderWidth: 1,
   },
-  historicalLeft: {
-    flex: 1,
+  historicalScoreRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 4,
   },
   historicalCrisisLabel: {
     fontSize: 14,
-    marginBottom: 2,
     lineHeight: 20,
   },
   historicalCrisisScore: {
@@ -809,11 +831,11 @@ const s = StyleSheet.create({
   },
   historicalDiffBadge: {
     paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingVertical: 4,
     borderRadius: 20,
   },
   historicalDiffText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
   },
   historicalText: {
@@ -920,6 +942,38 @@ const s = StyleSheet.create({
     lineHeight: 22,
   },
 
+  // Panic Shield — 위기 대비력 (CheckupHeader에서 통합)
+  panicShield: {
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 10,
+  },
+  panicShieldRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  panicShieldLabel: {
+    fontSize: 14,
+    marginLeft: 6,
+  },
+  panicShieldScore: {
+    fontSize: 15,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  panicShieldStatus: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 4,
+  },
+  panicShieldReason: {
+    fontSize: 14,
+    marginLeft: 21,
+    fontStyle: 'italic',
+    lineHeight: 20,
+  },
+
   // 미니 팩터 바 (접힌 상태)
   miniFactors: {
     gap: 8,
@@ -946,7 +1000,7 @@ const s = StyleSheet.create({
   },
   miniLabel: {
     fontSize: 14,
-    width: 72,
+    width: 84,
     flexShrink: 0,
     lineHeight: 20,
   },
@@ -975,7 +1029,7 @@ const s = StyleSheet.create({
   miniScore: {
     fontSize: 14,
     fontWeight: '700',
-    width: 22,
+    width: 30,
     textAlign: 'right',
   },
   miniStatusBadge: {

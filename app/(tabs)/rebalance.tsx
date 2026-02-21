@@ -361,7 +361,7 @@ export default function CheckupScreen() {
       AsyncStorage.getItem('@baln:guru_style'),
     ]).then(([storedPhil, guruStyle]) => {
       // 우선순위: @baln:guru_style > @investment_philosophy > 'dalio'
-      const guruPhils = ['dalio', 'buffett', 'cathie_wood', 'kostolany'];
+      const guruPhils = ['dalio', 'buffett', 'cathie_wood'];
       let phil: string | null = null;
       if (guruStyle && guruPhils.includes(guruStyle)) phil = guruStyle;
       if (!phil) phil = storedPhil === 'consensus' ? 'dalio' : storedPhil;

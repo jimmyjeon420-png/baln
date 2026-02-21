@@ -448,7 +448,7 @@ function LoungeScreenInner() {
       await createPost.mutateAsync({
         content: newPostContent.trim(),
         category: postCategory,
-        displayTag: `[자산: ${(totalAssets / 100000000).toFixed(1)}억 / 수익: ${gainSign}${Math.round(totalGain / 10000)}만]`,
+        displayTag: `[자산: ${(totalAssets / 100000000).toFixed(1)}억]`,
         assetMix: computedAssetMix,
         totalAssets,
       });

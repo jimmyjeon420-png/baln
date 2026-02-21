@@ -12,7 +12,6 @@ const GURU_NAMES: Record<string, string> = {
   dalio: '레이 달리오',
   buffett: '워렌 버핏',
   cathie_wood: '캐시 우드',
-  kostolany: '코스톨라니',
 };
 
 export function useGuruStyleChange() {

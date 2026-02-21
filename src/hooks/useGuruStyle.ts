@@ -8,7 +8,7 @@
  * - dalio: 레이 달리오 — All Weather (분산·안정)
  * - buffett: 워렌 버핏 — Berkshire (주식·현금)
  * - cathie_wood: 캐시우드 — ARK Invest (혁신·크립토)
- * - kostolany: 앙드레 코스톨라니 — 시장 사이클
+ * (코스톨라니 시장 사이클은 3구루 목표 배분에 25% 자동 반영)
  */
 
 import { useState, useEffect, useCallback } from 'react';
@@ -16,16 +16,15 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const GURU_KEY = '@baln:guru_style';
 
-export type GuruStyle = 'dalio' | 'buffett' | 'cathie_wood' | 'kostolany';
+export type GuruStyle = 'dalio' | 'buffett' | 'cathie_wood';
 
-const VALID_GURU_STYLES: GuruStyle[] = ['dalio', 'buffett', 'cathie_wood', 'kostolany'];
+const VALID_GURU_STYLES: GuruStyle[] = ['dalio', 'buffett', 'cathie_wood'];
 
 /** 구루별 표시 이름 */
 export const GURU_DISPLAY_NAME: Record<GuruStyle, string> = {
   dalio: '🌊 달리오 All Weather',
   buffett: '🔴 버핏 Berkshire',
   cathie_wood: '🚀 캐시우드 ARK',
-  kostolany: '📈 코스톨라니 사이클',
 };
 
 /**

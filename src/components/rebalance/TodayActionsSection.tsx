@@ -360,7 +360,7 @@ export default function TodayActionsSection({
 
   // 투자 철학 정합 여부 판단 (guruStyle × 티커 스타일)
   const isPhilosophyMismatch = useMemo(() => {
-    if (!guruStyle || guruStyle === 'dalio' || guruStyle === 'kostolany') return (_ticker: string) => false;
+    if (!guruStyle || guruStyle === 'dalio') return (_ticker: string) => false;
     return (ticker: string): boolean => {
       const profile = getCachedTickerProfile(ticker);
       if (!profile) return false; // 미분류 종목은 경고 없음

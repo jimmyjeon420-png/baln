@@ -87,14 +87,6 @@ const GURU_OPTIONS: GuruOption[] = [
     keyAlloc: '혁신주50 BTC25 알트10 현금15',
     accentColor: '#9C27B0',
   },
-  {
-    id: 'kostolany',
-    emoji: '📈',
-    name: '코스톨라니',
-    tagline: '"시장 사이클 따르기"',
-    keyAlloc: 'AI가 현재 국면 분석 자동 추천',
-    accentColor: '#FFB74D',
-  },
 ];
 
 // ============================================================================

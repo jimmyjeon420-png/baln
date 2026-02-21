@@ -35,6 +35,7 @@ import {
   useCreateComment,
   useUpdateComment,
   useDeleteComment,
+  useDeletePost,
   useLikeComment,
   useMyCommentLikes,
   useLikePost,
@@ -88,6 +89,9 @@ export default function PostDetailScreen() {
   const updateComment = useUpdateComment(id || '');
   const deleteComment = useDeleteComment(id || '');
 
+  // 게시글 삭제
+  const deletePost = useDeletePost();
+
   // 댓글 좋아요
   const likeComment = useLikeComment(id || '');
   const { data: myCommentLikes } = useMyCommentLikes();
@@ -119,6 +123,39 @@ export default function PostDetailScreen() {
   const handleReport = (type: 'post' | 'comment', targetId: string) => {
     setReportTarget({ type, id: targetId });
     setReportModalVisible(true);
+  };
+
+  // 게시글 삭제 확인
+  const handleDeletePost = () => {
+    Alert.alert('게시글 삭제', '정말 삭제하시겠습니까?', [
+      { text: '취소', style: 'cancel' },
+      {
+        text: '삭제',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await deletePost.mutateAsync(post!.id);
+            Alert.alert('삭제 완료', '게시글이 삭제되었습니다.');
+            router.back();
+          } catch (e: any) {
+            Alert.alert('오류', e?.message || '삭제에 실패했습니다.');
+          }
+        },
+      },
+    ]);
+  };
+
+  // 게시물 메뉴 (삭제 + 신고)
+  const handlePostMenu = () => {
+    if (!post) return;
+    const isOwner = post.user_id === user?.id;
+    const buttons: any[] = [];
+    if (isOwner) {
+      buttons.push({ text: '삭제', style: 'destructive', onPress: handleDeletePost });
+    }
+    buttons.push({ text: '신고', onPress: () => handleReport('post', post.id) });
+    buttons.push({ text: '취소', style: 'cancel' });
+    Alert.alert('게시물 관리', undefined, buttons);
   };
 
   // 대댓글 모드로 전환
@@ -324,8 +361,8 @@ export default function PostDetailScreen() {
                     styles.holdingDot,
                     { backgroundColor: HOLDING_TYPE_COLORS[h.type] || colors.textTertiary },
                   ]} />
-                  <Text style={[styles.holdingTicker, { color: colors.textSecondary }]}>{h.ticker}</Text>
-                  <Text style={[styles.holdingName, { color: colors.textTertiary }]}>{h.name}</Text>
+                  <Text style={[styles.holdingTicker, { color: colors.textSecondary }]}>{h.type === 'realestate' ? '부동산' : h.ticker}</Text>
+                  {h.type !== 'realestate' && <Text style={[styles.holdingName, { color: colors.textTertiary }]}>{h.name}</Text>}
                 </View>
               ))}
             </View>
@@ -443,7 +480,7 @@ export default function PostDetailScreen() {
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>게시물</Text>
           {post && (
-            <TouchableOpacity onPress={() => handleReport('post', post.id)}>
+            <TouchableOpacity onPress={handlePostMenu}>
               <Ionicons name="ellipsis-vertical" size={24} color={colors.textTertiary} />
             </TouchableOpacity>
           )}

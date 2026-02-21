@@ -1,7 +1,7 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 
 import type { HealthScoreResult } from '../../services/rebalanceScore';
-import { DEFAULT_TARGET, AssetCategory, KostolalyPhase } from '../../services/rebalanceScore';
+import { DEFAULT_TARGET, AssetCategory } from '../../services/rebalanceScore';
 import { useKostolalyPhase } from '../../hooks/useKostolalyPhase';
 import type {
   RiskAnalysisResult,
@@ -16,7 +16,6 @@ import ReassuranceBanner from './ReassuranceBanner';
 import MarketTemperature from './MarketTemperature';
 import EmotionCheck from './EmotionCheck';
 import HeroSection from '../rebalance/HeroSection';
-import CheckupHeader from './CheckupHeader';
 import HealthScoreSection from '../rebalance/HealthScoreSection';
 import AllocationDriftSection from '../rebalance/AllocationDriftSection';
 import WhatIfSimulator from '../rebalance/WhatIfSimulator';
@@ -24,7 +23,7 @@ import CorrelationHeatmapSection from '../rebalance/CorrelationHeatmapSection';
 import TodayActionsSection from '../rebalance/TodayActionsSection';
 import RiskDashboardSection from '../rebalance/RiskDashboardSection';
 import AIAnalysisCTA from './AIAnalysisCTA';
-import KostolalyPhaseCard from './KostolalyPhaseCard';
+// KostolalyPhaseCard 제거 — 코스톨라니 배분은 DB 자동 로드로 적용
 
 interface AdvancedCheckupViewProps {
   healthScore: HealthScoreResult;
@@ -102,31 +101,8 @@ export default function AdvancedCheckupView({
     onTargetUpdate?.(t);
   }, [onTargetUpdate]);
 
-  // KostolalyPhaseCard에서 "배분 적용" 클릭 시 → AllocationDriftSection으로 전달
-  const [kostolalyTarget, setKostolalyTarget] = useState<Record<AssetCategory, number> | null>(null);
-  const [kostolalyPhase, setKostolalyPhase] = useState<KostolalyPhase | null>(null);
-
-  // DB에서 현재 코스톨라니 단계 자동 로드 → AllocationDriftSection에 prop으로 전달
-  const { phase: autoPhase, target: autoTarget } = useKostolalyPhase();
-  useEffect(() => {
-    // kostolalyTarget/Phase prop만 업데이트 — selectedTarget은 AllocationDriftSection이
-    // onTargetChange 콜백으로 직접 관리 (저장된 구루 철학 기준)
-    if (autoTarget && autoPhase && kostolalyPhase === null) {
-      setKostolalyTarget(autoTarget);
-      setKostolalyPhase(autoPhase);
-      // setSelectedTarget(autoTarget) 제거:
-      // 코스톨라니 DB 로드가 사용자가 저장한 철학(달리오/버핏/캐시우드 등)을 덮어쓰는 버그 방지
-    }
-  }, [autoTarget, autoPhase]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const handleApplyKostolalyPhase = useCallback((
-    target: Record<AssetCategory, number>,
-    phase: KostolalyPhase,
-  ) => {
-    setKostolalyTarget(target);
-    setKostolalyPhase(phase);
-    handleTargetChange(target); // WhatIfSimulator + rebalance.tsx 동기화
-  }, [handleTargetChange]);
+  // DB에서 현재 코스톨라니 국면 자동 로드 → AllocationDriftSection에 전달 (3구루에 25% 반영)
+  const { phase: kostolalyPhase } = useKostolalyPhase();
 
   return (
     <>
@@ -146,9 +122,6 @@ export default function AdvancedCheckupView({
         contextHeadline={contextHeadline}
       />
 
-      {/* 2. 코스톨라니 달걀 모형 — 처방전 근거 카드 ("왜 이런 처방전인가?") */}
-      <KostolalyPhaseCard onApplyPhase={handleApplyKostolalyPhase} />
-
       {/* 3. 안심 배너 */}
       <ReassuranceBanner totalGainLoss={totalGainLoss} cfoWeather={cfoWeather} />
 
@@ -166,17 +139,11 @@ export default function AdvancedCheckupView({
       {/* 4. 시장 온도계 */}
       <MarketTemperature morningBriefing={morningBriefing ?? null} isAILoading={isAILoading} />
 
-      {/* 5. Checkup header — health score grade + panic score */}
-      <CheckupHeader
-        healthScore={healthScore}
-        panicScore={panicScore}
-        totalAssets={totalAssets}
-      />
-
-      {/* 6. Six-factor health score breakdown */}
+      {/* 5+6. 건강점수 통합 섹션 (CheckupHeader + HealthScoreSection 합침) */}
       <HealthScoreSection
         healthScore={healthScore}
         totalAssets={totalAssets}
+        panicScore={panicScore}
         onScoreImproved={(improvement) => {
           // 향후 크레딧 적립 로직 추가 가능 (부모에서 처리)
         }}
@@ -187,7 +154,6 @@ export default function AdvancedCheckupView({
         assets={allAssets}
         totalAssets={totalAssets}
         onTargetChange={handleTargetChange}
-        kostolalyTarget={kostolalyTarget}
         kostolalyPhase={kostolalyPhase}
       />
 
