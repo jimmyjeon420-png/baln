@@ -366,7 +366,7 @@ export default function MarketplaceScreen() {
             </View>
           </View>
           <View style={s.creditCta}>
-            <Text style={s.creditCtaText}>충전하기</Text>
+            <Text style={s.creditCtaText}>크레딧 모으기</Text>
             <Ionicons name="arrow-forward" size={14} color="#7C4DFF" />
           </View>
         </TouchableOpacity>

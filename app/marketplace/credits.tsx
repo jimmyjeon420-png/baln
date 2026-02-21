@@ -322,7 +322,7 @@ export default function CreditsScreen() {
           <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7}>
             <Ionicons name="close" size={24} color="#FFF" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>크레딧 충전소</Text>
+          <Text style={styles.headerTitle}>크레딧 안내</Text>
           <View style={{ width: 24 }} />
         </View>
 
@@ -462,82 +462,8 @@ export default function CreditsScreen() {
           </View>
         )}
 
-        {/* 패키지 목록 */}
-        <Text style={styles.sectionTitle}>크레딧 패키지</Text>
-        <View style={[styles.packageList, !chargingOpen && { opacity: 0.4 }]}>
-          {CREDIT_PACKAGES.map(pkg => {
-            const applePrice = getApplePrice(pkg.appleProductId);
-            return (
-              <TouchableOpacity
-                key={pkg.id}
-                style={[
-                  styles.packageCard,
-                  pkg.popular && styles.popularCard,
-                  chargingOpen && selectedPackage === pkg.id && styles.selectedCard,
-                ]}
-                onPress={() => {
-                  if (!chargingOpen) return;
-                  mediumTap();
-                  setSelectedPackage(pkg.id);
-                }}
-                activeOpacity={chargingOpen ? 0.7 : 1}
-                disabled={!chargingOpen}
-              >
-                {pkg.badge && (
-                  <View style={[styles.badge, pkg.popular && styles.popularBadge]}>
-                    <Text style={styles.badgeText}>{pkg.badge}</Text>
-                  </View>
-                )}
-                <Text style={styles.packageName}>{pkg.name}</Text>
-                <View style={styles.creditRow}>
-                  <Ionicons name="diamond" size={18} color="#7C4DFF" />
-                  <Text style={styles.creditAmount}>{pkg.credits}</Text>
-                  {pkg.bonus > 0 && (
-                    <Text style={styles.bonusText}>+{pkg.bonus}</Text>
-                  )}
-                </View>
-                {/* Apple 실제 가격이 있으면 표시, 없으면 기본 가격 */}
-                <Text style={styles.packagePrice}>
-                  {applePrice || pkg.priceLabel}
-                </Text>
-                <Text style={styles.perCredit}>
-                  크레딧당 ₩{Math.round(pkg.price / (pkg.credits + pkg.bonus)).toLocaleString()}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        {/* 구매 버튼 (6/1 이후에만 활성) */}
-        {chargingOpen && selectedPackage && (
-          <TouchableOpacity
-            style={[
-              styles.purchaseButton,
-              (purchasing || purchaseMutation.isPending) && styles.disabledButton,
-            ]}
-            onPress={() => handlePurchase(selectedPackage)}
-            disabled={purchasing || purchaseMutation.isPending}
-            activeOpacity={0.7}
-          >
-            {(purchasing || purchaseMutation.isPending) ? (
-              <View style={styles.purchaseButtonContent}>
-                <ActivityIndicator color="#FFF" size="small" />
-                <Text style={styles.purchaseButtonText}>결제 진행 중...</Text>
-              </View>
-            ) : (
-              <View style={styles.purchaseButtonContent}>
-                <Ionicons name="logo-apple" size={20} color="#FFF" />
-                <Text style={styles.purchaseButtonText}>
-                  {(() => {
-                    const pkg = CREDIT_PACKAGES.find(p => p.id === selectedPackage);
-                    const applePrice = pkg ? getApplePrice(pkg.appleProductId) : null;
-                    return `${applePrice || pkg?.priceLabel} 구매하기`;
-                  })()}
-                </Text>
-              </View>
-            )}
-          </TouchableOpacity>
-        )}
+        {/* 크레딧 패키지 — IAP 상품 등록 후 오픈 예정 (App Store 심사용 임시 숨김) */}
+        {/* TODO: App Store Connect에 IAP 등록 완료 후 이 섹션 복원 */}
 
         {/* 거래 내역 */}
         {history && history.length > 0 && (
@@ -578,9 +504,8 @@ export default function CreditsScreen() {
           <Text style={styles.infoText}>
             - 크레딧은 AI 프리미엄 기능 이용에 사용됩니다{'\n'}
             - AI 분석 실패 시 크레딧이 자동 환불됩니다{'\n'}
-            - 구독자는 매월 30 크레딧(₩3,000) 보너스를 받습니다{'\n'}
-            - 등급이 높을수록 할인율이 적용됩니다{'\n'}
-            - 결제는 Apple App Store를 통해 처리됩니다
+            - 다양한 활동으로 무료 크레딧을 획득할 수 있습니다{'\n'}
+            - 등급이 높을수록 할인율이 적용됩니다
           </Text>
         </View>
       </ScrollView>
