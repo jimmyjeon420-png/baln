@@ -21,6 +21,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
 import type { ThemeColors } from '../../styles/colors';
+import { success, lightTap } from '../../services/hapticService';
 
 // ============================================================================
 // Props 인터페이스
@@ -50,6 +51,8 @@ interface YesterdayReviewCardProps {
   accuracyRate: number | null;
   /** 전체 기록 보기 콜백 */
   onViewHistory: () => void;
+  /** 빈 상태에서 예측 화면으로 이동하는 CTA 콜백 */
+  onStartPrediction?: () => void;
 }
 
 // ============================================================================
@@ -79,7 +82,12 @@ const ReviewResultItem = React.memo(({
       duration: 400,
       delay: index * 150, // 순차적 등장 (0ms, 150ms, 300ms)
       useNativeDriver: true,
-    }).start();
+    }).start(() => {
+      // 페이드인 완료 후 적중 아이템이면 성공 햅틱
+      if (result.isCorrect) {
+        success();
+      }
+    });
   }, []);
 
   const hasExplanation = !!(result.description || result.source);
@@ -93,7 +101,12 @@ const ReviewResultItem = React.memo(({
     <Animated.View style={[styles.resultItemWrapper, { opacity: fadeAnim }]}>
       <TouchableOpacity
         style={[styles.resultItem, itemStyle]}
-        onPress={() => hasExplanation && setExpanded(!expanded)}
+        onPress={() => {
+          if (hasExplanation) {
+            lightTap();
+            setExpanded(!expanded);
+          }
+        }}
         disabled={!hasExplanation}
         activeOpacity={0.7}
       >
@@ -179,10 +192,40 @@ function YesterdayReviewCard({
   results,
   accuracyRate,
   onViewHistory,
+  onStartPrediction,
 }: YesterdayReviewCardProps) {
   const { colors } = useTheme();
   const styles = React.useMemo(() => createStyles(colors), [colors]);
   const COLORS = colors; // 하위 호환성
+
+  // 보상 스케일 애니메이션 (totalReward > 0일 때 실행)
+  const rewardScaleAnim = React.useRef(new Animated.Value(0.8)).current;
+
+  // 총 보상 계산 (결과가 있을 때만)
+  const totalReward = React.useMemo(
+    () => (results || []).reduce((sum, r) => sum + r.reward, 0),
+    [results]
+  );
+
+  // 결과가 있을 때 햅틱 + 보상 스케일 애니메이션 트리거
+  React.useEffect(() => {
+    if (!results || results.length === 0) return;
+
+    if (totalReward > 0) {
+      // 보상이 있으면 성공 햅틱
+      success();
+      // 보상 텍스트 스케일 애니메이션: 0.8 → 1.2 → 1.0
+      Animated.spring(rewardScaleAnim, {
+        toValue: 1,
+        friction: 4,
+        tension: 100,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      // 보상 없으면 가벼운 햅틱
+      lightTap();
+    }
+  }, [results, totalReward]);
 
   // 결과가 없으면 Empty 상태
   if (!results || results.length === 0) {
@@ -198,6 +241,16 @@ function YesterdayReviewCard({
           <Text style={styles.emptySubtext}>
             오늘 예측에 참여하면 내일 결과를 확인할 수 있어요
           </Text>
+          {onStartPrediction && (
+            <TouchableOpacity
+              style={styles.emptyCta}
+              onPress={onStartPrediction}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.emptyCtaText}>오늘 예측하러 가기</Text>
+              <Ionicons name="chevron-forward" size={14} color={colors.primary} />
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     );
@@ -206,7 +259,7 @@ function YesterdayReviewCard({
   // 적중/오답 집계
   const correctCount = results.filter(r => r.isCorrect).length;
   const totalCount = results.length;
-  const totalReward = results.reduce((sum, r) => sum + r.reward, 0);
+  // totalReward는 위 useMemo에서 이미 계산됨
 
   return (
     <View style={styles.card}>
@@ -232,9 +285,15 @@ function YesterdayReviewCard({
         )}
         {totalReward > 0 && (
           <View style={styles.summaryItem}>
-            <Text style={[styles.summaryValue, { color: COLORS.primary }]}>
+            <Animated.Text
+              style={[
+                styles.summaryValue,
+                { color: COLORS.primary, fontSize: 24 },
+                { transform: [{ scale: rewardScaleAnim }] },
+              ]}
+            >
               +{totalReward}C
-            </Text>
+            </Animated.Text>
             <Text style={styles.summaryLabel}>획득</Text>
           </View>
         )}
@@ -437,6 +496,21 @@ const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
     fontSize: 13,
     color: COLORS.textTertiary,
     textAlign: 'center',
+  },
+  emptyCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.primary + '15',
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    marginTop: 12,
+    gap: 4,
+  },
+  emptyCtaText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.primary,
   },
   // 하단 버튼
   historyButton: {

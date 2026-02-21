@@ -317,6 +317,10 @@ interface TodayActionsSectionProps {
   kostolalyPhase?: KostolalyPhase | null;
   /** 선택된 투자 철학 — 처방전 카드 정렬 + 불일치 경고용 */
   guruStyle?: string;
+  /** 맥락 카드 센티먼트 (홈 탭 연동) */
+  contextSentiment?: 'calm' | 'caution' | 'alert' | null;
+  /** 맥락 카드 헤드라인 (홈 탭 연동) */
+  contextHeadline?: string | null;
 }
 
 // 국면별 색상 (KostolalyPhaseCard와 동일)
@@ -334,6 +338,8 @@ export default function TodayActionsSection({
   selectedTarget,
   kostolalyPhase,
   guruStyle,
+  contextSentiment,
+  contextHeadline,
 }: TodayActionsSectionProps) {
   const { colors, shadows } = useTheme();
 
@@ -1010,6 +1016,31 @@ export default function TodayActionsSection({
               <Text style={[s.journalSaveBtnText, { color: colors.success }]}>저장</Text>
             </TouchableOpacity>
           )}
+        </View>
+      )}
+
+      {/* 오늘 맥락 연동 (홈 탭 맥락 카드 요약) */}
+      {contextHeadline && (
+        <View style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 8,
+          backgroundColor: contextSentiment === 'alert' ? `${colors.error}15` : contextSentiment === 'caution' ? `${colors.warning}15` : `${colors.success}15`,
+          borderRadius: 10,
+          padding: 12,
+          marginBottom: 12,
+        }}>
+          <Ionicons
+            name={contextSentiment === 'alert' ? 'warning' : contextSentiment === 'caution' ? 'alert-circle' : 'checkmark-circle'}
+            size={16}
+            color={contextSentiment === 'alert' ? colors.error : contextSentiment === 'caution' ? colors.warning : colors.success}
+          />
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 11, color: colors.textTertiary, marginBottom: 2 }}>오늘의 시장 맥락</Text>
+            <Text style={{ fontSize: 12, fontWeight: '600', color: colors.textPrimary }} numberOfLines={2}>
+              {contextHeadline}
+            </Text>
+          </View>
         </View>
       )}
 

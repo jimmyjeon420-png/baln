@@ -23,7 +23,9 @@
 
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import supabase from './supabase';
+import { getStreakData } from './streakService';
 
 // ============================================================================
 // Expo Push Token 획득
@@ -236,5 +238,111 @@ export async function sendCrisisNotification(
     if (__DEV__) console.log(`[Push] 위기 알림 발송 완료: ${level} — ${headline}`);
   } catch (e) {
     console.warn('[Push] 위기 알림 발송 실패:', e);
+  }
+}
+
+// ============================================================================
+// 스트릭 만료 경고 알림 (P2.1)
+// ============================================================================
+
+// AsyncStorage 키: 오늘 앱 방문 여부 (스트릭 경고 취소 용도)
+const STREAK_WARNING_VISITED_KEY = '@baln:streak_warning_visited_date';
+
+/**
+ * 스트릭 만료 경고 알림 예약 (매일 21:00 KST)
+ *
+ * [목적]
+ * - 이탈 방지: "오늘 아직 방문 안 하셨네요! N일 연속 기록이 끊어지기 3시간 전입니다"
+ * - 손실 회피 심리 활용 (버핏 전략: 기록 보존 욕구)
+ *
+ * [동작 로직]
+ * 1. 오늘 이미 방문한 경우 → 스트릭 경고 알림 취소 (방문했으니 필요 없음)
+ * 2. 아직 미방문인 경우 → 매일 21:00 KST(= 12:00 UTC) 에 알림 예약
+ * 3. 스트릭이 0이면 예약 안 함 (기록 없으면 경고할 것도 없음)
+ *
+ * [KST 21:00 = UTC 12:00]
+ * - iOS/Android 로컬 알림 트리거는 기기 로컬 타임존 기준
+ * - 한국 사용자는 기기가 KST이므로 hour: 21 로 설정하면 됨
+ *
+ * @param userId - 현재 로그인 유저 ID (로깅용)
+ */
+export async function scheduleStreakWarningNotification(userId: string): Promise<void> {
+  try {
+    // 1. 오늘 날짜 확인
+    const today = new Date().toISOString().split('T')[0]; // "YYYY-MM-DD"
+    const visitedDate = await AsyncStorage.getItem(STREAK_WARNING_VISITED_KEY);
+
+    if (visitedDate === today) {
+      // 오늘 이미 방문 기록이 있으면 스트릭 경고 알림 취소
+      await Notifications.cancelScheduledNotificationAsync('streak-warning').catch(() => {});
+      if (__DEV__) console.log('[Push] 오늘 방문 완료 → 스트릭 경고 알림 취소');
+      return;
+    }
+
+    // 2. 현재 스트릭 데이터 조회
+    const streakData = await getStreakData();
+    const { currentStreak, lastVisitDate } = streakData;
+
+    // 스트릭이 0이거나 기록이 없으면 경고 불필요
+    if (currentStreak <= 0 || !lastVisitDate) {
+      if (__DEV__) console.log('[Push] 스트릭 없음 → 경고 알림 건너뜀');
+      return;
+    }
+
+    // 3. 오늘 이미 스트릭이 업데이트 됐는지 확인 (오늘 방문한 경우)
+    if (lastVisitDate === today) {
+      // 오늘 방문했으므로 경고 알림 취소
+      await Notifications.cancelScheduledNotificationAsync('streak-warning').catch(() => {});
+      // 방문 날짜 기록 (다음 usePushSetup 호출 시 취소 유지)
+      await AsyncStorage.setItem(STREAK_WARNING_VISITED_KEY, today);
+      if (__DEV__) console.log('[Push] 오늘 스트릭 업데이트됨 → 스트릭 경고 알림 취소');
+      return;
+    }
+
+    // 4. 기존 스트릭 경고 알림 취소 후 재예약 (중복 방지)
+    await Notifications.cancelScheduledNotificationAsync('streak-warning').catch(() => {});
+
+    // 5. 매일 21:00(기기 로컬 타임존 기준)에 알림 예약
+    //    한국 사용자 기기는 KST이므로 21:00 = 오후 9시
+    await Notifications.scheduleNotificationAsync({
+      identifier: 'streak-warning',
+      content: {
+        title: '오늘 아직 방문 안 하셨네요!',
+        body: `🔥 ${currentStreak}일 연속 기록이 끊어지기 3시간 전입니다. 오늘 맥락 카드를 확인해보세요!`,
+        data: { type: 'streak-warning', streak: currentStreak, userId },
+        sound: true,
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DAILY,
+        hour: 21,
+        minute: 0,
+      },
+    });
+
+    if (__DEV__) console.log(`[Push] 스트릭 경고 알림 예약 완료 (21:00, 현재 스트릭: ${currentStreak}일)`);
+  } catch (e) {
+    console.warn('[Push] 스트릭 경고 알림 예약 실패:', e);
+  }
+}
+
+/**
+ * 오늘 방문 완료 표시 (스트릭 경고 알림 취소)
+ *
+ * [호출 시점]
+ * - 스트릭이 오늘로 업데이트된 직후 (checkAndUpdateStreak 성공 시)
+ * - 예: useStreak 훅에서 isNewDay === true 감지 시
+ *
+ * 이 함수를 호출하면:
+ * 1. 오늘 날짜를 AsyncStorage에 기록
+ * 2. 예약된 스트릭 경고 알림 즉시 취소
+ */
+export async function cancelStreakWarningForToday(): Promise<void> {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    await AsyncStorage.setItem(STREAK_WARNING_VISITED_KEY, today);
+    await Notifications.cancelScheduledNotificationAsync('streak-warning').catch(() => {});
+    if (__DEV__) console.log('[Push] 오늘 방문 완료 → 스트릭 경고 알림 취소');
+  } catch (e) {
+    console.warn('[Push] 스트릭 경고 취소 실패:', e);
   }
 }

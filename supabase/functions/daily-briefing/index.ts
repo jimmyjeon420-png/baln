@@ -35,6 +35,7 @@ import { resolvePredictionPolls } from './task-e-resolve.ts';
 import { updateRealEstatePrices } from './task-f-realestate.ts';
 import { runContextCardGeneration } from './task-g-context-card.ts';
 import { checkCrisisAlert } from './task-h-crisis-alert.ts';
+import { runNewsCollection } from './task-j-news.ts';
 
 // 공통 유틸 import
 import { supabase, STOCK_LIST, GURU_LIST, sleep, retryWithBackoff } from './_shared.ts';
@@ -119,6 +120,7 @@ serve(async (req: Request) => {
     let contextCardResult: TaskResult<any> = null;
     let realEstateResult: TaskResult<any> = null;
     let crisisResult: TaskResult<any> = null;
+    let newsResult: TaskResult<any> = null;
 
     // Task D: 포트폴리오 스냅샷 (Gemini 미사용, DB only)
     if (shouldRun('D')) {
@@ -197,6 +199,13 @@ serve(async (req: Request) => {
       crisisResult = await safe(() => retryWithBackoff('Task H', checkCrisisAlert));
     }
 
+    // Task J: 실시간 뉴스 수집 (RSS + Gemini 태깅) — ★ 재시도 적용
+    if (shouldRun('J')) {
+      console.log('[Task J] 시작: 뉴스 수집...');
+      newsResult = await safe(() => retryWithBackoff('Task J', runNewsCollection));
+      await sleep(delayMs);
+    }
+
     // Task I: 코스톨라니 국면 감지 (주 1회 — 매주 월요일 자동 실행)
     const todayKST = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
     const isMonday = todayKST.getDay() === 1;
@@ -236,6 +245,7 @@ serve(async (req: Request) => {
     logTask('Task G', contextCardResult, v => `성공: 맥락 카드 생성 (${v.sentiment}), ${v.usersCalculated}명 영향도 계산 (평균 ${v.avgImpact}%)`);
     logTask('Task H', crisisResult, v => v.crisisDetected ? `위기 감지: ${v.alertsCreated}건 알림 생성` : `정상 — 위기 미감지 (${v.marketsChecked.length}개 시장 확인)`);
     logTask('Task I', kostolalyResult, v => `코스톨라니 국면: ${v.action} — ${v.phase ?? v.newPhase ?? ''}`);
+    logTask('Task J', newsResult, v => `성공: 뉴스 ${v.totalFetched}건 수집, ${v.totalUpserted}건 저장, ${v.totalDeleted}건 삭제`);
 
     // ========================================================================
     // 응답 생성
@@ -258,6 +268,7 @@ serve(async (req: Request) => {
     if (shouldRun('F')) summary.realEstate = { status: st(realEstateResult), updated: val(realEstateResult, v => v.assetsUpdated, 0) };
     if (shouldRun('G')) summary.contextCard = { status: st(contextCardResult), sentiment: val(contextCardResult, v => v.sentiment, 'N/A'), users: val(contextCardResult, v => v.usersCalculated, 0) };
     if (shouldRun('H')) summary.crisisAlert = { status: st(crisisResult), detected: val(crisisResult, v => v.crisisDetected, false) };
+    if (shouldRun('J')) summary.news = { status: st(newsResult), fetched: val(newsResult, v => v.totalFetched, 0), upserted: val(newsResult, v => v.totalUpserted, 0) };
 
     console.log('========================================');
     console.log(`[Central Kitchen] 배치 완료: ${elapsed}초`);

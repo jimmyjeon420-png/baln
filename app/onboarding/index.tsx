@@ -407,16 +407,16 @@ export default function OnboardingScreen() {
       <View style={styles.stepContent}>
         <Text style={styles.welcomeEmoji}>{'👋'}</Text>
         <Text style={[styles.heading, { color: colors.textPrimary }]}>
-          bal<Text style={{ color: '#4CAF50' }}>n</Text>{'에 오신 걸\n환영합니다'}
+          {'시장이 흔들릴 때,\n당신의 기준이 됩니다'}
         </Text>
         <Text style={[styles.subheading, { color: colors.textSecondary }]}>
-          {'매일 5분, 시장 맥락을 읽어보세요.\n자기만의 투자 기준이 생깁니다.'}
+          {'급락에 패닉셀, 급등에 FOMO 매수...\n투자 경험 5년차도 반복하는 실수입니다.\nbaln은 매일 5분, 시장 맥락을 읽으며\n자기만의 투자 기준을 만들어갑니다.'}
         </Text>
 
         <View style={styles.featureList}>
-          <FeatureItem emoji="📊" text="매일 시장 맥락 카드" />
-          <FeatureItem emoji="🎯" text="투자 예측 게임" />
-          <FeatureItem emoji="🤖" text="AI 포트폴리오 진단" />
+          <FeatureItem emoji="📊" text="왜 빠졌는지 5분 안에 이해" />
+          <FeatureItem emoji="🎯" text="매일 시장을 예측하고 복기하며 감각 키우기" />
+          <FeatureItem emoji="💊" text="내 포트폴리오 맞춤 진단과 처방" />
         </View>
       </View>
     );

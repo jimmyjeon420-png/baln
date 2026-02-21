@@ -23,6 +23,7 @@ import {
   Modal,
   ScrollView,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
 
 
@@ -54,6 +55,12 @@ interface HealthSignalCardProps {
 
   /** 자산 추가 버튼 콜백 */
   onAddAssets?: () => void;
+
+  /** 분석 탭으로 이동 콜백 */
+  onAnalysisPress?: () => void;
+
+  /** 개별 자산 클릭 콜백 (자산 이름 전달) */
+  onAssetPress?: (assetName: string) => void;
 
   /** 6팩터 상세 데이터 (optional) */
   healthFactors?: {
@@ -137,6 +144,8 @@ const HealthSignalCard = React.memo(({
   hasAssets,
   isLoading,
   onAddAssets,
+  onAnalysisPress,
+  onAssetPress,
   healthFactors,
   totalAssets,
   dailyChangeRate,
@@ -238,17 +247,38 @@ const HealthSignalCard = React.memo(({
         </View>
       )}
 
+      {/* 분석 탭 CTA (건강 점수 80 미만 시 표시) */}
+      {onAnalysisPress && healthScore !== null && healthScore < 80 && (
+        <TouchableOpacity
+          style={[styles.analysisCTA, { backgroundColor: signalColor + '15' }]}
+          onPress={onAnalysisPress}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="analytics-outline" size={16} color={signalColor} />
+          <Text style={[styles.analysisCTAText, { color: signalColor }]}>
+            상세 분석 보기
+          </Text>
+          <Ionicons name="chevron-forward" size={14} color={signalColor} />
+        </TouchableOpacity>
+      )}
+
       {/* 하단: 관심자산 미니 신호등 + 자산 추가 */}
       <View style={styles.assetsArea}>
         {assetSignals.length > 0 && (
           <View style={styles.assetsList}>
             {assetSignals.slice(0, 5).map((asset, index) => (
-              <View key={index} style={[styles.assetChip, { backgroundColor: colors.surfaceLight }]}>
+              <TouchableOpacity
+                key={index}
+                style={[styles.assetChip, { backgroundColor: colors.surfaceLight }]}
+                onPress={() => onAssetPress?.(asset.name)}
+                activeOpacity={onAssetPress ? 0.7 : 1}
+                disabled={!onAssetPress}
+              >
                 <Text style={[styles.assetName, { color: colors.textPrimary }]} numberOfLines={1}>{asset.name}</Text>
                 <Text style={styles.assetSignal}>
                   {getMiniSignalEmoji(asset.signal)}
                 </Text>
-              </View>
+              </TouchableOpacity>
             ))}
           </View>
         )}
@@ -322,7 +352,9 @@ const HealthSignalCard = React.memo(({
     prevProps.hasAssets !== nextProps.hasAssets ||
     prevProps.isLoading !== nextProps.isLoading ||
     prevProps.totalAssets !== nextProps.totalAssets ||
-    prevProps.dailyChangeRate !== nextProps.dailyChangeRate
+    prevProps.dailyChangeRate !== nextProps.dailyChangeRate ||
+    prevProps.onAnalysisPress !== nextProps.onAnalysisPress ||
+    prevProps.onAssetPress !== nextProps.onAssetPress
   ) {
     return false;
   }
@@ -507,6 +539,20 @@ const styles = StyleSheet.create({
   },
   addAssetChipText: {
     fontSize: 14,
+    fontWeight: '600',
+  },
+  analysisCTA: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    marginTop: 12,
+  },
+  analysisCTAText: {
+    fontSize: 13,
     fontWeight: '600',
   },
   modalOverlay: {

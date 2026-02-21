@@ -18,6 +18,9 @@ import { BadgeRow } from '../../src/components/profile/BadgeRow';
 import { useScreenTracking } from '../../src/hooks/useAnalytics';
 import { SIZES } from '../../src/styles/theme';
 import RealEstatePreview from '../../src/components/more/RealEstatePreview';
+import NewsPreview from '../../src/components/more/NewsPreview';
+import CommunityPreview from '../../src/components/more/CommunityPreview';
+import { useLoungeEligibility } from '../../src/hooks/useCommunity';
 import { useTheme, ThemeMode } from '../../src/hooks/useTheme';
 import { CreditDisplay } from '../../src/components/common/CreditDisplay';
 import { useIsAdmin } from '../../src/hooks/useAdminDashboard';
@@ -57,6 +60,7 @@ export default function ProfileScreen() {
   const { themeMode, setThemeMode, colors } = useTheme();
   const { data: isAdmin } = useIsAdmin();
   const { guruStyle } = useGuruStyle();
+  const { eligibility } = useLoungeEligibility();
 
   // 화면 포커스 시 AsyncStorage에서 최신 guru style 읽기 (guru-style.tsx 변경 후 즉시 반영)
   const [latestGuruStyle, setLatestGuruStyle] = React.useState(guruStyle);
@@ -174,21 +178,6 @@ export default function ProfileScreen() {
           icon: 'shield-checkmark-outline',
           label: '보안',
           onPress: () => router.push('/settings/security'),
-        },
-        {
-          icon: 'help-circle-outline',
-          label: '도움말',
-          onPress: () => router.push('/settings/help'),
-        },
-        {
-          icon: 'document-text-outline',
-          label: '이용약관',
-          onPress: () => router.push('/settings/terms'),
-        },
-        {
-          icon: 'lock-closed-outline',
-          label: '개인정보처리방침',
-          onPress: () => router.push('/settings/privacy'),
         },
         {
           icon: 'information-circle-outline',
@@ -310,6 +299,12 @@ export default function ProfileScreen() {
         {user && (
           <BadgeRow achievements={badgeAchievements} isLoading={badgeLoading} />
         )}
+
+        {/* ── 뉴스 미리보기 (실시간 시장 뉴스) ── */}
+        {user && <NewsPreview />}
+
+        {/* ── 커뮤니티 미리보기 (모든 사용자에게 공개, 전체 커뮤니티는 자산 조건 유지) ── */}
+        {user && <CommunityPreview isEligible={eligibility?.isEligible ?? true} />}
 
         {/* ── 부동산 보유 현황 (있을 때만 표시) ── */}
         {user && <RealEstatePreview />}

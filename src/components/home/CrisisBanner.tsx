@@ -1,23 +1,23 @@
 /**
- * CrisisBanner.tsx - 시장 위기 경고 배너 (VIX + 급락 감지)
+ * CrisisBanner.tsx - 시장 위기 배너 컴포넌트
  *
- * 역할: "오늘 탭 긴급 경보 배너"
- * - 시장 급락(-3%+) 또는 VIX 30+ 감지 시 최상단에 표시
- * - moderate: 주황 배경 + caution 아이콘
- * - severe/extreme: 빨강 배경 + alert 아이콘 + 펄스 애니메이션
- * - 터치하면 맥락 카드(alert sentiment)로 이동
- * - 다크모드 지원 (useTheme)
+ * 역할: "위기 알림 창구"
+ * - 시장 위기 감지 시 홈 화면 상단에 표시
+ * - 사용자를 불안하게 만들지 않고, 맥락 확인을 유도
+ *   ("안심을 판다, 불안을 팔지 않는다" — 워렌 버핏)
+ * - 위기 수준(moderate/severe/extreme)에 따라 색상과 아이콘이 달라짐
+ * - 위에서 fade-in 애니메이션으로 자연스럽게 등장
  *
  * [사용처]
  * - app/(tabs)/index.tsx 오늘 탭 최상단
  * - useCrisisAlert 훅에서 상태 전달
  *
  * [전환 전략]
- * - moderate: 맥락 카드 강조 → Premium 티저
- * - severe/extreme: "기관 행동 보기" → Premium 페이월
+ * - moderate: 맥락 카드 강조 → "침착하게 맥락부터"
+ * - severe/extreme: "기관 행동 보기" → Premium 페이월 유도
  */
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, memo } from 'react';
 import {
   View,
   Text,
@@ -26,197 +26,309 @@ import {
   Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { useHaptics } from '../../hooks/useHaptics';
 import { useTheme } from '../../hooks/useTheme';
-import {
-  getCrisisBannerStyle,
-  type CrisisLevel,
-} from '../../services/crisisDetection';
+
+// =============================================================================
+// 타입 정의
+// =============================================================================
 
 interface CrisisBannerProps {
-  /** 위기 등급 */
-  crisisLevel: CrisisLevel;
-  /** 사용자 메시지 */
-  message: string;
-  /** 주요 하락 시장 */
+  /** 위기 수준: none이면 배너 미표시 */
+  crisisLevel: 'none' | 'moderate' | 'severe' | 'extreme';
+  /** 위기 설명 메시지 (1줄로 truncate) */
+  crisisMessage: string;
+  /** 주요 시장 이름 (예: "KOSPI", "S&P500") */
   primaryMarket: string | null;
-  /** 변동률 */
+  /** 주요 시장 변동률 (예: -3.5) */
   primaryChange: number | null;
-  /** VIX 수치 (옵션) */
-  vixLevel?: number | null;
-  /** 터치 시 스크롤할 ref (옵션) */
-  onPress?: () => void;
+  /** "맥락 확인" 버튼 탭 핸들러 → 맥락 카드로 이동 */
+  onViewContext: () => void;
+  /** 사용자가 Premium 구독자인지 여부 (기본값 false) */
+  isPremium?: boolean;
+  /** Premium 유도 문구 탭 핸들러 (severe/extreme + 비프리미엄일 때만 호출) */
+  onPremiumPress?: () => void;
 }
 
-export default function CrisisBanner({
+// =============================================================================
+// 위기 수준별 스타일 설정
+// =============================================================================
+
+type CrisisConfig = {
+  /** 배너 배경 틴트 색상 (반투명) */
+  backgroundTint: string;
+  /** 아이콘 + 버튼 텍스트 + 테두리 기준 색상 */
+  accentColor: string;
+  /** Ionicons 아이콘 이름 */
+  iconName: 'alert-circle' | 'warning' | 'thunderstorm';
+  /** 위기 수준 제목 (한국어) */
+  levelLabel: string;
+};
+
+const CRISIS_CONFIG: Record<Exclude<CrisisBannerProps['crisisLevel'], 'none'>, CrisisConfig> = {
+  moderate: {
+    backgroundTint: '#FFB74D15',
+    accentColor: '#FFB74D',
+    iconName: 'alert-circle',
+    levelLabel: '시장 변동',
+  },
+  severe: {
+    backgroundTint: '#FF980015',
+    accentColor: '#FF9800',
+    iconName: 'warning',
+    levelLabel: '시장 급락',
+  },
+  extreme: {
+    backgroundTint: '#CF667915',
+    accentColor: '#CF6679',
+    iconName: 'thunderstorm',
+    levelLabel: '시장 위기',
+  },
+};
+
+// =============================================================================
+// CrisisBanner 컴포넌트
+// =============================================================================
+
+function CrisisBanner({
   crisisLevel,
-  message,
+  crisisMessage,
   primaryMarket,
   primaryChange,
-  vixLevel,
-  onPress,
-}: CrisisBannerProps) {
-  const router = useRouter();
-  const { mediumTap } = useHaptics();
+  onViewContext,
+  isPremium = false,
+  onPremiumPress,
+}: CrisisBannerProps): React.ReactElement | null {
   const { colors } = useTheme();
-  const slideAnim = useRef(new Animated.Value(-80)).current;
-  const pulseAnim = useRef(new Animated.Value(1)).current;
 
-  // 위기 감지 시 슬라이드인 애니메이션
+  // 애니메이션 값: opacity (0 → 1) + translateY (-12 → 0)
+  const opacity = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(-12)).current;
+
+  // crisisLevel이 바뀔 때마다 fade-in 애니메이션 실행
   useEffect(() => {
-    if (crisisLevel !== 'none') {
-      Animated.spring(slideAnim, {
-        toValue: 0,
-        useNativeDriver: true,
-        tension: 50,
-        friction: 7,
-      }).start();
-
-      // severe/extreme일 때 아이콘 펄스 애니메이션
-      if (crisisLevel === 'severe' || crisisLevel === 'extreme') {
-        Animated.loop(
-          Animated.sequence([
-            Animated.timing(pulseAnim, {
-              toValue: 1.2,
-              duration: 600,
-              useNativeDriver: true,
-            }),
-            Animated.timing(pulseAnim, {
-              toValue: 1,
-              duration: 600,
-              useNativeDriver: true,
-            }),
-          ])
-        ).start();
-      }
-    } else {
-      Animated.timing(slideAnim, {
-        toValue: -80,
-        duration: 200,
-        useNativeDriver: true,
-      }).start();
+    if (crisisLevel === 'none') {
+      // 위기 없어지면 즉시 숨김 (값 초기화)
+      opacity.setValue(0);
+      translateY.setValue(-12);
+      return;
     }
-  }, [crisisLevel, slideAnim, pulseAnim]);
 
-  // 위기 없으면 렌더링 안 함
+    // 시작 위치로 초기화
+    opacity.setValue(0);
+    translateY.setValue(-12);
+
+    // 두 값을 동시에 애니메이션
+    Animated.parallel([
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 350,
+        useNativeDriver: true,
+      }),
+      Animated.timing(translateY, {
+        toValue: 0,
+        duration: 350,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [crisisLevel, opacity, translateY]);
+
+  // crisisLevel이 'none'이면 렌더링하지 않음
   if (crisisLevel === 'none') {
     return null;
   }
 
-  // 스타일 가져오기
-  const bannerStyle = getCrisisBannerStyle(crisisLevel);
+  const config = CRISIS_CONFIG[crisisLevel];
 
-  // 터치 핸들러
-  const handlePress = () => {
-    mediumTap();
+  // 변동률 텍스트 포맷 (예: "-3.5%")
+  const changeText =
+    primaryChange !== null
+      ? `${primaryChange > 0 ? '+' : ''}${primaryChange.toFixed(1)}%`
+      : null;
 
-    if (onPress) {
-      onPress();
-    } else {
-      router.push('/subscription/paywall');
-    }
-  };
+  // severe/extreme + 비프리미엄일 때 기관 행동 CTA 표시
+  const showPremiumCTA =
+    !isPremium && (crisisLevel === 'severe' || crisisLevel === 'extreme');
 
-  // VIX 레이블 생성
-  const vixLabel = vixLevel != null && vixLevel >= 30
-    ? `VIX ${vixLevel.toFixed(1)}`
-    : null;
-
-  // 서브텍스트 생성
-  const subParts: string[] = [];
-  if (primaryMarket && primaryChange !== null) {
-    subParts.push(`${primaryMarket} ${primaryChange.toFixed(2)}%`);
-  }
-  if (vixLabel) {
-    subParts.push(vixLabel);
-  }
-  subParts.push('터치하여 맥락 확인');
-  const subText = subParts.join(' \u00B7 ');
+  const styles = createStyles(colors, config);
 
   return (
     <Animated.View
       style={[
         styles.container,
-        {
-          backgroundColor: bannerStyle.backgroundColor,
-          borderColor: bannerStyle.borderColor,
-          transform: [{ translateY: slideAnim }],
-        },
+        { opacity, transform: [{ translateY }] },
       ]}
+      accessibilityRole="alert"
+      accessibilityLabel={`${config.levelLabel}: ${crisisMessage}`}
     >
-      <TouchableOpacity
-        style={styles.touchable}
-        onPress={handlePress}
-        activeOpacity={0.8}
-      >
-        {/* 왼쪽: 아이콘 + 메시지 */}
-        <View style={styles.content}>
-          <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
-            <Ionicons
-              name={bannerStyle.iconName}
-              size={20}
-              color={bannerStyle.iconColor}
-            />
-          </Animated.View>
-          <View style={styles.textContainer}>
-            <Text style={[styles.message, { color: bannerStyle.textColor }]}>
-              {message}
+      {/* ---- 메인 행: 아이콘 / 텍스트 / 버튼 ---- */}
+      <View style={styles.row}>
+        {/* 왼쪽: 위기 아이콘 */}
+        <Ionicons
+          name={config.iconName}
+          size={22}
+          color={config.accentColor}
+          style={styles.icon}
+        />
+
+        {/* 가운데: 위기 수준 제목 + 메시지 */}
+        <View style={styles.textBlock}>
+          {/* Line 1: 위기 수준 제목 + 시장명/변동률 */}
+          <View style={styles.titleRow}>
+            <Text style={[styles.levelLabel, { color: config.accentColor }]}>
+              {config.levelLabel}
             </Text>
-            <Text style={[styles.subText, { color: colors.textTertiary }]}>
-              {subText}
-            </Text>
+            {/* 시장명 + 변동률 (있을 때만) */}
+            {primaryMarket !== null && changeText !== null && (
+              <Text style={[styles.marketInfo, { color: colors.textTertiary }]}>
+                {' '}{primaryMarket} {changeText}
+              </Text>
+            )}
           </View>
+
+          {/* Line 2: 위기 메시지 (1줄 truncate) */}
+          <Text
+            style={[styles.crisisMessage, { color: colors.textSecondary }]}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
+            {crisisMessage}
+          </Text>
         </View>
 
-        {/* 오른쪽: 화살표 */}
-        <Ionicons
-          name="chevron-forward"
-          size={18}
-          color={bannerStyle.iconColor}
-        />
-      </TouchableOpacity>
+        {/* 오른쪽: 맥락 확인 CTA 버튼 */}
+        <TouchableOpacity
+          onPress={onViewContext}
+          style={[
+            styles.ctaButton,
+            {
+              borderColor: config.accentColor + '50',
+              backgroundColor: config.backgroundTint,
+            },
+          ]}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel="맥락 확인"
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Text style={[styles.ctaText, { color: config.accentColor }]}>
+            맥락 확인
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* ---- 하단: 안심 메시지 ---- */}
+      <Text style={[styles.reassurance, { color: colors.textTertiary }]}>
+        침착하게 맥락을 먼저 확인하세요
+      </Text>
+
+      {/* ---- Premium CTA: 기관 행동 레이어 (severe/extreme + 비프리미엄) ---- */}
+      {showPremiumCTA && (
+        <TouchableOpacity
+          onPress={onPremiumPress}
+          style={styles.premiumCTA}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel="프리미엄 기능: 기관 행동 보기"
+        >
+          <Ionicons
+            name="lock-closed"
+            size={12}
+            color={config.accentColor}
+            style={styles.premiumLockIcon}
+          />
+          <Text style={[styles.premiumCTAText, { color: config.accentColor }]}>
+            기관들은 지금 어떻게 행동하고 있을까?
+          </Text>
+        </TouchableOpacity>
+      )}
     </Animated.View>
   );
 }
 
-// ============================================================================
-// 스타일
-// ============================================================================
+// =============================================================================
+// 스타일 팩토리 (테마 + 위기 수준에 따라 동적 생성)
+// =============================================================================
 
-const styles = StyleSheet.create({
-  container: {
-    borderRadius: 12,
-    borderWidth: 1.5,
-    marginHorizontal: 16,
-    marginTop: 12,
-    marginBottom: 8,
-    overflow: 'hidden',
-  },
-  touchable: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-  },
-  content: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    flex: 1,
-  },
-  textContainer: {
-    flex: 1,
-  },
-  message: {
-    fontSize: 13,
-    fontWeight: '700',
-    lineHeight: 18,
-    marginBottom: 2,
-  },
-  subText: {
-    fontSize: 11,
-    marginTop: 2,
-  },
-});
+function createStyles(
+  colors: ReturnType<typeof useTheme>['colors'],
+  config: CrisisConfig,
+) {
+  return StyleSheet.create({
+    container: {
+      backgroundColor: colors.surface,
+      borderRadius: 14,
+      marginHorizontal: 16,
+      marginBottom: 8,
+      padding: 14,
+      borderWidth: 1,
+      borderColor: config.accentColor + '30', // ~18% 불투명도 테두리
+      overflow: 'hidden',
+    },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    icon: {
+      marginRight: 10,
+      flexShrink: 0,
+    },
+    textBlock: {
+      flex: 1,
+      marginRight: 10,
+    },
+    titleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flexWrap: 'nowrap',
+      marginBottom: 2,
+    },
+    levelLabel: {
+      fontSize: 13,
+      fontWeight: '700',
+      letterSpacing: 0.2,
+    },
+    marketInfo: {
+      fontSize: 12,
+      fontWeight: '500',
+    },
+    crisisMessage: {
+      fontSize: 12,
+      lineHeight: 17,
+    },
+    ctaButton: {
+      flexShrink: 0,
+      paddingVertical: 5,
+      paddingHorizontal: 10,
+      borderRadius: 8,
+      borderWidth: 1,
+    },
+    ctaText: {
+      fontSize: 12,
+      fontWeight: '600',
+    },
+    reassurance: {
+      fontSize: 11,
+      marginTop: 8,
+      // 아이콘 너비(22px) + 오른쪽 마진(10px)에 맞춰 들여쓰기
+      marginLeft: 32,
+    },
+    premiumCTA: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginTop: 6,
+      marginLeft: 32,
+      alignSelf: 'flex-start',
+    },
+    premiumLockIcon: {
+      marginRight: 4,
+    },
+    premiumCTAText: {
+      fontSize: 11,
+      fontWeight: '600',
+    },
+  });
+}
+
+// React.memo로 불필요한 리렌더링 방지
+// (crisisLevel, crisisMessage, primaryMarket, primaryChange, onViewContext가 같으면 리렌더 스킵)
+export default memo(CrisisBanner);

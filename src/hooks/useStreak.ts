@@ -17,6 +17,7 @@ import {
   StreakData,
   StreakMessage,
 } from '../services/streakService';
+import { cancelStreakWarningForToday } from '../services/pushNotificationService';
 
 export interface UseStreakReturn {
   currentStreak: number;       // 현재 연속 일수
@@ -49,6 +50,12 @@ export function useStreak(): UseStreakReturn {
       setData(result.data);
       setIsNewDay(result.updated);
       setIsNewStreak(result.isNewStreak);
+
+      // P2.1: 오늘 처음 방문한 경우 스트릭 경고 알림 취소
+      // (오늘 방문했으니 21:00 경고 알림은 필요 없음)
+      if (result.updated) {
+        cancelStreakWarningForToday().catch(() => {});
+      }
     } catch (error) {
       console.warn('[useStreak] checkStreak 에러:', error);
       // 에러 시 기존 데이터 조회

@@ -30,6 +30,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
 import { useTrackEvent } from '../../hooks/useAnalytics';
 import { useHabitLoopTracking } from '../../hooks/useHabitLoopTracking';
+import { mediumTap, success as successHaptic } from '../../services/hapticService';
 import AITrackRecordBanner from './AITrackRecordBanner';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -101,6 +102,9 @@ interface PredictionVoteCardProps {
   /** [전체 기록 보기] 콜백 (프리미엄 게이트) */
   onViewHistory?: () => void;
 
+  /** [맥락 카드 보기] 콜백 — allVoted CTA 버튼용 */
+  onViewContext?: () => void;
+
   /** 로딩 상태 */
   isLoading: boolean;
 
@@ -137,6 +141,7 @@ export default function PredictionVoteCard({
   onVote,
   onVotePoll,
   onViewHistory,
+  onViewContext,
   isLoading,
   isVoting,
   selectedCategory = 'all',
@@ -181,9 +186,10 @@ export default function PredictionVoteCard({
     return allPolls.every(poll => getMyVoteForPoll(poll.id) !== null);
   }, [allPolls, getMyVoteForPoll]);
 
-  // 모든 투표 완료 시 애니메이션
+  // 모든 투표 완료 시 애니메이션 + 성공 햅틱
   React.useEffect(() => {
     if (allVoted) {
+      successHaptic();
       Animated.timing(completeFade, {
         toValue: 1,
         duration: 500,
@@ -199,6 +205,9 @@ export default function PredictionVoteCard({
     // 이벤트 추적: 예측 투표
     track('prediction_vote', { pollId, choice, pollIndex: currentIndex });
     trackStep('prediction_vote');
+
+    // 햅틱: 투표 버튼 탭 시 중간 진동
+    mediumTap();
 
     // 신규 방식 (다중 질문)
     if (onVotePoll) {
@@ -252,6 +261,16 @@ export default function PredictionVoteCard({
         <View style={styles.centerArea}>
           <Text style={styles.emptyEmoji}>🎯</Text>
           <Text style={styles.emptyText}>오늘의 예측이 아직 준비되지 않았어요</Text>
+          {onViewContext && (
+            <TouchableOpacity
+              style={styles.emptyCta}
+              onPress={onViewContext}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.emptyCtaText}>맥락 카드 읽기</Text>
+              <Ionicons name="chevron-forward" size={14} color={colors.primary} />
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     );
@@ -449,6 +468,34 @@ export default function PredictionVoteCard({
           <Text style={styles.allVotedText}>
             🎯 모두 투표 완료! 내일 결과를 확인하세요!
           </Text>
+          <View style={styles.allVotedCTARow}>
+            {onViewContext && (
+              <TouchableOpacity
+                style={styles.allVotedCTAButton}
+                onPress={onViewContext}
+                accessibilityRole="button"
+                accessibilityLabel="맥락 카드 읽기"
+              >
+                <Text style={[styles.allVotedCTAText, { color: colors.primary }]}>
+                  맥락 카드 읽기
+                </Text>
+                <Ionicons name="chevron-forward" size={14} color={colors.primary} />
+              </TouchableOpacity>
+            )}
+            {onViewHistory && (
+              <TouchableOpacity
+                style={styles.allVotedCTAButton}
+                onPress={onViewHistory}
+                accessibilityRole="button"
+                accessibilityLabel="이전 결과 보기"
+              >
+                <Text style={[styles.allVotedCTAText, { color: colors.primary }]}>
+                  이전 결과 보기
+                </Text>
+                <Ionicons name="chevron-forward" size={14} color={colors.primary} />
+              </TouchableOpacity>
+            )}
+          </View>
         </Animated.View>
       )}
 
@@ -779,6 +826,19 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       fontWeight: '600',
       color: colors.primary,
     },
+    allVotedCTARow: {
+      gap: 10,
+      marginTop: 12,
+    },
+    allVotedCTAButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    allVotedCTAText: {
+      fontSize: 13,
+      fontWeight: '600',
+    },
     // 복기 섹션
     reviewArea: {
       gap: 8,
@@ -876,6 +936,21 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       fontSize: 16,
       color: colors.textSecondary,
       textAlign: 'center',
+    },
+    emptyCta: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.primary + '15',
+      borderRadius: 10,
+      paddingVertical: 10,
+      paddingHorizontal: 16,
+      marginTop: 12,
+      gap: 4,
+    },
+    emptyCtaText: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: colors.primary,
     },
     categoryFilter: {
       flexDirection: 'row',

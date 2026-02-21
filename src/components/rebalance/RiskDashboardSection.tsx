@@ -17,12 +17,15 @@ interface RiskDashboardSectionProps {
   analysisResult: RiskAnalysisResult | null;
   peerPanicData?: PeerComparison | null;
   isAILoading?: boolean;
+  /** 맥락 카드 센티먼트 (불일치 경고용) */
+  contextSentiment?: 'calm' | 'caution' | 'alert' | null;
 }
 
 export default function RiskDashboardSection({
   analysisResult,
   peerPanicData,
   isAILoading,
+  contextSentiment,
 }: RiskDashboardSectionProps) {
   const { colors, shadows } = useTheme();
   const [showDetail, setShowDetail] = useState(false);
@@ -120,6 +123,26 @@ export default function RiskDashboardSection({
           </View>
         </View>
       </View>
+
+      {/* 센티먼트 vs Panic Shield 불일치 경고 */}
+      {contextSentiment && ((contextSentiment === 'calm' && panicLevel === 'DANGER') || (contextSentiment === 'alert' && panicLevel === 'SAFE')) && (
+        <View style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 8,
+          marginTop: 10,
+          padding: 10,
+          borderRadius: 10,
+          backgroundColor: `${colors.warning}20`,
+        }}>
+          <Ionicons name="information-circle" size={16} color={colors.warning} />
+          <Text style={{ flex: 1, fontSize: 11, lineHeight: 16, color: colors.textSecondary }}>
+            {contextSentiment === 'calm' && panicLevel === 'DANGER'
+              ? '시장 심리는 안정적이지만, 포트폴리오 위험 신호가 감지되었습니다. 배분 이탈도를 확인하세요.'
+              : '시장에 경고 신호가 있지만, 당신의 포트폴리오는 안전합니다. 현재 기준을 유지하세요.'}
+          </Text>
+        </View>
+      )}
 
       {/* 상세 펼침 */}
       {showDetail && (

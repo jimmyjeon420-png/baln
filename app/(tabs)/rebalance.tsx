@@ -48,6 +48,7 @@ import { useCheckupLevel } from '../../src/hooks/useCheckupLevel';
 import { useHoldingPeriod } from '../../src/hooks/useHoldingPeriod';
 import { useEmotionCheck } from '../../src/hooks/useEmotionCheck';
 import { useTheme } from '../../src/hooks/useTheme';
+import { useQuickContextSentiment } from '../../src/hooks/useContextCard';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DisclaimerBanner from '../../src/components/common/DisclaimerBanner';
 import supabase, { getCurrentUser } from '../../src/services/supabase';
@@ -419,6 +420,9 @@ export default function CheckupScreen() {
   const myBracket = getAssetBracket(totalAssets);
   const { data: peerPanicData } = usePeerPanicScore(myBracket);
 
+  // 맥락 카드 심리 데이터 (크로스탭 연동: 처방전 + 리스크 대시보드)
+  const { data: contextSentimentData } = useQuickContextSentiment();
+
   // ── 투자원금 대비 총 수익 (주 지표) ──
   // 평단가 × 수량 = 원금, 현재가 × 수량 = 평가금액
   const { totalCostBasis, totalGainLoss, gainPercent } = useMemo(() => {
@@ -698,6 +702,8 @@ export default function CheckupScreen() {
             onLevelChange={setLevel}
             onTargetUpdate={setPhilosophyTarget}
             guruStyle={selectedGuruStyle}
+            contextSentiment={contextSentimentData?.sentiment ?? null}
+            contextHeadline={contextSentimentData?.headline ?? null}
           />
         )}
 

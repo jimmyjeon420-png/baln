@@ -56,6 +56,10 @@ interface AdvancedCheckupViewProps {
   onTargetUpdate?: (target: Record<AssetCategory, number>) => void;
   /** 선택된 투자 철학 (처방전 카드 정렬 + 불일치 경고용) */
   guruStyle?: string;
+  /** 맥락 카드 심리 (크로스탭 연동: 처방전 + 리스크 대시보드에 전달) */
+  contextSentiment?: 'calm' | 'caution' | 'alert' | null;
+  /** 맥락 카드 헤드라인 (크로스탭 연동: 처방전에 인라인 표시) */
+  contextHeadline?: string | null;
 }
 
 export default function AdvancedCheckupView({
@@ -86,6 +90,8 @@ export default function AdvancedCheckupView({
   onLevelChange,
   onTargetUpdate,
   guruStyle,
+  contextSentiment,
+  contextHeadline,
 }: AdvancedCheckupViewProps) {
   // AllocationDriftSection에서 선택된 철학 목표 → WhatIfSimulator + TodayActionsSection 전달
   const [selectedTarget, setSelectedTarget] = useState<Record<AssetCategory, number>>(DEFAULT_TARGET);
@@ -136,6 +142,8 @@ export default function AdvancedCheckupView({
         selectedTarget={selectedTarget}
         kostolalyPhase={kostolalyPhase}
         guruStyle={guruStyle}
+        contextSentiment={contextSentiment}
+        contextHeadline={contextHeadline}
       />
 
       {/* 2. 코스톨라니 달걀 모형 — 처방전 근거 카드 ("왜 이런 처방전인가?") */}
@@ -199,6 +207,7 @@ export default function AdvancedCheckupView({
         analysisResult={analysisResult}
         peerPanicData={peerPanicData}
         isAILoading={isAILoading}
+        contextSentiment={contextSentiment}
       />
 
       {/* 10. AI marketplace CTA — rebalance.tsx 하단에서 공통 렌더링 */}

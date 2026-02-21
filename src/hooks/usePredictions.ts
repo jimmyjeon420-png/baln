@@ -8,6 +8,7 @@
  * - 투표 + 내 투표 병합 편의 훅
  */
 
+import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import supabase, { getCurrentUser } from '../services/supabase';
@@ -382,6 +383,105 @@ export const PREDICTION_KEYS = {
 };
 
 // ============================================================================
+// 포트폴리오 관련성 정렬 유틸리티
+// ============================================================================
+
+/**
+ * 포트폴리오 자산 정보 (정렬 함수에 필요한 최소 필드)
+ * Asset 타입 전체를 import하지 않고 필요한 필드만 인라인 타입으로 정의합니다.
+ */
+interface PortfolioAssetForSort {
+  ticker?: string;
+  name: string;
+  assetType?: string; // 'liquid' | 'illiquid'
+}
+
+/**
+ * 카테고리 매핑: 포트폴리오 자산 유형 → 관련 poll 카테고리
+ * 예: BTC/ETH 보유 → 'crypto' 카테고리 투표 우선 노출
+ */
+const CRYPTO_TICKERS = new Set([
+  'BTC', 'ETH', 'XRP', 'SOL', 'ADA', 'DOGE', 'MATIC', 'DOT',
+  'AVAX', 'LINK', 'UNI', 'ATOM', 'LTC', 'BCH', 'ETC',
+  '비트코인', '이더리움', '리플', '솔라나', '에이다',
+]);
+
+/**
+ * 투표 1개의 포트폴리오 관련성 점수를 계산합니다.
+ *
+ * 점수 체계:
+ * - 10점: 투표 질문 또는 related_ticker에 사용자 보유 티커가 직접 언급됨 (최우선)
+ * - 5점:  투표 카테고리가 사용자 자산 유형과 일치 (crypto 보유 → crypto 투표)
+ * - 0점:  관련성 없음 (기존 순서 유지)
+ */
+function getPollRelevanceScore(
+  poll: PredictionPoll,
+  assets: PortfolioAssetForSort[],
+): number {
+  if (assets.length === 0) return 0;
+
+  const questionLower = poll.question.toLowerCase();
+  const relatedTicker = poll.related_ticker?.toUpperCase() ?? '';
+
+  // -- Priority 1: 질문 텍스트 또는 related_ticker에 보유 자산이 직접 언급 ----------
+  for (const asset of assets) {
+    // ticker 직접 비교 (대소문자 무관)
+    if (asset.ticker) {
+      const ticker = asset.ticker.toUpperCase();
+      if (relatedTicker === ticker) return 10;
+      if (questionLower.includes(asset.ticker.toLowerCase())) return 10;
+    }
+
+    // 자산 이름 포함 여부 (한국어 이름 등 — "삼성전자", "비트코인" 등)
+    if (asset.name && asset.name.length >= 2) {
+      if (questionLower.includes(asset.name.toLowerCase())) return 10;
+    }
+  }
+
+  // -- Priority 2: 카테고리 일치 --------------------------------------------------
+  const hasCrypto = assets.some(
+    a => a.ticker && CRYPTO_TICKERS.has(a.ticker.toUpperCase()),
+  );
+  const hasStocks = assets.some(
+    a => a.ticker && !a.ticker.startsWith('RE_') && !CRYPTO_TICKERS.has(a.ticker.toUpperCase()),
+  );
+
+  if (poll.category === 'crypto' && hasCrypto) return 5;
+  if ((poll.category === 'stocks' || poll.category === 'macro') && hasStocks) return 5;
+
+  return 0;
+}
+
+/**
+ * 투표 목록을 포트폴리오 관련성 기준으로 정렬합니다.
+ * 같은 점수끼리는 원래 순서(DB deadline 오름차순)를 유지합니다.
+ *
+ * 사용법:
+ *   const sorted = sortPollsByPortfolioRelevance(polls, myAssets);
+ */
+export function sortPollsByPortfolioRelevance(
+  polls: PredictionPoll[],
+  assets: PortfolioAssetForSort[],
+): PredictionPoll[] {
+  if (!polls.length || !assets.length) return polls;
+
+  // 원래 인덱스를 보존해 stable sort 구현 (Array.sort는 V8에서 stable하지만 명시적으로 보장)
+  return polls
+    .map((poll, originalIndex) => ({
+      poll,
+      score: getPollRelevanceScore(poll, assets),
+      originalIndex,
+    }))
+    .sort((a, b) => {
+      // 높은 점수 먼저
+      if (b.score !== a.score) return b.score - a.score;
+      // 같은 점수면 원래 순서 유지
+      return a.originalIndex - b.originalIndex;
+    })
+    .map(item => item.poll);
+}
+
+// ============================================================================
 // 활성 투표 조회 (staleTime 60초)
 // ============================================================================
 
@@ -414,6 +514,34 @@ export const useActivePolls = () => {
     retry: 1,          // 예측 게임은 중요 — 1회 재시도
     retryDelay: 2000,
   });
+};
+
+// ============================================================================
+// 포트폴리오 맞춤 활성 투표 (정렬 추가)
+// ============================================================================
+
+/**
+ * usePersonalizedPolls — 포트폴리오 보유 자산 기준으로 투표를 정렬하여 반환합니다.
+ *
+ * useActivePolls의 래퍼로, 동일한 쿼리 캐시를 사용하기 때문에 추가 네트워크 요청이 없습니다.
+ * 정렬은 클라이언트에서만 일어나며 기존 데이터를 변경하지 않습니다.
+ *
+ * @param assets - useSharedPortfolio().assets (Asset[]) 또는 빈 배열
+ *
+ * 정렬 우선순위:
+ * 1. 질문 텍스트 또는 related_ticker가 사용자 보유 티커/이름과 일치 (+10점)
+ * 2. 투표 카테고리가 사용자 자산 유형과 일치 — crypto 보유 → crypto 투표 (+5점)
+ * 3. 원래 순서 (deadline 오름차순)
+ */
+export const usePersonalizedPolls = (assets: PortfolioAssetForSort[]) => {
+  const result = useActivePolls();
+
+  const sortedData = React.useMemo(() => {
+    if (!result.data) return result.data;
+    return sortPollsByPortfolioRelevance(result.data, assets);
+  }, [result.data, assets]);
+
+  return { ...result, data: sortedData };
 };
 
 // ============================================================================
@@ -844,4 +972,102 @@ export const useGlobalPredictionStats = () => {
 function maskUserId(userId: string): string {
   if (!userId || userId.length < 8) return '***';
   return userId.substring(0, 4) + '****' + userId.substring(userId.length - 4);
+}
+
+// ============================================================================
+// P1.2: 예측 결과 알림 훅
+// ============================================================================
+
+import * as Notifications from 'expo-notifications';
+
+// AsyncStorage 키: 마지막으로 예측 결과 알림을 보낸 날짜
+const LAST_REVIEW_NOTIFY_KEY = '@baln:last_review_date';
+
+/**
+ * 예측 결과 알림 훅 (P1.2)
+ *
+ * [역할]
+ * - 사용자가 투표한 예측 중 어제 결과가 나온 것이 있으면 로컬 알림 발송
+ * - 하루에 한 번만, 투표한 내역이 있는 경우에만 발송
+ *
+ * [동작 순서]
+ * 1. 종료된 투표 + 내 투표 기록 조회 (TanStack Query)
+ * 2. 오늘 이미 알림을 보냈는지 확인 (@baln:last_review_date)
+ * 3. 어제 결과가 나온 것 중 내가 투표한 것이 있는지 확인
+ * 4. 있으면 즉시 로컬 알림 발송
+ *
+ * [호출 방법]
+ * 홈 탭 컴포넌트 상단에 한 번 호출하면 됩니다.
+ * 이 훅 내부에서 중복 발송 방지 처리를 합니다.
+ *
+ * @example
+ * // app/(tabs)/index.tsx 에서
+ * import { useResolvedPollNotification } from '../../src/hooks/usePredictions';
+ * // 컴포넌트 안에서:
+ * useResolvedPollNotification();
+ */
+export function useResolvedPollNotification(): void {
+  const { data: resolvedPolls } = useResolvedPolls(20);
+  const pollIds = (resolvedPolls || []).map(p => p.id);
+  const { data: myVotes } = useMyVotes(pollIds);
+
+  React.useEffect(() => {
+    if (!resolvedPolls || resolvedPolls.length === 0) return;
+    if (!myVotes) return;
+
+    const checkAndNotify = async () => {
+      try {
+        // 1. 오늘 이미 알림을 보냈는지 확인
+        const today = new Date().toISOString().split('T')[0]; // "YYYY-MM-DD"
+        const lastNotifyDate = await AsyncStorage.getItem(LAST_REVIEW_NOTIFY_KEY);
+        if (lastNotifyDate === today) {
+          // 오늘 이미 알림 발송 완료 → 중복 방지
+          return;
+        }
+
+        // 2. 어제 날짜 계산
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toISOString().split('T')[0]; // "YYYY-MM-DD"
+
+        // 3. 어제 결과가 나온 투표 중 내가 투표한 것 찾기
+        const myVotedPollIds = new Set((myVotes || []).map(v => v.poll_id));
+        const newResults = (resolvedPolls || []).filter(poll => {
+          if (!poll.resolved_at) return false;
+          const resolvedDate = new Date(poll.resolved_at).toISOString().split('T')[0];
+          return resolvedDate === yesterdayStr && myVotedPollIds.has(poll.id);
+        });
+
+        if (newResults.length === 0) {
+          // 어제 결과 나온 내 투표 없음 → 알림 불필요
+          return;
+        }
+
+        // 4. 즉시 로컬 알림 발송
+        await Notifications.scheduleNotificationAsync({
+          content: {
+            title: '예측 결과가 나왔어요!',
+            body: `어제 예측하신 ${newResults.length}개 질문의 결과가 나왔어요! 확인해보세요 🎯`,
+            data: { type: 'prediction-result', count: newResults.length },
+            sound: true,
+          },
+          trigger: null, // 즉시 발송
+        });
+
+        // 5. 오늘 날짜 기록 (하루 한 번 제한)
+        await AsyncStorage.setItem(LAST_REVIEW_NOTIFY_KEY, today);
+
+        if (__DEV__) {
+          console.log(`[PredictionNotify] 예측 결과 알림 발송 완료 (${newResults.length}개)`);
+        }
+      } catch (e) {
+        // 알림 실패해도 앱 동작에 영향 없음
+        console.warn('[PredictionNotify] 알림 처리 실패:', e);
+      }
+    };
+
+    checkAndNotify();
+  // resolvedPolls와 myVotes가 로드 완료된 시점에 한 번 실행
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resolvedPolls, myVotes]);
 }

@@ -29,6 +29,20 @@ import { ErrorBoundary, Toast, ToastType } from '../../src/components/common';
 // 진단용 (Supabase 연결 상태 확인 — 문제 해결 후 제거)
 import ConnectionStatus from '../../src/components/common/ConnectionStatus';
 
+// 크로스탭 연동 배너 (투자 철학 변경 / 뱃지 획득 / 투자 기준 리마인더)
+import CrossTabBanners from '../../src/components/home/CrossTabBanners';
+
+// P0.1: 복기 카드 (4번째 스와이프 — 습관 루프 완성)
+import YesterdayReviewCard from '../../src/components/home/YesterdayReviewCard';
+
+// P0.2: 스트릭 + 습관 루프 진행률 배너
+import DailyProgressBanner from '../../src/components/home/DailyProgressBanner';
+import { useHabitLoopTracking } from '../../src/hooks/useHabitLoopTracking';
+
+// P0.3: 시장 위기 배너
+import CrisisBanner from '../../src/components/home/CrisisBanner';
+import { useCrisisAlert } from '../../src/hooks/useCrisisAlert';
+
 // 스트릭 복구 & 마일스톤 축하
 import StreakRecoveryModal from '../../src/components/common/StreakRecoveryModal';
 import MilestoneCelebration from '../../src/components/common/MilestoneCelebration';
@@ -41,14 +55,16 @@ import { useHeartAssets } from '../../src/hooks/useHeartAssets';
 import { useContextCard } from '../../src/hooks/useContextCard';
 import ContextShareCard from '../../src/components/home/ContextShareCard';
 import {
-  useActivePolls,
+  usePersonalizedPolls,
   useMyVotes,
   useResolvedPolls,
   useSubmitVote,
   useMyPredictionStats,
   useGlobalPredictionStats,
+  useResolvedPollNotification,
 } from '../../src/hooks/usePredictions';
 import { useSubscriptionStatus } from '../../src/hooks/useSubscription';
+import { useMyCredits } from '../../src/hooks/useCredits';
 import { useSharedPortfolio } from '../../src/hooks/useSharedPortfolio';
 import { usePrices } from '../../src/hooks/usePrices';
 
@@ -58,7 +74,7 @@ import {
 } from '../../src/services/trafficLightScore';
 import { convertToContextCardData } from '../../src/services/contextCardService';
 import { useScreenTracking } from '../../src/hooks/useAnalytics';
-import { usePushSetup } from '../../src/hooks/usePushSetup';
+import { usePushSetup, PUSH_PERMISSION_ELIGIBLE_KEY } from '../../src/hooks/usePushSetup';
 import { useTheme } from '../../src/hooks/useTheme';
 import { useStreak } from '../../src/hooks/useStreak';
 import { useStreakRecovery } from '../../src/hooks/useStreakRecovery';
@@ -71,6 +87,9 @@ export default function HomeScreen() {
   // 화면 진입 추적 + Push 알림 초기화
   useScreenTracking('today');
   usePushSetup();
+
+  // P1.2: 예측 결과 알림 (어제 결과 나온 투표가 있으면 로컬 알림 발송, 하루 1회)
+  useResolvedPollNotification();
 
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -87,6 +106,12 @@ export default function HomeScreen() {
     showRecoveryModal,
     dismissRecoveryModal,
   } = useStreakRecovery();
+
+  // P0.2: 습관 루프 진행률 추적
+  const { todayProgress } = useHabitLoopTracking();
+
+  // P0.3: 시장 위기 감지
+  const crisisAlert = useCrisisAlert();
 
   // 마일스톤 축하 상태
   const [milestoneToShow, setMilestoneToShow] = useState<number | null>(null);
@@ -223,6 +248,7 @@ export default function HomeScreen() {
         onAddAssets: () => router.push('/add-asset'),
         totalAssets: 0,
         dailyChangeRate: null,
+        onAnalysisPress: () => router.push('/(tabs)/rebalance'),
       };
     }
 
@@ -245,6 +271,8 @@ export default function HomeScreen() {
       onAddAssets: () => router.push('/add-asset'),
       totalAssets,
       dailyChangeRate,
+      onAnalysisPress: () => router.push('/(tabs)/rebalance'),
+      onAssetPress: (name: string) => router.push('/(tabs)/rebalance'),
     };
   }, [
     hasAssets,
@@ -263,6 +291,7 @@ export default function HomeScreen() {
   // ──────────────────────────────────────────────────────────────────────
   const { data: contextData, isLoading: contextLoading, effectiveData: contextEffective, updateTimeLabel } = useContextCard();
   const { isPremium } = useSubscriptionStatus();
+  const { data: creditBalance } = useMyCredits();
   const [shareModalVisible, setShareModalVisible] = React.useState(false);
 
   const contextBriefProps = React.useMemo(() => {
@@ -321,7 +350,12 @@ export default function HomeScreen() {
       sentiment: briefing.sentiment,
       sentimentLabel: briefing.sentimentLabel,
       date: new Date().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' }),
-      onLearnMore: () => setContextModalVisible(true), // 모달 열기
+      onLearnMore: () => {
+        setContextModalVisible(true);
+        // P1.1: 맥락 카드를 처음 열면 알림 권한 요청 자격 부여
+        // 이후 앱 재실행 시 usePushSetup이 이 키를 확인해 권한 팝업을 표시함
+        AsyncStorage.setItem(PUSH_PERMISSION_ELIGIBLE_KEY, 'true').catch(() => {});
+      },
       isPremium: isPremium || false,
       onShare: () => setShareModalVisible(true),
       isLoading: contextLoading,
@@ -343,7 +377,8 @@ export default function HomeScreen() {
   // ──────────────────────────────────────────────────────────────────────
   // 3. 예측 투표 카드 데이터 (3개 질문 지원)
   // ──────────────────────────────────────────────────────────────────────
-  const { data: activePolls = [] } = useActivePolls();
+  // 포트폴리오 자산 기반 맞춤 정렬 — allPortfolioAssets는 위 183번 라인에서 이미 조회됨
+  const { data: activePolls = [] } = usePersonalizedPolls(allPortfolioAssets);
   const { data: resolvedPolls = [] } = useResolvedPolls(10);
   const { mutate: submitVote, isPending: isVoting } = useSubmitVote();
   const { data: myStats } = useMyPredictionStats();
@@ -456,7 +491,7 @@ export default function HomeScreen() {
           { pollId: currentPoll.id, vote: choice },
           {
             onSuccess: () => {
-              showToast('투표 완료! 내일 결과를 확인하세요', 'success');
+              showToast('🎯 투표 완료! 적중하면 +3C 획득', 'success');
             },
             onError: (error: any) => {
               showToast(error?.message || '투표에 실패했습니다. 다시 시도해주세요.', 'error');
@@ -470,7 +505,7 @@ export default function HomeScreen() {
           { pollId, vote: choice },
           {
             onSuccess: () => {
-              showToast('투표 완료!', 'success');
+              showToast('🎯 투표 완료! 적중하면 +3C 획득', 'success');
             },
             onError: (error: any) => {
               showToast(error?.message || '투표에 실패했습니다.', 'error');
@@ -479,6 +514,7 @@ export default function HomeScreen() {
         );
       },
       onViewHistory: () => router.push('/games/predictions'),
+      onViewContext: () => setContextModalVisible(true),
       isLoading: false,
       isVoting,
       // AI 트랙레코드 배너
@@ -516,11 +552,30 @@ export default function HomeScreen() {
   // ──────────────────────────────────────────────────────────────────────
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* 진단용: Supabase 연결 상태 표시 (문제 해결 후 제거) */}
-      <ConnectionStatus />
+      {/* 진단용: Supabase 연결 상태 (개발 모드에서만 표시) */}
+      {__DEV__ && <ConnectionStatus />}
+
+      {/* 크로스탭 연동 배너 (투자 철학 변경 / 뱃지 / 투자 기준) */}
+      <CrossTabBanners />
+
+      {/* P0.2: 스트릭 + 오늘 습관 루프 진행률 */}
+      <DailyProgressBanner
+        currentStreak={currentStreak}
+        todayProgress={todayProgress}
+        creditBalance={creditBalance?.balance ?? null}
+      />
+
+      {/* P0.3: 시장 위기 배너 (위기 감지 시만 표시) */}
+      <CrisisBanner
+        crisisLevel={crisisAlert.crisisLevel}
+        crisisMessage={crisisAlert.crisisMessage}
+        primaryMarket={crisisAlert.primaryMarket}
+        primaryChange={crisisAlert.primaryChange}
+        onViewContext={() => setContextModalVisible(true)}
+      />
 
       <CardSwipeContainer
-        labels={['건강', '맥락', '예측']}
+        labels={['건강', '맥락', '예측', '복기']}
         initialIndex={0}
         onCardChange={handleCardChange}
         onRefresh={handleRefresh}
@@ -539,6 +594,16 @@ export default function HomeScreen() {
         {/* 카드 3: 예측 투표 (3개 질문 수평 스크롤) */}
         <ErrorBoundary>
           <PredictionVoteCard {...predictionVoteProps} />
+        </ErrorBoundary>
+
+        {/* 카드 4: 어제 예측 복기 (습관 루프 완성) */}
+        <ErrorBoundary>
+          <YesterdayReviewCard
+            results={recentResults}
+            accuracyRate={myStats?.accuracy_rate ?? null}
+            onViewHistory={() => router.push('/games/predictions')}
+            onStartPrediction={() => router.push('/games/predictions')}
+          />
         </ErrorBoundary>
       </CardSwipeContainer>
 
