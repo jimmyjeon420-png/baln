@@ -34,6 +34,7 @@ import AllocationPieChart, { PieSlice } from '../charts/AllocationPieChart';
 import { useTheme } from '../../hooks/useTheme';
 import { ThemeColors } from '../../styles/colors';
 import TermTooltip from '../common/TermTooltip';
+import { CAT_ICONS } from '../../constants/categoryIcons';
 
 // ── 카테고리 설정 ──
 
@@ -730,7 +731,7 @@ export default function AllocationDriftSection({
                 <View key={item.category.key} style={s.driftRow}>
                   {/* 이모티콘 + 자산 이름 + ⓘ 버튼 */}
                   <View style={s.driftLabelGroup}>
-                    <Text style={s.driftIcon}>{item.category.icon}</Text>
+                    <Text style={[s.driftIcon, item.category.key === 'bitcoin' && { color: '#F5A623' }]}>{item.category.icon}</Text>
                     <Text style={[s.driftLabel, { color: colors.textSecondary }]} numberOfLines={1}>{item.category.label}</Text>
                     <TouchableOpacity
                       onPress={() => setInfoKey(item.category.key)}
@@ -805,7 +806,7 @@ export default function AllocationDriftSection({
           <Text style={s.editTitle}>목표 배분 설정 (합계 100%)</Text>
           {CATEGORIES.map(cat => (
             <View key={cat.key} style={s.editRow}>
-              <Text style={s.editIcon}>{cat.icon}</Text>
+              <Text style={[s.editIcon, cat.key === 'bitcoin' && { color: '#F5A623' }]}>{cat.icon}</Text>
               <Text style={s.editLabel}>{cat.label}</Text>
               <TextInput
                 style={s.editInput}
@@ -907,8 +908,8 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginBottom: 10,
   },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  cardLabel: { fontSize: 17, fontWeight: '700' },
-  cardLabelEn: { fontSize: 12, marginTop: 1, letterSpacing: 0.5, textTransform: 'uppercase' as const },
+  cardLabel: { fontSize: 18, fontWeight: '700' },
+  cardLabelEn: { fontSize: 13, marginTop: 1, letterSpacing: 0.5, textTransform: 'uppercase' as const },
   driftBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10, gap: 6 },
   driftDot: { width: 6, height: 6, borderRadius: 3 },
   driftText: { fontSize: 14, fontWeight: '700' },
@@ -916,8 +917,8 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   // 철학 선택
   philosophyRow: {
     flexDirection: 'row',
-    gap: 6,
-    marginBottom: 6,
+    gap: 8,
+    marginBottom: 8,
   },
   philosophyBtn: {
     flex: 1,
@@ -932,8 +933,8 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     backgroundColor: `${colors.textTertiary}0A`,
   },
   philosophyEmoji: { fontSize: 13 },
-  philosophyBtnText: { fontSize: 12, color: colors.textSecondary, fontWeight: '600' },
-  philosophyDesc: { fontSize: 12, textAlign: 'center', marginBottom: 10 },
+  philosophyBtnText: { fontSize: 13, color: colors.textSecondary, fontWeight: '600' },
+  philosophyDesc: { fontSize: 13, textAlign: 'center', marginBottom: 12 },
 
   // "왜 이탈이 생겼는가" 섹션
   whySection: {
@@ -945,18 +946,18 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   whyRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: 8,
     marginBottom: 4,
   },
   whyLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     color: colors.textSecondary,
   },
   whyText: {
-    fontSize: 14,
+    fontSize: 15,
     color: colors.textSecondary,
-    lineHeight: 20,
+    lineHeight: 22,
   },
 
   // "어떻게 해야 하는가" 액션 가이드 섹션
@@ -971,18 +972,18 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   actionGuideRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: 8,
     marginBottom: 4,
   },
   actionGuideLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     color: colors.primaryDark ?? colors.primary,
   },
   actionGuideText: {
-    fontSize: 14,
+    fontSize: 15,
     color: colors.textSecondary,
-    lineHeight: 20,
+    lineHeight: 22,
   },
 
   // 이탈도 바 차트
@@ -990,20 +991,20 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   driftRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   driftLabelGroup: { flexDirection: 'row', alignItems: 'center', width: 72, gap: 4, flexShrink: 0 },
   driftIcon: { fontSize: 15 },
-  driftLabel: { fontSize: 13, flex: 1 },
+  driftLabel: { fontSize: 14, flex: 1, lineHeight: 20 },
   driftBarContainer: { flex: 1, height: 14, backgroundColor: colors.surfaceElevated, borderRadius: 7, overflow: 'hidden', justifyContent: 'center' },
   driftBarTarget: { position: 'absolute', height: 14, borderRadius: 7, borderWidth: 1, borderStyle: 'dashed' },
   driftBarCurrent: { height: 8, borderRadius: 4, marginHorizontal: 3 },
   driftNumbers: { flexDirection: 'row', alignItems: 'baseline', width: 65 },
   driftCurrent: { fontSize: 14, fontWeight: '700' },
   driftSeparator: { fontSize: 12, color: colors.textQuaternary, marginHorizontal: 2 },
-  driftTargetNum: { fontSize: 12, color: colors.textTertiary },
+  driftTargetNum: { fontSize: 13, color: colors.textTertiary },
 
   // 범례
   legend: { flexDirection: 'row', justifyContent: 'center', gap: 16, marginTop: 10 },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   legendBar: { width: 12, height: 4, borderRadius: 2 },
-  legendText: { fontSize: 12, color: colors.textTertiary },
+  legendText: { fontSize: 13, color: colors.textTertiary },
 
   // 상세
   detailContainer: { marginTop: 14, paddingTop: 14, borderTopWidth: 1, borderTopColor: colors.border, gap: 8 },
@@ -1013,7 +1014,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   detailCurrent: { fontSize: 15, fontWeight: '600', color: colors.textPrimary, width: 42, textAlign: 'right' },
   detailTarget: { fontSize: 15, color: colors.textTertiary, width: 35 },
   detailDriftBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, marginLeft: 'auto' },
-  detailDriftText: { fontSize: 12, fontWeight: '700' },
+  detailDriftText: { fontSize: 13, fontWeight: '700' },
 
   // 편집 버튼
   editButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 10, paddingVertical: 10, borderRadius: 10, backgroundColor: `${colors.textTertiary}0A` },
@@ -1039,7 +1040,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   viewToggle: { flexDirection: 'row', justifyContent: 'center', gap: 6, marginBottom: 14 },
   toggleBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, backgroundColor: `${colors.textTertiary}0A` },
   toggleBtnActive: { backgroundColor: `${colors.success}26` },
-  toggleText: { fontSize: 13, color: colors.textTertiary, fontWeight: '600' },
+  toggleText: { fontSize: 14, color: colors.textTertiary, fontWeight: '600' },
   toggleTextActive: { color: colors.textPrimary },
 
   // 파이 차트 컨테이너
@@ -1060,7 +1061,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   realEstateIcon: { fontSize: 17 },
   realEstateTitle: { fontSize: 16, fontWeight: '700' },
-  realEstateSubtitle: { fontSize: 12, letterSpacing: 0.5, textTransform: 'uppercase' as const },
+  realEstateSubtitle: { fontSize: 13, letterSpacing: 0.5, textTransform: 'uppercase' as const },
   realEstateBody: { gap: 4 },
   realEstateValue: { fontSize: 16, fontWeight: '600' },
   realEstateRatio: { fontSize: 14, fontWeight: '400' },
@@ -1069,7 +1070,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   realEstateBonusRow: { marginTop: 8, gap: 4 },
   realEstateBonusBadge: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
   realEstateBonusText: { fontSize: 14, fontWeight: '700' },
-  realEstateBonusReason: { fontSize: 13, lineHeight: 18 },
+  realEstateBonusReason: { fontSize: 14, lineHeight: 20 },
 
   // ── ⓘ 버튼 & 모달 ──
   infoBtn: { fontSize: 13, fontWeight: '700' },
@@ -1098,7 +1099,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginBottom: 8,
   },
   infoSectionLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
     marginBottom: 4,
     textTransform: 'uppercase' as const,

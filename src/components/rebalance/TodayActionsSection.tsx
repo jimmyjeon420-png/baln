@@ -26,6 +26,7 @@ import { getTickerProfile, getCachedTickerProfile } from '../../data/tickerProfi
 import { useKostolalyPhase } from '../../hooks/useKostolalyPhase';
 import { usePrescriptionResults } from '../../hooks/usePrescriptionResults';
 import TermTooltip from '../common/TermTooltip';
+import { CAT_ICONS } from '../../constants/categoryIcons';
 
 // ── ETF 추천 맵 (없는 카테고리에 ETF 제안) ──
 const ETF_RECOMMENDATIONS: Partial<Record<AssetCategory, { tickers: string[]; note: string }>> = {
@@ -768,7 +769,7 @@ export default function TodayActionsSection({
                   return (
                     <View key={item.category} style={[s.planCatItem, { borderColor: `${colors.error}20` }]}>
                       <View style={s.planCatHeader}>
-                        <Text style={s.planCatIcon}>{CAT_ICON[item.category]}</Text>
+                        <Text style={[s.planCatIcon, item.category === 'bitcoin' && { color: '#F5A623' }]}>{CAT_ICON[item.category]}</Text>
                         <Text style={[s.planCatLabel, { color: colors.textPrimary }]}>{CAT_LABEL[item.category]}</Text>
                         <Text style={[s.planCatDrift, { color: colors.textTertiary }]}>
                           {item.currentPct.toFixed(0)}% → {item.targetPct}%
@@ -825,7 +826,7 @@ export default function TodayActionsSection({
                   return (
                     <View key={item.category} style={[s.planCatItem, { borderColor: `${colors.success}20` }]}>
                       <View style={s.planCatHeader}>
-                        <Text style={s.planCatIcon}>{CAT_ICON[item.category]}</Text>
+                        <Text style={[s.planCatIcon, item.category === 'bitcoin' && { color: '#F5A623' }]}>{CAT_ICON[item.category]}</Text>
                         <Text style={[s.planCatLabel, { color: colors.textPrimary }]}>{CAT_LABEL[item.category]}</Text>
                         <Text style={[s.planCatDrift, { color: colors.textTertiary }]}>
                           {item.currentPct.toFixed(0)}% → {item.targetPct}%
@@ -1408,23 +1409,23 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
   },
-  phasePreviewTagText: { fontSize: 13, fontWeight: '800' },
-  phaseConfidence: { fontSize: 12, fontWeight: '500' },
-  phasePreviewDesc: { fontSize: 14, lineHeight: 20 },
+  phasePreviewTagText: { fontSize: 14, fontWeight: '800' },
+  phaseConfidence: { fontSize: 13, fontWeight: '500' },
+  phasePreviewDesc: { fontSize: 15, lineHeight: 22 },
   phaseBasisRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2, flexWrap: 'wrap' },
-  phaseBasisText: { fontSize: 12, fontWeight: '500' },
+  phaseBasisText: { fontSize: 13, fontWeight: '500' },
   // P0-1: 근거 지표 목록
   phaseReasoningList: { gap: 3, marginTop: 2 },
   phaseReasoningItem: { flexDirection: 'row', alignItems: 'flex-start', gap: 5 },
   phaseReasoningDot: { fontSize: 13, fontWeight: '800', marginTop: 0 },
-  phaseReasoningText: { flex: 1, fontSize: 13, lineHeight: 18 },
+  phaseReasoningText: { flex: 1, fontSize: 14, lineHeight: 20 },
   // P0-3: 낮은 신뢰도 경고
   phaseNuanceRow: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
     paddingHorizontal: 8, paddingVertical: 5,
     borderRadius: 6, borderWidth: 1, marginTop: 2,
   },
-  phaseNuanceText: { fontSize: 12, fontWeight: '600' },
+  phaseNuanceText: { fontSize: 13, fontWeight: '600' },
 
   // 근거 출처 한 줄 (코스톨라니 없을 때 fallback)
   basisRow: {
@@ -1438,7 +1439,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginBottom: 10,
   },
   basisText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '500',
     letterSpacing: 0.2,
   },
@@ -1452,16 +1453,16 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   whyRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: 8,
     marginBottom: 4,
   },
   whyLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
   whyText: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 15,
+    lineHeight: 22,
   },
 
   // "어떤 순서로 실행할까" 가이드 섹션
@@ -1474,22 +1475,22 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   actionGuideRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: 8,
     marginBottom: 4,
   },
   actionGuideLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
   actionGuideText: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 15,
+    lineHeight: 22,
   },
 
   // 접힌 상태의 기대 효과 미니 설명
   actionEffectMini: {
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 14,
+    lineHeight: 20,
     marginTop: 4,
     fontStyle: 'italic',
   },
@@ -1503,35 +1504,35 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   actionEffectRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    marginBottom: 3,
+    gap: 8,
+    marginBottom: 4,
   },
   actionEffectLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
   actionEffectText: {
-    fontSize: 14,
-    lineHeight: 19,
+    fontSize: 15,
+    lineHeight: 22,
   },
 
   actionCount: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
-  actionCountText: { fontSize: 13, fontWeight: '600' },
+  actionCountText: { fontSize: 14, fontWeight: '600' },
   completedCount: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  completedCountText: { fontSize: 12, fontWeight: '500' },
+  completedCountText: { fontSize: 13, fontWeight: '500' },
   actionItem: { borderRadius: 12, padding: 14, marginBottom: 8 },
   actionItemExpanded: { borderWidth: 1 },
   actionTop: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
   checkBtn: { padding: 2 },
   checkBtnDone: {},
   actionBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
-  actionBadgeText: { fontSize: 13, fontWeight: '800' },
+  actionBadgeText: { fontSize: 14, fontWeight: '800' },
   actionTicker: { fontSize: 16, fontWeight: '700' },
   styleBadge: { paddingHorizontal: 5, paddingVertical: 2, borderRadius: 5, borderWidth: 1 },
   styleBadgeText: { fontSize: 12, fontWeight: '700' },
   mismatchBadge: { paddingHorizontal: 5, paddingVertical: 2, borderRadius: 5, backgroundColor: '#FF572222', borderWidth: 1, borderColor: '#FF572255' },
   mismatchBadgeText: { fontSize: 12, fontWeight: '700', color: '#FF5722' },
-  actionName: { flex: 1, fontSize: 14 },
+  actionName: { flex: 1, fontSize: 15, lineHeight: 22 },
   urgentDot: { width: 18, height: 18, borderRadius: 9, justifyContent: 'center', alignItems: 'center' },
   urgentDotText: { fontSize: 12, fontWeight: '800' },
   actionReason: { fontSize: 14, lineHeight: 20 },
@@ -1540,19 +1541,19 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   changeText: { fontSize: 14, fontWeight: '600' },
   liveIndicator: { flexDirection: 'row', alignItems: 'center', gap: 3, marginLeft: 'auto' },
   liveDotSmall: { width: 5, height: 5, borderRadius: 2.5 },
-  liveLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 0.5 },
+  liveLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 0.5 },
   detail: { marginTop: 10, paddingTop: 10, borderTopWidth: 1, gap: 10 },
   priorityBadge: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, gap: 6 },
   priorityDot: { width: 6, height: 6, borderRadius: 3 },
-  priorityText: { fontSize: 13, fontWeight: '700' },
+  priorityText: { fontSize: 14, fontWeight: '700' },
   reasonFull: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, padding: 12, borderRadius: 10 },
   reasonFullText: { flex: 1, fontSize: 15, lineHeight: 22 },
   portfolioInfo: { borderRadius: 10, padding: 12, borderWidth: 1 },
-  portfolioTitle: { fontSize: 13, fontWeight: '600', marginBottom: 8 },
+  portfolioTitle: { fontSize: 14, fontWeight: '600', marginBottom: 8 },
   portfolioRow: { flexDirection: 'row', alignItems: 'center' },
   portfolioItem: { flex: 1, alignItems: 'center' },
   portfolioDivider: { width: 1, height: 28 },
-  portfolioLabel: { fontSize: 12, marginBottom: 3 },
+  portfolioLabel: { fontSize: 13, marginBottom: 4, lineHeight: 18 },
   portfolioValue: { fontSize: 15, fontWeight: '700' },
   logExecutionBtn: {
     flexDirection: 'row',
@@ -1602,25 +1603,25 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   planCatIcon: { fontSize: 16 },
   planCatLabel: { fontSize: 15, fontWeight: '700' },
-  planCatDrift: { fontSize: 12, marginLeft: 4 },
+  planCatDrift: { fontSize: 13, marginLeft: 4 },
   planCatAmtBadge: { marginLeft: 'auto', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
-  planCatAmtText: { fontSize: 13, fontWeight: '700' },
+  planCatAmtText: { fontSize: 14, fontWeight: '700' },
   planAssetRow: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
     paddingHorizontal: 12, paddingVertical: 8,
     borderTopWidth: 1,
   },
   planAssetTicker: { fontSize: 14, fontWeight: '700', minWidth: 60 },
-  planAssetReturn: { fontSize: 13, fontWeight: '600' },
-  planAssetHint: { fontSize: 12, marginLeft: 'auto' },
+  planAssetReturn: { fontSize: 14, fontWeight: '600' },
+  planAssetHint: { fontSize: 13, marginLeft: 'auto' },
   etfRec: {
     flexDirection: 'row', gap: 8, alignItems: 'flex-start',
     paddingHorizontal: 12, paddingVertical: 10,
     borderTopWidth: 1,
   },
-  etfRecLabel: { fontSize: 12, fontWeight: '700', marginBottom: 2 },
+  etfRecLabel: { fontSize: 13, fontWeight: '700', marginBottom: 2 },
   etfRecTickers: { fontSize: 14, fontWeight: '700' },
-  etfRecNote: { fontSize: 12, marginTop: 2 },
+  etfRecNote: { fontSize: 13, marginTop: 2 },
   // P2-B: 처방전 실행 예상 점수 카드
   scorePreview: {
     borderRadius: 10,
@@ -1636,7 +1637,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginBottom: 8,
   },
   scorePreviewLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
   },
   scorePreviewRow: {
@@ -1687,7 +1688,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderRadius: 8,
   },
   journalSavedText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
   },
   journalInput: {
@@ -1728,15 +1729,15 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderWidth: 1,
   },
   taxHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 },
-  taxHeaderText: { fontSize: 13, fontWeight: '600' },
+  taxHeaderText: { fontSize: 14, fontWeight: '600' },
   taxAssetType: { fontSize: 12, marginLeft: 'auto', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
   taxRows: { gap: 6 },
   taxRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  taxLabel: { fontSize: 13 },
+  taxLabel: { fontSize: 14, lineHeight: 20 },
   taxValue: { fontSize: 14, fontWeight: '500' },
   taxTotalRow: { borderTopWidth: 1, paddingTop: 8, marginTop: 4 },
   taxTotalLabel: { fontSize: 14, fontWeight: '700' },
   taxTotalValue: { fontSize: 16, fontWeight: '700' },
-  taxNote: { fontSize: 12, marginTop: 8 },
-  taxDisclaimer: { fontSize: 10, marginTop: 4 },
+  taxNote: { fontSize: 13, marginTop: 8 },
+  taxDisclaimer: { fontSize: 11, marginTop: 4 },
 });

@@ -97,7 +97,7 @@ export default function MarketTemperature({ morningBriefing, isAILoading }: Mark
               <Text style={[
                 styles.gaugeLabel,
                 isActive && {
-                  color: '#FFFFFF',
+                  color: colors.textPrimary,
                   fontWeight: '700',
                 },
               ]}>

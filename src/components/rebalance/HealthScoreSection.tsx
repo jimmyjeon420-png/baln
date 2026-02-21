@@ -600,14 +600,14 @@ export default function HealthScoreSection({ healthScore, onScoreImproved, total
                     <Text style={[s.tooltipSummary, { color: colors.textSecondary }]}>{detail.summary}</Text>
 
                     {/* 높을 때 */}
-                    <View style={[s.tooltipSection, { backgroundColor: '#4CAF5015', borderLeftColor: '#4CAF50' }]}>
-                      <Text style={[s.tooltipSectionTitle, { color: '#4CAF50' }]}>✅ 점수가 높을 때 (70점 이상)</Text>
+                    <View style={[s.tooltipSection, { backgroundColor: `${colors.success}20`, borderLeftColor: colors.success }]}>
+                      <Text style={[s.tooltipSectionTitle, { color: colors.success }]}>✅ 점수가 높을 때 (70점 이상)</Text>
                       <Text style={[s.tooltipSectionText, { color: colors.textSecondary }]}>{detail.whenHigh}</Text>
                     </View>
 
                     {/* 낮을 때 */}
-                    <View style={[s.tooltipSection, { backgroundColor: '#CF667915', borderLeftColor: '#CF6679' }]}>
-                      <Text style={[s.tooltipSectionTitle, { color: '#CF6679' }]}>⚠️ 점수가 낮을 때 (40점 미만)</Text>
+                    <View style={[s.tooltipSection, { backgroundColor: `${colors.error}20`, borderLeftColor: colors.error }]}>
+                      <Text style={[s.tooltipSectionTitle, { color: colors.error }]}>⚠️ 점수가 낮을 때 (40점 미만)</Text>
                       <Text style={[s.tooltipSectionText, { color: colors.textSecondary }]}>{detail.whenLow}</Text>
                     </View>
 
@@ -676,8 +676,9 @@ const s = StyleSheet.create({
     marginBottom: 2,
   },
   improveToastSubtitle: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '500',
+    lineHeight: 20,
   },
   headerRow: {
     flexDirection: 'row',
@@ -721,8 +722,8 @@ const s = StyleSheet.create({
   },
   // cardLabel: { fontSize: 17, fontWeight: '700', color: '#FFFFFF' },
   // cardLabelEn: { fontSize: 12, color: '#555', marginTop: 1, letterSpacing: 0.5, textTransform: 'uppercase' as const },
-  cardLabel: { fontSize: 17, fontWeight: '700' },
-  cardLabelEn: { fontSize: 12, marginTop: 1, letterSpacing: 0.5, textTransform: 'uppercase' as const },
+  cardLabel: { fontSize: 18, fontWeight: '700' },
+  cardLabelEn: { fontSize: 13, marginTop: 1, letterSpacing: 0.5, textTransform: 'uppercase' as const },
   gradeBadge: {
     paddingHorizontal: 8,
     paddingVertical: 2,
@@ -751,11 +752,11 @@ const s = StyleSheet.create({
     marginBottom: 2,
   },
   sparklineLabel: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
   },
   sparklinePeriod: {
-    fontSize: 12,
+    fontSize: 13,
     marginLeft: 'auto',
   },
 
@@ -768,16 +769,17 @@ const s = StyleSheet.create({
   historicalRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    marginBottom: 6,
+    gap: 8,
+    marginBottom: 8,
   },
   historicalLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
+    lineHeight: 20,
   },
   historicalIntro: {
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 14,
+    lineHeight: 20,
     marginBottom: 10,
   },
   historicalComparison: {
@@ -797,8 +799,9 @@ const s = StyleSheet.create({
     flex: 1,
   },
   historicalCrisisLabel: {
-    fontSize: 13,
+    fontSize: 14,
     marginBottom: 2,
+    lineHeight: 20,
   },
   historicalCrisisScore: {
     fontSize: 14,
@@ -824,21 +827,21 @@ const s = StyleSheet.create({
     marginTop: 4,
   },
   historicalNote: {
-    fontSize: 13,
-    lineHeight: 19,
+    fontSize: 14,
+    lineHeight: 20,
     marginTop: 2,
   },
 
   // P2-B: 또래 비교 카드
   peerCard: { borderRadius: 10, padding: 12, marginBottom: 12 },
   peerHeader: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 8 },
-  peerLabel: { fontSize: 13, fontWeight: '700' },
+  peerLabel: { fontSize: 14, fontWeight: '700' },
   peerStats: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
   peerStat: { flex: 1, alignItems: 'center' },
   peerStatValue: { fontSize: 19, fontWeight: '800', marginBottom: 2 },
-  peerStatLabel: { fontSize: 12 },
+  peerStatLabel: { fontSize: 13, lineHeight: 18 },
   peerDivider: { width: 1, height: 32, marginHorizontal: 12 },
-  peerNote: { fontSize: 10, textAlign: 'center' as const },
+  peerNote: { fontSize: 11, textAlign: 'center' as const },
 
   // [NEW] "왜 이 점수인가" 섹션
   // whySection: {
@@ -869,12 +872,12 @@ const s = StyleSheet.create({
   //   lineHeight: 20,
   // },
   whyLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
   whyText: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 15,
+    lineHeight: 22,
   },
 
   // [NEW] "지금 할 수 있는 것" 액션 가이드 섹션
@@ -909,12 +912,12 @@ const s = StyleSheet.create({
   //   lineHeight: 20,
   // },
   actionGuideLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
   actionGuideText: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 15,
+    lineHeight: 22,
   },
 
   // 미니 팩터 바 (접힌 상태)
@@ -930,21 +933,22 @@ const s = StyleSheet.create({
     borderBottomWidth: 1,
   },
   factorHeaderLabel: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
   },
   factorHeaderHint: {
-    fontSize: 12,
+    fontSize: 13,
   },
   miniFactor: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
   },
   miniLabel: {
-    fontSize: 13,
+    fontSize: 14,
     width: 72,
     flexShrink: 0,
+    lineHeight: 20,
   },
   miniIcon: {
     fontSize: 14,
@@ -969,7 +973,7 @@ const s = StyleSheet.create({
     borderRadius: 2,
   },
   miniScore: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
     width: 22,
     textAlign: 'right',
@@ -980,7 +984,7 @@ const s = StyleSheet.create({
     borderRadius: 10,
   },
   miniStatusText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
   },
   infoIcon: {
@@ -1085,12 +1089,12 @@ const s = StyleSheet.create({
     marginBottom: 8,
   },
   tooltipSectionTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
-    marginBottom: 5,
+    marginBottom: 4,
   },
   tooltipSectionText: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 15,
+    lineHeight: 22,
   },
 });

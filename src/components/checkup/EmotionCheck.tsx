@@ -180,7 +180,7 @@ const s = StyleSheet.create({
   emotionRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: 6,
+    gap: 8,
   },
   emotionButton: {
     flex: 1,
@@ -198,9 +198,10 @@ const s = StyleSheet.create({
     fontSize: 29,
   },
   emotionLabel: {
-    fontSize: 12,
+    fontSize: 13,
     // color: '#808080', // Now dynamic
     fontWeight: '500',
+    lineHeight: 18,
   },
   // emotionLabelSelected removed — applied dynamically inline
   feedbackRow: {

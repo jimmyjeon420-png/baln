@@ -214,7 +214,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   summaryText: {
     fontSize: 16,
     color: colors.textPrimary,
-    lineHeight: 23,
+    lineHeight: 24,
   },
   panicSection: {
     marginTop: 12,
@@ -243,9 +243,10 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginLeft: 4,
   },
   panicReason: {
-    fontSize: 13,
+    fontSize: 14,
     color: colors.textTertiary,
     marginLeft: 22,
     fontStyle: 'italic',
+    lineHeight: 20,
   },
 });

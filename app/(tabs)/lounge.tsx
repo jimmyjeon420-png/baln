@@ -763,6 +763,7 @@ function LoungeScreenInner() {
                     />
                     <Text style={[
                       styles.categoryTabText,
+                      { color: themeColors.textSecondary },
                       isActive && { color: info.color || '#4CAF50', fontWeight: '700' },
                     ]}>
                       {info.label || key}

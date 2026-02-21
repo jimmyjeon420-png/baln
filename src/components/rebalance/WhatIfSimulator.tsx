@@ -316,7 +316,7 @@ export default function WhatIfSimulator({
                   : `${Math.round(Math.abs(delta) / 10000)}만원`;
                 return (
                   <View key={cat.key} style={s.tradeRow}>
-                    <Text style={s.tradeIcon}>{cat.icon}</Text>
+                    <Text style={[s.tradeIcon, cat.key === 'bitcoin' && { color: '#F5A623' }]}>{cat.icon}</Text>
                     <Text style={[s.tradeName, { color: colors.textSecondary }]}>{cat.label}</Text>
                     <Text style={[s.tradeAmount, { color: delta > 0 ? colors.success : colors.error }]}>
                       {delta > 0 ? '▲ 매수' : '▼ 매도'} {amtStr}
@@ -358,7 +358,7 @@ export default function WhatIfSimulator({
                 <View key={cat.key} style={s.catRow}>
                   <View style={s.catHeader}>
                     <View style={s.catNameRow}>
-                      <Text style={s.catIcon}>{cat.icon}</Text>
+                      <Text style={[s.catIcon, cat.key === 'bitcoin' && { color: '#F5A623' }]}>{cat.icon}</Text>
                       <Text style={[s.catLabel, { color: colors.textPrimary }]}>{cat.label}</Text>
                     </View>
                     <View style={s.catWeightRow}>
@@ -437,11 +437,11 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 },
-  cardLabel: { fontSize: 17, fontWeight: '700', color: colors.textPrimary },
-  cardLabelEn: { fontSize: 12, color: colors.textTertiary, marginTop: 1, letterSpacing: 0.5, textTransform: 'uppercase' },
+  cardLabel: { fontSize: 18, fontWeight: '700', color: colors.textPrimary },
+  cardLabelEn: { fontSize: 13, color: colors.textTertiary, marginTop: 1, letterSpacing: 0.5, textTransform: 'uppercase' },
   activeBadge: { backgroundColor: `${colors.premium.purple}20`, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
-  activeBadgeText: { fontSize: 12, color: colors.premium.purple, fontWeight: '700' },
-  collapsedDesc: { marginTop: 8, fontSize: 14, color: colors.textSecondary, lineHeight: 20 },
+  activeBadgeText: { fontSize: 13, color: colors.premium.purple, fontWeight: '700' },
+  collapsedDesc: { marginTop: 8, fontSize: 15, color: colors.textSecondary, lineHeight: 22 },
 
   simulatorContainer: { marginTop: 14, paddingTop: 14, borderTopWidth: 1, borderTopColor: colors.border, gap: 12 },
 
@@ -451,8 +451,8 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderRadius: 12, padding: 16, gap: 12,
   },
   healthItem: { alignItems: 'center' },
-  healthLabel: { fontSize: 12, color: colors.textTertiary, marginBottom: 4 },
-  healthValue: { fontSize: 23, fontWeight: '800' },
+  healthLabel: { fontSize: 13, color: colors.textTertiary, marginBottom: 4, lineHeight: 18 },
+  healthValue: { fontSize: 26, fontWeight: '800' },
   healthDelta: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 },
   healthDeltaText: { fontSize: 14, fontWeight: '700' },
 
@@ -463,10 +463,10 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   tradeGuideHeader: {
     flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 4,
   },
-  tradeGuideTitle: { fontSize: 14, fontWeight: '700' },
-  tradeGuideSub: { fontSize: 12, marginLeft: 'auto' },
+  tradeGuideTitle: { fontSize: 15, fontWeight: '700' },
+  tradeGuideSub: { fontSize: 13, marginLeft: 'auto' },
   tradeRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
+    flexDirection: 'row', alignItems: 'center', gap: 8,
   },
   tradeIcon: { fontSize: 15, width: 20, textAlign: 'center' },
   tradeName: { fontSize: 14, flex: 1 },
@@ -493,16 +493,16 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderRadius: 10, padding: 12,
   },
   catHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  catNameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  catNameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   catIcon: { fontSize: 17 },
   catLabel: { fontSize: 16, fontWeight: '700' },
   catWeightRow: { flexDirection: 'row', alignItems: 'center' },
-  catCurrentPct: { fontSize: 13 },
-  catArrow: { fontSize: 13 },
+  catCurrentPct: { fontSize: 14 },
+  catArrow: { fontSize: 14 },
   catTargetPct: { fontSize: 14 },
-  catDelta: { fontSize: 13, fontWeight: '600' },
+  catDelta: { fontSize: 14, fontWeight: '600' },
   sliderRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  sliderLabel: { fontSize: 12, color: colors.textTertiary, width: 30, textAlign: 'center' },
+  sliderLabel: { fontSize: 13, color: colors.textTertiary, width: 30, textAlign: 'center' },
   slider: { flex: 1, height: 32 },
 
   // 버튼
@@ -520,5 +520,5 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   aiButtonText: { fontSize: 15, color: colors.inverseText, fontWeight: '700' },
   aiButtonTextDisabled: { color: colors.disabledText },
 
-  hint: { fontSize: 13, color: colors.textTertiary, lineHeight: 18, textAlign: 'center' },
+  hint: { fontSize: 14, color: colors.textTertiary, lineHeight: 20, textAlign: 'center' },
 });

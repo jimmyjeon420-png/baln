@@ -917,9 +917,9 @@ const s = StyleSheet.create({
     borderColor: 'rgba(255, 193, 7, 0.2)',
   },
   disclaimer: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#9E9E9E',
-    lineHeight: 18,
+    lineHeight: 20,
   },
   // ── AI 심화 분석 섹션 (인라인 스타일 → StyleSheet 추출) ──
   diagnosticHeader: {
@@ -966,7 +966,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
   },
   aiButtonEmoji: {
-    fontSize: 33,
+    fontSize: 30,
     marginRight: 16,
   },
   aiButtonTextWrap: {
@@ -977,7 +977,8 @@ const s = StyleSheet.create({
     fontWeight: '600',
   },
   aiButtonDesc: {
-    fontSize: 14,
+    fontSize: 15,
     marginTop: 2,
+    lineHeight: 22,
   },
 });

@@ -179,12 +179,12 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     gap: 8,
   },
   cardLabel: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '700',
     color: colors.textPrimary,
   },
   cardLabelEn: {
-    fontSize: 12,
+    fontSize: 13,
     marginTop: 1,
     letterSpacing: 0.5,
     textTransform: 'uppercase',
@@ -211,15 +211,16 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     gap: 10,
   },
   summaryLabel: {
-    fontSize: 13,
+    fontSize: 14,
     marginBottom: 2,
     color: colors.textTertiary,
+    lineHeight: 20,
   },
   summaryValue: { fontSize: 15, fontWeight: '700' },
   reasonText: {
-    fontSize: 13,
+    fontSize: 14,
     marginTop: 4,
-    lineHeight: 17,
+    lineHeight: 20,
     color: colors.textTertiary,
   },
   detailContainer: {

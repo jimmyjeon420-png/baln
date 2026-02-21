@@ -112,7 +112,7 @@ const s = StyleSheet.create({
     fontWeight: '700',
   },
   heroAmount: {
-    fontSize: 34,
+    fontSize: 32,
     fontWeight: '800',
     letterSpacing: -1,
     marginBottom: 6,
@@ -136,7 +136,7 @@ const s = StyleSheet.create({
     fontWeight: '700',
   },
   heroChangePercent: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '500',
   },
   cfoLine: {
