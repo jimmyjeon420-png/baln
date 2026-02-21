@@ -24,6 +24,7 @@ import {
   NativeScrollEvent,
   Animated,
   LayoutChangeEvent,
+  TouchableOpacity,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../hooks/useTheme';
@@ -73,6 +74,7 @@ export default function CardSwipeContainer({
 }: CardSwipeContainerProps) {
   const [currentPage, setCurrentPage] = useState(initialIndex);
   const [scrollViewHeight, setScrollViewHeight] = useState(0);
+  const scrollViewRef = useRef<ScrollView>(null);
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const [showSwipeHint, setShowSwipeHint] = useState(true);
@@ -126,10 +128,20 @@ export default function CardSwipeContainer({
     }
   }, [childCount, currentPage, onCardChange]);
 
+  // 탭 라벨 터치 시 해당 페이지로 스크롤
+  const handleTabPress = useCallback((index: number) => {
+    if (index === currentPage || index < 0 || index >= childCount) return;
+    scrollViewRef.current?.scrollTo({ x: index * SCREEN_WIDTH, animated: true });
+    setCurrentPage(index);
+    selection();
+    onCardChange?.(index);
+  }, [currentPage, childCount, onCardChange]);
+
   return (
     <View style={[styles.container, { paddingTop: insets.top + 8, backgroundColor: colors.background }]}>
       {/* 수평 스와이프 영역 */}
       <ScrollView
+        ref={scrollViewRef}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
@@ -159,10 +171,15 @@ export default function CardSwipeContainer({
         </Animated.View>
       )}
 
-      {/* 카드 아래: 탭 형태 네비게이터 (선택 + 인디케이터) */}
+      {/* 카드 아래: 탭 형태 네비게이터 (터치 + 스와이프 모두 지원) */}
       <View style={styles.bottomNav}>
         {labels.map((label, index) => (
-          <View key={index} style={styles.navItem}>
+          <TouchableOpacity
+            key={index}
+            style={styles.navItem}
+            onPress={() => handleTabPress(index)}
+            activeOpacity={0.6}
+          >
             <Text
               style={[
                 styles.label,
@@ -179,7 +196,7 @@ export default function CardSwipeContainer({
                 index === currentPage && [styles.indicatorActive, { backgroundColor: colors.primary }],
               ]}
             />
-          </View>
+          </TouchableOpacity>
         ))}
       </View>
 

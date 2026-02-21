@@ -14,8 +14,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import { useTheme } from '../../src/hooks/useTheme';
+import { HeaderBar } from '../../src/components/common/HeaderBar';
 
 // 라이선스 타입 정의
 interface LicenseEntry {
@@ -304,7 +304,6 @@ const LICENSE_DATA: LicenseCategory[] = [
 ];
 
 export default function LicensesScreen() {
-  const router = useRouter();
   const { colors } = useTheme();
   // 펼쳐진 카테고리 인덱스 관리
   const [expandedCategories, setExpandedCategories] = useState<number[]>([0]);
@@ -323,44 +322,37 @@ export default function LicensesScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* 헤더 */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={28} color="#4CAF50" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>오픈소스 라이선스</Text>
-        <View style={{ width: 28 }} />
-      </View>
+      <HeaderBar title="오픈소스 라이선스" />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* 안내 문구 */}
-        <View style={styles.introSection}>
-          <Ionicons name="heart" size={20} color="#CF6679" />
-          <Text style={styles.introText}>
-            bal<Text style={{ color: '#4CAF50' }}>n</Text>은 {totalPackages}개의 오픈소스 프로젝트 위에
+        <View style={[styles.introSection, { backgroundColor: colors.surface }]}>
+          <Ionicons name="heart" size={20} color={colors.error} />
+          <Text style={[styles.introText, { color: colors.textSecondary }]}>
+            bal<Text style={{ color: colors.primary }}>n</Text>은 {totalPackages}개의 오픈소스 프로젝트 위에
             만들어졌습니다. 오픈소스 커뮤니티에 깊은 감사를 드립니다.
           </Text>
         </View>
 
         {/* 라이선스 요약 */}
         <View style={styles.summaryRow}>
-          <View style={styles.summaryBadge}>
-            <Text style={styles.summaryNumber}>{totalPackages}</Text>
-            <Text style={styles.summaryLabel}>패키지</Text>
+          <View style={[styles.summaryBadge, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.summaryNumber, { color: colors.primary }]}>{totalPackages}</Text>
+            <Text style={[styles.summaryLabel, { color: colors.textTertiary }]}>패키지</Text>
           </View>
-          <View style={styles.summaryBadge}>
-            <Text style={styles.summaryNumber}>MIT</Text>
-            <Text style={styles.summaryLabel}>주요 라이선스</Text>
+          <View style={[styles.summaryBadge, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.summaryNumber, { color: colors.primary }]}>MIT</Text>
+            <Text style={[styles.summaryLabel, { color: colors.textTertiary }]}>주요 라이선스</Text>
           </View>
-          <View style={styles.summaryBadge}>
-            <Text style={styles.summaryNumber}>{LICENSE_DATA.length}</Text>
-            <Text style={styles.summaryLabel}>카테고리</Text>
+          <View style={[styles.summaryBadge, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.summaryNumber, { color: colors.primary }]}>{LICENSE_DATA.length}</Text>
+            <Text style={[styles.summaryLabel, { color: colors.textTertiary }]}>카테고리</Text>
           </View>
         </View>
 
         {/* 카테고리별 패키지 목록 */}
         {LICENSE_DATA.map((category, catIndex) => (
-          <View key={catIndex} style={styles.categorySection}>
+          <View key={catIndex} style={[styles.categorySection, { backgroundColor: colors.surface }]}>
             {/* 카테고리 헤더 (접기/펼치기) */}
             <TouchableOpacity
               style={styles.categoryHeader}
@@ -368,10 +360,10 @@ export default function LicensesScreen() {
               activeOpacity={0.7}
             >
               <View style={styles.categoryLeft}>
-                <Ionicons name={category.icon} size={18} color="#4CAF50" />
-                <Text style={styles.categoryTitle}>{category.title}</Text>
-                <View style={styles.countBadge}>
-                  <Text style={styles.countText}>
+                <Ionicons name={category.icon} size={18} color={colors.primary} />
+                <Text style={[styles.categoryTitle, { color: colors.textPrimary }]}>{category.title}</Text>
+                <View style={[styles.countBadge, { backgroundColor: colors.surfaceLight }]}>
+                  <Text style={[styles.countText, { color: colors.primary }]}>
                     {category.packages.length}
                   </Text>
                 </View>
@@ -383,18 +375,19 @@ export default function LicensesScreen() {
                     : 'chevron-down'
                 }
                 size={18}
-                color="#888888"
+                color={colors.textTertiary}
               />
             </TouchableOpacity>
 
             {/* 패키지 목록 (펼쳐진 경우만 표시) */}
             {expandedCategories.includes(catIndex) && (
-              <View style={styles.packageList}>
+              <View style={[styles.packageList, { borderTopColor: colors.border }]}>
                 {category.packages.map((pkg, pkgIndex) => (
                   <TouchableOpacity
                     key={pkgIndex}
                     style={[
                       styles.packageItem,
+                      { borderBottomColor: colors.border },
                       pkgIndex === category.packages.length - 1 && {
                         borderBottomWidth: 0,
                       },
@@ -403,24 +396,24 @@ export default function LicensesScreen() {
                     activeOpacity={0.7}
                   >
                     <View style={styles.packageMain}>
-                      <Text style={styles.packageName}>{pkg.name}</Text>
+                      <Text style={[styles.packageName, { color: colors.textPrimary }]}>{pkg.name}</Text>
                       <View style={styles.packageMeta}>
-                        <View style={styles.versionBadge}>
-                          <Text style={styles.versionText}>v{pkg.version}</Text>
+                        <View style={[styles.versionBadge, { backgroundColor: colors.surfaceLight }]}>
+                          <Text style={[styles.versionText, { color: colors.textTertiary }]}>v{pkg.version}</Text>
                         </View>
-                        <View style={styles.licenseBadge}>
-                          <Text style={styles.licenseText}>{pkg.license}</Text>
+                        <View style={[styles.licenseBadge, { backgroundColor: `${colors.primary}20` }]}>
+                          <Text style={[styles.licenseText, { color: colors.primary }]}>{pkg.license}</Text>
                         </View>
                       </View>
                     </View>
-                    <Text style={styles.packageDesc}>{pkg.description}</Text>
+                    <Text style={[styles.packageDesc, { color: colors.textTertiary }]}>{pkg.description}</Text>
                     <View style={styles.packageLink}>
                       <Ionicons
                         name="logo-github"
                         size={14}
-                        color="#666666"
+                        color={colors.textQuaternary}
                       />
-                      <Text style={styles.packageUrl}>GitHub에서 보기</Text>
+                      <Text style={[styles.packageUrl, { color: colors.textQuaternary }]}>GitHub에서 보기</Text>
                     </View>
                   </TouchableOpacity>
                 ))}
@@ -430,9 +423,9 @@ export default function LicensesScreen() {
         ))}
 
         {/* MIT 라이선스 전문 */}
-        <View style={styles.fullLicenseSection}>
-          <Text style={styles.fullLicenseTitle}>MIT License</Text>
-          <Text style={styles.fullLicenseText}>
+        <View style={[styles.fullLicenseSection, { backgroundColor: colors.surfaceLight, borderColor: colors.border }]}>
+          <Text style={[styles.fullLicenseTitle, { color: colors.textPrimary }]}>MIT License</Text>
+          <Text style={[styles.fullLicenseText, { color: colors.textTertiary }]}>
             Permission is hereby granted, free of charge, to any person
             obtaining a copy of this software and associated documentation
             files (the "Software"), to deal in the Software without
@@ -456,9 +449,9 @@ export default function LicensesScreen() {
         </View>
 
         {/* Apache 2.0 라이선스 요약 */}
-        <View style={styles.fullLicenseSection}>
-          <Text style={styles.fullLicenseTitle}>Apache License 2.0</Text>
-          <Text style={styles.fullLicenseText}>
+        <View style={[styles.fullLicenseSection, { backgroundColor: colors.surfaceLight, borderColor: colors.border }]}>
+          <Text style={[styles.fullLicenseTitle, { color: colors.textPrimary }]}>Apache License 2.0</Text>
+          <Text style={[styles.fullLicenseText, { color: colors.textTertiary }]}>
             Licensed under the Apache License, Version 2.0 (the "License");
             you may not use this file except in compliance with the License.
             You may obtain a copy of the License at{'\n\n'}
@@ -471,7 +464,7 @@ export default function LicensesScreen() {
           </Text>
         </View>
 
-        <Text style={styles.footerText}>
+        <Text style={[styles.footerText, { color: colors.textQuaternary }]}>
           © 2026 발른 주식회사{'\n'}
           오픈소스 라이선스 정보는 앱 버전에 따라 변경될 수 있습니다.
         </Text>
@@ -483,19 +476,6 @@ export default function LicensesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  headerTitle: {
-    fontSize: 19,
-    fontWeight: '700',
-    color: '#FFFFFF',
   },
   content: {
     flex: 1,
@@ -506,7 +486,6 @@ const styles = StyleSheet.create({
   introSection: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: '#1E1E1E',
     borderRadius: 14,
     padding: 16,
     gap: 12,
@@ -515,7 +494,6 @@ const styles = StyleSheet.create({
   introText: {
     flex: 1,
     fontSize: 15,
-    color: '#AAAAAA',
     lineHeight: 22,
   },
 
@@ -527,7 +505,6 @@ const styles = StyleSheet.create({
   },
   summaryBadge: {
     flex: 1,
-    backgroundColor: '#1E1E1E',
     borderRadius: 12,
     padding: 14,
     alignItems: 'center',
@@ -535,17 +512,14 @@ const styles = StyleSheet.create({
   summaryNumber: {
     fontSize: 21,
     fontWeight: '800',
-    color: '#4CAF50',
   },
   summaryLabel: {
     fontSize: 12,
-    color: '#888888',
     marginTop: 4,
   },
 
   // 카테고리
   categorySection: {
-    backgroundColor: '#1E1E1E',
     borderRadius: 14,
     marginBottom: 12,
     overflow: 'hidden',
@@ -564,10 +538,8 @@ const styles = StyleSheet.create({
   categoryTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#FFFFFF',
   },
   countBadge: {
-    backgroundColor: '#2A2A2A',
     borderRadius: 10,
     paddingHorizontal: 8,
     paddingVertical: 2,
@@ -575,18 +547,15 @@ const styles = StyleSheet.create({
   countText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#4CAF50',
   },
 
   // 패키지
   packageList: {
     borderTopWidth: 1,
-    borderTopColor: '#2A2A2A',
   },
   packageItem: {
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#2A2A2A',
   },
   packageMain: {
     flexDirection: 'row',
@@ -597,7 +566,6 @@ const styles = StyleSheet.create({
   packageName: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#FFFFFF',
     flex: 1,
   },
   packageMeta: {
@@ -605,30 +573,25 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   versionBadge: {
-    backgroundColor: '#2A2A2A',
     borderRadius: 6,
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
   versionText: {
     fontSize: 11,
-    color: '#888888',
     fontWeight: '500',
   },
   licenseBadge: {
-    backgroundColor: '#1A2E1A',
     borderRadius: 6,
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
   licenseText: {
     fontSize: 11,
-    color: '#4CAF50',
     fontWeight: '700',
   },
   packageDesc: {
     fontSize: 13,
-    color: '#999999',
     lineHeight: 18,
     marginBottom: 6,
   },
@@ -639,27 +602,22 @@ const styles = StyleSheet.create({
   },
   packageUrl: {
     fontSize: 12,
-    color: '#666666',
   },
 
   // 라이선스 전문
   fullLicenseSection: {
-    backgroundColor: '#1A1A1A',
     borderRadius: 14,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#2A2A2A',
   },
   fullLicenseTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#FFFFFF',
     marginBottom: 10,
   },
   fullLicenseText: {
     fontSize: 12,
-    color: '#888888',
     lineHeight: 18,
     fontFamily: 'monospace',
   },
@@ -667,7 +625,6 @@ const styles = StyleSheet.create({
   // 하단
   footerText: {
     fontSize: 13,
-    color: '#555555',
     textAlign: 'center',
     lineHeight: 19,
     marginTop: 8,

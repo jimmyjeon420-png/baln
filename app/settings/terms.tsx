@@ -18,7 +18,7 @@ export default function TermsScreen() {
 
       <ScrollView style={styles.content}>
         <Text style={[styles.title, { color: colors.textPrimary }]}>baln 서비스 이용약관</Text>
-        <Text style={[styles.date, { color: colors.textTertiary }]}>최종 수정일: 2026년 2월 13일</Text>
+        <Text style={[styles.date, { color: colors.textTertiary }]}>최종 수정일: 2026년 2월 21일</Text>
 
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.primary }]}>제1조 (목적)</Text>
@@ -31,10 +31,13 @@ export default function TermsScreen() {
           <Text style={[styles.sectionTitle, { color: colors.primary }]}>제2조 (서비스의 내용)</Text>
           <Text style={[styles.sectionContent, { color: colors.textSecondary }]}>
             1. 포트폴리오 현황 관리 및 시각화{'\n'}
-            2. AI 기반 자산 분석 및 추출{'\n'}
-            3. 리밸런싱 추천 및 시뮬레이션{'\n'}
-            4. 세금 최적화 계산{'\n'}
-            5. 기타 포트폴리오 관련 부가 서비스
+            2. AI 기반 자산 분석 및 스크린샷 추출{'\n'}
+            3. 맥락 카드 — 시장 상황을 역사/거시/기관/내 자산 4개 관점으로 해설{'\n'}
+            4. 예측 게임 — AI 출제 투자 퀴즈 및 복기{'\n'}
+            5. 실시간 시장 뉴스 피드 및 포트폴리오 영향도 분석{'\n'}
+            6. 리밸런싱 추천 및 시뮬레이션{'\n'}
+            7. 크레딧 기반 AI 프리미엄 기능{'\n'}
+            8. 기타 포트폴리오 관련 부가 서비스
           </Text>
         </View>
 

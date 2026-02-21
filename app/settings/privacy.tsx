@@ -183,7 +183,7 @@ export default function PrivacyScreen() {
           </Text>
           <View style={{ marginTop: 12 }}>
             <Text style={[styles.contactText, { color: colors.textSecondary }]}>
-              {'\u2022'} 성명: 대표이사 (추후 업데이트 예정)
+              {'\u2022'} 성명: 전지혁 대표이사
             </Text>
             <Text style={[styles.contactText, { color: colors.textSecondary }]}>
               {'\u2022'} 직위: 개인정보 보호책임자 (CPO)
@@ -196,9 +196,6 @@ export default function PrivacyScreen() {
             </Text>
             <Text style={[styles.contactText, { color: colors.textSecondary }]}>
               {'\u2022'} 고객센터: baln.logic@gmail.com
-            </Text>
-            <Text style={[styles.contactText, { color: colors.textSecondary }]}>
-              {'\u2022'} 전화: 추후 업데이트 예정
             </Text>
           </View>
         </View>
@@ -283,7 +280,7 @@ export default function PrivacyScreen() {
         <View style={[styles.tableContainer, { backgroundColor: colors.surface }]}>
           <Text style={[styles.tableTitle, { color: colors.textPrimary }]}>개인정보처리방침의 변경</Text>
           <Text style={[styles.aiDecisionText, { color: colors.textSecondary }]}>
-            1. 이 개인정보처리방침은 2026년 2월 13일부터 적용됩니다.{'\n\n'}
+            1. 이 개인정보처리방침은 2026년 2월 21일부터 적용됩니다.{'\n\n'}
             2. 이전의 개인정보처리방침은 아래에서 확인하실 수 있습니다.{'\n'}
             {'  '}{'\u2022'} 현재 최초 버전이며, 변경 이력이 없습니다.{'\n\n'}
             3. 개인정보처리방침이 변경되는 경우 변경사항을 시행일의 7일 전부터 앱 내 공지사항을 통해 고지할 것입니다. 다만, 이용자 권리의 중대한 변경이 있을 경우에는 최소 30일 전에 고지합니다.
@@ -292,7 +289,7 @@ export default function PrivacyScreen() {
 
         {/* 마지막 업데이트 */}
         <Text style={[styles.lastUpdate, { color: colors.textTertiary }]}>
-          마지막 업데이트: 2026년 2월 13일
+          마지막 업데이트: 2026년 2월 21일
         </Text>
       </ScrollView>
     </SafeAreaView>
