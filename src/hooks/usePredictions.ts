@@ -360,8 +360,14 @@ function getDailyFallbackPolls(): PredictionPoll[] {
   return selected;
 }
 
-/** 오늘의 폴백 투표 3개 (날짜 기반 선택) */
-const FALLBACK_POLLS: PredictionPoll[] = getDailyFallbackPolls();
+/**
+ * 오늘의 폴백 투표 3개 (날짜 기반 선택)
+ * ⚠️ 함수 호출로 변경: 모듈 상수로 하면 앱이 다음 날까지 살아있을 때
+ *    같은 질문이 반복됨. 매번 호출해야 현재 날짜 기준으로 올바르게 선택.
+ */
+function getFallbackPolls(): PredictionPoll[] {
+  return getDailyFallbackPolls();
+}
 
 // ============================================================================
 // 쿼리 키 상수
@@ -395,13 +401,13 @@ export const useActivePolls = () => {
 
         // DB가 비어있으면 폴백 사용
         if (!data || data.length === 0) {
-          return FALLBACK_POLLS;
+          return getFallbackPolls();
         }
 
         return data as PredictionPoll[];
       } catch {
         // 쿼리 실패 시 (테이블 없음 등) 폴백 사용
-        return FALLBACK_POLLS;
+        return getFallbackPolls();
       }
     },
     staleTime: 60000, // 60초

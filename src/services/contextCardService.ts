@@ -157,10 +157,20 @@ export function formatCardUpdateTime(createdAt: string): string {
 }
 
 /**
- * 맥락 카드의 시간대 라벨 반환
+ * 맥락 카드의 시간대 라벨 반환 (3시간 간격)
  */
 export function getTimeSlotLabel(timeSlot?: string): string {
   switch (timeSlot) {
+    // 3시간 간격 슬롯
+    case 'h00': return '야간 글로벌';
+    case 'h03': return '미국 장 마감';
+    case 'h06': return '아침 브리핑';
+    case 'h09': return '장 개장';
+    case 'h12': return '점심 업데이트';
+    case 'h15': return '장 마감';
+    case 'h18': return '저녁 종합';
+    case 'h21': return '미국 프리마켓';
+    // 레거시 호환
     case 'morning': return '아침 브리핑';
     case 'afternoon': return '오후 업데이트';
     case 'evening': return '저녁 마감 정리';

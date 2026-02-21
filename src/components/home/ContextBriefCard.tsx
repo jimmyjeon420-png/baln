@@ -134,6 +134,9 @@ interface ContextBriefCardProps {
     message: string;
     isCalculating?: boolean;
   } | null;
+
+  /** 업데이트 시점 라벨 (예: "오전 6:03 업데이트") */
+  updateTimeLabel?: string | null;
 }
 
 // ============================================================================
@@ -597,6 +600,7 @@ export default React.forwardRef<View, ContextBriefCardProps>(
       politicalContext,
       institutionalBehavior,
       portfolioImpact,
+      updateTimeLabel,
     }: ContextBriefCardProps,
     ref
   ) => {
@@ -722,6 +726,12 @@ export default React.forwardRef<View, ContextBriefCardProps>(
             )}
           </View>
           <View style={styles.headerRightGroup}>
+            {updateTimeLabel && (
+              <View style={styles.updateTimeBadge}>
+                <Ionicons name="time-outline" size={12} color={COLORS.textTertiary} />
+                <Text style={styles.updateTimeText}>{updateTimeLabel}</Text>
+              </View>
+            )}
             {onShare && (
               <TouchableOpacity
                 onPress={() => { track('share_card', { source: 'context_brief' }); onShare(); }}
@@ -938,6 +948,16 @@ const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
     color: '#FFFFFF',
+  },
+  updateTimeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  updateTimeText: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: COLORS.textTertiary,
   },
 
   // ── 헤드라인 ──

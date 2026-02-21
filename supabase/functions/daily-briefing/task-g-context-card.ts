@@ -66,13 +66,23 @@ async function generateContextCard(timeSlot: string = 'morning'): Promise<{
   const dateStr = getKSTDateStr();
   const todayDate = getKSTDate();
 
-  // 시간대별 프롬프트 컨텍스트
+  // 시간대별 프롬프트 컨텍스트 (3시간 간격, KST 기준)
   const timeSlotContextMap: Record<string, string> = {
+    // 3시간 간격 슬롯 (신규)
+    h00: '[시간대: 자정 0시] 미국 장이 진행 중입니다. 현재 미국 시장 실시간 흐름과 주요 이슈를 분석하세요.',
+    h03: '[시간대: 새벽 3시] 미국 장이 막 마감했습니다. 미국 장 마감 결과와 애프터마켓 흐름을 정리하세요.',
+    h06: '[시간대: 아침 6시] 오늘 하루 시장을 미리 전망합니다. 간밤 미국 지수 마감 결과 + 오늘 아시아 장 전망을 분석하세요.',
+    h09: '[시간대: 오전 9시] 한국 장이 개장했습니다. 코스피/코스닥 시초가와 외국인/기관 초반 수급을 분석하세요.',
+    h12: '[시간대: 낮 12시] 한국 장 중반입니다. 오전장 흐름 정리 + 오후장 전망 + 점심시간 발표된 경제지표를 반영하세요.',
+    h15: '[시간대: 오후 3시] 한국 장이 마감했습니다. 코스피/코스닥 종가 + 외국인/기관 최종 수급 + 당일 핵심 이벤트를 정리하세요.',
+    h18: '[시간대: 저녁 6시] 저녁 종합 브리핑입니다. 한국 장 마감 결과 + 유럽 장 흐름 + 미국 프리마켓을 반영하세요.',
+    h21: '[시간대: 밤 9시] 미국 장 개장 직전/직후입니다. 미국 주요 지표 발표 + 개장 초반 흐름을 분석하세요.',
+    // 레거시 호환
     morning: '[시간대: 아침 6시] 오늘 하루 시장을 미리 전망합니다. 아시아 장 개장 전, 미국 장 마감 후 상황을 중심으로 분석하세요.',
     afternoon: '[시간대: 오후 3시] 장중 흐름을 업데이트합니다. 코스피/코스닥 장중 흐름과 오늘 발생한 주요 이벤트를 반영하세요.',
     evening: '[시간대: 저녁 7시] 오늘 시장 마감을 정리합니다. 한국 장 마감 결과와 미국 프리마켓 흐름을 반영하세요.',
   };
-  const timeSlotContext = timeSlotContextMap[timeSlot] || timeSlotContextMap['morning'];
+  const timeSlotContext = timeSlotContextMap[timeSlot] || timeSlotContextMap['h06'];
 
   // ── 실시간 시장 데이터 수집 ──
   // Task A가 이미 실행됐으면 DB에서 읽고, 없으면 직접 수집
@@ -406,14 +416,31 @@ async function calculateUserImpacts(
  *
  * @returns { contextCardId, sentiment, usersCalculated, avgImpact }
  */
+/**
+ * 현재 KST 시간을 기준으로 3시간 간격 time_slot 자동 결정
+ * 예: KST 14:30 → h12 (12:00~14:59 구간)
+ */
+function autoDetectTimeSlot(): string {
+  const now = new Date();
+  // UTC → KST (+9시간)
+  const kstHour = (now.getUTCHours() + 9) % 24;
+  // 3시간 단위로 내림: 0,3,6,9,12,15,18,21
+  const slotHour = Math.floor(kstHour / 3) * 3;
+  return `h${String(slotHour).padStart(2, '0')}`;
+}
+
 export async function runContextCardGeneration(timeSlot?: string): Promise<ContextCardResult> {
   const startTime = Date.now();
+
+  // time_slot이 없으면 현재 KST 시간으로 자동 결정
+  const effectiveSlot = timeSlot || autoDetectTimeSlot();
+  console.log(`[Task G] time_slot: ${effectiveSlot} (입력: ${timeSlot || 'auto'})`);
 
   try {
     console.log('[Task G] 맥락 카드 생성 배치 시작...');
 
     // G-1: 맥락 카드 생성
-    const cardResult = await generateContextCard(timeSlot);
+    const cardResult = await generateContextCard(effectiveSlot);
 
     // G-2: 사용자별 영향도 계산 (실데이터 + sentiment 전달)
     const impactResult = await calculateUserImpacts(
@@ -427,6 +454,7 @@ export async function runContextCardGeneration(timeSlot?: string): Promise<Conte
       sentiment: cardResult.cardData.sentiment,
       users: impactResult.usersCalculated,
       avgImpact: impactResult.avgImpact,
+      timeSlot: effectiveSlot,
     });
 
     return {

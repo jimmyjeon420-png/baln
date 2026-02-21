@@ -54,8 +54,8 @@ export const CONTEXT_SENTIMENT_KEY = ['contextCard', 'sentiment'];
 // 설정 상수
 // ============================================================================
 
-/** 데이터 신선도 기준: 이 시간(시) 이상 오래되면 stale로 판단 */
-const STALE_THRESHOLD_HOURS = 4;
+/** 데이터 신선도 기준: 이 시간(시) 이상 오래되면 stale로 판단 (3시간 간격 업데이트) */
+const STALE_THRESHOLD_HOURS = 3;
 
 /** 기본 재시도 횟수 */
 const DEFAULT_RETRY_COUNT = 2;
@@ -144,7 +144,7 @@ export function useContextCard(options?: { retryCount?: number }) {
 
       return result;
     },
-    staleTime: 3 * 60 * 1000, // 3분 (하루 3회 업데이트이므로 짧은 캐시)
+    staleTime: 3 * 60 * 1000, // 3분 (3시간 간격 업데이트이므로 짧은 캐시)
     gcTime: 30 * 60 * 1000,   // 30분 동안 메모리 유지
 
     // 지수 백오프 재시도: 1초, 3초 간격

@@ -261,7 +261,7 @@ export default function HomeScreen() {
   // ──────────────────────────────────────────────────────────────────────
   // 2. 맥락 브리핑 카드 데이터
   // ──────────────────────────────────────────────────────────────────────
-  const { data: contextData, isLoading: contextLoading, effectiveData: contextEffective } = useContextCard();
+  const { data: contextData, isLoading: contextLoading, effectiveData: contextEffective, updateTimeLabel } = useContextCard();
   const { isPremium } = useSubscriptionStatus();
   const [shareModalVisible, setShareModalVisible] = React.useState(false);
 
@@ -288,6 +288,7 @@ export default function HomeScreen() {
         isPremium: isPremium || false,
         onShare: undefined,
         isLoading: contextLoading,
+        updateTimeLabel,
         // 5겹 레이어 데이터 (effectiveData에서 추출)
         historicalContext: fallbackCard?.historical_context,
         macroChain: fallbackCard?.macro_chain,
@@ -324,6 +325,7 @@ export default function HomeScreen() {
       isPremium: isPremium || false,
       onShare: () => setShareModalVisible(true),
       isLoading: contextLoading,
+      updateTimeLabel,
       // 5겹 레이어 데이터 전달
       historicalContext: card.historical_context,
       macroChain: card.macro_chain,
@@ -336,7 +338,7 @@ export default function HomeScreen() {
         isCalculating: false,
       } : null,
     };
-  }, [contextData, contextEffective, contextLoading, isPremium, router, showToast]);
+  }, [contextData, contextEffective, contextLoading, isPremium, router, showToast, updateTimeLabel]);
 
   // ──────────────────────────────────────────────────────────────────────
   // 3. 예측 투표 카드 데이터 (3개 질문 지원)
