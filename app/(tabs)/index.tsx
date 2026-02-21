@@ -575,7 +575,7 @@ export default function HomeScreen() {
       />
 
       <CardSwipeContainer
-        labels={['건강', '맥락', '예측', '복기']}
+        labels={['내 자산', '오늘 시장', '내 예측', '어제 결과']}
         initialIndex={0}
         onCardChange={handleCardChange}
         onRefresh={handleRefresh}

@@ -249,28 +249,28 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   centerSmallLabel: {
-    fontSize: 11,
+    fontSize: 12,
     marginBottom: 2,
   },
   centerTotalValue: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '800',
   },
   centerIcon: {
-    fontSize: 16,
+    fontSize: 17,
     marginBottom: 2,
   },
   centerLabel: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
   },
   centerValue: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '800',
     marginTop: 2,
   },
   centerPercent: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
     marginTop: 1,
   },
@@ -297,11 +297,11 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   legendLabel: {
-    fontSize: 11,
+    fontSize: 12,
     maxWidth: 80,
   },
   legendPercent: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
   },
 });

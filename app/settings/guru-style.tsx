@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '700',
   },
   scrollView: {
@@ -233,10 +233,10 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   subtitle: {
-    fontSize: 13,
+    fontSize: 14,
     textAlign: 'center',
     marginBottom: 20,
-    lineHeight: 20,
+    lineHeight: 21,
   },
   card: {
     borderRadius: 16,
@@ -258,17 +258,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   emoji: {
-    fontSize: 22,
+    fontSize: 23,
   },
   cardTitleGroup: {
     flex: 1,
   },
   guruName: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
   },
   guruSubtitle: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
     marginTop: 2,
   },
@@ -281,18 +281,18 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   selectedText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
   },
   tagline: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     fontStyle: 'italic',
     marginBottom: 6,
   },
   description: {
-    fontSize: 12,
-    lineHeight: 18,
+    fontSize: 13,
+    lineHeight: 19,
     marginBottom: 12,
   },
   allocRow: {
@@ -309,11 +309,11 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   allocLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
   },
   allocPct: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '800',
   },
   kostolanyBadge: {
@@ -325,7 +325,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   kostolanyText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
   },
   disclaimerBox: {
@@ -340,13 +340,13 @@ const styles = StyleSheet.create({
   },
   disclaimerText: {
     flex: 1,
-    fontSize: 11,
-    lineHeight: 17,
+    fontSize: 12,
+    lineHeight: 18,
   },
   hint: {
-    fontSize: 11,
+    fontSize: 12,
     textAlign: 'center',
     marginTop: 8,
-    lineHeight: 18,
+    lineHeight: 19,
   },
 });

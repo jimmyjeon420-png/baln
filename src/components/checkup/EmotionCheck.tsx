@@ -162,7 +162,7 @@ const s = StyleSheet.create({
     marginBottom: 16,
   },
   cardTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     // color: '#FFFFFF', // Now dynamic
   },
@@ -173,7 +173,7 @@ const s = StyleSheet.create({
     borderRadius: 8,
   },
   checkedText: {
-    fontSize: 12,
+    fontSize: 13,
     // color: 동적 적용 (colors.primaryDark)
     fontWeight: '600',
   },
@@ -191,14 +191,14 @@ const s = StyleSheet.create({
     // backgroundColor & borderColor: 동적 적용
   },
   emotionEmoji: {
-    fontSize: 24,
+    fontSize: 25,
     marginBottom: 4,
   },
   emotionEmojiSelected: {
-    fontSize: 28,
+    fontSize: 29,
   },
   emotionLabel: {
-    fontSize: 11,
+    fontSize: 12,
     // color: '#808080', // Now dynamic
     fontWeight: '500',
   },
@@ -212,9 +212,9 @@ const s = StyleSheet.create({
     // borderColor: 동적 적용 (colors.border)
   },
   feedbackText: {
-    fontSize: 13,
+    fontSize: 14,
     // color: '#B0B0B0', // Now dynamic
-    lineHeight: 20,
+    lineHeight: 21,
   },
   // 메모 섹션
   memoSection: {
@@ -226,13 +226,13 @@ const s = StyleSheet.create({
     // borderColor: 동적 적용 (colors.border)
   },
   memoLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     // color: '#FFFFFF', // Now dynamic
     marginBottom: 8,
   },
   memoInput: {
-    fontSize: 14,
+    fontSize: 15,
     // color: '#FFFFFF', // Now dynamic
     // backgroundColor: '#0A0A0A', // Now dynamic
     borderRadius: 8,
@@ -249,7 +249,7 @@ const s = StyleSheet.create({
     marginTop: 8,
   },
   charCount: {
-    fontSize: 12,
+    fontSize: 13,
     // color: '#757575', // Now dynamic
   },
   saveButton: {
@@ -259,7 +259,7 @@ const s = StyleSheet.create({
     borderRadius: 8,
   },
   saveButtonText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     // color: '#FFFFFF', // Now dynamic
   },
@@ -271,7 +271,7 @@ const s = StyleSheet.create({
     borderWidth: 1,
   },
   rewardToastText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
   },
 });

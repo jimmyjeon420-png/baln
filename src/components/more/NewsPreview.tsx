@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   headerTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
   },
   liveBadge: {
@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   liveBadgeText: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: '800',
     color: '#000',
   },
@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   viewAllText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
   newsContainer: {
@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
   },
   contextLinkText: {
     flex: 1,
-    fontSize: 11,
+    fontSize: 12,
   },
   loadingBox: {
     paddingVertical: 20,

@@ -305,7 +305,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   headerTitle: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '700',
     color: '#FFF',
   },
@@ -336,14 +336,14 @@ const styles = StyleSheet.create({
     fontSize: 42,
   },
   heroName: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '800',
     color: '#FFF',
     textAlign: 'center',
     marginBottom: 4,
   },
   heroOrg: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#9CA3AF',
     textAlign: 'center',
     marginBottom: 12,
@@ -359,7 +359,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   myPhilosophyText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
   },
   // ── 카드 ──
@@ -380,18 +380,18 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   cardIcon: {
-    fontSize: 18,
+    fontSize: 19,
   },
   cardTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     color: '#FFF',
     flex: 1,
   },
   cardBody: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#D1D5DB',
-    lineHeight: 22,
+    lineHeight: 23,
   },
   quoteBox: {
     marginTop: 12,
@@ -399,10 +399,10 @@ const styles = StyleSheet.create({
     borderLeftWidth: 3,
   },
   quoteText: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#9CA3AF',
     fontStyle: 'italic',
-    lineHeight: 20,
+    lineHeight: 21,
   },
   // ── LIVE 뱃지 ──
   liveBadge: {
@@ -414,7 +414,7 @@ const styles = StyleSheet.create({
     borderColor: '#FF453A50',
   },
   liveText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '800',
     color: '#FF453A',
     letterSpacing: 0.5,
@@ -427,7 +427,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   loadingText: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#9CA3AF',
   },
   sentimentBadge: {
@@ -439,11 +439,11 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   sentimentText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
   },
   insightLabel: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#6B7280',
     fontWeight: '600',
     textTransform: 'uppercase',
@@ -452,9 +452,9 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   insightBody: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#D1D5DB',
-    lineHeight: 21,
+    lineHeight: 22,
   },
   tickerRow: {
     flexDirection: 'row',
@@ -468,19 +468,19 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   tickerText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
   },
   sourceText: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#6B7280',
     marginTop: 10,
   },
   noInsightText: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#6B7280',
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 21,
     paddingVertical: 8,
   },
   // ── 기타 ──
@@ -491,7 +491,7 @@ const styles = StyleSheet.create({
   },
   notFoundText: {
     color: '#9CA3AF',
-    fontSize: 15,
+    fontSize: 16,
   },
   disclaimer: {
     flexDirection: 'row',
@@ -503,8 +503,8 @@ const styles = StyleSheet.create({
   },
   disclaimerText: {
     flex: 1,
-    fontSize: 10,
+    fontSize: 11,
     color: '#555',
-    lineHeight: 15,
+    lineHeight: 16,
   },
 });

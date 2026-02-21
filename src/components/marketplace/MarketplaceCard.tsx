@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#37373720',
   },
   icon: {
-    fontSize: 28,
+    fontSize: 29,
   },
   lockBadge: {
     position: 'absolute',
@@ -147,15 +147,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   name: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     color: '#FFF',
     marginBottom: 6,
   },
   description: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#9CA3AF',
-    lineHeight: 18,
+    lineHeight: 19,
     marginBottom: 12,
     minHeight: 36,
   },
@@ -168,7 +168,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   priceCredit: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '800',
     color: '#9333EA',
     marginRight: 8,
@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
     color: '#6B7280',
   },
   priceKRW: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#6B7280',
     fontWeight: '600',
   },
@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   stockText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
     color: '#EF4444',
   },
@@ -202,7 +202,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#374151',
   },
   buttonText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     color: '#FFF',
   },
@@ -221,7 +221,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   tierText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
     color: '#F59E0B',
     marginLeft: 3,

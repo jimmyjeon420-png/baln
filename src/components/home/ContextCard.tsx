@@ -382,11 +382,11 @@ const s = StyleSheet.create({
     gap: 8,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
   },
   headerDate: {
-    fontSize: 13,
+    fontSize: 14,
   },
   headerRight: {
     alignItems: 'flex-end',
@@ -401,7 +401,7 @@ const s = StyleSheet.create({
     borderRadius: 10,
   },
   updateBadgeText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
   },
 
@@ -413,8 +413,8 @@ const s = StyleSheet.create({
 
   // 레이어 내부 텍스트
   layerText: {
-    fontSize: 14,
-    lineHeight: 22,
+    fontSize: 15,
+    lineHeight: 23,
   },
 
   // 거시경제 체인
@@ -431,8 +431,8 @@ const s = StyleSheet.create({
     marginRight: 10,
   },
   chainText: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 15,
+    lineHeight: 21,
     flex: 1,
   },
   chainArrow: {
@@ -452,10 +452,10 @@ const s = StyleSheet.create({
     alignItems: 'center',
   },
   impactLabel: {
-    fontSize: 14,
+    fontSize: 15,
   },
   impactValue: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
   },
 });

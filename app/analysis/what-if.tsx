@@ -370,7 +370,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
   },
   segmentText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
   // 기존 스타일 유지
@@ -384,14 +384,14 @@ const s = StyleSheet.create({
     marginBottom: 12,
   },
   emptyTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
     marginBottom: 8,
   },
   emptyDesc: {
-    fontSize: 14,
+    fontSize: 15,
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 21,
   },
   loadingCard: {
     borderRadius: 16,
@@ -400,13 +400,13 @@ const s = StyleSheet.create({
     marginTop: 16,
   },
   loadingTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
     marginTop: 16,
     marginBottom: 4,
   },
   loadingDesc: {
-    fontSize: 13,
+    fontSize: 14,
   },
   errorCard: {
     borderRadius: 12,
@@ -415,7 +415,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
   },
   errorText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '500',
     textAlign: 'center',
   },
@@ -434,8 +434,8 @@ const s = StyleSheet.create({
   },
   disclaimerText: {
     flex: 1,
-    fontSize: 11,
+    fontSize: 12,
     color: '#888888',
-    lineHeight: 16,
+    lineHeight: 17,
   },
 });

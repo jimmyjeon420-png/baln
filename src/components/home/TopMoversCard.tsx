@@ -132,11 +132,11 @@ const styles = StyleSheet.create({
     marginBottom: SIZES.lg,
   },
   title: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
   },
   subtitle: {
-    fontSize: 11,
+    fontSize: 12,
     marginTop: 2,
     marginBottom: 14,
   },
@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   columnHeader: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
     marginBottom: 10,
   },
@@ -166,23 +166,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   tickerIconText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
   },
   moverInfo: {
     flex: 1,
   },
   moverName: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
   moverPercent: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
     marginTop: 1,
   },
   emptyText: {
-    fontSize: 13,
+    fontSize: 14,
     textAlign: 'center',
     paddingVertical: 10,
   },

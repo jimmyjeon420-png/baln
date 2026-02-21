@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   emptyText: {
-    fontSize: 16,
+    fontSize: 17,
     textAlign: 'center',
   },
   addButton: {
@@ -139,7 +139,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   addButtonText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
   },
   item: {
@@ -154,12 +154,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   itemName: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
     marginBottom: 4,
   },
   itemTicker: {
-    fontSize: 14,
+    fontSize: 15,
   },
   itemActions: {
     flexDirection: 'row',

@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   tabLabelText: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: '600',
     marginTop: 3,
     letterSpacing: 0.1,

@@ -430,10 +430,10 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   headerEmoji: {
-    fontSize: 22,
+    fontSize: 23,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
   },
   headerRight: {
@@ -449,7 +449,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   progressText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
 
@@ -475,14 +475,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   questionNumberText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
   },
   questionText: {
     flex: 1,
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
-    lineHeight: 22,
+    lineHeight: 23,
   },
 
   // 옵션 버튼
@@ -502,7 +502,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   optionText: {
-    fontSize: 14,
+    fontSize: 15,
   },
   selectedDot: {
     width: 6,
@@ -517,7 +517,7 @@ const styles = StyleSheet.create({
     top: 8,
   },
   creditPopupText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
   },
 
@@ -534,11 +534,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   completeText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
   },
   completeSubtext: {
-    fontSize: 12,
+    fontSize: 13,
     marginTop: 2,
   },
   creditBadge: {
@@ -547,7 +547,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   creditBadgeText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
   },
 });

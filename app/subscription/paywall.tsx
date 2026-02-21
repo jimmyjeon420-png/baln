@@ -486,13 +486,13 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(76, 175, 80, 0.15)',
   },
   statusBannerText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     color: '#4CAF50',
   },
   statusBannerHighlight: {
     fontWeight: '900',
-    fontSize: 16,
+    fontSize: 17,
   },
   // 히어로
   heroSection: {
@@ -512,18 +512,18 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   heroTitle: {
-    fontSize: 28,
+    fontSize: 29,
     fontWeight: '900',
     color: '#FFFFFF',
     letterSpacing: 0.5,
   },
   heroSubtitle: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#4CAF50',
     marginTop: 8,
     textAlign: 'center',
     fontWeight: '600',
-    lineHeight: 20,
+    lineHeight: 21,
     paddingHorizontal: 16,
   },
   // 가격 카드
@@ -556,13 +556,13 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   recommendBadgeText: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: '800',
     color: '#000000',
     letterSpacing: 0.5,
   },
   pricingLabel: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#888888',
     marginBottom: 4,
   },
@@ -572,17 +572,17 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   pricingPrice: {
-    fontSize: 24,
+    fontSize: 25,
     fontWeight: '900',
     color: '#FFFFFF',
   },
   pricingPeriod: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#666666',
     fontWeight: '500',
   },
   pricingDiscount: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#4CAF50',
     marginTop: 4,
     fontWeight: '600',
@@ -592,7 +592,7 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
     color: '#FFFFFF',
     marginBottom: 16,
@@ -615,15 +615,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   benefitTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
   },
   benefitDesc: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#888888',
     marginTop: 2,
-    lineHeight: 18,
+    lineHeight: 19,
   },
   // CTA
   ctaButton: {
@@ -636,12 +636,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   ctaText: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '800',
     color: '#FFFFFF',
   },
   ctaSubtext: {
-    fontSize: 12,
+    fontSize: 13,
     color: 'rgba(255,255,255,0.7)',
     marginTop: 4,
   },
@@ -655,23 +655,23 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(76, 175, 80, 0.1)',
   },
   creditInfoTitle: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
     color: '#4CAF50',
     marginBottom: 6,
     textAlign: 'center',
   },
   creditInfoDesc: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#888888',
     textAlign: 'center',
-    lineHeight: 18,
+    lineHeight: 19,
   },
   legalText: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#555555',
     textAlign: 'center',
-    lineHeight: 16,
+    lineHeight: 17,
   },
   // 해지 방지 메시지
   streakWarning: {
@@ -689,14 +689,14 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   streakWarningTitle: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
     color: '#FFC107',
   },
   streakWarningText: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#CCCCCC',
-    lineHeight: 18,
+    lineHeight: 19,
   },
   streakWarningHighlight: {
     fontWeight: '700',

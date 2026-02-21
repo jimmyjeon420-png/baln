@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   title: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
     paddingVertical: 32,
   },
   emptyText: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#888888',
     marginTop: 12,
   },
@@ -190,7 +190,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   legendName: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#FFFFFF',
     fontWeight: '500',
   },
@@ -200,11 +200,11 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   legendValue: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#AAAAAA',
   },
   legendPercent: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     width: 50,
     textAlign: 'right',
@@ -219,11 +219,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   totalLabel: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#888888',
   },
   totalValue: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
     color: '#4CAF50',
   },

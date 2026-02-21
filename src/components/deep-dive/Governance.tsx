@@ -243,11 +243,11 @@ const s = StyleSheet.create({
     marginBottom: 16,
   },
   cardTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
   },
   cardSubtitle: {
-    fontSize: 10,
+    fontSize: 11,
     marginTop: 2,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -258,7 +258,7 @@ const s = StyleSheet.create({
     borderRadius: 8,
   },
   gradeBadgeText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
   },
 
@@ -270,28 +270,28 @@ const s = StyleSheet.create({
     marginBottom: 8,
   },
   summaryLabel: {
-    fontSize: 12,
+    fontSize: 13,
   },
   scoreText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
   esgGrade: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
   },
 
   // 별점
   star: {
-    fontSize: 16,
+    fontSize: 17,
     color: '#FFC107',
   },
   starHalf: {
-    fontSize: 16,
+    fontSize: 17,
     color: '#FFE082',
   },
   starEmpty: {
-    fontSize: 16,
+    fontSize: 17,
     color: '#E0E0E0',
   },
 
@@ -308,7 +308,7 @@ const s = StyleSheet.create({
     gap: 10,
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     marginBottom: 4,
   },
@@ -318,18 +318,18 @@ const s = StyleSheet.create({
     justifyContent: 'space-between',
   },
   detailLabel: {
-    fontSize: 13,
+    fontSize: 14,
   },
   detailValue: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
   dividendValue: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
   },
   esgGradeLarge: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '700',
   },
 
@@ -340,7 +340,7 @@ const s = StyleSheet.create({
     gap: 8,
   },
   pointsTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     marginBottom: 4,
   },
@@ -350,12 +350,12 @@ const s = StyleSheet.create({
     gap: 8,
   },
   bullet: {
-    fontSize: 16,
+    fontSize: 17,
     marginTop: 2,
   },
   pointText: {
     flex: 1,
-    fontSize: 13,
-    lineHeight: 20,
+    fontSize: 14,
+    lineHeight: 21,
   },
 });

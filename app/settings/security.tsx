@@ -169,11 +169,11 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   settingLabel: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
   },
   settingDescription: {
-    fontSize: 13,
+    fontSize: 14,
     marginTop: 4,
   },
   actionItem: {
@@ -185,6 +185,6 @@ const styles = StyleSheet.create({
   },
   actionLabel: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 17,
   },
 });

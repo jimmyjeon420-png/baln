@@ -233,7 +233,7 @@ const s = StyleSheet.create({
     marginBottom: 12,
   },
   headerText: {
-    fontSize: 13,
+    fontSize: 14,
     marginLeft: 8,
   },
   changeBox: {
@@ -242,11 +242,11 @@ const s = StyleSheet.create({
     marginBottom: 12,
   },
   changeValue: {
-    fontSize: 28,
+    fontSize: 29,
     fontWeight: '700',
   },
   changeLabel: {
-    fontSize: 13,
+    fontSize: 14,
     marginTop: 4,
   },
   healthBox: {
@@ -258,14 +258,14 @@ const s = StyleSheet.create({
     marginBottom: 12,
   },
   healthLabel: {
-    fontSize: 13,
+    fontSize: 14,
   },
   healthValueRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   healthValue: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     marginLeft: 8,
   },
@@ -276,8 +276,8 @@ const s = StyleSheet.create({
     marginTop: 4,
   },
   adviceText: {
-    fontSize: 13,
-    lineHeight: 20,
+    fontSize: 14,
+    lineHeight: 21,
     marginLeft: 8,
     flex: 1,
   },
@@ -291,7 +291,7 @@ const s = StyleSheet.create({
     gap: 12,
   },
   calculatingText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '500',
   },
   // 타임아웃 폴백 상태
@@ -302,14 +302,14 @@ const s = StyleSheet.create({
     gap: 8,
   },
   fallbackTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     marginTop: 4,
     textAlign: 'center',
   },
   fallbackDesc: {
-    fontSize: 13,
-    lineHeight: 20,
+    fontSize: 14,
+    lineHeight: 21,
     textAlign: 'center',
   },
   retryButton: {
@@ -323,7 +323,7 @@ const s = StyleSheet.create({
     marginTop: 8,
   },
   retryText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
 });

@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
 
   // ── 헤더 ──
   title: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     marginBottom: 12,
   },
@@ -173,11 +173,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   baseLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '500',
   },
   baseScore: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
 
@@ -194,12 +194,12 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   itemLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     flex: 1,
   },
   itemPoints: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     marginLeft: 8,
   },
@@ -213,8 +213,8 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   itemReason: {
-    fontSize: 11,
-    lineHeight: 16,
+    fontSize: 12,
+    lineHeight: 17,
   },
 
   // ── 합계 ──
@@ -225,11 +225,11 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   totalLabel: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
   },
   totalScore: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '800',
   },
 });

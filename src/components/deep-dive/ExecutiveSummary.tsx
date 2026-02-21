@@ -337,10 +337,10 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
   },
   recommendationEmoji: {
-    fontSize: 18,
+    fontSize: 19,
   },
   recommendationText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '800',
   },
 
@@ -375,11 +375,11 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   priceLabel: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
   },
   priceValue: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '800',
   },
   arrowIcon: {
@@ -396,7 +396,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   returnText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
   },
 
@@ -405,7 +405,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   sectionTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     marginBottom: 4,
   },
@@ -422,8 +422,8 @@ const styles = StyleSheet.create({
   },
   keyPointText: {
     flex: 1,
-    fontSize: 14,
-    lineHeight: 21,
+    fontSize: 15,
+    lineHeight: 22,
   },
 
   // 하단 메타
@@ -441,6 +441,6 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   footerText: {
-    fontSize: 12,
+    fontSize: 13,
   },
 });

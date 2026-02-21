@@ -70,7 +70,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginTop: 12,
   },
   cardTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     color: colors.textPrimary,
     marginBottom: 16,
@@ -87,13 +87,13 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderColor: colors.border,
   },
   weatherEmoji: {
-    fontSize: 24,
+    fontSize: 25,
   },
   weatherMessage: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 17,
     color: colors.textPrimary,
-    lineHeight: 24,
+    lineHeight: 25,
   },
   dailyRow: {
     flexDirection: 'row',
@@ -101,11 +101,11 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     gap: 8,
   },
   dailyEmoji: {
-    fontSize: 18,
+    fontSize: 19,
   },
   dailyText: {
-    fontSize: 16,
+    fontSize: 17,
     color: colors.textSecondary,
-    lineHeight: 22,
+    lineHeight: 23,
   },
 });

@@ -178,25 +178,25 @@ const styles = StyleSheet.create({
   },
   statusText: {
     color: '#FFFFFF',
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
   },
   urlText: {
     color: '#AAAAAA',
-    fontSize: 9,
+    fontSize: 10,
     flex: 1,
   },
   latencyText: {
     color: '#888888',
-    fontSize: 9,
+    fontSize: 10,
   },
   envText: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: '600',
   },
   errorText: {
     color: '#F44336',
-    fontSize: 9,
+    fontSize: 10,
     width: '100%',
     marginTop: 2,
   },

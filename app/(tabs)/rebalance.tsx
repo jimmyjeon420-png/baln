@@ -97,7 +97,7 @@ const toastStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(76,175,80,0.2)',
   },
-  text: { fontSize: 12, color: '#4CAF50', fontWeight: '600' },
+  text: { fontSize: 13, color: '#4CAF50', fontWeight: '600' },
 });
 
 // 포그라운드 복귀 자동 갱신 최소 간격 (5분)
@@ -829,16 +829,16 @@ const s = StyleSheet.create({
     marginBottom: 24,
   },
   emptyTitle: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '700',
     // color는 동적으로 적용됨 (라이트: 어두운 텍스트, 다크: 밝은 텍스트)
     marginBottom: 12,
   },
   emptyDesc: {
-    fontSize: 15,
+    fontSize: 16,
     color: '#9E9E9E',
     textAlign: 'center',
-    lineHeight: 22,
+    lineHeight: 23,
     marginBottom: 32,
   },
   emptyButton: {
@@ -851,7 +851,7 @@ const s = StyleSheet.create({
     gap: 8,
   },
   emptyButtonText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     color: '#000000',
   },
@@ -874,7 +874,7 @@ const s = StyleSheet.create({
     backgroundColor: '#4CAF50',
   },
   aiLoadingText: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#4CAF50',
     fontWeight: '600',
   },
@@ -891,7 +891,7 @@ const s = StyleSheet.create({
     gap: 12,
   },
   aiErrorText: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#CF6679',
     fontWeight: '600',
     flex: 1,
@@ -903,7 +903,7 @@ const s = StyleSheet.create({
     borderRadius: 8,
   },
   aiRetryText: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#CF6679',
     fontWeight: '600',
   },
@@ -917,9 +917,9 @@ const s = StyleSheet.create({
     borderColor: 'rgba(255, 193, 7, 0.2)',
   },
   disclaimer: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#9E9E9E',
-    lineHeight: 16,
+    lineHeight: 17,
   },
   // ── AI 심화 분석 섹션 (인라인 스타일 → StyleSheet 추출) ──
   diagnosticHeader: {
@@ -948,12 +948,12 @@ const s = StyleSheet.create({
     marginTop: 24,
   },
   aiSectionTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
     marginBottom: 4,
   },
   aiSectionSubtitle: {
-    fontSize: 13,
+    fontSize: 14,
     marginBottom: 16,
   },
   aiButtonList: {
@@ -966,18 +966,18 @@ const s = StyleSheet.create({
     alignItems: 'center',
   },
   aiButtonEmoji: {
-    fontSize: 32,
+    fontSize: 33,
     marginRight: 16,
   },
   aiButtonTextWrap: {
     flex: 1,
   },
   aiButtonTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
   },
   aiButtonDesc: {
-    fontSize: 12,
+    fontSize: 13,
     marginTop: 2,
   },
 });

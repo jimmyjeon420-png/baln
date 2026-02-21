@@ -600,7 +600,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(76, 175, 80, 0.3)',
   },
   checkInToastText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
     color: '#4CAF50',
   },
@@ -617,12 +617,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   headerTitle: {
-    fontSize: 28,
+    fontSize: 29,
     fontWeight: 'bold',
     color: '#FFFFFF',
   },
   headerSubtitle: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#888888',
     marginTop: 4,
   },
@@ -635,7 +635,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   tierBadgeText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
   },
   strategyCard: {
@@ -655,13 +655,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   strategyLabel: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#888888',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   strategyTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     marginTop: 2,
   },
@@ -681,9 +681,9 @@ const styles = StyleSheet.create({
   },
   strategyFocusText: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 15,
     color: '#CCCCCC',
-    lineHeight: 20,
+    lineHeight: 21,
   },
   strategyDetailLink: {
     flexDirection: 'row',
@@ -696,7 +696,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   strategyDetailText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
   // Morning Briefing 스타일
@@ -715,18 +715,18 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   briefingWeatherEmoji: {
-    fontSize: 32,
+    fontSize: 33,
   },
   briefingHeaderText: {
     flex: 1,
   },
   briefingTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     color: '#FFFFFF',
   },
   briefingStatus: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#888888',
     marginTop: 2,
   },
@@ -736,7 +736,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   sentimentText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
   },
   briefingSection: {
@@ -746,7 +746,7 @@ const styles = StyleSheet.create({
     borderTopColor: '#2A2A2A',
   },
   briefingSectionTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     color: '#FFFFFF',
     marginBottom: 10,
@@ -759,13 +759,13 @@ const styles = StyleSheet.create({
   },
   highlightBullet: {
     color: '#4CAF50',
-    fontSize: 14,
+    fontSize: 15,
   },
   highlightText: {
     flex: 1,
-    fontSize: 13,
+    fontSize: 14,
     color: '#CCCCCC',
-    lineHeight: 20,
+    lineHeight: 21,
   },
   interestRateBox: {
     flexDirection: 'row',
@@ -777,7 +777,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   interestRateText: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#FFD700',
     fontWeight: '500',
   },
@@ -799,23 +799,23 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   actionBadgeText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
     color: '#000000',
   },
   actionTicker: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     color: '#FFFFFF',
   },
   actionName: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#888888',
   },
   actionReason: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#AAAAAA',
-    lineHeight: 18,
+    lineHeight: 19,
   },
   cfoMessageBox: {
     flexDirection: 'row',
@@ -828,10 +828,10 @@ const styles = StyleSheet.create({
   },
   cfoMessageText: {
     flex: 1,
-    fontSize: 13,
+    fontSize: 14,
     color: '#4CAF50',
     fontWeight: '500',
-    lineHeight: 20,
+    lineHeight: 21,
   },
   emptyContainer: {
     flex: 1,
@@ -849,16 +849,16 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   emptyTitle: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '700',
     color: '#FFFFFF',
   },
   emptyText: {
-    fontSize: 15,
+    fontSize: 16,
     color: '#888888',
     textAlign: 'center',
     marginTop: 12,
-    lineHeight: 24,
+    lineHeight: 25,
   },
   emptyHighlight: {
     color: '#4CAF50',
@@ -875,7 +875,7 @@ const styles = StyleSheet.create({
     marginTop: 32,
   },
   registerButtonText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     color: '#000000',
   },
@@ -886,7 +886,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
   },
   errorText: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#CF6679',
     textAlign: 'center',
     marginTop: 12,
@@ -899,7 +899,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   retryText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     color: '#FFFFFF',
   },
@@ -916,7 +916,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   adviceTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -932,16 +932,16 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: '#4CAF50',
     textAlign: 'center',
-    lineHeight: 24,
-    fontSize: 12,
+    lineHeight: 25,
+    fontSize: 13,
     fontWeight: '700',
     color: '#000000',
   },
   adviceText: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 15,
     color: '#CCCCCC',
-    lineHeight: 22,
+    lineHeight: 23,
   },
   snapshotContainer: {
     backgroundColor: '#1E1E1E',
@@ -950,7 +950,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   snapshotTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     color: '#FFFFFF',
     marginBottom: 16,
@@ -967,12 +967,12 @@ const styles = StyleSheet.create({
     padding: 14,
   },
   snapshotLabel: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#888888',
     marginBottom: 4,
   },
   snapshotValue: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -982,7 +982,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   assetListTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     color: '#FFFFFF',
     marginBottom: 16,
@@ -1009,17 +1009,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   assetIconText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     color: '#4CAF50',
   },
   assetTicker: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     color: '#FFFFFF',
   },
   assetName: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#888888',
     marginTop: 2,
   },
@@ -1027,12 +1027,12 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   assetValue: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     color: '#FFFFFF',
   },
   assetGain: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '500',
     marginTop: 2,
   },
@@ -1050,7 +1050,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   realEstateTitleText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     color: '#FFFFFF',
     flex: 1,
@@ -1065,7 +1065,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   lockBadgeText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
     color: '#FFD700',
   },
@@ -1075,7 +1075,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   lockedText: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#555555',
     textAlign: 'center',
   },
@@ -1087,14 +1087,14 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   unlockButtonText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     color: '#4CAF50',
   },
   realEstateContent: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#CCCCCC',
-    lineHeight: 22,
+    lineHeight: 23,
   },
   // 면책 문구
   disclaimerBox: {
@@ -1107,17 +1107,17 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.06)',
   },
   disclaimerText: {
-    fontSize: 10,
+    fontSize: 11,
     color: '#555555',
     textAlign: 'center',
-    lineHeight: 16,
+    lineHeight: 17,
   },
   // 공유 섹션
   shareSection: {
     marginBottom: 16,
   },
   shareSectionTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     color: '#FFFFFF',
     marginBottom: 12,
@@ -1138,12 +1138,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   aiLoadingTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     color: '#FFFFFF',
   },
   aiLoadingDesc: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#888888',
     marginTop: 2,
   },

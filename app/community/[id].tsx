@@ -552,7 +552,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   emptyText: {
-    fontSize: 14,
+    fontSize: 15,
   },
   header: {
     flexDirection: 'row',
@@ -563,7 +563,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
   },
   listContent: {
@@ -603,7 +603,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   postDisplayTag: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
   },
   postCategoryBadge: {
@@ -615,15 +615,15 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   postCategoryLabel: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '600',
   },
   postAssetMix: {
-    fontSize: 11,
+    fontSize: 12,
     marginTop: 2,
   },
   postTime: {
-    fontSize: 11,
+    fontSize: 12,
   },
 
   // ── 보유종목 ──
@@ -631,7 +631,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   holdingsLabel: {
-    fontSize: 11,
+    fontSize: 12,
     marginBottom: 6,
     fontWeight: '600',
   },
@@ -655,17 +655,17 @@ const styles = StyleSheet.create({
     borderRadius: 2.5,
   },
   holdingTicker: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
   },
   holdingName: {
-    fontSize: 10,
+    fontSize: 11,
   },
 
   // ── 본문 + 푸터 ──
   postContent: {
-    fontSize: 16,
-    lineHeight: 26,
+    fontSize: 17,
+    lineHeight: 27,
     marginBottom: 16,
   },
   // ── 이미지 갤러리 ──
@@ -699,7 +699,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   postActionText: {
-    fontSize: 13,
+    fontSize: 14,
   },
 
   // ── 댓글 섹션 ──
@@ -709,7 +709,7 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
   },
   commentsTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
   },
   commentsLoading: {
@@ -722,7 +722,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   emptyCommentsText: {
-    fontSize: 13,
+    fontSize: 14,
   },
 
 
@@ -740,7 +740,7 @@ const styles = StyleSheet.create({
   },
   replyModeText: {
     flex: 1,
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
   },
   replyModeCancel: {
@@ -756,7 +756,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 10,
-    fontSize: 14,
+    fontSize: 15,
     maxHeight: 100,
   },
   commentSendButton: {
@@ -777,7 +777,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
   },
   commentLockedText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '500',
   },
 });

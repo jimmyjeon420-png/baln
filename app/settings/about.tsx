@@ -123,15 +123,15 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   appName: {
-    fontSize: 24,
+    fontSize: 25,
     fontWeight: '700',
   },
   appTagline: {
-    fontSize: 14,
+    fontSize: 15,
     marginTop: 4,
   },
   sectionTitle: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.8,
@@ -150,10 +150,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   infoLabel: {
-    fontSize: 15,
+    fontSize: 16,
   },
   infoValue: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '500',
   },
   linkItem: {
@@ -172,10 +172,10 @@ const styles = StyleSheet.create({
   },
   linkLabel: {
     flex: 1,
-    fontSize: 15,
+    fontSize: 16,
   },
   copyright: {
-    fontSize: 12,
+    fontSize: 13,
     textAlign: 'center',
     marginTop: 32,
     marginBottom: 40,

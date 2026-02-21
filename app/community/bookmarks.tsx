@@ -190,7 +190,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
   },
   loadingContainer: {
@@ -229,7 +229,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   displayTag: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
   },
   categoryBadge: {
@@ -238,15 +238,15 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   categoryLabel: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '600',
   },
   timeText: {
-    fontSize: 11,
+    fontSize: 12,
   },
   contentPreview: {
-    fontSize: 14,
-    lineHeight: 22,
+    fontSize: 15,
+    lineHeight: 23,
     marginBottom: 12,
   },
   postFooter: {
@@ -262,7 +262,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   actionText: {
-    fontSize: 12,
+    fontSize: 13,
   },
 
   // 빈 상태
@@ -272,12 +272,12 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   emptyTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
   },
   emptyDesc: {
-    fontSize: 13,
+    fontSize: 14,
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 21,
   },
 });

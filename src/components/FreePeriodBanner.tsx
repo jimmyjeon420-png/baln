@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(76, 175, 80, 0.15)',
   },
   compactText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
     color: '#4CAF50',
     flex: 1,
@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   dDayText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '800',
     color: '#000000',
   },
@@ -131,12 +131,12 @@ const styles = StyleSheet.create({
   },
   fullTitle: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '800',
     color: '#4CAF50',
   },
   fullSubtitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     color: '#CCCCCC',
     marginBottom: 12,
@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   benefitText: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#CCC',
     fontWeight: '500',
   },
@@ -170,9 +170,9 @@ const styles = StyleSheet.create({
   },
   creditHintText: {
     flex: 1,
-    fontSize: 11,
+    fontSize: 12,
     color: '#BB86FC',
     fontWeight: '500',
-    lineHeight: 16,
+    lineHeight: 17,
   },
 });

@@ -197,16 +197,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   displayTag: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
   },
   assetMix: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#888888',
     marginTop: 2,
   },
   timeText: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#666666',
   },
   tagRow: {
@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   categoryLabel: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '600',
   },
 
@@ -251,16 +251,16 @@ const styles = StyleSheet.create({
     borderRadius: 2.5,
   },
   holdingTicker: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
     color: '#AAA',
   },
 
   // ── 본문 + 푸터 ──
   content: {
-    fontSize: 15,
+    fontSize: 16,
     color: '#FFFFFF',
-    lineHeight: 24,
+    lineHeight: 25,
     marginBottom: 12,
   },
   // ── 이미지 갤러리 (썸네일) ──
@@ -294,7 +294,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   likeCount: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#888888',
   },
   commentCount: {

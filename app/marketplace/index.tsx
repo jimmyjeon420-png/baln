@@ -496,7 +496,7 @@ const s = StyleSheet.create({
   },
   headerTitle: {
     color: '#FFF',
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '800',
   },
 
@@ -529,21 +529,21 @@ const s = StyleSheet.create({
     borderRadius: 8,
   },
   heroBadgeText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
   },
   heroHeadline: {
     color: '#FFFFFF',
-    fontSize: 22,
+    fontSize: 23,
     fontWeight: '800',
-    lineHeight: 32,
+    lineHeight: 33,
     letterSpacing: -0.5,
     marginBottom: 8,
   },
   heroDesc: {
     color: '#888',
-    fontSize: 14,
-    lineHeight: 21,
+    fontSize: 15,
+    lineHeight: 22,
     marginBottom: 22,
   },
   heroCta: {
@@ -556,14 +556,14 @@ const s = StyleSheet.create({
   },
   heroCtaText: {
     color: '#FFF',
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
   },
 
   // ── 섹션 타이틀 ──
   sectionTitle: {
     color: '#FFF',
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '800',
     paddingHorizontal: 20,
     marginBottom: 14,
@@ -597,7 +597,7 @@ const s = StyleSheet.create({
   },
   toolBadgeText: {
     color: '#FFF',
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '800',
   },
   toolIconBg: {
@@ -610,15 +610,15 @@ const s = StyleSheet.create({
   },
   toolTitle: {
     color: '#888',
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
     marginBottom: 4,
   },
   toolTagline: {
     color: '#FFF',
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '800',
-    lineHeight: 22,
+    lineHeight: 23,
     marginBottom: 14,
   },
   toolCostRow: {
@@ -629,17 +629,17 @@ const s = StyleSheet.create({
   },
   toolOriginalCost: {
     color: '#555',
-    fontSize: 12,
+    fontSize: 13,
     textDecorationLine: 'line-through',
   },
   toolCost: {
     color: '#CCC',
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
   },
   toolCostUnit: {
     color: '#666',
-    fontSize: 11,
+    fontSize: 12,
   },
 
   // ── 소셜 프루프 ──
@@ -664,7 +664,7 @@ const s = StyleSheet.create({
   },
   socialText: {
     color: '#999',
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '500',
   },
   socialHighlight: {
@@ -700,12 +700,12 @@ const s = StyleSheet.create({
   },
   creditLabel: {
     color: '#888',
-    fontSize: 12,
+    fontSize: 13,
     marginBottom: 2,
   },
   creditBalance: {
     color: '#FFF',
-    fontSize: 22,
+    fontSize: 23,
     fontWeight: '800',
   },
   creditCta: {
@@ -719,7 +719,7 @@ const s = StyleSheet.create({
   },
   creditCtaText: {
     color: '#7C4DFF',
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
   },
 
@@ -736,7 +736,7 @@ const s = StyleSheet.create({
   },
   tierText: {
     color: '#AAA',
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '500',
   },
   tierHighlight: {
@@ -770,12 +770,12 @@ const s = StyleSheet.create({
   },
   historyLabel: {
     color: '#CCC',
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
   historyDate: {
     color: '#555',
-    fontSize: 11,
+    fontSize: 12,
     marginTop: 2,
   },
   historyCostBadge: {
@@ -789,7 +789,7 @@ const s = StyleSheet.create({
   },
   historyCost: {
     color: '#7C4DFF',
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
   },
 
@@ -808,7 +808,7 @@ const s = StyleSheet.create({
     marginBottom: 8,
   },
   shopItemIcon: {
-    fontSize: 28,
+    fontSize: 29,
     marginRight: 12,
   },
   shopItemInfo: {
@@ -816,13 +816,13 @@ const s = StyleSheet.create({
   },
   shopItemName: {
     color: '#FFF',
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     marginBottom: 2,
   },
   shopItemDesc: {
     color: '#6B7280',
-    fontSize: 11,
+    fontSize: 12,
   },
   shopItemPrice: {
     flexDirection: 'row',
@@ -835,7 +835,7 @@ const s = StyleSheet.create({
   },
   shopItemPriceText: {
     color: '#7C4DFF',
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
   },
 
@@ -851,8 +851,8 @@ const s = StyleSheet.create({
   },
   footerNote: {
     color: '#444',
-    fontSize: 10,
+    fontSize: 11,
     textAlign: 'center',
-    lineHeight: 16,
+    lineHeight: 17,
   },
 });

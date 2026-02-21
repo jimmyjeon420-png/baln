@@ -494,7 +494,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   stockName: {
-    fontSize: 24,
+    fontSize: 25,
     fontWeight: '800',
   },
   tickerBadge: {
@@ -503,7 +503,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   tickerText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
   },
   recBadge: {
@@ -512,7 +512,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   recText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
   },
 
@@ -531,12 +531,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   scoreNumber: {
-    fontSize: 28,
+    fontSize: 29,
     fontWeight: '900',
-    lineHeight: 32,
+    lineHeight: 33,
   },
   scoreUnit: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '500',
     marginTop: -2,
   },
@@ -544,11 +544,11 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   scoreLabelMain: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
   },
   scoreLabelSub: {
-    fontSize: 13,
+    fontSize: 14,
   },
 
   // ── 시가총액/PER/PBR ──
@@ -564,11 +564,11 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   metricLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '500',
   },
   metricValue: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
   },
 
@@ -579,12 +579,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
     marginBottom: 4,
   },
   sectionScore: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     marginBottom: 12,
   },
@@ -609,8 +609,8 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   highlightText: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 15,
+    lineHeight: 21,
     flex: 1,
   },
 
@@ -626,7 +626,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   signalHeaderCell: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
   },
   signalRow: {
@@ -639,7 +639,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0,
   },
   signalCell: {
-    fontSize: 13,
+    fontSize: 14,
   },
   signalCol1: { flex: 2 },
   signalCol2: { flex: 1.5, fontWeight: '600' },
@@ -659,18 +659,18 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   sourcesTitle: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
   sourceRow: {
     marginBottom: 6,
   },
   sourceName: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
   },
   sourceDetail: {
-    fontSize: 11,
+    fontSize: 12,
     marginTop: 1,
   },
 
@@ -682,8 +682,8 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
   },
   disclaimerText: {
-    fontSize: 11,
-    lineHeight: 16,
+    fontSize: 12,
+    lineHeight: 17,
     textAlign: 'center',
   },
 });

@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '800',
     color: '#FFFFFF',
   },
@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#666666',
   },
 
@@ -207,17 +207,17 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   emptyTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     color: '#FFFFFF',
     marginBottom: 8,
     textAlign: 'center',
   },
   emptyDescription: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#888888',
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 21,
     maxWidth: 280,
   },
 
@@ -253,13 +253,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   statValue: {
-    fontSize: 22,
+    fontSize: 23,
     fontWeight: '800',
     color: '#FFFFFF',
     marginBottom: 2,
   },
   statLabel: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#888888',
     fontWeight: '600',
   },
@@ -282,13 +282,13 @@ const styles = StyleSheet.create({
     borderColor: '#4CAF5040',
   },
   encouragementEmoji: {
-    fontSize: 24,
+    fontSize: 25,
   },
   encouragementText: {
     flex: 1,
-    fontSize: 13,
+    fontSize: 14,
     color: '#CCCCCC',
-    lineHeight: 19,
+    lineHeight: 20,
   },
 
   // 복기 카드 목록
@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   reviewListTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     color: '#AAAAAA',
     marginBottom: 12,
@@ -313,8 +313,8 @@ const styles = StyleSheet.create({
   },
   tipText: {
     flex: 1,
-    fontSize: 12,
+    fontSize: 13,
     color: '#888888',
-    lineHeight: 18,
+    lineHeight: 19,
   },
 });

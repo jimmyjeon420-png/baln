@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   loadingText: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#888888',
   },
 
@@ -227,12 +227,12 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   emptyTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
     color: '#FFFFFF',
   },
   emptySubtitle: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#888888',
     marginTop: 4,
   },
@@ -251,11 +251,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   countdownLabel: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#888888',
   },
   countdownTimer: {
-    fontSize: 28,
+    fontSize: 29,
     fontWeight: '800',
     color: '#4CAF50',
     fontVariant: ['tabular-nums'],
@@ -274,12 +274,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statsIcon: {
-    fontSize: 16,
+    fontSize: 17,
     width: 24,
     textAlign: 'center',
   },
   statsText: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#DDDDDD',
     marginLeft: 8,
   },
@@ -291,15 +291,15 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   tipTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     color: '#4CAF50',
     marginBottom: 8,
   },
   tipText: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#AAAAAA',
-    lineHeight: 20,
+    lineHeight: 21,
   },
 
   // 면책
@@ -310,9 +310,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#1A1A1A',
   },
   disclaimerText: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#666666',
     textAlign: 'center',
-    lineHeight: 16,
+    lineHeight: 17,
   },
 });

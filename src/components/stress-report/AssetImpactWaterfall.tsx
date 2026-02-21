@@ -158,7 +158,7 @@ const s = StyleSheet.create({
     padding: 20,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     marginBottom: 16,
   },
@@ -183,26 +183,26 @@ const s = StyleSheet.create({
     borderRadius: 6,
   },
   tickerText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
   },
   assetInfo: {
     flex: 1,
   },
   assetName: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     marginBottom: 2,
   },
   assetPrice: {
-    fontSize: 12,
+    fontSize: 13,
   },
   assetRight: {
     alignItems: 'flex-end',
     gap: 4,
   },
   changePercent: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
   },
   levelBadge: {
@@ -211,7 +211,7 @@ const s = StyleSheet.create({
     borderRadius: 4,
   },
   levelText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '600',
   },
   expandButton: {
@@ -223,7 +223,7 @@ const s = StyleSheet.create({
     marginTop: 4,
   },
   expandText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
 });

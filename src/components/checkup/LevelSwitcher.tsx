@@ -160,10 +160,10 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginBottom: 12,
   },
   levelEmoji: {
-    fontSize: 18,
+    fontSize: 19,
   },
   levelLabel: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
   },
   buttons: {
@@ -185,7 +185,7 @@ const switchStyles = StyleSheet.create({
     borderWidth: 1,
   },
   switchLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
   sublabelBadge: {
@@ -194,7 +194,7 @@ const switchStyles = StyleSheet.create({
     borderRadius: 4,
   },
   sublabelText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
   },
 });

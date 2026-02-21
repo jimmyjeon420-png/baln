@@ -245,7 +245,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   lockedText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
   },
   leftBadges: {
@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   tierRequirementText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
   },
   fadedBadge: {
@@ -291,7 +291,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   categoryText: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#4CAF50',
     fontWeight: '600',
   },
@@ -302,7 +302,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   fullBadgeText: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#CF6679',
     fontWeight: '600',
   },
@@ -313,16 +313,16 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   cancelledBadgeText: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#888888',
     fontWeight: '600',
   },
   title: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '700',
     color: '#FFFFFF',
     marginBottom: 12,
-    lineHeight: 24,
+    lineHeight: 25,
   },
   hostRow: {
     flexDirection: 'row',
@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   hostName: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     color: '#FFFFFF',
   },
@@ -356,12 +356,12 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   verifiedText: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#4CAF50',
     fontWeight: '500',
   },
   hostAssets: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
     marginTop: 2,
   },
@@ -380,7 +380,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   infoText: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#B0B0B0',
   },
   bottomRow: {
@@ -401,11 +401,11 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   feeLabel: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#888888',
   },
   feeValue: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -413,7 +413,7 @@ const styles = StyleSheet.create({
     color: '#4CAF50',
   },
   feeDetail: {
-    fontSize: 10,
+    fontSize: 11,
     color: '#666666',
     marginTop: 2,
   },
@@ -423,7 +423,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   capacityText: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#888888',
   },
   capacityCurrent: {

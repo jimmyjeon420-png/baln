@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   title: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
   },
   closeButton: {
@@ -241,11 +241,11 @@ const styles = StyleSheet.create({
   },
   infoText: {
     flex: 1,
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 14,
+    lineHeight: 19,
   },
   label: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
   },
   reasonGrid: {
@@ -264,19 +264,19 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   reasonLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     textAlign: 'center',
   },
   descriptionInput: {
     borderRadius: 12,
     padding: 14,
-    fontSize: 14,
+    fontSize: 15,
     minHeight: 100,
-    lineHeight: 20,
+    lineHeight: 21,
   },
   charCount: {
-    fontSize: 12,
+    fontSize: 13,
     textAlign: 'right',
   },
   footer: {
@@ -290,7 +290,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   submitButtonText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     color: '#000000',
   },

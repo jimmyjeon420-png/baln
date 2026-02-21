@@ -373,7 +373,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
   },
 
@@ -398,7 +398,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   chipLabel: {
-    fontSize: 13,
+    fontSize: 14,
   },
 
   // ── 정렬 버튼 ──
@@ -416,7 +416,7 @@ const styles = StyleSheet.create({
   },
   sortButtonActive: {},
   sortLabel: {
-    fontSize: 13,
+    fontSize: 14,
   },
 
   // ── 리스트 ──
@@ -447,7 +447,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   },
   emptyText: {
-    fontSize: 14,
+    fontSize: 15,
   },
   emptyButton: {
     marginTop: 8,
@@ -457,7 +457,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   emptyButtonText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     color: '#000000',
   },
@@ -471,17 +471,17 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   comingSoonTitle: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '700',
     marginTop: 8,
   },
   comingSoonDescription: {
-    fontSize: 15,
+    fontSize: 16,
     textAlign: 'center',
-    lineHeight: 22,
+    lineHeight: 23,
   },
   comingSoonHint: {
-    fontSize: 13,
+    fontSize: 14,
     textAlign: 'center',
     marginTop: 4,
   },
@@ -493,7 +493,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   comingSoonButtonText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
     color: '#000000',
   },
@@ -516,13 +516,13 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   lockedTitle: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '700',
   },
   lockedDescription: {
-    fontSize: 14,
+    fontSize: 15,
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 21,
   },
   lockedAssetBox: {
     borderRadius: 16,
@@ -532,14 +532,14 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   lockedAssetLabel: {
-    fontSize: 12,
+    fontSize: 13,
   },
   lockedAssetValue: {
-    fontSize: 24,
+    fontSize: 25,
     fontWeight: '700',
   },
   lockedShortfall: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#FFC107',
   },
   lockedButton: {
@@ -550,7 +550,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   lockedButtonText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
     color: '#000000',
   },

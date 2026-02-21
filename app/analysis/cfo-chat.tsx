@@ -670,7 +670,7 @@ export default function CFOChatScreen() {
           {item.isError && (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 }}>
               <Ionicons name="warning-outline" size={14} color="#FF5252" />
-              <Text style={{ color: '#FF5252', fontSize: 12, fontWeight: '600' }}>오류 발생</Text>
+              <Text style={{ color: '#FF5252', fontSize: 13, fontWeight: '600' }}>오류 발생</Text>
             </View>
           )}
           <Text style={[s.messageText, { color: isUser ? '#FFFFFF' : colors.textPrimary }]}>
@@ -684,7 +684,7 @@ export default function CFOChatScreen() {
               activeOpacity={0.7}
             >
               <Ionicons name="refresh" size={14} color="#FFFFFF" />
-              <Text style={[s.retryButtonText, { fontSize: 12 }]}>다시 시도</Text>
+              <Text style={[s.retryButtonText, { fontSize: 13 }]}>다시 시도</Text>
             </TouchableOpacity>
           )}
           <Text
@@ -707,7 +707,7 @@ export default function CFOChatScreen() {
         rightElement={
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
             <Ionicons name="diamond" size={14} color="#7C4DFF" />
-            <Text style={{ color: '#7C4DFF', fontSize: 14, fontWeight: '600' }}>
+            <Text style={{ color: '#7C4DFF', fontSize: 15, fontWeight: '600' }}>
               {credits?.balance ?? 0}
             </Text>
           </View>
@@ -837,12 +837,12 @@ const s = StyleSheet.create({
     padding: 12,
   },
   messageText: {
-    fontSize: 15,
-    lineHeight: 22,
+    fontSize: 16,
+    lineHeight: 23,
     marginBottom: 4,
   },
   timestamp: {
-    fontSize: 11,
+    fontSize: 12,
     textAlign: 'right',
   },
   loadingContainer: {
@@ -853,14 +853,14 @@ const s = StyleSheet.create({
     paddingVertical: 8,
   },
   loadingText: {
-    fontSize: 13,
+    fontSize: 14,
   },
   quickQuestionsContainer: {
     paddingHorizontal: 16,
     paddingBottom: 8,
   },
   quickQuestionsTitle: {
-    fontSize: 13,
+    fontSize: 14,
     marginBottom: 8,
   },
   quickQuestions: {
@@ -874,7 +874,7 @@ const s = StyleSheet.create({
     borderRadius: 16,
   },
   quickQuestionText: {
-    fontSize: 13,
+    fontSize: 14,
   },
   inputContainer: {
     flexDirection: 'row',
@@ -886,7 +886,7 @@ const s = StyleSheet.create({
   },
   input: {
     flex: 1,
-    fontSize: 15,
+    fontSize: 16,
     maxHeight: 100,
     paddingVertical: 8,
   },
@@ -904,13 +904,13 @@ const s = StyleSheet.create({
     borderLeftWidth: 4,
   },
   investorName: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     marginBottom: 6,
   },
   debateText: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 15,
+    lineHeight: 21,
   },
   summaryCard: {
     borderRadius: 12,
@@ -919,13 +919,13 @@ const s = StyleSheet.create({
     borderWidth: 2,
   },
   summaryTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     marginBottom: 8,
   },
   summaryText: {
-    fontSize: 15,
-    lineHeight: 22,
+    fontSize: 16,
+    lineHeight: 23,
     fontWeight: '500',
   },
   shareBrandRow: {
@@ -936,13 +936,13 @@ const s = StyleSheet.create({
     paddingLeft: 4,
   },
   shareBrandText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '800',
     color: '#FFFFFF',
     letterSpacing: 0.5,
   },
   shareBrandSub: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#AAAAAA',
     fontWeight: '500',
   },
@@ -959,16 +959,16 @@ const s = StyleSheet.create({
     borderColor: 'rgba(124, 77, 255, 0.3)',
   },
   captureQuestionLabel: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '800',
     color: '#7C4DFF',
   },
   captureQuestionText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     color: '#FFFFFF',
     flex: 1,
-    lineHeight: 20,
+    lineHeight: 21,
   },
   captureCTA: {
     alignItems: 'center',
@@ -976,7 +976,7 @@ const s = StyleSheet.create({
     paddingBottom: 4,
   },
   captureCTAText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
     color: '#AAAAAA',
     letterSpacing: 0.3,
@@ -993,7 +993,7 @@ const s = StyleSheet.create({
     borderRadius: 16,
   },
   shareDebateText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
     color: '#4CAF50',
   },
@@ -1004,7 +1004,7 @@ const s = StyleSheet.create({
     borderRadius: 8,
   },
   shareRewardBadgeText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '800',
     color: '#1A1A1A',
   },
@@ -1018,7 +1018,7 @@ const s = StyleSheet.create({
     backgroundColor: 'rgba(76, 175, 80, 0.15)',
   },
   rewardToastText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
     color: '#4CAF50',
   },
@@ -1035,9 +1035,9 @@ const s = StyleSheet.create({
   },
   disclaimerText: {
     flex: 1,
-    fontSize: 11,
+    fontSize: 12,
     color: '#888888',
-    lineHeight: 16,
+    lineHeight: 17,
   },
   // ============================================================================
   // 에러 UI 스타일
@@ -1056,7 +1056,7 @@ const s = StyleSheet.create({
   },
   errorBannerText: {
     flex: 1,
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
     color: '#FF5252',
   },
@@ -1072,7 +1072,7 @@ const s = StyleSheet.create({
     borderRadius: 20,
   },
   retryButtonText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -1098,7 +1098,7 @@ const cfoShareStyles = StyleSheet.create({
     borderBottomColor: 'rgba(255, 255, 255, 0.06)',
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -1143,19 +1143,19 @@ const cfoShareStyles = StyleSheet.create({
     alignItems: 'baseline',
   },
   logoBaln: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '900',
     color: '#FFFFFF',
     letterSpacing: 1,
   },
   logoDot: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '900',
     color: '#4CAF50',
     letterSpacing: 1,
   },
   logoSub: {
-    fontSize: 8,
+    fontSize: 9,
     color: '#666666',
     letterSpacing: 2,
     marginTop: 2,
@@ -1177,16 +1177,16 @@ const cfoShareStyles = StyleSheet.create({
     zIndex: 10,
   },
   questionLabel: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '800',
     color: '#7C4DFF',
   },
   questionText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     color: '#FFFFFF',
     flex: 1,
-    lineHeight: 19,
+    lineHeight: 20,
   },
 
   // ─── 구분선 ───
@@ -1206,14 +1206,14 @@ const cfoShareStyles = StyleSheet.create({
     zIndex: 10,
   },
   investorName: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
     marginBottom: 4,
   },
   investorText: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#CCCCCC',
-    lineHeight: 16,
+    lineHeight: 17,
   },
 
   // ─── 워렌의 한마디 ───
@@ -1228,15 +1228,15 @@ const cfoShareStyles = StyleSheet.create({
     zIndex: 10,
   },
   summaryLabel: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
     color: '#FBC02D',
     marginBottom: 6,
   },
   summaryText: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#EEEEEE',
-    lineHeight: 18,
+    lineHeight: 19,
     fontWeight: '500',
   },
 
@@ -1258,7 +1258,7 @@ const cfoShareStyles = StyleSheet.create({
     borderColor: 'rgba(124, 77, 255, 0.3)',
   },
   ctaText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
     color: '#7C4DFF',
     marginLeft: 6,
@@ -1279,13 +1279,13 @@ const cfoShareStyles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.06)',
   },
   watermarkBaln: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
     color: '#555555',
     letterSpacing: 1,
   },
   watermarkDot: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
     color: '#3A7D3E',
     letterSpacing: 1,
@@ -1305,7 +1305,7 @@ const cfoShareStyles = StyleSheet.create({
     borderRadius: 20,
   },
   rewardToastText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
     color: '#4CAF50',
   },
@@ -1325,7 +1325,7 @@ const cfoShareStyles = StyleSheet.create({
     borderRadius: 12,
   },
   shareButtonText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -1336,7 +1336,7 @@ const cfoShareStyles = StyleSheet.create({
     borderRadius: 8,
   },
   rewardHintText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '800',
     color: '#1A1A1A',
   },

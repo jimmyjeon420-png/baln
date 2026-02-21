@@ -280,7 +280,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   title: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
   },
   legendRow: {
@@ -298,7 +298,7 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   legendText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '500',
   },
 
@@ -324,7 +324,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   growthText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
   },
 
@@ -347,7 +347,7 @@ const styles = StyleSheet.create({
 
   // ── 라벨 ──
   quarterLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '500',
     marginTop: 8,
   },
@@ -382,18 +382,18 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   summaryLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '500',
   },
   summaryValue: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '800',
   },
 
   // ── 힌트 ──
   hint: {
     textAlign: 'center',
-    fontSize: 11,
+    fontSize: 12,
     marginTop: 12,
   },
 });

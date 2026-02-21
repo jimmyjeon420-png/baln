@@ -126,7 +126,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     marginBottom: 20,
     alignSelf: 'flex-start',
@@ -143,11 +143,11 @@ const s = StyleSheet.create({
     alignItems: 'center',
   },
   gaugeNumber: {
-    fontSize: 32,
+    fontSize: 33,
     fontWeight: '800',
   },
   gaugeLabel: {
-    fontSize: 13,
+    fontSize: 14,
     marginTop: -2,
   },
   detailRow: {
@@ -165,12 +165,12 @@ const s = StyleSheet.create({
     height: 36,
   },
   detailValue: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
     marginBottom: 2,
   },
   detailLabel: {
-    fontSize: 12,
+    fontSize: 13,
   },
   statusPill: {
     borderRadius: 12,
@@ -180,7 +180,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
   },
   statusText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     textAlign: 'center',
   },

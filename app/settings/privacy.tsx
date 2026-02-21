@@ -319,11 +319,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   zeroBannerTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
   },
   zeroBannerSubtitle: {
-    fontSize: 13,
+    fontSize: 14,
     marginTop: 4,
   },
   policiesContainer: {
@@ -347,13 +347,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   policyTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
     marginBottom: 6,
   },
   policyDescription: {
-    fontSize: 13,
-    lineHeight: 20,
+    fontSize: 14,
+    lineHeight: 21,
   },
   tableContainer: {
     borderRadius: 12,
@@ -361,7 +361,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   tableTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     marginBottom: 16,
   },
@@ -371,7 +371,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   tableHeaderText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
   },
   tableRow: {
@@ -380,7 +380,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   tableCell: {
-    fontSize: 12,
+    fontSize: 13,
   },
   contactContainer: {
     borderRadius: 12,
@@ -388,20 +388,20 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   contactTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
     marginBottom: 12,
   },
   contactText: {
-    fontSize: 13,
+    fontSize: 14,
     marginBottom: 6,
   },
   aiDecisionText: {
-    fontSize: 13,
-    lineHeight: 21,
+    fontSize: 14,
+    lineHeight: 22,
   },
   lastUpdate: {
-    fontSize: 12,
+    fontSize: 13,
     textAlign: 'center',
   },
 });

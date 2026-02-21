@@ -209,7 +209,7 @@ const styles = StyleSheet.create({
   },
   title: {
     color: '#FFF',
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
     marginTop: 8,
   },
@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
   },
   costLabel: {
     color: '#888',
-    fontSize: 12,
+    fontSize: 13,
     marginBottom: 4,
   },
   costRow: {
@@ -232,12 +232,12 @@ const styles = StyleSheet.create({
   },
   originalCost: {
     color: '#666',
-    fontSize: 16,
+    fontSize: 17,
     textDecorationLine: 'line-through',
   },
   discountedCost: {
     color: '#FFF',
-    fontSize: 24,
+    fontSize: 25,
     fontWeight: '700',
   },
   discountBadge: {
@@ -248,12 +248,12 @@ const styles = StyleSheet.create({
   },
   discountText: {
     color: '#FFF',
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
   },
   tierNote: {
     color: '#4CAF50',
-    fontSize: 11,
+    fontSize: 12,
     marginTop: 4,
   },
   balanceContainer: {
@@ -265,11 +265,11 @@ const styles = StyleSheet.create({
   },
   balanceLabel: {
     color: '#888',
-    fontSize: 14,
+    fontSize: 15,
   },
   balanceValue: {
     color: '#FFF',
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
   },
   insufficientBalance: {
@@ -277,7 +277,7 @@ const styles = StyleSheet.create({
   },
   shortageText: {
     color: '#CF6679',
-    fontSize: 13,
+    fontSize: 14,
     textAlign: 'center',
     marginBottom: 8,
   },
@@ -292,9 +292,9 @@ const styles = StyleSheet.create({
   },
   earnHintText: {
     color: '#B39DDB',
-    fontSize: 12,
+    fontSize: 13,
     textAlign: 'center',
-    lineHeight: 18,
+    lineHeight: 19,
   },
   buttonRow: {
     flexDirection: 'row',
@@ -309,7 +309,7 @@ const styles = StyleSheet.create({
   },
   cancelButtonText: {
     color: '#999',
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
   },
   confirmButton: {
@@ -324,7 +324,7 @@ const styles = StyleSheet.create({
   },
   confirmButtonText: {
     color: '#FFF',
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
   },
   chargeButton: {
@@ -339,7 +339,7 @@ const styles = StyleSheet.create({
   },
   chargeButtonText: {
     color: '#FFF',
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
   },
   disabledButton: {
@@ -355,7 +355,7 @@ const styles = StyleSheet.create({
   },
   subscriptionHintText: {
     color: '#4CAF50',
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
 });

@@ -97,10 +97,10 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   iconText: {
-    fontSize: 22,
+    fontSize: 23,
   },
   label: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
   },
 });

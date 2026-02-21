@@ -411,7 +411,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   title: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
   },
   levelBadge: {
@@ -420,7 +420,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   levelText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
   },
   gaugeContainer: {
@@ -438,7 +438,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   indexLabel: {
-    fontSize: 14,
+    fontSize: 15,
     marginTop: -4,
   },
   statusContainer: {
@@ -449,7 +449,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   statusMessage: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '500',
   },
   guidelinesContainer: {
@@ -458,7 +458,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
   },
   guidelinesTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     marginBottom: 12,
   },
@@ -473,11 +473,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   guidelineTicker: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
   guidelineName: {
-    fontSize: 12,
+    fontSize: 13,
     marginTop: 2,
   },
   guidelineRight: {
@@ -486,7 +486,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   guidelineLoss: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
   actionBadge: {
@@ -495,7 +495,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   actionText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
   },
   // 서브스코어 스타일
@@ -505,7 +505,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
   },
   subScoresTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     marginBottom: 14,
   },
@@ -518,15 +518,15 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   subScoreIcon: {
-    fontSize: 12,
+    fontSize: 13,
     marginRight: 6,
   },
   subScoreLabel: {
     flex: 1,
-    fontSize: 12,
+    fontSize: 13,
   },
   subScoreValue: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
     width: 28,
     textAlign: 'right',
@@ -551,7 +551,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   guideToggleText: {
-    fontSize: 12,
+    fontSize: 13,
   },
   guideContainer: {
     marginTop: 12,
@@ -565,13 +565,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   guideSectionTitle: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
     marginBottom: 8,
   },
   guideText: {
-    fontSize: 12,
-    lineHeight: 20,
+    fontSize: 13,
+    lineHeight: 21,
   },
   guideBold: {
     fontWeight: '700',
@@ -590,8 +590,8 @@ const styles = StyleSheet.create({
   },
   guideScoreText: {
     flex: 1,
-    fontSize: 12,
-    lineHeight: 18,
+    fontSize: 13,
+    lineHeight: 19,
   },
   guideItemRow: {
     flexDirection: 'row',
@@ -599,28 +599,28 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   guideItemIcon: {
-    fontSize: 14,
+    fontSize: 15,
     marginTop: 1,
   },
   guideItemContent: {
     flex: 1,
   },
   guideItemLabel: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
     marginBottom: 2,
   },
   guideItemDesc: {
-    fontSize: 11,
-    lineHeight: 17,
+    fontSize: 12,
+    lineHeight: 18,
   },
   guideSource: {
-    fontSize: 12,
+    fontSize: 13,
     fontStyle: 'italic',
   },
   guideSourceItem: {
-    fontSize: 11,
-    lineHeight: 18,
+    fontSize: 12,
+    lineHeight: 19,
     marginBottom: 4,
   },
   // 또래 비교 넛지 스타일
@@ -638,10 +638,10 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   peerLabel: {
-    fontSize: 12,
+    fontSize: 13,
   },
   peerAvgScore: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
   },
   peerDiffBadge: {
@@ -653,10 +653,10 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   peerDiffText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
   },
   peerSampleText: {
-    fontSize: 10,
+    fontSize: 11,
   },
 });

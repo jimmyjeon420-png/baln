@@ -210,8 +210,8 @@ const s = StyleSheet.create({
   container: { flex: 1 },
   scroll: { padding: 16, paddingBottom: 40 },
   header: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 20 },
-  headerTitle: { fontSize: 20, fontWeight: '700' },
-  headerSubtitle: { fontSize: 12, marginTop: 2 },
+  headerTitle: { fontSize: 21, fontWeight: '700' },
+  headerSubtitle: { fontSize: 13, marginTop: 2 },
 
   // 기간 선택
   periodSelector: { flexDirection: 'row', gap: 8, marginBottom: 16 },
@@ -223,7 +223,7 @@ const s = StyleSheet.create({
     borderWidth: 1,
   },
   periodButtonActive: { backgroundColor: 'rgba(76,175,80,0.1)', borderColor: '#4CAF50' },
-  periodButtonText: { fontSize: 14, fontWeight: '600' },
+  periodButtonText: { fontSize: 15, fontWeight: '600' },
   periodButtonTextActive: { color: '#4CAF50' },
 
   // 전체 통계
@@ -233,20 +233,20 @@ const s = StyleSheet.create({
     marginBottom: 20,
     borderWidth: 1,
   },
-  statsTitle: { fontSize: 15, fontWeight: '700', marginBottom: 14 },
+  statsTitle: { fontSize: 16, fontWeight: '700', marginBottom: 14 },
   statsGrid: { flexDirection: 'row', marginBottom: 16 },
   statItem: { flex: 1, alignItems: 'center' },
   statDivider: { width: 1 },
-  statValue: { fontSize: 20, fontWeight: '800', marginBottom: 4 },
-  statLabel: { fontSize: 11 },
+  statValue: { fontSize: 21, fontWeight: '800', marginBottom: 4 },
+  statLabel: { fontSize: 12 },
   executionRateRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
-  executionRateLabel: { fontSize: 12, width: 50 },
+  executionRateLabel: { fontSize: 13, width: 50 },
   executionRateBar: { flex: 1, height: 8, borderRadius: 4, overflow: 'hidden' },
   executionRateFill: { height: '100%', backgroundColor: '#4CAF50', borderRadius: 4 },
-  executionRateValue: { fontSize: 13, fontWeight: '700', color: '#4CAF50', width: 40, textAlign: 'right' },
+  executionRateValue: { fontSize: 14, fontWeight: '700', color: '#4CAF50', width: 40, textAlign: 'right' },
   resultRow: { flexDirection: 'row', justifyContent: 'center', gap: 20, paddingTop: 12, borderTopWidth: 1 },
   resultItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  resultText: { fontSize: 12, fontWeight: '600' },
+  resultText: { fontSize: 13, fontWeight: '600' },
 
   // 히스토리 카드
   card: {
@@ -262,9 +262,9 @@ const s = StyleSheet.create({
     borderWidth: 1,
   },
   historyHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  historyDate: { fontSize: 15, fontWeight: '700' },
+  historyDate: { fontSize: 16, fontWeight: '700' },
   executedBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(76,175,80,0.1)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
-  executedBadgeText: { fontSize: 11, color: '#4CAF50', fontWeight: '600' },
+  executedBadgeText: { fontSize: 12, color: '#4CAF50', fontWeight: '600' },
   prescriptionSummary: {
     backgroundColor: 'rgba(255,255,255,0.03)',
     borderRadius: 8,
@@ -274,9 +274,9 @@ const s = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
-  prescriptionLabel: { fontSize: 12 },
-  prescriptionValue: { fontSize: 12, fontWeight: '600', flex: 1 },
-  prescriptionRate: { fontSize: 11, color: '#4CAF50', fontWeight: '600' },
+  prescriptionLabel: { fontSize: 13 },
+  prescriptionValue: { fontSize: 13, fontWeight: '600', flex: 1 },
+  prescriptionRate: { fontSize: 12, color: '#4CAF50', fontWeight: '600' },
   executionsList: { gap: 8 },
   executionItem: {
     flexDirection: 'row',
@@ -286,12 +286,12 @@ const s = StyleSheet.create({
     gap: 10,
   },
   actionBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
-  actionBadgeText: { fontSize: 11, fontWeight: '800' },
+  actionBadgeText: { fontSize: 12, fontWeight: '800' },
   executionInfo: { flex: 1 },
-  executionTicker: { fontSize: 13, fontWeight: '700', marginBottom: 2 },
-  executionDetail: { fontSize: 11 },
+  executionTicker: { fontSize: 14, fontWeight: '700', marginBottom: 2 },
+  executionDetail: { fontSize: 12 },
   resultBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-  resultBadgeText: { fontSize: 12, fontWeight: '700' },
+  resultBadgeText: { fontSize: 13, fontWeight: '700' },
   noExecutionBanner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -301,12 +301,12 @@ const s = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 8,
   },
-  noExecutionText: { fontSize: 11 },
+  noExecutionText: { fontSize: 12 },
 
   // 빈 상태
   emptyContainer: { alignItems: 'center', paddingVertical: 60 },
-  emptyTitle: { fontSize: 16, fontWeight: '700', marginTop: 16, marginBottom: 6 },
-  emptyDesc: { fontSize: 13, textAlign: 'center' },
+  emptyTitle: { fontSize: 17, fontWeight: '700', marginTop: 16, marginBottom: 6 },
+  emptyDesc: { fontSize: 14, textAlign: 'center' },
 
   // 안내
   infoBox: {
@@ -320,5 +320,5 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(100,181,246,0.1)',
   },
-  infoText: { flex: 1, fontSize: 11, color: '#64B5F6', lineHeight: 16 },
+  infoText: { flex: 1, fontSize: 12, color: '#64B5F6', lineHeight: 17 },
 });

@@ -125,7 +125,7 @@ const MarketDriversList: React.FC<MarketDriversListProps> = ({
             {
               color: COLORS.textSecondary,
               marginTop: SIZES.md,
-              lineHeight: 20,
+              lineHeight: 21,
             },
           ]}
         >

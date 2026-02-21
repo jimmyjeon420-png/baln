@@ -106,14 +106,14 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   label: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     marginBottom: 8,
   },
   input: {
     borderRadius: 12,
     padding: 16,
-    fontSize: 16,
+    fontSize: 17,
     borderWidth: 1,
   },
   readOnlyInput: {
@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   readOnlyText: {
-    fontSize: 16,
+    fontSize: 17,
   },
   saveButton: {
     borderRadius: 12,
@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   saveButtonText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
   },
   divider: {
@@ -151,11 +151,11 @@ const styles = StyleSheet.create({
   },
   deleteAccountText: {
     flex: 1,
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
   },
   deleteAccountHint: {
-    fontSize: 12,
+    fontSize: 13,
     marginTop: 8,
     marginLeft: 4,
   },

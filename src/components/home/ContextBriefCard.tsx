@@ -897,7 +897,7 @@ const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
     justifyContent: 'space-between',
   },
   cardLogo: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     color: COLORS.textSecondary,
     letterSpacing: 1,
@@ -929,12 +929,12 @@ const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
     borderRadius: 4,
   },
   sentimentLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
     letterSpacing: 0.5,
   },
   dateText: {
-    fontSize: 13,
+    fontSize: 14,
     color: COLORS.textTertiary,
   },
   freeTrialInline: {
@@ -945,7 +945,7 @@ const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
     marginLeft: 2,
   },
   freeTrialInlineText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -955,7 +955,7 @@ const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
     gap: 3,
   },
   updateTimeText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '500',
     color: COLORS.textTertiary,
   },
@@ -965,23 +965,23 @@ const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
     marginBottom: 8,
   },
   headlineText: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '700',
     color: COLORS.textPrimary,
-    lineHeight: 24,
+    lineHeight: 25,
     marginBottom: 4,
   },
   mechanismSummary: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '400',
     color: COLORS.textSecondary,
-    lineHeight: 18,
+    lineHeight: 19,
   },
   expandToggleButton: {
     paddingVertical: 6,
   },
   expandToggle: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
     color: COLORS.primary,
   },
@@ -1039,23 +1039,23 @@ const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
     justifyContent: 'center',
   },
   layerNumText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '800',
     color: '#FFFFFF',
   },
 
   // 레이어 제목
   layerTitle: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     color: COLORS.textPrimary,
-    lineHeight: 17,
+    lineHeight: 18,
   },
   layerSubtitle: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '400',
     color: COLORS.textTertiary,
-    lineHeight: 14,
+    lineHeight: 15,
     letterSpacing: 0.3,
   },
 
@@ -1070,9 +1070,9 @@ const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
 
   // 레이어 본문 텍스트
   layerBodyText: {
-    fontSize: 13,
+    fontSize: 14,
     color: COLORS.textSecondary,
-    lineHeight: 20,
+    lineHeight: 21,
   },
 
   // ── 프리미엄 잠금 ──
@@ -1086,7 +1086,7 @@ const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
     borderRadius: 10,
   },
   premiumBadgeText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
     color: COLORS.premium.gold,
     letterSpacing: 0.5,
@@ -1101,9 +1101,9 @@ const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
     marginLeft: 22,
   },
   lockedBlurText: {
-    fontSize: 12,
+    fontSize: 13,
     color: COLORS.textSecondary,
-    lineHeight: 18,
+    lineHeight: 19,
   },
   lockedCTA: {
     flexDirection: 'row',
@@ -1116,13 +1116,13 @@ const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
     marginLeft: 22,
   },
   lockedCTAText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
     color: COLORS.premium.gold,
     flex: 1,
   },
   lockedCTAPrice: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '500',
     color: COLORS.textTertiary,
   },
@@ -1142,9 +1142,9 @@ const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
     borderRadius: 4,
   },
   chainStepText: {
-    fontSize: 13,
+    fontSize: 14,
     color: COLORS.textSecondary,
-    lineHeight: 18,
+    lineHeight: 19,
     flex: 1,
   },
   chainStepFirst: {
@@ -1182,12 +1182,12 @@ const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
     minWidth: 90,
   },
   impactBigNumber: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '800',
-    lineHeight: 26,
+    lineHeight: 27,
   },
   impactBigLabel: {
-    fontSize: 11,
+    fontSize: 12,
     color: COLORS.textTertiary,
     marginTop: 1,
     fontWeight: '500',
@@ -1202,14 +1202,14 @@ const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
     gap: 6,
   },
   impactMetaText: {
-    fontSize: 12,
+    fontSize: 13,
     color: COLORS.textSecondary,
-    lineHeight: 16,
+    lineHeight: 17,
   },
   impactMessage: {
-    fontSize: 12,
+    fontSize: 13,
     color: COLORS.textSecondary,
-    lineHeight: 18,
+    lineHeight: 19,
     backgroundColor: COLORS.surfaceLight,
     paddingVertical: 6,
     paddingHorizontal: 8,
@@ -1224,16 +1224,16 @@ const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
     gap: 12,
   },
   emptyText: {
-    fontSize: 16,
+    fontSize: 17,
     color: COLORS.textSecondary,
     fontWeight: '500',
   },
   emptySubtext: {
-    fontSize: 13,
+    fontSize: 14,
     color: COLORS.textTertiary,
   },
   swipeHint: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '500',
     color: COLORS.textTertiary,
     textAlign: 'center',
@@ -1266,7 +1266,7 @@ const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
     gap: 8,
   },
   freeTrialText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     color: COLORS.primary,
     flex: 1,
@@ -1278,7 +1278,7 @@ const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
     paddingHorizontal: 10,
   },
   freeTrialDday: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
     color: '#FFFFFF',
   },

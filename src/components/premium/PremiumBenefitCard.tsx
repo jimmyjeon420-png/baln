@@ -366,7 +366,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
   },
   currentBadge: {
@@ -378,7 +378,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   currentBadgeText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
   },
 
@@ -395,7 +395,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   tableHeaderCell: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
   },
   tableRow: {
@@ -414,7 +414,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   featureText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     flex: 1,
   },
@@ -423,9 +423,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   planValue: {
-    fontSize: 12,
+    fontSize: 13,
     textAlign: 'center',
-    lineHeight: 16,
+    lineHeight: 17,
   },
   premiumValue: {
     fontWeight: '600',
@@ -440,7 +440,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   billingLabel: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
   discountBadge: {
@@ -449,7 +449,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   discountText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
   },
 
@@ -463,15 +463,15 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   priceStrike: {
-    fontSize: 13,
+    fontSize: 14,
     textDecorationLine: 'line-through',
   },
   priceMain: {
-    fontSize: 24,
+    fontSize: 25,
     fontWeight: '800',
   },
   priceMonthly: {
-    fontSize: 13,
+    fontSize: 14,
   },
 
   // CTA 버튼
@@ -484,7 +484,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
   },
   ctaText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '800',
     color: '#1A1A1A',
   },

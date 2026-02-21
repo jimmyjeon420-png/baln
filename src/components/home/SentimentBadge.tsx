@@ -38,19 +38,19 @@ export function SentimentBadge({ sentiment, size = 'medium' }: SentimentBadgePro
       paddingHorizontal: 8,
       paddingVertical: 2,
       iconSize: 14,
-      fontSize: 12,
+      fontSize: 13,
     },
     medium: {
       paddingHorizontal: 12,
       paddingVertical: 4,
       iconSize: 16,
-      fontSize: 13,
+      fontSize: 14,
     },
     large: {
       paddingHorizontal: 16,
       paddingVertical: 6,
       iconSize: 20,
-      fontSize: 15,
+      fontSize: 16,
     },
   };
 

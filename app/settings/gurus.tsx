@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
   },
   title: {
     flex: 1,
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: 'bold',
     color: '#FFFFFF',
   },
@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   headerBadgeText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '800',
     color: '#000000',
   },
@@ -340,18 +340,18 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   contextIcon: {
-    fontSize: 24,
+    fontSize: 25,
   },
   contextLabel: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#4CAF50',
     fontWeight: '600',
     marginBottom: 4,
   },
   contextText: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#CCCCCC',
-    lineHeight: 20,
+    lineHeight: 21,
   },
 
   // 필터 칩
@@ -370,7 +370,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#1E1E1E',
   },
   filterChipText: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#AAAAAA',
     fontWeight: '500',
   },
@@ -381,7 +381,7 @@ const styles = StyleSheet.create({
     paddingVertical: 40,
   },
   noFilterText: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#666666',
   },
 
@@ -406,19 +406,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   guruEmoji: {
-    fontSize: 22,
+    fontSize: 23,
   },
   guruInfo: {
     flex: 1,
     marginLeft: 12,
   },
   guruName: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     color: '#FFFFFF',
   },
   guruOrg: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#888888',
     marginTop: 2,
   },
@@ -429,7 +429,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   sentimentText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
   },
 
@@ -438,7 +438,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   sectionLabel: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#666666',
     fontWeight: '600',
     marginBottom: 4,
@@ -446,9 +446,9 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   sectionContent: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#CCCCCC',
-    lineHeight: 20,
+    lineHeight: 21,
   },
 
   // 인용
@@ -464,14 +464,14 @@ const styles = StyleSheet.create({
     borderLeftColor: '#4CAF50',
   },
   quoteIcon: {
-    fontSize: 14,
+    fontSize: 15,
   },
   quoteText: {
     flex: 1,
-    fontSize: 13,
+    fontSize: 14,
     color: '#AAAAAA',
     fontStyle: 'italic',
-    lineHeight: 19,
+    lineHeight: 20,
   },
 
   // 푸터
@@ -494,12 +494,12 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   tickerText: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#4CAF50',
     fontWeight: '600',
   },
   sourceText: {
-    fontSize: 10,
+    fontSize: 11,
     color: '#555555',
     maxWidth: 120,
   },
@@ -514,16 +514,16 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   emptyTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '600',
     color: '#FFFFFF',
     marginBottom: 8,
   },
   emptyDescription: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#888888',
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 21,
     marginBottom: 20,
   },
   emptyRefreshButton: {
@@ -537,7 +537,7 @@ const styles = StyleSheet.create({
     borderColor: '#4CAF50',
   },
   emptyRefreshText: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#4CAF50',
     fontWeight: '600',
   },
@@ -554,8 +554,8 @@ const styles = StyleSheet.create({
   },
   disclaimerText: {
     flex: 1,
-    fontSize: 11,
+    fontSize: 12,
     color: '#666666',
-    lineHeight: 16,
+    lineHeight: 17,
   },
 });

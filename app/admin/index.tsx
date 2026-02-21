@@ -262,7 +262,7 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '600',
     color: COLORS.textPrimary,
   },
@@ -278,20 +278,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   },
   loadingText: {
-    fontSize: 14,
+    fontSize: 15,
     color: COLORS.textSecondary,
     marginTop: 12,
   },
 
   // 접근 거부 화면
   deniedTitle: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '700',
     color: COLORS.textPrimary,
     marginTop: 16,
   },
   deniedSubtitle: {
-    fontSize: 14,
+    fontSize: 15,
     color: COLORS.textSecondary,
     marginTop: 8,
     textAlign: 'center',
@@ -306,7 +306,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
   },
   goBackButtonText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     color: COLORS.textPrimary,
   },
@@ -346,15 +346,15 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   cardTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
     color: COLORS.textPrimary,
     marginBottom: 4,
   },
   cardSubtitle: {
-    fontSize: 12,
+    fontSize: 13,
     color: COLORS.textSecondary,
-    lineHeight: 16,
+    lineHeight: 17,
   },
 
   // 미니 KPI 뱃지 — 카드 우상단에 표시되는 작은 알약 모양
@@ -371,7 +371,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.error + '30',
   },
   badgeText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '600',
     color: COLORS.textSecondary,
   },

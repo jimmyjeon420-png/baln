@@ -304,14 +304,14 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   bannerTitle: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '700',
     textAlign: 'center',
-    lineHeight: 28,
+    lineHeight: 29,
     marginBottom: 8,
   },
   bannerSubtitle: {
-    fontSize: 14,
+    fontSize: 15,
     textAlign: 'center',
   },
 
@@ -325,7 +325,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   codeText: {
-    fontSize: 32,
+    fontSize: 33,
     fontWeight: '800',
     letterSpacing: 6,
     marginBottom: 12,
@@ -339,7 +339,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   copyButtonText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
 
@@ -353,7 +353,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   shareButtonText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -380,22 +380,22 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   rewardTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
   },
   rewardDesc: {
-    fontSize: 12,
+    fontSize: 13,
     marginTop: 2,
   },
   rewardAmountWrap: {
     alignItems: 'flex-end',
   },
   rewardAmount: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
   },
   rewardKrw: {
-    fontSize: 11,
+    fontSize: 12,
     marginTop: 2,
   },
 
@@ -418,19 +418,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   stepNumberText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
     color: '#FFFFFF',
   },
   stepText: {
     flex: 1,
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 15,
+    lineHeight: 21,
   },
 
   // ── 섹션 타이틀 ──
   sectionTitle: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.8,
@@ -447,8 +447,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
   },
   emptyText: {
-    fontSize: 15,
+    fontSize: 16,
     textAlign: 'center',
-    lineHeight: 22,
+    lineHeight: 23,
   },
 });

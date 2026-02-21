@@ -361,7 +361,7 @@ const styles = StyleSheet.create({
   },
   freezeToastText: {
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
 
@@ -382,14 +382,14 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   emoji: {
-    fontSize: 18,
+    fontSize: 19,
   },
   text: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '500',
   },
   number: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
   },
 
@@ -402,7 +402,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#1565C0' + '26',
   },
   freezeBadgeText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
     color: '#64B5F6',
   },
@@ -420,7 +420,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
   },
   closeButton: {
@@ -448,12 +448,12 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   currentLabel: {
-    fontSize: 14,
+    fontSize: 15,
     marginTop: 4,
     fontWeight: '500',
   },
   currentMessage: {
-    fontSize: 13,
+    fontSize: 14,
     marginTop: 12,
     textAlign: 'center',
   },
@@ -477,23 +477,23 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   freezeIcon: {
-    fontSize: 18,
+    fontSize: 19,
   },
   freezeTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
   },
   freezeCountLabel: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
   },
   freezeDesc: {
-    fontSize: 12,
+    fontSize: 13,
     marginBottom: 4,
-    lineHeight: 18,
+    lineHeight: 19,
   },
   freezeLastUsed: {
-    fontSize: 11,
+    fontSize: 12,
     marginBottom: 10,
   },
   freezePurchaseButton: {
@@ -506,7 +506,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   freezePurchaseText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
 
@@ -524,15 +524,15 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   longestLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
   longestNumber: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
   },
   longestHint: {
-    fontSize: 12,
+    fontSize: 13,
   },
 
   // ─── 마일스톤 섹션 ───
@@ -540,7 +540,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   milestonesTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     marginBottom: 12,
   },
@@ -556,7 +556,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   milestoneEmoji: {
-    fontSize: 24,
+    fontSize: 25,
   },
   milestoneDisabled: {
     opacity: 0.3,
@@ -565,11 +565,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   milestoneLabel: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
   milestoneDays: {
-    fontSize: 12,
+    fontSize: 13,
     marginTop: 2,
   },
   milestoneCheck: {
@@ -586,8 +586,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   infoText: {
-    fontSize: 12,
+    fontSize: 13,
     textAlign: 'center',
-    lineHeight: 18,
+    lineHeight: 19,
   },
 });

@@ -328,7 +328,7 @@ const styles = StyleSheet.create({
 
   // ── 축하 ──
   congrats: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
     marginBottom: 20,
   },
@@ -347,19 +347,19 @@ const styles = StyleSheet.create({
     fontSize: 48,
   },
   badgeName: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '800',
     marginBottom: 4,
   },
   milestoneDay: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '500',
     marginBottom: 8,
   },
   message: {
-    fontSize: 14,
+    fontSize: 15,
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 21,
     marginBottom: 20,
   },
 
@@ -374,11 +374,11 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   rewardLabel: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '500',
   },
   rewardValue: {
-    fontSize: 22,
+    fontSize: 23,
     fontWeight: '900',
   },
 
@@ -399,7 +399,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   shareText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
   confirmButton: {
@@ -410,7 +410,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   confirmText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
   },
 });

@@ -116,19 +116,19 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   levelIcon: {
-    fontSize: 28,
+    fontSize: 29,
   },
   levelInfo: {
     flex: 1,
     marginLeft: 10,
   },
   levelText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     color: '#FFFFFF',
   },
   xpText: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#888888',
     marginTop: 2,
   },
@@ -139,7 +139,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   streakText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     color: '#FF6B35',
   },
@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   nextLevelText: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#666666',
     marginTop: 6,
     textAlign: 'right',

@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
     zIndex: 9999, // 다른 모든 요소 위에 표시
   },
   text: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: 'bold',
     color: '#FFFFFF',
     textAlign: 'center',

@@ -577,7 +577,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: 12,
-    fontSize: 14,
+    fontSize: 15,
   },
   header: {
     flexDirection: 'row',
@@ -595,7 +595,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '600',
   },
   submitButton: {
@@ -607,7 +607,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   submitButtonText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     color: '#000000',
   },
@@ -636,11 +636,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   hostName: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
   },
   hostAssets: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     marginTop: 2,
   },
@@ -648,26 +648,26 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   label: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     marginBottom: 10,
   },
   input: {
     borderRadius: 12,
     padding: 16,
-    fontSize: 15,
+    fontSize: 16,
     borderWidth: 1,
   },
   textArea: {
     minHeight: 120,
   },
   charCount: {
-    fontSize: 11,
+    fontSize: 12,
     textAlign: 'right',
     marginTop: 6,
   },
   helperText: {
-    fontSize: 12,
+    fontSize: 13,
     marginTop: 8,
   },
   optionsGrid: {
@@ -685,7 +685,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   optionLabel: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '500',
   },
   optionLabelActive: {
@@ -707,7 +707,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   segmentText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '500',
   },
   segmentTextActive: {
@@ -728,7 +728,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   dateTimeText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '500',
   },
   capacityInput: {
@@ -746,13 +746,13 @@ const styles = StyleSheet.create({
   },
   capacityValue: {
     flex: 1,
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
     textAlign: 'center',
     padding: 12,
   },
   capacityUnit: {
-    fontSize: 14,
+    fontSize: 15,
     marginRight: 8,
   },
   feeInput: {
@@ -764,12 +764,12 @@ const styles = StyleSheet.create({
   },
   feeValue: {
     flex: 1,
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
     padding: 14,
   },
   feeUnit: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '500',
   },
   feeBreakdown: {
@@ -779,10 +779,10 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   feeBreakdownText: {
-    fontSize: 12,
+    fontSize: 13,
   },
   feeBreakdownTotal: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
     marginTop: 4,
   },
@@ -802,14 +802,14 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   noPermissionTitle: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '700',
     marginBottom: 12,
   },
   noPermissionDescription: {
-    fontSize: 15,
+    fontSize: 16,
     textAlign: 'center',
-    lineHeight: 22,
+    lineHeight: 23,
     marginBottom: 32,
   },
   verifyButton: {
@@ -821,7 +821,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   verifyButtonText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     color: '#000000',
   },
@@ -849,11 +849,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   tierOptionLabel: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
   tierOptionDesc: {
-    fontSize: 11,
+    fontSize: 12,
     marginTop: 2,
   },
   // 불법 리딩방 금지 동의 스타일
@@ -881,9 +881,9 @@ const styles = StyleSheet.create({
   },
   checkboxLabel: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
-    lineHeight: 20,
+    lineHeight: 21,
   },
   disclaimerWarning: {
     flexDirection: 'row',
@@ -896,8 +896,8 @@ const styles = StyleSheet.create({
   },
   disclaimerWarningText: {
     flex: 1,
-    fontSize: 11,
+    fontSize: 12,
     color: '#999999',
-    lineHeight: 16,
+    lineHeight: 17,
   },
 });

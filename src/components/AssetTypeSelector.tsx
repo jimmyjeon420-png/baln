@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
     marginVertical: SIZES.md,
   },
   label: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     marginBottom: SIZES.sm,
   },
@@ -90,11 +90,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   optionText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
   hint: {
-    fontSize: 12,
+    fontSize: 13,
     marginTop: SIZES.sm,
     fontStyle: 'italic',
   },

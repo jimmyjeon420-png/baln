@@ -181,13 +181,13 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
   title: {
-    fontSize: 28,
+    fontSize: 29,
     fontWeight: '800',
     color: '#FFF',
     marginBottom: 6,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#9CA3AF',
     fontWeight: '500',
   },
@@ -201,11 +201,11 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   sectionIcon: {
-    fontSize: 24,
+    fontSize: 25,
     marginRight: 10,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
     color: '#FFF',
   },
@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#27272720',
   },
   badgeIcon: {
-    fontSize: 28,
+    fontSize: 29,
   },
   badgeIconTextLocked: {
     opacity: 0.4,
@@ -261,7 +261,7 @@ const styles = StyleSheet.create({
     borderColor: '#2A2A2A',
   },
   badgeName: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
     color: '#FFF',
     textAlign: 'center',
@@ -276,12 +276,12 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   rarityText: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: '700',
     color: '#FFF',
   },
   conditionText: {
-    fontSize: 9,
+    fontSize: 10,
     color: '#6B7280',
     fontWeight: '600',
     textAlign: 'center',

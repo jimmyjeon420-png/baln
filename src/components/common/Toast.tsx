@@ -120,9 +120,9 @@ const styles = StyleSheet.create({
   },
   message: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     color: '#FFFFFF',
-    lineHeight: 20,
+    lineHeight: 21,
   },
 });

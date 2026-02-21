@@ -361,7 +361,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   title: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
   },
   countBadge: {
@@ -370,11 +370,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   countText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
   },
   description: {
-    fontSize: 13,
+    fontSize: 14,
     marginBottom: 16,
   },
   emptyContainer: {
@@ -382,12 +382,12 @@ const styles = StyleSheet.create({
     paddingVertical: 24,
   },
   emptyText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
     marginTop: 12,
   },
   emptySubtext: {
-    fontSize: 13,
+    fontSize: 14,
     marginTop: 4,
   },
   alertList: {
@@ -410,11 +410,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   alertTicker: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
   },
   alertName: {
-    fontSize: 12,
+    fontSize: 13,
     marginLeft: 4,
   },
   severityBadge: {
@@ -423,7 +423,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   severityText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
   },
   scoreContainer: {
@@ -443,14 +443,14 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   scoreText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
     width: 40,
     textAlign: 'right',
   },
   reasonText: {
-    fontSize: 12,
-    lineHeight: 18,
+    fontSize: 13,
+    lineHeight: 19,
   },
   tipContainer: {
     flexDirection: 'row',
@@ -462,8 +462,8 @@ const styles = StyleSheet.create({
   },
   tipText: {
     flex: 1,
-    fontSize: 12,
-    lineHeight: 18,
+    fontSize: 13,
+    lineHeight: 19,
   },
   // FOMO 서브스코어 스타일
   fomoSubScoresContainer: {
@@ -477,7 +477,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   fomoSubLabel: {
-    fontSize: 11,
+    fontSize: 12,
     width: 100,
   },
   fomoSubBarBg: {
@@ -491,7 +491,7 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   fomoSubValue: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
     width: 24,
     textAlign: 'right',
@@ -507,7 +507,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   guideToggleText: {
-    fontSize: 12,
+    fontSize: 13,
   },
   guideContainer: {
     marginTop: 12,
@@ -521,13 +521,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   guideSectionTitle: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
     marginBottom: 8,
   },
   guideText: {
-    fontSize: 12,
-    lineHeight: 20,
+    fontSize: 13,
+    lineHeight: 21,
   },
   guideBold: {
     fontWeight: '700',
@@ -546,8 +546,8 @@ const styles = StyleSheet.create({
   },
   guideScoreText: {
     flex: 1,
-    fontSize: 12,
-    lineHeight: 18,
+    fontSize: 13,
+    lineHeight: 19,
   },
   guideItemRow: {
     flexDirection: 'row',
@@ -558,21 +558,21 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   guideItemLabel: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
     marginBottom: 2,
   },
   guideItemDesc: {
-    fontSize: 11,
-    lineHeight: 17,
+    fontSize: 12,
+    lineHeight: 18,
   },
   guideSource: {
-    fontSize: 12,
+    fontSize: 13,
     fontStyle: 'italic',
   },
   guideSourceItem: {
-    fontSize: 11,
-    lineHeight: 18,
+    fontSize: 12,
+    lineHeight: 19,
     marginBottom: 4,
   },
 });

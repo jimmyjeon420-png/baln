@@ -502,7 +502,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -527,13 +527,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   stepTitle: {
-    fontSize: 22,
+    fontSize: 23,
     fontWeight: '700',
     color: '#FFFFFF',
     marginBottom: 4,
   },
   stepDesc: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#888',
     marginBottom: 20,
   },
@@ -549,7 +549,7 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 17,
     color: '#FFFFFF',
   },
   resultList: {
@@ -576,12 +576,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   resultName: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
     color: '#FFFFFF',
   },
   resultAddress: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#888',
     marginTop: 2,
   },
@@ -591,7 +591,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   metaText: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#666',
   },
   emptyContainer: {
@@ -603,14 +603,14 @@ const styles = StyleSheet.create({
   emptyText: {
     textAlign: 'center',
     color: '#888',
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
     marginTop: 8,
   },
   emptySubtext: {
     textAlign: 'center',
     color: '#666',
-    fontSize: 13,
+    fontSize: 14,
   },
   manualEntryButton: {
     flexDirection: 'row',
@@ -623,7 +623,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   manualEntryButtonText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     color: '#FFF',
   },
@@ -632,13 +632,13 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   manualEntryLinkText: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#4CAF50',
     fontWeight: '600',
   },
   // 면적 선택
   sectionLabel: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     color: '#AAA',
     marginTop: 20,
@@ -656,7 +656,7 @@ const styles = StyleSheet.create({
     borderColor: '#2A2A2A',
   },
   loadingText: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#888',
   },
   emptyDataContainer: {
@@ -673,16 +673,16 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   emptyAreaText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
     color: '#AAA',
     textAlign: 'center',
   },
   emptyAreaSubtext: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#666',
     textAlign: 'center',
-    lineHeight: 18,
+    lineHeight: 19,
   },
   quickManualButton: {
     flexDirection: 'row',
@@ -695,7 +695,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   quickManualButtonText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     color: '#FFF',
   },
@@ -717,7 +717,7 @@ const styles = StyleSheet.create({
     borderColor: '#4CAF50',
   },
   areaChipText: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#CCC',
   },
   areaChipTextActive: {
@@ -734,7 +734,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    fontSize: 15,
+    fontSize: 16,
     color: '#FFF',
     borderWidth: 1,
     borderColor: '#333',
@@ -759,17 +759,17 @@ const styles = StyleSheet.create({
   },
   dualInput: {
     flex: 1,
-    fontSize: 15,
+    fontSize: 16,
     color: '#FFF',
     paddingVertical: 2,
   },
   unitLabel: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#888',
     marginLeft: 4,
   },
   orText: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#666',
     paddingHorizontal: 4,
   },
@@ -783,14 +783,14 @@ const styles = StyleSheet.create({
   customAreaButtonText: {
     color: '#FFF',
     fontWeight: '600',
-    fontSize: 14,
+    fontSize: 15,
   },
   unitDetailInput: {
     backgroundColor: '#1E1E1E',
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    fontSize: 15,
+    fontSize: 16,
     color: '#FFF',
     borderWidth: 1,
     borderColor: '#333',
@@ -809,16 +809,16 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   priceLabel: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#888',
   },
   priceValue: {
-    fontSize: 22,
+    fontSize: 23,
     fontWeight: '700',
     color: '#4CAF50',
   },
   priceValueSmall: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
   },
@@ -838,24 +838,24 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   txDate: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#888',
     width: 100,
   },
   txFloor: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#AAA',
     width: 50,
   },
   txPrice: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     color: '#FFFFFF',
     textAlign: 'right',
   },
   hintText: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#666',
     marginTop: 6,
     fontStyle: 'italic',
@@ -871,7 +871,7 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   nextButtonText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     color: '#FFF',
   },
@@ -889,11 +889,11 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   confirmLabel: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#888',
   },
   confirmValue: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '500',
     color: '#FFFFFF',
     maxWidth: '60%',
@@ -912,9 +912,9 @@ const styles = StyleSheet.create({
   },
   disclaimerText: {
     flex: 1,
-    fontSize: 11,
+    fontSize: 12,
     color: '#888',
-    lineHeight: 16,
+    lineHeight: 17,
   },
   // Step 2: 입력 폼
   selectedComplexCard: {
@@ -930,18 +930,18 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   complexName: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
     color: '#FFFFFF',
     marginBottom: 6,
   },
   complexAddress: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#888',
-    lineHeight: 20,
+    lineHeight: 21,
   },
   sectionHint: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#666',
     marginTop: -6,
     marginBottom: 10,
@@ -952,14 +952,14 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    fontSize: 15,
+    fontSize: 16,
     color: '#FFF',
     borderWidth: 1,
     borderColor: '#333',
     marginBottom: 8,
   },
   pricePreview: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     color: '#4CAF50',
     marginTop: 4,
@@ -977,9 +977,9 @@ const styles = StyleSheet.create({
   },
   infoText: {
     flex: 1,
-    fontSize: 12,
+    fontSize: 13,
     color: '#888',
-    lineHeight: 18,
+    lineHeight: 19,
   },
   // 대출 정보 (Phase 1)
   debtSection: {
@@ -993,7 +993,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   debtCheckboxLabel: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
   },
@@ -1011,16 +1011,16 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   debtPreviewText: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#AAA',
   },
   debtPreviewLTV: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#FFB74D',
     fontWeight: '600',
   },
   debtPreviewNet: {
-    fontSize: 15,
+    fontSize: 16,
     color: '#4CAF50',
     fontWeight: '700',
   },
@@ -1039,7 +1039,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   saveButtonText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     color: '#FFF',
   },
@@ -1052,12 +1052,12 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   pyeongBadgeText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     color: '#4CAF50',
   },
   manualPricePreview: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     color: '#4CAF50',
     marginTop: 6,
@@ -1074,9 +1074,9 @@ const styles = StyleSheet.create({
   },
   manualInfoText: {
     flex: 1,
-    fontSize: 12,
+    fontSize: 13,
     color: '#888',
-    lineHeight: 18,
+    lineHeight: 19,
   },
   // 내 부동산 목록
   myRealEstateSection: {
@@ -1090,7 +1090,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   sectionHeaderText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -1108,13 +1108,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   myRealEstateName: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     color: '#FFFFFF',
     marginBottom: 4,
   },
   myRealEstateArea: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#888',
     marginBottom: 6,
   },
@@ -1125,17 +1125,17 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   myRealEstatePrice: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     color: '#4CAF50',
   },
   myRealEstateLTV: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
     color: '#FFB74D',
   },
   myRealEstateNet: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#AAA',
   },
   editButton: {
@@ -1152,7 +1152,7 @@ const styles = StyleSheet.create({
     borderColor: '#4CAF50',
   },
   editButtonText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     color: '#4CAF50',
   },

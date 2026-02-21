@@ -255,7 +255,7 @@ export default function EmotionHistoryScreen() {
                         todayEmotion !== key && { opacity: 0.3 },
                       ]}
                     >
-                      <Text style={[s.emotionEmoji, todayEmotion === key && { fontSize: 28 }]}>{emoji}</Text>
+                      <Text style={[s.emotionEmoji, todayEmotion === key && { fontSize: 29 }]}>{emoji}</Text>
                       <Text style={[
                         s.emotionLabel,
                         { color: todayEmotion === key ? EMOTION_COLORS[key] : colors.textSecondary },
@@ -323,7 +323,7 @@ export default function EmotionHistoryScreen() {
                       onPress={() => setEmotion(key)}
                       activeOpacity={0.7}
                     >
-                      <Text style={[s.emotionEmoji, todayEmotion === key && { fontSize: 28 }]}>{emoji}</Text>
+                      <Text style={[s.emotionEmoji, todayEmotion === key && { fontSize: 29 }]}>{emoji}</Text>
                       <Text style={[
                         s.emotionLabel,
                         { color: todayEmotion === key ? EMOTION_COLORS[key] : colors.textSecondary },
@@ -631,9 +631,9 @@ const s = StyleSheet.create({
     gap: 8,
     marginBottom: 14,
   },
-  cardTitle: { flex: 1, fontSize: 15, fontWeight: '700' },
+  cardTitle: { flex: 1, fontSize: 16, fontWeight: '700' },
   badge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
-  badgeText: { fontSize: 12, fontWeight: '800' },
+  badgeText: { fontSize: 13, fontWeight: '800' },
 
   emotionRow: {
     flexDirection: 'row',
@@ -647,8 +647,8 @@ const s = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
   },
-  emotionEmoji: { fontSize: 22, marginBottom: 4 },
-  emotionLabel: { fontSize: 10, fontWeight: '500' },
+  emotionEmoji: { fontSize: 23, marginBottom: 4 },
+  emotionLabel: { fontSize: 11, fontWeight: '500' },
 
   savedMemo: {
     flexDirection: 'row',
@@ -659,10 +659,10 @@ const s = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
   },
-  savedMemoText: { flex: 1, fontSize: 13, lineHeight: 18 },
+  savedMemoText: { flex: 1, fontSize: 14, lineHeight: 19 },
 
   feedbackBox: { marginTop: 10, padding: 11, borderRadius: 10 },
-  feedbackText: { fontSize: 13, lineHeight: 18, textAlign: 'center' },
+  feedbackText: { fontSize: 14, lineHeight: 19, textAlign: 'center' },
 
   reRecordBtn: {
     flexDirection: 'row',
@@ -672,38 +672,38 @@ const s = StyleSheet.create({
     marginTop: 10,
     paddingVertical: 4,
   },
-  reRecordText: { fontSize: 12 },
+  reRecordText: { fontSize: 13 },
 
   inputSection: { marginTop: 12, gap: 10 },
   memoInput: {
     borderRadius: 10,
     padding: 11,
-    fontSize: 14,
+    fontSize: 15,
     borderWidth: 1,
   },
   emotionHint: {
     marginTop: 12,
     textAlign: 'center',
-    fontSize: 13,
+    fontSize: 14,
   },
 
   // 나스닥/BTC 입력
   priceInputRow: { flexDirection: 'row', gap: 10 },
   priceInputWrap: { flex: 1 },
   priceInputLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 5 },
-  priceInputLabel: { fontSize: 12, fontWeight: '600' },
-  priceOptional: { fontSize: 10 },
+  priceInputLabel: { fontSize: 13, fontWeight: '600' },
+  priceOptional: { fontSize: 11 },
   priceInput: {
     borderRadius: 10,
     paddingHorizontal: 10,
     paddingVertical: 9,
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     borderWidth: 1,
   },
 
   saveBtn: { paddingVertical: 13, borderRadius: 10, alignItems: 'center' },
-  saveBtnText: { color: '#FFF', fontSize: 15, fontWeight: '700' },
+  saveBtnText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
 
   // 나스닥/BTC 표시
   priceRow: {
@@ -714,8 +714,8 @@ const s = StyleSheet.create({
     borderWidth: 1,
   },
   priceChip: { flex: 1, alignItems: 'center', gap: 3 },
-  priceChipLabel: { fontSize: 11, fontWeight: '500' },
-  priceChipValue: { fontSize: 15, fontWeight: '800' },
+  priceChipLabel: { fontSize: 12, fontWeight: '500' },
+  priceChipValue: { fontSize: 16, fontWeight: '800' },
 
   // 보상 토스트
   rewardToast: {
@@ -728,7 +728,7 @@ const s = StyleSheet.create({
     marginBottom: 14,
     borderWidth: 1,
   },
-  rewardToastText: { fontSize: 14, fontWeight: '700' },
+  rewardToastText: { fontSize: 15, fontWeight: '700' },
 
   // ─── 월별 캘린더 히트맵 ───
   calendarCard: {
@@ -744,7 +744,7 @@ const s = StyleSheet.create({
     marginBottom: 14,
   },
   monthNavBtn: { padding: 4 },
-  monthLabel: { fontSize: 17, fontWeight: '700' },
+  monthLabel: { fontSize: 18, fontWeight: '700' },
 
   legend: {
     flexDirection: 'row',
@@ -754,7 +754,7 @@ const s = StyleSheet.create({
   },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   legendDot: { width: 8, height: 8, borderRadius: 4 },
-  legendText: { fontSize: 11 },
+  legendText: { fontSize: 12 },
 
   weekdayRow: {
     flexDirection: 'row',
@@ -763,7 +763,7 @@ const s = StyleSheet.create({
   weekdayText: {
     flex: 1,
     textAlign: 'center',
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
   },
 
@@ -776,8 +776,8 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  dayCellNum: { fontSize: 10, lineHeight: 13 },
-  dayCellEmoji: { fontSize: 14 },
+  dayCellNum: { fontSize: 11, lineHeight: 14 },
+  dayCellEmoji: { fontSize: 15 },
   btcDot: { width: 4, height: 4, borderRadius: 2, marginTop: 1 },
 
   monthStatBox: {
@@ -786,7 +786,7 @@ const s = StyleSheet.create({
     marginTop: 10,
     alignItems: 'center',
   },
-  monthStatText: { fontSize: 13, textAlign: 'center', lineHeight: 19 },
+  monthStatText: { fontSize: 14, textAlign: 'center', lineHeight: 20 },
 
   // ─── 선택 날짜 상세 ───
   detailCard: {
@@ -796,10 +796,10 @@ const s = StyleSheet.create({
   },
   detailHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 10 },
   detailEmojiBg: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
-  detailEmoji: { fontSize: 26 },
-  detailLabel: { fontSize: 17, fontWeight: '700' },
-  detailDate: { fontSize: 12, marginTop: 2 },
-  detailFeedback: { fontSize: 13, lineHeight: 19, marginBottom: 8 },
+  detailEmoji: { fontSize: 27 },
+  detailLabel: { fontSize: 18, fontWeight: '700' },
+  detailDate: { fontSize: 13, marginTop: 2 },
+  detailFeedback: { fontSize: 14, lineHeight: 20, marginBottom: 8 },
   detailMemo: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -809,12 +809,12 @@ const s = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 2,
   },
-  detailMemoText: { flex: 1, fontSize: 13, lineHeight: 18 },
-  noPriceText: { fontSize: 12, marginTop: 8, textAlign: 'center' },
+  detailMemoText: { flex: 1, fontSize: 14, lineHeight: 19 },
+  noPriceText: { fontSize: 13, marginTop: 8, textAlign: 'center' },
 
   // ─── 리마인더 ───
   reminderCard: { borderRadius: 14, padding: 16, marginBottom: 14 },
-  reminderText: { fontSize: 14, lineHeight: 22 },
+  reminderText: { fontSize: 15, lineHeight: 23 },
 
   // ─── 명언 ───
   quoteCard: {
@@ -823,7 +823,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
-  quoteIcon: { fontSize: 28, marginBottom: 10 },
-  quoteText: { fontSize: 13, lineHeight: 21, textAlign: 'center', fontStyle: 'italic', marginBottom: 6 },
-  quoteAuthor: { fontSize: 11, textAlign: 'center' },
+  quoteIcon: { fontSize: 29, marginBottom: 10 },
+  quoteText: { fontSize: 14, lineHeight: 22, textAlign: 'center', fontStyle: 'italic', marginBottom: 6 },
+  quoteAuthor: { fontSize: 12, textAlign: 'center' },
 });

@@ -178,7 +178,7 @@ const s = StyleSheet.create({
     marginRight: 10,
   },
   title: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
     flex: 1,
   },
@@ -190,7 +190,7 @@ const s = StyleSheet.create({
     gap: 4,
   },
   lockText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
   },
 
@@ -204,8 +204,8 @@ const s = StyleSheet.create({
     marginBottom: 10,
   },
   blurText: {
-    fontSize: 13,
-    lineHeight: 20,
+    fontSize: 14,
+    lineHeight: 21,
   },
   premiumCTA: {
     flexDirection: 'row',
@@ -216,7 +216,7 @@ const s = StyleSheet.create({
     gap: 6,
   },
   premiumCTAText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     flex: 1,
   },

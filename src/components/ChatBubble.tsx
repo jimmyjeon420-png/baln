@@ -97,13 +97,13 @@ const styles = StyleSheet.create({
   },
   aiLabel: {
     color: '#7C4DFF',
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
     marginBottom: 4,
   },
   content: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 15,
+    lineHeight: 21,
   },
   userContent: {
     color: '#FFF',
@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
   },
   timestamp: {
     color: 'rgba(255,255,255,0.4)',
-    fontSize: 10,
+    fontSize: 11,
   },
   creditTag: {
     flexDirection: 'row',
@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
   },
   creditText: {
     color: '#7C4DFF',
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '600',
   },
 });

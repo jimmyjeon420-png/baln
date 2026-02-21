@@ -175,11 +175,11 @@ const styles = StyleSheet.create({
     marginBottom: SIZES.lg,
   },
   title: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
   },
   subtitle: {
-    fontSize: 11,
+    fontSize: 12,
     marginTop: 2,
   },
   chartContainer: {
@@ -203,10 +203,10 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   legendLabel: {
-    fontSize: 13,
+    fontSize: 14,
   },
   legendPercent: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
   },
 });

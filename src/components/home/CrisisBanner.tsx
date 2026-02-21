@@ -283,17 +283,17 @@ function createStyles(
       marginBottom: 2,
     },
     levelLabel: {
-      fontSize: 13,
+      fontSize: 14,
       fontWeight: '700',
       letterSpacing: 0.2,
     },
     marketInfo: {
-      fontSize: 12,
+      fontSize: 13,
       fontWeight: '500',
     },
     crisisMessage: {
-      fontSize: 12,
-      lineHeight: 17,
+      fontSize: 13,
+      lineHeight: 18,
     },
     ctaButton: {
       flexShrink: 0,
@@ -303,11 +303,11 @@ function createStyles(
       borderWidth: 1,
     },
     ctaText: {
-      fontSize: 12,
+      fontSize: 13,
       fontWeight: '600',
     },
     reassurance: {
-      fontSize: 11,
+      fontSize: 12,
       marginTop: 8,
       // 아이콘 너비(22px) + 오른쪽 마진(10px)에 맞춰 들여쓰기
       marginLeft: 32,
@@ -323,7 +323,7 @@ function createStyles(
       marginRight: 4,
     },
     premiumCTAText: {
-      fontSize: 11,
+      fontSize: 12,
       fontWeight: '600',
     },
   });

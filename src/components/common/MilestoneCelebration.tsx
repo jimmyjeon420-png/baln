@@ -125,7 +125,7 @@ function ConfettiDecoration({ confetti }: { confetti: string[] }) {
               ...(pos.left !== undefined ? { left: pos.left } : {}),
               ...(pos.right !== undefined ? { right: pos.right } : {}),
               opacity: 0.4 + (i % 3) * 0.2,
-              fontSize: 16 + (i % 3) * 6,
+              fontSize: 17 + (i % 3) * 6,
             },
           ]}
         >
@@ -143,7 +143,7 @@ const confettiStyles = StyleSheet.create({
   },
   emoji: {
     position: 'absolute',
-    fontSize: 20,
+    fontSize: 21,
   },
 });
 
@@ -329,17 +329,17 @@ const styles = StyleSheet.create({
     fontSize: 40,
   },
   title: {
-    fontSize: 24,
+    fontSize: 25,
     fontWeight: '800',
     color: '#FFFFFF',
     textAlign: 'center',
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 15,
     color: DARK_COLORS.textSecondary,
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 21,
     marginBottom: 20,
     paddingHorizontal: 8,
   },
@@ -361,20 +361,20 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   badgeCardLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
     color: DARK_COLORS.streak.active,
     textTransform: 'uppercase',
     letterSpacing: 1,
   },
   badgeCardName: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
     color: '#FFFFFF',
     marginBottom: 4,
   },
   badgeCardDesc: {
-    fontSize: 13,
+    fontSize: 14,
     color: DARK_COLORS.textTertiary,
   },
   buttonRow: {
@@ -392,7 +392,7 @@ const styles = StyleSheet.create({
     borderColor: DARK_COLORS.border,
   },
   shareButtonText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
     color: DARK_COLORS.textSecondary,
   },
@@ -404,7 +404,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   confirmButtonText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     color: '#FFFFFF',
   },

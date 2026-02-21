@@ -485,7 +485,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
   },
   navTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     color: '#FFF',
   },
@@ -510,26 +510,26 @@ const s = StyleSheet.create({
     marginBottom: 16,
   },
   heroTitle: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '800',
     textAlign: 'center',
     marginBottom: 12,
   },
   heroTagline: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
     color: '#FFF',
     textAlign: 'center',
     marginBottom: 4,
   },
   heroSubtitle: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#888',
     textAlign: 'center',
     marginBottom: 20,
   },
   heroAmount: {
-    fontSize: 32,
+    fontSize: 33,
     fontWeight: '800',
     color: '#FFF',
     letterSpacing: -1,
@@ -544,7 +544,7 @@ const s = StyleSheet.create({
     gap: 4,
   },
   heroBadgeText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
 
@@ -563,12 +563,12 @@ const s = StyleSheet.create({
     marginBottom: 8,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
     color: '#FFF',
   },
   sectionSubtitle: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#666',
     marginTop: 4,
   },
@@ -602,12 +602,12 @@ const s = StyleSheet.create({
     flex: 1,
   },
   accordionTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     color: '#FFF',
   },
   accordionSubtitle: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#888',
     marginTop: 2,
   },
@@ -617,7 +617,7 @@ const s = StyleSheet.create({
     borderRadius: 8,
   },
   highlightBadgeText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
   },
   accordionBody: {
@@ -627,9 +627,9 @@ const s = StyleSheet.create({
     borderTopColor: '#222',
   },
   accordionDesc: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#BBB',
-    lineHeight: 21,
+    lineHeight: 22,
     marginBottom: 14,
   },
   tipsContainer: {
@@ -638,7 +638,7 @@ const s = StyleSheet.create({
     padding: 14,
   },
   tipsLabel: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
     color: '#888',
     marginBottom: 10,
@@ -659,15 +659,15 @@ const s = StyleSheet.create({
     alignItems: 'center',
   },
   tipBulletText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '800',
     color: '#000',
   },
   tipText: {
     flex: 1,
-    fontSize: 13,
+    fontSize: 14,
     color: '#CCC',
-    lineHeight: 20,
+    lineHeight: 21,
   },
 
   // ── Section 3: 체크리스트 ──
@@ -678,7 +678,7 @@ const s = StyleSheet.create({
     borderRadius: 8,
   },
   progressText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
     color: '#4CAF50',
   },
@@ -716,9 +716,9 @@ const s = StyleSheet.create({
   },
   checkText: {
     flex: 1,
-    fontSize: 13,
+    fontSize: 14,
     color: '#CCC',
-    lineHeight: 19,
+    lineHeight: 20,
   },
   checkTextDone: {
     textDecorationLine: 'line-through',
@@ -730,7 +730,7 @@ const s = StyleSheet.create({
     borderRadius: 6,
   },
   priorityText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
   },
 
@@ -755,12 +755,12 @@ const s = StyleSheet.create({
     gap: 8,
   },
   gaugeLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     color: '#FFF',
   },
   gaugeValue: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
   },
   gaugeBar: {
@@ -794,11 +794,11 @@ const s = StyleSheet.create({
     marginTop: 6,
   },
   gaugeRangeText: {
-    fontSize: 10,
+    fontSize: 11,
     color: '#555',
   },
   gaugeRangeIdeal: {
-    fontSize: 10,
+    fontSize: 11,
     color: '#4CAF50',
     fontWeight: '500',
   },
@@ -812,7 +812,7 @@ const s = StyleSheet.create({
     gap: 8,
   },
   noDataText: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#666',
   },
 
@@ -838,11 +838,11 @@ const s = StyleSheet.create({
   },
   nextTierHeaderText: {},
   nextTierName: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '800',
   },
   nextTierRequired: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#888',
     marginTop: 2,
   },
@@ -853,9 +853,9 @@ const s = StyleSheet.create({
     marginBottom: 10,
   },
   nextTierBenefitText: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#CCC',
-    lineHeight: 19,
+    lineHeight: 20,
   },
   nextTierProgressContainer: {
     marginTop: 10,
@@ -871,14 +871,14 @@ const s = StyleSheet.create({
     borderRadius: 3,
   },
   nextTierProgressText: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#888',
     fontWeight: '600',
     marginTop: 6,
     textAlign: 'right',
   },
   nextTierRemaining: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#666',
     textAlign: 'center',
     marginTop: 8,
@@ -898,15 +898,15 @@ const s = StyleSheet.create({
     marginBottom: 16,
   },
   diamondTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '800',
     marginBottom: 8,
   },
   diamondSubtitle: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#888',
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 21,
   },
 
   // ── Section 6: CTA ──
@@ -923,15 +923,15 @@ const s = StyleSheet.create({
     gap: 8,
   },
   ctaText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     color: '#000',
   },
   disclaimer: {
-    fontSize: 10,
+    fontSize: 11,
     color: '#444',
     textAlign: 'center',
-    lineHeight: 15,
+    lineHeight: 16,
     marginTop: 16,
   },
 });

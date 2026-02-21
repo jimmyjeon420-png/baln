@@ -518,7 +518,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -553,7 +553,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#CF6679',
   },
   stepNumber: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     color: '#666666',
   },
@@ -578,18 +578,18 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   stepTitle: {
-    fontSize: 22,
+    fontSize: 23,
     fontWeight: '700',
     color: '#FFFFFF',
     textAlign: 'center',
     marginBottom: 12,
-    lineHeight: 32,
+    lineHeight: 33,
   },
   stepDescription: {
-    fontSize: 15,
+    fontSize: 16,
     color: '#AAAAAA',
     textAlign: 'center',
-    lineHeight: 24,
+    lineHeight: 25,
     marginBottom: 24,
   },
   boldText: {
@@ -621,11 +621,11 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   lossItemLabel: {
-    fontSize: 15,
+    fontSize: 16,
     color: '#FFFFFF',
   },
   lossItemValue: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#CF6679',
     fontWeight: '600',
   },
@@ -646,12 +646,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   exportButtonText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
     color: '#4CAF50',
   },
   exportHint: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#666666',
     textAlign: 'center',
     marginBottom: 32,
@@ -670,7 +670,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#333333',
   },
   nextButtonText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -684,7 +684,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cancelButtonText: {
-    fontSize: 15,
+    fontSize: 16,
     color: '#4CAF50',
     fontWeight: '600',
   },
@@ -700,12 +700,12 @@ const styles = StyleSheet.create({
     borderColor: '#2A2A2A',
   },
   currentEmailLabel: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#666666',
     marginBottom: 4,
   },
   currentEmailValue: {
-    fontSize: 16,
+    fontSize: 17,
     color: '#FFFFFF',
     fontWeight: '600',
   },
@@ -714,7 +714,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#1E1E1E',
     borderRadius: 12,
     padding: 16,
-    fontSize: 16,
+    fontSize: 17,
     color: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#333333',
@@ -724,13 +724,13 @@ const styles = StyleSheet.create({
     borderColor: '#4CAF50',
   },
   emailMismatch: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#CF6679',
     marginBottom: 16,
     alignSelf: 'flex-start',
   },
   emailMatchText: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#4CAF50',
     marginBottom: 16,
     alignSelf: 'flex-start',
@@ -747,15 +747,15 @@ const styles = StyleSheet.create({
     borderColor: '#CF6679',
   },
   summaryTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     color: '#CF6679',
     marginBottom: 12,
   },
   summaryItem: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#AAAAAA',
-    lineHeight: 24,
+    lineHeight: 25,
   },
 
   // 삭제 버튼 (3단계)
@@ -774,7 +774,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   deleteButtonText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -789,7 +789,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   keepButtonText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     color: '#121212',
   },

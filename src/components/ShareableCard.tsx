@@ -320,26 +320,26 @@ const styles = StyleSheet.create({
     alignItems: 'baseline',
   },
   logoBaln: {
-    fontSize: 26,
+    fontSize: 27,
     fontWeight: '900',
     color: '#FFFFFF',
     letterSpacing: 1,
   },
   logoDot: {
-    fontSize: 26,
+    fontSize: 27,
     fontWeight: '900',
     color: '#4CAF50',
     letterSpacing: 1,
   },
   logoSubtext: {
-    fontSize: 9,
+    fontSize: 10,
     color: '#666666',
     letterSpacing: 2,
     marginTop: 2,
     textTransform: 'uppercase',
   },
   dateText: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#888888',
   },
   centerSection: {
@@ -351,7 +351,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   statusText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
     marginBottom: 8,
   },
@@ -361,14 +361,14 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   sentimentText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
     letterSpacing: 1,
   },
   highlightText: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#AAAAAA',
-    lineHeight: 20,
+    lineHeight: 21,
     marginBottom: 4,
     paddingLeft: 8,
     borderLeftWidth: 2,
@@ -393,7 +393,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   tierText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
   },
   shieldBadge: {
@@ -402,7 +402,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   shieldText: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#4CAF50',
     fontWeight: '600',
   },
@@ -420,13 +420,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.06)',
   },
   watermarkBaln: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
     color: '#555555',
     letterSpacing: 1,
   },
   watermarkDot: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
     color: '#3A7D3E',
     letterSpacing: 1,
@@ -444,7 +444,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   rewardToastText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
     color: '#4CAF50',
   },
@@ -463,7 +463,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#2A2A2A',
   },
   shareButtonText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -479,7 +479,7 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   rewardHintText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '800',
     color: '#1A1A1A',
   },

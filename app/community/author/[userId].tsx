@@ -288,7 +288,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#2A2A2A',
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -299,7 +299,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   emptyText: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#888',
   },
   listContent: {
@@ -338,11 +338,11 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   tierBadgeText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
   },
   profileAssets: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     color: '#DDD',
   },
@@ -361,12 +361,12 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   statNumber: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
     color: '#FFFFFF',
   },
   statLabel: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#888',
   },
   statDivider: {
@@ -384,7 +384,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   sectionTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     color: '#FFFFFF',
     marginBottom: 12,
@@ -404,7 +404,7 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   holdingGroupLabel: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
     color: '#AAA',
   },
@@ -425,12 +425,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#161616',
   },
   holdingChipTicker: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
     color: '#DDD',
   },
   holdingChipName: {
-    fontSize: 10,
+    fontSize: 11,
     color: '#888',
   },
 
@@ -444,7 +444,7 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   timelineCount: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#888',
   },
   postCardWrapper: {

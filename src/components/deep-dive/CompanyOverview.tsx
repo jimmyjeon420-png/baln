@@ -324,12 +324,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
     marginBottom: 2,
   },
   companyName: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
 
@@ -371,15 +371,15 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   infoLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   infoValue: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
-    lineHeight: 20,
+    lineHeight: 21,
   },
 
   // 웹사이트
@@ -392,7 +392,7 @@ const styles = StyleSheet.create({
     borderTopColor: 'rgba(255, 255, 255, 0.05)',
   },
   websiteText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '500',
     textDecorationLine: 'underline',
   },
@@ -404,7 +404,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   emptyText: {
-    fontSize: 14,
+    fontSize: 15,
     textAlign: 'center',
   },
 });

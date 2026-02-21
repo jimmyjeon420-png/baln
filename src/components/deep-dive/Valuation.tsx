@@ -245,11 +245,11 @@ const s = StyleSheet.create({
     marginBottom: 16,
   },
   cardTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
   },
   cardSubtitle: {
-    fontSize: 10,
+    fontSize: 11,
     marginTop: 2,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -260,7 +260,7 @@ const s = StyleSheet.create({
     borderRadius: 8,
   },
   valuationBadgeText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
   },
 
@@ -275,15 +275,15 @@ const s = StyleSheet.create({
     flex: 1,
   },
   priceLabel: {
-    fontSize: 11,
+    fontSize: 12,
     marginBottom: 4,
   },
   priceValue: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '700',
   },
   upsideText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
     marginTop: 2,
   },
@@ -299,7 +299,7 @@ const s = StyleSheet.create({
     gap: 12,
   },
   sectionLabel: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     marginBottom: 4,
   },
@@ -317,25 +317,25 @@ const s = StyleSheet.create({
     gap: 2,
   },
   multipleName: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
   },
   multipleDesc: {
-    fontSize: 11,
+    fontSize: 12,
   },
   multipleRight: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   multipleValue: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
   },
   multipleAvg: {
-    fontSize: 13,
+    fontSize: 14,
   },
   multipleDiff: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     marginLeft: 8,
   },
@@ -347,7 +347,7 @@ const s = StyleSheet.create({
     marginTop: 4,
   },
   guideText: {
-    fontSize: 13,
-    lineHeight: 20,
+    fontSize: 14,
+    lineHeight: 21,
   },
 });

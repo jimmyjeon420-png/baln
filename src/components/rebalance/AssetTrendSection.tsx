@@ -245,15 +245,15 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
-  cardLabel: { fontSize: 15, fontWeight: '700' },
-  cardLabelEn: { fontSize: 10, marginTop: 1, letterSpacing: 0.5, textTransform: 'uppercase' as const },
+  cardLabel: { fontSize: 16, fontWeight: '700' },
+  cardLabelEn: { fontSize: 11, marginTop: 1, letterSpacing: 0.5, textTransform: 'uppercase' as const },
   changeBadge: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 },
-  changeText: { fontSize: 13, fontWeight: '700' },
+  changeText: { fontSize: 14, fontWeight: '700' },
 
   // 기간 탭
   periodTabs: { flexDirection: 'row', gap: 6, marginBottom: 12 },
   periodTab: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 8 },
-  periodTabText: { fontSize: 12, fontWeight: '600' },
+  periodTabText: { fontSize: 13, fontWeight: '600' },
 
   // 차트
   chartContainer: { marginBottom: 12 },
@@ -261,6 +261,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   // 요약
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between' },
   summaryItem: { alignItems: 'center' },
-  summaryLabel: { fontSize: 10, marginBottom: 3 },
-  summaryValue: { fontSize: 12, fontWeight: '700' },
+  summaryLabel: { fontSize: 11, marginBottom: 3 },
+  summaryValue: { fontSize: 13, fontWeight: '700' },
 });

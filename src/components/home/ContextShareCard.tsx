@@ -353,7 +353,7 @@ const styles = StyleSheet.create({
     borderBottomColor: 'rgba(255, 255, 255, 0.06)',
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -400,26 +400,26 @@ const styles = StyleSheet.create({
     alignItems: 'baseline',
   },
   logoBaln: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '900',
     color: '#FFFFFF',
     letterSpacing: 1,
   },
   logoDot: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '900',
     color: '#4CAF50',
     letterSpacing: 1,
   },
   logoSubtext: {
-    fontSize: 7,
+    fontSize: 8,
     color: '#666666',
     letterSpacing: 2,
     marginTop: 1,
     textTransform: 'uppercase',
   },
   dateText: {
-    fontSize: 9,
+    fontSize: 10,
     color: '#888888',
     marginTop: 4,
   },
@@ -436,17 +436,17 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   sentimentLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
     marginLeft: 5,
   },
 
   // ─── 헤드라인 ───
   headline: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     color: '#FFFFFF',
-    lineHeight: 22,
+    lineHeight: 23,
     marginBottom: 10,
   },
 
@@ -474,19 +474,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   layerNum: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: '800',
     color: '#FFFFFF',
   },
   layerTitle: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
     color: '#E0E0E0',
   },
   layerBody: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#BDBDBD',
-    lineHeight: 16,
+    lineHeight: 17,
     paddingLeft: 21,
   },
 
@@ -506,9 +506,9 @@ const styles = StyleSheet.create({
     marginRight: 6,
   },
   chainText: {
-    fontSize: 10,
+    fontSize: 11,
     color: '#BDBDBD',
-    lineHeight: 15,
+    lineHeight: 16,
     flex: 1,
   },
   chainArrow: {
@@ -531,19 +531,19 @@ const styles = StyleSheet.create({
     minWidth: 70,
   },
   impactNumber: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '800',
-    lineHeight: 20,
+    lineHeight: 21,
   },
   impactLabel: {
-    fontSize: 8,
+    fontSize: 9,
     color: '#888888',
     marginTop: 1,
   },
   impactMessage: {
-    fontSize: 10,
+    fontSize: 11,
     color: '#BDBDBD',
-    lineHeight: 15,
+    lineHeight: 16,
     flex: 1,
   },
 
@@ -565,7 +565,7 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   ctaText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
     color: '#4CAF50',
   },
@@ -584,7 +584,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.06)',
   },
   watermarkText: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: '700',
     color: '#555555',
     letterSpacing: 1,
@@ -604,7 +604,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   rewardToastText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
     color: '#4CAF50',
   },
@@ -624,7 +624,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   shareButtonText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -635,7 +635,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   rewardHintText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '800',
     color: '#1A1A1A',
   },

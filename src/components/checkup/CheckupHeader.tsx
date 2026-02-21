@@ -189,7 +189,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginRight: 16,
   },
   gradeText: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '800',
     marginTop: 2,
   },
@@ -197,13 +197,13 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     flex: 1,
   },
   scoreText: {
-    fontSize: 28,
+    fontSize: 29,
     fontWeight: '700',
     color: colors.textPrimary,
     marginBottom: 4,
   },
   totalAssetsText: {
-    fontSize: 14,
+    fontSize: 15,
     color: colors.textSecondary,
   },
   summarySection: {
@@ -212,9 +212,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderTopColor: colors.border,
   },
   summaryText: {
-    fontSize: 15,
+    fontSize: 16,
     color: colors.textPrimary,
-    lineHeight: 22,
+    lineHeight: 23,
   },
   panicSection: {
     marginTop: 12,
@@ -228,22 +228,22 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginBottom: 4,
   },
   panicLabel: {
-    fontSize: 13,
+    fontSize: 14,
     color: colors.textSecondary,
     marginLeft: 6,
   },
   panicScore: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     marginLeft: 8,
   },
   panicDesc: {
-    fontSize: 13,
+    fontSize: 14,
     color: colors.textSecondary,
     marginLeft: 4,
   },
   panicReason: {
-    fontSize: 12,
+    fontSize: 13,
     color: colors.textTertiary,
     marginLeft: 22,
     fontStyle: 'italic',

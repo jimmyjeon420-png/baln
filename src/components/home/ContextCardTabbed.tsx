@@ -315,12 +315,12 @@ const s = StyleSheet.create({
   errorText: {
     marginTop: 16,
     textAlign: 'center',
-    fontSize: 15,
+    fontSize: 16,
   },
   errorSubtext: {
     marginTop: 4,
     textAlign: 'center',
-    fontSize: 13,
+    fontSize: 14,
   },
 
   // Sentiment bar
@@ -343,13 +343,13 @@ const s = StyleSheet.create({
     marginRight: 12,
   },
   headline: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
     marginTop: 8,
-    lineHeight: 24,
+    lineHeight: 25,
   },
   date: {
-    fontSize: 12,
+    fontSize: 13,
     marginTop: 4,
   },
   shareButton: {
@@ -361,8 +361,8 @@ const s = StyleSheet.create({
     padding: 16,
   },
   contentText: {
-    fontSize: 15,
-    lineHeight: 24,
+    fontSize: 16,
+    lineHeight: 25,
   },
 
   // Macro chain
@@ -401,12 +401,12 @@ const s = StyleSheet.create({
     flex: 1,
   },
   premiumCtaTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     color: '#FFC107',
   },
   premiumCtaSubtitle: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#FFB300',
     marginTop: 4,
   },

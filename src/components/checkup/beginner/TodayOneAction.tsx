@@ -145,7 +145,7 @@ function createStyles(colors: ThemeColors) {
       marginTop: 12,
     },
     cardTitle: {
-      fontSize: 16,
+      fontSize: 17,
       fontWeight: '700',
       color: colors.textPrimary,
       marginBottom: 16,
@@ -156,11 +156,11 @@ function createStyles(colors: ThemeColors) {
       gap: 10,
     },
     loadingText: {
-      fontSize: 16,
+      fontSize: 17,
       color: colors.textSecondary,
     },
     emptyText: {
-      fontSize: 16,
+      fontSize: 17,
       color: colors.textSecondary,
     },
     actionContainer: {
@@ -177,26 +177,26 @@ function createStyles(colors: ThemeColors) {
       borderRadius: 8,
     },
     badgeText: {
-      fontSize: 14,
+      fontSize: 15,
       fontWeight: '700',
     },
     tickerInfo: {
       flex: 1,
     },
     tickerName: {
-      fontSize: 17,
+      fontSize: 18,
       fontWeight: '600',
       color: colors.textPrimary,
     },
     tickerCode: {
-      fontSize: 13,
+      fontSize: 14,
       color: colors.textTertiary,
       marginTop: 2,
     },
     reason: {
-      fontSize: 15,
+      fontSize: 16,
       color: colors.textSecondary,
-      lineHeight: 22,
+      lineHeight: 23,
     },
   });
 }

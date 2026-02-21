@@ -360,7 +360,7 @@ const styles = StyleSheet.create({
     borderColor: '#DADCE0',
   },
   googleIcon: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
     color: '#4285F4',
   },
@@ -375,7 +375,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FEE500',
   },
   kakaoIcon: {
-    fontSize: 18,
+    fontSize: 19,
   },
   kakaoButtonText: {
     fontSize: SIZES.fBase,
@@ -388,7 +388,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#000000',
   },
   appleIcon: {
-    fontSize: 18,
+    fontSize: 19,
     color: '#FFFFFF',
   },
   appleButtonText: {
@@ -475,6 +475,6 @@ const styles = StyleSheet.create({
   footerText: {
     fontSize: SIZES.fXs,
     textAlign: 'center',
-    lineHeight: 18,
+    lineHeight: 19,
   },
 });

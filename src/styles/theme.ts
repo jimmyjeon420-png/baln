@@ -144,46 +144,46 @@ export const TYPOGRAPHY = {
   headingLarge: {
     fontSize: SIZES.fXxxl,
     fontWeight: '700' as const,
-    lineHeight: 32,
+    lineHeight: 33,
   },
   headingMedium: {
     fontSize: SIZES.fXxl,
     fontWeight: '700' as const,
-    lineHeight: 28,
+    lineHeight: 29,
   },
   headingSmall: {
     fontSize: SIZES.fLg,
     fontWeight: '600' as const,
-    lineHeight: 24,
+    lineHeight: 25,
   },
   bodyLarge: {
     fontSize: SIZES.fBase,
     fontWeight: '400' as const,
-    lineHeight: 24,
+    lineHeight: 25,
   },
   bodyMedium: {
     fontSize: SIZES.fSm,
     fontWeight: '400' as const,
-    lineHeight: 20,
+    lineHeight: 21,
   },
   bodySmall: {
     fontSize: SIZES.fXs,
     fontWeight: '400' as const,
-    lineHeight: 16,
+    lineHeight: 17,
   },
   labelLarge: {
     fontSize: SIZES.fBase,
     fontWeight: '600' as const,
-    lineHeight: 24,
+    lineHeight: 25,
   },
   labelMedium: {
     fontSize: SIZES.fSm,
     fontWeight: '600' as const,
-    lineHeight: 20,
+    lineHeight: 21,
   },
   labelSmall: {
     fontSize: SIZES.fXs,
     fontWeight: '600' as const,
-    lineHeight: 16,
+    lineHeight: 17,
   },
 };

@@ -1201,7 +1201,7 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '600',
     color: COLORS.textPrimary,
   },
@@ -1225,7 +1225,7 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    fontSize: 15,
+    fontSize: 16,
     color: COLORS.textPrimary,
     paddingVertical: 0,
   },
@@ -1252,7 +1252,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.primary,
   },
   sortChipText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '500',
     color: COLORS.textSecondary,
   },
@@ -1270,7 +1270,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   countText: {
-    fontSize: 13,
+    fontSize: 14,
     color: COLORS.textSecondary,
   },
   countNumber: {
@@ -1278,7 +1278,7 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
   },
   searchHint: {
-    fontSize: 12,
+    fontSize: 13,
     color: COLORS.textTertiary,
     fontStyle: 'italic',
   },
@@ -1295,7 +1295,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   summaryText: {
-    fontSize: 13,
+    fontSize: 14,
     color: COLORS.textSecondary,
   },
   summaryHighlight: {
@@ -1331,7 +1331,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   tierLabel: {
-    fontSize: 8,
+    fontSize: 9,
     fontWeight: '700',
     letterSpacing: 0.5,
   },
@@ -1345,7 +1345,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   userEmail: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     color: COLORS.textPrimary,
     flexShrink: 1,
@@ -1368,16 +1368,16 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   planBadgeText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
     letterSpacing: 0.3,
   },
   joinDate: {
-    fontSize: 11,
+    fontSize: 12,
     color: COLORS.textTertiary,
   },
   lastActive: {
-    fontSize: 11,
+    fontSize: 12,
     color: COLORS.textTertiary,
     marginTop: 1,
   },
@@ -1387,7 +1387,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   assetValue: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     color: COLORS.primary,
   },
@@ -1400,12 +1400,12 @@ const styles = StyleSheet.create({
     paddingBottom: 60,
   },
   loadingText: {
-    fontSize: 14,
+    fontSize: 15,
     color: COLORS.textSecondary,
     marginTop: 12,
   },
   errorText: {
-    fontSize: 14,
+    fontSize: 15,
     color: COLORS.textSecondary,
     marginTop: 12,
   },
@@ -1417,7 +1417,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   retryButtonText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     color: '#FFFFFF',
   },
@@ -1426,12 +1426,12 @@ const styles = StyleSheet.create({
     paddingVertical: 60,
   },
   emptyText: {
-    fontSize: 15,
+    fontSize: 16,
     color: COLORS.textSecondary,
     marginTop: 12,
   },
   emptySubtext: {
-    fontSize: 13,
+    fontSize: 14,
     color: COLORS.textTertiary,
     marginTop: 4,
   },
@@ -1445,7 +1445,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   footerText: {
-    fontSize: 13,
+    fontSize: 14,
     color: COLORS.textSecondary,
   },
 
@@ -1464,7 +1464,7 @@ const styles = StyleSheet.create({
     borderBottomColor: COLORS.border,
   },
   modalHeaderTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '600',
     color: COLORS.textPrimary,
   },
@@ -1488,7 +1488,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   modalUserEmail: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '600',
     color: COLORS.textPrimary,
     marginBottom: 8,
@@ -1503,7 +1503,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   modalSectionTitle: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     color: COLORS.textTertiary,
     textTransform: 'uppercase',
@@ -1535,11 +1535,11 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   infoLabel: {
-    fontSize: 14,
+    fontSize: 15,
     color: COLORS.textSecondary,
   },
   infoValue: {
-    fontSize: 14,
+    fontSize: 15,
     color: COLORS.textPrimary,
     fontWeight: '500',
     maxWidth: '55%',
@@ -1547,7 +1547,7 @@ const styles = StyleSheet.create({
   },
   monoText: {
     fontFamily: 'Courier',
-    fontSize: 11,
+    fontSize: 12,
     color: COLORS.textTertiary,
   },
 
@@ -1560,7 +1560,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   detailLoadingText: {
-    fontSize: 12,
+    fontSize: 13,
     color: COLORS.textTertiary,
   },
 
@@ -1571,7 +1571,7 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
   transactionSectionLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
     color: COLORS.textTertiary,
     paddingHorizontal: 14,
@@ -1594,7 +1594,7 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   txTypeBadgeText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
   },
   txInfo: {
@@ -1602,16 +1602,16 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   txDescription: {
-    fontSize: 12,
+    fontSize: 13,
     color: COLORS.textSecondary,
     marginBottom: 1,
   },
   txDate: {
-    fontSize: 11,
+    fontSize: 12,
     color: COLORS.textTertiary,
   },
   txAmount: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
   },
 
@@ -1632,12 +1632,12 @@ const styles = StyleSheet.create({
   },
   activityLabel: {
     flex: 1,
-    fontSize: 13,
+    fontSize: 14,
     color: COLORS.textPrimary,
     marginLeft: 4,
   },
   activityTime: {
-    fontSize: 11,
+    fontSize: 12,
     color: COLORS.textTertiary,
     marginLeft: 8,
   },
@@ -1646,7 +1646,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   activityEmptyText: {
-    fontSize: 13,
+    fontSize: 14,
     color: COLORS.textTertiary,
   },
 
@@ -1662,7 +1662,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   banStatusText: {
-    fontSize: 13,
+    fontSize: 14,
     color: COLORS.error,
     flex: 1,
   },
@@ -1678,7 +1678,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   banButtonText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
   },
@@ -1694,7 +1694,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   grantButtonText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
   },
@@ -1720,7 +1720,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   grantTitle: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '700',
     color: COLORS.textPrimary,
   },
@@ -1734,12 +1734,12 @@ const styles = StyleSheet.create({
     borderBottomColor: COLORS.border,
   },
   grantLabel: {
-    fontSize: 13,
+    fontSize: 14,
     color: COLORS.textSecondary,
     marginBottom: 6,
   },
   grantTargetEmail: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     color: COLORS.textPrimary,
     maxWidth: '65%',
@@ -1758,18 +1758,18 @@ const styles = StyleSheet.create({
   },
   grantAmountInput: {
     flex: 1,
-    fontSize: 24,
+    fontSize: 25,
     fontWeight: '700',
     color: COLORS.textPrimary,
     paddingVertical: 12,
   },
   grantUnit: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '600',
     color: COLORS.textTertiary,
   },
   grantKrw: {
-    fontSize: 13,
+    fontSize: 14,
     color: COLORS.primary,
     marginTop: 4,
     paddingLeft: 4,
@@ -1793,7 +1793,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.primary,
   },
   quickAmountText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     color: COLORS.textSecondary,
   },
@@ -1807,7 +1807,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    fontSize: 14,
+    fontSize: 15,
     color: COLORS.textPrimary,
   },
   grantButtons: {
@@ -1823,7 +1823,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.surfaceLight,
   },
   grantCancelText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
     color: COLORS.textSecondary,
   },
@@ -1838,7 +1838,7 @@ const styles = StyleSheet.create({
     opacity: 0.4,
   },
   grantConfirmText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     color: '#FFFFFF',
   },

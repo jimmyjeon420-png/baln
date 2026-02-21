@@ -72,29 +72,29 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginBottom: 8,
   },
   title: {
-    fontSize: 16,
+    fontSize: 17,
     color: colors.textSecondary,
     marginBottom: 4,
   },
   gradeLabel: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
   },
   score: {
-    fontSize: 28,
+    fontSize: 29,
     fontWeight: '700',
     color: colors.textPrimary,
   },
   scoreUnit: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '400',
     color: colors.textSecondary,
   },
   summary: {
-    fontSize: 14,
+    fontSize: 15,
     color: colors.textSecondary,
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 21,
     marginTop: 4,
   },
 });

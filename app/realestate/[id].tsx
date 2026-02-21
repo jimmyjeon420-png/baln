@@ -445,7 +445,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   emptyText: {
-    fontSize: 14,
+    fontSize: 15,
   },
   header: {
     flexDirection: 'row',
@@ -456,7 +456,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
   },
   content: {
@@ -481,16 +481,16 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   heroName: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '700',
     textAlign: 'center',
   },
   heroArea: {
-    fontSize: 14,
+    fontSize: 15,
     marginTop: 4,
   },
   heroDetail: {
-    fontSize: 13,
+    fontSize: 14,
     marginTop: 2,
   },
 
@@ -502,11 +502,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   priceLabel: {
-    fontSize: 13,
+    fontSize: 14,
     marginBottom: 8,
   },
   priceValue: {
-    fontSize: 28,
+    fontSize: 29,
     fontWeight: '700',
   },
   changeRow: {
@@ -516,7 +516,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   changeText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
   purchaseRow: {
@@ -530,10 +530,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   purchaseLabel: {
-    fontSize: 13,
+    fontSize: 14,
   },
   purchaseValue: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
   },
 
@@ -544,7 +544,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   sectionTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     marginBottom: 12,
   },
@@ -559,25 +559,25 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   txDate: {
-    fontSize: 13,
+    fontSize: 14,
     width: 90,
   },
   txFloor: {
-    fontSize: 13,
+    fontSize: 14,
     width: 40,
   },
   txArea: {
-    fontSize: 13,
+    fontSize: 14,
     width: 50,
   },
   txPrice: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     textAlign: 'right',
   },
   noDataText: {
-    fontSize: 13,
+    fontSize: 14,
     textAlign: 'center',
     paddingVertical: 16,
   },
@@ -589,7 +589,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   savedBadge: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
     paddingHorizontal: 8,
     paddingVertical: 2,
@@ -598,9 +598,9 @@ const styles = StyleSheet.create({
   memoInput: {
     borderRadius: 10,
     padding: 12,
-    fontSize: 14,
+    fontSize: 15,
     minHeight: 80,
-    lineHeight: 20,
+    lineHeight: 21,
   },
   memoSaveBtn: {
     flexDirection: 'row',
@@ -612,20 +612,20 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   memoSaveBtnText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
 
   // 수정 모드
   editHint: {
-    fontSize: 12,
+    fontSize: 13,
     marginBottom: 8,
   },
   editInput: {
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    fontSize: 16,
+    fontSize: 17,
     borderWidth: 1,
   },
   editActions: {
@@ -640,7 +640,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   editCancelText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
   editSaveBtn: {
@@ -650,7 +650,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   editSaveText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     color: '#000',
   },
@@ -672,7 +672,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   editBtnText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
   },
   deleteBtn: {
@@ -686,7 +686,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   deleteBtnText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
   },
 
@@ -700,7 +700,7 @@ const styles = StyleSheet.create({
   },
   disclaimerText: {
     flex: 1,
-    fontSize: 11,
-    lineHeight: 16,
+    fontSize: 12,
+    lineHeight: 17,
   },
 });

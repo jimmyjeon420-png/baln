@@ -926,7 +926,7 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '600',
     color: COLORS.textPrimary,
   },
@@ -935,7 +935,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   headerRightBtnText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     color: COLORS.info,
   },
@@ -962,7 +962,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
   },
   segmentBtnText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     color: COLORS.textSecondary,
   },
@@ -992,7 +992,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.error,
   },
   filterChipText: {
-    fontSize: 13,
+    fontSize: 14,
     color: COLORS.textSecondary,
   },
   filterChipTextActive: {
@@ -1012,7 +1012,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   countText: {
-    fontSize: 13,
+    fontSize: 14,
     color: COLORS.textSecondary,
   },
   countNumber: {
@@ -1055,30 +1055,30 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   badgeText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
     letterSpacing: 0.3,
   },
   itemDate: {
-    fontSize: 11,
+    fontSize: 12,
     color: COLORS.textTertiary,
     marginLeft: 8,
   },
   itemAuthor: {
-    fontSize: 12,
+    fontSize: 13,
     color: COLORS.textSecondary,
     marginBottom: 6,
   },
   itemContent: {
-    fontSize: 14,
+    fontSize: 15,
     color: COLORS.textPrimary,
-    lineHeight: 20,
+    lineHeight: 21,
     marginBottom: 4,
   },
 
   // ── 더보기/접기 버튼 ──
   expandToggleText: {
-    fontSize: 12,
+    fontSize: 13,
     color: COLORS.info,
     marginTop: 4,
     marginBottom: 4,
@@ -1105,13 +1105,13 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   statText: {
-    fontSize: 12,
+    fontSize: 13,
     color: COLORS.textTertiary,
   },
 
   // ── 모임 전용 ──
   gatheringTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
     color: COLORS.textPrimary,
     marginBottom: 6,
@@ -1126,7 +1126,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   detailText: {
-    fontSize: 12,
+    fontSize: 13,
     color: COLORS.textSecondary,
   },
 
@@ -1156,7 +1156,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.error + '15',
   },
   actionBtnText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
 
@@ -1196,7 +1196,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   batchBtnText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -1209,17 +1209,17 @@ const styles = StyleSheet.create({
     paddingBottom: 60,
   },
   loadingText: {
-    fontSize: 14,
+    fontSize: 15,
     color: COLORS.textSecondary,
     marginTop: 12,
   },
   errorText: {
-    fontSize: 14,
+    fontSize: 15,
     color: COLORS.textSecondary,
     marginTop: 12,
   },
   deniedText: {
-    fontSize: 16,
+    fontSize: 17,
     color: COLORS.textSecondary,
     marginTop: 16,
   },
@@ -1231,7 +1231,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   retryButtonText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     color: '#FFFFFF',
   },
@@ -1240,7 +1240,7 @@ const styles = StyleSheet.create({
     paddingVertical: 60,
   },
   emptyText: {
-    fontSize: 15,
+    fontSize: 16,
     color: COLORS.textSecondary,
     marginTop: 12,
   },

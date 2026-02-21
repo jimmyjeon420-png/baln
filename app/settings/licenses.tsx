@@ -493,7 +493,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -514,9 +514,9 @@ const styles = StyleSheet.create({
   },
   introText: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 15,
     color: '#AAAAAA',
-    lineHeight: 21,
+    lineHeight: 22,
   },
 
   // 요약
@@ -533,12 +533,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   summaryNumber: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '800',
     color: '#4CAF50',
   },
   summaryLabel: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#888888',
     marginTop: 4,
   },
@@ -562,7 +562,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   categoryTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -573,7 +573,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   countText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
     color: '#4CAF50',
   },
@@ -595,7 +595,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   packageName: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     color: '#FFFFFF',
     flex: 1,
@@ -611,7 +611,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   versionText: {
-    fontSize: 10,
+    fontSize: 11,
     color: '#888888',
     fontWeight: '500',
   },
@@ -622,14 +622,14 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   licenseText: {
-    fontSize: 10,
+    fontSize: 11,
     color: '#4CAF50',
     fontWeight: '700',
   },
   packageDesc: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#999999',
-    lineHeight: 17,
+    lineHeight: 18,
     marginBottom: 6,
   },
   packageLink: {
@@ -638,7 +638,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   packageUrl: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#666666',
   },
 
@@ -652,24 +652,24 @@ const styles = StyleSheet.create({
     borderColor: '#2A2A2A',
   },
   fullLicenseTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     color: '#FFFFFF',
     marginBottom: 10,
   },
   fullLicenseText: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#888888',
-    lineHeight: 17,
+    lineHeight: 18,
     fontFamily: 'monospace',
   },
 
   // 하단
   footerText: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#555555',
     textAlign: 'center',
-    lineHeight: 18,
+    lineHeight: 19,
     marginTop: 8,
     marginBottom: 40,
   },

@@ -237,10 +237,10 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   whaleIcon: {
-    fontSize: 24,
+    fontSize: 25,
   },
   title: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   description: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#888888',
     marginBottom: 16,
   },
@@ -262,13 +262,13 @@ const styles = StyleSheet.create({
     borderLeftColor: '#4CAF50',
   },
   personaTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     color: '#4CAF50',
     marginBottom: 4,
   },
   personaSubtitle: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#AAAAAA',
   },
   // 조언 박스
@@ -283,16 +283,16 @@ const styles = StyleSheet.create({
   },
   adviceText: {
     flex: 1,
-    fontSize: 13,
+    fontSize: 14,
     color: '#FFC107',
-    lineHeight: 18,
+    lineHeight: 19,
   },
   loadingContainer: {
     paddingVertical: 32,
     alignItems: 'center',
   },
   loadingText: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#888888',
   },
   emptyContainer: {
@@ -300,7 +300,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   emptyText: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#888888',
   },
   comparisonContainer: {
@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   categoryLabel: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     color: '#FFFFFF',
   },
@@ -333,16 +333,16 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   userValue: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     color: '#4CAF50',
   },
   separator: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#666666',
   },
   whaleValue: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     color: '#888888',
   },
@@ -355,7 +355,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   barLabel: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#888888',
     width: 20,
   },
@@ -381,7 +381,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   recommendationText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '500',
   },
   legendContainer: {
@@ -404,11 +404,11 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   legendText: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#888888',
   },
   updateTime: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#555555',
     textAlign: 'center',
     marginTop: 12,

@@ -540,7 +540,7 @@ const styles = StyleSheet.create({
   },
   title: {
     flex: 1,
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: 'bold',
   },
   accuracyBadge: {
@@ -550,7 +550,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   accuracyBadgeText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '800',
     color: '#000000',
   },
@@ -571,7 +571,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   tabText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
   tabBadge: {
@@ -583,7 +583,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   tabBadgeText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
     color: '#000000',
   },
@@ -607,7 +607,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   categoryBadgeText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
   },
   allVotedBanner: {
@@ -622,14 +622,14 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   allVotedTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '800',
     marginBottom: 8,
   },
   allVotedDesc: {
-    fontSize: 14,
+    fontSize: 15,
     textAlign: 'center',
-    lineHeight: 21,
+    lineHeight: 22,
   },
   monthSummaryCard: {
     borderRadius: 16,
@@ -637,7 +637,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   monthSummaryTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     marginBottom: 16,
   },
@@ -654,12 +654,12 @@ const styles = StyleSheet.create({
     height: 32,
   },
   monthStatValue: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '800',
     marginBottom: 4,
   },
   monthStatLabel: {
-    fontSize: 11,
+    fontSize: 12,
   },
   historyItem: {
     flexDirection: 'row',
@@ -676,7 +676,7 @@ const styles = StyleSheet.create({
     minWidth: 50,
   },
   historyDate: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '500',
   },
   historyDot: {
@@ -689,7 +689,7 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   historyQuestion: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '500',
   },
   historyRight: {
@@ -703,7 +703,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   historyCorrectText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
     color: '#4CAF50',
   },
@@ -714,12 +714,12 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   historyWrongText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
     color: '#CF6679',
   },
   historyCreditText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
     color: '#4CAF50',
   },
@@ -740,17 +740,17 @@ const styles = StyleSheet.create({
     borderColor: '#333333',
   },
   filterEmoji: {
-    fontSize: 12,
+    fontSize: 13,
   },
   filterChipText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '500',
   },
   section: {
     marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     marginBottom: 12,
   },
@@ -759,7 +759,7 @@ const styles = StyleSheet.create({
     paddingVertical: 40,
   },
   loadingText: {
-    fontSize: 14,
+    fontSize: 15,
   },
   emptyState: {
     alignItems: 'center',
@@ -770,14 +770,14 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   emptyTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '600',
     marginBottom: 8,
   },
   emptyDescription: {
-    fontSize: 14,
+    fontSize: 15,
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 21,
   },
   yesterdaySummary: {
     flexDirection: 'row',
@@ -795,15 +795,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   summaryEmoji: {
-    fontSize: 32,
+    fontSize: 33,
   },
   summaryTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     marginBottom: 3,
   },
   summarySubtitle: {
-    fontSize: 13,
+    fontSize: 14,
   },
   summaryStreak: {
     backgroundColor: '#2A1A1A',
@@ -812,7 +812,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   summaryStreakText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
     color: '#FF9800',
   },
@@ -825,7 +825,7 @@ const styles = StyleSheet.create({
     borderColor: '#2A3A2A',
   },
   rewardInfoTitle: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     color: '#4CAF50',
     marginBottom: 12,
@@ -836,11 +836,11 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   rewardLabel: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#AAAAAA',
   },
   rewardValue: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
   disclaimer: {
@@ -852,7 +852,7 @@ const styles = StyleSheet.create({
   },
   disclaimerText: {
     flex: 1,
-    fontSize: 11,
-    lineHeight: 16,
+    fontSize: 12,
+    lineHeight: 17,
   },
 });

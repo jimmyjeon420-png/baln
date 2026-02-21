@@ -503,7 +503,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
   },
   submitButton: {
@@ -515,7 +515,7 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   submitButtonText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
     color: '#000000',
   },
@@ -541,13 +541,13 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   lockedTitle: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '700',
   },
   lockedDescription: {
-    fontSize: 14,
+    fontSize: 15,
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 21,
   },
   lockedAssetBox: {
     borderRadius: 16,
@@ -557,14 +557,14 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   lockedAssetLabel: {
-    fontSize: 12,
+    fontSize: 13,
   },
   lockedAssetValue: {
-    fontSize: 24,
+    fontSize: 25,
     fontWeight: '700',
   },
   lockedShortfall: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#FFC107',
   },
   lockedButton: {
@@ -574,7 +574,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   lockedButtonText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
     color: '#000000',
   },
@@ -608,22 +608,22 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   tierChipText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
   },
   authorAssets: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     marginBottom: 2,
   },
   authorAssetMix: {
-    fontSize: 12,
+    fontSize: 13,
   },
   section: {
     gap: 12,
   },
   sectionLabel: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
   },
   labelRow: {
@@ -632,7 +632,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   charCount: {
-    fontSize: 13,
+    fontSize: 14,
   },
   categoryRow: {
     flexDirection: 'row',
@@ -649,15 +649,15 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   categoryLabel: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
   contentInput: {
     borderRadius: 12,
     padding: 16,
-    fontSize: 15,
+    fontSize: 16,
     minHeight: 200,
-    lineHeight: 24,
+    lineHeight: 25,
   },
   infoBox: {
     flexDirection: 'row',
@@ -668,8 +668,8 @@ const styles = StyleSheet.create({
   },
   infoText: {
     flex: 1,
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 14,
+    lineHeight: 19,
   },
   warningBox: {
     flexDirection: 'row',
@@ -683,9 +683,9 @@ const styles = StyleSheet.create({
   },
   warningText: {
     flex: 1,
-    fontSize: 12,
+    fontSize: 13,
     color: '#FFC107',
-    lineHeight: 18,
+    lineHeight: 19,
   },
   imagePickButton: {
     flexDirection: 'row',
@@ -698,7 +698,7 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
   },
   imagePickButtonText: {
-    fontSize: 14,
+    fontSize: 15,
   },
   imagePreviewContainer: {
     flexDirection: 'row',
@@ -721,7 +721,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   imageFileSize: {
-    fontSize: 10,
+    fontSize: 11,
     textAlign: 'center',
     marginTop: 4,
   },
@@ -735,7 +735,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   uploadingText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
 });

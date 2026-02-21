@@ -202,15 +202,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   emoji: {
-    fontSize: 20,
+    fontSize: 21,
   },
   textSection: {
     flex: 1,
   },
   message: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
-    lineHeight: 18,
+    lineHeight: 19,
   },
 
   // 우측 CTA
@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   ctaText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
     color: '#1A1A1A',
   },

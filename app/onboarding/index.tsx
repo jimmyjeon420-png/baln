@@ -590,7 +590,7 @@ export default function OnboardingScreen() {
             <View style={{ flexDirection: 'row', backgroundColor: colors.surfaceLight, borderTopWidth: 1, borderTopColor: colors.border, paddingHorizontal: 12, paddingVertical: 8 }}>
               <View style={{ flex: 1 }} />
               <TouchableOpacity onPress={() => Keyboard.dismiss()} style={{ paddingHorizontal: 16, paddingVertical: 6 }}>
-                <Text style={{ fontSize: 16, fontWeight: '600', color: colors.primary }}>완료</Text>
+                <Text style={{ fontSize: 17, fontWeight: '600', color: colors.primary }}>완료</Text>
               </TouchableOpacity>
             </View>
           </InputAccessoryView>
@@ -955,7 +955,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   skipButtonText: {
-    fontSize: 14,
+    fontSize: 15,
   },
   progressDots: {
     flexDirection: 'row',
@@ -992,16 +992,16 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   heading: {
-    fontSize: 30,
+    fontSize: 31,
     fontWeight: '700',
     lineHeight: 42,
     textAlign: 'center',
     marginBottom: 12,
   },
   subheading: {
-    fontSize: 16,
+    fontSize: 17,
     textAlign: 'center',
-    lineHeight: 24,
+    lineHeight: 25,
     marginBottom: 32,
   },
   featureList: {
@@ -1019,10 +1019,10 @@ const styles = StyleSheet.create({
     maxWidth: 300,
   },
   featureEmoji: {
-    fontSize: 24,
+    fontSize: 25,
   },
   featureText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '500',
   },
   optionList: {
@@ -1041,22 +1041,22 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(76, 175, 80, 0.08)',
   },
   optionEmoji: {
-    fontSize: 28,
+    fontSize: 29,
     marginRight: 14,
   },
   optionTextContainer: {
     flex: 1,
   },
   optionLabel: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
     marginBottom: 2,
   },
   optionDesc: {
-    fontSize: 13,
+    fontSize: 14,
   },
   skipHint: {
-    fontSize: 13,
+    fontSize: 14,
     marginTop: 24,
     textAlign: 'center',
   },
@@ -1087,23 +1087,23 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   guruEmoji: {
-    fontSize: 24,
+    fontSize: 25,
   },
   guruName: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
     textAlign: 'center',
   },
   guruTagline: {
-    fontSize: 11,
+    fontSize: 12,
     textAlign: 'center',
-    lineHeight: 15,
+    lineHeight: 16,
     fontStyle: 'italic',
   },
   guruAlloc: {
-    fontSize: 10,
+    fontSize: 11,
     textAlign: 'center',
-    lineHeight: 14,
+    lineHeight: 15,
   },
   guruSelectedDot: {
     position: 'absolute',
@@ -1126,7 +1126,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     paddingVertical: 14,
-    fontSize: 16,
+    fontSize: 17,
   },
   dropdown: {
     borderRadius: 10,
@@ -1149,15 +1149,15 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   catBadgeText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
   },
   dropdownName: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
   dropdownTicker: {
-    fontSize: 11,
+    fontSize: 12,
     marginTop: 1,
   },
   assetForm: {
@@ -1167,7 +1167,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   selectedLabel: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     marginBottom: 12,
   },
@@ -1180,7 +1180,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   inputLabel: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
     marginBottom: 6,
   },
@@ -1189,10 +1189,10 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
     paddingHorizontal: 12,
-    fontSize: 15,
+    fontSize: 16,
   },
   totalPreview: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     marginBottom: 10,
   },
@@ -1206,7 +1206,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   addButtonText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -1216,7 +1216,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   registeredTitle: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     marginBottom: 8,
   },
@@ -1228,11 +1228,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   registeredName: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
   registeredValue: {
-    fontSize: 13,
+    fontSize: 14,
   },
   gradeCircle: {
     width: 100,
@@ -1248,7 +1248,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   scoreNumber: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '600',
     marginBottom: 24,
   },
@@ -1262,18 +1262,18 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   weakFactorIcon: {
-    fontSize: 20,
+    fontSize: 21,
   },
   weakFactorLabel: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
     color: '#FFB74D',
     marginBottom: 2,
   },
   weakFactorComment: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#CCCCCC',
-    lineHeight: 18,
+    lineHeight: 19,
   },
   summaryCard: {
     borderRadius: 16,
@@ -1288,14 +1288,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   summaryLabel: {
-    fontSize: 14,
+    fontSize: 15,
   },
   summaryValue: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
   },
   summaryEmpty: {
-    fontSize: 14,
+    fontSize: 15,
     textAlign: 'center',
   },
   footer: {
@@ -1312,7 +1312,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   nextButtonText: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '600',
     color: '#FFFFFF',
   },
@@ -1323,7 +1323,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   startButtonText: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '600',
     color: '#FFFFFF',
   },
@@ -1338,15 +1338,15 @@ const styles = StyleSheet.create({
   },
   consentText: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '500',
   },
   consentLink: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
   consentHint: {
-    fontSize: 12,
+    fontSize: 13,
     textAlign: 'center',
     marginBottom: 8,
   },

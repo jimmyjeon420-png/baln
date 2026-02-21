@@ -245,7 +245,7 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -270,12 +270,12 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   heroLevel: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#4CAF50',
     fontWeight: '700',
   },
   heroTitle: {
-    fontSize: 24,
+    fontSize: 25,
     fontWeight: '800',
     color: '#FFFFFF',
     marginTop: 4,
@@ -296,13 +296,13 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   progressText: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#AAAAAA',
     textAlign: 'center',
     marginTop: 8,
   },
   nextLevelHint: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#666666',
     textAlign: 'center',
     marginTop: 4,
@@ -319,7 +319,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     color: '#FFFFFF',
     marginBottom: 12,
@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#4CAF50',
   },
   milestoneLabel: {
-    fontSize: 10,
+    fontSize: 11,
     color: '#666666',
   },
   milestoneLabelActive: {
@@ -354,14 +354,14 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   milestoneCredits: {
-    fontSize: 9,
+    fontSize: 10,
     color: '#888888',
     marginTop: 2,
   },
 
   // 히트맵
   heatmapTitle: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#888888',
     marginBottom: 8,
   },
@@ -386,7 +386,7 @@ const styles = StyleSheet.create({
     borderColor: '#4CAF50',
   },
   heatmapCellText: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#555555',
   },
   heatmapCellTextChecked: {
@@ -410,12 +410,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statValue: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '800',
     color: '#FFFFFF',
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#888888',
     marginTop: 4,
   },
@@ -429,7 +429,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#2A2A2A',
   },
   historyIcon: {
-    fontSize: 18,
+    fontSize: 19,
     width: 30,
     textAlign: 'center',
   },
@@ -438,17 +438,17 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   historyLabel: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#DDDDDD',
     fontWeight: '500',
   },
   historyTime: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#666666',
     marginTop: 2,
   },
   historyXp: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     color: '#4CAF50',
   },

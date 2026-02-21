@@ -438,7 +438,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
   },
   creditBadge: {
@@ -450,7 +450,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   creditBadgeText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
   },
   scrollContent: {
@@ -468,12 +468,12 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   heroTitle: {
-    fontSize: 22,
+    fontSize: 23,
     fontWeight: '700',
     marginBottom: 6,
   },
   heroSubtitle: {
-    fontSize: 14,
+    fontSize: 15,
     textAlign: 'center',
   },
 
@@ -489,10 +489,10 @@ const styles = StyleSheet.create({
   },
   hookText: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     color: '#FFC107',
-    lineHeight: 20,
+    lineHeight: 21,
   },
 
   // 로딩
@@ -502,7 +502,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   loadingText: {
-    fontSize: 13,
+    fontSize: 14,
   },
 
   // 데이터 없음
@@ -512,11 +512,11 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   noDataText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
   },
   noDataSubtext: {
-    fontSize: 13,
+    fontSize: 14,
   },
 
   // 소셜 프루프
@@ -528,7 +528,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   socialProofText: {
-    fontSize: 12,
+    fontSize: 13,
   },
 
   // 등급 카드
@@ -554,7 +554,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   tierCardName: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
   },
   myBadge: {
@@ -563,12 +563,12 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   myBadgeText: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: '800',
     color: '#000000',
   },
   tierCardUsers: {
-    fontSize: 12,
+    fontSize: 13,
   },
 
   // 비중 바 차트
@@ -582,7 +582,7 @@ const styles = StyleSheet.create({
   },
   weightBarLabel: {
     width: 40,
-    fontSize: 12,
+    fontSize: 13,
   },
   weightBarTrack: {
     flex: 1,
@@ -596,7 +596,7 @@ const styles = StyleSheet.create({
   },
   weightBarValue: {
     width: 45,
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
     textAlign: 'right',
   },
@@ -611,10 +611,10 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
   },
   btcLabel: {
-    fontSize: 12,
+    fontSize: 13,
   },
   btcValue: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
   },
 
@@ -625,7 +625,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
   },
   topHoldingsTitle: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
     marginBottom: 8,
   },
@@ -640,20 +640,20 @@ const styles = StyleSheet.create({
   },
   topHoldingRank: {
     width: 16,
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
   },
   topHoldingTicker: {
     flex: 1,
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
   topHoldingHolders: {
-    fontSize: 11,
+    fontSize: 12,
   },
   topHoldingWeight: {
     width: 40,
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
     textAlign: 'right',
   },
@@ -672,7 +672,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   lockedTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     color: '#FFC107',
   },
@@ -697,12 +697,12 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   previewTier: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
     marginBottom: 4,
   },
   previewUnlocked: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: '700',
   },
   previewBlur: {
@@ -711,15 +711,15 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   previewBlurText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
   },
   lockedCta: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     textAlign: 'center',
     marginBottom: 16,
-    lineHeight: 22,
+    lineHeight: 23,
   },
   unlockButton: {
     flexDirection: 'row',
@@ -733,7 +733,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   unlockButtonText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -744,12 +744,12 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   discountText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
     color: '#FFFFFF',
   },
   lockedNote: {
-    fontSize: 11,
+    fontSize: 12,
     marginTop: 12,
   },
 
@@ -764,7 +764,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   unlockedTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
   },
 
@@ -775,7 +775,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   btcHighlightTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     color: '#F7931A',
     marginBottom: 12,
@@ -790,7 +790,7 @@ const styles = StyleSheet.create({
   },
   btcBarLabel: {
     width: 80,
-    fontSize: 12,
+    fontSize: 13,
   },
   btcBarTrack: {
     flex: 1,
@@ -804,7 +804,7 @@ const styles = StyleSheet.create({
   },
   btcBarValue: {
     width: 40,
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
     textAlign: 'right',
   },
@@ -818,8 +818,8 @@ const styles = StyleSheet.create({
     borderWidth: 0.5,
   },
   disclaimer: {
-    fontSize: 10,
+    fontSize: 11,
     textAlign: 'center',
-    lineHeight: 16,
+    lineHeight: 17,
   },
 });

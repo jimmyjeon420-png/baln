@@ -324,7 +324,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   title: {
-    fontSize: 24,
+    fontSize: 25,
     fontWeight: 'bold',
   },
   tabContainer: {
@@ -344,7 +344,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   tabText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
   chatContainer: {
@@ -372,11 +372,11 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 4,
   },
   messageText: {
-    fontSize: 15,
-    lineHeight: 22,
+    fontSize: 16,
+    lineHeight: 23,
   },
   messageTime: {
-    fontSize: 10,
+    fontSize: 11,
     marginTop: 4,
     alignSelf: 'flex-end',
   },
@@ -388,7 +388,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   loadingText: {
-    fontSize: 12,
+    fontSize: 13,
   },
   inputContainer: {
     flexDirection: 'row',
@@ -403,7 +403,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 10,
-    fontSize: 15,
+    fontSize: 16,
     maxHeight: 100,
   },
   sendButton: {

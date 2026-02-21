@@ -6,7 +6,7 @@
  *
  * 사용법:
  *   <TermTooltip term="리밸런싱">리밸런싱</TermTooltip>
- *   <TermTooltip term="코스톨라니" style={{ fontSize: 18 }}>코스톨라니</TermTooltip>
+ *   <TermTooltip term="코스톨라니" style={{ fontSize: 19 }}>코스톨라니</TermTooltip>
  *
  * 중복 방지: AllocationDriftSection의 CATEGORY_DETAILS(자산군 ⓘ)와 겹치지 않도록
  * 자산군(주식, 채권, 금, 원자재 등) 카테고리 설명에는 사용하지 않음.
@@ -191,10 +191,10 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   titleEmoji: {
-    fontSize: 28,
+    fontSize: 29,
   },
   title: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '700',
   },
   simpleBadge: {
@@ -203,13 +203,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
   },
   simpleText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
-    lineHeight: 22,
+    lineHeight: 23,
   },
   detail: {
-    fontSize: 14,
-    lineHeight: 22,
+    fontSize: 15,
+    lineHeight: 23,
   },
   exampleBox: {
     borderRadius: 10,
@@ -217,19 +217,19 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   exampleText: {
-    fontSize: 13,
-    lineHeight: 20,
+    fontSize: 14,
+    lineHeight: 21,
   },
   quoteBox: {
     gap: 4,
   },
   quoteText: {
-    fontSize: 13,
+    fontSize: 14,
     fontStyle: 'italic',
-    lineHeight: 20,
+    lineHeight: 21,
   },
   quoteAuthor: {
-    fontSize: 12,
+    fontSize: 13,
     textAlign: 'right',
   },
   closeBtn: {
@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   closeBtnText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
   },
 });

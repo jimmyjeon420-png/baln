@@ -100,12 +100,12 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '700',
     marginBottom: 4,
   },
   sectionDesc: {
-    fontSize: 13,
+    fontSize: 14,
     marginBottom: 16,
   },
   grid: {
@@ -125,14 +125,14 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   cardTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     textAlign: 'center',
   },
   cardSubtitle: {
-    fontSize: 12,
+    fontSize: 13,
     textAlign: 'center',
-    lineHeight: 16,
+    lineHeight: 17,
   },
   categoryBadge: {
     paddingHorizontal: 8,
@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   categoryText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
   },
 });

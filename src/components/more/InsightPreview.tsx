@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   headerTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     color: COLORS.textPrimary,
   },
@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   viewAllText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     color: '#FFC107',
   },
@@ -156,17 +156,17 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   sentimentEmoji: {
-    fontSize: 28,
+    fontSize: 29,
   },
   sentimentTextWrap: {
     gap: 2,
   },
   sentimentLabel: {
-    fontSize: 12,
+    fontSize: 13,
     color: COLORS.textSecondary,
   },
   sentimentValue: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
   },
   weatherBox: {
@@ -179,16 +179,16 @@ const styles = StyleSheet.create({
   },
   weatherText: {
     flex: 1,
-    fontSize: 12,
+    fontSize: 13,
     color: COLORS.textSecondary,
-    lineHeight: 18,
+    lineHeight: 19,
   },
   loadingBox: {
     paddingVertical: 20,
     alignItems: 'center',
   },
   loadingText: {
-    fontSize: 13,
+    fontSize: 14,
     color: COLORS.textSecondary,
   },
 });

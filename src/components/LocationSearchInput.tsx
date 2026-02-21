@@ -269,7 +269,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    fontSize: 15,
+    fontSize: 16,
     color: COLORS.text,
     paddingVertical: Platform.OS === 'ios' ? 16 : 12,
   },
@@ -290,9 +290,9 @@ const styles = StyleSheet.create({
   },
   apiHintText: {
     flex: 1,
-    fontSize: 11,
+    fontSize: 12,
     color: COLORS.textMuted,
-    lineHeight: 16,
+    lineHeight: 17,
   },
   // 드롭다운
   dropdown: {
@@ -333,12 +333,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   placeName: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     color: COLORS.text,
   },
   placeAddress: {
-    fontSize: 12,
+    fontSize: 13,
     color: COLORS.textMuted,
     marginTop: 2,
   },
@@ -363,12 +363,12 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   mapFallbackTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     color: COLORS.text,
   },
   mapFallbackHint: {
-    fontSize: 11,
+    fontSize: 12,
     color: COLORS.primary,
   },
   addressBar: {
@@ -381,7 +381,7 @@ const styles = StyleSheet.create({
   },
   addressText: {
     flex: 1,
-    fontSize: 13,
+    fontSize: 14,
     color: COLORS.textSecondary,
   },
 });

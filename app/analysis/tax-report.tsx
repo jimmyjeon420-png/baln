@@ -243,18 +243,18 @@ const s = StyleSheet.create({
   },
   loadingText: {
     marginTop: 12,
-    fontSize: 14,
+    fontSize: 15,
   },
   header: {
     marginBottom: 20,
   },
   title: {
-    fontSize: 24,
+    fontSize: 25,
     fontWeight: '700',
     marginBottom: 4,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 15,
   },
   card: {
     borderRadius: 16,
@@ -262,7 +262,7 @@ const s = StyleSheet.create({
     marginBottom: 16,
   },
   cardLabel: {
-    fontSize: 13,
+    fontSize: 14,
     marginBottom: 8,
   },
   totalTax: {
@@ -278,11 +278,11 @@ const s = StyleSheet.create({
     flex: 1,
   },
   breakdownLabel: {
-    fontSize: 12,
+    fontSize: 13,
     marginBottom: 4,
   },
   breakdownValue: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
   },
   savingsCard: {
@@ -296,11 +296,11 @@ const s = StyleSheet.create({
     gap: 12,
   },
   savingsLabel: {
-    fontSize: 13,
+    fontSize: 14,
     marginBottom: 4,
   },
   savingsAmount: {
-    fontSize: 24,
+    fontSize: 25,
     fontWeight: '700',
   },
   cardHeader: {
@@ -310,18 +310,18 @@ const s = StyleSheet.create({
     marginBottom: 12,
   },
   cardTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
   },
   strategyText: {
-    fontSize: 15,
-    lineHeight: 22,
+    fontSize: 16,
+    lineHeight: 23,
   },
   actionSection: {
     marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
     marginBottom: 12,
   },
@@ -342,17 +342,17 @@ const s = StyleSheet.create({
     borderRadius: 6,
   },
   priorityText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
   },
   actionTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
     flex: 1,
   },
   actionDesc: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 15,
+    lineHeight: 21,
     marginBottom: 8,
   },
   actionFooter: {
@@ -361,7 +361,7 @@ const s = StyleSheet.create({
     gap: 4,
   },
   deadline: {
-    fontSize: 12,
+    fontSize: 13,
   },
   disclaimer: {
     flexDirection: 'row',
@@ -371,8 +371,8 @@ const s = StyleSheet.create({
     padding: 12,
   },
   disclaimerText: {
-    fontSize: 12,
+    fontSize: 13,
     flex: 1,
-    lineHeight: 18,
+    lineHeight: 19,
   },
 });

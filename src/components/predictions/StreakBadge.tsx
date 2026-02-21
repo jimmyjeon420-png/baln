@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
 
   // 불꽃 이모지
   emoji: {
-    fontSize: 32,
+    fontSize: 33,
   },
 
   // 텍스트 영역
@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   streakText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     color: '#FF9800',
     marginBottom: 3,
@@ -151,12 +151,12 @@ const styles = StyleSheet.create({
     color: '#888888',
   },
   bonusText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
     color: '#4CAF50',
   },
   nextGoalText: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#AAAAAA',
   },
 
@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#666666',
   },
   countText: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '800',
     color: '#000000',
   },

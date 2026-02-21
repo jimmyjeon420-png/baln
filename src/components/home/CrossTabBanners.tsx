@@ -58,7 +58,7 @@ export default function CrossTabBanners() {
       {badgeNotif && (
         <View style={[styles.banner, { backgroundColor: '#FFC10715' }]}>
           <View style={styles.bannerContent}>
-            <Text style={{ fontSize: 20 }}>{badgeNotif.badgeEmoji}</Text>
+            <Text style={{ fontSize: 21 }}>{badgeNotif.badgeEmoji}</Text>
             <View style={{ flex: 1 }}>
               <Text style={[styles.bannerTitle, { color: colors.textPrimary }]}>
                 {badgeNotif.badgeName} 획득!
@@ -121,11 +121,11 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   bannerTitle: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
   },
   bannerSubtitle: {
-    fontSize: 11,
+    fontSize: 12,
     marginTop: 2,
   },
   bannerAction: {
@@ -135,7 +135,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   bannerActionText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
     color: '#000',
   },

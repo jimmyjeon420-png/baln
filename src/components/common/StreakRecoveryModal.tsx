@@ -235,18 +235,18 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   title: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '700',
     color: '#FFFFFF',
     textAlign: 'center',
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 15,
     color: DARK_COLORS.textSecondary,
     textAlign: 'center',
     marginBottom: 20,
-    lineHeight: 20,
+    lineHeight: 21,
   },
   streakInfoCard: {
     width: '100%',
@@ -262,11 +262,11 @@ const styles = StyleSheet.create({
   },
   streakInfoLabel: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 15,
     color: DARK_COLORS.textSecondary,
   },
   streakInfoValue: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -286,11 +286,11 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   costLabel: {
-    fontSize: 14,
+    fontSize: 15,
     color: DARK_COLORS.textSecondary,
   },
   costValue: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     color: DARK_COLORS.streak.active,
   },
@@ -306,9 +306,9 @@ const styles = StyleSheet.create({
   },
   infoText: {
     flex: 1,
-    fontSize: 13,
+    fontSize: 14,
     color: DARK_COLORS.textTertiary,
-    lineHeight: 18,
+    lineHeight: 19,
   },
   primaryButton: {
     width: '100%',
@@ -325,7 +325,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   primaryButtonText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -335,7 +335,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   secondaryButtonText: {
-    fontSize: 14,
+    fontSize: 15,
     color: DARK_COLORS.textTertiary,
   },
 });

@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
     // color는 동적으로 적용됨
     marginLeft: 8,
@@ -174,12 +174,12 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   freeBadgeText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
     color: '#FFFFFF',
   },
   headerDesc: {
-    fontSize: 14,
+    fontSize: 15,
     // color는 동적으로 적용됨
     marginBottom: 20,
   },
@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   featureTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     // color는 동적으로 적용됨
   },
@@ -225,14 +225,14 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   comingSoonText: {
-    fontSize: 9,
+    fontSize: 10,
     color: '#FFFFFF',
     fontWeight: '700',
   },
   featureDesc: {
-    fontSize: 12,
+    fontSize: 13,
     // color는 동적으로 적용됨
-    lineHeight: 16,
+    lineHeight: 17,
   },
   marketplaceButton: {
     flexDirection: 'row',
@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   marketplaceButtonText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     // color는 동적으로 적용됨
     marginRight: 6,

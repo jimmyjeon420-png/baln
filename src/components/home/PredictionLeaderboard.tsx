@@ -156,11 +156,11 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   title: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
   },
   subtitle: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '500',
   },
 
@@ -179,11 +179,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statValue: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
   },
   statLabel: {
-    fontSize: 11,
+    fontSize: 12,
     marginTop: 2,
   },
 
@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   rankText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
   },
   nameCell: {
@@ -208,11 +208,11 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   nameText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
   votesText: {
-    fontSize: 11,
+    fontSize: 12,
     marginTop: 1,
   },
   rateCell: {
@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   rateText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
   },
   streakCell: {
@@ -228,6 +228,6 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   streakText: {
-    fontSize: 12,
+    fontSize: 13,
   },
 });

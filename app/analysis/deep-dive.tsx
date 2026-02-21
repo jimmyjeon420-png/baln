@@ -595,7 +595,7 @@ const s = StyleSheet.create({
   },
   input: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 17,
     height: 44,
     paddingVertical: 8,
   },
@@ -612,11 +612,11 @@ const s = StyleSheet.create({
     paddingVertical: 14,
   },
   suggestionName: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
   },
   suggestionTicker: {
-    fontSize: 12,
+    fontSize: 13,
     marginTop: 2,
   },
   noResultCard: {
@@ -629,8 +629,8 @@ const s = StyleSheet.create({
   },
   noResultText: {
     flex: 1,
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 14,
+    lineHeight: 19,
   },
   analyzeButton: {
     borderRadius: 12,
@@ -641,7 +641,7 @@ const s = StyleSheet.create({
   },
   analyzeButtonText: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
   },
   errorCard: {
@@ -654,22 +654,22 @@ const s = StyleSheet.create({
   },
   errorText: {
     flex: 1,
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 15,
+    lineHeight: 21,
   },
   guideSection: {
     alignItems: 'center',
     paddingVertical: 40,
   },
   guideTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
     marginBottom: 8,
   },
   guideText: {
-    fontSize: 14,
+    fontSize: 15,
     textAlign: 'center',
-    lineHeight: 22,
+    lineHeight: 23,
     marginBottom: 24,
   },
   exampleSection: {
@@ -680,7 +680,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
   },
   exampleLabel: {
-    fontSize: 13,
+    fontSize: 14,
     marginRight: 4,
   },
   exampleChip: {
@@ -690,7 +690,7 @@ const s = StyleSheet.create({
     borderWidth: 1,
   },
   exampleChipText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '500',
   },
   disclaimerBanner: {
@@ -704,8 +704,8 @@ const s = StyleSheet.create({
   },
   disclaimerText: {
     flex: 1,
-    fontSize: 11,
+    fontSize: 12,
     color: '#888888',
-    lineHeight: 16,
+    lineHeight: 17,
   },
 });

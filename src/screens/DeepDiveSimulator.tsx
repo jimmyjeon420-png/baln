@@ -136,11 +136,11 @@ const s = StyleSheet.create({
     paddingBottom: 16,
   },
   title: {
-    fontSize: 24,
+    fontSize: 25,
     fontWeight: '700',
     marginBottom: 4,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 15,
   },
 });

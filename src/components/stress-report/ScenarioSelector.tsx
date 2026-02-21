@@ -125,12 +125,12 @@ const s = StyleSheet.create({
     marginBottom: 8,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '700',
     marginBottom: 4,
   },
   sectionSubtitle: {
-    fontSize: 13,
+    fontSize: 14,
     marginBottom: 16,
   },
   row: {
@@ -145,21 +145,21 @@ const s = StyleSheet.create({
     borderWidth: 1.5,
   },
   emoji: {
-    fontSize: 28,
+    fontSize: 29,
     marginBottom: 8,
   },
   magnitude: {
-    fontSize: 22,
+    fontSize: 23,
     fontWeight: '800',
     marginBottom: 4,
   },
   title: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
     marginBottom: 2,
   },
   subtitle: {
-    fontSize: 11,
+    fontSize: 12,
     textAlign: 'center',
   },
 });

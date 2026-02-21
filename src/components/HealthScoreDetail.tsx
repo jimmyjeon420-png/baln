@@ -250,10 +250,10 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   headerIcon: {
-    fontSize: 20,
+    fontSize: 21,
   },
   title: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   gradeText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '800',
     color: '#000000',
   },
@@ -272,11 +272,11 @@ const styles = StyleSheet.create({
     alignItems: 'baseline',
   },
   totalScore: {
-    fontSize: 32,
+    fontSize: 33,
     fontWeight: '800',
   },
   totalScoreLabel: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#888888',
     marginLeft: 2,
   },
@@ -290,7 +290,7 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   commentText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     textAlign: 'center',
   },
@@ -313,16 +313,16 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   factorIcon: {
-    fontSize: 12,
+    fontSize: 13,
     marginRight: 6,
   },
   factorLabel: {
     flex: 1,
-    fontSize: 12,
+    fontSize: 13,
     color: '#CCCCCC',
   },
   factorScore: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
     width: 28,
     textAlign: 'right',
@@ -350,7 +350,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.05)',
   },
   guideToggleText: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#888888',
   },
 
@@ -364,9 +364,9 @@ const styles = StyleSheet.create({
     borderColor: '#2A2A2A',
   },
   guideIntro: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#999999',
-    lineHeight: 20,
+    lineHeight: 21,
     marginBottom: 14,
   },
   guideItem: {
@@ -382,31 +382,31 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   guideItemIcon: {
-    fontSize: 13,
+    fontSize: 14,
   },
   guideItemLabel: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
     color: '#CCCCCC',
     flex: 1,
   },
   guideItemWeight: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#777777',
     fontWeight: '600',
   },
   guideItemComment: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#999999',
-    lineHeight: 17,
+    lineHeight: 18,
     paddingLeft: 22,
   },
   guideFooter: {
     marginTop: 4,
   },
   guideFooterText: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#666666',
-    lineHeight: 18,
+    lineHeight: 19,
   },
 });

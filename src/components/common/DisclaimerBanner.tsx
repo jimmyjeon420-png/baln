@@ -122,21 +122,21 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   icon: {
-    fontSize: 14,
+    fontSize: 15,
     marginRight: 8,
     marginTop: 1,
   },
   message: {
     flex: 1,
-    fontSize: 12,
-    lineHeight: 18,
+    fontSize: 13,
+    lineHeight: 19,
   },
   closeButton: {
     marginLeft: 8,
     paddingLeft: 4,
   },
   closeText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
 });

@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -283,19 +283,19 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   heroTitle: {
-    fontSize: 28,
+    fontSize: 29,
     fontWeight: '800',
     color: '#FFFFFF',
     letterSpacing: -0.5,
   },
   heroSubtitle: {
-    fontSize: 15,
+    fontSize: 16,
     color: '#4CAF50',
     fontWeight: '600',
     marginTop: 6,
   },
   heroTagline: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#888888',
     fontStyle: 'italic',
     marginTop: 12,
@@ -310,21 +310,21 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   missionTitle: {
-    fontSize: 22,
+    fontSize: 23,
     fontWeight: '700',
     color: '#FFFFFF',
-    lineHeight: 32,
+    lineHeight: 33,
     marginBottom: 12,
   },
   missionDesc: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#AAAAAA',
-    lineHeight: 22,
+    lineHeight: 23,
   },
 
   // 섹션 라벨
   sectionLabel: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
     color: '#4CAF50',
     letterSpacing: 2,
@@ -351,10 +351,10 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   trustLabel: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#AAAAAA',
     textAlign: 'center',
-    lineHeight: 16,
+    lineHeight: 17,
   },
 
   // 핵심 기능
@@ -377,15 +377,15 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   featureTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     color: '#FFFFFF',
     marginBottom: 6,
   },
   featureDesc: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#AAAAAA',
-    lineHeight: 20,
+    lineHeight: 21,
   },
 
   // 기술 스택
@@ -409,14 +409,14 @@ const styles = StyleSheet.create({
     borderColor: '#333333',
   },
   techBadgeText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
     color: '#4CAF50',
   },
   techDesc: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#AAAAAA',
-    lineHeight: 20,
+    lineHeight: 21,
     marginTop: 8,
   },
 
@@ -447,13 +447,13 @@ const styles = StyleSheet.create({
     paddingLeft: 8,
   },
   timelineDate: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
     color: '#4CAF50',
     marginBottom: 2,
   },
   timelineEvent: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#DDDDDD',
   },
 
@@ -481,19 +481,19 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   teamName: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     color: '#FFFFFF',
   },
   teamRole: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#4CAF50',
     marginTop: 2,
   },
   teamBio: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#AAAAAA',
-    lineHeight: 20,
+    lineHeight: 21,
     marginTop: 8,
   },
 
@@ -511,7 +511,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   contactText: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#DDDDDD',
   },
 
@@ -525,23 +525,23 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   disclaimerTitle: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
     color: '#CF6679',
     marginBottom: 6,
   },
   disclaimerText: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#999999',
-    lineHeight: 18,
+    lineHeight: 19,
   },
 
   // 하단
   footerText: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#555555',
     textAlign: 'center',
-    lineHeight: 18,
+    lineHeight: 19,
     marginBottom: 40,
   },
 });

@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     marginBottom: 12,
     textTransform: 'uppercase',
@@ -97,13 +97,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   faqQuestion: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
     marginBottom: 8,
   },
   faqAnswer: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 15,
+    lineHeight: 21,
   },
   supportItem: {
     flexDirection: 'row',
@@ -113,10 +113,10 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   supportLabel: {
-    fontSize: 16,
+    fontSize: 17,
   },
   supportDesc: {
-    fontSize: 12,
+    fontSize: 13,
     marginTop: 2,
   },
 });

@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   headerTitle: {
-    fontSize: 22,
+    fontSize: 23,
     fontWeight: '800',
     marginLeft: 12,
   },
@@ -145,11 +145,11 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   icon: {
-    fontSize: 20,
+    fontSize: 21,
     marginRight: 8,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
   },
   card: {
@@ -158,8 +158,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   descriptionText: {
-    fontSize: 14,
-    lineHeight: 22,
+    fontSize: 15,
+    lineHeight: 23,
   },
   listItem: {
     flexDirection: 'row',
@@ -179,8 +179,8 @@ const styles = StyleSheet.create({
   },
   listText: {
     flex: 1,
-    fontSize: 14,
-    lineHeight: 22,
+    fontSize: 15,
+    lineHeight: 23,
   },
   notesCard: {
     flexDirection: 'row',
@@ -191,8 +191,8 @@ const styles = StyleSheet.create({
   },
   notesText: {
     flex: 1,
-    fontSize: 12,
-    lineHeight: 18,
+    fontSize: 13,
+    lineHeight: 19,
     marginLeft: 8,
   },
 });

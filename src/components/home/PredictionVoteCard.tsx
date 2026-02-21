@@ -619,7 +619,7 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       justifyContent: 'space-between',
     },
     cardLogo: {
-      fontSize: 16,
+      fontSize: 17,
       fontWeight: '700',
       color: colors.textSecondary,
       letterSpacing: 1,
@@ -640,10 +640,10 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       gap: 10,
     },
     headerEmoji: {
-      fontSize: 24,
+      fontSize: 25,
     },
     headerText: {
-      fontSize: 18,
+      fontSize: 19,
       fontWeight: '600',
       color: colors.textPrimary,
     },
@@ -674,12 +674,12 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       paddingBottom: 4,
     },
     pollCounterText: {
-      fontSize: 13,
+      fontSize: 14,
       fontWeight: '700',
       color: colors.textSecondary,
     },
     pollSwipeHint: {
-      fontSize: 12,
+      fontSize: 13,
       fontWeight: '500',
       color: colors.primary,
     },
@@ -708,10 +708,10 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       marginBottom: 8,
     },
     pollCategoryEmoji: {
-      fontSize: 12,
+      fontSize: 13,
     },
     pollCategoryLabel: {
-      fontSize: 12,
+      fontSize: 13,
       fontWeight: '600',
     },
     pollQuestionArea: {
@@ -720,10 +720,10 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       paddingVertical: 8,
     },
     questionText: {
-      fontSize: 22,
+      fontSize: 23,
       fontWeight: '700',
       color: colors.textPrimary,
-      lineHeight: 32,
+      lineHeight: 33,
       textAlign: 'center',
     },
     // [NEW] 근거 박스 스타일
@@ -742,19 +742,19 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       borderLeftColor: colors.textSecondary,
     },
     reasonIcon: {
-      fontSize: 16,
+      fontSize: 17,
       marginTop: 2,
     },
     reasonLabel: {
-      fontSize: 11,
+      fontSize: 12,
       fontWeight: '600',
       color: colors.textSecondary,
       marginBottom: 3,
     },
     reasonText: {
-      fontSize: 12,
+      fontSize: 13,
       color: colors.textSecondary,
-      lineHeight: 18,
+      lineHeight: 19,
     },
     voteArea: {
       marginTop: 8,
@@ -795,7 +795,7 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       borderColor: colors.error,
     },
     voteButtonText: {
-      fontSize: 16,
+      fontSize: 17,
       fontWeight: '600',
       color: colors.textPrimary,
     },
@@ -803,7 +803,7 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       color: '#FFFFFF',
     },
     votePercentage: {
-      fontSize: 14,
+      fontSize: 15,
       color: colors.textSecondary,
       marginTop: 4,
     },
@@ -822,7 +822,7 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       marginTop: 12,
     },
     allVotedText: {
-      fontSize: 14,
+      fontSize: 15,
       fontWeight: '600',
       color: colors.primary,
     },
@@ -836,7 +836,7 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       gap: 6,
     },
     allVotedCTAText: {
-      fontSize: 13,
+      fontSize: 14,
       fontWeight: '600',
     },
     // 복기 섹션
@@ -847,7 +847,7 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       borderTopColor: colors.border,
     },
     reviewTitle: {
-      fontSize: 14,
+      fontSize: 15,
       color: colors.textSecondary,
       textAlign: 'center',
       marginBottom: 4,
@@ -860,15 +860,15 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       paddingVertical: 6,
     },
     reviewEmoji: {
-      fontSize: 16,
+      fontSize: 17,
     },
     reviewQuestion: {
       flex: 1,
-      fontSize: 14,
+      fontSize: 15,
       color: colors.textSecondary,
     },
     reviewReward: {
-      fontSize: 14,
+      fontSize: 15,
       fontWeight: '600',
       color: colors.primary,
     },
@@ -884,23 +884,23 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       gap: 4,
     },
     explanationLabel: {
-      fontSize: 12,
+      fontSize: 13,
       color: colors.textTertiary,
       fontWeight: '600',
     },
     explanationText: {
-      fontSize: 13,
+      fontSize: 14,
       color: colors.textSecondary,
-      lineHeight: 20,
+      lineHeight: 21,
     },
     accuracyText: {
-      fontSize: 14,
+      fontSize: 15,
       color: colors.textPrimary,
       textAlign: 'center',
       marginTop: 4,
     },
     accuracyHint: {
-      fontSize: 12,
+      fontSize: 13,
       color: colors.textTertiary,
       textAlign: 'center',
       marginTop: 4,
@@ -916,7 +916,7 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       minHeight: 48,
     },
     historyText: {
-      fontSize: 15,
+      fontSize: 16,
       color: colors.textSecondary,
     },
     centerArea: {
@@ -925,7 +925,7 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       alignItems: 'center',
     },
     loadingText: {
-      fontSize: 16,
+      fontSize: 17,
       color: colors.textSecondary,
     },
     emptyEmoji: {
@@ -933,7 +933,7 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       marginBottom: 20,
     },
     emptyText: {
-      fontSize: 16,
+      fontSize: 17,
       color: colors.textSecondary,
       textAlign: 'center',
     },
@@ -948,7 +948,7 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       gap: 4,
     },
     emptyCtaText: {
-      fontSize: 13,
+      fontSize: 14,
       fontWeight: '600',
       color: colors.primary,
     },
@@ -971,7 +971,7 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       borderColor: colors.primary,
     },
     categoryText: {
-      fontSize: 13,
+      fontSize: 14,
       color: colors.textSecondary,
     },
     categoryTextActive: {

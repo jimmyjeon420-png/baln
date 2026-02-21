@@ -121,12 +121,12 @@ const s = StyleSheet.create({
     padding: 20,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     marginBottom: 2,
   },
   sectionSubtitle: {
-    fontSize: 13,
+    fontSize: 14,
     marginBottom: 16,
   },
   timeline: {
@@ -164,16 +164,16 @@ const s = StyleSheet.create({
     marginBottom: 4,
   },
   eventYear: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '800',
   },
   eventName: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
   eventDesc: {
-    fontSize: 12,
-    lineHeight: 18,
+    fontSize: 13,
+    lineHeight: 19,
     marginBottom: 8,
   },
   eventStats: {
@@ -184,11 +184,11 @@ const s = StyleSheet.create({
     alignItems: 'center',
   },
   statValue: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
   },
   statLabel: {
-    fontSize: 10,
+    fontSize: 11,
     marginTop: 1,
   },
   highlightPill: {
@@ -198,9 +198,9 @@ const s = StyleSheet.create({
     alignItems: 'center',
   },
   highlightText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 21,
   },
 });

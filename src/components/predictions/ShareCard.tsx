@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   shareButtonText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -284,12 +284,12 @@ const styles = StyleSheet.create({
     alignItems: 'baseline',
   },
   logoText: {
-    fontSize: 32,
+    fontSize: 33,
     fontWeight: '800',
     color: '#FFFFFF',
   },
   logoSubtext: {
-    fontSize: 28,
+    fontSize: 29,
     fontWeight: '600',
     color: '#FFFFFF',
     opacity: 0.8,
@@ -300,7 +300,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cardTitle: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '600',
     color: '#FFFFFF',
     opacity: 0.9,
@@ -339,13 +339,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statValue: {
-    fontSize: 24,
+    fontSize: 25,
     fontWeight: '800',
     color: '#FFFFFF',
     marginBottom: 4,
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '500',
     color: '#FFFFFF',
     opacity: 0.7,
@@ -365,7 +365,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   watermark: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     color: '#FFFFFF',
     opacity: 0.7,
@@ -399,12 +399,12 @@ const styles = StyleSheet.create({
     minWidth: 200,
   },
   shareActionText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     color: '#FFFFFF',
   },
   modalHint: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#888888',
     marginTop: 12,
     textAlign: 'center',

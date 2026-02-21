@@ -288,7 +288,7 @@ function YesterdayReviewCard({
             <Animated.Text
               style={[
                 styles.summaryValue,
-                { color: COLORS.primary, fontSize: 24 },
+                { color: COLORS.primary, fontSize: 25 },
                 { transform: [{ scale: rewardScaleAnim }] },
               ]}
             >
@@ -346,10 +346,10 @@ const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
     marginBottom: 16,
   },
   headerEmoji: {
-    fontSize: 20,
+    fontSize: 21,
   },
   headerText: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
     color: COLORS.textPrimary,
   },
@@ -367,12 +367,12 @@ const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
     gap: 4,
   },
   summaryValue: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '700',
     color: COLORS.textPrimary,
   },
   summaryLabel: {
-    fontSize: 12,
+    fontSize: 13,
     color: COLORS.textTertiary,
   },
   divider: {
@@ -404,14 +404,14 @@ const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
     marginBottom: 8,
   },
   resultEmoji: {
-    fontSize: 18,
+    fontSize: 19,
     marginTop: 2,
   },
   resultQuestion: {
     flex: 1,
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
-    lineHeight: 22,
+    lineHeight: 23,
   },
   resultQuestionCorrect: {
     color: COLORS.textPrimary,
@@ -426,7 +426,7 @@ const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
     marginLeft: 28, // 이모지 너비만큼 들여쓰기
   },
   resultVoteLabel: {
-    fontSize: 13,
+    fontSize: 14,
     color: COLORS.textSecondary,
   },
   rewardBadge: {
@@ -437,7 +437,7 @@ const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
     marginLeft: 'auto',
   },
   rewardText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -452,7 +452,7 @@ const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
     borderTopColor: 'rgba(255, 255, 255, 0.1)',
   },
   expandHintText: {
-    fontSize: 12,
+    fontSize: 13,
     color: COLORS.textTertiary,
   },
   // 해설 영역
@@ -468,14 +468,14 @@ const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
     gap: 4,
   },
   explanationLabel: {
-    fontSize: 12,
+    fontSize: 13,
     color: COLORS.textTertiary,
     fontWeight: '600',
   },
   explanationText: {
-    fontSize: 13,
+    fontSize: 14,
     color: COLORS.textSecondary,
-    lineHeight: 20,
+    lineHeight: 21,
   },
   // Empty 상태
   emptyArea: {
@@ -488,12 +488,12 @@ const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
     marginBottom: 4,
   },
   emptyText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
     color: COLORS.textSecondary,
   },
   emptySubtext: {
-    fontSize: 13,
+    fontSize: 14,
     color: COLORS.textTertiary,
     textAlign: 'center',
   },
@@ -508,7 +508,7 @@ const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
     gap: 4,
   },
   emptyCtaText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     color: COLORS.primary,
   },
@@ -524,7 +524,7 @@ const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
     borderTopColor: COLORS.border,
   },
   historyText: {
-    fontSize: 14,
+    fontSize: 15,
     color: COLORS.textSecondary,
     fontWeight: '500',
   },

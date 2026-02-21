@@ -633,7 +633,7 @@ const styles = StyleSheet.create({
   emptySubtext: {
     ...TYPOGRAPHY.bodySmall,
     textAlign: 'center',
-    lineHeight: 18,
+    lineHeight: 19,
   },
 
   // 탭

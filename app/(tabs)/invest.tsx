@@ -292,7 +292,7 @@ export default function InvestScreen() {
           <Text
             style={[
               TYPOGRAPHY.bodySmall,
-              { color: COLORS.textSecondary, lineHeight: 20 },
+              { color: COLORS.textSecondary, lineHeight: 21 },
             ]}
           >
             수익률은 (현재가 - 매수가) / 매수가 × 100으로 계산됩니다. 빨강은 수익, 파랑은 손실을 나타냅니다.

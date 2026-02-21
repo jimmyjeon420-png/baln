@@ -83,7 +83,7 @@ export default function RollingNumber({
           padding: 0,
           margin: 0,
           color: '#FFFFFF',
-          fontSize: 28,
+          fontSize: 29,
           fontWeight: '700',
         },
         style,

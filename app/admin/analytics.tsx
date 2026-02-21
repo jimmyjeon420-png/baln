@@ -137,7 +137,7 @@ const barStyles = StyleSheet.create({
   },
   label: {
     width: 80,
-    fontSize: 13,
+    fontSize: 14,
     color: COLORS.textSecondary,
     marginRight: 8,
   },
@@ -159,13 +159,13 @@ const barStyles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   value: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     color: COLORS.textPrimary,
     textAlign: 'right',
   },
   changeText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '600',
     textAlign: 'right',
     marginTop: 1,
@@ -220,7 +220,7 @@ const distStyles = StyleSheet.create({
   },
   label: {
     width: 88,
-    fontSize: 13,
+    fontSize: 14,
     color: COLORS.textSecondary,
     marginRight: 8,
   },
@@ -238,7 +238,7 @@ const distStyles = StyleSheet.create({
   },
   value: {
     width: 100,
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
     color: COLORS.textPrimary,
     textAlign: 'right',
@@ -742,7 +742,7 @@ const styles = StyleSheet.create({
     alignItems: 'center' as const,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '600',
     color: COLORS.textPrimary,
   },
@@ -767,24 +767,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   },
   loadingText: {
-    fontSize: 14,
+    fontSize: 15,
     color: COLORS.textSecondary,
     marginTop: 12,
   },
 
   // 에러 상태
   errorTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
     color: COLORS.textPrimary,
     marginTop: 16,
   },
   errorMessage: {
-    fontSize: 13,
+    fontSize: 14,
     color: COLORS.textSecondary,
     marginTop: 8,
     textAlign: 'center',
-    lineHeight: 18,
+    lineHeight: 19,
   },
   retryButton: {
     flexDirection: 'row',
@@ -799,27 +799,27 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   retryButtonText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     color: COLORS.textPrimary,
   },
 
   // 빈 상태
   emptyText: {
-    fontSize: 14,
+    fontSize: 15,
     color: COLORS.textSecondary,
     marginTop: 12,
   },
 
   // 섹션 제목
   sectionTitle: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '700',
     color: COLORS.textPrimary,
     marginBottom: 4,
   },
   sectionSubtitle: {
-    fontSize: 13,
+    fontSize: 14,
     color: COLORS.textSecondary,
     marginBottom: 12,
   },
@@ -843,13 +843,13 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
   },
   retentionLabel: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     color: COLORS.textSecondary,
     marginBottom: 8,
   },
   retentionRate: {
-    fontSize: 26,
+    fontSize: 27,
     fontWeight: '800',
     marginBottom: 6,
   },
@@ -866,7 +866,7 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   retentionCount: {
-    fontSize: 11,
+    fontSize: 12,
     color: COLORS.textTertiary,
   },
 
@@ -891,14 +891,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   summaryText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     color: COLORS.textSecondary,
   },
 
   // 데이터 없음
   noDataText: {
-    fontSize: 13,
+    fontSize: 14,
     color: COLORS.textTertiary,
     textAlign: 'center',
     paddingVertical: 12,

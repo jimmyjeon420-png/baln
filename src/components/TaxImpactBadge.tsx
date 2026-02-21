@@ -90,7 +90,7 @@ export const TaxImpactBadge: React.FC<Props> = ({ taxImpact, showDetails = false
 
           <View style={styles.detailRow}>
             <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Net Proceeds</Text>
-            <Text style={[styles.detailValue, { color: colors.buy, fontSize: 13, fontWeight: '700' }]}>
+            <Text style={[styles.detailValue, { color: colors.buy, fontSize: 14, fontWeight: '700' }]}>
               {formatCurrency(taxImpact.netProceeds)}
             </Text>
           </View>
@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   label: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     flex: 1,
   },
@@ -130,11 +130,11 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   taxAmount: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
   },
   netAmount: {
-    fontSize: 12,
+    fontSize: 13,
     marginTop: 2,
   },
   expandedContainer: {
@@ -149,11 +149,11 @@ const styles = StyleSheet.create({
     paddingVertical: SIZES.xs,
   },
   detailLabel: {
-    fontSize: 12,
+    fontSize: 13,
     flex: 1,
   },
   detailValue: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
     textAlign: 'right',
   },

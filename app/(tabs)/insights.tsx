@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 25,
     fontWeight: '800',
   },
   headerBadge: {
@@ -320,7 +320,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   headerBadgeText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
     color: '#FFD700',
   },
@@ -356,11 +356,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   cardTitle: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '700',
   },
   cardSubtitle: {
-    fontSize: 12,
+    fontSize: 13,
     marginTop: 2,
   },
   cardLoading: {
@@ -379,7 +379,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   unvotedBadgeText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -390,8 +390,8 @@ const styles = StyleSheet.create({
     padding: 14,
   },
   pollQuestion: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 15,
+    lineHeight: 21,
     marginBottom: 8,
   },
   pollVoteHint: {
@@ -400,7 +400,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   pollVoteHintText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
   },
   pollVotedTag: {
@@ -409,7 +409,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   pollVotedText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
   },
 
@@ -426,11 +426,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statLabel: {
-    fontSize: 11,
+    fontSize: 12,
     marginBottom: 2,
   },
   statValue: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
   },
   statDivider: {
@@ -467,10 +467,10 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   legendLabel: {
-    fontSize: 12,
+    fontSize: 13,
   },
   legendValue: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
   },
 
@@ -492,14 +492,14 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   guruName: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     marginRight: 10,
     minWidth: 50,
   },
   guruTopic: {
     flex: 1,
-    fontSize: 13,
+    fontSize: 14,
   },
 
   // 빈 상태
@@ -508,6 +508,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   emptyText: {
-    fontSize: 13,
+    fontSize: 14,
   },
 });

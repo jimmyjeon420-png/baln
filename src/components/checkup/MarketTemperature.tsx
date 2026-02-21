@@ -128,17 +128,17 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginTop: 12,
   },
   cardTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     color: colors.textPrimary,
     marginBottom: 16,
   },
   emptyText: {
-    fontSize: 14,
+    fontSize: 15,
     color: colors.textSecondary,
   },
   emptySubText: {
-    fontSize: 12,
+    fontSize: 13,
     color: colors.textTertiary,
     marginTop: 4,
   },
@@ -161,7 +161,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginBottom: 4,
   },
   gaugeLabel: {
-    fontSize: 12,
+    fontSize: 13,
     color: colors.textSecondary,
     fontWeight: '500',
   },
@@ -172,15 +172,15 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     gap: 6,
   },
   summaryTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     color: colors.textPrimary,
-    lineHeight: 20,
+    lineHeight: 21,
   },
   summaryHighlight: {
-    fontSize: 13,
+    fontSize: 14,
     color: colors.textSecondary,
-    lineHeight: 20,
+    lineHeight: 21,
   },
 });
 

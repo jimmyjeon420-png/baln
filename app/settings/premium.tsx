@@ -522,7 +522,7 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
   },
 
@@ -549,12 +549,12 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   heroTitle: {
-    fontSize: 22,
+    fontSize: 23,
     fontWeight: '800',
     textAlign: 'center',
   },
   heroSubtitle: {
-    fontSize: 14,
+    fontSize: 15,
     marginTop: 6,
     textAlign: 'center',
   },
@@ -565,7 +565,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   sectionLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     marginBottom: 4,
   },
@@ -585,7 +585,7 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 8,
   },
   recommendBadgeText: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: '800',
     color: '#1A1A1A',
     letterSpacing: 0.5,
@@ -617,24 +617,24 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   planName: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
   },
   planDiscount: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
     marginTop: 2,
   },
   planSubtext: {
-    fontSize: 12,
+    fontSize: 13,
     marginTop: 2,
   },
   planPrice: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '900',
   },
   planPeriod: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '500',
   },
 
@@ -649,12 +649,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   ctaText: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '800',
     color: '#1A1A1A',
   },
   ctaSubtext: {
-    fontSize: 11,
+    fontSize: 12,
     color: 'rgba(26,26,26,0.6)',
     marginTop: 2,
   },
@@ -671,7 +671,7 @@ const styles = StyleSheet.create({
     marginBottom: 28,
   },
   trialText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
   },
 
@@ -680,7 +680,7 @@ const styles = StyleSheet.create({
     marginBottom: 28,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
     marginBottom: 16,
   },
@@ -706,7 +706,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   benefitTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
   },
   benefitTag: {
@@ -715,13 +715,13 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   benefitTagText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
   },
   benefitDesc: {
-    fontSize: 12,
+    fontSize: 13,
     marginTop: 4,
-    lineHeight: 18,
+    lineHeight: 19,
   },
 
   // 면책
@@ -730,13 +730,13 @@ const styles = StyleSheet.create({
     paddingTop: 16,
   },
   disclaimerTitle: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
     marginBottom: 8,
   },
   disclaimerText: {
-    fontSize: 11,
-    lineHeight: 18,
+    fontSize: 12,
+    lineHeight: 19,
   },
 
   // 활성 상태 화면
@@ -751,17 +751,17 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   activeTitle: {
-    fontSize: 24,
+    fontSize: 25,
     fontWeight: '800',
     marginBottom: 8,
   },
   activeSubtitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
     marginBottom: 8,
   },
   activeDesc: {
-    fontSize: 14,
+    fontSize: 15,
     textAlign: 'center',
   },
 });

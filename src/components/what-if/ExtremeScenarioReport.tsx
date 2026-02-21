@@ -649,7 +649,7 @@ const styles = StyleSheet.create({
     borderColor: '#EF444430',
   },
   viralHookText: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '800',
     color: '#EF4444',
     letterSpacing: 0.5,
@@ -665,7 +665,7 @@ const styles = StyleSheet.create({
     fontSize: 56,
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 25,
     fontWeight: '800',
     textAlign: 'center',
   },
@@ -675,11 +675,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   headerBadgeText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
   headerSub: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '500',
     marginTop: 4,
   },
@@ -693,7 +693,7 @@ const styles = StyleSheet.create({
   },
   ctaText: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
   },
   loadingBox: {
@@ -703,7 +703,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   loadingText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
   errorBox: {
@@ -712,7 +712,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   errorText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '500',
     textAlign: 'center',
   },
@@ -722,8 +722,8 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   reassureText: {
-    fontSize: 13,
-    lineHeight: 20,
+    fontSize: 14,
+    lineHeight: 21,
   },
   shareButton: {
     flexDirection: 'row',
@@ -736,7 +736,7 @@ const styles = StyleSheet.create({
   },
   shareButtonText: {
     color: '#FFFFFF',
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
   },
 });
@@ -761,7 +761,7 @@ const shareStyles = StyleSheet.create({
     borderBottomColor: 'rgba(255, 255, 255, 0.06)',
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -816,19 +816,19 @@ const shareStyles = StyleSheet.create({
     alignItems: 'baseline',
   },
   logoBaln: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '900',
     color: '#FFFFFF',
     letterSpacing: 1,
   },
   logoDot: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '900',
     color: '#4CAF50',
     letterSpacing: 1,
   },
   logoSub: {
-    fontSize: 8,
+    fontSize: 9,
     color: '#666666',
     letterSpacing: 2,
     marginTop: 2,
@@ -841,7 +841,7 @@ const shareStyles = StyleSheet.create({
     borderWidth: 1,
   },
   catBadgeText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
   },
 
@@ -858,7 +858,7 @@ const shareStyles = StyleSheet.create({
     zIndex: 10,
   },
   viralHookText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '800',
     color: '#EF4444',
     letterSpacing: 0.3,
@@ -875,14 +875,14 @@ const shareStyles = StyleSheet.create({
     marginBottom: 6,
   },
   scenarioTitle: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '800',
     color: '#FFFFFF',
     textAlign: 'center',
     marginBottom: 4,
   },
   scenarioSubtitle: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#AAAAAA',
     textAlign: 'center',
   },
@@ -908,13 +908,13 @@ const shareStyles = StyleSheet.create({
     alignItems: 'center',
   },
   impactLabel: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '600',
     color: '#999999',
     marginBottom: 4,
   },
   impactValue: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '800',
   },
 
@@ -936,7 +936,7 @@ const shareStyles = StyleSheet.create({
     marginHorizontal: 10,
   },
   sectorHeader: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
     marginBottom: 6,
     letterSpacing: 0.5,
@@ -945,12 +945,12 @@ const shareStyles = StyleSheet.create({
     marginBottom: 4,
   },
   sectorName: {
-    fontSize: 10,
+    fontSize: 11,
     color: '#CCCCCC',
-    lineHeight: 14,
+    lineHeight: 15,
   },
   sectorChange: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
   },
 
@@ -966,17 +966,17 @@ const shareStyles = StyleSheet.create({
     zIndex: 10,
   },
   simResultLabel: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '600',
     color: '#999999',
     marginBottom: 4,
   },
   simResultValue: {
-    fontSize: 28,
+    fontSize: 29,
     fontWeight: '900',
   },
   simResultAmount: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#BBBBBB',
     marginTop: 2,
   },
@@ -995,13 +995,13 @@ const shareStyles = StyleSheet.create({
     marginBottom: 6,
   },
   histTitle: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
     color: '#CCCCCC',
     marginLeft: 4,
   },
   histEvent: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
     color: '#FFFFFF',
     marginBottom: 8,
@@ -1014,14 +1014,14 @@ const shareStyles = StyleSheet.create({
     flex: 1,
   },
   histMetricLabel: {
-    fontSize: 9,
+    fontSize: 10,
     color: '#888888',
     marginBottom: 2,
   },
   histMetricValue: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
-    lineHeight: 15,
+    lineHeight: 16,
   },
 
   // ─── 안심 메시지 ───
@@ -1033,9 +1033,9 @@ const shareStyles = StyleSheet.create({
     zIndex: 10,
   },
   reassureText: {
-    fontSize: 10,
+    fontSize: 11,
     color: '#AAAAAA',
-    lineHeight: 15,
+    lineHeight: 16,
     textAlign: 'center',
   },
 
@@ -1057,7 +1057,7 @@ const shareStyles = StyleSheet.create({
     borderColor: 'rgba(76, 175, 80, 0.3)',
   },
   ctaText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
     color: '#4CAF50',
     marginLeft: 6,
@@ -1078,13 +1078,13 @@ const shareStyles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.06)',
   },
   watermarkBaln: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
     color: '#555555',
     letterSpacing: 1,
   },
   watermarkDot: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
     color: '#3A7D3E',
     letterSpacing: 1,
@@ -1104,7 +1104,7 @@ const shareStyles = StyleSheet.create({
     borderRadius: 20,
   },
   rewardToastText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
     color: '#4CAF50',
   },
@@ -1124,7 +1124,7 @@ const shareStyles = StyleSheet.create({
     borderRadius: 12,
   },
   shareButtonText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -1135,7 +1135,7 @@ const shareStyles = StyleSheet.create({
     borderRadius: 8,
   },
   rewardHintText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '800',
     color: '#1A1A1A',
   },
@@ -1154,7 +1154,7 @@ const sectionStyles = StyleSheet.create({
     marginBottom: 16,
   },
   cardTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
   },
   // Impact Chain
@@ -1169,15 +1169,15 @@ const sectionStyles = StyleSheet.create({
     gap: 12,
   },
   chainNumber: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '800',
     width: 22,
     textAlign: 'center',
   },
   chainText: {
-    fontSize: 14,
+    fontSize: 15,
     flex: 1,
-    lineHeight: 20,
+    lineHeight: 21,
   },
   chainArrowContainer: {
     alignItems: 'center',
@@ -1196,16 +1196,16 @@ const sectionStyles = StyleSheet.create({
     alignItems: 'center',
   },
   metricLabel: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '500',
     marginBottom: 4,
   },
   metricValue: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '800',
   },
   subTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     marginBottom: 8,
   },
@@ -1216,11 +1216,11 @@ const sectionStyles = StyleSheet.create({
     paddingVertical: 6,
   },
   sectorName: {
-    fontSize: 14,
+    fontSize: 15,
     flex: 1,
   },
   sectorChange: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
   },
   // Historical
@@ -1230,7 +1230,7 @@ const sectionStyles = StyleSheet.create({
     marginBottom: 12,
   },
   parallelEvent: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     marginBottom: 12,
   },
@@ -1242,14 +1242,14 @@ const sectionStyles = StyleSheet.create({
     flex: 1,
   },
   parallelLabel: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '500',
     marginBottom: 4,
   },
   parallelValue: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
-    lineHeight: 18,
+    lineHeight: 19,
   },
   lessonBox: {
     flexDirection: 'row',
@@ -1259,8 +1259,8 @@ const sectionStyles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   lessonText: {
-    fontSize: 13,
-    lineHeight: 20,
+    fontSize: 14,
+    lineHeight: 21,
     flex: 1,
   },
   // Action Guide
@@ -1277,8 +1277,8 @@ const sectionStyles = StyleSheet.create({
     marginTop: 7,
   },
   guideText: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 15,
+    lineHeight: 21,
     flex: 1,
   },
   // Simulation Result
@@ -1289,16 +1289,16 @@ const sectionStyles = StyleSheet.create({
     marginBottom: 16,
   },
   totalImpactLabel: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '500',
     marginBottom: 4,
   },
   totalImpactValue: {
-    fontSize: 32,
+    fontSize: 33,
     fontWeight: '800',
   },
   totalImpactAmount: {
-    fontSize: 14,
+    fontSize: 15,
     marginTop: 4,
   },
   assetRow: {
@@ -1313,18 +1313,18 @@ const sectionStyles = StyleSheet.create({
     gap: 2,
   },
   assetName: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
   assetTicker: {
-    fontSize: 12,
+    fontSize: 13,
   },
   assetImpact: {
     alignItems: 'flex-end',
     gap: 4,
   },
   assetChange: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
   },
   impactBadge: {
@@ -1333,7 +1333,7 @@ const sectionStyles = StyleSheet.create({
     borderRadius: 6,
   },
   impactBadgeText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
   },
   summaryBox: {
@@ -1342,8 +1342,8 @@ const sectionStyles = StyleSheet.create({
     marginTop: 16,
   },
   summaryText: {
-    fontSize: 13,
-    lineHeight: 20,
+    fontSize: 14,
+    lineHeight: 21,
   },
 });
 

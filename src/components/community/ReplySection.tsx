@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   toggleText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
   // 답글 목록 영역

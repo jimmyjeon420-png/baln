@@ -292,7 +292,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 25,
     fontWeight: '800',
   },
   liveBadge: {
@@ -301,12 +301,12 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   liveBadgeText: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: '800',
     color: '#000',
   },
   updateTime: {
-    fontSize: 11,
+    fontSize: 12,
   },
 
   // 필터
@@ -329,7 +329,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   tabLabel: {
-    fontSize: 13,
+    fontSize: 14,
   },
 
   // PiCK 섹션
@@ -345,11 +345,11 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   pickTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
   },
   pickSubtitle: {
-    fontSize: 12,
+    fontSize: 13,
   },
   pickScroll: {
     paddingHorizontal: 16,
@@ -388,12 +388,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   },
   emptyTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
     marginTop: 8,
   },
   emptySubtitle: {
-    fontSize: 14,
+    fontSize: 15,
     textAlign: 'center',
   },
 });

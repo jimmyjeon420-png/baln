@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '600',
   },
   tabBar: {
@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   tabText: {
-    fontSize: 16,
+    fontSize: 17,
   },
   content: {
     flex: 1,
@@ -144,11 +144,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statLabel: {
-    fontSize: 14,
+    fontSize: 15,
     marginBottom: 8,
   },
   statValue: {
-    fontSize: 32,
+    fontSize: 33,
     fontWeight: '700',
   },
   leaderboardContainer: {
@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   rank: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
     width: 40,
   },
@@ -170,11 +170,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   userName: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
     marginBottom: 4,
   },
   userStats: {
-    fontSize: 14,
+    fontSize: 15,
   },
 });

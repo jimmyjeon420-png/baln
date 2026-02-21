@@ -594,7 +594,7 @@ export default function AllocationDriftSection({
         <View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
             <Text style={[s.cardLabel, { color: colors.inverseText }]}>배분 이탈도</Text>
-            <TermTooltip term="배분 이탈도" style={{ color: colors.textTertiary, fontSize: 12 }}>ⓘ</TermTooltip>
+            <TermTooltip term="배분 이탈도" style={{ color: colors.textTertiary, fontSize: 13 }}>ⓘ</TermTooltip>
           </View>
           <Text style={[s.cardLabelEn, { color: colors.textTertiary }]}>Allocation Drift</Text>
         </View>
@@ -851,7 +851,7 @@ export default function AllocationDriftSection({
               style={{ marginLeft: 'auto' }}
               hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
             >
-              <Text style={[s.infoBtn, { color: colors.textTertiary, fontSize: 16 }]}>ⓘ</Text>
+              <Text style={[s.infoBtn, { color: colors.textTertiary, fontSize: 17 }]}>ⓘ</Text>
             </TouchableOpacity>
           </View>
           <View style={s.realEstateBody}>
@@ -907,11 +907,11 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginBottom: 10,
   },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  cardLabel: { fontSize: 15, fontWeight: '700' },
-  cardLabelEn: { fontSize: 10, marginTop: 1, letterSpacing: 0.5, textTransform: 'uppercase' as const },
+  cardLabel: { fontSize: 16, fontWeight: '700' },
+  cardLabelEn: { fontSize: 11, marginTop: 1, letterSpacing: 0.5, textTransform: 'uppercase' as const },
   driftBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10, gap: 6 },
   driftDot: { width: 6, height: 6, borderRadius: 3 },
-  driftText: { fontSize: 12, fontWeight: '700' },
+  driftText: { fontSize: 13, fontWeight: '700' },
 
   // 철학 선택
   philosophyRow: {
@@ -931,9 +931,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderColor: colors.border,
     backgroundColor: `${colors.textTertiary}0A`,
   },
-  philosophyEmoji: { fontSize: 11 },
-  philosophyBtnText: { fontSize: 10, color: colors.textSecondary, fontWeight: '600' },
-  philosophyDesc: { fontSize: 10, textAlign: 'center', marginBottom: 10 },
+  philosophyEmoji: { fontSize: 12 },
+  philosophyBtnText: { fontSize: 11, color: colors.textSecondary, fontWeight: '600' },
+  philosophyDesc: { fontSize: 11, textAlign: 'center', marginBottom: 10 },
 
   // "왜 이탈이 생겼는가" 섹션
   whySection: {
@@ -949,14 +949,14 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginBottom: 4,
   },
   whyLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
     color: colors.textSecondary,
   },
   whyText: {
-    fontSize: 12,
+    fontSize: 13,
     color: colors.textSecondary,
-    lineHeight: 18,
+    lineHeight: 19,
   },
 
   // "어떻게 해야 하는가" 액션 가이드 섹션
@@ -975,71 +975,71 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginBottom: 4,
   },
   actionGuideLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
     color: colors.primaryDark ?? colors.primary,
   },
   actionGuideText: {
-    fontSize: 12,
+    fontSize: 13,
     color: colors.textSecondary,
-    lineHeight: 18,
+    lineHeight: 19,
   },
 
   // 이탈도 바 차트
   driftChart: { gap: 10 },
   driftRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   driftLabelGroup: { flexDirection: 'row', alignItems: 'center', width: 72, gap: 4, flexShrink: 0 },
-  driftIcon: { fontSize: 13 },
-  driftLabel: { fontSize: 11, flex: 1 },
+  driftIcon: { fontSize: 14 },
+  driftLabel: { fontSize: 12, flex: 1 },
   driftBarContainer: { flex: 1, height: 14, backgroundColor: colors.surfaceElevated, borderRadius: 7, overflow: 'hidden', justifyContent: 'center' },
   driftBarTarget: { position: 'absolute', height: 14, borderRadius: 7, borderWidth: 1, borderStyle: 'dashed' },
   driftBarCurrent: { height: 8, borderRadius: 4, marginHorizontal: 3 },
   driftNumbers: { flexDirection: 'row', alignItems: 'baseline', width: 65 },
-  driftCurrent: { fontSize: 12, fontWeight: '700' },
-  driftSeparator: { fontSize: 10, color: colors.textQuaternary, marginHorizontal: 2 },
-  driftTargetNum: { fontSize: 10, color: colors.textTertiary },
+  driftCurrent: { fontSize: 13, fontWeight: '700' },
+  driftSeparator: { fontSize: 11, color: colors.textQuaternary, marginHorizontal: 2 },
+  driftTargetNum: { fontSize: 11, color: colors.textTertiary },
 
   // 범례
   legend: { flexDirection: 'row', justifyContent: 'center', gap: 16, marginTop: 10 },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   legendBar: { width: 12, height: 4, borderRadius: 2 },
-  legendText: { fontSize: 10, color: colors.textTertiary },
+  legendText: { fontSize: 11, color: colors.textTertiary },
 
   // 상세
   detailContainer: { marginTop: 14, paddingTop: 14, borderTopWidth: 1, borderTopColor: colors.border, gap: 8 },
   detailRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  detailIcon: { fontSize: 13, width: 20, textAlign: 'center' },
-  detailLabel: { fontSize: 13, color: colors.textSecondary, width: 55 },
-  detailCurrent: { fontSize: 13, fontWeight: '600', color: colors.textPrimary, width: 42, textAlign: 'right' },
-  detailTarget: { fontSize: 13, color: colors.textTertiary, width: 35 },
+  detailIcon: { fontSize: 14, width: 20, textAlign: 'center' },
+  detailLabel: { fontSize: 14, color: colors.textSecondary, width: 55 },
+  detailCurrent: { fontSize: 14, fontWeight: '600', color: colors.textPrimary, width: 42, textAlign: 'right' },
+  detailTarget: { fontSize: 14, color: colors.textTertiary, width: 35 },
   detailDriftBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, marginLeft: 'auto' },
-  detailDriftText: { fontSize: 10, fontWeight: '700' },
+  detailDriftText: { fontSize: 11, fontWeight: '700' },
 
   // 편집 버튼
   editButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 10, paddingVertical: 10, borderRadius: 10, backgroundColor: `${colors.textTertiary}0A` },
-  editButtonText: { fontSize: 12, color: colors.textTertiary },
+  editButtonText: { fontSize: 13, color: colors.textTertiary },
 
   // 편집 모드
   editContainer: { marginTop: 14, paddingTop: 14, borderTopWidth: 1, borderTopColor: colors.border },
-  editTitle: { fontSize: 13, fontWeight: '600', color: colors.textSecondary, marginBottom: 12 },
+  editTitle: { fontSize: 14, fontWeight: '600', color: colors.textSecondary, marginBottom: 12 },
   editRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
-  editIcon: { fontSize: 14, width: 22, textAlign: 'center' },
-  editLabel: { fontSize: 13, color: colors.textSecondary, width: 60 },
-  editInput: { width: 50, height: 34, backgroundColor: colors.surfaceElevated, borderRadius: 8, color: colors.textPrimary, fontSize: 14, fontWeight: '700', textAlign: 'center', paddingHorizontal: 4 },
-  editPercent: { fontSize: 12, color: colors.textTertiary },
+  editIcon: { fontSize: 15, width: 22, textAlign: 'center' },
+  editLabel: { fontSize: 14, color: colors.textSecondary, width: 60 },
+  editInput: { width: 50, height: 34, backgroundColor: colors.surfaceElevated, borderRadius: 8, color: colors.textPrimary, fontSize: 15, fontWeight: '700', textAlign: 'center', paddingHorizontal: 4 },
+  editPercent: { fontSize: 13, color: colors.textTertiary },
   editFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 },
-  editSum: { fontSize: 13, fontWeight: '700' },
+  editSum: { fontSize: 14, fontWeight: '700' },
   editButtons: { flexDirection: 'row', gap: 8 },
   editCancel: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, backgroundColor: `${colors.textTertiary}0F` },
-  editCancelText: { fontSize: 12, color: colors.textTertiary, fontWeight: '600' },
+  editCancelText: { fontSize: 13, color: colors.textTertiary, fontWeight: '600' },
   editSave: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, backgroundColor: `${colors.success}26` },
-  editSaveText: { fontSize: 12, color: colors.primaryDark ?? colors.primary, fontWeight: '700' },
+  editSaveText: { fontSize: 13, color: colors.primaryDark ?? colors.primary, fontWeight: '700' },
 
   // 뷰 모드 토글
   viewToggle: { flexDirection: 'row', justifyContent: 'center', gap: 6, marginBottom: 14 },
   toggleBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, backgroundColor: `${colors.textTertiary}0A` },
   toggleBtnActive: { backgroundColor: `${colors.success}26` },
-  toggleText: { fontSize: 11, color: colors.textTertiary, fontWeight: '600' },
+  toggleText: { fontSize: 12, color: colors.textTertiary, fontWeight: '600' },
   toggleTextActive: { color: colors.textPrimary },
 
   // 파이 차트 컨테이너
@@ -1058,21 +1058,21 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     gap: 6,
     marginBottom: 8,
   },
-  realEstateIcon: { fontSize: 16 },
-  realEstateTitle: { fontSize: 14, fontWeight: '700' },
-  realEstateSubtitle: { fontSize: 10, letterSpacing: 0.5, textTransform: 'uppercase' as const },
+  realEstateIcon: { fontSize: 17 },
+  realEstateTitle: { fontSize: 15, fontWeight: '700' },
+  realEstateSubtitle: { fontSize: 11, letterSpacing: 0.5, textTransform: 'uppercase' as const },
   realEstateBody: { gap: 4 },
-  realEstateValue: { fontSize: 14, fontWeight: '600' },
-  realEstateRatio: { fontSize: 12, fontWeight: '400' },
-  realEstateDebt: { fontSize: 12 },
-  realEstateMessage: { fontSize: 12, fontWeight: '500', marginTop: 4 },
+  realEstateValue: { fontSize: 15, fontWeight: '600' },
+  realEstateRatio: { fontSize: 13, fontWeight: '400' },
+  realEstateDebt: { fontSize: 13 },
+  realEstateMessage: { fontSize: 13, fontWeight: '500', marginTop: 4 },
   realEstateBonusRow: { marginTop: 8, gap: 4 },
   realEstateBonusBadge: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
-  realEstateBonusText: { fontSize: 12, fontWeight: '700' },
-  realEstateBonusReason: { fontSize: 11, lineHeight: 16 },
+  realEstateBonusText: { fontSize: 13, fontWeight: '700' },
+  realEstateBonusReason: { fontSize: 12, lineHeight: 17 },
 
   // ── ⓘ 버튼 & 모달 ──
-  infoBtn: { fontSize: 11, fontWeight: '700' },
+  infoBtn: { fontSize: 12, fontWeight: '700' },
 
   modalOverlay: {
     flex: 1,
@@ -1088,7 +1088,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     padding: 20,
   },
   infoModalTitle: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '800',
     marginBottom: 14,
   },
@@ -1098,15 +1098,15 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginBottom: 8,
   },
   infoSectionLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
     marginBottom: 4,
     textTransform: 'uppercase' as const,
     letterSpacing: 0.5,
   },
   infoSectionText: {
-    fontSize: 13,
-    lineHeight: 20,
+    fontSize: 14,
+    lineHeight: 21,
   },
   infoCloseBtn: {
     marginTop: 8,
@@ -1115,7 +1115,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     alignItems: 'center',
   },
   infoCloseBtnText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
   },
 });

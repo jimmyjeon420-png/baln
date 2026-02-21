@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
     lineHeight: 46,
   },
   streakLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     marginTop: 2,
   },
@@ -257,10 +257,10 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   recordEmoji: {
-    fontSize: 14,
+    fontSize: 15,
   },
   recordText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
   },
 
@@ -275,11 +275,11 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   milestoneLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '500',
   },
   milestoneRemaining: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
   },
   progressBarBg: {
@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   dotLabel: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '500',
   },
 
@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   checkedInText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
   },
   checkInButton: {
@@ -336,7 +336,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   checkInButtonText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
   },
 
@@ -347,7 +347,7 @@ const styles = StyleSheet.create({
     paddingTop: 14,
   },
   weeklySectionTitle: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
     marginBottom: 10,
   },
@@ -360,7 +360,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   weeklyDayLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '500',
   },
   weeklyDot: {

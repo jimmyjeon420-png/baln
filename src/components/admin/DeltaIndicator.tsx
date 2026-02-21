@@ -50,10 +50,10 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   text: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
   },
   textCompact: {
-    fontSize: 10,
+    fontSize: 11,
   },
 });

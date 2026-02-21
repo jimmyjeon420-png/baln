@@ -296,12 +296,12 @@ const styles = StyleSheet.create({
     alignItems: 'baseline',
   },
   logoText: {
-    fontSize: 26,
+    fontSize: 27,
     fontWeight: '800',
     color: '#FFFFFF',
   },
   logoSuffix: {
-    fontSize: 22,
+    fontSize: 23,
     fontWeight: '600',
     color: '#FFFFFF',
     opacity: 0.7,
@@ -312,7 +312,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   categoryText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -331,19 +331,19 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   resultIcon: {
-    fontSize: 22,
+    fontSize: 23,
   },
   resultLabel: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '800',
     color: '#FFFFFF',
   },
   questionText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
     color: '#FFFFFF',
     textAlign: 'center',
-    lineHeight: 24,
+    lineHeight: 25,
     paddingHorizontal: 8,
   },
   directionRow: {
@@ -356,7 +356,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   directionText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -377,13 +377,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statValue: {
-    fontSize: 22,
+    fontSize: 23,
     fontWeight: '800',
     color: '#FFFFFF',
     marginBottom: 2,
   },
   statLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '500',
     color: '#FFFFFF',
     opacity: 0.7,
@@ -400,13 +400,13 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   watermark: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     color: '#FFFFFF',
     opacity: 0.7,
   },
   disclaimer: {
-    fontSize: 9,
+    fontSize: 10,
     color: '#FFFFFF',
     opacity: 0.5,
     textAlign: 'center',
@@ -426,11 +426,11 @@ const styles = StyleSheet.create({
   },
   shareButtonText: {
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
   },
   branding: {
-    fontSize: 11,
+    fontSize: 12,
     letterSpacing: 0.5,
     marginTop: 8,
   },

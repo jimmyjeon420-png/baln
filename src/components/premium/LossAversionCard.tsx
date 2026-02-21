@@ -230,14 +230,14 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   emotionTitle: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '800',
     textAlign: 'center',
-    lineHeight: 28,
+    lineHeight: 29,
     marginBottom: 8,
   },
   emotionSubtext: {
-    fontSize: 14,
+    fontSize: 15,
     textAlign: 'center',
   },
 
@@ -257,13 +257,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   lossItemTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     marginBottom: 2,
   },
   lossItemDesc: {
-    fontSize: 12,
-    lineHeight: 16,
+    fontSize: 13,
+    lineHeight: 17,
   },
 
   // CTA
@@ -279,7 +279,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
   },
   keepButtonText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '800',
     color: '#FFFFFF',
   },
@@ -288,7 +288,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   cancelButtonText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '500',
   },
 });

@@ -196,7 +196,7 @@ const s = StyleSheet.create({
 
   // 섹션 제목
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
     // color: 동적 적용 (colors.textPrimary)
     marginHorizontal: 16,
@@ -227,19 +227,19 @@ const s = StyleSheet.create({
   },
 
   factorIcon: {
-    fontSize: 16,
+    fontSize: 17,
     marginRight: 8,
   },
 
   factorLabel: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     // color: 동적 적용 (colors.textPrimary)
   },
 
   factorScore: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
   },
 
@@ -258,8 +258,8 @@ const s = StyleSheet.create({
   },
 
   factorComment: {
-    fontSize: 12,
+    fontSize: 13,
     // color: 동적 적용 (colors.textSecondary)
-    lineHeight: 16,
+    lineHeight: 17,
   },
 });

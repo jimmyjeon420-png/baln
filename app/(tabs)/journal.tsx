@@ -212,7 +212,7 @@ const styles = StyleSheet.create({
   },
   recommendationText: {
     ...TYPOGRAPHY.bodySmall,
-    lineHeight: 18,
+    lineHeight: 19,
   },
   footer: {
     paddingHorizontal: SIZES.lg,

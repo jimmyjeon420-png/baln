@@ -58,19 +58,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   title: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '600',
     color: '#FFFFFF',
     marginBottom: 12,
   },
   message: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#B3B3B3',
     marginBottom: 20,
     textAlign: 'center',
   },
   errorDetails: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#CF6679',
     marginTop: 12,
     textAlign: 'center',

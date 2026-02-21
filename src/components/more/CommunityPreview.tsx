@@ -162,7 +162,7 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       gap: 8,
     },
     headerTitle: {
-      fontSize: 16,
+      fontSize: 17,
       fontWeight: '700',
     },
     newBadge: {
@@ -172,7 +172,7 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       borderRadius: 6,
     },
     newBadgeText: {
-      fontSize: 9,
+      fontSize: 10,
       fontWeight: '800',
       color: '#FFFFFF',
     },
@@ -182,12 +182,12 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       gap: 4,
     },
     viewAllText: {
-      fontSize: 13,
+      fontSize: 14,
       fontWeight: '600',
     },
     tagline: {
-      fontSize: 12,
-      lineHeight: 17,
+      fontSize: 13,
+      lineHeight: 18,
       marginBottom: SIZES.md,
     },
     postsContainer: {
@@ -206,9 +206,9 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       gap: 6,
     },
     postTitle: {
-      fontSize: 14,
+      fontSize: 15,
       fontWeight: '600',
-      lineHeight: 20,
+      lineHeight: 21,
     },
     postMeta: {
       flexDirection: 'row',
@@ -216,7 +216,7 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       gap: 8,
     },
     authorTag: {
-      fontSize: 11,
+      fontSize: 12,
       flex: 1,
     },
     metaDivider: {
@@ -230,7 +230,7 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       gap: 4,
     },
     likesCount: {
-      fontSize: 11,
+      fontSize: 12,
       fontWeight: '600',
     },
     commentsWrap: {
@@ -239,7 +239,7 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       gap: 4,
     },
     commentsCount: {
-      fontSize: 11,
+      fontSize: 12,
       fontWeight: '600',
     },
     loadingBox: {
@@ -247,14 +247,14 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       alignItems: 'center',
     },
     loadingText: {
-      fontSize: 13,
+      fontSize: 14,
     },
     emptyBox: {
       paddingVertical: 20,
       alignItems: 'center',
     },
     emptyText: {
-      fontSize: 13,
+      fontSize: 14,
     },
     unlockRow: {
       flexDirection: 'row',
@@ -263,7 +263,7 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       marginTop: SIZES.sm,
     },
     unlockText: {
-      fontSize: 12,
+      fontSize: 13,
       fontWeight: '500',
     },
   });

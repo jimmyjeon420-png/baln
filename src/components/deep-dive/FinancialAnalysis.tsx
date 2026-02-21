@@ -322,7 +322,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   headerTitle: {
-    fontSize: 22,
+    fontSize: 23,
     fontWeight: '800',
     marginLeft: 12,
   },
@@ -335,11 +335,11 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   icon: {
-    fontSize: 20,
+    fontSize: 21,
     marginRight: 8,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
   },
 
@@ -352,12 +352,12 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   marketCapLabel: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
     marginBottom: 6,
   },
   marketCapValue: {
-    fontSize: 28,
+    fontSize: 29,
     fontWeight: '900',
   },
 
@@ -387,21 +387,21 @@ const styles = StyleSheet.create({
     backgroundColor: '#9333EA20',
   },
   tableCellHeaderText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
     color: '#9333EA',
   },
   tableCellText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
   tableCellValue: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     marginBottom: 4,
   },
   growthText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
   },
 
@@ -418,17 +418,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   metricLabel: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
     marginBottom: 8,
   },
   metricValue: {
-    fontSize: 24,
+    fontSize: 25,
     fontWeight: '800',
     color: '#10B981',
   },
   metricUnit: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
   },
 
@@ -439,8 +439,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   descriptionText: {
-    fontSize: 14,
-    lineHeight: 22,
+    fontSize: 15,
+    lineHeight: 23,
   },
 
   // 상세 미제공 안내
@@ -454,7 +454,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   noDetailText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '500',
   },
 });

@@ -85,10 +85,10 @@ const styles = StyleSheet.create({
   },
 
   badgeEmoji: {
-    fontSize: 14,
+    fontSize: 15,
   },
   badgeText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
   },
 });

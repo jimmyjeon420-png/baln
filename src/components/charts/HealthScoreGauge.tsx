@@ -234,11 +234,11 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   gradeText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '800',
   },
   gradeLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
   },
   // 눈금 라벨
@@ -249,7 +249,7 @@ const styles = StyleSheet.create({
     marginTop: -10,
   },
   tickText: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: '500',
   },
 });

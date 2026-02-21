@@ -280,18 +280,18 @@ const s = StyleSheet.create({
     gap: 4,
   },
   bracketEmoji: {
-    fontSize: 14,
+    fontSize: 15,
   },
   bracketText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
   percentileText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
   },
   title: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
   },
 
@@ -315,7 +315,7 @@ const s = StyleSheet.create({
     gap: 6,
   },
   comparisonLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
   betterBadge: {
@@ -333,7 +333,7 @@ const s = StyleSheet.create({
     gap: 8,
   },
   barLabel: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
     width: 28,
   },
@@ -348,7 +348,7 @@ const s = StyleSheet.create({
     borderRadius: 4,
   },
   barValue: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     width: 52,
     textAlign: 'right',
@@ -365,16 +365,16 @@ const s = StyleSheet.create({
     marginBottom: 8,
   },
   nudgeText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     flex: 1,
-    lineHeight: 20,
+    lineHeight: 21,
   },
 
   // 익명 고지
   disclaimer: {
-    fontSize: 11,
+    fontSize: 12,
     textAlign: 'center',
-    lineHeight: 16,
+    lineHeight: 17,
   },
 });

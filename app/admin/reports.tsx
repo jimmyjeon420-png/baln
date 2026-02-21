@@ -451,7 +451,7 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '600',
     color: COLORS.textPrimary,
   },
@@ -474,7 +474,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
   },
   filterChipText: {
-    fontSize: 14,
+    fontSize: 15,
     color: COLORS.textSecondary,
   },
   filterChipTextActive: {
@@ -497,7 +497,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.3)',
   },
   filterCountText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
     color: COLORS.textSecondary,
   },
@@ -517,7 +517,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
   },
   summaryText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     color: COLORS.textSecondary,
   },
@@ -543,7 +543,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   reportReason: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     color: COLORS.textPrimary,
   },
@@ -559,7 +559,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   urgentBadgeText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '900',
     color: '#FFF',
   },
@@ -570,14 +570,14 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   statusBadgeText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
   },
   contentPreview: {
-    fontSize: 14,
+    fontSize: 15,
     color: COLORS.textSecondary,
     marginBottom: 8,
-    lineHeight: 20,
+    lineHeight: 21,
   },
   reportFooter: {
     flexDirection: 'row',
@@ -586,16 +586,16 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   reportFooterText: {
-    fontSize: 12,
+    fontSize: 13,
     color: COLORS.textSecondary,
   },
   duplicateCount: {
-    fontSize: 12,
+    fontSize: 13,
     color: COLORS.error,
     fontWeight: '600',
   },
   reportDate: {
-    fontSize: 11,
+    fontSize: 12,
     color: COLORS.textSecondary,
   },
   centerContainer: {
@@ -604,7 +604,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   errorText: {
-    fontSize: 14,
+    fontSize: 15,
     color: COLORS.textSecondary,
   },
   emptyContainer: {
@@ -612,7 +612,7 @@ const styles = StyleSheet.create({
     paddingVertical: 60,
   },
   emptyText: {
-    fontSize: 14,
+    fontSize: 15,
     color: COLORS.textSecondary,
     marginTop: 12,
   },
@@ -632,7 +632,7 @@ const styles = StyleSheet.create({
     borderBottomColor: COLORS.border,
   },
   modalHeaderTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '600',
     color: COLORS.textPrimary,
   },
@@ -643,7 +643,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   modalSectionTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
     color: COLORS.textPrimary,
     marginBottom: 12,
@@ -653,12 +653,12 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   infoLabel: {
-    fontSize: 14,
+    fontSize: 15,
     color: COLORS.textSecondary,
     width: 60,
   },
   infoValue: {
-    fontSize: 14,
+    fontSize: 15,
     color: COLORS.textPrimary,
     flex: 1,
   },
@@ -670,9 +670,9 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
   },
   contentText: {
-    fontSize: 14,
+    fontSize: 15,
     color: COLORS.textPrimary,
-    lineHeight: 20,
+    lineHeight: 21,
   },
   actionButtons: {
     gap: 12,
@@ -692,7 +692,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
   },
   actionButtonText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
     color: '#FFF',
   },

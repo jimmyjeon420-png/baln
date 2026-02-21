@@ -301,11 +301,11 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   masterLabel: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '700',
   },
   masterDesc: {
-    fontSize: 13,
+    fontSize: 14,
     marginTop: 4,
   },
   masterOffBanner: {
@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   masterOffText: {
-    fontSize: 12,
+    fontSize: 13,
     flex: 1,
   },
 
@@ -328,7 +328,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     paddingHorizontal: 16,
     paddingTop: 16,
@@ -357,18 +357,18 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   itemIcon: {
-    fontSize: 22,
+    fontSize: 23,
     marginRight: 12,
   },
   itemTitleInfo: {
     flex: 1,
   },
   itemLabel: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
   },
   itemSummary: {
-    fontSize: 13,
+    fontSize: 14,
     marginTop: 2,
   },
 
@@ -384,14 +384,14 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   detailDot: {
-    fontSize: 12,
+    fontSize: 13,
     marginRight: 6,
     marginTop: 1,
   },
   detailText: {
-    fontSize: 12,
+    fontSize: 13,
     flex: 1,
-    lineHeight: 18,
+    lineHeight: 19,
   },
 
   // 비활성화 텍스트
@@ -409,8 +409,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   infoText: {
-    fontSize: 12,
+    fontSize: 13,
     flex: 1,
-    lineHeight: 18,
+    lineHeight: 19,
   },
 });

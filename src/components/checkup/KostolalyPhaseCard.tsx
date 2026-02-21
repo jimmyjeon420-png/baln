@@ -376,9 +376,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     gap: 12,
   },
   loadingRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8 },
-  loadingText: { fontSize: 13 },
+  loadingText: { fontSize: 14 },
   errorRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8 },
-  errorText: { fontSize: 13 },
+  errorText: { fontSize: 14 },
 
   // 헤더
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
@@ -387,16 +387,16 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingHorizontal: 10, paddingVertical: 5,
     borderRadius: 10, borderWidth: 1,
   },
-  phaseTagText: { fontSize: 13, fontWeight: '800' },
-  phaseName: { fontSize: 16, fontWeight: '800' },
-  phaseNameEn: { fontSize: 10, marginTop: 2, letterSpacing: 0.3 },
+  phaseTagText: { fontSize: 14, fontWeight: '800' },
+  phaseName: { fontSize: 17, fontWeight: '800' },
+  phaseNameEn: { fontSize: 11, marginTop: 2, letterSpacing: 0.3 },
 
   // 설명 카드
   descCard: {
     borderRadius: 10, padding: 12,
     borderLeftWidth: 3,
   },
-  descText: { fontSize: 13, lineHeight: 20 },
+  descText: { fontSize: 14, lineHeight: 21 },
 
   // 달걀 모형
   eggContainer: { alignItems: 'center', paddingVertical: 8, gap: 6 },
@@ -411,49 +411,49 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     backgroundColor: 'transparent',
   },
   eggCellEmpty: { width: 82, height: 72 },
-  eggCellEmoji: { fontSize: 18, opacity: 0.8 },
-  eggCellPhase: { fontSize: 16, fontWeight: '700' },
-  eggCellName: { fontSize: 9, fontWeight: '500' },
-  eggCycle: { fontSize: 10, marginTop: 6, letterSpacing: 0.3 },
+  eggCellEmoji: { fontSize: 19, opacity: 0.8 },
+  eggCellPhase: { fontSize: 17, fontWeight: '700' },
+  eggCellName: { fontSize: 10, fontWeight: '500' },
+  eggCycle: { fontSize: 11, marginTop: 6, letterSpacing: 0.3 },
 
   // AI 근거
   reasonSection: { borderRadius: 10, padding: 12, gap: 6 },
   reasonHeader: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 4 },
-  reasonTitle: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
+  reasonTitle: { fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
   reasonRow: { flexDirection: 'row', gap: 6 },
-  reasonBullet: { fontSize: 14, lineHeight: 20, fontWeight: '800' },
-  reasonText: { fontSize: 12, lineHeight: 20, flex: 1 },
+  reasonBullet: { fontSize: 15, lineHeight: 21, fontWeight: '800' },
+  reasonText: { fontSize: 13, lineHeight: 21, flex: 1 },
 
   // 달리오/버핏
   expertsRow: { gap: 8 },
   expertCard: { borderRadius: 10, padding: 12, borderWidth: 1 },
-  expertLabel: { fontSize: 11, fontWeight: '800', marginBottom: 4 },
-  expertText: { fontSize: 12, lineHeight: 18 },
+  expertLabel: { fontSize: 12, fontWeight: '800', marginBottom: 4 },
+  expertText: { fontSize: 13, lineHeight: 19 },
 
   // 추천 배분 미리보기
   targetPreview: { borderRadius: 10, padding: 12 },
-  targetPreviewTitle: { fontSize: 11, fontWeight: '700', marginBottom: 8 },
+  targetPreviewTitle: { fontSize: 12, fontWeight: '700', marginBottom: 8 },
   targetGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   targetItem: {
     paddingHorizontal: 10, paddingVertical: 6,
     backgroundColor: 'rgba(255,255,255,0.05)',
     borderRadius: 8, alignItems: 'center',
   },
-  targetCat: { fontSize: 9, fontWeight: '600' },
-  targetPct: { fontSize: 13, fontWeight: '800' },
+  targetCat: { fontSize: 10, fontWeight: '600' },
+  targetPct: { fontSize: 14, fontWeight: '800' },
 
   // P2-A: 역사적 참고 성과
   histPerf: { borderRadius: 10, padding: 12, borderWidth: 1 },
   histPerfHeader: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 10 },
-  histPerfTitle: { fontSize: 11, fontWeight: '700' },
+  histPerfTitle: { fontSize: 12, fontWeight: '700' },
   histPerfStats: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
   histPerfStat: { flex: 1, alignItems: 'center' },
-  histPerfStatValue: { fontSize: 18, fontWeight: '800', marginBottom: 2 },
-  histPerfStatLabel: { fontSize: 10 },
+  histPerfStatValue: { fontSize: 19, fontWeight: '800', marginBottom: 2 },
+  histPerfStatLabel: { fontSize: 11 },
   histPerfDivider: { width: 1, height: 32, marginHorizontal: 12 },
   histPerfNote: { flexDirection: 'row', alignItems: 'flex-start', gap: 5, padding: 8, borderRadius: 8, marginBottom: 6 },
-  histPerfNoteText: { flex: 1, fontSize: 11, lineHeight: 16 },
-  histPerfDisclaimer: { fontSize: 9, textAlign: 'center' },
+  histPerfNoteText: { flex: 1, fontSize: 12, lineHeight: 17 },
+  histPerfDisclaimer: { fontSize: 10, textAlign: 'center' },
 
   // 배분 적용 버튼
   applyButton: {
@@ -464,8 +464,8 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderRadius: 12,
     gap: 8,
   },
-  applyButtonText: { fontSize: 14, fontWeight: '800', color: '#fff' },
+  applyButtonText: { fontSize: 15, fontWeight: '800', color: '#fff' },
 
   // 업데이트 시각
-  updatedAt: { fontSize: 10, textAlign: 'center', marginTop: -4 },
+  updatedAt: { fontSize: 11, textAlign: 'center', marginTop: -4 },
 });

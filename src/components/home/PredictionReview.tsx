@@ -437,10 +437,10 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   headerEmoji: {
-    fontSize: 22,
+    fontSize: 23,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
   },
   resultSummary: {
@@ -449,7 +449,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   resultSummaryText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
   },
 
@@ -474,11 +474,11 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   statValue: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
   },
   statLabel: {
-    fontSize: 11,
+    fontSize: 12,
   },
   statDivider: {
     width: 1,
@@ -513,9 +513,9 @@ const styles = StyleSheet.create({
   },
   reviewQuestion: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
-    lineHeight: 20,
+    lineHeight: 21,
   },
   reviewHeaderRight: {
     flexDirection: 'row',
@@ -524,7 +524,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   creditText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
   },
 
@@ -546,11 +546,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   answerLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '500',
   },
   answerValue: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
   },
 
@@ -561,13 +561,13 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   explanationLabel: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
     marginBottom: 4,
   },
   explanationText: {
-    fontSize: 13,
-    lineHeight: 20,
+    fontSize: 14,
+    lineHeight: 21,
   },
 
   // 빈 상태
@@ -576,7 +576,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   emptyText: {
-    fontSize: 14,
+    fontSize: 15,
   },
 
   // 스트릭 배너
@@ -590,10 +590,10 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   streakEmoji: {
-    fontSize: 18,
+    fontSize: 19,
   },
   streakText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
   },
 });

@@ -106,11 +106,11 @@ const s = StyleSheet.create({
     marginBottom: 12,
   },
   scenarioLabel: {
-    fontSize: 14,
+    fontSize: 15,
     marginBottom: 4,
   },
   scenarioName: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '700',
     textAlign: 'center',
     marginBottom: 16,
@@ -122,10 +122,10 @@ const s = StyleSheet.create({
     marginBottom: 16,
   },
   impactLabel: {
-    fontSize: 14,
+    fontSize: 15,
   },
   impactValue: {
-    fontSize: 28,
+    fontSize: 29,
     fontWeight: '700',
   },
   divider: {
@@ -145,10 +145,10 @@ const s = StyleSheet.create({
     gap: 8,
   },
   defenseLabel: {
-    fontSize: 13,
+    fontSize: 14,
   },
   defenseScore: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '700',
   },
   reassurancePill: {
@@ -157,7 +157,7 @@ const s = StyleSheet.create({
     borderRadius: 20,
   },
   reassuranceText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
   },
 });

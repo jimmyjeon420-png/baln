@@ -474,7 +474,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   backButton: { marginRight: 8, padding: 4 },
-  title: { flex: 1, fontSize: 20, fontWeight: 'bold' },
+  title: { flex: 1, fontSize: 21, fontWeight: 'bold' },
   content: { flex: 1 },
   scrollContent: { padding: 16, paddingBottom: 100 },
 
@@ -491,12 +491,12 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   emotionSectionTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '800',
     marginBottom: 2,
   },
   emotionSectionDate: {
-    fontSize: 13,
+    fontSize: 14,
   },
   historyLink: {
     flexDirection: 'row',
@@ -505,7 +505,7 @@ const styles = StyleSheet.create({
     paddingTop: 2,
   },
   historyLinkText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
 
@@ -530,7 +530,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   checkedLabel: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '800',
   },
   checkedBadge: {
@@ -543,19 +543,19 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
   },
   checkedBadgeText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
     color: '#4CAF50',
   },
   checkedFeedback: {
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 14,
+    lineHeight: 19,
     marginBottom: 6,
   },
   checkedMemo: {
-    fontSize: 12,
+    fontSize: 13,
     fontStyle: 'italic',
-    lineHeight: 16,
+    lineHeight: 17,
     marginBottom: 8,
   },
   checkedMarket: {
@@ -563,7 +563,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   checkedMarketText: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#888888',
     fontWeight: '600',
   },
@@ -579,7 +579,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   rewardHintText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
     color: '#4CAF50',
   },
@@ -598,11 +598,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#FFFFFF10',
   },
-  emotionBtnEmoji: { fontSize: 28, marginBottom: 4 },
-  emotionBtnLabel: { fontSize: 11, fontWeight: '600' },
+  emotionBtnEmoji: { fontSize: 29, marginBottom: 4 },
+  emotionBtnLabel: { fontSize: 12, fontWeight: '600' },
   detailInputs: { gap: 12 },
   feedbackText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     textAlign: 'center',
   },
@@ -610,7 +610,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 12,
     padding: 12,
-    fontSize: 14,
+    fontSize: 15,
     minHeight: 64,
     textAlignVertical: 'top',
   },
@@ -620,14 +620,14 @@ const styles = StyleSheet.create({
     gap: 4,
     alignSelf: 'flex-start',
   },
-  marketToggleText: { fontSize: 12 },
+  marketToggleText: { fontSize: 13 },
   marketInputRow: {
     flexDirection: 'row',
     gap: 12,
   },
   marketInputItem: { flex: 1 },
   marketInputLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
     marginBottom: 4,
   },
@@ -635,7 +635,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 10,
     padding: 10,
-    fontSize: 14,
+    fontSize: 15,
   },
   saveBtn: {
     borderRadius: 14,
@@ -644,7 +644,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   saveBtnText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '800',
     color: '#FFFFFF',
   },
@@ -657,11 +657,11 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   badgeSectionTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '800',
   },
   badgeSectionCount: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
   },
   badgeGrid: {
@@ -695,7 +695,7 @@ const styles = StyleSheet.create({
   },
   rewardBadgeClaimed: { backgroundColor: '#333' },
   rewardBadgeText: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: '800',
     color: '#FFFFFF',
   },
@@ -709,24 +709,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 10,
   },
-  badgeEmoji: { fontSize: 28 },
+  badgeEmoji: { fontSize: 29 },
   lockIcon: { justifyContent: 'center', alignItems: 'center' },
   badgeTitle: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
     textAlign: 'center',
     marginBottom: 4,
   },
   badgeTitleLocked: { color: '#666666' },
   badgeDesc: {
-    fontSize: 10,
+    fontSize: 11,
     color: '#888888',
     textAlign: 'center',
-    lineHeight: 14,
+    lineHeight: 15,
   },
   badgeDescLocked: { color: '#444444' },
   badgeDate: {
-    fontSize: 9,
+    fontSize: 10,
     color: '#4CAF50',
     marginTop: 6,
     fontWeight: '600',
@@ -743,15 +743,15 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(124, 77, 255, 0.2)',
   },
   rewardInfoTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     color: '#B39DDB',
     marginBottom: 2,
   },
   rewardInfoDesc: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#888888',
-    lineHeight: 18,
+    lineHeight: 19,
   },
   infoCard: {
     flexDirection: 'row',
@@ -762,8 +762,8 @@ const styles = StyleSheet.create({
   },
   infoText: {
     flex: 1,
-    fontSize: 12,
-    lineHeight: 18,
+    fontSize: 13,
+    lineHeight: 19,
   },
   toast: {
     position: 'absolute',
@@ -781,7 +781,7 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   toastText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     color: '#000000',
   },

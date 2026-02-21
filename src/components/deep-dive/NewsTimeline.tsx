@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   title: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '700',
   },
   sentimentBadge: {
@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   sentimentText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
   highlightsBox: {
@@ -186,12 +186,12 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   highlightDot: {
-    fontSize: 16,
-    lineHeight: 20,
+    fontSize: 17,
+    lineHeight: 21,
   },
   highlightText: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 15,
+    lineHeight: 21,
     flex: 1,
   },
   timeline: {
@@ -223,14 +223,14 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
   newsDate: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '500',
     marginBottom: 2,
   },
   newsTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
-    lineHeight: 20,
+    lineHeight: 21,
     marginBottom: 6,
   },
   impactBadge: {
@@ -240,7 +240,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   impactText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
   },
 });

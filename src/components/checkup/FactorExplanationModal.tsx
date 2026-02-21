@@ -121,10 +121,10 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     gap: 12,
   },
   headerIcon: {
-    fontSize: 32,
+    fontSize: 33,
   },
   headerTitle: {
-    fontSize: 22,
+    fontSize: 23,
     fontWeight: '700',
     color: colors.textPrimary,
   },
@@ -137,7 +137,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     justifyContent: 'center',
   },
   closeButtonText: {
-    fontSize: 20,
+    fontSize: 21,
     color: colors.textTertiary,
     fontWeight: '600',
   },
@@ -152,14 +152,14 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginBottom: 32,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
     color: colors.textPrimary,
     marginBottom: 12,
   },
   sectionText: {
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: 17,
+    lineHeight: 25,
     color: colors.textSecondary,
   },
   exampleBox: {
@@ -170,8 +170,8 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     padding: 16,
   },
   exampleText: {
-    fontSize: 15,
-    lineHeight: 23,
+    fontSize: 16,
+    lineHeight: 24,
     color: colors.textSecondary,
   },
   solutionBox: {
@@ -184,13 +184,13 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     padding: 16,
   },
   solutionIcon: {
-    fontSize: 24,
+    fontSize: 25,
     marginTop: 2,
   },
   solutionText: {
     flex: 1,
-    fontSize: 15,
-    lineHeight: 23,
+    fontSize: 16,
+    lineHeight: 24,
     color: colors.textSecondary,
   },
   contextBox: {
@@ -201,8 +201,8 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     padding: 16,
   },
   contextText: {
-    fontSize: 15,
-    lineHeight: 23,
+    fontSize: 16,
+    lineHeight: 24,
     color: colors.textSecondary,
   },
   footer: {
@@ -219,7 +219,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     justifyContent: 'center',
   },
   footerButtonText: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '600',
     color: '#FFFFFF',
   },

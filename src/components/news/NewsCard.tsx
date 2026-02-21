@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   categoryLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
   },
   pickBadge: {
@@ -250,18 +250,18 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   pickText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '800',
     color: '#000',
   },
   title: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
-    lineHeight: 22,
+    lineHeight: 23,
   },
   summary: {
-    fontSize: 13,
-    lineHeight: 19,
+    fontSize: 14,
+    lineHeight: 20,
   },
   pickReasonBox: {
     flexDirection: 'row',
@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   pickReasonText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
   },
   tagsRow: {
@@ -286,7 +286,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   tagText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '500',
   },
   impactBox: {
@@ -298,9 +298,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   impactSummary: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
-    lineHeight: 17,
+    lineHeight: 18,
     flex: 1,
   },
   bottomRow: {
@@ -310,10 +310,10 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   sourceName: {
-    fontSize: 11,
+    fontSize: 12,
   },
   timeAgo: {
-    fontSize: 11,
+    fontSize: 12,
     flexShrink: 1,
   },
   dot: {
@@ -335,12 +335,12 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   compactTitle: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
-    lineHeight: 18,
+    lineHeight: 19,
   },
   pickInline: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '800',
     color: '#FFC107',
   },
@@ -350,9 +350,9 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   compactSource: {
-    fontSize: 11,
+    fontSize: 12,
   },
   compactTime: {
-    fontSize: 11,
+    fontSize: 12,
   },
 });

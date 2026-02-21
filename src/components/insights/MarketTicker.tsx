@@ -204,21 +204,21 @@ const s = StyleSheet.create({
     gap: 5,
   },
   label: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
     color: '#777',
   },
   price: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
     color: '#FFFFFF',
   },
   change: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
   },
   dot: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#333',
     marginLeft: 6,
   },

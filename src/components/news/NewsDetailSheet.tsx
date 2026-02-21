@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   categoryLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
   },
   pickBadge: {
@@ -271,30 +271,30 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   pickText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '800',
     color: '#000',
   },
   timeText: {
-    fontSize: 12,
+    fontSize: 13,
   },
 
   // 제목 + 출처
   title: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
-    lineHeight: 26,
+    lineHeight: 27,
     marginBottom: 6,
   },
   source: {
-    fontSize: 12,
+    fontSize: 13,
     marginBottom: 12,
   },
 
   // 요약
   summary: {
-    fontSize: 14,
-    lineHeight: 21,
+    fontSize: 15,
+    lineHeight: 22,
     marginBottom: 12,
   },
 
@@ -309,7 +309,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   aiText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     flex: 1,
   },
@@ -327,7 +327,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   tagText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '500',
   },
 
@@ -343,12 +343,12 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   impactTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
   },
   impactDesc: {
-    fontSize: 13,
-    lineHeight: 19,
+    fontSize: 14,
+    lineHeight: 20,
   },
   assetRow: {
     flexDirection: 'row',
@@ -357,14 +357,14 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   assetName: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
   assetTicker: {
-    fontSize: 12,
+    fontSize: 13,
   },
   assetWeight: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
   },
   totalRow: {
@@ -376,10 +376,10 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   totalLabel: {
-    fontSize: 13,
+    fontSize: 14,
   },
   totalValue: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
   },
 
@@ -394,7 +394,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   openButtonText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     color: '#000',
   },

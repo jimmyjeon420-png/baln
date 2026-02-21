@@ -277,7 +277,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
   },
   headerActions: {
@@ -290,7 +290,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   markAllText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
   },
 
@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
     borderColor: '#4CAF50',
   },
   filterChipText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
   filterChipTextActive: {
@@ -333,7 +333,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',
   },
   filterBadgeText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
     color: '#FFF',
   },
@@ -382,7 +382,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   notifTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     flex: 1,
     marginRight: 8,
@@ -391,11 +391,11 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   notifTime: {
-    fontSize: 11,
+    fontSize: 12,
   },
   notifBody: {
-    fontSize: 13,
-    lineHeight: 19,
+    fontSize: 14,
+    lineHeight: 20,
     marginBottom: 6,
   },
   categoryTag: {
@@ -408,7 +408,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   categoryTagText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '600',
   },
 
@@ -419,11 +419,11 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   emptyTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
   },
   emptyDesc: {
-    fontSize: 13,
+    fontSize: 14,
     textAlign: 'center',
   },
   sampleBtn: {
@@ -436,7 +436,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   sampleBtnText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
 });

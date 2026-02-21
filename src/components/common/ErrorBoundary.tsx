@@ -265,20 +265,20 @@ const styles = StyleSheet.create({
     backgroundColor: DARK_COLORS.background,
   },
   title: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '700',
     color: DARK_COLORS.textPrimary,
     marginTop: 16,
     marginBottom: 8,
   },
   message: {
-    fontSize: 14,
+    fontSize: 15,
     color: DARK_COLORS.textSecondary,
     textAlign: 'center',
     marginBottom: 24,
   },
   retryHint: {
-    fontSize: 12,
+    fontSize: 13,
     color: DARK_COLORS.warning,
     textAlign: 'center',
     marginBottom: 16,
@@ -298,7 +298,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   primaryButtonText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
     color: '#FFFFFF',
   },
@@ -318,7 +318,7 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   reportButtonText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     color: DARK_COLORS.textSecondary,
   },
@@ -333,7 +333,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   buttonText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
     color: DARK_COLORS.textPrimary,
   },
@@ -347,18 +347,18 @@ const styles = StyleSheet.create({
     borderColor: DARK_COLORS.borderStrong,
   },
   devErrorTitle: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
     color: DARK_COLORS.error,
     marginBottom: 4,
   },
   devErrorText: {
-    fontSize: 12,
+    fontSize: 13,
     color: DARK_COLORS.error,
     marginBottom: 4,
   },
   devErrorStack: {
-    fontSize: 10,
+    fontSize: 11,
     color: DARK_COLORS.textTertiary,
     fontFamily: 'monospace',
   },

@@ -277,7 +277,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   monthTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
   },
   navButton: {
@@ -301,7 +301,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   dayLabelText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
   },
 
@@ -328,7 +328,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   gridDayNumber: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '500',
   },
 
@@ -346,11 +346,11 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   rateLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '500',
   },
   rateValue: {
-    fontSize: 22,
+    fontSize: 23,
     fontWeight: '900',
   },
 
@@ -370,7 +370,7 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   legendText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '500',
   },
 });

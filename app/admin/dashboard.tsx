@@ -657,31 +657,31 @@ const styles = StyleSheet.create({
     alignItems: 'center' as const,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '600',
     color: COLORS.textPrimary,
   },
 
   // 로딩
   loadingText: {
-    fontSize: 14,
+    fontSize: 15,
     color: COLORS.textSecondary,
     marginTop: 12,
   },
 
   // 에러
   errorTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '600',
     color: COLORS.textPrimary,
     marginTop: 16,
   },
   errorMessage: {
-    fontSize: 14,
+    fontSize: 15,
     color: COLORS.textSecondary,
     marginTop: 8,
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 21,
   },
   retryButton: {
     flexDirection: 'row',
@@ -694,7 +694,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   retryButtonText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
     color: '#FFFFFF',
   },
@@ -708,12 +708,12 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   sectionTitle: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '700',
     color: COLORS.textPrimary,
   },
   sectionSubtitle: {
-    fontSize: 12,
+    fontSize: 13,
     color: COLORS.textSecondary,
   },
 
@@ -744,20 +744,20 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   kpiLabel: {
-    fontSize: 13,
+    fontSize: 14,
     color: COLORS.textSecondary,
     marginBottom: 4,
   },
   kpiValue: {
-    fontSize: 22,
+    fontSize: 23,
     fontWeight: '700',
     color: COLORS.textPrimary,
   },
   kpiValueLarge: {
-    fontSize: 26,
+    fontSize: 27,
   },
   kpiSubLabel: {
-    fontSize: 11,
+    fontSize: 12,
     color: COLORS.textSecondary,
     marginTop: 4,
   },
@@ -785,12 +785,12 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.border,
   },
   infoBannerLabel: {
-    fontSize: 12,
+    fontSize: 13,
     color: COLORS.textSecondary,
     marginBottom: 4,
   },
   infoBannerValue: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
     color: COLORS.textPrimary,
   },
@@ -812,7 +812,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   summaryText: {
-    fontSize: 13,
+    fontSize: 14,
     color: COLORS.textSecondary,
   },
   summaryCount: {
@@ -842,7 +842,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   timeGroupText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
     color: COLORS.textSecondary,
   },
@@ -879,18 +879,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   activityLabel: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '500',
     color: COLORS.textPrimary,
     flex: 1,
     marginRight: 8,
   },
   activityTime: {
-    fontSize: 11,
+    fontSize: 12,
     color: COLORS.textSecondary,
   },
   activityEmail: {
-    fontSize: 12,
+    fontSize: 13,
     color: COLORS.textSecondary,
     marginTop: 2,
   },
@@ -901,7 +901,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   activityLoadingText: {
-    fontSize: 13,
+    fontSize: 14,
     color: COLORS.textSecondary,
     marginTop: 8,
   },
@@ -912,7 +912,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   emptyActivityText: {
-    fontSize: 14,
+    fontSize: 15,
     color: COLORS.textSecondary,
     marginTop: 8,
   },

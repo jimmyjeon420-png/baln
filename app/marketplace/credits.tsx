@@ -522,7 +522,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
-  headerTitle: { color: '#FFF', fontSize: 18, fontWeight: '700' },
+  headerTitle: { color: '#FFF', fontSize: 19, fontWeight: '700' },
 
   // Expo Go 안내 배너
   expoGoBanner: {
@@ -536,7 +536,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#FFB74D40',
   },
-  expoGoBannerText: { color: '#FFB74D', fontSize: 12, lineHeight: 18, flex: 1 },
+  expoGoBannerText: { color: '#FFB74D', fontSize: 13, lineHeight: 19, flex: 1 },
 
   // 무료 체험 배너
   trialBanner: {
@@ -551,14 +551,14 @@ const styles = StyleSheet.create({
   },
   trialTitle: {
     color: '#4CAF50',
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     marginBottom: 4,
   },
   trialDesc: {
     color: '#9E9E9E',
-    fontSize: 13,
-    lineHeight: 19,
+    fontSize: 14,
+    lineHeight: 20,
   },
 
   // 잔액 카드
@@ -571,12 +571,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#7C4DFF40',
   },
-  balanceLabel: { color: '#888', fontSize: 14, marginTop: 8 },
+  balanceLabel: { color: '#888', fontSize: 15, marginTop: 8 },
   balanceValue: { color: '#FFF', fontSize: 36, fontWeight: '800', marginTop: 4 },
-  balanceKRW: { color: '#888', fontSize: 13, marginTop: 4 },
+  balanceKRW: { color: '#888', fontSize: 14, marginTop: 4 },
 
   // 섹션
-  sectionTitle: { color: '#FFF', fontSize: 16, fontWeight: '700', marginBottom: 12 },
+  sectionTitle: { color: '#FFF', fontSize: 17, fontWeight: '700', marginBottom: 12 },
 
   // 패키지 목록
   packageList: {
@@ -614,13 +614,13 @@ const styles = StyleSheet.create({
   popularBadge: {
     backgroundColor: '#7C4DFF',
   },
-  badgeText: { color: '#FFF', fontSize: 10, fontWeight: '700' },
-  packageName: { color: '#FFF', fontSize: 14, fontWeight: '700', marginBottom: 6 },
+  badgeText: { color: '#FFF', fontSize: 11, fontWeight: '700' },
+  packageName: { color: '#FFF', fontSize: 15, fontWeight: '700', marginBottom: 6 },
   creditRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  creditAmount: { color: '#FFF', fontSize: 22, fontWeight: '800' },
-  bonusText: { color: '#4CAF50', fontSize: 14, fontWeight: '700' },
-  packagePrice: { color: '#FFF', fontSize: 16, fontWeight: '700', marginTop: 8 },
-  perCredit: { color: '#666', fontSize: 11, marginTop: 2 },
+  creditAmount: { color: '#FFF', fontSize: 23, fontWeight: '800' },
+  bonusText: { color: '#4CAF50', fontSize: 15, fontWeight: '700' },
+  packagePrice: { color: '#FFF', fontSize: 17, fontWeight: '700', marginTop: 8 },
+  perCredit: { color: '#666', fontSize: 12, marginTop: 2 },
 
   // 구매 버튼
   purchaseButton: {
@@ -636,7 +636,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
-  purchaseButtonText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
+  purchaseButtonText: { color: '#FFF', fontSize: 17, fontWeight: '700' },
   disabledButton: { opacity: 0.5 },
 
   // 거래 내역
@@ -650,11 +650,11 @@ const styles = StyleSheet.create({
     borderBottomColor: '#2A2A2A',
   },
   txInfo: { flex: 1 },
-  txLabel: { color: '#CCC', fontSize: 13, fontWeight: '600' },
-  txDate: { color: '#666', fontSize: 11 },
+  txLabel: { color: '#CCC', fontSize: 14, fontWeight: '600' },
+  txDate: { color: '#666', fontSize: 12 },
   txRight: { alignItems: 'flex-end' },
-  txAmount: { fontSize: 14, fontWeight: '700' },
-  txBalance: { color: '#666', fontSize: 11 },
+  txAmount: { fontSize: 15, fontWeight: '700' },
+  txBalance: { color: '#666', fontSize: 12 },
 
   // 크레딧 획득 방법
   earnSection: {
@@ -679,12 +679,12 @@ const styles = StyleSheet.create({
   },
   earnLabel: {
     color: '#FFF',
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
   earnDesc: {
     color: '#888',
-    fontSize: 12,
+    fontSize: 13,
     marginTop: 2,
   },
   earnBadge: {
@@ -695,7 +695,7 @@ const styles = StyleSheet.create({
   },
   earnBadgeText: {
     color: '#4CAF50',
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '800',
   },
   earnTip: {
@@ -711,8 +711,8 @@ const styles = StyleSheet.create({
   },
   earnTipText: {
     color: '#B39DDB',
-    fontSize: 12,
-    lineHeight: 18,
+    fontSize: 13,
+    lineHeight: 19,
     flex: 1,
   },
 
@@ -728,7 +728,7 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   referralMyCode: { gap: 8 },
-  referralLabel: { color: '#CCC', fontSize: 13, fontWeight: '600' },
+  referralLabel: { color: '#CCC', fontSize: 14, fontWeight: '600' },
   referralCodeRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -736,7 +736,7 @@ const styles = StyleSheet.create({
   },
   referralCode: {
     flex: 1,
-    fontSize: 24,
+    fontSize: 25,
     fontWeight: '800',
     color: '#7C4DFF',
     letterSpacing: 4,
@@ -750,8 +750,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     gap: 6,
   },
-  referralShareText: { color: '#FFF', fontSize: 13, fontWeight: '600' },
-  referralHint: { color: '#888', fontSize: 11, lineHeight: 16 },
+  referralShareText: { color: '#FFF', fontSize: 14, fontWeight: '600' },
+  referralHint: { color: '#888', fontSize: 12, lineHeight: 17 },
   referralInputSection: { gap: 8 },
   referralInputRow: {
     flexDirection: 'row',
@@ -765,7 +765,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     color: '#FFF',
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     letterSpacing: 2,
     borderWidth: 1,
@@ -777,7 +777,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 10,
   },
-  referralApplyText: { color: '#FFF', fontSize: 14, fontWeight: '700' },
+  referralApplyText: { color: '#FFF', fontSize: 15, fontWeight: '700' },
 
   // 안내 섹션
   infoSection: {
@@ -786,6 +786,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
   },
-  infoTitle: { color: '#888', fontSize: 13, fontWeight: '700', marginBottom: 8 },
-  infoText: { color: '#666', fontSize: 12, lineHeight: 20 },
+  infoTitle: { color: '#888', fontSize: 14, fontWeight: '700', marginBottom: 8 },
+  infoText: { color: '#666', fontSize: 13, lineHeight: 21 },
 });

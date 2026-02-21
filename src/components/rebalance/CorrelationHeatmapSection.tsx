@@ -162,7 +162,7 @@ const CorrelationHeatmapSection = ({ assets, totalAssets }: CorrelationHeatmapSe
         <View style={[styles.summaryDivider, { backgroundColor: colors.border }]} />
         <View style={styles.summaryItem}>
           <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>해석</Text>
-          <Text style={[styles.summaryValue, { color: divColor, fontSize: 11 }]}>
+          <Text style={[styles.summaryValue, { color: divColor, fontSize: 12 }]}>
             {avgCorrelation < 0.15 ? '헤지 효과 큼' : avgCorrelation < 0.35 ? '적정 분산' : '쏠림 위험'}
           </Text>
         </View>
@@ -274,8 +274,8 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     padding: 18,
     borderWidth: 1,
   },
-  cardLabel: { fontSize: 15, fontWeight: '700' },
-  cardLabelEn: { fontSize: 10, marginTop: 1, letterSpacing: 0.5, textTransform: 'uppercase' },
+  cardLabel: { fontSize: 16, fontWeight: '700' },
+  cardLabelEn: { fontSize: 11, marginTop: 1, letterSpacing: 0.5, textTransform: 'uppercase' },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -283,9 +283,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginBottom: 14,
   },
   expandButton: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  expandButtonText: { fontSize: 12 },
+  expandButtonText: { fontSize: 13 },
   divBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
-  divBadgeText: { fontSize: 11, fontWeight: '700' },
+  divBadgeText: { fontSize: 12, fontWeight: '700' },
 
   // 요약 행
   summaryRow: {
@@ -295,8 +295,8 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   summaryItem: { flex: 1, alignItems: 'center' },
   summaryDivider: { width: 1 },
-  summaryLabel: { fontSize: 10, marginBottom: 4 },
-  summaryValue: { fontSize: 14, fontWeight: '700' },
+  summaryLabel: { fontSize: 11, marginBottom: 4 },
+  summaryValue: { fontSize: 15, fontWeight: '700' },
 
   // 상세
   detailContainer: { marginTop: 14, paddingTop: 14, borderTopWidth: 1, gap: 12 },
@@ -304,16 +304,16 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   // 범례
   legend: { flexDirection: 'row', justifyContent: 'center', gap: 8 },
   legendItem: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6 },
-  legendText: { fontSize: 10, fontWeight: '500' },
+  legendText: { fontSize: 11, fontWeight: '500' },
 
   // 그리드
   grid: { alignSelf: 'center' },
   gridRow: { flexDirection: 'row' },
   gridCorner: { width: CELL_SIZE, height: 28 },
   gridHeaderCell: { width: CELL_SIZE, height: 28, justifyContent: 'center', alignItems: 'center' },
-  gridHeaderText: { fontSize: 10, fontWeight: '600' },
+  gridHeaderText: { fontSize: 11, fontWeight: '600' },
   gridRowLabel: { width: CELL_SIZE, height: CELL_SIZE, justifyContent: 'center', alignItems: 'flex-end', paddingRight: 6 },
-  gridRowLabelText: { fontSize: 10, fontWeight: '600' },
+  gridRowLabelText: { fontSize: 11, fontWeight: '600' },
   gridCell: {
     width: CELL_SIZE,
     height: CELL_SIZE,
@@ -322,12 +322,12 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderRadius: 4,
     margin: 1,
   },
-  gridCellText: { fontSize: 11, fontWeight: '600' },
+  gridCellText: { fontSize: 12, fontWeight: '600' },
 
   // 가이드
   guideBox: {
     borderRadius: 8,
     padding: 12,
   },
-  guideText: { fontSize: 12, lineHeight: 18 },
+  guideText: { fontSize: 13, lineHeight: 19 },
 });

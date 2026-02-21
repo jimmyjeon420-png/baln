@@ -253,7 +253,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
   },
 
@@ -277,7 +277,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   tabLabel: {
-    fontSize: 13,
+    fontSize: 14,
   },
 
   // PiCK 섹션
@@ -293,11 +293,11 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   pickTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
   },
   pickSubtitle: {
-    fontSize: 12,
+    fontSize: 13,
   },
   pickScroll: {
     paddingHorizontal: 16,
@@ -336,12 +336,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   },
   emptyTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
     marginTop: 8,
   },
   emptySubtitle: {
-    fontSize: 14,
+    fontSize: 15,
     textAlign: 'center',
   },
 });

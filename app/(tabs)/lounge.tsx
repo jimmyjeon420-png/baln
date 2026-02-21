@@ -216,17 +216,17 @@ class SafeLoungeWrapper extends React.Component<
       return (
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0A0A0A', padding: 32, paddingTop: 60 }}>
           <Text style={{ fontSize: 48 }}>{'⚠️'}</Text>
-          <Text style={{ color: '#FAFAFA', fontSize: 20, fontWeight: '700', marginTop: 16 }}>
+          <Text style={{ color: '#FAFAFA', fontSize: 21, fontWeight: '700', marginTop: 16 }}>
             VIP 라운지 오류
           </Text>
-          <Text style={{ color: '#AAA', fontSize: 14, textAlign: 'center', marginTop: 8, lineHeight: 20 }}>
+          <Text style={{ color: '#AAA', fontSize: 15, textAlign: 'center', marginTop: 8, lineHeight: 21 }}>
             {this.state.error?.message || '알 수 없는 오류가 발생했습니다.'}
           </Text>
           <TouchableOpacity
             onPress={() => this.setState({ hasError: false, error: null })}
             style={{ marginTop: 24, backgroundColor: '#4CAF50', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8 }}
           >
-            <Text style={{ color: '#FFF', fontWeight: '600', fontSize: 16 }}>재시도</Text>
+            <Text style={{ color: '#FFF', fontWeight: '600', fontSize: 17 }}>재시도</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={async () => {
@@ -239,7 +239,7 @@ class SafeLoungeWrapper extends React.Component<
             }}
             style={{ marginTop: 12, backgroundColor: '#2196F3', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8 }}
           >
-            <Text style={{ color: '#FFF', fontWeight: '600', fontSize: 16 }}>진단</Text>
+            <Text style={{ color: '#FFF', fontWeight: '600', fontSize: 17 }}>진단</Text>
           </TouchableOpacity>
         </View>
       );
@@ -306,10 +306,10 @@ class LoungeErrorBoundary extends React.Component<
         <View style={[styles.container, { paddingTop: insets?.top || 44, backgroundColor: '#0A0A0A' }]}>
           <View style={styles.loadingContainer}>
             <Text style={{ fontSize: 48 }}>{'⚠️'}</Text>
-            <Text style={{ color: '#FAFAFA', fontSize: 20, fontWeight: '700', marginTop: 16 }}>
+            <Text style={{ color: '#FAFAFA', fontSize: 21, fontWeight: '700', marginTop: 16 }}>
               라운지 로딩 중 오류
             </Text>
-            <Text style={{ color: '#8A8A8A', textAlign: 'center', marginTop: 8, fontSize: 13, lineHeight: 20, paddingHorizontal: 32 }}>
+            <Text style={{ color: '#8A8A8A', textAlign: 'center', marginTop: 8, fontSize: 14, lineHeight: 21, paddingHorizontal: 32 }}>
               {this.state.error?.message || '알 수 없는 오류가 발생했습니다.'}
             </Text>
 
@@ -318,7 +318,7 @@ class LoungeErrorBoundary extends React.Component<
                 style={{ backgroundColor: '#4CAF50', paddingHorizontal: 20, paddingVertical: 12, borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 6 }}
                 onPress={this.handleRetry}
               >
-                <Text style={{ color: '#FFF', fontWeight: '600', fontSize: 15 }}>재시도</Text>
+                <Text style={{ color: '#FFF', fontWeight: '600', fontSize: 16 }}>재시도</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -326,7 +326,7 @@ class LoungeErrorBoundary extends React.Component<
                 onPress={this.handleDiagnose}
                 disabled={this.state.isDiagnosing}
               >
-                <Text style={{ color: '#FFF', fontWeight: '600', fontSize: 15 }}>
+                <Text style={{ color: '#FFF', fontWeight: '600', fontSize: 16 }}>
                   {this.state.isDiagnosing ? '진단 중...' : '진단'}
                 </Text>
               </TouchableOpacity>
@@ -509,7 +509,7 @@ function LoungeScreenInner() {
         </View>
         <View style={styles.loadingContainer}>
           <Text style={{ fontSize: 48, marginBottom: 16 }}>{'🔄'}</Text>
-          <Text style={[styles.loadingText, { color: themeColors.textPrimary, fontSize: 16, fontWeight: '600' }]}>
+          <Text style={[styles.loadingText, { color: themeColors.textPrimary, fontSize: 17, fontWeight: '600' }]}>
             네트워크 연결을 확인해주세요
           </Text>
           <Text style={[styles.loadingText, { color: themeColors.textTertiary, marginTop: 8 }]}>
@@ -519,7 +519,7 @@ function LoungeScreenInner() {
             onPress={() => refetchEligibility()}
             style={{ marginTop: 24, backgroundColor: '#4CAF50', paddingHorizontal: 32, paddingVertical: 14, borderRadius: 12 }}
           >
-            <Text style={{ color: '#FFF', fontWeight: '700', fontSize: 16 }}>다시 시도</Text>
+            <Text style={{ color: '#FFF', fontWeight: '700', fontSize: 17 }}>다시 시도</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -1150,7 +1150,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 25,
     fontWeight: '800',
   },
   vipBadge: {
@@ -1163,7 +1163,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   vipBadgeText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
     color: '#B9F2FF',
   },
@@ -1188,7 +1188,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   segmentText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
   segmentTextActive: {
@@ -1202,7 +1202,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    fontSize: 14,
+    fontSize: 15,
     marginTop: 12,
   },
 
@@ -1223,15 +1223,15 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   lockedTitle: {
-    fontSize: 22,
+    fontSize: 23,
     fontWeight: '700',
     marginBottom: 8,
   },
   lockedSubtitle: {
-    fontSize: 14,
+    fontSize: 15,
     textAlign: 'center',
     marginBottom: 24,
-    lineHeight: 21,
+    lineHeight: 22,
   },
   accessGuide: {
     width: '100%',
@@ -1240,7 +1240,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   accessGuideTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     marginBottom: 14,
   },
@@ -1259,11 +1259,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   accessTierLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
   accessTierReq: {
-    fontSize: 11,
+    fontSize: 12,
     marginTop: 1,
   },
   progressSection: {
@@ -1279,10 +1279,10 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   progressLabel: {
-    fontSize: 14,
+    fontSize: 15,
   },
   progressValue: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '700',
   },
   progressBarBg: {
@@ -1296,7 +1296,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   progressShortfall: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#FFC107',
   },
   investButton: {
@@ -1309,12 +1309,12 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   investButtonText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
     color: '#FFFFFF',
   },
   verificationNote: {
-    fontSize: 12,
+    fontSize: 13,
     textAlign: 'center',
     marginTop: 16,
     fontStyle: 'italic',
@@ -1338,7 +1338,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   categoryTabText: {
-    fontSize: 12,
+    fontSize: 13,
   },
 
   // ── 커뮤니티: 정렬 칩 ──
@@ -1359,7 +1359,7 @@ const styles = StyleSheet.create({
   },
   sortChipActive: {},
   sortChipText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
   },
   sortChipTextActive: {
@@ -1380,15 +1380,15 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   welcomeIcon: {
-    fontSize: 32,
+    fontSize: 33,
   },
   welcomeText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
     color: '#4CAF50',
   },
   welcomeSubtext: {
-    fontSize: 13,
+    fontSize: 14,
     marginTop: 2,
   },
   accessBadgeRow: {
@@ -1404,7 +1404,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   accessBadgeLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
   },
 
@@ -1420,7 +1420,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   composeTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
   },
   composeCategoryRow: {
@@ -1438,12 +1438,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   composeCategoryText: {
-    fontSize: 12,
+    fontSize: 13,
   },
   composeInput: {
     borderRadius: 12,
     padding: 14,
-    fontSize: 15,
+    fontSize: 16,
     minHeight: 100,
     textAlignVertical: 'top',
   },
@@ -1454,7 +1454,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   charCount: {
-    fontSize: 13,
+    fontSize: 14,
   },
   submitButton: {
     backgroundColor: '#4CAF50',
@@ -1463,12 +1463,12 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   submitButtonText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     color: '#FFFFFF',
   },
   holdingsNotice: {
-    fontSize: 11,
+    fontSize: 12,
     textAlign: 'center',
     marginTop: 8,
     fontStyle: 'italic',
@@ -1500,7 +1500,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   categoryChipText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
   categoryChipTextActive: {
@@ -1519,13 +1519,13 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   gatheringWelcomeTitle: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '700',
     marginBottom: 4,
   },
   gatheringWelcomeSubtitle: {
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 14,
+    lineHeight: 19,
   },
   tierIndicator: {
     flexDirection: 'row',
@@ -1537,7 +1537,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   tierText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
   },
   gatheringsContent: {
@@ -1552,13 +1552,13 @@ const styles = StyleSheet.create({
     paddingVertical: 60,
   },
   emptyTitle: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '600',
     marginTop: 16,
     marginBottom: 8,
   },
   emptyDescription: {
-    fontSize: 14,
+    fontSize: 15,
     textAlign: 'center',
   },
 
@@ -1580,7 +1580,7 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   fabText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     color: '#000000',
   },

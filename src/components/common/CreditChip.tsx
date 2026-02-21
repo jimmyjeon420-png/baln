@@ -39,9 +39,9 @@ export function CreditChip({
 
   // 크기별 스타일
   const sizeConfig = {
-    small: { padding: 6, fontSize: 12, iconSize: 12 },
-    medium: { padding: 8, fontSize: 14, iconSize: 14 },
-    large: { padding: 12, fontSize: 16, iconSize: 16 },
+    small: { padding: 6, fontSize: 13, iconSize: 12 },
+    medium: { padding: 8, fontSize: 15, iconSize: 14 },
+    large: { padding: 12, fontSize: 17, iconSize: 16 },
   }[size];
 
   // 색상 (획득: 보라색, 차감: 회색)

@@ -119,10 +119,10 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   emoji: {
-    fontSize: 16,
+    fontSize: 17,
   },
   value: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
   },
   divider: {

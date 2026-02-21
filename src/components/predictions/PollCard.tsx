@@ -282,10 +282,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   categoryEmoji: {
-    fontSize: 12,
+    fontSize: 13,
   },
   categoryLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
   },
   countdownBadge: {
@@ -294,7 +294,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   countdownText: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#888888',
   },
   resultBadge: {
@@ -303,22 +303,22 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   resultBadgeText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
   },
 
   // 질문
   question: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     color: '#FFFFFF',
-    lineHeight: 24,
+    lineHeight: 25,
     marginBottom: 6,
   },
   description: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#888888',
-    lineHeight: 19,
+    lineHeight: 20,
     marginBottom: 14,
   },
 
@@ -347,12 +347,12 @@ const styles = StyleSheet.create({
     borderColor: '#CF667940',
   },
   voteBtnYesText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     color: '#4CAF50',
   },
   voteBtnNoText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     color: '#CF6679',
   },
@@ -371,7 +371,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   barLabel: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#AAAAAA',
   },
   barLabelHighlight: {
@@ -379,7 +379,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   barPercent: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -407,7 +407,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   footerText: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#666666',
   },
   creditBadge: {
@@ -417,20 +417,20 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   creditBadgeText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
     color: '#4CAF50',
   },
   missText: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#CF6679',
   },
   rewardHint: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#555555',
   },
   sourceText: {
-    fontSize: 10,
+    fontSize: 11,
     color: '#444444',
     marginTop: 8,
   },

@@ -136,7 +136,7 @@ const s = StyleSheet.create({
     flex: 1,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
     // color: 동적 적용 (colors.textPrimary)
     marginHorizontal: 16,
@@ -158,8 +158,8 @@ const s = StyleSheet.create({
   },
   disclaimerText: {
     flex: 1,
-    fontSize: 11,
+    fontSize: 12,
     color: '#888888',
-    lineHeight: 16,
+    lineHeight: 17,
   },
 });

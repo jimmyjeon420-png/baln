@@ -64,7 +64,7 @@ interface CardSwipeContainerProps {
 
 export default function CardSwipeContainer({
   children,
-  labels = ['건강', '맥락', '예측'],
+  labels = ['내 자산', '오늘 시장', '내 예측'],
   onSettingsPress,
   initialIndex = 0,
   onCardChange,
@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   label: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '500',
     letterSpacing: 0.5,
   },
@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
   },
   swipeHintText: {
     color: '#FFFFFF',
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     letterSpacing: 0.3,
   },
@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
     // paddingBottom is applied dynamically via insets.bottom + 68 (tab bar height + 8px buffer)
   },
   pageCounterText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '500',
     letterSpacing: 1,
   },

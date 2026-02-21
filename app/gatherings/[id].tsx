@@ -464,7 +464,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: 12,
-    fontSize: 14,
+    fontSize: 15,
   },
   header: {
     flexDirection: 'row',
@@ -482,7 +482,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '600',
   },
   content: {
@@ -506,7 +506,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   categoryText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
   fullBadge: {
@@ -516,7 +516,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   fullBadgeText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
   participatingBadge: {
@@ -528,18 +528,18 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   participatingBadgeText: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#000000',
     fontWeight: '600',
   },
   title: {
-    fontSize: 24,
+    fontSize: 25,
     fontWeight: '800',
     marginBottom: 20,
-    lineHeight: 32,
+    lineHeight: 33,
   },
   sectionLabel: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -562,7 +562,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   verifiedText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '500',
   },
   hostInfo: {
@@ -581,12 +581,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   hostName: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     marginBottom: 2,
   },
   hostAssets: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
   infoCard: {
@@ -613,15 +613,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   infoLabel: {
-    fontSize: 12,
+    fontSize: 13,
     marginBottom: 2,
   },
   infoValue: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '500',
   },
   feeValue: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '700',
   },
   descriptionCard: {
@@ -630,8 +630,8 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   description: {
-    fontSize: 15,
-    lineHeight: 24,
+    fontSize: 16,
+    lineHeight: 25,
   },
   participantsCard: {
     borderRadius: 16,
@@ -655,15 +655,15 @@ const styles = StyleSheet.create({
   },
   participantName: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '500',
   },
   participantAssets: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
   },
   moreParticipants: {
-    fontSize: 13,
+    fontSize: 14,
     textAlign: 'center',
     marginTop: 8,
   },
@@ -685,7 +685,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   joinButtonText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     color: '#000000',
   },
@@ -700,7 +700,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   cancelButtonText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
   },
   closedButton: {
@@ -712,7 +712,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   closedButtonText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
   },
   // 티어 기반 접근 제어 (TBAC) 스타일
@@ -736,13 +736,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   tierWarningTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     marginBottom: 4,
   },
   tierWarningText: {
-    fontSize: 12,
-    lineHeight: 18,
+    fontSize: 13,
+    lineHeight: 19,
   },
   tierBlockedButton: {
     flexDirection: 'row',
@@ -755,7 +755,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   tierBlockedButtonText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
   },
   // 사기 경고 배너
@@ -774,14 +774,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scamWarningTitle: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
     color: '#FF6B6B',
     marginBottom: 4,
   },
   scamWarningText: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#FF9B9B',
-    lineHeight: 18,
+    lineHeight: 19,
   },
 });

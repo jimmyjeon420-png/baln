@@ -135,7 +135,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   label: {
-    fontSize: 13,
+    fontSize: 14,
   },
   gradeBadge: {
     paddingHorizontal: 10,
@@ -143,11 +143,11 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   gradeText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
   },
   totalValue: {
-    fontSize: 32,
+    fontSize: 33,
     fontWeight: '800',
   },
   pnlRow: {
@@ -162,12 +162,12 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   realEstateText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     flex: 1,
   },
   pnlText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
   },
   actions: {
@@ -181,7 +181,7 @@ const styles = StyleSheet.create({
   },
   diagnosisBtn: {},
   actionLabel: {
-    fontSize: 12,
+    fontSize: 13,
     marginBottom: 6,
   },
   scoreRow: {
@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   scoreValue: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '800',
   },
   diagnosisArrow: {

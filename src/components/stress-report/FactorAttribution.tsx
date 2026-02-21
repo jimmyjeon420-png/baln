@@ -152,7 +152,7 @@ const s = StyleSheet.create({
     padding: 20,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     marginBottom: 16,
   },
@@ -169,11 +169,11 @@ const s = StyleSheet.create({
     alignItems: 'center',
   },
   factorLabel: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
   factorPercent: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
   },
   barBg: {
@@ -186,15 +186,15 @@ const s = StyleSheet.create({
     borderRadius: 4,
   },
   factorDesc: {
-    fontSize: 12,
+    fontSize: 13,
   },
   reassuranceBox: {
     borderRadius: 12,
     padding: 14,
   },
   reassuranceText: {
-    fontSize: 13,
-    lineHeight: 20,
+    fontSize: 14,
+    lineHeight: 21,
     textAlign: 'center',
     fontWeight: '500',
   },

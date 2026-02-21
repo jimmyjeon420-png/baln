@@ -204,17 +204,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
-  headerTitle: { fontSize: 18, fontWeight: '700' },
+  headerTitle: { fontSize: 19, fontWeight: '700' },
   inputSection: { marginBottom: 16 },
-  inputLabel: { fontSize: 13, marginBottom: 6, marginTop: 10 },
+  inputLabel: { fontSize: 14, marginBottom: 6, marginTop: 10 },
   textInput: {
     borderRadius: 12,
     padding: 14,
-    fontSize: 15,
+    fontSize: 16,
     borderWidth: 1,
   },
   quickSelect: { marginBottom: 16 },
-  quickLabel: { fontSize: 13, marginBottom: 8 },
+  quickLabel: { fontSize: 14, marginBottom: 8 },
   chipRow: { flexDirection: 'row', gap: 8 },
   chip: {
     paddingHorizontal: 14,
@@ -223,7 +223,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   chipActive: { backgroundColor: '#7C4DFF20', borderColor: '#7C4DFF' },
-  chipText: { fontSize: 13, fontWeight: '600' },
+  chipText: { fontSize: 14, fontWeight: '600' },
   chipTextActive: { color: '#7C4DFF' },
   analyzeButton: {
     flexDirection: 'row',
@@ -235,6 +235,6 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 20,
   },
-  analyzeButtonText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
+  analyzeButtonText: { color: '#FFF', fontSize: 17, fontWeight: '700' },
   disabledButton: { opacity: 0.4 },
 });

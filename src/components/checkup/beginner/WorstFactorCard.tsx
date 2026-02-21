@@ -190,7 +190,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderColor: colors.border,
   },
   cardTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     marginBottom: 16,
     color: colors.textPrimary,
@@ -202,14 +202,14 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginBottom: 12,
   },
   icon: {
-    fontSize: 28,
+    fontSize: 29,
     marginTop: 2,
   },
   factorContent: {
     flex: 1,
   },
   factorLabel: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '600',
     marginBottom: 8,
     color: colors.textPrimary,
@@ -226,12 +226,12 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderRadius: 4,
   },
   scoreText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
   comment: {
-    fontSize: 15,
-    lineHeight: 22,
+    fontSize: 16,
+    lineHeight: 23,
     marginBottom: 12,
     color: colors.textSecondary,
   },
@@ -246,11 +246,11 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     backgroundColor: `${colors.primary}15`,
   },
   improveIcon: {
-    fontSize: 14,
+    fontSize: 15,
   },
   improveText: {
     flex: 1,
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     color: colors.primary,
   },
@@ -264,13 +264,13 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     backgroundColor: `${colors.warning}20`,
   },
   contextIcon: {
-    fontSize: 16,
+    fontSize: 17,
     marginTop: 2,
   },
   contextText: {
     flex: 1,
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 15,
+    lineHeight: 21,
     color: colors.textPrimary,
   },
   tapHint: {
@@ -284,12 +284,12 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderTopColor: colors.border,
   },
   tapHintText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     color: colors.primaryDark ?? colors.primary,
   },
   tapHintIcon: {
-    fontSize: 14,
+    fontSize: 15,
     color: colors.primaryDark ?? colors.primary,
   },
 });

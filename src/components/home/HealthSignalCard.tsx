@@ -409,11 +409,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   dateText: {
-    fontSize: 14,
+    fontSize: 15,
     flexShrink: 1,
   },
   cardLogo: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     letterSpacing: 1,
   },
@@ -427,7 +427,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   gradeLabel: {
-    fontSize: 22,
+    fontSize: 23,
     fontWeight: '600',
     marginBottom: 10,
   },
@@ -441,28 +441,28 @@ const styles = StyleSheet.create({
     lineHeight: 64,
   },
   scoreDivider: {
-    fontSize: 28,
+    fontSize: 29,
     fontWeight: '300',
     marginHorizontal: 4,
   },
   scoreMax: {
-    fontSize: 28,
+    fontSize: 29,
     fontWeight: '300',
   },
   loadingText: {
-    fontSize: 16,
+    fontSize: 17,
   },
   emptyEmoji: {
     fontSize: 72,
     marginBottom: 20,
   },
   emptyTitle: {
-    fontSize: 22,
+    fontSize: 23,
     fontWeight: '700',
     marginBottom: 8,
   },
   emptySubtitle: {
-    fontSize: 16,
+    fontSize: 17,
     marginBottom: 32,
   },
   addButton: {
@@ -471,7 +471,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   addButtonText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
   },
   // 총 자산 Pulse 행
@@ -486,14 +486,14 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   assetPulseText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
   assetPulseDivider: {
-    fontSize: 14,
+    fontSize: 15,
   },
   assetPulseChange: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
   assetsArea: {
@@ -515,12 +515,12 @@ const styles = StyleSheet.create({
     maxWidth: 140,
   },
   assetName: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '500',
     flexShrink: 1,
   },
   assetSignal: {
-    fontSize: 16,
+    fontSize: 17,
   },
   addAssetChip: {
     flexDirection: 'row',
@@ -534,11 +534,11 @@ const styles = StyleSheet.create({
     minHeight: 44,
   },
   addAssetChipIcon: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
   },
   addAssetChipText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
   analysisCTA: {
@@ -552,7 +552,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   analysisCTAText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
   modalOverlay: {
@@ -568,12 +568,12 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '700',
     marginBottom: 8,
   },
   modalSubtitle: {
-    fontSize: 14,
+    fontSize: 15,
     marginBottom: 20,
   },
   modalScoreBox: {
@@ -586,7 +586,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   modalGrade: {
-    fontSize: 16,
+    fontSize: 17,
     marginTop: 8,
   },
   modalCloseButton: {
@@ -598,7 +598,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   modalCloseText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
   },
   factorsContainer: {
@@ -607,7 +607,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
   },
   factorsTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
     marginBottom: 12,
   },
@@ -621,14 +621,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   factorLabel: {
-    fontSize: 14,
+    fontSize: 15,
     marginBottom: 2,
   },
   factorWeight: {
-    fontSize: 12,
+    fontSize: 13,
   },
   factorScore: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
   },
 });

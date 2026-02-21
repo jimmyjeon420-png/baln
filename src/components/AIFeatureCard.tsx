@@ -96,14 +96,14 @@ const styles = StyleSheet.create({
   },
   title: {
     color: '#FFF',
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     marginBottom: 2,
   },
   description: {
     color: '#888',
-    fontSize: 12,
-    lineHeight: 16,
+    fontSize: 13,
+    lineHeight: 17,
   },
   costContainer: {
     alignItems: 'center',
@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
   },
   originalCost: {
     color: '#555',
-    fontSize: 11,
+    fontSize: 12,
     textDecorationLine: 'line-through',
   },
   costRow: {
@@ -121,12 +121,12 @@ const styles = StyleSheet.create({
   },
   cost: {
     color: '#FFF',
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
   },
   discountLabel: {
     color: '#4CAF50',
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
   },
   freeBadge: {
@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
   },
   freeBadgeText: {
     color: '#000',
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '800',
   },
 });

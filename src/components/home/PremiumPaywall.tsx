@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
   },
   closeBtn: {
@@ -219,13 +219,13 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   heroTitle: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '700',
     textAlign: 'center',
     marginBottom: 8,
   },
   heroSubtitle: {
-    fontSize: 14,
+    fontSize: 15,
     textAlign: 'center',
   },
 
@@ -251,11 +251,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   featureTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
   },
   featureDesc: {
-    fontSize: 12,
+    fontSize: 13,
     marginTop: 2,
   },
 
@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   priceLabel: {
-    fontSize: 13,
+    fontSize: 14,
     marginBottom: 4,
   },
   priceRow: {
@@ -280,12 +280,12 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   pricePeriod: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '500',
     marginLeft: 4,
   },
   priceNote: {
-    fontSize: 12,
+    fontSize: 13,
     marginTop: 6,
   },
 
@@ -298,14 +298,14 @@ const styles = StyleSheet.create({
   },
   purchaseText: {
     color: '#1A1A1A',
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '700',
   },
 
   // 면책
   disclaimer: {
-    fontSize: 11,
+    fontSize: 12,
     textAlign: 'center',
-    lineHeight: 16,
+    lineHeight: 17,
   },
 });

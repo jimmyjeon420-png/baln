@@ -109,18 +109,18 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   fireEmoji: {
-    fontSize: 16,
-    lineHeight: 20,
+    fontSize: 17,
+    lineHeight: 21,
   },
   streakNumber: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
-    lineHeight: 20,
+    lineHeight: 21,
   },
   streakLabel: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '400',
-    lineHeight: 20,
+    lineHeight: 21,
   },
 
   // 크레딧 잔액 영역
@@ -130,14 +130,14 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   creditSeparator: {
-    fontSize: 12,
-    lineHeight: 20,
+    fontSize: 13,
+    lineHeight: 21,
   },
   creditText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
     color: '#FFC107',
-    lineHeight: 20,
+    lineHeight: 21,
   },
 
   // 진행 단계 영역
@@ -146,14 +146,14 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   progressCount: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '400',
-    lineHeight: 14,
+    lineHeight: 15,
   },
   allDoneText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '600',
-    lineHeight: 14,
+    lineHeight: 15,
   },
   dotsRow: {
     flexDirection: 'row',
@@ -171,8 +171,8 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
   },
   dotLabel: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: '400',
-    lineHeight: 11,
+    lineHeight: 12,
   },
 });

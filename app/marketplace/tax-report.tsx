@@ -214,9 +214,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 4,
   },
-  headerTitle: { fontSize: 18, fontWeight: '700' },
-  subtitle: { fontSize: 13, textAlign: 'center', marginBottom: 20 },
-  sectionLabel: { fontSize: 14, fontWeight: '700', marginBottom: 10, marginTop: 16 },
+  headerTitle: { fontSize: 19, fontWeight: '700' },
+  subtitle: { fontSize: 14, textAlign: 'center', marginBottom: 20 },
+  sectionLabel: { fontSize: 15, fontWeight: '700', marginBottom: 10, marginTop: 16 },
   residencyRow: { flexDirection: 'row', gap: 10 },
   residencyCard: {
     flex: 1,
@@ -226,16 +226,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   residencyActive: { borderColor: '#66BB6A', backgroundColor: '#66BB6A10' },
-  residencyFlag: { fontSize: 24, marginBottom: 4 },
-  residencyLabel: { fontSize: 14, fontWeight: '700' },
-  residencyDesc: { fontSize: 10, textAlign: 'center', marginTop: 4 },
+  residencyFlag: { fontSize: 25, marginBottom: 4 },
+  residencyLabel: { fontSize: 15, fontWeight: '700' },
+  residencyDesc: { fontSize: 11, textAlign: 'center', marginTop: 4 },
   textInput: {
     borderRadius: 12,
     padding: 14,
-    fontSize: 15,
+    fontSize: 16,
     borderWidth: 1,
   },
-  hint: { fontSize: 11, marginTop: 4 },
+  hint: { fontSize: 12, marginTop: 4 },
   portfolioSummary: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
     padding: 12,
     marginTop: 16,
   },
-  summaryText: { fontSize: 13 },
+  summaryText: { fontSize: 14 },
   analyzeButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -256,7 +256,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 20,
   },
-  analyzeText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
+  analyzeText: { color: '#FFF', fontSize: 17, fontWeight: '700' },
   disabledButton: { opacity: 0.4 },
   taxDisclaimer: {
     marginTop: 20,
@@ -267,12 +267,12 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(102, 187, 106, 0.15)',
   },
   taxDisclaimerTitle: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
     marginBottom: 10,
   },
   taxDisclaimerText: {
-    fontSize: 11,
-    lineHeight: 18,
+    fontSize: 12,
+    lineHeight: 19,
   },
 });

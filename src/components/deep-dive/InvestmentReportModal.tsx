@@ -289,11 +289,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 22,
+    fontSize: 23,
     fontWeight: '700',
   },
   headerSubtitle: {
-    fontSize: 14,
+    fontSize: 15,
     marginTop: 4,
   },
   closeButton: {
@@ -312,12 +312,12 @@ const styles = StyleSheet.create({
     paddingVertical: 100,
   },
   loadingText: {
-    fontSize: 16,
+    fontSize: 17,
     marginTop: 16,
     fontWeight: '600',
   },
   loadingSubtext: {
-    fontSize: 13,
+    fontSize: 14,
     marginTop: 8,
     textAlign: 'center',
   },
@@ -328,7 +328,7 @@ const styles = StyleSheet.create({
     paddingVertical: 100,
   },
   errorText: {
-    fontSize: 16,
+    fontSize: 17,
     marginTop: 16,
   },
   section: {
@@ -337,7 +337,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
     marginBottom: 12,
   },
@@ -348,13 +348,13 @@ const styles = StyleSheet.create({
     borderLeftWidth: 4,
   },
   investorName: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     marginBottom: 6,
   },
   debateText: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 15,
+    lineHeight: 21,
   },
   summaryCard: {
     borderRadius: 12,
@@ -363,13 +363,13 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   summaryTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     marginBottom: 8,
   },
   summaryText: {
-    fontSize: 15,
-    lineHeight: 22,
+    fontSize: 16,
+    lineHeight: 23,
     fontWeight: '500',
   },
 });

@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   resultText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '800',
   },
   creditBadge: {
@@ -175,7 +175,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   creditText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
     color: '#4CAF50',
   },
@@ -191,10 +191,10 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   streakEmoji: {
-    fontSize: 16,
+    fontSize: 17,
   },
   streakText: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#FF9800',
     fontWeight: '600',
     flex: 1,
@@ -202,10 +202,10 @@ const styles = StyleSheet.create({
 
   // 질문
   question: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
-    lineHeight: 22,
+    lineHeight: 23,
     marginBottom: 12,
   },
 
@@ -223,12 +223,12 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   answerLabel: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#888888',
     width: 60,
   },
   answerValue: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
   },
 
@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#2A2A2A',
   },
   toggleButtonText: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#888888',
     fontWeight: '600',
   },
@@ -256,9 +256,9 @@ const styles = StyleSheet.create({
     borderTopColor: '#2A2A2A',
   },
   explanationText: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#CCCCCC',
-    lineHeight: 21,
+    lineHeight: 22,
     marginBottom: 10,
   },
   sourceRow: {
@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   sourceText: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#555555',
     flex: 1,
   },

@@ -1379,7 +1379,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '700',
   },
   realEstateShortcut: {
@@ -1399,11 +1399,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   realEstateTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
   },
   realEstateDesc: {
-    fontSize: 12,
+    fontSize: 13,
     marginTop: 2,
   },
   sectionCard: {
@@ -1413,12 +1413,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     marginBottom: 4,
   },
   sectionSubtitle: {
-    fontSize: 12,
+    fontSize: 13,
     marginBottom: 16,
   },
   inputGroup: {
@@ -1426,7 +1426,7 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   inputLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     marginBottom: 6,
   },
@@ -1443,7 +1443,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 44,
     paddingHorizontal: 10,
-    fontSize: 15,
+    fontSize: 16,
   },
   clearButton: {
     padding: 10,
@@ -1469,15 +1469,15 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   categoryBadgeText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
   },
   dropdownName: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
   dropdownTicker: {
-    fontSize: 11,
+    fontSize: 12,
     marginTop: 1,
   },
   selectedBadge: {
@@ -1498,18 +1498,18 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   selectedBadgeName: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
   selectedBadgeTicker: {
-    fontSize: 12,
+    fontSize: 13,
   },
   numberInput: {
     height: 44,
     borderRadius: 10,
     borderWidth: 1,
     paddingHorizontal: 14,
-    fontSize: 15,
+    fontSize: 16,
   },
   priceLabelRow: {
     flexDirection: 'row',
@@ -1523,7 +1523,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   priceHelp: {
-    fontSize: 11,
+    fontSize: 12,
   },
   priceLoadingRow: {
     flexDirection: 'row',
@@ -1531,7 +1531,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   priceLoadingText: {
-    fontSize: 11,
+    fontSize: 12,
   },
   autoTag: {
     backgroundColor: 'rgba(76, 175, 80, 0.12)',
@@ -1540,7 +1540,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   autoTagText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
   },
   priceInputRow: {
@@ -1550,7 +1550,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   currencySymbol: {
-    fontSize: 15,
+    fontSize: 16,
     paddingLeft: 14,
     fontWeight: '600',
   },
@@ -1558,10 +1558,10 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 44,
     paddingHorizontal: 8,
-    fontSize: 15,
+    fontSize: 16,
   },
   priceHint: {
-    fontSize: 11,
+    fontSize: 12,
     marginTop: 4,
     fontStyle: 'italic',
   },
@@ -1578,11 +1578,11 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(76, 175, 80, 0.12)',
   },
   totalLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
   totalValue: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '800',
   },
   saveButton: {
@@ -1598,7 +1598,7 @@ const styles = StyleSheet.create({
   },
   saveButtonText: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
   },
   cancelEditButton: {
@@ -1607,7 +1607,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   cancelEditText: {
-    fontSize: 13,
+    fontSize: 14,
   },
   recentScroll: {
     marginTop: 8,
@@ -1627,7 +1627,7 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   recentChipText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '500',
   },
   existingHeader: {
@@ -1637,7 +1637,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   assetCount: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
   },
   loadingContainer: {
@@ -1648,7 +1648,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   loadingText: {
-    fontSize: 13,
+    fontSize: 14,
   },
   emptyContainer: {
     alignItems: 'center',
@@ -1656,11 +1656,11 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   emptyText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
   emptySubtext: {
-    fontSize: 12,
+    fontSize: 13,
   },
   assetRow: {
     flexDirection: 'row',
@@ -1674,11 +1674,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   assetName: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
   assetTicker: {
-    fontSize: 11,
+    fontSize: 12,
     marginTop: 2,
   },
   assetValues: {
@@ -1686,11 +1686,11 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   assetValue: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
   },
   assetQuantity: {
-    fontSize: 11,
+    fontSize: 12,
     marginTop: 2,
   },
   assetActions: {
@@ -1724,7 +1724,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   keyboardDoneText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
   },
   retryButton: {
@@ -1735,7 +1735,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   retryButtonText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
   directInputBtn: {
@@ -1749,12 +1749,12 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   directInputText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     flex: 1,
   },
   directInputHint: {
-    fontSize: 11,
+    fontSize: 12,
   },
   autoTagRow: {
     flexDirection: 'row',
@@ -1762,7 +1762,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   exchangeRateText: {
-    fontSize: 10,
+    fontSize: 11,
   },
   priceLabelRight: {
     flexDirection: 'row',
@@ -1782,16 +1782,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   unitBtnText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
   },
   krwPreview: {
-    fontSize: 12,
+    fontSize: 13,
     marginTop: 5,
     fontWeight: '500',
   },
   totalValueKrw: {
-    fontSize: 12,
+    fontSize: 13,
     marginTop: 2,
   },
   avgCalcCard: {
@@ -1804,16 +1804,16 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   avgCalcTitle: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
     marginBottom: 2,
   },
   avgCalcDetail: {
-    fontSize: 11,
+    fontSize: 12,
     marginBottom: 2,
   },
   avgCalcResult: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
   },
   // ── 자산 유형 탭 ──
@@ -1837,7 +1837,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   assetCategoryTabText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
   },
   // ── 현금 UI ──
@@ -1854,12 +1854,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cashTypeBtnLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
     marginBottom: 2,
   },
   cashTypeBtnDesc: {
-    fontSize: 10,
+    fontSize: 11,
     textAlign: 'center',
   },
   // ── 수익률 안내 배너 ──
@@ -1876,7 +1876,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   infoBannerTitle: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     flex: 1,
   },
@@ -1884,8 +1884,8 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   infoBannerText: {
-    fontSize: 12,
-    lineHeight: 18,
+    fontSize: 13,
+    lineHeight: 19,
     marginBottom: 10,
   },
   screenshotBtn: {
@@ -1898,7 +1898,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   screenshotBtnText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
   // ── 파싱 결과 모달 ──
@@ -1914,12 +1914,12 @@ const styles = StyleSheet.create({
     paddingBottom: 34,
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
     marginBottom: 4,
   },
   modalSubtitle: {
-    fontSize: 13,
+    fontSize: 14,
     marginBottom: 14,
   },
   parsedAssetRow: {
@@ -1930,11 +1930,11 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   parsedAssetName: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
   parsedAssetDetail: {
-    fontSize: 12,
+    fontSize: 13,
     marginTop: 2,
   },
   modalButtons: {
@@ -1950,7 +1950,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalCancelText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
   modalConfirmBtn: {
@@ -1961,7 +1961,7 @@ const styles = StyleSheet.create({
   },
   modalConfirmText: {
     color: '#fff',
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
   },
   // ── 채권 빠른 선택 ──
@@ -1975,11 +1975,11 @@ const styles = StyleSheet.create({
     minWidth: 90,
   },
   bondChipTicker: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
     marginBottom: 2,
   },
   bondChipName: {
-    fontSize: 10,
+    fontSize: 11,
   },
 });

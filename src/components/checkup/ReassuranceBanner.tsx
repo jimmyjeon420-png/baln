@@ -67,11 +67,11 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderColor: `${colors.primary}15`,
   },
   emoji: {
-    fontSize: 18,
+    fontSize: 19,
   },
   message: {
     flex: 1,
-    fontSize: 13,
+    fontSize: 14,
     color: colors.textTertiary,
     fontWeight: '500',
   },

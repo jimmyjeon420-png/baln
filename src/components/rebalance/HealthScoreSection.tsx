@@ -671,12 +671,12 @@ const s = StyleSheet.create({
     flex: 1,
   },
   improveToastTitle: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
     marginBottom: 2,
   },
   improveToastSubtitle: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '500',
   },
   headerRow: {
@@ -706,11 +706,11 @@ const s = StyleSheet.create({
     alignItems: 'center',
   },
   scoreNumber: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '800',
   },
   conditionStatus: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     marginBottom: 2,
   },
@@ -719,23 +719,23 @@ const s = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
-  // cardLabel: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
-  // cardLabelEn: { fontSize: 10, color: '#555', marginTop: 1, letterSpacing: 0.5, textTransform: 'uppercase' as const },
-  cardLabel: { fontSize: 15, fontWeight: '700' },
-  cardLabelEn: { fontSize: 10, marginTop: 1, letterSpacing: 0.5, textTransform: 'uppercase' as const },
+  // cardLabel: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
+  // cardLabelEn: { fontSize: 11, color: '#555', marginTop: 1, letterSpacing: 0.5, textTransform: 'uppercase' as const },
+  cardLabel: { fontSize: 16, fontWeight: '700' },
+  cardLabelEn: { fontSize: 11, marginTop: 1, letterSpacing: 0.5, textTransform: 'uppercase' as const },
   gradeBadge: {
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 6,
   },
   gradeText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
   },
   summary: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '500',
-    lineHeight: 20,
+    lineHeight: 21,
     marginBottom: 12,
   },
 
@@ -751,11 +751,11 @@ const s = StyleSheet.create({
     marginBottom: 2,
   },
   sparklineLabel: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '600',
   },
   sparklinePeriod: {
-    fontSize: 10,
+    fontSize: 11,
     marginLeft: 'auto',
   },
 
@@ -772,12 +772,12 @@ const s = StyleSheet.create({
     marginBottom: 6,
   },
   historicalLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
   },
   historicalIntro: {
-    fontSize: 11,
-    lineHeight: 16,
+    fontSize: 12,
+    lineHeight: 17,
     marginBottom: 10,
   },
   historicalComparison: {
@@ -797,12 +797,12 @@ const s = StyleSheet.create({
     flex: 1,
   },
   historicalCrisisLabel: {
-    fontSize: 11,
+    fontSize: 12,
     marginBottom: 2,
   },
   historicalCrisisScore: {
-    fontSize: 12,
-    lineHeight: 16,
+    fontSize: 13,
+    lineHeight: 17,
   },
   historicalDiffBadge: {
     paddingHorizontal: 10,
@@ -810,35 +810,35 @@ const s = StyleSheet.create({
     borderRadius: 20,
   },
   historicalDiffText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
   },
   historicalText: {
-    fontSize: 12,
-    lineHeight: 18,
+    fontSize: 13,
+    lineHeight: 19,
   },
   currentComparison: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
-    lineHeight: 18,
+    lineHeight: 19,
     marginTop: 4,
   },
   historicalNote: {
-    fontSize: 11,
-    lineHeight: 17,
+    fontSize: 12,
+    lineHeight: 18,
     marginTop: 2,
   },
 
   // P2-B: 또래 비교 카드
   peerCard: { borderRadius: 10, padding: 12, marginBottom: 12 },
   peerHeader: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 8 },
-  peerLabel: { fontSize: 11, fontWeight: '700' },
+  peerLabel: { fontSize: 12, fontWeight: '700' },
   peerStats: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
   peerStat: { flex: 1, alignItems: 'center' },
-  peerStatValue: { fontSize: 18, fontWeight: '800', marginBottom: 2 },
-  peerStatLabel: { fontSize: 10 },
+  peerStatValue: { fontSize: 19, fontWeight: '800', marginBottom: 2 },
+  peerStatLabel: { fontSize: 11 },
   peerDivider: { width: 1, height: 32, marginHorizontal: 12 },
-  peerNote: { fontSize: 9, textAlign: 'center' as const },
+  peerNote: { fontSize: 10, textAlign: 'center' as const },
 
   // [NEW] "왜 이 점수인가" 섹션
   // whySection: {
@@ -859,22 +859,22 @@ const s = StyleSheet.create({
     marginBottom: 4,
   },
   // whyLabel: {
-  //   fontSize: 11,
+  //   fontSize: 12,
   //   fontWeight: '600',
   //   color: COLORS.textSecondary,
   // },
   // whyText: {
-  //   fontSize: 12,
+  //   fontSize: 13,
   //   color: COLORS.textSecondary,
-  //   lineHeight: 18,
+  //   lineHeight: 19,
   // },
   whyLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
   },
   whyText: {
-    fontSize: 12,
-    lineHeight: 18,
+    fontSize: 13,
+    lineHeight: 19,
   },
 
   // [NEW] "지금 할 수 있는 것" 액션 가이드 섹션
@@ -899,22 +899,22 @@ const s = StyleSheet.create({
     marginBottom: 4,
   },
   // actionGuideLabel: {
-  //   fontSize: 11,
+  //   fontSize: 12,
   //   fontWeight: '600',
   //   color: COLORS.primary,
   // },
   // actionGuideText: {
-  //   fontSize: 12,
+  //   fontSize: 13,
   //   color: COLORS.textSecondary,
-  //   lineHeight: 18,
+  //   lineHeight: 19,
   // },
   actionGuideLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
   },
   actionGuideText: {
-    fontSize: 12,
-    lineHeight: 18,
+    fontSize: 13,
+    lineHeight: 19,
   },
 
   // 미니 팩터 바 (접힌 상태)
@@ -930,11 +930,11 @@ const s = StyleSheet.create({
     borderBottomWidth: 1,
   },
   factorHeaderLabel: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '600',
   },
   factorHeaderHint: {
-    fontSize: 10,
+    fontSize: 11,
   },
   miniFactor: {
     flexDirection: 'row',
@@ -942,12 +942,12 @@ const s = StyleSheet.create({
     gap: 6,
   },
   miniLabel: {
-    fontSize: 11,
+    fontSize: 12,
     width: 72,
     flexShrink: 0,
   },
   miniIcon: {
-    fontSize: 12,
+    fontSize: 13,
     width: 18,
     textAlign: 'center',
   },
@@ -969,7 +969,7 @@ const s = StyleSheet.create({
     borderRadius: 2,
   },
   miniScore: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
     width: 22,
     textAlign: 'right',
@@ -980,7 +980,7 @@ const s = StyleSheet.create({
     borderRadius: 10,
   },
   miniStatusText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '600',
   },
   infoIcon: {
@@ -997,7 +997,7 @@ const s = StyleSheet.create({
   //   borderTopColor: '#222',
   // },
   // suggestionsTitle: {
-  //   fontSize: 14,
+  //   fontSize: 15,
   //   fontWeight: '700',
   //   color: '#FFC107',
   //   marginBottom: 12,
@@ -1008,13 +1008,13 @@ const s = StyleSheet.create({
     borderTopWidth: 1,
   },
   suggestionsTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     marginBottom: 12,
   },
   suggestion: {
-    fontSize: 13,
-    lineHeight: 20,
+    fontSize: 14,
+    lineHeight: 21,
     marginBottom: 12,
     padding: 12,
     borderRadius: 8,
@@ -1062,20 +1062,20 @@ const s = StyleSheet.create({
     borderBottomWidth: 1,
   },
   // tooltipTitle: {
-  //   fontSize: 16,
+  //   fontSize: 17,
   //   fontWeight: '700',
   //   color: '#FFFFFF',
   // },
   tooltipTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
   },
   tooltipScroll: {
     flexGrow: 1,
   },
   tooltipSummary: {
-    fontSize: 13,
-    lineHeight: 20,
+    fontSize: 14,
+    lineHeight: 21,
     marginBottom: 12,
   },
   tooltipSection: {
@@ -1085,12 +1085,12 @@ const s = StyleSheet.create({
     marginBottom: 8,
   },
   tooltipSectionTitle: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
     marginBottom: 5,
   },
   tooltipSectionText: {
-    fontSize: 12,
-    lineHeight: 18,
+    fontSize: 13,
+    lineHeight: 19,
   },
 });

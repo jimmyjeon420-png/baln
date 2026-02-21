@@ -169,28 +169,28 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   title: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '700',
     marginBottom: 8,
   },
   date: {
-    fontSize: 13,
+    fontSize: 14,
     marginBottom: 24,
   },
   section: {
     marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     marginBottom: 8,
   },
   sectionContent: {
-    fontSize: 14,
-    lineHeight: 22,
+    fontSize: 15,
+    lineHeight: 23,
   },
   footer: {
-    fontSize: 13,
+    fontSize: 14,
     textAlign: 'center',
     marginTop: 16,
     marginBottom: 40,
@@ -224,9 +224,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   warningText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 21,
   },
 });

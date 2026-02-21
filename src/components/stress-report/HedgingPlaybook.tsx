@@ -147,7 +147,7 @@ const s = StyleSheet.create({
     padding: 20,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     marginBottom: 16,
   },
@@ -161,7 +161,7 @@ const s = StyleSheet.create({
     marginBottom: 10,
   },
   blockTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
   },
   listItem: {
@@ -179,8 +179,8 @@ const s = StyleSheet.create({
   },
   listText: {
     flex: 1,
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 15,
+    lineHeight: 21,
   },
   premiumBadge: {
     paddingHorizontal: 8,
@@ -189,7 +189,7 @@ const s = StyleSheet.create({
     marginLeft: 4,
   },
   premiumText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
   },
   riskSummary: {
@@ -200,10 +200,10 @@ const s = StyleSheet.create({
     alignItems: 'center',
   },
   riskLabel: {
-    fontSize: 13,
+    fontSize: 14,
   },
   riskLevel: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
   },
 });

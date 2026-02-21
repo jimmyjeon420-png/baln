@@ -202,7 +202,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
   },
   closeBtn: {
@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   overallGradeText: {
-    fontSize: 22,
+    fontSize: 23,
     fontWeight: '900',
   },
   overallScore: {
@@ -236,21 +236,21 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   overallScoreUnit: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '400',
   },
   overallLabel: {
-    fontSize: 14,
+    fontSize: 15,
     marginTop: 4,
   },
   updatedAt: {
-    fontSize: 11,
+    fontSize: 12,
     marginTop: 4,
   },
 
   // 섹션 제목
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     marginBottom: 12,
   },
@@ -274,14 +274,14 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   catEmoji: {
-    fontSize: 24,
+    fontSize: 25,
   },
   catName: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
   },
   catNameEn: {
-    fontSize: 11,
+    fontSize: 12,
     marginTop: 1,
   },
   catGradeBadge: {
@@ -290,7 +290,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   catGradeText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '800',
   },
 
@@ -306,15 +306,15 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   scoreText: {
-    fontSize: 11,
+    fontSize: 12,
     textAlign: 'right',
     marginBottom: 8,
   },
 
   // 설명
   catDesc: {
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 14,
+    lineHeight: 19,
   },
 
   // 개선 제안
@@ -329,15 +329,15 @@ const styles = StyleSheet.create({
   },
   suggestionText: {
     flex: 1,
-    fontSize: 12,
-    lineHeight: 17,
+    fontSize: 13,
+    lineHeight: 18,
   },
 
   // 면책
   disclaimer: {
-    fontSize: 11,
+    fontSize: 12,
     textAlign: 'center',
-    lineHeight: 16,
+    lineHeight: 17,
     marginTop: 12,
   },
 });

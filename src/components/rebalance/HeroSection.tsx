@@ -99,7 +99,7 @@ const s = StyleSheet.create({
     marginBottom: 16,
   },
   heroDate: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '500',
   },
   tierChip: {
@@ -108,7 +108,7 @@ const s = StyleSheet.create({
     borderRadius: 10,
   },
   tierChipText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
   },
   heroAmount: {
@@ -132,11 +132,11 @@ const s = StyleSheet.create({
     gap: 4,
   },
   heroChangeText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
   },
   heroChangePercent: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '500',
   },
   cfoLine: {
@@ -149,13 +149,13 @@ const s = StyleSheet.create({
     borderWidth: 1,
   },
   cfoEmoji: {
-    fontSize: 20,
+    fontSize: 21,
     marginTop: -2,
   },
   cfoMessage: {
     flex: 1,
-    fontSize: 13,
-    lineHeight: 20,
+    fontSize: 14,
+    lineHeight: 21,
     fontWeight: '500',
   },
 });

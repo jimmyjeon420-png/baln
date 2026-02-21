@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
 
   // 로딩
   loadingText: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#888888',
     textAlign: 'center',
     marginTop: 8,
@@ -214,10 +214,10 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   emptyText: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#666666',
     textAlign: 'center',
-    lineHeight: 19,
+    lineHeight: 20,
   },
 
   // 헤더
@@ -233,10 +233,10 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   emoji: {
-    fontSize: 18,
+    fontSize: 19,
   },
   title: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -250,7 +250,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   votedText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
     color: '#4CAF50',
   },
@@ -268,17 +268,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#4CAF50',
   },
   activeText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
     color: '#4CAF50',
   },
 
   // 질문
   question: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
-    lineHeight: 22,
+    lineHeight: 23,
     marginBottom: 14,
   },
 
@@ -306,12 +306,12 @@ const styles = StyleSheet.create({
     borderColor: '#CF667940',
   },
   voteBtnYesText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     color: '#4CAF50',
   },
   voteBtnNoText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     color: '#CF6679',
   },
@@ -328,7 +328,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   votedInfoText: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#AAAAAA',
     flex: 1,
   },
@@ -349,7 +349,7 @@ const styles = StyleSheet.create({
     borderTopColor: '#2A2A2A',
   },
   footerText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     color: '#4CAF50',
   },

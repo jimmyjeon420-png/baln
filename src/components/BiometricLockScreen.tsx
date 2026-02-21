@@ -94,18 +94,18 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   appName: {
-    fontSize: 24,
+    fontSize: 25,
     fontWeight: '700',
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 17,
   },
   actionArea: {
     alignItems: 'center',
   },
   errorText: {
-    fontSize: 14,
+    fontSize: 15,
     marginBottom: 16,
   },
   unlockButton: {
@@ -117,7 +117,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   unlockText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
     color: '#FFFFFF',
   },

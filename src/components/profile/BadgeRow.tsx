@@ -130,15 +130,15 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
   },
   emoji: {
-    fontSize: 26,
+    fontSize: 27,
   },
   questionMark: {
-    fontSize: 20,
+    fontSize: 21,
     color: '#3a3a5a',
     fontWeight: '700',
   },
   badgeLabel: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '600',
     color: '#FFFFFF',
     textAlign: 'center',
@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
     color: '#3a3a5a',
   },
   hint: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#4CAF50',
     fontWeight: '500',
   },

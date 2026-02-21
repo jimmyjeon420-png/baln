@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   title: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '700',
   },
   summaryBox: {
@@ -133,8 +133,8 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   summaryText: {
-    fontSize: 14,
-    lineHeight: 22,
+    fontSize: 15,
+    lineHeight: 23,
   },
   scenarioContainer: {
     gap: 12,
@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
     padding: 14,
   },
   scenarioTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     marginBottom: 10,
   },
@@ -156,12 +156,12 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   scenarioIcon: {
-    fontSize: 12,
-    lineHeight: 20,
+    fontSize: 13,
+    lineHeight: 21,
   },
   scenarioText: {
-    fontSize: 13,
-    lineHeight: 20,
+    fontSize: 14,
+    lineHeight: 21,
     flex: 1,
   },
   footer: {
@@ -173,11 +173,11 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   footerLabel: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '500',
   },
   targetPrice: {
-    fontSize: 22,
+    fontSize: 23,
     fontWeight: '800',
   },
   horizonBadge: {
@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   horizonText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
 });

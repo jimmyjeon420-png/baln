@@ -140,11 +140,11 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   title: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
   },
   subtitle: {
-    fontSize: 11,
+    fontSize: 12,
     marginTop: 2,
   },
   countBadge: {
@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   countText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
   },
   alertList: {
@@ -176,17 +176,17 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   alertIcon: {
-    fontSize: 18,
+    fontSize: 19,
   },
   alertContent: {
     flex: 1,
   },
   alertTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
   alertSubtitle: {
-    fontSize: 12,
+    fontSize: 13,
     marginTop: 2,
   },
   ctaBtn: {
@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   ctaText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
   },
   // Calm state (알림 0건)
@@ -209,12 +209,12 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   calmTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     marginTop: 10,
   },
   calmDesc: {
-    fontSize: 13,
+    fontSize: 14,
     marginTop: 4,
   },
 });

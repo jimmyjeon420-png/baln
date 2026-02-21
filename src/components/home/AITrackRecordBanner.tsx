@@ -118,11 +118,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   label: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
   },
   sublabel: {
-    fontSize: 11,
+    fontSize: 12,
     marginTop: 1,
   },
   right: {
@@ -131,11 +131,11 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   accuracy: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '800',
   },
   accuracyLabel: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
   },
 });

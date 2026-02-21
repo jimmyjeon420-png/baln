@@ -192,11 +192,11 @@ const s = StyleSheet.create({
     marginBottom: 16,
   },
   cardTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
   },
   cardSubtitle: {
-    fontSize: 10,
+    fontSize: 11,
     marginTop: 2,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -207,7 +207,7 @@ const s = StyleSheet.create({
     borderRadius: 8,
   },
   riskBadgeText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
   },
 
@@ -222,10 +222,10 @@ const s = StyleSheet.create({
     minWidth: '45%',
   },
   summaryCategory: {
-    fontSize: 12,
+    fontSize: 13,
   },
   summaryLevel: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
 
@@ -248,7 +248,7 @@ const s = StyleSheet.create({
     marginBottom: 10,
   },
   riskCategory: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     flex: 1,
   },
@@ -258,7 +258,7 @@ const s = StyleSheet.create({
     borderRadius: 6,
   },
   levelText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
   },
 
@@ -272,13 +272,13 @@ const s = StyleSheet.create({
     gap: 8,
   },
   bullet: {
-    fontSize: 16,
+    fontSize: 17,
     marginTop: 2,
   },
   pointText: {
     flex: 1,
-    fontSize: 13,
-    lineHeight: 20,
+    fontSize: 14,
+    lineHeight: 21,
   },
 
   // 가이드
@@ -288,7 +288,7 @@ const s = StyleSheet.create({
     marginTop: 4,
   },
   guideText: {
-    fontSize: 13,
-    lineHeight: 20,
+    fontSize: 14,
+    lineHeight: 21,
   },
 });

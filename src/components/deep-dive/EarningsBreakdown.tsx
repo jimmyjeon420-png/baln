@@ -376,7 +376,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   title: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
   },
   marginBadges: {
@@ -389,7 +389,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   marginText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
   },
 
@@ -410,7 +410,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   accordionTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
   accordionContent: {
@@ -450,7 +450,7 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   segmentName: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
   segmentRight: {
@@ -458,7 +458,7 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   segmentAmount: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
   },
   segmentMeta: {
@@ -466,11 +466,11 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   segmentPercent: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '500',
   },
   segmentGrowth: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
   },
 
@@ -483,11 +483,11 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   totalLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
   totalValue: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '800',
   },
 
@@ -504,11 +504,11 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   costName: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
   costPercent: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '500',
   },
   costRight: {
@@ -517,7 +517,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   costAmount: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
   },
   costBarBg: {
@@ -544,7 +544,7 @@ const styles = StyleSheet.create({
     width: 80,
   },
   waterfallLabel: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '500',
   },
   waterfallBarCol: {
@@ -561,7 +561,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.2)',
   },
   waterfallBarText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -594,8 +594,8 @@ const styles = StyleSheet.create({
   },
   takeawayText: {
     flex: 1,
-    fontSize: 13,
-    lineHeight: 20,
+    fontSize: 14,
+    lineHeight: 21,
     fontWeight: '500',
   },
 });

@@ -263,19 +263,19 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   displayTag: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
   },
   time: {
-    fontSize: 10,
+    fontSize: 11,
   },
   edited: {
-    fontSize: 10,
+    fontSize: 11,
     fontStyle: 'italic',
   },
   text: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 15,
+    lineHeight: 21,
     marginBottom: 8,
   },
 
@@ -287,9 +287,9 @@ const styles = StyleSheet.create({
   editInput: {
     borderRadius: 8,
     padding: 10,
-    fontSize: 14,
+    fontSize: 15,
     minHeight: 60,
-    lineHeight: 20,
+    lineHeight: 21,
   },
   editButtons: {
     flexDirection: 'row',
@@ -302,11 +302,11 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   editButtonTextCancel: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
   editButtonTextSave: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     color: '#000000',
   },
@@ -323,6 +323,6 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   actionText: {
-    fontSize: 12,
+    fontSize: 13,
   },
 });

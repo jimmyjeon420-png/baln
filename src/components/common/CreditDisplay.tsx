@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   label: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     color: '#FFF',
     opacity: 0.9,
@@ -165,14 +165,14 @@ const styles = StyleSheet.create({
     letterSpacing: -1,
   },
   balanceSymbol: {
-    fontSize: 32,
+    fontSize: 33,
     fontWeight: '700',
     color: '#FFF',
     marginLeft: 4,
     opacity: 0.9,
   },
   balanceKRW: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
     color: '#FFF',
     opacity: 0.7,
@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
     marginRight: 6,
   },
   footerText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     color: '#FFF',
   },

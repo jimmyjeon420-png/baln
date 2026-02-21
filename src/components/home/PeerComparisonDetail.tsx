@@ -216,11 +216,11 @@ const s = StyleSheet.create({
     borderBottomWidth: 1,
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '700',
   },
   modalSubtitle: {
-    fontSize: 13,
+    fontSize: 14,
     marginTop: 2,
   },
   closeButton: {
@@ -258,11 +258,11 @@ const s = StyleSheet.create({
     justifyContent: 'center',
   },
   rankNumber: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '800',
   },
   rankLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '500',
     marginTop: -2,
   },
@@ -270,13 +270,13 @@ const s = StyleSheet.create({
     flex: 1,
   },
   summaryMainText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     marginBottom: 4,
   },
   summarySubText: {
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 14,
+    lineHeight: 19,
   },
 
   // 상세 항목 카드
@@ -298,7 +298,7 @@ const s = StyleSheet.create({
     gap: 8,
   },
   detailLabel: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
   },
   statusBadge: {
@@ -310,7 +310,7 @@ const s = StyleSheet.create({
     gap: 4,
   },
   statusText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
   },
 
@@ -325,11 +325,11 @@ const s = StyleSheet.create({
     gap: 4,
   },
   valueSmallLabel: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '500',
   },
   valueBig: {
-    fontSize: 22,
+    fontSize: 23,
     fontWeight: '700',
   },
   vsDivider: {
@@ -348,16 +348,16 @@ const s = StyleSheet.create({
     gap: 8,
   },
   tipText: {
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 14,
+    lineHeight: 19,
     flex: 1,
   },
 
   // 하단 고지
   footerDisclaimer: {
-    fontSize: 11,
+    fontSize: 12,
     textAlign: 'center',
-    lineHeight: 16,
+    lineHeight: 17,
     marginTop: 8,
     marginBottom: 40,
   },

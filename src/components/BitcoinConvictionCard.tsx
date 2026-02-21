@@ -385,12 +385,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   bitcoinIcon: {
-    fontSize: 22,
+    fontSize: 23,
     fontWeight: '800',
     color: '#F7931A',
   },
   title: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     color: '#FFFFFF',
     flexShrink: 1,
@@ -401,7 +401,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   zoneBadgeText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
     color: '#000000',
   },
@@ -421,7 +421,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   scoreLabel: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#888888',
     marginTop: -4,
   },
@@ -435,14 +435,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   interpretationTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     marginBottom: 6,
   },
   interpretationMessage: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#BBBBBB',
-    lineHeight: 20,
+    lineHeight: 21,
   },
   // 존 + 가격 행
   statusRow: {
@@ -463,7 +463,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   zoneText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
   priceContainer: {
@@ -478,17 +478,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#4CAF50',
   },
   priceLabel: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#888888',
     fontWeight: '500',
   },
   priceValue: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     color: '#FFFFFF',
   },
   priceChange: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
   },
   // 서브스코어 (팩터 분석)
@@ -505,12 +505,12 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   subScoresTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     color: '#AAAAAA',
   },
   helpToggle: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#F7931A',
     fontWeight: '500',
   },
@@ -523,22 +523,22 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   subScoreIcon: {
-    fontSize: 13,
+    fontSize: 14,
     marginRight: 6,
   },
   subScoreLabel: {
     flex: 1,
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     color: '#DDDDDD',
   },
   subScoreWeight: {
-    fontSize: 10,
+    fontSize: 11,
     color: '#666666',
     marginRight: 8,
   },
   subScoreValue: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
     width: 28,
     textAlign: 'right',
@@ -554,10 +554,10 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   subScoreDesc: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#888888',
     marginTop: 5,
-    lineHeight: 16,
+    lineHeight: 17,
     paddingLeft: 20,
   },
   contextRow: {
@@ -573,10 +573,10 @@ const styles = StyleSheet.create({
     borderRadius: 2.5,
   },
   contextText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '500',
     flex: 1,
-    lineHeight: 16,
+    lineHeight: 17,
   },
   // AI 인사이트
   insightContainer: {
@@ -591,7 +591,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   insightToggleText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     color: '#AAAAAA',
   },
@@ -602,20 +602,20 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   insightLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     color: '#CCCCCC',
     marginBottom: 2,
   },
   insightHint: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#666666',
     marginBottom: 4,
   },
   insightValue: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#BBBBBB',
-    lineHeight: 20,
+    lineHeight: 21,
   },
   eventsContainer: {
     marginTop: 8,
@@ -624,7 +624,7 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   eventsTitle: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
     color: '#F7931A',
     marginBottom: 8,
@@ -637,20 +637,20 @@ const styles = StyleSheet.create({
   },
   eventBullet: {
     color: '#F7931A',
-    fontSize: 13,
+    fontSize: 14,
   },
   eventText: {
     flex: 1,
-    fontSize: 12,
+    fontSize: 13,
     color: '#CCCCCC',
-    lineHeight: 18,
+    lineHeight: 19,
   },
   // 면책 문구
   disclaimer: {
-    fontSize: 10,
+    fontSize: 11,
     color: '#555555',
     textAlign: 'center',
     marginTop: 16,
-    lineHeight: 14,
+    lineHeight: 15,
   },
 });

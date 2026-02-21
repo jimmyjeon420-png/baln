@@ -274,7 +274,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     color: '#FFFFFF',
     marginBottom: 12,
@@ -286,7 +286,7 @@ const styles = StyleSheet.create({
     paddingVertical: 40,
   },
   loadingText: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#666666',
   },
 
@@ -300,16 +300,16 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   emptyTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '600',
     color: '#FFFFFF',
     marginBottom: 8,
   },
   emptyDescription: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#888888',
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 21,
   },
 
   // 리더보드 컨테이너
@@ -350,15 +350,15 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   medalEmoji: {
-    fontSize: 28,
+    fontSize: 29,
   },
   rankNumber: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '800',
     color: '#AAAAAA',
   },
   rankNumberTop: {
-    fontSize: 20,
+    fontSize: 21,
     color: '#FFFFFF',
   },
 
@@ -372,7 +372,7 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   avatarText: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -383,7 +383,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   userName: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
     marginBottom: 3,
@@ -397,7 +397,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   userVotes: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#888888',
   },
   userVotesTop: {
@@ -411,7 +411,7 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   accuracyValue: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '800',
     color: '#FFFFFF',
     marginBottom: 2,
@@ -420,7 +420,7 @@ const styles = StyleSheet.create({
     color: '#000000',
   },
   accuracyLabel: {
-    fontSize: 10,
+    fontSize: 11,
     color: '#888888',
   },
   accuracyLabelTop: {
@@ -436,7 +436,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   streakText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
     color: '#FF9800',
   },
@@ -459,13 +459,13 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   myRankTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     color: '#4CAF50',
     marginBottom: 4,
   },
   myRankSubtitle: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#888888',
   },
   myRankCard: {

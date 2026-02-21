@@ -239,17 +239,17 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   itemName: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '700',
     color: '#FFFFFF',
     textAlign: 'center',
     marginBottom: 8,
   },
   itemDesc: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#9CA3AF',
     textAlign: 'center',
-    lineHeight: 19,
+    lineHeight: 20,
     marginBottom: 20,
   },
   // ── 잔액/비용 박스 ──
@@ -266,16 +266,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   infoLabel: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#9CA3AF',
   },
   infoValue: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#FFFFFF',
     fontWeight: '600',
   },
   infoCost: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#FFD700',
     fontWeight: '700',
   },
@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   warningText: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#FF6B6B',
     textAlign: 'center',
   },
@@ -312,7 +312,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cancelText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
     color: '#9CA3AF',
   },
@@ -328,7 +328,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#2a2a3e',
   },
   confirmText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -342,13 +342,13 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   successTitle: {
-    fontSize: 22,
+    fontSize: 23,
     fontWeight: '800',
     color: '#FFFFFF',
     marginBottom: 6,
   },
   successDesc: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#4CAF50',
     fontWeight: '600',
   },

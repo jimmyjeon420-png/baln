@@ -553,7 +553,7 @@ const KostolanyEggCard: React.FC<KostolanyEggCardProps> = ({
                       top: pos.y + 12,
                       color: phaseInfo.color,
                       fontWeight: '700',
-                      fontSize: 11,
+                      fontSize: 12,
                     },
                   ]}
                 >
@@ -835,12 +835,12 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   cardLabel: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     color: '#FFFFFF',
   },
   cardLabelEn: {
-    fontSize: 10,
+    fontSize: 11,
     color: '#555',
     marginTop: 1,
     letterSpacing: 0.5,
@@ -851,7 +851,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   phaseBadgeText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
   },
 
@@ -871,7 +871,7 @@ const styles = StyleSheet.create({
   },
   phaseLabel: {
     position: 'absolute',
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: '500',
     textAlign: 'center',
     width: 28,
@@ -895,13 +895,13 @@ const styles = StyleSheet.create({
     borderRadius: 2.5,
   },
   cycleText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
   },
   summaryText: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#BBB',
-    lineHeight: 19,
+    lineHeight: 20,
   },
   actionBadge: {
     flexDirection: 'row',
@@ -913,11 +913,11 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   actionBadgeText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
   },
   confidenceText: {
-    fontSize: 10,
+    fontSize: 11,
     color: '#666',
     fontWeight: '500',
   },
@@ -938,15 +938,15 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   phaseDescTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     color: '#FFF',
     marginBottom: 6,
   },
   phaseDescText: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#AAA',
-    lineHeight: 19,
+    lineHeight: 20,
   },
   rateOriginal: {
     flexDirection: 'row',
@@ -959,7 +959,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   rateOriginalText: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#FFC107',
     fontWeight: '500',
   },
@@ -969,7 +969,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   fundManagerTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     color: '#FFF',
     marginBottom: 10,
@@ -986,7 +986,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   caseHeaderText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
   },
   caseItem: {
@@ -1003,9 +1003,9 @@ const styles = StyleSheet.create({
   },
   caseItemText: {
     flex: 1,
-    fontSize: 12,
+    fontSize: 13,
     color: '#AAA',
-    lineHeight: 18,
+    lineHeight: 19,
   },
 
   // ── 다음 시나리오 ──
@@ -1024,15 +1024,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   nextScenarioLabel: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
     color: '#FFC107',
     marginBottom: 4,
   },
   nextScenarioText: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#999',
-    lineHeight: 17,
+    lineHeight: 18,
   },
 
   // ── 2차 확장 (증거 딥다이브) ──
@@ -1050,7 +1050,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(100,181,246,0.15)',
   },
   evidenceToggleText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     color: '#64B5F6',
   },
@@ -1063,7 +1063,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   evidenceLoadingText: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#666',
   },
   evidenceEmpty: {
@@ -1072,13 +1072,13 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   evidenceEmptyText: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#555',
     textAlign: 'center',
-    lineHeight: 18,
+    lineHeight: 19,
   },
   evidenceTimestamp: {
-    fontSize: 10,
+    fontSize: 11,
     color: '#444',
     textAlign: 'right',
     marginTop: 8,
@@ -1086,9 +1086,9 @@ const styles = StyleSheet.create({
 
   // ── 면책 ──
   disclaimer: {
-    fontSize: 10,
+    fontSize: 11,
     color: '#444',
-    lineHeight: 15,
+    lineHeight: 16,
     textAlign: 'center',
   },
 
@@ -1102,7 +1102,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   guideToggleText: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#666',
   },
   guideBody: {
@@ -1114,9 +1114,9 @@ const styles = StyleSheet.create({
     borderColor: '#252525',
   },
   guideIntro: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#AAA',
-    lineHeight: 20,
+    lineHeight: 21,
     marginBottom: 12,
   },
   guideBold: {
@@ -1127,15 +1127,15 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   guideSectionTitle: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
     color: '#DDD',
     marginBottom: 6,
   },
   guideText: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#999',
-    lineHeight: 19,
+    lineHeight: 20,
   },
   guideCycleRow: {
     flexDirection: 'row',
@@ -1148,11 +1148,11 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   guideCycleBadgeText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
   },
   guideCycleDesc: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#888',
   },
   guideSteps: {
@@ -1160,9 +1160,9 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   guideStepText: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#777',
-    lineHeight: 18,
+    lineHeight: 19,
   },
   guideQuote: {
     backgroundColor: 'rgba(255,193,7,0.06)',
@@ -1172,14 +1172,14 @@ const styles = StyleSheet.create({
     borderLeftColor: '#FFC107',
   },
   guideQuoteText: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#FFC107',
     fontStyle: 'italic',
     fontWeight: '600',
-    lineHeight: 18,
+    lineHeight: 19,
   },
   guideQuoteAuthor: {
-    fontSize: 10,
+    fontSize: 11,
     color: '#888',
     marginTop: 4,
   },
@@ -1204,7 +1204,7 @@ const evidStyles = StyleSheet.create({
     marginBottom: 10,
   },
   sectionTitle: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
     color: '#DDD',
   },
@@ -1220,9 +1220,9 @@ const evidStyles = StyleSheet.create({
     marginBottom: 6,
   },
   evidenceHeadline: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#CCC',
-    lineHeight: 18,
+    lineHeight: 19,
     fontWeight: '500',
   },
   evidenceMetaRow: {
@@ -1231,7 +1231,7 @@ const evidStyles = StyleSheet.create({
     gap: 8,
   },
   evidenceSource: {
-    fontSize: 10,
+    fontSize: 11,
     color: '#666',
   },
   stanceBadge: {
@@ -1240,11 +1240,11 @@ const evidStyles = StyleSheet.create({
     borderRadius: 4,
   },
   stanceBadgeText: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: '700',
   },
   impactText: {
-    fontSize: 9,
+    fontSize: 10,
     color: '#555',
   },
 
@@ -1263,7 +1263,7 @@ const evidStyles = StyleSheet.create({
     marginBottom: 0,
   },
   indicatorName: {
-    fontSize: 10,
+    fontSize: 11,
     color: '#888',
     marginBottom: 4,
   },
@@ -1274,16 +1274,16 @@ const evidStyles = StyleSheet.create({
     marginBottom: 2,
   },
   indicatorValue: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     color: '#FFF',
   },
   indicatorPrev: {
-    fontSize: 9,
+    fontSize: 10,
     color: '#555',
   },
   indicatorNext: {
-    fontSize: 9,
+    fontSize: 10,
     color: '#FFC107',
     marginTop: 2,
   },
@@ -1301,7 +1301,7 @@ const evidStyles = StyleSheet.create({
     alignItems: 'center',
   },
   ratioText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
     color: '#FFF',
   },
@@ -1317,7 +1317,7 @@ const evidStyles = StyleSheet.create({
     marginBottom: 6,
   },
   campTitle: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
   },
   argRow: {
@@ -1334,12 +1334,12 @@ const evidStyles = StyleSheet.create({
   },
   argText: {
     flex: 1,
-    fontSize: 11,
+    fontSize: 12,
     color: '#AAA',
-    lineHeight: 17,
+    lineHeight: 18,
   },
   figuresText: {
-    fontSize: 10,
+    fontSize: 11,
     color: '#666',
     marginTop: 6,
     fontStyle: 'italic',
@@ -1364,7 +1364,7 @@ const evidStyles = StyleSheet.create({
     borderRadius: 4,
   },
   progressLabel: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     width: 40,
     textAlign: 'right',
@@ -1378,9 +1378,9 @@ const evidStyles = StyleSheet.create({
   },
   factorText: {
     flex: 1,
-    fontSize: 11,
+    fontSize: 12,
     color: '#AAA',
-    lineHeight: 16,
+    lineHeight: 17,
   },
   weightBadge: {
     paddingHorizontal: 6,
@@ -1388,7 +1388,7 @@ const evidStyles = StyleSheet.create({
     borderRadius: 4,
   },
   weightText: {
-    fontSize: 9,
+    fontSize: 10,
     color: '#888',
     fontWeight: '600',
   },

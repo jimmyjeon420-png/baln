@@ -119,11 +119,11 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   title: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
   },
   subtitle: {
-    fontSize: 11,
+    fontSize: 12,
     marginTop: 2,
   },
   chip: {
@@ -132,12 +132,12 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   chipText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
   },
   message: {
-    fontSize: 14,
-    lineHeight: 22,
+    fontSize: 15,
+    lineHeight: 23,
     marginTop: 12,
     fontStyle: 'italic',
   },

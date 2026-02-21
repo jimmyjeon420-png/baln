@@ -108,15 +108,15 @@ const s = StyleSheet.create({
     marginBottom: 16,
   },
   title: {
-    fontSize: 24,
+    fontSize: 25,
     fontWeight: '800',
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 15,
+    fontSize: 16,
     textAlign: 'center',
     marginBottom: 24,
-    lineHeight: 22,
+    lineHeight: 23,
   },
   bonusRow: {
     flexDirection: 'row',
@@ -132,15 +132,15 @@ const s = StyleSheet.create({
     borderColor: 'rgba(76,175,80,0.2)',
   },
   bonusLabel: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
   },
   bonusAmount: {
-    fontSize: 22,
+    fontSize: 23,
     fontWeight: '800',
   },
   hint: {
-    fontSize: 12,
+    fontSize: 13,
     marginBottom: 24,
   },
   button: {
@@ -151,7 +151,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
   },
   buttonText: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '700',
     color: '#FFFFFF',
   },

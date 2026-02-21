@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
     ...TYPOGRAPHY.headingSmall,
   },
   closeButton: {
-    fontSize: 24,
+    fontSize: 25,
     width: 30,
     textAlign: 'center',
   },
@@ -190,28 +190,28 @@ const styles = StyleSheet.create({
     marginBottom: SIZES.xs,
   },
   flag: {
-    fontSize: 24,
+    fontSize: 25,
     marginRight: SIZES.md,
   },
   countryInfo: {
     flex: 1,
   },
   countryName: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
     marginBottom: 2,
   },
   countryRate: {
-    fontSize: 13,
+    fontSize: 14,
   },
   countryNotes: {
-    fontSize: 12,
+    fontSize: 13,
     marginLeft: 32,
     marginTop: SIZES.xs,
     fontStyle: 'italic',
   },
   checkmark: {
-    fontSize: 20,
+    fontSize: 21,
     marginLeft: SIZES.md,
   },
   customOption: {
@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
     marginBottom: SIZES.xxl,
   },
   customOptionText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
   },
   customContainer: {
@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   customLabel: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
     marginBottom: SIZES.md,
   },
@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: SIZES.md,
     paddingVertical: SIZES.md,
-    fontSize: 16,
+    fontSize: 17,
     marginBottom: SIZES.lg,
   },
   customButtonGroup: {
@@ -253,7 +253,7 @@ const styles = StyleSheet.create({
   customCancelButtonText: {
     textAlign: 'center',
     fontWeight: '600',
-    fontSize: 14,
+    fontSize: 15,
   },
   customSubmitButton: {
     flex: 1,
@@ -264,6 +264,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#fff',
     fontWeight: '600',
-    fontSize: 14,
+    fontSize: 15,
   },
 });
