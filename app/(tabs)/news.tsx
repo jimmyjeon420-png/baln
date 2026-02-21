@@ -2,7 +2,7 @@
  * 뉴스 탭 — 시장 뉴스 실시간 피드
  *
  * 역할: 뉴스룸 — 실시간 뉴스를 무한 스크롤로 보여주는 탭
- * - 상단: 카테고리 필터 탭 (전체/크립토/주식/매크로/내 자산)
+ * - 상단: 카테고리 필터 탭 (전체/암호화폐/주식/거시경제/내 자산)
  * - 헤더: "마지막 업데이트: HH:MM" 표시
  * - PiCK 섹션: 수평 스크롤 AI 추천 뉴스
  * - 뉴스 리스트: FlatList + 무한 스크롤 + Pull-to-refresh
@@ -42,9 +42,9 @@ type ExtendedFilter = NewsCategoryFilter | 'portfolio';
 const CATEGORY_TABS: { key: ExtendedFilter; label: string; icon: string; color: string }[] = [
   { key: 'all', label: '전체', icon: 'apps-outline', color: '#4CAF50' },
   { key: 'portfolio', label: '내 자산', icon: 'pie-chart-outline', color: '#AB47BC' },
-  { key: 'crypto', label: '크립토', icon: 'logo-bitcoin', color: '#F7931A' },
+  { key: 'crypto', label: '암호화폐', icon: 'logo-bitcoin', color: '#F7931A' },
   { key: 'stock', label: '주식', icon: 'trending-up', color: '#4CAF50' },
-  { key: 'macro', label: '매크로', icon: 'globe-outline', color: '#29B6F6' },
+  { key: 'macro', label: '거시경제', icon: 'globe-outline', color: '#29B6F6' },
 ];
 
 // ============================================================================

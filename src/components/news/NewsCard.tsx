@@ -58,9 +58,9 @@ function getImpactIcon(score: number | null): keyof typeof Ionicons.glyphMap {
 // ============================================================================
 
 const CATEGORY_CONFIG: Record<string, { icon: string; color: string; label: string }> = {
-  crypto: { icon: 'logo-bitcoin', color: '#F7931A', label: '크립토' },
+  crypto: { icon: 'logo-bitcoin', color: '#F7931A', label: '암호화폐' },
   stock: { icon: 'trending-up', color: '#4CAF50', label: '주식' },
-  macro: { icon: 'globe-outline', color: '#29B6F6', label: '매크로' },
+  macro: { icon: 'globe-outline', color: '#29B6F6', label: '거시경제' },
   general: { icon: 'newspaper-outline', color: '#9E9E9E', label: '일반' },
 };
 
