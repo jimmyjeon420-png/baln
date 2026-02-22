@@ -1,7 +1,6 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 
-import type { HealthScoreResult } from '../../services/rebalanceScore';
-import { DEFAULT_TARGET, AssetCategory } from '../../services/rebalanceScore';
+import { DEFAULT_TARGET, type HealthScoreResult, type AssetCategory } from '../../services/rebalanceScore';
 import { useKostolalyPhase } from '../../hooks/useKostolalyPhase';
 import type {
   RiskAnalysisResult,
@@ -29,6 +28,7 @@ interface AdvancedCheckupViewProps {
   healthScore: HealthScoreResult;
   allAssets: Asset[];
   totalAssets: number;
+  philosophyTarget: Record<AssetCategory, number>;
   morningBriefing: MorningBriefingResult | null;
   analysisResult: RiskAnalysisResult | null;
   sortedActions: MorningBriefingResult['portfolioActions'];
@@ -65,6 +65,7 @@ export default function AdvancedCheckupView({
   healthScore,
   allAssets,
   totalAssets,
+  philosophyTarget,
   morningBriefing,
   analysisResult,
   sortedActions,
@@ -93,7 +94,14 @@ export default function AdvancedCheckupView({
   contextHeadline,
 }: AdvancedCheckupViewProps) {
   // AllocationDriftSection에서 선택된 철학 목표 → WhatIfSimulator + TodayActionsSection 전달
-  const [selectedTarget, setSelectedTarget] = useState<Record<AssetCategory, number>>(DEFAULT_TARGET);
+  const [selectedTarget, setSelectedTarget] = useState<Record<AssetCategory, number>>(philosophyTarget ?? DEFAULT_TARGET);
+
+  // 부모(rebalance.tsx) 철학 목표가 바뀌면 내부 기준도 즉시 동기화
+  useEffect(() => {
+    if (philosophyTarget) {
+      setSelectedTarget(philosophyTarget);
+    }
+  }, [philosophyTarget]);
 
   // target 변경 시 자신의 state + 부모(rebalance.tsx)에 동시 전파 → 건강점수 재계산 연동
   const handleTargetChange = useCallback((t: Record<AssetCategory, number>) => {
@@ -113,6 +121,7 @@ export default function AdvancedCheckupView({
         portfolio={portfolio}
         livePrices={livePrices}
         totalAssets={totalAssets}
+        currentHealthScore={healthScore.totalScore}
         isAILoading={isAILoading}
         allAssets={allAssets}
         selectedTarget={selectedTarget}

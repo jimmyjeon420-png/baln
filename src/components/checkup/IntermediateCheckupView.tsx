@@ -21,11 +21,9 @@ import TodayActionsSection from '../rebalance/TodayActionsSection';
 import RiskDashboardSection from '../rebalance/RiskDashboardSection';
 import LevelSwitcher from './LevelSwitcher';
 
-import type { HealthScoreResult, FactorResult } from '../../services/rebalanceScore';
-import { DEFAULT_TARGET } from '../../services/rebalanceScore';
-import type { RiskAnalysisResult, MorningBriefingResult } from '../../services/gemini';
+import { DEFAULT_TARGET, type HealthScoreResult, type FactorResult } from '../../services/rebalanceScore';
+import type { RiskAnalysisResult, MorningBriefingResult, PortfolioAsset } from '../../services/gemini';
 import type { Asset } from '../../types/asset';
-import type { PortfolioAsset } from '../../services/gemini';
 import type { InvestorLevel } from '../../hooks/useCheckupLevel';
 import type { PeerComparison } from '../../types/rebalanceTypes';
 import type { ThemeColors } from '../../styles/colors';
@@ -147,6 +145,7 @@ export default function IntermediateCheckupView({
         portfolio={portfolio as any}
         livePrices={livePrices}
         totalAssets={totalAssets}
+        currentHealthScore={healthScore.totalScore}
         isAILoading={isAILoading}
         allAssets={allAssets}
         selectedTarget={DEFAULT_TARGET}

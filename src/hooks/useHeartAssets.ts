@@ -27,6 +27,7 @@ import {
   BUFFETT_TARGET,
   CATHIE_WOOD_TARGET,
   DEFAULT_TARGET,
+  getPhaseAdjustedTarget,
 } from '../services/rebalanceScore';
 import { useKostolalyPhase } from './useKostolalyPhase';
 import { getTickerProfile } from '../data/tickerProfile';
@@ -243,6 +244,7 @@ export function useHeartAssets(): UseHeartAssetsReturn {
   // ── 구루 철학 타겟 + 스타일 (오늘 탭 건강 점수 연동) ──
   const [guruTarget, setGuruTarget] = useState<Record<AssetCategory, number>>(DEFAULT_TARGET);
   const [guruStyle, setGuruStyle] = useState<string>('dalio');
+  const [isCustomTarget, setIsCustomTarget] = useState(false);
 
   // 코스톨라니 국면 (Supabase에서 실시간 조회)
   const { phase: kostolalyPhase } = useKostolalyPhase();
@@ -252,19 +254,49 @@ export function useHeartAssets(): UseHeartAssetsReturn {
     Promise.all([
       AsyncStorage.getItem('@baln:guru_style'),
       AsyncStorage.getItem('@investment_philosophy'),
-    ]).then(([storedGuruStyle, storedPhil]) => {
-      const raw = storedGuruStyle || storedPhil || 'dalio';
-      const phil = raw === 'consensus' ? 'dalio' : raw;
+      AsyncStorage.getItem('@target_allocation'),
+    ]).then(([storedGuruStyle, storedPhil, storedCustomTarget]) => {
+      const normalizedPhil = storedPhil === 'consensus' ? 'dalio' : storedPhil;
+      const validGuruStyles = ['dalio', 'buffett', 'cathie_wood'];
       const targetMap: Partial<Record<string, Record<AssetCategory, number>>> = {
         dalio: DALIO_TARGET,
         buffett: BUFFETT_TARGET,
         cathie_wood: CATHIE_WOOD_TARGET,
       };
+
+      // 직접설정 모드: 저장된 커스텀 배분을 우선 사용 (분석 탭과 동일 기준)
+      if (normalizedPhil === 'custom') {
+        let parsedTarget: Record<AssetCategory, number> | null = null;
+        if (storedCustomTarget) {
+          try {
+            parsedTarget = JSON.parse(storedCustomTarget) as Record<AssetCategory, number>;
+          } catch {
+            parsedTarget = null;
+          }
+        }
+        setGuruTarget(parsedTarget ?? DEFAULT_TARGET);
+        setIsCustomTarget(true);
+        setGuruStyle(
+          storedGuruStyle && validGuruStyles.includes(storedGuruStyle)
+            ? storedGuruStyle
+            : 'dalio',
+        );
+        return;
+      }
+
+      const phil = storedGuruStyle && validGuruStyles.includes(storedGuruStyle)
+        ? storedGuruStyle
+        : normalizedPhil && validGuruStyles.includes(normalizedPhil)
+          ? normalizedPhil
+          : 'dalio';
+
       setGuruTarget(targetMap[phil] ?? DEFAULT_TARGET);
       setGuruStyle(phil);
+      setIsCustomTarget(false);
     }).catch(() => {
       setGuruTarget(DEFAULT_TARGET);
       setGuruStyle('dalio');
+      setIsCustomTarget(false);
     });
   }, []));
 
@@ -421,8 +453,12 @@ export function useHeartAssets(): UseHeartAssetsReturn {
   let portfolioGradeLabel: string | null = null;
   let healthResult: HealthScoreResult | null = null;
 
+  const effectiveTarget = isCustomTarget
+    ? guruTarget
+    : getPhaseAdjustedTarget(guruTarget, kostolalyPhase);
+
   if (assets.length > 0 && totalAssets > 0) {
-    healthResult = calculateHealthScore(assets, totalAssets, guruTarget, {
+    healthResult = calculateHealthScore(assets, totalAssets, effectiveTarget, {
       guruStyle,
       kostolalyPhase: kostolalyPhase ?? undefined,
     });

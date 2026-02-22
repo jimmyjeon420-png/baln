@@ -17,6 +17,17 @@ import { getStockComposition } from '../data/tickerProfile';
 /** 자산 분류 카테고리 */
 export type AssetCategory = 'cash' | 'bond' | 'large_cap' | 'realestate' | 'bitcoin' | 'altcoin' | 'gold' | 'commodity';
 
+/** 유동 자산 카테고리 (부동산 제외) */
+export const LIQUID_ASSET_CATEGORIES: AssetCategory[] = [
+  'cash',
+  'bond',
+  'large_cap',
+  'bitcoin',
+  'altcoin',
+  'gold',
+  'commodity',
+];
+
 /** 건강 등급 */
 export type HealthGrade = 'S' | 'A' | 'B' | 'C' | 'D';
 
@@ -343,6 +354,39 @@ export function getPhaseAdjustedTarget(
   return adjusted as Record<AssetCategory, number>;
 }
 
+/**
+ * 유동 자산(부동산 제외) 기준으로 목표 비중을 100%로 정규화
+ *
+ * 리밸런싱은 유동 자산 안에서만 실행하므로,
+ * customTarget에 realestate 비중이 포함되어도 유동 7개 카테고리 합이 100%가 되도록 보정한다.
+ */
+export function normalizeLiquidTarget(
+  customTarget?: Record<AssetCategory, number>,
+): Record<AssetCategory, number> {
+  const target = customTarget ?? DEFAULT_TARGET;
+  const liquidSum = LIQUID_ASSET_CATEGORIES.reduce(
+    (sum, cat) => sum + Math.max(0, target[cat] || 0),
+    0,
+  );
+
+  const fallbackSum = LIQUID_ASSET_CATEGORIES.reduce(
+    (sum, cat) => sum + Math.max(0, DEFAULT_TARGET[cat] || 0),
+    0,
+  );
+  const denom = liquidSum > 0 ? liquidSum : Math.max(1, fallbackSum);
+
+  const normalized = { ...DEFAULT_TARGET } as Record<AssetCategory, number>;
+  LIQUID_ASSET_CATEGORIES.forEach((cat) => {
+    const raw = liquidSum > 0 ? (target[cat] || 0) : (DEFAULT_TARGET[cat] || 0);
+    normalized[cat] = (Math.max(0, raw) / denom) * 100;
+  });
+
+  // 부동산은 리밸런싱 대상이 아니므로 점수/처방전 계산에서 직접 사용하지 않는다.
+  normalized.realestate = target.realestate ?? 0;
+
+  return normalized;
+}
+
 /** 등급 설정 */
 const GRADE_CONFIG: Record<HealthGrade, { color: string; bgColor: string; label: string }> = {
   S: { color: '#4CAF50', bgColor: 'rgba(76,175,80,0.15)', label: '최적' },
@@ -448,12 +492,11 @@ function calcDriftPenalty(
     return { label: '배분 이탈도', icon: '🎯', rawPenalty: 0, weight: 0.225, weightedPenalty: 0, score: 100, comment: '자산을 추가해보세요' };
   }
 
-  const target = customTarget ?? DEFAULT_TARGET;
+  const target = normalizeLiquidTarget(customTarget);
 
   // 카테고리별 현재 비중 계산 (유동 자산만, 순자산 기준)
-  const LIQUID_CATS: AssetCategory[] = ['cash', 'bond', 'large_cap', 'bitcoin', 'altcoin', 'gold', 'commodity'];
   const categoryPct: Record<string, number> = {};
-  for (const cat of LIQUID_CATS) categoryPct[cat] = 0;
+  for (const cat of LIQUID_ASSET_CATEGORIES) categoryPct[cat] = 0;
 
   for (const asset of assets) {
     const cat = classifyAsset(asset);
@@ -463,7 +506,7 @@ function calcDriftPenalty(
   }
 
   // 목표 대비 이탈도: Σ|실제% - 목표%| / 2
-  const drift = LIQUID_CATS.reduce((sum, cat) => {
+  const drift = LIQUID_ASSET_CATEGORIES.reduce((sum, cat) => {
     return sum + Math.abs((categoryPct[cat] || 0) - (target[cat] || 0));
   }, 0) / 2;
 
@@ -471,9 +514,9 @@ function calcDriftPenalty(
   const score = Math.round(100 - penalty);
 
   // 가장 많이 이탈한 카테고리 찾기
-  let maxDriftCat = LIQUID_CATS[0];
+  let maxDriftCat = LIQUID_ASSET_CATEGORIES[0];
   let maxDrift = 0;
-  for (const cat of LIQUID_CATS) {
+  for (const cat of LIQUID_ASSET_CATEGORIES) {
     const d = Math.abs((categoryPct[cat] || 0) - (target[cat] || 0));
     if (d > maxDrift) { maxDrift = d; maxDriftCat = cat; }
   }

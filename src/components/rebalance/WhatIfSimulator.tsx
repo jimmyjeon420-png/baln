@@ -17,7 +17,7 @@ import { useRouter } from 'expo-router';
 import Slider from '@react-native-community/slider';
 import * as Haptics from 'expo-haptics';
 import { Asset } from '../../types/asset';
-import { calculateHealthScore, classifyAsset, AssetCategory, DEFAULT_TARGET } from '../../services/rebalanceScore';
+import { calculateHealthScore, classifyAsset, AssetCategory, DEFAULT_TARGET, getNetAssetValue, normalizeLiquidTarget } from '../../services/rebalanceScore';
 import { generateOptimalAllocation, type PortfolioAsset } from '../../services/gemini';
 import { useTheme } from '../../hooks/useTheme';
 import { ThemeColors } from '../../styles/colors';
@@ -62,7 +62,7 @@ export default function WhatIfSimulator({
     [assets],
   );
   const liquidTotal = useMemo(
-    () => liquidAssets.reduce((sum, a) => sum + (a.currentValue || 0), 0),
+    () => liquidAssets.reduce((sum, a) => sum + getNetAssetValue(a), 0),
     [liquidAssets],
   );
 
@@ -74,14 +74,17 @@ export default function WhatIfSimulator({
     for (const asset of liquidAssets) {
       const cat = classifyAsset(asset);
       if (cat !== 'realestate') {
-        map[cat] = (map[cat] || 0) + (asset.currentValue || 0) / liquidTotal * 100;
+        map[cat] = (map[cat] || 0) + getNetAssetValue(asset) / liquidTotal * 100;
       }
     }
     return map;
   }, [liquidAssets, liquidTotal]);
 
   // philosophyTarget이 바뀌면 catTargets 업데이트
-  const baseTarget = philosophyTarget ?? DEFAULT_TARGET;
+  const baseTarget = useMemo(
+    () => normalizeLiquidTarget(philosophyTarget ?? DEFAULT_TARGET),
+    [philosophyTarget],
+  );
 
   // 카테고리 목표 비중 (슬라이더로 조정)
   const [catTargets, setCatTargets] = useState<Record<string, number>>(() => {
@@ -139,11 +142,11 @@ export default function WhatIfSimulator({
   const simulatedHealthScore = useMemo(() => {
     if (simulatedTotal === 0 || catSum < 95 || catSum > 105) return currentHealthScore;
     try {
-      return calculateHealthScore(simulatedAssets, simulatedTotal, philosophyTarget).totalScore;
+      return calculateHealthScore(simulatedAssets, simulatedTotal, baseTarget).totalScore;
     } catch {
       return currentHealthScore;
     }
-  }, [simulatedAssets, simulatedTotal, currentHealthScore, catSum, philosophyTarget]);
+  }, [simulatedAssets, simulatedTotal, currentHealthScore, catSum, baseTarget]);
 
   const healthDelta = simulatedHealthScore - currentHealthScore;
 

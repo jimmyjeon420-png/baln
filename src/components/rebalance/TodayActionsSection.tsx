@@ -21,7 +21,7 @@ import { useTheme } from '../../hooks/useTheme';
 import { ThemeColors } from '../../styles/colors';
 import type { PortfolioAction, RebalancePortfolioAsset, LivePriceData } from '../../types/rebalanceTypes';
 import type { Asset } from '../../types/asset';
-import { classifyAsset, AssetCategory, getNetAssetValue, KostolalyPhase, KOSTOLANY_PHASE_NAMES, KOSTOLANY_PHASE_EMOJIS, KOSTOLANY_PHASE_DESCRIPTIONS, calculateHealthScore } from '../../services/rebalanceScore';
+import { classifyAsset, AssetCategory, getNetAssetValue, KostolalyPhase, KOSTOLANY_PHASE_NAMES, KOSTOLANY_PHASE_EMOJIS, KOSTOLANY_PHASE_DESCRIPTIONS, calculateHealthScore, LIQUID_ASSET_CATEGORIES, normalizeLiquidTarget } from '../../services/rebalanceScore';
 import { getTickerProfile, getCachedTickerProfile } from '../../data/tickerProfile';
 import { useKostolalyPhase } from '../../hooks/useKostolalyPhase';
 import { usePrescriptionResults } from '../../hooks/usePrescriptionResults';
@@ -310,6 +310,8 @@ interface TodayActionsSectionProps {
   portfolio: RebalancePortfolioAsset[];
   livePrices: Record<string, LivePriceData | undefined>;
   totalAssets: number;
+  /** HealthScoreSection과 동일한 현재 건강 점수 (단일 소스) */
+  currentHealthScore: number;
   isAILoading: boolean;
   /** 코스톨라니/철학 기반 처방전 계산용 */
   allAssets?: Asset[];
@@ -334,6 +336,7 @@ export default function TodayActionsSection({
   portfolio,
   livePrices,
   totalAssets,
+  currentHealthScore,
   isAILoading,
   allAssets,
   selectedTarget,
@@ -395,7 +398,7 @@ export default function TodayActionsSection({
     currentPhase: activePhase,
     actionsCount: sortedActions.length,
     completedCount,
-    currentScore: 0, // healthScore는 props 없음 — HealthScoreSection이 별도 관리
+    currentScore: Math.round(currentHealthScore),
   });
 
   // P3-A: completedCount 변경 시 처방전 완료 수 자동 동기화
@@ -409,8 +412,13 @@ export default function TodayActionsSection({
   const { memo, setMemo, saveMemo, isSaved } = useJournalMemo();
 
   // ── 카테고리 리밸런싱 계획 계산 ──
+  const normalizedTarget = useMemo(
+    () => normalizeLiquidTarget(selectedTarget),
+    [selectedTarget],
+  );
+
   const categoryRebalancePlan = useMemo<CategoryRebalanceAction[]>(() => {
-    if (!allAssets || !selectedTarget || totalAssets <= 0) return [];
+    if (!allAssets || totalAssets <= 0) return [];
 
     // 유동 자산만 (부동산 제외)
     const liquidAssets = allAssets.filter(a => classifyAsset(a) !== 'realestate');
@@ -427,13 +435,12 @@ export default function TodayActionsSection({
       catAmount[cat] += getNetAssetValue(asset);
     }
 
-    const LIQUID_CATS: AssetCategory[] = ['cash', 'bond', 'large_cap', 'bitcoin', 'altcoin', 'gold', 'commodity'];
     const result: CategoryRebalanceAction[] = [];
 
-    for (const cat of LIQUID_CATS) {
+    for (const cat of LIQUID_ASSET_CATEGORIES) {
       const currentAmt = catAmount[cat] || 0;
       const currentPct = (currentAmt / liquidTotal) * 100;
-      const targetPct = selectedTarget[cat] || 0;
+      const targetPct = normalizedTarget[cat] || 0;
       const drift = currentPct - targetPct;
       const driftAmount = (drift / 100) * liquidTotal; // 양수: 초과(매도), 음수: 부족(매수)
 
@@ -482,18 +489,18 @@ export default function TodayActionsSection({
 
     // 매도 먼저, 매수 나중
     return result.sort((a, b) => b.drift - a.drift);
-  }, [allAssets, selectedTarget, totalAssets, portfolio]);
+  }, [allAssets, normalizedTarget, totalAssets, portfolio]);
 
   // ── 처방전 실행 시 예상 건강 점수 변화 (P2-B) ──
   const expectedScoreChange = useMemo(() => {
-    if (!allAssets || !selectedTarget || categoryRebalancePlan.length === 0) return null;
+    if (!allAssets || categoryRebalancePlan.length === 0) return null;
 
     const liquidAssets = allAssets.filter(a => classifyAsset(a) !== 'realestate');
     const liquidTotal = liquidAssets.reduce((sum, a) => sum + getNetAssetValue(a), 0);
     if (liquidTotal <= 0) return null;
 
-    // 현재 점수
-    const currentScore = calculateHealthScore(liquidAssets, liquidTotal, selectedTarget).totalScore;
+    // 현재 점수: HealthScoreSection과 동일한 단일 소스 사용
+    const currentScore = Math.round(currentHealthScore);
 
     // 카테고리별 현재 순자산 합계
     const catNetTotals: Partial<Record<AssetCategory, number>> = {};
@@ -502,13 +509,11 @@ export default function TodayActionsSection({
       catNetTotals[cat] = (catNetTotals[cat] || 0) + getNetAssetValue(asset);
     }
 
-    // ── 시뮬레이션 핵심 수정 ──
-    // getAssetValue()는 quantity × currentPrice 우선 사용 → currentValue 변경이 무시됨
-    // 해결: quantity/currentPrice를 undefined로 지워서 currentValue가 쓰이게 함
-    const simulatedAssets: typeof liquidAssets = liquidAssets.map(asset => {
+    // ── 시뮬레이션: 유동 자산 비중을 목표로 조정 ──
+    const simulatedLiquidAssets: typeof liquidAssets = liquidAssets.map(asset => {
       const cat = classifyAsset(asset);
       const currentCatNet = catNetTotals[cat] || 0;
-      const targetPct = selectedTarget[cat as AssetCategory] || 0;
+      const targetPct = normalizedTarget[cat as AssetCategory] || 0;
       const targetNetAmt = liquidTotal * (targetPct / 100);
       const scale = currentCatNet > 0 ? targetNetAmt / currentCatNet : 0;
       const newNet = Math.max(0, getNetAssetValue(asset) * scale);
@@ -526,14 +531,13 @@ export default function TodayActionsSection({
       bond: 'TLT', gold: 'GLD', commodity: 'DJP',
       large_cap: 'SPY', cash: 'CASH_KRW', altcoin: 'ETH', bitcoin: 'BTC',
     };
-    const LIQUID_CATS: AssetCategory[] = ['cash', 'bond', 'large_cap', 'bitcoin', 'altcoin', 'gold', 'commodity'];
     const templateAsset = liquidAssets[0];
     if (templateAsset) {
-      for (const cat of LIQUID_CATS) {
-        const targetPct = selectedTarget[cat] || 0;
+      for (const cat of LIQUID_ASSET_CATEGORIES) {
+        const targetPct = normalizedTarget[cat] || 0;
         if (targetPct > 0 && (catNetTotals[cat] || 0) === 0) {
           // 해당 카테고리에 보유 자산이 없을 때 가상 포지션 추가
-          simulatedAssets.push({
+          simulatedLiquidAssets.push({
             ...templateAsset,
             id: `virtual_${cat}`,
             name: `Virtual ${cat}`,
@@ -549,13 +553,28 @@ export default function TodayActionsSection({
       }
     }
 
-    const projectedScore = calculateHealthScore(simulatedAssets, liquidTotal, selectedTarget).totalScore;
+    // 전체 자산 스코어 체계 유지: 비유동 자산(부동산)은 그대로 두고 유동만 교체
+    const simulatedById = new Map(simulatedLiquidAssets.map(asset => [asset.id, asset]));
+    const simulatedAllAssets = allAssets.map(asset => simulatedById.get(asset.id) ?? asset);
+    const originalIds = new Set(allAssets.map(asset => asset.id));
+    for (const asset of simulatedLiquidAssets) {
+      if (!originalIds.has(asset.id)) {
+        simulatedAllAssets.push(asset);
+      }
+    }
+
+    const projectedScore = Math.round(calculateHealthScore(
+      simulatedAllAssets,
+      totalAssets,
+      normalizedTarget,
+      { guruStyle },
+    ).totalScore);
     const change = projectedScore - currentScore;
 
     if (Math.abs(change) < 1) return null; // 변화 미미하면 숨김
 
     return { currentScore, projectedScore, change };
-  }, [allAssets, selectedTarget, categoryRebalancePlan]);
+  }, [allAssets, normalizedTarget, categoryRebalancePlan, currentHealthScore, totalAssets, guruStyle]);
 
   // 전체 요약 + 우선순위 가이드 계산
   const actionsSummary = useMemo(() => generateActionsSummary(sortedActions), [sortedActions]);

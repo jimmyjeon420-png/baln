@@ -29,7 +29,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { Asset } from '../../types/asset';
-import { classifyAsset, AssetCategory, getNetAssetValue, calculateLTV, calcRealEstateDiversificationBonus, DEFAULT_TARGET, DALIO_TARGET, BUFFETT_TARGET, CATHIE_WOOD_TARGET, KostolalyPhase, KOSTOLANY_PHASE_NAMES, KOSTOLANY_PHASE_EMOJIS, getPhaseAdjustedTarget } from '../../services/rebalanceScore';
+import { classifyAsset, AssetCategory, getNetAssetValue, calculateLTV, calcRealEstateDiversificationBonus, DEFAULT_TARGET, DALIO_TARGET, BUFFETT_TARGET, CATHIE_WOOD_TARGET, KostolalyPhase, KOSTOLANY_PHASE_NAMES, KOSTOLANY_PHASE_EMOJIS, getPhaseAdjustedTarget, normalizeLiquidTarget } from '../../services/rebalanceScore';
 import AllocationPieChart, { PieSlice } from '../charts/AllocationPieChart';
 import { useTheme } from '../../hooks/useTheme';
 import { ThemeColors } from '../../styles/colors';
@@ -172,6 +172,8 @@ function calculateDrift(
   totalAssets: number,
   target: Record<AssetCategory, number>,
 ): DriftItem[] {
+  const liquidTarget = normalizeLiquidTarget(target);
+
   // 현재 배분 계산
   const currentMap: Record<AssetCategory, number> = {
     cash: 0, bond: 0, large_cap: 0, realestate: 0, bitcoin: 0, altcoin: 0, gold: 0, commodity: 0,
@@ -179,12 +181,12 @@ function calculateDrift(
 
   assets.forEach(asset => {
     const cat = classifyAsset(asset);
-    currentMap[cat] += asset.currentValue;
+    currentMap[cat] += getNetAssetValue(asset);
   });
 
   return CATEGORIES.map(cat => {
     const currentPct = totalAssets > 0 ? (currentMap[cat.key] / totalAssets) * 100 : 0;
-    const targetPct = target[cat.key] ?? 0;
+    const targetPct = liquidTarget[cat.key] ?? 0;
     return {
       category: cat,
       currentPct,
@@ -393,7 +395,7 @@ export default function AllocationDriftSection({
   const liquidTotal = useMemo(
     () => assets
       .filter(a => classifyAsset(a) !== 'realestate')
-      .reduce((sum, a) => sum + (a.currentValue || 0), 0),
+      .reduce((sum, a) => sum + getNetAssetValue(a), 0),
     [assets],
   );
   const realEstateRatio = totalAssets > 0 ? (realEstateInfo.grossValue / totalAssets) * 100 : 0;
