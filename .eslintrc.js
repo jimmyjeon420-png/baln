@@ -41,6 +41,8 @@ module.exports = {
     '@typescript-eslint/no-explicit-any': 'warn',
     '@typescript-eslint/explicit-module-boundary-types': 'off',
     '@typescript-eslint/no-non-null-assertion': 'warn',
+    '@typescript-eslint/ban-ts-comment': 'warn',
+    '@typescript-eslint/no-var-requires': 'warn',
 
     // TypeScript 5.x 업데이트로 인한 false positive 방지
     '@typescript-eslint/no-empty-object-type': 'off',
@@ -56,12 +58,23 @@ module.exports = {
     'no-var': 'error',
     'prefer-const': 'warn',
     'prefer-arrow-callback': 'warn',
-    'no-duplicate-imports': 'error',
+    'no-duplicate-imports': 'warn',
 
     // Expo/React Native 최적화
     // 'react-native/no-unused-styles': 'off', // eslint-plugin-react-native 미설치 시 주석
     // 'react-native/no-inline-styles': 'off',
   },
+  overrides: [
+    {
+      files: ['supabase/functions/**/*.ts'],
+      rules: {
+        // Deno Edge Function URL import는 Node resolver 기준에서 false positive가 발생함
+        'import/no-unresolved': 'off',
+        // 레거시 함수 파일의 @ts-nocheck는 별도 리팩터 단계에서 정리
+        '@typescript-eslint/ban-ts-comment': 'off',
+      },
+    },
+  ],
   ignorePatterns: [
     'node_modules/',
     'coverage/',

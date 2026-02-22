@@ -12,13 +12,12 @@
  * - 처음에는 접힌 상태, 탭하면 펼쳐짐
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
@@ -70,9 +69,9 @@ export default function ReplySection({
   // 답글이 없으면 아무것도 렌더링 안 함
   if (replies.length === 0) return null;
 
-  const toggleExpanded = useCallback(() => {
+  const toggleExpanded = () => {
     setExpanded(prev => !prev);
-  }, []);
+  };
 
   return (
     <View style={styles.container}>
