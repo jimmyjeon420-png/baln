@@ -12,7 +12,7 @@
     "test": "jest",
     "test:smoke": "jest --runInBand src/utils/__tests__/rebalanceCalculator.test.ts src/utils/__tests__/currencyFormatter.test.ts",
     "lint": "eslint . --ext .ts,.tsx",
-    "lint:critical": "eslint \"app/(tabs)/news.tsx\" src/hooks/useMarketNews.ts src/config/experiments.ts src/hooks/useABExperiment.ts src/services/analyticsService.ts",
+    "lint:critical": "eslint --max-warnings=0 \"app/(tabs)/news.tsx\" src/hooks/useMarketNews.ts src/config/experiments.ts src/hooks/useABExperiment.ts src/services/analyticsService.ts",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
     "typecheck": "tsc --noEmit --pretty false",
     "check:ts-nocheck": "bash -lc 'count=$(grep -R --line-number --include=\"*.ts\" --include=\"*.tsx\" \"@ts-nocheck\" supabase/functions src app 2>/dev/null | wc -l | tr -d \" \"); echo \"@ts-nocheck count=$count\"; [ \"$count\" -le 13 ]'",

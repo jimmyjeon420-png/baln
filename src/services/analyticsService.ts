@@ -30,7 +30,7 @@ type AnalyticsEvent = {
   /** 이벤트 이름 (예: 'screen_view', 'prediction_vote') */
   event: string;
   /** 이벤트 부가 정보 (JSON) */
-  properties?: Record<string, any>;
+  properties?: Record<string, unknown>;
   /** ISO 문자열 타임스탬프 */
   timestamp: string;
   /** Supabase auth.users.id */
@@ -64,7 +64,7 @@ let eventBuffer: AnalyticsEvent[] = [];
  */
 export function trackEvent(
   event: string,
-  properties?: Record<string, any>,
+  properties?: Record<string, unknown>,
   userId?: string
 ): void {
   const analyticsEvent: AnalyticsEvent = {
