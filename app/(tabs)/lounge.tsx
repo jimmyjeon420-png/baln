@@ -2,7 +2,7 @@
  * VIP 라운지 - 커뮤니티 + 모임 통합 화면
  *
  * 세그먼트 컨트롤로 두 섹션 전환:
- *   커뮤니티(기본): 게시글/댓글/좋아요 (100만+ 열람, 1000만+ 댓글, 1.5억+ 글쓰기)
+ *   커뮤니티(기본): 게시글/댓글/좋아요 (100만+ 열람, 300만+ 댓글, 3,000만+ 글쓰기)
  *   모임: 스터디/정기모임/네트워킹/워크샵 (100만+ 열람, 1억+ 모임 생성)
  */
 
@@ -31,6 +31,7 @@ import {
   useLikePost,
   useMyLikes,
   PostSortBy,
+  generateAssetMix,
 } from '../../src/hooks/useCommunity';
 import {
   useGatherings,
@@ -54,7 +55,6 @@ import { Gathering } from '../../src/types/database';
 import { useTheme } from '../../src/hooks/useTheme';
 import supabase, { getCurrentUser } from '../../src/services/supabase';
 import { useSharedPortfolio } from '../../src/hooks/useSharedPortfolio';
-import { generateAssetMix } from '../../src/hooks/useCommunity';
 
 // ══════════════════════════════════════════
 // 상수
@@ -364,6 +364,8 @@ function LoungeScreenInner() {
 
   // 공통 상태
   const [refreshing, setRefreshing] = useState(false);
+  const commentRequirementLabel = formatAssetAmount(LOUNGE_COMMENT_THRESHOLD);
+  const postRequirementLabel = formatAssetAmount(LOUNGE_POST_THRESHOLD);
 
   // ── 훅 (각각 try-catch 내장) ──
   const { eligibility, loading: eligibilityLoading, error: eligibilityError, refetch: refetchEligibility } = useLoungeEligibility();
@@ -371,6 +373,7 @@ function LoungeScreenInner() {
   const {
     data: postsData,
     isLoading: postsLoading,
+    isError: postsError,
     refetch: refetchPosts,
     fetchNextPage,
     hasNextPage,
@@ -380,7 +383,12 @@ function LoungeScreenInner() {
   const createPost = useCreatePost();
   const likePost = useLikePost();
   const { data: hostingEligibility } = useHostingEligibility();
-  const { data: gatherings, isLoading: gatheringsLoading, refetch: refetchGatherings } = useGatherings(
+  const {
+    data: gatherings,
+    isLoading: gatheringsLoading,
+    isError: gatheringsError,
+    refetch: refetchGatherings,
+  } = useGatherings(
     gatheringCategory === 'all' ? undefined : gatheringCategory
   );
 
@@ -470,7 +478,7 @@ function LoungeScreenInner() {
     if (!eligibility?.canPost) {
       Alert.alert(
         '글쓰기 제한',
-        `게시물 작성은 자산 1.5억 이상 회원만 가능합니다.\n\n현재 자산: ${formatAssetAmount(eligibility?.totalAssets ?? 0)}\n필요 자산: 1.5억`,
+        `게시물 작성은 자산 ${postRequirementLabel} 이상 회원만 가능합니다.\n\n현재 자산: ${formatAssetAmount(eligibility?.totalAssets ?? 0)}\n필요 자산: ${postRequirementLabel}`,
         [{ text: '확인' }]
       );
       return;
@@ -603,7 +611,7 @@ function LoungeScreenInner() {
               <View style={[styles.accessDot, { backgroundColor: '#2196F3' }]} />
               <View style={styles.accessTierContent}>
                 <Text style={[styles.accessTierLabel, { color: themeColors.textPrimary }]}>댓글 작성</Text>
-                <Text style={[styles.accessTierReq, { color: themeColors.textTertiary }]}>자산 1,000만원 이상</Text>
+                <Text style={[styles.accessTierReq, { color: themeColors.textTertiary }]}>자산 {commentRequirementLabel} 이상</Text>
               </View>
               <Ionicons
                 name={(eligibility?.totalAssets ?? 0) >= LOUNGE_COMMENT_THRESHOLD ? 'checkmark-circle' : 'ellipse-outline'}
@@ -616,7 +624,7 @@ function LoungeScreenInner() {
               <View style={[styles.accessDot, { backgroundColor: '#FFD700' }]} />
               <View style={styles.accessTierContent}>
                 <Text style={[styles.accessTierLabel, { color: themeColors.textPrimary }]}>게시물 작성</Text>
-                <Text style={[styles.accessTierReq, { color: themeColors.textTertiary }]}>자산 1.5억 이상</Text>
+                <Text style={[styles.accessTierReq, { color: themeColors.textTertiary }]}>자산 {postRequirementLabel} 이상</Text>
               </View>
               <Ionicons
                 name={(eligibility?.totalAssets ?? 0) >= LOUNGE_POST_THRESHOLD ? 'checkmark-circle' : 'ellipse-outline'}
@@ -906,7 +914,7 @@ function LoungeScreenInner() {
                         styles.accessBadgeLabel,
                         { color: eligibility?.canComment ? '#2196F3' : '#666' },
                       ]}>
-                        댓글 {eligibility?.canComment ? '' : '(1,000만+)'}
+                        댓글 {eligibility?.canComment ? '' : `(${commentRequirementLabel}+)`}
                       </Text>
                     </View>
                     <View style={[
@@ -922,7 +930,7 @@ function LoungeScreenInner() {
                         styles.accessBadgeLabel,
                         { color: eligibility?.canPost ? '#FFD700' : '#666' },
                       ]}>
-                        글쓰기 {eligibility?.canPost ? '' : '(1.5억+)'}
+                        글쓰기 {eligibility?.canPost ? '' : `(${postRequirementLabel}+)`}
                       </Text>
                     </View>
                   </View>
@@ -933,6 +941,14 @@ function LoungeScreenInner() {
                   <View style={styles.postsLoading}>
                     <ActivityIndicator size="large" color={themeColors.primary} />
                   </View>
+                ) : postsError ? (
+                  <View style={styles.emptyContainer}>
+                    <Ionicons name="cloud-offline-outline" size={48} color={themeColors.textTertiary} />
+                    <Text style={[styles.emptyTitle, { color: themeColors.textPrimary }]}>게시글을 불러오지 못했습니다</Text>
+                    <Text style={[styles.emptyDescription, { color: themeColors.textTertiary }]}>
+                      네트워크 상태를 확인한 뒤 다시 시도해주세요
+                    </Text>
+                  </View>
                 ) : (
                   <View style={styles.emptyContainer}>
                     <Ionicons name="chatbubbles-outline" size={48} color={themeColors.textTertiary} />
@@ -940,7 +956,7 @@ function LoungeScreenInner() {
                     <Text style={[styles.emptyDescription, { color: themeColors.textTertiary }]}>
                       {eligibility?.canPost
                         ? '첫 번째 게시물을 작성해보세요!'
-                        : '자산 1.5억 이상 회원이 게시물을 작성할 수 있습니다'}
+                        : `자산 ${postRequirementLabel} 이상 회원이 게시물을 작성할 수 있습니다`}
                     </Text>
                   </View>
                 )
@@ -965,7 +981,7 @@ function LoungeScreenInner() {
               }
             />
 
-            {/* 글쓰기 FAB (1.5억+ 전용) */}
+            {/* 글쓰기 FAB (자격 기준 충족 시 노출) */}
             {eligibility?.canPost && !isComposing && (
               <TouchableOpacity
                 style={[styles.fab, { bottom: insets.bottom + 80 }]}
@@ -1055,6 +1071,14 @@ function LoungeScreenInner() {
               ListEmptyComponent={
                 gatheringsLoading ? (
                   <LoungeSkeleton />
+                ) : gatheringsError ? (
+                  <View style={styles.emptyContainer}>
+                    <Ionicons name="cloud-offline-outline" size={64} color={themeColors.textTertiary} />
+                    <Text style={[styles.emptyTitle, { color: themeColors.textPrimary }]}>모임 정보를 불러오지 못했습니다</Text>
+                    <Text style={[styles.emptyDescription, { color: themeColors.textTertiary }]}>
+                      잠시 후 다시 시도해주세요
+                    </Text>
+                  </View>
                 ) : (
                   <View style={styles.emptyContainer}>
                     <Ionicons name="calendar-outline" size={64} color={themeColors.textTertiary} />
@@ -1105,13 +1129,7 @@ function LoungeScreenInner() {
 
 function LoungeScreenContent() {
   const insets = useSafeAreaInsets();
-  let themeColors: any = {};
-  try {
-    const { colors } = useTheme();
-    themeColors = colors;
-  } catch {
-    themeColors = { background: '#0A0A0A', textPrimary: '#FFF', textTertiary: '#888' };
-  }
+  const { colors: themeColors } = useTheme();
 
   return (
     <LoungeErrorBoundary themeColors={themeColors} insets={insets}>

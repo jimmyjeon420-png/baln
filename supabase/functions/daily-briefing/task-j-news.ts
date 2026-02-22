@@ -1,4 +1,3 @@
-// @ts-nocheck
 // ============================================================================
 // Task J: 실시간 뉴스 수집 (News Collection) — Phase 1 토큰 최적화
 //
@@ -49,7 +48,34 @@ const RSS_SOURCES = [
     url: 'https://www.coindeskkorea.com/rss',
     maxItems: 15,
   },
+  {
+    name: '비트코인매거진',
+    url: 'https://bitcoinmagazine.com/.rss/full/',
+    maxItems: 15,
+  },
 ];
+
+function isAllowedSourceLink(rawLink: string): boolean {
+  try {
+    const url = new URL(rawLink);
+    return url.protocol === 'https:' || url.protocol === 'http:';
+  } catch {
+    return false;
+  }
+}
+
+const SOURCE_TRUST_SCORE: Record<string, number> = {
+  한국경제: 88,
+  연합뉴스: 92,
+  매일경제: 87,
+  'Google News': 80,
+  코인데스크: 84,
+  비트코인매거진: 82,
+};
+
+const NEWS_FRESHNESS_WINDOW_MS = 6 * 60 * 60 * 1000; // 6시간
+const MAX_NEWS_CANDIDATES = 18; // 품질 우선: 과도한 적재 방지
+const MAX_AI_ANALYSIS_ITEMS = 12; // 토큰 상한
 
 // ============================================================================
 // Phase 1: 기계적 선태깅 (AI 호출 전 자동 분류)
@@ -233,13 +259,16 @@ function parseRSSItems(xml: string, sourceName: string, maxItems: number): RawNe
       : link;
 
     if (!title || !cleanLink) continue;
+    if (!isAllowedSourceLink(cleanLink)) continue;
+
+    const safeDescription = descMatch?.[1]?.trim().substring(0, 200) || undefined;
 
     items.push({
       title,
       link: cleanLink,
       pubDate: pubDateMatch?.[1] || new Date().toISOString(),
       source: sourceName,
-      description: descMatch?.[1]?.trim().substring(0, 200) || undefined,
+      description: safeDescription,
       normalizedTitle: normalizeTitle(title),
     });
   }
@@ -283,6 +312,15 @@ async function fetchRSSFeed(source: typeof RSS_SOURCES[number]): Promise<RawNews
 // Gemini AI 태깅 (배치)
 // ============================================================================
 
+interface ScoredNewsItem extends RawNewsItem {
+  preTag: PreTagResult;
+  freshnessScore: number;
+  assetRelevanceScore: number;
+  sourceTrustScore: number;
+  newsQualityScore: number;
+  topicKey: string;
+}
+
 interface TaggedNews {
   title: string;
   link: string;
@@ -297,6 +335,151 @@ interface TaggedNews {
   impact_summary?: string;
   /** -2(매우부정) ~ +2(매우긍정), 0=중립 */
   impact_score?: number;
+  news_quality_score?: number;
+  freshness_score?: number;
+  asset_relevance_score?: number;
+  source_trust_score?: number;
+}
+
+function toSafeISOString(dateLike: string): string {
+  const d = new Date(dateLike);
+  return Number.isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
+}
+
+function getSourceTrustScore(source: string): number {
+  return SOURCE_TRUST_SCORE[source] ?? 75;
+}
+
+function getFreshnessScore(pubDate: string, nowMs: number): number {
+  const pubTime = new Date(pubDate).getTime();
+  if (Number.isNaN(pubTime)) return 50;
+  const ageMs = Math.max(0, nowMs - pubTime);
+  const ratio = 1 - (ageMs / NEWS_FRESHNESS_WINDOW_MS);
+  return Math.round(clamp(ratio, 0, 1) * 100);
+}
+
+function getAssetRelevanceScore(
+  preTag: PreTagResult,
+  title: string,
+  description?: string
+): number {
+  const text = `${title} ${description || ''}`.toLowerCase();
+  const signalKeywords = [
+    'etf',
+    '금리',
+    '연준',
+    'cpi',
+    '환율',
+    '관세',
+    '실적',
+    '승인',
+    '규제',
+    '비트코인',
+    '이더리움',
+    '나스닥',
+    '코스피',
+  ];
+
+  let score = 0;
+  if (preTag.category === 'crypto') score += 55;
+  else if (preTag.category === 'stock') score += 50;
+  else if (preTag.category === 'macro') score += 42;
+  else score += 20;
+
+  score += Math.min(25, preTag.tags.length * 8);
+
+  const keywordHits = signalKeywords.reduce((count, kw) => (text.includes(kw) ? count + 1 : count), 0);
+  score += Math.min(20, keywordHits * 5);
+
+  return Math.round(clamp(score, 0, 100));
+}
+
+function toTopicKey(item: RawNewsItem): string {
+  const tokens = item.normalizedTitle
+    .replace(/\d+/g, '')
+    .split(/[^a-z0-9가-힣]+/i)
+    .filter((token) => token.length >= 2)
+    .slice(0, 3);
+  return tokens.join('-') || item.normalizedTitle.slice(0, 20);
+}
+
+function scoreNewsItems(items: RawNewsItem[]): ScoredNewsItem[] {
+  const now = Date.now();
+  return items.map((item) => {
+    const preTag = preTagNews(item.title, item.description);
+    const freshnessScore = getFreshnessScore(item.pubDate, now);
+    const sourceTrustScore = getSourceTrustScore(item.source);
+    const assetRelevanceScore = getAssetRelevanceScore(preTag, item.title, item.description);
+    const newsQualityScore = Math.round(
+      (freshnessScore * 0.5) + (assetRelevanceScore * 0.3) + (sourceTrustScore * 0.2)
+    );
+
+    return {
+      ...item,
+      preTag,
+      freshnessScore,
+      sourceTrustScore,
+      assetRelevanceScore,
+      newsQualityScore,
+      topicKey: toTopicKey(item),
+    };
+  });
+}
+
+function selectDiverseTopNews(items: ScoredNewsItem[], limit: number): ScoredNewsItem[] {
+  const sorted = [...items].sort((a, b) => b.newsQualityScore - a.newsQualityScore);
+  const topicCounter = new Map<string, number>();
+  const selected: ScoredNewsItem[] = [];
+
+  for (const item of sorted) {
+    if (selected.length >= limit) break;
+    const topicCount = topicCounter.get(item.topicKey) || 0;
+    if (topicCount >= 2) continue;
+    selected.push(item);
+    topicCounter.set(item.topicKey, topicCount + 1);
+  }
+
+  return selected;
+}
+
+function fallbackTagging(scoredItems: ScoredNewsItem[]): TaggedNews[] {
+  return scoredItems.map((item) => ({
+    title: item.title,
+    link: item.link,
+    pubDate: item.pubDate,
+    source: item.source,
+    summary: item.description,
+    tags: item.preTag.tags,
+    category: item.preTag.category,
+    is_pick: false,
+    impact_score: 0,
+    news_quality_score: item.newsQualityScore,
+    freshness_score: item.freshnessScore,
+    asset_relevance_score: item.assetRelevanceScore,
+    source_trust_score: item.sourceTrustScore,
+  }));
+}
+
+function rebalancePickFlags(items: TaggedNews[]): TaggedNews[] {
+  if (items.length === 0) return items;
+
+  const ranked = [...items]
+    .map((item, index) => ({ item, index }))
+    .sort((a, b) => {
+      const scoreA = (a.item.news_quality_score ?? 0) + (Math.abs(a.item.impact_score ?? 0) * 4) + (a.item.is_pick ? 5 : 0);
+      const scoreB = (b.item.news_quality_score ?? 0) + (Math.abs(b.item.impact_score ?? 0) * 4) + (b.item.is_pick ? 5 : 0);
+      return scoreB - scoreA;
+    });
+
+  const pickIndexes = new Set(ranked.slice(0, Math.min(3, ranked.length)).map((row) => row.index));
+  return items.map((item, idx) => ({
+    ...item,
+    is_pick: pickIndexes.has(idx),
+  }));
 }
 
 /**
@@ -307,7 +490,7 @@ interface TaggedNews {
  *
  * 비유: 이전엔 "이 편지들 전부 읽고 분류해줘" → 이제는 "봉투에 적힌 부서명은 이미 읽었어, 중요도만 판단해줘"
  */
-async function tagNewsWithGemini(items: RawNewsItem[]): Promise<TaggedNews[]> {
+async function tagNewsWithGemini(items: ScoredNewsItem[]): Promise<TaggedNews[]> {
   if (items.length === 0) return [];
 
   const BATCH_SIZE = 20; // ← 10에서 20으로 (API 호출 50% 절감)
@@ -317,7 +500,7 @@ async function tagNewsWithGemini(items: RawNewsItem[]): Promise<TaggedNews[]> {
     const batch = items.slice(i, i + BATCH_SIZE);
 
     // ── Step 1: 기계적 선태깅 (AI 호출 없이 자동 분류) ──
-    const preTags = batch.map(item => preTagNews(item.title, item.description));
+    const preTags = batch.map(item => item.preTag);
 
     // 뉴스 목록 (선태깅 결과 포함 → AI가 확인만 하면 됨)
     const newsList = batch.map((item, idx) => {
@@ -383,6 +566,10 @@ ${newsList}
           pick_reason: tag.pick_reason || undefined,
           impact_summary: tag.impact_summary || undefined,
           impact_score: impactScore,
+          news_quality_score: item.newsQualityScore,
+          freshness_score: item.freshnessScore,
+          asset_relevance_score: item.assetRelevanceScore,
+          source_trust_score: item.sourceTrustScore,
         });
       }
 
@@ -403,6 +590,11 @@ ${newsList}
           tags: pt.tags,
           category: pt.category,
           is_pick: false,
+          impact_score: 0,
+          news_quality_score: item.newsQualityScore,
+          freshness_score: item.freshnessScore,
+          asset_relevance_score: item.assetRelevanceScore,
+          source_trust_score: item.sourceTrustScore,
         });
       }
     }
@@ -427,26 +619,76 @@ async function upsertNews(taggedItems: TaggedNews[]): Promise<number> {
   for (let i = 0; i < taggedItems.length; i += BATCH_SIZE) {
     const batch = taggedItems.slice(i, i + BATCH_SIZE);
 
-    const rows = batch.map(item => ({
+    const fullRows = batch.map(item => ({
       title: item.title.substring(0, 500),
-      source: item.source, // ★ 원본 컬럼 (NOT NULL)
-      content: item.summary?.substring(0, 300) || item.title, // ★ 원본 컬럼 (NOT NULL)
+      source: item.source, // legacy 호환 컬럼
+      content: item.summary?.substring(0, 300) || item.title.substring(0, 300), // legacy 호환 컬럼
       summary: item.summary?.substring(0, 300) || null,
       source_name: item.source,
       source_url: item.link,
       thumbnail_url: null,
-      published_at: new Date(item.pubDate).toISOString(),
+      published_at: toSafeISOString(item.pubDate),
       tags: item.tags,
       category: item.category,
       is_pick: item.is_pick,
       pick_reason: item.pick_reason || null,
       impact_summary: item.impact_summary?.substring(0, 200) || null,
       impact_score: item.impact_score ?? 0,
+      news_quality_score: item.news_quality_score ?? null,
+      freshness_score: item.freshness_score ?? null,
+      asset_relevance_score: item.asset_relevance_score ?? null,
+      source_trust_score: item.source_trust_score ?? null,
     }));
 
-    const { error } = await supabase
+    let { error } = await supabase
       .from('market_news')
-      .upsert(rows, { onConflict: 'source_url' });
+      .upsert(fullRows, { onConflict: 'source_url' });
+
+    // 1차 호환: 품질 컬럼 없는 환경
+    if (error && /column .* (news_quality_score|freshness_score|asset_relevance_score|source_trust_score)/i.test(error.message)) {
+      const compatibilityRows = batch.map(item => ({
+        title: item.title.substring(0, 500),
+        source: item.source,
+        content: item.summary?.substring(0, 300) || item.title.substring(0, 300),
+        summary: item.summary?.substring(0, 300) || null,
+        source_name: item.source,
+        source_url: item.link,
+        thumbnail_url: null,
+        published_at: toSafeISOString(item.pubDate),
+        tags: item.tags,
+        category: item.category,
+        is_pick: item.is_pick,
+        pick_reason: item.pick_reason || null,
+        impact_summary: item.impact_summary?.substring(0, 200) || null,
+        impact_score: item.impact_score ?? 0,
+      }));
+
+      const retry = await supabase
+        .from('market_news')
+        .upsert(compatibilityRows, { onConflict: 'source_url' });
+      error = retry.error;
+    }
+
+    // 2차 호환: source/content/impact 컬럼 자체가 없는 아주 구버전 스키마
+    if (error && /column .* (source|content|impact_summary|impact_score)/i.test(error.message)) {
+      const minimalRows = batch.map((item) => ({
+        title: item.title.substring(0, 500),
+        summary: item.summary?.substring(0, 300) || null,
+        source_name: item.source,
+        source_url: item.link,
+        thumbnail_url: null,
+        published_at: toSafeISOString(item.pubDate),
+        tags: item.tags,
+        category: item.category,
+        is_pick: item.is_pick,
+        pick_reason: item.pick_reason || null,
+      }));
+
+      const fallbackRetry = await supabase
+        .from('market_news')
+        .upsert(minimalRows, { onConflict: 'source_url' });
+      error = fallbackRetry.error;
+    }
 
     if (error) {
       console.warn(`[Task J] UPSERT 실패 (배치 ${Math.floor(i / BATCH_SIZE) + 1}):`, error.message);
@@ -483,6 +725,38 @@ async function cleanupOldNews(): Promise<number> {
   return deleted;
 }
 
+/**
+ * 금지 소스(브랜드/법적 리스크 가능성) 잔존 데이터 정리
+ */
+async function purgeDisallowedSources(): Promise<number> {
+  let { data, error } = await supabase
+    .from('market_news')
+    .delete()
+    .or('source_url.ilike.%bloomingbit%,source_name.ilike.%코인속보%,source.ilike.%블루밍비트%')
+    .select('id');
+
+  if (error && /column .*source/i.test(error.message)) {
+    const retry = await supabase
+      .from('market_news')
+      .delete()
+      .or('source_url.ilike.%bloomingbit%,source_name.ilike.%코인속보%')
+      .select('id');
+    data = retry.data;
+    error = retry.error;
+  }
+
+  if (error) {
+    console.warn('[Task J] 금지 소스 정리 실패:', error.message);
+    return 0;
+  }
+
+  const purged = data?.length || 0;
+  if (purged > 0) {
+    console.log(`[Task J] 금지 소스 데이터 ${purged}건 정리 완료`);
+  }
+  return purged;
+}
+
 // ============================================================================
 // Task J 통합 실행
 // ============================================================================
@@ -491,6 +765,10 @@ export interface NewsCollectionResult {
   totalFetched: number;
   totalUpserted: number;
   totalDeleted: number;
+  totalPurged: number;
+  aiTagged: number;
+  fallbackTagged: number;
+  avgQualityScore: number;
   sources: Record<string, number>;
 }
 
@@ -527,34 +805,48 @@ export async function runNewsCollection(): Promise<NewsCollectionResult> {
 
     console.log(`[Task J] RSS 수집 완료 (원본): ${allItems.length}건`);
 
-    // ── 3시간 이내 뉴스만 통과 (30분 수집 주기에 맞춘 실시간성) ──
-    const FRESHNESS_MS = 3 * 60 * 60 * 1000; // 3시간
+    // ── 최근 6시간 이내 뉴스 우선 (신선도 중심) ──
     const now = Date.now();
-    const freshItems = allItems.filter(item => {
+    const freshItems = allItems.filter((item) => {
       const pubTime = new Date(item.pubDate).getTime();
       const age = now - pubTime;
       if (isNaN(pubTime)) return true;
-      return age <= FRESHNESS_MS;
+      return age <= NEWS_FRESHNESS_WINDOW_MS;
     });
-    console.log(`[Task J] 3시간 이내 뉴스: ${freshItems.length}/${allItems.length}건`);
+    const freshnessHours = NEWS_FRESHNESS_WINDOW_MS / (60 * 60 * 1000);
+    console.log(`[Task J] ${freshnessHours}시간 이내 뉴스: ${freshItems.length}/${allItems.length}건`);
 
-    // ── 금융 뉴스만 통과 (crypto/stock/macro — general 제외) ──
-    const financeItems = freshItems.filter(item => {
-      const pt = preTagNews(item.title, item.description);
-      return pt.category !== 'general'; // crypto, stock, macro만 통과
-    });
-    console.log(`[Task J] 금융뉴스 필터: ${freshItems.length} → ${financeItems.length}건 (general ${freshItems.length - financeItems.length}건 제외)`);
+    const baseItems = freshItems.length > 0
+      ? freshItems
+      : [...allItems]
+        .sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime())
+        .slice(0, 12);
+    if (freshItems.length === 0) {
+      console.warn('[Task J] 최신 뉴스 부족으로 최근 기사 일부를 임시 사용합니다');
+    }
 
     // ── 제목 기반 중복 제거 (RSS 소스 간 동일 기사 필터링) ──
     const seenTitles = new Set<string>();
     const dedupedItems: RawNewsItem[] = [];
-    for (const item of financeItems) {
+    for (const item of baseItems) {
       if (!seenTitles.has(item.normalizedTitle)) {
         seenTitles.add(item.normalizedTitle);
         dedupedItems.push(item);
       }
     }
-    console.log(`[Task J] 제목 중복 제거: ${financeItems.length} → ${dedupedItems.length}건`);
+    console.log(`[Task J] 제목 중복 제거: ${baseItems.length} → ${dedupedItems.length}건`);
+
+    const scoredItems = scoreNewsItems(dedupedItems);
+    const financeItems = scoredItems.filter((item) => item.preTag.category !== 'general');
+    const fallbackGeneral = financeItems.length === 0 ? scoredItems.slice(0, 5) : [];
+    const candidateItems = selectDiverseTopNews(
+      [...financeItems, ...fallbackGeneral],
+      MAX_NEWS_CANDIDATES
+    );
+
+    console.log(
+      `[Task J] 품질 선별 완료: scored=${scoredItems.length}, finance=${financeItems.length}, selected=${candidateItems.length}`
+    );
 
     // ── DB 기존 제목 체크 (최근 3일 뉴스의 제목과 비교) ──
     let existingTitles = new Set<string>();
@@ -572,22 +864,44 @@ export async function runNewsCollection(): Promise<NewsCollectionResult> {
       console.warn('[Task J] 기존 뉴스 조회 실패, 전체 upsert 진행:', err);
     }
 
-    const newItems = dedupedItems.filter(item => !existingTitles.has(item.normalizedTitle));
-    console.log(`[Task J] DB 중복 제거 후: ${newItems.length}건 (기존 ${existingTitles.size}건 스킵)`);
+    const newItems = candidateItems.filter(item => !existingTitles.has(item.normalizedTitle));
+    const cappedNewItems = newItems.slice(0, MAX_NEWS_CANDIDATES);
+    console.log(`[Task J] DB 중복 제거 후: ${newItems.length}건 (기존 ${existingTitles.size}건 스킵), 처리 대상 ${cappedNewItems.length}건`);
 
-    if (newItems.length === 0) {
+    if (cappedNewItems.length === 0) {
       const elapsed = Date.now() - startTime;
       await logTaskResult('news_collection', 'SUCCESS', elapsed, {
         totalFetched: 0,
         totalUpserted: 0,
         message: 'RSS 피드에서 뉴스를 가져오지 못했습니다',
       });
-      return { totalFetched: 0, totalUpserted: 0, totalDeleted: 0, sources: sourceCount };
+      return {
+        totalFetched: 0,
+        totalUpserted: 0,
+        totalDeleted: 0,
+        totalPurged: 0,
+        aiTagged: 0,
+        fallbackTagged: 0,
+        avgQualityScore: 0,
+        sources: sourceCount,
+      };
     }
 
-    // 2. Gemini AI 태깅 (새 뉴스만)
-    const taggedItems = await tagNewsWithGemini(newItems);
-    console.log(`[Task J] AI 태깅 완료: ${taggedItems.length}건`);
+    const aiTargets = cappedNewItems.slice(0, MAX_AI_ANALYSIS_ITEMS);
+    const fallbackTargets = cappedNewItems.slice(MAX_AI_ANALYSIS_ITEMS);
+
+    // 2. Gemini AI 태깅 (상위 품질 뉴스만) + 나머지는 저비용 폴백
+    const aiTagged = await tagNewsWithGemini(aiTargets);
+    const lowCostTagged = fallbackTagging(fallbackTargets);
+    const taggedItems = rebalancePickFlags([...aiTagged, ...lowCostTagged]);
+    const avgQualityScore = taggedItems.length > 0
+      ? Math.round(
+        taggedItems.reduce((sum, item) => sum + (item.news_quality_score ?? 0), 0) / taggedItems.length
+      )
+      : 0;
+    console.log(
+      `[Task J] AI 태깅 완료: ai=${aiTagged.length}건, low_cost=${lowCostTagged.length}건, total=${taggedItems.length}건`
+    );
 
     // 3. DB UPSERT
     const upsertedCount = await upsertNews(taggedItems);
@@ -595,12 +909,17 @@ export async function runNewsCollection(): Promise<NewsCollectionResult> {
 
     // 4. 오래된 뉴스 정리
     const deletedCount = await cleanupOldNews();
+    const purgedCount = await purgeDisallowedSources();
 
     const elapsed = Date.now() - startTime;
     await logTaskResult('news_collection', 'SUCCESS', elapsed, {
       totalFetched: allItems.length,
       totalUpserted: upsertedCount,
       totalDeleted: deletedCount,
+      totalPurged: purgedCount,
+      aiTagged: aiTagged.length,
+      fallbackTagged: lowCostTagged.length,
+      avgQualityScore,
       sources: sourceCount,
     });
 
@@ -608,6 +927,10 @@ export async function runNewsCollection(): Promise<NewsCollectionResult> {
       totalFetched: allItems.length,
       totalUpserted: upsertedCount,
       totalDeleted: deletedCount,
+      totalPurged: purgedCount,
+      aiTagged: aiTagged.length,
+      fallbackTagged: lowCostTagged.length,
+      avgQualityScore,
       sources: sourceCount,
     };
   } catch (error) {

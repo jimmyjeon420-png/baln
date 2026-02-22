@@ -3,8 +3,8 @@
  *
  * 접근 등급 (3단계):
  *   열람: 100만원+ → 게시물 읽기만 가능
- *   댓글: 1,000만원+ → 댓글 작성 가능
- *   글쓰기: 1.5억+ → 게시물 작성 가능
+ *   댓글: 300만원+ → 댓글 작성 가능
+ *   글쓰기: 3,000만원+ → 게시물 작성 가능
  */
 
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -18,7 +18,6 @@ import {
   LoungeEligibility,
   UserDisplayInfo,
   HoldingSnapshot,
-  CommunityCategory,
   CommunityCategoryFilter,
   TIER_THRESHOLDS,
   TIER_LABELS,
@@ -159,41 +158,35 @@ export const useCommunityPosts = (
   return useInfiniteQuery({
     queryKey: ['communityPosts', category, sortBy],
     queryFn: async ({ pageParam = 0 }) => {
-      try {
-        let query = supabase
-          .from('community_posts')
-          .select('*');
+      let query = supabase
+        .from('community_posts')
+        .select('*');
 
-        if (category !== 'all') {
-          query = query.eq('category', category);
-        }
-
-        // 정렬 기준
-        if (sortBy === 'popular') {
-          query = query.order('likes_count', { ascending: false });
-        } else if (sortBy === 'hot') {
-          query = query.order('comments_count', { ascending: false });
-        } else {
-          query = query.order('created_at', { ascending: false });
-        }
-
-        // 오프셋 기반 페이지네이션
-        query = query.range(pageParam, pageParam + PAGE_SIZE - 1);
-
-        const { data, error } = await query;
-        if (error) {
-          console.warn('[Community] 게시물 조회 실패 (빈 배열 반환):', error.message);
-          return [] as CommunityPost[];
-        }
-
-        return (data || []).map(post => ({
-          ...post,
-          top_holdings: Array.isArray(post.top_holdings) ? post.top_holdings : [],
-        })) as CommunityPost[];
-      } catch (err) {
-        console.warn('[Community] 게시물 조회 예외:', err);
-        return [] as CommunityPost[];
+      if (category !== 'all') {
+        query = query.eq('category', category);
       }
+
+      // 정렬 기준
+      if (sortBy === 'popular') {
+        query = query.order('likes_count', { ascending: false });
+      } else if (sortBy === 'hot') {
+        query = query.order('comments_count', { ascending: false });
+      } else {
+        query = query.order('created_at', { ascending: false });
+      }
+
+      // 오프셋 기반 페이지네이션
+      query = query.range(pageParam, pageParam + PAGE_SIZE - 1);
+
+      const { data, error } = await query;
+      if (error) {
+        throw new Error(error.message || '게시물 조회에 실패했습니다.');
+      }
+
+      return (data || []).map(post => ({
+        ...post,
+        top_holdings: Array.isArray(post.top_holdings) ? post.top_holdings : [],
+      })) as CommunityPost[];
     },
     initialPageParam: 0,
     getNextPageParam: (lastPage, allPages) => {
@@ -206,7 +199,7 @@ export const useCommunityPosts = (
 };
 
 // ================================================================
-// 게시물 작성 (1.5억+ 전용)
+// 게시물 작성 (3,000만원+ 전용)
 // ================================================================
 
 export const useCreatePost = () => {
@@ -217,9 +210,9 @@ export const useCreatePost = () => {
       const user = await getCurrentUser();
       if (!user) throw new Error('로그인이 필요합니다.');
 
-      // 자산 1.5억 미만이면 차단 (무료 기간에는 스킵)
+      // 자산 기준 미달이면 차단 (무료 기간에는 스킵)
       if (!isFreePeriod() && input.totalAssets < LOUNGE_POST_THRESHOLD) {
-        throw new Error('글 작성은 자산 1.5억 이상 회원만 가능합니다.');
+        throw new Error(`글 작성은 자산 ${formatAssetInBillion(LOUNGE_POST_THRESHOLD)} 이상 회원만 가능합니다.`);
       }
 
       // 보유종목 스냅샷 가져오기 (상위 10개)
@@ -488,9 +481,9 @@ export const useCreateComment = (postId: string) => {
       const user = await getCurrentUser();
       if (!user) throw new Error('로그인이 필요합니다.');
 
-      // 자산 1,000만원 미만이면 차단 (무료 기간 제외)
+      // 자산 기준 미달이면 차단 (무료 기간 제외)
       if (!isFreePeriod() && input.totalAssets < LOUNGE_COMMENT_THRESHOLD) {
-        throw new Error('댓글 작성은 자산 1,000만원 이상 회원만 가능합니다.');
+        throw new Error(`댓글 작성은 자산 ${formatAssetInBillion(LOUNGE_COMMENT_THRESHOLD)} 이상 회원만 가능합니다.`);
       }
 
       // 댓글 저장 (parent_id 포함 = 대댓글)
@@ -826,6 +819,99 @@ export const useCommunityPost = (postId: string) => {
     },
     enabled: !!postId,
     staleTime: 60000,
+  });
+};
+
+// ================================================================
+// 베스트 답변 (품질 시스템)
+// ================================================================
+
+export interface CommunityBestAnswer {
+  post_id: string;
+  comment_id: string;
+  selected_by: string;
+  selected_at: string;
+}
+
+/** 게시글별 베스트 답변 조회 */
+export const useBestAnswer = (postId: string) => {
+  return useQuery({
+    queryKey: ['communityBestAnswer', postId],
+    queryFn: async () => {
+      if (!postId) return null as CommunityBestAnswer | null;
+      try {
+        const { data, error } = await supabase
+          .from('community_best_answers')
+          .select('*')
+          .eq('post_id', postId)
+          .maybeSingle();
+
+        if (error) {
+          // 테이블 미생성(마이그레이션 전)일 수 있으므로 조용히 null 처리
+          if (error.code !== 'PGRST116') {
+            console.warn('[Community] 베스트 답변 조회 실패:', error.message);
+          }
+          return null as CommunityBestAnswer | null;
+        }
+
+        return (data || null) as CommunityBestAnswer | null;
+      } catch (err) {
+        console.warn('[Community] 베스트 답변 조회 예외:', err);
+        return null as CommunityBestAnswer | null;
+      }
+    },
+    enabled: !!postId,
+    staleTime: 60000,
+  });
+};
+
+/** 베스트 답변 채택/변경 (게시글 작성자 권한) */
+export const useSelectBestAnswer = (postId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (commentId: string) => {
+      const user = await getCurrentUser();
+      if (!user) throw new Error('로그인이 필요합니다.');
+      if (!postId) throw new Error('게시글 정보가 없습니다.');
+
+      // 게시글 작성자 권한 확인
+      const { data: post, error: postErr } = await supabase
+        .from('community_posts')
+        .select('user_id')
+        .eq('id', postId)
+        .single();
+
+      if (postErr) throw postErr;
+      if (post?.user_id !== user.id) {
+        throw new Error('게시글 작성자만 베스트 답변을 채택할 수 있습니다.');
+      }
+
+      const { error } = await supabase
+        .from('community_best_answers')
+        .upsert(
+          {
+            post_id: postId,
+            comment_id: commentId,
+            selected_by: user.id,
+            selected_at: new Date().toISOString(),
+          },
+          { onConflict: 'post_id' }
+        );
+
+      if (error) {
+        if (error.code === '42P01') {
+          throw new Error('베스트 답변 기능 준비 중입니다. DB 마이그레이션을 먼저 적용해주세요.');
+        }
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['communityBestAnswer', postId] });
+      queryClient.invalidateQueries({ queryKey: ['communityComments', postId] });
+      queryClient.invalidateQueries({ queryKey: ['communityPost', postId] });
+      queryClient.invalidateQueries({ queryKey: ['communityPosts'] });
+    },
   });
 };
 

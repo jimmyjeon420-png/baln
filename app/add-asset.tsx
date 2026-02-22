@@ -22,9 +22,7 @@ import {
   ActivityIndicator,
   ScrollView,
   TextInput,
-  FlatList,
   Keyboard,
-  TouchableWithoutFeedback,
   Platform,
   InputAccessoryView,
   KeyboardAvoidingView,
@@ -37,12 +35,14 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQueryClient } from '@tanstack/react-query';
 
-import supabase, { getCurrentUser } from '../src/services/supabase';
+import supabase, {
+  getCurrentUser,
+  SUPABASE_ANON_KEY,
+  SUPABASE_URL,
+} from '../src/services/supabase';
 import { useAuth } from '../src/context/AuthContext';
 import { useTheme } from '../src/hooks/useTheme';
 import { searchStocks, StockItem, getCategoryLabel, getCategoryColor } from '../src/data/stockList';
-import { priceService } from '../src/services/PriceService';
-import { AssetClass, PriceData } from '../src/types/price';
 import { fetchExchangeRate } from '../src/services/stockDataService';
 import { SHARED_PORTFOLIO_KEY } from '../src/hooks/useSharedPortfolio';
 import { grantAssetRegistrationReward, REWARD_AMOUNTS } from '../src/services/rewardService';
@@ -94,19 +94,6 @@ function withTimeout<T>(promise: PromiseLike<T>, ms: number, message: string): P
   ]);
 }
 
-/** 티커에서 자산 클래스 추론 */
-function inferAssetClassFromTicker(ticker: string): AssetClass {
-  const upper = ticker.toUpperCase();
-  if (/^\d{6}(\.KS|\.KQ)?$/i.test(upper) || upper.endsWith('.KS') || upper.endsWith('.KQ')) {
-    return AssetClass.STOCK;
-  }
-  const cryptoKeywords = ['BTC', 'ETH', 'USDC', 'USDT', 'SOL', 'XRP', 'DOGE', 'ADA', 'AVAX', 'DOT', 'LINK', 'BNB', 'MATIC', 'LTC', 'BCH', 'XLM', 'ATOM', 'UNI', 'AAVE', 'SUSHI', 'NEAR', 'SHIB'];
-  if (cryptoKeywords.some(kw => upper.includes(kw))) return AssetClass.CRYPTO;
-  const etfKeywords = ['VTI', 'VOO', 'QQQ', 'AGG', 'SPY', 'IVV', 'ARKK', 'GLD', 'VNQ', 'SCHD', 'JEPI', 'SOXL', 'TQQQ', 'VGT', 'EEM', 'TLT', 'SHY', 'BND'];
-  if (etfKeywords.some(kw => upper === kw)) return AssetClass.ETF;
-  return AssetClass.STOCK;
-}
-
 /** 금액 포맷 (한국원) */
 function formatKRW(value: number): string {
   if (value >= 100000000) return `${(value / 100000000).toFixed(1)}억`;
@@ -123,6 +110,121 @@ function getCurrencySymbol(ticker: string): string {
   return '$';
 }
 
+function parseNumberCell(value: string | undefined): number {
+  if (!value) return 0;
+  const cleaned = value.replace(/[^0-9.-]/g, '');
+  const parsed = Number(cleaned);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function splitCsvLine(line: string, delimiter: string): string[] {
+  const cells: string[] = [];
+  let current = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i += 1) {
+    const char = line[i];
+    if (char === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        current += '"';
+        i += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+    if (char === delimiter && !inQuotes) {
+      cells.push(current.trim());
+      current = '';
+      continue;
+    }
+    current += char;
+  }
+
+  cells.push(current.trim());
+  return cells;
+}
+
+function detectDelimiter(sampleLine: string): string {
+  const candidates = [',', '\t', ';'];
+  const counts = candidates.map((d) => ({
+    delimiter: d,
+    count: sampleLine.split(d).length - 1,
+  }));
+  counts.sort((a, b) => b.count - a.count);
+  return counts[0].count > 0 ? counts[0].delimiter : ',';
+}
+
+function parsePastedCsv(raw: string): ParsedAsset[] {
+  const lines = raw
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  if (lines.length === 0) return [];
+
+  const delimiter = detectDelimiter(lines[0]);
+  const rows = lines.map((line) => splitCsvLine(line, delimiter));
+  const header = rows[0].map((cell) => cell.toLowerCase());
+
+  const hasHeader = header.some((cell) =>
+    /(ticker|종목코드|코드|symbol|name|종목명|수량|quantity|qty|금액|amount|cost|평가)/i.test(cell)
+  );
+
+  const tickerIdx = hasHeader
+    ? header.findIndex((cell) => /(ticker|종목코드|코드|symbol|심볼)/i.test(cell))
+    : (rows[0].length >= 3 ? 1 : 0);
+  const nameIdx = hasHeader
+    ? header.findIndex((cell) => /(name|종목명|자산명)/i.test(cell))
+    : 0;
+  const quantityIdx = hasHeader
+    ? header.findIndex((cell) => /(quantity|qty|수량|보유수량)/i.test(cell))
+    : (rows[0].length >= 3 ? 2 : 1);
+  const totalCostIdx = hasHeader
+    ? header.findIndex((cell) => /(총매수금액|매수금액|매입금액|cost|total|원금)/i.test(cell))
+    : (rows[0].length >= 4 ? 3 : -1);
+  const currentValueIdx = hasHeader
+    ? header.findIndex((cell) => /(평가금액|현재가치|current|value)/i.test(cell))
+    : -1;
+
+  const dataRows = hasHeader ? rows.slice(1) : rows;
+  const aggregated = new Map<string, ParsedAsset>();
+
+  for (const row of dataRows) {
+    const tickerRaw = row[tickerIdx] || '';
+    const ticker = tickerRaw.replace(/\s+/g, '').toUpperCase();
+    if (!ticker) continue;
+
+    const name = (row[nameIdx] || ticker).trim();
+    const quantity = parseNumberCell(row[quantityIdx]);
+    if (!quantity || quantity <= 0) continue;
+
+    const totalCostKRW = Math.max(0, parseNumberCell(row[totalCostIdx]));
+    const currentValueKRW = Math.max(0, parseNumberCell(row[currentValueIdx]));
+
+    const key = `${ticker}:${name}`;
+    const existing = aggregated.get(key);
+    if (existing) {
+      existing.quantity += quantity;
+      existing.totalCostKRW += totalCostKRW;
+      if (currentValueKRW > 0) {
+        existing.currentValueKRW = (existing.currentValueKRW ?? 0) + currentValueKRW;
+      }
+      continue;
+    }
+
+    aggregated.set(key, {
+      ticker,
+      name,
+      quantity,
+      totalCostKRW,
+      currentValueKRW: currentValueKRW > 0 ? currentValueKRW : undefined,
+    });
+  }
+
+  return Array.from(aggregated.values()).slice(0, 50);
+}
+
 // ── 진단 함수 (Supabase 연결 테스트) ──
 
 async function runDiagnostic() {
@@ -133,9 +235,9 @@ async function runDiagnostic() {
   try {
     const t1 = Date.now();
     const res = await Promise.race([
-      fetch('https://ruqeinfcqhgexrckonsy.supabase.co/rest/v1/', {
+      fetch(`${SUPABASE_URL}/rest/v1/`, {
         headers: {
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1cWVpbmZjcWhnZXhyY2tvbnN5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkyMTE4MDksImV4cCI6MjA4NDc4NzgwOX0.NJmOH_uF59nYaSmjebGMNHlBwvqx5MHIwXOoqzITsXc',
+          apikey: SUPABASE_ANON_KEY,
         },
       }),
       new Promise<null>((r) => setTimeout(() => r(null), 5000)),
@@ -229,10 +331,14 @@ export default function AddAssetScreen() {
   const [infoExpanded, setInfoExpanded] = useState(false);
   const [screenshotParsing, setScreenshotParsing] = useState(false);
   const [parsedAssets, setParsedAssets] = useState<ParsedAsset[] | null>(null);
+  const [parsedSource, setParsedSource] = useState<'ocr' | 'csv' | null>(null);
+  const [csvModalVisible, setCsvModalVisible] = useState(false);
+  const [csvInput, setCsvInput] = useState('');
+  const [csvParsing, setCsvParsing] = useState(false);
 
   // --- 저장 상태 ---
   const [saving, setSaving] = useState(false);
-  const savingRef = React.useRef(false); // 이중 탭 방어 (setState보다 빠른 동기적 가드)
+  const savingRef = useRef(false); // 이중 탭 방어 (setState보다 빠른 동기적 가드)
 
   // --- 최근 추가 종목 ---
   const [recentAssets, setRecentAssets] = useState<RecentAsset[]>([]);
@@ -569,14 +675,14 @@ export default function AddAssetScreen() {
         currency,
       };
 
-      const { data: savedData, error: upsertError } = await withTimeout(
+      const { error: upsertError } = await withTimeout(
         supabase
           .from('portfolios')
           .upsert(upsertData, {
             onConflict: 'user_id,name',
             ignoreDuplicates: false,
           })
-          .select(),
+          .select('id'),
         15000,
         '저장 시간이 초과되었습니다. 다시 시도해주세요.',
       );
@@ -656,6 +762,11 @@ export default function AddAssetScreen() {
 
   // ─── 스크린샷 파싱 ───
 
+  const closeParsedAssetsModal = () => {
+    setParsedAssets(null);
+    setParsedSource(null);
+  };
+
   const handleScreenshotParse = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
@@ -672,35 +783,53 @@ export default function AddAssetScreen() {
 
     setScreenshotParsing(true);
     try {
-      const session = await supabase.auth.getSession();
-      const token = session.data.session?.access_token;
-      const response = await fetch(
-        'https://ruqeinfcqhgexrckonsy.supabase.co/functions/v1/gemini-proxy',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
+      const { data, error } = await supabase.functions.invoke('gemini-proxy', {
+        body: {
+          type: 'parse-screenshot',
+          data: {
+            imageBase64: result.assets[0].base64,
+            mimeType: result.assets[0].mimeType || 'image/jpeg',
           },
-          body: JSON.stringify({
-            type: 'parse-screenshot',
-            data: {
-              imageBase64: result.assets[0].base64,
-              mimeType: result.assets[0].mimeType || 'image/jpeg',
-            },
-          }),
-        }
-      );
-      const json = await response.json();
-      if (!json.success || !json.data?.assets?.length) {
+        },
+      });
+
+      if (error || !data?.success || !data?.data?.assets?.length) {
         Alert.alert('파싱 실패', '자산 정보를 인식하지 못했어요. 다른 스크린샷을 시도해보세요.');
         return;
       }
-      setParsedAssets(json.data.assets);
+      setParsedSource('ocr');
+      setParsedAssets(data.data.assets);
     } catch (err) {
       Alert.alert('오류', '스크린샷 분석 중 오류가 발생했습니다.');
     } finally {
       setScreenshotParsing(false);
+    }
+  };
+
+  const handleCsvParse = () => {
+    const input = csvInput.trim();
+    if (!input) {
+      Alert.alert('입력 필요', 'CSV 내용을 붙여넣어 주세요.');
+      return;
+    }
+
+    setCsvParsing(true);
+    try {
+      const parsed = parsePastedCsv(input);
+      if (parsed.length === 0) {
+        Alert.alert(
+          '파싱 실패',
+          'CSV 형식을 인식하지 못했어요.\n예시: 종목명,티커,수량,총매수금액'
+        );
+        return;
+      }
+
+      setCsvModalVisible(false);
+      setCsvInput('');
+      setParsedSource('csv');
+      setParsedAssets(parsed);
+    } finally {
+      setCsvParsing(false);
     }
   };
 
@@ -733,7 +862,7 @@ export default function AddAssetScreen() {
         console.warn(`[AddAsset] 일괄 등록 실패 (${asset.name}):`, err);
       }
     }
-    setParsedAssets(null);
+    closeParsedAssetsModal();
     queryClient.invalidateQueries({ queryKey: SHARED_PORTFOLIO_KEY });
     await loadExistingAssets();
     Alert.alert('등록 완료', `${successCount}개 자산이 등록되었습니다.`);
@@ -860,25 +989,45 @@ export default function AddAssetScreen() {
                   {'2. 환차익/환차손은 실시간으로 반영되지 않아 차이가 생길 수 있어요\n'}
                   {'3. 코인은 거래소 가격과 글로벌 가격이 다를 수 있어요 (김치 프리미엄)'}
                 </Text>
-                <TouchableOpacity
-                  style={[styles.screenshotBtn, { backgroundColor: colors.primary + '15', borderColor: colors.primary }]}
-                  onPress={(e) => { e.stopPropagation(); handleScreenshotParse(); }}
-                  disabled={screenshotParsing}
-                >
-                  {screenshotParsing ? (
-                    <ActivityIndicator size="small" color={colors.primary} />
-                  ) : (
-                    <>
-                      <Ionicons name="camera-outline" size={15} color={colors.primary} />
-                      <Text style={[styles.screenshotBtnText, { color: colors.primary }]}>
-                        📸 스크린샷으로 한 번에 입력 (자동 파싱)
-                      </Text>
-                    </>
-                  )}
-                </TouchableOpacity>
+                <Text style={[styles.infoBannerHint, { color: colors.primary }]}>
+                  아래 "빠른 가져오기"에서 OCR / CSV로 여러 종목을 한 번에 등록할 수 있어요.
+                </Text>
               </View>
             )}
           </TouchableOpacity>
+        )}
+
+        {!editingAsset && (
+          <View style={[styles.quickImportCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>빠른 가져오기</Text>
+            <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
+              붙여넣기나 OCR로 여러 자산을 한 번에 추가하세요
+            </Text>
+            <View style={styles.quickImportRow}>
+              <TouchableOpacity
+                style={[styles.quickImportButton, { backgroundColor: colors.surfaceLight, borderColor: colors.border }]}
+                onPress={() => setCsvModalVisible(true)}
+              >
+                <Ionicons name="document-text-outline" size={18} color={colors.primary} />
+                <Text style={[styles.quickImportTitle, { color: colors.textPrimary }]}>CSV 붙여넣기</Text>
+                <Text style={[styles.quickImportDesc, { color: colors.textSecondary }]}>엑셀 내역 일괄 등록</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.quickImportButton, { backgroundColor: colors.surfaceLight, borderColor: colors.border }]}
+                onPress={handleScreenshotParse}
+                disabled={screenshotParsing}
+              >
+                {screenshotParsing ? (
+                  <ActivityIndicator size="small" color={colors.primary} />
+                ) : (
+                  <Ionicons name="camera-outline" size={18} color={colors.primary} />
+                )}
+                <Text style={[styles.quickImportTitle, { color: colors.textPrimary }]}>OCR 스크린샷</Text>
+                <Text style={[styles.quickImportDesc, { color: colors.textSecondary }]}>증권사 화면 자동 인식</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         )}
 
         {/* ─── 빠른 추가 섹션 ─── */}
@@ -1314,16 +1463,64 @@ export default function AddAssetScreen() {
       </ScrollView>
       </KeyboardAvoidingView>
 
+      <Modal
+        visible={csvModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setCsvModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContainer, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>📄 CSV 붙여넣기</Text>
+            <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>
+              예시: 종목명,티커,수량,총매수금액
+            </Text>
+            <TextInput
+              style={[styles.csvInput, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: colors.surfaceLight }]}
+              placeholder={"종목명,티커,수량,총매수금액\n엔비디아,NVDA,3,1800000"}
+              placeholderTextColor={colors.textTertiary}
+              value={csvInput}
+              onChangeText={setCsvInput}
+              multiline
+              textAlignVertical="top"
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalCancelBtn, { borderColor: colors.border }]}
+                onPress={() => setCsvModalVisible(false)}
+              >
+                <Text style={[styles.modalCancelText, { color: colors.textSecondary }]}>취소</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalConfirmBtn, { backgroundColor: colors.primary }]}
+                onPress={handleCsvParse}
+                disabled={csvParsing}
+              >
+                {csvParsing ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={styles.modalConfirmText}>미리보기</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       {/* 스크린샷 파싱 결과 모달 */}
       <Modal
         visible={parsedAssets !== null}
         transparent
         animationType="slide"
-        onRequestClose={() => setParsedAssets(null)}
+        onRequestClose={closeParsedAssetsModal}
       >
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContainer, { backgroundColor: colors.surface }]}>
-            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>📸 스크린샷 파싱 결과</Text>
+            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
+              {parsedSource === 'csv' ? '📄 CSV 파싱 결과' : '📸 스크린샷 파싱 결과'}
+            </Text>
             <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>
               {parsedAssets?.length}개 자산을 인식했어요. 확인 후 등록하세요
             </Text>
@@ -1345,7 +1542,7 @@ export default function AddAssetScreen() {
             <View style={styles.modalButtons}>
               <TouchableOpacity
                 style={[styles.modalCancelBtn, { borderColor: colors.border }]}
-                onPress={() => setParsedAssets(null)}
+                onPress={closeParsedAssetsModal}
               >
                 <Text style={[styles.modalCancelText, { color: colors.textSecondary }]}>취소</Text>
               </TouchableOpacity>
@@ -1411,6 +1608,32 @@ const styles = StyleSheet.create({
     padding: 18,
     marginBottom: 14,
     borderWidth: 1,
+  },
+  quickImportCard: {
+    borderRadius: 16,
+    padding: 18,
+    marginBottom: 14,
+    borderWidth: 1,
+  },
+  quickImportRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  quickImportButton: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    alignItems: 'center',
+    gap: 4,
+  },
+  quickImportTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  quickImportDesc: {
+    fontSize: 12,
   },
   sectionTitle: {
     fontSize: 17,
@@ -1888,6 +2111,10 @@ const styles = StyleSheet.create({
     lineHeight: 19,
     marginBottom: 10,
   },
+  infoBannerHint: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
   screenshotBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1921,6 +2148,15 @@ const styles = StyleSheet.create({
   modalSubtitle: {
     fontSize: 14,
     marginBottom: 14,
+  },
+  csvInput: {
+    minHeight: 180,
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 12,
+    fontSize: 14,
+    marginBottom: 14,
+    lineHeight: 20,
   },
   parsedAssetRow: {
     flexDirection: 'row',

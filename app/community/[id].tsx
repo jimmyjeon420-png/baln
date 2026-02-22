@@ -5,7 +5,7 @@
  * - 게시물 원본 (보유종목 포함)
  * - 좋아요 토글 (유저당 1회)
  * - 댓글 목록
- * - 댓글 작성 (1,000만원+ 전용, 미만 시 안내 표시)
+ * - 댓글 작성 (자산 기준 미달 시 안내 표시)
  * - 작성자 아바타 탭 → 프로필 페이지
  */
 
@@ -41,6 +41,8 @@ import {
   useLikePost,
   useMyLikes,
   useLoungeEligibility,
+  useBestAnswer,
+  useSelectBestAnswer,
 } from '../../src/hooks/useCommunity';
 import {
   CommunityComment,
@@ -50,10 +52,13 @@ import {
   LOUNGE_COMMENT_THRESHOLD,
 } from '../../src/types/community';
 import {
+  formatAssetAmount,
   getTierFromAssets,
   getTierIcon,
   HOLDING_TYPE_COLORS,
   getRelativeTime,
+  isBeginnerQuestion,
+  stripBeginnerQuestionPrefix,
 } from '../../src/utils/communityUtils';
 import CommentItem from '../../src/components/community/CommentItem';
 import ReplySection from '../../src/components/community/ReplySection';
@@ -75,12 +80,17 @@ export default function PostDetailScreen() {
 
   // 자격 확인 (댓글 가능 여부)
   const { eligibility } = useLoungeEligibility();
+  const commentRequirementLabel = formatAssetAmount(LOUNGE_COMMENT_THRESHOLD);
 
   // 게시물 상세
   const { data: post, isLoading: postLoading, refetch: refetchPost } = useCommunityPost(id || '');
 
   // 댓글 목록
   const { data: comments, isLoading: commentsLoading, refetch: refetchComments } = usePostComments(id || '');
+
+  // 베스트 답변
+  const { data: bestAnswer } = useBestAnswer(id || '');
+  const selectBestAnswer = useSelectBestAnswer(id || '');
 
   // 댓글 작성
   const createComment = useCreateComment(id || '');
@@ -195,7 +205,7 @@ export default function PostDetailScreen() {
     if (!eligibility.canComment) {
       Alert.alert(
         '댓글 작성 제한',
-        `댓글 작성은 자산 1,000만원 이상 회원만 가능합니다.\n\n현재 자산: ${(eligibility.totalAssets / 10000).toFixed(0)}만원`,
+        `댓글 작성은 자산 ${commentRequirementLabel} 이상 회원만 가능합니다.\n\n현재 자산: ${formatAssetAmount(eligibility.totalAssets)}`,
       );
       return;
     }
@@ -232,6 +242,26 @@ export default function PostDetailScreen() {
     likeComment.mutate(commentId);
   };
 
+  const handleSelectBestAnswer = (commentId: string) => {
+    if (!post || post.user_id !== user?.id) return;
+    Alert.alert(
+      '베스트 답변 채택',
+      '이 댓글을 베스트 답변으로 채택하시겠습니까?',
+      [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '채택',
+          onPress: () => {
+            selectBestAnswer.mutate(commentId, {
+              onSuccess: () => Alert.alert('완료', '베스트 답변이 채택되었습니다.'),
+              onError: (err: any) => Alert.alert('오류', err?.message || '채택에 실패했습니다.'),
+            });
+          },
+        },
+      ],
+    );
+  };
+
   // ── 댓글 아이템 (최상위 + 답글 섹션) ──
   const renderComment = ({ item }: { item: CommunityComment }) => {
     const replies = comments?.filter((c) => c.parent_id === item.id) || [];
@@ -243,6 +273,10 @@ export default function PostDetailScreen() {
           comment={item}
           currentUserId={user?.id}
           isLiked={myCommentLikes?.has(item.id) ?? false}
+          isBestAnswer={bestAnswer?.comment_id === item.id}
+          canSelectBest={post?.user_id === user?.id}
+          onSelectBest={handleSelectBestAnswer}
+          isSelectingBest={selectBestAnswer.isPending}
           onLike={handleLikeComment}
           onDelete={handleDeleteComment}
           onUpdate={handleUpdateComment}
@@ -306,6 +340,9 @@ export default function PostDetailScreen() {
   const tierIcon = getTierIcon(tier);
   const categoryInfo = post.category ? CATEGORY_INFO[post.category] : null;
   const holdings = (post.top_holdings || []).slice(0, 5);
+  const beginnerQuestion = isBeginnerQuestion(post.content);
+  const displayPostContent = stripBeginnerQuestionPrefix(post.content);
+  const bestAnswerComment = comments?.find((comment) => comment.id === bestAnswer?.comment_id) ?? null;
 
   // ── 게시물 헤더 (FlatList ListHeaderComponent) ──
   const renderHeader = () => (
@@ -333,6 +370,12 @@ export default function PostDetailScreen() {
                     <Text style={[styles.postCategoryLabel, { color: categoryInfo.color }]}>
                       {categoryInfo.label}
                     </Text>
+                  </View>
+                )}
+                {beginnerQuestion && (
+                  <View style={[styles.beginnerBadge, { backgroundColor: colors.primary + '20' }]}>
+                    <Ionicons name="help-circle" size={10} color={colors.primary} />
+                    <Text style={[styles.beginnerBadgeText, { color: colors.primary }]}>초보 질문</Text>
                   </View>
                 )}
               </View>
@@ -370,7 +413,7 @@ export default function PostDetailScreen() {
         )}
 
         {/* 본문 */}
-        <Text style={[styles.postContent, { color: colors.textPrimary }]}>{post.content}</Text>
+        <Text style={[styles.postContent, { color: colors.textPrimary }]}>{displayPostContent}</Text>
 
         {/* 첨부 이미지 갤러리 */}
         {post.image_urls && post.image_urls.length > 0 && (
@@ -451,6 +494,18 @@ export default function PostDetailScreen() {
           댓글 {comments?.length || 0}
         </Text>
       </View>
+
+      {bestAnswerComment && (
+        <View style={[styles.bestAnswerHighlight, { backgroundColor: colors.primary + '10', borderColor: colors.primary + '30' }]}>
+          <View style={styles.bestAnswerTitleRow}>
+            <Ionicons name="ribbon" size={14} color={colors.primary} />
+            <Text style={[styles.bestAnswerTitle, { color: colors.primary }]}>채택된 답변</Text>
+          </View>
+          <Text style={[styles.bestAnswerPreview, { color: colors.textPrimary }]} numberOfLines={2}>
+            {bestAnswerComment.content}
+          </Text>
+        </View>
+      )}
 
       {commentsLoading && (
         <View style={styles.commentsLoading}>
@@ -553,7 +608,7 @@ export default function PostDetailScreen() {
           <View style={[styles.commentLockedBar, { borderTopColor: colors.border, backgroundColor: colors.warning + '10' }]}>
             <Ionicons name="lock-closed" size={16} color={colors.warning} />
             <Text style={[styles.commentLockedText, { color: colors.warning }]}>
-              댓글 작성은 자산 1,000만원 이상 회원만 가능합니다
+              댓글 작성은 자산 {commentRequirementLabel} 이상 회원만 가능합니다
             </Text>
           </View>
         )}
@@ -655,6 +710,18 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
   },
+  beginnerBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  beginnerBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
   postAssetMix: {
     fontSize: 12,
     marginTop: 2,
@@ -748,6 +815,27 @@ const styles = StyleSheet.create({
   commentsTitle: {
     fontSize: 16,
     fontWeight: '700',
+  },
+  bestAnswerHighlight: {
+    marginHorizontal: 16,
+    marginBottom: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 12,
+  },
+  bestAnswerTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 6,
+  },
+  bestAnswerTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  bestAnswerPreview: {
+    fontSize: 14,
+    lineHeight: 20,
   },
   commentsLoading: {
     paddingVertical: 20,

@@ -67,7 +67,7 @@ interface ThemeProviderProps {
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
   // 사용자가 선택한 테마 모드 (light/dark/system)
-  const [themeMode, setThemeModeState] = useState<ThemeMode>('dark'); // 기본값: 다크 모드
+  const [themeMode, setThemeModeState] = useState<ThemeMode>('system'); // 기본값: 시스템 설정 따름
 
   // 시스템 테마 (iOS/Android 시스템 설정)
   const [systemTheme, setSystemTheme] = useState<ColorSchemeName>(

@@ -8,7 +8,7 @@
  * - 정렬 옵션 (인기순/최신순)
  * - 무한스크롤 (페이지네이션)
  * - 자격 확인 (100만원 미만 시 잠금 안내)
- * - 글쓰기 버튼 (1.5억+ 전용)
+ * - 글쓰기 버튼 (자산 기준 충족 시 노출)
  *
  * 비유: 건물의 게시판 — 여러 카테고리의 글을 한눈에 보고, 원하는 주제만 필터링
  */
@@ -40,14 +40,16 @@ import {
   LOUNGE_VIEW_THRESHOLD,
   LOUNGE_POST_THRESHOLD,
 } from '../../src/types/community';
-import { SIZES } from '../../src/styles/theme';
 import { useTheme } from '../../src/hooks/useTheme';
+import { formatAssetAmount } from '../../src/utils/communityUtils';
 
 type SortMode = 'popular' | 'latest';
 
 export default function CommunityMainScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const postRequirementLabel = formatAssetAmount(LOUNGE_POST_THRESHOLD);
+  const viewRequirementLabel = formatAssetAmount(LOUNGE_VIEW_THRESHOLD);
 
   // 자격 확인
   const { eligibility, loading: eligibilityLoading, error: eligibilityError } = useLoungeEligibility();
@@ -99,7 +101,7 @@ export default function CommunityMainScreen() {
     if (!eligibility?.canPost) {
       Alert.alert(
         '글쓰기 제한',
-        `글쓰기는 자산 ${(LOUNGE_POST_THRESHOLD / 100000000).toFixed(1)}억원 이상 회원만 가능합니다.\n\n현재 자산: ${((eligibility?.totalAssets ?? 0) / 100000000).toFixed(2)}억원`,
+        `글쓰기는 자산 ${postRequirementLabel} 이상 회원만 가능합니다.\n\n현재 자산: ${formatAssetAmount(eligibility?.totalAssets ?? 0)}`,
       );
       return;
     }
@@ -262,15 +264,15 @@ export default function CommunityMainScreen() {
           </View>
           <Text style={[styles.lockedTitle, { color: colors.textPrimary }]}>VIP 라운지는 잠겨 있습니다</Text>
           <Text style={[styles.lockedDescription, { color: colors.textSecondary }]}>
-            VIP 라운지 열람은 자산 {(LOUNGE_VIEW_THRESHOLD / 10000).toFixed(0)}만원 이상 회원만 가능합니다.
+            VIP 라운지 열람은 자산 {viewRequirementLabel} 이상 회원만 가능합니다.
           </Text>
           <View style={[styles.lockedAssetBox, { backgroundColor: colors.surface }]}>
             <Text style={[styles.lockedAssetLabel, { color: colors.textSecondary }]}>현재 자산</Text>
             <Text style={[styles.lockedAssetValue, { color: colors.textPrimary }]}>
-              {(eligibility.totalAssets / 10000).toFixed(0)}만원
+              {formatAssetAmount(eligibility.totalAssets)}
             </Text>
             <Text style={styles.lockedShortfall}>
-              {(eligibility.shortfall / 10000).toFixed(0)}만원 더 필요합니다
+              {formatAssetAmount(eligibility.shortfall)} 더 필요합니다
             </Text>
           </View>
           <TouchableOpacity style={styles.lockedButton} onPress={() => router.back()}>

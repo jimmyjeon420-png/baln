@@ -1,4 +1,3 @@
-// @ts-nocheck
 // ============================================================================
 // Central Kitchen: 일일 시장 분석 배치 Edge Function (Orchestrator)
 // 매일 07:00 AM cron 트리거 → Task A~G 병렬 실행 → DB UPSERT
@@ -38,7 +37,16 @@ import { checkCrisisAlert } from './task-h-crisis-alert.ts';
 import { runNewsCollection } from './task-j-news.ts';
 
 // 공통 유틸 import
-import { supabase, STOCK_LIST, GURU_LIST, sleep, retryWithBackoff } from './_shared.ts';
+import {
+  supabase,
+  STOCK_LIST,
+  GURU_LIST,
+  sleep,
+  retryWithBackoff,
+  createDailyBriefingRun,
+  finalizeDailyBriefingRun,
+  logDailyBriefingTaskRun,
+} from './_shared.ts';
 
 // ============================================================================
 // 메인 핸들러
@@ -55,6 +63,9 @@ serve(async (req: Request) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
+  const startTime = Date.now();
+  let runLogId: string | null = null;
+
   try {
     // 인증 확인 (cron 또는 service role만 실행 가능)
     const authHeader = req.headers.get('Authorization');
@@ -69,19 +80,20 @@ serve(async (req: Request) => {
     // 미지정 시 전체 실행 (기존 cron 동작)
     // ========================================================================
     let selectedTasks: Set<string> | null = null;
+    const url = new URL(req.url);
+    let triggerSource = url.searchParams.get('trigger_source') || 'manual';
 
     // URL 쿼리 파라미터 확인
-    const url = new URL(req.url);
     const tasksParam = url.searchParams.get('tasks');
     if (tasksParam) {
       selectedTasks = new Set(tasksParam.toUpperCase().split(',').map(t => t.trim()));
     }
 
-    // POST body 확인 (쿼리 파라미터가 없을 때)
-    if (!selectedTasks && req.method === 'POST') {
+    // POST body 확인
+    if (req.method === 'POST') {
       try {
         const body = await req.clone().json();
-        if (body?.tasks) {
+        if (!selectedTasks && body?.tasks) {
           // 배열 형식: {"tasks":["A","G"]} 또는 문자열 형식: {"tasks":"J"}
           if (Array.isArray(body.tasks)) {
             selectedTasks = new Set(body.tasks.map((t: string) => t.toUpperCase().trim()));
@@ -89,7 +101,15 @@ serve(async (req: Request) => {
             selectedTasks = new Set(body.tasks.toUpperCase().split(',').map((t: string) => t.trim()));
           }
         }
-      } catch { /* body 파싱 실패 시 전체 실행 */ }
+
+        if (typeof body?.trigger_source === 'string' && body.trigger_source.trim()) {
+          triggerSource = body.trigger_source.slice(0, 80);
+        } else if (typeof body?.reason === 'string' && body.reason.trim()) {
+          triggerSource = `reason:${body.reason.slice(0, 72)}`;
+        }
+      } catch {
+        // body 파싱 실패 시 전체 실행
+      }
     }
 
     const timeSlot = url.searchParams.get('time_slot') || undefined;
@@ -98,11 +118,19 @@ serve(async (req: Request) => {
     const shouldRun = (task: string) => runAll || selectedTasks!.has(task);
     // 선택 실행 시 Task 간 지연 단축 (전체 실행 시만 Rate Limit 방지)
     const delayMs = runAll ? 2000 : 500;
+    const selectedTaskList = runAll ? ['ALL'] : [...selectedTasks!];
 
-    const startTime = Date.now();
+    runLogId = await createDailyBriefingRun({
+      runMode: runAll ? 'full' : 'selective',
+      selectedTasks: selectedTaskList,
+      triggerSource,
+      startedAt: new Date().toISOString(),
+    });
+
     console.log('========================================');
     console.log(`[Central Kitchen] 배치 시작: ${new Date().toISOString()}`);
     console.log(`[모드] ${runAll ? '전체 실행 (cron)' : `선택 실행: ${[...selectedTasks!].join(',')}`}`);
+    console.log(`[RunLog] ${runLogId || '미생성'}`);
     console.log('========================================');
 
     // ========================================================================
@@ -115,6 +143,42 @@ serve(async (req: Request) => {
         value => ({ status: 'fulfilled' as const, value }),
         reason => ({ status: 'rejected' as const, reason })
       );
+
+    const toErrorMessage = (reason: unknown): string => {
+      if (reason instanceof Error) return reason.message;
+      if (typeof reason === 'string') return reason;
+      try {
+        return JSON.stringify(reason);
+      } catch {
+        return 'Unknown error';
+      }
+    };
+
+    const toResultSummary = (result: TaskResult<any>): Record<string, unknown> => {
+      if (!result || result.status !== 'fulfilled') return {};
+      const value = result.value;
+      if (value == null) return {};
+      if (Array.isArray(value)) return { count: value.length };
+      if (typeof value === 'object') return value;
+      return { value };
+    };
+
+    const logTaskMetric = async (
+      taskKey: string,
+      startedAtMs: number,
+      result: TaskResult<any>
+    ) => {
+      if (!runLogId || !result) return;
+      const status = result.status === 'fulfilled' ? 'SUCCESS' : 'FAILED';
+      await logDailyBriefingTaskRun({
+        runId: runLogId,
+        taskKey,
+        status,
+        elapsedMs: Date.now() - startedAtMs,
+        resultSummary: toResultSummary(result),
+        errorMessage: result.status === 'rejected' ? toErrorMessage(result.reason) : undefined,
+      });
+    };
 
     let snapshotsResult: TaskResult<any> = null;
     let macroResult: TaskResult<any> = null;
@@ -130,14 +194,18 @@ serve(async (req: Request) => {
     // Task D: 포트폴리오 스냅샷 (Gemini 미사용, DB only)
     if (shouldRun('D')) {
       console.log('[Task D] 시작: 포트폴리오 스냅샷...');
+      const taskStartedAt = Date.now();
       snapshotsResult = await safe(() => retryWithBackoff('Task D', takePortfolioSnapshots));
+      await logTaskMetric('D', taskStartedAt, snapshotsResult);
       await sleep(delayMs);
     }
 
     // Task A: 거시경제 & 비트코인 (Gemini + Search) — ★ 재시도 적용
     if (shouldRun('A')) {
       console.log('[Task A] 시작: 거시경제 & 비트코인...');
+      const taskStartedAt = Date.now();
       macroResult = await safe(() => retryWithBackoff('Task A', analyzeMacroAndBitcoin));
+      await logTaskMetric('A', taskStartedAt, macroResult);
       await sleep(delayMs);
     }
 
@@ -145,69 +213,89 @@ serve(async (req: Request) => {
     // ⚠️ Task B는 150초 타임아웃에 걸릴 수 있으므로 B1(전반) + B2(후반)로 분할
     if (shouldRun('B')) {
       console.log('[Task B] 시작: 종목 분석 (35개)...');
+      const taskStartedAt = Date.now();
       stocksResult = await safe(() => retryWithBackoff('Task B', analyzeAllStocks));
+      await logTaskMetric('B', taskStartedAt, stocksResult);
       await sleep(delayMs);
     }
     // Task B 전반부만 (B1): 종목 0~17
     if (shouldRun('B1')) {
       console.log('[Task B1] 시작: 종목 분석 전반부 (18개)...');
       const { analyzeStockSubset } = await import('./task-b-stocks.ts');
+      const taskStartedAt = Date.now();
       stocksResult = await safe(() => retryWithBackoff('Task B1', () => analyzeStockSubset(0, 18)));
+      await logTaskMetric('B1', taskStartedAt, stocksResult);
       await sleep(delayMs);
     }
     // Task B 후반부만 (B2): 종목 18~34
     if (shouldRun('B2')) {
       console.log('[Task B2] 시작: 종목 분석 후반부 (17개)...');
       const { analyzeStockSubset } = await import('./task-b-stocks.ts');
+      const taskStartedAt = Date.now();
       stocksResult = await safe(() => retryWithBackoff('Task B2', () => analyzeStockSubset(18, 35)));
+      await logTaskMetric('B2', taskStartedAt, stocksResult);
       await sleep(delayMs);
     }
 
     // Task C: 투자 거장 인사이트 (Gemini) — ★ 재시도 적용
     if (shouldRun('C')) {
       console.log('[Task C] 시작: 투자 거장 인사이트...');
+      const taskStartedAt = Date.now();
       gurusResult = await safe(() => retryWithBackoff('Task C', runGuruInsightsAnalysis));
+      await logTaskMetric('C', taskStartedAt, gurusResult);
       await sleep(delayMs);
     }
 
     // Task E-1: 예측 질문 생성 (Gemini) — ★ 재시도 적용
     if (shouldRun('E') || shouldRun('E1') || shouldRun('E-1')) {
       console.log('[Task E-1] 시작: 예측 질문 생성...');
+      const taskStartedAt = Date.now();
       predictionsResult = await safe(() => retryWithBackoff('Task E-1', generatePredictionPolls));
+      await logTaskMetric('E-1', taskStartedAt, predictionsResult);
       await sleep(delayMs);
     }
 
     // Task E-2: 예측 정답 판정 (Gemini) — ★ 재시도 적용
     if (shouldRun('E') || shouldRun('E2') || shouldRun('E-2')) {
       console.log('[Task E-2] 시작: 예측 정답 판정...');
+      const taskStartedAt = Date.now();
       resolveResult = await safe(() => retryWithBackoff('Task E-2', resolvePredictionPolls));
+      await logTaskMetric('E-2', taskStartedAt, resolveResult);
       await sleep(delayMs);
     }
 
     // Task G: 맥락 카드 생성 (Gemini) — ★ 재시도 적용
     if (shouldRun('G')) {
       console.log('[Task G] 시작: 맥락 카드 생성...');
+      const taskStartedAt = Date.now();
       contextCardResult = await safe(() => retryWithBackoff('Task G', () => runContextCardGeneration(timeSlot)));
+      await logTaskMetric('G', taskStartedAt, contextCardResult);
       await sleep(delayMs);
     }
 
     // Task F: 부동산 시세 업데이트 (국토부 API, 옵셔널) — ★ 재시도 적용
     if (shouldRun('F')) {
       console.log('[Task F] 시작: 부동산 시세...');
+      const taskStartedAt = Date.now();
       realEstateResult = await safe(() => retryWithBackoff('Task F', updateRealEstatePrices));
+      await logTaskMetric('F', taskStartedAt, realEstateResult);
       await sleep(delayMs);
     }
 
     // Task H: 위기 알림 감지 (Gemini + Search) — ★ 재시도 적용
     if (shouldRun('H')) {
       console.log('[Task H] 시작: 위기 알림 감지...');
+      const taskStartedAt = Date.now();
       crisisResult = await safe(() => retryWithBackoff('Task H', checkCrisisAlert));
+      await logTaskMetric('H', taskStartedAt, crisisResult);
     }
 
     // Task J: 실시간 뉴스 수집 (RSS + Gemini 태깅) — ★ 재시도 적용
     if (shouldRun('J')) {
       console.log('[Task J] 시작: 뉴스 수집...');
+      const taskStartedAt = Date.now();
       newsResult = await safe(() => retryWithBackoff('Task J', runNewsCollection));
+      await logTaskMetric('J', taskStartedAt, newsResult);
       await sleep(delayMs);
     }
 
@@ -217,6 +305,7 @@ serve(async (req: Request) => {
     let kostolalyResult: TaskResult<any> = null;
     if (shouldRun('I') || (runAll && isMonday)) {
       console.log('[Task I] 시작: 코스톨라니 국면 감지 (주 1회)...');
+      const taskStartedAt = Date.now();
       kostolalyResult = await safe(async () => {
         const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
         const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
@@ -226,6 +315,15 @@ serve(async (req: Request) => {
         });
         if (!res.ok) throw new Error(`kostolany-detector ${res.status}`);
         return await res.json();
+      });
+      await logTaskMetric('I', taskStartedAt, kostolalyResult);
+    } else if (runLogId && runAll) {
+      await logDailyBriefingTaskRun({
+        runId: runLogId,
+        taskKey: 'I',
+        status: 'SKIPPED',
+        elapsedMs: 0,
+        resultSummary: { reason: 'weekly_schedule_only_monday' },
       });
     }
 
@@ -250,7 +348,11 @@ serve(async (req: Request) => {
     logTask('Task G', contextCardResult, v => `성공: 맥락 카드 생성 (${v.sentiment}), ${v.usersCalculated}명 영향도 계산 (평균 ${v.avgImpact}%)`);
     logTask('Task H', crisisResult, v => v.crisisDetected ? `위기 감지: ${v.alertsCreated}건 알림 생성` : `정상 — 위기 미감지 (${v.marketsChecked.length}개 시장 확인)`);
     logTask('Task I', kostolalyResult, v => `코스톨라니 국면: ${v.action} — ${v.phase ?? v.newPhase ?? ''}`);
-    logTask('Task J', newsResult, v => `성공: 뉴스 ${v.totalFetched}건 수집, ${v.totalUpserted}건 저장, ${v.totalDeleted}건 삭제`);
+    logTask(
+      'Task J',
+      newsResult,
+      (v) => `성공: 뉴스 ${v.totalFetched}건 수집, ${v.totalUpserted}건 저장, ${v.totalDeleted}건 삭제, 금지소스 ${v.totalPurged}건 정리 (AI ${v.aiTagged}건/저비용 ${v.fallbackTagged}건, 품질 ${v.avgQualityScore})`
+    );
 
     // ========================================================================
     // 응답 생성
@@ -273,7 +375,44 @@ serve(async (req: Request) => {
     if (shouldRun('F')) summary.realEstate = { status: st(realEstateResult), updated: val(realEstateResult, v => v.assetsUpdated, 0) };
     if (shouldRun('G')) summary.contextCard = { status: st(contextCardResult), sentiment: val(contextCardResult, v => v.sentiment, 'N/A'), users: val(contextCardResult, v => v.usersCalculated, 0) };
     if (shouldRun('H')) summary.crisisAlert = { status: st(crisisResult), detected: val(crisisResult, v => v.crisisDetected, false) };
-    if (shouldRun('J')) summary.news = { status: st(newsResult), fetched: val(newsResult, v => v.totalFetched, 0), upserted: val(newsResult, v => v.totalUpserted, 0) };
+    if (shouldRun('I') || (runAll && isMonday)) summary.kostolany = { status: st(kostolalyResult) };
+    if (shouldRun('J')) {
+      summary.news = {
+        status: st(newsResult),
+        fetched: val(newsResult, (v) => v.totalFetched, 0),
+        upserted: val(newsResult, (v) => v.totalUpserted, 0),
+        purged: val(newsResult, (v) => v.totalPurged, 0),
+        aiTagged: val(newsResult, (v) => v.aiTagged, 0),
+        fallbackTagged: val(newsResult, (v) => v.fallbackTagged, 0),
+        avgQualityScore: val(newsResult, (v) => v.avgQualityScore, 0),
+      };
+    }
+
+    const selectedResults = [
+      snapshotsResult,
+      macroResult,
+      stocksResult,
+      gurusResult,
+      predictionsResult,
+      resolveResult,
+      contextCardResult,
+      realEstateResult,
+      crisisResult,
+      kostolalyResult,
+      newsResult,
+    ].filter((r) => r !== null) as Array<{ status: 'fulfilled' | 'rejected'; value?: unknown; reason?: unknown }>;
+
+    const failedCount = selectedResults.filter((r) => r.status === 'rejected').length;
+    const successCount = selectedResults.filter((r) => r.status === 'fulfilled').length;
+    const runStatus = failedCount === 0 ? 'SUCCESS' : successCount > 0 ? 'PARTIAL' : 'FAILED';
+
+    await finalizeDailyBriefingRun(
+      runLogId,
+      runStatus,
+      Date.now() - startTime,
+      summary,
+      failedCount > 0 ? `${failedCount} tasks failed` : undefined
+    );
 
     console.log('========================================');
     console.log(`[Central Kitchen] 배치 완료: ${elapsed}초`);
@@ -298,6 +437,14 @@ serve(async (req: Request) => {
 
     return response;
   } catch (error) {
+    await finalizeDailyBriefingRun(
+      runLogId,
+      'FAILED',
+      Date.now() - startTime,
+      {},
+      error instanceof Error ? error.message : 'Unknown error'
+    );
+
     console.error('[Central Kitchen] 치명적 오류:', error);
     return new Response(
       JSON.stringify({

@@ -137,6 +137,21 @@ interface ContextBriefCardProps {
 
   /** 업데이트 시점 라벨 (예: "오전 6:03 업데이트") */
   updateTimeLabel?: string | null;
+
+  /** 데이터 출처 라벨 */
+  dataSource?: string | null;
+
+  /** 데이터 생성 시점 (ISO) */
+  dataTimestamp?: string | null;
+
+  /** 신뢰도 메모 */
+  confidenceNote?: string | null;
+
+  /** 신뢰도 점수 (추정) */
+  confidenceScore?: number | null;
+
+  /** 데이터 신선도 라벨 */
+  freshnessLabel?: string | null;
 }
 
 // ============================================================================
@@ -154,6 +169,25 @@ const SENTIMENT_BG_COLORS = {
   caution: 'rgba(255, 183, 77, 0.12)',
   alert: 'rgba(207, 102, 121, 0.12)',
 };
+
+function formatTrustTime(timestamp?: string | null): string {
+  if (!timestamp) return '시간 미표기';
+  const dt = new Date(timestamp);
+  if (Number.isNaN(dt.getTime())) return '시간 미표기';
+  return dt.toLocaleString('ko-KR', {
+    month: 'numeric',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function simplifySourceLabel(source?: string | null): string {
+  if (!source) return 'baln 분석 엔진';
+  if (source.includes('fallback') || source.includes('폴백')) return '표준 맥락 폴백';
+  if (source.includes('Google')) return 'baln + Google Search';
+  return source;
+}
 
 // ============================================================================
 // 스켈레톤 로더 컴포넌트
@@ -601,6 +635,11 @@ export default React.forwardRef<View, ContextBriefCardProps>(
       institutionalBehavior,
       portfolioImpact,
       updateTimeLabel,
+      dataSource,
+      dataTimestamp,
+      confidenceNote,
+      confidenceScore,
+      freshnessLabel,
     }: ContextBriefCardProps,
     ref
   ) => {
@@ -745,6 +784,20 @@ export default React.forwardRef<View, ContextBriefCardProps>(
             )}
             <Text style={styles.cardLogo}>bal<Text style={{ color: '#4CAF50' }}>n</Text></Text>
           </View>
+        </View>
+
+        <View style={styles.trustMetaRow}>
+          <Text style={styles.trustMetaText}>출처: {simplifySourceLabel(dataSource)}</Text>
+          <Text style={styles.trustMetaText}>생성: {formatTrustTime(dataTimestamp)}</Text>
+          {freshnessLabel && <Text style={styles.trustMetaText}>신선도: {freshnessLabel}</Text>}
+          {typeof confidenceScore === 'number' && (
+            <Text style={styles.trustMetaText}>신뢰도: {confidenceScore}점(추정)</Text>
+          )}
+          {!!confidenceNote && (
+            <Text style={styles.trustMetaNote} numberOfLines={1}>
+              {confidenceNote}
+            </Text>
+          )}
         </View>
 
         {/* ── 헤드라인 ── */}
@@ -958,6 +1011,25 @@ const createStyles = (COLORS: ThemeColors) => StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
     color: COLORS.textTertiary,
+  },
+  trustMetaRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginBottom: 8,
+  },
+  trustMetaText: {
+    fontSize: 11,
+    color: COLORS.textTertiary,
+    backgroundColor: COLORS.surfaceLight,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  trustMetaNote: {
+    fontSize: 11,
+    color: COLORS.textQuaternary,
+    maxWidth: '100%',
   },
 
   // ── 헤드라인 ──

@@ -110,6 +110,8 @@ interface Recommendation {
   cta: string;
   accentColor: string;
   icon: keyof typeof Ionicons.glyphMap;
+  sourceLabel: string;
+  confidenceScore: number; // 추천 신뢰도(클라이언트 추정)
 }
 
 function getRecommendation(portfolio: any[]): Recommendation {
@@ -122,6 +124,8 @@ function getRecommendation(portfolio: any[]): Recommendation {
       cta: '첫 분석 시작하기',
       accentColor: '#4FC3F7',
       icon: 'sparkles',
+      sourceLabel: '기본 추천 규칙',
+      confidenceScore: 52,
     };
   }
 
@@ -145,6 +149,8 @@ function getRecommendation(portfolio: any[]): Recommendation {
       cta: '딥다이브 시작',
       accentColor: '#4FC3F7',
       icon: 'trending-down',
+      sourceLabel: '내 포트폴리오 + 평균단가',
+      confidenceScore: 84,
     };
   }
 
@@ -157,6 +163,8 @@ function getRecommendation(portfolio: any[]): Recommendation {
       cta: '시뮬레이션 시작',
       accentColor: '#FFA726',
       icon: 'shield-checkmark',
+      sourceLabel: '포트폴리오 구성',
+      confidenceScore: 74,
     };
   }
 
@@ -168,6 +176,8 @@ function getRecommendation(portfolio: any[]): Recommendation {
     cta: '절세 리포트 받기',
     accentColor: '#66BB6A',
     icon: 'cash',
+    sourceLabel: '포트폴리오 규모/구성',
+    confidenceScore: 70,
   };
 }
 
@@ -188,6 +198,7 @@ export default function MarketplaceScreen() {
   const [initialLoaded, setInitialLoaded] = useState(false);
   const [selectedItem, setSelectedItem] = useState<MarketplaceItem | null>(null);
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
+  const [recommendationGeneratedAt, setRecommendationGeneratedAt] = useState<string>(new Date().toISOString());
 
   // 사용자 티어 + 포트폴리오 로드 (개인화 추천에 필요)
   useFocusEffect(
@@ -207,6 +218,7 @@ export default function MarketplaceScreen() {
         } catch (err) {
           console.warn('[Marketplace] 데이터 로드 실패 (기본값 사용):', err);
         } finally {
+          setRecommendationGeneratedAt(new Date().toISOString());
           setInitialLoaded(true);
         }
       };
@@ -282,6 +294,12 @@ export default function MarketplaceScreen() {
 
           <Text style={s.heroHeadline}>{recommendation.headline}</Text>
           <Text style={s.heroDesc}>{recommendation.description}</Text>
+
+          <View style={s.heroTrustRow}>
+            <Text style={s.heroTrustChip}>출처: {recommendation.sourceLabel}</Text>
+            <Text style={s.heroTrustChip}>생성: {new Date(recommendationGeneratedAt).toLocaleString('ko-KR')}</Text>
+            <Text style={s.heroTrustChip}>신뢰도: {recommendation.confidenceScore}점(추정)</Text>
+          </View>
 
           <View style={[s.heroCta, { backgroundColor: recommendation.accentColor }]}>
             <Text style={s.heroCtaText}>{recommendation.cta}</Text>
@@ -545,6 +563,20 @@ const s = StyleSheet.create({
     fontSize: 15,
     lineHeight: 22,
     marginBottom: 22,
+  },
+  heroTrustRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginBottom: 14,
+  },
+  heroTrustChip: {
+    fontSize: 11,
+    color: '#8B8B8B',
+    backgroundColor: '#1E1E1E',
+    borderRadius: 8,
+    paddingHorizontal: 7,
+    paddingVertical: 4,
   },
   heroCta: {
     flexDirection: 'row',

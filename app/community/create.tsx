@@ -8,7 +8,7 @@
  * - 본문 입력 (500자 제한)
  * - 자산 정보 자동 표시 (현재 자산, 티어)
  * - 보유종목 자동 스냅샷 (상위 10개)
- * - 자격 확인 (1.5억 미만 시 차단)
+ * - 자격 확인 (자산 기준 미달 시 차단)
  *
  * 비유: 편지지에 글을 쓰는 것 — 주제를 정하고, 내용을 작성하면 자동으로 서명(자산 정보)이 붙음
  */
@@ -43,7 +43,13 @@ import {
   LOUNGE_POST_THRESHOLD,
 } from '../../src/types/community';
 import { useTheme } from '../../src/hooks/useTheme';
-import { getTierFromAssets, TIER_COLORS, TIER_LABELS } from '../../src/utils/communityUtils';
+import {
+  formatAssetAmount,
+  getTierFromAssets,
+  TIER_COLORS,
+  TIER_LABELS,
+  BEGINNER_QUESTION_PREFIX,
+} from '../../src/utils/communityUtils';
 import { validateContent, getViolationMessage } from '../../src/services/contentFilter';
 import {
   pickImages,
@@ -53,7 +59,7 @@ import {
   MAX_IMAGES,
   PickedImage,
 } from '../../src/services/imageUpload';
-import supabase, { getCurrentUser } from '../../src/services/supabase';
+import { getCurrentUser } from '../../src/services/supabase';
 
 const MAX_CONTENT_LENGTH = 500;
 
@@ -69,6 +75,7 @@ const ASSET_TYPE_KR: Record<string, string> = {
 export default function CreatePostScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const postRequirementLabel = formatAssetAmount(LOUNGE_POST_THRESHOLD);
 
   // 자격 확인
   const { eligibility, loading: eligibilityLoading } = useLoungeEligibility();
@@ -82,6 +89,7 @@ export default function CreatePostScreen() {
   // 상태
   const [category, setCategory] = useState<CommunityCategory | null>(null);
   const [content, setContent] = useState('');
+  const [isBeginnerQuestion, setIsBeginnerQuestion] = useState(false);
   const [selectedImages, setSelectedImages] = useState<PickedImage[]>([]);
   const [isUploadingImages, setIsUploadingImages] = useState(false);
 
@@ -179,7 +187,7 @@ export default function CreatePostScreen() {
     if (!eligibility.canPost) {
       Alert.alert(
         '글쓰기 제한',
-        `글쓰기는 자산 ${(LOUNGE_POST_THRESHOLD / 100000000).toFixed(1)}억원 이상 회원만 가능합니다.\n\n현재 자산: ${(eligibility.totalAssets / 100000000).toFixed(2)}억원`,
+        `글쓰기는 자산 ${postRequirementLabel} 이상 회원만 가능합니다.\n\n현재 자산: ${formatAssetAmount(eligibility.totalAssets)}`,
       );
       return;
     }
@@ -207,9 +215,14 @@ export default function CreatePostScreen() {
 
       setIsUploadingImages(false);
 
+      const normalizedContent = content.trim();
+      const finalContent = isBeginnerQuestion
+        ? `${BEGINNER_QUESTION_PREFIX} ${normalizedContent}`
+        : normalizedContent;
+
       // 2. 게시글 생성 (이미지 URL 포함)
       await createPost.mutateAsync({
-        content: content.trim(),
+        content: finalContent,
         category,
         displayTag: displayInfo.displayTag,
         assetMix: assetMix || '다양한 자산',
@@ -265,15 +278,15 @@ export default function CreatePostScreen() {
           </View>
           <Text style={[styles.lockedTitle, { color: colors.textPrimary }]}>글쓰기는 잠겨 있습니다</Text>
           <Text style={[styles.lockedDescription, { color: colors.textSecondary }]}>
-            글쓰기는 자산 {(LOUNGE_POST_THRESHOLD / 100000000).toFixed(1)}억원 이상 회원만 가능합니다.
+            글쓰기는 자산 {postRequirementLabel} 이상 회원만 가능합니다.
           </Text>
           <View style={[styles.lockedAssetBox, { backgroundColor: colors.surface }]}>
             <Text style={[styles.lockedAssetLabel, { color: colors.textSecondary }]}>현재 자산</Text>
             <Text style={[styles.lockedAssetValue, { color: colors.textPrimary }]}>
-              {(eligibility.totalAssets / 100000000).toFixed(2)}억원
+              {formatAssetAmount(eligibility.totalAssets)}
             </Text>
             <Text style={styles.lockedShortfall}>
-              {((LOUNGE_POST_THRESHOLD - eligibility.totalAssets) / 100000000).toFixed(2)}억원 더 필요합니다
+              {formatAssetAmount(Math.max(0, LOUNGE_POST_THRESHOLD - eligibility.totalAssets))} 더 필요합니다
             </Text>
           </View>
           <TouchableOpacity style={[styles.lockedButton, { backgroundColor: colors.primary }]} onPress={() => router.back()}>
@@ -415,6 +428,32 @@ export default function CreatePostScreen() {
               textAlignVertical="top"
             />
           </View>
+
+          {/* 초보 질문 태그 */}
+          <TouchableOpacity
+            style={[styles.beginnerQuestionRow, { backgroundColor: colors.surface }]}
+            onPress={() => setIsBeginnerQuestion((prev) => !prev)}
+            activeOpacity={0.8}
+          >
+            <View style={styles.beginnerQuestionLeft}>
+              <View style={[styles.beginnerQuestionIcon, { backgroundColor: colors.primary + '20' }]}>
+                <Ionicons name="help-circle" size={16} color={colors.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.beginnerQuestionTitle, { color: colors.textPrimary }]}>
+                  초보 질문 태그
+                </Text>
+                <Text style={[styles.beginnerQuestionDesc, { color: colors.textSecondary }]}>
+                  체크하면 게시글에 "초보 질문" 배지가 표시됩니다.
+                </Text>
+              </View>
+            </View>
+            <Ionicons
+              name={isBeginnerQuestion ? 'checkbox' : 'square-outline'}
+              size={22}
+              color={isBeginnerQuestion ? colors.primary : colors.textTertiary}
+            />
+          </TouchableOpacity>
 
           {/* 이미지 첨부 */}
           <View style={styles.section}>
@@ -658,6 +697,35 @@ const styles = StyleSheet.create({
     fontSize: 16,
     minHeight: 200,
     lineHeight: 25,
+  },
+  beginnerQuestionRow: {
+    borderRadius: 12,
+    padding: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  beginnerQuestionLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+    marginRight: 12,
+  },
+  beginnerQuestionIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  beginnerQuestionTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  beginnerQuestionDesc: {
+    fontSize: 12,
+    marginTop: 2,
   },
   infoBox: {
     flexDirection: 'row',

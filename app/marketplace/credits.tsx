@@ -24,10 +24,9 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useMyCredits, usePurchaseCredits, useCreditHistory } from '../../src/hooks/useCredits';
 import { useHaptics } from '../../src/hooks/useHaptics';
-import { CREDIT_PACKAGES } from '../../src/types/marketplace';
-import type { CreditTransaction } from '../../src/types/marketplace';
-import { formatCredits, CREDIT_TO_KRW } from '../../src/utils/formatters';
-import { getMyReferralCode, applyReferralCode, REWARD_AMOUNTS } from '../../src/services/rewardService';
+import { CREDIT_PACKAGES, type CreditTransaction } from '../../src/types/marketplace';
+import { CREDIT_TO_KRW } from '../../src/utils/formatters';
+import { getMyReferralCode, applyReferralCode } from '../../src/services/rewardService';
 import { useTheme } from '../../src/hooks/useTheme';
 import {
   connectToStore,
@@ -47,7 +46,6 @@ import {
 
 /** 충전 기능 오픈일 (6월 1일부터 활성화) */
 const CHARGE_OPEN_DATE = new Date('2026-06-01T00:00:00');
-const FREE_TRIAL_END_LABEL = '5월 31일';
 
 function isChargingOpen(): boolean {
   return new Date() >= CHARGE_OPEN_DATE;
@@ -62,7 +60,6 @@ export default function CreditsScreen() {
   const purchaseMutation = usePurchaseCredits();
   const chargingOpen = isChargingOpen();
 
-  const [selectedPackage, setSelectedPackage] = useState<string | null>(null);
   const [iapConnected, setIapConnected] = useState(false);
   const [iapProducts, setIapProducts] = useState<Product[]>([]);
   const [purchasing, setPurchasing] = useState(false);
@@ -357,7 +354,7 @@ export default function CreditsScreen() {
               <Text style={styles.trialTitle}>무료로 크레딧을 모아보세요!</Text>
               <Text style={styles.trialDesc}>
                 아래 활동으로 크레딧을 획득하면{'\n'}
-                AI 분석, 시뮬레이션 등 프리미엄 서비스를 이용할 수 있어요.
+                2026년 6월 1일 이후에도 AI 분석/시뮬레이션에 사용할 수 있어요.
               </Text>
             </View>
           </View>
@@ -505,7 +502,7 @@ export default function CreditsScreen() {
             - 크레딧은 AI 프리미엄 기능 이용에 사용됩니다{'\n'}
             - AI 분석 실패 시 크레딧이 자동 환불됩니다{'\n'}
             - 다양한 활동으로 무료 크레딧을 획득할 수 있습니다{'\n'}
-            - 등급이 높을수록 할인율이 적용됩니다
+            - 충전소는 2026년 6월 1일부터 순차 오픈됩니다
           </Text>
         </View>
       </ScrollView>

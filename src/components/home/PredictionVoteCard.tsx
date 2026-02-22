@@ -15,7 +15,7 @@
  * - 보험 BM: 투표 무료, 상세 리뷰 프리미엄
  */
 
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -62,6 +62,8 @@ interface PollItem {
   noPercentage: number; // 0~100
   totalVotes: number;
   deadline: string; // ISO date
+  source?: string;
+  createdAt?: string;
   upReason?: string; // [NEW] 오를 근거
   downReason?: string; // [NEW] 내릴 근거
 }
@@ -125,6 +127,29 @@ interface PredictionVoteCardProps {
 
   /** 트랙레코드 배너 클릭 콜백 */
   onTrackRecordPress?: () => void;
+
+  /** DB 실패 시 표준 질문 폴백 데이터 여부 */
+  isFallbackData?: boolean;
+
+  /** 추천 신뢰도 메타 */
+  trustMeta?: {
+    sourceLabel: string;
+    generatedAt?: string | null;
+    freshnessLabel?: string;
+    confidenceScore?: number;
+  };
+}
+
+function formatMetaTimestamp(timestamp?: string | null): string {
+  if (!timestamp) return '시간 미표기';
+  const dt = new Date(timestamp);
+  if (Number.isNaN(dt.getTime())) return '시간 미표기';
+  return dt.toLocaleString('ko-KR', {
+    month: 'numeric',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 }
 
 // ============================================================================
@@ -144,11 +169,13 @@ export default function PredictionVoteCard({
   onViewContext,
   isLoading,
   isVoting,
-  selectedCategory = 'all',
-  onCategoryChange,
+  selectedCategory: _selectedCategory = 'all',
+  onCategoryChange: _onCategoryChange,
   globalAccuracy = null,
   globalResolvedCount = 0,
   onTrackRecordPress,
+  isFallbackData = false,
+  trustMeta,
 }: PredictionVoteCardProps) {
   const { colors } = useTheme();
   const track = useTrackEvent();
@@ -403,6 +430,11 @@ export default function PredictionVoteCard({
         <View style={styles.headerLeft}>
           <Text style={styles.headerEmoji}>🎯</Text>
           <Text style={styles.headerText}>오늘의 예측</Text>
+          {isFallbackData && (
+            <View style={styles.fallbackBadge}>
+              <Text style={styles.fallbackBadgeText}>표준 질문</Text>
+            </View>
+          )}
         </View>
         <View style={styles.headerRight}>
           {/* 페이지 인디케이터 (1/3) */}
@@ -426,6 +458,19 @@ export default function PredictionVoteCard({
           <Text style={styles.cardLogo}>bal<Text style={{ color: '#4CAF50' }}>n</Text></Text>
         </View>
       </View>
+
+      {trustMeta && (
+        <View style={styles.trustMetaRow}>
+          <Text style={styles.trustMetaText}>출처: {trustMeta.sourceLabel}</Text>
+          <Text style={styles.trustMetaText}>생성: {formatMetaTimestamp(trustMeta.generatedAt)}</Text>
+          {trustMeta.freshnessLabel && (
+            <Text style={styles.trustMetaText}>신선도: {trustMeta.freshnessLabel}</Text>
+          )}
+          {typeof trustMeta.confidenceScore === 'number' && (
+            <Text style={styles.trustMetaText}>신뢰도: {trustMeta.confidenceScore}점(추정)</Text>
+          )}
+        </View>
+      )}
 
       {/* 질문 카운터 (1/3) + 스와이프 힌트 */}
       {allPolls.length > 1 && (
@@ -646,6 +691,35 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       fontSize: 19,
       fontWeight: '600',
       color: colors.textPrimary,
+    },
+    fallbackBadge: {
+      marginLeft: 4,
+      backgroundColor: 'rgba(255, 183, 77, 0.2)',
+      borderColor: 'rgba(255, 183, 77, 0.35)',
+      borderWidth: 1,
+      borderRadius: 6,
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+    },
+    fallbackBadgeText: {
+      fontSize: 10,
+      fontWeight: '700',
+      color: '#FFB74D',
+    },
+    trustMetaRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 6,
+      paddingTop: 8,
+      paddingBottom: 2,
+    },
+    trustMetaText: {
+      fontSize: 11,
+      color: colors.textTertiary,
+      backgroundColor: colors.surfaceLight,
+      borderRadius: 8,
+      paddingHorizontal: 6,
+      paddingVertical: 3,
     },
     // 페이지 인디케이터
     pageIndicator: {

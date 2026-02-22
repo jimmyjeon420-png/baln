@@ -1,4 +1,3 @@
-// @ts-nocheck
 // ============================================================================
 // 공유 유틸리티 & 상수 (Shared Utilities & Constants)
 // 모든 Task 파일에서 import하여 사용
@@ -332,6 +331,123 @@ export function getTier(total: number): string {
 // ============================================================================
 // 로그 기록 함수 (모니터링)
 // ============================================================================
+
+export type DailyBriefingRunStatus = 'RUNNING' | 'SUCCESS' | 'FAILED' | 'PARTIAL';
+export type DailyBriefingTaskStatus = 'SUCCESS' | 'FAILED' | 'SKIPPED';
+
+interface CreateDailyBriefingRunParams {
+  runMode: 'full' | 'selective';
+  selectedTasks: string[];
+  triggerSource?: string;
+  startedAt?: string;
+}
+
+interface LogDailyBriefingTaskRunParams {
+  runId: string;
+  taskKey: string;
+  status: DailyBriefingTaskStatus;
+  elapsedMs: number;
+  retryCount?: number;
+  resultSummary?: Record<string, unknown>;
+  errorMessage?: string;
+  tokensPrompt?: number;
+  tokensOutput?: number;
+  tokensTotal?: number;
+}
+
+/**
+ * daily-briefing 실행(run) 단위 시작 로그 생성
+ */
+export async function createDailyBriefingRun(
+  params: CreateDailyBriefingRunParams
+): Promise<string | null> {
+  try {
+    const { data, error } = await supabase
+      .from('daily_briefing_runs')
+      .insert({
+        function_name: 'daily-briefing',
+        run_mode: params.runMode,
+        selected_tasks: params.selectedTasks,
+        trigger_source: params.triggerSource || 'manual',
+        started_at: params.startedAt || new Date().toISOString(),
+        status: 'RUNNING',
+      })
+      .select('id')
+      .single();
+
+    if (error) {
+      console.warn('[Run 로그 생성 실패]:', error.message);
+      return null;
+    }
+
+    return data?.id || null;
+  } catch (e) {
+    console.warn('[Run 로그 생성 예외]:', e);
+    return null;
+  }
+}
+
+/**
+ * daily-briefing 실행(run) 단위 종료 로그 업데이트
+ */
+export async function finalizeDailyBriefingRun(
+  runId: string | null,
+  status: DailyBriefingRunStatus,
+  elapsedMs: number,
+  summary?: Record<string, unknown>,
+  errorMessage?: string
+): Promise<void> {
+  if (!runId) return;
+
+  try {
+    const { error } = await supabase
+      .from('daily_briefing_runs')
+      .update({
+        status,
+        finished_at: new Date().toISOString(),
+        elapsed_ms: elapsedMs,
+        summary: summary || {},
+        error_message: errorMessage || null,
+      })
+      .eq('id', runId);
+
+    if (error) {
+      console.warn(`[Run 로그 종료 업데이트 실패] ${runId}:`, error.message);
+    }
+  } catch (e) {
+    console.warn(`[Run 로그 종료 업데이트 예외] ${runId}:`, e);
+  }
+}
+
+/**
+ * daily-briefing Task 단위 실행 로그 생성
+ */
+export async function logDailyBriefingTaskRun(
+  params: LogDailyBriefingTaskRunParams
+): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from('daily_briefing_task_runs')
+      .upsert({
+        run_id: params.runId,
+        task_key: params.taskKey,
+        status: params.status,
+        elapsed_ms: params.elapsedMs,
+        retry_count: params.retryCount || 0,
+        result_summary: params.resultSummary || {},
+        error_message: params.errorMessage || null,
+        tokens_prompt: params.tokensPrompt ?? null,
+        tokens_output: params.tokensOutput ?? null,
+        tokens_total: params.tokensTotal ?? null,
+      }, { onConflict: 'run_id,task_key' });
+
+    if (error) {
+      console.warn(`[Task 로그 기록 실패] ${params.taskKey}:`, error.message);
+    }
+  } catch (e) {
+    console.warn(`[Task 로그 기록 예외] ${params.taskKey}:`, e);
+  }
+}
 
 /**
  * Edge Function Task 실행 로그 기록

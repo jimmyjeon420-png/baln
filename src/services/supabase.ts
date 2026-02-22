@@ -7,15 +7,15 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const FALLBACK_URL = 'https://ruqeinfcqhgexrckonsy.supabase.co';
 const FALLBACK_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1cWVpbmZjcWhnZXhyY2tvbnN5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkyMTE4MDksImV4cCI6MjA4NDc4NzgwOX0.NJmOH_uF59nYaSmjebGMNHlBwvqx5MHIwXOoqzITsXc';
 
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || FALLBACK_URL;
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || FALLBACK_KEY;
+export const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL || FALLBACK_URL;
+export const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || FALLBACK_KEY;
 
 // 진단 로그 (빌드에서 env 변수가 제대로 들어왔는지 확인)
-console.log('[Supabase] URL:', supabaseUrl.substring(0, 30) + '...');
-console.log('[Supabase] Key:', supabaseAnonKey.substring(0, 20) + '...');
+console.log('[Supabase] URL:', SUPABASE_URL.substring(0, 30) + '...');
+console.log('[Supabase] Key:', SUPABASE_ANON_KEY.substring(0, 20) + '...');
 
 // AsyncStorage 어댑터를 사용하여 토큰 저장
-const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
     storage: AsyncStorage,
     autoRefreshToken: true,

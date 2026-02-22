@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
-import { Tabs, useRouter } from 'expo-router';
+import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../src/hooks/useTheme';
@@ -9,9 +9,8 @@ import { useTheme } from '../../src/hooks/useTheme';
 const VISIBLE_TABS = ['index', 'rebalance', 'news', 'lounge', 'profile'];
 
 // 커스텀 탭 바 컴포넌트 - 플로팅 스캔 버튼 포함
-function CustomTabBar({ state, descriptors, navigation }: any) {
+function CustomTabBar({ state, navigation }: any) {
   const insets = useSafeAreaInsets();
-  const router = useRouter();
   const { colors } = useTheme();
 
   // 표시할 탭만 필터링
@@ -23,7 +22,6 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
     <View style={[styles.tabBarContainer, { paddingBottom: insets.bottom, backgroundColor: colors.surface }]}>
       <View style={styles.tabBar}>
         {visibleRoutes.map((route: any) => {
-          const { options } = descriptors[route.key];
           const routeIndex = state.routes.findIndex((r: any) => r.key === route.key);
           const isFocused = state.index === routeIndex;
 
@@ -35,8 +33,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
             });
 
             if (!event.defaultPrevented) {
-              const tabPath = route.name === 'index' ? '/(tabs)' : `/(tabs)/${route.name}`;
-              router.replace(tabPath as any);
+              navigation.navigate(route.name);
             }
           };
 

@@ -35,7 +35,7 @@ import { HeaderBar } from '../../src/components/common/HeaderBar';
 // ============================================================================
 
 interface NotificationItem {
-  key: keyof Omit<NotificationSettings, 'pushEnabled'>;
+  key: 'rebalanceAlert' | 'priceAlert' | 'marketNews';
   icon: string;
   label: string;
   /** 한줄 요약 */
@@ -63,9 +63,9 @@ const NOTIFICATION_ITEMS: NotificationItem[] = [
     summary: '보유 종목의 큰 가격 변동을 놓치지 마세요',
     details: [
       '매일 아침 7:30에 전일 가격 변동 확인 알림',
-      '앱을 열면 전일 대비 ±5% 이상 변동한 종목을 하이라이트',
-      '기준: 하루 동안 5% 이상 오르거나 내린 보유 종목',
-      '예) 삼성전자가 어제 -6.2% 하락 → 확인 필요 알림',
+      '앱을 열면 설정한 기준(±3/5/7%) 이상 변동한 종목을 하이라이트',
+      '기준은 아래 "가격 변동 기준"에서 조정할 수 있어요',
+      '예) 기준이 ±5%일 때, 어제 -6.2% 하락 종목은 확인 알림',
     ],
   },
   {
@@ -80,6 +80,9 @@ const NOTIFICATION_ITEMS: NotificationItem[] = [
     ],
   },
 ];
+
+const PRICE_THRESHOLD_OPTIONS = [3, 5, 7];
+const WEEKLY_CAP_OPTIONS = [3, 5, 7];
 
 export default function NotificationsScreen() {
   const { colors } = useTheme();
@@ -99,8 +102,8 @@ export default function NotificationsScreen() {
   }, []);
 
   // 설정 변경 핸들러: 저장 + 스케줄 동기화
-  const updateSetting = useCallback(
-    async (key: keyof NotificationSettings, value: boolean) => {
+  const updateToggleSetting = useCallback(
+    async (key: 'pushEnabled' | 'rebalanceAlert' | 'priceAlert' | 'marketNews', value: boolean) => {
       const newSettings = { ...settings, [key]: value };
 
       // 마스터 토글 끄면 하위도 모두 끔 (UI 정합성)
@@ -113,11 +116,29 @@ export default function NotificationsScreen() {
       setSettings(newSettings);
       setSyncing(true);
 
-      // AsyncStorage 저장 + 알림 스케줄 동기화
-      await saveNotificationSettings(newSettings);
-      await syncNotificationSchedule(newSettings);
+      try {
+        // AsyncStorage 저장 + 알림 스케줄 동기화
+        await saveNotificationSettings(newSettings);
+        await syncNotificationSchedule(newSettings);
+      } finally {
+        setSyncing(false);
+      }
+    },
+    [settings]
+  );
 
-      setSyncing(false);
+  const updateNumericSetting = useCallback(
+    async (key: 'priceAlertThreshold' | 'weeklyNotificationCap', value: number) => {
+      const newSettings = { ...settings, [key]: value };
+      setSettings(newSettings);
+      setSyncing(true);
+
+      try {
+        await saveNotificationSettings(newSettings);
+        await syncNotificationSchedule(newSettings);
+      } finally {
+        setSyncing(false);
+      }
     },
     [settings]
   );
@@ -151,7 +172,7 @@ export default function NotificationsScreen() {
             </View>
             <Switch
               value={settings.pushEnabled}
-              onValueChange={(v) => updateSetting('pushEnabled', v)}
+              onValueChange={(v) => updateToggleSetting('pushEnabled', v)}
               trackColor={{ false: colors.border, true: colors.primary }}
               thumbColor={settings.pushEnabled ? colors.textPrimary : colors.textTertiary}
             />
@@ -211,7 +232,7 @@ export default function NotificationsScreen() {
                   </View>
                   <Switch
                     value={isEnabled}
-                    onValueChange={(v) => updateSetting(item.key, v)}
+                    onValueChange={(v) => updateToggleSetting(item.key, v)}
                     disabled={isDisabled}
                     trackColor={{ false: colors.border, true: colors.primary }}
                     thumbColor={isEnabled && !isDisabled ? colors.textPrimary : colors.textTertiary}
@@ -242,6 +263,71 @@ export default function NotificationsScreen() {
           })}
         </View>
 
+        {/* 알림 강도 설정 */}
+        <View style={[styles.section, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.sectionTitle, { color: colors.textTertiary }]}>알림 강도</Text>
+
+          <View style={styles.controlCard}>
+            <Text style={[styles.controlTitle, { color: colors.textPrimary }]}>가격 변동 기준</Text>
+            <Text style={[styles.controlDesc, { color: colors.textSecondary }]}>
+              가격 변동 알림에서 몇 % 이상 움직였을 때 확인할지 설정합니다.
+            </Text>
+            <View style={styles.optionRow}>
+              {PRICE_THRESHOLD_OPTIONS.map((option) => {
+                const selected = settings.priceAlertThreshold === option;
+                const disabled = !settings.pushEnabled || !settings.priceAlert;
+                return (
+                  <TouchableOpacity
+                    key={option}
+                    style={[
+                      styles.optionButton,
+                      { borderColor: selected ? colors.primary : colors.border },
+                      selected && { backgroundColor: `${colors.primary}20` },
+                      disabled && styles.optionDisabled,
+                    ]}
+                    disabled={disabled}
+                    onPress={() => updateNumericSetting('priceAlertThreshold', option)}
+                  >
+                    <Text style={[styles.optionText, { color: selected ? colors.primary : colors.textSecondary }]}>
+                      ±{option}%
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+
+          <View style={[styles.controlCard, styles.controlCardBorder, { borderTopColor: colors.border }]}>
+            <Text style={[styles.controlTitle, { color: colors.textPrimary }]}>주간 알림 상한</Text>
+            <Text style={[styles.controlDesc, { color: colors.textSecondary }]}>
+              한 주에 받는 알림 개수를 제한해 알림 피로도를 줄입니다.
+            </Text>
+            <View style={styles.optionRow}>
+              {WEEKLY_CAP_OPTIONS.map((option) => {
+                const selected = settings.weeklyNotificationCap === option;
+                const disabled = !settings.pushEnabled;
+                return (
+                  <TouchableOpacity
+                    key={option}
+                    style={[
+                      styles.optionButton,
+                      { borderColor: selected ? colors.primary : colors.border },
+                      selected && { backgroundColor: `${colors.primary}20` },
+                      disabled && styles.optionDisabled,
+                    ]}
+                    disabled={disabled}
+                    onPress={() => updateNumericSetting('weeklyNotificationCap', option)}
+                  >
+                    <Text style={[styles.optionText, { color: selected ? colors.primary : colors.textSecondary }]}>
+                      주 {option}회
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+        </View>
+
         {/* 안내 정보 */}
         <View style={[styles.infoSection, { backgroundColor: colors.surface }]}>
           <View style={styles.infoRow}>
@@ -256,6 +342,12 @@ export default function NotificationsScreen() {
             <Text style={[styles.infoText, { color: colors.textTertiary }]}>
               알림 발송 시간은 기기의 현지 시간 기준입니다.
               가격 변동 알림 7:30 → 아침 브리핑 8:00 → 리밸런싱 점검 9:00(월요일) 순서로 도착합니다.
+            </Text>
+          </View>
+          <View style={[styles.infoRow, { marginTop: 8 }]}>
+            <Ionicons name="shield-checkmark-outline" size={18} color={colors.textTertiary} />
+            <Text style={[styles.infoText, { color: colors.textTertiary }]}>
+              현재 설정: 가격 변동 기준 ±{settings.priceAlertThreshold}% · 주간 알림 상한 {settings.weeklyNotificationCap}회
             </Text>
           </View>
         </View>
@@ -392,6 +484,40 @@ const styles = StyleSheet.create({
     fontSize: 13,
     flex: 1,
     lineHeight: 19,
+  },
+  controlCard: {
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  controlCardBorder: {
+    borderTopWidth: 1,
+  },
+  controlTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  controlDesc: {
+    fontSize: 13,
+    marginTop: 4,
+    marginBottom: 10,
+    lineHeight: 18,
+  },
+  optionRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  optionButton: {
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  optionText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  optionDisabled: {
+    opacity: 0.4,
   },
 
   // 비활성화 텍스트

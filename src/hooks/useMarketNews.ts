@@ -10,6 +10,7 @@
  */
 
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import supabase from '../services/supabase';
 
 // ============================================================================
@@ -32,10 +33,142 @@ export interface MarketNewsItem {
   impact_summary: string | null;
   /** -2(매우부정) ~ +2(매우긍정), 0=중립 */
   impact_score: number | null;
+  /** 신선도(50) + 자산관련도(30) + 출처신뢰도(20) 기반 품질 점수 */
+  news_quality_score?: number | null;
+  freshness_score?: number | null;
+  asset_relevance_score?: number | null;
+  source_trust_score?: number | null;
   created_at: string;
 }
 
 export type NewsCategoryFilter = 'all' | 'crypto' | 'stock' | 'macro';
+
+const NEWS_COLLECTION_COOLDOWN_KEY = '@baln:news_collection_last_trigger';
+const NEWS_COLLECTION_COOLDOWN_MS = 20 * 60 * 1000; // 20분
+const FALLBACK_PAGE_SIZE = 6;
+const FALLBACK_FRESHNESS_MS = 6 * 60 * 60 * 1000; // 6시간
+
+interface FallbackFeedSource {
+  name: string;
+  url: string;
+}
+
+function isAllowedFallbackLink(rawLink: string): boolean {
+  try {
+    const url = new URL(rawLink);
+    return url.protocol === 'https:' || url.protocol === 'http:';
+  } catch {
+    return false;
+  }
+}
+
+const FALLBACK_FEEDS: Record<NewsCategoryFilter, FallbackFeedSource[]> = {
+  all: [
+    { name: '한국경제', url: 'https://www.hankyung.com/feed/all-news' },
+    { name: '연합뉴스', url: 'https://www.yna.co.kr/rss/economy.xml' },
+    { name: '매일경제', url: 'https://www.mk.co.kr/rss/30100041/' },
+  ],
+  crypto: [
+    { name: '코인데스크', url: 'https://www.coindeskkorea.com/rss' },
+    { name: '비트코인매거진', url: 'https://bitcoinmagazine.com/.rss/full/' },
+    { name: 'Google News', url: 'https://news.google.com/rss/search?q=비트코인+OR+이더리움+OR+가상자산&hl=ko&gl=KR&ceid=KR:ko' },
+  ],
+  stock: [
+    { name: '한국경제', url: 'https://www.hankyung.com/feed/all-news' },
+    { name: 'Google News', url: 'https://news.google.com/rss/search?q=코스피+OR+나스닥+OR+미국증시+OR+주식&hl=ko&gl=KR&ceid=KR:ko' },
+  ],
+  macro: [
+    { name: '연합뉴스', url: 'https://www.yna.co.kr/rss/economy.xml' },
+    { name: 'Google News', url: 'https://news.google.com/rss/search?q=금리+OR+연준+OR+CPI+OR+환율+OR+경기&hl=ko&gl=KR&ceid=KR:ko' },
+  ],
+};
+
+function safeDateISO(value?: string): string {
+  if (!value) return new Date().toISOString();
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
+}
+
+function parseRssItems(xml: string): { title: string; link: string; pubDate?: string; summary?: string }[] {
+  const items: { title: string; link: string; pubDate?: string; summary?: string }[] = [];
+  const itemRegex = /<item>([\s\S]*?)<\/item>/g;
+  let match: RegExpExecArray | null = null;
+
+  while ((match = itemRegex.exec(xml)) !== null && items.length < FALLBACK_PAGE_SIZE) {
+    const itemXml = match[1];
+    const titleMatch = itemXml.match(/<title>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/title>/);
+    const linkMatch = itemXml.match(/<link>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/link>/);
+    const pubDateMatch = itemXml.match(/<pubDate>(.*?)<\/pubDate>/);
+    const descMatch = itemXml.match(/<description>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/description>/s);
+
+    if (!titleMatch || !linkMatch) continue;
+    const title = titleMatch[1].trim();
+    const link = linkMatch[1].trim();
+    if (!title || !link) continue;
+
+    items.push({
+      title,
+      link,
+      pubDate: pubDateMatch?.[1],
+      summary: descMatch?.[1]?.trim(),
+    });
+  }
+
+  return items;
+}
+
+async function fetchFallbackMarketNews(category: NewsCategoryFilter): Promise<MarketNewsItem[]> {
+  const feeds = FALLBACK_FEEDS[category] ?? FALLBACK_FEEDS.all;
+  const collected: MarketNewsItem[] = [];
+
+  for (const feed of feeds) {
+    try {
+      const res = await fetch(feed.url, {
+        headers: {
+          Accept: 'application/rss+xml, application/xml, text/xml',
+          'User-Agent': 'baln-news-fallback/1.0',
+        },
+      });
+      if (!res.ok) continue;
+
+      const xml = await res.text();
+      const parsed = parseRssItems(xml);
+      const fallbackCategory: MarketNewsItem['category'] = category === 'all' ? 'general' : category;
+      const mapped = parsed
+        .filter((item) => isAllowedFallbackLink(item.link))
+        .map((item, idx) => ({
+        id: `fallback-${feed.name}-${idx}-${item.link}`,
+        title: item.title,
+        summary: item.summary?.slice(0, 280) || null,
+        source_name: feed.name,
+        source_url: item.link,
+        thumbnail_url: null,
+        published_at: safeDateISO(item.pubDate),
+        tags: [] as string[],
+        category: fallbackCategory,
+        is_pick: false,
+        pick_reason: null,
+        impact_summary: null,
+        impact_score: 0,
+        created_at: new Date().toISOString(),
+      }));
+      collected.push(...mapped);
+    } catch {
+      // fallback fetch 실패는 무시
+    }
+  }
+
+  const deduped = new Map<string, MarketNewsItem>();
+  for (const item of collected) {
+    const key = `${item.title.trim().toLowerCase()}|${item.source_url.trim().toLowerCase()}`;
+    if (!deduped.has(key)) deduped.set(key, item);
+  }
+
+  return Array.from(deduped.values())
+    .filter((item) => (Date.now() - new Date(item.published_at).getTime()) <= FALLBACK_FRESHNESS_MS)
+    .sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime())
+    .slice(0, FALLBACK_PAGE_SIZE);
+}
 
 // ============================================================================
 // 뉴스 목록 (무한 스크롤)
@@ -47,30 +180,34 @@ export const useMarketNews = (category: NewsCategoryFilter = 'all') => {
   return useInfiniteQuery({
     queryKey: ['marketNews', category],
     queryFn: async ({ pageParam = 0 }) => {
-      try {
-        let query = supabase
-          .from('market_news')
-          .select('*')
-          .order('published_at', { ascending: false });
+      let query = supabase
+        .from('market_news')
+        .select('*')
+        .order('published_at', { ascending: false });
 
-        if (category !== 'all') {
-          query = query.eq('category', category);
-        }
-
-        query = query.range(pageParam, pageParam + NEWS_PAGE_SIZE - 1);
-
-        const { data, error } = await query;
-
-        if (error) {
-          console.warn('[MarketNews] 조회 실패 (빈 배열 반환):', error.message);
-          return [] as MarketNewsItem[];
-        }
-
-        return (data || []) as MarketNewsItem[];
-      } catch (err) {
-        console.warn('[MarketNews] 조회 예외:', err);
-        return [] as MarketNewsItem[];
+      if (category !== 'all') {
+        query = query.eq('category', category);
       }
+
+      query = query.range(pageParam, pageParam + NEWS_PAGE_SIZE - 1);
+
+      const { data, error } = await query;
+      if (error) {
+        // 테이블/권한/일시 오류 시 1페이지에서만 RSS fallback 시도
+        if (pageParam === 0) {
+          return fetchFallbackMarketNews(category);
+        }
+        throw new Error(error.message || '뉴스 조회에 실패했습니다.');
+      }
+
+      const rows = (data || []) as MarketNewsItem[];
+      if (rows.length > 0) return rows;
+
+      // DB가 비었을 때 1페이지 fallback
+      if (pageParam === 0) {
+        return fetchFallbackMarketNews(category);
+      }
+      return [];
     },
     initialPageParam: 0,
     getNextPageParam: (lastPage, allPages) => {
@@ -89,35 +226,74 @@ export const usePickNews = () => {
   return useQuery({
     queryKey: ['pickNews'],
     queryFn: async () => {
-      try {
-        const { data, error } = await supabase
-          .from('market_news')
-          .select('*')
-          .eq('is_pick', true)
-          .order('published_at', { ascending: false })
-          .limit(5);
+      const { data, error } = await supabase
+        .from('market_news')
+        .select('*')
+        .eq('is_pick', true)
+        .order('published_at', { ascending: false })
+        .limit(5);
 
-        if (error) {
-          console.warn('[MarketNews] PiCK 조회 실패:', error.message);
-          return [] as MarketNewsItem[];
-        }
-
-        return (data || []) as MarketNewsItem[];
-      } catch (err) {
-        console.warn('[MarketNews] PiCK 조회 예외:', err);
-        return [] as MarketNewsItem[];
+      if (error) {
+        throw new Error(error.message || 'AI PiCK 조회에 실패했습니다.');
       }
+
+      return (data || []) as MarketNewsItem[];
     },
     staleTime: 30000,
   });
 };
 
 // ============================================================================
+// 뉴스 자동 복구 (Task J 트리거)
+// ============================================================================
+
+export async function triggerNewsCollectionIfNeeded(reason: 'empty' | 'stale'): Promise<{
+  triggered: boolean;
+  skippedByCooldown: boolean;
+  error?: string;
+}> {
+  try {
+    const now = Date.now();
+    const raw = await AsyncStorage.getItem(NEWS_COLLECTION_COOLDOWN_KEY);
+    const lastTriggeredAt = raw ? Number(raw) : 0;
+
+    if (Number.isFinite(lastTriggeredAt) && now - lastTriggeredAt < NEWS_COLLECTION_COOLDOWN_MS) {
+      return { triggered: false, skippedByCooldown: true };
+    }
+
+    await AsyncStorage.setItem(NEWS_COLLECTION_COOLDOWN_KEY, String(now));
+
+    const { error } = await supabase.functions.invoke('daily-briefing', {
+      body: {
+        tasks: 'J',
+        reason: `news_tab_${reason}`,
+      },
+    });
+
+    if (error) {
+      return {
+        triggered: false,
+        skippedByCooldown: false,
+        error: error.message || '뉴스 수집 호출 실패',
+      };
+    }
+
+    return { triggered: true, skippedByCooldown: false };
+  } catch (err) {
+    return {
+      triggered: false,
+      skippedByCooldown: false,
+      error: err instanceof Error ? err.message : '알 수 없는 오류',
+    };
+  }
+}
+
+// ============================================================================
 // 시간 포맷 유틸리티
 // ============================================================================
 
 /**
- * 블루밍비트 스타일 시간 표시
+ * 뉴스 피드 스타일 시간 표시
  * - 1시간 이내: "32분 전"
  * - 오늘: "10:34"
  * - 어제~7일: "3일 전"
@@ -135,7 +311,7 @@ export function getTimeAgo(dateString: string): string {
   if (minutes < 1) return '방금';
   if (minutes < 60) return `${minutes}분 전`;
 
-  // 오늘이면 시간만 표시 (블루밍비트 실시간 뉴스 스타일)
+  // 오늘이면 시간만 표시 (실시간 뉴스 스타일)
   const isToday = now.getDate() === date.getDate()
     && now.getMonth() === date.getMonth()
     && now.getFullYear() === date.getFullYear();

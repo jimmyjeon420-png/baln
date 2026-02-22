@@ -13,14 +13,13 @@
  * 선택하면 AsyncStorage에 저장 → 나중에 개인화 활용
  */
 
-import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Dimensions,
   ScrollView,
   Animated,
   ActivityIndicator,
@@ -38,13 +37,10 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useTheme } from '../../src/hooks/useTheme';
 import supabase, { getCurrentUser } from '../../src/services/supabase';
 import { searchStocks, StockItem, getCategoryColor } from '../../src/data/stockList';
-import { calculateHealthScore, HealthScoreResult, DALIO_TARGET, BUFFETT_TARGET, CATHIE_WOOD_TARGET } from '../../src/services/rebalanceScore';
+import { calculateHealthScore, HealthScoreResult } from '../../src/services/rebalanceScore';
 import type { GuruStyle } from '../../src/hooks/useGuruStyle';
-import { AssetType } from '../../src/types/asset';
-import type { Asset } from '../../src/types/asset';
+import { AssetType, type Asset } from '../../src/types/asset';
 import { SHARED_PORTFOLIO_KEY } from '../../src/hooks/useSharedPortfolio';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // 총 단계 수 (구루 선택 Step 1 추가로 6단계)
 const TOTAL_STEPS = 6;
@@ -257,9 +253,6 @@ export default function OnboardingScreen() {
     }
   }, [registeredAssets]);
 
-  // 등록 자산 수
-  const selectedCount = registeredAssets.length;
-
   // 다음 단계로 이동 (페이드 애니메이션)
   const goNext = () => {
     if (currentStep < TOTAL_STEPS - 1) {
@@ -353,6 +346,10 @@ export default function OnboardingScreen() {
     }
   };
 
+  const handleQuickStart = () => {
+    handleSkip();
+  };
+
   // 진행률 인디케이터
   const renderProgressDots = () => (
     <View style={styles.progressDots}>
@@ -410,6 +407,15 @@ export default function OnboardingScreen() {
           <FeatureItem emoji="🎯" text="매일 시장을 예측하고 복기하며 감각 키우기" />
           <FeatureItem emoji="💊" text="내 포트폴리오 맞춤 진단과 처방" />
         </View>
+        <TouchableOpacity
+          style={[styles.quickStartButton, { borderColor: colors.primary }]}
+          onPress={handleQuickStart}
+          activeOpacity={0.8}
+        >
+          <Text style={[styles.quickStartButtonText, { color: colors.primary }]}>
+            10초로 빠른 시작
+          </Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -877,7 +883,7 @@ export default function OnboardingScreen() {
         {renderProgressDots()}
 
         <TouchableOpacity onPress={handleSkip} style={styles.topBarButton}>
-          <Text style={[styles.skipButtonText, { color: colors.textTertiary }]}>건너뛰기</Text>
+          <Text style={[styles.skipButtonText, { color: colors.textTertiary }]}>빠른 시작</Text>
         </TouchableOpacity>
       </View>
 
@@ -948,6 +954,17 @@ const styles = StyleSheet.create({
   },
   skipButtonText: {
     fontSize: 15,
+  },
+  quickStartButton: {
+    marginTop: 24,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 18,
+  },
+  quickStartButtonText: {
+    fontSize: 15,
+    fontWeight: '700',
   },
   progressDots: {
     flexDirection: 'row',

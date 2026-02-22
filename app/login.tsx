@@ -19,14 +19,12 @@ import {
   KeyboardAvoidingView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
 import { useAuth, OAuthProvider } from '../src/context/AuthContext';
 import { SIZES } from '../src/styles/theme';
 import { useTheme } from '../src/hooks/useTheme';
 import queryClient from '../src/services/queryClient';
 
 export default function LoginScreen() {
-  const router = useRouter();
   const { signIn, signUp, signInWithOAuth, signInWithApple } = useAuth();
   const { colors } = useTheme();
 
@@ -68,8 +66,8 @@ export default function LoginScreen() {
       } else {
         await signIn(email, password);
         // 이전 세션의 캐시된 데이터 제거 후 새로 로드
+        // 라우팅은 AuthGate가 단일 처리 (온보딩/메인 분기)
         queryClient.clear();
-        router.replace('/(tabs)');
       }
     } catch (error: any) {
       const errorMessage = error?.message || '인증 실패';
@@ -98,8 +96,8 @@ export default function LoginScreen() {
     try {
       await signInWithOAuth(provider);
       // 이전 세션의 캐시된 데이터 제거 후 새로 로드
+      // 라우팅은 AuthGate가 단일 처리
       queryClient.clear();
-      router.replace('/(tabs)');
     } catch (error: any) {
       const errorMessage = error?.message || '';
 
@@ -121,8 +119,8 @@ export default function LoginScreen() {
     try {
       await signInWithApple();
       // 이전 세션의 캐시된 데이터 제거 후 새로 로드
+      // 라우팅은 AuthGate가 단일 처리
       queryClient.clear();
-      router.replace('/(tabs)');
     } catch (error: any) {
       const errorMessage = error?.message || 'Apple 로그인 실패';
 

@@ -26,6 +26,10 @@ interface CommentItemProps {
   onReply: (parentId: string) => void;
   onAuthorPress: (userId: string) => void;
   onReport?: (commentId: string) => void;
+  isBestAnswer?: boolean;
+  canSelectBest?: boolean;
+  onSelectBest?: (commentId: string) => void;
+  isSelectingBest?: boolean;
   isUpdating?: boolean;
   isDeleting?: boolean;
 }
@@ -40,6 +44,10 @@ export default function CommentItem({
   onReply,
   onAuthorPress,
   onReport,
+  isBestAnswer = false,
+  canSelectBest = false,
+  onSelectBest,
+  isSelectingBest = false,
   isUpdating = false,
   isDeleting = false,
 }: CommentItemProps) {
@@ -116,6 +124,12 @@ export default function CommentItem({
               {comment.display_tag}
             </Text>
           </TouchableOpacity>
+          {isBestAnswer && (
+            <View style={[styles.bestAnswerBadge, { backgroundColor: colors.primary + '18' }]}>
+              <Ionicons name="ribbon" size={11} color={colors.primary} />
+              <Text style={[styles.bestAnswerText, { color: colors.primary }]}>베스트 답변</Text>
+            </View>
+          )}
           <Text style={[styles.time, { color: colors.textSecondary }]}>{getRelativeTime(comment.created_at)}</Text>
           {comment.updated_at && (
             <Text style={[styles.edited, { color: colors.textSecondary }]}>(수정됨)</Text>
@@ -180,6 +194,30 @@ export default function CommentItem({
               >
                 <Ionicons name="chatbubble-outline" size={14} color={colors.textSecondary} />
                 <Text style={[styles.actionText, { color: colors.textSecondary }]}>답글</Text>
+              </TouchableOpacity>
+            )}
+
+            {/* 베스트 답변 채택 (게시글 작성자만) */}
+            {!isReply && canSelectBest && onSelectBest && (
+              <TouchableOpacity
+                style={styles.actionButton}
+                onPress={() => onSelectBest(comment.id)}
+                disabled={isSelectingBest}
+              >
+                {isSelectingBest ? (
+                  <ActivityIndicator size="small" color={colors.primary} />
+                ) : (
+                  <>
+                    <Ionicons
+                      name={isBestAnswer ? 'ribbon' : 'ribbon-outline'}
+                      size={14}
+                      color={isBestAnswer ? colors.primary : colors.textSecondary}
+                    />
+                    <Text style={[styles.actionText, { color: isBestAnswer ? colors.primary : colors.textSecondary }]}>
+                      {isBestAnswer ? '채택됨' : '채택'}
+                    </Text>
+                  </>
+                )}
               </TouchableOpacity>
             )}
 
@@ -268,6 +306,18 @@ const styles = StyleSheet.create({
   },
   time: {
     fontSize: 11,
+  },
+  bestAnswerBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    borderRadius: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  bestAnswerText: {
+    fontSize: 10,
+    fontWeight: '700',
   },
   edited: {
     fontSize: 11,

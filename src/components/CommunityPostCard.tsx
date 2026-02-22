@@ -22,6 +22,8 @@ import {
   getTierIcon,
   HOLDING_TYPE_COLORS,
   getRelativeTime,
+  isBeginnerQuestion,
+  stripBeginnerQuestionPrefix,
 } from '../utils/communityUtils';
 
 interface CommunityPostCardProps {
@@ -44,6 +46,8 @@ export default function CommunityPostCard({
   const tierIcon = getTierIcon(tier);
   const categoryInfo = post.category ? CATEGORY_INFO[post.category] : null;
   const holdings = (post.top_holdings || []).slice(0, 5);
+  const beginnerQuestion = isBeginnerQuestion(post.content);
+  const displayContent = stripBeginnerQuestionPrefix(post.content);
 
   return (
     <TouchableOpacity
@@ -88,6 +92,12 @@ export default function CommunityPostCard({
                   </Text>
                 </View>
               )}
+              {beginnerQuestion && (
+                <View style={styles.beginnerBadge}>
+                  <Ionicons name="help-circle" size={10} color="#2E7D32" />
+                  <Text style={styles.beginnerBadgeLabel}>초보 질문</Text>
+                </View>
+              )}
             </View>
             {post.asset_mix && (
               <Text style={styles.assetMix}>{post.asset_mix}</Text>
@@ -121,7 +131,7 @@ export default function CommunityPostCard({
       )}
 
       {/* 본문 */}
-      <Text style={styles.content} numberOfLines={5}>{post.content}</Text>
+      <Text style={styles.content} numberOfLines={5}>{displayContent}</Text>
 
       {/* 첨부 이미지 썸네일 (최대 3장 가로 스크롤) */}
       {post.image_urls && post.image_urls.length > 0 && (
@@ -226,6 +236,20 @@ const styles = StyleSheet.create({
   categoryLabel: {
     fontSize: 11,
     fontWeight: '600',
+  },
+  beginnerBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    backgroundColor: 'rgba(76, 175, 80, 0.18)',
+  },
+  beginnerBadgeLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#2E7D32',
   },
 
   // ── 보유종목 칩 ──

@@ -83,28 +83,22 @@ export const useGatherings = (category?: Gathering['category']) => {
   return useQuery({
     queryKey: ['gatherings', category],
     queryFn: async () => {
-      try {
-        let query = supabase
-          .from('gatherings')
-          .select('*')
-          .in('status', ['open', 'closed']) // 취소/완료 제외
-          .order('event_date', { ascending: true });
+      let query = supabase
+        .from('gatherings')
+        .select('*')
+        .in('status', ['open', 'closed']) // 취소/완료 제외
+        .order('event_date', { ascending: true });
 
-        if (category) {
-          query = query.eq('category', category);
-        }
-
-        const { data, error } = await query;
-
-        if (error) {
-          console.warn('[Gatherings] 모임 목록 조회 실패 (빈 배열 반환):', error.message);
-          return [] as Gathering[];
-        }
-        return data as Gathering[];
-      } catch (err) {
-        console.warn('[Gatherings] 모임 목록 조회 예외:', err);
-        return [] as Gathering[];
+      if (category) {
+        query = query.eq('category', category);
       }
+
+      const { data, error } = await query;
+      if (error) {
+        throw new Error(error.message || '모임 목록 조회에 실패했습니다.');
+      }
+
+      return data as Gathering[];
     },
     staleTime: 30000, // 30초 캐시
   });

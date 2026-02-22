@@ -60,6 +60,21 @@ export const HOLDING_TYPE_COLORS: Record<string, string> = {
   other: '#888888',
 };
 
+/** 초보 질문 태그 프리픽스 */
+export const BEGINNER_QUESTION_PREFIX = '[초보질문]';
+
+/** 초보 질문 여부 판단 */
+export const isBeginnerQuestion = (content: string | null | undefined): boolean => {
+  if (!content) return false;
+  return content.trim().startsWith(BEGINNER_QUESTION_PREFIX);
+};
+
+/** 초보 질문 태그 제거 (화면 표시용) */
+export const stripBeginnerQuestionPrefix = (content: string): string => {
+  if (!isBeginnerQuestion(content)) return content;
+  return content.trim().replace(BEGINNER_QUESTION_PREFIX, '').trim();
+};
+
 /** 상대적 시간 표시 ("3분 전", "2시간 전", "3일 전") */
 export const getRelativeTime = (dateString: string): string => {
   const date = new Date(dateString);

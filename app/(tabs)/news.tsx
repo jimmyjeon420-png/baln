@@ -1,15 +1,13 @@
 /**
- * 뉴스 탭 — 시장 뉴스 실시간 피드
+ * 뉴스 탭 — 신선도 우선 + 내 자산 영향도 피드
  *
- * 역할: 뉴스룸 — 실시간 뉴스를 무한 스크롤로 보여주는 탭
- * - 상단: 카테고리 필터 탭 (전체/암호화폐/주식/거시경제/내 자산)
- * - 헤더: "마지막 업데이트: HH:MM" 표시
- * - PiCK 섹션: 수평 스크롤 AI 추천 뉴스
- * - 뉴스 리스트: FlatList + 무한 스크롤 + Pull-to-refresh
- * - 뉴스 탭 → 상세 바텀 시트 (포트폴리오 영향도 표시)
+ * 목표:
+ * - 실시간 탭은 "최근 뉴스"만 노출 (양보다 신선도)
+ * - PiCK 뉴스 + 내 자산 뉴스 탭 분리
+ * - 각 뉴스에 "내 포트폴리오 영향도" 표시
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -18,7 +16,8 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
-  ScrollView,
+  Linking,
+  Image,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -27,25 +26,181 @@ import {
   useMarketNews,
   usePickNews,
   formatUpdateTime,
-  type NewsCategoryFilter,
+  getTimeAgo,
+  triggerNewsCollectionIfNeeded,
   type MarketNewsItem,
 } from '../../src/hooks/useMarketNews';
+import { useNewsPortfolioMatch, computeNewsPortfolioMatch } from '../../src/hooks/useNewsPortfolioMatch';
 import { useSharedPortfolio } from '../../src/hooks/useSharedPortfolio';
-import NewsCard from '../../src/components/news/NewsCard';
 
 // ============================================================================
-// 카테고리 설정 — "내 자산" 필터 추가
+// 탭/정책
 // ============================================================================
 
-type ExtendedFilter = NewsCategoryFilter | 'portfolio';
+type NewsMode = 'realtime' | 'pick' | 'my_assets';
 
-const CATEGORY_TABS: { key: ExtendedFilter; label: string; icon: string; color: string }[] = [
-  { key: 'all', label: '전체', icon: 'apps-outline', color: '#4CAF50' },
-  { key: 'portfolio', label: '내 자산', icon: 'pie-chart-outline', color: '#AB47BC' },
-  { key: 'crypto', label: '암호화폐', icon: 'logo-bitcoin', color: '#F7931A' },
-  { key: 'stock', label: '주식', icon: 'trending-up', color: '#4CAF50' },
-  { key: 'macro', label: '거시경제', icon: 'globe-outline', color: '#29B6F6' },
+const MODE_TABS: { key: NewsMode; label: string }[] = [
+  { key: 'realtime', label: '실시간 뉴스' },
+  { key: 'pick', label: 'PiCK 뉴스' },
+  { key: 'my_assets', label: '내 자산 뉴스' },
 ];
+
+const REALTIME_WINDOW_MS = 24 * 60 * 60 * 1000; // 24시간
+const PICK_WINDOW_MS = 48 * 60 * 60 * 1000; // 48시간
+const MAX_REALTIME_ITEMS = 30;
+const MAX_PICK_ITEMS = 20;
+const MAX_ASSET_NEWS_ITEMS = 30;
+
+function parseSafeDate(iso: string): Date {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? new Date() : d;
+}
+
+function normalizeTitleForDedupe(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/\[[^\]]*]/g, ' ')
+    .replace(/[“”"'`]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function isSameDay(aIso: string, bIso: string): boolean {
+  const a = parseSafeDate(aIso);
+  const b = parseSafeDate(bIso);
+  return a.getFullYear() === b.getFullYear()
+    && a.getMonth() === b.getMonth()
+    && a.getDate() === b.getDate();
+}
+
+function formatDayLabel(iso: string): string {
+  const date = parseSafeDate(iso);
+  return date.toLocaleDateString('ko-KR', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    weekday: 'short',
+  });
+}
+
+function formatTimeLabel(iso: string): string {
+  const date = parseSafeDate(iso);
+  const hh = date.getHours().toString().padStart(2, '0');
+  const mm = date.getMinutes().toString().padStart(2, '0');
+  return `${hh}:${mm}`;
+}
+
+function getExposureTone(totalExposure: number): { label: string; color: string } {
+  if (totalExposure >= 30) return { label: '높음', color: '#E53935' };
+  if (totalExposure >= 10) return { label: '중간', color: '#FB8C00' };
+  if (totalExposure > 0) return { label: '낮음', color: '#43A047' };
+  return { label: '낮음', color: '#9E9E9E' };
+}
+
+function getImpactDirection(score: number | null | undefined): string {
+  if (!score || score === 0) return '중립';
+  return score > 0 ? '상승 압력' : '하락 압력';
+}
+
+function openNews(item: MarketNewsItem) {
+  const url = item.source_url;
+  if (!url) return;
+
+  Linking.openURL(url).catch(() => {
+    const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(item.title)}`;
+    Linking.openURL(searchUrl).catch(() => {});
+  });
+}
+
+interface TimelineNewsItemProps {
+  item: MarketNewsItem;
+  showDate: boolean;
+  isLast: boolean;
+}
+
+function TimelineNewsItem({ item, showDate, isLast }: TimelineNewsItemProps) {
+  const { colors } = useTheme();
+  const { totalExposure, hasMatch } = useNewsPortfolioMatch(item.tags ?? []);
+  const exposurePercent = Math.max(0, Math.round(totalExposure));
+  const impactDirection = getImpactDirection(item.impact_score);
+  const impactIndex = hasMatch
+    ? Math.round((exposurePercent * Math.abs(item.impact_score ?? 0)) / 2)
+    : 0;
+  const tone = getExposureTone(impactIndex);
+  const sourceName = item.source_name || '출처 미상';
+
+  const impactText = hasMatch
+    ? `내 자산 영향지수 ${impactIndex}/100 · ${impactDirection} · 노출 ${exposurePercent}%`
+    : '내 자산 영향 낮음 · 직접 연관된 보유 자산 없음';
+
+  return (
+    <View style={styles.timelineRow}>
+      <View style={styles.timeCol}>
+        <View style={[styles.timeChip, { backgroundColor: colors.surfaceLight }]}>
+          <Text style={[styles.timeChipText, { color: colors.textSecondary }]}>{formatTimeLabel(item.published_at)}</Text>
+        </View>
+        {!isLast && <View style={[styles.timelineLine, { backgroundColor: colors.border }]} />}
+      </View>
+
+      <TouchableOpacity
+        style={[styles.newsBody, { borderBottomColor: colors.border }]}
+        activeOpacity={0.75}
+        onPress={() => openNews(item)}
+      >
+        {showDate && (
+          <Text style={[styles.dateText, { color: colors.textTertiary }]}>
+            {formatDayLabel(item.published_at)}
+          </Text>
+        )}
+
+        <View style={styles.mainRow}>
+          <View style={styles.textCol}>
+            <Text style={[styles.newsTitle, { color: colors.textPrimary }]} numberOfLines={2}>
+              {item.title}
+            </Text>
+
+            {item.tags && item.tags.length > 0 && (
+              <View style={styles.tagsRow}>
+                {item.tags.slice(0, 3).map((tag) => (
+                  <View key={tag} style={[styles.tagChip, { backgroundColor: colors.surfaceLight }]}>
+                    <Text style={[styles.tagText, { color: colors.textSecondary }]}>{tag}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            <View style={styles.metaRow}>
+              <Text style={[styles.metaText, { color: colors.textTertiary }]}>{sourceName}</Text>
+              <View style={[styles.dot, { backgroundColor: colors.textTertiary }]} />
+              <Text style={[styles.metaText, { color: colors.textTertiary }]}>{getTimeAgo(item.published_at)}</Text>
+            </View>
+
+            <View style={[styles.impactRow, { backgroundColor: hasMatch ? `${tone.color}18` : colors.surfaceLight }]}>
+              <Ionicons name="pie-chart-outline" size={12} color={hasMatch ? tone.color : colors.textTertiary} />
+              <Text
+                style={[
+                  styles.impactText,
+                  { color: hasMatch ? tone.color : colors.textSecondary },
+                ]}
+                numberOfLines={1}
+              >
+                {impactText}
+              </Text>
+            </View>
+          </View>
+
+          <View style={[styles.thumbWrap, { backgroundColor: colors.surfaceLight }]}>
+            {item.thumbnail_url ? (
+              <Image source={{ uri: item.thumbnail_url }} style={styles.thumbImage} resizeMode="cover" />
+            ) : (
+              <Ionicons name="newspaper-outline" size={22} color={colors.textTertiary} />
+            )}
+          </View>
+        </View>
+      </TouchableOpacity>
+    </View>
+  );
+}
 
 // ============================================================================
 // 메인 화면
@@ -54,37 +209,106 @@ const CATEGORY_TABS: { key: ExtendedFilter; label: string; icon: string; color: 
 export default function NewsTabScreen() {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
-  const [category, setCategory] = useState<ExtendedFilter>('all');
+  const { assets, liquidTotal } = useSharedPortfolio();
+  const [mode, setMode] = useState<NewsMode>('realtime');
+  const [isRecoveringNews, setIsRecoveringNews] = useState(false);
+  const autoRecoveryLockRef = useRef(false);
 
-  // "내 자산" 필터용 포트폴리오 데이터
-  const { assets } = useSharedPortfolio();
-  const portfolioTickers = useMemo(() => {
-    const tickers = new Set<string>();
-    for (const asset of assets) {
-      if (asset.ticker && !asset.ticker.startsWith('RE_')) {
-        tickers.add(asset.ticker.toLowerCase());
-        tickers.add((asset.name || '').toLowerCase());
-      }
-    }
-    return tickers;
-  }, [assets]);
-
-  // 뉴스 목록 (무한 스크롤) — "내 자산" 필터 시 'all'로 조회 후 클라이언트 필터
-  const apiCategory: NewsCategoryFilter = category === 'portfolio' ? 'all' : category;
   const {
     data,
     isLoading,
+    isError,
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
     refetch,
     dataUpdatedAt,
-  } = useMarketNews(apiCategory);
+  } = useMarketNews('all');
 
-  // AI PiCK 뉴스
-  const { data: pickNews } = usePickNews();
+  const { data: pickNews = [] } = usePickNews();
 
-  // 새로고침
+  const allNews = useMemo(() => {
+    const rows = data?.pages?.flatMap((page) => page) ?? [];
+    const deduped = new Map<string, MarketNewsItem>();
+
+    for (const item of rows) {
+      const normalizedTitle = normalizeTitleForDedupe(item.title || '');
+      const normalizedUrl = (item.source_url || '').trim().toLowerCase();
+      const key = normalizedTitle || normalizedUrl || item.id;
+      const existing = deduped.get(key);
+
+      if (!existing) {
+        deduped.set(key, item);
+        continue;
+      }
+
+      const currentPublishedAt = parseSafeDate(item.published_at).getTime();
+      const existingPublishedAt = parseSafeDate(existing.published_at).getTime();
+      if (currentPublishedAt > existingPublishedAt) {
+        deduped.set(key, item);
+      }
+    }
+
+    return Array.from(deduped.values())
+      .sort((a, b) => parseSafeDate(b.published_at).getTime() - parseSafeDate(a.published_at).getTime());
+  }, [data]);
+
+  const realtimeNews = useMemo(() => {
+    const now = Date.now();
+    return allNews
+      .filter((item) => now - parseSafeDate(item.published_at).getTime() <= REALTIME_WINDOW_MS)
+      .slice(0, MAX_REALTIME_ITEMS);
+  }, [allNews]);
+
+  const pickList = useMemo(() => {
+    const now = Date.now();
+    return (pickNews ?? [])
+      .filter((item) => now - parseSafeDate(item.published_at).getTime() <= PICK_WINDOW_MS)
+      .sort((a, b) => parseSafeDate(b.published_at).getTime() - parseSafeDate(a.published_at).getTime())
+      .slice(0, MAX_PICK_ITEMS);
+  }, [pickNews]);
+
+  const myAssetNews = useMemo(() => {
+    return allNews
+      .filter((item) => computeNewsPortfolioMatch(item.tags ?? [], assets, liquidTotal).hasMatch)
+      .slice(0, MAX_ASSET_NEWS_ITEMS);
+  }, [allNews, assets, liquidTotal]);
+
+  const activeNews = useMemo(() => {
+    if (mode === 'pick') return pickList;
+    if (mode === 'my_assets') return myAssetNews;
+    return realtimeNews;
+  }, [mode, pickList, myAssetNews, realtimeNews]);
+
+  const latestRealtimePublishedAt = realtimeNews[0]?.published_at ?? null;
+
+  // 실시간 탭에서 뉴스가 없거나 오래되면 Task J 자동 동기화
+  useEffect(() => {
+    if (mode !== 'realtime' || isLoading || autoRecoveryLockRef.current) return;
+
+    const isEmpty = realtimeNews.length === 0;
+    const isStale = latestRealtimePublishedAt
+      ? (Date.now() - parseSafeDate(latestRealtimePublishedAt).getTime()) > (90 * 60 * 1000)
+      : true;
+
+    if (!isEmpty && !isStale) return;
+
+    autoRecoveryLockRef.current = true;
+    setIsRecoveringNews(true);
+
+    (async () => {
+      const result = await triggerNewsCollectionIfNeeded(isEmpty ? 'empty' : 'stale');
+      if (result.triggered || result.skippedByCooldown) {
+        await refetch();
+      }
+    })().finally(() => {
+      setIsRecoveringNews(false);
+      setTimeout(() => {
+        autoRecoveryLockRef.current = false;
+      }, 3000);
+    });
+  }, [mode, isLoading, realtimeNews.length, latestRealtimePublishedAt, refetch]);
+
   const [refreshing, setRefreshing] = useState(false);
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -92,164 +316,109 @@ export default function NewsTabScreen() {
     setRefreshing(false);
   }, [refetch]);
 
-  // 무한 스크롤
-  const handleLoadMore = () => {
+  const handleLoadMore = useCallback(() => {
+    if (mode === 'pick') return;
     if (hasNextPage && !isFetchingNextPage) {
       fetchNextPage();
     }
-  };
+  }, [mode, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  // 뉴스 평탄화 + "내 자산" 필터
-  const newsList = useMemo(() => {
-    const allNews = data?.pages?.flatMap((page) => page) ?? [];
-    if (category !== 'portfolio') return allNews;
-
-    // 내 자산 관련 뉴스만 필터
-    return allNews.filter((news) => {
-      if (!news.tags || news.tags.length === 0) return false;
-      return news.tags.some((tag) => {
-        const tagLower = tag.toLowerCase();
-        return portfolioTickers.has(tagLower);
-      });
-    });
-  }, [data, category, portfolioTickers]);
-
-  // 마지막 업데이트 시간
   const updateTimeStr = dataUpdatedAt ? formatUpdateTime(new Date(dataUpdatedAt)) : '';
 
-  // ---------------------------------------------------------------------------
-  // 렌더: 카테고리 필터 탭
-  // ---------------------------------------------------------------------------
-  const renderCategoryTabs = () => (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.tabsRow}
-    >
-      {CATEGORY_TABS.map((tab) => {
-        const isActive = category === tab.key;
-        return (
-          <TouchableOpacity
-            key={tab.key}
-            style={[
-              styles.tab,
-              { backgroundColor: colors.surface, borderColor: colors.border },
-              isActive && { backgroundColor: tab.color + '20', borderColor: tab.color },
-            ]}
-            onPress={() => setCategory(tab.key)}
-          >
-            <Ionicons
-              name={tab.icon as any}
-              size={14}
-              color={isActive ? tab.color : colors.textSecondary}
-            />
-            <Text
-              style={[
-                styles.tabLabel,
-                { color: colors.textSecondary },
-                isActive && { color: tab.color, fontWeight: '700' },
-              ]}
-            >
-              {tab.label}
-            </Text>
-          </TouchableOpacity>
-        );
-      })}
-    </ScrollView>
-  );
-
-  // ---------------------------------------------------------------------------
-  // 렌더: PiCK 섹션 (수평 스크롤)
-  // ---------------------------------------------------------------------------
-  const renderPickSection = () => {
-    if (!pickNews || pickNews.length === 0) return null;
-
-    return (
-      <View style={styles.pickSection}>
-        <View style={styles.pickHeader}>
-          <Ionicons name="flash" size={18} color="#FFC107" />
-          <Text style={[styles.pickTitle, { color: colors.textPrimary }]}>
-            AI PiCK
-          </Text>
-          <Text style={[styles.pickSubtitle, { color: colors.textSecondary }]}>
-            오늘의 핵심 뉴스
-          </Text>
-        </View>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.pickScroll}
-        >
-          {pickNews.map((item) => (
-            <View key={item.id} style={[styles.pickCard, { backgroundColor: colors.surface }]}>
-              <NewsCard item={item} />
-            </View>
-          ))}
-        </ScrollView>
-      </View>
-    );
-  };
-
-  // ---------------------------------------------------------------------------
-  // 렌더: 뉴스 아이템
-  // ---------------------------------------------------------------------------
-  const renderNewsItem = ({ item }: { item: MarketNewsItem }) => (
-    <View style={styles.newsItemWrapper}>
-      <NewsCard item={item} />
-    </View>
-  );
-
-  // ---------------------------------------------------------------------------
-  // 메인 렌더
-  // ---------------------------------------------------------------------------
   return (
-    <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.background }]}>
-      {/* 헤더 */}
+    <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.background }]}> 
       <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>시장 뉴스</Text>
-          <View style={[styles.liveBadge, { backgroundColor: colors.primary }]}>
-            <Text style={styles.liveBadgeText}>LIVE</Text>
-          </View>
-        </View>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>시장 뉴스</Text>
         {updateTimeStr ? (
-          <Text style={[styles.updateTime, { color: colors.textTertiary }]}>
-            {updateTimeStr} 업데이트
-          </Text>
+          <Text style={[styles.updateTime, { color: colors.textTertiary }]}>{updateTimeStr} 업데이트</Text>
         ) : null}
       </View>
 
-      {/* 카테고리 필터 */}
-      <View style={[styles.filterSection, { borderBottomColor: colors.border }]}>
-        {renderCategoryTabs()}
+      <View style={[styles.modeTabs, { borderBottomColor: colors.border }]}> 
+        {MODE_TABS.map((tab) => {
+          const active = mode === tab.key;
+          return (
+            <TouchableOpacity
+              key={tab.key}
+              style={styles.modeTabButton}
+              onPress={() => setMode(tab.key)}
+            >
+              <Text style={[styles.modeTabText, { color: active ? colors.textPrimary : colors.textTertiary }]}>
+                {tab.label}
+              </Text>
+              <View
+                style={[
+                  styles.modeTabUnderline,
+                  { backgroundColor: active ? colors.textPrimary : 'transparent' },
+                ]}
+              />
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
-      {/* 뉴스 리스트 */}
+      {isRecoveringNews && (
+        <View style={[styles.recoveringBanner, { backgroundColor: `${colors.primary}14`, borderBottomColor: colors.border }]}> 
+          <ActivityIndicator size="small" color={colors.primary} />
+          <Text style={[styles.recoveringText, { color: colors.textSecondary }]}>최신 뉴스를 동기화하고 있습니다...</Text>
+        </View>
+      )}
+
+      {mode === 'realtime' && (
+        <View style={[styles.focusBanner, { borderBottomColor: colors.border }]}> 
+          <Ionicons name="time-outline" size={14} color={colors.textTertiary} />
+          <Text style={[styles.focusText, { color: colors.textSecondary }]}>신선도 우선: 최근 24시간 뉴스만 표시</Text>
+        </View>
+      )}
+
+      {mode === 'my_assets' && (
+        <View style={[styles.focusBanner, { borderBottomColor: colors.border }]}>
+          <Ionicons name="pie-chart-outline" size={14} color={colors.textTertiary} />
+          <Text style={[styles.focusText, { color: colors.textSecondary }]}>보유 비중과 뉴스 태그를 매칭해 관련 뉴스만 표시</Text>
+        </View>
+      )}
+
       {isLoading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
-      ) : newsList.length === 0 ? (
+      ) : isError && activeNews.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Ionicons name="newspaper-outline" size={48} color={colors.textTertiary} />
+          <Ionicons name="cloud-offline-outline" size={46} color={colors.textTertiary} />
+          <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>뉴스를 불러오지 못했습니다</Text>
+          <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>네트워크를 확인하고 다시 시도해 주세요</Text>
+          <TouchableOpacity
+            style={[styles.retryButton, { backgroundColor: colors.primary }]}
+            onPress={onRefresh}
+          >
+            <Text style={styles.retryButtonText}>다시 시도</Text>
+          </TouchableOpacity>
+        </View>
+      ) : activeNews.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Ionicons name="newspaper-outline" size={46} color={colors.textTertiary} />
           <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
-            {category === 'portfolio' ? '관련 뉴스가 없습니다' : '뉴스가 없습니다'}
+            {mode === 'my_assets' ? '내 자산과 연결된 뉴스가 없습니다' : '표시할 뉴스가 없습니다'}
           </Text>
           <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
-            {category === 'portfolio'
-              ? '보유 자산과 관련된 뉴스가 아직 없어요'
-              : '잠시 후 다시 확인해주세요'}
+            {mode === 'my_assets'
+              ? '보유 자산 태그와 매칭되는 뉴스가 올라오면 자동으로 표시됩니다'
+              : '신선한 뉴스가 들어오면 자동으로 갱신됩니다'}
           </Text>
         </View>
       ) : (
         <FlatList
-          data={newsList}
-          keyExtractor={(item, index) => `${item.id}-${index}`}
-          renderItem={renderNewsItem}
-          ListHeaderComponent={category === 'all' ? renderPickSection : undefined}
+          data={activeNews}
+          keyExtractor={(item, index) => `${item.id}-${item.source_url}-${index}`}
+          renderItem={({ item, index }) => {
+            const prev = index > 0 ? activeNews[index - 1] : null;
+            const showDate = !prev || !isSameDay(item.published_at, prev.published_at);
+            const isLast = index === activeNews.length - 1;
+            return <TimelineNewsItem item={item} showDate={showDate} isLast={isLast} />;
+          }}
           contentContainerStyle={styles.listContent}
           onEndReached={handleLoadMore}
-          onEndReachedThreshold={0.3}
+          onEndReachedThreshold={0.35}
           ListFooterComponent={
             isFetchingNextPage ? (
               <View style={styles.footerLoader}>
@@ -266,14 +435,9 @@ export default function NewsTabScreen() {
           }
         />
       )}
-
     </View>
   );
 }
-
-// ============================================================================
-// 스타일
-// ============================================================================
 
 const styles = StyleSheet.create({
   container: {
@@ -283,117 +447,210 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+    paddingHorizontal: 18,
+    paddingTop: 14,
+    paddingBottom: 10,
   },
   headerTitle: {
-    fontSize: 25,
+    fontSize: 28,
     fontWeight: '800',
-  },
-  liveBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  liveBadgeText: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: '#000',
+    letterSpacing: -0.4,
   },
   updateTime: {
     fontSize: 12,
   },
 
-  // 필터
-  filterSection: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+  modeTabs: {
+    flexDirection: 'row',
+    paddingHorizontal: 14,
     borderBottomWidth: 1,
   },
-  tabsRow: {
-    flexDirection: 'row',
+  modeTabButton: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 12,
     gap: 8,
   },
-  tab: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-  },
-  tabLabel: {
-    fontSize: 14,
-  },
-
-  // PiCK 섹션
-  pickSection: {
-    paddingTop: 16,
-    paddingBottom: 8,
-  },
-  pickHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 16,
-    marginBottom: 12,
-  },
-  pickTitle: {
+  modeTabText: {
     fontSize: 17,
     fontWeight: '700',
   },
-  pickSubtitle: {
-    fontSize: 13,
-  },
-  pickScroll: {
-    paddingHorizontal: 16,
-    gap: 10,
-  },
-  pickCard: {
-    width: 280,
-    borderRadius: 14,
+  modeTabUnderline: {
+    width: 56,
+    height: 3,
+    borderRadius: 2,
   },
 
-  // 리스트
+  recoveringBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+  },
+  recoveringText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+
+  focusBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+  },
+  focusText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+
   listContent: {
+    paddingHorizontal: 12,
     paddingBottom: 120,
   },
-  newsItemWrapper: {
-    paddingHorizontal: 16,
-  },
   footerLoader: {
-    paddingVertical: 16,
     alignItems: 'center',
+    paddingVertical: 12,
   },
 
-  // 로딩
+  timelineRow: {
+    flexDirection: 'row',
+  },
+  timeCol: {
+    width: 58,
+    alignItems: 'center',
+  },
+  timeChip: {
+    marginTop: 16,
+    borderRadius: 16,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  timeChipText: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  timelineLine: {
+    width: 2,
+    flex: 1,
+    marginTop: 8,
+    borderRadius: 2,
+  },
+
+  newsBody: {
+    flex: 1,
+    paddingTop: 12,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+  },
+  dateText: {
+    textAlign: 'right',
+    fontSize: 13,
+    marginBottom: 8,
+    paddingRight: 4,
+  },
+  mainRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  textCol: {
+    flex: 1,
+    gap: 8,
+  },
+  newsTitle: {
+    fontSize: 19,
+    lineHeight: 29,
+    fontWeight: '700',
+    letterSpacing: -0.3,
+  },
+  tagsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  tagChip: {
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  tagText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  metaText: {
+    fontSize: 12,
+  },
+  dot: {
+    width: 3,
+    height: 3,
+    borderRadius: 2,
+  },
+  impactRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderRadius: 8,
+    paddingHorizontal: 9,
+    paddingVertical: 6,
+    marginTop: 2,
+  },
+  impactText: {
+    fontSize: 12,
+    fontWeight: '700',
+    flex: 1,
+  },
+
+  thumbWrap: {
+    width: 96,
+    height: 96,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    marginTop: 2,
+  },
+  thumbImage: {
+    width: '100%',
+    height: '100%',
+  },
+
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-
-  // 빈 화면
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 32,
+    paddingHorizontal: 24,
+    gap: 10,
   },
   emptyTitle: {
-    fontSize: 19,
+    fontSize: 18,
     fontWeight: '700',
-    marginTop: 8,
   },
   emptySubtitle: {
-    fontSize: 15,
+    fontSize: 14,
     textAlign: 'center',
+  },
+  retryButton: {
+    marginTop: 8,
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  retryButtonText: {
+    color: '#000',
+    fontSize: 14,
+    fontWeight: '700',
   },
 });

@@ -29,7 +29,7 @@ export default function FreePeriodBanner({ compact = false }: FreePeriodBannerPr
       <View style={styles.compactBanner}>
         <Ionicons name="gift" size={14} color="#4CAF50" />
         <Text style={styles.compactText}>
-          창립 멤버 혜택 — 5/31까지 모든 기능 무료!
+          창립 멤버 혜택 — 2026년 5월 31일까지 모든 기능 무료!
         </Text>
         <View style={styles.dDayBadge}>
           <Text style={styles.dDayText}>D-{daysLeft}</Text>
@@ -50,7 +50,7 @@ export default function FreePeriodBanner({ compact = false }: FreePeriodBannerPr
       </View>
 
       <Text style={styles.fullSubtitle}>
-        5/31까지 모든 기능 무료!
+        2026년 5월 31일까지 모든 기능 무료!
       </Text>
 
       {/* 혜택 목록 */}

@@ -1,0 +1,3 @@
+-- Remote DB에 이미 적용된 migration version(20260222020400)과
+-- 로컬 migration history를 동기화하기 위한 placeholder입니다.
+-- 실제 스키마 변경은 원격에 선적용되어 있으며, 추후 필요 시 상세 SQL로 대체합니다.

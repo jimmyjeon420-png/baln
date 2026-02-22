@@ -38,8 +38,7 @@ import { DiagnosisSkeletonLoader } from '../../src/components/SkeletonLoader';
 import { useSharedPortfolio } from '../../src/hooks/useSharedPortfolio';
 import { useSharedAnalysis } from '../../src/hooks/useSharedAnalysis';
 import { usePeerPanicScore, getAssetBracket } from '../../src/hooks/usePortfolioSnapshots';
-import { calculateHealthScore, DALIO_TARGET, BUFFETT_TARGET, CATHIE_WOOD_TARGET, KOSTOLANY_TARGETS, DEFAULT_TARGET } from '../../src/services/rebalanceScore';
-import type { AssetCategory } from '../../src/services/rebalanceScore';
+import { calculateHealthScore, DALIO_TARGET, BUFFETT_TARGET, CATHIE_WOOD_TARGET, KOSTOLANY_TARGETS, DEFAULT_TARGET, type AssetCategory } from '../../src/services/rebalanceScore';
 import FreePeriodBanner from '../../src/components/FreePeriodBanner';
 import { usePrices } from '../../src/hooks/usePrices';
 import { AssetType } from '../../src/types/asset';
@@ -129,6 +128,7 @@ const DISCLAIMER_STORAGE_KEY = '@baln:disclaimer_dismissed';
 async function runAnalysisDiagnostic() {
   const results: string[] = [];
   const startTotal = Date.now();
+  const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
 
   // [이승건: 캐시 무효화 단축키 추가]
   // 맥박 버튼 2초 길게 누르면 캐시 삭제
@@ -136,10 +136,13 @@ async function runAnalysisDiagnostic() {
   // 1. Supabase raw fetch 테스트 (SDK 우회)
   try {
     const t1 = Date.now();
+    if (!anonKey) {
+      results.push('1. Supabase fetch: SKIP (anon key missing)');
+    } else {
     const res = await Promise.race([
       fetch('https://ruqeinfcqhgexrckonsy.supabase.co/rest/v1/', {
         headers: {
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1cWVpbmZjcWhnZXhyY2tvbnN5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkyMTE4MDksImV4cCI6MjA4NDc4NzgwOX0.NJmOH_uF59nYaSmjebGMNHlBwvqx5MHIwXOoqzITsXc',
+          'apikey': anonKey,
         },
       }),
       new Promise<null>((r) => setTimeout(() => r(null), 5000)),
@@ -148,6 +151,7 @@ async function runAnalysisDiagnostic() {
       results.push(`1. Supabase fetch: ${res.status} (${Date.now() - t1}ms)`);
     } else {
       results.push(`1. Supabase fetch: TIMEOUT 5s`);
+    }
     }
   } catch (e: any) {
     results.push(`1. Supabase fetch ERROR: ${e.message}`);
@@ -623,9 +627,11 @@ export default function CheckupScreen() {
       {/* 진단 헤더 (맥박 버튼) */}
       <View style={s.diagnosticHeader}>
         <View style={{ flex: 1 }} />
-        <TouchableOpacity onPress={runAnalysisDiagnostic} style={s.diagnosticButton}>
-          <Ionicons name="pulse-outline" size={22} color={colors.primary} />
-        </TouchableOpacity>
+        {__DEV__ && (
+          <TouchableOpacity onPress={runAnalysisDiagnostic} style={s.diagnosticButton}>
+            <Ionicons name="pulse-outline" size={22} color={colors.primary} />
+          </TouchableOpacity>
+        )}
       </View>
 
       <ScrollView

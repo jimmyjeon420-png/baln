@@ -14,11 +14,11 @@
 /** 커뮤니티 열람 최소 자산 (100만원) */
 export const LOUNGE_VIEW_THRESHOLD = 1000000;
 
-/** 댓글 작성 최소 자산 (1,000만원) */
-export const LOUNGE_COMMENT_THRESHOLD = 10000000;
+/** 댓글 작성 최소 자산 (300만원) */
+export const LOUNGE_COMMENT_THRESHOLD = 3000000;
 
-/** 글 작성 최소 자산 (1.5억) */
-export const LOUNGE_POST_THRESHOLD = 150000000;
+/** 글 작성 최소 자산 (3,000만원) */
+export const LOUNGE_POST_THRESHOLD = 30000000;
 
 // ================================================================
 // 카테고리

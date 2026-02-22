@@ -289,7 +289,15 @@ export default function HomeScreen() {
   // ──────────────────────────────────────────────────────────────────────
   // 2. 맥락 브리핑 카드 데이터
   // ──────────────────────────────────────────────────────────────────────
-  const { data: contextData, isLoading: contextLoading, effectiveData: contextEffective, updateTimeLabel } = useContextCard();
+  const {
+    data: contextData,
+    isLoading: contextLoading,
+    effectiveData: contextEffective,
+    updateTimeLabel,
+    isFallback: isContextFallback,
+    isStale: isContextStale,
+    freshnessLabel,
+  } = useContextCard();
   const { isPremium } = useSubscriptionStatus();
   const { data: creditBalance } = useMyCredits();
   const [shareModalVisible, setShareModalVisible] = React.useState(false);
@@ -306,6 +314,10 @@ export default function HomeScreen() {
         sentiment: fallbackCard.sentiment || 'calm',
       }) : null;
 
+      const fallbackUpdateLabel = isContextFallback
+        ? '임시 데이터'
+        : (isContextStale && freshnessLabel ? freshnessLabel : updateTimeLabel);
+
       return {
         fact: fallbackBriefing?.fact || '시장은 늘 변동하지만, 맥락을 알면 불안은 줄어듭니다',
         mechanism: fallbackBriefing?.mechanism || '매일 아침 7시, 새로운 시장 분석이 도착합니다',
@@ -317,7 +329,12 @@ export default function HomeScreen() {
         isPremium: isPremium || false,
         onShare: undefined,
         isLoading: contextLoading,
-        updateTimeLabel,
+        updateTimeLabel: fallbackUpdateLabel,
+        dataSource: contextEffective?.dataSource ?? '표준 맥락 폴백',
+        dataTimestamp: contextEffective?.dataTimestamp ?? fallbackCard?.created_at ?? null,
+        confidenceNote: contextEffective?.confidenceNote ?? '임시 카드 기반 추정',
+        confidenceScore: isContextFallback ? 58 : (isContextStale ? 72 : 84),
+        freshnessLabel: isContextFallback ? '임시 데이터' : (isContextStale ? (freshnessLabel ?? '이전 분석') : '최신'),
         // 5겹 레이어 데이터 (effectiveData에서 추출)
         historicalContext: fallbackCard?.historical_context,
         macroChain: fallbackCard?.macro_chain,
@@ -343,6 +360,10 @@ export default function HomeScreen() {
       sentiment: card.sentiment || 'calm',
     });
 
+    const contextUpdateLabel = isContextFallback
+      ? '임시 데이터'
+      : (isContextStale && freshnessLabel ? freshnessLabel : updateTimeLabel);
+
     return {
       fact: briefing.fact,
       mechanism: briefing.mechanism,
@@ -359,7 +380,12 @@ export default function HomeScreen() {
       isPremium: isPremium || false,
       onShare: () => setShareModalVisible(true),
       isLoading: contextLoading,
-      updateTimeLabel,
+      updateTimeLabel: contextUpdateLabel,
+      dataSource: contextData.dataSource ?? contextEffective?.dataSource ?? 'baln 분석 엔진',
+      dataTimestamp: contextData.dataTimestamp ?? card.created_at ?? null,
+      confidenceNote: contextData.confidenceNote ?? '실시간 데이터 기반 분석',
+      confidenceScore: isContextFallback ? 58 : (isContextStale ? 74 : 87),
+      freshnessLabel: isContextFallback ? '임시 데이터' : (isContextStale ? (freshnessLabel ?? '이전 분석') : '최신'),
       // 5겹 레이어 데이터 전달
       historicalContext: card.historical_context,
       macroChain: card.macro_chain,
@@ -372,7 +398,18 @@ export default function HomeScreen() {
         isCalculating: false,
       } : null,
     };
-  }, [contextData, contextEffective, contextLoading, isPremium, router, showToast, updateTimeLabel]);
+  }, [
+    contextData,
+    contextEffective,
+    contextLoading,
+    isPremium,
+    router,
+    showToast,
+    updateTimeLabel,
+    isContextFallback,
+    isContextStale,
+    freshnessLabel,
+  ]);
 
   // ──────────────────────────────────────────────────────────────────────
   // 3. 예측 투표 카드 데이터 (3개 질문 지원)
@@ -452,8 +489,39 @@ export default function HomeScreen() {
         noPercentage: total > 0 ? (poll.no_count / total) * 100 : 0,
         totalVotes: total,
         deadline: poll.deadline,
+        source: poll.source ?? undefined,
+        createdAt: poll.created_at ?? undefined,
       };
     });
+  }, [todayPolls]);
+
+  const predictionTrustMeta = React.useMemo(() => {
+    const firstPoll = todayPolls[0];
+    const hasFallback = todayPolls.some((poll) => poll.source === 'fallback');
+    const avgVotes = todayPolls.length > 0
+      ? todayPolls.reduce((sum, poll) => sum + poll.yes_count + poll.no_count, 0) / todayPolls.length
+      : 0;
+
+    // 표본 크기 기반 보수적 추정 점수 (클라이언트 추정치)
+    const estimatedConfidence = hasFallback
+      ? 55
+      : Math.min(92, 62 + Math.round(Math.log10(avgVotes + 1) * 18));
+
+    let freshness = '최신';
+    if (firstPoll?.created_at) {
+      const createdAtMs = new Date(firstPoll.created_at).getTime();
+      if (Number.isFinite(createdAtMs)) {
+        const ageHours = (Date.now() - createdAtMs) / (1000 * 60 * 60);
+        if (ageHours >= 24) freshness = '갱신 필요';
+      }
+    }
+
+    return {
+      sourceLabel: hasFallback ? '표준 질문 폴백' : 'BALN 예측 엔진',
+      generatedAt: firstPoll?.created_at ?? null,
+      freshnessLabel: hasFallback ? '임시 데이터' : freshness,
+      confidenceScore: estimatedConfidence,
+    };
   }, [todayPolls]);
 
   const predictionVoteProps = React.useMemo(() => {
@@ -521,8 +589,10 @@ export default function HomeScreen() {
       globalAccuracy: globalStats?.accuracy ?? null,
       globalResolvedCount: globalStats?.resolvedCount ?? 0,
       onTrackRecordPress: () => router.push('/games/predictions'),
+      isFallbackData: todayPolls.some((poll) => poll.source === 'fallback'),
+      trustMeta: predictionTrustMeta,
     };
-  }, [currentPoll, pollsForCard, myVote, myVotesChoiceMap, recentResults, myStats, globalStats, router, submitVote, showToast, isVoting]);
+  }, [currentPoll, pollsForCard, myVote, myVotesChoiceMap, recentResults, myStats, globalStats, router, submitVote, showToast, isVoting, todayPolls, predictionTrustMeta]);
 
   // ──────────────────────────────────────────────────────────────────────
   // 맥락 카드 전체 데이터 (모달용)
@@ -555,15 +625,15 @@ export default function HomeScreen() {
       {/* 진단용: Supabase 연결 상태 (개발 모드에서만 표시) */}
       {__DEV__ && <ConnectionStatus />}
 
-      {/* 크로스탭 연동 배너 (투자 철학 변경 / 뱃지 / 투자 기준) */}
-      <CrossTabBanners />
-
       {/* P0.2: 스트릭 + 오늘 습관 루프 진행률 */}
       <DailyProgressBanner
         currentStreak={currentStreak}
         todayProgress={todayProgress}
         creditBalance={creditBalance?.balance ?? null}
       />
+
+      {/* 크로스탭 연동 배너는 일정 이상 습관이 형성된 사용자에게만 노출 */}
+      {currentStreak >= 3 && <CrossTabBanners />}
 
       {/* P0.3: 시장 위기 배너 (위기 감지 시만 표시) */}
       <CrisisBanner

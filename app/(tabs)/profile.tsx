@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
+import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../../src/context/AuthContext';
 import { useAchievementCount } from '../../src/hooks/useAchievements';
@@ -21,6 +22,8 @@ import { useTheme, ThemeMode } from '../../src/hooks/useTheme';
 import { CreditDisplay } from '../../src/components/common/CreditDisplay';
 import { useIsAdmin } from '../../src/hooks/useAdminDashboard';
 import { useGuruStyle, GURU_DISPLAY_NAME } from '../../src/hooks/useGuruStyle';
+
+const APP_VERSION = Constants.expoConfig?.version ?? '1.0.0';
 
 // =============================================================================
 // 타입 정의
@@ -331,7 +334,7 @@ export default function ProfileScreen() {
         )}
 
         {/* ── 버전 정보 ── */}
-        <Text style={[styles.versionText, { color: colors.textTertiary }]}>bal<Text style={{ color: '#4CAF50' }}>n</Text> v3.0.0</Text>
+        <Text style={[styles.versionText, { color: colors.textTertiary }]}>bal<Text style={{ color: '#4CAF50' }}>n</Text> v{APP_VERSION}</Text>
       </ScrollView>
     </SafeAreaView>
   );

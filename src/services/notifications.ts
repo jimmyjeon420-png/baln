@@ -15,6 +15,7 @@
 import { Platform, Alert } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import supabase, { getCurrentUser } from './supabase';
 
 // ============================================================================
 // 스토리지 키
@@ -37,6 +38,10 @@ export interface NotificationSettings {
   priceAlert: boolean;
   /** 시장 뉴스: 매일 아침 시장 브리핑 */
   marketNews: boolean;
+  /** 가격 변동 기준(%) - 예: 5 => ±5% 이상 */
+  priceAlertThreshold: number;
+  /** 주간 최대 알림 수 (피로도 제어) */
+  weeklyNotificationCap: number;
 }
 
 /** 기본 알림 설정 (최초 설치 시) */
@@ -45,7 +50,81 @@ export const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
   rebalanceAlert: true,
   priceAlert: false,   // 기본 꺼짐 (사용자가 명시적으로 활성화)
   marketNews: true,
+  priceAlertThreshold: 5,
+  weeklyNotificationCap: 5,
 };
+
+const DEFAULT_WEEKDAYS = [2, 3, 4, 5, 6, 7, 1]; // 월~일 순서
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
+function pickDistributedWeekdays(slots: number): number[] {
+  const count = clamp(Math.floor(slots), 0, 7);
+  if (count <= 0) return [];
+  if (count >= 7) return [...DEFAULT_WEEKDAYS];
+
+  const picked = new Set<number>();
+  const step = DEFAULT_WEEKDAYS.length / count;
+  for (let i = 0; i < count; i += 1) {
+    const idx = Math.floor(i * step);
+    picked.add(DEFAULT_WEEKDAYS[idx]);
+  }
+  return DEFAULT_WEEKDAYS.filter((day) => picked.has(day));
+}
+
+async function getTopHoldingName(): Promise<string | null> {
+  try {
+    const user = await getCurrentUser();
+    if (!user) return null;
+
+    const { data, error } = await supabase
+      .from('portfolios')
+      .select('name, current_value')
+      .eq('user_id', user.id)
+      .order('current_value', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error || !data?.name) return null;
+    return data.name;
+  } catch {
+    return null;
+  }
+}
+
+async function scheduleWeeklyNotifications(params: {
+  type: string;
+  title: string;
+  body: string;
+  screen: string;
+  weekdays: number[];
+  hour: number;
+  minute: number;
+  channelId?: string;
+}): Promise<string[]> {
+  const ids: string[] = [];
+  for (const weekday of params.weekdays) {
+    const id = await Notifications.scheduleNotificationAsync({
+      content: {
+        title: params.title,
+        body: params.body,
+        data: { type: params.type, screen: params.screen, weekday },
+        sound: 'default',
+        ...(Platform.OS === 'android' && params.channelId ? { channelId: params.channelId } : {}),
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
+        weekday,
+        hour: params.hour,
+        minute: params.minute,
+      },
+    });
+    ids.push(id);
+  }
+  return ids;
+}
 
 // ============================================================================
 // 알림 설정 저장/로드
@@ -155,30 +234,34 @@ export async function requestNotificationPermission(): Promise<boolean> {
 // 개별 알림 스케줄링 함수
 // ============================================================================
 
-/** 매일 오전 8시 Morning Briefing 알림 (시장 뉴스 토글) */
-export async function scheduleMorningBriefing(): Promise<string | null> {
+/** Morning Briefing 알림 (기본: 매일 08:00, cap에 따라 요일 축소) */
+export async function scheduleMorningBriefing(
+  weekdays: number[] = DEFAULT_WEEKDAYS,
+  topHoldingName?: string | null
+): Promise<string | null> {
   try {
     const hasPermission = await checkNotificationPermission();
     if (!hasPermission) return null;
 
     await cancelScheduledNotifications('morning-briefing');
+    if (weekdays.length === 0) return null;
 
-    const id = await Notifications.scheduleNotificationAsync({
-      content: {
-        title: '☀️ 오늘의 시장 브리핑 준비 완료',
-        body: 'AI가 분석한 오늘의 시장 동향과 포트폴리오 처방전을 확인하세요.',
-        data: { type: 'morning-briefing', screen: '/(tabs)/diagnosis' },
-        sound: 'default',
-        ...(Platform.OS === 'android' && { channelId: 'morning-briefing' }),
-      },
-      trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.DAILY,
-        hour: 8,
-        minute: 0,
-      },
+    const body = topHoldingName
+      ? `${topHoldingName} 포함 보유 자산 기준으로 오늘의 시장 동향을 확인하세요.`
+      : 'AI가 분석한 오늘의 시장 동향과 포트폴리오 처방전을 확인하세요.';
+
+    const ids = await scheduleWeeklyNotifications({
+      type: 'morning-briefing',
+      title: '☀️ 오늘의 시장 브리핑 준비 완료',
+      body,
+      screen: '/(tabs)/diagnosis',
+      weekdays,
+      hour: 8,
+      minute: 0,
+      channelId: 'morning-briefing',
     });
 
-    return id;
+    return ids[0] ?? null;
   } catch (err) {
     console.error('[알림] 아침 브리핑 스케줄 실패:', err);
     return null;
@@ -280,28 +363,36 @@ export async function scheduleRebalancingReminder(): Promise<string | null> {
  * 앱을 열면 Central Kitchen이 전일 대비 ±5% 이상 변동한 종목을
  * 하이라이트하여 보여줍니다.
  */
-export async function schedulePriceChangeReminder(): Promise<string | null> {
+export async function schedulePriceChangeReminder(options?: {
+  weekdays?: number[];
+  thresholdPercent?: number;
+  topHoldingName?: string | null;
+}): Promise<string | null> {
   try {
     const hasPermission = await checkNotificationPermission();
     if (!hasPermission) return null;
 
     await cancelScheduledNotifications('price-alert');
+    const weekdays = options?.weekdays ?? DEFAULT_WEEKDAYS;
+    if (weekdays.length === 0) return null;
 
-    const id = await Notifications.scheduleNotificationAsync({
-      content: {
-        title: '📊 보유 종목 가격 변동 확인',
-        body: '어제 시장에서 주요 변동이 있었을 수 있습니다. 앱에서 포트폴리오를 확인해보세요.',
-        data: { type: 'price-alert', screen: '/(tabs)/diagnosis' },
-        ...(Platform.OS === 'android' && { channelId: 'market-alert' }),
-      },
-      trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.DAILY,
-        hour: 7,
-        minute: 30,
-      },
+    const threshold = clamp(Math.round(options?.thresholdPercent ?? 5), 1, 20);
+    const body = options?.topHoldingName
+      ? `${options.topHoldingName} 포함 보유 종목에서 ±${threshold}% 이상 변동 가능성을 점검해보세요.`
+      : `보유 종목의 전일 대비 ±${threshold}% 이상 변동 가능성을 점검해보세요.`;
+
+    const ids = await scheduleWeeklyNotifications({
+      type: 'price-alert',
+      title: '📊 보유 종목 가격 변동 확인',
+      body,
+      screen: '/(tabs)/diagnosis',
+      weekdays,
+      hour: 7,
+      minute: 30,
+      channelId: 'market-alert',
     });
 
-    return id;
+    return ids[0] ?? null;
   } catch (err) {
     console.error('[알림] 가격 변동 리마인더 스케줄 실패:', err);
     return null;
@@ -328,9 +419,40 @@ export async function syncNotificationSchedule(
       return;
     }
 
+    const weeklyCap = clamp(settings.weeklyNotificationCap || 5, 1, 14);
+    const priceThreshold = clamp(settings.priceAlertThreshold || 5, 1, 20);
+    const reservedRebalanceSlot = settings.rebalanceAlert ? 1 : 0;
+    const dailySlots = Math.max(0, weeklyCap - reservedRebalanceSlot);
+
+    let marketNewsSlots = 0;
+    let priceAlertSlots = 0;
+    if (dailySlots > 0) {
+      if (settings.marketNews && settings.priceAlert) {
+        const priceRatio = priceThreshold <= 3 ? 0.65 : priceThreshold <= 5 ? 0.5 : 0.35;
+        priceAlertSlots = Math.max(1, Math.round(dailySlots * priceRatio));
+        if (dailySlots > 1) {
+          priceAlertSlots = Math.min(priceAlertSlots, dailySlots - 1);
+          marketNewsSlots = dailySlots - priceAlertSlots;
+        } else {
+          marketNewsSlots = 0;
+          priceAlertSlots = 1;
+        }
+      } else if (settings.marketNews) {
+        marketNewsSlots = dailySlots;
+      } else if (settings.priceAlert) {
+        priceAlertSlots = dailySlots;
+      }
+    }
+
+    const marketNewsDays = pickDistributedWeekdays(marketNewsSlots);
+    const priceAlertDays = pickDistributedWeekdays(priceAlertSlots);
+    const topHoldingName = settings.marketNews || settings.priceAlert
+      ? await getTopHoldingName()
+      : null;
+
     // 1. 시장 뉴스 (= 아침 브리핑)
-    if (settings.marketNews) {
-      await scheduleMorningBriefing();
+    if (settings.marketNews && marketNewsDays.length > 0) {
+      await scheduleMorningBriefing(marketNewsDays, topHoldingName);
     } else {
       await cancelScheduledNotifications('morning-briefing');
     }
@@ -345,8 +467,12 @@ export async function syncNotificationSchedule(
     }
 
     // 3. 가격 변동 알림
-    if (settings.priceAlert) {
-      await schedulePriceChangeReminder();
+    if (settings.priceAlert && priceAlertDays.length > 0) {
+      await schedulePriceChangeReminder({
+        weekdays: priceAlertDays,
+        thresholdPercent: priceThreshold,
+        topHoldingName,
+      });
     } else {
       await cancelScheduledNotifications('price-alert');
     }

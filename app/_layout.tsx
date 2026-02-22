@@ -1,8 +1,8 @@
 import { Stack, useRouter, useSegments, useNavigationContainerRef } from 'expo-router';
-import { View, AppState, AppStateStatus, Alert } from 'react-native';
+import { View, AppState, AppStateStatus } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
@@ -34,14 +34,12 @@ import * as Sentry from '@sentry/react-native';
 // [Sentry] 에러 모니터링 초기화
 // DSN이 없으면 Sentry 비활성 — 앱 정상 동작 보장
 // ============================================================================
-// ★★★ Sentry 완전 비활성화 (네트워크 차단 원인 조사 중) ★★★
-// Sentry.init()을 호출하지 않으면 네트워크 패칭도 안 됨
-const SENTRY_DSN = ''; // 강제 비활성화
-console.log('[Sentry] ★ 네트워크 디버깅 중 — Sentry 완전 비활성화');
-
-if (false) {
-  // 아래 코드는 Sentry 원인 확인 후 복구 예정
-  console.log('[Sentry] DSN 미설정 — Sentry 비활성');
+const SENTRY_DSN = process.env.EXPO_PUBLIC_SENTRY_DSN ?? '';
+if (SENTRY_DSN && !__DEV__) {
+  Sentry.init({
+    dsn: SENTRY_DSN,
+    tracesSampleRate: 0.2,
+  });
 }
 
 // AsyncStorage 기반 영속 캐시 — 앱 재시작 시에도 데이터 즉시 표시
@@ -108,27 +106,37 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     if (!user && !inAuthGroup) {
       // 로그인되지 않았고, 로그인 페이지가 아니면 로그인으로 리다이렉트
       router.replace('/login');
-    } else if (user && inAuthGroup) {
-      // 로그인되었고, 로그인 페이지에 있으면 → 온보딩 체크 후 리다이렉트
-      AsyncStorage.getItem('@baln:onboarding_completed').then((completed) => {
-        if (completed === 'true') {
-          router.replace('/(tabs)');
-        } else {
-          router.replace('/onboarding');
-        }
-      }).catch((err) => {
-        console.warn('[AuthGate] 온보딩 상태 조회 실패, 메인으로 이동:', err);
-        router.replace('/(tabs)');
-      });
-    } else if (user && inOnboarding) {
-      // 온보딩 중인데 이미 완료했으면 메인으로
-      AsyncStorage.getItem('@baln:onboarding_completed').then((completed) => {
-        if (completed === 'true') {
-          router.replace('/(tabs)');
-        }
-      }).catch((err) => console.warn('[AuthGate] 온보딩 완료 상태 조회 실패:', err));
+      return;
     }
-  }, [user, loading, segments]);
+
+    if (!user) return;
+
+    let cancelled = false;
+
+    // 로그인 사용자는 어느 경로에서 들어오든 온보딩 완료 상태를 단일 기준으로 분기한다.
+    AsyncStorage.getItem('@baln:onboarding_completed').then((completed) => {
+      if (cancelled) return;
+
+      const isCompleted = completed === 'true';
+      if (!isCompleted && !inOnboarding) {
+        router.replace('/onboarding');
+        return;
+      }
+
+      if (isCompleted && (inAuthGroup || inOnboarding)) {
+        router.replace('/(tabs)');
+      }
+    }).catch((err) => {
+      console.warn('[AuthGate] 온보딩 상태 조회 실패:', err);
+      if (!cancelled && (inAuthGroup || inOnboarding)) {
+        router.replace('/(tabs)');
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user, loading, segments, router]);
 
   // ★ 인증 로딩 중에는 자식을 렌더링하지 않음 (콜드 스타트 레이스 컨디션 방지)
   // BrandSplash는 AuthGate 외부(RootLayout)에서 렌더되므로 사용자는 스플래시를 봄

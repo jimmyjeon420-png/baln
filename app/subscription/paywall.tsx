@@ -7,7 +7,7 @@
  * C. 체험 만료 → "체험 종료" 안내 + "구독하고 계속 이용하기"
  */
 
-import React from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -21,11 +21,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useQuery } from '@tanstack/react-query';
 import { useHaptics } from '../../src/hooks/useHaptics';
 import { useSubscriptionStatus, useActivateTrial } from '../../src/hooks/useSubscription';
 import { isFreePeriod, getFreePeriodDaysLeft } from '../../src/config/freePeriod';
 import { useStreakData } from '../../src/hooks/useStreak';
 import { useTheme } from '../../src/hooks/useTheme';
+import supabase, { getCurrentUser } from '../../src/services/supabase';
+import { useTrackEvent } from '../../src/hooks/useAnalytics';
+import { useABExperiment } from '../../src/hooks/useABExperiment';
+import { CREDIT_TO_KRW } from '../../src/utils/formatters';
 
 // 가격 정보
 const PRICING = {
@@ -81,10 +86,54 @@ const BENEFITS = [
   },
 ];
 
+const MONTHLY_PRICE_KRW = 2900;
+
+type CreditSpendRow = {
+  amount: number;
+  feature_type: string | null;
+  type: string;
+};
+
+interface ValueProofSummary {
+  spendEvents30d: number;
+  spendCredits30d: number;
+  inferredKrwValue: number;
+  topFeature: string | null;
+  generatedAt: string;
+}
+
+const EMPTY_VALUE_PROOF: ValueProofSummary = {
+  spendEvents30d: 0,
+  spendCredits30d: 0,
+  inferredKrwValue: 0,
+  topFeature: null,
+  generatedAt: new Date().toISOString(),
+};
+
+const FEATURE_LABEL_MAP: Record<string, string> = {
+  deep_dive: 'Deep Dive',
+  what_if: 'What-if',
+  tax_report: '세금 리포트',
+  ai_cfo_chat: 'AI 버핏 티타임',
+};
+
+function formatMetaTime(iso: string): string {
+  return new Date(iso).toLocaleString('ko-KR', {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 export default function PaywallScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const { mediumTap, heavyTap } = useHaptics();
+  const track = useTrackEvent();
+  const freePeriodActive = isFreePeriod();
+  const { experimentId, variant, isActive: isExperimentActive } = useABExperiment('subscription_paywall');
+  const isValueFirstVariant = isExperimentActive && variant === 'value_first';
   const {
     isPremium,
     isTrialActive,
@@ -94,10 +143,115 @@ export default function PaywallScreen() {
   } = useSubscriptionStatus();
   const activateTrial = useActivateTrial();
   const { currentStreak } = useStreakData();
+  const hasTrackedViewRef = useRef(false);
+  const hasTrackedValueProofRef = useRef(false);
+
+  const { data: valueProof = EMPTY_VALUE_PROOF, isLoading: valueProofLoading } = useQuery({
+    queryKey: ['paywall', 'value-proof-30d'],
+    enabled: !freePeriodActive,
+    staleTime: 10 * 60 * 1000,
+    queryFn: async (): Promise<ValueProofSummary> => {
+      const user = await getCurrentUser();
+      if (!user) return { ...EMPTY_VALUE_PROOF, generatedAt: new Date().toISOString() };
+
+      const from = new Date();
+      from.setDate(from.getDate() - 30);
+
+      const { data, error } = await supabase
+        .from('credit_transactions')
+        .select('amount, feature_type, type')
+        .eq('user_id', user.id)
+        .eq('type', 'spend')
+        .gte('created_at', from.toISOString())
+        .order('created_at', { ascending: false })
+        .limit(500);
+
+      if (error) {
+        if (error.code === '42P01' || error.code === 'PGRST116') {
+          return { ...EMPTY_VALUE_PROOF, generatedAt: new Date().toISOString() };
+        }
+        throw error;
+      }
+
+      const spendRows = (data ?? []) as CreditSpendRow[];
+      const spendCredits30d = Math.abs(
+        spendRows.reduce((sum, row) => sum + (Number.isFinite(row.amount) ? row.amount : 0), 0)
+      );
+
+      const featureUsage = spendRows.reduce<Record<string, number>>((acc, row) => {
+        const key = row.feature_type ?? 'unknown';
+        acc[key] = (acc[key] ?? 0) + 1;
+        return acc;
+      }, {});
+
+      let topFeature: string | null = null;
+      let topFeatureCount = 0;
+      Object.entries(featureUsage).forEach(([feature, count]) => {
+        if (count > topFeatureCount) {
+          topFeature = feature;
+          topFeatureCount = count;
+        }
+      });
+
+      return {
+        spendEvents30d: spendRows.length,
+        spendCredits30d,
+        inferredKrwValue: spendCredits30d * CREDIT_TO_KRW,
+        topFeature,
+        generatedAt: new Date().toISOString(),
+      };
+    },
+  });
+
+  const valueProofTopFeatureLabel = useMemo(() => {
+    if (!valueProof.topFeature) return null;
+    return FEATURE_LABEL_MAP[valueProof.topFeature] ?? 'AI 분석';
+  }, [valueProof.topFeature]);
+
+  const valueProofNetGainKrw = useMemo(() => {
+    return valueProof.inferredKrwValue - MONTHLY_PRICE_KRW;
+  }, [valueProof.inferredKrwValue]);
+
+  useEffect(() => {
+    if (isLoading || hasTrackedViewRef.current) return;
+    hasTrackedViewRef.current = true;
+
+    track('paywall_viewed', {
+      state: isTrialActive ? 'trial_active' : isTrialExpired ? 'trial_expired' : 'new_user',
+      is_premium: isPremium,
+      free_period_active: freePeriodActive,
+      experiment_id: experimentId,
+      variant: variant ?? 'none',
+    });
+  }, [
+    isLoading,
+    isPremium,
+    isTrialActive,
+    isTrialExpired,
+    freePeriodActive,
+    experimentId,
+    variant,
+    track,
+  ]);
+
+  useEffect(() => {
+    if (freePeriodActive || valueProofLoading || hasTrackedValueProofRef.current) return;
+    hasTrackedValueProofRef.current = true;
+    track('paywall_value_proof_loaded', {
+      spend_events_30d: valueProof.spendEvents30d,
+      spend_credits_30d: valueProof.spendCredits30d,
+      inferred_krw_value: valueProof.inferredKrwValue,
+      top_feature: valueProof.topFeature,
+    });
+  }, [freePeriodActive, valueProofLoading, valueProof, track]);
 
   // 무료 체험 시작 핸들러
   const handleActivateTrial = () => {
     heavyTap();
+    track('paywall_trial_start_clicked', {
+      experiment_id: experimentId,
+      variant: variant ?? 'none',
+    });
     Alert.alert(
       '무료 체험 시작',
       '30일간 모든 Premium 기능을 무료로 이용하시겠습니까?\n\n결제 정보가 필요하지 않습니다.',
@@ -108,12 +262,19 @@ export default function PaywallScreen() {
           onPress: async () => {
             const result = await activateTrial.mutateAsync();
             if (result.success) {
+              track('paywall_trial_activated', {
+                experiment_id: experimentId,
+                variant: variant ?? 'none',
+              });
               Alert.alert(
                 '체험 활성화 완료!',
                 'Premium이 활성화되었습니다.\n30일간 모든 기능을 무료로 이용하세요.',
                 [{ text: '확인', onPress: () => router.back() }]
               );
             } else {
+              track('paywall_trial_activation_failed', {
+                error: result.error,
+              });
               Alert.alert('알림', result.error || '활성화에 실패했습니다.');
             }
           },
@@ -125,9 +286,28 @@ export default function PaywallScreen() {
   // 유료 구독 핸들러 (placeholder)
   const handleSubscribe = (period: 'monthly' | 'yearly') => {
     heavyTap();
+    track('paywall_plan_selected', {
+      period,
+      experiment_id: experimentId,
+      variant: variant ?? 'none',
+      state: isTrialActive ? 'trial_active' : isTrialExpired ? 'trial_expired' : 'new_user',
+    });
+
+    if (!freePeriodActive) {
+      track('paywall_purchase_intent', {
+        period,
+      });
+      Alert.alert(
+        '구독 준비 중',
+        '인앱 구독 결제 연동을 준비 중입니다.\n준비 완료 시 앱 공지로 안내드리겠습니다.'
+      );
+      return;
+    }
+
+    track('paywall_subscribe_blocked_free_period', { period });
     Alert.alert(
       '무료 체험 기간',
-      '현재 모든 프리미엄 기능을 무료로 체험하실 수 있습니다.\n5월 31일까지 무제한 이용 가능합니다!',
+      '현재 모든 프리미엄 기능을 무료로 체험하실 수 있습니다.\n2026년 5월 31일까지 무제한 이용 가능합니다!',
       [{ text: '확인' }]
     );
   };
@@ -144,7 +324,7 @@ export default function PaywallScreen() {
   }
 
   // ─── 무료 기간 축하 모드 ───
-  if (isFreePeriod()) {
+  if (freePeriodActive) {
     const daysLeft = getFreePeriodDaysLeft();
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -169,7 +349,7 @@ export default function PaywallScreen() {
             <Text style={styles.heroEmoji}>{'🎉'}</Text>
             <Text style={styles.heroTitle}>지금 모든 기능이 무료!</Text>
             <Text style={styles.heroSubtitle}>
-              D-{daysLeft} 남음 · 5/31까지 전 기능 무료 개방
+              D-{daysLeft} 남음 · 2026년 5월 31일까지 전 기능 무료 개방
             </Text>
           </View>
 
@@ -280,16 +460,65 @@ export default function PaywallScreen() {
             {isTrialActive ? '⏱️' : isTrialExpired ? '🔒' : '✨'}
           </Text>
           <Text style={styles.heroTitle}>
-            {isTrialExpired ? 'Premium 구독' : 'Premium으로 업그레이드'}
+            {isTrialExpired
+              ? 'Premium 구독'
+              : isValueFirstVariant
+              ? '이미 쓰고 있는 가치, 구독으로 절약'
+              : 'Premium으로 업그레이드'}
           </Text>
           <Text style={styles.heroSubtitle}>
             {isTrialActive
               ? `체험 기간 D-${trialDaysLeft} · 지금 구독하면 끊김 없이 이용`
               : isTrialExpired
               ? '구독하고 모든 프리미엄 기능을 이용하세요'
+              : isValueFirstVariant
+              ? '최근 사용량 기준, 월 구독이 더 유리한지 바로 확인하세요'
               : '1개월 무료 체험으로 시작하세요'}
           </Text>
+          {isExperimentActive && (
+            <View style={styles.experimentBadge}>
+              <Text style={styles.experimentBadgeText}>
+                실험 중: {variant === 'value_first' ? '가치 우선 카피' : '기본 카피'}
+              </Text>
+            </View>
+          )}
         </View>
+
+        {isValueFirstVariant && (
+          <View style={styles.valueProofCard}>
+            <Text style={styles.valueProofTitle}>최근 30일 실제 사용 가치</Text>
+
+            {valueProofLoading ? (
+              <View style={styles.valueProofLoadingRow}>
+                <ActivityIndicator size="small" color="#4CAF50" />
+                <Text style={styles.valueProofSecondary}>내 사용 데이터를 계산 중입니다...</Text>
+              </View>
+            ) : valueProof.spendEvents30d > 0 ? (
+              <>
+                <Text style={styles.valueProofPrimary}>
+                  AI 기능 {valueProof.spendEvents30d}회 사용 · 약 ₩{valueProof.inferredKrwValue.toLocaleString()} 상당
+                </Text>
+                <Text style={[styles.valueProofSecondary, valueProofNetGainKrw >= 0 ? styles.valueProofGain : styles.valueProofLoss]}>
+                  {valueProofNetGainKrw >= 0
+                    ? `월 구독료 대비 +₩${valueProofNetGainKrw.toLocaleString()} 절약 가능 (추정)`
+                    : `월 구독료까지 ₩${Math.abs(valueProofNetGainKrw).toLocaleString()} 남음`}
+                </Text>
+              </>
+            ) : (
+              <Text style={styles.valueProofSecondary}>
+                최근 30일 결제형 AI 사용 이력이 아직 없습니다. 3회 이상 사용 시 개인화 절약액이 표시됩니다.
+              </Text>
+            )}
+
+            <View style={styles.valueProofMetaRow}>
+              <Text style={styles.valueProofMeta}>출처: credit_transactions</Text>
+              <Text style={styles.valueProofMeta}>생성: {formatMetaTime(valueProof.generatedAt)}</Text>
+            </View>
+            {valueProofTopFeatureLabel && (
+              <Text style={styles.valueProofMeta}>가장 많이 사용한 기능: {valueProofTopFeatureLabel}</Text>
+            )}
+          </View>
+        )}
 
         {/* 가격 카드 */}
         <View style={styles.pricingSection}>
@@ -351,6 +580,42 @@ export default function PaywallScreen() {
             </View>
           ))}
         </View>
+
+        {!isValueFirstVariant && (
+          <View style={styles.valueProofCard}>
+            <Text style={styles.valueProofTitle}>최근 30일 실제 사용 가치</Text>
+
+            {valueProofLoading ? (
+              <View style={styles.valueProofLoadingRow}>
+                <ActivityIndicator size="small" color="#4CAF50" />
+                <Text style={styles.valueProofSecondary}>내 사용 데이터를 계산 중입니다...</Text>
+              </View>
+            ) : valueProof.spendEvents30d > 0 ? (
+              <>
+                <Text style={styles.valueProofPrimary}>
+                  AI 기능 {valueProof.spendEvents30d}회 사용 · 약 ₩{valueProof.inferredKrwValue.toLocaleString()} 상당
+                </Text>
+                <Text style={[styles.valueProofSecondary, valueProofNetGainKrw >= 0 ? styles.valueProofGain : styles.valueProofLoss]}>
+                  {valueProofNetGainKrw >= 0
+                    ? `월 구독료 대비 +₩${valueProofNetGainKrw.toLocaleString()} 절약 가능 (추정)`
+                    : `월 구독료까지 ₩${Math.abs(valueProofNetGainKrw).toLocaleString()} 남음`}
+                </Text>
+              </>
+            ) : (
+              <Text style={styles.valueProofSecondary}>
+                최근 30일 결제형 AI 사용 이력이 아직 없습니다. 3회 이상 사용 시 개인화 절약액이 표시됩니다.
+              </Text>
+            )}
+
+            <View style={styles.valueProofMetaRow}>
+              <Text style={styles.valueProofMeta}>출처: credit_transactions</Text>
+              <Text style={styles.valueProofMeta}>생성: {formatMetaTime(valueProof.generatedAt)}</Text>
+            </View>
+            {valueProofTopFeatureLabel && (
+              <Text style={styles.valueProofMeta}>가장 많이 사용한 기능: {valueProofTopFeatureLabel}</Text>
+            )}
+          </View>
+        )}
 
         {/* CTA 버튼 */}
         {!isTrialActive && !isTrialExpired && (
@@ -526,6 +791,20 @@ const styles = StyleSheet.create({
     lineHeight: 21,
     paddingHorizontal: 16,
   },
+  experimentBadge: {
+    marginTop: 10,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  experimentBadgeText: {
+    fontSize: 11,
+    color: '#BBBBBB',
+    fontWeight: '600',
+  },
   // 가격 카드
   pricingSection: {
     gap: 12,
@@ -589,7 +868,7 @@ const styles = StyleSheet.create({
   },
   // 혜택
   benefitsSection: {
-    marginBottom: 32,
+    marginBottom: 20,
   },
   sectionTitle: {
     fontSize: 19,
@@ -624,6 +903,54 @@ const styles = StyleSheet.create({
     color: '#888888',
     marginTop: 2,
     lineHeight: 19,
+  },
+  valueProofCard: {
+    backgroundColor: 'rgba(33, 150, 243, 0.08)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(33, 150, 243, 0.2)',
+    padding: 14,
+    marginBottom: 18,
+    gap: 4,
+  },
+  valueProofTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#90CAF9',
+    marginBottom: 4,
+  },
+  valueProofLoadingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  valueProofPrimary: {
+    fontSize: 14,
+    color: '#FFFFFF',
+    fontWeight: '600',
+    lineHeight: 20,
+  },
+  valueProofSecondary: {
+    fontSize: 13,
+    color: '#B0BEC5',
+    lineHeight: 18,
+  },
+  valueProofGain: {
+    color: '#4CAF50',
+    fontWeight: '700',
+  },
+  valueProofLoss: {
+    color: '#FFA726',
+    fontWeight: '700',
+  },
+  valueProofMetaRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 6,
+  },
+  valueProofMeta: {
+    fontSize: 11,
+    color: '#78909C',
   },
   // CTA
   ctaButton: {
