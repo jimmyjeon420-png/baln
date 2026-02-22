@@ -31,8 +31,8 @@ import {
   XP_SOURCE_INFO,
   getLevelProgress,
   getXPToNextLevel,
+  type XPSource,
 } from '../../src/types/level';
-import type { XPSource } from '../../src/types/level';
 import { useTheme } from '../../src/hooks/useTheme';
 
 export default function InvestorLevelScreen() {

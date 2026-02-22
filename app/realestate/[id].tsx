@@ -32,8 +32,7 @@ import supabase from '../../src/services/supabase';
 import { SHARED_PORTFOLIO_KEY } from '../../src/hooks/useSharedPortfolio';
 import { useRealEstatePrice } from '../../src/hooks/useRealEstate';
 import { formatPrice } from '../../src/services/realEstateApi';
-import { sqmToPyeong } from '../../src/types/realestate';
-import type { AreaPriceSummary } from '../../src/types/realestate';
+import { sqmToPyeong, type AreaPriceSummary } from '../../src/types/realestate';
 import { useTheme } from '../../src/hooks/useTheme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 

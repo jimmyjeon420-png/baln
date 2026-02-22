@@ -17,10 +17,8 @@ import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { formatKRW } from '../../utils/formatters';
 import { useTheme } from '../../hooks/useTheme';
-import QuarterlyChart from './QuarterlyChart';
-import EarningsBreakdown from './EarningsBreakdown';
-import type { QuarterlyData } from './QuarterlyChart';
-import type { RevenueSegment, CostItem, WaterfallItem } from './EarningsBreakdown';
+import QuarterlyChart, { type QuarterlyData } from './QuarterlyChart';
+import EarningsBreakdown, { type RevenueSegment, type CostItem, type WaterfallItem } from './EarningsBreakdown';
 
 // ── 연간 재무 데이터 ──
 interface YearlyFinancialData {

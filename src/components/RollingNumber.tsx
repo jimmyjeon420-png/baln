@@ -5,7 +5,7 @@
  */
 
 import React, { useEffect } from 'react';
-import { TextStyle } from 'react-native';
+import { TextStyle, TextInput } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedProps,
@@ -13,7 +13,6 @@ import Animated, {
   Easing,
   useDerivedValue,
 } from 'react-native-reanimated';
-import { TextInput } from 'react-native';
 
 // Reanimated AnimatedProps를 위한 TextInput 래핑
 const AnimatedTextInput = Animated.createAnimatedComponent(TextInput);
@@ -46,7 +45,7 @@ export default function RollingNumber({
       duration,
       easing: Easing.out(Easing.cubic),
     });
-  }, [value]);
+  }, [animatedValue, duration, value]);
 
   // 포맷팅 함수를 derivedValue로 처리 (UI 스레드)
   const displayText = useDerivedValue(() => {
@@ -88,7 +87,6 @@ export default function RollingNumber({
         },
         style,
       ]}
-      // @ts-ignore - Reanimated animated props
       animatedProps={animatedProps}
     />
   );

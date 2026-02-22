@@ -16,11 +16,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useGuruInsights } from '../../src/hooks/useSharedAnalysis';
+import { useGuruInsights, GURU_INSIGHTS_KEY } from '../../src/hooks/useSharedAnalysis';
 import { GuruInsightsSkeleton } from '../../src/components/SkeletonLoader';
 import type { GuruInsight } from '../../src/services/centralKitchen';
 import { useQueryClient } from '@tanstack/react-query';
-import { GURU_INSIGHTS_KEY } from '../../src/hooks/useSharedAnalysis';
 import { useTheme } from '../../src/hooks/useTheme';
 
 // 구루 이름 → ID 변환 (딥다이브 네비게이션용)

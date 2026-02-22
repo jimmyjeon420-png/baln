@@ -11,10 +11,10 @@ import {
   SafeAreaView,
   Alert,
   TextInput,
-  Modal
+  Modal,
+  Text,
 } from 'react-native';
-import { Text } from 'react-native';
-import { Country, TaxSettings } from '../types/tax';
+import { Country } from '../types/tax';
 import { COUNTRY_TAX_PROFILES } from '../constants/taxProfiles';
 import { SIZES, TYPOGRAPHY } from '../styles/theme';
 import { useTheme } from '../hooks/useTheme';

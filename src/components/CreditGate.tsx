@@ -19,8 +19,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMyCredits } from '../hooks/useCredits';
 import { getDiscountedCost } from '../services/creditService';
 import { useHaptics } from '../hooks/useHaptics';
-import type { AIFeatureType } from '../types/marketplace';
-import { FEATURE_LABELS } from '../types/marketplace';
+import { FEATURE_LABELS, type AIFeatureType } from '../types/marketplace';
 import type { UserTier } from '../types/database';
 
 interface CreditGateProps {

@@ -9,12 +9,12 @@
  * API 키가 비어있으면 자동으로 Mock 모드로 전환됩니다.
  */
 
-import type {
-  ApartmentComplex,
-  RealEstateTransaction,
-  AreaPriceSummary,
+import {
+  sqmToPyeong,
+  type ApartmentComplex,
+  type RealEstateTransaction,
+  type AreaPriceSummary,
 } from '../types/realestate';
-import { sqmToPyeong } from '../types/realestate';
 import { extractLawdCd } from './lawdCodeMap';
 
 // ============================================================================

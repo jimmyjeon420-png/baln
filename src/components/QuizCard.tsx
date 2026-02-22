@@ -9,8 +9,7 @@
 
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
-import type { DailyQuiz, QuizAttempt, SubmitQuizResult } from '../types/quiz';
-import { QUIZ_CATEGORIES } from '../types/quiz';
+import { QUIZ_CATEGORIES, type DailyQuiz, type QuizAttempt, type SubmitQuizResult } from '../types/quiz';
 
 interface QuizCardProps {
   quiz: DailyQuiz;
@@ -25,10 +24,6 @@ export default function QuizCard({ quiz, attempt, onSubmit, isSubmitting }: Quiz
 
   // 이미 풀었으면 결과 모드
   const isAnswered = !!attempt || !!result;
-  const correctOption = attempt?.is_correct !== undefined
-    ? (attempt.is_correct ? attempt.selected_option : null)
-    : result?.correct_option;
-
   const categoryInfo = QUIZ_CATEGORIES[quiz.category];
 
   const handleSubmit = async () => {

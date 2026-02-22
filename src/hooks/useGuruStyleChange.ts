@@ -2,10 +2,9 @@
  * useGuruStyleChange — 투자 철학 변경 감지
  * 전체 탭에서 철학 변경 시 홈 탭에 알림 표시
  */
-import { useState, useEffect } from 'react';
+import { useCallback, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from 'expo-router';
-import React from 'react';
 
 const GURU_CHANGE_KEY = '@baln:guru_style_changed';
 const GURU_NAMES: Record<string, string> = {
@@ -18,7 +17,7 @@ export function useGuruStyleChange() {
   const [changeInfo, setChangeInfo] = useState<{ from: string; to: string } | null>(null);
 
   useFocusEffect(
-    React.useCallback(() => {
+    useCallback(() => {
       const check = async () => {
         try {
           const raw = await AsyncStorage.getItem(GURU_CHANGE_KEY);

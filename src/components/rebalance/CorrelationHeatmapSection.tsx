@@ -9,11 +9,10 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { TouchableOpacity } from 'react-native';
-import { Asset } from '../../types/asset';
-import { classifyAsset, AssetCategory } from '../../services/rebalanceScore';
+import type { Asset } from '../../types/asset';
+import { classifyAsset, type AssetCategory } from '../../services/rebalanceScore';
 import { useTheme } from '../../hooks/useTheme';
 import { ThemeColors } from '../../styles/colors';
 import type { ActiveTheme } from '../../contexts/ThemeContext';

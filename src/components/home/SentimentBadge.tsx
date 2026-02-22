@@ -8,8 +8,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import type { ContextCardSentiment } from '../../types/contextCard';
-import { SENTIMENT_COLORS, SENTIMENT_ICONS, SENTIMENT_LABELS } from '../../types/contextCard';
+import { SENTIMENT_COLORS, SENTIMENT_ICONS, SENTIMENT_LABELS, type ContextCardSentiment } from '../../types/contextCard';
 
 interface SentimentBadgeProps {
   /** 시장 심리 상태 */

@@ -8,8 +8,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import supabase from '../services/supabase';
-import type { KostolalyPhase, AssetCategory } from '../services/rebalanceScore';
-import { KOSTOLANY_TARGETS } from '../services/rebalanceScore';
+import { KOSTOLANY_TARGETS, type KostolalyPhase, type AssetCategory } from '../services/rebalanceScore';
 
 // ── 타입 ──
 

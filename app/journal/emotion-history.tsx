@@ -26,10 +26,9 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useEmotionHistory } from '../../src/hooks/useEmotionHistory';
-import { useEmotionCheck } from '../../src/hooks/useEmotionCheck';
+import { useEmotionCheck, type EmotionEntry } from '../../src/hooks/useEmotionCheck';
 import { useTheme } from '../../src/hooks/useTheme';
 import { SIZES } from '../../src/styles/theme';
-import type { EmotionEntry } from '../../src/hooks/useEmotionCheck';
 
 // ============================================================================
 // 상수

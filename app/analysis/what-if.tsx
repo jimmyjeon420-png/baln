@@ -24,8 +24,7 @@ import { HeaderBar } from '../../src/components/common/HeaderBar';
 import { useSharedPortfolio } from '../../src/hooks/useSharedPortfolio';
 import { generateWhatIf } from '../../src/services/gemini';
 import { spendCredits, refundCredits } from '../../src/services/creditService';
-import { FEATURE_COSTS } from '../../src/types/marketplace';
-import type { WhatIfInput, WhatIfResult } from '../../src/types/marketplace';
+import { FEATURE_COSTS, type WhatIfInput, type WhatIfResult } from '../../src/types/marketplace';
 import {
   ScenarioSelector,
   EmpathyHeader,
@@ -35,8 +34,8 @@ import {
   RiskBudgetGauge,
   HedgingPlaybook,
   RecoveryOutlook,
+  type ScenarioType,
 } from '../../src/components/stress-report';
-import type { ScenarioType } from '../../src/components/stress-report';
 import { ExtremeScenarioGrid, ExtremeScenarioReport } from '../../src/components/what-if';
 import type { ExtremeScenario } from '../../src/data/whatIfScenarios';
 

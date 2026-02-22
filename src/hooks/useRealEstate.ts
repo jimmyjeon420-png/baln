@@ -15,8 +15,7 @@ import {
   getRecentTransactions,
   calculateEstimatedPrice,
 } from '../services/realEstateApi';
-import { makeRealEstateTicker } from '../types/realestate';
-import type { RealEstatePortfolioInput } from '../types/realestate';
+import { makeRealEstateTicker, type RealEstatePortfolioInput } from '../types/realestate';
 import supabase, { getCurrentUser } from '../services/supabase';
 import { SHARED_PORTFOLIO_KEY } from './useSharedPortfolio';
 

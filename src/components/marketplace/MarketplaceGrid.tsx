@@ -15,14 +15,11 @@
 import React from 'react';
 import { View, Text, ScrollView, StyleSheet, Alert } from 'react-native';
 import { MarketplaceCard } from './MarketplaceCard';
-import { useMyCredits, useSpendCredits } from '../../hooks/useCredits';
+import { useMyCredits } from '../../hooks/useCredits';
 import { MARKETPLACE_ITEMS, getItemsByTier } from '../../data/marketplaceItems';
-import type { MarketplaceItem } from '../../data/marketplaceItems';
 
 export function MarketplaceGrid() {
   const { data: credits } = useMyCredits();
-  const spendMutation = useSpendCredits();
-
   const currentBalance = credits?.balance ?? 0;
 
   // Tier별 상품 필터링

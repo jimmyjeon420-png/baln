@@ -21,8 +21,7 @@ import {
   useMyRealEstate,
 } from '../src/hooks/useRealEstate';
 import { formatPrice } from '../src/services/realEstateApi';
-import { sqmToPyeong } from '../src/types/realestate';
-import type { ApartmentComplex, AreaPriceSummary } from '../src/types/realestate';
+import { sqmToPyeong, type ApartmentComplex, type AreaPriceSummary } from '../src/types/realestate';
 import { useTheme } from '../src/hooks/useTheme';
 
 // 2단계 스텝 흐름 (간소화)

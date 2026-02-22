@@ -3,7 +3,7 @@
  * 기존 SkeletonBlock 패턴 재사용
  */
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -11,7 +11,6 @@ import Animated, {
   withRepeat,
   withTiming,
 } from 'react-native-reanimated';
-import { useEffect } from 'react';
 
 function SkeletonBlock({ width, height, borderRadius = 8 }: {
   width: number | string;
@@ -22,7 +21,7 @@ function SkeletonBlock({ width, height, borderRadius = 8 }: {
 
   useEffect(() => {
     opacity.value = withRepeat(withTiming(0.7, { duration: 1000 }), -1, true);
-  }, []);
+  }, [opacity]);
 
   const animatedStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
 
