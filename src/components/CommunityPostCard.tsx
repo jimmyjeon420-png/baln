@@ -47,9 +47,22 @@ export default function CommunityPostCard({
   onPress,
   onAuthorPress,
 }: CommunityPostCardProps) {
-  const { colors } = useTheme();
+  const { theme, colors } = useTheme();
+  const isLightTheme = theme === 'light';
   const tier = getTierFromAssets(post.total_assets_at_post);
   const tierColor = TIER_COLORS[tier] || '#C0C0C0';
+  const lightTierTextColors: Record<string, string> = {
+    SILVER: '#475569',
+    GOLD: '#92400E',
+    PLATINUM: '#334155',
+    DIAMOND: '#0369A1',
+  };
+  const tierAccentColor = isLightTheme
+    ? (lightTierTextColors[tier] || colors.primaryDark || colors.primary)
+    : tierColor;
+  const tierBadgeBackground = isLightTheme ? `${tierAccentColor}1A` : tierColor;
+  const tierBadgeBorderColor = isLightTheme ? `${tierAccentColor}4D` : 'transparent';
+  const tierIconColor = isLightTheme ? tierAccentColor : '#000000';
   const tierIcon = getTierIcon(tier);
   const categoryInfo = post.category ? CATEGORY_INFO[post.category] : null;
   const allHoldings = post.top_holdings || [];
@@ -70,13 +83,19 @@ export default function CommunityPostCard({
         <View style={styles.userInfo}>
           {/* 아바타 (탭하면 프로필 이동) */}
           <TouchableOpacity
-            style={[styles.tierBadge, { backgroundColor: tierColor }]}
+            style={[
+              styles.tierBadge,
+              {
+                backgroundColor: tierBadgeBackground,
+                borderColor: tierBadgeBorderColor,
+              },
+            ]}
             onPress={(e) => {
               e.stopPropagation?.();
               onAuthorPress?.(post.user_id);
             }}
           >
-            <Ionicons name={tierIcon} size={14} color="#000000" />
+            <Ionicons name={tierIcon} size={14} color={tierIconColor} />
           </TouchableOpacity>
           <View style={{ flex: 1 }}>
             <View style={styles.tagRow}>
@@ -86,7 +105,7 @@ export default function CommunityPostCard({
                   onAuthorPress?.(post.user_id);
                 }}
               >
-                <Text style={[styles.displayTag, { color: tierColor }]}>
+                <Text style={[styles.displayTag, { color: tierAccentColor }]}>
                   {displayTag}
                 </Text>
               </TouchableOpacity>
@@ -221,6 +240,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
   },
   displayTag: {
     fontSize: 14,

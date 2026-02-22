@@ -347,7 +347,11 @@ class LoungeErrorBoundary extends React.Component<
 function LoungeScreenInner() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { colors: themeColors } = useTheme();
+  const { theme, colors: themeColors } = useTheme();
+  const isLightTheme = theme === 'light';
+  const vipBadgeColor = isLightTheme ? '#0B4A6F' : '#B9F2FF';
+  const vipBadgeBackground = isLightTheme ? '#DFF2FF' : 'rgba(185, 242, 255, 0.15)';
+  const vipBadgeBorder = isLightTheme ? '#B6E3FF' : 'rgba(185, 242, 255, 0.28)';
 
   // 세그먼트 상태
   const [activeSegment, setActiveSegment] = useState<Segment>('community');
@@ -506,9 +510,9 @@ function LoungeScreenInner() {
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <Text style={[styles.headerTitle, { color: themeColors.textPrimary }]}>VIP 라운지</Text>
-            <View style={styles.vipBadge}>
-              <Ionicons name="diamond" size={14} color="#B9F2FF" />
-              <Text style={styles.vipBadgeText}>PRIVATE</Text>
+            <View style={[styles.vipBadge, { backgroundColor: vipBadgeBackground, borderColor: vipBadgeBorder }]}>
+              <Ionicons name="diamond" size={14} color={vipBadgeColor} />
+              <Text style={[styles.vipBadgeText, { color: vipBadgeColor }]}>PRIVATE</Text>
             </View>
           </View>
         </View>
@@ -1178,6 +1182,8 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 12,
     gap: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(185, 242, 255, 0.28)',
   },
   vipBadgeText: {
     fontSize: 12,

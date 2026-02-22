@@ -658,27 +658,70 @@ export const useDeletePost = () => {
       const user = await getCurrentUser();
       if (!user) throw new Error('로그인이 필요합니다.');
 
-      // 본인 게시글인지 확인
-      const { data: post } = await supabase
-        .from('community_posts')
-        .select('user_id')
-        .eq('id', postId)
-        .single();
+      // 1) 우선: RLS 누락/불일치에도 안정적인 RPC 경로
+      try {
+        const { data: rpcData, error: rpcError } = await supabase.rpc('delete_own_community_post', {
+          p_post_id: postId,
+        });
 
-      if (post?.user_id !== user.id) {
-        throw new Error('본인의 게시글만 삭제할 수 있습니다.');
+        if (!rpcError && rpcData) {
+          const success = (rpcData as any)?.success === true;
+          const reason = (rpcData as any)?.reason as string | undefined;
+
+          if (success) {
+            return;
+          }
+
+          if (reason === 'forbidden') {
+            throw new Error('본인의 게시글만 삭제할 수 있습니다.');
+          }
+          if (reason === 'not_found') {
+            throw new Error('이미 삭제된 게시글입니다.');
+          }
+          if (reason === 'not_authenticated') {
+            throw new Error('로그인이 필요합니다.');
+          }
+        } else if (rpcError) {
+          // 함수 미배포(PGRST202) 등은 직접 삭제 경로로 폴백
+          console.warn('[Community] delete_own_community_post RPC 실패, 폴백 시도:', rpcError.message);
+        }
+      } catch (rpcErr) {
+        console.warn('[Community] 게시글 삭제 RPC 예외, 폴백 시도:', rpcErr);
       }
 
-      // 삭제
-      const { error } = await supabase
+      // 2) 폴백: 직접 삭제 + 영향 행 검증
+      const { data, error } = await supabase
         .from('community_posts')
         .delete()
-        .eq('id', postId);
+        .eq('id', postId)
+        .eq('user_id', user.id)
+        .select('id');
 
       if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error('게시글 삭제 권한 확인에 실패했습니다. 잠시 후 다시 시도해주세요.');
+      }
     },
-    onSuccess: () => {
+    onSuccess: (_deletedPost, deletedPostId) => {
+      queryClient.setQueriesData({ queryKey: ['communityPosts'] }, (old: unknown) => {
+        if (!old || typeof old !== 'object') return old;
+        const maybeInfinite = old as { pages?: unknown[] };
+        if (!Array.isArray(maybeInfinite.pages)) return old;
+
+        const pages = maybeInfinite.pages.map((page) => {
+          if (!Array.isArray(page)) return page;
+          return page.filter((post) => {
+            if (!post || typeof post !== 'object') return true;
+            return (post as { id?: string }).id !== deletedPostId;
+          });
+        });
+
+        return { ...(old as Record<string, unknown>), pages };
+      });
       queryClient.invalidateQueries({ queryKey: ['communityPosts'] });
+      queryClient.invalidateQueries({ queryKey: ['communityPost', deletedPostId] });
+      queryClient.invalidateQueries({ queryKey: ['authorPosts'] });
+      queryClient.invalidateQueries({ queryKey: ['bookmarkedPosts'] });
     },
   });
 };
