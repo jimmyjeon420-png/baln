@@ -2067,19 +2067,30 @@ overallScore, financial.score, technical.score, quality.score는 반드시 아�
 ${hasFundamentals ? '12. API 제공 데이터(시가총액, PER, PBR, ROE 등)는 반드시 그대로 사용하세요. 임의로 수정하지 마세요.' : ''}
 `;
 
-  // 프로덕션(TestFlight)은 프록시 우선: 만료된 클라이언트 API 키 이슈를 회피
+  // 프로덕션(TestFlight)은 프록시 "강제": 클라이언트 API 키 직접 호출 금지
   const shouldPreferProxy = !__DEV__;
   if (shouldPreferProxy) {
-    try {
-      console.log('[DeepDive] 프록시 우선 경로 실행');
-      return await generateDeepDiveViaProxy(input);
-    } catch (proxyErr: any) {
-      console.warn('[DeepDive] 프록시 우선 경로 실패, 직접 호출로 폴백:', proxyErr?.message?.substring(0, 120));
-      Sentry.captureException(proxyErr, {
-        tags: { service: 'gemini', type: 'proxy_fallback_failed' },
-        extra: { feature: 'deep_dive', stage: 'proxy_preferred' },
-      });
+    let lastProxyError: unknown = null;
+
+    for (let attempt = 1; attempt <= 2; attempt += 1) {
+      try {
+        console.log(`[DeepDive] 프록시 강제 경로 실행 (${attempt}/2)`);
+        return await generateDeepDiveViaProxy(input);
+      } catch (proxyErr) {
+        lastProxyError = proxyErr;
+        console.warn(
+          `[DeepDive] 프록시 강제 경로 실패 (${attempt}/2):`,
+          String((proxyErr as Error)?.message || proxyErr).substring(0, 120),
+        );
+      }
     }
+
+    Sentry.captureException(lastProxyError, {
+      tags: { service: 'gemini', type: 'proxy_required_failed' },
+      extra: { feature: 'deep_dive', stage: 'proxy_required' },
+    });
+
+    throw new Error('딥다이브 서버 분석이 일시적으로 지연되고 있습니다. 잠시 후 다시 시도해주세요.');
   }
 
   // Google Search 모델 → 실패 시 일반 모델 폴백 (2단계 시도)
