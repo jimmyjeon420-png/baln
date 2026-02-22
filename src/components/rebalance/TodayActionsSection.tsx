@@ -49,6 +49,18 @@ const CAT_ICON: Record<AssetCategory, string> = {
   cash: '💵', realestate: '🏠',
 };
 
+function roundToOneDecimal(value: number): number {
+  return Math.round((value + Number.EPSILON) * 10) / 10;
+}
+
+function formatCategoryPct(category: AssetCategory, pct: number): string {
+  const safePct = Number.isFinite(pct) ? pct : 0;
+  if (category === 'commodity') {
+    return roundToOneDecimal(safePct).toFixed(1);
+  }
+  return Math.round(safePct).toString();
+}
+
 // ── getCurrency 제거됨 ──
 // liveData?.currency 를 직접 사용 (CoinGecko→KRW, Yahoo 한국주식→KRW, Yahoo 미국주식→USD)
 
@@ -791,7 +803,7 @@ export default function TodayActionsSection({
                         <Text style={[s.planCatIcon, item.category === 'bitcoin' && { color: '#F5A623' }]}>{CAT_ICON[item.category]}</Text>
                         <Text style={[s.planCatLabel, { color: colors.textPrimary }]}>{CAT_LABEL[item.category]}</Text>
                         <Text style={[s.planCatDrift, { color: colors.textTertiary }]}>
-                          {item.currentPct.toFixed(0)}% → {item.targetPct}%
+                          {formatCategoryPct(item.category, item.currentPct)}% → {formatCategoryPct(item.category, item.targetPct)}%
                         </Text>
                         <View style={[s.planCatAmtBadge, { backgroundColor: `${colors.error}20` }]}>
                           <Text style={[s.planCatAmtText, { color: colors.error }]}>▼ 매도 {amtStr}</Text>
@@ -848,7 +860,7 @@ export default function TodayActionsSection({
                         <Text style={[s.planCatIcon, item.category === 'bitcoin' && { color: '#F5A623' }]}>{CAT_ICON[item.category]}</Text>
                         <Text style={[s.planCatLabel, { color: colors.textPrimary }]}>{CAT_LABEL[item.category]}</Text>
                         <Text style={[s.planCatDrift, { color: colors.textTertiary }]}>
-                          {item.currentPct.toFixed(0)}% → {item.targetPct}%
+                          {formatCategoryPct(item.category, item.currentPct)}% → {formatCategoryPct(item.category, item.targetPct)}%
                         </Text>
                         <View style={[s.planCatAmtBadge, { backgroundColor: `${colors.success}20` }]}>
                           <Text style={[s.planCatAmtText, { color: colors.success }]}>▲ 매수 {amtStr}</Text>

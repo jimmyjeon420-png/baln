@@ -1,9 +1,9 @@
 /**
- * 뉴스 탭 — 신선도 우선 + 내 자산 영향도 피드
+ * 뉴스 탭 — 카테고리별 신선 뉴스 + 내 자산 영향도
  *
  * 목표:
- * - 실시간 탭은 "최근 뉴스"만 노출 (양보다 신선도)
- * - PiCK 뉴스 + 내 자산 뉴스 탭 분리
+ * - 탭을 주식/암호화폐/거시경제 3개로 고정
+ * - 카테고리에 맞지 않는 뉴스는 노출하지 않음
  * - 각 뉴스에 "내 포트폴리오 영향도" 표시
  */
 
@@ -24,32 +24,28 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../src/hooks/useTheme';
 import {
   useMarketNews,
-  usePickNews,
   formatUpdateTime,
   getTimeAgo,
   triggerNewsCollectionIfNeeded,
   type MarketNewsItem,
+  type MarketNewsCategory,
 } from '../../src/hooks/useMarketNews';
-import { useNewsPortfolioMatch, computeNewsPortfolioMatch } from '../../src/hooks/useNewsPortfolioMatch';
-import { useSharedPortfolio } from '../../src/hooks/useSharedPortfolio';
+import { useNewsPortfolioMatch } from '../../src/hooks/useNewsPortfolioMatch';
 
 // ============================================================================
 // 탭/정책
 // ============================================================================
 
-type NewsMode = 'realtime' | 'pick' | 'my_assets';
+type NewsCategoryTab = MarketNewsCategory;
 
-const MODE_TABS: { key: NewsMode; label: string }[] = [
-  { key: 'realtime', label: '실시간 뉴스' },
-  { key: 'pick', label: 'PiCK 뉴스' },
-  { key: 'my_assets', label: '내 자산 뉴스' },
+const CATEGORY_TABS: { key: NewsCategoryTab; label: string }[] = [
+  { key: 'stock', label: '주식 뉴스' },
+  { key: 'crypto', label: '암호화폐 뉴스' },
+  { key: 'macro', label: '거시경제 뉴스' },
 ];
 
-const REALTIME_WINDOW_MS = 24 * 60 * 60 * 1000; // 24시간
-const PICK_WINDOW_MS = 48 * 60 * 60 * 1000; // 48시간
-const MAX_REALTIME_ITEMS = 30;
-const MAX_PICK_ITEMS = 20;
-const MAX_ASSET_NEWS_ITEMS = 30;
+const CATEGORY_WINDOW_MS = 24 * 60 * 60 * 1000; // 24시간
+const MAX_CATEGORY_ITEMS = 36;
 
 function parseSafeDate(iso: string): Date {
   const d = new Date(iso);
@@ -90,6 +86,70 @@ function formatTimeLabel(iso: string): string {
   return `${hh}:${mm}`;
 }
 
+function isGoogleNewsLink(raw: string | null | undefined): boolean {
+  if (!raw) return false;
+  try {
+    const parsed = new URL(raw);
+    return parsed.hostname.toLowerCase() === 'news.google.com';
+  } catch {
+    return false;
+  }
+}
+
+function sanitizeThumbnailUrl(
+  raw: string | null | undefined,
+  sourceUrl?: string | null
+): string | null {
+  if (!raw) return null;
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+
+  try {
+    const parsed = new URL(trimmed.replace(/&amp;/g, '&'));
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null;
+    if (parsed.protocol === 'http:') {
+      parsed.protocol = 'https:';
+    }
+    const normalized = parsed.toString();
+    const lower = normalized.toLowerCase();
+    const host = parsed.hostname.toLowerCase();
+    const path = parsed.pathname.toLowerCase();
+    const isGoogleSource = isGoogleNewsLink(sourceUrl);
+    const width = Number(parsed.searchParams.get('w') ?? parsed.searchParams.get('width') ?? parsed.searchParams.get('sz') ?? '');
+    const height = Number(parsed.searchParams.get('h') ?? parsed.searchParams.get('height') ?? '');
+    if (
+      lower.includes('favicon')
+      || lower.includes('/logo')
+      || lower.includes('logo_')
+      || lower.includes('_logo')
+      || lower.includes('logotype')
+      || lower.includes('icon')
+      || lower.includes('symbol')
+      || lower.includes('google.com/s2/favicons')
+      || lower.includes('gstatic.com')
+      || path.includes('/touch-icon')
+      || path.includes('apple-touch-icon')
+      || lower.endsWith('.ico')
+    ) {
+      return null;
+    }
+
+    if (isGoogleSource && (host.endsWith('googleusercontent.com') || host.endsWith('googleapis.com'))) {
+      return null;
+    }
+
+    if (Number.isFinite(width) && width > 0 && width <= 200) {
+      if (!Number.isFinite(height) || (height > 0 && height <= 200)) {
+        return null;
+      }
+    }
+
+    return normalized;
+  } catch {
+    return null;
+  }
+}
+
 function getExposureTone(totalExposure: number): { label: string; color: string } {
   if (totalExposure >= 30) return { label: '높음', color: '#E53935' };
   if (totalExposure >= 10) return { label: '중간', color: '#FB8C00' };
@@ -121,6 +181,17 @@ interface TimelineNewsItemProps {
 function TimelineNewsItem({ item, showDate, isLast }: TimelineNewsItemProps) {
   const { colors } = useTheme();
   const { totalExposure, hasMatch } = useNewsPortfolioMatch(item.tags ?? []);
+  const [thumbLoadFailed, setThumbLoadFailed] = useState(false);
+  const thumbnailUri = useMemo(
+    () => sanitizeThumbnailUrl(item.thumbnail_url, item.source_url),
+    [item.thumbnail_url, item.source_url]
+  );
+  const displayThumbUri = thumbnailUri;
+
+  useEffect(() => {
+    setThumbLoadFailed(false);
+  }, [thumbnailUri]);
+
   const exposurePercent = Math.max(0, Math.round(totalExposure));
   const impactDirection = getImpactDirection(item.impact_score);
   const impactIndex = hasMatch
@@ -190,8 +261,13 @@ function TimelineNewsItem({ item, showDate, isLast }: TimelineNewsItemProps) {
           </View>
 
           <View style={[styles.thumbWrap, { backgroundColor: colors.surfaceLight }]}>
-            {item.thumbnail_url ? (
-              <Image source={{ uri: item.thumbnail_url }} style={styles.thumbImage} resizeMode="cover" />
+            {displayThumbUri && !thumbLoadFailed ? (
+              <Image
+                source={{ uri: displayThumbUri }}
+                style={styles.thumbImage}
+                resizeMode="cover"
+                onError={() => setThumbLoadFailed(true)}
+              />
             ) : (
               <Ionicons name="newspaper-outline" size={22} color={colors.textTertiary} />
             )}
@@ -209,8 +285,7 @@ function TimelineNewsItem({ item, showDate, isLast }: TimelineNewsItemProps) {
 export default function NewsTabScreen() {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
-  const { assets, liquidTotal } = useSharedPortfolio();
-  const [mode, setMode] = useState<NewsMode>('realtime');
+  const [category, setCategory] = useState<NewsCategoryTab>('stock');
   const [isRecoveringNews, setIsRecoveringNews] = useState(false);
   const autoRecoveryLockRef = useRef(false);
 
@@ -223,9 +298,7 @@ export default function NewsTabScreen() {
     fetchNextPage,
     refetch,
     dataUpdatedAt,
-  } = useMarketNews('all');
-
-  const { data: pickNews = [] } = usePickNews();
+  } = useMarketNews(category);
 
   const allNews = useMemo(() => {
     const rows = data?.pages?.flatMap((page) => page) ?? [];
@@ -253,42 +326,28 @@ export default function NewsTabScreen() {
       .sort((a, b) => parseSafeDate(b.published_at).getTime() - parseSafeDate(a.published_at).getTime());
   }, [data]);
 
-  const realtimeNews = useMemo(() => {
+  const activeNews = useMemo(() => {
     const now = Date.now();
     return allNews
-      .filter((item) => now - parseSafeDate(item.published_at).getTime() <= REALTIME_WINDOW_MS)
-      .slice(0, MAX_REALTIME_ITEMS);
+      .filter((item) => now - parseSafeDate(item.published_at).getTime() <= CATEGORY_WINDOW_MS)
+      .slice(0, MAX_CATEGORY_ITEMS);
   }, [allNews]);
 
-  const pickList = useMemo(() => {
-    const now = Date.now();
-    return (pickNews ?? [])
-      .filter((item) => now - parseSafeDate(item.published_at).getTime() <= PICK_WINDOW_MS)
-      .sort((a, b) => parseSafeDate(b.published_at).getTime() - parseSafeDate(a.published_at).getTime())
-      .slice(0, MAX_PICK_ITEMS);
-  }, [pickNews]);
+  const latestCategoryPublishedAt = activeNews[0]?.published_at ?? null;
 
-  const myAssetNews = useMemo(() => {
-    return allNews
-      .filter((item) => computeNewsPortfolioMatch(item.tags ?? [], assets, liquidTotal).hasMatch)
-      .slice(0, MAX_ASSET_NEWS_ITEMS);
-  }, [allNews, assets, liquidTotal]);
+  const categoryGuideText = useMemo(() => {
+    if (category === 'stock') return '주식 시장 관련 기사만 표시';
+    if (category === 'crypto') return '암호화폐 시장 관련 기사만 표시';
+    return '금리·환율·물가 등 거시경제 기사만 표시';
+  }, [category]);
 
-  const activeNews = useMemo(() => {
-    if (mode === 'pick') return pickList;
-    if (mode === 'my_assets') return myAssetNews;
-    return realtimeNews;
-  }, [mode, pickList, myAssetNews, realtimeNews]);
-
-  const latestRealtimePublishedAt = realtimeNews[0]?.published_at ?? null;
-
-  // 실시간 탭에서 뉴스가 없거나 오래되면 Task J 자동 동기화
+  // 카테고리 뉴스가 없거나 오래되면 Task J 자동 동기화
   useEffect(() => {
-    if (mode !== 'realtime' || isLoading || autoRecoveryLockRef.current) return;
+    if (isLoading || autoRecoveryLockRef.current) return;
 
-    const isEmpty = realtimeNews.length === 0;
-    const isStale = latestRealtimePublishedAt
-      ? (Date.now() - parseSafeDate(latestRealtimePublishedAt).getTime()) > (90 * 60 * 1000)
+    const isEmpty = activeNews.length === 0;
+    const isStale = latestCategoryPublishedAt
+      ? (Date.now() - parseSafeDate(latestCategoryPublishedAt).getTime()) > (90 * 60 * 1000)
       : true;
 
     if (!isEmpty && !isStale) return;
@@ -307,7 +366,7 @@ export default function NewsTabScreen() {
         autoRecoveryLockRef.current = false;
       }, 3000);
     });
-  }, [mode, isLoading, realtimeNews.length, latestRealtimePublishedAt, refetch]);
+  }, [category, isLoading, activeNews.length, latestCategoryPublishedAt, refetch]);
 
   const [refreshing, setRefreshing] = useState(false);
   const onRefresh = useCallback(async () => {
@@ -317,11 +376,10 @@ export default function NewsTabScreen() {
   }, [refetch]);
 
   const handleLoadMore = useCallback(() => {
-    if (mode === 'pick') return;
     if (hasNextPage && !isFetchingNextPage) {
       fetchNextPage();
     }
-  }, [mode, hasNextPage, isFetchingNextPage, fetchNextPage]);
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const updateTimeStr = dataUpdatedAt ? formatUpdateTime(new Date(dataUpdatedAt)) : '';
 
@@ -335,13 +393,13 @@ export default function NewsTabScreen() {
       </View>
 
       <View style={[styles.modeTabs, { borderBottomColor: colors.border }]}> 
-        {MODE_TABS.map((tab) => {
-          const active = mode === tab.key;
+        {CATEGORY_TABS.map((tab) => {
+          const active = category === tab.key;
           return (
             <TouchableOpacity
               key={tab.key}
               style={styles.modeTabButton}
-              onPress={() => setMode(tab.key)}
+              onPress={() => setCategory(tab.key)}
             >
               <Text style={[styles.modeTabText, { color: active ? colors.textPrimary : colors.textTertiary }]}>
                 {tab.label}
@@ -364,19 +422,12 @@ export default function NewsTabScreen() {
         </View>
       )}
 
-      {mode === 'realtime' && (
-        <View style={[styles.focusBanner, { borderBottomColor: colors.border }]}> 
-          <Ionicons name="time-outline" size={14} color={colors.textTertiary} />
-          <Text style={[styles.focusText, { color: colors.textSecondary }]}>신선도 우선: 최근 24시간 뉴스만 표시</Text>
-        </View>
-      )}
-
-      {mode === 'my_assets' && (
-        <View style={[styles.focusBanner, { borderBottomColor: colors.border }]}>
-          <Ionicons name="pie-chart-outline" size={14} color={colors.textTertiary} />
-          <Text style={[styles.focusText, { color: colors.textSecondary }]}>보유 비중과 뉴스 태그를 매칭해 관련 뉴스만 표시</Text>
-        </View>
-      )}
+      <View style={[styles.focusBanner, { borderBottomColor: colors.border }]}> 
+        <Ionicons name="time-outline" size={14} color={colors.textTertiary} />
+        <Text style={[styles.focusText, { color: colors.textSecondary }]}>
+          신선도 우선: 최근 24시간 뉴스만 표시 · {categoryGuideText}
+        </Text>
+      </View>
 
       {isLoading ? (
         <View style={styles.loadingContainer}>
@@ -398,12 +449,10 @@ export default function NewsTabScreen() {
         <View style={styles.emptyContainer}>
           <Ionicons name="newspaper-outline" size={46} color={colors.textTertiary} />
           <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
-            {mode === 'my_assets' ? '내 자산과 연결된 뉴스가 없습니다' : '표시할 뉴스가 없습니다'}
+            표시할 뉴스가 없습니다
           </Text>
           <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
-            {mode === 'my_assets'
-              ? '보유 자산 태그와 매칭되는 뉴스가 올라오면 자동으로 표시됩니다'
-              : '신선한 뉴스가 들어오면 자동으로 갱신됩니다'}
+            해당 카테고리의 신선한 뉴스가 들어오면 자동으로 갱신됩니다
           </Text>
         </View>
       ) : (
@@ -526,12 +575,15 @@ const styles = StyleSheet.create({
   timeChip: {
     marginTop: 16,
     borderRadius: 16,
+    minWidth: 64,
+    alignItems: 'center',
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
   timeChipText: {
     fontSize: 14,
     fontWeight: '700',
+    textAlign: 'center',
   },
   timelineLine: {
     width: 2,

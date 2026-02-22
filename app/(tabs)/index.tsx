@@ -79,6 +79,59 @@ import { useTheme } from '../../src/hooks/useTheme';
 import { useStreak } from '../../src/hooks/useStreak';
 import { useStreakRecovery } from '../../src/hooks/useStreakRecovery';
 
+function extractTaggedLine(source: string | null | undefined, tag: string): string | null {
+  if (!source) return null;
+  const regex = new RegExp(`^${tag}:\\s*(.+)$`, 'm');
+  const match = source.match(regex);
+  return match?.[1]?.trim() || null;
+}
+
+function buildReviewDescription(
+  description: string | null | undefined,
+  source: string | null | undefined,
+  myVote: 'YES' | 'NO' | null,
+  isCorrect: boolean,
+): string | undefined {
+  const parts: string[] = [];
+  if (description?.trim()) {
+    parts.push(description.trim());
+  }
+
+  if (myVote) {
+    const scenario = extractTaggedLine(source, myVote === 'YES' ? 'YES 시나리오' : 'NO 시나리오');
+    if (scenario) {
+      parts.push(`${isCorrect ? '성공 이유' : '실패 이유'}: ${scenario}`);
+    }
+  }
+
+  const learning = extractTaggedLine(source, '학습포인트');
+  if (learning) {
+    parts.push(`학습 포인트: ${learning}`);
+  }
+
+  if (parts.length === 0) return undefined;
+  return parts.join('\n\n');
+}
+
+function buildReviewSource(source: string | null | undefined): string | undefined {
+  if (!source) return undefined;
+
+  const observed = extractTaggedLine(source, '관측데이터');
+  const check = extractTaggedLine(source, '조건검증');
+  const reasoning = extractTaggedLine(source, '핵심근거');
+  const refs = extractTaggedLine(source, '출처');
+
+  const summaryLines = [
+    observed ? `관측값: ${observed}` : null,
+    check ? `조건: ${check}` : null,
+    reasoning ? `판정 근거: ${reasoning}` : null,
+    refs ? `출처: ${refs}` : null,
+  ].filter(Boolean) as string[];
+
+  if (summaryLines.length === 0) return source;
+  return summaryLines.join('\n');
+}
+
 // ============================================================================
 // 메인 컴포넌트
 // ============================================================================
@@ -462,17 +515,18 @@ export default function HomeScreen() {
 
     return resolvedPolls.slice(0, 3).map(poll => {
       const vote = myVotesMap[poll.id];
+      const myVoteChoice = vote?.vote || null;
       const isCorrect = vote ? vote.vote === poll.correct_answer : false;
       const reward = isCorrect ? (isPremium ? 4 : 2) : 0;
 
       return {
         question: poll.question,
-        myVote: vote?.vote || 'YES',
+        myVote: myVoteChoice || 'YES',
         correctAnswer: poll.correct_answer || 'YES',
         isCorrect,
         reward,
-        description: poll.description || undefined,
-        source: poll.source || undefined,
+        description: buildReviewDescription(poll.description, poll.source, myVoteChoice, isCorrect),
+        source: buildReviewSource(poll.source),
       };
     });
   }, [resolvedPolls, myVotesMap, isPremium]);
@@ -491,6 +545,8 @@ export default function HomeScreen() {
         deadline: poll.deadline,
         source: poll.source ?? undefined,
         createdAt: poll.created_at ?? undefined,
+        upReason: poll.up_reason ?? undefined,
+        downReason: poll.down_reason ?? undefined,
       };
     });
   }, [todayPolls]);

@@ -50,7 +50,7 @@ import {
   LOUNGE_COMMENT_THRESHOLD,
   LOUNGE_POST_THRESHOLD,
 } from '../../src/types/community';
-import { formatAssetAmount } from '../../src/utils/communityUtils';
+import { formatAssetAmount, formatCommunityDisplayTag } from '../../src/utils/communityUtils';
 import { Gathering } from '../../src/types/database';
 import { useTheme } from '../../src/hooks/useTheme';
 import supabase, { getCurrentUser } from '../../src/services/supabase';
@@ -438,25 +438,22 @@ function LoungeScreenInner() {
       assets.forEach((a) => {
         const raw = (a.assetType as string) || 'other';
         const cat = ASSET_TYPE_KR_LOUNGE[raw] ?? raw;
-        byCat[cat] = (byCat[cat] || 0) + a.currentValue;
+        const rawValue = Number(a.currentValue) || 0;
+        const debtAmount = Number(a.debtAmount) || 0;
+        const normalizedValue = cat === '부동산'
+          ? Math.max(0, rawValue - debtAmount)
+          : Math.max(0, rawValue);
+        byCat[cat] = (byCat[cat] || 0) + normalizedValue;
       });
       const mixCategories = Object.entries(byCat)
         .filter(([, v]) => v > 0)
         .map(([cat, v]) => ({ category: cat, percentage: Math.round((v / Math.max(totalAssets, 1)) * 100) }));
       const computedAssetMix = generateAssetMix(mixCategories) || '다양한 자산';
 
-      // 총 평가손익
-      const totalGain = assets.reduce((sum, a) => {
-        const cost = a.costBasis ?? a.currentValue;
-        return sum + (a.currentValue - cost);
-      }, 0);
-      const gainSign = totalGain >= 0 ? '+' : '';
-      const gainStr = `${gainSign}${(Math.abs(totalGain) >= 1000000 ? (totalGain / 100000000).toFixed(1) + '억' : Math.round(totalGain / 10000) + '만')}`;
-
       await createPost.mutateAsync({
         content: newPostContent.trim(),
         category: postCategory,
-        displayTag: `[자산: ${(totalAssets / 100000000).toFixed(1)}억]`,
+        displayTag: formatCommunityDisplayTag(totalAssets),
         assetMix: computedAssetMix,
         totalAssets,
       });

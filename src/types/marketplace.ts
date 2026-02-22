@@ -178,6 +178,13 @@ export interface DeepDiveResult {
     detail: string;
     date: string;
   }>;
+  verification?: {
+    level: 'high' | 'medium' | 'low';
+    score: number; // 0-100 (높을수록 신뢰도 높음)
+    summary: string;
+    checks: string[];
+    checkedAt: string;
+  };
 }
 
 // --- What-If 시뮬레이터 ---

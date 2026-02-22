@@ -89,9 +89,17 @@ const MACRO_KEYWORDS = [
   '관세', '재정', '통화정책', '양적', 'pce', '고용', '제조업', 'pmi',
 ];
 
+type StrictNewsCategory = 'crypto' | 'stock' | 'macro';
+
+const STRICT_NEWS_CATEGORIES: StrictNewsCategory[] = ['crypto', 'stock', 'macro'];
+
+function isStrictNewsCategory(value: unknown): value is StrictNewsCategory {
+  return typeof value === 'string' && STRICT_NEWS_CATEGORIES.includes(value as StrictNewsCategory);
+}
+
 interface PreTagResult {
   tags: string[];
-  category: 'crypto' | 'stock' | 'macro' | 'general';
+  category: StrictNewsCategory | null;
 }
 
 /**
@@ -101,7 +109,7 @@ interface PreTagResult {
 function preTagNews(title: string, description?: string): PreTagResult {
   const text = `${title} ${description || ''}`.toLowerCase();
   const tags: string[] = [];
-  let category: PreTagResult['category'] = 'general';
+  let category: PreTagResult['category'] = null;
   let hasCrypto = false;
   let hasStock = false;
 
@@ -127,7 +135,7 @@ function preTagNews(title: string, description?: string): PreTagResult {
     }
   }
 
-  // 카테고리 결정: crypto > stock > macro > general
+  // 카테고리 결정: crypto > stock > macro
   if (hasCrypto) category = 'crypto';
   else if (hasStock) category = 'stock';
   else {
@@ -228,7 +236,384 @@ interface RawNewsItem {
   pubDate: string;
   source: string;
   description?: string;
+  thumbnailUrl: string | null;
   normalizedTitle: string;
+}
+
+const GOOGLE_NEWS_BASE_URL = 'https://news.google.com';
+const GOOGLE_NEWS_LOCALE_QUERY = 'hl=ko&gl=KR&ceid=KR:ko';
+const GOOGLE_NEWS_DECODE_ENDPOINT = `${GOOGLE_NEWS_BASE_URL}/_/DotsSplashUi/data/batchexecute?rpcids=Fbv4je`;
+const googleNewsResolveCache = new Map<string, string | null>();
+
+function decodeXmlEntities(raw: string): string {
+  return raw
+    .replaceAll('&amp;', '&')
+    .replaceAll('&quot;', '"')
+    .replaceAll('&#39;', "'")
+    .replaceAll('&lt;', '<')
+    .replaceAll('&gt;', '>');
+}
+
+function normalizeThumbnailUrl(raw: string, baseLink: string): string | null {
+  if (!raw) return null;
+  const unescaped = decodeXmlEntities(raw.trim())
+    .replace(/^<!\[CDATA\[/, '')
+    .replace(/\]\]>$/, '')
+    .trim();
+
+  if (!unescaped) return null;
+
+  try {
+    const absolute = new URL(unescaped, baseLink);
+    if (absolute.protocol !== 'http:' && absolute.protocol !== 'https:') return null;
+    if (absolute.protocol === 'http:') absolute.protocol = 'https:';
+    return absolute.toString();
+  } catch {
+    return null;
+  }
+}
+
+function isGoogleNewsArticleLink(rawLink: string): boolean {
+  try {
+    const parsed = new URL(rawLink);
+    const host = parsed.hostname.toLowerCase();
+    if (host !== 'news.google.com') return false;
+    return parsed.pathname.startsWith('/rss/articles/')
+      || parsed.pathname.startsWith('/articles/')
+      || parsed.pathname.startsWith('/read/');
+  } catch {
+    return false;
+  }
+}
+
+function extractGoogleNewsArticleToken(rawLink: string): string | null {
+  try {
+    const parsed = new URL(rawLink);
+    if (parsed.hostname.toLowerCase() !== 'news.google.com') return null;
+    const segments = parsed.pathname.split('/').filter(Boolean);
+    if (segments.length < 2) return null;
+
+    if (segments[0] === 'rss' && segments[1] === 'articles' && segments[2]) {
+      return decodeURIComponent(segments[2]);
+    }
+    if ((segments[0] === 'articles' || segments[0] === 'read') && segments[1]) {
+      return decodeURIComponent(segments[1]);
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+async function getGoogleNewsDecodingParams(articleToken: string): Promise<{ timestamp: string; signature: string } | null> {
+  const decodePages = [
+    `${GOOGLE_NEWS_BASE_URL}/articles/${articleToken}?${GOOGLE_NEWS_LOCALE_QUERY}`,
+    `${GOOGLE_NEWS_BASE_URL}/rss/articles/${articleToken}?${GOOGLE_NEWS_LOCALE_QUERY}`,
+  ];
+
+  for (const pageUrl of decodePages) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 7000);
+
+    try {
+      const res = await fetch(pageUrl, {
+        signal: controller.signal,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml',
+          'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.7',
+        },
+      });
+      if (!res.ok) continue;
+
+      const html = await res.text();
+      const tsFirst = html.match(/data-n-a-ts="([^"]+)"\s+data-n-a-sg="([^"]+)"/);
+      if (tsFirst) {
+        return { timestamp: tsFirst[1], signature: tsFirst[2] };
+      }
+
+      const sgFirst = html.match(/data-n-a-sg="([^"]+)"\s+data-n-a-ts="([^"]+)"/);
+      if (sgFirst) {
+        return { timestamp: sgFirst[2], signature: sgFirst[1] };
+      }
+    } catch {
+      // 다음 fallback URL 시도
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  return null;
+}
+
+async function decodeGoogleNewsArticleUrl(articleToken: string, timestamp: string, signature: string): Promise<string | null> {
+  if (!/^\d+$/.test(timestamp)) return null;
+  if (!signature) return null;
+
+  // Google News 내부 RPC 요청 형식
+  const batchedReq = [[
+    'Fbv4je',
+    `["garturlreq",[["X","X",["X","X"],null,null,1,1,"US:en",null,1,null,null,null,null,null,0,1],"X","X",1,[1,1,1],1,1,null,0,0,null,0],"${articleToken}",${timestamp},"${signature}"]`,
+    null,
+    'generic',
+  ]];
+
+  const body = `f.req=${encodeURIComponent(JSON.stringify([batchedReq]))}`;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 7000);
+
+  try {
+    const res = await fetch(GOOGLE_NEWS_DECODE_ENDPOINT, {
+      method: 'POST',
+      signal: controller.signal,
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+        'Referer': `${GOOGLE_NEWS_BASE_URL}/`,
+      },
+      body,
+    });
+
+    if (!res.ok) return null;
+
+    const rawText = await res.text();
+    const payloadBlock = rawText
+      .split('\n\n')
+      .find((block) => block.trim().startsWith('[["wrb.fr","Fbv4je"'));
+    if (!payloadBlock) return null;
+
+    const parsed = JSON.parse(payloadBlock);
+    const row = parsed.find((entry: any) => Array.isArray(entry) && entry[0] === 'wrb.fr' && entry[1] === 'Fbv4je');
+    if (!row) return null;
+
+    const rpcPayload = typeof row[2] === 'string' ? JSON.parse(row[2]) : row[2];
+    const decodedUrl = typeof rpcPayload?.[1] === 'string' ? rpcPayload[1] : null;
+    if (!decodedUrl) return null;
+    if (!isAllowedSourceLink(decodedUrl)) return null;
+    if (isGoogleNewsArticleLink(decodedUrl)) return null;
+    return decodedUrl;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function resolveGoogleNewsArticleUrl(rawLink: string): Promise<string | null> {
+  if (!isGoogleNewsArticleLink(rawLink)) return null;
+
+  const token = extractGoogleNewsArticleToken(rawLink);
+  if (!token) return null;
+
+  if (googleNewsResolveCache.has(token)) {
+    return googleNewsResolveCache.get(token) ?? null;
+  }
+
+  const params = await getGoogleNewsDecodingParams(token);
+  if (!params) {
+    googleNewsResolveCache.set(token, null);
+    return null;
+  }
+
+  const decoded = await decodeGoogleNewsArticleUrl(token, params.timestamp, params.signature);
+  googleNewsResolveCache.set(token, decoded);
+  return decoded;
+}
+
+function isLikelyLogoThumbnail(url: string | null | undefined, articleUrl?: string): boolean {
+  if (!url) return true;
+  const lower = url.toLowerCase();
+
+  if (
+    lower.includes('favicon')
+    || lower.includes('/logo')
+    || lower.includes('logo_')
+    || lower.includes('_logo')
+    || lower.includes('logotype')
+    || lower.includes('brandmark')
+    || lower.includes('masthead')
+    || lower.includes('icon')
+    || lower.includes('/ci/')
+    || lower.includes('symbol')
+    || lower.includes('google.com/s2/favicons')
+    || lower.includes('gstatic.com')
+    || lower.endsWith('.ico')
+  ) {
+    return true;
+  }
+
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.toLowerCase();
+    if (host === 'news.google.com') return true;
+    if (host.endsWith('gstatic.com')) return true;
+    if (host.endsWith('googleusercontent.com') && articleUrl && isGoogleNewsArticleLink(articleUrl)) return true;
+
+    const width = Number(parsed.searchParams.get('w') ?? parsed.searchParams.get('width') ?? parsed.searchParams.get('sz') ?? '');
+    const height = Number(parsed.searchParams.get('h') ?? parsed.searchParams.get('height') ?? '');
+    if (Number.isFinite(width) && width > 0 && width <= 200) {
+      if (!Number.isFinite(height) || (height > 0 && height <= 200)) return true;
+    }
+
+    const path = parsed.pathname.toLowerCase();
+    if (path.includes('/favicon') || path.includes('/touch-icon') || path.includes('apple-touch-icon')) {
+      return true;
+    }
+  } catch {
+    return true;
+  }
+
+  return false;
+}
+
+function extractThumbnailFromItemXml(itemXml: string, articleLink: string): string | null {
+  const encodedContent = itemXml.match(/<content:encoded>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/content:encoded>/i)?.[1] || '';
+  const encodedDescription = itemXml.match(/<description>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/description>/i)?.[1] || '';
+  const decodedHtml = decodeXmlEntities(`${encodedContent}\n${encodedDescription}`);
+
+  const candidates: Array<string | undefined> = [
+    itemXml.match(/<media:thumbnail[^>]*url=["']([^"']+)["'][^>]*>/i)?.[1],
+    itemXml.match(/<media:content[^>]*url=["']([^"']+)["'][^>]*>/i)?.[1],
+    itemXml.match(/<enclosure[^>]*type=["']image\/[^"']*["'][^>]*url=["']([^"']+)["'][^>]*>/i)?.[1],
+    itemXml.match(/<enclosure[^>]*url=["']([^"']+)["'][^>]*type=["']image\/[^"']*["'][^>]*>/i)?.[1],
+    decodedHtml.match(/<img[^>]*src=["']([^"']+)["']/i)?.[1],
+  ];
+
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+    const normalized = normalizeThumbnailUrl(candidate, articleLink);
+    if (!normalized) continue;
+    if (isLikelyLogoThumbnail(normalized, articleLink)) continue;
+    return normalized;
+  }
+  return null;
+}
+
+function collectHtmlImageCandidates(html: string): string[] {
+  const patterns = [
+    /<meta[^>]*property=["']og:image(?::secure_url|:url)?["'][^>]*content=["']([^"']+)["'][^>]*>/gi,
+    /<meta[^>]*content=["']([^"']+)["'][^>]*property=["']og:image(?::secure_url|:url)?["'][^>]*>/gi,
+    /<meta[^>]*name=["']twitter:image(?::src)?["'][^>]*content=["']([^"']+)["'][^>]*>/gi,
+    /<meta[^>]*content=["']([^"']+)["'][^>]*name=["']twitter:image(?::src)?["'][^>]*>/gi,
+    /<link[^>]*rel=["']image_src["'][^>]*href=["']([^"']+)["'][^>]*>/gi,
+    /<img[^>]*src=["']([^"']+)["'][^>]*>/gi,
+  ];
+
+  const candidates: string[] = [];
+  for (const pattern of patterns) {
+    for (const match of html.matchAll(pattern)) {
+      const raw = match[1]?.trim();
+      if (!raw) continue;
+      candidates.push(raw);
+      if (candidates.length >= 40) return candidates;
+    }
+  }
+  return candidates;
+}
+
+async function fetchArticleHeroImage(articleUrl: string): Promise<string | null> {
+  if (!isAllowedSourceLink(articleUrl)) return null;
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
+
+  try {
+    const res = await fetch(articleUrl, {
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml',
+        'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.7',
+      },
+    });
+
+    if (!res.ok) return null;
+
+    const contentType = (res.headers.get('content-type') || '').toLowerCase();
+    if (!contentType.includes('text/html') && !contentType.includes('application/xhtml+xml')) {
+      return null;
+    }
+
+    const html = (await res.text()).slice(0, 350000);
+    const baseUrl = res.url || articleUrl;
+    const candidates = collectHtmlImageCandidates(html);
+
+    for (const candidate of candidates) {
+      const normalized = normalizeThumbnailUrl(candidate, baseUrl);
+      if (!normalized) continue;
+      if (isLikelyLogoThumbnail(normalized, articleUrl)) continue;
+      return normalized;
+    }
+  } catch {
+    // 사이트별 봇 차단/타임아웃은 무시하고 기존 썸네일 유지
+  } finally {
+    clearTimeout(timeout);
+  }
+
+  return null;
+}
+
+async function enrichArticleThumbnails(items: RawNewsItem[]): Promise<RawNewsItem[]> {
+  if (items.length === 0) return items;
+
+  const enriched = items.map((item) => ({ ...item }));
+  const CONCURRENCY = 4;
+  let resolvedCount = 0;
+  let heroCount = 0;
+  let heroTargetCount = 0;
+
+  const indexed = enriched.map((item, index) => ({ item, index }));
+
+  for (let i = 0; i < indexed.length; i += CONCURRENCY) {
+    const chunk = indexed.slice(i, i + CONCURRENCY);
+    const results = await Promise.all(
+      chunk.map(async ({ item, index }) => ({
+        index,
+        originalLink: item.link,
+        resolvedLink: isGoogleNewsArticleLink(item.link)
+          ? (await resolveGoogleNewsArticleUrl(item.link) || item.link)
+          : item.link,
+      }))
+    );
+
+    const heroResults = await Promise.all(
+      results.map(async (row) => {
+        let nextThumbnail = enriched[row.index].thumbnailUrl;
+        if (nextThumbnail && isLikelyLogoThumbnail(nextThumbnail, row.resolvedLink)) {
+          nextThumbnail = null;
+        }
+
+        if (!nextThumbnail) {
+          heroTargetCount += 1;
+          nextThumbnail = await fetchArticleHeroImage(row.resolvedLink);
+        }
+
+        return {
+          ...row,
+          thumbnail: nextThumbnail,
+        };
+      })
+    );
+
+    for (const result of heroResults) {
+      if (result.resolvedLink !== result.originalLink) {
+        enriched[result.index].link = result.resolvedLink;
+        resolvedCount += 1;
+      }
+
+      if (result.thumbnail) {
+        if (result.thumbnail !== enriched[result.index].thumbnailUrl) {
+          heroCount += 1;
+        }
+        enriched[result.index].thumbnailUrl = result.thumbnail;
+      } else {
+        enriched[result.index].thumbnailUrl = null;
+      }
+    }
+  }
+
+  console.log(`[Task J] Google 원문 URL 복원: ${resolvedCount}건, 기사 대표이미지 보강: ${heroCount}/${heroTargetCount}건`);
+  return enriched;
 }
 
 /**
@@ -247,16 +632,18 @@ function parseRSSItems(xml: string, sourceName: string, maxItems: number): RawNe
     const linkMatch = itemXml.match(/<link>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/link>/);
     const pubDateMatch = itemXml.match(/<pubDate>(.*?)<\/pubDate>/);
     const descMatch = itemXml.match(/<description>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/description>/s);
+    const rssSourceMatch = itemXml.match(/<source(?:\s+url=["'][^"']+["'])?>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/source>/i);
 
     if (!titleMatch || !linkMatch) continue;
 
     const title = titleMatch[1].trim();
     const link = linkMatch[1].trim();
+    const sourceFromItem = rssSourceMatch?.[1]?.trim();
+    const normalizedSourceName = sourceName === 'Google News' && sourceFromItem
+      ? sourceFromItem
+      : sourceName;
 
-    // Google News 리다이렉트 URL에서 실제 URL 추출 시도
-    const cleanLink = link.startsWith('https://news.google.com/rss/articles/')
-      ? link // Google News URL 그대로 사용 (리다이렉트는 앱에서 처리)
-      : link;
+    const cleanLink = link;
 
     if (!title || !cleanLink) continue;
     if (!isAllowedSourceLink(cleanLink)) continue;
@@ -267,8 +654,9 @@ function parseRSSItems(xml: string, sourceName: string, maxItems: number): RawNe
       title,
       link: cleanLink,
       pubDate: pubDateMatch?.[1] || new Date().toISOString(),
-      source: sourceName,
+      source: normalizedSourceName,
       description: safeDescription,
+      thumbnailUrl: extractThumbnailFromItemXml(itemXml, cleanLink),
       normalizedTitle: normalizeTitle(title),
     });
   }
@@ -328,7 +716,8 @@ interface TaggedNews {
   source: string;
   summary?: string;
   tags: string[];
-  category: 'crypto' | 'stock' | 'macro' | 'general';
+  category: StrictNewsCategory;
+  thumbnail_url?: string | null;
   is_pick: boolean;
   pick_reason?: string;
   /** 투자자 관점 영향 분석 (예: "BTC 보유자 주의. 기관 매도세로 단기 하락 가능") */
@@ -446,22 +835,54 @@ function selectDiverseTopNews(items: ScoredNewsItem[], limit: number): ScoredNew
   return selected;
 }
 
+function resolveStrictCategory(
+  rawCategory: unknown,
+  fallbackCategory: PreTagResult['category'],
+  title: string,
+  description?: string,
+  tags: string[] = []
+): StrictNewsCategory | null {
+  const normalizedCategory = typeof rawCategory === 'string'
+    ? rawCategory.toLowerCase()
+    : rawCategory;
+
+  if (isStrictNewsCategory(normalizedCategory)) return normalizedCategory;
+  if (fallbackCategory) return fallbackCategory;
+
+  const mergedDescription = `${description || ''} ${tags.join(' ')}`.trim();
+  return preTagNews(title, mergedDescription).category;
+}
+
 function fallbackTagging(scoredItems: ScoredNewsItem[]): TaggedNews[] {
-  return scoredItems.map((item) => ({
-    title: item.title,
-    link: item.link,
-    pubDate: item.pubDate,
-    source: item.source,
-    summary: item.description,
-    tags: item.preTag.tags,
-    category: item.preTag.category,
-    is_pick: false,
-    impact_score: 0,
-    news_quality_score: item.newsQualityScore,
-    freshness_score: item.freshnessScore,
-    asset_relevance_score: item.assetRelevanceScore,
-    source_trust_score: item.sourceTrustScore,
-  }));
+  return scoredItems
+    .map((item) => {
+      const category = resolveStrictCategory(
+        item.preTag.category,
+        item.preTag.category,
+        item.title,
+        item.description,
+        item.preTag.tags
+      );
+      if (!category) return null;
+
+      return {
+        title: item.title,
+        link: item.link,
+        pubDate: item.pubDate,
+        source: item.source,
+        summary: item.description,
+        tags: item.preTag.tags,
+        category,
+        thumbnail_url: item.thumbnailUrl,
+        is_pick: false,
+        impact_score: 0,
+        news_quality_score: item.newsQualityScore,
+        freshness_score: item.freshnessScore,
+        asset_relevance_score: item.assetRelevanceScore,
+        source_trust_score: item.sourceTrustScore,
+      } satisfies TaggedNews;
+    })
+    .filter((item): item is TaggedNews => item !== null);
 }
 
 function rebalancePickFlags(items: TaggedNews[]): TaggedNews[] {
@@ -515,7 +936,7 @@ ${newsList}
 각 항목 JSON 배열:
 - index: 번호
 - tags: 사전태그 확인/보완 (누락 추가, 오류 수정)
-- category: "crypto"|"stock"|"macro"|"general" (사전분류 확인/수정)
+- category: "crypto"|"stock"|"macro" 중 1개
 - summary: 한국어 50자 요약
 - is_pick: 핵심뉴스 여부 (배치당 최대 2개)
 - impact_summary: "~보유자" 관점 영향+전망 80자
@@ -540,15 +961,11 @@ ${newsList}
         if (!item) continue;
         const pt = preTags[tag.index];
 
-        const validCategories = ['crypto', 'stock', 'macro', 'general'];
-        // AI 결과 우선, 실패 시 선태깅 결과 사용
-        const category = validCategories.includes(tag.category)
-          ? tag.category as TaggedNews['category']
-          : pt.category;
-
         // 태그: AI 결과와 선태깅 결과 병합 (중복 제거)
         const aiTags = Array.isArray(tag.tags) ? tag.tags : [];
         const mergedTags = [...new Set([...aiTags, ...pt.tags])].slice(0, 5);
+        const category = resolveStrictCategory(tag.category, pt.category, item.title, item.description, mergedTags);
+        if (!category) continue;
 
         // impact_score 범위 검증 (-2 ~ +2)
         let impactScore = typeof tag.impact_score === 'number' ? tag.impact_score : 0;
@@ -562,6 +979,7 @@ ${newsList}
           summary: tag.summary || item.description,
           tags: mergedTags,
           category,
+          thumbnail_url: item.thumbnailUrl,
           is_pick: !!tag.is_pick,
           pick_reason: tag.pick_reason || undefined,
           impact_summary: tag.impact_summary || undefined,
@@ -577,10 +995,11 @@ ${newsList}
     } catch (err) {
       console.warn(`[Task J] Gemini 실패 (배치 ${Math.floor(i / BATCH_SIZE) + 1}), 선태깅 결과로 저장:`, err);
 
-      // ★ AI 실패 시에도 선태깅 결과로 저장 (기존: 빈 태그/general)
+      // ★ AI 실패 시에도 선태깅 결과로 저장 (단, 허용 카테고리 기사만 유지)
       for (let j = 0; j < batch.length; j++) {
         const item = batch[j];
         const pt = preTags[j];
+        if (!pt.category) continue;
         results.push({
           title: item.title,
           link: item.link,
@@ -589,6 +1008,7 @@ ${newsList}
           summary: item.description,
           tags: pt.tags,
           category: pt.category,
+          thumbnail_url: item.thumbnailUrl,
           is_pick: false,
           impact_score: 0,
           news_quality_score: item.newsQualityScore,
@@ -607,12 +1027,58 @@ ${newsList}
 // DB UPSERT + 정리
 // ============================================================================
 
+let recentUpsertErrors: string[] = [];
+
+async function writeBatchWithRecovery(rows: Record<string, any>[]): Promise<number> {
+  let successCount = 0;
+
+  for (const row of rows) {
+    // 1) source_url 기준 업데이트 (이미 존재하는 기사면 갱신)
+    const updateBySource = await supabase
+      .from('market_news')
+      .update(row)
+      .eq('source_url', row.source_url)
+      .select('id');
+
+    if (!updateBySource.error && (updateBySource.data?.length || 0) > 0) {
+      successCount += 1;
+      continue;
+    }
+
+    // 2) 신규 insert 시도
+    const insertResult = await supabase
+      .from('market_news')
+      .insert(row)
+      .select('id');
+
+    if (!insertResult.error) {
+      successCount += 1;
+      continue;
+    }
+
+    // 3) title unique 충돌 환경 대비: title 기준 update
+    if (/duplicate key value violates unique constraint/i.test(insertResult.error.message || '')) {
+      const updateByTitle = await supabase
+        .from('market_news')
+        .update(row)
+        .eq('title', row.title)
+        .select('id');
+      if (!updateByTitle.error && (updateByTitle.data?.length || 0) > 0) {
+        successCount += 1;
+      }
+    }
+  }
+
+  return successCount;
+}
+
 /**
  * market_news 테이블에 UPSERT (source_url 기준 중복 방지)
  */
 async function upsertNews(taggedItems: TaggedNews[]): Promise<number> {
   if (taggedItems.length === 0) return 0;
 
+  recentUpsertErrors = [];
   let upsertedCount = 0;
   const BATCH_SIZE = 20;
 
@@ -626,7 +1092,7 @@ async function upsertNews(taggedItems: TaggedNews[]): Promise<number> {
       summary: item.summary?.substring(0, 300) || null,
       source_name: item.source,
       source_url: item.link,
-      thumbnail_url: null,
+      thumbnail_url: item.thumbnail_url || null,
       published_at: toSafeISOString(item.pubDate),
       tags: item.tags,
       category: item.category,
@@ -640,6 +1106,7 @@ async function upsertNews(taggedItems: TaggedNews[]): Promise<number> {
       source_trust_score: item.source_trust_score ?? null,
     }));
 
+    let rowsForRecovery: Record<string, any>[] = fullRows;
     let { error } = await supabase
       .from('market_news')
       .upsert(fullRows, { onConflict: 'source_url' });
@@ -653,7 +1120,7 @@ async function upsertNews(taggedItems: TaggedNews[]): Promise<number> {
         summary: item.summary?.substring(0, 300) || null,
         source_name: item.source,
         source_url: item.link,
-        thumbnail_url: null,
+        thumbnail_url: item.thumbnail_url || null,
         published_at: toSafeISOString(item.pubDate),
         tags: item.tags,
         category: item.category,
@@ -663,6 +1130,7 @@ async function upsertNews(taggedItems: TaggedNews[]): Promise<number> {
         impact_score: item.impact_score ?? 0,
       }));
 
+      rowsForRecovery = compatibilityRows;
       const retry = await supabase
         .from('market_news')
         .upsert(compatibilityRows, { onConflict: 'source_url' });
@@ -676,7 +1144,7 @@ async function upsertNews(taggedItems: TaggedNews[]): Promise<number> {
         summary: item.summary?.substring(0, 300) || null,
         source_name: item.source,
         source_url: item.link,
-        thumbnail_url: null,
+        thumbnail_url: item.thumbnail_url || null,
         published_at: toSafeISOString(item.pubDate),
         tags: item.tags,
         category: item.category,
@@ -684,6 +1152,7 @@ async function upsertNews(taggedItems: TaggedNews[]): Promise<number> {
         pick_reason: item.pick_reason || null,
       }));
 
+      rowsForRecovery = minimalRows;
       const fallbackRetry = await supabase
         .from('market_news')
         .upsert(minimalRows, { onConflict: 'source_url' });
@@ -692,6 +1161,14 @@ async function upsertNews(taggedItems: TaggedNews[]): Promise<number> {
 
     if (error) {
       console.warn(`[Task J] UPSERT 실패 (배치 ${Math.floor(i / BATCH_SIZE) + 1}):`, error.message);
+      if (recentUpsertErrors.length < 5) {
+        recentUpsertErrors.push(error.message);
+      }
+      const recovered = await writeBatchWithRecovery(rowsForRecovery);
+      if (recovered > 0) {
+        console.log(`[Task J] 배치 ${Math.floor(i / BATCH_SIZE) + 1} 복구 저장 성공: ${recovered}/${rowsForRecovery.length}`);
+        upsertedCount += recovered;
+      }
     } else {
       upsertedCount += batch.length;
     }
@@ -769,6 +1246,7 @@ export interface NewsCollectionResult {
   aiTagged: number;
   fallbackTagged: number;
   avgQualityScore: number;
+  upsertErrorSample?: string[];
   sources: Record<string, number>;
 }
 
@@ -837,43 +1315,70 @@ export async function runNewsCollection(): Promise<NewsCollectionResult> {
     console.log(`[Task J] 제목 중복 제거: ${baseItems.length} → ${dedupedItems.length}건`);
 
     const scoredItems = scoreNewsItems(dedupedItems);
-    const financeItems = scoredItems.filter((item) => item.preTag.category !== 'general');
-    const fallbackGeneral = financeItems.length === 0 ? scoredItems.slice(0, 5) : [];
-    const candidateItems = selectDiverseTopNews(
-      [...financeItems, ...fallbackGeneral],
-      MAX_NEWS_CANDIDATES
-    );
+    const financeItems = scoredItems.filter((item) => item.preTag.category !== null);
+    const selectedItems = selectDiverseTopNews(financeItems, MAX_NEWS_CANDIDATES);
+    const candidateItems = await enrichArticleThumbnails(selectedItems);
 
     console.log(
-      `[Task J] 품질 선별 완료: scored=${scoredItems.length}, finance=${financeItems.length}, selected=${candidateItems.length}`
+      `[Task J] 품질 선별 완료: scored=${scoredItems.length}, classified=${financeItems.length}, selected=${candidateItems.length}`
     );
 
     // ── DB 기존 제목 체크 (최근 3일 뉴스의 제목과 비교) ──
-    let existingTitles = new Set<string>();
+    const existingByTitle = new Map<string, { hasUsableThumbnail: boolean; hasGoogleSourceUrl: boolean }>();
     try {
       const threeDaysAgo = new Date();
       threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
       const { data: existing } = await supabase
         .from('market_news')
-        .select('title')
+        .select('title,thumbnail_url,source_url')
         .gte('published_at', threeDaysAgo.toISOString());
       if (existing) {
-        existingTitles = new Set(existing.map((r: any) => normalizeTitle(r.title)));
+        for (const row of existing as Array<{ title: string; thumbnail_url?: string | null; source_url?: string | null }>) {
+          const key = normalizeTitle(row.title);
+          const hasUsableThumbnail = !!row.thumbnail_url && !isLikelyLogoThumbnail(row.thumbnail_url);
+          const hasGoogleSourceUrl = typeof row.source_url === 'string' && isGoogleNewsArticleLink(row.source_url);
+          const prev = existingByTitle.get(key);
+          if (!prev) {
+            existingByTitle.set(key, { hasUsableThumbnail, hasGoogleSourceUrl });
+            continue;
+          }
+
+          existingByTitle.set(key, {
+            hasUsableThumbnail: prev.hasUsableThumbnail || hasUsableThumbnail,
+            hasGoogleSourceUrl: prev.hasGoogleSourceUrl || hasGoogleSourceUrl,
+          });
+        }
       }
     } catch (err) {
       console.warn('[Task J] 기존 뉴스 조회 실패, 전체 upsert 진행:', err);
     }
 
-    const newItems = candidateItems.filter(item => !existingTitles.has(item.normalizedTitle));
+    let thumbnailBackfillCount = 0;
+    let googleCanonicalUpgradeCount = 0;
+    const newItems = candidateItems.filter((item) => {
+      const existing = existingByTitle.get(item.normalizedTitle);
+      if (!existing) return true;
+      if (existing.hasGoogleSourceUrl) {
+        googleCanonicalUpgradeCount += 1;
+        return true;
+      }
+      if (!existing.hasUsableThumbnail && item.thumbnailUrl) {
+        thumbnailBackfillCount += 1;
+        return true;
+      }
+      return false;
+    });
     const cappedNewItems = newItems.slice(0, MAX_NEWS_CANDIDATES);
-    console.log(`[Task J] DB 중복 제거 후: ${newItems.length}건 (기존 ${existingTitles.size}건 스킵), 처리 대상 ${cappedNewItems.length}건`);
+    console.log(
+      `[Task J] DB 중복 제거 후: ${newItems.length}건 (기존 ${existingByTitle.size}건 비교, 썸네일 보강 ${thumbnailBackfillCount}건, Google 원문치환 ${googleCanonicalUpgradeCount}건), 처리 대상 ${cappedNewItems.length}건`
+    );
 
     if (cappedNewItems.length === 0) {
       const elapsed = Date.now() - startTime;
       await logTaskResult('news_collection', 'SUCCESS', elapsed, {
         totalFetched: 0,
         totalUpserted: 0,
-        message: 'RSS 피드에서 뉴스를 가져오지 못했습니다',
+        message: '허용 카테고리(주식/암호화폐/거시경제) 조건을 만족하는 신규 뉴스가 없습니다',
       });
       return {
         totalFetched: 0,
@@ -883,6 +1388,7 @@ export async function runNewsCollection(): Promise<NewsCollectionResult> {
         aiTagged: 0,
         fallbackTagged: 0,
         avgQualityScore: 0,
+        upsertErrorSample: recentUpsertErrors.slice(0, 3),
         sources: sourceCount,
       };
     }
@@ -920,6 +1426,7 @@ export async function runNewsCollection(): Promise<NewsCollectionResult> {
       aiTagged: aiTagged.length,
       fallbackTagged: lowCostTagged.length,
       avgQualityScore,
+      upsertErrorSample: recentUpsertErrors.slice(0, 3),
       sources: sourceCount,
     });
 
@@ -931,6 +1438,7 @@ export async function runNewsCollection(): Promise<NewsCollectionResult> {
       aiTagged: aiTagged.length,
       fallbackTagged: lowCostTagged.length,
       avgQualityScore,
+      upsertErrorSample: recentUpsertErrors.slice(0, 3),
       sources: sourceCount,
     };
   } catch (error) {

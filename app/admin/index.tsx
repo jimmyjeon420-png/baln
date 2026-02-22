@@ -22,7 +22,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
 import { useIsAdmin, useAdminOverview } from '../../src/hooks/useAdminDashboard';
 import { COLORS } from '../../src/styles/theme';
 
@@ -35,7 +35,15 @@ type AdminCard = {
   icon: keyof typeof Ionicons.glyphMap;
   title: string;
   subtitle: string;
-  route: string;
+  route: Href;
+};
+
+type AdminOverviewBadgeSource = {
+  dau?: number;
+  total_users?: number;
+  pending_reports?: number;
+  churn_risk_count?: number;
+  posts_today?: number;
 };
 
 const ADMIN_CARDS: AdminCard[] = [
@@ -86,7 +94,7 @@ const ADMIN_CARDS: AdminCard[] = [
  */
 function getBadgeValue(
   cardKey: string,
-  overview: any,
+  overview: AdminOverviewBadgeSource | null | undefined,
 ): { text: string; highlight: boolean } | null {
   if (!overview) return null;
 
@@ -198,7 +206,7 @@ export default function AdminHubScreen() {
                     key={card.key}
                     style={styles.card}
                     activeOpacity={0.7}
-                    onPress={() => router.push(card.route as any)}
+                    onPress={() => router.push(card.route)}
                   >
                     {/* 미니 KPI 뱃지 — overview 데이터가 있을 때만 표시 */}
                     {badge && (

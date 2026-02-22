@@ -306,7 +306,7 @@ export default function PredictionVoteCard({
   // ──────────────────────────────────────────────────────────────────────
   // 개별 질문 슬라이드 렌더러 (일반 함수 — early return 이후이므로 useCallback 사용 불가)
   // ──────────────────────────────────────────────────────────────────────
-  const renderPollSlide = ({ item, index }: { item: PollItem; index: number }) => {
+  const renderPollSlide = ({ item }: { item: PollItem; index: number }) => {
     const pollVote = getMyVoteForPoll(item.id);
     const hasVoted = pollVote !== null;
     const catInfo = CATEGORY_INFO[item.category];
@@ -459,185 +459,192 @@ export default function PredictionVoteCard({
         </View>
       </View>
 
-      {trustMeta && (
-        <View style={styles.trustMetaRow}>
-          <Text style={styles.trustMetaText}>출처: {trustMeta.sourceLabel}</Text>
-          <Text style={styles.trustMetaText}>생성: {formatMetaTimestamp(trustMeta.generatedAt)}</Text>
-          {trustMeta.freshnessLabel && (
-            <Text style={styles.trustMetaText}>신선도: {trustMeta.freshnessLabel}</Text>
-          )}
-          {typeof trustMeta.confidenceScore === 'number' && (
-            <Text style={styles.trustMetaText}>신뢰도: {trustMeta.confidenceScore}점(추정)</Text>
-          )}
-        </View>
-      )}
-
-      {/* 질문 카운터 (1/3) + 스와이프 힌트 */}
-      {allPolls.length > 1 && (
-        <View style={styles.pollCounterRow}>
-          <Text style={styles.pollCounterText}>
-            {currentIndex + 1} / {allPolls.length}
-          </Text>
-          {currentIndex < allPolls.length - 1 && (
-            <Text style={styles.pollSwipeHint}>스와이프하여 다음 퀴즈 →</Text>
-          )}
-        </View>
-      )}
-
-      {/* 수평 스크롤 질문 리스트 (ScrollView + map으로 중첩 에러 방지) */}
       <ScrollView
-        ref={scrollRef}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        snapToInterval={POLL_SLIDE_WIDTH}
-        decelerationRate="fast"
+        style={styles.contentScroll}
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
         nestedScrollEnabled
-        disableIntervalMomentum
-        onMomentumScrollEnd={(e) => {
-          const page = Math.round(e.nativeEvent.contentOffset.x / POLL_SLIDE_WIDTH);
-          setCurrentIndex(page);
-        }}
-        style={styles.pollFlatList}
-        contentContainerStyle={styles.pollFlatListContent}
       >
-        {allPolls.map((item, index) => (
-          <React.Fragment key={item.id}>
-            {renderPollSlide({ item, index })}
-          </React.Fragment>
-        ))}
-      </ScrollView>
-
-      {/* 모두 투표 완료 메시지 */}
-      {allVoted && (
-        <Animated.View style={[styles.allVotedBanner, { opacity: completeFade }]}>
-          <Text style={styles.allVotedText}>
-            🎯 모두 투표 완료! 내일 결과를 확인하세요!
-          </Text>
-          <View style={styles.allVotedCTARow}>
-            {onViewContext && (
-              <TouchableOpacity
-                style={styles.allVotedCTAButton}
-                onPress={onViewContext}
-                accessibilityRole="button"
-                accessibilityLabel="맥락 카드 읽기"
-              >
-                <Text style={[styles.allVotedCTAText, { color: colors.primary }]}>
-                  맥락 카드 읽기
-                </Text>
-                <Ionicons name="chevron-forward" size={14} color={colors.primary} />
-              </TouchableOpacity>
+        {trustMeta && (
+          <View style={styles.trustMetaRow}>
+            <Text style={styles.trustMetaText}>출처: {trustMeta.sourceLabel}</Text>
+            <Text style={styles.trustMetaText}>생성: {formatMetaTimestamp(trustMeta.generatedAt)}</Text>
+            {trustMeta.freshnessLabel && (
+              <Text style={styles.trustMetaText}>신선도: {trustMeta.freshnessLabel}</Text>
             )}
-            {onViewHistory && (
-              <TouchableOpacity
-                style={styles.allVotedCTAButton}
-                onPress={onViewHistory}
-                accessibilityRole="button"
-                accessibilityLabel="이전 결과 보기"
-              >
-                <Text style={[styles.allVotedCTAText, { color: colors.primary }]}>
-                  이전 결과 보기
-                </Text>
-                <Ionicons name="chevron-forward" size={14} color={colors.primary} />
-              </TouchableOpacity>
+            {typeof trustMeta.confidenceScore === 'number' && (
+              <Text style={styles.trustMetaText}>신뢰도: {trustMeta.confidenceScore}점(추정)</Text>
             )}
           </View>
-        </Animated.View>
-      )}
+        )}
 
-      {/* 복기 섹션 */}
-      {recentResults.length > 0 && (
-        <View style={styles.reviewArea}>
-          <Text style={styles.reviewTitle}>─── 지난 복기 ───</Text>
-          {recentResults.slice(0, 3).map((result, index) => {
-            const isExpanded = expandedReviewIndex === index;
-            const hasExplanation = result.description || result.source;
+        {/* 질문 카운터 (1/3) + 스와이프 힌트 */}
+        {allPolls.length > 1 && (
+          <View style={styles.pollCounterRow}>
+            <Text style={styles.pollCounterText}>
+              {currentIndex + 1} / {allPolls.length}
+            </Text>
+            {currentIndex < allPolls.length - 1 && (
+              <Text style={styles.pollSwipeHint}>스와이프하여 다음 퀴즈 →</Text>
+            )}
+          </View>
+        )}
 
-            return (
-              <View key={index}>
-                {/* 복기 헤더 (클릭 가능) */}
+        {/* 수평 스크롤 질문 리스트 (ScrollView + map으로 중첩 에러 방지) */}
+        <ScrollView
+          ref={scrollRef}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          snapToInterval={POLL_SLIDE_WIDTH}
+          decelerationRate="fast"
+          nestedScrollEnabled
+          disableIntervalMomentum
+          onMomentumScrollEnd={(e) => {
+            const page = Math.round(e.nativeEvent.contentOffset.x / POLL_SLIDE_WIDTH);
+            setCurrentIndex(page);
+          }}
+          style={styles.pollFlatList}
+          contentContainerStyle={styles.pollFlatListContent}
+        >
+          {allPolls.map((item, index) => (
+            <React.Fragment key={item.id}>
+              {renderPollSlide({ item, index })}
+            </React.Fragment>
+          ))}
+        </ScrollView>
+
+        {/* 모두 투표 완료 메시지 */}
+        {allVoted && (
+          <Animated.View style={[styles.allVotedBanner, { opacity: completeFade }]}>
+            <Text style={styles.allVotedText}>
+              🎯 모두 투표 완료! 내일 결과를 확인하세요!
+            </Text>
+            <View style={styles.allVotedCTARow}>
+              {onViewContext && (
                 <TouchableOpacity
-                  style={styles.reviewItem}
-                  onPress={() => {
-                    if (hasExplanation) {
-                      if (!isExpanded) {
-                        track('review_explanation_viewed', { questionIndex: index });
-                      }
-                      setExpandedReviewIndex(isExpanded ? null : index);
-                    }
-                  }}
-                  disabled={!hasExplanation}
-                  activeOpacity={0.7}
+                  style={styles.allVotedCTAButton}
+                  onPress={onViewContext}
+                  accessibilityRole="button"
+                  accessibilityLabel="맥락 카드 읽기"
                 >
-                  <Text style={styles.reviewEmoji}>
-                    {result.isCorrect ? '✅' : '❌'}
+                  <Text style={[styles.allVotedCTAText, { color: colors.primary }]}>
+                    맥락 카드 읽기
                   </Text>
-                  <Text style={styles.reviewQuestion} numberOfLines={isExpanded ? undefined : 1}>
-                    {result.question}
-                  </Text>
-                  {result.isCorrect && (
-                    <Text style={styles.reviewReward}>+{result.reward}C</Text>
-                  )}
-                  {hasExplanation && (
-                    <Ionicons
-                      name={isExpanded ? 'chevron-up' : 'chevron-down'}
-                      size={16}
-                      color={colors.textTertiary}
-                      style={{ marginLeft: 4 }}
-                    />
-                  )}
+                  <Ionicons name="chevron-forward" size={14} color={colors.primary} />
                 </TouchableOpacity>
+              )}
+              {onViewHistory && (
+                <TouchableOpacity
+                  style={styles.allVotedCTAButton}
+                  onPress={onViewHistory}
+                  accessibilityRole="button"
+                  accessibilityLabel="이전 결과 보기"
+                >
+                  <Text style={[styles.allVotedCTAText, { color: colors.primary }]}>
+                    이전 결과 보기
+                  </Text>
+                  <Ionicons name="chevron-forward" size={14} color={colors.primary} />
+                </TouchableOpacity>
+              )}
+            </View>
+          </Animated.View>
+        )}
 
-                {/* 해설 (펼쳐진 상태) */}
-                {isExpanded && hasExplanation && (
-                  <View style={styles.explanationBox}>
-                    {result.description && (
-                      <View style={styles.explanationSection}>
-                        <Text style={styles.explanationLabel}>💡 배경</Text>
-                        <Text style={styles.explanationText}>{result.description}</Text>
-                      </View>
+        {/* 복기 섹션 */}
+        {recentResults.length > 0 && (
+          <View style={styles.reviewArea}>
+            <Text style={styles.reviewTitle}>─── 지난 복기 ───</Text>
+            {recentResults.slice(0, 3).map((result, index) => {
+              const isExpanded = expandedReviewIndex === index;
+              const hasExplanation = result.description || result.source;
+
+              return (
+                <View key={index}>
+                  {/* 복기 헤더 (클릭 가능) */}
+                  <TouchableOpacity
+                    style={styles.reviewItem}
+                    onPress={() => {
+                      if (hasExplanation) {
+                        if (!isExpanded) {
+                          track('review_explanation_viewed', { questionIndex: index });
+                        }
+                        setExpandedReviewIndex(isExpanded ? null : index);
+                      }
+                    }}
+                    disabled={!hasExplanation}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.reviewEmoji}>
+                      {result.isCorrect ? '✅' : '❌'}
+                    </Text>
+                    <Text style={styles.reviewQuestion} numberOfLines={isExpanded ? undefined : 1}>
+                      {result.question}
+                    </Text>
+                    {result.isCorrect && (
+                      <Text style={styles.reviewReward}>+{result.reward}C</Text>
                     )}
-                    {result.source && (
-                      <View style={styles.explanationSection}>
-                        <Text style={styles.explanationLabel}>
-                          {result.isCorrect ? '🎯 정답 근거' : '📌 정답 근거'}
-                        </Text>
-                        <Text style={styles.explanationText}>{result.source}</Text>
-                      </View>
+                    {hasExplanation && (
+                      <Ionicons
+                        name={isExpanded ? 'chevron-up' : 'chevron-down'}
+                        size={16}
+                        color={colors.textTertiary}
+                        style={{ marginLeft: 4 }}
+                      />
                     )}
-                  </View>
-                )}
-              </View>
-            );
-          })}
+                  </TouchableOpacity>
 
-          {/* 적중률 */}
-          {accuracyRate !== null && accuracyRate >= 0 && (
-            <Text style={styles.accuracyText}>
-              적중률: {accuracyRate.toFixed(0)}%
-            </Text>
-          )}
-          {accuracyRate === null && (
-            <Text style={styles.accuracyHint}>
-              5회 이상 투표 시 적중률 표시
-            </Text>
-          )}
-        </View>
-      )}
+                  {/* 해설 (펼쳐진 상태) */}
+                  {isExpanded && hasExplanation && (
+                    <View style={styles.explanationBox}>
+                      {result.description && (
+                        <View style={styles.explanationSection}>
+                          <Text style={styles.explanationLabel}>💡 배경</Text>
+                          <Text style={styles.explanationText}>{result.description}</Text>
+                        </View>
+                      )}
+                      {result.source && (
+                        <View style={styles.explanationSection}>
+                          <Text style={styles.explanationLabel}>
+                            {result.isCorrect ? '🎯 정답 근거' : '📌 정답 근거'}
+                          </Text>
+                          <Text style={styles.explanationText}>{result.source}</Text>
+                        </View>
+                      )}
+                    </View>
+                  )}
+                </View>
+              );
+            })}
 
-      {/* AI 트랙레코드 배너 (커뮤니티 전체 적중률) */}
-      <AITrackRecordBanner
-        accuracy={globalAccuracy}
-        resolvedCount={globalResolvedCount}
-        onPress={onTrackRecordPress}
-      />
+            {/* 적중률 */}
+            {accuracyRate !== null && accuracyRate >= 0 && (
+              <Text style={styles.accuracyText}>
+                적중률: {accuracyRate.toFixed(0)}%
+              </Text>
+            )}
+            {accuracyRate === null && (
+              <Text style={styles.accuracyHint}>
+                5회 이상 투표 시 적중률 표시
+              </Text>
+            )}
+          </View>
+        )}
 
-      {/* 하단: [전체 기록 보기] 프리미엄 게이트 */}
-      {onViewHistory && (
-        <TouchableOpacity style={styles.historyButton} onPress={() => { track('prediction_history_viewed'); onViewHistory(); }} accessibilityRole="button" accessibilityLabel="상세 통계 보기">
-          <Text style={styles.historyText}>📊 상세 통계 보기</Text>
-          <Ionicons name="arrow-forward" size={18} color={colors.textSecondary} />
-        </TouchableOpacity>
-      )}
+        {/* AI 트랙레코드 배너 (커뮤니티 전체 적중률) */}
+        <AITrackRecordBanner
+          accuracy={globalAccuracy}
+          resolvedCount={globalResolvedCount}
+          onPress={onTrackRecordPress}
+        />
+
+        {/* 하단: [전체 기록 보기] 프리미엄 게이트 */}
+        {onViewHistory && (
+          <TouchableOpacity style={styles.historyButton} onPress={() => { track('prediction_history_viewed'); onViewHistory(); }} accessibilityRole="button" accessibilityLabel="상세 통계 보기">
+            <Text style={styles.historyText}>📊 상세 통계 보기</Text>
+            <Ionicons name="arrow-forward" size={18} color={colors.textSecondary} />
+          </TouchableOpacity>
+        )}
+      </ScrollView>
     </View>
   );
 }
@@ -654,9 +661,15 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       backgroundColor: colors.surface,
       borderRadius: 24,
       padding: 20,
-      justifyContent: 'space-between',
       borderWidth: 1,
       borderColor: colors.border,
+    },
+    contentScroll: {
+      flex: 1,
+      marginTop: 4,
+    },
+    contentContainer: {
+      paddingBottom: 4,
     },
     topRow: {
       flexDirection: 'row',
@@ -759,7 +772,7 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
     },
     // 수평 스크롤 FlatList
     pollFlatList: {
-      flex: 1,
+      marginTop: 4,
     },
     pollFlatListContent: {
       alignItems: 'stretch',
@@ -767,7 +780,8 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
     // 개별 질문 슬라이드
     pollSlide: {
       width: POLL_SLIDE_WIDTH,
-      justifyContent: 'center',
+      justifyContent: 'flex-start',
+      paddingBottom: 6,
     },
     // 카테고리 칩
     pollCategoryChip: {
@@ -789,8 +803,8 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       fontWeight: '600',
     },
     pollQuestionArea: {
-      flex: 1,
       justifyContent: 'center',
+      minHeight: 96,
       paddingVertical: 8,
     },
     questionText: {
@@ -916,6 +930,7 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
     // 복기 섹션
     reviewArea: {
       gap: 8,
+      marginTop: 10,
       paddingVertical: 12,
       borderTopWidth: 1,
       borderTopColor: colors.border,

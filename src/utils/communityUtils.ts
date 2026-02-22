@@ -12,7 +12,7 @@
  */
 
 import { Ionicons } from '@expo/vector-icons';
-import { TIER_THRESHOLDS } from '../types/community';
+import { HoldingSnapshot, TIER_THRESHOLDS } from '../types/community';
 
 /**
  * 자산 금액 → 티어 판정
@@ -96,4 +96,95 @@ export const formatAssetAmount = (amount: number): string => {
   if (amount >= 100000000) return `${(amount / 100000000).toFixed(1)}억`;
   if (amount >= 10000) return `${(amount / 10000).toFixed(0)}만원`;
   return `${amount.toLocaleString()}원`;
+};
+
+const EOK = 100000000;
+
+/**
+ * 커뮤니티용 자산 구간 라벨 (프라이버시 보호)
+ * 예) 7.9억 -> "3억 이상"
+ */
+export const formatCommunityAssetBand = (amount: number): string => {
+  const safeAmount = Number.isFinite(amount) ? amount : 0;
+  if (safeAmount >= 20 * EOK) return '20억 이상';
+  if (safeAmount >= 10 * EOK) return '10억 이상';
+  if (safeAmount >= 3 * EOK) return '3억 이상';
+  if (safeAmount >= 1 * EOK) return '1억 이상';
+  return '1억 미만';
+};
+
+export const formatCommunityDisplayTag = (totalAssets: number): string => {
+  return `[자산: ${formatCommunityAssetBand(totalAssets)}]`;
+};
+
+function isRealEstateHolding(holding: Pick<HoldingSnapshot, 'type' | 'ticker'>): boolean {
+  return holding.type === 'realestate' || holding.ticker?.startsWith('RE_');
+}
+
+const safePositive = (value: unknown): number => {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) && numeric > 0 ? numeric : 0;
+};
+
+function getPortfolioRatioDenominator(totalAssets: number, holdings: HoldingSnapshot[]): number {
+  const safeTotalAssets = safePositive(totalAssets);
+  const holdingsTotal = holdings.reduce((sum, holding) => sum + safePositive(holding.value), 0);
+  return Math.max(safeTotalAssets, holdingsTotal, 1);
+}
+
+export const getCommunityHoldingLabel = (
+  holding: Pick<HoldingSnapshot, 'type' | 'ticker' | 'name'>
+): string => {
+  if (isRealEstateHolding(holding)) return '부동산';
+  return holding.ticker || holding.name || '기타';
+};
+
+export const getCommunityHoldingRatio = (
+  holdingValue: number,
+  totalAssets: number,
+  holdings: HoldingSnapshot[]
+): number => {
+  const denominator = getPortfolioRatioDenominator(totalAssets, holdings);
+  const ratio = (safePositive(holdingValue) / denominator) * 100;
+  return Math.max(0, Math.min(100, ratio));
+};
+
+export const formatPortfolioRatio = (ratio: number): string => {
+  const safeRatio = Number.isFinite(ratio) ? Math.max(0, ratio) : 0;
+  const rounded = safeRatio >= 10
+    ? Math.round(safeRatio)
+    : Math.round(safeRatio * 10) / 10;
+  return Number.isInteger(rounded) ? `${rounded}%` : `${rounded.toFixed(1)}%`;
+};
+
+export const buildCommunityAssetMixFromHoldings = (
+  holdings: HoldingSnapshot[],
+  totalAssets: number
+): string => {
+  if (!Array.isArray(holdings) || holdings.length === 0) return '';
+
+  let realEstateValue = 0;
+  let financialValue = 0;
+
+  for (const holding of holdings) {
+    const value = safePositive(holding.value);
+    if (value <= 0) continue;
+    if (isRealEstateHolding(holding)) {
+      realEstateValue += value;
+    } else {
+      financialValue += value;
+    }
+  }
+
+  const denominator = getPortfolioRatioDenominator(totalAssets, holdings);
+  const parts: string[] = [];
+
+  if (realEstateValue > 0) {
+    parts.push(`부동산 ${formatPortfolioRatio((realEstateValue / denominator) * 100)}`);
+  }
+  if (financialValue > 0) {
+    parts.push(`금융자산 ${formatPortfolioRatio((financialValue / denominator) * 100)}`);
+  }
+
+  return parts.join(', ');
 };

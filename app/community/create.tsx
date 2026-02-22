@@ -93,16 +93,8 @@ export default function CreatePostScreen() {
   const [selectedImages, setSelectedImages] = useState<PickedImage[]>([]);
   const [isUploadingImages, setIsUploadingImages] = useState(false);
 
-  // 총 평가손익 계산 (costBasis 있는 자산만)
-  const totalGain = React.useMemo(() => {
-    return assets.reduce((sum, a) => {
-      const cost = a.costBasis ?? a.currentValue;
-      return sum + (a.currentValue - cost);
-    }, 0);
-  }, [assets]);
-
-  // 사용자 표시 정보 (실제 손익 반영)
-  const displayInfo = useUserDisplayInfo(eligibility.totalAssets, totalGain);
+  // 사용자 표시 정보 (자산 구간 기반)
+  const displayInfo = useUserDisplayInfo(eligibility.totalAssets, 0);
 
   // 자산 믹스 계산 (한국어 카테고리명)
   const assetMix = React.useMemo(() => {
@@ -115,7 +107,12 @@ export default function CreatePostScreen() {
     assets.forEach((asset) => {
       const raw = (asset.assetType as string) || 'other';
       const cat = ASSET_TYPE_KR[raw] ?? raw;
-      byCategory[cat] = (byCategory[cat] || 0) + asset.currentValue;
+      const rawValue = Number(asset.currentValue) || 0;
+      const debtAmount = Number(asset.debtAmount) || 0;
+      const normalizedValue = cat === '부동산'
+        ? Math.max(0, rawValue - debtAmount)
+        : Math.max(0, rawValue);
+      byCategory[cat] = (byCategory[cat] || 0) + normalizedValue;
     });
 
     // 비율 계산

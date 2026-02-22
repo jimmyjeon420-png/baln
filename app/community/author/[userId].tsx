@@ -27,7 +27,6 @@ import {
 } from '../../../src/hooks/useCommunity';
 import CommunityPostCard from '../../../src/components/CommunityPostCard';
 import {
-  CommunityPost,
   HoldingSnapshot,
   TIER_COLORS,
   TIER_LABELS,
@@ -35,8 +34,10 @@ import {
 import {
   getTierFromAssets,
   getTierIcon,
-  HOLDING_TYPE_COLORS,
-  formatAssetAmount,
+  formatCommunityDisplayTag,
+  getCommunityHoldingLabel,
+  getCommunityHoldingRatio,
+  formatPortfolioRatio,
 } from '../../../src/utils/communityUtils';
 import { useTheme } from '../../../src/hooks/useTheme';
 
@@ -137,7 +138,7 @@ export default function AuthorProfileScreen() {
               </Text>
             </View>
             <Text style={styles.profileAssets}>
-              {latestPost.display_tag}
+              {formatCommunityDisplayTag(latestPost.total_assets_at_post)}
             </Text>
           </View>
         </View>
@@ -180,8 +181,10 @@ export default function AuthorProfileScreen() {
               <View style={styles.holdingChipsRow}>
                 {stockHoldings.map((h: HoldingSnapshot, idx: number) => (
                   <View key={`s-${idx}`} style={[styles.holdingChip, { borderColor: '#4CAF5040' }]}>
-                    <Text style={styles.holdingChipTicker}>{h.ticker}</Text>
-                    <Text style={styles.holdingChipName}>{h.name}</Text>
+                    <Text style={styles.holdingChipTicker}>{getCommunityHoldingLabel(h)}</Text>
+                    <Text style={styles.holdingChipRatio}>
+                      {formatPortfolioRatio(getCommunityHoldingRatio(h.value, latestPost.total_assets_at_post, holdings))}
+                    </Text>
                   </View>
                 ))}
               </View>
@@ -198,8 +201,10 @@ export default function AuthorProfileScreen() {
               <View style={styles.holdingChipsRow}>
                 {cryptoHoldings.map((h: HoldingSnapshot, idx: number) => (
                   <View key={`c-${idx}`} style={[styles.holdingChip, { borderColor: '#F7931A40' }]}>
-                    <Text style={styles.holdingChipTicker}>{h.ticker}</Text>
-                    <Text style={styles.holdingChipName}>{h.name}</Text>
+                    <Text style={styles.holdingChipTicker}>{getCommunityHoldingLabel(h)}</Text>
+                    <Text style={styles.holdingChipRatio}>
+                      {formatPortfolioRatio(getCommunityHoldingRatio(h.value, latestPost.total_assets_at_post, holdings))}
+                    </Text>
                   </View>
                 ))}
               </View>
@@ -216,8 +221,10 @@ export default function AuthorProfileScreen() {
               <View style={styles.holdingChipsRow}>
                 {otherHoldings.map((h: HoldingSnapshot, idx: number) => (
                   <View key={`o-${idx}`} style={[styles.holdingChip, { borderColor: '#88888840' }]}>
-                    <Text style={styles.holdingChipTicker}>{h.ticker}</Text>
-                    <Text style={styles.holdingChipName}>{h.name}</Text>
+                    <Text style={styles.holdingChipTicker}>{getCommunityHoldingLabel(h)}</Text>
+                    <Text style={styles.holdingChipRatio}>
+                      {formatPortfolioRatio(getCommunityHoldingRatio(h.value, latestPost.total_assets_at_post, holdings))}
+                    </Text>
                   </View>
                 ))}
               </View>
@@ -429,8 +436,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#DDD',
   },
-  holdingChipName: {
+  holdingChipRatio: {
     fontSize: 11,
+    fontWeight: '700',
     color: '#888',
   },
 

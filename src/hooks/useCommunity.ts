@@ -25,6 +25,7 @@ import {
   LOUNGE_COMMENT_THRESHOLD,
   LOUNGE_POST_THRESHOLD,
 } from '../types/community';
+import { formatCommunityDisplayTag } from '../utils/communityUtils';
 
 /**
  * 자산을 "X.X억" 또는 "X만" 형식으로 변환
@@ -114,9 +115,9 @@ export const useLoungeEligibility = () => {
 // 사용자 표시 정보
 // ================================================================
 
-export const useUserDisplayInfo = (totalAssets: number, totalGain: number): UserDisplayInfo => {
+export const useUserDisplayInfo = (totalAssets: number, _totalGain: number): UserDisplayInfo => {
   const tier = determineTier(totalAssets);
-  const displayTag = `[자산: ${formatAssetInBillion(totalAssets)} / 수익: ${totalGain >= 0 ? '+' : ''}${formatAssetInBillion(totalGain)}]`;
+  const displayTag = formatCommunityDisplayTag(totalAssets);
   const assetMix = '';
 
   return {
@@ -218,19 +219,29 @@ export const useCreatePost = () => {
       // 보유종목 스냅샷 가져오기 (상위 10개)
       const { data: portfolioData } = await supabase
         .from('portfolios')
-        .select('ticker, name, asset_type, current_value, quantity, current_price')
+        .select('ticker, name, asset_type, current_value, quantity, current_price, debt_amount')
         .eq('user_id', user.id)
         .order('current_value', { ascending: false })
         .limit(10);
 
       const topHoldings: HoldingSnapshot[] = (portfolioData || [])
-        .filter(item => item.ticker && item.current_value > 0)
-        .map(item => ({
-          ticker: item.ticker,
-          name: item.name || item.ticker,
-          type: normalizeHoldingType(item.asset_type),
-          value: item.current_value || (item.quantity * item.current_price) || 0,
-        }));
+        .filter(item => item.ticker)
+        .map(item => {
+          const type = normalizeHoldingType(item.asset_type);
+          const rawValue = Number(item.current_value) || (Number(item.quantity) * Number(item.current_price)) || 0;
+          const debtAmount = Number(item.debt_amount) || 0;
+          const value = type === 'realestate'
+            ? Math.max(0, rawValue - debtAmount)
+            : Math.max(0, rawValue);
+
+          return {
+            ticker: item.ticker,
+            name: type === 'realestate' ? '부동산' : (item.name || item.ticker),
+            type,
+            value,
+          };
+        })
+        .filter((holding) => holding.value > 0);
 
       const { data, error } = await supabase
         .from('community_posts')
@@ -576,26 +587,51 @@ export const useDeleteComment = (postId: string) => {
       const user = await getCurrentUser();
       if (!user) throw new Error('로그인이 필요합니다.');
 
-      // 본인 댓글인지 확인
-      const { data: comment } = await supabase
-        .from('community_comments')
-        .select('user_id')
-        .eq('id', commentId)
-        .single();
+      // 1) 우선: RLS 누락/불일치에도 안전한 RPC 경로
+      try {
+        const { data: rpcData, error: rpcError } = await supabase.rpc('delete_own_community_comment', {
+          p_comment_id: commentId,
+        });
 
-      if (comment?.user_id !== user.id) {
-        throw new Error('본인의 댓글만 삭제할 수 있습니다.');
+        if (!rpcError && rpcData) {
+          const success = (rpcData as any)?.success === true;
+          const reason = (rpcData as any)?.reason as string | undefined;
+
+          if (success) {
+            return;
+          }
+
+          if (reason === 'forbidden') {
+            throw new Error('본인 댓글만 삭제할 수 있습니다.');
+          }
+          if (reason === 'not_found') {
+            throw new Error('이미 삭제된 댓글입니다.');
+          }
+          if (reason === 'not_authenticated') {
+            throw new Error('로그인이 필요합니다.');
+          }
+        } else if (rpcError) {
+          // 함수 미배포(PGRST202) 등은 직접 삭제 경로로 폴백
+          console.warn('[Community] delete_own_community_comment RPC 실패, 폴백 시도:', rpcError.message);
+        }
+      } catch (rpcErr) {
+        console.warn('[Community] 댓글 삭제 RPC 예외, 폴백 시도:', rpcErr);
       }
 
-      // 삭제
-      const { error } = await supabase
+      // 2) 폴백: 기존 직접 삭제
+      const { data, error } = await supabase
         .from('community_comments')
         .delete()
-        .eq('id', commentId);
+        .eq('id', commentId)
+        .eq('user_id', user.id)
+        .select('id');
 
       if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error('댓글 삭제 권한 확인에 실패했습니다. 잠시 후 다시 시도해주세요.');
+      }
 
-      // 댓글 수 감소 — RPC 실패 시 무시 (댓글은 이미 삭제됨)
+      // 폴백 경로에서만 댓글 수 감소 RPC
       try {
         const { error: rpcError } = await supabase.rpc('increment_comment_count', { p_post_id: postId, p_delta: -1 });
         if (rpcError) {

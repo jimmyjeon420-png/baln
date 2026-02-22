@@ -26,7 +26,7 @@ export interface MarketNewsItem {
   thumbnail_url: string | null;
   published_at: string;
   tags: string[];
-  category: 'crypto' | 'stock' | 'macro' | 'general';
+  category: MarketNewsCategory;
   is_pick: boolean;
   pick_reason: string | null;
   /** AI 투자 영향 분석 (예: "BTC 보유자 주의. 기관 매도세로 단기 하락 가능") */
@@ -41,16 +41,53 @@ export interface MarketNewsItem {
   created_at: string;
 }
 
-export type NewsCategoryFilter = 'all' | 'crypto' | 'stock' | 'macro';
+export const ALLOWED_NEWS_CATEGORIES = ['stock', 'crypto', 'macro'] as const;
+export type MarketNewsCategory = typeof ALLOWED_NEWS_CATEGORIES[number];
+export type NewsCategoryFilter = 'all' | MarketNewsCategory;
 
 const NEWS_COLLECTION_COOLDOWN_KEY = '@baln:news_collection_last_trigger';
 const NEWS_COLLECTION_COOLDOWN_MS = 20 * 60 * 1000; // 20분
 const FALLBACK_PAGE_SIZE = 6;
 const FALLBACK_FRESHNESS_MS = 6 * 60 * 60 * 1000; // 6시간
+const NEWS_STALE_THRESHOLD_MS = 90 * 60 * 1000; // 90분
 
 interface FallbackFeedSource {
   name: string;
   url: string;
+}
+
+const CRYPTO_CATEGORY_KEYWORDS = [
+  'bitcoin', 'btc', '비트코인', 'ethereum', 'eth', '이더리움',
+  'xrp', '리플', 'sol', '솔라나', '코인', '암호화폐', '가상자산', '블록체인',
+];
+
+const STOCK_CATEGORY_KEYWORDS = [
+  '코스피', '코스닥', 'kospi', 'kosdaq', '나스닥', 'nasdaq', 's&p', 's&p500',
+  '다우', 'dow', '주식', '증시', '기업', '실적', 'ipo', '상장',
+  '삼성전자', '엔비디아', '애플', '테슬라',
+];
+
+const MACRO_CATEGORY_KEYWORDS = [
+  '금리', '기준금리', '연준', 'fed', 'fomc', 'cpi', 'pce', 'gdp', 'pmi',
+  '실업률', '고용', '환율', '달러', '인플레이션', '물가', '국채', '채권',
+  '무역', '관세', '재정', '통화정책', '거시경제',
+];
+
+function includesAnyKeyword(text: string, keywords: string[]): boolean {
+  return keywords.some((keyword) => text.includes(keyword));
+}
+
+export function isAllowedNewsCategory(value: unknown): value is MarketNewsCategory {
+  return typeof value === 'string'
+    && (ALLOWED_NEWS_CATEGORIES as readonly string[]).includes(value);
+}
+
+function classifyNewsCategory(title: string, summary?: string | null): MarketNewsCategory | null {
+  const text = `${title} ${summary || ''}`.toLowerCase();
+  if (includesAnyKeyword(text, CRYPTO_CATEGORY_KEYWORDS)) return 'crypto';
+  if (includesAnyKeyword(text, STOCK_CATEGORY_KEYWORDS)) return 'stock';
+  if (includesAnyKeyword(text, MACRO_CATEGORY_KEYWORDS)) return 'macro';
+  return null;
 }
 
 function isAllowedFallbackLink(rawLink: string): boolean {
@@ -71,15 +108,16 @@ const FALLBACK_FEEDS: Record<NewsCategoryFilter, FallbackFeedSource[]> = {
   crypto: [
     { name: '코인데스크', url: 'https://www.coindeskkorea.com/rss' },
     { name: '비트코인매거진', url: 'https://bitcoinmagazine.com/.rss/full/' },
-    { name: 'Google News', url: 'https://news.google.com/rss/search?q=비트코인+OR+이더리움+OR+가상자산&hl=ko&gl=KR&ceid=KR:ko' },
   ],
   stock: [
     { name: '한국경제', url: 'https://www.hankyung.com/feed/all-news' },
-    { name: 'Google News', url: 'https://news.google.com/rss/search?q=코스피+OR+나스닥+OR+미국증시+OR+주식&hl=ko&gl=KR&ceid=KR:ko' },
+    { name: '연합뉴스', url: 'https://www.yna.co.kr/rss/economy.xml' },
+    { name: '매일경제', url: 'https://www.mk.co.kr/rss/30100041/' },
   ],
   macro: [
     { name: '연합뉴스', url: 'https://www.yna.co.kr/rss/economy.xml' },
-    { name: 'Google News', url: 'https://news.google.com/rss/search?q=금리+OR+연준+OR+CPI+OR+환율+OR+경기&hl=ko&gl=KR&ceid=KR:ko' },
+    { name: '매일경제', url: 'https://www.mk.co.kr/rss/30100041/' },
+    { name: '한국경제', url: 'https://www.hankyung.com/feed/all-news' },
   ],
 };
 
@@ -89,8 +127,113 @@ function safeDateISO(value?: string): string {
   return Number.isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
 }
 
-function parseRssItems(xml: string): { title: string; link: string; pubDate?: string; summary?: string }[] {
-  const items: { title: string; link: string; pubDate?: string; summary?: string }[] = [];
+function decodeXmlEntities(raw: string): string {
+  return raw
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>');
+}
+
+function normalizeThumbnailUrl(raw: string, baseLink: string): string | null {
+  if (!raw) return null;
+  const unescaped = decodeXmlEntities(raw.trim())
+    .replace(/^<!\[CDATA\[/, '')
+    .replace(/\]\]>$/, '')
+    .trim();
+
+  if (!unescaped) return null;
+
+  try {
+    const absolute = new URL(unescaped, baseLink);
+    if (absolute.protocol !== 'http:' && absolute.protocol !== 'https:') return null;
+    if (absolute.protocol === 'http:') {
+      absolute.protocol = 'https:';
+    }
+    return absolute.toString();
+  } catch {
+    return null;
+  }
+}
+
+function isGoogleNewsLink(raw: string): boolean {
+  try {
+    const parsed = new URL(raw);
+    return parsed.hostname.toLowerCase() === 'news.google.com';
+  } catch {
+    return false;
+  }
+}
+
+function isLikelyLogoThumbnail(url: string | null | undefined, articleLink?: string): boolean {
+  if (!url) return true;
+  const lower = url.toLowerCase();
+
+  if (
+    lower.includes('favicon')
+    || lower.includes('/logo')
+    || lower.includes('logo_')
+    || lower.includes('_logo')
+    || lower.includes('logotype')
+    || lower.includes('icon')
+    || lower.includes('symbol')
+    || lower.includes('google.com/s2/favicons')
+    || lower.includes('gstatic.com')
+    || lower.endsWith('.ico')
+  ) {
+    return true;
+  }
+
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.toLowerCase();
+    const path = parsed.pathname.toLowerCase();
+    if (host === 'news.google.com') return true;
+    if (host.endsWith('gstatic.com')) return true;
+    if (articleLink && isGoogleNewsLink(articleLink) && host.endsWith('googleusercontent.com')) return true;
+    if (path.includes('/favicon') || path.includes('/touch-icon') || path.includes('apple-touch-icon')) return true;
+
+    const width = Number(parsed.searchParams.get('w') ?? parsed.searchParams.get('width') ?? parsed.searchParams.get('sz') ?? '');
+    const height = Number(parsed.searchParams.get('h') ?? parsed.searchParams.get('height') ?? '');
+    if (Number.isFinite(width) && width > 0 && width <= 200) {
+      if (!Number.isFinite(height) || (height > 0 && height <= 200)) return true;
+    }
+  } catch {
+    return true;
+  }
+
+  return false;
+}
+
+function extractThumbnailFromItemXml(itemXml: string, articleLink: string): string | null {
+  const encodedContent = itemXml.match(/<content:encoded>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/content:encoded>/i)?.[1] || '';
+  const encodedDescription = itemXml.match(/<description>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/description>/i)?.[1] || '';
+  const decodedHtml = decodeXmlEntities(`${encodedContent}\n${encodedDescription}`);
+
+  const candidates: (string | undefined)[] = [
+    itemXml.match(/<media:thumbnail[^>]*url=["']([^"']+)["'][^>]*>/i)?.[1],
+    itemXml.match(/<media:content[^>]*url=["']([^"']+)["'][^>]*>/i)?.[1],
+    itemXml.match(/<enclosure[^>]*type=["']image\/[^"']*["'][^>]*url=["']([^"']+)["'][^>]*>/i)?.[1],
+    itemXml.match(/<enclosure[^>]*url=["']([^"']+)["'][^>]*type=["']image\/[^"']*["'][^>]*>/i)?.[1],
+    decodedHtml.match(/<img[^>]*src=["']([^"']+)["']/i)?.[1],
+  ];
+
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+    const normalized = normalizeThumbnailUrl(candidate, articleLink);
+    if (!normalized) continue;
+    if (isLikelyLogoThumbnail(normalized, articleLink)) continue;
+    return normalized;
+  }
+
+  return null;
+}
+
+function parseRssItems(
+  xml: string
+): { title: string; link: string; pubDate?: string; summary?: string; thumbnailUrl: string | null }[] {
+  const items: { title: string; link: string; pubDate?: string; summary?: string; thumbnailUrl: string | null }[] = [];
   const itemRegex = /<item>([\s\S]*?)<\/item>/g;
   let match: RegExpExecArray | null = null;
 
@@ -105,16 +248,130 @@ function parseRssItems(xml: string): { title: string; link: string; pubDate?: st
     const title = titleMatch[1].trim();
     const link = linkMatch[1].trim();
     if (!title || !link) continue;
+    if (!isAllowedFallbackLink(link)) continue;
 
     items.push({
       title,
       link,
       pubDate: pubDateMatch?.[1],
       summary: descMatch?.[1]?.trim(),
+      thumbnailUrl: extractThumbnailFromItemXml(itemXml, link),
     });
   }
 
   return items;
+}
+
+function collectHtmlImageCandidates(html: string): string[] {
+  const patterns = [
+    /<meta[^>]*property=["']og:image(?::secure_url|:url)?["'][^>]*content=["']([^"']+)["'][^>]*>/gi,
+    /<meta[^>]*content=["']([^"']+)["'][^>]*property=["']og:image(?::secure_url|:url)?["'][^>]*>/gi,
+    /<meta[^>]*name=["']twitter:image(?::src)?["'][^>]*content=["']([^"']+)["'][^>]*>/gi,
+    /<meta[^>]*content=["']([^"']+)["'][^>]*name=["']twitter:image(?::src)?["'][^>]*>/gi,
+    /<link[^>]*rel=["']image_src["'][^>]*href=["']([^"']+)["'][^>]*>/gi,
+    /<img[^>]*src=["']([^"']+)["'][^>]*>/gi,
+  ];
+
+  const candidates: string[] = [];
+  for (const pattern of patterns) {
+    for (const match of html.matchAll(pattern)) {
+      const raw = match[1]?.trim();
+      if (!raw) continue;
+      candidates.push(raw);
+      if (candidates.length >= 30) return candidates;
+    }
+  }
+  return candidates;
+}
+
+async function fetchFallbackHeroImage(articleUrl: string): Promise<string | null> {
+  if (!isAllowedFallbackLink(articleUrl)) return null;
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
+
+  try {
+    const res = await fetch(articleUrl, {
+      signal: controller.signal,
+      headers: {
+        Accept: 'text/html,application/xhtml+xml',
+        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+      },
+    });
+    if (!res.ok) return null;
+
+    const contentType = (res.headers.get('content-type') || '').toLowerCase();
+    if (!contentType.includes('text/html') && !contentType.includes('application/xhtml+xml')) {
+      return null;
+    }
+
+    const html = (await res.text()).slice(0, 320000);
+    const baseUrl = res.url || articleUrl;
+    const candidates = collectHtmlImageCandidates(html);
+
+    for (const candidate of candidates) {
+      const normalized = normalizeThumbnailUrl(candidate, baseUrl);
+      if (!normalized) continue;
+      if (isLikelyLogoThumbnail(normalized, articleUrl)) continue;
+      return normalized;
+    }
+  } catch {
+    // 폴백 경로에서는 썸네일 보강 실패를 무시
+  } finally {
+    clearTimeout(timeout);
+  }
+
+  return null;
+}
+
+async function enrichFallbackThumbnails(items: MarketNewsItem[]): Promise<MarketNewsItem[]> {
+  if (items.length === 0) return items;
+
+  const enriched = items.map((item) => ({ ...item }));
+  const targets = enriched
+    .map((item, index) => ({ item, index }))
+    .filter(({ item }) => !item.thumbnail_url || isLikelyLogoThumbnail(item.thumbnail_url, item.source_url))
+    .slice(0, 8); // 폴백 경로 과부하 방지
+
+  if (targets.length === 0) return enriched;
+
+  const CONCURRENCY = 3;
+  for (let i = 0; i < targets.length; i += CONCURRENCY) {
+    const chunk = targets.slice(i, i + CONCURRENCY);
+    const results = await Promise.all(
+      chunk.map(async ({ item, index }) => ({
+        index,
+        hero: await fetchFallbackHeroImage(item.source_url),
+      }))
+    );
+
+    for (const result of results) {
+      if (!result.hero) continue;
+      enriched[result.index].thumbnail_url = result.hero;
+    }
+  }
+
+  return enriched;
+}
+
+function dedupeAndSortNews(items: MarketNewsItem[]): MarketNewsItem[] {
+  const deduped = new Map<string, MarketNewsItem>();
+  for (const item of items) {
+    const key = `${item.title.trim().toLowerCase()}|${item.source_url.trim().toLowerCase()}`;
+    const prev = deduped.get(key);
+    if (!prev) {
+      deduped.set(key, item);
+      continue;
+    }
+    const prevTime = new Date(prev.published_at).getTime();
+    const curTime = new Date(item.published_at).getTime();
+    if (Number.isFinite(curTime) && (!Number.isFinite(prevTime) || curTime > prevTime)) {
+      deduped.set(key, item);
+    }
+  }
+
+  return Array.from(deduped.values())
+    .sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime());
 }
 
 async function fetchFallbackMarketNews(category: NewsCategoryFilter): Promise<MarketNewsItem[]> {
@@ -133,25 +390,30 @@ async function fetchFallbackMarketNews(category: NewsCategoryFilter): Promise<Ma
 
       const xml = await res.text();
       const parsed = parseRssItems(xml);
-      const fallbackCategory: MarketNewsItem['category'] = category === 'all' ? 'general' : category;
       const mapped = parsed
-        .filter((item) => isAllowedFallbackLink(item.link))
-        .map((item, idx) => ({
-        id: `fallback-${feed.name}-${idx}-${item.link}`,
-        title: item.title,
-        summary: item.summary?.slice(0, 280) || null,
-        source_name: feed.name,
-        source_url: item.link,
-        thumbnail_url: null,
-        published_at: safeDateISO(item.pubDate),
-        tags: [] as string[],
-        category: fallbackCategory,
-        is_pick: false,
-        pick_reason: null,
-        impact_summary: null,
-        impact_score: 0,
-        created_at: new Date().toISOString(),
-      }));
+        .map((item, idx): MarketNewsItem | null => {
+          const strictCategory = classifyNewsCategory(item.title, item.summary);
+          if (!strictCategory) return null;
+          if (category !== 'all' && strictCategory !== category) return null;
+
+          return {
+            id: `fallback-${feed.name}-${idx}-${item.link}`,
+            title: item.title,
+            summary: item.summary?.slice(0, 280) || null,
+            source_name: feed.name,
+            source_url: item.link,
+            thumbnail_url: item.thumbnailUrl,
+            published_at: safeDateISO(item.pubDate),
+            tags: [] as string[],
+            category: strictCategory,
+            is_pick: false,
+            pick_reason: null,
+            impact_summary: null,
+            impact_score: 0,
+            created_at: new Date().toISOString(),
+          };
+        })
+        .filter((item): item is MarketNewsItem => item !== null);
       collected.push(...mapped);
     } catch {
       // fallback fetch 실패는 무시
@@ -164,10 +426,12 @@ async function fetchFallbackMarketNews(category: NewsCategoryFilter): Promise<Ma
     if (!deduped.has(key)) deduped.set(key, item);
   }
 
-  return Array.from(deduped.values())
+  const fresh = Array.from(deduped.values())
     .filter((item) => (Date.now() - new Date(item.published_at).getTime()) <= FALLBACK_FRESHNESS_MS)
     .sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime())
     .slice(0, FALLBACK_PAGE_SIZE);
+
+  return enrichFallbackThumbnails(fresh);
 }
 
 // ============================================================================
@@ -187,6 +451,8 @@ export const useMarketNews = (category: NewsCategoryFilter = 'all') => {
 
       if (category !== 'all') {
         query = query.eq('category', category);
+      } else {
+        query = query.in('category', [...ALLOWED_NEWS_CATEGORIES]);
       }
 
       query = query.range(pageParam, pageParam + NEWS_PAGE_SIZE - 1);
@@ -200,8 +466,25 @@ export const useMarketNews = (category: NewsCategoryFilter = 'all') => {
         throw new Error(error.message || '뉴스 조회에 실패했습니다.');
       }
 
-      const rows = (data || []) as MarketNewsItem[];
-      if (rows.length > 0) return rows;
+      const rows = (data || []) as (MarketNewsItem & { category: unknown })[];
+      const strictRows = rows.filter((row): row is MarketNewsItem => isAllowedNewsCategory(row.category));
+      if (strictRows.length > 0) {
+        // DB에 데이터가 있어도 너무 오래됐다면 RSS fallback을 합쳐서 신선도 복구
+        if (pageParam === 0) {
+          const latestPublishedAt = strictRows[0]?.published_at;
+          const latestMs = latestPublishedAt ? new Date(latestPublishedAt).getTime() : NaN;
+          const isStale = !Number.isFinite(latestMs) || (Date.now() - latestMs) > NEWS_STALE_THRESHOLD_MS;
+
+          if (isStale) {
+            const fallbackRows = await fetchFallbackMarketNews(category);
+            if (fallbackRows.length > 0) {
+              return dedupeAndSortNews([...strictRows, ...fallbackRows]);
+            }
+          }
+        }
+
+        return strictRows;
+      }
 
       // DB가 비었을 때 1페이지 fallback
       if (pageParam === 0) {
@@ -230,6 +513,7 @@ export const usePickNews = () => {
         .from('market_news')
         .select('*')
         .eq('is_pick', true)
+        .in('category', [...ALLOWED_NEWS_CATEGORIES])
         .order('published_at', { ascending: false })
         .limit(5);
 
@@ -237,7 +521,8 @@ export const usePickNews = () => {
         throw new Error(error.message || 'AI PiCK 조회에 실패했습니다.');
       }
 
-      return (data || []) as MarketNewsItem[];
+      const rows = (data || []) as (MarketNewsItem & { category: unknown })[];
+      return rows.filter((row): row is MarketNewsItem => isAllowedNewsCategory(row.category));
     },
     staleTime: 30000,
   });
@@ -261,8 +546,6 @@ export async function triggerNewsCollectionIfNeeded(reason: 'empty' | 'stale'): 
       return { triggered: false, skippedByCooldown: true };
     }
 
-    await AsyncStorage.setItem(NEWS_COLLECTION_COOLDOWN_KEY, String(now));
-
     const { error } = await supabase.functions.invoke('daily-briefing', {
       body: {
         tasks: 'J',
@@ -277,6 +560,8 @@ export async function triggerNewsCollectionIfNeeded(reason: 'empty' | 'stale'): 
         error: error.message || '뉴스 수집 호출 실패',
       };
     }
+
+    await AsyncStorage.setItem(NEWS_COLLECTION_COOLDOWN_KEY, String(now));
 
     return { triggered: true, skippedByCooldown: false };
   } catch (err) {

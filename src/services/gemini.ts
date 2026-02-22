@@ -388,6 +388,355 @@ function parseGeminiJson<T = any>(text: string): T {
   return JSON.parse(cleaned) as T;
 }
 
+type DeepDiveRecommendation = DeepDiveResult['recommendation'];
+type DeepDiveSentiment = DeepDiveResult['sections']['news']['sentiment'];
+type DeepDiveMetricStatus = 'good' | 'neutral' | 'bad';
+
+function clampNumber(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max);
+}
+
+function toFiniteNumber(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string') {
+    const parsed = Number(value.replace(/[^0-9.\-]/g, ''));
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
+function roundTo(value: number, decimals: number): number {
+  const base = 10 ** decimals;
+  return Math.round(value * base) / base;
+}
+
+function sentimentToNumericScore(sentiment: DeepDiveSentiment | string | undefined): number {
+  switch (sentiment) {
+    case 'VERY_POSITIVE':
+      return 90;
+    case 'POSITIVE':
+      return 70;
+    case 'NEUTRAL':
+      return 50;
+    case 'NEGATIVE':
+      return 30;
+    case 'VERY_NEGATIVE':
+      return 10;
+    default:
+      return 50;
+  }
+}
+
+function recommendationFromScore(score: number): DeepDiveRecommendation {
+  if (score >= 78) return 'VERY_POSITIVE';
+  if (score >= 63) return 'POSITIVE';
+  if (score >= 42) return 'NEUTRAL';
+  if (score >= 28) return 'NEGATIVE';
+  return 'VERY_NEGATIVE';
+}
+
+function inferMarketCapKRW(fundamentals?: DeepDiveInput['fundamentals']): number | null {
+  if (!fundamentals) return null;
+  if (typeof fundamentals.marketCapKRW === 'number' && Number.isFinite(fundamentals.marketCapKRW)) {
+    return fundamentals.marketCapKRW;
+  }
+  if (typeof fundamentals.marketCap === 'number' && Number.isFinite(fundamentals.marketCap)) {
+    if (fundamentals.currency === 'KRW') {
+      return fundamentals.marketCap;
+    }
+    if (typeof fundamentals.exchangeRate === 'number' && Number.isFinite(fundamentals.exchangeRate)) {
+      return fundamentals.marketCap * fundamentals.exchangeRate;
+    }
+  }
+  return null;
+}
+
+function relativeDiff(a: number, b: number): number {
+  const denom = Math.max(Math.abs(a), Math.abs(b), 1);
+  return Math.abs(a - b) / denom;
+}
+
+function formatKrwCompact(value: number): string {
+  const abs = Math.abs(value);
+  const sign = value < 0 ? '-' : '';
+
+  if (abs >= 1_0000_0000_0000) {
+    return `${sign}약 ${(abs / 1_0000_0000_0000).toFixed(1)}조원`;
+  }
+  if (abs >= 1_0000_0000) {
+    return `${sign}약 ${(abs / 1_0000_0000).toFixed(0)}억원`;
+  }
+  return `${sign}${Math.round(abs).toLocaleString()}원`;
+}
+
+function normalizeMetricStatus(status: unknown): DeepDiveMetricStatus {
+  if (status === 'good' || status === 'neutral' || status === 'bad') {
+    return status;
+  }
+  return 'neutral';
+}
+
+function upsertMetric(
+  metrics: { label: string; value: string; status: DeepDiveMetricStatus }[],
+  label: string,
+  value: string,
+  status: DeepDiveMetricStatus,
+): { label: string; value: string; status: DeepDiveMetricStatus }[] {
+  const idx = metrics.findIndex((m) => m.label.toLowerCase() === label.toLowerCase());
+  if (idx >= 0) {
+    const next = [...metrics];
+    next[idx] = { ...next[idx], value, status };
+    return next;
+  }
+  return [...metrics, { label, value, status }];
+}
+
+function sanitizeDeepDiveResult(raw: DeepDiveResult, input: DeepDiveInput): DeepDiveResult {
+  const nowIso = new Date().toISOString();
+  const checks: string[] = [];
+  let reliabilityScore = 100;
+
+  const sections = raw.sections ?? ({} as DeepDiveResult['sections']);
+  const financialRaw = sections.financial ?? {
+    title: '재무 분석',
+    score: 50,
+    highlights: [],
+    metrics: [],
+  };
+  const technicalRaw = sections.technical ?? {
+    title: '기술적 분석',
+    score: 50,
+    highlights: [],
+    signals: [],
+  };
+  const newsRaw = sections.news ?? {
+    title: '뉴스 분석',
+    sentiment: 'NEUTRAL' as DeepDiveSentiment,
+    highlights: [],
+    recentNews: [],
+  };
+  const qualityRaw = sections.quality ?? {
+    title: '투자 품질',
+    score: 50,
+    highlights: [],
+    metrics: [],
+  };
+
+  const financialScore = clampNumber(toFiniteNumber(financialRaw.score) ?? 50, 0, 100);
+  const technicalScore = clampNumber(toFiniteNumber(technicalRaw.score) ?? 50, 0, 100);
+  const qualityScore = clampNumber(toFiniteNumber(qualityRaw.score) ?? 50, 0, 100);
+  const newsScore = clampNumber(sentimentToNumericScore(newsRaw.sentiment), 0, 100);
+
+  let overallScore = clampNumber(toFiniteNumber(raw.overallScore) ?? 50, 0, 100);
+  const recomputedOverall = roundTo(
+    financialScore * 0.55 + technicalScore * 0.15 + newsScore * 0.15 + qualityScore * 0.15,
+    2,
+  );
+  if (Math.abs(overallScore - recomputedOverall) >= 3) {
+    overallScore = recomputedOverall;
+    reliabilityScore -= 8;
+    checks.push(`종합 점수를 세부 점수 기반 공식으로 재계산 (${recomputedOverall}점).`);
+  } else {
+    overallScore = roundTo(overallScore, 2);
+  }
+
+  let recommendation = raw.recommendation ?? 'NEUTRAL';
+  const expectedRecommendation = recommendationFromScore(overallScore);
+  if (recommendation !== expectedRecommendation) {
+    recommendation = expectedRecommendation;
+    reliabilityScore -= 6;
+    checks.push('추천 등급을 점수 기준과 일치하도록 보정했습니다.');
+  }
+
+  let marketCap = toFiniteNumber(raw.marketCap);
+  let per = toFiniteNumber(raw.per);
+  let pbr = toFiniteNumber(raw.pbr);
+
+  const factMarketCap = inferMarketCapKRW(input.fundamentals);
+  const factPer = input.fundamentals?.forwardPE ?? input.fundamentals?.trailingPE ?? null;
+  const factPbr = input.fundamentals?.priceToBook ?? null;
+
+  if (!input.fundamentals) {
+    reliabilityScore -= 20;
+    checks.push('재무 API 데이터가 없어 검색 기반 검증으로 처리했습니다.');
+  }
+
+  if (factMarketCap != null && factMarketCap > 0) {
+    if (marketCap == null || relativeDiff(marketCap, factMarketCap) > 0.2) {
+      marketCap = Math.round(factMarketCap);
+      reliabilityScore -= 12;
+      checks.push('시가총액을 API 팩트 데이터로 교정했습니다.');
+    }
+  }
+
+  if (factPer != null && Number.isFinite(factPer) && factPer > 0) {
+    if (per == null || relativeDiff(per, factPer) > 0.15) {
+      per = roundTo(factPer, 2);
+      reliabilityScore -= 10;
+      checks.push('PER를 API 팩트 데이터 기준으로 교정했습니다.');
+    }
+  }
+
+  if (factPbr != null && Number.isFinite(factPbr) && factPbr > 0) {
+    if (pbr == null || relativeDiff(pbr, factPbr) > 0.15) {
+      pbr = roundTo(factPbr, 2);
+      reliabilityScore -= 10;
+      checks.push('PBR을 API 팩트 데이터 기준으로 교정했습니다.');
+    }
+  }
+
+  if (per != null) {
+    if (!Number.isFinite(per) || per < -100 || per > 300) {
+      per = factPer != null ? roundTo(factPer, 2) : null;
+      reliabilityScore -= 8;
+      checks.push('비정상 PER 범위를 감지해 값을 정리했습니다.');
+    } else {
+      per = roundTo(per, 2);
+    }
+  }
+
+  if (pbr != null) {
+    if (!Number.isFinite(pbr) || pbr < 0 || pbr > 50) {
+      pbr = factPbr != null ? roundTo(factPbr, 2) : null;
+      reliabilityScore -= 8;
+      checks.push('비정상 PBR 범위를 감지해 값을 정리했습니다.');
+    } else {
+      pbr = roundTo(pbr, 2);
+    }
+  }
+
+  if (marketCap != null) {
+    if (!Number.isFinite(marketCap) || marketCap <= 0) {
+      marketCap = factMarketCap != null ? Math.round(factMarketCap) : null;
+      reliabilityScore -= 8;
+      checks.push('비정상 시가총액을 감지해 값을 정리했습니다.');
+    } else {
+      marketCap = Math.round(marketCap);
+    }
+  }
+
+  const financialMetrics = (Array.isArray(financialRaw.metrics) ? financialRaw.metrics : []).map((metric) => ({
+    label: metric?.label ?? '',
+    value: metric?.value ?? '',
+    status: normalizeMetricStatus(metric?.status),
+  })).filter((metric) => metric.label.length > 0);
+
+  let mergedMetrics = [...financialMetrics];
+  if (per != null) {
+    mergedMetrics = upsertMetric(
+      mergedMetrics,
+      'PER',
+      `${per.toFixed(2)}배`,
+      per <= 0 ? 'neutral' : per <= 15 ? 'good' : per <= 30 ? 'neutral' : 'bad',
+    );
+  }
+  if (pbr != null) {
+    mergedMetrics = upsertMetric(
+      mergedMetrics,
+      'PBR',
+      `${pbr.toFixed(2)}배`,
+      pbr <= 1 ? 'good' : pbr <= 3 ? 'neutral' : 'bad',
+    );
+  }
+  if (marketCap != null) {
+    mergedMetrics = upsertMetric(mergedMetrics, '시가총액', formatKrwCompact(marketCap), 'neutral');
+  }
+
+  const generatedAt = raw.generatedAt && !Number.isNaN(new Date(raw.generatedAt).getTime())
+    ? raw.generatedAt
+    : nowIso;
+
+  const sourceList = (Array.isArray(raw.dataSources) ? raw.dataSources : [])
+    .filter((source) => source?.name && source?.detail)
+    .map((source) => ({
+      name: String(source.name),
+      detail: String(source.detail),
+      date: source.date ? String(source.date) : nowIso.split('T')[0],
+    }));
+
+  if (input.fundamentals && !sourceList.some((source) => source.name.includes('Yahoo Finance'))) {
+    sourceList.unshift({
+      name: 'Yahoo Finance API',
+      detail: '시가총액·PER·PBR 팩트값 검증',
+      date: input.fundamentals.fetchedAt || nowIso,
+    });
+  }
+
+  if (!sourceList.some((source) => source.name.includes('Google Search'))) {
+    sourceList.push({
+      name: 'Google Search',
+      detail: '뉴스/이벤트 및 보조 지표 확인',
+      date: nowIso.split('T')[0],
+    });
+  }
+
+  if (checks.length === 0) {
+    checks.push('점수/추천/핵심 지표의 일관성 검증을 통과했습니다.');
+  }
+
+  const normalizedReliabilityScore = clampNumber(Math.round(reliabilityScore), 0, 100);
+  const level: 'high' | 'medium' | 'low' =
+    normalizedReliabilityScore >= 80 ? 'high' : normalizedReliabilityScore >= 60 ? 'medium' : 'low';
+  const summary = level === 'high'
+    ? '핵심 재무지표와 점수 일관성 검증이 완료되었습니다.'
+    : level === 'medium'
+      ? '일부 항목을 자동 보정해 신뢰도를 높였습니다.'
+      : '다수 항목이 보정되었습니다. 투자 전 원문 공시/체결가를 재확인하세요.';
+
+  return {
+    ...raw,
+    overallScore,
+    recommendation,
+    generatedAt,
+    sections: {
+      ...sections,
+      financial: {
+        ...financialRaw,
+        score: roundTo(financialScore, 1),
+        highlights: Array.isArray(financialRaw.highlights) ? financialRaw.highlights : [],
+        metrics: mergedMetrics,
+      },
+      technical: {
+        ...technicalRaw,
+        score: roundTo(technicalScore, 1),
+        highlights: Array.isArray(technicalRaw.highlights) ? technicalRaw.highlights : [],
+        signals: Array.isArray(technicalRaw.signals) ? technicalRaw.signals : [],
+      },
+      news: {
+        ...newsRaw,
+        sentiment: (newsRaw.sentiment ?? 'NEUTRAL') as DeepDiveSentiment,
+        highlights: Array.isArray(newsRaw.highlights) ? newsRaw.highlights : [],
+        recentNews: Array.isArray(newsRaw.recentNews) ? newsRaw.recentNews : [],
+      },
+      quality: {
+        ...qualityRaw,
+        score: roundTo(qualityScore, 1),
+        highlights: Array.isArray(qualityRaw.highlights) ? qualityRaw.highlights : [],
+        metrics: Array.isArray(qualityRaw.metrics) ? qualityRaw.metrics : [],
+      },
+      aiOpinion: {
+        title: sections.aiOpinion?.title ?? 'AI 종합 의견',
+        summary: sections.aiOpinion?.summary ?? '',
+        bullCase: Array.isArray(sections.aiOpinion?.bullCase) ? sections.aiOpinion?.bullCase : [],
+        bearCase: Array.isArray(sections.aiOpinion?.bearCase) ? sections.aiOpinion?.bearCase : [],
+        targetPrice: sections.aiOpinion?.targetPrice ?? '-',
+        timeHorizon: sections.aiOpinion?.timeHorizon ?? '-',
+      },
+    },
+    marketCap: marketCap ?? undefined,
+    per: per ?? undefined,
+    pbr: pbr ?? undefined,
+    dataSources: sourceList,
+    verification: {
+      level,
+      score: normalizedReliabilityScore,
+      summary,
+      checks: checks.slice(0, 5),
+      checkedAt: nowIso,
+    },
+  };
+}
+
 export const getPortfolioAdvice = async (prompt: any) => {
   try {
     const msg = typeof prompt === 'string' ? prompt : JSON.stringify(prompt);
@@ -1518,8 +1867,9 @@ ${hasFundamentals ? '12. API 제공 데이터(시가총액, PER, PBR, ROE 등)�
       console.log('[DeepDive] 응답 앞 200자:', text.substring(0, 200));
     }
 
-    // JSON 정제 및 파싱 (통합 파서 사용)
-    return parseGeminiJson<DeepDiveResult>(text);
+    // JSON 정제 및 파싱 + 신뢰도 검증/보정
+    const parsed = parseGeminiJson<DeepDiveResult>(text);
+    return sanitizeDeepDiveResult(parsed, input);
   } catch (parseErr) {
     console.warn('[DeepDive] JSON 파싱 실패:', parseErr);
     throw new Error('AI 응답 형식 오류 — 재시도해주세요');

@@ -63,9 +63,34 @@ function getScoreColor(score: number): string {
   return '#CF6679';
 }
 
+function normalizeScore(score: number): number {
+  if (!Number.isFinite(score)) return 0;
+  return Math.min(Math.max(score, 0), 100);
+}
+
+function formatScoreDisplay(score: number): { circle: string; precise: string } {
+  const normalized = normalizeScore(score);
+  return {
+    circle: String(Math.round(normalized)),
+    precise: normalized.toFixed(2).replace(/\.00$/, ''),
+  };
+}
+
+function reliabilityLabel(level: 'high' | 'medium' | 'low' | undefined): string {
+  if (level === 'high') return '검증 높음';
+  if (level === 'medium') return '검증 보통';
+  return '검증 필요';
+}
+
+function reliabilityColor(level: 'high' | 'medium' | 'low' | undefined): string {
+  if (level === 'high') return '#4CAF50';
+  if (level === 'medium') return '#FFB74D';
+  return '#EF5350';
+}
+
 // ── financial.metrics에서 특정 지표 추출 ──
 function extractMetricValue(
-  metrics: Array<{ label: string; value: string }>,
+  metrics: { label: string; value: string }[],
   keywords: string[],
 ): number {
   for (const m of metrics) {
@@ -81,6 +106,7 @@ function extractMetricValue(
 // ── 메인 컴포넌트 ──
 export default function DeepDiveReport({ result }: DeepDiveReportProps) {
   const { colors } = useTheme();
+  const scoreDisplay = formatScoreDisplay(result.overallScore);
 
   // null 안전: AI 응답이 부분적일 수 있으므로 기본값 적용
   const sections = result.sections ?? {} as any;
@@ -157,8 +183,13 @@ export default function DeepDiveReport({ result }: DeepDiveReportProps) {
         {/* 종합 점수 */}
         <View style={styles.scoreRow}>
           <View style={[styles.scoreCircle, { borderColor: getScoreColor(result.overallScore) }]}>
-            <Text style={[styles.scoreNumber, { color: getScoreColor(result.overallScore) }]}>
-              {result.overallScore}
+            <Text
+              style={[styles.scoreNumber, { color: getScoreColor(result.overallScore) }]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.7}
+            >
+              {scoreDisplay.circle}
             </Text>
             <Text style={[styles.scoreUnit, { color: colors.textTertiary }]}>점</Text>
           </View>
@@ -167,6 +198,16 @@ export default function DeepDiveReport({ result }: DeepDiveReportProps) {
             <Text style={[styles.scoreLabelSub, { color: colors.textTertiary }]}>
               재무 {financial.score ?? 0} · 품질 {quality?.score ?? '-'} · 기술 {technical.score ?? 0} · 뉴스 {newsScore}
             </Text>
+            <Text style={[styles.scoreLabelPrecise, { color: colors.textSecondary }]}>
+              정밀 점수 {scoreDisplay.precise}점
+            </Text>
+            {result.verification && (
+              <View style={[styles.verificationBadge, { backgroundColor: `${reliabilityColor(result.verification.level)}22` }]}>
+                <Text style={[styles.verificationBadgeText, { color: reliabilityColor(result.verification.level) }]}>
+                  {reliabilityLabel(result.verification.level)} · {result.verification.score}점
+                </Text>
+              </View>
+            )}
           </View>
         </View>
 
@@ -424,7 +465,33 @@ export default function DeepDiveReport({ result }: DeepDiveReportProps) {
       )}
 
       {/* ═══════════════════════════════════════
-          8. 면책 문구
+          8. 데이터 검증
+         ═══════════════════════════════════════ */}
+      {result.verification && (
+        <View style={[styles.sourcesBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View style={styles.sourcesHeader}>
+            <Ionicons name="shield-checkmark-outline" size={16} color={reliabilityColor(result.verification.level)} />
+            <Text style={[styles.sourcesTitle, { color: colors.textSecondary }]}>
+              데이터 검증 · {reliabilityLabel(result.verification.level)}
+            </Text>
+          </View>
+          <Text style={[styles.sourceDetail, { color: colors.textSecondary, marginBottom: 8 }]}>
+            {result.verification.summary}
+          </Text>
+          {result.verification.checks.map((check, idx) => (
+            <View key={idx} style={styles.highlightRow}>
+              <Ionicons name="ellipse" size={6} color={colors.primary} style={styles.bulletIcon} />
+              <Text style={[styles.highlightText, { color: colors.textSecondary }]}>{check}</Text>
+            </View>
+          ))}
+          <Text style={[styles.sourceDetail, { color: colors.textTertiary, marginTop: 8 }]}>
+            점검 시각: {new Date(result.verification.checkedAt).toLocaleString('ko-KR')}
+          </Text>
+        </View>
+      )}
+
+      {/* ═══════════════════════════════════════
+          9. 면책 문구
          ═══════════════════════════════════════ */}
       <View style={[styles.disclaimerBox, { borderColor: colors.border }]}>
         <Text style={[styles.disclaimerText, { color: colors.textQuaternary }]}>
@@ -523,25 +590,26 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   scoreCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 82,
+    height: 82,
+    borderRadius: 41,
     borderWidth: 3,
     justifyContent: 'center',
     alignItems: 'center',
   },
   scoreNumber: {
-    fontSize: 29,
+    fontSize: 31,
     fontWeight: '900',
-    lineHeight: 33,
+    lineHeight: 36,
   },
   scoreUnit: {
     fontSize: 11,
     fontWeight: '500',
-    marginTop: -2,
+    marginTop: -3,
   },
   scoreLabels: {
     gap: 4,
+    flex: 1,
   },
   scoreLabelMain: {
     fontSize: 17,
@@ -549,6 +617,22 @@ const styles = StyleSheet.create({
   },
   scoreLabelSub: {
     fontSize: 14,
+    lineHeight: 19,
+  },
+  scoreLabelPrecise: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  verificationBadge: {
+    alignSelf: 'flex-start',
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    marginTop: 2,
+  },
+  verificationBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
   },
 
   // ── 시가총액/PER/PBR ──

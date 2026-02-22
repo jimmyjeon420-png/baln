@@ -23,7 +23,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useBookmarkedPosts, useMyBookmarks, useToggleBookmark } from '../../src/hooks/useBookmarks';
 import { useMyLikes, useLikePost } from '../../src/hooks/useCommunity';
 import { CommunityPost, TIER_COLORS, CATEGORY_INFO } from '../../src/types/community';
-import { getTierFromAssets, getTierIcon, getRelativeTime } from '../../src/utils/communityUtils';
+import { getTierFromAssets, getTierIcon, getRelativeTime, formatCommunityDisplayTag } from '../../src/utils/communityUtils';
 import { useTheme } from '../../src/hooks/useTheme';
 
 export default function BookmarksScreen() {
@@ -65,7 +65,7 @@ export default function BookmarksScreen() {
               <Ionicons name={tierIcon} size={10} color={colors.background} />
             </View>
             <Text style={[styles.displayTag, { color: tierColor }]}>
-              {item.display_tag}
+              {formatCommunityDisplayTag(item.total_assets_at_post)}
             </Text>
             {categoryInfo && (
               <View style={[styles.categoryBadge, { backgroundColor: categoryInfo.color + '20' }]}>

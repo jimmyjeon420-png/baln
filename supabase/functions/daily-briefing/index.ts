@@ -385,6 +385,7 @@ serve(async (req: Request) => {
         aiTagged: val(newsResult, (v) => v.aiTagged, 0),
         fallbackTagged: val(newsResult, (v) => v.fallbackTagged, 0),
         avgQualityScore: val(newsResult, (v) => v.avgQualityScore, 0),
+        upsertErrorSample: val(newsResult, (v) => v.upsertErrorSample ?? [], [] as string[]),
       };
     }
 

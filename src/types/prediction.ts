@@ -49,6 +49,8 @@ export interface PredictionPoll {
   difficulty?: PollDifficulty;      // 난이도 (easy/medium/hard)
   context_hint?: string | null;     // 복기 시 학습 포인트 힌트
   related_ticker?: string | null;   // 관련 종목 티커
+  up_reason?: string | null;        // YES(오를) 근거
+  down_reason?: string | null;      // NO(내릴) 근거
 }
 
 /** prediction_votes 테이블 */

@@ -32,13 +32,12 @@ export function useReports(options: UseReportsOptions = {}) {
   return useQuery<ReportWithContent[], Error>({
     queryKey: ['reports', status],
     queryFn: async () => {
-      // 기본 쿼리: 신고 + 신고자 정보
+      // 운영 스키마 편차 대응:
+      // 1) FK 명시 조인 제거 (환경마다 FK 이름이 다를 수 있음)
+      // 2) created_at 미존재 시 updated_at 정렬로 자동 폴백
       let query = supabase
         .from('community_reports')
-        .select(`
-          *,
-          reporter:profiles!community_reports_reporter_id_fkey(display_tag)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       // 상태 필터
@@ -46,12 +45,53 @@ export function useReports(options: UseReportsOptions = {}) {
         query = query.eq('status', status);
       }
 
-      const { data, error } = await query;
+      let { data, error } = await query;
+
+      if (error && /created_at/i.test(error.message || '')) {
+        let fallbackQuery = supabase
+          .from('community_reports')
+          .select('*')
+          .order('updated_at', { ascending: false });
+
+        if (status) {
+          fallbackQuery = fallbackQuery.eq('status', status);
+        }
+
+        const fallbackResult = await fallbackQuery;
+        data = fallbackResult.data;
+        error = fallbackResult.error;
+      }
+
       if (error) throw error;
+
+      const reports = (data || []) as CommunityReport[];
+
+      // reporter display_tag 일괄 조회 (FK 이름 의존 제거)
+      const reporterIds = Array.from(
+        new Set(
+          reports
+            .map((r) => r.reporter_id)
+            .filter((id): id is string => !!id)
+        )
+      );
+
+      const reporterTagMap = new Map<string, string>();
+      if (reporterIds.length > 0) {
+        const { data: profileRows } = await supabase
+          .from('profiles')
+          .select('id, display_tag')
+          .in('id', reporterIds);
+
+        (profileRows || []).forEach((row: { id: string; display_tag: string | null }) => {
+          if (row?.id) {
+            reporterTagMap.set(row.id, row.display_tag || '알 수 없음');
+          }
+        });
+      }
 
       // 각 신고에 대해 대상 콘텐츠 조회
       const reportsWithContent: ReportWithContent[] = await Promise.all(
-        (data || []).map(async (report: any) => {
+        reports.map(async (report) => {
           let targetContent;
 
           // 게시글 신고인 경우
@@ -83,7 +123,7 @@ export function useReports(options: UseReportsOptions = {}) {
           return {
             ...report,
             target_content: targetContent,
-            reporter_display_tag: (report as any).reporter?.display_tag || '알 수 없음',
+            reporter_display_tag: reporterTagMap.get(report.reporter_id) || '알 수 없음',
             duplicate_count: count || 1,
           } as ReportWithContent;
         })

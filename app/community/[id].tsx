@@ -59,6 +59,11 @@ import {
   getRelativeTime,
   isBeginnerQuestion,
   stripBeginnerQuestionPrefix,
+  formatCommunityDisplayTag,
+  buildCommunityAssetMixFromHoldings,
+  getCommunityHoldingLabel,
+  getCommunityHoldingRatio,
+  formatPortfolioRatio,
 } from '../../src/utils/communityUtils';
 import CommentItem from '../../src/components/community/CommentItem';
 import ReplySection from '../../src/components/community/ReplySection';
@@ -233,8 +238,13 @@ export default function PostDetailScreen() {
   };
 
   // 댓글 삭제 핸들러
-  const handleDeleteComment = (commentId: string) => {
-    deleteComment.mutate(commentId);
+  const handleDeleteComment = async (commentId: string) => {
+    try {
+      await deleteComment.mutateAsync(commentId);
+    } catch (error: any) {
+      const errorMsg = error?.message || '댓글 삭제에 실패했습니다.';
+      Alert.alert('오류', errorMsg);
+    }
   };
 
   // 댓글 좋아요 핸들러
@@ -339,7 +349,10 @@ export default function PostDetailScreen() {
   const tierColor = TIER_COLORS[tier] || '#C0C0C0';
   const tierIcon = getTierIcon(tier);
   const categoryInfo = post.category ? CATEGORY_INFO[post.category] : null;
-  const holdings = (post.top_holdings || []).slice(0, 5);
+  const allHoldings = post.top_holdings || [];
+  const holdings = allHoldings.slice(0, 5);
+  const displayTag = formatCommunityDisplayTag(post.total_assets_at_post);
+  const assetMixText = buildCommunityAssetMixFromHoldings(allHoldings, post.total_assets_at_post);
   const beginnerQuestion = isBeginnerQuestion(post.content);
   const displayPostContent = stripBeginnerQuestionPrefix(post.content);
   const bestAnswerComment = comments?.find((comment) => comment.id === bestAnswer?.comment_id) ?? null;
@@ -361,7 +374,7 @@ export default function PostDetailScreen() {
               <View style={styles.postTagRow}>
                 <TouchableOpacity onPress={() => handleAuthorPress(post.user_id)}>
                   <Text style={[styles.postDisplayTag, { color: tierColor }]}>
-                    {post.display_tag}
+                    {displayTag}
                   </Text>
                 </TouchableOpacity>
                 {categoryInfo && (
@@ -379,8 +392,8 @@ export default function PostDetailScreen() {
                   </View>
                 )}
               </View>
-              {post.asset_mix ? (
-                <Text style={[styles.postAssetMix, { color: colors.textTertiary }]}>{post.asset_mix}</Text>
+              {assetMixText ? (
+                <Text style={[styles.postAssetMix, { color: colors.textTertiary }]}>{assetMixText}</Text>
               ) : null}
             </View>
           </View>
@@ -404,8 +417,12 @@ export default function PostDetailScreen() {
                     styles.holdingDot,
                     { backgroundColor: HOLDING_TYPE_COLORS[h.type] || colors.textTertiary },
                   ]} />
-                  <Text style={[styles.holdingTicker, { color: colors.textSecondary }]}>{h.type === 'realestate' ? '부동산' : h.ticker}</Text>
-                  {h.type !== 'realestate' && <Text style={[styles.holdingName, { color: colors.textTertiary }]}>{h.name}</Text>}
+                  <Text style={[styles.holdingTicker, { color: colors.textSecondary }]}>
+                    {getCommunityHoldingLabel(h)}
+                  </Text>
+                  <Text style={[styles.holdingRatio, { color: colors.textTertiary }]}>
+                    {formatPortfolioRatio(getCommunityHoldingRatio(h.value, post.total_assets_at_post, allHoldings))}
+                  </Text>
                 </View>
               ))}
             </View>
@@ -762,8 +779,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
   },
-  holdingName: {
+  holdingRatio: {
     fontSize: 11,
+    fontWeight: '700',
   },
 
   // ── 본문 + 푸터 ──

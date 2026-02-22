@@ -84,6 +84,7 @@ export default function ScoreRadar({
   const cy = svgSize / 2 + 8; // 약간 아래로 → 상단 라벨 공간 확보
   const maxRadius = size * 0.35;
   const scores = [financialScore, technicalScore, newsScore];
+  const displayScores = scores.map((score) => Math.round(Math.min(Math.max(score, 0), 100)));
   const avgScore = (financialScore + technicalScore + newsScore) / 3;
   const fillColor = getScoreColor(avgScore);
 
@@ -180,7 +181,7 @@ export default function ScoreRadar({
               fill={getScoreColor(scores[idx])}
               textAnchor="middle"
             >
-              {scores[idx]}
+              {displayScores[idx]}
             </SvgText>
           </React.Fragment>
         ))}

@@ -11,6 +11,7 @@
 import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Notifications from 'expo-notifications';
 import supabase, { getCurrentUser } from '../services/supabase';
 import type {
   PredictionPoll,
@@ -33,6 +34,31 @@ const getTodayDeadline = (): string => {
   d.setHours(23, 59, 59, 999);
   return d.toISOString();
 };
+
+/** Date/ISO 값을 로컬 날짜키(YYYY-MM-DD)로 변환 */
+function toLocalDateKey(input: Date | string): string {
+  const dt = input instanceof Date ? input : new Date(input);
+  if (Number.isNaN(dt.getTime())) return '';
+  const year = dt.getFullYear();
+  const month = String(dt.getMonth() + 1).padStart(2, '0');
+  const day = String(dt.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+/** n일 오프셋 기준 로컬 날짜키 */
+function getLocalDateKey(offsetDays: number): string {
+  const dt = new Date();
+  dt.setDate(dt.getDate() + offsetDays);
+  return toLocalDateKey(dt);
+}
+
+/** KST(UTC+9) 기준 날짜키 (prediction 일일 세트 식별용) */
+function toKstDateKey(iso: string | null | undefined): string | null {
+  if (!iso) return null;
+  const ms = new Date(iso).getTime();
+  if (!Number.isFinite(ms)) return null;
+  return new Date(ms + 9 * 60 * 60 * 1000).toISOString().split('T')[0];
+}
 
 /**
  * 전체 폴백 투표 풀 (18개)
@@ -490,11 +516,13 @@ export const useActivePolls = () => {
     queryKey: PREDICTION_KEYS.activePolls,
     queryFn: async () => {
       try {
+        const nowIso = new Date().toISOString();
         const { data, error } = await supabase
           .from('prediction_polls')
           .select('*')
           .eq('status', 'active')
-          .gte('deadline', new Date().toISOString())
+          .gte('deadline', nowIso)
+          .order('created_at', { ascending: false })
           .order('deadline', { ascending: true });
 
         if (error) throw error;
@@ -504,7 +532,31 @@ export const useActivePolls = () => {
           return getFallbackPolls();
         }
 
-        return data as PredictionPoll[];
+        // "하루 1세트" 보장: KST 기준 가장 최근 생성일의 최대 3개만 노출
+        const latestBatchDate = toKstDateKey(data[0]?.created_at);
+        const todayKst = toKstDateKey(nowIso);
+        if (latestBatchDate && todayKst && latestBatchDate !== todayKst) {
+          return getFallbackPolls();
+        }
+
+        const latestBatch = latestBatchDate
+          ? data.filter((poll) => toKstDateKey(poll.created_at) === latestBatchDate)
+          : data;
+
+        const latestThree = [...latestBatch]
+          .sort((a, b) => {
+            const aCreated = new Date(a.created_at).getTime();
+            const bCreated = new Date(b.created_at).getTime();
+            return bCreated - aCreated;
+          })
+          .slice(0, 3)
+          .sort((a, b) => {
+            const aDeadline = new Date(a.deadline).getTime();
+            const bDeadline = new Date(b.deadline).getTime();
+            return aDeadline - bDeadline;
+          });
+
+        return (latestThree.length > 0 ? latestThree : data.slice(0, 3)) as PredictionPoll[];
       } catch {
         // 쿼리 실패 시 (테이블 없음 등) 폴백 사용
         return getFallbackPolls();
@@ -823,17 +875,15 @@ export const useYesterdayReview = () => {
   const pollIds = (resolvedPolls || []).map(p => p.id);
   const { data: myVotes, isLoading: votesLoading } = useMyVotes(pollIds);
 
-  // 어제 날짜 계산 (로컬 타임존)
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayDateString = yesterday.toISOString().split('T')[0]; // "YYYY-MM-DD"
+  // 어제 날짜 계산 (로컬 타임존 기준)
+  const yesterdayDateString = getLocalDateKey(-1);
 
   // 어제 resolved + 내가 투표한 것만 필터링
   const yesterdayPolls: PollWithMyVote[] = (resolvedPolls || [])
     .filter(poll => {
       // resolved_at이 어제인지 확인
       if (!poll.resolved_at) return false;
-      const resolvedDate = new Date(poll.resolved_at).toISOString().split('T')[0];
+      const resolvedDate = toLocalDateKey(poll.resolved_at);
       return resolvedDate === yesterdayDateString;
     })
     .map(poll => {
@@ -978,8 +1028,6 @@ function maskUserId(userId: string): string {
 // P1.2: 예측 결과 알림 훅
 // ============================================================================
 
-import * as Notifications from 'expo-notifications';
-
 // AsyncStorage 키: 마지막으로 예측 결과 알림을 보낸 날짜
 const LAST_REVIEW_NOTIFY_KEY = '@baln:last_review_date';
 
@@ -1018,7 +1066,7 @@ export function useResolvedPollNotification(): void {
     const checkAndNotify = async () => {
       try {
         // 1. 오늘 이미 알림을 보냈는지 확인
-        const today = new Date().toISOString().split('T')[0]; // "YYYY-MM-DD"
+        const today = getLocalDateKey(0); // "YYYY-MM-DD" (local)
         const lastNotifyDate = await AsyncStorage.getItem(LAST_REVIEW_NOTIFY_KEY);
         if (lastNotifyDate === today) {
           // 오늘 이미 알림 발송 완료 → 중복 방지
@@ -1026,15 +1074,13 @@ export function useResolvedPollNotification(): void {
         }
 
         // 2. 어제 날짜 계산
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        const yesterdayStr = yesterday.toISOString().split('T')[0]; // "YYYY-MM-DD"
+        const yesterdayStr = getLocalDateKey(-1); // "YYYY-MM-DD" (local)
 
         // 3. 어제 결과가 나온 투표 중 내가 투표한 것 찾기
         const myVotedPollIds = new Set((myVotes || []).map(v => v.poll_id));
         const newResults = (resolvedPolls || []).filter(poll => {
           if (!poll.resolved_at) return false;
-          const resolvedDate = new Date(poll.resolved_at).toISOString().split('T')[0];
+          const resolvedDate = toLocalDateKey(poll.resolved_at);
           return resolvedDate === yesterdayStr && myVotedPollIds.has(poll.id);
         });
 

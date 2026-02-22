@@ -24,6 +24,11 @@ import {
   getRelativeTime,
   isBeginnerQuestion,
   stripBeginnerQuestionPrefix,
+  formatCommunityDisplayTag,
+  buildCommunityAssetMixFromHoldings,
+  getCommunityHoldingLabel,
+  getCommunityHoldingRatio,
+  formatPortfolioRatio,
 } from '../utils/communityUtils';
 
 interface CommunityPostCardProps {
@@ -45,7 +50,10 @@ export default function CommunityPostCard({
   const tierColor = TIER_COLORS[tier] || '#C0C0C0';
   const tierIcon = getTierIcon(tier);
   const categoryInfo = post.category ? CATEGORY_INFO[post.category] : null;
-  const holdings = (post.top_holdings || []).slice(0, 5);
+  const allHoldings = post.top_holdings || [];
+  const holdings = allHoldings.slice(0, 5);
+  const displayTag = formatCommunityDisplayTag(post.total_assets_at_post);
+  const assetMixText = buildCommunityAssetMixFromHoldings(allHoldings, post.total_assets_at_post);
   const beginnerQuestion = isBeginnerQuestion(post.content);
   const displayContent = stripBeginnerQuestionPrefix(post.content);
 
@@ -77,7 +85,7 @@ export default function CommunityPostCard({
                 }}
               >
                 <Text style={[styles.displayTag, { color: tierColor }]}>
-                  {post.display_tag}
+                  {displayTag}
                 </Text>
               </TouchableOpacity>
               {categoryInfo && (
@@ -99,8 +107,8 @@ export default function CommunityPostCard({
                 </View>
               )}
             </View>
-            {post.asset_mix && (
-              <Text style={styles.assetMix}>{post.asset_mix}</Text>
+            {assetMixText && (
+              <Text style={styles.assetMix}>{assetMixText}</Text>
             )}
           </View>
         </View>
@@ -123,7 +131,10 @@ export default function CommunityPostCard({
                 { backgroundColor: HOLDING_TYPE_COLORS[h.type] || '#888' },
               ]} />
               <Text style={styles.holdingTicker}>
-                {h.ticker.startsWith('RE_') ? '부동산' : h.ticker}
+                {getCommunityHoldingLabel(h)}
+              </Text>
+              <Text style={styles.holdingRatio}>
+                {formatPortfolioRatio(getCommunityHoldingRatio(h.value, post.total_assets_at_post, allHoldings))}
               </Text>
             </View>
           ))}
@@ -278,6 +289,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: '#AAA',
+  },
+  holdingRatio: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#888888',
   },
 
   // ── 본문 + 푸터 ──

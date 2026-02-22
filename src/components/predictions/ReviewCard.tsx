@@ -15,7 +15,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTrackEvent } from '../../hooks/useAnalytics';
@@ -25,6 +24,13 @@ interface ReviewCardProps {
   poll: PollWithMyVote;
   isCorrect: boolean;
   currentStreak?: number;  // 현재 연속 적중 수 (옵션)
+}
+
+function extractTaggedLine(source: string | null | undefined, tag: string): string | null {
+  if (!source) return null;
+  const regex = new RegExp(`^${tag}:\\s*(.+)$`, 'm');
+  const match = source.match(regex);
+  return match?.[1]?.trim() || null;
 }
 
 export default function ReviewCard({ poll, isCorrect, currentStreak }: ReviewCardProps) {
@@ -38,6 +44,18 @@ export default function ReviewCard({ poll, isCorrect, currentStreak }: ReviewCar
   const iconName = isCorrect ? 'checkmark-circle' : 'close-circle';
   const iconColor = isCorrect ? '#4CAF50' : '#CF6679';
   const resultText = isCorrect ? '적중!' : '아쉽게 빗나갔어요';
+
+  const observed = extractTaggedLine(poll.source, '관측데이터');
+  const thresholdCheck = extractTaggedLine(poll.source, '조건검증');
+  const reasoning = extractTaggedLine(poll.source, '핵심근거');
+  const yesScenario = extractTaggedLine(poll.source, 'YES 시나리오');
+  const noScenario = extractTaggedLine(poll.source, 'NO 시나리오');
+  const learningPoint = extractTaggedLine(poll.source, '학습포인트');
+  const sourceRef = extractTaggedLine(poll.source, '출처');
+  const myScenario = poll.myVote === 'YES' ? yesScenario : noScenario;
+  const hasStructuredSource = !!(
+    observed || thresholdCheck || reasoning || yesScenario || noScenario || learningPoint || sourceRef
+  );
 
   return (
     <View style={[styles.card, { backgroundColor: bgColor, borderColor }]}>
@@ -127,8 +145,35 @@ export default function ReviewCard({ poll, isCorrect, currentStreak }: ReviewCar
             </Text>
           )}
 
-          {/* 출처 */}
-          {poll.source && (
+          {myScenario && (
+            <Text style={styles.explanationText}>
+              {isCorrect ? '성공 이유' : '실패 이유'}: {myScenario}
+            </Text>
+          )}
+
+          {learningPoint && (
+            <Text style={styles.explanationText}>
+              학습 포인트: {learningPoint}
+            </Text>
+          )}
+
+          {(observed || thresholdCheck || reasoning) && (
+            <View style={styles.explanationMetaBox}>
+              {observed && <Text style={styles.metaText}>관측값: {observed}</Text>}
+              {thresholdCheck && <Text style={styles.metaText}>조건: {thresholdCheck}</Text>}
+              {reasoning && <Text style={styles.metaText}>핵심 근거: {reasoning}</Text>}
+            </View>
+          )}
+
+          {sourceRef && (
+            <View style={styles.sourceRow}>
+              <Ionicons name="link-outline" size={14} color="#555555" />
+              <Text style={styles.sourceText}>출처: {sourceRef}</Text>
+            </View>
+          )}
+
+          {/* 레거시 source 포맷 fallback */}
+          {!hasStructuredSource && poll.source && (
             <View style={styles.sourceRow}>
               <Ionicons name="link-outline" size={14} color="#555555" />
               <Text style={styles.sourceText}>출처: {poll.source}</Text>
@@ -260,6 +305,19 @@ const styles = StyleSheet.create({
     color: '#CCCCCC',
     lineHeight: 22,
     marginBottom: 10,
+  },
+  explanationMetaBox: {
+    marginTop: 2,
+    marginBottom: 8,
+    padding: 10,
+    borderRadius: 10,
+    backgroundColor: '#222222',
+    gap: 4,
+  },
+  metaText: {
+    fontSize: 13,
+    color: '#AAAAAA',
+    lineHeight: 19,
   },
   sourceRow: {
     flexDirection: 'row',

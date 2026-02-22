@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { SIZES } from '../../styles/theme';
 import { useCommunityPosts } from '../../hooks/useCommunity';
 import { useTheme } from '../../hooks/useTheme';
+import { formatCommunityDisplayTag } from '../../utils/communityUtils';
 
 /**
  * 커뮤니티 미리보기 (전체 탭 상단)
@@ -100,7 +101,7 @@ export default function CommunityPreview({ isEligible = true }: CommunityPreview
                 </Text>
                 <View style={styles.postMeta}>
                   <Text style={[styles.authorTag, { color: colors.textSecondary }]} numberOfLines={1}>
-                    {post.display_tag}
+                    {formatCommunityDisplayTag(post.total_assets_at_post)}
                   </Text>
                   <View style={[styles.metaDivider, { backgroundColor: colors.border }]} />
                   <View style={styles.likesWrap}>
