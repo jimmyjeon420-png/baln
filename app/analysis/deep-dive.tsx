@@ -4,7 +4,7 @@
  * 역할: AI 기반 개별 종목 분석 제공
  * 사용자 흐름: 종목명/티커 입력 → AI 분석 → 4섹션 리포트
  *
- * [수정] Edge Function 대신 클라이언트 Gemini 직접 호출
+ * [수정] 프로덕션은 Edge Function(gemini-proxy) 우선, 직접 호출은 폴백
  * [수정] 한국어 기업명 검색 지원 (삼성전자, SK하이닉스 등)
  */
 
@@ -179,17 +179,17 @@ async function runDeepDiveDiagnostic() {
     results.push(`3. Gemini proxy ERROR: ${e.message}`);
   }
 
-  // 4. Gemini API 키 확인
+  // 4. 클라이언트 Gemini API 키 확인 (선택)
   try {
     const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
     const modelName = process.env.EXPO_PUBLIC_GEMINI_MODEL || 'gemini-3-flash-preview';
     if (apiKey && apiKey.length > 0) {
-      results.push(`4. Gemini KEY: loaded (${apiKey.length}chars) / model: ${modelName}`);
+      results.push(`4. Client KEY(선택): loaded (${apiKey.length}chars) / model: ${modelName}`);
     } else {
-      results.push(`4. Gemini KEY: MISSING`);
+      results.push(`4. Client KEY(선택): 없음 (프록시 모드에서는 정상)`);
     }
   } catch (e: any) {
-    results.push(`4. Gemini KEY ERROR: ${e.message}`);
+    results.push(`4. Client KEY(선택) ERROR: ${e.message}`);
   }
 
   // 5. getCurrentUser 체크
@@ -201,8 +201,14 @@ async function runDeepDiveDiagnostic() {
     results.push(`5. User ERROR: ${e.message}`);
   }
 
-  // 6. 클라이언트 Gemini API 직접 호출 테스트 (딥다이브에서 실제 사용하는 경로)
+  // 6. 클라이언트 Gemini API 직접 호출 테스트 (참고용)
   try {
+    if (!__DEV__) {
+      results.push('6. Gemini 직접호출(참고): 프로덕션은 프록시 우선 모드로 스킵');
+      Alert.alert('딥다이브 진단 결과', results.join('\n') + `\n\n총: ${Date.now() - startTotal}ms`);
+      return;
+    }
+
     const t6 = Date.now();
     const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY || '';
     const model = process.env.EXPO_PUBLIC_GEMINI_MODEL || 'gemini-3-flash-preview';

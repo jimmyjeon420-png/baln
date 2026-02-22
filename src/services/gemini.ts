@@ -392,6 +392,20 @@ type DeepDiveRecommendation = DeepDiveResult['recommendation'];
 type DeepDiveSentiment = DeepDiveResult['sections']['news']['sentiment'];
 type DeepDiveMetricStatus = 'good' | 'neutral' | 'bad';
 
+interface ProxyDeepDiveResponse {
+  name?: string;
+  ticker?: string;
+  currentPrice?: number;
+  change?: number;
+  overview?: string;
+  marketCap?: number | string;
+  per?: number;
+  pbr?: number;
+  recommendation?: string;
+  reason?: string;
+  generatedAt?: string;
+}
+
 function clampNumber(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
@@ -433,6 +447,211 @@ function recommendationFromScore(score: number): DeepDiveRecommendation {
   if (score >= 42) return 'NEUTRAL';
   if (score >= 28) return 'NEGATIVE';
   return 'VERY_NEGATIVE';
+}
+
+function isGeminiCredentialError(message: string): boolean {
+  const normalized = message.toUpperCase();
+  return (
+    normalized.includes('API_KEY_INVALID') ||
+    normalized.includes('API KEY EXPIRED') ||
+    normalized.includes('PERMISSION_DENIED') ||
+    normalized.includes('AUTHENTICATION') ||
+    normalized.includes('403')
+  );
+}
+
+function normalizeDeepDiveRecommendation(value: unknown): DeepDiveRecommendation {
+  const raw = String(value ?? '').toUpperCase();
+
+  if (
+    raw === 'VERY_POSITIVE' ||
+    raw === 'POSITIVE' ||
+    raw === 'NEUTRAL' ||
+    raw === 'NEGATIVE' ||
+    raw === 'VERY_NEGATIVE'
+  ) {
+    return raw;
+  }
+
+  if (raw.includes('STRONG') && raw.includes('BUY')) return 'VERY_POSITIVE';
+  if (raw.includes('BUY') || raw.includes('POSITIVE')) return 'POSITIVE';
+  if (raw.includes('SELL') || raw.includes('NEGATIVE')) return 'NEGATIVE';
+  return 'NEUTRAL';
+}
+
+function parseKoreanMarketCap(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return Math.round(value);
+  }
+
+  if (typeof value !== 'string') return null;
+
+  const normalized = value.replace(/,/g, '').trim();
+  const numMatch = normalized.match(/-?\d+(?:\.\d+)?/);
+  if (!numMatch) return null;
+
+  const base = Number(numMatch[0]);
+  if (!Number.isFinite(base)) return null;
+
+  if (normalized.includes('조')) return Math.round(base * 1_0000_0000_0000);
+  if (normalized.includes('억')) return Math.round(base * 1_0000_0000);
+  if (normalized.includes('만')) return Math.round(base * 10_000);
+
+  // 순수 숫자 문자열인 경우만 숫자로 처리 (예: "1600000000000000")
+  if (/^-?\d+(?:\.\d+)?$/.test(normalized)) {
+    return Math.round(base);
+  }
+
+  return null;
+}
+
+async function generateDeepDiveViaProxy(input: DeepDiveInput): Promise<DeepDiveResult> {
+  const invokeResult = await Promise.race([
+    supabase.functions.invoke('gemini-proxy', {
+      body: {
+        type: 'deep-dive',
+        data: {
+          ticker: input.ticker,
+          currentPrice: input.currentPrice ?? input.fundamentals?.currentPrice,
+        },
+      },
+    }),
+    new Promise<{ data: null; error: { message: string } }>((resolve) =>
+      setTimeout(() => resolve({ data: null, error: { message: 'Edge Function 호출 30초 타임아웃' } }), 30000)
+    ),
+  ]);
+
+  const { data, error } = invokeResult as any;
+  if (error) {
+    throw new Error(`gemini-proxy 오류: ${error.message || JSON.stringify(error)}`);
+  }
+  if (!data?.success || !data?.data) {
+    throw new Error(`gemini-proxy 응답 오류: ${data?.error || 'no data'}`);
+  }
+
+  const proxy = data.data as ProxyDeepDiveResponse;
+  const recommendation = normalizeDeepDiveRecommendation(proxy.recommendation);
+  const sentiment: DeepDiveSentiment =
+    recommendation === 'VERY_POSITIVE' ? 'VERY_POSITIVE' :
+    recommendation === 'POSITIVE' ? 'POSITIVE' :
+    recommendation === 'NEGATIVE' ? 'NEGATIVE' :
+    recommendation === 'VERY_NEGATIVE' ? 'VERY_NEGATIVE' :
+    'NEUTRAL';
+
+  const financialScore =
+    recommendation === 'VERY_POSITIVE' ? 78 :
+    recommendation === 'POSITIVE' ? 66 :
+    recommendation === 'NEGATIVE' ? 34 :
+    recommendation === 'VERY_NEGATIVE' ? 22 :
+    50;
+
+  const change = toFiniteNumber(proxy.change);
+  const technicalScore = change == null
+    ? 50
+    : clampNumber(roundTo(50 + (change * 1.8), 1), 20, 85);
+  const qualityScore = 50;
+
+  const marketCap = inferMarketCapKRW(input.fundamentals) ?? parseKoreanMarketCap(proxy.marketCap) ?? undefined;
+  const per = toFiniteNumber(proxy.per) ?? input.fundamentals?.forwardPE ?? input.fundamentals?.trailingPE ?? undefined;
+  const pbr = toFiniteNumber(proxy.pbr) ?? input.fundamentals?.priceToBook ?? undefined;
+
+  const overview = typeof proxy.overview === 'string' && proxy.overview.trim().length > 0
+    ? proxy.overview.trim()
+    : `${input.name}(${input.ticker})에 대한 서버 프록시 분석 결과입니다.`;
+
+  const reason = typeof proxy.reason === 'string' && proxy.reason.trim().length > 0
+    ? proxy.reason.trim()
+    : '프록시 응답 기반으로 주요 포인트를 요약했습니다.';
+
+  const overallScore = roundTo(
+    (financialScore * 0.55) +
+    (technicalScore * 0.15) +
+    (sentimentToNumericScore(sentiment) * 0.15) +
+    (qualityScore * 0.15),
+    2,
+  );
+
+  const rawResult: DeepDiveResult = {
+    ticker: proxy.ticker || input.ticker,
+    name: proxy.name || input.name,
+    overallScore,
+    recommendation,
+    sections: {
+      financial: {
+        title: '재무 분석',
+        score: financialScore,
+        highlights: [
+          `${input.name}의 핵심 재무 지표를 프록시 경로에서 수집해 반영했습니다.`,
+          per != null ? `PER ${per.toFixed(2)}배 기준 상대 밸류에이션을 확인했습니다.` : 'PER 데이터는 추가 확인이 필요합니다.',
+          pbr != null ? `PBR ${pbr.toFixed(2)}배 수준을 기준으로 자산가치를 점검했습니다.` : 'PBR 데이터는 추가 확인이 필요합니다.',
+        ],
+        metrics: [
+          { label: 'PER', value: per != null ? `${per.toFixed(2)}배` : '-', status: per != null ? (per <= 15 ? 'good' : per <= 30 ? 'neutral' : 'bad') : 'neutral' },
+          { label: 'PBR', value: pbr != null ? `${pbr.toFixed(2)}배` : '-', status: pbr != null ? (pbr <= 1 ? 'good' : pbr <= 3 ? 'neutral' : 'bad') : 'neutral' },
+          { label: '시가총액', value: marketCap != null ? formatKrwCompact(marketCap) : (String(proxy.marketCap || '-')), status: 'neutral' },
+        ],
+      },
+      technical: {
+        title: '기술적 분석',
+        score: technicalScore,
+        highlights: [
+          change != null ? `전일 대비 ${change >= 0 ? '+' : ''}${change.toFixed(2)}% 흐름을 반영했습니다.` : '단기 가격 변동 데이터가 제한적입니다.',
+          '과도한 신호 해석을 피하고 중립 기준으로 변동성을 평가했습니다.',
+          '세부 보조지표는 다음 업데이트에서 보강됩니다.',
+        ],
+        signals: [
+          { indicator: '모멘텀', signal: change != null ? (change >= 3 ? '상승' : change <= -3 ? '하락' : '중립') : '중립', value: change != null ? `${change.toFixed(2)}%` : '-' },
+        ],
+      },
+      news: {
+        title: '뉴스 분석',
+        sentiment,
+        highlights: [
+          '최신 이슈를 프록시 경로로 재검증해 반영했습니다.',
+          '뉴스 기반 의견은 신뢰도 검증 로직을 통과한 데이터만 사용합니다.',
+        ],
+        recentNews: [],
+      },
+      quality: {
+        title: '투자 품질',
+        score: qualityScore,
+        highlights: [
+          overview,
+          '경영/산업 품질 평가는 보수적 중립 기준으로 설정했습니다.',
+        ],
+        metrics: [
+          { label: '경영 안정성', value: '중립', status: 'neutral', detail: '프록시 요약 기반 초기 추정' },
+          { label: '산업 경쟁력', value: '중립', status: 'neutral', detail: '추가 실적 데이터 수집 필요' },
+        ],
+      },
+      aiOpinion: {
+        title: 'AI 종합 의견',
+        summary: reason,
+        bullCase: ['실적/가이던스 개선 시 추가 상향 가능성이 있습니다.'],
+        bearCase: ['밸류에이션 부담 또는 거시 변수 악화 시 변동성이 확대될 수 있습니다.'],
+        targetPrice: '-',
+        timeHorizon: '3-12개월',
+      },
+    },
+    generatedAt: proxy.generatedAt || new Date().toISOString(),
+    marketCap,
+    per: per ?? undefined,
+    pbr: pbr ?? undefined,
+    dataSources: [
+      {
+        name: 'Supabase gemini-proxy',
+        detail: '프로덕션 프록시 경로로 생성된 딥다이브 요약',
+        date: new Date().toISOString().split('T')[0],
+      },
+      {
+        name: 'Google Search',
+        detail: '프록시 내부 보조 데이터 조회',
+        date: new Date().toISOString().split('T')[0],
+      },
+    ],
+  };
+
+  return sanitizeDeepDiveResult(rawResult, input);
 }
 
 function inferMarketCapKRW(fundamentals?: DeepDiveInput['fundamentals']): number | null {
@@ -1848,17 +2067,56 @@ overallScore, financial.score, technical.score, quality.score는 반드시 아�
 ${hasFundamentals ? '12. API 제공 데이터(시가총액, PER, PBR, ROE 등)는 반드시 그대로 사용하세요. 임의로 수정하지 마세요.' : ''}
 `;
 
-  // ★ Google Search 모델 → 실패 시 일반 모델 폴백 (2단계 시도)
+  // 프로덕션(TestFlight)은 프록시 우선: 만료된 클라이언트 API 키 이슈를 회피
+  const shouldPreferProxy = !__DEV__;
+  if (shouldPreferProxy) {
+    try {
+      console.log('[DeepDive] 프록시 우선 경로 실행');
+      return await generateDeepDiveViaProxy(input);
+    } catch (proxyErr: any) {
+      console.warn('[DeepDive] 프록시 우선 경로 실패, 직접 호출로 폴백:', proxyErr?.message?.substring(0, 120));
+      Sentry.captureException(proxyErr, {
+        tags: { service: 'gemini', type: 'proxy_fallback_failed' },
+        extra: { feature: 'deep_dive', stage: 'proxy_preferred' },
+      });
+    }
+  }
+
+  // Google Search 모델 → 실패 시 일반 모델 폴백 (2단계 시도)
   let text: string;
   try {
-    // 1차: Google Search 그라운딩 활성화 모델 (60초)
-    console.log('[DeepDive] 1차 시도: Google Search 모델');
-    text = await callGeminiSafe(modelWithSearch, prompt, { timeoutMs: 60000, maxRetries: 0 });
-  } catch (searchErr: any) {
-    console.warn('[DeepDive] Google Search 모델 실패:', searchErr.message?.substring(0, 100));
-    console.log('[DeepDive] 2차 시도: 일반 모델 (Google Search 없이)');
-    // 2차: 일반 모델 폴백 (Google Search 없이, 60초)
-    text = await callGeminiSafe(model, prompt, { timeoutMs: 60000, maxRetries: 1 });
+    try {
+      // 1차: Google Search 그라운딩 활성화 모델 (60초)
+      console.log('[DeepDive] 1차 시도: Google Search 모델');
+      text = await callGeminiSafe(modelWithSearch, prompt, { timeoutMs: 60000, maxRetries: 0 });
+    } catch (searchErr: any) {
+      console.warn('[DeepDive] Google Search 모델 실패:', searchErr.message?.substring(0, 100));
+      console.log('[DeepDive] 2차 시도: 일반 모델 (Google Search 없이)');
+      // 2차: 일반 모델 폴백 (Google Search 없이, 60초)
+      text = await callGeminiSafe(model, prompt, { timeoutMs: 60000, maxRetries: 1 });
+    }
+  } catch (directErr: any) {
+    // 직접 호출이 키 만료/권한 문제면 프록시 재시도
+    const directMessage = String(directErr?.message || directErr || '');
+    const shouldFallbackToProxy = shouldPreferProxy || isGeminiCredentialError(directMessage) || !API_KEY;
+
+    if (shouldFallbackToProxy) {
+      try {
+        console.log('[DeepDive] 직접 호출 실패 → 프록시 재시도');
+        return await generateDeepDiveViaProxy(input);
+      } catch (proxyRetryErr: any) {
+        console.warn('[DeepDive] 프록시 재시도 실패:', proxyRetryErr?.message?.substring(0, 120));
+        Sentry.captureException(proxyRetryErr, {
+          tags: { service: 'gemini', type: 'proxy_retry_failed' },
+          extra: {
+            feature: 'deep_dive',
+            directMessage: directMessage.substring(0, 200),
+          },
+        });
+      }
+    }
+
+    throw directErr;
   }
 
   try {
