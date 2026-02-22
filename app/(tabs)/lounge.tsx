@@ -792,7 +792,7 @@ function LoungeScreenInner() {
                   <Ionicons
                     name={opt.icon}
                     size={12}
-                    color={sortBy === opt.key ? '#000' : themeColors.textTertiary}
+                    color={sortBy === opt.key ? '#FFFFFF' : themeColors.textTertiary}
                   />
                   <Text style={[
                     styles.sortChipText,
@@ -1377,9 +1377,10 @@ const styles = StyleSheet.create({
   sortChipText: {
     fontSize: 12,
     fontWeight: '600',
+    color: '#FFFFFF',
   },
   sortChipTextActive: {
-    color: '#000',
+    color: '#FFFFFF',
   },
 
   // ── 커뮤니티: 환영 배너 ──
