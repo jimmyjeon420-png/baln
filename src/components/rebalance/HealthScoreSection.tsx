@@ -51,8 +51,8 @@ const FACTOR_LABELS: Record<string, string> = {
 /** 팩터 점수 → 상태 라벨 */
 function getFactorStatus(score: number): { label: string; color: string } {
   if (score >= 70) return { label: '좋음', color: '#4CAF50' };
-  if (score >= 40) return { label: '주의', color: '#FF9800' };
-  return { label: '개선 필요', color: '#CF6679' };
+  if (score >= 40) return { label: '주의', color: '#B56A00' };
+  return { label: '개선 필요', color: '#B23A48' };
 }
 
 /** 팩터 상세 설명 (ⓘ 툴팁용) */

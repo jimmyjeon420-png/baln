@@ -25,6 +25,12 @@ export default function NewsPreview() {
   const { data: sentimentData } = useQuickContextSentiment();
   const sentiment = sentimentData?.sentiment ?? null;
 
+  const sentimentAccent = {
+    alert: '#C62828',
+    caution: '#B56A00',
+    calm: colors.primaryDark ?? colors.primary,
+  };
+
   // 첫 페이지의 상위 3개만 표시
   const topNews = data?.pages?.[0]?.slice(0, 3) ?? [];
 
@@ -77,7 +83,12 @@ export default function NewsPreview() {
       {sentiment && (
         <TouchableOpacity
           style={[styles.contextLink, {
-            backgroundColor: sentiment === 'alert' ? '#CF667915' : sentiment === 'caution' ? '#FFB74D15' : '#4CAF5015'
+            backgroundColor:
+              sentiment === 'alert'
+                ? `${sentimentAccent.alert}15`
+                : sentiment === 'caution'
+                ? `${sentimentAccent.caution}18`
+                : `${sentimentAccent.calm}15`,
           }]}
           onPress={() => router.push('/(tabs)/index')}
           activeOpacity={0.7}
@@ -85,7 +96,13 @@ export default function NewsPreview() {
           <Ionicons
             name={sentiment === 'alert' ? 'warning' : sentiment === 'caution' ? 'alert-circle' : 'shield-checkmark'}
             size={14}
-            color={sentiment === 'alert' ? '#CF6679' : sentiment === 'caution' ? '#FFB74D' : '#4CAF50'}
+            color={
+              sentiment === 'alert'
+                ? sentimentAccent.alert
+                : sentiment === 'caution'
+                ? sentimentAccent.caution
+                : sentimentAccent.calm
+            }
           />
           <Text style={[styles.contextLinkText, { color: colors.textSecondary }]}>
             시장 분위기: {sentiment === 'alert' ? '경고' : sentiment === 'caution' ? '주의' : '안정'} · 맥락 카드에서 확인

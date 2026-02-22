@@ -30,6 +30,7 @@ import {
   getCommunityHoldingRatio,
   formatPortfolioRatio,
 } from '../utils/communityUtils';
+import { useTheme } from '../hooks/useTheme';
 
 interface CommunityPostCardProps {
   post: CommunityPost;
@@ -46,6 +47,7 @@ export default function CommunityPostCard({
   onPress,
   onAuthorPress,
 }: CommunityPostCardProps) {
+  const { colors } = useTheme();
   const tier = getTierFromAssets(post.total_assets_at_post);
   const tierColor = TIER_COLORS[tier] || '#C0C0C0';
   const tierIcon = getTierIcon(tier);
@@ -59,7 +61,7 @@ export default function CommunityPostCard({
 
   return (
     <TouchableOpacity
-      style={styles.container}
+      style={[styles.container, { backgroundColor: colors.surface, borderColor: colors.border }]}
       activeOpacity={0.7}
       onPress={() => onPress?.(post.id)}
     >
@@ -101,18 +103,18 @@ export default function CommunityPostCard({
                 </View>
               )}
               {beginnerQuestion && (
-                <View style={styles.beginnerBadge}>
-                  <Ionicons name="help-circle" size={10} color="#2E7D32" />
-                  <Text style={styles.beginnerBadgeLabel}>초보 질문</Text>
+                <View style={[styles.beginnerBadge, { backgroundColor: `${colors.success}20` }]}>
+                  <Ionicons name="help-circle" size={10} color={colors.primaryDark ?? colors.success} />
+                  <Text style={[styles.beginnerBadgeLabel, { color: colors.primaryDark ?? colors.success }]}>초보 질문</Text>
                 </View>
               )}
             </View>
             {assetMixText && (
-              <Text style={styles.assetMix}>{assetMixText}</Text>
+              <Text style={[styles.assetMix, { color: colors.textSecondary }]}>{assetMixText}</Text>
             )}
           </View>
         </View>
-        <Text style={styles.timeText}>{getRelativeTime(post.created_at)}</Text>
+        <Text style={[styles.timeText, { color: colors.textTertiary }]}>{getRelativeTime(post.created_at)}</Text>
       </View>
 
       {/* 보유종목 칩 */}
@@ -123,17 +125,20 @@ export default function CommunityPostCard({
               key={`${h.ticker}-${idx}`}
               style={[
                 styles.holdingChip,
-                { borderColor: (HOLDING_TYPE_COLORS[h.type] || '#888') + '40' },
+                {
+                  backgroundColor: colors.surfaceLight,
+                  borderColor: (HOLDING_TYPE_COLORS[h.type] || colors.textTertiary) + '40',
+                },
               ]}
             >
               <View style={[
                 styles.holdingDot,
-                { backgroundColor: HOLDING_TYPE_COLORS[h.type] || '#888' },
+                { backgroundColor: HOLDING_TYPE_COLORS[h.type] || colors.textTertiary },
               ]} />
-              <Text style={styles.holdingTicker}>
+              <Text style={[styles.holdingTicker, { color: colors.textSecondary }]}>
                 {getCommunityHoldingLabel(h)}
               </Text>
-              <Text style={styles.holdingRatio}>
+              <Text style={[styles.holdingRatio, { color: colors.textTertiary }]}>
                 {formatPortfolioRatio(getCommunityHoldingRatio(h.value, post.total_assets_at_post, allHoldings))}
               </Text>
             </View>
@@ -142,7 +147,7 @@ export default function CommunityPostCard({
       )}
 
       {/* 본문 */}
-      <Text style={styles.content} numberOfLines={5}>{displayContent}</Text>
+      <Text style={[styles.content, { color: colors.textPrimary }]} numberOfLines={5}>{displayContent}</Text>
 
       {/* 첨부 이미지 썸네일 (최대 3장 가로 스크롤) */}
       {post.image_urls && post.image_urls.length > 0 && (
@@ -156,7 +161,7 @@ export default function CommunityPostCard({
             <Image
               key={index}
               source={{ uri: url }}
-              style={styles.thumbnailImage}
+              style={[styles.thumbnailImage, { backgroundColor: colors.surfaceElevated }]}
               resizeMode="cover"
             />
           ))}
@@ -164,7 +169,7 @@ export default function CommunityPostCard({
       )}
 
       {/* 푸터: 좋아요 토글 + 댓글 수 */}
-      <View style={styles.footer}>
+      <View style={[styles.footer, { borderTopColor: colors.border }]}>
         <TouchableOpacity
           style={styles.likeButton}
           onPress={(e) => {
@@ -175,16 +180,16 @@ export default function CommunityPostCard({
           <Ionicons
             name={isLiked ? 'heart' : 'heart-outline'}
             size={18}
-            color={isLiked ? '#CF6679' : '#888888'}
+            color={isLiked ? colors.sell : colors.textTertiary}
           />
-          <Text style={[styles.likeCount, isLiked && { color: '#CF6679' }]}>
+          <Text style={[styles.likeCount, { color: isLiked ? colors.sell : colors.textSecondary }]}>
             {post.likes_count || 0}
           </Text>
         </TouchableOpacity>
 
         <View style={styles.commentCount}>
-          <Ionicons name="chatbubble-outline" size={16} color="#888888" />
-          <Text style={styles.likeCount}>{post.comments_count || 0}</Text>
+          <Ionicons name="chatbubble-outline" size={16} color={colors.textTertiary} />
+          <Text style={[styles.likeCount, { color: colors.textSecondary }]}>{post.comments_count || 0}</Text>
         </View>
       </View>
     </TouchableOpacity>
@@ -193,10 +198,10 @@ export default function CommunityPostCard({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#1E1E1E',
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
+    borderWidth: 1,
   },
   header: {
     flexDirection: 'row',
@@ -223,12 +228,10 @@ const styles = StyleSheet.create({
   },
   assetMix: {
     fontSize: 12,
-    color: '#888888',
     marginTop: 2,
   },
   timeText: {
     fontSize: 12,
-    color: '#666666',
   },
   tagRow: {
     flexDirection: 'row',
@@ -260,7 +263,6 @@ const styles = StyleSheet.create({
   beginnerBadgeLabel: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#2E7D32',
   },
 
   // ── 보유종목 칩 ──
@@ -278,7 +280,6 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     borderRadius: 10,
     borderWidth: 1,
-    backgroundColor: '#161616',
   },
   holdingDot: {
     width: 5,
@@ -288,18 +289,15 @@ const styles = StyleSheet.create({
   holdingTicker: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#AAA',
   },
   holdingRatio: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#888888',
   },
 
   // ── 본문 + 푸터 ──
   content: {
     fontSize: 16,
-    color: '#FFFFFF',
     lineHeight: 25,
     marginBottom: 12,
   },
@@ -316,7 +314,6 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 8,
-    backgroundColor: '#1E1E1E',
     marginRight: 8,
   },
   footer: {
@@ -324,7 +321,6 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#2A2A2A',
   },
   likeButton: {
     flexDirection: 'row',
@@ -335,7 +331,6 @@ const styles = StyleSheet.create({
   },
   likeCount: {
     fontSize: 14,
-    color: '#888888',
   },
   commentCount: {
     flexDirection: 'row',

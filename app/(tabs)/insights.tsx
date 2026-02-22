@@ -31,22 +31,24 @@ import { useTheme } from '../../src/hooks/useTheme';
 const FEATURE_COLORS = {
   prediction: '#7C4DFF',
   dna: '#00BCD4',
-  guru: '#FF9800',
+  guru: '#B56A00',
 };
 
 // 센티먼트 색상
 const SENTIMENT_COLORS: Record<string, string> = {
   BULLISH: '#4CAF50',
   BEARISH: '#CF6679',
-  CAUTIOUS: '#FF9800',
-  NEUTRAL: '#FFD700',
+  CAUTIOUS: '#B56A00',
+  NEUTRAL: '#A17900',
 };
 
 export default function InsightsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { colors } = useTheme();
+  const { colors, theme } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
+  const aiBadgeColor = theme === 'light' ? '#8A6A00' : '#FFD700';
+  const aiBadgeBg = theme === 'light' ? 'rgba(181, 106, 0, 0.16)' : 'rgba(255, 215, 0, 0.15)';
 
   // 훅 호출
   const { userTier } = useSharedPortfolio();
@@ -75,7 +77,7 @@ export default function InsightsScreen() {
   const allocations = tierData
     ? [
         { label: '주식', value: tierData.avg_stock_weight, color: '#4CAF50' },
-        { label: '코인', value: tierData.avg_crypto_weight, color: '#FF9800' },
+        { label: '코인', value: tierData.avg_crypto_weight, color: '#B56A00' },
         { label: '부동산', value: tierData.avg_realestate_weight, color: '#2196F3' },
         { label: '현금', value: tierData.avg_cash_weight, color: '#9E9E9E' },
       ]
@@ -86,9 +88,9 @@ export default function InsightsScreen() {
       {/* 헤더 */}
       <View style={styles.header}>
         <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>인사이트</Text>
-        <View style={styles.headerBadge}>
-          <Ionicons name="bulb" size={14} color="#FFD700" />
-          <Text style={styles.headerBadgeText}>AI</Text>
+        <View style={[styles.headerBadge, { backgroundColor: aiBadgeBg }]}>
+          <Ionicons name="bulb" size={14} color={aiBadgeColor} />
+          <Text style={[styles.headerBadgeText, { color: aiBadgeColor }]}>AI</Text>
         </View>
       </View>
 

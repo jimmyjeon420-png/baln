@@ -148,51 +148,51 @@ export const LIGHT_COLORS: ThemeColors = {
   // ========================================
   // 배경 레이어 (모두 밝은색 - 라이트 모드 핵심 원칙)
   // ========================================
-  background: '#FAFAFA',        // 페이지 배경 (아주 밝은 회색, Apple 스타일)
+  background: '#F4F6F8',        // 페이지 배경 (눈부심 완화)
   surface: '#FFFFFF',           // 카드 배경 (순백)
-  surfaceElevated: '#F7F7F8',   // 강조/중첩 카드 (순백과 구분되는 미세 회색)
-  surfaceLight: '#F8F9FA',      // 하위 호환 (약간 밝은 회색)
+  surfaceElevated: '#F1F4F7',   // 강조/중첩 카드
+  surfaceLight: '#EEF2F5',      // 하위 호환 (칩/태그 배경)
 
   // 인버스 섹션 (라이트 모드에서도 밝은 배경 유지)
-  inverseSurface: '#F5F5F5',    // 연한 회색 배경 (밝음)
-  inverseText: '#1A1A1A',       // 어두운 텍스트 (라이트 모드 = 어두운 텍스트)
+  inverseSurface: '#EAF0F4',    // 연한 회색 배경 (대비 강화)
+  inverseText: '#111827',       // 어두운 텍스트 (라이트 모드 = 어두운 텍스트)
 
   primary: '#4CAF50',
   primaryLight: '#66BB6A',
-  primaryDark: '#2E7D32',       // 라이트 모드 텍스트용 (흰 배경에서 WCAG AA 5.9:1)
+  primaryDark: '#1F6A25',       // 라이트 모드 텍스트용 (흰 배경 대비 강화)
 
-  buy: '#4CAF50',
+  buy: '#2E7D32',
   sell: '#E53935',
-  neutral: '#9E9E9E',
-  hold: '#4CAF50',
+  neutral: '#6B7280',
+  hold: '#2E7D32',
 
   // ========================================
   // 텍스트 계층 (모두 어두운색 - 라이트 모드 핵심 원칙)
   // ========================================
-  textPrimary: '#1A1A1A',       // 주요 텍스트 (거의 검정, 18:1 대비)
-  textSecondary: '#4A4A4A',     // 보조 텍스트 (진한 회색)
-  textTertiary: '#767676',      // 비활성 텍스트 (중간 회색)
-  textQuaternary: '#A8A8A8',    // 매우 연한 텍스트 (연한 회색)
+  textPrimary: '#111827',       // 주요 텍스트 (거의 검정)
+  textSecondary: '#2F3A46',     // 보조 텍스트 (가독성 강화)
+  textTertiary: '#51606F',      // 힌트 텍스트 (기존보다 진하게)
+  textQuaternary: '#7A8694',    // 매우 연한 텍스트
 
-  success: '#4CAF50',
-  error: '#E53935',
-  warning: '#FF9800',
-  info: '#2196F3',
+  success: '#2E7D32',
+  error: '#C62828',
+  warning: '#B56A00',
+  info: '#0066CC',
 
   // ========================================
   // 구분선 & 테두리 (밝은 회색 - 배경과 조화)
   // ========================================
-  border: '#E8E8E8',            // 일반 구분선 (연한 회색)
-  borderLight: '#E5E5E5',       // 연한 구분선 (배경과 구분 가능)
-  borderStrong: '#D0D0D0',      // 강한 구분선 (중간 회색)
+  border: '#DDE3E8',            // 일반 구분선
+  borderLight: '#E7ECF0',       // 연한 구분선
+  borderStrong: '#C4CED7',      // 강한 구분선
 
-  disabled: '#E8E8E8',          // 비활성 배경 (연한 회색)
-  disabledText: '#A8A8A8',      // 비활성 텍스트 (연한 회색)
+  disabled: '#E3E8EE',          // 비활성 배경
+  disabledText: '#8B96A3',      // 비활성 텍스트
 
   sentiment: {
-    calm: '#4CAF50',
-    caution: '#FF9800',
-    alert: '#E53935',
+    calm: '#2E7D32',
+    caution: '#B56A00',
+    alert: '#C62828',
   },
 
   streak: {

@@ -31,19 +31,19 @@ import { useNewsPortfolioMatch } from '../../hooks/useNewsPortfolioMatch';
 // ============================================================================
 
 function getImpactColor(score: number | null): string {
-  if (!score) return '#9E9E9E';
-  if (score >= 2) return '#4CAF50';
-  if (score >= 1) return '#66BB6A';
-  if (score <= -2) return '#F44336';
-  if (score <= -1) return '#EF5350';
-  return '#FFC107'; // 중립
+  if (!score) return '#6B7280';
+  if (score >= 2) return '#2E7D32';
+  if (score >= 1) return '#388E3C';
+  if (score <= -2) return '#C62828';
+  if (score <= -1) return '#D84315';
+  return '#A17900'; // 중립
 }
 
 function getImpactBg(score: number | null): string {
-  if (!score) return '#9E9E9E10';
-  if (score >= 1) return '#4CAF5015';
-  if (score <= -1) return '#F4433615';
-  return '#FFC10710';
+  if (!score) return '#6B728012';
+  if (score >= 1) return '#2E7D3214';
+  if (score <= -1) return '#C6282814';
+  return '#A1790015';
 }
 
 function getImpactIcon(score: number | null): keyof typeof Ionicons.glyphMap {
@@ -120,8 +120,8 @@ export default function NewsCard({ item, compact = false, onPress }: NewsCardPro
             <Text style={[styles.compactSource, { color: colors.textTertiary }]}>
               {item.source_name}
             </Text>
-            <View style={[styles.dot, { backgroundColor: recent ? '#4CAF50' : colors.textTertiary }]} />
-            <Text style={[styles.compactTime, { color: recent ? '#4CAF50' : colors.textTertiary, fontWeight: recent ? '700' : '400' }]}>
+            <View style={[styles.dot, { backgroundColor: recent ? '#2E7D32' : colors.textTertiary }]} />
+            <Text style={[styles.compactTime, { color: recent ? '#2E7D32' : colors.textTertiary, fontWeight: recent ? '700' : '400' }]}>
               {getTimeAgo(item.published_at)}
             </Text>
           </View>
@@ -188,8 +188,8 @@ export default function NewsCard({ item, compact = false, onPress }: NewsCardPro
             </View>
           ))}
           {hasMatch && (
-            <View style={[styles.tagChip, { backgroundColor: '#4CAF5020' }]}>
-              <Text style={[styles.tagText, { color: '#4CAF50', fontWeight: '700' }]}>
+            <View style={[styles.tagChip, { backgroundColor: '#2E7D3220' }]}>
+              <Text style={[styles.tagText, { color: '#2E7D32', fontWeight: '700' }]}>
                 내 자산 {matchedAssets.slice(0, 2).map(a => `${a.name} ${a.weight}%`).join(', ')}
               </Text>
             </View>
@@ -202,8 +202,8 @@ export default function NewsCard({ item, compact = false, onPress }: NewsCardPro
         <Text style={[styles.sourceName, { color: colors.textTertiary }]}>
           {item.source_name}
         </Text>
-        <View style={[styles.dot, { backgroundColor: recent ? '#4CAF50' : colors.textTertiary }]} />
-        <Text style={[styles.timeAgo, { color: recent ? '#4CAF50' : colors.textTertiary, fontWeight: recent ? '700' : '400' }]} numberOfLines={1}>
+        <View style={[styles.dot, { backgroundColor: recent ? '#2E7D32' : colors.textTertiary }]} />
+        <Text style={[styles.timeAgo, { color: recent ? '#2E7D32' : colors.textTertiary, fontWeight: recent ? '700' : '400' }]} numberOfLines={1}>
           {getTimeAgo(item.published_at)}
         </Text>
       </View>

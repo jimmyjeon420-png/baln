@@ -389,11 +389,11 @@ export function normalizeLiquidTarget(
 
 /** 등급 설정 */
 const GRADE_CONFIG: Record<HealthGrade, { color: string; bgColor: string; label: string }> = {
-  S: { color: '#4CAF50', bgColor: 'rgba(76,175,80,0.15)', label: '최적' },
-  A: { color: '#66BB6A', bgColor: 'rgba(102,187,106,0.15)', label: '양호' },
-  B: { color: '#FFB74D', bgColor: 'rgba(255,183,77,0.15)', label: '보통' },
-  C: { color: '#FF8A65', bgColor: 'rgba(255,138,101,0.15)', label: '주의' },
-  D: { color: '#CF6679', bgColor: 'rgba(207,102,121,0.15)', label: '개선 필요' },
+  S: { color: '#2E7D32', bgColor: 'rgba(46,125,50,0.15)', label: '최적' },
+  A: { color: '#3F8C42', bgColor: 'rgba(63,140,66,0.15)', label: '양호' },
+  B: { color: '#B56A00', bgColor: 'rgba(181,106,0,0.16)', label: '보통' },
+  C: { color: '#B6572A', bgColor: 'rgba(182,87,42,0.15)', label: '주의' },
+  D: { color: '#B23A48', bgColor: 'rgba(178,58,72,0.15)', label: '개선 필요' },
 };
 
 // ============================================================================
@@ -1027,10 +1027,10 @@ export function calculateHealthScore(
 
   // driftStatus 호환 (기존 배너용)
   const driftStatus = totalScore >= 75
-    ? { label: '균형', color: '#4CAF50', bgColor: 'rgba(76,175,80,0.15)' }
+    ? { label: '균형', color: '#2E7D32', bgColor: 'rgba(46,125,50,0.15)' }
     : totalScore >= 50
-    ? { label: '주의', color: '#FFB74D', bgColor: 'rgba(255,183,77,0.15)' }
-    : { label: '조정 필요', color: '#CF6679', bgColor: 'rgba(207,102,121,0.15)' };
+    ? { label: '주의', color: '#B56A00', bgColor: 'rgba(181,106,0,0.15)' }
+    : { label: '조정 필요', color: '#B23A48', bgColor: 'rgba(178,58,72,0.15)' };
 
   // ── 부동산 분산 보너스 (달리오 All Weather 원칙) ──
   const { bonus: realEstateBonus, reason: bonusReason, avgLtv } =

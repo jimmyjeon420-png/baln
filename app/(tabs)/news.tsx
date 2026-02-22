@@ -151,10 +151,10 @@ function sanitizeThumbnailUrl(
 }
 
 function getExposureTone(totalExposure: number): { label: string; color: string } {
-  if (totalExposure >= 30) return { label: '높음', color: '#E53935' };
-  if (totalExposure >= 10) return { label: '중간', color: '#FB8C00' };
-  if (totalExposure > 0) return { label: '낮음', color: '#43A047' };
-  return { label: '낮음', color: '#9E9E9E' };
+  if (totalExposure >= 30) return { label: '높음', color: '#C62828' };
+  if (totalExposure >= 10) return { label: '중간', color: '#B56A00' };
+  if (totalExposure > 0) return { label: '낮음', color: '#2E7D32' };
+  return { label: '낮음', color: '#6B7280' };
 }
 
 function getImpactDirection(score: number | null | undefined): string {

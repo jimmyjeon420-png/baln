@@ -707,7 +707,7 @@ function LoungeScreenInner() {
               <Ionicons
                 name="chatbubbles"
                 size={14}
-                color={activeSegment === 'community' ? '#000' : themeColors.textTertiary}
+                color={activeSegment === 'community' ? '#0F172A' : themeColors.textTertiary}
               />
               <Text
                 style={[
@@ -729,7 +729,7 @@ function LoungeScreenInner() {
               <Ionicons
                 name="calendar"
                 size={14}
-                color={activeSegment === 'gatherings' ? '#000' : themeColors.textTertiary}
+                color={activeSegment === 'gatherings' ? '#0F172A' : themeColors.textTertiary}
               />
               <Text
                 style={[
@@ -785,17 +785,22 @@ function LoungeScreenInner() {
                   key={opt.key}
                   style={[
                     styles.sortChip, { backgroundColor: themeColors.surface, borderColor: themeColors.border },
-                    sortBy === opt.key && styles.sortChipActive,
+                    sortBy === opt.key && [styles.sortChipActive, { backgroundColor: themeColors.primary, borderColor: themeColors.primary }],
                   ]}
                   onPress={() => setSortBy(opt.key)}
                 >
                   <Ionicons
                     name={opt.icon}
                     size={12}
-                    color={sortBy === opt.key ? '#FFFFFF' : themeColors.textTertiary}
+<<<<<<< ours
+                    color={sortBy === opt.key ? '#0F172A' : themeColors.textSecondary}
+=======
+                    color={sortBy === opt.key ? '#000' : themeColors.textTertiary}
+>>>>>>> theirs
                   />
                   <Text style={[
                     styles.sortChipText,
+                    { color: sortBy === opt.key ? '#0F172A' : themeColors.textSecondary },
                     sortBy === opt.key && styles.sortChipTextActive,
                   ]}>
                     {opt.label}
@@ -840,7 +845,7 @@ function LoungeScreenInner() {
                 <TextInput
                   style={[styles.composeInput, { backgroundColor: themeColors.surfaceLight, color: themeColors.textPrimary }]}
                   placeholder="투자 인사이트를 공유해주세요..."
-                  placeholderTextColor="#666666"
+                  placeholderTextColor={themeColors.textTertiary}
                   multiline
                   maxLength={500}
                   value={newPostContent}
@@ -1208,7 +1213,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   segmentTextActive: {
-    color: '#000',
+    color: '#0F172A',
   },
 
   // ── 로딩 ──
@@ -1377,10 +1382,13 @@ const styles = StyleSheet.create({
   sortChipText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#FFFFFF',
   },
   sortChipTextActive: {
-    color: '#FFFFFF',
+<<<<<<< ours
+    color: '#0F172A',
+=======
+    color: '#000',
+>>>>>>> theirs
   },
 
   // ── 커뮤니티: 환영 배너 ──
@@ -1521,7 +1529,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   categoryChipTextActive: {
-    color: '#000000',
+    color: '#0F172A',
   },
 
   // ── 모임: 환영 배너 ──
@@ -1599,6 +1607,6 @@ const styles = StyleSheet.create({
   fabText: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#000000',
+    color: '#0F172A',
   },
 });

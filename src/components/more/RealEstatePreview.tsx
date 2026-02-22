@@ -14,7 +14,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSharedPortfolio } from '../../hooks/useSharedPortfolio';
-import { COLORS } from '../../styles/theme';
+import { useTheme } from '../../hooks/useTheme';
 
 /** 금액 포맷: 억/만원 */
 const formatAmount = (amount: number): string => {
@@ -30,7 +30,9 @@ const formatAmount = (amount: number): string => {
 
 export default function RealEstatePreview() {
   const router = useRouter();
+  const { colors } = useTheme();
   const { realEstateAssets, totalRealEstate, isLoading } = useSharedPortfolio();
+  const styles = createStyles(colors);
 
   // 부동산 자산이 없으면 미리보기 카드 표시 안 함
   if (isLoading || realEstateAssets.length === 0) return null;
@@ -43,7 +45,7 @@ export default function RealEstatePreview() {
     >
       {/* 아이콘 */}
       <View style={styles.iconBox}>
-        <Ionicons name="business" size={22} color={COLORS.primary} />
+        <Ionicons name="business" size={22} color={colors.primaryDark ?? colors.primary} />
       </View>
 
       {/* 요약 정보 */}
@@ -55,41 +57,44 @@ export default function RealEstatePreview() {
       </View>
 
       {/* 화살표 */}
-      <Ionicons name="chevron-forward" size={18} color="#888" />
+      <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
     </TouchableOpacity>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.surface,
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 12,
-    gap: 12,
-  },
-  iconBox: {
-    width: 42,
-    height: 42,
-    borderRadius: 12,
-    backgroundColor: '#1A2A1A',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  info: {
-    flex: 1,
-  },
-  title: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
-  },
-  summary: {
-    fontSize: 14,
-    color: COLORS.primary,
-    fontWeight: '500',
-    marginTop: 2,
-  },
-});
+const createStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
+  StyleSheet.create({
+    container: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surface,
+      borderRadius: 14,
+      padding: 14,
+      marginBottom: 12,
+      gap: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    iconBox: {
+      width: 42,
+      height: 42,
+      borderRadius: 12,
+      backgroundColor: (colors.primaryDark ?? colors.primary) + '1A',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    info: {
+      flex: 1,
+    },
+    title: {
+      fontSize: 15,
+      fontWeight: '600',
+      color: colors.textPrimary,
+    },
+    summary: {
+      fontSize: 14,
+      color: colors.primaryDark ?? colors.primary,
+      fontWeight: '600',
+      marginTop: 2,
+    },
+  });

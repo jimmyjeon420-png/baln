@@ -13,45 +13,45 @@
  */
 
 export const COLORS = {
-  // 다크 모드 배경 (기본값 - 하위 호환성)
-  background: '#121212', // 매우 다크 배경
-  surface: '#1E1E1E', // 카드 배경
-  surfaceLight: '#2C2C2C', // 약간 밝은 서피스
+  // 라이트 모드 배경 (기본값 - 하위 호환성)
+  background: '#F4F6F8',
+  surface: '#FFFFFF',
+  surfaceLight: '#EEF2F5',
 
   // 기본 액션 - Green 강조
   primary: '#4CAF50', // 그린 (액션/긍정)
   primaryLight: '#66BB6A', // 밝은 그린
 
   // 심정 색상
-  buy: '#4CAF50', // 그린 (매수/상승)
-  sell: '#CF6679', // 레드 (매도/하락)
-  neutral: '#9E9E9E', // 회색 (중립)
-  hold: '#4CAF50', // 그린 (보유)
+  buy: '#2E7D32',
+  sell: '#C62828',
+  neutral: '#6B7280',
+  hold: '#2E7D32',
 
   // 텍스트
-  textPrimary: '#FFFFFF', // 흰색 (주요 텍스트)
-  textSecondary: '#B0B0B0', // 라이트 그레이 (보조 텍스트)
-  textTertiary: '#757575', // 다크 그레이 (힌트)
+  textPrimary: '#111827',
+  textSecondary: '#2F3A46',
+  textTertiary: '#51606F',
 
   // 상태
-  success: '#4CAF50', // 그린
-  error: '#CF6679', // 레드
-  warning: '#FFB74D', // 오렌지
-  info: '#29B6F6', // 라이트 블루
+  success: '#2E7D32',
+  error: '#C62828',
+  warning: '#B56A00',
+  info: '#0066CC',
 
   // 테두리
-  border: '#3A3A3A', // 다크 그레이 테두리
-  borderLight: '#2A2A2A', // 아주 다크 테두리
+  border: '#DDE3E8',
+  borderLight: '#E7ECF0',
 
   // 비활성화
-  disabled: '#424242',
-  disabledText: '#757575',
+  disabled: '#E3E8EE',
+  disabledText: '#8B96A3',
 
   // 센티먼트 (맥락 카드용)
   sentiment: {
-    calm: '#4CAF50', // 안정적 (그린)
-    caution: '#FFB74D', // 주의 (오렌지)
-    alert: '#CF6679', // 경고 (레드)
+    calm: '#2E7D32',
+    caution: '#B56A00',
+    alert: '#C62828',
   },
 
   // 스트릭 (연속 기록)
