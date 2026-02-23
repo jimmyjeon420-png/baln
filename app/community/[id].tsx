@@ -121,6 +121,9 @@ export default function PostDetailScreen() {
   const toggleBookmark = useToggleBookmark();
   const isBookmarked = myBookmarks?.has(id || '') ?? false;
 
+  // 삭제 중인 댓글 ID 추적 (개별 로딩 상태)
+  const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
+
   // 새로고침
   const [refreshing, setRefreshing] = useState(false);
   const onRefresh = useCallback(async () => {
@@ -150,14 +153,9 @@ export default function PostDetailScreen() {
         onPress: async () => {
           try {
             await deletePost.mutateAsync(post!.id);
-            Alert.alert('삭제 완료', '게시글이 삭제되었습니다.', [
-              {
-                text: 'OK',
-                onPress: () => {
-                  router.replace('/(tabs)/lounge');
-                },
-              },
-            ]);
+            // 삭제 성공 → 즉시 라운지로 이동 후 알림
+            router.replace('/(tabs)/lounge');
+            Alert.alert('삭제 완료', '게시글이 삭제되었습니다.');
           } catch (e: any) {
             Alert.alert('오류', e?.message || '삭제에 실패했습니다.');
           }
@@ -243,13 +241,16 @@ export default function PostDetailScreen() {
     updateComment.mutate({ commentId, content });
   };
 
-  // 댓글 삭제 핸들러
+  // 댓글 삭제 핸들러 (개별 로딩 상태 추적)
   const handleDeleteComment = async (commentId: string) => {
+    setDeletingCommentId(commentId);
     try {
       await deleteComment.mutateAsync(commentId);
     } catch (error: any) {
       const errorMsg = error?.message || '댓글 삭제에 실패했습니다.';
       Alert.alert('오류', errorMsg);
+    } finally {
+      setDeletingCommentId(null);
     }
   };
 
@@ -300,7 +301,7 @@ export default function PostDetailScreen() {
           onAuthorPress={handleAuthorPress}
           onReport={(commentId) => handleReport('comment', commentId)}
           isUpdating={updateComment.isPending}
-          isDeleting={deleteComment.isPending}
+          isDeleting={deletingCommentId === item.id}
         />
 
         {/* 답글 섹션 (접기/펼치기 + 초록 바 디자인) */}
@@ -315,7 +316,7 @@ export default function PostDetailScreen() {
           onAuthorPress={handleAuthorPress}
           onReport={(commentId) => handleReport('comment', commentId)}
           isUpdating={updateComment.isPending}
-          isDeleting={deleteComment.isPending}
+          deletingCommentId={deletingCommentId}
         />
       </>
     );
@@ -558,8 +559,12 @@ export default function PostDetailScreen() {
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>게시물</Text>
           {post && (
-            <TouchableOpacity onPress={handlePostMenu}>
-              <Ionicons name="ellipsis-vertical" size={24} color={colors.textTertiary} />
+            <TouchableOpacity onPress={handlePostMenu} disabled={deletePost.isPending}>
+              {deletePost.isPending ? (
+                <ActivityIndicator size="small" color={colors.textTertiary} />
+              ) : (
+                <Ionicons name="ellipsis-vertical" size={24} color={colors.textTertiary} />
+              )}
             </TouchableOpacity>
           )}
           {!post && <View style={{ width: 28 }} />}

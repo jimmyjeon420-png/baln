@@ -45,8 +45,8 @@ interface ReplySectionProps {
   onReport?: (commentId: string) => void;
   /** 수정 중 로딩 */
   isUpdating?: boolean;
-  /** 삭제 중 로딩 */
-  isDeleting?: boolean;
+  /** 현재 삭제 중인 댓글 ID (개별 로딩) */
+  deletingCommentId?: string | null;
 }
 
 export default function ReplySection({
@@ -60,7 +60,7 @@ export default function ReplySection({
   onAuthorPress,
   onReport,
   isUpdating,
-  isDeleting,
+  deletingCommentId,
 }: ReplySectionProps) {
   const { colors } = useTheme();
   // 접기/펼치기 상태
@@ -111,7 +111,7 @@ export default function ReplySection({
                 onAuthorPress={onAuthorPress}
                 onReport={onReport}
                 isUpdating={isUpdating}
-                isDeleting={isDeleting}
+                isDeleting={deletingCommentId === reply.id}
               />
             ))}
           </View>

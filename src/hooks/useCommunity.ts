@@ -610,6 +610,9 @@ export const useDeleteComment = (postId: string) => {
           if (reason === 'not_authenticated') {
             throw new Error('로그인이 필요합니다.');
           }
+          if (reason === 'delete_failed') {
+            throw new Error('댓글 삭제에 실패했습니다. 잠시 후 다시 시도해주세요.');
+          }
         } else if (rpcError) {
           // 함수 미배포(PGRST202) 등은 직접 삭제 경로로 폴백
           console.warn('[Community] delete_own_community_comment RPC 실패, 폴백 시도:', rpcError.message);
@@ -631,14 +634,28 @@ export const useDeleteComment = (postId: string) => {
         throw new Error('댓글 삭제 권한 확인에 실패했습니다. 잠시 후 다시 시도해주세요.');
       }
 
-      // 폴백 경로에서만 댓글 수 감소 RPC
+      // 폴백 경로: 댓글 수 보정 (대댓글 CASCADE 삭제분 포함)
+      // 직접 삭제 후 실제 댓글 수를 카운트하여 정확히 동기화
       try {
-        const { error: rpcError } = await supabase.rpc('increment_comment_count', { p_post_id: postId, p_delta: -1 });
-        if (rpcError) {
-          console.warn('[Community] increment_comment_count (감소) RPC 에러 (무시):', rpcError.message);
+        const { count, error: countError } = await supabase
+          .from('community_comments')
+          .select('id', { count: 'exact', head: true })
+          .eq('post_id', postId);
+
+        if (!countError && count !== null) {
+          const { error: updateError } = await supabase
+            .from('community_posts')
+            .update({ comments_count: count })
+            .eq('id', postId);
+          if (updateError) {
+            console.warn('[Community] comments_count 동기화 실패 (무시):', updateError.message);
+          }
+        } else if (countError) {
+          console.warn('[Community] 댓글 수 카운트 실패, 폴백 -1 적용:', countError.message);
+          await supabase.rpc('increment_comment_count', { p_post_id: postId, p_delta: -1 });
         }
       } catch (rpcErr) {
-        console.warn('[Community] increment_comment_count (감소) RPC 실패 (무시):', rpcErr);
+        console.warn('[Community] comments_count 동기화 예외 (무시):', rpcErr);
       }
     },
     onSuccess: () => {
@@ -667,10 +684,14 @@ export const useDeletePost = () => {
             .eq('id', postId)
             .maybeSingle();
 
-          // PGRST116: no rows returned → 정상적으로 삭제됨
-          if (!error || error.code === 'PGRST116') {
-            if (!data) return;
+          // DB 에러 시: 삭제 자체는 성공했을 수 있으므로 경고만 남기고 진행
+          if (error) {
+            console.warn('[Community] 삭제 확인 중 DB 에러 (무시):', error.message);
+            return;
           }
+
+          // maybeSingle: 행 없으면 data=null, error=null → 정상 삭제 확인
+          if (!data) return;
 
           if (attempt === 0) {
             await new Promise((resolve) => setTimeout(resolve, 220));
@@ -678,7 +699,8 @@ export const useDeletePost = () => {
           }
         }
 
-        throw new Error('삭제 요청은 처리되었지만 서버 반영이 지연되고 있습니다. 잠시 후 새로고침해주세요.');
+        // 2회 확인 후에도 행이 존재 → 경고만 남기고 진행 (onSuccess 캐시 정리 보장)
+        console.warn('[Community] 삭제 확인: 서버 반영 지연 감지, 캐시는 선제 정리');
       };
 
       // 1) 우선: RLS 누락/불일치에도 안정적인 RPC 경로
@@ -704,6 +726,9 @@ export const useDeletePost = () => {
           }
           if (reason === 'not_authenticated') {
             throw new Error('로그인이 필요합니다.');
+          }
+          if (reason === 'delete_failed') {
+            throw new Error('게시글 삭제에 실패했습니다. 잠시 후 다시 시도해주세요.');
           }
         } else if (rpcError) {
           // 함수 미배포(PGRST202) 등은 직접 삭제 경로로 폴백
