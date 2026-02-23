@@ -114,36 +114,41 @@ export default function PortfolioImpactBadge({
         <Text style={[styles.title, { color: colors.textSecondary }]}>내 포트폴리오 영향</Text>
       </View>
 
-      {/* 관련 종목 칩 목록 */}
-      <View style={styles.tickerRow}>
-        {matchedAssets.slice(0, 4).map((asset) => {
-          const rawTicker = asset.ticker.replace(/\.KS$/i, '').toUpperCase();
-          const impact = impactAnalysis
-            ? (impactAnalysis[rawTicker] || impactAnalysis[asset.ticker])
-            : null;
-          const config = impact
-            ? getDirectionConfig(impact.direction)
-            : { color: '#9E9E9E', icon: 'remove-outline' as const };
-          const magnitudeLabel = impact ? impact.magnitude : '';
+      {/* 관련 종목 칩 + 이유 */}
+      {matchedAssets.slice(0, 3).map((asset) => {
+        const rawTicker = asset.ticker.replace(/\.KS$/i, '').toUpperCase();
+        const impact = impactAnalysis
+          ? (impactAnalysis[rawTicker] || impactAnalysis[asset.ticker])
+          : null;
+        const config = impact
+          ? getDirectionConfig(impact.direction)
+          : { color: '#9E9E9E', icon: 'remove-outline' as const };
+        const magnitudeLabel = impact ? impact.magnitude : '';
+        const reason = impact?.reason_ko || '';
 
-          return (
-            <View
-              key={asset.ticker}
-              style={[styles.tickerChip, { backgroundColor: config.color + '20' }]}
-            >
-              <Text style={[styles.tickerText, { color: config.color }]}>
-                {rawTicker}
-              </Text>
-              {magnitudeLabel.length > 0 && (
-                <Text style={[styles.magnitudeText, { color: config.color }]}>
-                  {' '}{magnitudeLabel}
+        return (
+          <View key={asset.ticker} style={styles.impactItem}>
+            <View style={styles.impactTopRow}>
+              <View style={[styles.tickerChip, { backgroundColor: config.color + '20' }]}>
+                <Text style={[styles.tickerText, { color: config.color }]}>
+                  {rawTicker}
                 </Text>
-              )}
-              <Ionicons name={config.icon} size={12} color={config.color} />
+                {magnitudeLabel.length > 0 && (
+                  <Text style={[styles.magnitudeText, { color: config.color }]}>
+                    {' '}{magnitudeLabel}
+                  </Text>
+                )}
+                <Ionicons name={config.icon} size={12} color={config.color} />
+              </View>
             </View>
-          );
-        })}
-      </View>
+            {reason.length > 0 && (
+              <Text style={[styles.reasonText, { color: colors.textTertiary }]}>
+                {reason}
+              </Text>
+            )}
+          </View>
+        );
+      })}
 
       {/* 예상 변동 금액 (유의미한 경우만) */}
       {Math.abs(estimatedChange) >= 1000 && (
@@ -188,10 +193,17 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
-  tickerRow: {
+  impactItem: {
+    gap: 3,
+  },
+  impactTopRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
+    alignItems: 'center',
+  },
+  reasonText: {
+    fontSize: 11,
+    lineHeight: 15,
+    paddingLeft: 4,
   },
   tickerChip: {
     flexDirection: 'row',
