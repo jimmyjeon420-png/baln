@@ -81,6 +81,37 @@ interface ClassifyTickerRequest {
   };
 }
 
+interface WhatIfRequest {
+  type: 'what-if';
+  data: {
+    scenario: string;
+    description: string;
+    magnitude?: number;
+    portfolio: Array<{
+      ticker: string;
+      name: string;
+      currentValue: number;
+      allocation: number;
+    }>;
+  };
+}
+
+interface TaxReportRequest {
+  type: 'tax-report';
+  data: {
+    residency: 'KR' | 'US';
+    annualIncome?: number;
+    portfolio: Array<{
+      ticker: string;
+      name: string;
+      currentValue: number;
+      costBasis: number;
+      purchaseDate: string;
+      quantity: number;
+    }>;
+  };
+}
+
 interface InvestmentReport {
   executiveSummary: {
     recommendation: 'BUY' | 'SELL' | 'HOLD';
@@ -143,7 +174,15 @@ interface InvestmentReport {
   };
 }
 
-type GeminiProxyRequest = MorningBriefingRequest | DeepDiveRequest | CFOChatRequest | InvestmentReportRequest | ParseScreenshotRequest | ClassifyTickerRequest;
+type GeminiProxyRequest =
+  | MorningBriefingRequest
+  | DeepDiveRequest
+  | CFOChatRequest
+  | InvestmentReportRequest
+  | ParseScreenshotRequest
+  | ClassifyTickerRequest
+  | WhatIfRequest
+  | TaxReportRequest;
 
 // ============================================================================
 // 유틸리티 함수
@@ -492,6 +531,133 @@ ${priceInfo}
     ...analysis,
     generatedAt: new Date().toISOString(),
   };
+}
+
+// ============================================================================
+// What-If: 시나리오 기반 포트폴리오 영향 분석
+// ============================================================================
+
+async function generateWhatIfAnalysis(reqData: WhatIfRequest['data']) {
+  const magnitude = Number.isFinite(reqData.magnitude as number) ? Number(reqData.magnitude) : -20;
+  const portfolioStr = (reqData.portfolio || [])
+    .map((asset) => `${asset.name}(${asset.ticker}) ₩${Number(asset.currentValue || 0).toLocaleString()} / ${asset.allocation}%`)
+    .join('\n');
+
+  const prompt = `당신은 포트폴리오 리스크 분석가입니다.
+아래 시나리오에서 자산별 영향도를 계산해 JSON만 반환하세요.
+
+[시나리오]
+- 유형: ${reqData.scenario}
+- 설명: ${reqData.description}
+- 기준 변동폭: ${magnitude}%
+
+[포트폴리오]
+${portfolioStr}
+
+규칙:
+1) 모든 자산의 changePercent를 동일하게 만들지 말 것
+2) projectedValue = currentValue * (1 + changePercent/100)
+3) 합계 값(currentTotal/projectedTotal/changePercent/changeAmount)은 자산별 값과 일치해야 함
+4) 한국어, 숫자 필드는 숫자만
+
+반드시 아래 JSON 구조만 반환:
+{
+  "scenario": "${reqData.description}",
+  "summary": "요약",
+  "totalImpact": {
+    "currentTotal": 0,
+    "projectedTotal": 0,
+    "changePercent": 0,
+    "changeAmount": 0
+  },
+  "assetImpacts": [
+    {
+      "ticker": "AAPL",
+      "name": "애플",
+      "currentValue": 0,
+      "projectedValue": 0,
+      "changePercent": 0,
+      "impactLevel": "HIGH",
+      "explanation": "근거"
+    }
+  ],
+  "riskAssessment": {
+    "overallRisk": "HIGH",
+    "vulnerabilities": ["취약점"],
+    "hedgingSuggestions": ["헤지 전략"]
+  },
+  "generatedAt": "${new Date().toISOString()}"
+}`;
+
+  const responseText = await callGeminiWithSearch(prompt, 30000, 1);
+  return cleanJsonResponse(responseText);
+}
+
+// ============================================================================
+// Tax Report: 세금 최적화 리포트
+// ============================================================================
+
+async function generateTaxReportAnalysis(reqData: TaxReportRequest['data']) {
+  const residency = reqData.residency === 'US' ? 'US' : 'KR';
+  const portfolioStr = (reqData.portfolio || [])
+    .map((asset) =>
+      `${asset.name}(${asset.ticker}) 현재가치 ₩${Number(asset.currentValue || 0).toLocaleString()} / ` +
+      `취득가 ₩${Number(asset.costBasis || 0).toLocaleString()} / 수량 ${Number(asset.quantity || 0)} / 취득일 ${asset.purchaseDate}`
+    )
+    .join('\n');
+
+  const prompt = `당신은 세무 전문가(CPA)입니다.
+아래 포트폴리오의 연간 세금 추정과 절세 전략을 JSON으로 반환하세요.
+
+[거주지] ${residency}
+${Number.isFinite(reqData.annualIncome as number) ? `[연소득] ₩${Number(reqData.annualIncome).toLocaleString()}` : '[연소득] 미입력'}
+
+[포트폴리오]
+${portfolioStr}
+
+반드시 아래 JSON 구조만 반환:
+{
+  "residency": "${residency}",
+  "taxSummary": {
+    "estimatedCapitalGainsTax": 0,
+    "estimatedIncomeTax": 0,
+    "totalTaxBurden": 0,
+    "effectiveTaxRate": 0
+  },
+  "strategies": [
+    {
+      "title": "전략명",
+      "description": "설명",
+      "potentialSaving": 0,
+      "priority": "HIGH",
+      "actionItems": ["실행 항목"]
+    }
+  ],
+  "sellTimeline": [
+    {
+      "ticker": "AAPL",
+      "name": "애플",
+      "suggestedAction": "HOLD_FOR_TAX",
+      "reason": "근거",
+      "optimalTiming": "2026년 12월"
+    }
+  ],
+  "annualPlan": [
+    { "quarter": "Q1 ${new Date().getFullYear()}", "actions": ["실행"] },
+    { "quarter": "Q2 ${new Date().getFullYear()}", "actions": ["실행"] },
+    { "quarter": "Q3 ${new Date().getFullYear()}", "actions": ["실행"] },
+    { "quarter": "Q4 ${new Date().getFullYear()}", "actions": ["실행"] }
+  ],
+  "generatedAt": "${new Date().toISOString()}"
+}
+
+주의:
+- 한국어 작성
+- 숫자 필드는 숫자만
+- JSON 외 텍스트 금지`;
+
+  const responseText = await callGeminiWithSearch(prompt, 30000, 1);
+  return cleanJsonResponse(responseText);
 }
 
 // ============================================================================
@@ -1004,6 +1170,14 @@ serve(async (req: Request) => {
 
       case 'classify-ticker':
         result = await classifyTicker((body as ClassifyTickerRequest).data);
+        break;
+
+      case 'what-if':
+        result = await generateWhatIfAnalysis((body as WhatIfRequest).data);
+        break;
+
+      case 'tax-report':
+        result = await generateTaxReportAnalysis((body as TaxReportRequest).data);
         break;
 
       case 'health-check': {

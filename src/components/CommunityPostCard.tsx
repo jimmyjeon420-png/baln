@@ -60,6 +60,7 @@ export default function CommunityPostCard({
   const tierAccentColor = isLightTheme
     ? (lightTierTextColors[tier] || colors.primaryDark || colors.primary)
     : tierColor;
+  const displayTagColor = isLightTheme ? colors.textPrimary : tierAccentColor;
   const tierBadgeBackground = isLightTheme ? `${tierAccentColor}1A` : tierColor;
   const tierBadgeBorderColor = isLightTheme ? `${tierAccentColor}4D` : 'transparent';
   const tierIconColor = isLightTheme ? tierAccentColor : '#000000';
@@ -105,7 +106,7 @@ export default function CommunityPostCard({
                   onAuthorPress?.(post.user_id);
                 }}
               >
-                <Text style={[styles.displayTag, { color: tierAccentColor }]}>
+                <Text style={[styles.displayTag, { color: displayTagColor }]}>
                   {displayTag}
                 </Text>
               </TouchableOpacity>

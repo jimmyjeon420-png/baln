@@ -406,6 +406,21 @@ interface ProxyDeepDiveResponse {
   generatedAt?: string;
 }
 
+interface GeminiProxyEnvelope<T> {
+  success?: boolean;
+  data?: T;
+  error?: string;
+}
+
+interface ProxyCFOChatResponse {
+  warren?: string;
+  dalio?: string;
+  wood?: string;
+  kostolany?: string;
+  summary?: string;
+  answer?: string;
+}
+
 function clampNumber(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
@@ -506,30 +521,14 @@ function parseKoreanMarketCap(value: unknown): number | null {
 }
 
 async function generateDeepDiveViaProxy(input: DeepDiveInput): Promise<DeepDiveResult> {
-  const invokeResult = await Promise.race([
-    supabase.functions.invoke('gemini-proxy', {
-      body: {
-        type: 'deep-dive',
-        data: {
-          ticker: input.ticker,
-          currentPrice: input.currentPrice ?? input.fundamentals?.currentPrice,
-        },
-      },
-    }),
-    new Promise<{ data: null; error: { message: string } }>((resolve) =>
-      setTimeout(() => resolve({ data: null, error: { message: 'Edge Function 호출 30초 타임아웃' } }), 30000)
-    ),
-  ]);
-
-  const { data, error } = invokeResult as any;
-  if (error) {
-    throw new Error(`gemini-proxy 오류: ${error.message || JSON.stringify(error)}`);
-  }
-  if (!data?.success || !data?.data) {
-    throw new Error(`gemini-proxy 응답 오류: ${data?.error || 'no data'}`);
-  }
-
-  const proxy = data.data as ProxyDeepDiveResponse;
+  const proxy = await invokeGeminiProxy<ProxyDeepDiveResponse>(
+    'deep-dive',
+    {
+      ticker: input.ticker,
+      currentPrice: input.currentPrice ?? input.fundamentals?.currentPrice,
+    },
+    30000,
+  );
   const recommendation = normalizeDeepDiveRecommendation(proxy.recommendation);
   const sentiment: DeepDiveSentiment =
     recommendation === 'VERY_POSITIVE' ? 'VERY_POSITIVE' :
@@ -652,6 +651,183 @@ async function generateDeepDiveViaProxy(input: DeepDiveInput): Promise<DeepDiveR
   };
 
   return sanitizeDeepDiveResult(rawResult, input);
+}
+
+async function invokeGeminiProxy<T>(
+  type: string,
+  data: unknown,
+  timeoutMs: number = 30000,
+): Promise<T> {
+  const invokeResult = await Promise.race([
+    supabase.functions.invoke('gemini-proxy', {
+      body: { type, data },
+    }),
+    new Promise<{ data: null; error: { message: string } }>((resolve) =>
+      setTimeout(() => resolve({ data: null, error: { message: `Edge Function 호출 ${Math.round(timeoutMs / 1000)}초 타임아웃` } }), timeoutMs)
+    ),
+  ]);
+
+  const { data: envelope, error } = invokeResult as {
+    data: GeminiProxyEnvelope<T> | null;
+    error: { message?: string } | null;
+  };
+
+  if (error) {
+    throw new Error(`gemini-proxy 오류: ${error.message || JSON.stringify(error)}`);
+  }
+
+  if (!envelope?.success || !envelope.data) {
+    throw new Error(`gemini-proxy 응답 오류: ${envelope?.error || 'no data'}`);
+  }
+
+  return envelope.data;
+}
+
+async function generateWhatIfViaProxy(input: WhatIfInput): Promise<WhatIfResult> {
+  return invokeGeminiProxy<WhatIfResult>('what-if', input, 30000);
+}
+
+async function generateTaxReportViaProxy(input: TaxReportInput): Promise<TaxReportResult> {
+  return invokeGeminiProxy<TaxReportResult>('tax-report', input, 30000);
+}
+
+function computeTaxReportFallback(input: TaxReportInput): TaxReportResult {
+  const totalValue = input.portfolio.reduce((sum, asset) => sum + Math.max(0, Number(asset.currentValue) || 0), 0);
+  const gains = input.portfolio.map((asset) => {
+    const currentValue = Math.max(0, Number(asset.currentValue) || 0);
+    const costBasis = Math.max(0, Number(asset.costBasis) || 0);
+    const gain = currentValue - costBasis;
+    const purchaseDate = new Date(asset.purchaseDate);
+    const daysHeld = Number.isNaN(purchaseDate.getTime())
+      ? 365
+      : Math.max(0, Math.floor((Date.now() - purchaseDate.getTime()) / (1000 * 60 * 60 * 24)));
+
+    return {
+      ticker: asset.ticker,
+      name: asset.name,
+      currentValue,
+      gain,
+      daysHeld,
+    };
+  });
+
+  const positiveGain = gains.reduce((sum, row) => sum + Math.max(0, row.gain), 0);
+  const lossAmount = gains.reduce((sum, row) => sum + Math.max(0, -row.gain), 0);
+  const taxableGain = input.residency === 'KR'
+    ? Math.max(0, positiveGain - lossAmount - 2_500_000)
+    : Math.max(0, positiveGain - lossAmount);
+  const capitalTaxRate = input.residency === 'KR' ? 0.22 : 0.15;
+  const estimatedCapitalGainsTax = Math.round(taxableGain * capitalTaxRate);
+
+  const estimatedDividendTax = Math.round(totalValue * (input.residency === 'KR' ? 0.0018 : 0.0022));
+  const totalTaxBurden = estimatedCapitalGainsTax + estimatedDividendTax;
+  const effectiveTaxRate = totalValue > 0 ? roundTo((totalTaxBurden / totalValue) * 100, 2) : 0;
+  const potentialSaving = Math.round(Math.min(lossAmount, taxableGain) * capitalTaxRate);
+
+  const strategies: TaxReportResult['strategies'] = [
+    {
+      title: '손익상계 우선 적용',
+      description: '평가손실 자산을 연말 전에 점검해 과세 대상 이익을 줄이는 전략입니다.',
+      potentialSaving,
+      priority: potentialSaving > 0 ? 'HIGH' : 'MEDIUM',
+      actionItems: [
+        '손실 자산과 이익 자산을 동일 과세연도에 함께 점검하세요.',
+        '수수료/세금 포함 실현손익을 기준으로 매도 규모를 결정하세요.',
+      ],
+    },
+    {
+      title: input.residency === 'US' ? '장기보유 세율 구간 관리' : '연도 분할 매도 전략',
+      description: input.residency === 'US'
+        ? '보유기간 1년 경계 전후로 매도 시점을 조절해 세율 차이를 활용합니다.'
+        : '대규모 이익 실현을 연도별로 분산해 세금 급증 구간을 완화합니다.',
+      potentialSaving: Math.round(estimatedCapitalGainsTax * (input.residency === 'US' ? 0.08 : 0.05)),
+      priority: 'MEDIUM',
+      actionItems: input.residency === 'US'
+        ? ['1년 미만 보유 고수익 자산의 예정 매도일을 재점검하세요.', '단기/장기 보유 구간별 예상 세율을 비교하세요.']
+        : ['연말 직전 집중 매도 대신 분할 매도 일정을 세우세요.', '월별 실현손익 누적표를 만들어 과세표준을 관리하세요.'],
+    },
+    {
+      title: '배당·이자 과세 데이터 정합성 점검',
+      description: '배당 및 이자 내역이 누락되면 실제 신고세액과 오차가 커질 수 있습니다.',
+      potentialSaving: Math.round(estimatedDividendTax * 0.15),
+      priority: 'LOW',
+      actionItems: ['증권사 연간 손익/배당 명세서를 앱 데이터와 대조하세요.', '누락된 계좌/자산이 없는지 분기별로 확인하세요.'],
+    },
+  ];
+
+  const sellTimeline: TaxReportResult['sellTimeline'] = gains
+    .map((row) => {
+      if (row.gain < 0) {
+        return {
+          ticker: row.ticker,
+          name: row.name,
+          suggestedAction: 'TAX_LOSS_HARVEST' as const,
+          reason: '평가손실 구간으로 손익상계 목적의 실현손실 활용이 가능합니다.',
+          optimalTiming: '연말 전 손익 점검 후 실행',
+        };
+      }
+
+      if (input.residency === 'US' && row.daysHeld < 365 && row.gain > 0) {
+        return {
+          ticker: row.ticker,
+          name: row.name,
+          suggestedAction: 'HOLD_FOR_TAX' as const,
+          reason: '1년 장기보유 기준 충족 전 매도 시 단기 과세 부담이 커질 수 있습니다.',
+          optimalTiming: '장기보유 요건 충족 직후',
+        };
+      }
+
+      return {
+        ticker: row.ticker,
+        name: row.name,
+        suggestedAction: row.gain > row.currentValue * 0.2 ? 'SELL_NOW' as const : 'HOLD_FOR_TAX' as const,
+        reason: row.gain > row.currentValue * 0.2
+          ? '수익률이 높아 분할 이익실현으로 변동성·세금 리스크를 관리할 필요가 있습니다.'
+          : '세금 및 포지션 유지 균형 관점에서 관망이 유리합니다.',
+        optimalTiming: row.gain > row.currentValue * 0.2 ? '이번 분기 내 분할 실행' : '다음 분기 실적 확인 후 판단',
+      };
+    })
+    .slice(0, 8);
+
+  const currentYear = new Date().getFullYear();
+  const annualPlan: TaxReportResult['annualPlan'] = [
+    { quarter: `Q1 ${currentYear}`, actions: ['전년 실현손익 확정 및 신고자료 정리', '손실 상계 후보 자산 점검'] },
+    { quarter: `Q2 ${currentYear}`, actions: ['상반기 누적 손익 점검', '배당/이자 내역 누락 여부 점검'] },
+    { quarter: `Q3 ${currentYear}`, actions: ['연말 전 손익상계 시뮬레이션 실행', '과세연도 분산 매도 초안 작성'] },
+    { quarter: `Q4 ${currentYear}`, actions: ['손익상계 대상 확정', '연말 분할 매도 및 증빙 자료 보관'] },
+  ];
+
+  return {
+    residency: input.residency,
+    taxSummary: {
+      estimatedCapitalGainsTax,
+      estimatedIncomeTax: estimatedDividendTax,
+      totalTaxBurden,
+      effectiveTaxRate,
+    },
+    strategies,
+    sellTimeline,
+    annualPlan,
+    generatedAt: new Date().toISOString(),
+  };
+}
+
+function formatCfoProxyResponse(data: ProxyCFOChatResponse): string {
+  const answer = typeof data.answer === 'string' ? data.answer.trim() : '';
+  if (answer.length > 0) return answer;
+
+  const summary = typeof data.summary === 'string' ? data.summary.trim() : '';
+  const parts = [
+    data.warren,
+    data.dalio,
+    data.wood,
+    data.kostolany,
+    summary,
+  ]
+    .map((value) => (typeof value === 'string' ? value.trim() : ''))
+    .filter((value) => value.length > 0);
+
+  return parts.slice(0, 2).join('\n\n') || '현재 분석 서버 응답이 지연되고 있습니다. 잠시 후 다시 시도해주세요.';
 }
 
 function inferMarketCapKRW(fundamentals?: DeepDiveInput['fundamentals']): number | null {
@@ -2423,6 +2599,17 @@ ${betaGuideStr}
 중요: 유효한 JSON만 반환. 금액은 숫자로, 한국어로 작성. 설명 텍스트를 JSON 앞뒤에 붙이지 마세요.
 `;
 
+  const shouldPreferProxy = !__DEV__;
+
+  if (shouldPreferProxy || !API_KEY) {
+    try {
+      return await generateWhatIfViaProxy(input);
+    } catch (proxyErr) {
+      console.warn('[What-If] 프록시 실패, 로컬 계산 폴백 사용:', proxyErr);
+      return computeWhatIfFallback(input, magnitude);
+    }
+  }
+
   try {
     const text = await callGeminiSafe(modelWithSearch, prompt, { timeoutMs: 30000, maxRetries: 1 });
     try {
@@ -2433,6 +2620,14 @@ ${betaGuideStr}
       return computeWhatIfFallback(input, magnitude);
     }
   } catch (error: any) {
+    const message = String(error?.message || error || '');
+    if (isGeminiCredentialError(message) || !API_KEY) {
+      try {
+        return await generateWhatIfViaProxy(input);
+      } catch (proxyErr) {
+        console.warn('[What-If] 직접 호출 키 오류 + 프록시 실패, 로컬 계산 사용:', proxyErr);
+      }
+    }
     console.warn('What-If 시뮬레이션 오류:', error);
     // 타임아웃/API 에러 시에도 클라이언트 폴백 시도
     try {
@@ -2519,12 +2714,35 @@ ${input.residency === 'KR' ?
 중요: 유효한 JSON만 반환. 금액은 숫자(KRW). 한국어 작성. 실제 세법 기반 정확한 계산.
 `;
 
+  const shouldPreferProxy = !__DEV__;
+  if (shouldPreferProxy || !API_KEY) {
+    try {
+      return await generateTaxReportViaProxy(input);
+    } catch (proxyErr) {
+      console.warn('[TaxReport] 프록시 실패, 결정론 폴백 사용:', proxyErr);
+      return computeTaxReportFallback(input);
+    }
+  }
+
   try {
     const text = await callGeminiSafe(modelWithSearch, prompt, { timeoutMs: 30000, maxRetries: 1 });
-    return parseGeminiJson<TaxReportResult>(text);
-  } catch (error) {
+    try {
+      return parseGeminiJson<TaxReportResult>(text);
+    } catch (parseErr) {
+      console.warn('[TaxReport] JSON 파싱 실패, 결정론 폴백 사용:', parseErr);
+      return computeTaxReportFallback(input);
+    }
+  } catch (error: any) {
+    const message = String(error?.message || error || '');
+    if (isGeminiCredentialError(message) || !API_KEY) {
+      try {
+        return await generateTaxReportViaProxy(input);
+      } catch (proxyErr) {
+        console.warn('[TaxReport] 직접 호출 키 오류 + 프록시 실패, 폴백 사용:', proxyErr);
+      }
+    }
     console.warn('세금 리포트 생성 오류:', error);
-    throw new Error('세금 최적화 리포트 생성에 실패했습니다');
+    return computeTaxReportFallback(input);
   }
 };
 
@@ -2536,6 +2754,32 @@ export const generateAICFOResponse = async (
   input: CFOChatInput,
   conversationHistory: { role: string; content: string }[]
 ): Promise<string> => {
+  const historyPayload = conversationHistory
+    .slice(-10)
+    .map((m) => ({
+      role: m.role === 'user' ? 'user' as const : 'assistant' as const,
+      text: String(m.content || ''),
+    }))
+    .filter((m) => m.text.trim().length > 0);
+
+  const shouldPreferProxy = !__DEV__;
+  if (shouldPreferProxy || !API_KEY) {
+    try {
+      const proxyResponse = await invokeGeminiProxy<ProxyCFOChatResponse>(
+        'cfo-chat',
+        {
+          question: input.message,
+          conversationHistory: historyPayload,
+        },
+        30000,
+      );
+      return formatCfoProxyResponse(proxyResponse);
+    } catch (proxyErr) {
+      console.warn('[AICFO] 프록시 실패, 안전 폴백 응답 사용:', proxyErr);
+      return '지금은 분석 서버가 잠시 지연되고 있습니다. 잠시 후 다시 시도해 주세요. 투자 판단은 분산과 리스크 관리 원칙을 우선해 주세요.';
+    }
+  }
+
   const historyStr = conversationHistory
     .slice(-10) // 최근 10개 메시지만
     .map(m => `${m.role === 'user' ? '사용자' : 'AI 버핏'}: ${m.content}`)
@@ -2572,8 +2816,24 @@ ${input.message}
 
   try {
     return await callGeminiSafe(modelWithSearch, prompt, { timeoutMs: 30000, maxRetries: 1 });
-  } catch (error) {
+  } catch (error: any) {
+    const message = String(error?.message || error || '');
+    if (isGeminiCredentialError(message) || !API_KEY) {
+      try {
+        const proxyResponse = await invokeGeminiProxy<ProxyCFOChatResponse>(
+          'cfo-chat',
+          {
+            question: input.message,
+            conversationHistory: historyPayload,
+          },
+          30000,
+        );
+        return formatCfoProxyResponse(proxyResponse);
+      } catch (proxyErr) {
+        console.warn('[AICFO] 직접 호출 키 오류 + 프록시 실패:', proxyErr);
+      }
+    }
     console.warn('AI 버핏 응답 오류:', error);
-    throw new Error('AI 버핏 응답 생성에 실패했습니다');
+    return '현재 AI 상담 서버가 일시적으로 지연되고 있습니다. 잠시 후 다시 시도해 주세요.';
   }
 };

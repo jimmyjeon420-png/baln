@@ -31,6 +31,7 @@ import {
   type MarketNewsCategory,
 } from '../../src/hooks/useMarketNews';
 import { useNewsPortfolioMatch } from '../../src/hooks/useNewsPortfolioMatch';
+import { calculateNewsImpactSummary } from '../../src/utils/newsImpact';
 
 // ============================================================================
 // 탭/정책
@@ -157,11 +158,6 @@ function getExposureTone(totalExposure: number): { label: string; color: string 
   return { label: '낮음', color: '#6B7280' };
 }
 
-function getImpactDirection(score: number | null | undefined): string {
-  if (!score || score === 0) return '중립';
-  return score > 0 ? '상승 압력' : '하락 압력';
-}
-
 function openNews(item: MarketNewsItem) {
   const url = item.source_url;
   if (!url) return;
@@ -193,15 +189,18 @@ function TimelineNewsItem({ item, showDate, isLast }: TimelineNewsItemProps) {
   }, [thumbnailUri]);
 
   const exposurePercent = Math.max(0, Math.round(totalExposure));
-  const impactDirection = getImpactDirection(item.impact_score);
-  const impactIndex = hasMatch
-    ? Math.round((exposurePercent * Math.abs(item.impact_score ?? 0)) / 2)
-    : 0;
+  const impactSummary = calculateNewsImpactSummary(
+    exposurePercent,
+    item.impact_score,
+    hasMatch,
+    item.category
+  );
+  const impactIndex = impactSummary.impactIndex;
   const tone = getExposureTone(impactIndex);
   const sourceName = item.source_name || '출처 미상';
 
   const impactText = hasMatch
-    ? `내 자산 영향지수 ${impactIndex}/100 · ${impactDirection} · 노출 ${exposurePercent}%`
+    ? `영향 ${impactIndex}/100 · ${impactSummary.polarity}(${impactSummary.strengthLabel}) · 단기 ${impactSummary.grades.short} / 중기 ${impactSummary.grades.mid} / 장기 ${impactSummary.grades.long}`
     : '내 자산 영향 낮음 · 직접 연관된 보유 자산 없음';
 
   return (
@@ -253,7 +252,7 @@ function TimelineNewsItem({ item, showDate, isLast }: TimelineNewsItemProps) {
                   styles.impactText,
                   { color: hasMatch ? tone.color : colors.textSecondary },
                 ]}
-                numberOfLines={1}
+                numberOfLines={2}
               >
                 {impactText}
               </Text>

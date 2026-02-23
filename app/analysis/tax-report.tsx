@@ -18,6 +18,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { HeaderBar } from '../../src/components/common/HeaderBar';
 import { useTheme } from '../../src/hooks/useTheme';
+import { useSharedPortfolio } from '../../src/hooks/useSharedPortfolio';
+import { AssetType } from '../../src/types/asset';
+import { estimateTax, inferTaxAssetType, type TaxAssetType } from '../../src/utils/taxEstimator';
 
 interface TaxReport {
   totalTax: number;
@@ -25,6 +28,7 @@ interface TaxReport {
   dividendTax: number;
   potentialSavings: number;
   savingsStrategy: string;
+  assumptions: string[];
   actionItems: Array<{
     title: string;
     description: string;
@@ -35,44 +39,158 @@ interface TaxReport {
 
 export default function TaxReportScreen() {
   const { colors } = useTheme();
+  const { assets, isLoading: isPortfolioLoading } = useSharedPortfolio();
   const [taxReport, setTaxReport] = useState<TaxReport | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    loadTaxReport();
-  }, []);
+    if (!isPortfolioLoading) {
+      loadTaxReport();
+    }
+  }, [isPortfolioLoading, assets]);
 
-  const loadTaxReport = async () => {
+  const loadTaxReport = () => {
     setIsLoading(true);
     try {
-      // TODO: 실제 포트폴리오 기반 세금 계산
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const liquidAssets = assets.filter((asset) => asset.assetType === AssetType.LIQUID);
+      const currentYear = new Date().getFullYear();
+      const yearEnd = `${currentYear}-12-31`;
+      const nextYearStart = `${currentYear + 1}-01-31`;
+
+      if (liquidAssets.length === 0) {
+        setTaxReport({
+          totalTax: 0,
+          capitalGainsTax: 0,
+          dividendTax: 0,
+          potentialSavings: 0,
+          savingsStrategy: '보유한 유동자산이 없어 세금 분석 대상이 없습니다. 자산 등록 후 다시 확인해주세요.',
+          assumptions: ['유동자산 기준으로만 계산합니다.', '부동산은 현금화 시점이 달라 본 계산에서 제외됩니다.'],
+          actionItems: [
+            {
+              title: '유동자산 등록',
+              description: '주식/ETF/암호화폐를 등록하면 종목별 절세 타이밍을 계산할 수 있습니다.',
+              deadline: nextYearStart,
+              priority: 'medium',
+            },
+          ],
+        });
+        return;
+      }
+
+      const perTypeYield: Record<TaxAssetType, number> = {
+        kr_stock: 0.015, // 1.5% 가정
+        us_stock: 0.018, // 1.8% 가정
+        crypto: 0,
+        other: 0.005,
+      };
+
+      const taxRows = liquidAssets.map((asset) => {
+        const currentValue = Math.max(0, Number(asset.currentValue) || 0);
+        const quantity =
+          asset.quantity && asset.quantity > 0
+            ? asset.quantity
+            : asset.currentPrice && asset.currentPrice > 0
+              ? currentValue / asset.currentPrice
+              : 1;
+        const currentPrice =
+          asset.currentPrice && asset.currentPrice > 0
+            ? asset.currentPrice
+            : quantity > 0
+              ? currentValue / quantity
+              : 0;
+        const avgPrice =
+          asset.avgPrice && asset.avgPrice > 0
+            ? asset.avgPrice
+            : asset.costBasis && quantity > 0
+              ? asset.costBasis / quantity
+              : currentPrice;
+        const ticker = asset.ticker || asset.name || 'UNKNOWN';
+        const type = inferTaxAssetType(ticker);
+        const estimate = estimateTax(ticker, currentValue, avgPrice, currentPrice, quantity);
+
+        return {
+          name: asset.name,
+          ticker,
+          type,
+          currentValue,
+          quantity,
+          avgPrice,
+          currentPrice,
+          estimate,
+          gainRate: avgPrice > 0 ? ((currentPrice - avgPrice) / avgPrice) * 100 : 0,
+        };
+      });
+
+      const capitalGainsTax = Math.round(
+        taxRows.reduce((sum, row) => sum + (row.estimate.capitalGainsTax || 0), 0)
+      );
+
+      const estimatedDividendTax = Math.round(
+        taxRows.reduce((sum, row) => sum + (row.currentValue * perTypeYield[row.type] * 0.154), 0)
+      );
+
+      const usPositiveGain = taxRows
+        .filter((row) => row.type === 'us_stock')
+        .reduce((sum, row) => sum + Math.max(0, row.estimate.gain), 0);
+      const usLossAmount = taxRows
+        .filter((row) => row.type === 'us_stock')
+        .reduce((sum, row) => sum + Math.max(0, -row.estimate.gain), 0);
+      const taxableUsGainAfterDeduction = Math.max(0, usPositiveGain - 2_500_000);
+      const potentialSavings = Math.round(Math.min(usLossAmount, taxableUsGainAfterDeduction) * 0.22);
+
+      const biggestLoss = [...taxRows]
+        .filter((row) => row.estimate.gain < 0)
+        .sort((a, b) => a.estimate.gain - b.estimate.gain)[0];
+
+      const biggestGain = [...taxRows]
+        .filter((row) => row.estimate.gain > 0)
+        .sort((a, b) => b.estimate.gain - a.estimate.gain)[0];
+
+      const actionItems: TaxReport['actionItems'] = [];
+
+      if (biggestLoss && potentialSavings > 0) {
+        actionItems.push({
+          title: '손실 종목 손익상계',
+          description: `${biggestLoss.name}은(는) 현재 ${biggestLoss.gainRate.toFixed(1)}% 손실 구간입니다. 연말 전 일부 매도로 과세 대상 이익을 상쇄하면 추정 ₩${potentialSavings.toLocaleString()} 절세 여지가 있습니다.`,
+          deadline: yearEnd,
+          priority: 'high',
+        });
+      }
+
+      if (biggestGain) {
+        actionItems.push({
+          title: '수익 종목 분할 매도 계획',
+          description: `${biggestGain.name}의 평가이익이 큽니다. 한 번에 전량 매도보다 분할 매도로 연도별 과세표준을 분산하면 세금 급증을 줄일 수 있습니다.`,
+          deadline: yearEnd,
+          priority: 'medium',
+        });
+      }
+
+      actionItems.push({
+        title: '배당 내역 연동 점검',
+        description: '현재 배당소득세는 보유자산 유형별 평균 배당수익률 가정치로 추정됩니다. 실제 배당 내역 연동 시 정확도가 높아집니다.',
+        deadline: nextYearStart,
+        priority: 'low',
+      });
+
+      const totalTax = capitalGainsTax + estimatedDividendTax;
+      const summary =
+        potentialSavings > 0
+          ? `해외주식 손익상계 기준으로 최대 ₩${potentialSavings.toLocaleString()} 절세 여지가 있습니다.`
+          : '현재 데이터 기준 손익상계 절세 여지는 제한적입니다. 분할매도와 과세연도 분산 전략을 우선 검토하세요.';
+
       setTaxReport({
-        totalTax: 1500000,
-        capitalGainsTax: 1200000,
-        dividendTax: 300000,
-        potentialSavings: 300000,
-        savingsStrategy: '연말 전 손실 종목 매도로 양도소득세 절감 가능',
-        actionItems: [
-          {
-            title: '손실 종목 매도',
-            description: '현재 -15% 손실 중인 카카오를 12월 중 매도하여 실현손실로 과세표준 감소',
-            deadline: '2026-12-31',
-            priority: 'high',
-          },
-          {
-            title: 'ISA 계좌 활용',
-            description: '내년부터 ISA 계좌로 투자하면 연 200만원까지 비과세 혜택',
-            deadline: '2027-01-31',
-            priority: 'medium',
-          },
-          {
-            title: '배당소득 분산',
-            description: '가족 계좌로 배당주 분산 투자하여 2,000만원 비과세 한도 활용',
-            deadline: '2026-11-30',
-            priority: 'low',
-          },
+        totalTax,
+        capitalGainsTax,
+        dividendTax: estimatedDividendTax,
+        potentialSavings,
+        savingsStrategy: summary,
+        assumptions: [
+          '유동자산(주식/ETF/코인) 기준 추정치이며, 부동산은 제외됩니다.',
+          '배당소득세는 종목별 실제 배당내역이 없어 평균 배당수익률 가정치(국내 1.5%, 해외 1.8%)로 계산합니다.',
+          '세법/공제한도/개인 공제항목에 따라 실제 신고세액은 달라질 수 있습니다.',
         ],
+        actionItems: actionItems.slice(0, 3),
       });
     } catch (error) {
       console.error('[TaxReport] 리포트 생성 실패:', error);
@@ -136,7 +254,7 @@ export default function TaxReportScreen() {
         <View style={s.header}>
           <Text style={[s.title, { color: colors.textPrimary }]}>🧾 2026년 세금 리포트</Text>
           <Text style={[s.subtitle, { color: colors.textSecondary }]}>
-            현재 포트폴리오 기준 예상치입니다
+            현재 포트폴리오 기준 추정치(가정 포함)입니다
           </Text>
         </View>
 
@@ -220,9 +338,16 @@ export default function TaxReportScreen() {
         {/* 면책 고지 */}
         <View style={[s.disclaimer, { backgroundColor: colors.surface }]}>
           <Ionicons name="information-circle-outline" size={16} color={colors.textTertiary} />
-          <Text style={[s.disclaimerText, { color: colors.textTertiary }]}>
-            본 리포트는 참고용이며, 세무 전문가 상담을 권장합니다.
-          </Text>
+          <View style={{ flex: 1 }}>
+            <Text style={[s.disclaimerText, { color: colors.textTertiary }]}>
+              본 리포트는 참고용이며, 세무 전문가 상담을 권장합니다.
+            </Text>
+            {taxReport.assumptions.map((line, idx) => (
+              <Text key={idx} style={[s.disclaimerText, { color: colors.textTertiary }]}>
+                • {line}
+              </Text>
+            ))}
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>

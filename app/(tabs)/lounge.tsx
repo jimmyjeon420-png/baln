@@ -349,9 +349,14 @@ function LoungeScreenInner() {
   const insets = useSafeAreaInsets();
   const { theme, colors: themeColors } = useTheme();
   const isLightTheme = theme === 'light';
+  const activePillTextColor = '#FFFFFF';
   const vipBadgeColor = isLightTheme ? '#0B4A6F' : '#B9F2FF';
   const vipBadgeBackground = isLightTheme ? '#DFF2FF' : 'rgba(185, 242, 255, 0.15)';
   const vipBadgeBorder = isLightTheme ? '#B6E3FF' : 'rgba(185, 242, 255, 0.28)';
+  const sortChipInactiveTextColor = isLightTheme ? themeColors.textSecondary : '#F2F6FA';
+  const sortChipInactiveIconColor = isLightTheme ? themeColors.textSecondary : '#E7EDF4';
+  const welcomeBannerBackground = isLightTheme ? '#EAF4ED' : 'rgba(76, 175, 80, 0.08)';
+  const welcomeBannerTitleColor = isLightTheme ? (themeColors.primaryDark || '#1F6A25') : '#4CAF50';
 
   // 세그먼트 상태
   const [activeSegment, setActiveSegment] = useState<Segment>('community');
@@ -544,9 +549,9 @@ function LoungeScreenInner() {
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <Text style={[styles.headerTitle, { color: themeColors.textPrimary }]}>VIP 라운지</Text>
-            <View style={styles.vipBadge}>
-              <Ionicons name="diamond" size={14} color="#B9F2FF" />
-              <Text style={styles.vipBadgeText}>PRIVATE</Text>
+            <View style={[styles.vipBadge, { backgroundColor: vipBadgeBackground, borderColor: vipBadgeBorder }]}>
+              <Ionicons name="diamond" size={14} color={vipBadgeColor} />
+              <Text style={[styles.vipBadgeText, { color: vipBadgeColor }]}>PRIVATE</Text>
             </View>
           </View>
         </View>
@@ -568,9 +573,9 @@ function LoungeScreenInner() {
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <Text style={[styles.headerTitle, { color: themeColors.textPrimary }]}>VIP 라운지</Text>
-            <View style={styles.vipBadge}>
-              <Ionicons name="diamond" size={14} color="#B9F2FF" />
-              <Text style={styles.vipBadgeText}>PRIVATE</Text>
+            <View style={[styles.vipBadge, { backgroundColor: vipBadgeBackground, borderColor: vipBadgeBorder }]}>
+              <Ionicons name="diamond" size={14} color={vipBadgeColor} />
+              <Text style={[styles.vipBadgeText, { color: vipBadgeColor }]}>PRIVATE</Text>
             </View>
           </View>
           {/* 진단 버튼 */}
@@ -687,9 +692,9 @@ function LoungeScreenInner() {
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <Text style={[styles.headerTitle, { color: themeColors.textPrimary }]}>VIP 라운지</Text>
-            <View style={styles.vipBadge}>
-              <Ionicons name="diamond" size={14} color="#B9F2FF" />
-              <Text style={styles.vipBadgeText}>PRIVATE</Text>
+            <View style={[styles.vipBadge, { backgroundColor: vipBadgeBackground, borderColor: vipBadgeBorder }]}>
+              <Ionicons name="diamond" size={14} color={vipBadgeColor} />
+              <Text style={[styles.vipBadgeText, { color: vipBadgeColor }]}>PRIVATE</Text>
             </View>
           </View>
           {/* 맥박 진단 버튼 */}
@@ -711,7 +716,7 @@ function LoungeScreenInner() {
               <Ionicons
                 name="chatbubbles"
                 size={14}
-                color={activeSegment === 'community' ? '#0F172A' : themeColors.textTertiary}
+                color={activeSegment === 'community' ? activePillTextColor : themeColors.textTertiary}
               />
               <Text
                 style={[
@@ -733,7 +738,7 @@ function LoungeScreenInner() {
               <Ionicons
                 name="calendar"
                 size={14}
-                color={activeSegment === 'gatherings' ? '#0F172A' : themeColors.textTertiary}
+                color={activeSegment === 'gatherings' ? activePillTextColor : themeColors.textTertiary}
               />
               <Text
                 style={[
@@ -796,11 +801,11 @@ function LoungeScreenInner() {
                   <Ionicons
                     name={opt.icon}
                     size={12}
-                    color={sortBy === opt.key ? '#0F172A' : themeColors.textSecondary}
+                    color={sortBy === opt.key ? activePillTextColor : sortChipInactiveIconColor}
                   />
                   <Text style={[
                     styles.sortChipText,
-                    { color: sortBy === opt.key ? '#0F172A' : themeColors.textSecondary },
+                    { color: sortBy === opt.key ? activePillTextColor : sortChipInactiveTextColor },
                     sortBy === opt.key && styles.sortChipTextActive,
                   ]}>
                     {opt.label}
@@ -834,7 +839,7 @@ function LoungeScreenInner() {
                         onPress={() => setPostCategory(key)}
                       >
                         <Ionicons name={(info.icon || 'apps') as any} size={12} color={isActive ? (info.color || '#4CAF50') : themeColors.textTertiary} />
-                        <Text style={[styles.composeCategoryText, isActive && { color: info.color || '#4CAF50' }]}>
+                        <Text style={[styles.composeCategoryText, { color: themeColors.textSecondary }, isActive && { color: info.color || '#4CAF50' }]}>
                           {info.label || key}
                         </Text>
                       </TouchableOpacity>
@@ -888,11 +893,11 @@ function LoungeScreenInner() {
                 );
               }}
               ListHeaderComponent={
-                <View style={styles.welcomeBanner}>
+                <View style={[styles.welcomeBanner, { backgroundColor: welcomeBannerBackground }]}>
                   <View style={styles.welcomeTop}>
                     <Text style={styles.welcomeIcon}>{'🏦'}</Text>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.welcomeText}>VIP 회원님, 환영합니다!</Text>
+                      <Text style={[styles.welcomeText, { color: welcomeBannerTitleColor }]}>VIP 회원님, 환영합니다!</Text>
                       <Text style={[styles.welcomeSubtext, { color: themeColors.textTertiary }]}>
                         현재 자산: {formatAssetAmount(eligibility?.totalAssets ?? 0)}
                       </Text>
@@ -990,7 +995,7 @@ function LoungeScreenInner() {
                 onPress={handleComposePress}
                 activeOpacity={0.8}
               >
-                <Ionicons name="create" size={22} color="#000000" />
+                <Ionicons name="create" size={22} color="#FFFFFF" />
                 <Text style={styles.fabText}>글쓰기</Text>
               </TouchableOpacity>
             )}
@@ -1110,7 +1115,7 @@ function LoungeScreenInner() {
                 onPress={handleCreateGathering}
                 activeOpacity={0.8}
               >
-                <Ionicons name="add" size={28} color="#000000" />
+                <Ionicons name="add" size={24} color="#FFFFFF" />
                 <Text style={styles.fabText}>모임 만들기</Text>
               </TouchableOpacity>
             )}
@@ -1215,7 +1220,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   segmentTextActive: {
-    color: '#0F172A',
+    color: '#FFFFFF',
   },
 
   // ── 로딩 ──
@@ -1386,7 +1391,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   sortChipTextActive: {
-    color: '#0F172A',
+    color: '#FFFFFF',
   },
 
   // ── 커뮤니티: 환영 배너 ──
@@ -1527,7 +1532,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   categoryChipTextActive: {
-    color: '#0F172A',
+    color: '#FFFFFF',
   },
 
   // ── 모임: 환영 배너 ──
@@ -1605,6 +1610,6 @@ const styles = StyleSheet.create({
   fabText: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#0F172A',
+    color: '#FFFFFF',
   },
 });

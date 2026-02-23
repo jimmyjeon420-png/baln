@@ -658,6 +658,29 @@ export const useDeletePost = () => {
       const user = await getCurrentUser();
       if (!user) throw new Error('로그인이 필요합니다.');
 
+      const verifyDeleted = async () => {
+        // 삭제 직후 반영 지연을 감안해 짧게 1회 재확인
+        for (let attempt = 0; attempt < 2; attempt += 1) {
+          const { data, error } = await supabase
+            .from('community_posts')
+            .select('id')
+            .eq('id', postId)
+            .maybeSingle();
+
+          // PGRST116: no rows returned → 정상적으로 삭제됨
+          if (!error || error.code === 'PGRST116') {
+            if (!data) return;
+          }
+
+          if (attempt === 0) {
+            await new Promise((resolve) => setTimeout(resolve, 220));
+            continue;
+          }
+        }
+
+        throw new Error('삭제 요청은 처리되었지만 서버 반영이 지연되고 있습니다. 잠시 후 새로고침해주세요.');
+      };
+
       // 1) 우선: RLS 누락/불일치에도 안정적인 RPC 경로
       try {
         const { data: rpcData, error: rpcError } = await supabase.rpc('delete_own_community_post', {
@@ -669,6 +692,7 @@ export const useDeletePost = () => {
           const reason = (rpcData as any)?.reason as string | undefined;
 
           if (success) {
+            await verifyDeleted();
             return;
           }
 
@@ -701,8 +725,10 @@ export const useDeletePost = () => {
       if (!data || data.length === 0) {
         throw new Error('게시글 삭제 권한 확인에 실패했습니다. 잠시 후 다시 시도해주세요.');
       }
+
+      await verifyDeleted();
     },
-    onSuccess: (_deletedPost, deletedPostId) => {
+    onSuccess: async (_deletedPost, deletedPostId) => {
       queryClient.setQueriesData({ queryKey: ['communityPosts'] }, (old: unknown) => {
         if (!old || typeof old !== 'object') return old;
         const maybeInfinite = old as { pages?: unknown[] };
@@ -718,10 +744,12 @@ export const useDeletePost = () => {
 
         return { ...(old as Record<string, unknown>), pages };
       });
-      queryClient.invalidateQueries({ queryKey: ['communityPosts'] });
-      queryClient.invalidateQueries({ queryKey: ['communityPost', deletedPostId] });
-      queryClient.invalidateQueries({ queryKey: ['authorPosts'] });
-      queryClient.invalidateQueries({ queryKey: ['bookmarkedPosts'] });
+      queryClient.removeQueries({ queryKey: ['communityPost', deletedPostId], exact: true });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['communityPosts'], refetchType: 'all' }),
+        queryClient.invalidateQueries({ queryKey: ['authorPosts'], refetchType: 'all' }),
+        queryClient.invalidateQueries({ queryKey: ['bookmarkedPosts'], refetchType: 'all' }),
+      ]);
     },
   });
 };

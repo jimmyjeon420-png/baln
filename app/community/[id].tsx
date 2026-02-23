@@ -150,8 +150,14 @@ export default function PostDetailScreen() {
         onPress: async () => {
           try {
             await deletePost.mutateAsync(post!.id);
-            Alert.alert('삭제 완료', '게시글이 삭제되었습니다.');
-            router.back();
+            Alert.alert('삭제 완료', '게시글이 삭제되었습니다.', [
+              {
+                text: 'OK',
+                onPress: () => {
+                  router.replace('/(tabs)/lounge');
+                },
+              },
+            ]);
           } catch (e: any) {
             Alert.alert('오류', e?.message || '삭제에 실패했습니다.');
           }
