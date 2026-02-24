@@ -28,7 +28,7 @@ function guruNameToId(name: string): string | null {
   if (n.includes('달리오') || n.includes('dalio')) return 'dalio';
   if (n.includes('버핏') || n.includes('buffett')) return 'buffett';
   if (n.includes('캐시') || n.includes('cathie')) return 'cathie_wood';
-  if (n.includes('코스톨라니') || n.includes('kostolany')) return 'kostolany';
+  if (n.includes('드러킨밀러') || n.includes('druckenmiller') || n.includes('스탠리')) return 'druckenmiller';
   return null;
 }
 

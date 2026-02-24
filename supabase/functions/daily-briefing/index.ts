@@ -35,6 +35,7 @@ import { updateRealEstatePrices } from './task-f-realestate.ts';
 import { runContextCardGeneration } from './task-g-context-card.ts';
 import { checkCrisisAlert } from './task-h-crisis-alert.ts';
 import { runNewsCollection } from './task-j-news.ts';
+import { runPolymarketCollection } from './task-k-polymarket.ts';
 
 // 공통 유틸 import
 import {
@@ -190,6 +191,7 @@ serve(async (req: Request) => {
     let realEstateResult: TaskResult<any> = null;
     let crisisResult: TaskResult<any> = null;
     let newsResult: TaskResult<any> = null;
+    let polymarketResult: TaskResult<any> = null;
 
     // Task D: 포트폴리오 스냅샷 (Gemini 미사용, DB only)
     if (shouldRun('D')) {
@@ -299,6 +301,15 @@ serve(async (req: Request) => {
       await sleep(delayMs);
     }
 
+    // Task K: Polymarket 예측 시장 수집 (Gamma API + Gemini 번역/분석) — ★ 재시도 적용
+    if (shouldRun('K')) {
+      console.log('[Task K] 시작: Polymarket 예측 시장 수집...');
+      const taskStartedAt = Date.now();
+      polymarketResult = await safe(() => retryWithBackoff('Task K', runPolymarketCollection));
+      await logTaskMetric('K', taskStartedAt, polymarketResult);
+      await sleep(delayMs);
+    }
+
     // Task I: 코스톨라니 국면 감지 (주 1회 — 매주 월요일 자동 실행)
     const todayKST = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
     const isMonday = todayKST.getDay() === 1;
@@ -353,6 +364,11 @@ serve(async (req: Request) => {
       newsResult,
       (v) => `성공: 뉴스 ${v.totalFetched}건 수집, ${v.totalUpserted}건 저장, ${v.totalDeleted}건 삭제, 금지소스 ${v.totalPurged}건 정리 (AI ${v.aiTagged}건/저비용 ${v.fallbackTagged}건, 품질 ${v.avgQualityScore})`
     );
+    logTask(
+      'Task K',
+      polymarketResult,
+      (v) => `성공: Polymarket ${v.totalFetched}건 수집, ${v.totalProcessed}건 처리, ${v.totalUpserted}건 저장, ${v.totalCleaned}건 정리 (AI ${v.aiProcessed}건/폴백 ${v.fallbackProcessed}건)`
+    );
 
     // ========================================================================
     // 응답 생성
@@ -388,6 +404,18 @@ serve(async (req: Request) => {
         upsertErrorSample: val(newsResult, (v) => v.upsertErrorSample ?? [], [] as string[]),
       };
     }
+    if (shouldRun('K')) {
+      summary.polymarket = {
+        status: st(polymarketResult),
+        fetched: val(polymarketResult, (v) => v.totalFetched, 0),
+        processed: val(polymarketResult, (v) => v.totalProcessed, 0),
+        upserted: val(polymarketResult, (v) => v.totalUpserted, 0),
+        cleaned: val(polymarketResult, (v) => v.totalCleaned, 0),
+        aiProcessed: val(polymarketResult, (v) => v.aiProcessed, 0),
+        fallbackProcessed: val(polymarketResult, (v) => v.fallbackProcessed, 0),
+        categoryBreakdown: val(polymarketResult, (v) => v.categoryBreakdown, {}),
+      };
+    }
 
     const selectedResults = [
       snapshotsResult,
@@ -401,6 +429,7 @@ serve(async (req: Request) => {
       crisisResult,
       kostolalyResult,
       newsResult,
+      polymarketResult,
     ].filter((r) => r !== null) as Array<{ status: 'fulfilled' | 'rejected'; value?: unknown; reason?: unknown }>;
 
     const failedCount = selectedResults.filter((r) => r.status === 'rejected').length;

@@ -510,25 +510,29 @@ export default function HomeScreen() {
     : null;
 
   // 지난주 복기 (최대 3개) + 해설 데이터
+  // 🐛 FIX: 투표하지 않은 폴을 먼저 필터링 (미투표 폴이 'YES'로 표시되는 버그 수정)
   const recentResults = React.useMemo(() => {
     if (!resolvedPolls || resolvedPolls.length === 0) return [];
 
-    return resolvedPolls.slice(0, 3).map(poll => {
-      const vote = myVotesMap[poll.id];
-      const myVoteChoice = vote?.vote || null;
-      const isCorrect = vote ? vote.vote === poll.correct_answer : false;
-      const reward = isCorrect ? (isPremium ? 4 : 2) : 0;
+    return resolvedPolls
+      .filter(poll => myVotesMap[poll.id]) // 내가 투표한 폴만
+      .slice(0, 3)
+      .map(poll => {
+        const vote = myVotesMap[poll.id];
+        const myVoteChoice = vote.vote;
+        const isCorrect = vote.vote === poll.correct_answer;
+        const reward = isCorrect ? (isPremium ? 4 : 2) : 0;
 
-      return {
-        question: poll.question,
-        myVote: myVoteChoice || 'YES',
-        correctAnswer: poll.correct_answer || 'YES',
-        isCorrect,
-        reward,
-        description: buildReviewDescription(poll.description, poll.source, myVoteChoice, isCorrect),
-        source: buildReviewSource(poll.source),
-      };
-    });
+        return {
+          question: poll.question,
+          myVote: myVoteChoice,
+          correctAnswer: poll.correct_answer || 'YES',
+          isCorrect,
+          reward,
+          description: buildReviewDescription(poll.description, poll.source, myVoteChoice, isCorrect),
+          source: buildReviewSource(poll.source),
+        };
+      });
   }, [resolvedPolls, myVotesMap, isPremium]);
 
   // 3개 질문 → PollItem 배열로 변환

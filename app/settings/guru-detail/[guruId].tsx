@@ -80,17 +80,17 @@ const GURU_PROFILES: Record<string, GuruProfile> = {
     track: '2020년 ARK Innovation ETF +152% 수익. 장기 AI 낙관론, 비트코인 $1.5M 목표치 제시.',
     matchKeywords: ['캐시', 'cathie', 'ark', '우드'],
   },
-  kostolany: {
-    id: 'kostolany',
-    fullName: '앙드레 코스톨라니 (André Kostolany)',
-    org: '독립 투자자',
-    emoji: '📈',
+  druckenmiller: {
+    id: 'druckenmiller',
+    fullName: '스탠리 드러킨밀러 (Stanley Druckenmiller)',
+    org: 'Duquesne Capital Management',
+    emoji: '🦅',
     accentColor: '#FFB74D',
-    philosophy: '시장 사이클 투자 — 군중 심리를 역이용하는 달걀 모형입니다. 공황기에 매수하고 호황기에 매도하는 인내심이 최고의 수익을 만듭니다.',
-    strategy: '공황기(달걀 바닥) → 전량 매수 → 호황기(달걀 꼭대기) → 전량 매도. 중간 과정은 무시. 수면제 전략: 사고 자고 나중에 부자로 깨어나라.',
-    keyPrinciple: '"주식을 사고 수면제를 먹어라 — 몇 년 후에 깨어나 부자가 되어 있을 것이다." 인내심이 최고의 투자 전략.',
-    track: '60년 투자 경력. 2차 세계대전 전후 독일 재건 수혜로 대부호 달성. 유럽 최고의 시장 예언자로 불림.',
-    matchKeywords: ['코스톨라니', 'kostolany', 'kostolanyi'],
+    philosophy: '매크로 트렌드 + 집중 투자 — 거시 경제 흐름을 읽고, 확신이 들면 한 방향에 크게 베팅합니다. "올바른 판단에 소극적으로 베팅하면 의미가 없다."',
+    strategy: '탑다운 매크로: 금리·통화·재정 정책 분석 → 승률 높은 비대칭 기회 포착 → 레버리지 집중 투자. 틀리면 즉시 손절, 맞으면 추가 매수.',
+    keyPrinciple: '"중요한 건 맞고 틀리는 빈도가 아니라, 맞았을 때 얼마나 버느냐다." 승률보다 수익의 비대칭성이 핵심.',
+    track: '30년간 연평균 +30% 수익률, 단 한 해도 마이너스 없음. 1992년 소로스와 영국 파운드 공매도로 $1B 이상 수익. Duquesne 청산 시 자산 $12B.',
+    matchKeywords: ['드러킨밀러', 'druckenmiller', 'duquesne', '스탠리'],
   },
 };
 

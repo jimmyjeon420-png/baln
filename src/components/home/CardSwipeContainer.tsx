@@ -154,7 +154,13 @@ export default function CardSwipeContainer({
       >
         {childArray.map((child, index) => (
           <View key={index} style={[styles.cardWrapper, scrollViewHeight > 0 && { height: scrollViewHeight }]}>
-            {child}
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              nestedScrollEnabled={true}
+              contentContainerStyle={styles.cardScrollContent}
+            >
+              {child}
+            </ScrollView>
           </View>
         ))}
       </ScrollView>
@@ -258,6 +264,9 @@ const styles = StyleSheet.create({
   cardWrapper: {
     width: SCREEN_WIDTH,
     paddingTop: 8,
+  },
+  cardScrollContent: {
+    paddingBottom: 16,
   },
   swipeHint: {
     position: 'absolute',

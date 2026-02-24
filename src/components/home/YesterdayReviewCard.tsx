@@ -113,7 +113,7 @@ const ReviewResultItem = React.memo(({
         {/* 상단 행: 적중/오답 아이콘 + 질문 */}
         <View style={styles.resultHeader}>
           <Text style={styles.resultEmoji}>
-            {result.isCorrect ? '🎯' : '❌'}
+            {result.isCorrect ? '⭕' : '❌'}
           </Text>
           <Text
             style={[

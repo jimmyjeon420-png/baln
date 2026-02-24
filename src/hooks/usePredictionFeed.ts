@@ -89,7 +89,8 @@ export const usePredictionFeed = (category: PredictionCategory = 'stock') => {
       if (lastPage.length < PREDICTION_PAGE_SIZE) return undefined;
       return allPages.length * PREDICTION_PAGE_SIZE;
     },
-    staleTime: 30000, // 30초 캐시
+    staleTime: 600000, // 10분 캐시 (3시간 갱신 주기에 맞게)
+    refetchOnMount: true, // 탭 전환 시 최신 데이터 확인
   });
 };
 
@@ -112,7 +113,7 @@ export const usePredictionDetail = (predictionId: string | null) => {
       return data as PredictionItem;
     },
     enabled: !!predictionId,
-    staleTime: 30000,
+    staleTime: 600000, // 10분 캐시
   });
 };
 
