@@ -53,6 +53,27 @@ const RSS_SOURCES = [
     url: 'https://bitcoinmagazine.com/.rss/full/',
     maxItems: 15,
   },
+  // 해외 금융 뉴스 (stock 카테고리 보강)
+  {
+    name: 'Reuters Business',
+    url: 'https://www.reutersagency.com/feed/?best-topics=business-finance',
+    maxItems: 10,
+  },
+  {
+    name: 'CNBC Top News',
+    url: 'https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=100003114',
+    maxItems: 10,
+  },
+  {
+    name: 'Yahoo Finance',
+    url: 'https://finance.yahoo.com/news/rssindex',
+    maxItems: 10,
+  },
+  {
+    name: 'MarketWatch',
+    url: 'https://feeds.content.dowjones.io/public/rss/mw_topstories',
+    maxItems: 10,
+  },
 ];
 
 function isAllowedSourceLink(rawLink: string): boolean {
@@ -71,6 +92,10 @@ const SOURCE_TRUST_SCORE: Record<string, number> = {
   'Google News': 80,
   코인데스크: 84,
   비트코인매거진: 82,
+  'Reuters Business': 95,
+  'CNBC Top News': 90,
+  'Yahoo Finance': 85,
+  'MarketWatch': 88,
 };
 
 const NEWS_FRESHNESS_WINDOW_MS = 6 * 60 * 60 * 1000; // 6시간
@@ -87,6 +112,10 @@ const MACRO_KEYWORDS = [
   '금리', 'cpi', '연준', 'fed', 'fomc', '기준금리', 'gdp', '실업률',
   '환율', '달러', '인플레이션', '물가', '국채', '채권', '경기', '무역',
   '관세', '재정', '통화정책', '양적', 'pce', '고용', '제조업', 'pmi',
+  // 해외 매크로 키워드
+  'ecb', 'boe', 'boj', 'rate cut', 'rate hike', 'payroll',
+  'earnings', 'revenue', 'profit', 'guidance', 'outlook',
+  'dow', 'nasdaq', 's&p', 'russell', 'vix',
 ];
 
 type StrictNewsCategory = 'crypto' | 'stock' | 'macro';
@@ -101,6 +130,16 @@ interface PreTagResult {
   tags: string[];
   category: StrictNewsCategory | null;
 }
+
+/** 영어 종목명 → 티커 매핑 (해외 뉴스 매칭 강화) */
+const ENGLISH_NAME_MAP: Record<string, string> = {
+  nvidia: 'NVDA', tesla: 'TSLA', apple: 'AAPL', microsoft: 'MSFT',
+  amazon: 'AMZN', alphabet: 'GOOGL', google: 'GOOGL', meta: 'META',
+  netflix: 'NFLX', berkshire: 'BRK.B', samsung: '005930.KS',
+  'sk hynix': '000660.KS', kakao: '035720.KS', naver: '035420.KS',
+  hyundai: '005380.KS', bitcoin: 'BTC', ethereum: 'ETH', solana: 'SOL',
+  ripple: 'XRP', dogecoin: 'DOGE',
+};
 
 /**
  * 뉴스 제목+설명에서 STOCK_LIST 기반 자동 태그/카테고리 추출
@@ -133,6 +172,21 @@ function preTagNews(title: string, description?: string): PreTagResult {
       if (stock.sector === 'Crypto') hasCrypto = true;
       else hasStock = true;
     }
+  }
+
+  // 영어 종목명 매칭 (해외 뉴스 보강)
+  for (const [engName, ticker] of Object.entries(ENGLISH_NAME_MAP)) {
+    if (!text.includes(engName)) continue;
+    const stock = STOCK_LIST.find((s) => s.ticker === ticker);
+    if (!stock) continue;
+    const displayTag = stock.sector === 'Crypto'
+      ? stock.ticker
+      : stock.ticker.includes('.KS')
+        ? stock.name
+        : stock.ticker;
+    if (!tags.includes(displayTag)) tags.push(displayTag);
+    if (stock.sector === 'Crypto') hasCrypto = true;
+    else hasStock = true;
   }
 
   // 카테고리 결정: crypto > stock > macro
@@ -932,14 +986,17 @@ async function tagNewsWithGemini(items: ScoredNewsItem[]): Promise<TaggedNews[]>
 
     // ── Step 2: 다이어트 프롬프트 (기존 대비 ~60% 짧음) ──
     const prompt = `금융뉴스 ${batch.length}건 분석. 태그·분류는 사전감지됨. 확인·보완 후 영향도 추가.
+- 영어 기사가 포함되어 있으면 제목과 요약을 자연스러운 한국어로 번역하세요
+- 글로벌 뉴스의 경우 "한국 투자자에게 미치는 영향" 관점으로 impact_summary 작성
+- 전체 배치 중 가장 중요한 1-2개를 is_pick: true로 선정 (글로벌 주요 뉴스 우선)
 ${newsList}
 각 항목 JSON 배열:
 - index: 번호
 - tags: 사전태그 확인/보완 (누락 추가, 오류 수정)
 - category: "crypto"|"stock"|"macro" 중 1개
-- summary: 한국어 50자 요약
+- summary: 한국어 50자 요약 (영어 기사는 한국어로 번역)
 - is_pick: 핵심뉴스 여부 (배치당 최대 2개)
-- impact_summary: "~보유자" 관점 영향+전망 80자
+- impact_summary: "~보유자" 관점 영향+전망 80자 (글로벌뉴스는 한국시장 영향 포함)
 - impact_score: -2(매우부정)~+2(매우긍정)`;
 
     try {

@@ -17,6 +17,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   Linking,
+  ScrollView,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -26,7 +27,9 @@ import {
   type PredictionItem,
   type PredictionCategory,
 } from '../../src/hooks/usePredictionFeed';
+import { usePickNews, type MarketNewsItem } from '../../src/hooks/useMarketNews';
 import PredictionCard from '../../src/components/prediction/PredictionCard';
+import NewsCard from '../../src/components/news/NewsCard';
 
 // ============================================================================
 // 탭/정책
@@ -58,10 +61,23 @@ function openPrediction(item: PredictionItem) {
 // 메인 화면
 // ============================================================================
 
+// Open news article URL
+function openNewsArticle(item: MarketNewsItem) {
+  const url = item.source_url;
+  if (!url) return;
+  Linking.openURL(url).catch(() => {
+    const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(item.title)}`;
+    Linking.openURL(searchUrl).catch(() => {});
+  });
+}
+
 export default function NewsTabScreen() {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const [category, setCategory] = useState<PredictionTab>('stock');
+
+  // 글로벌 픽 뉴스 (is_pick=true, 상위 5개)
+  const { data: pickNews } = usePickNews();
 
   const {
     data,
@@ -110,6 +126,47 @@ export default function NewsTabScreen() {
           <Text style={[styles.updateTime, { color: colors.textTertiary }]}>{updateTimeStr} 업데이트</Text>
         ) : null}
       </View>
+
+      {/* 글로벌 뉴스 픽 배너 */}
+      {pickNews && pickNews.length > 0 && (
+        <View style={[styles.pickSection, { borderBottomColor: colors.border }]}>
+          <View style={styles.pickHeader}>
+            <View style={styles.pickBadge}>
+              <Ionicons name="flash" size={12} color="#000" />
+              <Text style={styles.pickBadgeText}>NEWS PiCK</Text>
+            </View>
+            <Text style={[styles.pickSubtitle, { color: colors.textTertiary }]}>
+              AI 선정 주요 뉴스
+            </Text>
+          </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.pickScroll}
+          >
+            {pickNews.slice(0, 3).map((item) => (
+              <TouchableOpacity
+                key={item.id}
+                style={[styles.pickCard, { backgroundColor: colors.surface }]}
+                activeOpacity={0.7}
+                onPress={() => openNewsArticle(item)}
+              >
+                <Text style={[styles.pickTitle, { color: colors.textPrimary }]} numberOfLines={2}>
+                  {item.title}
+                </Text>
+                {item.impact_summary && (
+                  <Text style={[styles.pickImpact, { color: colors.textSecondary }]} numberOfLines={1}>
+                    {item.impact_summary}
+                  </Text>
+                )}
+                <View style={styles.pickMeta}>
+                  <Text style={[styles.pickSource, { color: colors.textTertiary }]}>{item.source_name}</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      )}
 
       {/* Category Tabs */}
       <View style={[styles.modeTabs, { borderBottomColor: colors.border }]}>
@@ -295,5 +352,64 @@ const styles = StyleSheet.create({
     color: '#000',
     fontSize: 14,
     fontWeight: '700',
+  },
+
+  // --- 글로벌 뉴스 픽 ---
+  pickSection: {
+    paddingTop: 8,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+  },
+  pickHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
+    marginBottom: 10,
+  },
+  pickBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: '#FFC107',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  pickBadgeText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#000',
+  },
+  pickSubtitle: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  pickScroll: {
+    paddingHorizontal: 16,
+    gap: 10,
+  },
+  pickCard: {
+    width: 220,
+    borderRadius: 12,
+    padding: 12,
+    gap: 6,
+  },
+  pickTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    lineHeight: 19,
+  },
+  pickImpact: {
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  pickMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  pickSource: {
+    fontSize: 11,
   },
 });

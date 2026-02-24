@@ -29,6 +29,10 @@
 - **MacBook Pro M5** (메인): 빌드, 테스트, 배포, Xcode 설치됨
 - **Windows** (서브): Claude Code 코드 개발
 - **양쪽 모두 git clone 완료**, SSH 키 등록됨
+- **Claude 사용 방식**: Claude CLI (Claude Code) 전용 — API 직접 호출 없음
+  - Claude API 키 별도 사용하지 않음 (2026-02-24 기준 CLI로 완전 전환)
+  - 모든 AI 코드 작업은 Claude Code CLI를 통해서만 진행
+  - AI 분석 기능(앱 내)은 Google Gemini API 사용 (Claude API 아님)
 
 ### 로컬 빌드 명령어 (MacBook에서)
 ```bash
@@ -205,6 +209,31 @@ npx eas submit --platform ios --path ./build-xxxxx.ipa
 2.  **Dependency Safety:** Never downgrade Expo SDK. Use `npx expo install`.
 3.  **No "Silent" Failures:** Suggest `cmd` over `PowerShell` for stability.
 4.  **Step-by-Step:** Plan -> Code -> Verify. Don't break the build.
+
+## 4.5 자동 실행 원칙 (퍼미션 정책)
+
+> **핵심: 삭제 외에는 묻지 말고 알아서 실행한다.**
+
+### 자동 실행 (허락 불필요)
+- 파일 읽기, 탐색, 검색 (Read, Glob, Grep)
+- 파일 생성, 수정, 편집 (Write, Edit)
+- Git 작업: add, commit, status, diff, log, pull
+- 패키지 설치: `npx expo install`, `npm install`
+- TypeScript 검증: `npx tsc --noEmit`
+- 빌드 실행: `eas build`
+- Supabase Edge Function 배포
+- 테스트 실행, 린트 실행
+- 웹 검색, URL 조회
+
+### 사용자 확인 필요 (반드시 물어보기)
+- **파일/브랜치 삭제** (`rm`, `git branch -D`)
+- **git push --force** (강제 푸시)
+- **git reset --hard** (되돌릴 수 없는 리셋)
+- **DB 테이블 DROP / 데이터 삭제**
+- **외부 서비스에 메시지 전송** (PR 생성, 이슈 코멘트 등)
+
+### 요약
+읽기·쓰기·빌드·배포 = **자동**, 삭제·강제변경·외부전송 = **확인**
 
 ## 5. UI/UX Principles (Premium Fintech)
 - **Visual Identity:** Dark Mode (#121212), Green Accents (#4CAF50).
