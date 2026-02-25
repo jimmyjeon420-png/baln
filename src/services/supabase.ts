@@ -10,9 +10,11 @@ const FALLBACK_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 export const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL || FALLBACK_URL;
 export const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || FALLBACK_KEY;
 
-// 진단 로그 (빌드에서 env 변수가 제대로 들어왔는지 확인)
-console.log('[Supabase] URL:', SUPABASE_URL.substring(0, 30) + '...');
-console.log('[Supabase] Key:', SUPABASE_ANON_KEY.substring(0, 20) + '...');
+// 진단 로그 (개발 환경에서만)
+if (__DEV__) {
+  console.log('[Supabase] URL:', SUPABASE_URL.substring(0, 30) + '...');
+  console.log('[Supabase] Key:', SUPABASE_ANON_KEY.substring(0, 20) + '...');
+}
 
 // AsyncStorage 어댑터를 사용하여 토큰 저장
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -70,7 +72,7 @@ export async function getCurrentUser() {
     ]);
 
     if (!result) {
-      console.warn('[Supabase] getSession 5초 타임아웃 — refreshSession 시도');
+      if (__DEV__) console.warn('[Supabase] getSession 5초 타임아웃 — refreshSession 시도');
     } else {
       const session = (result as any).data?.session;
       if (session?.user) {
@@ -78,7 +80,7 @@ export async function getCurrentUser() {
         if (session.access_token && !isTokenExpired(session.access_token)) {
           return session.user; // 유효한 토큰 → 바로 반환
         }
-        console.warn('[Supabase] access_token 만료됨 → refreshSession 시도');
+        if (__DEV__) console.warn('[Supabase] access_token 만료됨 → refreshSession 시도');
         // 만료된 경우 아래 refreshSession으로 진행
       }
     }
@@ -95,17 +97,17 @@ export async function getCurrentUser() {
     const refreshResult = await pendingRefresh;
 
     if (!refreshResult) {
-      console.warn('[Supabase] refreshSession 8초 타임아웃');
+      if (__DEV__) console.warn('[Supabase] refreshSession 8초 타임아웃');
       return null;
     }
 
     const refreshedUser = (refreshResult as any).data?.session?.user ?? null;
     if (refreshedUser) {
-      console.log('[Supabase] refreshSession 성공 — 유효한 세션 복구됨');
+      if (__DEV__) console.log('[Supabase] refreshSession 성공 — 유효한 세션 복구됨');
     }
     return refreshedUser;
   } catch (err) {
-    console.warn('[Supabase] getCurrentUser 에러:', err);
+    if (__DEV__) console.warn('[Supabase] getCurrentUser 에러:', err);
     return null;
   }
 }

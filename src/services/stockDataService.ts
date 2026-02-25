@@ -127,7 +127,7 @@ export async function fetchExchangeRate(): Promise<number> {
       }
       return rate;
     } catch (err: any) {
-      console.warn(`[ExchangeRate] ${name} 실패:`, err.message);
+      if (__DEV__) console.warn(`[ExchangeRate] ${name} 실패:`, err.message);
     }
   }
 

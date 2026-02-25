@@ -46,7 +46,7 @@ function stripHtmlTags(text: string): string {
 export async function searchPlaces(query: string, size: number = 5): Promise<ParsedPlace[]> {
   // API 키가 없거나 플레이스홀더면 빈 배열 반환 (수동 입력 가능)
   if (!NAVER_CLIENT_ID || !NAVER_CLIENT_SECRET) {
-    console.log('[NaverSearch] API 키 미설정. EXPO_PUBLIC_NAVER_CLIENT_ID/SECRET를 .env에 설정하세요.');
+    if (__DEV__) console.log('[NaverSearch] API 키 미설정. EXPO_PUBLIC_NAVER_CLIENT_ID/SECRET를 .env에 설정하세요.');
     return [];
   }
 
@@ -82,9 +82,9 @@ export async function searchPlaces(query: string, size: number = 5): Promise<Par
     // API 실패 시 원인 로깅 → 사용자는 수동 입력 가능
     const status = error?.response?.status;
     if (status === 401 || status === 403) {
-      console.warn('[NaverSearch] 인증 실패. 네이버 개발자 센터에서 Client ID/Secret를 확인하세요.');
+      if (__DEV__) console.warn('[NaverSearch] 인증 실패. 네이버 개발자 센터에서 Client ID/Secret를 확인하세요.');
     } else {
-      console.warn('[NaverSearch] API 호출 실패:', status || error?.message);
+      if (__DEV__) console.warn('[NaverSearch] API 호출 실패:', status || error?.message);
     }
     return [];
   }

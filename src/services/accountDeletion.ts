@@ -247,7 +247,7 @@ export async function deleteUserAccount(userId: string): Promise<DeletionResult>
       await AsyncStorage.multiRemove(balnKeys);
     }
 
-    console.log(`[계정삭제] AsyncStorage ${balnKeys.length}개 키 삭제 완료`);
+    if (__DEV__) console.log(`[계정삭제] AsyncStorage ${balnKeys.length}개 키 삭제 완료`);
   } catch (err) {
     console.warn('[계정삭제] AsyncStorage 클리어 실패:', err);
     // AsyncStorage 실패는 치명적이지 않음 — 계속 진행
@@ -257,7 +257,7 @@ export async function deleteUserAccount(userId: string): Promise<DeletionResult>
   try {
     const { error: signOutError } = await supabase.auth.signOut();
     if (signOutError) {
-      console.error('[계정삭제] 로그아웃 실패:', signOutError.message);
+      if (__DEV__) console.error('[계정삭제] 로그아웃 실패:', signOutError.message);
       return {
         success: false,
         error: `데이터 삭제는 완료했으나 로그아웃에 실패했습니다: ${signOutError.message}`,
@@ -266,7 +266,7 @@ export async function deleteUserAccount(userId: string): Promise<DeletionResult>
       };
     }
   } catch (err) {
-    console.error('[계정삭제] 로그아웃 중 예외:', err);
+    if (__DEV__) console.error('[계정삭제] 로그아웃 중 예외:', err);
     return {
       success: false,
       error: '로그아웃 처리 중 오류가 발생했습니다.',
@@ -275,7 +275,7 @@ export async function deleteUserAccount(userId: string): Promise<DeletionResult>
     };
   }
 
-  console.log(`[계정삭제] 완료 — 삭제: ${deletedTables.length}개 테이블, 실패: ${failedTables.length}개`);
+  if (__DEV__) console.log(`[계정삭제] 완료 — 삭제: ${deletedTables.length}개 테이블, 실패: ${failedTables.length}개`);
 
   return {
     success: true,

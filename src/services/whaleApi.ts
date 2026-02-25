@@ -141,7 +141,7 @@ const loadFromCache = async (): Promise<WhaleAllocation | null> => {
 
     return null;
   } catch (error) {
-    console.error('Cache load error:', error);
+    if (__DEV__) console.error('Cache load error:', error);
     return null;
   }
 };
@@ -151,7 +151,7 @@ const saveToCache = async (data: WhaleAllocation): Promise<void> => {
   try {
     await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(data));
   } catch (error) {
-    console.error('Cache save error:', error);
+    if (__DEV__) console.error('Cache save error:', error);
   }
 };
 
@@ -191,7 +191,7 @@ const fetchSEC13FData = async (): Promise<WhaleAllocation | null> => {
 
     return avgAllocation;
   } catch (error) {
-    console.error('SEC 13F fetch error:', error);
+    if (__DEV__) console.error('SEC 13F fetch error:', error);
     return null;
   }
 };
@@ -208,7 +208,7 @@ const fetchWhaleAlertData = async (): Promise<{ cryptoTrend: 'bullish' | 'bearis
     // 시뮬레이션: 중립 트렌드 반환
     return { cryptoTrend: 'neutral' };
   } catch (error) {
-    console.error('Whale Alert fetch error:', error);
+    if (__DEV__) console.error('Whale Alert fetch error:', error);
     return null;
   }
 };
@@ -223,7 +223,7 @@ export const fetchWhaleAllocation = async (): Promise<WhaleAllocation> => {
     // 1. 캐시 확인
     const cached = await loadFromCache();
     if (cached) {
-      console.log('Pace Maker data loaded from cache');
+      if (__DEV__) console.log('Pace Maker data loaded from cache');
       return cached;
     }
 
@@ -244,11 +244,11 @@ export const fetchWhaleAllocation = async (): Promise<WhaleAllocation> => {
 
     // 캐시에 저장
     await saveToCache(paceMakerData);
-    console.log('Pace Maker benchmark data ready');
+    if (__DEV__) console.log('Pace Maker benchmark data ready');
     return paceMakerData;
 
   } catch (error) {
-    console.error('fetchWhaleAllocation error:', error);
+    if (__DEV__) console.error('fetchWhaleAllocation error:', error);
     return WHALE_BENCHMARK_FALLBACK;
   }
 };
