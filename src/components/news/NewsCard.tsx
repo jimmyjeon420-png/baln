@@ -21,6 +21,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
 import { MarketNewsItem, getTimeAgo, isRecentNews } from '../../hooks/useMarketNews';
 import { useNewsPortfolioMatch } from '../../hooks/useNewsPortfolioMatch';
+import { getCurrentLanguage } from '../../locales';
 
 // ============================================================================
 // 카테고리 설정
@@ -122,7 +123,7 @@ export default function NewsCard({ item, compact = false, onPress }: NewsCardPro
             </Text>
             <View style={[styles.dot, { backgroundColor: recent ? '#2E7D32' : colors.textTertiary }]} />
             <Text style={[styles.compactTime, { color: recent ? '#2E7D32' : colors.textTertiary, fontWeight: recent ? '700' : '400' }]}>
-              {getTimeAgo(item.published_at)}
+              {getTimeAgo(item.published_at, getCurrentLanguage())}
             </Text>
           </View>
         </View>
@@ -204,7 +205,7 @@ export default function NewsCard({ item, compact = false, onPress }: NewsCardPro
         </Text>
         <View style={[styles.dot, { backgroundColor: recent ? '#2E7D32' : colors.textTertiary }]} />
         <Text style={[styles.timeAgo, { color: recent ? '#2E7D32' : colors.textTertiary, fontWeight: recent ? '700' : '400' }]} numberOfLines={1}>
-          {getTimeAgo(item.published_at)}
+          {getTimeAgo(item.published_at, getCurrentLanguage())}
         </Text>
       </View>
     </TouchableOpacity>

@@ -262,7 +262,7 @@ export async function scheduleMorningBriefing(
       type: 'morning-briefing',
       title,
       body,
-      screen: '/(tabs)/diagnosis',
+      screen: '/(tabs)/rebalance',
       weekdays,
       hour: 8,
       minute: 0,
@@ -306,7 +306,7 @@ export async function scheduleInactivityReminder(): Promise<string | null> {
         content: {
           title: inactivityTitle,
           body: inactivityBody,
-          data: { type: 'inactivity-reminder', screen: '/(tabs)/diagnosis' },
+          data: { type: 'inactivity-reminder', screen: '/(tabs)/rebalance' },
           ...(Platform.OS === 'android' && { channelId: 'rebalancing' }),
         },
         trigger: null,
@@ -319,7 +319,7 @@ export async function scheduleInactivityReminder(): Promise<string | null> {
       content: {
         title: inactivityTitle,
         body: inactivityBody,
-        data: { type: 'inactivity-reminder', screen: '/(tabs)/diagnosis' },
+        data: { type: 'inactivity-reminder', screen: '/(tabs)/rebalance' },
         ...(Platform.OS === 'android' && { channelId: 'rebalancing' }),
       },
       trigger: {
@@ -411,7 +411,7 @@ export async function schedulePriceChangeReminder(options?: {
       type: 'price-alert',
       title: priceTitle,
       body: priceBody,
-      screen: '/(tabs)/diagnosis',
+      screen: '/(tabs)/rebalance',
       weekdays,
       hour: 7,
       minute: 30,

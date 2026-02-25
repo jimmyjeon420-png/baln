@@ -13,7 +13,7 @@
  * 5. 보험 BM: 신호등 무료, 상세 프리미엄
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Modal } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
@@ -298,9 +298,17 @@ export default function HomeScreen() {
   }, [liquidAssetsForHome, homeLivePrices, totalAssets]);
 
   // 시장 심리 피드 (포트폴리오 변동률 → 마을 감정 연동)
+  // useRef 가드: 변동폭 0.01% 미만이면 무시 → 무한 루프 방지
+  const lastSentimentRateRef = useRef<number | null>(null);
   useEffect(() => {
     if (dailyChangeRate !== null && dailyChangeRate !== undefined) {
-      setSentimentFromPortfolio(dailyChangeRate);
+      if (
+        lastSentimentRateRef.current === null ||
+        Math.abs(lastSentimentRateRef.current - dailyChangeRate) > 0.01
+      ) {
+        lastSentimentRateRef.current = dailyChangeRate;
+        setSentimentFromPortfolio(dailyChangeRate);
+      }
     }
   }, [dailyChangeRate, setSentimentFromPortfolio]);
 

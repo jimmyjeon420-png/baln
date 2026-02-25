@@ -30,7 +30,7 @@ import { useLocale } from '../src/context/LocaleContext';
 export default function LoginScreen() {
   const { signIn, signUp, signInWithOAuth, signInWithApple } = useAuth();
   const { colors } = useTheme();
-  const { t } = useLocale();
+  const { t, language } = useLocale();
   const router = useRouter();
 
   // 상태
@@ -201,21 +201,23 @@ export default function LoginScreen() {
               )}
             </TouchableOpacity>
 
-            {/* 카카오 로그인 */}
-            <TouchableOpacity
-              style={[styles.socialButton, styles.kakaoButton]}
-              onPress={() => handleOAuthLogin('kakao')}
-              disabled={isAnyLoading}
-            >
-              {loadingProvider === 'kakao' ? (
-                <ActivityIndicator color="#3C1E1E" size="small" />
-              ) : (
-                <>
-                  <Text style={styles.kakaoIcon}>💬</Text>
-                  <Text style={styles.kakaoButtonText}>{t('login.kakao_button')}</Text>
-                </>
-              )}
-            </TouchableOpacity>
+            {/* 카카오 로그인 — 한국어 사용자만 표시 (Kakao는 한국 전용 서비스) */}
+            {language === 'ko' && (
+              <TouchableOpacity
+                style={[styles.socialButton, styles.kakaoButton]}
+                onPress={() => handleOAuthLogin('kakao')}
+                disabled={isAnyLoading}
+              >
+                {loadingProvider === 'kakao' ? (
+                  <ActivityIndicator color="#3C1E1E" size="small" />
+                ) : (
+                  <>
+                    <Text style={styles.kakaoIcon}>💬</Text>
+                    <Text style={styles.kakaoButtonText}>{t('login.kakao_button')}</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            )}
 
             {/* Apple 로그인 (iOS에서만 표시) */}
             {Platform.OS === 'ios' && (
@@ -327,21 +329,21 @@ export default function LoginScreen() {
           {/* 하단 안내 — 약관/개인정보 링크 (Apple 심사 요구) */}
           <View style={styles.footerSection}>
             <Text style={[styles.footerText, { color: colors.textTertiary }]}>
-              계정을 만들면{' '}
+              {t('login.footer_prefix')}
               <Text
                 style={[styles.footerLink, { color: colors.primary }]}
                 onPress={() => router.push('/settings/terms')}
               >
                 {t('login.terms_link')}
               </Text>
-              {' '}및{' '}
+              {t('login.footer_and')}
               <Text
                 style={[styles.footerLink, { color: colors.primary }]}
                 onPress={() => router.push('/settings/privacy')}
               >
                 {t('login.privacy_link')}
               </Text>
-              에 동의하게 됩니다
+              {t('login.footer_suffix')}
             </Text>
           </View>
         </ScrollView>

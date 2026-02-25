@@ -183,7 +183,8 @@ export default function PredictionVoteCard({
   const { colors } = useTheme();
   const track = useTrackEvent();
   const { trackStep } = useHabitLoopTracking();
-  const { t } = useLocale();
+  const { t, language } = useLocale();
+  const isKo = language === 'ko';
   const styles = React.useMemo(() => createStyles(colors), [colors]);
   const scrollRef = React.useRef<ScrollView>(null);
   const [currentIndex, setCurrentIndex] = React.useState(0);
@@ -605,14 +606,14 @@ export default function PredictionVoteCard({
                     <View style={styles.explanationBox}>
                       {result.description && (
                         <View style={styles.explanationSection}>
-                          <Text style={styles.explanationLabel}>💡 배경</Text>
+                          <Text style={styles.explanationLabel}>{isKo ? '💡 배경' : '💡 Context'}</Text>
                           <Text style={styles.explanationText}>{result.description}</Text>
                         </View>
                       )}
                       {result.source && (
                         <View style={styles.explanationSection}>
                           <Text style={styles.explanationLabel}>
-                            {result.isCorrect ? '🎯 정답 근거' : '📌 정답 근거'}
+                            {result.isCorrect ? (isKo ? '🎯 정답 근거' : '🎯 Correct Reasoning') : (isKo ? '📌 정답 근거' : '📌 Answer Key')}
                           </Text>
                           <Text style={styles.explanationText}>{result.source}</Text>
                         </View>

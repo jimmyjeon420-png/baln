@@ -607,14 +607,19 @@ export async function triggerNewsCollectionIfNeeded(reason: 'empty' | 'stale'): 
 // 시간 포맷 유틸리티
 // ============================================================================
 
+const MONTH_ABBREV = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
 /**
  * 뉴스 피드 스타일 시간 표시
- * - 1시간 이내: "32분 전"
- * - 오늘: "10:34"
- * - 어제~7일: "3일 전"
- * - 그 이상: "2월 13일"
+ * - 1시간 이내: "32분 전" / "32m ago"
+ * - 오늘: "10:34" (공통)
+ * - 어제~7일: "3일 전" / "3d ago"
+ * - 그 이상: "2월 13일" / "Feb 13"
+ *
+ * @param dateString ISO 날짜 문자열
+ * @param locale 'ko' (기본) 또는 'en'
  */
-export function getTimeAgo(dateString: string): string {
+export function getTimeAgo(dateString: string, locale: string = getCurrentLanguage()): string {
   const now = new Date();
   const date = new Date(dateString);
   const diffMs = now.getTime() - date.getTime();
@@ -623,8 +628,10 @@ export function getTimeAgo(dateString: string): string {
   const hours = Math.floor(diffMs / 3600000);
   const days = Math.floor(diffMs / 86400000);
 
-  if (minutes < 1) return '방금';
-  if (minutes < 60) return `${minutes}분 전`;
+  const isKo = locale === 'ko';
+
+  if (minutes < 1) return isKo ? '방금' : 'Just now';
+  if (minutes < 60) return isKo ? `${minutes}분 전` : `${minutes}m ago`;
 
   // 오늘이면 시간만 표시 (실시간 뉴스 스타일)
   const isToday = now.getDate() === date.getDate()
@@ -636,12 +643,12 @@ export function getTimeAgo(dateString: string): string {
     return `${hh}:${mm}`;
   }
 
-  if (hours < 24) return `${hours}시간 전`;
-  if (days < 7) return `${days}일 전`;
+  if (hours < 24) return isKo ? `${hours}시간 전` : `${hours}h ago`;
+  if (days < 7) return isKo ? `${days}일 전` : `${days}d ago`;
 
   const m = date.getMonth() + 1;
   const d = date.getDate();
-  return `${m}월 ${d}일`;
+  return isKo ? `${m}월 ${d}일` : `${MONTH_ABBREV[date.getMonth()]} ${d}`;
 }
 
 /**

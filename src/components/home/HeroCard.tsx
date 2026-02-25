@@ -100,7 +100,7 @@ export default function HeroCard({
           <Text style={[styles.actionLabel, { color: colors.textSecondary }]}>{t('hero.health_score_label')}</Text>
           <View style={styles.scoreRow}>
             <Text style={[styles.scoreValue, { color: healthGradeColor }]}>
-              {healthScore}점
+              {healthScore}{t('hero.score_unit')}
             </Text>
           </View>
         </View>

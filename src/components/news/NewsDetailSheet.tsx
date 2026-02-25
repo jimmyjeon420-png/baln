@@ -26,6 +26,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../hooks/useTheme';
 import { type MarketNewsItem, getTimeAgo } from '../../hooks/useMarketNews';
 import { useNewsPortfolioMatch } from '../../hooks/useNewsPortfolioMatch';
+import { getCurrentLanguage } from '../../locales';
 
 const SCREEN_HEIGHT = Dimensions.get('window').height;
 
@@ -105,7 +106,7 @@ export default function NewsDetailSheet({ item, visible, onClose }: NewsDetailSh
               )}
               <View style={{ flex: 1 }} />
               <Text style={[styles.timeText, { color: colors.textTertiary }]}>
-                {getTimeAgo(item.published_at)}
+                {getTimeAgo(item.published_at, getCurrentLanguage())}
               </Text>
             </View>
 

@@ -139,10 +139,10 @@ async function analyzeGuruInsight(guru: typeof GURU_LIST[0], langInstruction = '
       organization: String(parsed.organization || guru.org),
       emoji: String(parsed.emoji || guru.emoji),
       topic: String(parsed.topic || guru.topic),
-      recentAction: String(parsed.recentAction || '최신 데이터 없음'),
+      recentAction: String(parsed.recentAction || (langInstruction.includes('English') ? 'No recent data available' : '최신 데이터 없음')),
       quote: String(parsed.quote || ''),
       sentiment: String(parsed.sentiment || 'NEUTRAL'),
-      reasoning: String(parsed.reasoning || '분석 데이터를 불러오지 못했습니다.'),
+      reasoning: String(parsed.reasoning || (langInstruction.includes('English') ? 'Analysis data unavailable' : '분석 데이터를 불러오지 못했습니다.')),
       relevantAssets: Array.isArray(parsed.relevantAssets) ? parsed.relevantAssets.map(String) : [],
       source: String(parsed.source || ''),
       action: validActions.includes(parsed.action) ? parsed.action : undefined,
@@ -153,16 +153,17 @@ async function analyzeGuruInsight(guru: typeof GURU_LIST[0], langInstruction = '
   } catch (error) {
     console.error(`[Task C] ${guru.name} 분석 실패:`, error.message);
     // 실패 시 기본값 반환
+    const isEn = langInstruction.includes('English');
     return {
       guruName: guru.name,
       guruNameEn: guru.nameEn,
       organization: guru.org,
       emoji: guru.emoji,
       topic: guru.topic,
-      recentAction: '최신 데이터를 불러오지 못했습니다.',
+      recentAction: isEn ? 'Unable to fetch latest data.' : '최신 데이터를 불러오지 못했습니다.',
       quote: '',
       sentiment: 'NEUTRAL',
-      reasoning: '분석 데이터가 아직 준비되지 않았습니다.',
+      reasoning: isEn ? 'Analysis data not yet available.' : '분석 데이터가 아직 준비되지 않았습니다.',
       relevantAssets: [],
       source: '',
     };

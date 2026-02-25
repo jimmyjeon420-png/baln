@@ -2,7 +2,7 @@ import { Stack, useRouter, useSegments, useNavigationContainerRef } from 'expo-r
 import { View, AppState, AppStateStatus } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
@@ -71,7 +71,10 @@ function ThemedAppContainer({ children }: { children: React.ReactNode }) {
 function AuthGate({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const segments = useSegments();
+  const rawSegments = useSegments();
+  // useSegments()는 매 렌더마다 새 배열 참조 반환 → useEffect 무한 루프 방지
+  const segmentPath = rawSegments.join('/');
+  const segments = useMemo(() => rawSegments, [segmentPath]);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [welcomeCredits, setWelcomeCredits] = useState(10);
   const [showAIConsent, setShowAIConsent] = useState(false);
