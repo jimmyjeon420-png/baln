@@ -26,12 +26,12 @@ export interface AiConsensus {
 export interface WhaleSignal {
   score: number;           // 0~100
   direction: 'YES' | 'NO' | 'MIXED';
-  top_trades: Array<{
+  top_trades: {
     side: string;
     outcome: string;
     size: number;
     price: number;
-  }>;
+  }[];
   total_whale_volume: number;
 }
 

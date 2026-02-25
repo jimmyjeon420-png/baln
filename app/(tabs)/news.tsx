@@ -29,7 +29,8 @@ import {
 } from '../../src/hooks/usePredictionFeed';
 import { usePickNews, type MarketNewsItem } from '../../src/hooks/useMarketNews';
 import PredictionCard from '../../src/components/prediction/PredictionCard';
-import NewsCard from '../../src/components/news/NewsCard';
+// NewsCard는 뉴스 피드에서 사용 예정 (현재 예측 시장 전환 중)
+// import NewsCard from '../../src/components/news/NewsCard';
 
 // ============================================================================
 // 탭/정책

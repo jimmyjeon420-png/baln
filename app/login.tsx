@@ -4,6 +4,7 @@
  */
 
 import React, { useState } from 'react';
+import { useRouter } from 'expo-router';
 import {
   View,
   Text,
@@ -27,6 +28,7 @@ import queryClient from '../src/services/queryClient';
 export default function LoginScreen() {
   const { signIn, signUp, signInWithOAuth, signInWithApple } = useAuth();
   const { colors } = useTheme();
+  const router = useRouter();
 
   // 상태
   const [email, setEmail] = useState('');
@@ -298,10 +300,24 @@ export default function LoginScreen() {
             </View>
           </View>
 
-          {/* 하단 안내 */}
+          {/* 하단 안내 — 약관/개인정보 링크 (Apple 심사 요구) */}
           <View style={styles.footerSection}>
             <Text style={[styles.footerText, { color: colors.textTertiary }]}>
-              계정을 만들면 이용약관 및 개인정보처리방침에 동의하게 됩니다
+              계정을 만들면{' '}
+              <Text
+                style={[styles.footerLink, { color: colors.primary }]}
+                onPress={() => router.push('/settings/terms')}
+              >
+                이용약관
+              </Text>
+              {' '}및{' '}
+              <Text
+                style={[styles.footerLink, { color: colors.primary }]}
+                onPress={() => router.push('/settings/privacy')}
+              >
+                개인정보처리방침
+              </Text>
+              에 동의하게 됩니다
             </Text>
           </View>
         </ScrollView>
@@ -474,5 +490,9 @@ const styles = StyleSheet.create({
     fontSize: SIZES.fXs,
     textAlign: 'center',
     lineHeight: 19,
+  },
+  footerLink: {
+    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
 });
