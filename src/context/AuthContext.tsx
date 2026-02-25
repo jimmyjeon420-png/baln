@@ -614,7 +614,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       console.error('Apple 로그인 실패:', error);
       Sentry.captureException(error, {
-        tags: { service: 'auth', provider: 'apple' },
+        tags: { service: 'auth', provider: 'apple', errorCode: error.code || 'unknown' },
+        extra: { errorMessage: error.message, errorDomain: error.domain },
       });
       throw error;
     }
