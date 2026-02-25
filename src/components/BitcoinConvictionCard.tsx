@@ -15,6 +15,7 @@ import {
   BitcoinSubScores,
   BitcoinLivePrice,
   ZONE_CONFIG,
+  getZoneLabel,
 } from '../services/bitcoinIntelligence';
 
 interface BitcoinConvictionCardProps {
@@ -175,7 +176,7 @@ export default function BitcoinConvictionCard({ data, livePrice }: BitcoinConvic
           <Text style={styles.title}>비트코인 확신 점수</Text>
         </View>
         <View style={[styles.zoneBadge, { backgroundColor: zoneConfig.color }]}>
-          <Text style={styles.zoneBadgeText}>{zoneConfig.label}</Text>
+          <Text style={styles.zoneBadgeText}>{getZoneLabel(data.zone)}</Text>
         </View>
       </View>
 
@@ -226,7 +227,7 @@ export default function BitcoinConvictionCard({ data, livePrice }: BitcoinConvic
         <View style={styles.statusLeft}>
           <View style={[styles.zoneDot, { backgroundColor: zoneConfig.color }]} />
           <Text style={[styles.zoneText, { color: zoneConfig.color }]}>
-            {zoneConfig.label}
+            {getZoneLabel(data.zone)}
           </Text>
         </View>
         {formattedPrice && (

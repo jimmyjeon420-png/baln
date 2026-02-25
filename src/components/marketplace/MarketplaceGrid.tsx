@@ -20,10 +20,12 @@ import { useMyCredits } from '../../hooks/useCredits';
 import { MARKETPLACE_ITEMS, getItemsByTier } from '../../data/marketplaceItems';
 import { spendCredits } from '../../services/creditService';
 import queryClient from '../../services/queryClient';
+import { useLocale } from '../../context/LocaleContext';
 
 export function MarketplaceGrid() {
   const { data: credits } = useMyCredits();
   const router = useRouter();
+  const { t } = useLocale();
   const currentBalance = credits?.balance ?? 0;
 
   // Tier별 상품 필터링
@@ -38,9 +40,9 @@ export function MarketplaceGrid() {
     // 비활성화 상품
     if (!item.enabled) {
       Alert.alert(
-        '곧 공개 예정',
-        'Premium 구독 시스템이 안정화되면 오픈됩니다. 조금만 기다려주세요!',
-        [{ text: '확인' }]
+        t('marketplace.alert_coming_soon_title'),
+        t('marketplace.alert_coming_soon_msg'),
+        [{ text: t('common.confirm') }]
       );
       return;
     }
@@ -48,11 +50,11 @@ export function MarketplaceGrid() {
     // 잔액 부족
     if (currentBalance < item.price) {
       Alert.alert(
-        '크레딧 부족',
-        `${item.name}을(를) 구매하려면 ${item.price - currentBalance}C가 더 필요합니다.`,
+        t('marketplace.alert_insufficient_title'),
+        t('marketplace.alert_insufficient_msg', { name: item.name, amount: item.price - currentBalance }),
         [
-          { text: '취소', style: 'cancel' },
-          { text: '충전하기', onPress: () => router.push('/marketplace/credits') },
+          { text: t('common.cancel'), style: 'cancel' },
+          { text: t('marketplace.alert_insufficient_charge'), onPress: () => router.push('/marketplace/credits') },
         ]
       );
       return;
@@ -60,19 +62,19 @@ export function MarketplaceGrid() {
 
     // 구매 확인
     Alert.alert(
-      '구매 확인',
-      `${item.name}\n${item.price}C (₩${item.priceKRW.toLocaleString()})을(를) 구매하시겠습니까?`,
+      t('marketplace.alert_confirm_title'),
+      t('marketplace.alert_confirm_msg', { name: item.name, price: item.price, krw: `₩${item.priceKRW.toLocaleString()}` }),
       [
-        { text: '취소', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: '구매',
+          text: t('marketplace.buy_button'),
           onPress: async () => {
             const result = await spendCredits(item.price, 'deep_dive', item.id);
             if (result.success) {
               queryClient.invalidateQueries({ queryKey: ['credits'] });
-              Alert.alert('구매 완료', `${item.name}이(가) 적용되었습니다!`);
+              Alert.alert(t('marketplace.alert_success_title'), t('marketplace.alert_success_msg', { name: item.name }));
             } else {
-              Alert.alert('구매 실패', result.errorMessage || '다시 시도해주세요.');
+              Alert.alert(t('marketplace.alert_fail_title'), result.errorMessage || t('marketplace.alert_fail_retry'));
             }
           },
         },
@@ -84,8 +86,8 @@ export function MarketplaceGrid() {
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* 헤더 */}
       <View style={styles.header}>
-        <Text style={styles.title}>마켓플레이스</Text>
-        <Text style={styles.subtitle}>크레딧으로 다양한 기능을 이용하세요</Text>
+        <Text style={styles.title}>{t('marketplace.title')}</Text>
+        <Text style={styles.subtitle}>{t('marketplace.subtitle')}</Text>
       </View>
 
       {/* Tier 1: 즉시 효용 */}
@@ -93,8 +95,8 @@ export function MarketplaceGrid() {
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionIcon}>⚡</Text>
           <View>
-            <Text style={styles.sectionTitle}>즉시 효용</Text>
-            <Text style={styles.sectionSubtitle}>당장 써볼 수 있는 기능</Text>
+            <Text style={styles.sectionTitle}>{t('marketplace.tier_instant')}</Text>
+            <Text style={styles.sectionSubtitle}>{t('marketplace.tier_instant_sub')}</Text>
           </View>
         </View>
         {tier1Items.map((item) => (
@@ -113,8 +115,8 @@ export function MarketplaceGrid() {
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionIcon}>🎁</Text>
           <View>
-            <Text style={styles.sectionTitle}>경험 확장</Text>
-            <Text style={styles.sectionSubtitle}>새로운 기능 체험</Text>
+            <Text style={styles.sectionTitle}>{t('marketplace.tier_experience')}</Text>
+            <Text style={styles.sectionSubtitle}>{t('marketplace.tier_experience_sub')}</Text>
           </View>
         </View>
         {tier2Items.map((item) => (
@@ -133,8 +135,8 @@ export function MarketplaceGrid() {
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionIcon}>👑</Text>
           <View>
-            <Text style={styles.sectionTitle}>충성 보상</Text>
-            <Text style={styles.sectionSubtitle}>장기 유저 특전 (출시 후 오픈)</Text>
+            <Text style={styles.sectionTitle}>{t('marketplace.tier_loyalty')}</Text>
+            <Text style={styles.sectionSubtitle}>{t('marketplace.tier_loyalty_sub')}</Text>
           </View>
         </View>
         {tier3Items.map((item) => (

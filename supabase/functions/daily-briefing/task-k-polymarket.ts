@@ -303,7 +303,8 @@ function getTickerReference(): string {
 }
 
 async function analyzeWithGemini(
-  batch: ProcessedMarket[]
+  batch: ProcessedMarket[],
+  lang = 'ko'
 ): Promise<GeminiAnalyzedMarket[]> {
   const tickerRef = getTickerReference();
 
@@ -319,7 +320,48 @@ async function analyzeWithGemini(
     slug: m.slug,
   }));
 
-  const prompt = `당신은 금융 예측 시장 전문 분석가입니다. Polymarket 예측 시장 데이터를 한국 투자자를 위해 분석하세요.
+  const prompt = lang === 'en'
+    ? `You are an expert financial prediction market analyst. Analyze Polymarket prediction market data for US/global investors.
+
+## Input Data
+${JSON.stringify(marketsForPrompt)}
+
+## Trackable Tickers
+${tickerRef}
+
+## Return a JSON array for each market:
+[
+  {
+    "idx": 0,
+    "question_ko": "Keep the original English question as-is (no translation needed)",
+    "category": "one of stock|crypto|macro (use pre_cat as a hint, override if needed)",
+    "related_tickers": ["array of related ticker symbols from the list above, empty array if none"],
+    "impact_analysis": {
+      "TICKER": {
+        "direction": "up|down|neutral",
+        "magnitude": "expected impact in the form +5~10%",
+        "reason_ko": "explanation of the impact in English"
+      }
+    },
+    "yes_label": "English YES outcome label (e.g. 'Goes up', 'Rate cut')",
+    "no_label": "English NO outcome label (e.g. 'Goes down', 'Holds steady')",
+    "summary_ko": "1-2 sentence summary in English of why this matters to investors (portfolio impact perspective)",
+    "ai_consensus": {
+      "direction": "YES or NO (AI judgment on whether this prediction is likely to materialize)",
+      "confidence": 75,
+      "reasoning_ko": "one-line reasoning in English (e.g. 'Fed rate hold likely given recent CPI data')"
+    }
+  }
+]
+
+## Rules:
+- category must be exactly one of "stock", "crypto", "macro"
+- if pre_cat is null, determine from question content
+- markets unrelated to finance/investing (politics, sports, etc.) get category "macro"
+- related_tickers only for tickers that are genuinely affected (empty array if unrelated)
+- impact_analysis only when related_tickers is non-empty
+- summary_ko should answer "If this prediction comes true, how does it affect your portfolio?"`
+    : `당신은 금융 예측 시장 전문 분석가입니다. Polymarket 예측 시장 데이터를 한국 투자자를 위해 분석하세요.
 
 ## 입력 데이터
 ${JSON.stringify(marketsForPrompt)}
@@ -598,7 +640,7 @@ export async function runPolymarketCollection(lang = 'ko'): Promise<PolymarketCo
       console.log(`[Task K] Gemini 배치 ${batchNum}/${totalBatches} (${batch.length}건)...`);
 
       try {
-        const analyzed = await analyzeWithGemini(batch);
+        const analyzed = await analyzeWithGemini(batch, lang);
         allResults.push(...analyzed);
         aiProcessed += analyzed.length;
 

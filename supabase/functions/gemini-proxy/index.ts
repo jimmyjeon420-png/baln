@@ -359,9 +359,12 @@ JSON만 반환 (설명 없이):
 
 async function generateMorningBriefing(reqData: MorningBriefingRequest['data'], langInstruction = '한국어로 자연스럽게 작성한다.') {
   const { portfolio, options } = reqData;
+  const isKorean = langInstruction.includes('한국어');
 
   const today = new Date();
-  const dateStr = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`;
+  const dateStr = isKorean
+    ? `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`
+    : today.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
   // 부동산 자산(RE_) 필터링
   const filteredPortfolio = portfolio.filter(p => !p.ticker?.startsWith('RE_'));
@@ -383,8 +386,12 @@ async function generateMorningBriefing(reqData: MorningBriefingRequest['data'], 
     };
   });
 
+  const briefingPersona = isKorean
+    ? `당신은 한국의 고액자산가 전담 투자 어드바이저입니다. 오늘(${dateStr}) 아침 브리핑을 작성해주세요.`
+    : `You are a dedicated investment advisor for high-net-worth individuals. Please write today's (${dateStr}) morning briefing.`;
+
   const prompt = `
-당신은 한국의 고액자산가 전담 투자 어드바이저입니다. 오늘(${dateStr}) 아침 브리핑을 작성해주세요.
+${briefingPersona}
 
 **포트폴리오 (수익률 포함):**
 ${JSON.stringify(portfolioWithProfitLoss, null, 2)}

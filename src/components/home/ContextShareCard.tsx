@@ -44,6 +44,7 @@ import {
   SENTIMENT_LABELS,
 } from '../../types/contextCard';
 import { REWARD_AMOUNTS } from '../../services/rewardService';
+import { useLocale } from '../../context/LocaleContext';
 
 // ============================================================================
 // 레이어 색상 (ContextBriefCard와 동일)
@@ -73,6 +74,7 @@ export default function ContextShareCard({
   const { heavyTap, success, error: errorHaptic } = useHaptics();
   const { rewarded, claimReward } = useShareReward();
   const track = useTrackEvent();
+  const { t } = useLocale();
 
   const sentimentColor = SENTIMENT_COLORS[data.sentiment];
   const sentimentIcon = SENTIMENT_ICONS[data.sentiment];
@@ -80,14 +82,14 @@ export default function ContextShareCard({
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
-    return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일`;
+    return date.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
   };
 
   const handleRewardAfterShare = useCallback(async () => {
     try {
       const result = await claimReward();
       if (result.success) {
-        setRewardMessage(`+${result.creditsEarned} 크레딧 획득!`);
+        setRewardMessage(t('share.context_card.reward_earned', { amount: result.creditsEarned }));
         setTimeout(() => setRewardMessage(null), 3000);
       }
     } catch {
@@ -101,24 +103,24 @@ export default function ContextShareCard({
 
     try {
       if (Platform.OS === 'web') {
-        Alert.alert('알림', '웹에서는 이미지 공유가 지원되지 않습니다.');
+        Alert.alert(t('common.error'), t('share.context_card.web_not_supported'));
         return;
       }
 
       const isAvailable = await Sharing.isAvailableAsync();
       if (!isAvailable) {
-        Alert.alert('공유 불가', '이 기기에서는 공유 기능을 사용할 수 없습니다.');
+        Alert.alert(t('share.context_card.fail_title'), t('share.context_card.not_available'));
         return;
       }
 
       if (!viewShotRef.current?.capture) {
-        throw new Error('캡처 컴포넌트를 찾을 수 없습니다.');
+        throw new Error('Capture component not found.');
       }
 
       const uri = await viewShotRef.current.capture();
       await Sharing.shareAsync(uri, {
         mimeType: 'image/png',
-        dialogTitle: 'baln.logic 맥락 카드 공유',
+        dialogTitle: t('share.context_card.dialog_title'),
         UTI: 'public.png',
       });
 
@@ -126,9 +128,9 @@ export default function ContextShareCard({
       track('share_card', { source: 'context_share_modal', sentiment: data.sentiment, date: data.date });
       await handleRewardAfterShare();
     } catch (err) {
-      console.warn('[Share] 공유 실패:', err);
+      console.warn('[Share] share failed:', err);
       errorHaptic();
-      Alert.alert('공유 실패', '카드 공유 중 오류가 발생했습니다.');
+      Alert.alert(t('share.context_card.fail_title'), t('share.context_card.fail_desc'));
     } finally {
       setSharing(false);
     }
@@ -156,7 +158,7 @@ export default function ContextShareCard({
             <Text style={styles.logoBaln}>bal<Text style={{ color: '#4CAF50' }}>n</Text></Text>
             <Text style={styles.logoDot}>.logic</Text>
           </View>
-          <Text style={styles.logoSubtext}>AI 맥락 분석</Text>
+          <Text style={styles.logoSubtext}>{t('share.context_card.logo_subtext')}</Text>
         </View>
         <Text style={styles.dateText}>{formatDate(data.date)}</Text>
       </View>
@@ -179,7 +181,7 @@ export default function ContextShareCard({
             <Text style={styles.layerNum}>1</Text>
           </View>
           <Ionicons name="time-outline" size={14} color={LAYER_COLORS.historical} />
-          <Text style={styles.layerTitle}>역사적 맥락</Text>
+          <Text style={styles.layerTitle}>{t('share.context_card.layer_historical')}</Text>
         </View>
         <Text style={styles.layerBody} numberOfLines={3}>{data.historicalContext}</Text>
       </View>
@@ -191,7 +193,7 @@ export default function ContextShareCard({
             <Text style={styles.layerNum}>2</Text>
           </View>
           <Ionicons name="git-network-outline" size={14} color={LAYER_COLORS.macro} />
-          <Text style={styles.layerTitle}>거시경제 체인</Text>
+          <Text style={styles.layerTitle}>{t('share.context_card.layer_macro')}</Text>
         </View>
         <View style={styles.chainContainer}>
           {displayChain.map((step, index) => (
@@ -216,7 +218,7 @@ export default function ContextShareCard({
             <Text style={styles.layerNum}>3</Text>
           </View>
           <Ionicons name="business-outline" size={14} color={LAYER_COLORS.institutional} />
-          <Text style={styles.layerTitle}>기관 행동</Text>
+          <Text style={styles.layerTitle}>{t('share.context_card.layer_institutional')}</Text>
         </View>
         <Text style={styles.layerBody} numberOfLines={3}>{data.institutionalBehavior}</Text>
       </View>
@@ -228,15 +230,15 @@ export default function ContextShareCard({
             <Text style={styles.layerNum}>4</Text>
           </View>
           <Ionicons name="wallet-outline" size={14} color={LAYER_COLORS.portfolio} />
-          <Text style={styles.layerTitle}>포트폴리오 영향</Text>
+          <Text style={styles.layerTitle}>{t('share.context_card.layer_portfolio')}</Text>
         </View>
         <View style={styles.impactRow}>
           <View style={[styles.impactBox, { borderColor: pctColor }]}>
             <Text style={[styles.impactNumber, { color: pctColor }]}>{pctText}</Text>
-            <Text style={styles.impactLabel}>자산 변동</Text>
+            <Text style={styles.impactLabel}>{t('share.context_card.asset_change_label')}</Text>
           </View>
           <Text style={styles.impactMessage} numberOfLines={2}>
-            {data.portfolioImpact.message || '영향도 분석 완료'}
+            {data.portfolioImpact.message || t('share.context_card.impact_default')}
           </Text>
         </View>
       </View>
@@ -246,7 +248,7 @@ export default function ContextShareCard({
         <View style={styles.ctaBox}>
           <Ionicons name="open-outline" size={14} color="#4CAF50" />
           <Text style={styles.ctaText}>
-            bal<Text style={{ color: '#4CAF50' }}>n</Text>.app에서 전체 분석 보기
+            {t('share.context_card.cta_text')}
           </Text>
         </View>
       </View>
@@ -273,7 +275,7 @@ export default function ContextShareCard({
       <View style={styles.modalContainer}>
         {/* 모달 헤더 */}
         <View style={styles.modalHeader}>
-          <Text style={styles.modalTitle}>맥락 카드 공유</Text>
+          <Text style={styles.modalTitle}>{t('share.context_card.modal_title')}</Text>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
             <Ionicons name="close" size={24} color="#888888" />
           </TouchableOpacity>
@@ -318,7 +320,7 @@ export default function ContextShareCard({
             ) : (
               <>
                 <Ionicons name="share-social" size={18} color="#FFFFFF" />
-                <Text style={styles.shareButtonText}>인스타그램 스토리 공유</Text>
+                <Text style={styles.shareButtonText}>{t('share.context_card.share_button')}</Text>
                 {!rewarded && (
                   <View style={styles.rewardHint}>
                     <Text style={styles.rewardHintText}>+{REWARD_AMOUNTS.shareCard}</Text>

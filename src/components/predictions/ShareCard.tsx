@@ -30,6 +30,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { useTrackEvent } from '../../hooks/useAnalytics';
+import { useLocale } from '../../context/LocaleContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_SIZE = Math.min(SCREEN_WIDTH - 32, 400); // 화면 크기 대응
@@ -51,6 +52,7 @@ export default function ShareCard({
   const [isVisible, setIsVisible] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
   const track = useTrackEvent();
+  const { t } = useLocale();
 
   // 공유하기 버튼 클릭 → 모달 열기
   const handleOpenModal = () => {
@@ -60,7 +62,7 @@ export default function ShareCard({
   // 공유 실행 (이미지 캡처 + Share Sheet)
   const handleShare = async () => {
     if (!viewShotRef.current) {
-      Alert.alert('오류', '공유 카드를 준비하는 중입니다. 잠시 후 다시 시도해주세요.');
+      Alert.alert(t('share.stats_card.error_title'), t('share.stats_card.error_preparing'));
       return;
     }
 
@@ -71,20 +73,20 @@ export default function ShareCard({
       const uri = await viewShotRef.current.capture?.();
 
       if (!uri) {
-        throw new Error('이미지 캡처에 실패했습니다.');
+        throw new Error('Image capture failed.');
       }
 
       // 2. 공유 가능 여부 확인
       const isAvailable = await Sharing.isAvailableAsync();
       if (!isAvailable) {
-        Alert.alert('오류', '이 기기에서는 공유 기능을 사용할 수 없습니다.');
+        Alert.alert(t('share.stats_card.error_title'), t('share.stats_card.error_not_available'));
         return;
       }
 
       // 3. 네이티브 Share Sheet 열기
       await Sharing.shareAsync(uri, {
         mimeType: 'image/png',
-        dialogTitle: '내 투자 예측 적중률 공유',
+        dialogTitle: t('share.stats_card.dialog_title'),
         UTI: 'public.png',
       });
 
@@ -94,10 +96,10 @@ export default function ShareCard({
       setIsVisible(false);
 
       // 성공 메시지
-      Alert.alert('공유 완료', '투자 예측 적중률을 공유했습니다!');
+      Alert.alert(t('share.stats_card.share_success_title'), t('share.stats_card.share_success_desc'));
     } catch (error) {
       console.error('Share error:', error);
-      Alert.alert('공유 실패', '이미지 공유 중 오류가 발생했습니다.');
+      Alert.alert(t('share.stats_card.share_fail_title'), t('share.stats_card.share_fail_desc'));
     } finally {
       setIsCapturing(false);
     }
@@ -118,7 +120,7 @@ export default function ShareCard({
           style={styles.shareButtonGradient}
         >
           <Ionicons name="share-social-outline" size={20} color="#FFFFFF" />
-          <Text style={styles.shareButtonText}>인스타그램 공유</Text>
+          <Text style={styles.shareButtonText}>{t('share.stats_card.share_button')}</Text>
         </LinearGradient>
       </TouchableOpacity>
 
@@ -164,7 +166,7 @@ export default function ShareCard({
 
                 {/* 중앙: 적중률 대형 숫자 */}
                 <View style={styles.cardCenter}>
-                  <Text style={styles.cardTitle}>내 투자 예측 적중률</Text>
+                  <Text style={styles.cardTitle}>{t('share.stats_card.card_title')}</Text>
                   <View style={styles.accuracyContainer}>
                     <Text style={styles.accuracyNumber}>{accuracyRate}</Text>
                     <Text style={styles.accuracyPercent}>%</Text>
@@ -173,13 +175,13 @@ export default function ShareCard({
                   {/* 통계 그리드 */}
                   <View style={styles.statsRow}>
                     <View style={styles.statBox}>
-                      <Text style={styles.statValue}>{totalVotes}회</Text>
-                      <Text style={styles.statLabel}>총 투표</Text>
+                      <Text style={styles.statValue}>{totalVotes}</Text>
+                      <Text style={styles.statLabel}>{t('share.stats_card.stat_total_votes')}</Text>
                     </View>
                     <View style={styles.statDivider} />
                     <View style={styles.statBox}>
-                      <Text style={styles.statValue}>🔥 {currentStreak}회</Text>
-                      <Text style={styles.statLabel}>연속 적중</Text>
+                      <Text style={styles.statValue}>🔥 {currentStreak}</Text>
+                      <Text style={styles.statLabel}>{t('share.stats_card.stat_streak')}</Text>
                     </View>
                   </View>
                 </View>
@@ -207,13 +209,13 @@ export default function ShareCard({
               ) : (
                 <>
                   <Ionicons name="logo-instagram" size={24} color="#FFFFFF" />
-                  <Text style={styles.shareActionText}>공유하기</Text>
+                  <Text style={styles.shareActionText}>{t('share.stats_card.share_action')}</Text>
                 </>
-              )}
+  )}
             </TouchableOpacity>
 
             <Text style={styles.modalHint}>
-              인스타그램 스토리나 피드에 공유해보세요!
+              {t('share.stats_card.modal_hint')}
             </Text>
           </View>
         </View>

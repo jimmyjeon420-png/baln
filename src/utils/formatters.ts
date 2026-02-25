@@ -55,7 +55,7 @@ export function formatLocalDateFull(dateStr: string | Date): string {
   }
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'];
-  return t('format.date_full', { year, monthName: monthNames[d.getMonth()], day });
+  return t('format.date_full', { year, month: monthNames[d.getMonth()], day });
 }
 
 /**
@@ -69,7 +69,7 @@ export function formatMonthYear(date: Date): string {
   }
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'];
-  return t('format.date_month_year', { year, monthName: monthNames[date.getMonth()] });
+  return t('format.date_month_year', { year, month: monthNames[date.getMonth()] });
 }
 
 /**

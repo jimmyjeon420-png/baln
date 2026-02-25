@@ -29,19 +29,14 @@ import { sentimentToExpression } from '../../../src/services/characterService';
 import { useLocale } from '../../../src/context/LocaleContext';
 
 // ─────────────────────────────────────────────
-// 정적 구루 프로필 데이터
+// 정적 구루 프로필 데이터 (번역 키 포함)
 // ─────────────────────────────────────────────
 
 interface GuruProfile {
   id: string;
-  fullName: string;
   org: string;
   emoji: string;
   accentColor: string;
-  philosophy: string;
-  strategy: string;
-  keyPrinciple: string;
-  track: string;
   /** Insights DB에서 이 구루를 찾기 위한 키워드 */
   matchKeywords: string[];
 }
@@ -49,50 +44,30 @@ interface GuruProfile {
 const GURU_PROFILES: Record<string, GuruProfile> = {
   dalio: {
     id: 'dalio',
-    fullName: '레이 달리오 (Ray Dalio)',
     org: 'Bridgewater Associates',
     emoji: '🌊',
     accentColor: '#4CAF50',
-    philosophy: 'All Weather 전략 — 어떤 경제 환경에서도 살아남는 분산 포트폴리오를 구성합니다. 성장·침체·인플레이션·디플레이션 4가지 국면 모두를 커버하는 것이 핵심입니다.',
-    strategy: '주식 30% + 장기채 40% + 중기채 15% + 금 7.5% + 원자재 7.5%. 상관관계가 낮은 자산을 섞어 어떤 환경에서도 손실을 최소화합니다.',
-    keyPrinciple: '"고통 + 성찰 = 진보" — 손실에서 배우고 원칙을 세워라. 진짜 성공은 올바른 의사결정 시스템에서 나온다.',
-    track: '2008년 금융위기에 +9.5% 수익 달성. 운용 자산 1,500억 달러, 지난 30년 평균 연 12% 수익률. 모든 헤지펀드 중 역대 최고 수익 기록.',
     matchKeywords: ['달리오', 'dalio', 'bridgewater'],
   },
   buffett: {
     id: 'buffett',
-    fullName: '워렌 버핏 (Warren Buffett)',
     org: 'Berkshire Hathaway',
     emoji: '🔴',
     accentColor: '#FF5722',
-    philosophy: '가치 투자 — 내재 가치보다 싸게 사서 오래 보유하는 장기 복리 전략입니다. "10년을 보유할 마음이 없으면 10분도 보유하지 마라."',
-    strategy: '우량 기업에 집중 투자 (AAPL, OXY, BRK 등). 현금 비중 25% 항상 유지. 이해 못하는 사업엔 절대 투자하지 않는 "능력의 원" 원칙.',
-    keyPrinciple: '"남들이 탐욕스러울 때 두려워하고, 남들이 두려울 때 탐욕스러워라." 시장의 공포를 기회로 활용하는 역발상 투자.',
-    track: '지난 58년 연평균 +19.8%. 1964년 1만 달러 투자 시 현재 1억 4천만 달러. S&P500 대비 3배 초과 수익.',
     matchKeywords: ['버핏', 'buffett', 'berkshire'],
   },
   cathie_wood: {
     id: 'cathie_wood',
-    fullName: '캐시 우드 (Cathie Wood)',
     org: 'ARK Invest',
     emoji: '🚀',
     accentColor: '#9C27B0',
-    philosophy: '파괴적 혁신 투자 — AI·블록체인·유전체학·우주 등 5년 후 세상을 바꿀 기술에 집중합니다. 단기 변동성은 혁신의 대가입니다.',
-    strategy: '성장주 집중 (TSLA, COIN, ROKU, PATH 등). 분산 최소화, 확신이 클수록 비중 확대. 5년 이상 장기 보유 원칙.',
-    keyPrinciple: '"혁신은 선형이 아니라 지수적으로 성장한다." 오늘의 비싼 주식이 내일의 저렴한 주식이 될 수 있다.',
-    track: '2020년 ARK Innovation ETF +152% 수익. 장기 AI 낙관론, 비트코인 $1.5M 목표치 제시.',
     matchKeywords: ['캐시', 'cathie', 'ark', '우드'],
   },
   druckenmiller: {
     id: 'druckenmiller',
-    fullName: '스탠리 드러킨밀러 (Stanley Druckenmiller)',
     org: 'Duquesne Capital Management',
     emoji: '🦅',
     accentColor: '#FFB74D',
-    philosophy: '매크로 트렌드 + 집중 투자 — 거시 경제 흐름을 읽고, 확신이 들면 한 방향에 크게 베팅합니다. "올바른 판단에 소극적으로 베팅하면 의미가 없다."',
-    strategy: '탑다운 매크로: 금리·통화·재정 정책 분석 → 승률 높은 비대칭 기회 포착 → 레버리지 집중 투자. 틀리면 즉시 손절, 맞으면 추가 매수.',
-    keyPrinciple: '"중요한 건 맞고 틀리는 빈도가 아니라, 맞았을 때 얼마나 버느냐다." 승률보다 수익의 비대칭성이 핵심.',
-    track: '30년간 연평균 +30% 수익률, 단 한 해도 마이너스 없음. 1992년 소로스와 영국 파운드 공매도로 $1B 이상 수익. Duquesne 청산 시 자산 $12B.',
     matchKeywords: ['드러킨밀러', 'druckenmiller', 'duquesne', '스탠리'],
   },
 };
@@ -173,7 +148,7 @@ export default function GuruDetailScreen() {
               fallbackEmoji={profile.emoji}
             />
           </View>
-          <Text style={styles.heroName}>{profile.fullName}</Text>
+          <Text style={styles.heroName}>{t(`guru.profiles.${profile.id}.full_name`)}</Text>
           <Text style={styles.heroOrg}>{profile.org}</Text>
 
           {isMyPhilosophy && (
@@ -192,7 +167,7 @@ export default function GuruDetailScreen() {
             <Text style={styles.cardIcon}>🎯</Text>
             <Text style={styles.cardTitle}>{t('guru.detail.philosophy_label')}</Text>
           </View>
-          <Text style={styles.cardBody}>{profile.philosophy}</Text>
+          <Text style={styles.cardBody}>{t(`guru.profiles.${profile.id}.philosophy`)}</Text>
         </View>
 
         {/* ── 전략 카드 ── */}
@@ -201,9 +176,9 @@ export default function GuruDetailScreen() {
             <Text style={styles.cardIcon}>⚙️</Text>
             <Text style={styles.cardTitle}>{t('guru.detail.strategy_label')}</Text>
           </View>
-          <Text style={styles.cardBody}>{profile.strategy}</Text>
+          <Text style={styles.cardBody}>{t(`guru.profiles.${profile.id}.strategy`)}</Text>
           <View style={[styles.quoteBox, { borderLeftColor: profile.accentColor }]}>
-            <Text style={styles.quoteText}>"{profile.keyPrinciple}"</Text>
+            <Text style={styles.quoteText}>"{t(`guru.profiles.${profile.id}.key_principle`)}"</Text>
           </View>
         </View>
 
@@ -213,7 +188,7 @@ export default function GuruDetailScreen() {
             <Text style={styles.cardIcon}>📊</Text>
             <Text style={styles.cardTitle}>{t('guru.detail.track_label')}</Text>
           </View>
-          <Text style={styles.cardBody}>{profile.track}</Text>
+          <Text style={styles.cardBody}>{t(`guru.profiles.${profile.id}.track`)}</Text>
         </View>
 
         {/* ── 구조화 분석 카드 (structured data 있을 때만) ── */}

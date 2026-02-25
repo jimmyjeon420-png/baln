@@ -42,6 +42,8 @@ import supabase, {
 } from '../src/services/supabase';
 import { useAuth } from '../src/context/AuthContext';
 import { useTheme } from '../src/hooks/useTheme';
+import { useLocale } from '../src/context/LocaleContext';
+import { t as rawT } from '../src/locales';
 import { searchStocks, StockItem, getCategoryLabel, getCategoryColor } from '../src/data/stockList';
 import { fetchExchangeRate } from '../src/services/stockDataService';
 import { SHARED_PORTFOLIO_KEY } from '../src/hooks/useSharedPortfolio';
@@ -297,7 +299,7 @@ async function runDiagnostic() {
   }
 
   const totalMs = Date.now() - startTotal;
-  Alert.alert('진단 결과', results.join('\n') + `\n\n총: ${totalMs}ms`);
+  Alert.alert(rawT('add_asset.diagnostic_title'), results.join('\n') + `\n\n총: ${totalMs}ms`);
 }
 
 // ── 메인 컴포넌트 ──
@@ -307,6 +309,7 @@ export default function AddAssetScreen() {
   const queryClient = useQueryClient();
   const { colors } = useTheme();
   const { user: authUser } = useAuth();
+  const { t } = useLocale();
 
   // --- 자산 유형 탭 ---
   const [assetCategory, setAssetCategory] = useState<'stock' | 'cash' | 'bond'>('stock');
@@ -373,7 +376,7 @@ export default function AddAssetScreen() {
       console.warn('[AddAsset] 30초 안전 타임아웃 — 저장 강제 종료');
       setSaving(false);
       savingRef.current = false;
-      Alert.alert('저장 시간 초과', '저장이 너무 오래 걸리고 있습니다. 네트워크를 확인하고 다시 시도해주세요.');
+      Alert.alert(t('add_asset.alert_save_timeout_title'), t('add_asset.alert_save_timeout_msg'));
     }, 30000);
     return () => clearTimeout(timer);
   }, [saving]);
@@ -426,7 +429,7 @@ export default function AddAssetScreen() {
           .not('ticker', 'like', 'RE_%')  // 부동산 제외
           .order('current_value', { ascending: false }),
         15000,
-        '자산 목록 조회 시간이 초과되었습니다.',
+        t('add_asset.loading_assets'),
       );
 
       if (!error && data) {
@@ -494,12 +497,12 @@ export default function AddAssetScreen() {
 
   const deleteAsset = useCallback(async (asset: ExistingAsset) => {
     Alert.alert(
-      '자산 삭제',
-      `"${asset.name}" (${asset.ticker})을(를) 삭제하시겠습니까?`,
+      t('add_asset.alert_delete_title'),
+      t('add_asset.alert_delete_msg', { name: asset.name, ticker: asset.ticker }),
       [
-        { text: '취소', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: '삭제',
+          text: t('common.delete'),
           style: 'destructive',
           onPress: async () => {
             try {
@@ -514,7 +517,7 @@ export default function AddAssetScreen() {
               // 캐시 무효화
               queryClient.invalidateQueries({ queryKey: SHARED_PORTFOLIO_KEY });
             } catch (err) {
-              Alert.alert('삭제 실패', '자산을 삭제할 수 없습니다. 다시 시도해주세요.');
+              Alert.alert(t('add_asset.alert_delete_failed_title'), t('add_asset.alert_delete_failed_msg'));
             }
           },
         },
@@ -547,14 +550,14 @@ export default function AddAssetScreen() {
   const handleCashSave = async () => {
     const amount = parseFloat(cashAmount.replace(/,/g, ''));
     if (!amount || amount <= 0) {
-      Alert.alert('금액 입력', '보유 금액을 입력해주세요.');
+      Alert.alert(t('add_asset.alert_cash_amount_title'), t('add_asset.alert_cash_amount_msg'));
       return;
     }
     if (cashSaving) return;
     setCashSaving(true);
     try {
       const user = authUser ?? await getCurrentUser();
-      if (!user) throw new Error('로그인이 필요합니다.');
+      if (!user) throw new Error(t('add_asset.alert_login_required'));
 
       let krwAmount = amount;
       // 달러 예금은 환율 변환
@@ -583,7 +586,7 @@ export default function AddAssetScreen() {
           .upsert(upsertData, { onConflict: 'user_id,ticker', ignoreDuplicates: false })
           .select(),
         15000,
-        '저장 시간이 초과되었습니다.',
+        t('add_asset.alert_save_timeout_msg'),
       );
       if (error) throw error;
 
@@ -592,15 +595,15 @@ export default function AddAssetScreen() {
       setCashAmount('');
 
       Alert.alert(
-        '등록 완료',
-        `${meta.name} ₩${krwAmount.toLocaleString()}이(가) 등록되었습니다.`,
+        t('add_asset.alert_cash_done_title'),
+        t('add_asset.alert_cash_done_msg', { name: meta.name, amount: krwAmount.toLocaleString() }),
         [
-          { text: '처방전 보기', onPress: () => router.push('/(tabs)/rebalance') },
-          { text: '더 추가하기', style: 'cancel' },
+          { text: t('add_asset.alert_done_view_prescription'), onPress: () => router.push('/(tabs)/rebalance') },
+          { text: t('add_asset.alert_done_add_more'), style: 'cancel' },
         ],
       );
     } catch (err) {
-      Alert.alert('저장 실패', err instanceof Error ? err.message : '저장 중 오류가 발생했습니다.');
+      Alert.alert(t('add_asset.alert_save_failed_title'), err instanceof Error ? err.message : t('common.error'));
     } finally {
       setCashSaving(false);
     }
@@ -615,7 +618,7 @@ export default function AddAssetScreen() {
 
     if (!selectedStock) {
       savingRef.current = false;
-      Alert.alert('종목 선택', '등록할 종목을 먼저 선택해주세요.');
+      Alert.alert(t('add_asset.alert_select_stock_title'), t('add_asset.alert_select_stock_msg'));
       return;
     }
 
@@ -624,7 +627,7 @@ export default function AddAssetScreen() {
 
     if (!q || q <= 0) {
       savingRef.current = false;
-      Alert.alert('수량 입력', '보유 수량을 입력해주세요.');
+      Alert.alert(t('add_asset.alert_quantity_title'), t('add_asset.alert_quantity_msg'));
       return;
     }
 
@@ -632,7 +635,7 @@ export default function AddAssetScreen() {
     try {
       const user = authUser ?? await getCurrentUser();
 
-      if (!user) throw new Error('로그인이 필요합니다. 앱을 재시작하고 다시 로그인해주세요.');
+      if (!user) throw new Error(t('add_asset.alert_login_required'));
 
       const ticker = selectedStock.ticker.trim();
       const name = selectedStock.name.trim();
@@ -681,7 +684,7 @@ export default function AddAssetScreen() {
           })
           .select('id'),
         15000,
-        '저장 시간이 초과되었습니다. 다시 시도해주세요.',
+        t('add_asset.alert_save_timeout_msg'),
       );
 
       if (upsertError) throw upsertError;
@@ -712,24 +715,29 @@ export default function AddAssetScreen() {
       try {
         const reward = await grantAssetRegistrationReward(updatedCount);
         if (reward.success) {
-          rewardMsg = `\n\n🎉 자산 3개 등록 보상 +${REWARD_AMOUNTS.assetRegistration}C (₩${REWARD_AMOUNTS.assetRegistration * 100}) 적립!`;
+          rewardMsg = t('add_asset.alert_done_reward', {
+            amount: REWARD_AMOUNTS.assetRegistration,
+            krw: REWARD_AMOUNTS.assetRegistration * 100,
+          });
         }
       } catch (err) {
         console.warn('[AddAsset] 자산 등록 보상 확인 실패:', err);
       }
 
-      const unit = selectedStock.category === 'crypto' ? '개' : '주';
+      const unit = selectedStock.category === 'crypto'
+        ? t('add_asset.alert_done_unit_crypto')
+        : t('add_asset.alert_done_unit_stock');
       const valueInfo = currentValue > 0 ? ` (₩${currentValue.toLocaleString()})` : '';
       Alert.alert(
-        '등록 완료',
+        t('add_asset.alert_done_title'),
         `${name} ${finalQuantity}${unit}${valueInfo}이(가) 등록되었습니다.${rewardMsg}`,
         [
           {
-            text: '처방전 보기',
+            text: t('add_asset.alert_done_view_prescription'),
             onPress: () => router.push('/(tabs)/rebalance'),
           },
           {
-            text: '더 추가하기',
+            text: t('add_asset.alert_done_add_more'),
             style: 'cancel',
           },
         ],
@@ -737,8 +745,8 @@ export default function AddAssetScreen() {
     } catch (error) {
       console.error('[AddAsset] 저장 실패:', error);
       Alert.alert(
-        '저장 실패',
-        error instanceof Error ? error.message : '자산 저장 중 오류가 발생했습니다.',
+        t('add_asset.alert_save_failed_title'),
+        error instanceof Error ? error.message : t('common.error'),
       );
     } finally {
       setSaving(false);
@@ -765,7 +773,7 @@ export default function AddAssetScreen() {
   const handleScreenshotParse = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
-      Alert.alert('권한 필요', '사진 접근 권한이 필요합니다. 설정에서 허용해주세요.');
+      Alert.alert(t('add_asset.alert_ocr_perm_title'), t('add_asset.alert_ocr_perm_msg'));
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -789,13 +797,13 @@ export default function AddAssetScreen() {
       });
 
       if (error || !data?.success || !data?.data?.assets?.length) {
-        Alert.alert('파싱 실패', '자산 정보를 인식하지 못했어요. 다른 스크린샷을 시도해보세요.');
+        Alert.alert(t('add_asset.alert_ocr_fail_title'), t('add_asset.alert_ocr_fail_msg'));
         return;
       }
       setParsedSource('ocr');
       setParsedAssets(data.data.assets);
     } catch (err) {
-      Alert.alert('오류', '스크린샷 분석 중 오류가 발생했습니다.');
+      Alert.alert(t('add_asset.alert_ocr_error_title'), t('add_asset.alert_ocr_error_msg'));
     } finally {
       setScreenshotParsing(false);
     }
@@ -804,7 +812,7 @@ export default function AddAssetScreen() {
   const handleCsvParse = () => {
     const input = csvInput.trim();
     if (!input) {
-      Alert.alert('입력 필요', 'CSV 내용을 붙여넣어 주세요.');
+      Alert.alert(t('add_asset.alert_csv_empty_title'), t('add_asset.alert_csv_empty_msg'));
       return;
     }
 
@@ -813,8 +821,8 @@ export default function AddAssetScreen() {
       const parsed = parsePastedCsv(input);
       if (parsed.length === 0) {
         Alert.alert(
-          '파싱 실패',
-          'CSV 형식을 인식하지 못했어요.\n예시: 종목명,티커,수량,총매수금액'
+          t('add_asset.alert_csv_fail_title'),
+          t('add_asset.alert_csv_fail_msg')
         );
         return;
       }
@@ -831,7 +839,7 @@ export default function AddAssetScreen() {
   const handleBulkSave = async (assets: ParsedAsset[]) => {
     const user = authUser ?? await getCurrentUser();
     if (!user) {
-      Alert.alert('오류', '로그인이 필요합니다.');
+      Alert.alert(t('common.error'), t('add_asset.alert_bulk_fail_msg'));
       return;
     }
     let successCount = 0;
@@ -860,7 +868,7 @@ export default function AddAssetScreen() {
     closeParsedAssetsModal();
     queryClient.invalidateQueries({ queryKey: SHARED_PORTFOLIO_KEY });
     await loadExistingAssets();
-    Alert.alert('등록 완료', `${successCount}개 자산이 등록되었습니다.`);
+    Alert.alert(t('add_asset.alert_bulk_done_title'), t('add_asset.alert_bulk_done_msg', { count: successCount }));
   };
 
   // ─── 숫자 키보드 "완료" 버튼 (iOS decimal-pad에는 return 키가 없음) ───
@@ -879,7 +887,7 @@ export default function AddAssetScreen() {
               onPress={() => Keyboard.dismiss()}
               style={styles.keyboardDoneButton}
             >
-              <Text style={[styles.keyboardDoneText, { color: colors.primary }]}>완료</Text>
+              <Text style={[styles.keyboardDoneText, { color: colors.primary }]}>{t('add_asset.keyboard_done')}</Text>
             </TouchableOpacity>
           </View>
         </InputAccessoryView>
@@ -899,7 +907,7 @@ export default function AddAssetScreen() {
           <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={28} color={colors.primary} />
           </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>자산 추가</Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{t('add_asset.title')}</Text>
           <TouchableOpacity onPress={runDiagnostic}>
             <Ionicons name="pulse-outline" size={24} color={colors.primary} />
           </TouchableOpacity>
@@ -914,8 +922,8 @@ export default function AddAssetScreen() {
             <Ionicons name="home" size={22} color={colors.primary} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={[styles.realEstateTitle, { color: colors.primary }]}>부동산 자산 등록</Text>
-            <Text style={[styles.realEstateDesc, { color: colors.textSecondary }]}>아파트 검색 → 시세 확인 → 포트폴리오 추가</Text>
+            <Text style={[styles.realEstateTitle, { color: colors.primary }]}>{t('add_asset.real_estate_shortcut_title')}</Text>
+            <Text style={[styles.realEstateDesc, { color: colors.textSecondary }]}>{t('add_asset.real_estate_shortcut_desc')}</Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
         </TouchableOpacity>
@@ -925,11 +933,11 @@ export default function AddAssetScreen() {
           <View style={[styles.assetCategoryRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             {(
               [
-                { key: 'stock', label: '주식·ETF·크립토', icon: 'trending-up-outline' },
-                { key: 'cash', label: '현금', icon: 'wallet-outline' },
-                { key: 'bond', label: '채권', icon: 'document-text-outline' },
+                { key: 'stock', labelKey: 'add_asset.category_stock', icon: 'trending-up-outline' },
+                { key: 'cash', labelKey: 'add_asset.category_cash', icon: 'wallet-outline' },
+                { key: 'bond', labelKey: 'add_asset.category_bond', icon: 'document-text-outline' },
               ] as const
-            ).map(({ key, label, icon }) => (
+            ).map(({ key, labelKey, icon }) => (
               <TouchableOpacity
                 key={key}
                 style={[
@@ -952,7 +960,7 @@ export default function AddAssetScreen() {
                   styles.assetCategoryTabText,
                   { color: assetCategory === key ? colors.primary : colors.textSecondary },
                 ]}>
-                  {label}
+                  {t(labelKey)}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -969,7 +977,7 @@ export default function AddAssetScreen() {
             <View style={styles.infoBannerHeader}>
               <Ionicons name="information-circle-outline" size={16} color={colors.primary} />
               <Text style={[styles.infoBannerTitle, { color: colors.textPrimary }]}>
-                증권사 수익률과 차이가 나나요?
+                {t('add_asset.info_banner_title')}
               </Text>
               <Ionicons
                 name={infoExpanded ? 'chevron-up' : 'chevron-down'}
@@ -980,12 +988,10 @@ export default function AddAssetScreen() {
             {infoExpanded && (
               <View style={styles.infoBannerBody}>
                 <Text style={[styles.infoBannerText, { color: colors.textSecondary }]}>
-                  {'1. 총 매수금액(원화)을 직접 입력하면 가장 정확합니다\n'}
-                  {'2. 환차익/환차손은 실시간으로 반영되지 않아 차이가 생길 수 있어요\n'}
-                  {'3. 코인은 거래소 가격과 글로벌 가격이 다를 수 있어요 (김치 프리미엄)'}
+                  {t('add_asset.info_banner_text')}
                 </Text>
                 <Text style={[styles.infoBannerHint, { color: colors.primary }]}>
-                  아래 "빠른 가져오기"에서 OCR / CSV로 여러 종목을 한 번에 등록할 수 있어요.
+                  {t('add_asset.info_banner_hint')}
                 </Text>
               </View>
             )}
@@ -994,9 +1000,9 @@ export default function AddAssetScreen() {
 
         {!editingAsset && (
           <View style={[styles.quickImportCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>빠른 가져오기</Text>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{t('add_asset.quick_import_title')}</Text>
             <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
-              붙여넣기나 OCR로 여러 자산을 한 번에 추가하세요
+              {t('add_asset.quick_import_subtitle')}
             </Text>
             <View style={styles.quickImportRow}>
               <TouchableOpacity
@@ -1004,8 +1010,8 @@ export default function AddAssetScreen() {
                 onPress={() => setCsvModalVisible(true)}
               >
                 <Ionicons name="document-text-outline" size={18} color={colors.primary} />
-                <Text style={[styles.quickImportTitle, { color: colors.textPrimary }]}>CSV 붙여넣기</Text>
-                <Text style={[styles.quickImportDesc, { color: colors.textSecondary }]}>엑셀 내역 일괄 등록</Text>
+                <Text style={[styles.quickImportTitle, { color: colors.textPrimary }]}>{t('add_asset.csv_button_title')}</Text>
+                <Text style={[styles.quickImportDesc, { color: colors.textSecondary }]}>{t('add_asset.csv_button_desc')}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -1018,8 +1024,8 @@ export default function AddAssetScreen() {
                 ) : (
                   <Ionicons name="camera-outline" size={18} color={colors.primary} />
                 )}
-                <Text style={[styles.quickImportTitle, { color: colors.textPrimary }]}>OCR 스크린샷</Text>
-                <Text style={[styles.quickImportDesc, { color: colors.textSecondary }]}>증권사 화면 자동 인식</Text>
+                <Text style={[styles.quickImportTitle, { color: colors.textPrimary }]}>{t('add_asset.ocr_button_title')}</Text>
+                <Text style={[styles.quickImportDesc, { color: colors.textSecondary }]}>{t('add_asset.ocr_button_desc')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -1028,10 +1034,10 @@ export default function AddAssetScreen() {
         {/* ─── 빠른 추가 섹션 ─── */}
         <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-            {editingAsset ? '자산 수정' : assetCategory === 'cash' ? '현금 등록' : assetCategory === 'bond' ? '채권 등록' : '빠른 추가'}
+            {editingAsset ? t('add_asset.section_title_edit') : assetCategory === 'cash' ? t('add_asset.section_title_cash') : assetCategory === 'bond' ? t('add_asset.section_title_bond') : t('add_asset.section_title_quick')}
           </Text>
           <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
-            {editingAsset ? '수량과 가격을 수정하세요' : assetCategory === 'cash' ? '보유 현금 금액을 입력하세요' : assetCategory === 'bond' ? '채권 ETF 검색 또는 아래에서 빠르게 선택하세요' : '종목 검색 → 수량 입력 → 등록 (30초)'}
+            {editingAsset ? t('add_asset.section_subtitle_edit') : assetCategory === 'cash' ? t('add_asset.section_subtitle_cash') : assetCategory === 'bond' ? t('add_asset.section_subtitle_bond') : t('add_asset.section_subtitle_stock')}
           </Text>
 
           {/* ─── 현금 전용 UI ─── */}
@@ -1039,13 +1045,13 @@ export default function AddAssetScreen() {
             <View>
               {/* 현금 종류 선택 */}
               <View style={styles.inputGroup}>
-                <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>현금 종류</Text>
+                <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>{t('add_asset.cash_type_label')}</Text>
                 <View style={styles.cashTypeRow}>
                   {([
-                    { key: 'CASH_KRW', label: '원화 현금', desc: '은행 예금·현금' },
-                    { key: 'CASH_USD', label: '달러 예금', desc: '외화 예금·달러' },
-                    { key: 'CASH_CMA', label: 'CMA·MMF', desc: '단기 금융 상품' },
-                  ] as const).map(({ key, label, desc }) => (
+                    { key: 'CASH_KRW', labelKey: 'add_asset.cash_krw_label', descKey: 'add_asset.cash_krw_desc' },
+                    { key: 'CASH_USD', labelKey: 'add_asset.cash_usd_label', descKey: 'add_asset.cash_usd_desc' },
+                    { key: 'CASH_CMA', labelKey: 'add_asset.cash_cma_label', descKey: 'add_asset.cash_cma_desc' },
+                  ] as const).map(({ key, labelKey, descKey }) => (
                     <TouchableOpacity
                       key={key}
                       style={[
@@ -1057,10 +1063,10 @@ export default function AddAssetScreen() {
                       onPress={() => setCashType(key)}
                     >
                       <Text style={[styles.cashTypeBtnLabel, { color: cashType === key ? '#fff' : colors.textPrimary }]}>
-                        {label}
+                        {t(labelKey)}
                       </Text>
                       <Text style={[styles.cashTypeBtnDesc, { color: cashType === key ? 'rgba(255,255,255,0.8)' : colors.textTertiary }]}>
-                        {desc}
+                        {t(descKey)}
                       </Text>
                     </TouchableOpacity>
                   ))}
@@ -1070,7 +1076,7 @@ export default function AddAssetScreen() {
               {/* 보유 금액 */}
               <View style={styles.inputGroup}>
                 <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
-                  보유 금액{cashType === 'CASH_USD' ? ' (달러)' : ' (원화)'}
+                  {cashType === 'CASH_USD' ? t('add_asset.amount_label_usd') : t('add_asset.amount_label_krw')}
                 </Text>
                 <View style={[styles.priceInputRow, { backgroundColor: colors.surfaceLight, borderColor: colors.border }]}>
                   <Text style={[styles.currencySymbol, { color: colors.textSecondary }]}>
@@ -1089,7 +1095,7 @@ export default function AddAssetScreen() {
                 </View>
                 {cashType === 'CASH_USD' && parseFloat(cashAmount) > 0 && (
                   <Text style={[styles.krwPreview, { color: colors.textSecondary }]}>
-                    ≈ ₩{Math.round(parseFloat(cashAmount) * 1450).toLocaleString()} (환율 1,450원 기준)
+                    {t('add_asset.krw_preview', { amount: Math.round(parseFloat(cashAmount) * 1450).toLocaleString() })}
                   </Text>
                 )}
               </View>
@@ -1109,7 +1115,7 @@ export default function AddAssetScreen() {
                 ) : (
                   <>
                     <Ionicons name="add-circle" size={20} color="#FFFFFF" />
-                    <Text style={styles.saveButtonText}>현금 등록</Text>
+                    <Text style={styles.saveButtonText}>{t('add_asset.cash_register_button')}</Text>
                   </>
                 )}
               </TouchableOpacity>
@@ -1119,7 +1125,7 @@ export default function AddAssetScreen() {
           {/* ─── 채권 빠른 선택 ─── */}
           {assetCategory === 'bond' && !editingAsset && (
             <View style={styles.inputGroup}>
-              <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>인기 채권 빠른 선택</Text>
+              <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>{t('add_asset.bond_quick_label')}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 {[
                   { ticker: 'TLT', name: '미국 장기국채' },
@@ -1157,12 +1163,12 @@ export default function AddAssetScreen() {
 
           {/* 1. 종목 검색 */}
           <View style={styles.inputGroup}>
-            <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>종목 검색</Text>
+            <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>{t('add_asset.search_label')}</Text>
             <View style={[styles.searchContainer, { backgroundColor: colors.surfaceLight, borderColor: colors.border }]}>
               <Ionicons name="search" size={18} color={colors.textSecondary} style={styles.searchIcon} />
               <TextInput
                 style={[styles.searchInput, { color: colors.textPrimary }]}
-                placeholder="삼성전자, NVDA, 비트코인..."
+                placeholder={t('add_asset.search_placeholder')}
                 placeholderTextColor={colors.textTertiary}
                 value={searchQuery}
                 onChangeText={(text) => {
@@ -1232,10 +1238,10 @@ export default function AddAssetScreen() {
               >
                 <Ionicons name="add-circle-outline" size={16} color={colors.primary} />
                 <Text style={[styles.directInputText, { color: colors.primary }]}>
-                  "{searchQuery.trim().toUpperCase()}" 직접 입력
+                  {t('add_asset.direct_input_text', { ticker: searchQuery.trim().toUpperCase() })}
                 </Text>
                 <Text style={[styles.directInputHint, { color: colors.textTertiary }]}>
-                  목록에 없는 종목
+                  {t('add_asset.direct_input_hint')}
                 </Text>
               </TouchableOpacity>
             )}
@@ -1252,10 +1258,10 @@ export default function AddAssetScreen() {
 
           {/* 2. 수량 입력 */}
           <View style={styles.inputGroup}>
-            <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>보유 수량</Text>
+            <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>{t('add_asset.quantity_label')}</Text>
             <TextInput
               style={[styles.numberInput, { backgroundColor: colors.surfaceLight, borderColor: colors.border, color: colors.textPrimary }]}
-              placeholder="예: 100"
+              placeholder={t('add_asset.quantity_placeholder')}
               placeholderTextColor={colors.textTertiary}
               value={quantity}
               onChangeText={(text) => setQuantity(text.replace(/[^0-9.]/g, ''))}
@@ -1269,15 +1275,15 @@ export default function AddAssetScreen() {
           <View style={styles.inputGroup}>
             <View style={styles.priceLabelRow}>
               <View style={styles.priceLabelGroup}>
-                <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>총 매수금액 (원화)</Text>
-                <Text style={[styles.priceHelp, { color: colors.textTertiary }]}>선택사항 · 입력 시 수익률 계산</Text>
+                <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>{t('add_asset.total_cost_label')}</Text>
+                <Text style={[styles.priceHelp, { color: colors.textTertiary }]}>{t('add_asset.total_cost_optional')}</Text>
               </View>
             </View>
             <View style={[styles.priceInputRow, { backgroundColor: colors.surfaceLight, borderColor: colors.border }]}>
               <Text style={[styles.currencySymbol, { color: colors.textSecondary }]}>₩</Text>
               <TextInput
                 style={[styles.priceInput, { color: colors.textPrimary }]}
-                placeholder="예: 1,500,000 (증권사 총 매수금액)"
+                placeholder={t('add_asset.total_cost_placeholder')}
                 placeholderTextColor={colors.textTertiary}
                 value={price}
                 onChangeText={(text) => setPrice(text.replace(/[^0-9.]/g, ''))}
@@ -1293,7 +1299,7 @@ export default function AddAssetScreen() {
             <View style={[styles.avgCalcCard, { backgroundColor: colors.surfaceLight, borderColor: colors.border }]}>
               <Ionicons name="calculator-outline" size={14} color={colors.primary} />
               <View style={{ flex: 1 }}>
-                <Text style={[styles.avgCalcTitle, { color: colors.textPrimary }]}>평균 단가 자동 계산</Text>
+                <Text style={[styles.avgCalcTitle, { color: colors.textPrimary }]}>{t('add_asset.avg_calc_title')}</Text>
                 <Text style={[styles.avgCalcDetail, { color: colors.textSecondary }]}>
                   기존 {matchingExisting.quantity}주 평단 ₩{matchingExisting.avg_price.toLocaleString()}
                   {' '}+ 이번 {parseFloat(quantity) || 0}주 총액 ₩{(parseFloat(price) || 0).toLocaleString()}
@@ -1314,14 +1320,14 @@ export default function AddAssetScreen() {
           {/* 4. 총 매수금액 미리보기 */}
           {totalValue > 0 && (
             <View style={styles.totalRow}>
-              <Text style={[styles.totalLabel, { color: colors.textSecondary }]}>총 매수금액</Text>
+              <Text style={[styles.totalLabel, { color: colors.textSecondary }]}>{t('add_asset.total_label')}</Text>
               <View style={{ alignItems: 'flex-end' }}>
                 <Text style={[styles.totalValue, { color: colors.primary }]}>
                   ₩{totalValue.toLocaleString()}
                 </Text>
                 {parseFloat(quantity) > 0 && (
                   <Text style={[styles.totalValueKrw, { color: colors.textSecondary }]}>
-                    평단 ₩{Math.round(totalValue / (parseFloat(quantity) || 1)).toLocaleString()}
+                    {`Avg ₩${Math.round(totalValue / (parseFloat(quantity) || 1)).toLocaleString()}`}
                   </Text>
                 )}
               </View>
@@ -1344,7 +1350,7 @@ export default function AddAssetScreen() {
               <>
                 <Ionicons name={editingAsset ? 'checkmark-circle' : 'add-circle'} size={20} color="#FFFFFF" />
                 <Text style={styles.saveButtonText}>
-                  {editingAsset ? '수정 완료' : '등록'}
+                  {editingAsset ? t('add_asset.edit_done_button') : t('add_asset.register_button')}
                 </Text>
               </>
             )}
@@ -1356,7 +1362,7 @@ export default function AddAssetScreen() {
               style={styles.cancelEditButton}
               onPress={resetForm}
             >
-              <Text style={[styles.cancelEditText, { color: colors.textSecondary }]}>수정 취소</Text>
+              <Text style={[styles.cancelEditText, { color: colors.textSecondary }]}>{t('add_asset.cancel_edit_button')}</Text>
             </TouchableOpacity>
           )}
           </>)}
@@ -1365,7 +1371,7 @@ export default function AddAssetScreen() {
         {/* ─── 최근 추가 종목 ─── */}
         {recentAssets.length > 0 && !editingAsset && (
           <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>최근 추가 종목</Text>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{t('add_asset.recent_title')}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.recentScroll}>
               {recentAssets.map((recent) => (
                 <TouchableOpacity
@@ -1384,7 +1390,7 @@ export default function AddAssetScreen() {
         {/* ─── 보유 자산 목록 ─── */}
         <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.existingHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>유동자산 목록</Text>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{t('add_asset.asset_list_title')}</Text>
             {existingAssets.length > 0 && (
               <Text style={[styles.assetCount, { color: colors.textSecondary }]}>{existingAssets.length}개</Text>
             )}
@@ -1393,25 +1399,25 @@ export default function AddAssetScreen() {
           {loadingAssets ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="small" color={colors.primary} />
-              <Text style={[styles.loadingText, { color: colors.textSecondary }]}>자산 불러오는 중...</Text>
+              <Text style={[styles.loadingText, { color: colors.textSecondary }]}>{t('add_asset.loading_assets')}</Text>
             </View>
           ) : authFailed ? (
             <View style={styles.emptyContainer}>
               <Ionicons name="log-in-outline" size={40} color={colors.error} />
-              <Text style={[styles.emptyText, { color: colors.textSecondary }]}>로그인이 필요합니다</Text>
-              <Text style={[styles.emptySubtext, { color: colors.textTertiary }]}>자산을 불러오려면 로그인해주세요</Text>
+              <Text style={[styles.emptyText, { color: colors.textSecondary }]}>{t('add_asset.auth_failed_text')}</Text>
+              <Text style={[styles.emptySubtext, { color: colors.textTertiary }]}>{t('add_asset.auth_failed_subtext')}</Text>
               <TouchableOpacity
                 style={styles.retryButton}
                 onPress={() => loadExistingAssets()}
               >
-                <Text style={[styles.retryButtonText, { color: colors.primary }]}>다시 시도</Text>
+                <Text style={[styles.retryButtonText, { color: colors.primary }]}>{t('add_asset.retry_button')}</Text>
               </TouchableOpacity>
             </View>
           ) : existingAssets.length === 0 ? (
             <View style={styles.emptyContainer}>
               <Ionicons name="wallet-outline" size={40} color={colors.textTertiary} />
-              <Text style={[styles.emptyText, { color: colors.textSecondary }]}>등록된 자산이 없습니다</Text>
-              <Text style={[styles.emptySubtext, { color: colors.textTertiary }]}>위에서 종목을 검색하여 추가하세요</Text>
+              <Text style={[styles.emptyText, { color: colors.textSecondary }]}>{t('add_asset.empty_text')}</Text>
+              <Text style={[styles.emptySubtext, { color: colors.textTertiary }]}>{t('add_asset.empty_subtext')}</Text>
             </View>
           ) : (
             existingAssets.map((asset) => (
@@ -1466,13 +1472,13 @@ export default function AddAssetScreen() {
       >
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContainer, { backgroundColor: colors.surface }]}>
-            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>📄 CSV 붙여넣기</Text>
+            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>📄 {t('add_asset.csv_modal_title')}</Text>
             <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>
-              예시: 종목명,티커,수량,총매수금액
+              {t('add_asset.csv_modal_subtitle')}
             </Text>
             <TextInput
               style={[styles.csvInput, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: colors.surfaceLight }]}
-              placeholder={"종목명,티커,수량,총매수금액\n엔비디아,NVDA,3,1800000"}
+              placeholder={t('add_asset.csv_placeholder')}
               placeholderTextColor={colors.textTertiary}
               value={csvInput}
               onChangeText={setCsvInput}
@@ -1486,7 +1492,7 @@ export default function AddAssetScreen() {
                 style={[styles.modalCancelBtn, { borderColor: colors.border }]}
                 onPress={() => setCsvModalVisible(false)}
               >
-                <Text style={[styles.modalCancelText, { color: colors.textSecondary }]}>취소</Text>
+                <Text style={[styles.modalCancelText, { color: colors.textSecondary }]}>{t('common.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.modalConfirmBtn, { backgroundColor: colors.primary }]}
@@ -1496,7 +1502,7 @@ export default function AddAssetScreen() {
                 {csvParsing ? (
                   <ActivityIndicator size="small" color="#fff" />
                 ) : (
-                  <Text style={styles.modalConfirmText}>미리보기</Text>
+                  <Text style={styles.modalConfirmText}>{t('add_asset.csv_preview_button')}</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -1514,10 +1520,10 @@ export default function AddAssetScreen() {
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContainer, { backgroundColor: colors.surface }]}>
             <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
-              {parsedSource === 'csv' ? '📄 CSV 파싱 결과' : '📸 스크린샷 파싱 결과'}
+              {parsedSource === 'csv' ? `📄 ${t('add_asset.csv_result_title')}` : `📸 ${t('add_asset.screenshot_result_title')}`}
             </Text>
             <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>
-              {parsedAssets?.length}개 자산을 인식했어요. 확인 후 등록하세요
+              {t('add_asset.parsed_assets_subtitle', { count: parsedAssets?.length ?? 0 })}
             </Text>
             <ScrollView style={{ maxHeight: 280 }}>
               {parsedAssets?.map((asset, i) => (
@@ -1528,7 +1534,7 @@ export default function AddAssetScreen() {
                       {asset.name} ({asset.ticker})
                     </Text>
                     <Text style={[styles.parsedAssetDetail, { color: colors.textSecondary }]}>
-                      {asset.quantity}개 · 총 ₩{asset.totalCostKRW.toLocaleString()}
+                      {t('add_asset.parsed_asset_detail', { qty: asset.quantity, amount: asset.totalCostKRW.toLocaleString() })}
                     </Text>
                   </View>
                 </View>
@@ -1539,13 +1545,13 @@ export default function AddAssetScreen() {
                 style={[styles.modalCancelBtn, { borderColor: colors.border }]}
                 onPress={closeParsedAssetsModal}
               >
-                <Text style={[styles.modalCancelText, { color: colors.textSecondary }]}>취소</Text>
+                <Text style={[styles.modalCancelText, { color: colors.textSecondary }]}>{t('common.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.modalConfirmBtn, { backgroundColor: colors.primary }]}
                 onPress={() => parsedAssets && handleBulkSave(parsedAssets)}
               >
-                <Text style={styles.modalConfirmText}>{parsedAssets?.length}개 전체 등록</Text>
+                <Text style={styles.modalConfirmText}>{t('add_asset.bulk_register_button', { count: parsedAssets?.length ?? 0 })}</Text>
               </TouchableOpacity>
             </View>
           </View>

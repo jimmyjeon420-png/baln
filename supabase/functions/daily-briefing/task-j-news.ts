@@ -965,7 +965,7 @@ function rebalancePickFlags(items: TaggedNews[]): TaggedNews[] {
  *
  * 비유: 이전엔 "이 편지들 전부 읽고 분류해줘" → 이제는 "봉투에 적힌 부서명은 이미 읽었어, 중요도만 판단해줘"
  */
-async function tagNewsWithGemini(items: ScoredNewsItem[]): Promise<TaggedNews[]> {
+async function tagNewsWithGemini(items: ScoredNewsItem[], lang = 'ko'): Promise<TaggedNews[]> {
   if (items.length === 0) return [];
 
   const BATCH_SIZE = 20; // ← 10에서 20으로 (API 호출 50% 절감)
@@ -980,12 +980,26 @@ async function tagNewsWithGemini(items: ScoredNewsItem[]): Promise<TaggedNews[]>
     // 뉴스 목록 (선태깅 결과 포함 → AI가 확인만 하면 됨)
     const newsList = batch.map((item, idx) => {
       const pt = preTags[idx];
-      const tagStr = pt.tags.length > 0 ? pt.tags.join(',') : '미감지';
-      return `[${idx}] ${item.title} | 태그:${tagStr} | 분류:${pt.category}`;
+      const tagStr = pt.tags.length > 0 ? pt.tags.join(',') : (lang === 'en' ? 'undetected' : '미감지');
+      return `[${idx}] ${item.title} | tags:${tagStr} | category:${pt.category}`;
     }).join('\n');
 
     // ── Step 2: 다이어트 프롬프트 (기존 대비 ~60% 짧음) ──
-    const prompt = `금융뉴스 ${batch.length}건 분석. 태그·분류는 사전감지됨. 확인·보완 후 영향도 추가.
+    const prompt = lang === 'en'
+      ? `Analyze ${batch.length} financial news items. Tags and category are pre-detected. Verify/supplement them and add impact data.
+- If Korean articles are included, translate titles and summaries into natural English
+- For global news, write impact_summary from a "US/global investor impact" perspective
+- Select the 1-2 most important items in the batch as is_pick: true (prioritize major global news)
+${newsList}
+Return a JSON array for each item:
+- index: item number
+- tags: verify/supplement pre-detected tags (add missing, fix errors)
+- category: one of "crypto"|"stock"|"macro"
+- summary: English summary in 50 characters (translate Korean articles to English)
+- is_pick: whether this is a key news item (max 2 per batch)
+- impact_summary: impact and outlook from a "~holder" perspective in 80 characters (global news: include US/global market impact)
+- impact_score: -2(very negative)~+2(very positive)`
+      : `금융뉴스 ${batch.length}건 분석. 태그·분류는 사전감지됨. 확인·보완 후 영향도 추가.
 - 영어 기사가 포함되어 있으면 제목과 요약을 자연스러운 한국어로 번역하세요
 - 글로벌 뉴스의 경우 "한국 투자자에게 미치는 영향" 관점으로 impact_summary 작성
 - 전체 배치 중 가장 중요한 1-2개를 is_pick: true로 선정 (글로벌 주요 뉴스 우선)
@@ -1454,7 +1468,7 @@ export async function runNewsCollection(lang = 'ko'): Promise<NewsCollectionResu
     const fallbackTargets = cappedNewItems.slice(MAX_AI_ANALYSIS_ITEMS);
 
     // 2. Gemini AI 태깅 (상위 품질 뉴스만) + 나머지는 저비용 폴백
-    const aiTagged = await tagNewsWithGemini(aiTargets);
+    const aiTagged = await tagNewsWithGemini(aiTargets, lang);
     const lowCostTagged = fallbackTagging(fallbackTargets);
     const taggedItems = rebalancePickFlags([...aiTagged, ...lowCostTagged]);
     const avgQualityScore = taggedItems.length > 0

@@ -25,9 +25,18 @@ const MODEL_NAME = process.env.EXPO_PUBLIC_GEMINI_MODEL || 'gemini-3-flash-previ
 // 오늘의 퀴즈 조회
 // ============================================================================
 
-/** 오늘 날짜 키 (YYYY-MM-DD, KST 기준) */
+/**
+ * 오늘 날짜 키 (YYYY-MM-DD, 기기 로컬 시간 기준)
+ * - KST 하드코딩 제거: toLocaleDateString으로 기기 시간대 사용
+ * - 한국 사용자: 동일하게 KST 기준 날짜
+ * - 해외 사용자: 현지 시간 기준 날짜 (locale-aware)
+ */
 function getTodayDate(): string {
-  return new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 /** 오늘의 퀴즈 조회 (DB 우선 → Gemini 생성 → 폴백) */

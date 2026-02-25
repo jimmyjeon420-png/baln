@@ -6,6 +6,7 @@
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { getTodayMarketInsight } from './centralKitchen';
+import { t as rawT } from '../locales';
 
 // ⚠️ 보안: EXPO_PUBLIC_ 키는 클라이언트 번들에 포함됩니다. 프로덕션에서는 서버 프록시 권장.
 const API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY || '';
@@ -23,13 +24,30 @@ export type ScoreZone =
   | 'GREED'          // 61-80
   | 'EXTREME_GREED'; // 81-100
 
-/** 존별 설정 */
+/** 존별 i18n 키 매핑 */
+const ZONE_LABEL_KEYS: Record<ScoreZone, string> = {
+  EXTREME_FEAR:  'bitcoin.zone_extreme_fear',
+  FEAR:          'bitcoin.zone_fear',
+  NEUTRAL:       'bitcoin.zone_neutral',
+  GREED:         'bitcoin.zone_greed',
+  EXTREME_GREED: 'bitcoin.zone_extreme_greed',
+};
+
+/**
+ * 현재 로케일에 맞는 존 라벨을 반환합니다.
+ * 컴포넌트 외부(서비스 레이어)에서도 사용 가능합니다.
+ */
+export function getZoneLabel(zone: ScoreZone): string {
+  return rawT(ZONE_LABEL_KEYS[zone]);
+}
+
+/** 존별 설정 (color/bgColor만 보유; label은 getZoneLabel()로 조회) */
 export const ZONE_CONFIG: Record<ScoreZone, { label: string; color: string; bgColor: string }> = {
-  EXTREME_FEAR:  { label: '극도의 공포', color: '#B71C1C', bgColor: '#2E1A1A' },
-  FEAR:          { label: '공포',       color: '#CF6679', bgColor: '#2E1A1E' },
-  NEUTRAL:       { label: '중립',       color: '#FFB74D', bgColor: '#2E2A1A' },
-  GREED:         { label: '탐욕',       color: '#81C784', bgColor: '#1A2E1C' },
-  EXTREME_GREED: { label: '극도의 탐욕', color: '#4CAF50', bgColor: '#1A2E1A' },
+  EXTREME_FEAR:  { label: 'bitcoin.zone_extreme_fear', color: '#B71C1C', bgColor: '#2E1A1A' },
+  FEAR:          { label: 'bitcoin.zone_fear',         color: '#CF6679', bgColor: '#2E1A1E' },
+  NEUTRAL:       { label: 'bitcoin.zone_neutral',      color: '#FFB74D', bgColor: '#2E2A1A' },
+  GREED:         { label: 'bitcoin.zone_greed',        color: '#81C784', bgColor: '#1A2E1C' },
+  EXTREME_GREED: { label: 'bitcoin.zone_extreme_greed', color: '#4CAF50', bgColor: '#1A2E1A' },
 };
 
 /** 6개 팩터 점수 */

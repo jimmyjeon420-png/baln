@@ -29,7 +29,7 @@ export default function SecurityScreen() {
   const [biometricEnabled, setBiometricEnabled] = useState(false);
   const [autoLock, setAutoLock] = useState(true);
   const [biometricAvailable, setBiometricAvailable] = useState(false);
-  const [biometricName, setBiometricName] = useState('생체 인증');
+  const [biometricName, setBiometricName] = useState(t('settings.security.biometric'));
   const [loading, setLoading] = useState(true);
 
   // 화면 진입 시 설정 로드 + 기기 지원 여부 확인
@@ -57,12 +57,12 @@ export default function SecurityScreen() {
       // 켤 때: 먼저 생체인증으로 본인 확인
       const success = await authenticateWithBiometric();
       if (!success) {
-        Alert.alert('인증 실패', '생체 인증에 실패했습니다. 다시 시도해주세요.');
+        Alert.alert(t('security.biometric_auth_fail_title'), t('security.biometric_auth_fail_desc'));
         return; // 토글 상태 유지 (OFF)
       }
       setBiometricEnabled(true);
       await saveBiometricSettings({ biometricEnabled: true, autoLockEnabled: autoLock });
-      Alert.alert('활성화 완료', `${biometricName}이(가) 활성화되었습니다.`);
+      Alert.alert(t('security.biometric_enabled_title'), t('security.biometric_enabled_desc', { name: biometricName }));
     } else {
       // 끌 때: 바로 저장
       setBiometricEnabled(false);
@@ -78,11 +78,11 @@ export default function SecurityScreen() {
 
   const handleChangePassword = () => {
     Alert.alert(
-      '비밀번호 변경',
-      '이메일로 비밀번호 재설정 링크를 보내시겠습니까?',
+      t('security.change_password_title'),
+      t('security.change_password_message'),
       [
-        { text: '취소', style: 'cancel' },
-        { text: '전송', onPress: () => Alert.alert('성공', '이메일을 확인해주세요.') },
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('security.send_button'), onPress: () => Alert.alert(t('security.email_sent_title'), t('security.email_sent_desc')) },
       ]
     );
   };
@@ -100,8 +100,8 @@ export default function SecurityScreen() {
               <Text style={[styles.settingLabel, { color: colors.textPrimary }]}>{biometricName}</Text>
               <Text style={[styles.settingDescription, { color: colors.textTertiary }]}>
                 {biometricAvailable
-                  ? `${biometricName}(으)로 잠금 해제`
-                  : '이 기기는 생체 인증을 지원하지 않습니다'}
+                  ? t('security.biometric_desc_available', { name: biometricName })
+                  : t('security.biometric_desc_unavailable')}
               </Text>
             </View>
             <Switch
@@ -116,7 +116,7 @@ export default function SecurityScreen() {
           <View style={[styles.settingItem, { borderBottomColor: colors.border }]}>
             <View style={styles.settingInfo}>
               <Text style={[styles.settingLabel, { color: colors.textPrimary }]}>{t('settings.security.auto_lock')}</Text>
-              <Text style={[styles.settingDescription, { color: colors.textTertiary }]}>앱 전환 시 자동 잠금</Text>
+              <Text style={[styles.settingDescription, { color: colors.textTertiary }]}>{t('security.auto_lock_desc')}</Text>
             </View>
             <Switch
               value={autoLock}
@@ -132,7 +132,7 @@ export default function SecurityScreen() {
         <View style={[styles.section, { marginTop: 24, backgroundColor: colors.surface }]}>
           <TouchableOpacity style={[styles.actionItem, { borderBottomColor: colors.border }]} onPress={handleChangePassword}>
             <Ionicons name="key-outline" size={22} color={colors.textPrimary} />
-            <Text style={[styles.actionLabel, { color: colors.textPrimary }]}>비밀번호 변경</Text>
+            <Text style={[styles.actionLabel, { color: colors.textPrimary }]}>{t('security.change_password')}</Text>
             <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
           </TouchableOpacity>
 

@@ -28,6 +28,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -55,14 +56,14 @@ interface PredictionShareCardProps {
 }
 
 // ============================================================================
-// 카테고리 라벨
+// 카테고리 색상 (라벨은 locale에서)
 // ============================================================================
 
-const CATEGORY_LABELS: Record<string, { label: string; color: string }> = {
-  stocks: { label: '주식', color: '#2196F3' },
-  crypto: { label: '코인', color: '#F7931A' },
-  macro: { label: '거시경제', color: '#9C27B0' },
-  event: { label: '이벤트', color: '#FF9800' },
+const CATEGORY_COLORS: Record<string, string> = {
+  stocks: '#2196F3',
+  crypto: '#F7931A',
+  macro: '#9C27B0',
+  event: '#FF9800',
 };
 
 // ============================================================================
@@ -80,13 +81,15 @@ export default function PredictionShareCard({
   onShareComplete,
 }: PredictionShareCardProps) {
   const { colors, theme } = useTheme();
+  const { t } = useLocale();
   const viewShotRef = useRef<ViewShot>(null);
   const [isCapturing, setIsCapturing] = useState(false);
 
   const isCorrect = myVote === correctAnswer;
-  const voteDirection = myVote === 'YES' ? '상승' : '하락';
-  const resultLabel = isCorrect ? '적중' : '빗나감';
-  const categoryInfo = category ? CATEGORY_LABELS[category] : null;
+  const voteDirection = myVote === 'YES' ? t('share.prediction_card.direction_up') : t('share.prediction_card.direction_down');
+  const resultLabel = isCorrect ? t('share.prediction_card.result_hit') : t('share.prediction_card.result_miss');
+  const categoryColor = category ? CATEGORY_COLORS[category] : null;
+  const categoryLabel = category ? t(`prediction.card.category_${category}`) : null;
 
   // 그라데이션 색상 결정 (적중/빗나감)
   const gradientColors: [string, string] = isCorrect
@@ -96,7 +99,7 @@ export default function PredictionShareCard({
   // 이미지 캡처 + 네이티브 공유
   const handleShare = async () => {
     if (!viewShotRef.current) {
-      Alert.alert('오류', '공유 카드를 준비하는 중입니다.');
+      Alert.alert(t('share.prediction_card.fail_title'), t('share.prediction_card.fail_desc'));
       return;
     }
 
@@ -106,28 +109,28 @@ export default function PredictionShareCard({
       // 1. ViewShot으로 PNG 캡처
       const uri = await viewShotRef.current.capture?.();
       if (!uri) {
-        throw new Error('이미지 캡처 실패');
+        throw new Error('Image capture failed');
       }
 
       // 2. 공유 가능 여부 확인
       const isAvailable = await Sharing.isAvailableAsync();
       if (!isAvailable) {
-        Alert.alert('오류', '이 기기에서는 공유 기능을 사용할 수 없습니다.');
+        Alert.alert(t('share.prediction_card.fail_title'), t('share.prediction_card.not_available'));
         return;
       }
 
       // 3. 네이티브 Share Sheet 열기
       await Sharing.shareAsync(uri, {
         mimeType: 'image/png',
-        dialogTitle: '내 투자 예측 결과 공유',
+        dialogTitle: t('share.prediction_card.dialog_title'),
         UTI: 'public.png',
       });
 
       // 4. 공유 완료 콜백
       onShareComplete?.();
     } catch (error) {
-      console.error('[PredictionShareCard] 공유 실패:', error);
-      Alert.alert('공유 실패', '이미지 공유 중 오류가 발생했습니다.');
+      console.error('[PredictionShareCard] share failed:', error);
+      Alert.alert(t('share.prediction_card.share_fail_title'), t('share.prediction_card.share_fail_desc'));
     } finally {
       setIsCapturing(false);
     }
@@ -160,9 +163,9 @@ export default function PredictionShareCard({
               </Text>
               <Text style={styles.logoSuffix}>.logic</Text>
             </View>
-            {categoryInfo && (
+            {categoryLabel && (
               <View style={[styles.categoryBadge, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
-                <Text style={styles.categoryText}>{categoryInfo.label}</Text>
+                <Text style={styles.categoryText}>{categoryLabel}</Text>
               </View>
             )}
           </View>
@@ -193,7 +196,7 @@ export default function PredictionShareCard({
                 color="#FFFFFF"
               />
               <Text style={styles.directionText}>
-                내 예측: {voteDirection}
+                {t('share.prediction_card.my_prediction', { direction: voteDirection })}
               </Text>
             </View>
           </View>
@@ -203,19 +206,19 @@ export default function PredictionShareCard({
             <View style={styles.statsRow}>
               <View style={styles.statBox}>
                 <Text style={styles.statValue}>{accuracyRate.toFixed(0)}%</Text>
-                <Text style={styles.statLabel}>적중률</Text>
+                <Text style={styles.statLabel}>{t('share.prediction_card.stat_accuracy')}</Text>
               </View>
               <View style={styles.statDivider} />
               <View style={styles.statBox}>
-                <Text style={styles.statValue}>{totalVotes}회</Text>
-                <Text style={styles.statLabel}>참여</Text>
+                <Text style={styles.statValue}>{totalVotes}</Text>
+                <Text style={styles.statLabel}>{t('share.prediction_card.stat_votes')}</Text>
               </View>
               {currentStreak > 0 && (
                 <>
                   <View style={styles.statDivider} />
                   <View style={styles.statBox}>
-                    <Text style={styles.statValue}>{currentStreak}연속</Text>
-                    <Text style={styles.statLabel}>적중</Text>
+                    <Text style={styles.statValue}>{currentStreak}</Text>
+                    <Text style={styles.statLabel}>{t('share.prediction_card.stat_streak')}</Text>
                   </View>
                 </>
               )}
@@ -228,7 +231,7 @@ export default function PredictionShareCard({
               bal<Text style={{ color: '#A5D6A7' }}>n</Text>.app
             </Text>
             <Text style={styles.disclaimer}>
-              본 예측은 오락/학습 목적이며 투자 권유가 아닙니다
+              {t('share.prediction_card.disclaimer')}
             </Text>
           </View>
         </LinearGradient>
@@ -246,14 +249,14 @@ export default function PredictionShareCard({
         ) : (
           <>
             <Ionicons name="share-outline" size={18} color="#FFFFFF" />
-            <Text style={styles.shareButtonText}>이미지로 공유하고 5C 받기</Text>
+            <Text style={styles.shareButtonText}>{t('share.prediction_card.share_button')}</Text>
           </>
         )}
       </TouchableOpacity>
 
       {/* 브랜딩 */}
       <Text style={[styles.branding, { color: colors.textTertiary }]}>
-        baln {'\u00B7'} 매일 5분 투자 습관
+        {t('share.prediction_card.branding')}
       </Text>
     </View>
   );

@@ -24,6 +24,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 
 // ============================================================================
 // 타입 정의
@@ -76,6 +77,7 @@ export default function HealthScoreBreakdown({
   lastUpdated,
 }: HealthScoreBreakdownProps) {
   const { colors } = useTheme();
+  const { t } = useLocale();
 
   return (
     <Modal
@@ -87,7 +89,7 @@ export default function HealthScoreBreakdown({
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         {/* 헤더 */}
         <View style={[styles.header, { borderBottomColor: colors.border }]}>
-          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>건강 점수 상세</Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{t('health_score.breakdown_title')}</Text>
           <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
             <Ionicons name="close" size={24} color={colors.textTertiary} />
           </TouchableOpacity>
@@ -106,18 +108,18 @@ export default function HealthScoreBreakdown({
               <Text style={[styles.overallScoreUnit, { color: colors.textTertiary }]}>/100</Text>
             </Text>
             <Text style={[styles.overallLabel, { color: colors.textSecondary }]}>
-              종합 건강 점수
+              {t('health_score.overall_label')}
             </Text>
             {lastUpdated && (
               <Text style={[styles.updatedAt, { color: colors.textTertiary }]}>
-                {lastUpdated.split('T')[0]} 기준
+                {t('health_score.as_of', { date: lastUpdated.split('T')[0] })}
               </Text>
             )}
           </View>
 
           {/* 카테고리별 점수 */}
           <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-            카테고리별 분석
+            {t('health_score.category_section_title')}
           </Text>
 
           {categories.map((cat, index) => (
@@ -176,8 +178,7 @@ export default function HealthScoreBreakdown({
 
           {/* 면책 */}
           <Text style={[styles.disclaimer, { color: colors.textTertiary }]}>
-            건강 점수는 AI가 포트폴리오 구조를 분석한 결과이며, 투자 수익을 보장하지 않습니다.
-            투자 결정은 본인의 판단과 전문가 상담에 따라 이루어져야 합니다.
+            {t('health_score.disclaimer')}
           </Text>
         </ScrollView>
       </View>

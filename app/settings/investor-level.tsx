@@ -65,7 +65,7 @@ export default function InvestorLevelScreen() {
   const quizAccuracy = quizzesAttempted > 0 ? Math.round((quizzesCorrect / quizzesAttempted) * 100) : 0;
   const progress = getLevelProgress(totalXp, level);
   const xpToNext = getXPToNextLevel(totalXp, level);
-  const title = LEVEL_TITLES[level] || '새싹 투자자';
+  const title = t(`investor_level.title_${level}` as any) || LEVEL_TITLES[level] || t('investor_level.title_1');
   const icon = LEVEL_ICONS[level] || '🌱';
   const currentLevelXp = LEVEL_XP_TABLE[level] || 0;
   const nextLevelXp = level < MAX_LEVEL ? (LEVEL_XP_TABLE[level + 1] || 0) : totalXp;

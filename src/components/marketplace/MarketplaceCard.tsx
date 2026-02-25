@@ -12,7 +12,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { MarketplaceItem } from '../../data/marketplaceItems';
-import { formatCredits } from '../../utils/formatters';
+import { useLocale } from '../../context/LocaleContext';
 
 interface MarketplaceCardProps {
   /** 상품 정보 */
@@ -31,13 +31,14 @@ export function MarketplaceCard({
   currentBalance,
   onPurchase,
 }: MarketplaceCardProps) {
+  const { t } = useLocale();
   const isEnabled = item.enabled;
   const isAffordable = canAfford && isEnabled;
 
   // 버튼 텍스트
-  let buttonText = '구매하기';
-  if (!isEnabled) buttonText = '🔐 곧 공개';
-  else if (!canAfford) buttonText = `${item.price - currentBalance}C 부족`;
+  let buttonText = t('marketplace.card_buy');
+  if (!isEnabled) buttonText = t('marketplace.card_coming_soon');
+  else if (!canAfford) buttonText = t('marketplace.card_insufficient', { amount: item.price - currentBalance });
 
   return (
     <View style={[styles.card, !isAffordable && styles.cardDisabled]}>
@@ -69,7 +70,7 @@ export function MarketplaceCard({
           </Text>
           {item.stock && (
             <View style={styles.stockBadge}>
-              <Text style={styles.stockText}>한정 {item.stock}</Text>
+              <Text style={styles.stockText}>{t('marketplace.card_limited', { count: item.stock })}</Text>
             </View>
           )}
         </View>
@@ -100,7 +101,7 @@ export function MarketplaceCard({
       {item.tier === 'loyalty' && (
         <View style={styles.tierBadge}>
           <Ionicons name="star" size={10} color="#F59E0B" />
-          <Text style={styles.tierText}>충성 보상</Text>
+          <Text style={styles.tierText}>{t('marketplace.tier_loyalty')}</Text>
         </View>
       )}
     </View>
