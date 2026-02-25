@@ -133,6 +133,39 @@ async function saveFreezeData(data: StreakFreezeData): Promise<void> {
 }
 
 // ============================================================================
+// Standalone 함수 (훅 외부에서 호출 가능 — streakService에서 사용)
+// ============================================================================
+
+/**
+ * 프리즈 자동 사용 시도 (스트릭 끊길 때 streakService가 호출)
+ *
+ * 반환: true면 프리즈 소모 성공 → 스트릭 유지, false면 프리즈 없음 → 리셋
+ */
+export async function tryAutoUseFreeze(): Promise<boolean> {
+  try {
+    const current = await getFreezeData();
+
+    // 프리즈 없음
+    if (current.count <= 0) return false;
+
+    // 오늘 이미 사용됨 (중복 방지)
+    const today = getTodayString();
+    if (current.lastUsedDate === today) return false;
+
+    // 프리즈 1개 소모
+    const newData: StreakFreezeData = {
+      count: Math.max(0, current.count - 1),
+      lastUsedDate: today,
+    };
+    await saveFreezeData(newData);
+    return true;
+  } catch (error) {
+    console.warn('[StreakFreeze] tryAutoUseFreeze 에러:', error);
+    return false;
+  }
+}
+
+// ============================================================================
 // 훅
 // ============================================================================
 

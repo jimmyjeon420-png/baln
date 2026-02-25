@@ -14,6 +14,7 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { tryAutoUseFreeze } from '../hooks/useStreakFreeze';
 
 // 스트릭 데이터 타입
 export interface StreakData {
@@ -129,7 +130,21 @@ export async function checkAndUpdateStreak(): Promise<{
     return { updated: true, isNewStreak: false, data: newData };
   }
 
-  // 케이스 4: 어제 미방문 → 연속 리셋
+  // 케이스 4: 어제 미방문 → 프리즈 확인 후 연속 유지 또는 리셋
+  const freezeUsed = await tryAutoUseFreeze();
+
+  if (freezeUsed) {
+    // 프리즈 소모 → 스트릭 유지 (끊기지 않음)
+    const newData: StreakData = {
+      currentStreak: prevData.currentStreak + 1,
+      lastVisitDate: today,
+      longestStreak: Math.max(prevData.currentStreak + 1, prevData.longestStreak),
+    };
+    await saveStreakData(newData);
+    return { updated: true, isNewStreak: false, data: newData };
+  }
+
+  // 프리즈 없음 → 연속 리셋
   const newData: StreakData = {
     currentStreak: 1,
     lastVisitDate: today,
