@@ -24,6 +24,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useGuruInsights } from '../../../src/hooks/useSharedAnalysis';
 import { useGuruStyle } from '../../../src/hooks/useGuruStyle';
 import type { GuruInsight } from '../../../src/services/centralKitchen';
+import { CharacterAvatar } from '../../../src/components/character/CharacterAvatar';
+import { sentimentToExpression } from '../../../src/services/characterService';
+import { useLocale } from '../../../src/context/LocaleContext';
 
 // ─────────────────────────────────────────────
 // 정적 구루 프로필 데이터
@@ -100,6 +103,7 @@ const GURU_PROFILES: Record<string, GuruProfile> = {
 
 export default function GuruDetailScreen() {
   const router = useRouter();
+  const { t } = useLocale();
   const { guruId } = useLocalSearchParams<{ guruId: string }>();
   const { data: insightsData, isLoading: insightsLoading } = useGuruInsights();
   const { guruStyle } = useGuruStyle();
@@ -113,7 +117,7 @@ export default function GuruDetailScreen() {
           <Ionicons name="chevron-back" size={24} color="#FFF" />
         </TouchableOpacity>
         <View style={styles.notFound}>
-          <Text style={styles.notFoundText}>프로필을 찾을 수 없습니다</Text>
+          <Text style={styles.notFoundText}>{t('guru.detail.not_found')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -140,10 +144,10 @@ export default function GuruDetailScreen() {
     NEUTRAL: '#FFD700',
   };
   const sentimentLabels: Record<string, string> = {
-    BULLISH: '강세',
-    BEARISH: '약세',
-    CAUTIOUS: '신중',
-    NEUTRAL: '중립',
+    BULLISH: t('guru.insights.filter_bullish'),
+    BEARISH: t('guru.insights.filter_bearish'),
+    CAUTIOUS: t('guru.insights.filter_cautious'),
+    NEUTRAL: t('guru.insights.filter_neutral'),
   };
 
   return (
@@ -155,14 +159,19 @@ export default function GuruDetailScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
             <Ionicons name="chevron-back" size={24} color="#FFF" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>거장 딥다이브</Text>
+          <Text style={styles.headerTitle}>{t('guru.detail.header_title')}</Text>
           <View style={{ width: 32 }} />
         </View>
 
         {/* ── 히어로 카드 ── */}
         <View style={[styles.heroCard, { borderColor: profile.accentColor + '40' }]}>
           <View style={[styles.emojiCircle, { backgroundColor: profile.accentColor + '20', borderColor: profile.accentColor + '60' }]}>
-            <Text style={styles.heroEmoji}>{profile.emoji}</Text>
+            <CharacterAvatar
+              guruId={profile.id}
+              size="lg"
+              expression={sentimentToExpression(todayInsight?.sentiment)}
+              fallbackEmoji={profile.emoji}
+            />
           </View>
           <Text style={styles.heroName}>{profile.fullName}</Text>
           <Text style={styles.heroOrg}>{profile.org}</Text>
@@ -171,7 +180,7 @@ export default function GuruDetailScreen() {
             <View style={[styles.myPhilosophyBadge, { backgroundColor: profile.accentColor + '20', borderColor: profile.accentColor }]}>
               <Ionicons name="checkmark-circle" size={14} color={profile.accentColor} />
               <Text style={[styles.myPhilosophyText, { color: profile.accentColor }]}>
-                현재 선택된 철학
+                {t('guru.detail.my_philosophy_badge')}
               </Text>
             </View>
           )}
@@ -181,7 +190,7 @@ export default function GuruDetailScreen() {
         <View style={styles.card}>
           <View style={styles.cardTitleRow}>
             <Text style={styles.cardIcon}>🎯</Text>
-            <Text style={styles.cardTitle}>핵심 철학</Text>
+            <Text style={styles.cardTitle}>{t('guru.detail.philosophy_label')}</Text>
           </View>
           <Text style={styles.cardBody}>{profile.philosophy}</Text>
         </View>
@@ -190,7 +199,7 @@ export default function GuruDetailScreen() {
         <View style={styles.card}>
           <View style={styles.cardTitleRow}>
             <Text style={styles.cardIcon}>⚙️</Text>
-            <Text style={styles.cardTitle}>투자 전략</Text>
+            <Text style={styles.cardTitle}>{t('guru.detail.strategy_label')}</Text>
           </View>
           <Text style={styles.cardBody}>{profile.strategy}</Text>
           <View style={[styles.quoteBox, { borderLeftColor: profile.accentColor }]}>
@@ -202,7 +211,7 @@ export default function GuruDetailScreen() {
         <View style={[styles.card, styles.trackCard]}>
           <View style={styles.cardTitleRow}>
             <Text style={styles.cardIcon}>📊</Text>
-            <Text style={styles.cardTitle}>실적 기록</Text>
+            <Text style={styles.cardTitle}>{t('guru.detail.track_label')}</Text>
           </View>
           <Text style={styles.cardBody}>{profile.track}</Text>
         </View>
@@ -212,12 +221,12 @@ export default function GuruDetailScreen() {
           <View style={styles.card}>
             <View style={styles.cardTitleRow}>
               <Text style={styles.cardIcon}>📈</Text>
-              <Text style={styles.cardTitle}>구조화 분석</Text>
+              <Text style={styles.cardTitle}>{t('guru.detail.structured_analysis_label')}</Text>
             </View>
 
             {/* 행동 배지 */}
             <View style={styles.structuredRow}>
-              <Text style={styles.structuredLabel}>행동</Text>
+              <Text style={styles.structuredLabel}>{t('guru.detail.action_label')}</Text>
               <View style={[
                 styles.actionBadge,
                 {
@@ -234,7 +243,7 @@ export default function GuruDetailScreen() {
             {/* 주목 종목 */}
             {todayInsight.target_tickers && todayInsight.target_tickers.length > 0 && (
               <View style={styles.structuredRow}>
-                <Text style={styles.structuredLabel}>주목 종목</Text>
+                <Text style={styles.structuredLabel}>{t('guru.detail.target_tickers_label')}</Text>
                 <View style={styles.structuredTickerRow}>
                   {todayInsight.target_tickers.map((ticker: string) => (
                     <View key={ticker} style={[styles.structuredTickerChip, { backgroundColor: profile.accentColor + '20' }]}>
@@ -248,7 +257,7 @@ export default function GuruDetailScreen() {
             {/* 섹터 */}
             {todayInsight.sector && (
               <View style={styles.structuredRow}>
-                <Text style={styles.structuredLabel}>섹터</Text>
+                <Text style={styles.structuredLabel}>{t('guru.detail.sector_label')}</Text>
                 <Text style={styles.structuredValue}>{todayInsight.sector}</Text>
               </View>
             )}
@@ -256,7 +265,7 @@ export default function GuruDetailScreen() {
             {/* 확신도 별점 */}
             {todayInsight.conviction_level && (
               <View style={styles.structuredRow}>
-                <Text style={styles.structuredLabel}>확신도</Text>
+                <Text style={styles.structuredLabel}>{t('guru.detail.conviction_label')}</Text>
                 <View style={styles.starRow}>
                   {[1, 2, 3, 4, 5].map((i) => (
                     <Text key={i} style={[styles.starIcon, { color: i <= todayInsight.conviction_level! ? profile.accentColor : '#333333' }]}>
@@ -274,16 +283,16 @@ export default function GuruDetailScreen() {
         <View style={styles.card}>
           <View style={styles.cardTitleRow}>
             <Text style={styles.cardIcon}>🔴</Text>
-            <Text style={styles.cardTitle}>오늘의 인사이트</Text>
+            <Text style={styles.cardTitle}>{t('guru.detail.insight_title')}</Text>
             <View style={styles.liveBadge}>
-              <Text style={styles.liveText}>LIVE</Text>
+              <Text style={styles.liveText}>{t('guru.detail.live_badge')}</Text>
             </View>
           </View>
 
           {insightsLoading ? (
             <View style={styles.loadingRow}>
               <ActivityIndicator size="small" color={profile.accentColor} />
-              <Text style={styles.loadingText}>업데이트 중...</Text>
+              <Text style={styles.loadingText}>{t('guru.detail.loading_text')}</Text>
             </View>
           ) : todayInsight ? (
             <View>
@@ -301,7 +310,7 @@ export default function GuruDetailScreen() {
               </View>
 
               {/* 최근 행동 */}
-              <Text style={styles.insightLabel}>최근 행동</Text>
+              <Text style={styles.insightLabel}>{t('guru.detail.recent_action_label')}</Text>
               <Text style={styles.insightBody}>{todayInsight.recentAction}</Text>
 
               {/* 발언 인용 */}
@@ -314,7 +323,7 @@ export default function GuruDetailScreen() {
               {/* AI 분석 */}
               {todayInsight.reasoning && (
                 <>
-                  <Text style={styles.insightLabel}>AI 분석</Text>
+                  <Text style={styles.insightLabel}>{t('guru.detail.analysis_label')}</Text>
                   <Text style={styles.insightBody}>{todayInsight.reasoning}</Text>
                 </>
               )}
@@ -332,12 +341,12 @@ export default function GuruDetailScreen() {
 
               {/* 출처 */}
               {todayInsight.source && (
-                <Text style={styles.sourceText}>출처: {todayInsight.source}</Text>
+                <Text style={styles.sourceText}>{t('guru.detail.source_label')} {todayInsight.source}</Text>
               )}
             </View>
           ) : (
             <Text style={styles.noInsightText}>
-              오늘 인사이트가 아직 업데이트되지 않았습니다.{'\n'}매일 아침 7시에 자동 업데이트됩니다.
+              {t('guru.detail.no_insight_text')}
             </Text>
           )}
         </View>
@@ -346,7 +355,7 @@ export default function GuruDetailScreen() {
         <View style={styles.disclaimer}>
           <Ionicons name="warning-outline" size={12} color="#555" />
           <Text style={styles.disclaimerText}>
-            본 정보는 AI가 공개 데이터를 기반으로 생성한 교육 목적의 분석이며, 실제 거장의 공식 의견이 아닙니다. 투자 결정은 본인의 판단에 따라 이루어져야 합니다.
+            {t('guru.detail.disclaimer')}
           </Text>
         </View>
 

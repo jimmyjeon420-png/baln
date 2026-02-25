@@ -25,6 +25,7 @@ import { useTheme } from '../../src/hooks/useTheme';
 import { HeaderBar } from '../../src/components/common/HeaderBar';
 import { getMyReferralCode, REWARD_AMOUNTS } from '../../src/services/rewardService';
 import { useAuth } from '../../src/context/AuthContext';
+import { useLocale } from '../../src/context/LocaleContext';
 
 // =============================================================================
 // 친구 초대 화면
@@ -33,6 +34,7 @@ import { useAuth } from '../../src/context/AuthContext';
 export default function ReferralScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
+  const { t } = useLocale();
 
   // ---------------------------------------------------------------------------
   // 상태
@@ -124,7 +126,7 @@ export default function ReferralScreen() {
   if (!user) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-        <HeaderBar title="친구 초대" />
+        <HeaderBar title={t('settings.referral.title')} />
         <View style={styles.emptyContainer}>
           <Ionicons name="person-outline" size={48} color={colors.textTertiary} />
           <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
@@ -140,7 +142,7 @@ export default function ReferralScreen() {
   // ---------------------------------------------------------------------------
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <HeaderBar title="친구 초대" />
+      <HeaderBar title={t('settings.referral.title')} />
 
       <ScrollView
         style={styles.scrollView}
@@ -166,7 +168,7 @@ export default function ReferralScreen() {
 
         {/* ── 내 초대 코드 ── */}
         <Text style={[styles.sectionTitle, { color: colors.textTertiary }]}>
-          내 초대 코드
+          {t('settings.referral.code')}
         </Text>
         <View style={[styles.codeCard, { backgroundColor: colors.surface }]}>
           {loading ? (

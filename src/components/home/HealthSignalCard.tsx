@@ -25,6 +25,9 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
+import { CharacterAvatar } from '../character/CharacterAvatar';
+import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
+import { useLocale } from '../../context/LocaleContext';
 
 
 // ============================================================================
@@ -74,6 +77,9 @@ interface HealthSignalCardProps {
 
   /** 전일 대비 수익률 (%, optional) */
   dailyChangeRate?: number | null;
+
+  /** 선택한 투자 구루 ID (buffett, dalio 등, optional) */
+  selectedGuruId?: string | null;
 }
 
 // ============================================================================
@@ -103,12 +109,11 @@ function getMiniSignalEmoji(signal: 'green' | 'yellow' | 'red'): string {
 // 날짜 포맷 유틸
 // ============================================================================
 
-function formatDate(): string {
+function formatDate(weekdayNames: string[]): string {
   const now = new Date();
   const month = now.getMonth() + 1;
   const day = now.getDate();
-  const weekdays = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
-  const weekday = weekdays[now.getDay()];
+  const weekday = weekdayNames[now.getDay()] ?? '';
   const hours = String(now.getHours()).padStart(2, '0');
   const minutes = String(now.getMinutes()).padStart(2, '0');
   return `${month}월 ${day}일 ${weekday} · ${hours}:${minutes}`;
@@ -149,11 +154,23 @@ const HealthSignalCard = React.memo(({
   healthFactors,
   totalAssets,
   dailyChangeRate,
+  selectedGuruId,
 }: HealthSignalCardProps) => {
   const [showDetail, setShowDetail] = useState(false);
   const { colors } = useTheme();
+  const { t } = useLocale();
   const signalColor = getSignalColor(healthScore, colors.textSecondary);
   const signalEmoji = getSignalEmoji(healthScore);
+
+  const weekdayNames = [
+    t('health.weekdays.sun'),
+    t('health.weekdays.mon'),
+    t('health.weekdays.tue'),
+    t('health.weekdays.wed'),
+    t('health.weekdays.thu'),
+    t('health.weekdays.fri'),
+    t('health.weekdays.sat'),
+  ];
 
   // ──────────────────────────────────────────────────────────────────────
   // 로딩 상태
@@ -162,13 +179,13 @@ const HealthSignalCard = React.memo(({
     return (
       <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <View style={styles.headerRow}>
-          <Text style={[styles.dateText, { color: colors.textSecondary }]}>{formatDate()}</Text>
+          <Text style={[styles.dateText, { color: colors.textSecondary }]}>{formatDate(weekdayNames)}</Text>
           <Text style={[styles.cardLogo, { color: colors.textSecondary }]}>bal<Text style={{ color: '#4CAF50' }}>n</Text></Text>
         </View>
         <View style={styles.centerArea}>
           <ActivityIndicator size="large" color={colors.textSecondary} />
           <Text style={[styles.loadingText, { marginTop: 16, color: colors.textSecondary }]}>
-            건강 점수를 계산하고 있어요
+            {t('health.loading_text')}
           </Text>
         </View>
       </View>
@@ -182,16 +199,16 @@ const HealthSignalCard = React.memo(({
     return (
       <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <View style={styles.headerRow}>
-          <Text style={[styles.dateText, { color: colors.textSecondary }]}>{formatDate()}</Text>
+          <Text style={[styles.dateText, { color: colors.textSecondary }]}>{formatDate(weekdayNames)}</Text>
           <Text style={[styles.cardLogo, { color: colors.textSecondary }]}>bal<Text style={{ color: '#4CAF50' }}>n</Text></Text>
         </View>
         <View style={styles.centerArea}>
           <Text style={styles.emptyEmoji}>❤️</Text>
-          <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>내 투자 건강이 궁금하다면</Text>
-          <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>자산을 하트해주세요</Text>
+          <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>{t('health.empty.title')}</Text>
+          <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>{t('health.empty.subtitle')}</Text>
           {onAddAssets && (
             <TouchableOpacity style={[styles.addButton, { backgroundColor: colors.primary }]} onPress={onAddAssets}>
-              <Text style={[styles.addButtonText, { color: '#FFFFFF' }]}>자산 추가하기</Text>
+              <Text style={[styles.addButtonText, { color: '#FFFFFF' }]}>{t('health.empty.add_button')}</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -204,17 +221,29 @@ const HealthSignalCard = React.memo(({
   // ──────────────────────────────────────────────────────────────────────
   return (
     <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-      {/* 상단: 날짜 + baln 로고 */}
+      {/* 상단: 날짜 + 구루 아바타 + baln 로고 */}
       <View style={styles.headerRow}>
-        <Text style={[styles.dateText, { color: colors.textSecondary }]}>{formatDate()}</Text>
-        <Text style={[styles.cardLogo, { color: colors.textSecondary }]}>bal<Text style={{ color: '#4CAF50' }}>n</Text></Text>
+        <Text style={[styles.dateText, { color: colors.textSecondary }]}>{formatDate(weekdayNames)}</Text>
+        <View style={styles.headerRight}>
+          {selectedGuruId && GURU_CHARACTER_CONFIGS[selectedGuruId] && (
+            <View style={styles.guruAvatarMini}>
+              <CharacterAvatar
+                guruId={selectedGuruId}
+                size="sm"
+                expression="neutral"
+                fallbackEmoji={GURU_CHARACTER_CONFIGS[selectedGuruId]?.emoji}
+              />
+            </View>
+          )}
+          <Text style={[styles.cardLogo, { color: colors.textSecondary }]}>bal<Text style={{ color: '#4CAF50' }}>n</Text></Text>
+        </View>
       </View>
 
       {/* 중앙: 거대 신호등 */}
       <TouchableOpacity style={styles.centerArea} onPress={() => setShowDetail(true)} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={`건강 점수 ${healthScore}점, ${gradeLabel} ${healthGrade}등급. 탭하여 상세 보기`}>
         <Text style={styles.signalEmoji}>{signalEmoji}</Text>
         <Text style={[styles.gradeLabel, { color: signalColor }]}>
-          {gradeLabel || '분석 중'} {healthGrade ? `(${healthGrade}등급)` : ''}
+          {gradeLabel || t('health.grade_analyzing')} {healthGrade ? `(${healthGrade}등급)` : ''}
         </Text>
         <View style={styles.scoreRow}>
           <Text style={[styles.scoreNumber, { color: signalColor }]}>
@@ -229,7 +258,7 @@ const HealthSignalCard = React.memo(({
       {totalAssets != null && totalAssets > 0 && (
         <View style={[styles.assetPulseRow, { backgroundColor: colors.surfaceLight }]}>
           <Text style={[styles.assetPulseText, { color: colors.textPrimary }]}>
-            총 자산 {formatAssetAmount(totalAssets)}
+            {t('health.pulse.total_assets')} {formatAssetAmount(totalAssets)}
           </Text>
           {dailyChangeRate != null && (
             <>
@@ -240,7 +269,7 @@ const HealthSignalCard = React.memo(({
                   { color: dailyChangeRate >= 0 ? '#4CAF50' : '#CF6679' },
                 ]}
               >
-                어제 대비 {dailyChangeRate >= 0 ? '+' : ''}{dailyChangeRate.toFixed(1)}%
+                {t('health.pulse.daily_change_label')} {dailyChangeRate >= 0 ? '+' : ''}{dailyChangeRate.toFixed(1)}%
               </Text>
             </>
           )}
@@ -256,7 +285,7 @@ const HealthSignalCard = React.memo(({
         >
           <Ionicons name="analytics-outline" size={16} color={signalColor} />
           <Text style={[styles.analysisCTAText, { color: signalColor }]}>
-            상세 분석 보기
+            {t('health.analysis_cta')}
           </Text>
           <Ionicons name="chevron-forward" size={14} color={signalColor} />
         </TouchableOpacity>
@@ -285,7 +314,7 @@ const HealthSignalCard = React.memo(({
         {onAddAssets && (
           <TouchableOpacity style={[styles.addAssetChip, { backgroundColor: colors.primary }]} onPress={onAddAssets}>
             <Text style={[styles.addAssetChipIcon, { color: '#FFFFFF' }]}>+</Text>
-            <Text style={[styles.addAssetChipText, { color: '#FFFFFF' }]}>자산 추가</Text>
+            <Text style={[styles.addAssetChipText, { color: '#FFFFFF' }]}>{t('health.add_asset_chip')}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -300,24 +329,24 @@ const HealthSignalCard = React.memo(({
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
             <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
-              <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>건강 점수 상세</Text>
+              <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>{t('health.modal.title')}</Text>
               <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>
-                6팩터 기반 복합 점수입니다
+                {t('health.modal.subtitle')}
               </Text>
               <View style={styles.modalScoreBox}>
                 <Text style={[styles.modalScore, { color: colors.textPrimary }]}>{healthScore}</Text>
-                <Text style={[styles.modalGrade, { color: colors.textSecondary }]}>{gradeLabel || '분석 중'} {healthGrade ? `(${healthGrade}등급)` : ''}</Text>
+                <Text style={[styles.modalGrade, { color: colors.textSecondary }]}>{gradeLabel || t('health.grade_analyzing')} {healthGrade ? `(${healthGrade}등급)` : ''}</Text>
               </View>
 
               {/* 6팩터 상세 */}
               {healthFactors && healthFactors.length > 0 && (
                 <View style={[styles.factorsContainer, { borderTopColor: colors.border }]}>
-                  <Text style={[styles.factorsTitle, { color: colors.textPrimary }]}>6팩터 상세</Text>
+                  <Text style={[styles.factorsTitle, { color: colors.textPrimary }]}>{t('health.modal.factors_title')}</Text>
                   {healthFactors.map((factor, index) => (
                     <View key={index} style={styles.factorRow}>
                       <View style={styles.factorLeft}>
                         <Text style={[styles.factorLabel, { color: colors.textPrimary }]}>{factor.label}</Text>
-                        <Text style={[styles.factorWeight, { color: colors.textSecondary }]}>가중치 {factor.weight}%</Text>
+                        <Text style={[styles.factorWeight, { color: colors.textSecondary }]}>{t('health.modal.weight_label')} {factor.weight}%</Text>
                       </View>
                       <Text style={[
                         styles.factorScore,
@@ -334,7 +363,7 @@ const HealthSignalCard = React.memo(({
                 style={[styles.modalCloseButton, { backgroundColor: colors.primary }]}
                 onPress={() => setShowDetail(false)}
               >
-                <Text style={[styles.modalCloseText, { color: '#FFFFFF' }]}>닫기</Text>
+                <Text style={[styles.modalCloseText, { color: '#FFFFFF' }]}>{t('health.modal.close_button')}</Text>
               </TouchableOpacity>
             </ScrollView>
           </View>
@@ -353,6 +382,7 @@ const HealthSignalCard = React.memo(({
     prevProps.isLoading !== nextProps.isLoading ||
     prevProps.totalAssets !== nextProps.totalAssets ||
     prevProps.dailyChangeRate !== nextProps.dailyChangeRate ||
+    prevProps.selectedGuruId !== nextProps.selectedGuruId ||
     prevProps.onAnalysisPress !== nextProps.onAnalysisPress ||
     prevProps.onAssetPress !== nextProps.onAssetPress
   ) {
@@ -407,6 +437,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  guruAvatarMini: {
+    transform: [{ scale: 0.6 }],
+    marginRight: -8,
   },
   dateText: {
     fontSize: 15,

@@ -29,6 +29,7 @@ import {
 } from '../../src/services/notifications';
 import { useTheme } from '../../src/hooks/useTheme';
 import { HeaderBar } from '../../src/components/common/HeaderBar';
+import { useLocale } from '../../src/context/LocaleContext';
 
 // ============================================================================
 // 알림 종류별 설정 데이터
@@ -81,11 +82,19 @@ const NOTIFICATION_ITEMS: NotificationItem[] = [
   },
 ];
 
+/** 알림 항목 key → i18n 번역 키 매핑 */
+const NOTIFICATION_LABEL_KEYS: Record<string, string> = {
+  rebalanceAlert: '',          // 번역 키 없음 — 하드코딩 유지
+  priceAlert: '',               // 번역 키 없음 — 하드코딩 유지
+  marketNews: 'settings.notifications.morning_briefing',
+};
+
 const PRICE_THRESHOLD_OPTIONS = [3, 5, 7];
 const WEEKLY_CAP_OPTIONS = [3, 5, 7];
 
 export default function NotificationsScreen() {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const [settings, setSettings] = useState<NotificationSettings>(
     DEFAULT_NOTIFICATION_SETTINGS
   );
@@ -156,7 +165,7 @@ export default function NotificationsScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <HeaderBar
-        title="알림 설정"
+        title={t('settings.notifications.title')}
         rightElement={syncing ? <ActivityIndicator size="small" color={colors.primary} /> : undefined}
       />
 
@@ -217,7 +226,9 @@ export default function NotificationsScreen() {
                           isDisabled && styles.textDisabled,
                         ]}
                       >
-                        {item.label}
+                        {NOTIFICATION_LABEL_KEYS[item.key]
+                          ? t(NOTIFICATION_LABEL_KEYS[item.key])
+                          : item.label}
                       </Text>
                       <Text
                         style={[

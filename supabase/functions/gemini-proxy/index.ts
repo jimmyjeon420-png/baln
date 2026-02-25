@@ -327,7 +327,7 @@ function cleanJsonResponse(text: string): any {
 // Classify Ticker: 동적 티커 스타일/섹터 분류
 // ============================================================================
 
-async function classifyTicker(reqData: ClassifyTickerRequest['data']) {
+async function classifyTicker(reqData: ClassifyTickerRequest['data'], langInstruction = '한국어로 자연스럽게 작성한다.') {
   const { ticker, name } = reqData;
 
   const prompt = `당신은 금융 데이터 전문가입니다. 아래 주식/ETF 티커를 분류하고 JSON으로 응답하세요.
@@ -357,7 +357,7 @@ JSON만 반환 (설명 없이):
 // Morning Briefing 생성
 // ============================================================================
 
-async function generateMorningBriefing(reqData: MorningBriefingRequest['data']) {
+async function generateMorningBriefing(reqData: MorningBriefingRequest['data'], langInstruction = '한국어로 자연스럽게 작성한다.') {
   const { portfolio, options } = reqData;
 
   const today = new Date();
@@ -475,7 +475,7 @@ ${(options?.includeRealEstate && options?.realEstateContext) ? `
 // Deep Dive: 개별 종목 AI 분석
 // ============================================================================
 
-async function generateDeepDive(reqData: DeepDiveRequest['data']) {
+async function generateDeepDive(reqData: DeepDiveRequest['data'], langInstruction = '한국어로 자연스럽게 작성한다.') {
   const { ticker, currentPrice, previousPrice, percentChange } = reqData;
 
   // 가격 정보가 있으면 포함
@@ -515,7 +515,7 @@ ${priceInfo}
 \`\`\`
 
 **중요:**
-- 모든 답변은 한국어로 작성
+- ${langInstruction}
 - recommendation은 반드시 "BUY", "SELL", "HOLD" 중 하나
 - 최신 뉴스와 실적을 반영한 현실적인 분석
 - reason은 구체적이고 근거 있게 작성
@@ -537,7 +537,7 @@ ${priceInfo}
 // What-If: 시나리오 기반 포트폴리오 영향 분석
 // ============================================================================
 
-async function generateWhatIfAnalysis(reqData: WhatIfRequest['data']) {
+async function generateWhatIfAnalysis(reqData: WhatIfRequest['data'], langInstruction = '한국어로 자연스럽게 작성한다.') {
   const magnitude = Number.isFinite(reqData.magnitude as number) ? Number(reqData.magnitude) : -20;
   const portfolioStr = (reqData.portfolio || [])
     .map((asset) => `${asset.name}(${asset.ticker}) ₩${Number(asset.currentValue || 0).toLocaleString()} / ${asset.allocation}%`)
@@ -558,7 +558,7 @@ ${portfolioStr}
 1) 모든 자산의 changePercent를 동일하게 만들지 말 것
 2) projectedValue = currentValue * (1 + changePercent/100)
 3) 합계 값(currentTotal/projectedTotal/changePercent/changeAmount)은 자산별 값과 일치해야 함
-4) 한국어, 숫자 필드는 숫자만
+4) ${langInstruction} 숫자 필드는 숫자만
 
 반드시 아래 JSON 구조만 반환:
 {
@@ -597,7 +597,7 @@ ${portfolioStr}
 // Tax Report: 세금 최적화 리포트
 // ============================================================================
 
-async function generateTaxReportAnalysis(reqData: TaxReportRequest['data']) {
+async function generateTaxReportAnalysis(reqData: TaxReportRequest['data'], langInstruction = '한국어로 자연스럽게 작성한다.') {
   const residency = reqData.residency === 'US' ? 'US' : 'KR';
   const portfolioStr = (reqData.portfolio || [])
     .map((asset) =>
@@ -652,7 +652,7 @@ ${portfolioStr}
 }
 
 주의:
-- 한국어 작성
+- ${langInstruction}
 - 숫자 필드는 숫자만
 - JSON 외 텍스트 금지`;
 
@@ -664,7 +664,7 @@ ${portfolioStr}
 // Investment Report: 전문 투자심사보고서 생성
 // ============================================================================
 
-async function generateInvestmentReport(reqData: InvestmentReportRequest['data']) {
+async function generateInvestmentReport(reqData: InvestmentReportRequest['data'], langInstruction = '한국어로 자연스럽게 작성한다.') {
   const { ticker, currentPrice } = reqData;
 
   const priceInfo = currentPrice
@@ -855,7 +855,7 @@ ${priceInfo}
 - 모든 숫자는 검증된 최신 데이터
 - 추측 금지, 근거 없는 수치 금지
 - JSON 형식 엄수 (주석, 마크다운 절대 금지)
-- 한국어 자연스럽게 작성
+- ${langInstruction}
 `;
 
   // Gemini API 호출
@@ -933,7 +933,7 @@ async function parsePortfolioScreenshot(imageBase64: string, mimeType: string) {
 // Warren Buffett Chat: 대화형 투자 조언
 // ============================================================================
 
-async function generateCFOChat(reqData: CFOChatRequest['data']) {
+async function generateCFOChat(reqData: CFOChatRequest['data'], langInstruction = '한국어로 자연스럽게 작성한다.') {
   const { question, conversationHistory = [] } = reqData;
 
   // 대화 기록을 프롬프트에 포함
@@ -1033,7 +1033,7 @@ async function generateCFOChat(reqData: CFOChatRequest['data']) {
 - 각자 다른 의견 OK! 서로 가볍게 반박하면 더 좋음 (예: 달리오가 캐시에게 "과도한 낙관은 위험합니다")
 - 구체적 숫자와 근거 필수 (예: "PER 12배", "3회 분할 매수", "포트폴리오 30% 비중")
 - 최신 뉴스/실적 반영
-- 한국어 자연스럽게 작성
+- ${langInstruction}
 `;
 
   // Gemini API 호출 (AI 버핏과 티타임 채팅은 30초 타임아웃)
@@ -1114,6 +1114,10 @@ serve(async (req: Request) => {
     // 요청 body 파싱
     const body = await req.json() as GeminiProxyRequest;
 
+    // 언어 설정: 클라이언트에서 전달한 lang 값으로 프롬프트 언어 결정
+    const lang = ((body as any).lang as string) || 'ko';
+    const langInstruction = lang === 'ko' ? '한국어로 자연스럽게 작성한다.' : 'Write naturally in English.';
+
     // ========================================================================
     // 인증 확인: 로그인한 사용자만 Gemini API 호출 허용
     // Supabase 클라이언트가 자동으로 Authorization 헤더에 JWT를 포함하므로
@@ -1149,19 +1153,19 @@ serve(async (req: Request) => {
     // 타입별 분기 처리
     switch (body.type) {
       case 'morning-briefing':
-        result = await generateMorningBriefing(body.data);
+        result = await generateMorningBriefing(body.data, langInstruction);
         break;
 
       case 'deep-dive':
-        result = await generateDeepDive(body.data);
+        result = await generateDeepDive(body.data, langInstruction);
         break;
 
       case 'cfo-chat':
-        result = await generateCFOChat(body.data);
+        result = await generateCFOChat(body.data, langInstruction);
         break;
 
       case 'investment-report':
-        result = await generateInvestmentReport(body.data);
+        result = await generateInvestmentReport(body.data, langInstruction);
         break;
 
       case 'parse-screenshot':
@@ -1169,15 +1173,15 @@ serve(async (req: Request) => {
         break;
 
       case 'classify-ticker':
-        result = await classifyTicker((body as ClassifyTickerRequest).data);
+        result = await classifyTicker((body as ClassifyTickerRequest).data, langInstruction);
         break;
 
       case 'what-if':
-        result = await generateWhatIfAnalysis((body as WhatIfRequest).data);
+        result = await generateWhatIfAnalysis((body as WhatIfRequest).data, langInstruction);
         break;
 
       case 'tax-report':
-        result = await generateTaxReportAnalysis((body as TaxReportRequest).data);
+        result = await generateTaxReportAnalysis((body as TaxReportRequest).data, langInstruction);
         break;
 
       case 'health-check': {

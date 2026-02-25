@@ -12,6 +12,7 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import supabase from '../services/supabase';
+import { getLangParam } from '../utils/promptLanguage';
 
 // ============================================================================
 // 타입 정의
@@ -550,6 +551,7 @@ export async function triggerNewsCollectionIfNeeded(reason: 'empty' | 'stale'): 
       body: {
         tasks: 'J',
         reason: `news_tab_${reason}`,
+        lang: getLangParam(),
       },
     });
 

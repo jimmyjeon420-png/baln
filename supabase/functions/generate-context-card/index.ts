@@ -95,6 +95,14 @@ serve(async (req: Request) => {
   }
 
   try {
+    // 언어 설정
+    let lang = 'ko';
+    try {
+      const body = await req.clone().json();
+      if (body?.lang === 'en') lang = 'en';
+    } catch { /* body 없으면 기본 ko */ }
+    const langInstruction = lang === 'ko' ? '쉬운 한국어로 작성한다.' : 'Write in clear, simple English.';
+
     // KST 기준 날짜
     const kst = new Date(Date.now() + 9 * 60 * 60 * 1000);
     const today = kst.toISOString().split('T')[0];
@@ -108,7 +116,7 @@ serve(async (req: Request) => {
 - "안심을 판다, 불안을 팔지 않는다." — 하락장에서도 맥락으로 이해를 돕는다.
 - "급락", "폭락", "공포" 같은 감정적 표현 대신 "조정", "하락", "변동성 확대"를 사용한다.
 - 과거 사례를 들 때는 회복 경험을 반드시 포함한다.
-- 쉬운 한국어로 작성한다.
+- ${langInstruction}
 
 [political_context 작성 원칙 — 버핏+달리오 합의]
 - 현재 미국 정치 이벤트(관세, 연준 압박, 규제 변화 등)를 역사적 유사 사례와 함께 설명한다.

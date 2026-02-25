@@ -34,6 +34,7 @@ import {
   getUserDataSummary,
 } from '../../src/services/accountDeletion';
 import { useTheme } from '../../src/hooks/useTheme';
+import { useLocale } from '../../src/context/LocaleContext';
 
 // ============================================================================
 // 상수
@@ -50,6 +51,7 @@ export default function DeleteAccountScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { colors } = useTheme();
+  const { t } = useLocale();
 
   // 상태
   const [step, setStep] = useState<Step>(1);
@@ -112,10 +114,10 @@ export default function DeleteAccountScreen() {
 
     // 최종 확인 Alert
     Alert.alert(
-      '정말로 삭제하시겠습니까?',
-      '이 작업은 되돌릴 수 없습니다.\n모든 데이터가 영구적으로 삭제됩니다.',
+      t('settings.delete_account.confirm'),
+      t('settings.delete_account.warning'),
       [
-        { text: '취소', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
           text: '삭제합니다',
           style: 'destructive',
@@ -131,7 +133,7 @@ export default function DeleteAccountScreen() {
                   '그동안 baln을 이용해 주셔서 감사합니다.',
                   [
                     {
-                      text: '확인',
+                      text: t('common.confirm'),
                       onPress: () => {
                         // signOut으로 인해 AuthContext가 세션 null 감지 → 로그인 화면 자동 이동
                         // 만약 자동 이동이 안 되면 수동으로 라우팅
@@ -176,7 +178,7 @@ export default function DeleteAccountScreen() {
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={28} color="#4CAF50" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>계정 삭제</Text>
+        <Text style={styles.headerTitle}>{t('settings.delete_account.title')}</Text>
         <View style={{ width: 28 }} />
       </View>
 
@@ -351,7 +353,7 @@ export default function DeleteAccountScreen() {
               ]}
               value={emailInput}
               onChangeText={setEmailInput}
-              placeholder="이메일 주소 입력"
+              placeholder={t('settings.delete_account.reason_placeholder')}
               placeholderTextColor="#666666"
               keyboardType="email-address"
               autoCapitalize="none"

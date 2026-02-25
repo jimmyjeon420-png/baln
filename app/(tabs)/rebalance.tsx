@@ -53,13 +53,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import DisclaimerBanner from '../../src/components/common/DisclaimerBanner';
 import { AIConsentModal, hasAIConsent } from '../../src/components/common/AIConsentModal';
 import supabase, { getCurrentUser } from '../../src/services/supabase';
+import { useLocale } from '../../src/context/LocaleContext';
 
 // ── 단일 통합 뷰 컴포넌트 (P2-A) ──
 import AdvancedCheckupView from '../../src/components/checkup/AdvancedCheckupView';
 
 
 // 새로고침 완료 토스트 (페이드인/아웃)
-function RefreshToast({ visible }: { visible: boolean }) {
+function RefreshToast({ visible, text }: { visible: boolean; text: string }) {
   const opacity = useRef(new RNAnimated.Value(0)).current;
 
   useEffect(() => {
@@ -77,7 +78,7 @@ function RefreshToast({ visible }: { visible: boolean }) {
   return (
     <RNAnimated.View style={[toastStyles.container, { opacity }]}>
       <Ionicons name="checkmark-circle" size={14} color="#4CAF50" />
-      <Text style={toastStyles.text}>최신 데이터로 갱신됨</Text>
+      <Text style={toastStyles.text}>{text}</Text>
     </RNAnimated.View>
   );
 }
@@ -343,6 +344,7 @@ async function runAnalysisDiagnostic() {
 export default function CheckupScreen() {
   useScreenTracking('checkup');
   const router = useRouter();
+  const { t } = useLocale();
   const { colors } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
   const [showToast, setShowToast] = useState(false);
@@ -638,23 +640,23 @@ export default function CheckupScreen() {
             />
           </View>
           <Text style={[s.emptyTitle, { color: colors.textPrimary }]}>
-            {isNetworkIssue ? '데이터를 불러올 수 없습니다' : '포트폴리오를 등록해주세요'}
+            {isNetworkIssue ? t('rebalance.empty.network_error_title') : t('rebalance.empty.no_portfolio_title')}
           </Text>
           <Text style={[s.emptyDesc, { color: colors.textSecondary }]}>
             {isNetworkIssue
-              ? 'WiFi 연결을 확인하고\n아래 버튼을 눌러 다시 시도해주세요'
-              : <>보유 자산을 등록하시면{'\n'}<Text style={{ color: '#4CAF50', fontWeight: '700' }}>AI 진단 + 맞춤 처방전</Text>을 받아보실 수 있습니다</>
+              ? t('rebalance.empty.network_error_desc')
+              : <>{t('rebalance.empty.no_portfolio_desc').split(t('rebalance.empty.ai_prescription_label'))[0]}<Text style={{ color: '#4CAF50', fontWeight: '700' }}>{t('rebalance.empty.ai_prescription_label')}</Text>{t('rebalance.empty.no_portfolio_desc').split(t('rebalance.empty.ai_prescription_label'))[1] ?? ''}</>
             }
           </Text>
           {isNetworkIssue ? (
             <TouchableOpacity style={[s.emptyButton, { backgroundColor: '#FF9800' }]} onPress={() => refreshPortfolio()}>
               <Ionicons name="refresh" size={20} color="#000" />
-              <Text style={s.emptyButtonText}>다시 시도</Text>
+              <Text style={s.emptyButtonText}>{t('rebalance.empty.retry_button')}</Text>
             </TouchableOpacity>
           ) : (
             <TouchableOpacity style={s.emptyButton} onPress={() => router.push('/add-asset')}>
               <Ionicons name="add-circle" size={20} color="#000" />
-              <Text style={s.emptyButtonText}>자산 등록하기</Text>
+              <Text style={s.emptyButtonText}>{t('rebalance.empty.add_asset_button')}</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -676,7 +678,7 @@ export default function CheckupScreen() {
       />
 
       {/* 새로고침 완료 토스트 */}
-      <RefreshToast key={toastKeyRef.current} visible={showToast} />
+      <RefreshToast key={toastKeyRef.current} visible={showToast} text={t('rebalance.toast.refresh_complete')} />
 
       {/* 진단 헤더 (맥박 버튼) */}
       <View style={s.diagnosticHeader}>
@@ -702,7 +704,7 @@ export default function CheckupScreen() {
         {!disclaimerDismissed && (
           <View style={s.disclaimerBannerWrap}>
             <DisclaimerBanner
-              message="본 서비스는 투자 자문이 아닙니다. AI 분석 결과는 참고 자료이며, 투자 결정에 대한 책임은 사용자에게 있습니다."
+              message={t('rebalance.disclaimer.text')}
               type="legal"
               dismissible
               onDismiss={() => {
@@ -717,7 +719,7 @@ export default function CheckupScreen() {
         {isAILoading && (
           <View style={s.aiLoadingBanner}>
             <View style={s.aiLoadingDot} />
-            <Text style={s.aiLoadingText}>AI가 포트폴리오를 분석하고 있습니다...</Text>
+            <Text style={s.aiLoadingText}>{t('rebalance.banner.ai_analyzing')}</Text>
           </View>
         )}
 
@@ -725,9 +727,9 @@ export default function CheckupScreen() {
         {analysisFailed && (
           <View style={s.aiErrorBanner}>
             <Ionicons name="alert-circle" size={16} color="#CF6679" />
-            <Text style={s.aiErrorText}>AI 분석 실패</Text>
+            <Text style={s.aiErrorText}>{t('rebalance.banner.ai_failed')}</Text>
             <TouchableOpacity onPress={() => onRefresh(true)} style={s.aiRetryButton}>
-              <Text style={s.aiRetryText}>재시도</Text>
+              <Text style={s.aiRetryText}>{t('common.retry')}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -771,10 +773,10 @@ export default function CheckupScreen() {
         {/* AI 심화 분석 도구 */}
         <View style={s.aiSection}>
           <Text style={[s.aiSectionTitle, { color: colors.textPrimary }]}>
-            🤖 AI 심화 분석
+            🤖 {t('rebalance.ai_section.title')}
           </Text>
           <Text style={[s.aiSectionSubtitle, { color: colors.textTertiary }]}>
-            더 깊은 인사이트가 필요하신가요?
+            {t('rebalance.ai_section.subtitle')}
           </Text>
 
           <View style={s.aiButtonList}>
@@ -786,10 +788,10 @@ export default function CheckupScreen() {
               <Text style={s.aiButtonEmoji}>📈</Text>
               <View style={s.aiButtonTextWrap}>
                 <Text style={[s.aiButtonTitle, { color: colors.textPrimary }]}>
-                  종목 딥다이브
+                  {t('rebalance.ai_button.deep_dive_title')}
                 </Text>
                 <Text style={[s.aiButtonDesc, { color: colors.textSecondary }]}>
-                  개별 주식 심층 분석
+                  {t('rebalance.ai_button.deep_dive_desc')}
                 </Text>
               </View>
               <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
@@ -803,10 +805,10 @@ export default function CheckupScreen() {
               <Text style={s.aiButtonEmoji}>🧪</Text>
               <View style={s.aiButtonTextWrap}>
                 <Text style={[s.aiButtonTitle, { color: colors.textPrimary }]}>
-                  What-If 시뮬레이션
+                  {t('rebalance.ai_button.what_if_title')}
                 </Text>
                 <Text style={[s.aiButtonDesc, { color: colors.textSecondary }]}>
-                  시장 폭락 시나리오 테스트
+                  {t('rebalance.ai_button.what_if_desc')}
                 </Text>
               </View>
               <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
@@ -820,10 +822,10 @@ export default function CheckupScreen() {
               <Text style={s.aiButtonEmoji}>🧾</Text>
               <View style={s.aiButtonTextWrap}>
                 <Text style={[s.aiButtonTitle, { color: colors.textPrimary }]}>
-                  세금 리포트
+                  {t('rebalance.ai_button.tax_report_title')}
                 </Text>
                 <Text style={[s.aiButtonDesc, { color: colors.textSecondary }]}>
-                  절세 전략 제안
+                  {t('rebalance.ai_button.tax_report_desc')}
                 </Text>
               </View>
               <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
@@ -837,10 +839,10 @@ export default function CheckupScreen() {
               <Text style={s.aiButtonEmoji}>☕</Text>
               <View style={s.aiButtonTextWrap}>
                 <Text style={[s.aiButtonTitle, { color: colors.textPrimary }]}>
-                  AI 버핏과 티타임
+                  {t('rebalance.ai_button.cfo_chat_title')}
                 </Text>
                 <Text style={[s.aiButtonDesc, { color: colors.textSecondary }]}>
-                  실시간 대화형 조언
+                  {t('rebalance.ai_button.cfo_chat_desc')}
                 </Text>
               </View>
               <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
@@ -851,7 +853,7 @@ export default function CheckupScreen() {
         {/* 면책 문구 */}
         <View style={s.disclaimerBox}>
           <Text style={s.disclaimer}>
-            본 서비스는 금융위원회에 등록된 투자자문업·투자일임업이 아니며, 제공되는 정보는 투자 권유가 아닙니다. AI 분석 결과는 과거 데이터 기반이며 미래 수익을 보장하지 않습니다. 투자 원금의 일부 또는 전부를 잃을 수 있으며, 투자 결정은 전적으로 본인의 판단과 책임 하에 이루어져야 합니다. 본 서비스는 예금자보호법에 따른 보호 대상이 아닙니다.
+            {t('rebalance.disclaimer.long_text')}
           </Text>
         </View>
 

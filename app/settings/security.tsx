@@ -20,10 +20,12 @@ import {
 } from '../../src/services/biometric';
 import { useTheme } from '../../src/hooks/useTheme';
 import { HeaderBar } from '../../src/components/common/HeaderBar';
+import { useLocale } from '../../src/context/LocaleContext';
 
 export default function SecurityScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { t } = useLocale();
   const [biometricEnabled, setBiometricEnabled] = useState(false);
   const [autoLock, setAutoLock] = useState(true);
   const [biometricAvailable, setBiometricAvailable] = useState(false);
@@ -87,7 +89,7 @@ export default function SecurityScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <HeaderBar title="보안" />
+      <HeaderBar title={t('settings.security.title')} />
 
       {/* 컨텐츠 */}
       <View style={styles.content}>
@@ -113,7 +115,7 @@ export default function SecurityScreen() {
 
           <View style={[styles.settingItem, { borderBottomColor: colors.border }]}>
             <View style={styles.settingInfo}>
-              <Text style={[styles.settingLabel, { color: colors.textPrimary }]}>자동 잠금</Text>
+              <Text style={[styles.settingLabel, { color: colors.textPrimary }]}>{t('settings.security.auto_lock')}</Text>
               <Text style={[styles.settingDescription, { color: colors.textTertiary }]}>앱 전환 시 자동 잠금</Text>
             </View>
             <Switch
@@ -136,7 +138,7 @@ export default function SecurityScreen() {
 
           <TouchableOpacity style={[styles.actionItem, { borderBottomColor: colors.border }]} onPress={() => router.push('/settings/delete-account')}>
             <Ionicons name="trash-outline" size={22} color={colors.error} />
-            <Text style={[styles.actionLabel, { color: colors.error }]}>계정 삭제</Text>
+            <Text style={[styles.actionLabel, { color: colors.error }]}>{t('settings.delete_account.title')}</Text>
             <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
           </TouchableOpacity>
         </View>

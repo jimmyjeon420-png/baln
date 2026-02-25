@@ -15,6 +15,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import supabase, { getCurrentUser } from './supabase';
 import type { DailyQuiz, QuizAttempt, SubmitQuizResult, QuizCategory } from '../types/quiz';
+import { getPromptLanguageInstruction } from '../utils/promptLanguage';
 
 // ⚠️ 보안: EXPO_PUBLIC_ 키는 클라이언트 번들에 포함됩니다. 프로덕션에서는 서버 프록시 권장.
 const API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY || '';
@@ -137,7 +138,7 @@ async function generateQuizWithGemini(): Promise<{
 - 정답이 아닌 보기도 그럴듯해야 한다 (너무 뻔한 오답 금지).
 - 하지만 보기끼리 너무 비슷하면 안 된다 (명확한 구분 필요).
 - 해설은 "왜 정답인지"와 "왜 오답인지"를 모두 설명한다.
-- 한국어로 자연스럽게 작성한다.
+- ${getPromptLanguageInstruction()}
 - 오늘 날짜: ${getTodayDate()}
 
 [난이도 기준]

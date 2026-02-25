@@ -77,7 +77,7 @@ export interface GuruAnalysisResult {
  * @param guru - GURU_LIST의 단일 거장 정보
  * @returns GuruInsightResult 또는 null (에러 시)
  */
-async function analyzeGuruInsight(guru: typeof GURU_LIST[0]): Promise<GuruInsightResult | null> {
+async function analyzeGuruInsight(guru: typeof GURU_LIST[0], langInstruction = '한국어로 자연스럽게 작성한다.'): Promise<GuruInsightResult | null> {
   const dateStr = getKSTDateStr();
 
   const prompt = `당신은 baln(발른) 앱의 투자 거장 분석 AI입니다.
@@ -86,7 +86,7 @@ async function analyzeGuruInsight(guru: typeof GURU_LIST[0]): Promise<GuruInsigh
 [핵심 원칙]
 - 한국 개인투자자가 거장의 행보를 통해 시장을 이해하도록 돕는다.
 - 확인된 사실만 서술한다. 추측은 "~로 추정됩니다"로 표현한다.
-- 한국어로 자연스럽게 작성한다.
+- ${langInstruction}
 
 [Google Search 검색]
 - "${guru.nameEn} portfolio 2026", "${guru.nameEn} latest news"
@@ -179,7 +179,7 @@ async function analyzeGuruInsight(guru: typeof GURU_LIST[0]): Promise<GuruInsigh
  *
  * @returns { insights, marketContext }
  */
-async function analyzeGuruInsights(): Promise<GuruAnalysisResult> {
+async function analyzeGuruInsights(langInstruction = '한국어로 자연스럽게 작성한다.'): Promise<GuruAnalysisResult> {
   const dateStr = getKSTDateStr();
 
   console.log('[Task C] 투자 거장 인사이트 순차 분석 시작...');
@@ -188,7 +188,7 @@ async function analyzeGuruInsights(): Promise<GuruAnalysisResult> {
 
   // 순차 실행 (for loop + await)
   for (const guru of GURU_LIST) {
-    const insight = await analyzeGuruInsight(guru);
+    const insight = await analyzeGuruInsight(guru, langInstruction);
     if (insight) {
       insights.push(insight);
     }
@@ -258,7 +258,7 @@ async function upsertGuruInsights(data: GuruAnalysisResult): Promise<void> {
  *
  * @returns { count: 10, marketContext }
  */
-export async function runGuruInsightsAnalysis(): Promise<{
+export async function runGuruInsightsAnalysis(lang = 'ko'): Promise<{
   count: number;
   marketContext: string;
 }> {
@@ -267,7 +267,8 @@ export async function runGuruInsightsAnalysis(): Promise<{
   try {
     console.log('[Task C] 투자 거장 인사이트 배치 시작...');
 
-    const result = await analyzeGuruInsights();
+    const langInstruction = lang === 'ko' ? '한국어로 자연스럽게 작성한다.' : 'Write naturally in English.';
+    const result = await analyzeGuruInsights(langInstruction);
     await upsertGuruInsights(result);
 
     const elapsed = Date.now() - startTime;

@@ -12,10 +12,11 @@
 
 export interface Badge {
   id: string;
-  name: string;
-  nameEn: string;
+  name: string;            // 뱃지 이름 (한국어)
+  nameEn: string;          // 뱃지 이름 (영어)
   icon: string;
-  description: string;
+  description: string;     // 뱃지 설명 (한국어)
+  descriptionEn?: string;  // 뱃지 설명 (영어)
   category: 'activity' | 'skill' | 'contribution' | 'special';
   condition: {
     type: 'streak' | 'prediction' | 'community' | 'manual';
@@ -38,6 +39,7 @@ const ACTIVITY_BADGES: Badge[] = [
     nameEn: 'Legend',
     icon: '🏆',
     description: '365일 연속 출석 — 진정한 투자자의 증명',
+    descriptionEn: '365-day streak — Proof of a true investor',
     category: 'activity',
     condition: { type: 'streak', threshold: 365 },
     rarity: 'legendary',
@@ -50,6 +52,7 @@ const ACTIVITY_BADGES: Badge[] = [
     nameEn: 'Iron Will',
     icon: '💪',
     description: '90일 연속 출석 — 습관이 체화된 사람',
+    descriptionEn: '90-day streak — Someone who has made it a habit',
     category: 'activity',
     condition: { type: 'streak', threshold: 90 },
     rarity: 'epic',
@@ -62,6 +65,7 @@ const ACTIVITY_BADGES: Badge[] = [
     nameEn: 'Month Master',
     icon: '💪',
     description: '30일 연속 출석 — 투자 습관이 자리잡은 사람',
+    descriptionEn: '30-day streak — Someone who has built an investment habit',
     category: 'activity',
     condition: { type: 'streak', threshold: 30 },
     rarity: 'rare',
@@ -74,6 +78,7 @@ const ACTIVITY_BADGES: Badge[] = [
     nameEn: 'Week Warrior',
     icon: '🔥',
     description: '7일 연속 출석 — 습관의 시작',
+    descriptionEn: '7-day streak — The beginning of a habit',
     category: 'activity',
     condition: { type: 'streak', threshold: 7 },
     rarity: 'common',
@@ -93,6 +98,7 @@ const SKILL_BADGES: Badge[] = [
     nameEn: 'Analyst',
     icon: '📊',
     description: '예측 적중률 60% 이상 (최소 10회 참여)',
+    descriptionEn: 'Prediction accuracy 60%+ (minimum 10 predictions)',
     category: 'skill',
     condition: {
       type: 'prediction',
@@ -109,6 +115,7 @@ const SKILL_BADGES: Badge[] = [
     nameEn: 'Sniper',
     icon: '🎯',
     description: '5연속 예측 적중 — 날카로운 시장 감각',
+    descriptionEn: '5 consecutive correct predictions — Sharp market instinct',
     category: 'skill',
     condition: {
       type: 'prediction',
@@ -132,6 +139,7 @@ const CONTRIBUTION_BADGES: Badge[] = [
     nameEn: 'Mentor',
     icon: '📚',
     description: '커뮤니티 글 10개 이상 + 평균 좋아요 5개 이상',
+    descriptionEn: '10+ community posts with an average of 5+ likes each',
     category: 'contribution',
     condition: {
       type: 'community',
@@ -155,6 +163,7 @@ const SPECIAL_BADGES: Badge[] = [
     nameEn: 'Verified',
     icon: '🔐',
     description: '계좌 연동 완료 — 실제 투자자 인증',
+    descriptionEn: 'Brokerage account linked — Verified real investor',
     category: 'special',
     condition: { type: 'manual' },
     rarity: 'common',
@@ -167,6 +176,7 @@ const SPECIAL_BADGES: Badge[] = [
     nameEn: 'Founder',
     icon: '⭐',
     description: '2026년 초기 사용자 (선착순 100명 한정)',
+    descriptionEn: '2026 early adopter (limited to first 100 users)',
     category: 'special',
     condition: { type: 'manual' },
     rarity: 'legendary',

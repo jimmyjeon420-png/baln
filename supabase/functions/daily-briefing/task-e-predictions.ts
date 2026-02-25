@@ -356,7 +356,7 @@ function curateQuestions(
  *
  * @returns { created, skipped }
  */
-export async function generatePredictionPolls(): Promise<PredictionGenerationResult> {
+export async function generatePredictionPolls(lang = 'ko'): Promise<PredictionGenerationResult> {
   const startTime = Date.now();
   const todayKst = getKSTDate();
   const { startIso, endIso } = getKSTDayBounds(todayKst);
@@ -414,7 +414,7 @@ ${snapshotContext}
 - 질문은 정확히 3개: stocks 1개, crypto 1개, macro 1개
 - YES/NO로 명확히 판정 가능해야 함
 - 24~48시간 내 결과 확인 가능해야 함
-- 한국어 자연문으로 작성
+- ${lang === 'ko' ? '한국어 자연문으로 작성' : 'Write naturally in English'}
 - 목표 수치가 현재가와 동떨어지면 안 됨
 - 이미 돌파한 수치를 다시 "회복/돌파"로 묻지 말 것
 

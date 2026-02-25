@@ -78,65 +78,65 @@ export interface ThemeColors {
 
 export const DARK_COLORS: ThemeColors = {
   // ========================================
-  // 배경 레이어 (모두 어두운색 - 다크 모드 핵심 원칙)
+  // 배경 레이어 — 동물의숲 따뜻한 네이비 (순수 검정 대신 푸른 기운)
   // ========================================
-  background: '#0A0A0A',        // 페이지 배경 (매우 어두운 검정)
-  surface: '#1A1A1A',           // 카드 배경 (어두운 회색)
-  surfaceElevated: '#252525',   // 강조 카드 (약간 밝은 회색)
-  surfaceLight: '#1F1F1F',      // 하위 호환
+  background: '#0D1B2A',        // 페이지 배경 (따뜻한 네이비)
+  surface: '#162537',           // 카드 배경 (짙은 네이비)
+  surfaceElevated: '#1E3044',   // 강조 카드 (밝은 네이비)
+  surfaceLight: '#182B3D',      // 하위 호환
 
-  // 인버스 섹션 (다크 모드에서도 어두운 배경 유지)
-  inverseSurface: '#1F1F1F',    // 어두운 회색 배경
-  inverseText: '#FAFAFA',       // 밝은 텍스트 (다크 모드 = 밝은 텍스트)
+  // 인버스 섹션
+  inverseSurface: '#182B3D',    // 어두운 네이비 배경
+  inverseText: '#F5F0E8',       // 따뜻한 크림 텍스트
 
-  primary: '#4CAF50',
-  primaryLight: '#66BB6A',
-  primaryDark: '#4CAF50',       // 다크 모드에서는 primary와 동일
+  primary: '#5DBB63',           // 동물의숲 그린 (약간 밝고 생기있게)
+  primaryLight: '#7ECC84',
+  primaryDark: '#5DBB63',
 
-  buy: '#4CAF50',
-  sell: '#CF6679',
-  neutral: '#9E9E9E',
-  hold: '#4CAF50',
-
-  // ========================================
-  // 텍스트 계층 (모두 밝은색 - 다크 모드 핵심 원칙)
-  // ========================================
-  textPrimary: '#FAFAFA',       // 주요 텍스트 (거의 흰색)
-  textSecondary: '#B8B8B8',     // 보조 텍스트 (밝은 회색)
-  textTertiary: '#8A8A8A',      // 비활성 텍스트 (중간 회색)
-  textQuaternary: '#5C5C5C',    // 매우 어두운 텍스트
-
-  success: '#4CAF50',
-  error: '#CF6679',
-  warning: '#FFB74D',
-  info: '#29B6F6',
+  buy: '#5DBB63',
+  sell: '#E88B96',              // 부드러운 코럴 레드
+  neutral: '#8E9EB0',           // 따뜻한 회색
+  hold: '#5DBB63',
 
   // ========================================
-  // 구분선 & 테두리 (어두운 회색 - 배경과 조화)
+  // 텍스트 계층 — 따뜻한 톤
   // ========================================
-  border: '#2A2A2A',            // 일반 구분선 (어두운 회색)
-  borderLight: '#222222',       // 매우 어두운 구분선
-  borderStrong: '#3A3A3A',      // 강한 구분선 (밝은 회색)
+  textPrimary: '#F5F0E8',       // 주요 (따뜻한 크림)
+  textSecondary: '#B8C4D0',     // 보조 (부드러운 하늘)
+  textTertiary: '#7A8DA0',      // 비활성 (네이비 회색)
+  textQuaternary: '#4E6478',    // 매우 연한
 
-  disabled: '#2A2A2A',          // 비활성 배경
-  disabledText: '#5C5C5C',      // 비활성 텍스트
+  success: '#5DBB63',
+  error: '#E88B96',
+  warning: '#F0C060',           // 따뜻한 골드
+  info: '#5DADE2',              // 하늘색
+
+  // ========================================
+  // 구분선 & 테두리 — 네이비 계열
+  // ========================================
+  border: '#1E3044',            // 네이비 구분선
+  borderLight: '#182B3D',       // 어두운 네이비 구분선
+  borderStrong: '#2A4058',      // 밝은 네이비 구분선
+
+  disabled: '#1E3044',
+  disabledText: '#4E6478',
 
   sentiment: {
-    calm: '#4CAF50',
-    caution: '#FFB74D',
-    alert: '#CF6679',
+    calm: '#5DBB63',
+    caution: '#F0C060',
+    alert: '#E88B96',
   },
 
   streak: {
-    active: '#4CAF50',
-    glow: '#66BB6A',
-    background: '#1E3A1E',
+    active: '#5DBB63',
+    glow: '#7ECC84',
+    background: '#162E1E',
   },
 
   premium: {
-    gold: '#FFC107',
-    purple: '#7C4DFF',
-    gradient: ['#FFC107', '#7C4DFF'],
+    gold: '#F0C060',
+    purple: '#9B7DFF',
+    gradient: ['#F0C060', '#9B7DFF'],
   },
 };
 

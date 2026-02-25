@@ -18,6 +18,7 @@ import { View, StyleSheet, Modal } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
+import { useLocale } from '../../src/context/LocaleContext';
 
 // 3카드 시스템
 import CardSwipeContainer from '../../src/components/home/CardSwipeContainer';
@@ -46,6 +47,9 @@ import { useCrisisAlert } from '../../src/hooks/useCrisisAlert';
 // 스트릭 복구 & 마일스톤 축하
 import StreakRecoveryModal from '../../src/components/common/StreakRecoveryModal';
 import MilestoneCelebration from '../../src/components/common/MilestoneCelebration';
+
+// 동물의숲 × 주토피아 — 구루 마을
+import { GuruVillage } from '../../src/components/village/GuruVillage';
 
 // 맥락 카드 전체 모달
 import ContextCard from '../../src/components/home/ContextCard';
@@ -78,6 +82,7 @@ import { usePushSetup, PUSH_PERMISSION_ELIGIBLE_KEY } from '../../src/hooks/useP
 import { useTheme } from '../../src/hooks/useTheme';
 import { useStreak } from '../../src/hooks/useStreak';
 import { useStreakRecovery } from '../../src/hooks/useStreakRecovery';
+import { useGuruStyle } from '../../src/hooks/useGuruStyle';
 
 function extractTaggedLine(source: string | null | undefined, tag: string): string | null {
   if (!source) return null;
@@ -137,6 +142,8 @@ function buildReviewSource(source: string | null | undefined): string | undefine
 // ============================================================================
 
 export default function HomeScreen() {
+  const { t } = useLocale();
+
   // 화면 진입 추적 + Push 알림 초기화
   useScreenTracking('today');
   usePushSetup();
@@ -147,6 +154,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { colors } = useTheme();
+  const { guruStyle } = useGuruStyle();
 
   // ──────────────────────────────────────────────────────────────────────
   // 스트릭 복구 & 마일스톤 축하
@@ -301,6 +309,7 @@ export default function HomeScreen() {
         onAddAssets: () => router.push('/add-asset'),
         totalAssets: 0,
         dailyChangeRate: null,
+        selectedGuruId: guruStyle,
         onAnalysisPress: () => router.push('/(tabs)/rebalance'),
       };
     }
@@ -324,6 +333,7 @@ export default function HomeScreen() {
       onAddAssets: () => router.push('/add-asset'),
       totalAssets,
       dailyChangeRate,
+      selectedGuruId: guruStyle,
       onAnalysisPress: () => router.push('/(tabs)/rebalance'),
       onAssetPress: (name: string) => router.push('/(tabs)/rebalance'),
     };
@@ -337,6 +347,7 @@ export default function HomeScreen() {
     router,
     totalAssets,
     dailyChangeRate,
+    guruStyle,
   ]);
 
   // ──────────────────────────────────────────────────────────────────────
@@ -361,33 +372,33 @@ export default function HomeScreen() {
       const fallbackCard = contextEffective?.card;
       const fallbackImpact = contextEffective?.userImpact;
       const fallbackBriefing = fallbackCard ? convertContextToBriefing({
-        headline: fallbackCard.headline || '시장은 늘 변동합니다',
+        headline: fallbackCard.headline || t('home.context_fallback.headline'),
         macroChain: fallbackCard.macro_chain || [],
         portfolioImpact: { message: fallbackImpact?.impact_message || '' },
         sentiment: fallbackCard.sentiment || 'calm',
       }) : null;
 
       const fallbackUpdateLabel = isContextFallback
-        ? '임시 데이터'
+        ? t('home.context_freshness.temp_data')
         : (isContextStale && freshnessLabel ? freshnessLabel : updateTimeLabel);
 
       return {
-        fact: fallbackBriefing?.fact || '시장은 늘 변동하지만, 맥락을 알면 불안은 줄어듭니다',
-        mechanism: fallbackBriefing?.mechanism || '매일 아침 7시, 새로운 시장 분석이 도착합니다',
+        fact: fallbackBriefing?.fact || t('home.context_fallback.fact'),
+        mechanism: fallbackBriefing?.mechanism || t('home.context_fallback.mechanism'),
         impact: fallbackBriefing?.impact || null,
         sentiment: (fallbackBriefing?.sentiment || 'calm') as 'calm' | 'caution' | 'alert',
-        sentimentLabel: fallbackBriefing?.sentimentLabel || '안정',
+        sentimentLabel: fallbackBriefing?.sentimentLabel || t('home.context_sentiment.calm'),
         date: new Date().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' }),
         onLearnMore: () => router.push('/marketplace'),
         isPremium: isPremium || false,
         onShare: undefined,
         isLoading: contextLoading,
         updateTimeLabel: fallbackUpdateLabel,
-        dataSource: contextEffective?.dataSource ?? '표준 맥락 폴백',
+        dataSource: contextEffective?.dataSource ?? t('home.context_message.standard_fallback'),
         dataTimestamp: contextEffective?.dataTimestamp ?? fallbackCard?.created_at ?? null,
-        confidenceNote: contextEffective?.confidenceNote ?? '임시 카드 기반 추정',
+        confidenceNote: contextEffective?.confidenceNote ?? t('home.context_message.temp_card_estimate'),
         confidenceScore: isContextFallback ? 58 : (isContextStale ? 72 : 84),
-        freshnessLabel: isContextFallback ? '임시 데이터' : (isContextStale ? (freshnessLabel ?? '이전 분석') : '최신'),
+        freshnessLabel: isContextFallback ? t('home.context_freshness.temp_data') : (isContextStale ? (freshnessLabel ?? t('home.context_freshness.previous_analysis')) : t('home.context_freshness.latest')),
         // 5겹 레이어 데이터 (effectiveData에서 추출)
         historicalContext: fallbackCard?.historical_context,
         macroChain: fallbackCard?.macro_chain,
@@ -396,7 +407,7 @@ export default function HomeScreen() {
         portfolioImpact: fallbackImpact ? {
           percentChange: fallbackImpact.percent_change ?? 0,
           healthScoreChange: fallbackImpact.health_score_change ?? 0,
-          message: fallbackImpact.impact_message || '오늘의 시장 변동에 따른 영향을 분석했습니다.',
+          message: fallbackImpact.impact_message || t('home.context_portfolio_impact.default'),
           isCalculating: false,
         } : null,
       };
@@ -407,14 +418,14 @@ export default function HomeScreen() {
 
     // 4겹 맥락카드 → 3줄 브리핑 변환
     const briefing = convertContextToBriefing({
-      headline: card.headline || '오늘의 시장 분석',
+      headline: card.headline || t('context_card.default_market_analysis'),
       macroChain: card.macro_chain || [],
       portfolioImpact: { message: userImpact?.impact_message || '' },
       sentiment: card.sentiment || 'calm',
     });
 
     const contextUpdateLabel = isContextFallback
-      ? '임시 데이터'
+      ? t('home.context_freshness.temp_data')
       : (isContextStale && freshnessLabel ? freshnessLabel : updateTimeLabel);
 
     return {
@@ -436,9 +447,9 @@ export default function HomeScreen() {
       updateTimeLabel: contextUpdateLabel,
       dataSource: contextData.dataSource ?? contextEffective?.dataSource ?? 'baln 분석 엔진',
       dataTimestamp: contextData.dataTimestamp ?? card.created_at ?? null,
-      confidenceNote: contextData.confidenceNote ?? '실시간 데이터 기반 분석',
+      confidenceNote: contextData.confidenceNote ?? t('context_card.confidence_live'),
       confidenceScore: isContextFallback ? 58 : (isContextStale ? 74 : 87),
-      freshnessLabel: isContextFallback ? '임시 데이터' : (isContextStale ? (freshnessLabel ?? '이전 분석') : '최신'),
+      freshnessLabel: isContextFallback ? t('home.context_freshness.temp_data') : (isContextStale ? (freshnessLabel ?? t('home.context_freshness.previous_analysis')) : t('home.context_freshness.latest')),
       // 5겹 레이어 데이터 전달
       historicalContext: card.historical_context,
       macroChain: card.macro_chain,
@@ -447,7 +458,7 @@ export default function HomeScreen() {
       portfolioImpact: userImpact ? {
         percentChange: userImpact.percent_change ?? 0,
         healthScoreChange: userImpact.health_score_change ?? 0,
-        message: userImpact.impact_message || '오늘의 시장 변동에 따른 영향을 분석했습니다.',
+        message: userImpact.impact_message || t('home.context_portfolio_impact.default'),
         isCalculating: false,
       } : null,
     };
@@ -462,6 +473,7 @@ export default function HomeScreen() {
     isContextFallback,
     isContextStale,
     freshnessLabel,
+    t,
   ]);
 
   // ──────────────────────────────────────────────────────────────────────
@@ -567,22 +579,22 @@ export default function HomeScreen() {
       ? 55
       : Math.min(92, 62 + Math.round(Math.log10(avgVotes + 1) * 18));
 
-    let freshness = '최신';
+    let freshness = t('home.prediction.latest');
     if (firstPoll?.created_at) {
       const createdAtMs = new Date(firstPoll.created_at).getTime();
       if (Number.isFinite(createdAtMs)) {
         const ageHours = (Date.now() - createdAtMs) / (1000 * 60 * 60);
-        if (ageHours >= 24) freshness = '갱신 필요';
+        if (ageHours >= 24) freshness = t('home.prediction.needs_update');
       }
     }
 
     return {
-      sourceLabel: hasFallback ? '표준 질문 폴백' : 'BALN 예측 엔진',
+      sourceLabel: hasFallback ? t('home.prediction.fallback_source') : 'BALN 예측 엔진',
       generatedAt: firstPoll?.created_at ?? null,
-      freshnessLabel: hasFallback ? '임시 데이터' : freshness,
+      freshnessLabel: hasFallback ? t('home.prediction.fallback_freshness') : freshness,
       confidenceScore: estimatedConfidence,
     };
-  }, [todayPolls]);
+  }, [todayPolls, t]);
 
   const predictionVoteProps = React.useMemo(() => {
     // 하위호환용 첫 번째 질문 비율
@@ -619,10 +631,10 @@ export default function HomeScreen() {
           { pollId: currentPoll.id, vote: choice },
           {
             onSuccess: () => {
-              showToast('🎯 투표 완료! 적중하면 +3C 획득', 'success');
+              showToast(t('home.toast.vote_success'), 'success');
             },
             onError: (error: any) => {
-              showToast(error?.message || '투표에 실패했습니다. 다시 시도해주세요.', 'error');
+              showToast(error?.message || t('home.toast.vote_error'), 'error');
             },
           }
         );
@@ -633,10 +645,10 @@ export default function HomeScreen() {
           { pollId, vote: choice },
           {
             onSuccess: () => {
-              showToast('🎯 투표 완료! 적중하면 +3C 획득', 'success');
+              showToast(t('home.toast.multi_vote_success'), 'success');
             },
             onError: (error: any) => {
-              showToast(error?.message || '투표에 실패했습니다.', 'error');
+              showToast(error?.message || t('home.toast.multi_vote_error'), 'error');
             },
           }
         );
@@ -652,7 +664,7 @@ export default function HomeScreen() {
       isFallbackData: todayPolls.some((poll) => poll.source === 'fallback'),
       trustMeta: predictionTrustMeta,
     };
-  }, [currentPoll, pollsForCard, myVote, myVotesChoiceMap, recentResults, myStats, globalStats, router, submitVote, showToast, isVoting, todayPolls, predictionTrustMeta]);
+  }, [currentPoll, pollsForCard, myVote, myVotesChoiceMap, recentResults, myStats, globalStats, router, submitVote, showToast, isVoting, todayPolls, predictionTrustMeta, t]);
 
   // ──────────────────────────────────────────────────────────────────────
   // 맥락 카드 전체 데이터 (모달용)
@@ -704,8 +716,19 @@ export default function HomeScreen() {
         onViewContext={() => setContextModalVisible(true)}
       />
 
+      {/* 🏘️ 구루 마을 — 동물의숲 × 주토피아 (구루들이 살아 움직이는 마을) */}
+      <GuruVillage
+        height={240}
+        onRoundtablePress={() => router.push('/roundtable')}
+      />
+
       <CardSwipeContainer
-        labels={['내 자산', '오늘 시장', '내 예측', '어제 결과']}
+        labels={[
+          t('home.card_labels.my_assets'),
+          t('home.card_labels.today_market'),
+          t('home.card_labels.my_predictions'),
+          t('home.card_labels.yesterday_review'),
+        ]}
         initialIndex={0}
         onCardChange={handleCardChange}
         onRefresh={handleRefresh}

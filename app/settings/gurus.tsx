@@ -4,7 +4,7 @@
  * Central Kitchen 배치 데이터 표시 (매일 07:00 업데이트)
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -21,6 +21,9 @@ import { GuruInsightsSkeleton } from '../../src/components/SkeletonLoader';
 import type { GuruInsight } from '../../src/services/centralKitchen';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTheme } from '../../src/hooks/useTheme';
+import { CharacterAvatar } from '../../src/components/character/CharacterAvatar';
+import { guruNameToCharacterId } from '../../src/services/characterService';
+import { useLocale } from '../../src/context/LocaleContext';
 
 // 구루 이름 → ID 변환 (딥다이브 네비게이션용)
 function guruNameToId(name: string): string | null {
@@ -42,14 +45,6 @@ const ACTION_COLORS: Record<string, string> = {
 // 센티먼트 필터 옵션
 type SentimentFilter = 'ALL' | 'BULLISH' | 'BEARISH' | 'CAUTIOUS' | 'NEUTRAL';
 
-const FILTER_OPTIONS: { key: SentimentFilter; label: string }[] = [
-  { key: 'ALL', label: '전체' },
-  { key: 'BULLISH', label: '강세' },
-  { key: 'BEARISH', label: '약세' },
-  { key: 'CAUTIOUS', label: '신중' },
-  { key: 'NEUTRAL', label: '중립' },
-];
-
 // 센티먼트별 색상
 const SENTIMENT_COLORS: Record<string, string> = {
   BULLISH: '#4CAF50',
@@ -58,19 +53,34 @@ const SENTIMENT_COLORS: Record<string, string> = {
   NEUTRAL: '#FFD700',
 };
 
-const SENTIMENT_LABELS: Record<string, string> = {
-  BULLISH: '강세',
-  BEARISH: '약세',
-  CAUTIOUS: '신중',
-  NEUTRAL: '중립',
-};
-
 export default function GuruInsightsScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { t } = useLocale();
   const queryClient = useQueryClient();
   const { data, isLoading, isRefetching } = useGuruInsights();
   const [filter, setFilter] = useState<SentimentFilter>('ALL');
+
+  const FILTER_OPTIONS = useMemo<{ key: SentimentFilter; label: string }[]>(
+    () => [
+      { key: 'ALL', label: t('guru.insights.filter_all') },
+      { key: 'BULLISH', label: t('guru.insights.filter_bullish') },
+      { key: 'BEARISH', label: t('guru.insights.filter_bearish') },
+      { key: 'CAUTIOUS', label: t('guru.insights.filter_cautious') },
+      { key: 'NEUTRAL', label: t('guru.insights.filter_neutral') },
+    ],
+    [t],
+  );
+
+  const SENTIMENT_LABELS = useMemo<Record<string, string>>(
+    () => ({
+      BULLISH: t('guru.insights.filter_bullish'),
+      BEARISH: t('guru.insights.filter_bearish'),
+      CAUTIOUS: t('guru.insights.filter_cautious'),
+      NEUTRAL: t('guru.insights.filter_neutral'),
+    }),
+    [t],
+  );
 
   const onRefresh = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: GURU_INSIGHTS_KEY });
@@ -90,7 +100,7 @@ export default function GuruInsightsScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
           </TouchableOpacity>
-          <Text style={[styles.title, { color: colors.textPrimary }]}>투자 거장 인사이트</Text>
+          <Text style={[styles.title, { color: colors.textPrimary }]}>{t('guru.insights.title')}</Text>
           <View style={styles.headerBadge}>
             <Text style={styles.headerBadgeText}>GURU</Text>
           </View>
@@ -110,7 +120,7 @@ export default function GuruInsightsScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={[styles.title, { color: colors.textPrimary }]}>투자 거장 인사이트</Text>
+        <Text style={[styles.title, { color: colors.textPrimary }]}>{t('guru.insights.title')}</Text>
         <View style={styles.headerBadge}>
           <Text style={styles.headerBadgeText}>GURU</Text>
         </View>
@@ -131,13 +141,13 @@ export default function GuruInsightsScreen() {
           /* Empty State */
           <View style={styles.emptyState}>
             <Text style={styles.emptyEmoji}>🔭</Text>
-            <Text style={styles.emptyTitle}>아직 거장 인사이트가 없습니다</Text>
+            <Text style={styles.emptyTitle}>{t('guru.insights.empty_title')}</Text>
             <Text style={styles.emptyDescription}>
-              매일 아침 7시에 10명의 투자 거장 분석이{'\n'}자동으로 업데이트됩니다.
+              {t('guru.insights.empty_description')}
             </Text>
             <TouchableOpacity style={styles.emptyRefreshButton} onPress={onRefresh}>
               <Ionicons name="refresh" size={18} color="#4CAF50" />
-              <Text style={styles.emptyRefreshText}>새로고침</Text>
+              <Text style={styles.emptyRefreshText}>{t('guru.insights.empty_refresh')}</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -147,7 +157,7 @@ export default function GuruInsightsScreen() {
               <View style={styles.contextBanner}>
                 <Text style={styles.contextIcon}>🌍</Text>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.contextLabel}>오늘의 시장 맥락</Text>
+                  <Text style={styles.contextLabel}>{t('guru.insights.context_label')}</Text>
                   <Text style={styles.contextText}>{data.market_context}</Text>
                 </View>
               </View>
@@ -189,7 +199,7 @@ export default function GuruInsightsScreen() {
             {filteredInsights.length === 0 && (
               <View style={styles.noFilterResult}>
                 <Text style={styles.noFilterText}>
-                  '{SENTIMENT_LABELS[filter]}' 포지션의 거장이 없습니다
+                  {t('guru.insights.no_filter_result', { sentiment: SENTIMENT_LABELS[filter] })}
                 </Text>
               </View>
             )}
@@ -212,7 +222,7 @@ export default function GuruInsightsScreen() {
             <View style={styles.disclaimer}>
               <Ionicons name="warning-outline" size={14} color="#666666" />
               <Text style={styles.disclaimerText}>
-                본 정보는 AI가 공개 데이터를 기반으로 생성한 가상의 분석이며, 실제 투자 거장의 공식 의견이 아닙니다. 「자본시장법」상 투자자문에 해당하지 않으며, 특정 금융상품의 매수·매도 권유가 아닙니다. 전망성 정보(Forward-looking statements)는 실제 결과와 다를 수 있습니다. 투자 결정은 본인의 판단과 전문가 상담에 따라 이루어져야 합니다.
+                {t('guru.insights.disclaimer')}
               </Text>
             </View>
           </>
@@ -227,15 +237,29 @@ export default function GuruInsightsScreen() {
 // ============================================================================
 
 function GuruCard({ guru }: { guru: GuruInsight }) {
+  const { t } = useLocale();
   const sentimentColor = SENTIMENT_COLORS[guru.sentiment] || '#FFD700';
-  const sentimentLabel = SENTIMENT_LABELS[guru.sentiment] || '중립';
+  const sentimentLabel = (() => {
+    switch (guru.sentiment) {
+      case 'BULLISH': return t('guru.insights.filter_bullish');
+      case 'BEARISH': return t('guru.insights.filter_bearish');
+      case 'CAUTIOUS': return t('guru.insights.filter_cautious');
+      case 'NEUTRAL': return t('guru.insights.filter_neutral');
+      default: return t('guru.insights.filter_neutral');
+    }
+  })();
 
   return (
     <View style={styles.guruCard}>
-      {/* 헤더: 이모지 + 이름 + 센티먼트 배지 */}
+      {/* 헤더: 캐릭터 아바타 + 이름 + 센티먼트 배지 */}
       <View style={styles.guruHeader}>
         <View style={styles.guruAvatar}>
-          <Text style={styles.guruEmoji}>{guru.emoji}</Text>
+          <CharacterAvatar
+            guruId={guruNameToCharacterId(guru.guruName) || guruNameToCharacterId(guru.guruNameEn) || ''}
+            size="sm"
+            sentiment={guru.sentiment}
+            fallbackEmoji={guru.emoji}
+          />
         </View>
         <View style={styles.guruInfo}>
           <Text style={styles.guruName}>{guru.guruName}</Text>
@@ -280,7 +304,7 @@ function GuruCard({ guru }: { guru: GuruInsight }) {
       {/* 주목 종목 (target_tickers) */}
       {guru.target_tickers && guru.target_tickers.length > 0 && (
         <View style={styles.targetTickerRow}>
-          <Text style={styles.targetTickerLabel}>주목</Text>
+          <Text style={styles.targetTickerLabel}>{t('guru.insights.target_tickers_label')}</Text>
           {guru.target_tickers.map((ticker: string) => (
             <View key={ticker} style={styles.targetTickerChip}>
               <Text style={styles.targetTickerText}>{ticker}</Text>
@@ -291,7 +315,7 @@ function GuruCard({ guru }: { guru: GuruInsight }) {
 
       {/* 최근 행동 */}
       <View style={styles.section}>
-        <Text style={styles.sectionLabel}>최근 행동</Text>
+        <Text style={styles.sectionLabel}>{t('guru.insights.recent_action_label')}</Text>
         <Text style={styles.sectionContent}>{guru.recentAction}</Text>
       </View>
 
@@ -305,7 +329,7 @@ function GuruCard({ guru }: { guru: GuruInsight }) {
 
       {/* AI 분석 */}
       <View style={styles.section}>
-        <Text style={styles.sectionLabel}>분석</Text>
+        <Text style={styles.sectionLabel}>{t('guru.insights.analysis_label')}</Text>
         <Text style={styles.sectionContent}>{guru.reasoning}</Text>
       </View>
 
@@ -320,7 +344,7 @@ function GuruCard({ guru }: { guru: GuruInsight }) {
         </View>
         {guru.source && (
           <Text style={styles.sourceText} numberOfLines={1}>
-            출처: {guru.source}
+            {t('guru.insights.source_label')} {guru.source}
           </Text>
         )}
       </View>

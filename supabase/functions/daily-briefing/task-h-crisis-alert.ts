@@ -56,7 +56,7 @@ const VIX_THRESHOLDS = {
 // 메인 함수
 // ============================================================================
 
-export async function checkCrisisAlert(): Promise<CrisisCheckResult> {
+export async function checkCrisisAlert(lang = 'ko'): Promise<CrisisCheckResult> {
   const startTime = Date.now();
   const marketsChecked: string[] = [];
   let alertsCreated = 0;
@@ -172,7 +172,7 @@ ${crisisDesc}
 - "급락", "폭락", "공포", "패닉" 같은 감정적 표현을 사용하지 않는다.
 - "조정", "하락", "변동성 확대" 같은 중립적 표현을 사용한다.
 - 과거 유사 사례에서 회복한 경험을 반드시 포함한다.
-- 한국어로 자연스럽게 작성한다.
+- ${lang === 'ko' ? '한국어로 자연스럽게 작성한다.' : 'Write naturally in English.'}
 
 [응답 형식 — 아래 JSON만 출력. 설명문, 마크다운 금지.]
 {

@@ -59,7 +59,8 @@ export interface StockQuantResult {
  * @returns StockQuantResult[]
  */
 async function analyzeStockBatch(
-  stocks: typeof STOCK_LIST
+  stocks: typeof STOCK_LIST,
+  langInstruction = '한국어로 자연스럽게 작성한다.'
 ): Promise<StockQuantResult[]> {
   const dateStr = getKSTDateStr();
 
@@ -71,7 +72,7 @@ async function analyzeStockBatch(
 [분석 대상] ${tickerList}
 
 [핵심 원칙]
-- 한국 개인투자자가 이해할 수 있는 쉬운 한국어로 작성한다.
+- ${langInstruction}
 - "안심을 판다, 불안을 팔지 않는다" — 하락 종목도 맥락과 함께 설명한다.
 - 분석은 데이터 기반으로 하되, 결론을 단정짓지 않는다.
 
@@ -170,7 +171,7 @@ async function analyzeStockBatch(
  * @param startIdx - 시작 인덱스 (inclusive)
  * @param endIdx - 종료 인덱스 (exclusive)
  */
-export async function analyzeStockSubset(startIdx: number, endIdx: number): Promise<StockQuantResult[]> {
+export async function analyzeStockSubset(startIdx: number, endIdx: number, lang = 'ko'): Promise<StockQuantResult[]> {
   const subset = STOCK_LIST.slice(startIdx, endIdx);
   console.log(`[Task B subset] ${startIdx}~${endIdx}: ${subset.length}개 종목 (${subset.map(s => s.ticker).join(', ')})`);
 
@@ -186,7 +187,8 @@ export async function analyzeStockSubset(startIdx: number, endIdx: number): Prom
     console.log(`[Task B subset] 배치 ${batchNum}/${totalBatches}: ${batch.map(s => s.ticker).join(', ')}`);
 
     try {
-      const results = await analyzeStockBatch(batch);
+      const subLangInstruction = lang === 'ko' ? '한국어로 자연스럽게 작성한다.' : 'Write naturally in English.';
+      const results = await analyzeStockBatch(batch, subLangInstruction);
       allResults.push(...results);
     } catch (error) {
       console.error(`[Task B subset] 배치 ${batchNum} 실패:`, error);
@@ -242,7 +244,8 @@ export async function analyzeStockSubset(startIdx: number, endIdx: number): Prom
   return allResults;
 }
 
-export async function analyzeAllStocks(): Promise<StockQuantResult[]> {
+export async function analyzeAllStocks(lang = 'ko'): Promise<StockQuantResult[]> {
+  const langInstruction = lang === 'ko' ? '한국어로 자연스럽게 작성한다.' : 'Write naturally in English.';
   const startTime = Date.now();
   const BATCH_SIZE = 7;  // 5→7로 증가: 배치 수 7→5로 줄여서 150s 타임아웃 방지
   const allResults: StockQuantResult[] = [];
@@ -256,7 +259,7 @@ export async function analyzeAllStocks(): Promise<StockQuantResult[]> {
       console.log(`[Task B] 배치 ${batchNum}/${totalBatches}: ${batch.map(s => s.ticker).join(', ')}`);
 
       try {
-        const results = await analyzeStockBatch(batch);
+        const results = await analyzeStockBatch(batch, langInstruction);
         allResults.push(...results);
       } catch (error) {
         console.error(`[Task B] 배치 ${batchNum} 실패:`, error);

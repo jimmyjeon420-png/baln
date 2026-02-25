@@ -44,11 +44,16 @@ npx eas submit --platform ios --path ./build-xxxxx.ipa
 ```
 
 ### 핵심 파일 구조 요약
-- `app/(tabs)/`: index(오늘)/rebalance(분석)/profile(전체) — 3탭
+- `app/(tabs)/`: index(오늘)/rebalance(분석)/village(마을)/lounge(라운지)/profile(전체) — **5탭**
 - `app/_layout.tsx`: AuthGate + ErrorBoundary + 딥링크 + Analytics
+- `app/roundtable/`: 라운드테이블 로비 + 세션 화면
 - `app/settings/delete-account.tsx`: 계정 삭제 (Apple 필수)
-- `src/hooks/`: 33개 훅 (useSharedPortfolio, useDeepLink, usePushSetup 등)
-- `src/services/`: 20개 서비스 (centralKitchen, analyticsService, shareService 등)
+- `src/components/character/`: 10 구루 동물 캐릭터 SVG + 애니메이션
+- `src/components/village/`: 구루 마을 씬 (배경/NPC/채팅)
+- `src/components/roundtable/`: 라운드테이블 토론 UI
+- `src/data/guruCharacterConfig.ts`: 10 캐릭터 설정 (동물/색상/철학)
+- `src/hooks/`: 35개+ 훅 (useGuruVillage, useRoundtable, useTimeOfDay 등)
+- `src/services/`: 22개+ 서비스 (characterService, roundtableService, villageConversationService 등)
 - `supabase/functions/daily-briefing/`: Edge Function (Task A~G)
 
 ---
@@ -98,15 +103,19 @@ npx eas submit --platform ios --path ./build-xxxxx.ipa
 
 **사용자 경험**: "아, 오늘 주가가 빠진 게 내 탓이 아니라 매크로 때문이구나" → 안심
 
-### 3-Tab 구조 (목표 아키텍처)
+### 5-Tab 구조 (2026-02-25 전환)
 
-> 현재 5탭 → 3탭으로 통합 (이승건: "사용자가 세지 않아도 되는 앱")
+> 동물의숲+주토피아 세계관 도입 → 캐릭터 감정 연결로 리텐션 강화
+> 이승건: "보상으로 교육을 감싸면 사용자는 성장하는 줄도 모르고 매일 온다"
+> 듀오링고 전략: 귀여운 캐릭터 + 죄책감 + 습관 → DAU 폭증
 
-| 탭 | 이름 | 역할 | 체류시간 목표 |
-|----|------|------|-------------|
-| **1** | **오늘** (Today) | 맥락 카드 + 예측 투표 + Pulse 요약 | 3~5분/일 |
-| **2** | **분석** (Checkup) | AI 진단 + 처방전 + 건강 점수 | 필요 시 |
-| **3** | **전체** (More) | 커뮤니티 + 설정 + 크레딧 + 부동산 | 탐색 |
+| 탭 | 이름 | 파일 | 역할 | 체류시간 목표 |
+|----|------|------|------|-------------|
+| **1** | **오늘** (Today) | `index.tsx` | 맥락 카드 + 예측 투표 + Pulse 요약 | 3~5분/일 |
+| **2** | **분석** (Checkup) | `rebalance.tsx` | AI 진단 + 처방전 + 건강 점수 | 필요 시 |
+| **3** | **마을** (Village) | `village.tsx` | 구루 마을 + 라운드테이블 입장 | **킬링 피처** |
+| **4** | **라운지** (Lounge) | `lounge.tsx` | 커뮤니티 소셜 공간 | 소셜 |
+| **5** | **전체** (More) | `profile.tsx` | 설정 + 크레딧 + 마켓 + 부동산 | 탐색 |
 
 **오늘 탭 구성 (위→아래):**
 1. 한 줄 Pulse ("총 자산 1.2억 | 건강 A | 어제 대비 +0.3%")
@@ -116,11 +125,34 @@ npx eas submit --platform ios --path ./build-xxxxx.ipa
 5. 또래 비교 넛지 (같은 자산 구간 평균)
 
 **분석 탭 구성:**
-- 기존 diagnosis.tsx + rebalance.tsx 통합
 - AI 진단 → 처방전 → 실행 체크리스트 원스톱
 
-**전체 탭 구성:**
+**마을 탭 구성 (신규 — 킬링 피처):**
+- 구루 마을 씬 (10마리 동물 캐릭터가 돌아다니며 대화)
+- 시간대별 배경 변화 (새벽/아침/오후/저녁/밤 + 별)
+- 구루 탭 → 1:1 AI 대화
+- "거장 토론" 버튼 → 라운드테이블 (주제+구루 선택 → AI 토론)
+- 파벌 시스템: 가치투자파/혁신파/매크로파/전통파
+
+**10 구루 캐릭터:**
+| 구루 | 동물 | 이모지 | 파벌 |
+|------|------|--------|------|
+| 워렌 버핏 | 올빼미 | 🦉 | 가치투자 |
+| 레이 달리오 | 사슴 | 🦌 | 매크로 |
+| 캐시 우드 | 여우 | 🦊 | 혁신 |
+| 드러킨밀러 | 치타 | 🐆 | 매크로 |
+| 마이클 세일러 | 늑대 | 🐺 | 혁신 |
+| 제이미 다이먼 | 사자 | 🦁 | 전통 |
+| 일론 머스크 | 카멜레온 | 🦎 | 혁신 |
+| 피터 린치 | 곰 | 🐻 | 가치투자 |
+| 하워드 막스 | 거북이 | 🐢 | 가치투자 |
+| 짐 로저스 | 호랑이 | 🐯 | 매크로 |
+
+**라운지 탭 구성:**
 - 커뮤니티 (VIP 라운지)
+- 사용자 간 소셜 기능
+
+**전체 탭 구성:**
 - 투자 거장 인사이트
 - 부동산 자산 관리
 - 크레딧/구독/설정
@@ -159,19 +191,21 @@ npx eas submit --platform ios --path ./build-xxxxx.ipa
 ### 실행 우선순위
 
 **P0 (즉시 — 이번 스프린트)**:
+- [ ] 5탭 구조 전환 (`_layout.tsx` — 오늘/분석/마을/라운지/전체)
+- [ ] 마을 탭 통합 (`village.tsx` — GuruVillage + 라운드테이블 진입)
+- [ ] 라운지 탭 복원 (`lounge.tsx` — 커뮤니티)
 - [ ] 맥락 카드 UI 컴포넌트 (`src/components/home/ContextCard.tsx`)
-- [ ] 오늘 탭 리디자인 (맥락 카드 중심)
-- [ ] 예측 투표 → 복기 연결 강화
+- [ ] EN/KO/JA 다국어 확장 (영어 우선 완성)
 
 **P1 (2주 내)**:
-- [ ] 3탭 구조 전환 (_layout.tsx 리팩터링)
-- [ ] 맥락 카드 Edge Function (Central Kitchen Task G)
-- [ ] Premium 페이월 맥락 카드 연동
+- [ ] 마을 캐릭터 인터랙션 고도화 (감정 연결 강화)
+- [ ] 라운드테이블 UX 폴리싱 (타자기 효과 + 표정 전환)
+- [ ] Premium 페이월 마을 콘텐츠 연동
 
 **P2 (1개월 내)**:
 - [ ] 위기 감지 자동 알림 (시장 -3% → 맥락 카드 푸시)
-- [ ] 연속 기록 시스템 (스트릭)
-- [ ] 앱스토어 출시 준비
+- [ ] 마을 성장 시스템 (건강 점수 ↔ 마을 번영도 연동)
+- [ ] 일본어 지원 검토 (MAU 500 이후)
 
 ---
 
@@ -329,12 +363,11 @@ npx eas submit --platform ios --path ./build-xxxxx.ipa
 
 | 역할 | 전담 파일 | 절대 수정 금지 |
 |------|----------|---------------|
-| 홈 탭 담당 | `app/(tabs)/index.tsx` | diagnosis, rebalance, lounge, insights, profile |
-| 진단 탭 담당 | `app/(tabs)/diagnosis.tsx` | index, rebalance, lounge, insights, profile |
-| 처방전 탭 담당 | `app/(tabs)/rebalance.tsx` | index, diagnosis, lounge, insights, profile |
-| 라운지 탭 담당 | `app/(tabs)/lounge.tsx` | index, diagnosis, rebalance, insights, profile |
-| 인사이트 탭 담당 | `app/(tabs)/insights.tsx` | index, diagnosis, rebalance, lounge, profile |
-| 프로필 담당 | `app/(tabs)/profile.tsx` | index, diagnosis, rebalance, lounge, insights |
+| 홈 탭 담당 | `app/(tabs)/index.tsx` | rebalance, village, lounge, profile |
+| 분석 탭 담당 | `app/(tabs)/rebalance.tsx` | index, village, lounge, profile |
+| 마을 탭 담당 | `app/(tabs)/village.tsx` | index, rebalance, lounge, profile |
+| 라운지 탭 담당 | `app/(tabs)/lounge.tsx` | index, rebalance, village, profile |
+| 전체 탭 담당 | `app/(tabs)/profile.tsx` | index, rebalance, village, lounge |
 | 레이아웃 담당 | `app/(tabs)/_layout.tsx` | 모든 탭 파일 |
 
 #### 공유 금지 파일 (한 명만 수정 가능)
@@ -346,6 +379,9 @@ npx eas submit --platform ios --path ./build-xxxxx.ipa
 | `src/hooks/useSharedAnalysis.ts` | **최고** | 4개+ 탭이 공유 |
 | `src/services/centralKitchen.ts` | **높음** | Edge Function + 여러 훅 연동 |
 | `src/services/gemini.ts` | **높음** | AI 분석 타입 공유 |
+| `src/data/guruCharacterConfig.ts` | **높음** | 10 캐릭터 설정, 마을+라운드테이블 공유 |
+| `src/services/characterService.ts` | **높음** | 캐릭터 유틸리티, 여러 컴포넌트 의존 |
+| `src/types/character.ts` | **높음** | 캐릭터 타입, 마을+라운드테이블 공유 |
 | `supabase/functions/daily-briefing/index.ts` | **높음** | Task 추가 시 전체 영향 |
 | `package.json` / `package-lock.json` | **높음** | 동시 install 시 충돌 |
 | `app/(tabs)/_layout.tsx` | **높음** | 탭 구조 변경 시 전체 영향 |
@@ -372,11 +408,13 @@ npx eas submit --platform ios --path ./build-xxxxx.ipa
 **탭별 컴포넌트 디렉토리 구조:**
 ```
 src/components/
-  home/           ← index.tsx 전용 컴포넌트
-  diagnosis/      ← diagnosis.tsx 전용 컴포넌트
-  rebalance/      ← rebalance.tsx 전용 컴포넌트
-  lounge/         ← lounge.tsx 전용 컴포넌트
-  insights/       ← insights.tsx 전용 컴포넌트
+  home/           ← index.tsx (오늘 탭) 전용 컴포넌트
+  rebalance/      ← rebalance.tsx (분석 탭) 전용 컴포넌트
+  character/      ← 10 구루 동물 캐릭터 SVG + 아바타 (마을/라운드테이블 공유)
+  village/        ← village.tsx (마을 탭) 전용 컴포넌트
+  roundtable/     ← 라운드테이블 토론 UI 컴포넌트
+  lounge/         ← lounge.tsx (라운지 탭) 전용 컴포넌트
+  profile/        ← profile.tsx (전체 탭) 전용 컴포넌트
 ```
 
 이렇게 하면 여러 Claude가 같은 탭의 다른 섹션을 동시에 작업할 수 있습니다.

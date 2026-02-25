@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
+import { LocaleProvider } from '../src/context/LocaleContext';
 import { ThemeProvider } from '../src/contexts/ThemeContext';
 import { useTheme } from '../src/hooks/useTheme';
 import {
@@ -294,6 +295,7 @@ function RootLayout() {
       }}
     >
       <SafeAreaProvider>
+        <LocaleProvider>
         <AuthProvider>
           <ThemeProvider>
             {/* 테마 적용 배경 (다크/라이트 모드 자동 전환) */}
@@ -405,6 +407,9 @@ function RootLayout() {
                 <Stack.Screen name="journal/emotion-history" options={{ headerShown: false }} />
                 {/* 모임 화면 */}
                 <Stack.Screen name="gatherings" options={{ headerShown: false }} />
+                {/* 거장 라운드테이블 */}
+                <Stack.Screen name="roundtable/index" options={{ headerShown: false }} />
+                <Stack.Screen name="roundtable/[sessionId]" options={{ headerShown: false }} />
               </Stack>
                 </AuthGate>
               </ErrorBoundary>
@@ -419,6 +424,7 @@ function RootLayout() {
             </ThemedAppContainer>
           </ThemeProvider>
         </AuthProvider>
+        </LocaleProvider>
       </SafeAreaProvider>
     </PersistQueryClientProvider>
   );

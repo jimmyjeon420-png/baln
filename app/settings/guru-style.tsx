@@ -20,6 +20,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useGuruStyle, GuruStyle } from '../../src/hooks/useGuruStyle';
 import { useTheme } from '../../src/hooks/useTheme';
 import { DALIO_TARGET, BUFFETT_TARGET, CATHIE_WOOD_TARGET } from '../../src/services/rebalanceScore';
+import { CharacterAvatar } from '../../src/components/character/CharacterAvatar';
+import { useLocale } from '../../src/context/LocaleContext';
 
 // ── 구루 카드 데이터 ──
 
@@ -87,6 +89,7 @@ const GURU_CARDS: GuruCard[] = [
 export default function GuruStyleScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { t } = useLocale();
   // loaded: AsyncStorage 비동기 로드 완료 여부
   // guruStyle: 실제 저장된 값 (로드 전에는 'dalio' 기본값)
   const { guruStyle, setGuruStyle, loaded } = useGuruStyle();
@@ -104,7 +107,7 @@ export default function GuruStyleScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
           <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>투자 철학 선택</Text>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{t('guru.style.header_title')}</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -114,7 +117,7 @@ export default function GuruStyleScreen() {
         showsVerticalScrollIndicator={false}
       >
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-          선택한 거장의 철학이 배분 이탈도의 기본 목표가 됩니다
+          {t('guru.style.subtitle')}
         </Text>
 
         {GURU_CARDS.map(card => {
@@ -134,7 +137,12 @@ export default function GuruStyleScreen() {
               {/* 카드 헤더 */}
               <View style={styles.cardHeader}>
                 <View style={[styles.emojiWrap, { backgroundColor: card.accentColor + '20' }]}>
-                  <Text style={styles.emoji}>{card.emoji}</Text>
+                  <CharacterAvatar
+                    guruId={card.id}
+                    size="sm"
+                    expression={isActive ? 'bullish' : 'neutral'}
+                    fallbackEmoji={card.emoji}
+                  />
                 </View>
                 <View style={styles.cardTitleGroup}>
                   <Text style={[styles.guruName, { color: colors.textPrimary }]}>{card.name}</Text>
@@ -143,7 +151,7 @@ export default function GuruStyleScreen() {
                 {isActive && (
                   <View style={[styles.selectedBadge, { backgroundColor: card.accentColor + '20' }]}>
                     <Ionicons name="checkmark-circle" size={22} color={card.accentColor} />
-                    <Text style={[styles.selectedText, { color: card.accentColor }]}>선택됨</Text>
+                    <Text style={[styles.selectedText, { color: card.accentColor }]}>{t('guru.style.selected_badge')}</Text>
                   </View>
                 )}
               </View>
@@ -170,19 +178,19 @@ export default function GuruStyleScreen() {
         <View style={[styles.phaseNotice, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Ionicons name="analytics-outline" size={14} color={colors.textSecondary} />
           <Text style={[styles.phaseNoticeText, { color: colors.textSecondary }]}>
-            코스톨라니 시장 사이클은 선택한 구루의 목표 배분에 자동 반영됩니다 (기본 75% + 국면 25%)
+            {t('guru.style.phase_notice')}
           </Text>
         </View>
 
         <View style={[styles.disclaimerBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Ionicons name="information-circle-outline" size={14} color={colors.textTertiary} />
           <Text style={[styles.disclaimerText, { color: colors.textTertiary }]}>
-            실제 포트폴리오가 아닌, 해당 거장의 철학을 한국 개인 투자자 기준으로 baln이 재해석한 배분입니다
+            {t('guru.style.disclaimer')}
           </Text>
         </View>
 
         <Text style={[styles.hint, { color: colors.textTertiary }]}>
-          언제든지 변경 가능합니다. 분석 탭의 배분 이탈도에서도 수동 변경할 수 있어요.
+          {t('guru.style.hint')}
         </Text>
       </ScrollView>
     </SafeAreaView>

@@ -66,13 +66,14 @@ let pendingRefresh: Promise<any> | null = null;
 export async function getCurrentUser() {
   try {
     // 1차: 로컬 세션 조회 (AsyncStorage, 빠름)
+    // 시뮬레이터 콜드스타트 시 AsyncStorage가 느릴 수 있어 10초로 여유 확보
     const result = await Promise.race([
       supabase.auth.getSession(),
-      new Promise<null>((resolve) => setTimeout(() => resolve(null), 5000)),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), 10000)),
     ]);
 
     if (!result) {
-      if (__DEV__) console.warn('[Supabase] getSession 5초 타임아웃 — refreshSession 시도');
+      if (__DEV__) console.warn('[Supabase] getSession 10초 타임아웃 — refreshSession 시도');
     } else {
       const session = (result as any).data?.session;
       if (session?.user) {
@@ -90,14 +91,14 @@ export async function getCurrentUser() {
     if (!pendingRefresh) {
       pendingRefresh = Promise.race([
         supabase.auth.refreshSession(),
-        new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000)),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 15000)),
       ]).finally(() => { pendingRefresh = null; });
     }
 
     const refreshResult = await pendingRefresh;
 
     if (!refreshResult) {
-      if (__DEV__) console.warn('[Supabase] refreshSession 8초 타임아웃');
+      if (__DEV__) console.warn('[Supabase] refreshSession 15초 타임아웃');
       return null;
     }
 

@@ -548,7 +548,7 @@ async function cleanupOldPredictions(): Promise<number> {
 // 메인 함수
 // ============================================================================
 
-export async function runPolymarketCollection(): Promise<PolymarketCollectionResult> {
+export async function runPolymarketCollection(lang = 'ko'): Promise<PolymarketCollectionResult> {
   const startTime = Date.now();
   console.log('[Task K] Polymarket 예측 시장 수집 시작...');
 

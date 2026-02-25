@@ -3,7 +3,7 @@
  * 이메일/비밀번호 및 소셜 인증(Google, Kakao, Apple) 지원
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import {
   View,
@@ -25,10 +25,12 @@ import { useAuth, OAuthProvider } from '../src/context/AuthContext';
 import { SIZES } from '../src/styles/theme';
 import { useTheme } from '../src/hooks/useTheme';
 import queryClient from '../src/services/queryClient';
+import { useLocale } from '../src/context/LocaleContext';
 
 export default function LoginScreen() {
   const { signIn, signUp, signInWithOAuth, signInWithApple } = useAuth();
   const { colors } = useTheme();
+  const { t } = useLocale();
   const router = useRouter();
 
   // 상태
@@ -43,17 +45,17 @@ export default function LoginScreen() {
    */
   const handleAuth = async () => {
     if (!email.trim()) {
-      Alert.alert('오류', '이메일을 입력해주세요');
+      Alert.alert(t('login.error.title'), t('login.error.email_required'));
       return;
     }
 
     if (!password.trim()) {
-      Alert.alert('오류', '비밀번호를 입력해주세요');
+      Alert.alert(t('login.error.title'), t('login.error.password_required'));
       return;
     }
 
     if (password.length < 6) {
-      Alert.alert('오류', '비밀번호는 6자 이상이어야 합니다');
+      Alert.alert(t('login.error.title'), t('login.error.password_too_short'));
       return;
     }
 
@@ -73,18 +75,18 @@ export default function LoginScreen() {
         queryClient.clear();
       }
     } catch (error: any) {
-      const errorMessage = error?.message || '인증 실패';
+      const errorMessage = error?.message || t('login.error.auth_failed');
 
       let displayMessage = errorMessage;
       if (errorMessage.includes('Invalid login credentials')) {
-        displayMessage = '이메일 또는 비밀번호가 올바르지 않습니다';
+        displayMessage = t('login.error.invalid_credentials');
       } else if (errorMessage.includes('User already registered')) {
-        displayMessage = '이미 등록된 이메일입니다';
+        displayMessage = t('login.error.email_exists');
       } else if (errorMessage.includes('Email not confirmed')) {
-        displayMessage = '이메일 인증이 필요합니다';
+        displayMessage = t('login.error.email_not_confirmed');
       }
 
-      Alert.alert('오류', displayMessage);
+      Alert.alert(t('login.error.title'), displayMessage);
     } finally {
       setIsLoading(false);
     }
@@ -106,7 +108,7 @@ export default function LoginScreen() {
 
       if (!errorMessage.includes('cancel')) {
         console.warn(`[로그인] ${provider} OAuth 오류:`, errorMessage);
-        Alert.alert('소셜 로그인 오류', '소셜 로그인에 실패했습니다. 잠시 후 다시 시도해주세요.');
+        Alert.alert(t('login.error.social_login_title'), t('login.error.social_login_failed'));
       }
     } finally {
       setLoadingProvider(null);
@@ -125,7 +127,7 @@ export default function LoginScreen() {
       // 라우팅은 AuthGate가 단일 처리
       queryClient.clear();
     } catch (error: any) {
-      const errorMessage = error?.message || 'Apple 로그인 실패';
+      const errorMessage = error?.message || t('login.error.apple_login_failed');
 
       // 사용자 취소는 무시 (한국어/영어 모두 감지)
       if (errorMessage.includes('cancel') || errorMessage.includes('취소')) {
@@ -135,16 +137,27 @@ export default function LoginScreen() {
       // 에러 메시지 매핑 (사용자 친화적)
       let displayMessage = errorMessage;
       if (errorMessage.includes('업데이트')) {
-        displayMessage = '현재 빌드에서 Apple 로그인을 사용할 수 없습니다.\n앱을 최신 버전으로 업데이트해주세요.';
+        displayMessage = t('login.error.apple_unavailable');
       } else if (errorMessage.includes('활성화')) {
-        displayMessage = 'Apple 로그인을 사용할 수 없습니다.\n다른 로그인 방법을 이용해주세요.';
+        displayMessage = t('login.error.apple_disabled');
       }
 
-      Alert.alert('Apple 로그인 오류', displayMessage);
+      Alert.alert(t('login.error.apple_title'), displayMessage);
     } finally {
       setLoadingProvider(null);
     }
   };
+
+  // Apple 로그인 네이티브 버튼 사용 가능 여부 (시뮬레이터에서는 false)
+  const [appleAuthAvailable, setAppleAuthAvailable] = useState(false);
+
+  useEffect(() => {
+    if (Platform.OS === 'ios') {
+      AppleAuthentication.isAvailableAsync()
+        .then(setAppleAuthAvailable)
+        .catch(() => setAppleAuthAvailable(false));
+    }
+  }, []);
 
   const isAnyLoading = isLoading || loadingProvider !== null;
 
@@ -165,8 +178,8 @@ export default function LoginScreen() {
             <Text style={[styles.title, { color: colors.textPrimary }]}>baln</Text>
             <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
               {isSignUpMode
-                ? '계정을 만들어 시작하세요'
-                : '매일 5분, 바른 투자 습관'}
+                ? t('login.subtitle_signup')
+                : t('login.subtitle_signin')}
             </Text>
           </View>
 
@@ -183,7 +196,7 @@ export default function LoginScreen() {
               ) : (
                 <>
                   <Text style={styles.googleIcon}>G</Text>
-                  <Text style={styles.googleButtonText}>구글로 시작하기</Text>
+                  <Text style={styles.googleButtonText}>{t('login.google_button')}</Text>
                 </>
               )}
             </TouchableOpacity>
@@ -199,18 +212,19 @@ export default function LoginScreen() {
               ) : (
                 <>
                   <Text style={styles.kakaoIcon}>💬</Text>
-                  <Text style={styles.kakaoButtonText}>카카오로 시작하기</Text>
+                  <Text style={styles.kakaoButtonText}>{t('login.kakao_button')}</Text>
                 </>
               )}
             </TouchableOpacity>
 
-            {/* Apple 로그인 (iOS에서만 표시) — Apple 공식 버튼 컴포넌트 사용 */}
+            {/* Apple 로그인 (iOS에서만 표시) */}
             {Platform.OS === 'ios' && (
               loadingProvider === 'apple' ? (
                 <View style={[styles.socialButton, styles.appleButton]}>
                   <ActivityIndicator color="#000000" size="small" />
                 </View>
-              ) : (
+              ) : appleAuthAvailable ? (
+                // 실제 기기: Apple 공식 네이티브 버튼 (Apple HIG 준수)
                 <AppleAuthentication.AppleAuthenticationButton
                   buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
                   buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE}
@@ -218,6 +232,16 @@ export default function LoginScreen() {
                   style={styles.appleOfficialButton}
                   onPress={handleAppleLogin}
                 />
+              ) : (
+                // 시뮬레이터 등 네이티브 버튼 불가: 커스텀 폴백 버튼
+                <TouchableOpacity
+                  style={[styles.socialButton, styles.appleButton]}
+                  onPress={handleAppleLogin}
+                  disabled={isAnyLoading}
+                >
+                  <Text style={styles.appleIcon}></Text>
+                  <Text style={styles.appleButtonText}>{t('login.apple_button')}</Text>
+                </TouchableOpacity>
               )
             )}
           </View>
@@ -225,14 +249,14 @@ export default function LoginScreen() {
           {/* 구분선 */}
           <View style={styles.dividerSection}>
             <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-            <Text style={[styles.dividerText, { color: colors.textTertiary }]}>또는 이메일로</Text>
+            <Text style={[styles.dividerText, { color: colors.textTertiary }]}>{t('login.divider_text')}</Text>
             <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
           </View>
 
           {/* 이메일 입력 필드 */}
           <View style={styles.formSection}>
             <View style={styles.inputContainer}>
-              <Text style={[styles.label, { color: colors.textPrimary }]}>이메일</Text>
+              <Text style={[styles.label, { color: colors.textPrimary }]}>{t('login.email_label')}</Text>
               <TextInput
                 style={[styles.input, { color: colors.textPrimary, backgroundColor: colors.surface, borderColor: colors.border }]}
                 placeholder="your@email.com"
@@ -248,7 +272,7 @@ export default function LoginScreen() {
             </View>
 
             <View style={styles.inputContainer}>
-              <Text style={[styles.label, { color: colors.textPrimary }]}>비밀번호</Text>
+              <Text style={[styles.label, { color: colors.textPrimary }]}>{t('login.password_label')}</Text>
               <TextInput
                 style={[styles.input, { color: colors.textPrimary, backgroundColor: colors.surface, borderColor: colors.border }]}
                 placeholder="••••••••"
@@ -276,14 +300,14 @@ export default function LoginScreen() {
                 <ActivityIndicator color={colors.background} size="small" />
               ) : (
                 <Text style={styles.primaryButtonText}>
-                  {isSignUpMode ? '회원가입' : '로그인'}
+                  {isSignUpMode ? t('login.signup_button') : t('login.signin_button')}
                 </Text>
               )}
             </TouchableOpacity>
 
             <View style={styles.toggleSection}>
               <Text style={[styles.toggleText, { color: colors.textSecondary }]}>
-                {isSignUpMode ? '이미 계정이 있나요?' : '계정이 없나요?'}
+                {isSignUpMode ? t('login.already_have_account') : t('login.no_account')}
               </Text>
               <TouchableOpacity
                 onPress={() => {
@@ -294,7 +318,7 @@ export default function LoginScreen() {
                 disabled={isAnyLoading}
               >
                 <Text style={styles.toggleButton}>
-                  {isSignUpMode ? '로그인' : '회원가입'}
+                  {isSignUpMode ? t('login.toggle_signin') : t('login.toggle_signup')}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -308,14 +332,14 @@ export default function LoginScreen() {
                 style={[styles.footerLink, { color: colors.primary }]}
                 onPress={() => router.push('/settings/terms')}
               >
-                이용약관
+                {t('login.terms_link')}
               </Text>
               {' '}및{' '}
               <Text
                 style={[styles.footerLink, { color: colors.primary }]}
                 onPress={() => router.push('/settings/privacy')}
               >
-                개인정보처리방침
+                {t('login.privacy_link')}
               </Text>
               에 동의하게 됩니다
             </Text>
@@ -402,10 +426,19 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 50,
   },
-  // Apple 로딩 상태용 플레이스홀더
+  // Apple 버튼 (로딩 상태 + 시뮬레이터 폴백)
   appleButton: {
     backgroundColor: '#FFFFFF',
     height: 50,
+  },
+  appleIcon: {
+    fontSize: 19,
+    color: '#000000',
+  },
+  appleButtonText: {
+    fontSize: SIZES.fBase,
+    fontWeight: '600',
+    color: '#000000',
   },
 
   // 구분선 섹션

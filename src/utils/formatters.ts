@@ -7,6 +7,8 @@
  * - 날짜 포맷
  */
 
+import { t } from '../locales';
+
 // ============================================================================
 // 크레딧 시스템 (출시 후 조정 가능한 상수)
 // ============================================================================
@@ -40,10 +42,11 @@ export function formatCredits(credits: number, showKRW = true): string {
 /**
  * 크레딧 획득 메시지 포맷
  * @param credits 획득 크레딧
- * @returns "+10C (₩1,000) 획득" 형태
+ * @returns "+10C (₩1,000) 획득" / "+10C ($1.00) earned" 형태
  */
 export function formatCreditReward(credits: number): string {
-  return `+${formatCredits(credits)} 획득`;
+  const krw = credits * CREDIT_TO_KRW;
+  return t('credit.reward', { amount: credits, value: krw.toLocaleString() });
 }
 
 // ============================================================================
@@ -98,7 +101,8 @@ export function formatCurrency(
 // ============================================================================
 
 /**
- * 상대 시간 포맷 ("3분 전", "2시간 전")
+ * 상대 시간 포맷 ("3분 전" / "3m ago")
+ * i18n 지원: format.just_now, format.minutes_ago, format.hours_ago, format.days_ago
  */
 export function formatRelativeTime(date: Date | string | number): string {
   const now = Date.now();
@@ -109,16 +113,14 @@ export function formatRelativeTime(date: Date | string | number): string {
   const hour = 60 * minute;
   const day = 24 * hour;
 
-  if (diff < minute) return '방금 전';
-  if (diff < hour) return `${Math.floor(diff / minute)}분 전`;
-  if (diff < day) return `${Math.floor(diff / hour)}시간 전`;
-  if (diff < 7 * day) return `${Math.floor(diff / day)}일 전`;
+  if (diff < minute) return t('format.just_now');
+  if (diff < hour) return t('format.minutes_ago', { n: Math.floor(diff / minute) });
+  if (diff < day) return t('format.hours_ago', { n: Math.floor(diff / hour) });
+  if (diff < 7 * day) return t('format.days_ago', { n: Math.floor(diff / day) });
 
   // 7일 이상은 날짜 표시
-  return new Date(targetTime).toLocaleDateString('ko-KR', {
-    month: 'short',
-    day: 'numeric',
-  });
+  const d = new Date(targetTime);
+  return t('format.date_month_day', { month: d.getMonth() + 1, day: d.getDate() });
 }
 
 /**

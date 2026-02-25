@@ -61,7 +61,8 @@ export interface MacroAnalysisResult {
  *
  * @returns MacroAnalysisResult
  */
-export async function analyzeMacroAndBitcoin(): Promise<MacroAnalysisResult> {
+export async function analyzeMacroAndBitcoin(lang = 'ko'): Promise<MacroAnalysisResult> {
+  const langInstruction = lang === 'ko' ? '한국어로 자연스럽게 작성한다.' : 'Write naturally in English.';
   const startTime = Date.now();
   const dateStr = getKSTDateStr();
 
@@ -81,7 +82,7 @@ ${realDataContext}
 [핵심 원칙]
 - "안심을 판다, 불안을 팔지 않는다" — 공포 표현 대신 맥락으로 이해를 돕는다.
 - 수치와 출처를 반드시 포함한다. 감정적 표현(급락, 폭등, 공포, 패닉)을 지양하고 사실 기반으로 서술한다.
-- 한국어로 자연스럽게 작성한다.
+- ${langInstruction}
 
 [Google Search 검색 키워드]
 1. "S&P 500 today", "NASDAQ today", "Dow Jones today"

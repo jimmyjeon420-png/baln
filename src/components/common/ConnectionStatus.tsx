@@ -37,30 +37,33 @@ export default function ConnectionStatus() {
     errorMessage: null,
   });
 
+  // DEV 환경에서만 렌더링 — 프로덕션 빌드에서는 아무것도 표시하지 않음
+  const [visible] = useState(__DEV__);
+
   const checkConnection = useCallback(async () => {
+    if (!__DEV__) return; // 프로덕션에서는 체크 자체를 스킵
+
     setInfo(prev => ({ ...prev, state: 'checking', errorMessage: null }));
 
-    // 1. env 변수 확인
     const rawUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
     const rawKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
     const envLoaded = rawUrl.length > 0 && rawKey.length > 0;
 
-    // 2. 실제 Supabase 쿼리 테스트 (5초 타임아웃)
+    // 15초 타임아웃 (시뮬레이터 + 콜드스타트 여유 확보)
+    const TIMEOUT_MS = 15000;
     const startTime = Date.now();
 
     try {
       const result = await Promise.race([
         supabase.from('context_cards').select('id').limit(1),
         new Promise<{ error: { message: string } }>((resolve) =>
-          setTimeout(() => resolve({ error: { message: 'Timeout: 5s' } }), 5000)
+          setTimeout(() => resolve({ error: { message: `Timeout: ${TIMEOUT_MS / 1000}s` } }), TIMEOUT_MS)
         ),
       ]);
 
       const latencyMs = Date.now() - startTime;
 
       if (result && 'error' in result && result.error) {
-        // Supabase returned an error (could be table not found, auth issue, etc.)
-        // But if the error is from Supabase itself, the connection works
         const errMsg = result.error.message || 'Unknown error';
         const isNetworkError = errMsg.includes('Timeout') ||
           errMsg.includes('fetch') ||
@@ -75,7 +78,6 @@ export default function ConnectionStatus() {
           errorMessage: isNetworkError ? errMsg : null,
         });
       } else {
-        // Success
         setInfo({
           state: 'connected',
           supabaseUrl: rawUrl || '(env empty, using fallback)',
@@ -98,7 +100,22 @@ export default function ConnectionStatus() {
 
   useEffect(() => {
     checkConnection();
+
+    // 첫 시도 실패 시 5초 후 자동 재시도 (시뮬레이터 콜드스타트 대비)
+    const retryTimer = setTimeout(() => {
+      setInfo(prev => {
+        if (prev.state === 'disconnected') {
+          checkConnection();
+        }
+        return prev;
+      });
+    }, 5000);
+
+    return () => clearTimeout(retryTimer);
   }, [checkConnection]);
+
+  // 프로덕션에서는 렌더링하지 않음
+  if (!visible) return null;
 
   // 색상 결정
   const dotColor =

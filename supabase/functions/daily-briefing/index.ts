@@ -81,6 +81,7 @@ serve(async (req: Request) => {
     // 미지정 시 전체 실행 (기존 cron 동작)
     // ========================================================================
     let selectedTasks: Set<string> | null = null;
+    let lang = 'ko'; // 언어 기본값
     const url = new URL(req.url);
     let triggerSource = url.searchParams.get('trigger_source') || 'manual';
 
@@ -102,6 +103,8 @@ serve(async (req: Request) => {
             selectedTasks = new Set(body.tasks.toUpperCase().split(',').map((t: string) => t.trim()));
           }
         }
+
+        if (body?.lang === 'en') lang = 'en';
 
         if (typeof body?.trigger_source === 'string' && body.trigger_source.trim()) {
           triggerSource = body.trigger_source.slice(0, 80);
@@ -206,7 +209,7 @@ serve(async (req: Request) => {
     if (shouldRun('A')) {
       console.log('[Task A] 시작: 거시경제 & 비트코인...');
       const taskStartedAt = Date.now();
-      macroResult = await safe(() => retryWithBackoff('Task A', analyzeMacroAndBitcoin));
+      macroResult = await safe(() => retryWithBackoff('Task A', () => analyzeMacroAndBitcoin(lang)));
       await logTaskMetric('A', taskStartedAt, macroResult);
       await sleep(delayMs);
     }
@@ -216,7 +219,7 @@ serve(async (req: Request) => {
     if (shouldRun('B')) {
       console.log('[Task B] 시작: 종목 분석 (35개)...');
       const taskStartedAt = Date.now();
-      stocksResult = await safe(() => retryWithBackoff('Task B', analyzeAllStocks));
+      stocksResult = await safe(() => retryWithBackoff('Task B', () => analyzeAllStocks(lang)));
       await logTaskMetric('B', taskStartedAt, stocksResult);
       await sleep(delayMs);
     }
@@ -243,7 +246,7 @@ serve(async (req: Request) => {
     if (shouldRun('C')) {
       console.log('[Task C] 시작: 투자 거장 인사이트...');
       const taskStartedAt = Date.now();
-      gurusResult = await safe(() => retryWithBackoff('Task C', runGuruInsightsAnalysis));
+      gurusResult = await safe(() => retryWithBackoff('Task C', () => runGuruInsightsAnalysis(lang)));
       await logTaskMetric('C', taskStartedAt, gurusResult);
       await sleep(delayMs);
     }
@@ -252,7 +255,7 @@ serve(async (req: Request) => {
     if (shouldRun('E') || shouldRun('E1') || shouldRun('E-1')) {
       console.log('[Task E-1] 시작: 예측 질문 생성...');
       const taskStartedAt = Date.now();
-      predictionsResult = await safe(() => retryWithBackoff('Task E-1', generatePredictionPolls));
+      predictionsResult = await safe(() => retryWithBackoff('Task E-1', () => generatePredictionPolls(lang)));
       await logTaskMetric('E-1', taskStartedAt, predictionsResult);
       await sleep(delayMs);
     }
@@ -288,7 +291,7 @@ serve(async (req: Request) => {
     if (shouldRun('H')) {
       console.log('[Task H] 시작: 위기 알림 감지...');
       const taskStartedAt = Date.now();
-      crisisResult = await safe(() => retryWithBackoff('Task H', checkCrisisAlert));
+      crisisResult = await safe(() => retryWithBackoff('Task H', () => checkCrisisAlert(lang)));
       await logTaskMetric('H', taskStartedAt, crisisResult);
     }
 
@@ -296,7 +299,7 @@ serve(async (req: Request) => {
     if (shouldRun('J')) {
       console.log('[Task J] 시작: 뉴스 수집...');
       const taskStartedAt = Date.now();
-      newsResult = await safe(() => retryWithBackoff('Task J', runNewsCollection));
+      newsResult = await safe(() => retryWithBackoff('Task J', () => runNewsCollection(lang)));
       await logTaskMetric('J', taskStartedAt, newsResult);
       await sleep(delayMs);
     }
@@ -305,7 +308,7 @@ serve(async (req: Request) => {
     if (shouldRun('K')) {
       console.log('[Task K] 시작: Polymarket 예측 시장 수집...');
       const taskStartedAt = Date.now();
-      polymarketResult = await safe(() => retryWithBackoff('Task K', runPolymarketCollection));
+      polymarketResult = await safe(() => retryWithBackoff('Task K', () => runPolymarketCollection(lang)));
       await logTaskMetric('K', taskStartedAt, polymarketResult);
       await sleep(delayMs);
     }

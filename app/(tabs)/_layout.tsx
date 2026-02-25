@@ -4,14 +4,16 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../src/hooks/useTheme';
+import { useLocale } from '../../src/context/LocaleContext';
 
-// 표시할 탭 목록 (5탭 구조: 오늘/분석/뉴스/라운지/전체)
-const VISIBLE_TABS = ['index', 'rebalance', 'news', 'lounge', 'profile'];
+// 표시할 탭 목록 (5탭 구조: 오늘/분석/마을/라운지/전체)
+const VISIBLE_TABS = ['index', 'rebalance', 'village', 'lounge', 'profile'];
 
 // 커스텀 탭 바 컴포넌트 - 플로팅 스캔 버튼 포함
 function CustomTabBar({ state, navigation }: any) {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
+  const { t } = useLocale();
 
   // 표시할 탭만 필터링
   const visibleRoutes = state.routes.filter((route: any) =>
@@ -39,7 +41,14 @@ function CustomTabBar({ state, navigation }: any) {
 
           // 탭 아이콘 렌더링
           const iconName = getIconName(route.name, isFocused);
-          const label = getLabel(route.name);
+          const tabLabels: Record<string, string> = {
+            index: t('tab.today'),
+            rebalance: t('tab.analysis'),
+            village: t('tab.village'),
+            lounge: t('tab.lounge'),
+            profile: t('tab.more'),
+          };
+          const label = tabLabels[route.name] ?? route.name;
 
           return (
             <TouchableOpacity
@@ -72,12 +81,12 @@ function CustomTabBar({ state, navigation }: any) {
   );
 }
 
-// 탭별 아이콘 이름 반환 (5탭: 오늘/분석/뉴스/라운지/전체)
+// 탭별 아이콘 이름 반환 (5탭: 오늘/분석/마을/라운지/전체)
 function getIconName(routeName: string, isFocused: boolean): keyof typeof Ionicons.glyphMap {
   const icons: Record<string, { active: string; inactive: string }> = {
     index: { active: 'today', inactive: 'today-outline' },
     rebalance: { active: 'analytics', inactive: 'analytics-outline' },
-    news: { active: 'newspaper', inactive: 'newspaper-outline' },
+    village: { active: 'leaf', inactive: 'leaf-outline' },
     lounge: { active: 'diamond', inactive: 'diamond-outline' },
     profile: { active: 'grid', inactive: 'grid-outline' },
   };
@@ -86,19 +95,10 @@ function getIconName(routeName: string, isFocused: boolean): keyof typeof Ionico
   return (isFocused ? icon.active : icon.inactive) as keyof typeof Ionicons.glyphMap;
 }
 
-// 탭별 라벨 반환 (5탭: 오늘/분석/뉴스/라운지/전체)
-function getLabel(routeName: string): string {
-  const labels: Record<string, string> = {
-    index: '오늘',
-    rebalance: '분석',
-    news: '뉴스',
-    lounge: '라운지',
-    profile: '전체',
-  };
-  return labels[routeName] || routeName;
-}
 
 export default function TabLayout() {
+  const { t } = useLocale();
+
   return (
     <Tabs
       tabBar={(props) => <CustomTabBar {...props} />}
@@ -106,13 +106,13 @@ export default function TabLayout() {
         headerShown: false,
       }}
     >
-      {/* ═══ 5탭 구조: 오늘 / 분석 / 뉴스 / 라운지 / 전체 ═══ */}
+      {/* ═══ 5탭 구조: 오늘 / 분석 / 마을 / 라운지 / 전체 ═══ */}
 
       {/* 1. 오늘 (Today) — 맥락 카드 + 예측 + 스트릭 + 위기 배너 */}
       <Tabs.Screen
         name="index"
         options={{
-          title: '오늘',
+          title: t('tab.today'),
         }}
       />
 
@@ -120,15 +120,15 @@ export default function TabLayout() {
       <Tabs.Screen
         name="rebalance"
         options={{
-          title: '분석',
+          title: t('tab.analysis'),
         }}
       />
 
-      {/* 3. 뉴스 (News) — 실시간 시장 뉴스 + AI PiCK */}
+      {/* 3. 마을 (Village) — 구루 마을 + 라운드테이블 입장 */}
       <Tabs.Screen
-        name="news"
+        name="village"
         options={{
-          title: '뉴스',
+          title: t('tab.village'),
         }}
       />
 
@@ -136,7 +136,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="lounge"
         options={{
-          title: '라운지',
+          title: t('tab.lounge'),
         }}
       />
 
@@ -144,11 +144,12 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: '전체',
+          title: t('tab.more'),
         }}
       />
 
-      {/* ═══ 숨김 탭 (URL 직접 접근만 가능) ═══ */}
+      {/* ═══ 숨김 탭 ═══ */}
+      <Tabs.Screen name="news" options={{ href: null }} />
       <Tabs.Screen name="insights" options={{ href: null }} />
     </Tabs>
   );

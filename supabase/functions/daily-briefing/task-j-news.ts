@@ -1311,7 +1311,7 @@ export interface NewsCollectionResult {
  * Task J 메인 함수
  * 1. RSS 피드 수집 → 2. Gemini AI 태깅 → 3. DB UPSERT → 4. 오래된 뉴스 정리
  */
-export async function runNewsCollection(): Promise<NewsCollectionResult> {
+export async function runNewsCollection(lang = 'ko'): Promise<NewsCollectionResult> {
   const startTime = Date.now();
 
   try {

@@ -8,9 +8,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../src/hooks/useTheme';
 import { HeaderBar } from '../../src/components/common/HeaderBar';
+import { useLocale } from '../../src/context/LocaleContext';
 
 export default function HelpScreen() {
   const { colors } = useTheme();
+  const { t } = useLocale();
 
   const faqItems = [
     {
@@ -56,11 +58,11 @@ export default function HelpScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <HeaderBar title="도움말" />
+      <HeaderBar title={t('settings.help.title')} />
 
       <ScrollView style={styles.content}>
         {/* FAQ 섹션 */}
-        <Text style={[styles.sectionTitle, { color: colors.textTertiary }]}>자주 묻는 질문</Text>
+        <Text style={[styles.sectionTitle, { color: colors.textTertiary }]}>{t('settings.help.faq')}</Text>
         <View style={[styles.section, { backgroundColor: colors.surface }]}>
           {faqItems.map((item, index) => (
             <View key={index} style={[styles.faqItem, { borderBottomColor: colors.border }]}>
@@ -71,7 +73,7 @@ export default function HelpScreen() {
         </View>
 
         {/* 문의하기 섹션 */}
-        <Text style={[styles.sectionTitle, { marginTop: 24, color: colors.textTertiary }]}>문의하기</Text>
+        <Text style={[styles.sectionTitle, { marginTop: 24, color: colors.textTertiary }]}>{t('settings.help.contact')}</Text>
         <View style={[styles.section, { backgroundColor: colors.surface }]}>
           {supportItems.map((item, index) => (
             <TouchableOpacity key={index} style={[styles.supportItem, { borderBottomColor: colors.border }]} onPress={item.action}>

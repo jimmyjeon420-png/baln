@@ -22,6 +22,7 @@ import { useTheme, ThemeMode } from '../../src/hooks/useTheme';
 import { CreditDisplay } from '../../src/components/common/CreditDisplay';
 import { useIsAdmin } from '../../src/hooks/useAdminDashboard';
 import { useGuruStyle, GURU_DISPLAY_NAME } from '../../src/hooks/useGuruStyle';
+import { useLocale } from '../../src/context/LocaleContext';
 
 const APP_VERSION = Constants.expoConfig?.version ?? '1.0.0';
 
@@ -53,6 +54,7 @@ interface MenuSection {
 export default function ProfileScreen() {
   useScreenTracking('more');
   const router = useRouter();
+  const { t } = useLocale();
   const { user, signOut } = useAuth();
   const { unlockedCount, totalCount } = useAchievementCount();
   const { themeMode, setThemeMode, colors } = useTheme();
@@ -75,25 +77,25 @@ export default function ProfileScreen() {
   // ---------------------------------------------------------------------------
   const handleLogout = React.useCallback(async () => {
     Alert.alert(
-      '로그아웃',
-      '정말 로그아웃 하시겠습니까?',
+      t('profile.menu.logout'),
+      t('profile.logout_confirm'),
       [
-        { text: '취소', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: '로그아웃',
+          text: t('profile.menu.logout'),
           style: 'destructive',
           onPress: async () => {
             try {
               await signOut();
               router.replace('/login');
             } catch (error) {
-              Alert.alert('오류', '로그아웃 중 오류가 발생했습니다.');
+              Alert.alert(t('common.error'), '로그아웃 중 오류가 발생했습니다.');
             }
           },
         },
       ]
     );
-  }, [signOut, router]);
+  }, [signOut, router, t]);
 
   // ---------------------------------------------------------------------------
   // 테마 변경 핸들러
@@ -109,23 +111,23 @@ export default function ProfileScreen() {
   const sections: MenuSection[] = React.useMemo(() => [
     // ── 섹션 1: 나의 활동 ──
     {
-      title: '나의 활동',
+      title: t('profile.section.community'),
       items: [
         {
           icon: 'diamond-outline',
-          label: '크레딧 & 구독',
+          label: t('profile.menu.marketplace'),
           onPress: () => router.push('/marketplace/credits'),
         },
         {
           icon: 'trophy-outline',
-          label: '성취 & 감정 기록',
+          label: t('profile.menu.achievements'),
           onPress: () => router.push('/achievements'),
           badge: unlockedCount > 0 ? `${unlockedCount}/${totalCount}` : undefined,
           badgeColor: '#4CAF50',
         },
         {
           icon: 'gift-outline',
-          label: '친구 초대',
+          label: t('profile.menu.referral'),
           onPress: () => router.push('/settings/referral'),
           badge: '20C',
           badgeColor: '#4CAF50',
@@ -135,8 +137,15 @@ export default function ProfileScreen() {
 
     // ── 섹션 2: 더 알아보기 ──
     {
-      title: '더 알아보기',
+      title: t('profile.section.investment'),
       items: [
+        {
+          icon: 'chatbubbles-outline',
+          label: t('profile.menu.roundtable'),
+          onPress: () => router.push('/roundtable'),
+          badge: 'NEW',
+          badgeColor: '#4CAF50',
+        },
         {
           icon: 'bookmark-outline',
           label: '내 북마크',
@@ -147,38 +156,38 @@ export default function ProfileScreen() {
 
     // ── 섹션 3: 설정 ──
     {
-      title: '설정',
+      title: t('profile.section.settings'),
       items: [
         {
           icon: 'analytics-outline',
-          label: '투자 철학 변경',
+          label: t('profile.menu.guru_style'),
           onPress: () => router.push('/settings/guru-style'),
           badge: GURU_DISPLAY_NAME[latestGuruStyle],
           badgeColor: '#4CAF5033',
         },
         {
           icon: 'person-outline',
-          label: '프로필 설정',
+          label: t('profile.menu.edit_profile'),
           onPress: () => router.push('/settings/profile'),
         },
         {
           icon: 'notifications-outline',
-          label: '알림 설정',
+          label: t('profile.menu.notifications'),
           onPress: () => router.push('/settings/notifications'),
         },
         {
           icon: 'shield-checkmark-outline',
-          label: '보안',
+          label: t('profile.menu.security'),
           onPress: () => router.push('/settings/security'),
         },
         {
           icon: 'information-circle-outline',
-          label: '앱 정보',
+          label: t('profile.menu.about'),
           onPress: () => router.push('/settings/about'),
         },
       ],
     },
-  ], [router, unlockedCount, totalCount, latestGuruStyle]);
+  ], [router, unlockedCount, totalCount, latestGuruStyle, t]);
 
   // ---------------------------------------------------------------------------
   // 다크모드 토글 (헤더 우측 스위치에서 사용)
@@ -248,7 +257,7 @@ export default function ProfileScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
       {/* 헤더 — 우측에 다크/라이트 모드 스위치 */}
       <View style={styles.header}>
-        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>전체</Text>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{t('profile.title')}</Text>
         <View style={styles.themeToggle}>
           <Ionicons
             name={isDarkMode ? 'moon' : 'sunny'}
@@ -332,7 +341,7 @@ export default function ProfileScreen() {
             activeOpacity={0.6}
           >
             <Ionicons name="log-out-outline" size={20} color={colors.error} />
-            <Text style={[styles.logoutText, { color: colors.error }]}>로그아웃</Text>
+            <Text style={[styles.logoutText, { color: colors.error }]}>{t('profile.menu.logout')}</Text>
           </TouchableOpacity>
         )}
 

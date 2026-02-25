@@ -17,7 +17,288 @@
     "close": "Close",
     "loading": "Loading...",
     "error": "Error",
-    "success": "Success"
+    "success": "Success",
+    "confirm": "Confirm",
+    "done": "Done",
+    "retry": "Retry",
+    "back": "Back",
+    "next": "Next",
+    "skip": "Skip",
+    "share": "Share",
+    "copy": "Copy",
+    "copied": "Copied",
+    "more": "More",
+    "less": "Less",
+    "all": "All",
+    "none": "None",
+    "yes": "Yes",
+    "no": "No",
+    "ok": "OK",
+    "select": "Select",
+    "update": "Update",
+    "apply": "Apply",
+    "reset": "Reset"
+  },
+  "tab": {
+    "today": "Today",
+    "analysis": "Analysis",
+    "village": "Village",
+    "news": "News",
+    "lounge": "Lounge",
+    "more": "More"
+  },
+  "login": {
+    "subtitle_signin": "Smart investing habits in 5 min a day",
+    "subtitle_signup": "Create an account to get started",
+    "google_button": "Continue with Google",
+    "kakao_button": "Continue with Kakao",
+    "apple_button": "Continue with Apple",
+    "divider_text": "or with email",
+    "email_label": "Email",
+    "password_label": "Password",
+    "signin_button": "Sign In",
+    "signup_button": "Sign Up",
+    "already_have_account": "Already have an account?",
+    "no_account": "Don't have an account?",
+    "toggle_signin": "Sign In",
+    "toggle_signup": "Sign Up",
+    "terms_agreement": "By creating an account, you agree to our Terms of Service and Privacy Policy",
+    "terms_link": "Terms of Service",
+    "privacy_link": "Privacy Policy",
+    "error": {
+      "title": "Error",
+      "email_required": "Please enter your email",
+      "password_required": "Please enter your password",
+      "password_too_short": "Password must be at least 6 characters",
+      "auth_failed": "Authentication failed",
+      "invalid_credentials": "Invalid email or password",
+      "email_exists": "This email is already registered",
+      "email_not_confirmed": "Email verification required",
+      "social_login_title": "Social Login Error",
+      "social_login_failed": "Social login failed. Please try again later.",
+      "apple_login_failed": "Apple Sign In failed",
+      "apple_unavailable": "Apple Sign In is not available in this build.\nPlease update the app to the latest version.",
+      "apple_disabled": "Apple Sign In is not available.\nPlease use another sign-in method.",
+      "apple_title": "Apple Sign In Error"
+    }
+  },
+  "home": {
+    "card_labels": {
+      "my_assets": "My Assets",
+      "today_market": "Today's Market",
+      "my_predictions": "My Predictions",
+      "yesterday_review": "Yesterday's Review"
+    },
+    "toast": {
+      "vote_success": "Vote submitted! +3C if correct",
+      "vote_error": "Vote failed. Please try again.",
+      "multi_vote_success": "Vote submitted! +3C if correct",
+      "multi_vote_error": "Vote failed."
+    },
+    "context_fallback": {
+      "headline": "Markets always fluctuate",
+      "fact": "Markets always fluctuate, but understanding the context reduces anxiety",
+      "mechanism": "New market analysis arrives every morning at 7 AM",
+      "temp_data": "Temporary data"
+    },
+    "context_sentiment": {
+      "calm": "Calm",
+      "cautious": "Cautious",
+      "alert": "Alert",
+      "positive": "Positive"
+    },
+    "context_message": {
+      "temp_data": "Temporary data",
+      "standard_fallback": "Standard context fallback",
+      "temp_card_estimate": "Estimate based on temporary card"
+    },
+    "context_freshness": {
+      "temp_data": "Temporary data",
+      "previous_analysis": "Previous analysis",
+      "latest": "Latest",
+      "needs_update": "Needs update",
+      "yesterday": "Yesterday's analysis"
+    },
+    "context_portfolio_impact": {
+      "default": "Analyzing today's market impact on your portfolio."
+    },
+    "prediction": {
+      "fallback_source": "Standard question fallback",
+      "fallback_freshness": "Temporary data",
+      "needs_update": "Needs update",
+      "latest": "Latest"
+    }
+  },
+  "health": {
+    "loading_text": "Calculating your health score",
+    "grade_analyzing": "Analyzing",
+    "empty": {
+      "title": "Curious about your investment health?",
+      "subtitle": "Add your assets to get started",
+      "add_button": "Add Assets"
+    },
+    "pulse": {
+      "total_assets": "Total Assets",
+      "daily_change_label": "vs Yesterday"
+    },
+    "analysis_cta": "View Detailed Analysis",
+    "add_asset_chip": "Add Asset",
+    "modal": {
+      "title": "Health Score Details",
+      "subtitle": "Composite score based on 6 factors",
+      "factors_title": "6 Factor Details",
+      "weight_label": "Weight",
+      "close_button": "Close"
+    },
+    "weekdays": {
+      "sun": "Sunday",
+      "mon": "Monday",
+      "tue": "Tuesday",
+      "wed": "Wednesday",
+      "thu": "Thursday",
+      "fri": "Friday",
+      "sat": "Saturday"
+    }
+  },
+  "daily_progress": {
+    "step": {
+      "read": "Read",
+      "vote": "Vote",
+      "review": "Review"
+    },
+    "streak_label": "day streak",
+    "all_done": "All done today!",
+    "completed_count": "{{done}}/{{total}} done"
+  },
+  "rebalance": {
+    "toast": {
+      "refresh_complete": "Updated with latest data"
+    },
+    "empty": {
+      "network_error_title": "Unable to load data",
+      "no_portfolio_title": "Register your portfolio",
+      "network_error_desc": "Check your WiFi connection and\ntap the button below to retry",
+      "no_portfolio_desc": "AI Diagnosis + Custom Prescription\nRegister your assets to receive\nhealth scores and personalized analysis",
+      "ai_prescription_label": "AI Diagnosis + Custom Prescription",
+      "retry_button": "Retry",
+      "add_asset_button": "Add Assets"
+    },
+    "banner": {
+      "ai_analyzing": "AI is analyzing your portfolio...",
+      "ai_failed": "AI analysis failed",
+      "retry": "Retry"
+    },
+    "disclaimer": {
+      "text": "This is not investment advice. AI analysis is for reference only. You are responsible for your investment decisions.",
+      "long_text": "This service is not a registered investment advisory. We are not liable for investment outcomes. AI analysis is for reference only."
+    },
+    "ai_section": {
+      "title": "AI Deep Analysis",
+      "subtitle": "Need deeper insights?"
+    },
+    "ai_button": {
+      "deep_dive_title": "Stock Deep Dive",
+      "deep_dive_desc": "Individual stock analysis",
+      "what_if_title": "What-If Simulation",
+      "what_if_desc": "Market crash scenario test",
+      "tax_report_title": "Tax Report",
+      "tax_report_desc": "Tax optimization strategies",
+      "cfo_chat_title": "Chat with AI Buffett",
+      "cfo_chat_desc": "Real-time conversational advice"
+    }
+  },
+  "news": {
+    "title": "News",
+    "tab_market": "Market",
+    "tab_ai_pick": "AI PiCK",
+    "tab_global": "Global",
+    "empty": "No news available",
+    "loading": "Loading news...",
+    "source": "Source",
+    "read_more": "Read More",
+    "published": "{{time}} ago",
+    "ai_summary": "AI Summary",
+    "impact_label": "Market Impact",
+    "related_assets": "Related Assets"
+  },
+  "lounge": {
+    "title": "VIP Lounge",
+    "write": "Write",
+    "empty": "No posts yet",
+    "loading": "Loading posts...",
+    "like": "Like",
+    "comment": "Comment",
+    "comments_count": "{{count}} comments",
+    "share": "Share",
+    "bookmark": "Save",
+    "report": "Report",
+    "delete_confirm": "Delete this post?",
+    "my_posts": "My Posts",
+    "bookmarks": "Saved Posts",
+    "rules": "Lounge Rules",
+    "premium_only": "Only Premium members can write posts",
+    "gatherings": "Gatherings",
+    "anonymous": "Anonymous"
+  },
+  "profile": {
+    "title": "More",
+    "section": {
+      "portfolio": "My Portfolio",
+      "premium": "Premium",
+      "community": "Community",
+      "investment": "Investment Learning",
+      "settings": "Settings",
+      "support": "Support"
+    },
+    "menu": {
+      "add_asset": "Add Asset",
+      "realestate": "Real Estate",
+      "premium_subscribe": "Premium Subscription",
+      "marketplace": "Credit Shop",
+      "achievements": "Achievements & Badges",
+      "investor_level": "Investor Level",
+      "community": "Community",
+      "lounge": "VIP Lounge",
+      "guru_style": "Investment Philosophy",
+      "gurus": "Guru Insights",
+      "guru_village": "Guru Village",
+      "roundtable": "Roundtable",
+      "daily_quiz": "Daily Quiz",
+      "games": "Prediction Game",
+      "edit_profile": "Edit Profile",
+      "notifications": "Notifications",
+      "security": "Security",
+      "language": "Language",
+      "theme": "Theme",
+      "help": "Help",
+      "about": "About",
+      "terms": "Terms of Service",
+      "privacy": "Privacy Policy",
+      "licenses": "Open Source Licenses",
+      "referral": "Invite Friends",
+      "delete_account": "Delete Account",
+      "logout": "Sign Out",
+      "website": "Website"
+    },
+    "logout_confirm": "Are you sure you want to sign out?",
+    "current_account": "Current account:"
+  },
+  "error": {
+    "title": "Something went wrong",
+    "message": "Please try again later.",
+    "retry_button": "Retry",
+    "retry_hint": "Retry failed {{count}} times. Try restarting the app.",
+    "report_button": "Report Issue",
+    "report_done": "Reported",
+    "report_success_title": "Report Submitted",
+    "report_success_message": "Your report has been received. We'll look into it shortly.",
+    "dev_info_title": "Dev mode error info:"
+  },
+  "offline": {
+    "banner": {
+      "disconnected": "No internet connection — Offline mode",
+      "reconnected": "Connection restored"
+    }
   },
   "assets": {
     "name": "Asset Name",
@@ -103,30 +384,354 @@
     "subtitle": "Analyze current market stage with Kostolany's Egg Theory",
     "interestRate": "What's the current interest rate trend?",
     "interestRateHint": "Interest rate trend is the key to Egg analysis. Select your current situation.",
-    "peakLabel": "🔴 Peak (High Point)",
+    "peakLabel": "Peak (High Point)",
     "peakDescription": "Interest rates have been high for a long time",
-    "fallingLabel": "📉 Falling",
+    "fallingLabel": "Falling",
     "fallingDescription": "Interest rates are declining",
-    "bottomLabel": "🟢 Bottom (Low Point)",
+    "bottomLabel": "Bottom (Low Point)",
     "bottomDescription": "Interest rates have been low for a long time",
-    "risingLabel": "📈 Rising",
+    "risingLabel": "Rising",
     "risingDescription": "Interest rates are increasing",
-    "runDiagnosis": "Run Diagnosis →",
+    "runDiagnosis": "Run Diagnosis",
     "rediagnose": "Diagnose Again",
-    "eggChart": "Kostolany's Egg 🥚",
-    "currentPhase": "📍 Current",
+    "eggChart": "Kostolany's Egg",
+    "currentPhase": "Current",
     "confidence": "Confidence",
     "nextPhase": "Expected Next",
-    "marketDrivers": "📰 Market Drivers",
+    "marketDrivers": "Market Drivers",
     "marketDriversSubtitle": "Top 3 factors moving markets today",
     "affectedAssets": "Affected Assets",
-    "portfolioSnapshot": "📈 Portfolio Status",
+    "portfolioSnapshot": "Portfolio Status",
     "assetCount": "Asset Count",
     "cryptoAllocation": "Crypto",
     "cashAllocation": "Cash",
     "impactHigh": "High",
     "impactMedium": "Medium",
     "impactLow": "Low",
-    "disclaimer": "💡 This information is educational mock data. Make investment decisions carefully."
+    "disclaimer": "This information is educational mock data. Make investment decisions carefully."
+  },
+  "credit": {
+    "name": "Credits",
+    "symbol": "C",
+    "reward": "+{{amount}}C (${{value}}) earned",
+    "balance": "Credit Balance",
+    "earn": "Earn Credits",
+    "spend": "Spend Credits",
+    "history": "Credit History",
+    "insufficient": "Insufficient credits",
+    "free_period": "Free Period",
+    "value_label": "${{value}}",
+    "attendance": "Attendance Reward",
+    "prediction_hit": "Prediction Hit",
+    "share_bonus": "Share Bonus",
+    "welcome_bonus": "Welcome Bonus",
+    "premium_bonus": "Premium Monthly Bonus"
+  },
+  "guru": {
+    "style": {
+      "header_title": "Choose Investment Philosophy",
+      "subtitle": "The selected guru's philosophy becomes the target for your allocation drift",
+      "selected_badge": "Selected",
+      "phase_notice": "Kostolany's market cycle is automatically reflected in your guru's target allocation (Base 75% + Phase 25%)",
+      "disclaimer": "This is baln's interpretation of the guru's philosophy for Korean individual investors, not their actual portfolio",
+      "hint": "You can change this anytime. You can also manually adjust in the Analysis tab's allocation drift."
+    },
+    "detail": {
+      "header_title": "Guru Deep Dive",
+      "not_found": "Profile not found",
+      "my_philosophy_badge": "My Current Philosophy",
+      "philosophy_label": "Core Philosophy",
+      "strategy_label": "Investment Strategy",
+      "track_label": "Track Record",
+      "structured_analysis_label": "Structured Analysis",
+      "action_label": "Action",
+      "target_tickers_label": "Key Tickers",
+      "sector_label": "Sector",
+      "conviction_label": "Conviction",
+      "insight_title": "Today's Insight",
+      "live_badge": "LIVE",
+      "loading_text": "Updating...",
+      "recent_action_label": "Recent Action",
+      "analysis_label": "AI Analysis",
+      "source_label": "Source:",
+      "no_insight_text": "Today's insight hasn't been updated yet.\nAutomatically updates every morning at 7 AM.",
+      "disclaimer": "This analysis is AI-generated from public data for educational purposes only and is not actual investment advice."
+    },
+    "insights": {
+      "title": "Guru Insights",
+      "empty_title": "No guru insights yet",
+      "empty_description": "Guru analyses from 10 investment masters update automatically every morning at 7 AM.",
+      "empty_refresh": "Refresh",
+      "context_label": "Today's Market Context",
+      "filter_all": "All",
+      "filter_bullish": "Bullish",
+      "filter_bearish": "Bearish",
+      "filter_cautious": "Cautious",
+      "filter_neutral": "Neutral",
+      "no_filter_result": "No gurus with '{{sentiment}}' position",
+      "target_tickers_label": "Key Tickers",
+      "recent_action_label": "Recent Action",
+      "analysis_label": "Analysis",
+      "source_label": "Source:",
+      "disclaimer": "This analysis is AI-generated from public data and is not actual investment advice."
+    }
+  },
+  "badge": {
+    "title": "Achievements & Badges",
+    "unlocked": "Unlocked",
+    "locked": "Locked",
+    "progress": "{{current}}/{{target}}",
+    "rarity": {
+      "common": "Common",
+      "rare": "Rare",
+      "epic": "Epic",
+      "legendary": "Legendary"
+    },
+    "category": {
+      "activity": "Activity",
+      "skill": "Skill",
+      "contribution": "Contribution",
+      "special": "Special"
+    }
+  },
+  "marketplace": {
+    "title": "Credit Shop",
+    "tier_instant": "Instant Value",
+    "tier_experience": "Experience",
+    "tier_loyalty": "Loyalty Rewards",
+    "buy_button": "Buy",
+    "buy_confirm": "Buy {{name}} for {{price}}?",
+    "purchase_success": "Purchase complete!",
+    "purchase_failed": "Purchase failed",
+    "activated": "Activated",
+    "already_owned": "Already owned"
+  },
+  "format": {
+    "just_now": "Just now",
+    "minutes_ago": "{{n}}m ago",
+    "hours_ago": "{{n}}h ago",
+    "days_ago": "{{n}}d ago",
+    "date_month_day": "{{month}} {{day}}",
+    "won": "KRW",
+    "trillion": "T",
+    "billion": "B",
+    "ten_thousand": "K",
+    "update_time_am": "Updated {{hour}}:{{min}} AM",
+    "update_time_pm": "Updated {{hour}}:{{min}} PM",
+    "updated": "Updated"
+  },
+  "village": {
+    "title": "Guru Village",
+    "time_greeting": {
+      "morning": "Good morning",
+      "afternoon": "Good afternoon",
+      "evening": "Good evening",
+      "night": "Good night"
+    },
+    "chat_placeholder": "Ask a guru...",
+    "chat_send": "Send",
+    "village_square": "Village Square",
+    "guru_house": "{{name}}'s Place",
+    "conversation": "Conversation",
+    "thinking": "Thinking..."
+  },
+  "roundtable": {
+    "title": "Guru Roundtable",
+    "start": "Start Discussion",
+    "topic": "Discussion Topic",
+    "ask_more": "Ask More",
+    "discussion": "Discussion",
+    "conclusion": "Conclusion",
+    "loading": "Gurus are discussing...",
+    "empty": "No roundtable sessions",
+    "new_session": "Start New Discussion",
+    "participants": "Participants",
+    "duration": "Duration",
+    "question_placeholder": "What would you like to ask the gurus?"
+  },
+  "prediction": {
+    "title": "Prediction Game",
+    "vote": "Vote",
+    "voted": "Voted",
+    "result": "Result",
+    "correct": "Correct!",
+    "wrong": "Missed",
+    "pending": "Pending",
+    "expired": "Expired",
+    "participants": "{{count}} participants",
+    "accuracy": "Accuracy",
+    "streak": "Hit Streak",
+    "explanation": "Explanation",
+    "up": "Up",
+    "down": "Down",
+    "flat": "Flat",
+    "review_title": "Yesterday's Prediction Review",
+    "no_predictions": "No predictions yet",
+    "credit_hint": "+3C if correct"
+  },
+  "streak": {
+    "title": "Streak",
+    "days": "{{count}} days",
+    "freeze": "Streak Shield",
+    "freeze_desc": "Your streak is protected for one missed day",
+    "freeze_active": "Shield active",
+    "broken": "Your streak was broken",
+    "new_record": "New record!"
+  },
+  "crisis": {
+    "title": "Crisis Alert",
+    "banner": "Market volatility detected",
+    "alert_message": "{{market}} moved {{change}}",
+    "guru_response": "Guru Reactions",
+    "stay_calm": "Check the context first",
+    "historical": "Historically in cases like this...",
+    "portfolio_impact": "Portfolio Impact"
+  },
+  "context_card": {
+    "time_slot": {
+      "h00": "Global Night",
+      "h03": "US Market Close",
+      "h06": "Morning Briefing",
+      "h09": "Market Open",
+      "h12": "Midday Update",
+      "h15": "Market Close",
+      "h18": "Evening Summary",
+      "h21": "US Pre-Market"
+    },
+    "layer": {
+      "historical": "Historical Context",
+      "macro": "Macro Chain",
+      "political": "Political Trends",
+      "institutional": "Institutional Behavior",
+      "portfolio": "Portfolio Impact"
+    },
+    "premium_lock": "Premium-only content",
+    "data_source": "baln.logic AI Analysis · Google Search Grounding",
+    "confidence_live": "Analysis based on real-time data",
+    "confidence_cached": "Previous analysis data (cached)",
+    "analyzing": "Analyzing today's market context",
+    "fallback_historical": "Historically, markets have tended to recover after short-term shocks. Building a habit of reading context daily is your best defense against panic selling.",
+    "fallback_macro": "Collecting macroeconomic data",
+    "fallback_political": "Collecting political trend data. Historically, political events caused short-term fluctuations but had limited long-term investment impact.",
+    "fallback_institutional": "Collecting institutional investor behavior data. Institutions rebalance by rules and do not panic sell.",
+    "fallback_impact": "Analyzing today's market impact on your portfolio.",
+    "default_market_analysis": "Market Analysis"
+  },
+  "settings": {
+    "language": {
+      "title": "Language Settings",
+      "display_language": "Display Language",
+      "market_region": "Market Region",
+      "currency": "Currency",
+      "auto_detect": "Auto-detect",
+      "korean": "한국어",
+      "english": "English",
+      "market_kr": "Korea (KOSPI)",
+      "market_us": "US (S&P 500)"
+    },
+    "notifications": {
+      "title": "Notifications",
+      "morning_briefing": "Morning Briefing",
+      "crisis_alert": "Crisis Alerts",
+      "prediction_result": "Prediction Results",
+      "community": "Community"
+    },
+    "security": {
+      "title": "Security",
+      "biometric": "Biometric Authentication",
+      "auto_lock": "Auto Lock"
+    },
+    "about": {
+      "title": "About",
+      "version": "Version",
+      "build": "Build"
+    },
+    "premium": {
+      "title": "Premium",
+      "subscribe": "Subscribe",
+      "restore": "Restore Purchase",
+      "features": "Premium Features",
+      "price": "$3.99/mo",
+      "free_until": "Free until {{date}}"
+    },
+    "delete_account": {
+      "title": "Delete Account",
+      "warning": "This action cannot be undone",
+      "confirm": "Are you sure you want to delete your account?",
+      "reason_placeholder": "Reason for leaving (optional)"
+    },
+    "help": {
+      "title": "Help",
+      "faq": "FAQ",
+      "contact": "Contact Us"
+    },
+    "referral": {
+      "title": "Invite Friends",
+      "code": "Invite Code",
+      "reward": "Earn 5C per friend"
+    }
+  },
+  "onboarding": {
+    "welcome": "Welcome!",
+    "step1_title": "Register Assets",
+    "step1_desc": "Add your holdings to see your health score",
+    "step2_title": "Choose Philosophy",
+    "step2_desc": "Pick an investment guru's philosophy that fits you",
+    "step3_title": "5 Min Daily Habit",
+    "step3_desc": "Read context → Vote predictions → Review results",
+    "start": "Get Started",
+    "add_later": "Add Later"
+  },
+  "ai_consent": {
+    "title": "AI Data Sharing Consent",
+    "description": "baln uses Google Gemini AI to provide personalized investment analysis.",
+    "accept": "I Agree",
+    "decline": "Decline"
+  },
+  "welcome_bonus": {
+    "title": "Welcome!",
+    "message": "You received a sign-up bonus of {{credits}}C (${{value}})!",
+    "dismiss": "Get Started"
+  },
+  "add_asset": {
+    "title": "Add Asset",
+    "search_placeholder": "Search by name or ticker",
+    "manual_input": "Manual Input",
+    "asset_name": "Asset Name",
+    "current_value": "Current Value",
+    "target_ratio": "Target Allocation (%)",
+    "cost_basis": "Cost Basis",
+    "category": "Category",
+    "categories": {
+      "kr_stock": "Korean Stock",
+      "us_stock": "US Stock",
+      "etf": "ETF",
+      "crypto": "Crypto",
+      "bond": "Bond",
+      "gold": "Gold",
+      "commodity": "Commodity",
+      "cash": "Cash",
+      "realestate": "Real Estate",
+      "other": "Other"
+    }
+  },
+  "subscription": {
+    "title": "Premium",
+    "price_monthly": "$3.99/mo",
+    "price_yearly": "$39.99/yr",
+    "free_trial": "7-day free trial",
+    "feature_context_card": "Full 4-layer Context Card",
+    "feature_ai_analysis": "3 AI analyses/day",
+    "feature_prediction": "Prediction insights + review",
+    "feature_credit_bonus": "30C monthly bonus",
+    "feature_peer_compare": "Full tier comparison",
+    "subscribe_button": "Subscribe",
+    "restore_button": "Restore Purchase",
+    "terms": "Subscription Terms"
+  },
+  "terms": {
+    "title": "Terms of Service",
+    "privacy_title": "Privacy Policy",
+    "last_updated": "Last updated: {{date}}"
   }
 }

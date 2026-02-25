@@ -17,7 +17,288 @@
     "close": "닫기",
     "loading": "로딩 중...",
     "error": "오류",
-    "success": "성공"
+    "success": "성공",
+    "confirm": "확인",
+    "done": "완료",
+    "retry": "재시도",
+    "back": "뒤로",
+    "next": "다음",
+    "skip": "건너뛰기",
+    "share": "공유",
+    "copy": "복사",
+    "copied": "복사됨",
+    "more": "더보기",
+    "less": "접기",
+    "all": "전체",
+    "none": "없음",
+    "yes": "예",
+    "no": "아니오",
+    "ok": "확인",
+    "select": "선택",
+    "update": "업데이트",
+    "apply": "적용",
+    "reset": "초기화"
+  },
+  "tab": {
+    "today": "오늘",
+    "analysis": "분석",
+    "village": "마을",
+    "news": "뉴스",
+    "lounge": "라운지",
+    "more": "전체"
+  },
+  "login": {
+    "subtitle_signin": "매일 5분, 바른 투자 습관",
+    "subtitle_signup": "계정을 만들어 시작하세요",
+    "google_button": "구글로 시작하기",
+    "kakao_button": "카카오로 시작하기",
+    "apple_button": "Apple로 시작하기",
+    "divider_text": "또는 이메일로",
+    "email_label": "이메일",
+    "password_label": "비밀번호",
+    "signin_button": "로그인",
+    "signup_button": "회원가입",
+    "already_have_account": "이미 계정이 있나요?",
+    "no_account": "계정이 없나요?",
+    "toggle_signin": "로그인",
+    "toggle_signup": "회원가입",
+    "terms_agreement": "계정을 만들면 이용약관 및 개인정보처리방침에 동의하게 됩니다",
+    "terms_link": "이용약관",
+    "privacy_link": "개인정보처리방침",
+    "error": {
+      "title": "오류",
+      "email_required": "이메일을 입력해주세요",
+      "password_required": "비밀번호를 입력해주세요",
+      "password_too_short": "비밀번호는 6자 이상이어야 합니다",
+      "auth_failed": "인증 실패",
+      "invalid_credentials": "이메일 또는 비밀번호가 올바르지 않습니다",
+      "email_exists": "이미 등록된 이메일입니다",
+      "email_not_confirmed": "이메일 인증이 필요합니다",
+      "social_login_title": "소셜 로그인 오류",
+      "social_login_failed": "소셜 로그인에 실패했습니다. 잠시 후 다시 시도해주세요.",
+      "apple_login_failed": "Apple 로그인 실패",
+      "apple_unavailable": "현재 빌드에서 Apple 로그인을 사용할 수 없습니다.\n앱을 최신 버전으로 업데이트해주세요.",
+      "apple_disabled": "Apple 로그인을 사용할 수 없습니다.\n다른 로그인 방법을 이용해주세요.",
+      "apple_title": "Apple 로그인 오류"
+    }
+  },
+  "home": {
+    "card_labels": {
+      "my_assets": "내 자산",
+      "today_market": "오늘 시장",
+      "my_predictions": "내 예측",
+      "yesterday_review": "어제 결과"
+    },
+    "toast": {
+      "vote_success": "🎯 투표 완료! 적중하면 +3C 획득",
+      "vote_error": "투표에 실패했습니다. 다시 시도해주세요.",
+      "multi_vote_success": "🎯 투표 완료! 적중하면 +3C 획득",
+      "multi_vote_error": "투표에 실패했습니다."
+    },
+    "context_fallback": {
+      "headline": "시장은 늘 변동합니다",
+      "fact": "시장은 늘 변동하지만, 맥락을 알면 불안은 줄어듭니다",
+      "mechanism": "매일 아침 7시, 새로운 시장 분석이 도착합니다",
+      "temp_data": "임시 데이터"
+    },
+    "context_sentiment": {
+      "calm": "안정",
+      "cautious": "주의",
+      "alert": "경계",
+      "positive": "긍정"
+    },
+    "context_message": {
+      "temp_data": "임시 데이터",
+      "standard_fallback": "표준 맥락 폴백",
+      "temp_card_estimate": "임시 카드 기반 추정"
+    },
+    "context_freshness": {
+      "temp_data": "임시 데이터",
+      "previous_analysis": "이전 분석",
+      "latest": "최신",
+      "needs_update": "갱신 필요",
+      "yesterday": "어제의 분석"
+    },
+    "context_portfolio_impact": {
+      "default": "오늘의 시장 변동에 따른 영향을 분석했습니다."
+    },
+    "prediction": {
+      "fallback_source": "표준 질문 폴백",
+      "fallback_freshness": "임시 데이터",
+      "needs_update": "갱신 필요",
+      "latest": "최신"
+    }
+  },
+  "health": {
+    "loading_text": "건강 점수를 계산하고 있어요",
+    "grade_analyzing": "분석 중",
+    "empty": {
+      "title": "내 투자 건강이 궁금하다면",
+      "subtitle": "자산을 하트해주세요",
+      "add_button": "자산 추가하기"
+    },
+    "pulse": {
+      "total_assets": "총 자산",
+      "daily_change_label": "어제 대비"
+    },
+    "analysis_cta": "상세 분석 보기",
+    "add_asset_chip": "자산 추가",
+    "modal": {
+      "title": "건강 점수 상세",
+      "subtitle": "6팩터 기반 복합 점수입니다",
+      "factors_title": "6팩터 상세",
+      "weight_label": "가중치",
+      "close_button": "닫기"
+    },
+    "weekdays": {
+      "sun": "일요일",
+      "mon": "월요일",
+      "tue": "화요일",
+      "wed": "수요일",
+      "thu": "목요일",
+      "fri": "금요일",
+      "sat": "토요일"
+    }
+  },
+  "daily_progress": {
+    "step": {
+      "read": "읽기",
+      "vote": "투표",
+      "review": "복기"
+    },
+    "streak_label": "일 연속",
+    "all_done": "오늘 완료!",
+    "completed_count": "{{done}}/{{total}} 완료"
+  },
+  "rebalance": {
+    "toast": {
+      "refresh_complete": "최신 데이터로 갱신됨"
+    },
+    "empty": {
+      "network_error_title": "데이터를 불러올 수 없습니다",
+      "no_portfolio_title": "포트폴리오를 등록해주세요",
+      "network_error_desc": "WiFi 연결을 확인하고\n아래 버튼을 눌러 다시 시도해주세요",
+      "no_portfolio_desc": "AI 진단 + 맞춤 처방전\n보유 자산을 등록하시면\n건강 점수와 맞춤 분석을 받아보실 수 있습니다",
+      "ai_prescription_label": "AI 진단 + 맞춤 처방전",
+      "retry_button": "다시 시도",
+      "add_asset_button": "자산 등록하기"
+    },
+    "banner": {
+      "ai_analyzing": "AI가 포트폴리오를 분석하고 있습니다...",
+      "ai_failed": "AI 분석 실패",
+      "retry": "재시도"
+    },
+    "disclaimer": {
+      "text": "본 서비스는 투자 자문이 아닙니다. AI 분석 결과는 참고 자료이며, 투자 결정에 대한 책임은 사용자에게 있습니다.",
+      "long_text": "본 서비스는 금융위원회에 등록된 투자자문업이 아니며, 투자 결과에 대해 책임지지 않습니다. AI 분석은 참고 자료로만 활용해주세요."
+    },
+    "ai_section": {
+      "title": "🤖 AI 심화 분석",
+      "subtitle": "더 깊은 인사이트가 필요하신가요?"
+    },
+    "ai_button": {
+      "deep_dive_title": "종목 딥다이브",
+      "deep_dive_desc": "개별 주식 심층 분석",
+      "what_if_title": "What-If 시뮬레이션",
+      "what_if_desc": "시장 폭락 시나리오 테스트",
+      "tax_report_title": "세금 리포트",
+      "tax_report_desc": "절세 전략 제안",
+      "cfo_chat_title": "AI 버핏과 티타임",
+      "cfo_chat_desc": "실시간 대화형 조언"
+    }
+  },
+  "news": {
+    "title": "뉴스",
+    "tab_market": "시장",
+    "tab_ai_pick": "AI PiCK",
+    "tab_global": "글로벌",
+    "empty": "뉴스가 없습니다",
+    "loading": "뉴스를 불러오는 중...",
+    "source": "출처",
+    "read_more": "더 읽기",
+    "published": "{{time}} 전",
+    "ai_summary": "AI 요약",
+    "impact_label": "시장 영향",
+    "related_assets": "관련 자산"
+  },
+  "lounge": {
+    "title": "VIP 라운지",
+    "write": "글쓰기",
+    "empty": "아직 게시글이 없습니다",
+    "loading": "게시글 불러오는 중...",
+    "like": "좋아요",
+    "comment": "댓글",
+    "comments_count": "댓글 {{count}}개",
+    "share": "공유",
+    "bookmark": "저장",
+    "report": "신고",
+    "delete_confirm": "이 게시글을 삭제하시겠습니까?",
+    "my_posts": "내 글",
+    "bookmarks": "저장한 글",
+    "rules": "라운지 규칙",
+    "premium_only": "Premium 회원만 글을 작성할 수 있습니다",
+    "gatherings": "모임",
+    "anonymous": "익명"
+  },
+  "profile": {
+    "title": "전체",
+    "section": {
+      "portfolio": "내 포트폴리오",
+      "premium": "Premium",
+      "community": "커뮤니티",
+      "investment": "투자 학습",
+      "settings": "설정",
+      "support": "지원"
+    },
+    "menu": {
+      "add_asset": "자산 추가",
+      "realestate": "부동산 관리",
+      "premium_subscribe": "Premium 구독",
+      "marketplace": "크레딧 상점",
+      "achievements": "업적 & 뱃지",
+      "investor_level": "투자자 레벨",
+      "community": "커뮤니티",
+      "lounge": "VIP 라운지",
+      "guru_style": "투자 철학",
+      "gurus": "거장 인사이트",
+      "guru_village": "구루 마을",
+      "roundtable": "라운드테이블",
+      "daily_quiz": "데일리 퀴즈",
+      "games": "예측 게임",
+      "edit_profile": "프로필 편집",
+      "notifications": "알림 설정",
+      "security": "보안",
+      "language": "언어",
+      "theme": "테마",
+      "help": "도움말",
+      "about": "앱 정보",
+      "terms": "이용약관",
+      "privacy": "개인정보처리방침",
+      "licenses": "오픈소스 라이선스",
+      "referral": "친구 초대",
+      "delete_account": "계정 삭제",
+      "logout": "로그아웃",
+      "website": "웹사이트"
+    },
+    "logout_confirm": "정말 로그아웃하시겠습니까?",
+    "current_account": "현재 계정:"
+  },
+  "error": {
+    "title": "문제가 발생했습니다",
+    "message": "잠시 후 다시 시도해 주세요.",
+    "retry_button": "재시도",
+    "retry_hint": "재시도 {{count}}회 실패. 앱을 재시작해 보세요.",
+    "report_button": "문제 신고",
+    "report_done": "신고 완료",
+    "report_success_title": "신고 접수 완료",
+    "report_success_message": "문제가 접수되었습니다. 빠르게 확인하겠습니다.",
+    "dev_info_title": "개발 모드 에러 정보:"
+  },
+  "offline": {
+    "banner": {
+      "disconnected": "인터넷 연결 없음 — 오프라인 모드",
+      "reconnected": "다시 연결되었습니다"
+    }
   },
   "assets": {
     "name": "자산명",
@@ -128,5 +409,329 @@
     "impactMedium": "중간",
     "impactLow": "낮음",
     "disclaimer": "💡 이 정보는 교육용 Mock 데이터입니다. 실제 투자 결정은 신중하게 하세요."
+  },
+  "credit": {
+    "name": "크레딧",
+    "symbol": "C",
+    "reward": "+{{amount}}C (₩{{value}}) 획득",
+    "balance": "보유 크레딧",
+    "earn": "크레딧 획득",
+    "spend": "크레딧 사용",
+    "history": "크레딧 내역",
+    "insufficient": "크레딧이 부족합니다",
+    "free_period": "무료 기간",
+    "value_label": "₩{{value}}",
+    "attendance": "출석 보상",
+    "prediction_hit": "예측 적중",
+    "share_bonus": "공유 보너스",
+    "welcome_bonus": "환영 보너스",
+    "premium_bonus": "Premium 월 보너스"
+  },
+  "guru": {
+    "style": {
+      "header_title": "투자 철학 선택",
+      "subtitle": "선택한 거장의 철학이 배분 이탈도의 기본 목표가 됩니다",
+      "selected_badge": "선택됨",
+      "phase_notice": "코스톨라니 시장 사이클은 선택한 구루의 목표 배분에 자동 반영됩니다 (기본 75% + 국면 25%)",
+      "disclaimer": "실제 포트폴리오가 아닌, 해당 거장의 철학을 한국 개인 투자자 기준으로 baln이 재해석한 배분입니다",
+      "hint": "언제든지 변경 가능합니다. 분석 탭의 배분 이탈도에서도 수동 변경할 수 있어요."
+    },
+    "detail": {
+      "header_title": "거장 딥다이브",
+      "not_found": "프로필을 찾을 수 없습니다",
+      "my_philosophy_badge": "현재 선택된 철학",
+      "philosophy_label": "핵심 철학",
+      "strategy_label": "투자 전략",
+      "track_label": "실적 기록",
+      "structured_analysis_label": "구조화 분석",
+      "action_label": "행동",
+      "target_tickers_label": "주목 종목",
+      "sector_label": "섹터",
+      "conviction_label": "확신도",
+      "insight_title": "오늘의 인사이트",
+      "live_badge": "LIVE",
+      "loading_text": "업데이트 중...",
+      "recent_action_label": "최근 행동",
+      "analysis_label": "AI 분석",
+      "source_label": "출처:",
+      "no_insight_text": "오늘 인사이트가 아직 업데이트되지 않았습니다.\n매일 아침 7시에 자동 업데이트됩니다.",
+      "disclaimer": "본 정보는 AI가 공개 데이터를 기반으로 생성한 교육 목적의 분석이며, 실제 투자 조언이 아닙니다."
+    },
+    "insights": {
+      "title": "투자 거장 인사이트",
+      "empty_title": "아직 거장 인사이트가 없습니다",
+      "empty_description": "매일 아침 7시에 10명의 투자 거장 분석이 자동으로 업데이트됩니다.",
+      "empty_refresh": "새로고침",
+      "context_label": "오늘의 시장 맥락",
+      "filter_all": "전체",
+      "filter_bullish": "강세",
+      "filter_bearish": "약세",
+      "filter_cautious": "신중",
+      "filter_neutral": "중립",
+      "no_filter_result": "'{{sentiment}}' 포지션의 거장이 없습니다",
+      "target_tickers_label": "주목",
+      "recent_action_label": "최근 행동",
+      "analysis_label": "분석",
+      "source_label": "출처:",
+      "disclaimer": "본 정보는 AI가 공개 데이터를 기반으로 생성한 가상의 분석이며, 실제 투자 조언이 아닙니다."
+    }
+  },
+  "badge": {
+    "title": "업적 & 뱃지",
+    "unlocked": "획득",
+    "locked": "미획득",
+    "progress": "{{current}}/{{target}}",
+    "rarity": {
+      "common": "일반",
+      "rare": "레어",
+      "epic": "에픽",
+      "legendary": "레전더리"
+    },
+    "category": {
+      "activity": "활동",
+      "skill": "실력",
+      "contribution": "기여",
+      "special": "특수"
+    }
+  },
+  "marketplace": {
+    "title": "크레딧 상점",
+    "tier_instant": "즉시 효용",
+    "tier_experience": "경험 확장",
+    "tier_loyalty": "충성 보상",
+    "buy_button": "구매",
+    "buy_confirm": "{{name}}을(를) {{price}}에 구매하시겠습니까?",
+    "purchase_success": "구매 완료!",
+    "purchase_failed": "구매에 실패했습니다",
+    "activated": "활성화됨",
+    "already_owned": "이미 보유 중"
+  },
+  "format": {
+    "just_now": "방금 전",
+    "minutes_ago": "{{n}}분 전",
+    "hours_ago": "{{n}}시간 전",
+    "days_ago": "{{n}}일 전",
+    "date_month_day": "{{month}}월 {{day}}일",
+    "won": "원",
+    "trillion": "조",
+    "billion": "억",
+    "ten_thousand": "만",
+    "update_time_am": "오전 {{hour}}:{{min}} 업데이트",
+    "update_time_pm": "오후 {{hour}}:{{min}} 업데이트",
+    "updated": "업데이트됨"
+  },
+  "village": {
+    "title": "구루 마을",
+    "time_greeting": {
+      "morning": "좋은 아침이에요",
+      "afternoon": "좋은 오후에요",
+      "evening": "좋은 저녁이에요",
+      "night": "좋은 밤이에요"
+    },
+    "chat_placeholder": "구루에게 질문해보세요...",
+    "chat_send": "보내기",
+    "village_square": "마을 광장",
+    "guru_house": "{{name}}의 집",
+    "conversation": "대화",
+    "thinking": "생각 중..."
+  },
+  "roundtable": {
+    "title": "거장 라운드테이블",
+    "start": "토론 시작",
+    "topic": "토론 주제",
+    "ask_more": "추가 질문",
+    "discussion": "토론",
+    "conclusion": "결론",
+    "loading": "거장들이 토론 중...",
+    "empty": "라운드테이블 세션이 없습니다",
+    "new_session": "새 토론 시작",
+    "participants": "참가자",
+    "duration": "소요 시간",
+    "question_placeholder": "거장들에게 물어보고 싶은 것..."
+  },
+  "prediction": {
+    "title": "예측 게임",
+    "vote": "투표하기",
+    "voted": "투표 완료",
+    "result": "결과",
+    "correct": "적중!",
+    "wrong": "빗나감",
+    "pending": "결과 대기 중",
+    "expired": "마감됨",
+    "participants": "{{count}}명 참여",
+    "accuracy": "적중률",
+    "streak": "연속 적중",
+    "explanation": "해설",
+    "up": "오른다",
+    "down": "내린다",
+    "flat": "보합",
+    "review_title": "어제 예측 복기",
+    "no_predictions": "아직 예측 질문이 없습니다",
+    "credit_hint": "적중 시 +3C 획득"
+  },
+  "streak": {
+    "title": "연속 출석",
+    "days": "{{count}}일",
+    "freeze": "스트릭 보호",
+    "freeze_desc": "하루 빠져도 기록이 유지됩니다",
+    "freeze_active": "보호 활성화됨",
+    "broken": "연속 기록이 끊겼습니다",
+    "new_record": "새 기록!"
+  },
+  "crisis": {
+    "title": "위기 감지",
+    "banner": "시장 급변동 감지",
+    "alert_message": "{{market}}이(가) {{change}} 변동했습니다",
+    "guru_response": "거장들의 반응",
+    "stay_calm": "맥락을 먼저 확인하세요",
+    "historical": "역사적으로 이런 경우...",
+    "portfolio_impact": "내 포트폴리오 영향"
+  },
+  "context_card": {
+    "time_slot": {
+      "h00": "야간 글로벌",
+      "h03": "미국 장 마감",
+      "h06": "아침 브리핑",
+      "h09": "장 개장",
+      "h12": "점심 업데이트",
+      "h15": "장 마감",
+      "h18": "저녁 종합",
+      "h21": "미국 프리마켓"
+    },
+    "layer": {
+      "historical": "역사적 맥락",
+      "macro": "거시경제 체인",
+      "political": "정치 동향",
+      "institutional": "기관 행동",
+      "portfolio": "포트폴리오 영향"
+    },
+    "premium_lock": "Premium 전용 콘텐츠",
+    "data_source": "baln.logic AI 분석 · Google Search 그라운딩",
+    "confidence_live": "실시간 데이터 기반 분석",
+    "confidence_cached": "이전 분석 데이터 (캐시)",
+    "analyzing": "오늘의 시장 맥락을 분석 중입니다",
+    "fallback_historical": "역사적으로 시장은 단기 충격 후에도 장기적으로 회복하는 경향을 보였습니다. 매일 맥락을 읽는 습관이 패닉셀을 방지하는 힘입니다.",
+    "fallback_macro": "거시경제 데이터 수집 중",
+    "fallback_political": "정치 동향 데이터를 수집하고 있습니다. 역사적으로 정치 이벤트는 단기 변동을 만들었지만, 장기 투자 관점에서 영향은 제한적이었습니다.",
+    "fallback_institutional": "기관 투자자 행동 데이터를 수집하고 있습니다. 기관은 규칙에 따라 리밸런싱하며, 패닉 매도는 하지 않습니다.",
+    "fallback_impact": "오늘의 시장 변동에 따른 영향을 분석했습니다.",
+    "default_market_analysis": "시장 분석"
+  },
+  "settings": {
+    "language": {
+      "title": "언어 설정",
+      "display_language": "표시 언어",
+      "market_region": "시장 기준",
+      "currency": "통화",
+      "auto_detect": "자동 감지",
+      "korean": "한국어",
+      "english": "English",
+      "market_kr": "한국 (KOSPI)",
+      "market_us": "미국 (S&P 500)"
+    },
+    "notifications": {
+      "title": "알림 설정",
+      "morning_briefing": "아침 브리핑",
+      "crisis_alert": "위기 알림",
+      "prediction_result": "예측 결과",
+      "community": "커뮤니티"
+    },
+    "security": {
+      "title": "보안",
+      "biometric": "생체 인증",
+      "auto_lock": "자동 잠금"
+    },
+    "about": {
+      "title": "앱 정보",
+      "version": "버전",
+      "build": "빌드"
+    },
+    "premium": {
+      "title": "Premium",
+      "subscribe": "구독하기",
+      "restore": "구매 복원",
+      "features": "Premium 기능",
+      "price": "₩4,900/월",
+      "free_until": "{{date}}까지 무료"
+    },
+    "delete_account": {
+      "title": "계정 삭제",
+      "warning": "이 작업은 되돌릴 수 없습니다",
+      "confirm": "정말 계정을 삭제하시겠습니까?",
+      "reason_placeholder": "삭제 사유를 입력해주세요 (선택)"
+    },
+    "help": {
+      "title": "도움말",
+      "faq": "자주 묻는 질문",
+      "contact": "문의하기"
+    },
+    "referral": {
+      "title": "친구 초대",
+      "code": "초대 코드",
+      "reward": "친구 1명당 5C 획득"
+    }
+  },
+  "onboarding": {
+    "welcome": "반갑습니다!",
+    "step1_title": "자산 등록",
+    "step1_desc": "보유 자산을 입력해 건강 점수를 확인하세요",
+    "step2_title": "투자 철학 선택",
+    "step2_desc": "나에게 맞는 투자 거장의 철학을 선택하세요",
+    "step3_title": "매일 5분 습관",
+    "step3_desc": "맥락 카드 읽기 → 예측 투표 → 복기",
+    "start": "시작하기",
+    "add_later": "나중에 추가"
+  },
+  "ai_consent": {
+    "title": "AI 데이터 공유 동의",
+    "description": "baln은 Google Gemini AI를 활용해 개인화된 투자 분석을 제공합니다.",
+    "accept": "동의하기",
+    "decline": "거부하기"
+  },
+  "welcome_bonus": {
+    "title": "환영합니다!",
+    "message": "가입 축하 보너스 {{credits}}C (₩{{value}})를 받았습니다!",
+    "dismiss": "시작하기"
+  },
+  "add_asset": {
+    "title": "자산 추가",
+    "search_placeholder": "종목명 또는 티커 검색",
+    "manual_input": "직접 입력",
+    "asset_name": "자산명",
+    "current_value": "현재 평가 금액",
+    "target_ratio": "목표 비중 (%)",
+    "cost_basis": "매입 금액",
+    "category": "분류",
+    "categories": {
+      "kr_stock": "한국 주식",
+      "us_stock": "미국 주식",
+      "etf": "ETF",
+      "crypto": "암호화폐",
+      "bond": "채권",
+      "gold": "금",
+      "commodity": "원자재",
+      "cash": "현금",
+      "realestate": "부동산",
+      "other": "기타"
+    }
+  },
+  "subscription": {
+    "title": "Premium",
+    "price_monthly": "₩4,900/월",
+    "price_yearly": "₩49,000/년",
+    "free_trial": "7일 무료 체험",
+    "feature_context_card": "맥락 카드 4겹 전체",
+    "feature_ai_analysis": "AI 분석 3회/일",
+    "feature_prediction": "예측 해설 + 복기",
+    "feature_credit_bonus": "월 30C 보너스",
+    "feature_peer_compare": "전체 등급 비교",
+    "subscribe_button": "구독하기",
+    "restore_button": "구매 복원",
+    "terms": "구독 이용약관"
+  },
+  "terms": {
+    "title": "이용약관",
+    "privacy_title": "개인정보처리방침",
+    "last_updated": "최종 수정일: {{date}}"
   }
 }

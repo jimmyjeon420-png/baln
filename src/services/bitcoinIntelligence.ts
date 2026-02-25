@@ -212,9 +212,9 @@ async function analyzeBitcoinWithGemini(): Promise<GeminiInsight> {
 {
   "score": (0-100 정수, 종합 투자 매력도),
   "hashrateScore": (0-100 정수, 해시레이트 건강도. 역대 최고치 대비 현재 수준 + 추세 반영. 높을수록 네트워크가 건강),
-  "hashrateTrend": "(해시레이트 동향 2줄 요약, 한국어. 수치와 추세 포함)",
-  "politicsImpact": "(정치/규제 영향 1줄 요약, 한국어)",
-  "macroOutlook": "(매크로 환경 1줄 요약, 한국어)",
+  "hashrateTrend": "(해시레이트 동향 2줄 요약. 수치와 추세 포함)",
+  "politicsImpact": "(정치/규제 영향 1줄 요약)",
+  "macroOutlook": "(매크로 환경 1줄 요약)",
   "keyEvents": ["(핵심 이벤트 1)", "(핵심 이벤트 2)", "(핵심 이벤트 3)"]
 }`;
 

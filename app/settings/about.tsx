@@ -10,31 +10,33 @@ import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
 import { useTheme } from '../../src/hooks/useTheme';
 import { HeaderBar } from '../../src/components/common/HeaderBar';
+import { useLocale } from '../../src/context/LocaleContext';
 
 export default function AboutScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { t } = useLocale();
 
   const appVersion = Constants.expoConfig?.version ?? '3.0.0';
 
   const appInfo = [
-    { label: '버전', value: appVersion },
+    { label: t('settings.about.version'), value: appVersion },
     { label: '프레임워크', value: 'Expo SDK 54' },
     { label: 'AI 엔진', value: 'Gemini 3 Flash' },
   ];
 
   // 도움말 / 이용약관 / 개인정보처리방침을 이 화면에서 바로 이동할 수 있도록 통합
   const navLinks: { icon: keyof typeof Ionicons.glyphMap; label: string; route: string }[] = [
-    { icon: 'help-circle-outline', label: '도움말', route: '/settings/help' },
-    { icon: 'document-text-outline', label: '이용약관', route: '/settings/terms' },
-    { icon: 'lock-closed-outline', label: '개인정보처리방침', route: '/settings/privacy' },
-    { icon: 'open-outline', label: '오픈소스 라이선스', route: '/settings/licenses' },
+    { icon: 'help-circle-outline', label: t('settings.help.title'), route: '/settings/help' },
+    { icon: 'document-text-outline', label: t('profile.menu.terms'), route: '/settings/terms' },
+    { icon: 'lock-closed-outline', label: t('profile.menu.privacy'), route: '/settings/privacy' },
+    { icon: 'open-outline', label: t('profile.menu.licenses'), route: '/settings/licenses' },
     { icon: 'globe-outline', label: '공식 웹사이트', route: '/settings/website' },
   ];
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <HeaderBar title="앱 정보" />
+      <HeaderBar title={t('settings.about.title')} />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* 앱 로고 및 이름 */}
