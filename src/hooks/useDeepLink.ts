@@ -17,7 +17,7 @@
  * - baln://community/{postId}   → 커뮤니티 게시글 상세
  */
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 
@@ -86,23 +86,28 @@ function handleDeepLink(url: string, router: any) {
  */
 export function useDeepLink(enabled: boolean = true) {
   const router = useRouter();
+  // router를 ref에 보관 — 최신 값을 쓰되 useEffect deps에서 제외 (무한 루프 방지)
+  const routerRef = useRef(router);
+  useEffect(() => { routerRef.current = router; });
 
   useEffect(() => {
     if (!enabled) return; // 인증 완료 전에는 딥링크 처리하지 않음
 
     // 1. 앱이 이미 열린 상태에서 딥링크가 들어온 경우 (백그라운드 → 포그라운드)
     const subscription = Linking.addEventListener('url', ({ url }) => {
-      handleDeepLink(url, router);
+      handleDeepLink(url, routerRef.current);
     });
 
     // 2. 앱이 딥링크로 처음 열린 경우 (콜드 스타트)
     Linking.getInitialURL().then((url) => {
       if (url) {
-        handleDeepLink(url, router);
+        handleDeepLink(url, routerRef.current);
       }
     });
 
     // 컴포넌트 언마운트 시 이벤트 리스너 정리
     return () => subscription.remove();
-  }, [router, enabled]);
+    // router는 routerRef로 관리 — deps에서 제외하여 무한 루프 방지
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabled]);
 }

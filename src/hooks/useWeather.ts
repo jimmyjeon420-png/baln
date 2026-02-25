@@ -134,13 +134,17 @@ export function useWeather(): UseWeatherReturn {
     }
   }, [extractClothingLevel]);
 
-  // 마운트 시 초기 로드 + 30분 간격 자동 갱신
+  // loadWeather를 ref로 보관 — 최신 버전을 쓰되 useEffect deps에서 제외 (무한 루프 방지)
+  const loadWeatherRef = useRef(loadWeather);
+  useEffect(() => { loadWeatherRef.current = loadWeather; }, [loadWeather]);
+
+  // 마운트 시 초기 로드 + 30분 간격 자동 갱신 ([] — 한 번만 실행)
   useEffect(() => {
     isMountedRef.current = true;
-    loadWeather();
+    loadWeatherRef.current();
 
     refreshTimerRef.current = setInterval(() => {
-      loadWeather();
+      loadWeatherRef.current();
     }, REFRESH_INTERVAL);
 
     return () => {
@@ -149,7 +153,9 @@ export function useWeather(): UseWeatherReturn {
         clearInterval(refreshTimerRef.current);
       }
     };
-  }, [loadWeather]);
+    // loadWeather는 loadWeatherRef를 통해 접근 — deps 제외하여 무한 루프 방지
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return {
     weather,
