@@ -81,25 +81,25 @@ export function useActivityAnimation({
   const buildAnimation = (act: GuruActivity): Animated.CompositeAnimation | null => {
     switch (act) {
       // -----------------------------------------------------------------------
-      // 1. dancing — 리듬감 있는 좌우 회전 + 위아래 바운스
-      //    느낌: 클럽 댄스처럼 신나고 통통 튐
+      // 1. dancing — 부드러운 좌우 회전 + 느긋한 바운스
+      //    느낌: 음악에 맞춰 여유롭게 몸을 흔드는 모습
       // -----------------------------------------------------------------------
       case 'dancing': {
         const rotateLoop = Animated.loop(
           Animated.sequence([
             Animated.timing(rotateValue, {
-              toValue: 1,      // → +8deg
-              duration: 200,
+              toValue: 0.75,   // → +6deg (줄임)
+              duration: 600,
               useNativeDriver: true,
             }),
             Animated.timing(rotateValue, {
-              toValue: -1,     // → -8deg
-              duration: 400,
+              toValue: -0.75,  // → -6deg
+              duration: 1200,
               useNativeDriver: true,
             }),
             Animated.timing(rotateValue, {
               toValue: 0,
-              duration: 200,
+              duration: 600,
               useNativeDriver: true,
             }),
           ])
@@ -107,13 +107,13 @@ export function useActivityAnimation({
         const bounceLoop = Animated.loop(
           Animated.sequence([
             Animated.timing(translateY, {
-              toValue: -6,
-              duration: 200,
+              toValue: -4,
+              duration: 500,
               useNativeDriver: true,
             }),
             Animated.timing(translateY, {
               toValue: 0,
-              duration: 200,
+              duration: 500,
               useNativeDriver: true,
             }),
           ])
@@ -122,25 +122,25 @@ export function useActivityAnimation({
       }
 
       // -----------------------------------------------------------------------
-      // 2. singing — 부드러운 좌우 흔들림 + 미세 scale 펄스
+      // 2. singing — 느긋한 좌우 흔들림 + 미세 scale 펄스
       //    느낌: 자기 음악에 취해 천천히 몸을 흔드는 모습
       // -----------------------------------------------------------------------
       case 'singing': {
         const swayLoop = Animated.loop(
           Animated.sequence([
             Animated.timing(translateX, {
-              toValue: 3,
-              duration: 300,
+              toValue: 2,
+              duration: 800,
               useNativeDriver: true,
             }),
             Animated.timing(translateX, {
-              toValue: -3,
-              duration: 600,
+              toValue: -2,
+              duration: 1600,
               useNativeDriver: true,
             }),
             Animated.timing(translateX, {
               toValue: 0,
-              duration: 300,
+              duration: 800,
               useNativeDriver: true,
             }),
           ])
@@ -148,13 +148,13 @@ export function useActivityAnimation({
         const pulseLoop = Animated.loop(
           Animated.sequence([
             Animated.timing(scaleValue, {
-              toValue: 1.04,
-              duration: 300,
+              toValue: 1.03,
+              duration: 800,
               useNativeDriver: true,
             }),
             Animated.timing(scaleValue, {
               toValue: 1.0,
-              duration: 300,
+              duration: 800,
               useNativeDriver: true,
             }),
           ])
@@ -163,40 +163,39 @@ export function useActivityAnimation({
       }
 
       // -----------------------------------------------------------------------
-      // 3. exercising — 빠른 위아래 바운스 (점핑잭 느낌)
-      //    느낌: 에너지 넘치게 뛰고 있는 모습
+      // 3. exercising — 느긋한 위아래 바운스 (체조 느낌)
+      //    느낌: 여유 있게 스트레칭하는 모습
       // -----------------------------------------------------------------------
       case 'exercising': {
         const jumpLoop = Animated.loop(
           Animated.sequence([
             Animated.timing(translateY, {
-              toValue: -10,
-              duration: 175,
+              toValue: -6,
+              duration: 500,
               useNativeDriver: true,
             }),
             Animated.timing(translateY, {
               toValue: 0,
-              duration: 175,
+              duration: 500,
               useNativeDriver: true,
             }),
           ])
         );
-        // 착지할 때 살짝 납작해지는 스케일 연출
         const squishLoop = Animated.loop(
           Animated.sequence([
             Animated.timing(scaleValue, {
               toValue: 1.0,
-              duration: 175,
+              duration: 500,
               useNativeDriver: true,
             }),
             Animated.timing(scaleValue, {
-              toValue: 0.96,   // 착지 순간 살짝 수직으로 눌림
-              duration: 60,
+              toValue: 0.97,
+              duration: 200,
               useNativeDriver: true,
             }),
             Animated.timing(scaleValue, {
               toValue: 1.0,
-              duration: 115,
+              duration: 300,
               useNativeDriver: true,
             }),
           ])
@@ -278,20 +277,20 @@ export function useActivityAnimation({
       }
 
       // -----------------------------------------------------------------------
-      // 6. cooking — 냄비 젓는 팔 동작 (좌우 회전 + 위아래 bob)
-      //    느낌: 냄비를 열심히 젓고 있는 모습
+      // 6. cooking — 느긋하게 냄비 젓는 동작 (좌우 회전 + 위아래 bob)
+      //    느낌: 천천히 냄비를 젓고 있는 모습
       // -----------------------------------------------------------------------
       case 'cooking': {
         const stirLoop = Animated.loop(
           Animated.sequence([
             Animated.timing(rotateValue, {
-              toValue: -0.625,  // → -5deg
-              duration: 250,
+              toValue: -0.5,   // → -4deg
+              duration: 700,
               useNativeDriver: true,
             }),
             Animated.timing(rotateValue, {
-              toValue: 0.625,   // → +5deg
-              duration: 250,
+              toValue: 0.5,    // → +4deg
+              duration: 700,
               useNativeDriver: true,
             }),
           ])
@@ -299,13 +298,13 @@ export function useActivityAnimation({
         const bobLoop = Animated.loop(
           Animated.sequence([
             Animated.timing(translateY, {
-              toValue: -2,
-              duration: 250,
+              toValue: -1.5,
+              duration: 700,
               useNativeDriver: true,
             }),
             Animated.timing(translateY, {
-              toValue: 2,
-              duration: 250,
+              toValue: 1.5,
+              duration: 700,
               useNativeDriver: true,
             }),
           ])
@@ -443,25 +442,25 @@ export function useActivityAnimation({
       }
 
       // -----------------------------------------------------------------------
-      // 11. debugging (trading-like) — 빠른 회전 jerk + 탭 느낌 Y
-      //     느낌: 데이터/차트를 미친 듯이 분석하며 타이핑하는 모습 (머스크 스타일)
+      // 11. debugging (trading-like) — 집중하며 천천히 고개 숙이는 느낌
+      //     느낌: 데이터를 분석하며 집중하는 모습
       // -----------------------------------------------------------------------
       case 'debugging': {
         const typingRotateLoop = Animated.loop(
           Animated.sequence([
             Animated.timing(rotateValue, {
-              toValue: -0.25,   // -2deg
-              duration: 150,
+              toValue: -0.15,   // -1.2deg
+              duration: 500,
               useNativeDriver: true,
             }),
             Animated.timing(rotateValue, {
-              toValue: 0.25,    // +2deg
-              duration: 150,
+              toValue: 0.15,    // +1.2deg
+              duration: 500,
               useNativeDriver: true,
             }),
             Animated.timing(rotateValue, {
               toValue: 0,
-              duration: 150,
+              duration: 500,
               useNativeDriver: true,
             }),
           ])
@@ -469,13 +468,13 @@ export function useActivityAnimation({
         const tapLoop = Animated.loop(
           Animated.sequence([
             Animated.timing(translateY, {
-              toValue: -1,
-              duration: 150,
+              toValue: -0.5,
+              duration: 400,
               useNativeDriver: true,
             }),
             Animated.timing(translateY, {
               toValue: 0,
-              duration: 150,
+              duration: 400,
               useNativeDriver: true,
             }),
           ])
@@ -649,25 +648,25 @@ export function useActivityAnimation({
       }
 
       // -----------------------------------------------------------------------
-      // 17. surfing — 균형 잡기 (dancing처럼 강하지만 더 낮고 넓게)
-      //     느낌: 파도 위에서 균형 잡는 모습
+      // 17. surfing — 균형 잡기 (느긋한 파도 타기)
+      //     느낌: 파도 위에서 천천히 균형 잡는 모습
       // -----------------------------------------------------------------------
       case 'surfing': {
         const surfRockLoop = Animated.loop(
           Animated.sequence([
             Animated.timing(rotateValue, {
-              toValue: 0.75,    // 6deg
-              duration: 500,
+              toValue: 0.5,     // 4deg
+              duration: 1200,
               useNativeDriver: true,
             }),
             Animated.timing(rotateValue, {
-              toValue: -0.75,
-              duration: 1000,
+              toValue: -0.5,
+              duration: 2400,
               useNativeDriver: true,
             }),
             Animated.timing(rotateValue, {
               toValue: 0,
-              duration: 500,
+              duration: 1200,
               useNativeDriver: true,
             }),
           ])
@@ -675,18 +674,18 @@ export function useActivityAnimation({
         const surfBobLoop = Animated.loop(
           Animated.sequence([
             Animated.timing(translateY, {
-              toValue: -4,
-              duration: 500,
+              toValue: -3,
+              duration: 1200,
               useNativeDriver: true,
             }),
             Animated.timing(translateY, {
-              toValue: 4,
-              duration: 1000,
+              toValue: 3,
+              duration: 2400,
               useNativeDriver: true,
             }),
             Animated.timing(translateY, {
               toValue: 0,
-              duration: 500,
+              duration: 1200,
               useNativeDriver: true,
             }),
           ])
@@ -702,22 +701,22 @@ export function useActivityAnimation({
       case 'gardening':
       case 'stargazing':
       default: {
-        // 기본 gentle sway — idle보다 약간 더 뚜렷한 좌우 흔들림
+        // 기본 gentle sway — 매우 느린 좌우 흔들림 (자연스러운 서있기)
         const gentleSwayLoop = Animated.loop(
           Animated.sequence([
             Animated.timing(translateX, {
-              toValue: 2,
-              duration: 900,
+              toValue: 1.5,
+              duration: 2000,
               useNativeDriver: true,
             }),
             Animated.timing(translateX, {
-              toValue: -2,
-              duration: 1800,
+              toValue: -1.5,
+              duration: 4000,
               useNativeDriver: true,
             }),
             Animated.timing(translateX, {
               toValue: 0,
-              duration: 900,
+              duration: 2000,
               useNativeDriver: true,
             }),
           ])
@@ -725,13 +724,13 @@ export function useActivityAnimation({
         const gentleBreathLoop = Animated.loop(
           Animated.sequence([
             Animated.timing(scaleValue, {
-              toValue: 1.02,
-              duration: 900,
+              toValue: 1.015,
+              duration: 2000,
               useNativeDriver: true,
             }),
             Animated.timing(scaleValue, {
               toValue: 1.0,
-              duration: 900,
+              duration: 2000,
               useNativeDriver: true,
             }),
           ])

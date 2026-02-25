@@ -10,6 +10,8 @@
 
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { Animated, Easing } from 'react-native';
+import { getGuruProfile } from '../../../data/guruMovementProfile';
+import type { GuruMovementProfile } from '../../../data/guruMovementProfile';
 
 // ─────────────────────────────────────────────
 // 타입 정의
@@ -33,6 +35,8 @@ interface UseWanderAnimationProps {
    * 'walking' 또는 기타 → 기본 배회
    */
   activity?: string;
+  /** 구루 ID — 동물별 고유 움직임 프로필 적용 */
+  guruId?: string;
 }
 
 interface WanderAnimationResult {
@@ -51,28 +55,28 @@ interface WanderAnimationResult {
 // 상수
 // ─────────────────────────────────────────────
 
-/** 한 번에 이동할 최소/최대 픽셀 */
-const MIN_MOVE_PX = 15;
-const MAX_MOVE_PX = 30;
+/** 한 번에 이동할 최소/최대 픽셀 (느리게 — 동물의숲 템포) */
+const MIN_MOVE_PX = 6;
+const MAX_MOVE_PX = 14;
 
 /** 이동 시 한 "발자국"의 길이 (전체 이동량을 이 단위로 쪼갬) */
-const STEP_SIZE_PX = 8;
+const STEP_SIZE_PX = 4;
 
-/** 각 발자국 애니메이션 지속 시간 (ms) */
-const STEP_DURATION_MS = 80;
+/** 각 발자국 애니메이션 지속 시간 (ms) — 느린 걸음 */
+const STEP_DURATION_MS = 250;
 
 /** 발자국 사이 미세 정지 시간 (ms) */
-const STEP_PAUSE_MS = 40;
+const STEP_PAUSE_MS = 120;
 
-/** 멈춤 구간 최소/최대 시간 (ms) */
-const MIN_PAUSE_MS = 1000;
-const MAX_PAUSE_MS = 3000;
+/** 멈춤 구간 최소/최대 시간 (ms) — 오래 쉬기 */
+const MIN_PAUSE_MS = 3000;
+const MAX_PAUSE_MS = 8000;
 
 /** "그냥 한 번 더 서 있을" 확률 (0~1) */
-const STAY_STILL_CHANCE = 0.3;
+const STAY_STILL_CHANCE = 0.45;
 
-/** 기본 이동 가능 영역 (픽셀 오프셋 기준, 부모 기준 비율 아님) */
-const DEFAULT_BOUNDS = { minX: -50, maxX: 50, minY: -30, maxY: 30 };
+/** 기본 이동 가능 영역 (픽셀 오프셋 기준) — 범위 축소 */
+const DEFAULT_BOUNDS = { minX: -25, maxX: 25, minY: -15, maxY: 15 };
 
 // ─────────────────────────────────────────────
 // 유틸 함수
@@ -131,7 +135,13 @@ export function useWanderAnimation({
   bounds = DEFAULT_BOUNDS,
   speed = 1,
   activity,
+  guruId,
 }: UseWanderAnimationProps = {}): WanderAnimationResult {
+
+  // 구루별 동물 프로필 — 거북이는 아주 느리게, 치타는 빠르게
+  const profile: GuruMovementProfile = guruId ? getGuruProfile(guruId) : getGuruProfile('default');
+  // 프로필 속도를 기본 speed에 곱함 (0.3 거북이 ~ 1.8 치타)
+  const effectiveSpeed = speed * profile.wanderSpeed;
 
   // Animated.Value — useNativeDriver: true 사용
   const offsetX = useRef(new Animated.Value(0)).current;
@@ -187,18 +197,28 @@ export function useWanderAnimation({
     (activityConfig: ReturnType<typeof resolveActivityConfig>) => {
       if (!mountedRef.current) return;
 
-      // 30% 확률로 그냥 한 번 더 멈춤
-      if (Math.random() < STAY_STILL_CHANCE / activityConfig.directionChangeBias) {
+      // 프로필 기반 멈춤 확률 (거북이 60%, 여우 15%)
+      const idleChance = Math.max(STAY_STILL_CHANCE, profile.idleChance);
+      if (Math.random() < idleChance / activityConfig.directionChangeBias) {
         if (mountedRef.current) setIsMoving(false);
-        const pauseDuration = randomBetween(MIN_PAUSE_MS, MAX_PAUSE_MS);
+        // 프로필 기반 멈춤 시간 (거북이 5~10초, 여우 0.8~2초)
+        const [pauseMin, pauseMax] = profile.pauseRange;
+        const pauseDuration = randomBetween(
+          Math.max(MIN_PAUSE_MS, pauseMin),
+          Math.max(MAX_PAUSE_MS, pauseMax),
+        );
         cycleTimerRef.current = setTimeout(() => {
           runCycle(activityConfig);
-        }, pauseDuration / speed);
+        }, pauseDuration);
         return;
       }
 
-      // ── 이동 방향 및 거리 결정 ──
-      const movePx = randomBetween(MIN_MOVE_PX, MAX_MOVE_PX) * speed * activityConfig.speedMultiplier;
+      // ── 이동 방향 및 거리 결정 (프로필 stepSize 기반) ──
+      const profileStepPx = profile.stepSize * profile.stepsPerBurst;
+      const movePx = randomBetween(
+        Math.min(MIN_MOVE_PX, profileStepPx * 0.5),
+        Math.max(MAX_MOVE_PX, profileStepPx),
+      ) * effectiveSpeed * activityConfig.speedMultiplier;
 
       // X축과 Y축을 독립적으로 결정 (대각선 이동 포함)
       const rawDx = (Math.random() - 0.5) * 2 * movePx;
@@ -208,20 +228,24 @@ export function useWanderAnimation({
       const dy = clampDelta(positionRef.current.y, rawDy, bounds.minY, bounds.maxY);
 
       // 이동량이 너무 작으면 그냥 멈춤
-      if (Math.abs(dx) < 4 && Math.abs(dy) < 4) {
+      if (Math.abs(dx) < 2 && Math.abs(dy) < 2) {
         if (mountedRef.current) setIsMoving(false);
-        const pauseDuration = randomBetween(MIN_PAUSE_MS, MAX_PAUSE_MS);
+        const [pauseMin, pauseMax] = profile.pauseRange;
+        const pauseDuration = randomBetween(
+          Math.max(MIN_PAUSE_MS, pauseMin),
+          Math.max(MAX_PAUSE_MS, pauseMax),
+        );
         cycleTimerRef.current = setTimeout(() => {
           runCycle(activityConfig);
-        }, pauseDuration / speed);
+        }, pauseDuration);
         return;
       }
 
-      // ── 발자국 시퀀스 생성 ──
-      // 전체 이동량을 STEP_SIZE_PX 단위로 쪼개 뚝뚝 끊기는 효과
-      const totalSteps = Math.max(
-        Math.ceil(Math.max(Math.abs(dx), Math.abs(dy)) / STEP_SIZE_PX),
-        1
+      // ── 발자국 시퀀스 생성 (프로필 stepSize 적용) ──
+      const stepPx = Math.max(STEP_SIZE_PX, profile.stepSize);
+      const totalSteps = Math.min(
+        profile.stepsPerBurst,
+        Math.max(Math.ceil(Math.max(Math.abs(dx), Math.abs(dy)) / stepPx), 1),
       );
 
       const startX = positionRef.current.x;
@@ -238,30 +262,32 @@ export function useWanderAnimation({
         const stepX = startX + dx * progress;
         const stepY = startY + dy * progress;
 
-        // X 발자국 (이동 + 발자국 사이 미세 정지)
+        // X 발자국 (이동 + 발자국 사이 미세 정지) — 프로필 속도 반영
+        const stepDur = Math.round(STEP_DURATION_MS / effectiveSpeed);
+        const stepPause = Math.round(STEP_PAUSE_MS / effectiveSpeed);
         xStepAnims.push(
           Animated.timing(offsetX, {
             toValue: stepX,
-            duration: STEP_DURATION_MS / speed,
+            duration: stepDur,
             easing: Easing.linear,
             useNativeDriver: true,
           })
         );
         if (i < totalSteps) {
-          xStepAnims.push(Animated.delay(STEP_PAUSE_MS));
+          xStepAnims.push(Animated.delay(stepPause));
         }
 
         // Y 발자국
         yStepAnims.push(
           Animated.timing(offsetY, {
             toValue: stepY,
-            duration: STEP_DURATION_MS / speed,
+            duration: stepDur,
             easing: Easing.linear,
             useNativeDriver: true,
           })
         );
         if (i < totalSteps) {
-          yStepAnims.push(Animated.delay(STEP_PAUSE_MS));
+          yStepAnims.push(Animated.delay(stepPause));
         }
       }
 
@@ -284,16 +310,20 @@ export function useWanderAnimation({
 
         if (mountedRef.current) setIsMoving(false);
 
-        // ── 멈춤 구간 ──
-        const pauseDuration = randomBetween(MIN_PAUSE_MS, MAX_PAUSE_MS);
+        // ── 멈춤 구간 (프로필 기반) ──
+        const [pMin, pMax] = profile.pauseRange;
+        const pauseDuration = randomBetween(
+          Math.max(MIN_PAUSE_MS, pMin),
+          Math.max(MAX_PAUSE_MS, pMax),
+        );
         cycleTimerRef.current = setTimeout(() => {
           if (mountedRef.current) {
             runCycle(activityConfig);
           }
-        }, pauseDuration / speed);
+        }, pauseDuration);
       });
     },
-    [offsetX, offsetY, bounds, speed]
+    [offsetX, offsetY, bounds, effectiveSpeed, profile]
   );
 
   // ── 메인 effect ─────────────────────────────────────
@@ -330,7 +360,7 @@ export function useWanderAnimation({
         activeAnimationRef.current = null;
       }
     };
-  }, [enabled, activity, speed, bounds, runCycle, returnToOrigin]);
+  }, [enabled, activity, effectiveSpeed, bounds, runCycle, returnToOrigin]);
 
   // ── 언마운트 시 mountedRef 초기화 ───────────────────
   useEffect(() => {

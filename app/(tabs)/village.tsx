@@ -39,7 +39,7 @@ import { useScreenTracking } from '../../src/hooks/useAnalytics';
 import { VillageWeatherBackground } from '../../src/components/village/VillageWeatherBackground';
 import type { TimeOfDay as WeatherTimeOfDay } from '../../src/components/village/VillageWeatherBackground';
 import ProsperityMeter from '../../src/components/village/ProsperityMeter';
-import ActivityBubble from '../../src/components/village/ActivityBubble';
+// ActivityBubble 제거 — 텍스트 대신 캐릭터 애니메이션으로 활동 표현
 import GuruDetailSheet from '../../src/components/village/GuruDetailSheet';
 import EventBanner from '../../src/components/village/EventBanner';
 import WeatherBadge from '../../src/components/common/WeatherBadge';
@@ -335,17 +335,8 @@ export default function VillageScreen() {
                   onPress={() => handleGuruTap(pos.guruId)}
                   activeOpacity={0.8}
                 >
-                  {/* Activity bubble above character */}
-                  {guruState && (
-                    <ActivityBubble
-                      activity={guruState.activity}
-                      mood={guruState.mood}
-                      colors={colors}
-                      locale={language}
-                    />
-                  )}
-
                   {/* Character avatar + 의상/파티클 레이어 */}
+                  {/* 활동은 텍스트 대신 캐릭터 애니메이션으로 표현 */}
                   <CharacterAvatar
                     guruId={pos.guruId}
                     size="md"

@@ -180,7 +180,7 @@ function AnimatedAvatar({
   const SvgComponent = CHARACTER_COMPONENTS[guruId];
   const { breathingStyle, swayStyle, blinkPhaseRef } = useIdleAnimation();
   const { activityStyle } = useActivityAnimation({ activity, isActive: true });
-  const { wanderStyle } = useWanderAnimation({ enabled: true, activity });
+  const { wanderStyle } = useWanderAnimation({ enabled: true, activity, guruId });
 
   if (SvgComponent && config) {
     return (
