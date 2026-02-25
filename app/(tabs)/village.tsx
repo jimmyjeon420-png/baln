@@ -44,6 +44,7 @@ import GuruDetailSheet from '../../src/components/village/GuruDetailSheet';
 import EventBanner from '../../src/components/village/EventBanner';
 import WeatherBadge from '../../src/components/common/WeatherBadge';
 import { CharacterAvatar } from '../../src/components/character/CharacterAvatar';
+import { VillageTutorialOverlay } from '../../src/components/village/VillageTutorialOverlay';
 
 // 동물의숲 스타일 배경 레이어 (하늘→구름→지면→나무→가구→캐릭터 순)
 import { VillageClouds } from '../../src/components/village/VillageClouds';
@@ -96,7 +97,7 @@ const SpeechBubble = React.memo(({ text, colors }: SpeechBubbleProps) => {
       >
         {text}
       </Text>
-      <View style={[styles.speechTail, { borderTopColor: colors.surface + 'E0' }]} />
+      <View style={[styles.speechTail, { borderTopColor: colors.surface + 'D0' }]} />
     </View>
   );
 });
@@ -335,11 +336,15 @@ export default function VillageScreen() {
                   onPress={() => handleGuruTap(pos.guruId)}
                   activeOpacity={0.8}
                 >
-                  {/* Character avatar + 의상/파티클 레이어 */}
-                  {/* 활동은 텍스트 대신 캐릭터 애니메이션으로 표현 */}
+                  {/* 말풍선 — 캐릭터 위에 표시 (겹침 방지) */}
+                  {pos.bubble && (
+                    <SpeechBubble text={pos.bubble} colors={colors} />
+                  )}
+
+                  {/* Character avatar (sm 사이즈 — 5명 배치 시 겹침 방지) */}
                   <CharacterAvatar
                     guruId={pos.guruId}
-                    size="md"
+                    size="sm"
                     expression={guruState?.expression ?? 'neutral'}
                     animated
                     clothingLevel={clothingLevel}
@@ -363,11 +368,6 @@ export default function VillageScreen() {
                       ? (config?.guruName ?? pos.guruId)
                       : (config?.guruNameEn ?? pos.guruId)}
                   </Text>
-
-                  {/* Speech bubble (conversation auto-play) */}
-                  {pos.bubble && (
-                    <SpeechBubble text={pos.bubble} colors={colors} />
-                  )}
                 </TouchableOpacity>
               );
             })}
@@ -463,6 +463,12 @@ export default function VillageScreen() {
         onChat={handleGuruChat}
         onGift={handleGuruGift}
         onViewProfile={handleGuruViewProfile}
+        colors={colors}
+        locale={language}
+      />
+
+      {/* ── 마을 첫 진입 튜토리얼 오버레이 ─────────────────────────────── */}
+      <VillageTutorialOverlay
         colors={colors}
         locale={language}
       />
@@ -750,30 +756,32 @@ const styles = StyleSheet.create({
   guruContainer: {
     position: 'absolute',
     alignItems: 'center',
-    // Offset to center the character on its position point
-    marginLeft: -32,
-    marginTop: -20,
+    // sm 사이즈(48px) 기준 중앙 정렬
+    marginLeft: -24,
+    marginTop: -24,
     zIndex: 10,
+    // 말풍선 오버플로 허용
+    overflow: 'visible',
   },
   guruNameLabel: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '700',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 5,
     overflow: 'hidden',
-    marginTop: 2,
+    marginTop: 1,
     textAlign: 'center',
   },
 
-  // ── Speech Bubble ────────────────────────────────────────────────────────
+  // ── Speech Bubble (캐릭터 위에 표시, 컴팩트) ───────────────────────────
   speechBubble: {
-    maxWidth: 150,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 12,
+    maxWidth: 120,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
     borderWidth: 1,
-    marginTop: 4,
+    marginBottom: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
@@ -781,19 +789,20 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   speechText: {
-    fontSize: 11,
-    lineHeight: 15,
+    fontSize: 10,
+    lineHeight: 13,
   },
   speechTail: {
     position: 'absolute',
-    top: -6,
+    bottom: -5,
     left: '50%' as any,
-    marginLeft: -5,
+    marginLeft: -4,
     width: 0,
     height: 0,
-    borderLeftWidth: 5,
-    borderRightWidth: 5,
-    borderTopWidth: 6,
+    borderLeftWidth: 4,
+    borderRightWidth: 4,
+    borderBottomWidth: 0,
+    borderTopWidth: 5,
     borderLeftColor: 'transparent',
     borderRightColor: 'transparent',
   },

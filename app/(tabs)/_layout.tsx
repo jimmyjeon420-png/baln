@@ -81,14 +81,14 @@ function CustomTabBar({ state, navigation }: any) {
   );
 }
 
-// 탭별 아이콘 이름 반환 (5탭: 오늘/분석/마을/라운지/전체)
+// 탭별 아이콘 이름 반환 (5탭: 광장/병원/마을/카페/시청 세계관)
 function getIconName(routeName: string, isFocused: boolean): keyof typeof Ionicons.glyphMap {
   const icons: Record<string, { active: string; inactive: string }> = {
-    index: { active: 'today', inactive: 'today-outline' },
-    rebalance: { active: 'analytics', inactive: 'analytics-outline' },
-    village: { active: 'leaf', inactive: 'leaf-outline' },
-    lounge: { active: 'diamond', inactive: 'diamond-outline' },
-    profile: { active: 'grid', inactive: 'grid-outline' },
+    index: { active: 'sunny', inactive: 'sunny-outline' },           // 광장 (오늘의 광장)
+    rebalance: { active: 'pulse', inactive: 'pulse-outline' },       // 병원 (건강 진단)
+    village: { active: 'home', inactive: 'home-outline' },           // 마을 (중심가)
+    lounge: { active: 'cafe', inactive: 'cafe-outline' },            // 카페 (라운지)
+    profile: { active: 'business', inactive: 'business-outline' },   // 시청 (전체 관리)
   };
 
   const icon = icons[routeName] || { active: 'help', inactive: 'help-outline' };
@@ -106,9 +106,9 @@ export default function TabLayout() {
         headerShown: false,
       }}
     >
-      {/* ═══ 5탭 구조: 오늘 / 분석 / 마을 / 라운지 / 전체 ═══ */}
+      {/* ═══ 발른 마을 5탭: 광장 / 병원 / 마을 / 카페 / 시청 ═══ */}
 
-      {/* 1. 오늘 (Today) — 맥락 카드 + 예측 + 스트릭 + 위기 배너 */}
+      {/* 1. 광장 (Square) — 맥락 카드 + 예측 + 스트릭 + 위기 배너 */}
       <Tabs.Screen
         name="index"
         options={{
@@ -116,7 +116,7 @@ export default function TabLayout() {
         }}
       />
 
-      {/* 2. 분석 (Checkup) — 건강 점수 + 배분 이탈 + AI 심화 CTA */}
+      {/* 2. 병원 (Clinic) — 건강 점수 + AI 진단 + 처방전 */}
       <Tabs.Screen
         name="rebalance"
         options={{
@@ -132,7 +132,7 @@ export default function TabLayout() {
         }}
       />
 
-      {/* 4. 라운지 (Lounge) — VIP 커뮤니티 + 모임 */}
+      {/* 4. 카페 (Café) — VIP 라운지 + 커뮤니티 */}
       <Tabs.Screen
         name="lounge"
         options={{
@@ -140,7 +140,7 @@ export default function TabLayout() {
         }}
       />
 
-      {/* 5. 전체 (More) — 프로필 + 설정 + 크레딧 */}
+      {/* 5. 시청 (Hall) — 프로필 + 설정 + 크레딧 + 마켓 */}
       <Tabs.Screen
         name="profile"
         options={{
@@ -148,9 +148,6 @@ export default function TabLayout() {
         }}
       />
 
-      {/* ═══ 숨김 탭 ═══ */}
-      <Tabs.Screen name="news" options={{ href: null }} />
-      <Tabs.Screen name="insights" options={{ href: null }} />
     </Tabs>
   );
 }
