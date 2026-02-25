@@ -45,56 +45,50 @@ interface NotificationItem {
   details: string[];
 }
 
-const NOTIFICATION_ITEMS: NotificationItem[] = [
-  {
-    key: 'rebalanceAlert',
-    icon: '⚖️',
-    label: '리밸런싱 알림',
-    summary: '포트폴리오 점검이 필요할 때 알려드려요',
-    details: [
-      '매주 월요일 오전 9시에 주간 리밸런싱 점검 리마인더',
-      '3일 이상 앱을 열지 않으면 포트폴리오 확인 알림',
-      '리밸런싱이란? 자산 비율이 원래 목표에서 벗어났을 때 다시 맞추는 것이에요',
-    ],
-  },
-  {
-    key: 'priceAlert',
-    icon: '📊',
-    label: '가격 변동 알림',
-    summary: '보유 종목의 큰 가격 변동을 놓치지 마세요',
-    details: [
-      '매일 아침 7:30에 전일 가격 변동 확인 알림',
-      '앱을 열면 설정한 기준(±3/5/7%) 이상 변동한 종목을 하이라이트',
-      '기준은 아래 "가격 변동 기준"에서 조정할 수 있어요',
-      '예) 기준이 ±5%일 때, 어제 -6.2% 하락 종목은 확인 알림',
-    ],
-  },
-  {
-    key: 'marketNews',
-    icon: '☀️',
-    label: '아침 시장 브리핑',
-    summary: 'AI가 분석한 오늘의 시장 동향을 매일 받아보세요',
-    details: [
-      '매일 아침 8시에 AI 브리핑 알림',
-      'AI가 전날 시장 데이터를 분석하여 핵심 정보를 정리',
-      '금리/환율/주요 지수 변동 + 포트폴리오 처방전 포함',
-    ],
-  },
-];
-
-/** 알림 항목 key → i18n 번역 키 매핑 */
-const NOTIFICATION_LABEL_KEYS: Record<string, string> = {
-  rebalanceAlert: '',          // 번역 키 없음 — 하드코딩 유지
-  priceAlert: '',               // 번역 키 없음 — 하드코딩 유지
-  marketNews: 'settings.notifications.morning_briefing',
-};
-
 const PRICE_THRESHOLD_OPTIONS = [3, 5, 7];
 const WEEKLY_CAP_OPTIONS = [3, 5, 7];
 
 export default function NotificationsScreen() {
   const { colors } = useTheme();
   const { t } = useLocale();
+
+  // 알림 항목: t() 호출이 필요하므로 컴포넌트 내부에서 정의
+  const NOTIFICATION_ITEMS: NotificationItem[] = [
+    {
+      key: 'rebalanceAlert',
+      icon: '⚖️',
+      label: t('settings.notifications.rebalance_label'),
+      summary: t('settings.notifications.rebalance_summary'),
+      details: [
+        t('settings.notifications.rebalance_detail_1'),
+        t('settings.notifications.rebalance_detail_2'),
+        t('settings.notifications.rebalance_detail_3'),
+      ],
+    },
+    {
+      key: 'priceAlert',
+      icon: '📊',
+      label: t('settings.notifications.price_label'),
+      summary: t('settings.notifications.price_summary'),
+      details: [
+        t('settings.notifications.price_detail_1'),
+        t('settings.notifications.price_detail_2'),
+        t('settings.notifications.price_detail_3'),
+        t('settings.notifications.price_detail_4'),
+      ],
+    },
+    {
+      key: 'marketNews',
+      icon: '☀️',
+      label: t('settings.notifications.morning_briefing'),
+      summary: t('settings.notifications.market_summary'),
+      details: [
+        t('settings.notifications.market_detail_1'),
+        t('settings.notifications.market_detail_2'),
+        t('settings.notifications.market_detail_3'),
+      ],
+    },
+  ];
   const [settings, setSettings] = useState<NotificationSettings>(
     DEFAULT_NOTIFICATION_SETTINGS
   );
@@ -174,9 +168,9 @@ export default function NotificationsScreen() {
         <View style={[styles.masterSection, { backgroundColor: colors.surface }]}>
           <View style={styles.masterRow}>
             <View style={styles.masterInfo}>
-              <Text style={[styles.masterLabel, { color: colors.textPrimary }]}>🔔 푸시 알림</Text>
+              <Text style={[styles.masterLabel, { color: colors.textPrimary }]}>{t('settings.notifications.push_title')}</Text>
               <Text style={[styles.masterDesc, { color: colors.textSecondary }]}>
-                모든 알림을 한 번에 켜거나 끌 수 있어요
+                {t('settings.notifications.push_desc')}
               </Text>
             </View>
             <Switch
@@ -191,7 +185,7 @@ export default function NotificationsScreen() {
             <View style={styles.masterOffBanner}>
               <Ionicons name="notifications-off-outline" size={16} color={colors.error} />
               <Text style={[styles.masterOffText, { color: colors.error }]}>
-                알림이 꺼져 있습니다. 중요한 시장 변화를 놓칠 수 있어요.
+                {t('settings.notifications.push_off_warning')}
               </Text>
             </View>
           )}
@@ -199,7 +193,7 @@ export default function NotificationsScreen() {
 
         {/* 개별 알림 토글 */}
         <View style={[styles.section, { backgroundColor: colors.surface }]}>
-          <Text style={[styles.sectionTitle, { color: colors.textTertiary }]}>알림 종류</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textTertiary }]}>{t('settings.notifications.section_types')}</Text>
 
           {NOTIFICATION_ITEMS.map((item, index) => {
             const isEnabled = settings[item.key];
@@ -226,9 +220,7 @@ export default function NotificationsScreen() {
                           isDisabled && styles.textDisabled,
                         ]}
                       >
-                        {NOTIFICATION_LABEL_KEYS[item.key]
-                          ? t(NOTIFICATION_LABEL_KEYS[item.key])
-                          : item.label}
+                        {item.label}
                       </Text>
                       <Text
                         style={[
@@ -276,12 +268,12 @@ export default function NotificationsScreen() {
 
         {/* 알림 강도 설정 */}
         <View style={[styles.section, { backgroundColor: colors.surface }]}>
-          <Text style={[styles.sectionTitle, { color: colors.textTertiary }]}>알림 강도</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textTertiary }]}>{t('settings.notifications.section_intensity')}</Text>
 
           <View style={styles.controlCard}>
-            <Text style={[styles.controlTitle, { color: colors.textPrimary }]}>가격 변동 기준</Text>
+            <Text style={[styles.controlTitle, { color: colors.textPrimary }]}>{t('settings.notifications.price_threshold_title')}</Text>
             <Text style={[styles.controlDesc, { color: colors.textSecondary }]}>
-              가격 변동 알림에서 몇 % 이상 움직였을 때 확인할지 설정합니다.
+              {t('settings.notifications.price_threshold_desc')}
             </Text>
             <View style={styles.optionRow}>
               {PRICE_THRESHOLD_OPTIONS.map((option) => {
@@ -309,9 +301,9 @@ export default function NotificationsScreen() {
           </View>
 
           <View style={[styles.controlCard, styles.controlCardBorder, { borderTopColor: colors.border }]}>
-            <Text style={[styles.controlTitle, { color: colors.textPrimary }]}>주간 알림 상한</Text>
+            <Text style={[styles.controlTitle, { color: colors.textPrimary }]}>{t('settings.notifications.weekly_cap_title')}</Text>
             <Text style={[styles.controlDesc, { color: colors.textSecondary }]}>
-              한 주에 받는 알림 개수를 제한해 알림 피로도를 줄입니다.
+              {t('settings.notifications.weekly_cap_desc')}
             </Text>
             <View style={styles.optionRow}>
               {WEEKLY_CAP_OPTIONS.map((option) => {
@@ -330,7 +322,7 @@ export default function NotificationsScreen() {
                     onPress={() => updateNumericSetting('weeklyNotificationCap', option)}
                   >
                     <Text style={[styles.optionText, { color: selected ? colors.primary : colors.textSecondary }]}>
-                      주 {option}회
+                      {t('settings.notifications.weekly_cap_unit', { n: option })}
                     </Text>
                   </TouchableOpacity>
                 );
@@ -344,21 +336,19 @@ export default function NotificationsScreen() {
           <View style={styles.infoRow}>
             <Ionicons name="information-circle-outline" size={18} color={colors.textTertiary} />
             <Text style={[styles.infoText, { color: colors.textTertiary }]}>
-              알림은 휴대폰의 알림 권한이 허용되어 있어야 동작합니다.
-              기기 설정에서 bal<Text style={{ color: '#4CAF50' }}>n</Text>의 알림이 켜져 있는지 확인해주세요.
+              {t('settings.notifications.info_permission')}
             </Text>
           </View>
           <View style={[styles.infoRow, { marginTop: 8 }]}>
             <Ionicons name="time-outline" size={18} color={colors.textTertiary} />
             <Text style={[styles.infoText, { color: colors.textTertiary }]}>
-              알림 발송 시간은 기기의 현지 시간 기준입니다.
-              가격 변동 알림 7:30 → 아침 브리핑 8:00 → 리밸런싱 점검 9:00(월요일) 순서로 도착합니다.
+              {t('settings.notifications.info_timing')}
             </Text>
           </View>
           <View style={[styles.infoRow, { marginTop: 8 }]}>
             <Ionicons name="shield-checkmark-outline" size={18} color={colors.textTertiary} />
             <Text style={[styles.infoText, { color: colors.textTertiary }]}>
-              현재 설정: 가격 변동 기준 ±{settings.priceAlertThreshold}% · 주간 알림 상한 {settings.weeklyNotificationCap}회
+              {t('settings.notifications.info_current_settings', { threshold: settings.priceAlertThreshold, cap: settings.weeklyNotificationCap })}
             </Text>
           </View>
         </View>

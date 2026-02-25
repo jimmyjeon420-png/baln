@@ -26,6 +26,7 @@ import {
 import type { GuruLetter } from '../../types/village';
 import { CharacterAvatar } from '../character/CharacterAvatar';
 import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
+import { useLocale } from '../../context/LocaleContext';
 
 // ---------------------------------------------------------------------------
 // 타입 정의
@@ -190,6 +191,7 @@ function LetterDetailInner({
   fadeAnim,
   locale,
 }: InnerProps) {
+  const { t } = useLocale();
   // 타이핑 애니메이션 (본문)
   const displayedBody = useTypewriter(bodyText, isVisible, 16);
 
@@ -241,7 +243,7 @@ function LetterDetailInner({
               <CharacterAvatar guruId={guruId} size="md" />
               <View style={styles.senderInfo}>
                 <Text style={[styles.fromLabel, { color: colors.textTertiary }]}>
-                  {isKo ? '보낸이' : 'From'}
+                  {t('village.letter.from_label')}
                 </Text>
                 <Text style={[styles.senderName, { color: colors.textPrimary }]}>
                   {guruName}
@@ -289,7 +291,7 @@ function LetterDetailInner({
               <Text style={styles.giftEmoji}>🎁</Text>
               <View style={styles.giftTextWrapper}>
                 <Text style={[styles.giftLabel, { color: colors.textTertiary }]}>
-                  {isKo ? '첨부 선물' : 'Attached Gift'}
+                  {t('village.letter.attached_gift_label')}
                 </Text>
                 <Text style={[styles.giftItem, { color: colors.premium.gold }]}>
                   {letter.attachedItem}
@@ -307,7 +309,7 @@ function LetterDetailInner({
             activeOpacity={0.8}
           >
             <Text style={styles.closeButtonText}>
-              {isKo ? '편지 닫기' : 'Close Letter'}
+              {t('village.letter.close_button')}
             </Text>
           </TouchableOpacity>
         </View>

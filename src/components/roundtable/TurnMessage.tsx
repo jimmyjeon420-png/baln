@@ -13,13 +13,14 @@ import { CharacterAvatar } from '../character/CharacterAvatar';
 import { TypewriterText } from './TypewriterText';
 import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
 import { sentimentToExpression } from '../../services/characterService';
+import { useLocale } from '../../context/LocaleContext';
 import type { RoundtableTurn } from '../../types/roundtable';
 
-const SENTIMENT_LABELS: Record<string, { text: string; color: string }> = {
-  BULLISH: { text: '낙관', color: '#4CAF50' },
-  BEARISH: { text: '비관', color: '#CF6679' },
-  NEUTRAL: { text: '중립', color: '#9E9E9E' },
-  CAUTIOUS: { text: '신중', color: '#FFB74D' },
+const SENTIMENT_COLORS: Record<string, string> = {
+  BULLISH: '#4CAF50',
+  BEARISH: '#CF6679',
+  NEUTRAL: '#9E9E9E',
+  CAUTIOUS: '#FFB74D',
 };
 
 interface TurnMessageProps {
@@ -31,8 +32,11 @@ interface TurnMessageProps {
 }
 
 export function TurnMessage({ turn, isCurrent, onTypewriterComplete }: TurnMessageProps) {
+  const { t } = useLocale();
   const config = GURU_CHARACTER_CONFIGS[turn.speaker];
-  const sentimentInfo = SENTIMENT_LABELS[turn.sentiment] || SENTIMENT_LABELS.NEUTRAL;
+  const sentimentKey = turn.sentiment?.toLowerCase() as 'bullish' | 'bearish' | 'neutral' | 'cautious';
+  const sentimentColor = SENTIMENT_COLORS[turn.sentiment] ?? SENTIMENT_COLORS.NEUTRAL;
+  const sentimentText = t(`roundtable.sentiment.${sentimentKey}`);
   const accentColor = config?.accentColor || '#4CAF50';
 
   return (
@@ -54,9 +58,9 @@ export function TurnMessage({ turn, isCurrent, onTypewriterComplete }: TurnMessa
           <Text style={[styles.guruName, { color: accentColor }]}>
             {config?.guruName || turn.speaker}
           </Text>
-          <View style={[styles.sentimentBadge, { backgroundColor: sentimentInfo.color + '20' }]}>
-            <Text style={[styles.sentimentText, { color: sentimentInfo.color }]}>
-              {sentimentInfo.text}
+          <View style={[styles.sentimentBadge, { backgroundColor: sentimentColor + '20' }]}>
+            <Text style={[styles.sentimentText, { color: sentimentColor }]}>
+              {sentimentText}
             </Text>
           </View>
         </View>

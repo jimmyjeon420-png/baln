@@ -305,7 +305,7 @@ export default function GuruDetailScreen() {
                 }
               ]}>
                 <Text style={[styles.sentimentText, { color: sentimentColors[todayInsight.sentiment] || '#FFD700' }]}>
-                  {sentimentLabels[todayInsight.sentiment] || '중립'} 포지션
+                  {t('guru.detail.sentiment_position', { sentiment: sentimentLabels[todayInsight.sentiment] || t('guru.insights.filter_neutral') })}
                 </Text>
               </View>
 

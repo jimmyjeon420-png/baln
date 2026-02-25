@@ -6,7 +6,7 @@
  * 선택 즉시 AsyncStorage 저장 + 분석 탭 즉시 반영
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
@@ -36,56 +36,6 @@ interface GuruCard {
   accentColor: string;
 }
 
-const GURU_CARDS: GuruCard[] = [
-  {
-    id: 'dalio',
-    emoji: '🌊',
-    name: '레이 달리오',
-    subtitle: 'All Weather',
-    tagline: '"어떤 경제 환경에서도 생존"',
-    description: '브릿지워터 창업자. 경기침체·인플레·디플레 모든 환경에서 살아남는 포트폴리오. 채권과 금으로 안전판 구축.',
-    keyAlloc: [
-      { label: '주식', pct: DALIO_TARGET.large_cap, color: '#4CAF50' },
-      { label: '채권', pct: DALIO_TARGET.bond, color: '#64B5F6' },
-      { label: '금', pct: DALIO_TARGET.gold, color: '#FFD700' },
-      { label: '원자재', pct: DALIO_TARGET.commodity, color: '#FF8A65' },
-      { label: 'BTC', pct: DALIO_TARGET.bitcoin, color: '#F7931A' },
-    ],
-    accentColor: '#4CAF50',
-  },
-  {
-    id: 'buffett',
-    emoji: '🔴',
-    name: '워렌 버핏',
-    subtitle: 'Berkshire',
-    tagline: '"생산하는 자산만 진짜 투자"',
-    description: '오마하의 현인. 위대한 기업을 사서 영원히 보유. 현금 25%로 공포 극성 시 저가 매수 기회 포착.',
-    keyAlloc: [
-      { label: '주식', pct: BUFFETT_TARGET.large_cap, color: '#4CAF50' },
-      { label: '현금', pct: BUFFETT_TARGET.cash, color: '#78909C' },
-      { label: '채권', pct: BUFFETT_TARGET.bond, color: '#64B5F6' },
-      { label: '원자재', pct: BUFFETT_TARGET.commodity, color: '#FF8A65' },
-      { label: 'BTC', pct: BUFFETT_TARGET.bitcoin, color: '#F7931A' },
-    ],
-    accentColor: '#FF5722',
-  },
-  {
-    id: 'cathie_wood',
-    emoji: '🚀',
-    name: '캐시 우드',
-    subtitle: 'ARK Invest',
-    tagline: '"혁신이 미래를 바꾼다"',
-    description: 'ARK Invest CEO. AI·크립토·바이오·로봇 혁신 기술에 집중. BTC $1.5M 목표. 고위험·고수익 전략.',
-    keyAlloc: [
-      { label: '혁신주', pct: CATHIE_WOOD_TARGET.large_cap, color: '#4CAF50' },
-      { label: 'BTC', pct: CATHIE_WOOD_TARGET.bitcoin, color: '#F7931A' },
-      { label: '현금', pct: CATHIE_WOOD_TARGET.cash, color: '#78909C' },
-      { label: '알트코인', pct: CATHIE_WOOD_TARGET.altcoin, color: '#9C27B0' },
-    ],
-    accentColor: '#9C27B0',
-  },
-];
-
 export default function GuruStyleScreen() {
   const router = useRouter();
   const { colors } = useTheme();
@@ -93,6 +43,56 @@ export default function GuruStyleScreen() {
   // loaded: AsyncStorage 비동기 로드 완료 여부
   // guruStyle: 실제 저장된 값 (로드 전에는 'dalio' 기본값)
   const { guruStyle, setGuruStyle, loaded } = useGuruStyle();
+
+  const GURU_CARDS = useMemo<GuruCard[]>(() => [
+    {
+      id: 'dalio',
+      emoji: '🌊',
+      name: t('guru.style.card_dalio.name'),
+      subtitle: 'All Weather',
+      tagline: t('guru.style.card_dalio.tagline'),
+      description: t('guru.style.card_dalio.description'),
+      keyAlloc: [
+        { label: t('guru.style.alloc_labels.stock'), pct: DALIO_TARGET.large_cap, color: '#4CAF50' },
+        { label: t('guru.style.alloc_labels.bond'), pct: DALIO_TARGET.bond, color: '#64B5F6' },
+        { label: t('guru.style.alloc_labels.gold'), pct: DALIO_TARGET.gold, color: '#FFD700' },
+        { label: t('guru.style.alloc_labels.commodity'), pct: DALIO_TARGET.commodity, color: '#FF8A65' },
+        { label: 'BTC', pct: DALIO_TARGET.bitcoin, color: '#F7931A' },
+      ],
+      accentColor: '#4CAF50',
+    },
+    {
+      id: 'buffett',
+      emoji: '🔴',
+      name: t('guru.style.card_buffett.name'),
+      subtitle: 'Berkshire',
+      tagline: t('guru.style.card_buffett.tagline'),
+      description: t('guru.style.card_buffett.description'),
+      keyAlloc: [
+        { label: t('guru.style.alloc_labels.stock'), pct: BUFFETT_TARGET.large_cap, color: '#4CAF50' },
+        { label: t('guru.style.alloc_labels.cash'), pct: BUFFETT_TARGET.cash, color: '#78909C' },
+        { label: t('guru.style.alloc_labels.bond'), pct: BUFFETT_TARGET.bond, color: '#64B5F6' },
+        { label: t('guru.style.alloc_labels.commodity'), pct: BUFFETT_TARGET.commodity, color: '#FF8A65' },
+        { label: 'BTC', pct: BUFFETT_TARGET.bitcoin, color: '#F7931A' },
+      ],
+      accentColor: '#FF5722',
+    },
+    {
+      id: 'cathie_wood',
+      emoji: '🚀',
+      name: t('guru.style.card_cathie.name'),
+      subtitle: 'ARK Invest',
+      tagline: t('guru.style.card_cathie.tagline'),
+      description: t('guru.style.card_cathie.description'),
+      keyAlloc: [
+        { label: t('guru.style.alloc_labels.innovation'), pct: CATHIE_WOOD_TARGET.large_cap, color: '#4CAF50' },
+        { label: 'BTC', pct: CATHIE_WOOD_TARGET.bitcoin, color: '#F7931A' },
+        { label: t('guru.style.alloc_labels.cash'), pct: CATHIE_WOOD_TARGET.cash, color: '#78909C' },
+        { label: t('guru.style.alloc_labels.altcoin'), pct: CATHIE_WOOD_TARGET.altcoin, color: '#9C27B0' },
+      ],
+      accentColor: '#9C27B0',
+    },
+  ], [t]);
 
   const handleSelect = async (style: GuruStyle) => {
     // 즉시 저장 + hook 상태 업데이트 → isActive 반영됨

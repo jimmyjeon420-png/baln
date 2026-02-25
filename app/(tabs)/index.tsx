@@ -19,6 +19,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { useLocale } from '../../src/context/LocaleContext';
+import { t as rawT } from '../../src/locales';
 
 // 3카드 시스템
 import CardSwipeContainer from '../../src/components/home/CardSwipeContainer';
@@ -109,15 +110,16 @@ function buildReviewDescription(
   }
 
   if (myVote) {
+    // DB 저장 태그는 항상 한국어 (Edge Function 고정값)
     const scenario = extractTaggedLine(source, myVote === 'YES' ? 'YES 시나리오' : 'NO 시나리오');
     if (scenario) {
-      parts.push(`${isCorrect ? '성공 이유' : '실패 이유'}: ${scenario}`);
+      parts.push(`${isCorrect ? rawT('home.review_description.success_reason') : rawT('home.review_description.fail_reason')}: ${scenario}`);
     }
   }
 
   const learning = extractTaggedLine(source, '학습포인트');
   if (learning) {
-    parts.push(`학습 포인트: ${learning}`);
+    parts.push(`${rawT('home.review_description.learning_point')}: ${learning}`);
   }
 
   if (parts.length === 0) return undefined;
@@ -127,16 +129,17 @@ function buildReviewDescription(
 function buildReviewSource(source: string | null | undefined): string | undefined {
   if (!source) return undefined;
 
+  // DB 저장 태그는 항상 한국어 (Edge Function 고정값)
   const observed = extractTaggedLine(source, '관측데이터');
   const check = extractTaggedLine(source, '조건검증');
   const reasoning = extractTaggedLine(source, '핵심근거');
   const refs = extractTaggedLine(source, '출처');
 
   const summaryLines = [
-    observed ? `관측값: ${observed}` : null,
-    check ? `조건: ${check}` : null,
-    reasoning ? `판정 근거: ${reasoning}` : null,
-    refs ? `출처: ${refs}` : null,
+    observed ? `${rawT('home.review_source.observed')}: ${observed}` : null,
+    check ? `${rawT('home.review_source.condition')}: ${check}` : null,
+    reasoning ? `${rawT('home.review_source.reasoning')}: ${reasoning}` : null,
+    refs ? `${rawT('home.review_source.source')}: ${refs}` : null,
   ].filter(Boolean) as string[];
 
   if (summaryLines.length === 0) return source;
@@ -463,7 +466,7 @@ export default function HomeScreen() {
       onShare: () => setShareModalVisible(true),
       isLoading: contextLoading,
       updateTimeLabel: contextUpdateLabel,
-      dataSource: contextData.dataSource ?? contextEffective?.dataSource ?? 'baln 분석 엔진',
+      dataSource: contextData.dataSource ?? contextEffective?.dataSource ?? t('home.data_source.baln_engine'),
       dataTimestamp: contextData.dataTimestamp ?? card.created_at ?? null,
       confidenceNote: contextData.confidenceNote ?? t('context_card.confidence_live'),
       confidenceScore: isContextFallback ? 58 : (isContextStale ? 74 : 87),
@@ -607,7 +610,7 @@ export default function HomeScreen() {
     }
 
     return {
-      sourceLabel: hasFallback ? t('home.prediction.fallback_source') : 'BALN 예측 엔진',
+      sourceLabel: hasFallback ? t('home.prediction.fallback_source') : t('home.prediction.baln_engine_source'),
       generatedAt: firstPoll?.created_at ?? null,
       freshnessLabel: hasFallback ? t('home.prediction.fallback_freshness') : freshness,
       confidenceScore: estimatedConfidence,
@@ -807,16 +810,16 @@ export default function HomeScreen() {
           <Text style={[styles.quoteAuthor, { color: colors.textTertiary }]}>
             {(() => {
               const GURU_LABELS: Record<string, string> = {
-                buffett: '워렌 버핏 🦉',
-                dalio: '레이 달리오 🦌',
-                cathie_wood: '캐시 우드 🦊',
-                druckenmiller: '드러킨밀러 🐆',
-                saylor: '마이클 세일러 🐺',
-                dimon: '제이미 다이먼 🦁',
-                musk: '일론 머스크 🦎',
-                lynch: '피터 린치 🐻',
-                marks: '하워드 막스 🐢',
-                rogers: '짐 로저스 🐯',
+                buffett: t('home.quote_author.buffett'),
+                dalio: t('home.quote_author.dalio'),
+                cathie_wood: t('home.quote_author.cathie_wood'),
+                druckenmiller: t('home.quote_author.druckenmiller'),
+                saylor: t('home.quote_author.saylor'),
+                dimon: t('home.quote_author.dimon'),
+                musk: t('home.quote_author.musk'),
+                lynch: t('home.quote_author.lynch'),
+                marks: t('home.quote_author.marks'),
+                rogers: t('home.quote_author.rogers'),
               };
               return '— ' + (GURU_LABELS[dailyQuote.guruId] ?? dailyQuote.guruId);
             })()}

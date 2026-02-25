@@ -126,7 +126,42 @@
       "fallback_source": "Standard question fallback",
       "fallback_freshness": "Temporary data",
       "needs_update": "Needs update",
-      "latest": "Latest"
+      "latest": "Latest",
+      "baln_engine_source": "BALN Prediction Engine"
+    },
+    "review_description": {
+      "success_reason": "Why you succeeded",
+      "fail_reason": "Why you were wrong",
+      "learning_point": "Learning Point"
+    },
+    "review_source": {
+      "observed": "Observed",
+      "condition": "Condition",
+      "reasoning": "Reasoning",
+      "source": "Source"
+    },
+    "extract_tag": {
+      "yes_scenario": "YES Scenario",
+      "no_scenario": "NO Scenario",
+      "learning_point_tag": "LearningPoint",
+      "observed_data": "ObservedData",
+      "condition_verify": "ConditionVerify",
+      "key_reasoning": "KeyReasoning"
+    },
+    "data_source": {
+      "baln_engine": "baln Analysis Engine"
+    },
+    "quote_author": {
+      "buffett": "Warren Buffett 🦉",
+      "dalio": "Ray Dalio 🦌",
+      "cathie_wood": "Cathie Wood 🦊",
+      "druckenmiller": "Druckenmiller 🐆",
+      "saylor": "Michael Saylor 🐺",
+      "dimon": "Jamie Dimon 🦁",
+      "musk": "Elon Musk 🦎",
+      "lynch": "Peter Lynch 🐻",
+      "marks": "Howard Marks 🐢",
+      "rogers": "Jim Rogers 🐯"
     }
   },
   "health": {
@@ -205,6 +240,22 @@
       "tax_report_desc": "Tax optimization strategies",
       "cfo_chat_title": "Chat with AI Buffett",
       "cfo_chat_desc": "Real-time conversational advice"
+    },
+    "date": {
+      "weekday_short": {
+        "sun": "Sun",
+        "mon": "Mon",
+        "tue": "Tue",
+        "wed": "Wed",
+        "thu": "Thu",
+        "fri": "Fri",
+        "sat": "Sat"
+      },
+      "format": "{{weekday}}, {{month}}/{{day}}"
+    },
+    "dr_marks": {
+      "name": "🐢 Dr. Marks",
+      "quote": "\"The most important thing is understanding risk\""
     }
   },
   "news": {
@@ -278,10 +329,24 @@
       "referral": "Invite Friends",
       "delete_account": "Delete Account",
       "logout": "Sign Out",
-      "website": "Website"
+      "website": "Website",
+      "bookmarks": "My Bookmarks"
     },
     "logout_confirm": "Are you sure you want to sign out?",
-    "current_account": "Current account:"
+    "current_account": "Current account:",
+    "user_default_name": "User",
+    "login_prompt": "Log in to sync your data",
+    "error": {
+      "logout_failed": "An error occurred while logging out."
+    },
+    "admin": {
+      "title": "Admin Dashboard",
+      "subtitle": "Manage users, metrics, and lounge"
+    },
+    "village_section_title": "🏘️ Village Status",
+    "village_prosperity_label": "Prosperity",
+    "village_top_gurus_label": "Top Gurus",
+    "village_no_gurus_hint": "Chat with gurus in the village"
   },
   "error": {
     "title": "Something went wrong",
@@ -434,7 +499,31 @@
       "selected_badge": "Selected",
       "phase_notice": "Kostolany's market cycle is automatically reflected in your guru's target allocation (Base 75% + Phase 25%)",
       "disclaimer": "This is baln's interpretation of the guru's philosophy for Korean individual investors, not their actual portfolio",
-      "hint": "You can change this anytime. You can also manually adjust in the Analysis tab's allocation drift."
+      "hint": "You can change this anytime. You can also manually adjust in the Analysis tab's allocation drift.",
+      "card_dalio": {
+        "name": "Ray Dalio",
+        "tagline": "\"Survive in any economic environment\"",
+        "description": "Bridgewater founder. A portfolio designed to survive recession, inflation, and deflation. Safety net built with bonds and gold."
+      },
+      "card_buffett": {
+        "name": "Warren Buffett",
+        "tagline": "\"Only assets that produce are real investments\"",
+        "description": "The Oracle of Omaha. Buy great companies and hold forever. Keep 25% cash to buy during market panic."
+      },
+      "card_cathie": {
+        "name": "Cathie Wood",
+        "tagline": "\"Innovation changes the future\"",
+        "description": "ARK Invest CEO. Focus on AI, crypto, biotech, and robotics innovation. BTC $1.5M target. High-risk, high-reward strategy."
+      },
+      "alloc_labels": {
+        "stock": "Stocks",
+        "bond": "Bonds",
+        "gold": "Gold",
+        "commodity": "Commodities",
+        "cash": "Cash",
+        "innovation": "Innovation",
+        "altcoin": "Altcoins"
+      }
     },
     "detail": {
       "header_title": "Guru Deep Dive",
@@ -455,7 +544,8 @@
       "analysis_label": "AI Analysis",
       "source_label": "Source:",
       "no_insight_text": "Today's insight hasn't been updated yet.\nAutomatically updates every morning at 7 AM.",
-      "disclaimer": "This analysis is AI-generated from public data for educational purposes only and is not actual investment advice."
+      "disclaimer": "This analysis is AI-generated from public data for educational purposes only and is not actual investment advice.",
+      "sentiment_position": "{{sentiment}} Position"
     },
     "insights": {
       "title": "Guru Insights",
@@ -533,7 +623,72 @@
     "village_square": "Village Square",
     "guru_house": "{{name}}'s Place",
     "conversation": "Conversation",
-    "thinking": "Thinking..."
+    "thinking": "Thinking...",
+    "loading": "Loading village...",
+    "friendship": {
+      "tier": {
+        "stranger": "Stranger",
+        "acquaintance": "Acquaintance",
+        "friend": "Friend",
+        "close_friend": "Close Friend",
+        "best_friend": "Best Friend",
+        "mentor": "Mentor",
+        "soulmate": "Soulmate"
+      },
+      "score_to_next": "{{score}} pts · {{points}} to next",
+      "score_max": "{{score}} pts (Max!)",
+      "soulmate_banner": "Legendary Bond ✨"
+    },
+    "prosperity": {
+      "level_1": "First Spark",
+      "level_2": "Tiny Sprout",
+      "level_3": "Dawn Village",
+      "level_4": "Growing Ground",
+      "level_5": "Lively Square",
+      "level_6": "Crossroads of Prosperity",
+      "level_7": "Golden Fields",
+      "level_8": "City of Sages",
+      "level_9": "Hall of Legends",
+      "level_10": "Eternal Village",
+      "default_name": "Baln Village",
+      "level_sub": "Village Lv.{{level}}",
+      "level_sub_max": "Village Lv.{{level}} · Legendary!",
+      "today_label": "today",
+      "max_label": "MAX",
+      "max_banner": "✨ Legendary Village! Become soulmates with all gurus ✨"
+    },
+    "brand": {
+      "category": {
+        "tech": "Tech",
+        "fashion": "Fashion",
+        "food": "Food",
+        "finance": "Finance",
+        "auto": "Auto",
+        "entertainment": "Entertainment"
+      }
+    },
+    "letter": {
+      "tier_badge": {
+        "stranger": "Resident",
+        "acquaintance": "Neighbor",
+        "friend": "Friend",
+        "close_friend": "Close",
+        "best_friend": "Student",
+        "mentor": "Mentor",
+        "soulmate": "Legend"
+      },
+      "time_just_now": "Just now",
+      "time_minutes_ago": "{{minutes}}m ago",
+      "time_hours_ago": "{{hours}}h ago",
+      "time_days_ago": "{{days}}d ago",
+      "inbox_title": "Mailbox",
+      "unread_count": "{{count}} unread letter(s)",
+      "empty_title": "No letters yet",
+      "empty_desc": "Build friendship with gurus to receive letters",
+      "from_label": "From",
+      "attached_gift_label": "Attached Gift",
+      "close_button": "Close Letter"
+    }
   },
   "roundtable": {
     "title": "Guru Roundtable",
@@ -547,7 +702,28 @@
     "new_session": "Start New Discussion",
     "participants": "Participants",
     "duration": "Duration",
-    "question_placeholder": "What would you like to ask the gurus?"
+    "question_placeholder": "What would you like to ask the gurus?",
+    "suggested_topics": {
+      "topic_1": "The market dropped today — is it a buying opportunity?",
+      "topic_2": "How does an interest rate cut impact the stock market?",
+      "topic_3": "Bitcoin vs. Gold — where should I invest?",
+      "topic_4": "AI-related stocks — is it still not too late?"
+    },
+    "min_participants_alert": "At least 3 participants are required.",
+    "max_participants_alert": "You can have at most 5 participants.",
+    "alert_title": "Notice",
+    "section_suggested_topics": "Today's Suggested Topics",
+    "section_custom_topic": "Or type your own",
+    "free_badge": "Free",
+    "section_recent": "Recent Discussions",
+    "history_turns": "{{count}} turns",
+    "history_participants": "{{count}} gurus",
+    "sentiment": {
+      "bullish": "Bullish",
+      "bearish": "Bearish",
+      "neutral": "Neutral",
+      "cautious": "Cautious"
+    }
   },
   "prediction": {
     "title": "Prediction Game",
@@ -634,7 +810,35 @@
       "morning_briefing": "Morning Briefing",
       "crisis_alert": "Crisis Alerts",
       "prediction_result": "Prediction Results",
-      "community": "Community"
+      "community": "Community",
+      "push_title": "🔔 Push Notifications",
+      "push_desc": "Turn all notifications on or off at once",
+      "push_off_warning": "Notifications are off. You may miss important market changes.",
+      "section_types": "Notification Types",
+      "section_intensity": "Notification Intensity",
+      "rebalance_label": "Rebalancing Alert",
+      "rebalance_summary": "We'll notify you when your portfolio needs review",
+      "rebalance_detail_1": "Weekly rebalancing reminder every Monday at 9 AM",
+      "rebalance_detail_2": "Portfolio check alert if app is not opened for 3+ days",
+      "rebalance_detail_3": "Rebalancing means adjusting your assets back to your target allocation",
+      "price_label": "Price Change Alert",
+      "price_summary": "Don't miss large price movements in your holdings",
+      "price_detail_1": "Daily price change check notification at 7:30 AM",
+      "price_detail_2": "Highlights assets that moved beyond your threshold (±3/5/7%) when you open the app",
+      "price_detail_3": "You can adjust the threshold in the 'Price Change Threshold' section below",
+      "price_detail_4": "e.g. With ±5% threshold, an asset that dropped -6.2% yesterday triggers a check alert",
+      "market_summary": "Receive daily AI-analyzed market trends every morning",
+      "market_detail_1": "Daily AI briefing notification at 8 AM",
+      "market_detail_2": "AI analyzes the previous day's market data and summarizes key insights",
+      "market_detail_3": "Includes interest rate/FX/major index changes + portfolio prescription",
+      "price_threshold_title": "Price Change Threshold",
+      "price_threshold_desc": "Set the minimum price movement percentage for the price change alert.",
+      "weekly_cap_title": "Weekly Notification Limit",
+      "weekly_cap_desc": "Limit the number of notifications per week to reduce notification fatigue.",
+      "weekly_cap_unit": "{{n}}/week",
+      "info_permission": "Notifications require permission to be enabled. Check that baln notifications are turned on in your device settings.",
+      "info_timing": "Notification times are based on your device's local time. Price alert 7:30 → Morning briefing 8:00 → Rebalancing check 9:00 (Monday).",
+      "info_current_settings": "Current settings: Price threshold ±{{threshold}}% · Weekly limit {{cap}} times"
     },
     "security": {
       "title": "Security",
@@ -644,7 +848,14 @@
     "about": {
       "title": "About",
       "version": "Version",
-      "build": "Build"
+      "build": "Build",
+      "framework_label": "Framework",
+      "ai_engine_label": "AI Engine",
+      "section_version": "Version Info",
+      "section_legal": "Help & Legal",
+      "tagline": "The Beginning of Sound Investing",
+      "official_website": "Official Website",
+      "copyright": "© 2026 Baln Co., Ltd. All rights reserved."
     },
     "premium": {
       "title": "Premium",
@@ -658,17 +869,95 @@
       "title": "Delete Account",
       "warning": "This action cannot be undone",
       "confirm": "Are you sure you want to delete your account?",
-      "reason_placeholder": "Reason for leaving (optional)"
+      "reason_placeholder": "Reason for leaving (optional)",
+      "lose_title": "Deleting your account will\npermanently remove the following data",
+      "lose_credit": "Credit Balance",
+      "lose_portfolio": "Portfolio",
+      "lose_streak": "Streak Record",
+      "lose_prediction": "Prediction History",
+      "lose_community": "Community Posts & Comments",
+      "lose_value_streak": "{{days}}-day streak",
+      "lose_value_prediction": "{{count}} votes",
+      "lose_value_community": "{{posts}} posts, {{comments}} comments",
+      "loading": "Loading...",
+      "export_button": "Export Data Before Deletion (JSON)",
+      "export_hint": "You can download your data before deletion in accordance with privacy laws",
+      "proceed_button": "Continue",
+      "keep_account": "No, keep my account",
+      "verify_title": "Identity Verification",
+      "verify_desc": "To proceed with account deletion,\nplease re-enter your registered email address.",
+      "current_account_label": "Current Account",
+      "email_unknown": "Unknown",
+      "email_mismatch": "Email does not match",
+      "email_match": "Email verified",
+      "next_button": "Next",
+      "back_button": "Go Back",
+      "final_title": "Final Confirmation",
+      "final_desc": "Pressing the button below will permanently delete\nyour account and all data.\nThis action cannot be undone.",
+      "summary_title": "Items to Delete",
+      "summary_portfolio": "Portfolio, AI analysis results",
+      "summary_credits": "Credits, prediction history, streak",
+      "summary_community": "Community posts, comments, likes",
+      "summary_settings": "Notification settings, all in-app data",
+      "delete_button": "Permanently Delete Account",
+      "keep_button": "I'll Keep My Account",
+      "confirm_delete_button": "Delete",
+      "success_title": "Account Deleted",
+      "success_desc": "Thank you for using baln.",
+      "fail_title": "Deletion Failed",
+      "fail_desc": "An error occurred while deleting your account. Please try again later.",
+      "error_title": "Error Occurred",
+      "error_desc": "An unexpected error occurred while deleting your account.",
+      "export_fail_title": "Export Failed",
+      "export_fail_desc": "An error occurred while exporting your data. Please try again later.",
+      "share_title": "baln Account Data"
     },
     "help": {
       "title": "Help",
       "faq": "FAQ",
-      "contact": "Contact Us"
+      "contact": "Contact Us",
+      "faq_q1": "What is baln?",
+      "faq_a1": "baln is an investment education app where you build your own investment principles by reading daily 5-minute market context, participating in predictions, and reviewing outcomes. It is not a trading app.",
+      "faq_q2": "What is the Context Card?",
+      "faq_a2": "The Context Card helps you understand why your assets moved today through 4-layer analysis (historical context, macro chain, institutional behavior, portfolio impact) in 5 minutes. It auto-updates every 3 hours.",
+      "faq_q3": "How do I participate in the prediction game?",
+      "faq_a3": "Vote YES/NO on 3 daily market prediction questions. Review results and explanations the next day. Earn 3 credits for correct predictions.",
+      "faq_q4": "How do I use credits?",
+      "faq_a4": "1 credit = ₩100. Earn for free via check-in (2C), correct prediction (3C), sharing (5C). Spend in the marketplace for extra AI analysis (1C), Premium trial (5C), etc.",
+      "faq_q5": "How does the AI health checkup work?",
+      "faq_a5": "AI analyzes 7 factors including diversification, volatility, and concentration, rating your portfolio from A+ to F. It also provides a prescription with specific improvement steps.",
+      "faq_q6": "What are Guru Insights?",
+      "faq_a6": "AI analyzes the philosophy of world-class investors like Warren Buffett, Ray Dalio, Cathie Wood, and Stanley Druckenmiller, and provides daily insights applied to today's market.",
+      "faq_q7": "Is my data secure?",
+      "faq_a7": "We operate on a Zero-Knowledge principle. We do not collect brokerage passwords or account numbers. All data is encrypted with TLS 1.3 + AES-256.",
+      "faq_q8": "What are the benefits of a Premium subscription?",
+      "faq_a8": "Full 4-layer context card analysis, prediction explanations + review, 3 AI diagnoses/day, institutional behavior analysis, full peer comparison, and 30C monthly bonus. ₩4,900/month.",
+      "email_label": "Email Support",
+      "feedback_label": "In-App Feedback",
+      "feedback_desc": "You can submit feedback via Settings > Help"
     },
     "referral": {
       "title": "Invite Friends",
       "code": "Invite Code",
-      "reward": "Earn 5C per friend"
+      "reward": "Earn 5C per friend",
+      "login_required": "Please log in to invite friends.",
+      "banner_title": "Invite friends and earn {{amount}}C (₩{{krw}})!",
+      "banner_subtitle": "Your friend also receives 10C (₩1,000) when they sign up",
+      "code_generating": "Generating code...",
+      "copy_done": "Copied",
+      "copy": "Copy Code",
+      "share_button": "Share with Friends",
+      "reward_section_title": "Reward Guide",
+      "my_reward_title": "My Reward",
+      "my_reward_desc": "Paid after friend logs in for 3 consecutive days",
+      "friend_reward_title": "Friend's Reward",
+      "friend_reward_desc": "Paid as a welcome bonus upon sign-up",
+      "how_to_title": "How It Works",
+      "step_1": "Share your invite code using the button above",
+      "step_2": "Your friend signs up for the baln app",
+      "step_3": "Friend enters the code in Profile > Enter Referral Code",
+      "step_4": "Friend gets 10C instantly + you get 20C after 3 days",
+      "share_message": "Build a 5-minute daily investment habit with baln!\nMy invite code: {{code}}\nhttps://baln.app"
     }
   },
   "onboarding": {
@@ -733,5 +1022,18 @@
     "title": "Terms of Service",
     "privacy_title": "Privacy Policy",
     "last_updated": "Last updated: {{date}}"
+  },
+  "investor_level": {
+    "header_title": "My Investment Level",
+    "next_level_hint": "{{xpToNext}} XP to next level",
+    "streak_active": "{{streak}}-day streak!",
+    "streak_empty": "Start your streak",
+    "heatmap_title": "Last 30 days",
+    "stat_total_xp": "Total XP",
+    "stat_total_checkins": "Total Check-ins",
+    "stat_longest_streak": "Longest Streak",
+    "stat_quiz_accuracy": "Quiz Accuracy",
+    "xp_history_title": "XP History",
+    "days_unit": "days"
   }
 }

@@ -57,7 +57,7 @@ interface MenuSection {
 export default function ProfileScreen() {
   useScreenTracking('more');
   const router = useRouter();
-  const { t, language } = useLocale();
+  const { t } = useLocale();
   const { user, signOut } = useAuth();
   const { unlockedCount, totalCount } = useAchievementCount();
   const { themeMode, setThemeMode, colors } = useTheme();
@@ -95,7 +95,7 @@ export default function ProfileScreen() {
               await signOut();
               router.replace('/login');
             } catch (error) {
-              Alert.alert(t('common.error'), '로그아웃 중 오류가 발생했습니다.');
+              Alert.alert(t('common.error'), t('profile.error.logout_failed'));
             }
           },
         },
@@ -154,7 +154,7 @@ export default function ProfileScreen() {
         },
         {
           icon: 'bookmark-outline',
-          label: '내 북마크',
+          label: t('profile.menu.bookmarks'),
           onPress: () => router.push('/community/bookmarks'),
         },
       ],
@@ -296,10 +296,10 @@ export default function ProfileScreen() {
           </View>
           <View style={styles.profileInfo}>
             <Text style={[styles.profileName, { color: colors.textPrimary }]} numberOfLines={1}>
-              {user?.email?.split('@')[0] || '사용자'}
+              {user?.email?.split('@')[0] || t('profile.user_default_name')}
             </Text>
             <Text style={[styles.profileEmail, { color: colors.textSecondary }]} numberOfLines={1}>
-              {user ? user.email : '로그인하여 데이터를 동기화하세요'}
+              {user ? user.email : t('profile.login_prompt')}
             </Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
@@ -319,13 +319,13 @@ export default function ProfileScreen() {
         {user && (
           <View style={[styles.villageSection, { backgroundColor: colors.surface }]}>
             <Text style={[styles.villageSectionTitle, { color: colors.textPrimary }]}>
-              {language === 'ko' ? '🏘️ 마을 현황' : '🏘️ Village Status'}
+              {t('profile.village_section_title')}
             </Text>
 
             {/* 번영도 */}
             <View style={styles.villageRow}>
               <Text style={{ color: colors.textSecondary }}>
-                {language === 'ko' ? '번영도' : 'Prosperity'}
+                {t('profile.village_prosperity_label')}
               </Text>
               <Text style={{ color: colors.primary, fontWeight: '700' }}>
                 Lv.{prosperityLevel}
@@ -335,7 +335,7 @@ export default function ProfileScreen() {
             {/* 친한 구루 Top 3 */}
             <View style={styles.villageRow}>
               <Text style={{ color: colors.textSecondary }}>
-                {language === 'ko' ? '친한 구루' : 'Top Gurus'}
+                {t('profile.village_top_gurus_label')}
               </Text>
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 {topFriends.map(f => (
@@ -343,7 +343,7 @@ export default function ProfileScreen() {
                 ))}
                 {topFriends.length === 0 && (
                   <Text style={{ color: colors.textTertiary, fontSize: 12 }}>
-                    {language === 'ko' ? '마을에서 구루와 대화해보세요' : 'Chat with gurus in the village'}
+                    {t('profile.village_no_gurus_hint')}
                   </Text>
                 )}
               </View>
@@ -362,8 +362,8 @@ export default function ProfileScreen() {
               <Ionicons name="shield-checkmark" size={22} color={colors.primary} />
             </View>
             <View style={styles.adminInfo}>
-              <Text style={[styles.adminTitle, { color: colors.textPrimary }]}>관리자 대시보드</Text>
-              <Text style={[styles.adminSubtitle, { color: colors.textSecondary }]}>유저, 지표, 라운지 관리</Text>
+              <Text style={[styles.adminTitle, { color: colors.textPrimary }]}>{t('profile.admin.title')}</Text>
+              <Text style={[styles.adminSubtitle, { color: colors.textSecondary }]}>{t('profile.admin.subtitle')}</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
           </TouchableOpacity>

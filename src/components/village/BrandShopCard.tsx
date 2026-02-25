@@ -22,6 +22,7 @@ import {
   Platform,
 } from 'react-native';
 import type { BrandShop, BrandCategory } from '../../types/village';
+import { useLocale } from '../../context/LocaleContext';
 
 // ---------------------------------------------------------------------------
 // 타입 정의
@@ -49,22 +50,14 @@ const CATEGORY_COLORS: Record<BrandCategory, string> = {
   entertainment: '#9B7DFF',   // 퍼플 (엔터)
 };
 
-const CATEGORY_LABEL_KO: Record<BrandCategory, string> = {
-  tech:          '기술',
-  fashion:       '패션',
-  food:          '식음',
-  finance:       '금융',
-  auto:          '자동차',
-  entertainment: '엔터',
-};
-
-const CATEGORY_LABEL_EN: Record<BrandCategory, string> = {
-  tech:          'Tech',
-  fashion:       'Fashion',
-  food:          'Food',
-  finance:       'Finance',
-  auto:          'Auto',
-  entertainment: 'Entertainment',
+/** 카테고리 → i18n 키 맵핑 */
+const CATEGORY_I18N_KEY: Record<BrandCategory, string> = {
+  tech:          'village.brand.category.tech',
+  fashion:       'village.brand.category.fashion',
+  food:          'village.brand.category.food',
+  finance:       'village.brand.category.finance',
+  auto:          'village.brand.category.auto',
+  entertainment: 'village.brand.category.entertainment',
 };
 
 // ---------------------------------------------------------------------------
@@ -87,12 +80,11 @@ const BrandShopCard = React.memo(function BrandShopCard({
   locale = 'ko',
   stockChange,
 }: BrandShopCardProps) {
+  const { t } = useLocale();
   const isKo = locale === 'ko';
 
   const categoryColor = CATEGORY_COLORS[brand.category] ?? '#8E9EB0';
-  const categoryLabel = isKo
-    ? CATEGORY_LABEL_KO[brand.category]
-    : CATEGORY_LABEL_EN[brand.category];
+  const categoryLabel = t(CATEGORY_I18N_KEY[brand.category]);
 
   const shopName = isKo ? brand.villageName : brand.villageNameEn;
   const description = isKo ? brand.description : brand.descriptionEn;

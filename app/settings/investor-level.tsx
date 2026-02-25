@@ -34,10 +34,12 @@ import {
   type XPSource,
 } from '../../src/types/level';
 import { useTheme } from '../../src/hooks/useTheme';
+import { useLocale } from '../../src/context/LocaleContext';
 
 export default function InvestorLevelScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { t } = useLocale();
   const { data: levelData, isLoading } = useMyLevel();
   const { data: xpHistory = [] } = useXPHistory(30);
   const { data: heatmapDates = [] } = useCheckinHeatmap();
@@ -87,12 +89,12 @@ export default function InvestorLevelScreen() {
   const formatRelativeTime = (dateStr: string): string => {
     const diff = Date.now() - new Date(dateStr).getTime();
     const minutes = Math.floor(diff / 60000);
-    if (minutes < 1) return '방금';
-    if (minutes < 60) return `${minutes}분 전`;
+    if (minutes < 1) return t('format.just_now');
+    if (minutes < 60) return t('format.minutes_ago', { n: minutes });
     const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours}시간 전`;
+    if (hours < 24) return t('format.hours_ago', { n: hours });
     const days = Math.floor(hours / 24);
-    if (days < 7) return `${days}일 전`;
+    if (days < 7) return t('format.days_ago', { n: days });
     return new Date(dateStr).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
   };
 
@@ -103,7 +105,7 @@ export default function InvestorLevelScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>내 투자 레벨</Text>
+        <Text style={styles.headerTitle}>{t('investor_level.header_title')}</Text>
         <View style={{ width: 32 }} />
       </View>
 
@@ -127,7 +129,7 @@ export default function InvestorLevelScreen() {
             </Text>
             {level < MAX_LEVEL && (
               <Text style={styles.nextLevelHint}>
-                다음 레벨까지 {xpToNext} XP
+                {t('investor_level.next_level_hint', { xpToNext })}
               </Text>
             )}
           </View>
@@ -137,7 +139,7 @@ export default function InvestorLevelScreen() {
         <View style={styles.sectionCard}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>
-              {streak > 0 ? `🔥 ${streak}일 연속 출석!` : '📅 출석을 시작하세요'}
+              {streak > 0 ? `🔥 ${t('investor_level.streak_active', { streak })}` : `📅 ${t('investor_level.streak_empty')}`}
             </Text>
           </View>
 
@@ -158,7 +160,7 @@ export default function InvestorLevelScreen() {
           </View>
 
           {/* 30일 캘린더 히트맵 */}
-          <Text style={styles.heatmapTitle}>최근 30일</Text>
+          <Text style={styles.heatmapTitle}>{t('investor_level.heatmap_title')}</Text>
           <View style={styles.heatmapGrid}>
             {calendarDays.map((day) => (
               <View
@@ -184,26 +186,26 @@ export default function InvestorLevelScreen() {
         <View style={styles.statsGrid}>
           <View style={styles.statBox}>
             <Text style={styles.statValue}>{totalXp.toLocaleString()}</Text>
-            <Text style={styles.statLabel}>총 XP</Text>
+            <Text style={styles.statLabel}>{t('investor_level.stat_total_xp')}</Text>
           </View>
           <View style={styles.statBox}>
-            <Text style={styles.statValue}>{totalCheckins}일</Text>
-            <Text style={styles.statLabel}>총 출석</Text>
+            <Text style={styles.statValue}>{totalCheckins}{t('investor_level.days_unit')}</Text>
+            <Text style={styles.statLabel}>{t('investor_level.stat_total_checkins')}</Text>
           </View>
           <View style={styles.statBox}>
-            <Text style={styles.statValue}>{longestStreak}일</Text>
-            <Text style={styles.statLabel}>최장 연속</Text>
+            <Text style={styles.statValue}>{longestStreak}{t('investor_level.days_unit')}</Text>
+            <Text style={styles.statLabel}>{t('investor_level.stat_longest_streak')}</Text>
           </View>
           <View style={styles.statBox}>
             <Text style={styles.statValue}>{quizAccuracy}%</Text>
-            <Text style={styles.statLabel}>퀴즈 정답률</Text>
+            <Text style={styles.statLabel}>{t('investor_level.stat_quiz_accuracy')}</Text>
           </View>
         </View>
 
         {/* XP 히스토리 */}
         {xpHistory.length > 0 && (
           <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>📋 XP 히스토리</Text>
+            <Text style={styles.sectionTitle}>📋 {t('investor_level.xp_history_title')}</Text>
             {xpHistory.map((event) => {
               const sourceInfo = XP_SOURCE_INFO[event.source as XPSource];
               return (

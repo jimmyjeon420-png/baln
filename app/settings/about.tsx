@@ -21,8 +21,8 @@ export default function AboutScreen() {
 
   const appInfo = [
     { label: t('settings.about.version'), value: appVersion },
-    { label: '프레임워크', value: 'Expo SDK 54' },
-    { label: 'AI 엔진', value: 'Gemini 3 Flash' },
+    { label: t('settings.about.framework_label'), value: 'Expo SDK 54' },
+    { label: t('settings.about.ai_engine_label'), value: 'Gemini 3 Flash' },
   ];
 
   // 도움말 / 이용약관 / 개인정보처리방침을 이 화면에서 바로 이동할 수 있도록 통합
@@ -31,7 +31,7 @@ export default function AboutScreen() {
     { icon: 'document-text-outline', label: t('profile.menu.terms'), route: '/settings/terms' },
     { icon: 'lock-closed-outline', label: t('profile.menu.privacy'), route: '/settings/privacy' },
     { icon: 'open-outline', label: t('profile.menu.licenses'), route: '/settings/licenses' },
-    { icon: 'globe-outline', label: '공식 웹사이트', route: '/settings/website' },
+    { icon: 'globe-outline', label: t('settings.about.official_website'), route: '/settings/website' },
   ];
 
   return (
@@ -47,11 +47,11 @@ export default function AboutScreen() {
           <Text style={[styles.appName, { color: colors.textPrimary }]}>
             bal<Text style={{ color: '#4CAF50' }}>n</Text>
           </Text>
-          <Text style={[styles.appTagline, { color: colors.textTertiary }]}>올바른 투자의 시작</Text>
+          <Text style={[styles.appTagline, { color: colors.textTertiary }]}>{t('settings.about.tagline')}</Text>
         </View>
 
         {/* 앱 버전 정보 */}
-        <Text style={[styles.sectionTitle, { color: colors.textTertiary }]}>버전 정보</Text>
+        <Text style={[styles.sectionTitle, { color: colors.textTertiary }]}>{t('settings.about.section_version')}</Text>
         <View style={[styles.section, { backgroundColor: colors.surface }]}>
           {appInfo.map((item, index) => (
             <View
@@ -71,7 +71,7 @@ export default function AboutScreen() {
         </View>
 
         {/* 도움말 / 약관 / 라이선스 링크 */}
-        <Text style={[styles.sectionTitle, { color: colors.textTertiary, marginTop: 24 }]}>도움말 & 법적 고지</Text>
+        <Text style={[styles.sectionTitle, { color: colors.textTertiary, marginTop: 24 }]}>{t('settings.about.section_legal')}</Text>
         <View style={[styles.section, { backgroundColor: colors.surface }]}>
           {navLinks.map((item, index) => (
             <TouchableOpacity
@@ -97,7 +97,7 @@ export default function AboutScreen() {
 
         {/* 저작권 */}
         <Text style={[styles.copyright, { color: colors.textTertiary }]}>
-          © 2026 발른 주식회사. All rights reserved.
+          {t('settings.about.copyright')}
         </Text>
       </ScrollView>
     </SafeAreaView>

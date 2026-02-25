@@ -218,7 +218,7 @@ export function GuruVillage({ height = VILLAGE_HEIGHT, onRoundtablePress }: Guru
         {/* 로딩 인디케이터 */}
         {isLoading && (
           <View style={styles.loadingBadge}>
-            <Text style={styles.loadingText}>마을 준비 중...</Text>
+            <Text style={styles.loadingText}>{t('village.loading')}</Text>
           </View>
         )}
       </VillageBackground>

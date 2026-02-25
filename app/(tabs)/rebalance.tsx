@@ -116,14 +116,22 @@ function getTierInfo(totalAssets: number): { label: string; color: string } {
   return { label: 'SILVER', color: '#B0BEC5' };
 }
 
-// ── 날짜 포맷팅 ──
-function formatTodayDate(): string {
+// ── 날짜 포맷팅 (t 함수 파라미터로 주입) ──
+function formatTodayDate(tFn: (key: string, opts?: Record<string, any>) => string): string {
   const now = new Date();
   const month = String(now.getMonth() + 1).padStart(2, '0');
   const day = String(now.getDate()).padStart(2, '0');
-  const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
-  const weekday = weekdays[now.getDay()];
-  return `${month}월 ${day}일 ${weekday}요일`;
+  const weekdayKeys = [
+    'rebalance.date.weekday_short.sun',
+    'rebalance.date.weekday_short.mon',
+    'rebalance.date.weekday_short.tue',
+    'rebalance.date.weekday_short.wed',
+    'rebalance.date.weekday_short.thu',
+    'rebalance.date.weekday_short.fri',
+    'rebalance.date.weekday_short.sat',
+  ];
+  const weekday = tFn(weekdayKeys[now.getDay()]);
+  return tFn('rebalance.date.format', { month, day, weekday });
 }
 
 const DISCLAIMER_STORAGE_KEY = '@baln:disclaimer_dismissed';
@@ -346,7 +354,7 @@ async function runAnalysisDiagnostic() {
 export default function CheckupScreen() {
   useScreenTracking('checkup');
   const router = useRouter();
-  const { t, language } = useLocale();
+  const { t } = useLocale();
   const { colors } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
   const [showToast, setShowToast] = useState(false);
@@ -606,7 +614,7 @@ export default function CheckupScreen() {
 
   // 히어로 섹션 데이터
   const tierInfo = getTierInfo(totalAssets);
-  const dateString = formatTodayDate();
+  const dateString = formatTodayDate(t);
   const cfoWeather = morningBriefing?.cfoWeather || null;
 
   // ══════════════════════════════════════════
@@ -707,12 +715,10 @@ export default function CheckupScreen() {
           <CharacterAvatar guruId="marks" size="sm" expression="neutral" />
           <View style={s.drMarksText}>
             <Text style={[s.drMarksName, { color: colors.textPrimary }]}>
-              {language === 'ko' ? '🐢 Dr. 막스' : '🐢 Dr. Marks'}
+              {t('rebalance.dr_marks.name')}
             </Text>
             <Text style={[s.drMarksQuote, { color: colors.textSecondary }]} numberOfLines={2}>
-              {language === 'ko'
-                ? '"가장 중요한 것은 위험을 아는 것입니다"'
-                : '"The most important thing is understanding risk"'}
+              {t('rebalance.dr_marks.quote')}
             </Text>
           </View>
         </View>

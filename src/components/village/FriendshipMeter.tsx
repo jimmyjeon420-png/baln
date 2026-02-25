@@ -19,6 +19,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import type { GuruFriendship, FriendshipTier } from '../../types/village';
 import { CharacterAvatar } from '../character/CharacterAvatar';
+import { useLocale } from '../../context/LocaleContext';
 
 // ============================================================================
 // 타입
@@ -41,15 +42,15 @@ interface FriendshipMeterProps {
 // 티어 메타데이터
 // ============================================================================
 
-/** 티어 이름 (한국어/영어) */
-const TIER_NAMES: Record<FriendshipTier, { ko: string; en: string }> = {
-  stranger: { ko: '낯선 사이', en: 'Stranger' },
-  acquaintance: { ko: '아는 사이', en: 'Acquaintance' },
-  friend: { ko: '친구', en: 'Friend' },
-  close_friend: { ko: '절친', en: 'Close Friend' },
-  best_friend: { ko: '베프', en: 'Best Friend' },
-  mentor: { ko: '스승', en: 'Mentor' },
-  soulmate: { ko: '소울메이트', en: 'Soulmate' },
+/** 티어 → i18n 키 맵핑 */
+const TIER_I18N_KEY: Record<FriendshipTier, string> = {
+  stranger: 'village.friendship.tier.stranger',
+  acquaintance: 'village.friendship.tier.acquaintance',
+  friend: 'village.friendship.tier.friend',
+  close_friend: 'village.friendship.tier.close_friend',
+  best_friend: 'village.friendship.tier.best_friend',
+  mentor: 'village.friendship.tier.mentor',
+  soulmate: 'village.friendship.tier.soulmate',
 };
 
 /** 티어 이모지 */
@@ -116,12 +117,11 @@ function FullFriendshipMeter({
   friendship,
   guruId,
   colors,
-  locale = 'ko',
 }: Omit<FriendshipMeterProps, 'compact'>) {
+  const { t } = useLocale();
   const { tier, score } = friendship;
-  const isKo = locale === 'ko';
 
-  const tierName = isKo ? TIER_NAMES[tier].ko : TIER_NAMES[tier].en;
+  const tierName = t(TIER_I18N_KEY[tier]);
   const tierEmoji = TIER_EMOJI[tier];
   const barColor = getTierBarColor(tier);
   const progress = calcTierProgress(score, tier);
@@ -162,9 +162,9 @@ function FullFriendshipMeter({
 
           {/* 점수 표시 */}
           <Text style={[styles.scoreText, { color: colors.textTertiary }]}>
-            {isKo
-              ? `${score}점${isSoulmate ? ' (만렙!)' : ` · 다음 티어까지 ${pointsToNext}점`}`
-              : `${score} pts${isSoulmate ? ' (Max!)' : ` · ${pointsToNext} to next`}`
+            {isSoulmate
+              ? t('village.friendship.score_max', { score })
+              : t('village.friendship.score_to_next', { score, points: pointsToNext })
             }
           </Text>
         </View>
@@ -197,7 +197,7 @@ function FullFriendshipMeter({
       {/* 소울메이트 축하 메시지 */}
       {isSoulmate && (
         <Text style={[styles.soulmateBadge, { color: colors.premium.gold }]}>
-          {isKo ? '전설의 동반자 ✨' : 'Legendary Bond ✨'}
+          {t('village.friendship.soulmate_banner')}
         </Text>
       )}
     </View>
@@ -251,7 +251,6 @@ const FriendshipMeter = React.memo(({
   friendship,
   guruId,
   colors,
-  locale = 'ko',
   compact = false,
 }: FriendshipMeterProps) => {
   if (compact) {
@@ -260,7 +259,6 @@ const FriendshipMeter = React.memo(({
         friendship={friendship}
         guruId={guruId}
         colors={colors}
-        locale={locale}
       />
     );
   }
@@ -270,7 +268,6 @@ const FriendshipMeter = React.memo(({
       friendship={friendship}
       guruId={guruId}
       colors={colors}
-      locale={locale}
     />
   );
 });

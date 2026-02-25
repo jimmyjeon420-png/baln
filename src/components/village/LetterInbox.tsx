@@ -26,6 +26,7 @@ import {
 import type { GuruLetter, FriendshipTier } from '../../types/village';
 import { CharacterAvatar } from '../character/CharacterAvatar';
 import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
+import { useLocale } from '../../context/LocaleContext';
 
 // ---------------------------------------------------------------------------
 // 타입 정의
@@ -44,31 +45,41 @@ interface LetterInboxProps {
 // 우정 등급 배지 설정
 // ---------------------------------------------------------------------------
 
-const TIER_BADGE: Record<FriendshipTier, { labelKo: string; labelEn: string; color: string }> = {
-  stranger:     { labelKo: '주민님',   labelEn: 'Resident',   color: '#8E9EB0' },
-  acquaintance: { labelKo: '이웃님',   labelEn: 'Neighbor',   color: '#5DADE2' },
-  friend:       { labelKo: '친구',     labelEn: 'Friend',     color: '#5DBB63' },
-  close_friend: { labelKo: '가까운 벗', labelEn: 'Close',     color: '#F0C060' },
-  best_friend:  { labelKo: '제자',     labelEn: 'Student',   color: '#E88B96' },
-  mentor:       { labelKo: '스승',     labelEn: 'Mentor',    color: '#9B7DFF' },
-  soulmate:     { labelKo: '전설',     labelEn: 'Legend',    color: '#FF6B35' },
+const TIER_BADGE_COLOR: Record<FriendshipTier, string> = {
+  stranger:     '#8E9EB0',
+  acquaintance: '#5DADE2',
+  friend:       '#5DBB63',
+  close_friend: '#F0C060',
+  best_friend:  '#E88B96',
+  mentor:       '#9B7DFF',
+  soulmate:     '#FF6B35',
+};
+
+const TIER_BADGE_I18N_KEY: Record<FriendshipTier, string> = {
+  stranger:     'village.letter.tier_badge.stranger',
+  acquaintance: 'village.letter.tier_badge.acquaintance',
+  friend:       'village.letter.tier_badge.friend',
+  close_friend: 'village.letter.tier_badge.close_friend',
+  best_friend:  'village.letter.tier_badge.best_friend',
+  mentor:       'village.letter.tier_badge.mentor',
+  soulmate:     'village.letter.tier_badge.soulmate',
 };
 
 // ---------------------------------------------------------------------------
 // 시간 포맷 헬퍼
 // ---------------------------------------------------------------------------
 
-function timeAgo(timestamp: string, locale: string): string {
-  const isKo = locale === 'ko';
+function useTimeAgo(timestamp: string): string {
+  const { t } = useLocale();
   const diff = Date.now() - new Date(timestamp).getTime();
   const minutes = Math.floor(diff / 60000);
   const hours = Math.floor(diff / 3600000);
   const days = Math.floor(diff / 86400000);
 
-  if (minutes < 1) return isKo ? '방금 전' : 'Just now';
-  if (minutes < 60) return isKo ? `${minutes}분 전` : `${minutes}m ago`;
-  if (hours < 24) return isKo ? `${hours}시간 전` : `${hours}h ago`;
-  return isKo ? `${days}일 전` : `${days}d ago`;
+  if (minutes < 1) return t('village.letter.time_just_now');
+  if (minutes < 60) return t('village.letter.time_minutes_ago', { minutes });
+  if (hours < 24) return t('village.letter.time_hours_ago', { hours });
+  return t('village.letter.time_days_ago', { days });
 }
 
 // ---------------------------------------------------------------------------
@@ -88,13 +99,16 @@ const LetterCard = React.memo(function LetterCard({
   colors,
   locale,
 }: LetterCardProps) {
+  const { t } = useLocale();
   const isKo = locale === 'ko';
   const guruId = letter.fromGuruId || letter.guruId || '';
   const config = GURU_CHARACTER_CONFIGS[guruId];
   const guruName = config ? (isKo ? config.guruName : (config.guruNameEn ?? config.guruName)) : guruId;
   const subject = isKo ? letter.subject : (letter.subjectEn ?? letter.subject);
   const tier = letter.friendshipRequired;
-  const badge = TIER_BADGE[tier] ?? TIER_BADGE.stranger;
+  const badgeColor = TIER_BADGE_COLOR[tier] ?? TIER_BADGE_COLOR.stranger;
+  const badgeLabel = t(TIER_BADGE_I18N_KEY[tier] ?? TIER_BADGE_I18N_KEY.stranger);
+  const timeText = useTimeAgo(letter.timestamp);
 
   const handlePress = useCallback(() => {
     onPress(letter);
@@ -133,9 +147,9 @@ const LetterCard = React.memo(function LetterCard({
             {guruName}
           </Text>
           {/* 우정 등급 배지 */}
-          <View style={[styles.tierBadge, { backgroundColor: badge.color + '25', borderColor: badge.color + '60' }]}>
-            <Text style={[styles.tierBadgeText, { color: badge.color }]}>
-              {isKo ? badge.labelKo : badge.labelEn}
+          <View style={[styles.tierBadge, { backgroundColor: badgeColor + '25', borderColor: badgeColor + '60' }]}>
+            <Text style={[styles.tierBadgeText, { color: badgeColor }]}>
+              {badgeLabel}
             </Text>
           </View>
         </View>
@@ -154,7 +168,7 @@ const LetterCard = React.memo(function LetterCard({
         </Text>
 
         <Text style={[styles.timeAgo, { color: colors.textTertiary }]}>
-          {timeAgo(letter.timestamp, locale)}
+          {timeText}
         </Text>
       </View>
 
@@ -178,6 +192,7 @@ export function LetterInbox({
   colors,
   locale = 'ko',
 }: LetterInboxProps) {
+  const { t } = useLocale();
   const isKo = locale === 'ko';
 
   // 봉투 흔들기 애니메이션 (새 편지 있을 때)
@@ -223,12 +238,10 @@ export function LetterInbox({
     <View style={styles.emptyContainer}>
       <Text style={styles.emptyEmoji}>📭</Text>
       <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
-        {isKo ? '아직 편지가 없어요' : 'No letters yet'}
+        {t('village.letter.empty_title')}
       </Text>
       <Text style={[styles.emptyDesc, { color: colors.textTertiary }]}>
-        {isKo
-          ? '구루와 친해지면 편지를 받을 수 있어요'
-          : 'Build friendship with gurus to receive letters'}
+        {t('village.letter.empty_desc')}
       </Text>
     </View>
   );
@@ -251,13 +264,11 @@ export function LetterInbox({
             </Animated.Text>
             <View>
               <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
-                {isKo ? '우체통' : 'Mailbox'}
+                {t('village.letter.inbox_title')}
               </Text>
               {unreadCount > 0 && (
                 <Text style={[styles.headerSubtitle, { color: colors.info }]}>
-                  {isKo
-                    ? `읽지 않은 편지 ${unreadCount}통`
-                    : `${unreadCount} unread letter${unreadCount > 1 ? 's' : ''}`}
+                  {t('village.letter.unread_count', { count: unreadCount })}
                 </Text>
               )}
             </View>

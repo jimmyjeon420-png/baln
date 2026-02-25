@@ -31,18 +31,18 @@ import { useLocale } from '../../src/context/LocaleContext';
 
 const ALL_GURUS = Object.values(GURU_CHARACTER_CONFIGS);
 
-// 추천 주제 (시장 상황에 따라 교체 가능)
-const SUGGESTED_TOPICS = [
-  '오늘 시장이 하락했는데, 매수 기회일까?',
-  '금리 인하가 주식시장에 미치는 영향은?',
-  '비트코인 vs 금, 어디에 투자해야 할까?',
-  'AI 관련주, 아직 늦지 않았을까?',
-];
-
 export default function RoundtableIndexScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const { t } = useLocale();
+
+  // 추천 주제 (시장 상황에 따라 교체 가능) — t()를 써야 하므로 컴포넌트 안에서 정의
+  const SUGGESTED_TOPICS = useMemo(() => [
+    t('roundtable.suggested_topics.topic_1'),
+    t('roundtable.suggested_topics.topic_2'),
+    t('roundtable.suggested_topics.topic_3'),
+    t('roundtable.suggested_topics.topic_4'),
+  ], [t]);
   const {
     startRoundtable,
     isGenerating,
@@ -59,13 +59,13 @@ export default function RoundtableIndexScreen() {
     setSelectedGurus(prev => {
       if (prev.includes(guruId)) {
         if (prev.length <= 3) {
-          Alert.alert('알림', '최소 3명의 참석자가 필요합니다.');
+          Alert.alert(t('roundtable.alert_title'), t('roundtable.min_participants_alert'));
           return prev;
         }
         return prev.filter(id => id !== guruId);
       }
       if (prev.length >= 5) {
-        Alert.alert('알림', '최대 5명까지 참석할 수 있습니다.');
+        Alert.alert(t('roundtable.alert_title'), t('roundtable.max_participants_alert'));
         return prev;
       }
       return [...prev, guruId];
@@ -107,7 +107,7 @@ export default function RoundtableIndexScreen() {
           {t('roundtable.title')}
         </Text>
         <View style={styles.creditBadge}>
-          <Text style={styles.creditText}>{isFree ? '무료' : '2C'}</Text>
+          <Text style={styles.creditText}>{isFree ? t('roundtable.free_badge') : '2C'}</Text>
         </View>
       </View>
 
@@ -118,7 +118,7 @@ export default function RoundtableIndexScreen() {
       >
         {/* 추천 주제 */}
         <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-          오늘의 추천 주제
+          {t('roundtable.section_suggested_topics')}
         </Text>
         <View style={styles.topicChips}>
           {SUGGESTED_TOPICS.map((t, i) => (
@@ -139,7 +139,7 @@ export default function RoundtableIndexScreen() {
 
         {/* 직접 입력 */}
         <Text style={[styles.sectionTitle, { color: colors.textPrimary, marginTop: 24 }]}>
-          또는 직접 입력
+          {t('roundtable.section_custom_topic')}
         </Text>
         <TextInput
           style={[styles.topicInput, { backgroundColor: colors.surface, color: colors.textPrimary, borderColor: colors.border }]}
@@ -218,7 +218,7 @@ export default function RoundtableIndexScreen() {
         {recentSessions.length > 0 && (
           <>
             <Text style={[styles.sectionTitle, { color: colors.textPrimary, marginTop: 32 }]}>
-              최근 토론
+              {t('roundtable.section_recent')}
             </Text>
             {recentSessions.slice(0, 5).map(s => {
               const dateStr = new Date(s.createdAt).toLocaleDateString('ko-KR', {
@@ -235,7 +235,7 @@ export default function RoundtableIndexScreen() {
                       {s.topicSummary || s.topic}
                     </Text>
                     <Text style={[styles.historyMeta, { color: colors.textTertiary }]}>
-                      {dateStr} · {s.turns.length}턴 · {s.participants.length}명
+                      {dateStr} · {t('roundtable.history_turns', { count: s.turns.length })} · {t('roundtable.history_participants', { count: s.participants.length })}
                     </Text>
                   </View>
                   <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />

@@ -91,8 +91,7 @@ export default function ReferralScreen() {
     if (!referralCode) return;
 
     try {
-      const shareMessage =
-        `baln에서 매일 5분 투자 습관을 만들어보세요!\n내 초대 코드: ${referralCode}\nhttps://baln.app`;
+      const shareMessage = t('settings.referral.share_message', { code: referralCode });
 
       await Share.share({ message: shareMessage });
     } catch (err) {
@@ -106,17 +105,17 @@ export default function ReferralScreen() {
   const rewardInfo = [
     {
       icon: 'gift-outline' as const,
-      title: '내가 받는 보상',
+      title: t('settings.referral.my_reward_title'),
       amount: `${REWARD_AMOUNTS.referral}C`,
       krw: `${(REWARD_AMOUNTS.referral * 100).toLocaleString()}`,
-      desc: '친구가 3일 연속 접속 후 지급',
+      desc: t('settings.referral.my_reward_desc'),
     },
     {
       icon: 'people-outline' as const,
-      title: '친구가 받는 보상',
+      title: t('settings.referral.friend_reward_title'),
       amount: '10C',
       krw: '1,000',
-      desc: '가입 시 웰컴 보너스로 지급',
+      desc: t('settings.referral.friend_reward_desc'),
     },
   ];
 
@@ -130,7 +129,7 @@ export default function ReferralScreen() {
         <View style={styles.emptyContainer}>
           <Ionicons name="person-outline" size={48} color={colors.textTertiary} />
           <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-            로그인 후 친구를 초대할 수 있습니다.
+            {t('settings.referral.login_required')}
           </Text>
         </View>
       </SafeAreaView>
@@ -155,14 +154,10 @@ export default function ReferralScreen() {
             <Ionicons name="gift" size={40} color={colors.primary} />
           </View>
           <Text style={[styles.bannerTitle, { color: colors.textPrimary }]}>
-            친구를 초대하고{'\n'}
-            <Text style={{ color: colors.primary }}>
-              {REWARD_AMOUNTS.referral}C ({(REWARD_AMOUNTS.referral * 100).toLocaleString()}원)
-            </Text>
-            을 받으세요!
+            {t('settings.referral.banner_title', { amount: REWARD_AMOUNTS.referral, krw: (REWARD_AMOUNTS.referral * 100).toLocaleString() })}
           </Text>
           <Text style={[styles.bannerSubtitle, { color: colors.textSecondary }]}>
-            친구도 가입 시 10C (1,000원)를 받습니다
+            {t('settings.referral.banner_subtitle')}
           </Text>
         </View>
 
@@ -176,7 +171,7 @@ export default function ReferralScreen() {
           ) : (
             <>
               <Text style={[styles.codeText, { color: colors.textPrimary }]}>
-                {referralCode || '코드 생성 중...'}
+                {referralCode || t('settings.referral.code_generating')}
               </Text>
               <TouchableOpacity
                 style={[styles.copyButton, { backgroundColor: `${colors.primary}15` }]}
@@ -189,7 +184,7 @@ export default function ReferralScreen() {
                   color={colors.primary}
                 />
                 <Text style={[styles.copyButtonText, { color: colors.primary }]}>
-                  {copied ? '복사됨' : '코드 복사'}
+                  {copied ? t('settings.referral.copy_done') : t('settings.referral.copy')}
                 </Text>
               </TouchableOpacity>
             </>
@@ -204,12 +199,12 @@ export default function ReferralScreen() {
           disabled={!referralCode}
         >
           <Ionicons name="share-social-outline" size={22} color="#FFFFFF" />
-          <Text style={styles.shareButtonText}>친구에게 공유하기</Text>
+          <Text style={styles.shareButtonText}>{t('settings.referral.share_button')}</Text>
         </TouchableOpacity>
 
         {/* ── 보상 안내 ── */}
         <Text style={[styles.sectionTitle, { color: colors.textTertiary, marginTop: 28 }]}>
-          보상 안내
+          {t('settings.referral.reward_section_title')}
         </Text>
         <View style={[styles.rewardSection, { backgroundColor: colors.surface }]}>
           {rewardInfo.map((item, index) => (
@@ -248,14 +243,14 @@ export default function ReferralScreen() {
 
         {/* ── 이용 방법 ── */}
         <Text style={[styles.sectionTitle, { color: colors.textTertiary, marginTop: 28 }]}>
-          이용 방법
+          {t('settings.referral.how_to_title')}
         </Text>
         <View style={[styles.stepsCard, { backgroundColor: colors.surface }]}>
           {[
-            { step: '1', text: '위의 공유 버튼으로 초대 코드를 전달하세요' },
-            { step: '2', text: '친구가 baln 앱에 가입합니다' },
-            { step: '3', text: '친구가 프로필 > 추천 코드 입력에서 코드를 입력합니다' },
-            { step: '4', text: '친구에게 10C 즉시 + 나에게 20C는 3일 접속 후 지급' },
+            { step: '1', text: t('settings.referral.step_1') },
+            { step: '2', text: t('settings.referral.step_2') },
+            { step: '3', text: t('settings.referral.step_3') },
+            { step: '4', text: t('settings.referral.step_4') },
           ].map((item, index) => (
             <View key={index} style={styles.stepRow}>
               <View style={[styles.stepNumber, { backgroundColor: colors.primary }]}>

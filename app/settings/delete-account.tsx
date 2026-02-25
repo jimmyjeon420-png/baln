@@ -95,12 +95,12 @@ export default function DeleteAccountScreen() {
       // 공유 시트로 JSON 데이터 전달
       await Share.share({
         message: jsonString,
-        title: 'baln 계정 데이터',
+        title: t('settings.delete_account.share_title'),
       });
     } catch (err) {
       Alert.alert(
-        '내보내기 실패',
-        '데이터를 내보내는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'
+        t('settings.delete_account.export_fail_title'),
+        t('settings.delete_account.export_fail_desc')
       );
       console.error('[데이터 내보내기 실패]', err);
     } finally {
@@ -119,7 +119,7 @@ export default function DeleteAccountScreen() {
       [
         { text: t('common.cancel'), style: 'cancel' },
         {
-          text: '삭제합니다',
+          text: t('settings.delete_account.confirm_delete_button'),
           style: 'destructive',
           onPress: async () => {
             setLoading(true);
@@ -129,8 +129,8 @@ export default function DeleteAccountScreen() {
               if (result.success) {
                 // 삭제 성공 → AuthContext가 세션 변경 감지 → 자동으로 로그인 화면 이동
                 Alert.alert(
-                  '계정이 삭제되었습니다',
-                  '그동안 baln을 이용해 주셔서 감사합니다.',
+                  t('settings.delete_account.success_title'),
+                  t('settings.delete_account.success_desc'),
                   [
                     {
                       text: t('common.confirm'),
@@ -148,14 +148,14 @@ export default function DeleteAccountScreen() {
                 );
               } else {
                 Alert.alert(
-                  '삭제 실패',
-                  result.error || '계정 삭제 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'
+                  t('settings.delete_account.fail_title'),
+                  result.error || t('settings.delete_account.fail_desc')
                 );
               }
             } catch (err) {
               Alert.alert(
-                '오류 발생',
-                '계정 삭제 중 예기치 않은 오류가 발생했습니다.'
+                t('settings.delete_account.error_title'),
+                t('settings.delete_account.error_desc')
               );
               console.error('[계정 삭제 실패]', err);
             } finally {
@@ -228,54 +228,54 @@ export default function DeleteAccountScreen() {
               style={styles.warningIcon}
             />
             <Text style={styles.stepTitle}>
-              계정을 삭제하면{'\n'}다음 데이터가 영구 삭제됩니다
+              {t('settings.delete_account.lose_title')}
             </Text>
 
             {/* 삭제 항목 리스트 */}
             <View style={styles.lossCard}>
               <LossItem
                 icon="wallet-outline"
-                label="보유 크레딧"
+                label={t('settings.delete_account.lose_credit')}
                 value={
                   dataSummary
                     ? `${dataSummary.creditBalance}C`
-                    : '로딩 중...'
+                    : t('settings.delete_account.loading')
                 }
               />
               <LossItem
                 icon="briefcase-outline"
-                label="포트폴리오"
+                label={t('settings.delete_account.lose_portfolio')}
                 value={
                   dataSummary
                     ? `${dataSummary.portfolioCount}개 자산`
-                    : '로딩 중...'
+                    : t('settings.delete_account.loading')
                 }
               />
               <LossItem
                 icon="flame-outline"
-                label="연속 기록"
+                label={t('settings.delete_account.lose_streak')}
                 value={
                   dataSummary
-                    ? `${dataSummary.streakDays}일 스트릭`
-                    : '로딩 중...'
+                    ? t('settings.delete_account.lose_value_streak', { days: dataSummary.streakDays })
+                    : t('settings.delete_account.loading')
                 }
               />
               <LossItem
                 icon="stats-chart-outline"
-                label="예측 기록"
+                label={t('settings.delete_account.lose_prediction')}
                 value={
                   dataSummary
-                    ? `${dataSummary.predictionCount}회 투표`
-                    : '로딩 중...'
+                    ? t('settings.delete_account.lose_value_prediction', { count: dataSummary.predictionCount })
+                    : t('settings.delete_account.loading')
                 }
               />
               <LossItem
                 icon="chatbubble-outline"
-                label="커뮤니티 글/댓글"
+                label={t('settings.delete_account.lose_community')}
                 value={
                   dataSummary
-                    ? `글 ${dataSummary.postCount}개, 댓글 ${dataSummary.commentCount}개`
-                    : '로딩 중...'
+                    ? t('settings.delete_account.lose_value_community', { posts: dataSummary.postCount, comments: dataSummary.commentCount })
+                    : t('settings.delete_account.loading')
                 }
               />
             </View>
@@ -292,14 +292,14 @@ export default function DeleteAccountScreen() {
                 <>
                   <Ionicons name="download-outline" size={20} color="#4CAF50" />
                   <Text style={styles.exportButtonText}>
-                    삭제 전 데이터 내보내기 (JSON)
+                    {t('settings.delete_account.export_button')}
                   </Text>
                 </>
               )}
             </TouchableOpacity>
 
             <Text style={styles.exportHint}>
-              개인정보보호법에 따라 삭제 전 데이터를 다운로드할 수 있습니다
+              {t('settings.delete_account.export_hint')}
             </Text>
 
             {/* 다음 단계 */}
@@ -307,7 +307,7 @@ export default function DeleteAccountScreen() {
               style={styles.nextButton}
               onPress={() => setStep(2)}
             >
-              <Text style={styles.nextButtonText}>계속 진행</Text>
+              <Text style={styles.nextButtonText}>{t('settings.delete_account.proceed_button')}</Text>
             </TouchableOpacity>
 
             {/* 돌아가기 */}
@@ -316,7 +316,7 @@ export default function DeleteAccountScreen() {
               onPress={() => router.back()}
             >
               <Text style={styles.cancelButtonText}>
-                아니요, 계정을 유지할게요
+                {t('settings.delete_account.keep_account')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -331,17 +331,16 @@ export default function DeleteAccountScreen() {
               color="#CF6679"
               style={styles.warningIcon}
             />
-            <Text style={styles.stepTitle}>본인 확인</Text>
+            <Text style={styles.stepTitle}>{t('settings.delete_account.verify_title')}</Text>
             <Text style={styles.stepDescription}>
-              계정 삭제를 진행하려면{'\n'}
-              가입하신 이메일 주소를 다시 입력해주세요.
+              {t('settings.delete_account.verify_desc')}
             </Text>
 
             {/* 현재 이메일 표시 */}
             <View style={styles.currentEmailBox}>
-              <Text style={styles.currentEmailLabel}>현재 계정</Text>
+              <Text style={styles.currentEmailLabel}>{t('settings.delete_account.current_account_label')}</Text>
               <Text style={styles.currentEmailValue}>
-                {user?.email || '알 수 없음'}
+                {user?.email || t('settings.delete_account.email_unknown')}
               </Text>
             </View>
 
@@ -362,11 +361,11 @@ export default function DeleteAccountScreen() {
 
             {emailInput.length > 0 && !emailMatches && (
               <Text style={styles.emailMismatch}>
-                이메일이 일치하지 않습니다
+                {t('settings.delete_account.email_mismatch')}
               </Text>
             )}
             {emailMatches && (
-              <Text style={styles.emailMatchText}>이메일이 확인되었습니다</Text>
+              <Text style={styles.emailMatchText}>{t('settings.delete_account.email_match')}</Text>
             )}
 
             {/* 다음 단계 */}
@@ -384,7 +383,7 @@ export default function DeleteAccountScreen() {
                   !emailMatches && styles.nextButtonTextDisabled,
                 ]}
               >
-                다음
+                {t('settings.delete_account.next_button')}
               </Text>
             </TouchableOpacity>
 
@@ -393,7 +392,7 @@ export default function DeleteAccountScreen() {
               style={styles.cancelButton}
               onPress={() => setStep(1)}
             >
-              <Text style={styles.cancelButtonText}>이전으로</Text>
+              <Text style={styles.cancelButtonText}>{t('settings.delete_account.back_button')}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -407,30 +406,28 @@ export default function DeleteAccountScreen() {
               color="#CF6679"
               style={styles.warningIcon}
             />
-            <Text style={styles.stepTitle}>최종 확인</Text>
+            <Text style={styles.stepTitle}>{t('settings.delete_account.final_title')}</Text>
             <Text style={styles.stepDescription}>
-              아래 버튼을 누르면 계정과 모든 데이터가{'\n'}
-              <Text style={styles.boldText}>영구적으로 삭제</Text>되며,{'\n'}
-              이 작업은 되돌릴 수 없습니다.
+              {t('settings.delete_account.final_desc')}
             </Text>
 
             {/* 요약 박스 */}
             <View style={styles.summaryBox}>
-              <Text style={styles.summaryTitle}>삭제 대상</Text>
+              <Text style={styles.summaryTitle}>{t('settings.delete_account.summary_title')}</Text>
               <Text style={styles.summaryItem}>
-                {'>'} 계정: {user?.email}
+                {'>'} {t('settings.delete_account.current_account_label')}: {user?.email}
               </Text>
               <Text style={styles.summaryItem}>
-                {'>'} 포트폴리오, AI 분석 결과
+                {'>'} {t('settings.delete_account.summary_portfolio')}
               </Text>
               <Text style={styles.summaryItem}>
-                {'>'} 크레딧, 예측 기록, 스트릭
+                {'>'} {t('settings.delete_account.summary_credits')}
               </Text>
               <Text style={styles.summaryItem}>
-                {'>'} 커뮤니티 글, 댓글, 좋아요
+                {'>'} {t('settings.delete_account.summary_community')}
               </Text>
               <Text style={styles.summaryItem}>
-                {'>'} 알림 설정, 앱 내 모든 데이터
+                {'>'} {t('settings.delete_account.summary_settings')}
               </Text>
             </View>
 
@@ -446,7 +443,7 @@ export default function DeleteAccountScreen() {
                 <>
                   <Ionicons name="trash-outline" size={20} color="#FFFFFF" />
                   <Text style={styles.deleteButtonText}>
-                    계정 영구 삭제
+                    {t('settings.delete_account.delete_button')}
                   </Text>
                 </>
               )}
@@ -458,7 +455,7 @@ export default function DeleteAccountScreen() {
               onPress={() => router.back()}
             >
               <Text style={styles.keepButtonText}>
-                계정을 유지하겠습니다
+                {t('settings.delete_account.keep_button')}
               </Text>
             </TouchableOpacity>
 
@@ -467,7 +464,7 @@ export default function DeleteAccountScreen() {
               style={styles.cancelButton}
               onPress={() => setStep(2)}
             >
-              <Text style={styles.cancelButtonText}>이전으로</Text>
+              <Text style={styles.cancelButtonText}>{t('settings.delete_account.back_button')}</Text>
             </TouchableOpacity>
           </View>
         )}

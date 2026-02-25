@@ -22,6 +22,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
+import { useLocale } from '../../context/LocaleContext';
 
 // ============================================================================
 // 타입
@@ -44,21 +45,18 @@ interface ProsperityMeterProps {
 // 레벨 메타데이터
 // ============================================================================
 
-/**
- * 레벨별 마을 이름 (한국어/영어)
- * VillageProsperity.milestones의 name/nameEn과 동일하게 맞춤
- */
-const LEVEL_NAMES: Record<number, { ko: string; en: string }> = {
-  1: { ko: '첫 번째 불꽃', en: 'First Spark' },
-  2: { ko: '작은 싹', en: 'Tiny Sprout' },
-  3: { ko: '새벽의 마을', en: 'Dawn Village' },
-  4: { ko: '성장하는 터전', en: 'Growing Ground' },
-  5: { ko: '활기찬 광장', en: 'Lively Square' },
-  6: { ko: '번영의 길목', en: 'Crossroads of Prosperity' },
-  7: { ko: '황금빛 들녘', en: 'Golden Fields' },
-  8: { ko: '현자의 도시', en: 'City of Sages' },
-  9: { ko: '전설의 전당', en: 'Hall of Legends' },
-  10: { ko: '영원한 마을', en: 'Eternal Village' },
+/** 레벨 → i18n 키 맵핑 */
+const LEVEL_I18N_KEY: Record<number, string> = {
+  1: 'village.prosperity.level_1',
+  2: 'village.prosperity.level_2',
+  3: 'village.prosperity.level_3',
+  4: 'village.prosperity.level_4',
+  5: 'village.prosperity.level_5',
+  6: 'village.prosperity.level_6',
+  7: 'village.prosperity.level_7',
+  8: 'village.prosperity.level_8',
+  9: 'village.prosperity.level_9',
+  10: 'village.prosperity.level_10',
 };
 
 /** 레벨 → 진행 바 색상 */
@@ -130,8 +128,9 @@ const ProsperityMeter = React.memo(({
   progress,
   todayPoints,
   colors,
-  locale = 'ko',
 }: ProsperityMeterProps) => {
+  const { t } = useLocale();
+
   // 진행 바 애니메이션 값 (0~1 → width)
   const barAnim = useRef(new Animated.Value(0)).current;
 
@@ -144,11 +143,8 @@ const ProsperityMeter = React.memo(({
     }).start();
   }, [progress, barAnim]);
 
-  const isKo = locale === 'ko';
   const clampedLevel = Math.min(Math.max(level, 1), 10);
-  const levelName = isKo
-    ? (LEVEL_NAMES[clampedLevel]?.ko ?? '발른 마을')
-    : (LEVEL_NAMES[clampedLevel]?.en ?? 'Baln Village');
+  const levelName = t(LEVEL_I18N_KEY[clampedLevel] ?? 'village.prosperity.default_name');
   const levelEmoji = getLevelEmoji(clampedLevel);
   const barColor = getLevelColor(clampedLevel);
 
@@ -191,9 +187,9 @@ const ProsperityMeter = React.memo(({
 
           {/* 레벨 부가 설명 */}
           <Text style={[styles.levelSub, { color: colors.textTertiary }]}>
-            {isKo
-              ? `마을 레벨 ${clampedLevel}${isMaxLevel ? ' · 전설 달성!' : ''}`
-              : `Village Lv.${clampedLevel}${isMaxLevel ? ' · Legendary!' : ''}`
+            {isMaxLevel
+              ? t('village.prosperity.level_sub_max', { level: clampedLevel })
+              : t('village.prosperity.level_sub', { level: clampedLevel })
             }
           </Text>
         </View>
@@ -210,7 +206,7 @@ const ProsperityMeter = React.memo(({
               {`+${todayPoints}`}
             </Text>
             <Text style={[styles.todayLabel, { color: barColor + 'AA' }]}>
-              {isKo ? '오늘' : 'today'}
+              {t('village.prosperity.today_label')}
             </Text>
           </View>
         )}
@@ -247,7 +243,7 @@ const ProsperityMeter = React.memo(({
         {/* 우측: 퍼센트 또는 만렙 */}
         <Text style={[styles.progressLabel, { color: colors.textTertiary }]}>
           {isMaxLevel
-            ? (isKo ? '만렙' : 'MAX')
+            ? t('village.prosperity.max_label')
             : `${Math.round(progress * 100)}%`
           }
         </Text>
@@ -256,10 +252,7 @@ const ProsperityMeter = React.memo(({
       {/* 만렙 달성 축하 줄 */}
       {isMaxLevel && (
         <Text style={[styles.maxLevelBanner, { color: colors.premium.gold }]}>
-          {isKo
-            ? '✨ 전설의 마을 달성! 모든 구루와 소울메이트가 되세요 ✨'
-            : '✨ Legendary Village! Become soulmates with all gurus ✨'
-          }
+          {t('village.prosperity.max_banner')}
         </Text>
       )}
     </View>
