@@ -151,7 +151,6 @@ export default function TabLayout() {
       {/* ═══ 숨김 탭들 (URL 직접 접근만 가능) ═══ */}
       <Tabs.Screen name="insights" options={{ href: null }} />
       <Tabs.Screen name="scan" options={{ href: null }} />
-      <Tabs.Screen name="diagnosis" options={{ href: null }} />
       <Tabs.Screen name="strategy" options={{ href: null }} />
       <Tabs.Screen name="journal" options={{ href: null }} />
       <Tabs.Screen name="invest" options={{ href: null }} />

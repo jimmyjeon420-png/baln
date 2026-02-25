@@ -155,7 +155,18 @@ export default function PrivacyScreen() {
             <Text style={[styles.tableCell, { flex: 1, color: colors.textSecondary }]}>미국</Text>
           </View>
           <Text style={[styles.aiDecisionText, { color: colors.textSecondary }]}>
-            {'\n'}이전되는 데이터는 익명화 처리되며, 개인 식별 정보(이름, 계좌번호 등)는 포함되지 않습니다. 각 수탁업체는 GDPR 및 SOC 2 Type II 인증을 보유하고 있습니다.
+            {'\n'}■ Google Gemini AI에 전송되는 데이터:{'\n'}
+            • 포트폴리오 종목 코드 및 비중 (예: AAPL 30%){'\n'}
+            • 시장 데이터 (주가, 환율, 지수){'\n'}
+            • 건강 점수 및 리스크 팩터{'\n\n'}
+            ■ 전송되지 않는 데이터:{'\n'}
+            • 이름, 이메일, 계좌번호 등 개인 식별 정보{'\n'}
+            • 실제 보유 금액 또는 거래 내역{'\n\n'}
+            ■ 보호 조치:{'\n'}
+            • 모든 데이터는 TLS 1.3으로 암호화 전송{'\n'}
+            • Google Gemini API는 사용자 데이터를 모델 학습에 사용하지 않음 (Google Cloud API Terms of Service){'\n'}
+            • 사용자는 설정에서 언제든지 AI 데이터 공유 동의를 철회할 수 있음{'\n\n'}
+            각 수탁업체는 GDPR 및 SOC 2 Type II 인증을 보유하고 있습니다.
           </Text>
         </View>
 

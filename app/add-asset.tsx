@@ -51,9 +51,7 @@ import { getTickerProfile } from '../src/data/tickerProfile';
 
 // ── 상수 ──
 
-// 진단 트리거 플래그 키
-const NEEDS_DIAGNOSIS_KEY = '@smart_rebalancer:needs_diagnosis';
-const LAST_SCAN_DATE_KEY = '@smart_rebalancer:last_scan_date';
+const LAST_SCAN_DATE_KEY = '@baln:last_scan_date';
 // 최근 추가 종목 저장 키
 const RECENT_ASSETS_KEY = '@baln:recent_assets';
 
@@ -589,7 +587,6 @@ export default function AddAssetScreen() {
       );
       if (error) throw error;
 
-      await AsyncStorage.setItem(NEEDS_DIAGNOSIS_KEY, 'true');
       queryClient.invalidateQueries({ queryKey: SHARED_PORTFOLIO_KEY });
       await loadExistingAssets();
       setCashAmount('');
@@ -689,9 +686,7 @@ export default function AddAssetScreen() {
 
       if (upsertError) throw upsertError;
 
-      // 진단 트리거 설정
       const today = new Date().toISOString().split('T')[0];
-      await AsyncStorage.setItem(NEEDS_DIAGNOSIS_KEY, 'true');
       await AsyncStorage.setItem(LAST_SCAN_DATE_KEY, today);
 
       // 미등록 티커 자동 분류 (fire-and-forget — 저장 흐름 블로킹 없음)

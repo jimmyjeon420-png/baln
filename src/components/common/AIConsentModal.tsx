@@ -15,6 +15,7 @@ import {
   StyleSheet,
   Modal,
   ScrollView,
+  Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -76,11 +77,15 @@ export function AIConsentModal({ visible, onAccept, onDecline }: AIConsentModalP
 
             {/* 제목 */}
             <Text style={[styles.title, { color: colors.textPrimary }]}>
-              AI 분석 데이터 공유 안내
+              AI 분석 데이터 공유 동의
+            </Text>
+            <Text style={[styles.titleEn, { color: colors.textTertiary }]}>
+              AI Data Sharing Consent
             </Text>
 
             <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-              맞춤형 투자 분석을 위해 아래 데이터가 외부 AI 서비스에 전송됩니다.
+              맞춤형 투자 분석을 위해 아래 데이터가 외부 AI 서비스에 전송됩니다.{'\n'}
+              동의 전에는 데이터가 전송되지 않습니다.
             </Text>
 
             {/* 전송 데이터 */}
@@ -108,15 +113,21 @@ export function AIConsentModal({ visible, onAccept, onDecline }: AIConsentModalP
               </View>
             </View>
 
-            {/* 전송 대상 */}
+            {/* 전송 대상 (Data Recipient) */}
             <View style={[styles.infoBox, { backgroundColor: colors.background }]}>
               <Text style={[styles.infoTitle, { color: colors.textPrimary }]}>
-                전송 대상
+                전송 대상 (Data Recipient)
               </Text>
               <View style={styles.infoRow}>
                 <Ionicons name="business-outline" size={16} color={colors.textSecondary} />
                 <Text style={[styles.infoText, { color: colors.textSecondary }]}>
-                  Google LLC (Gemini AI) — 미국 소재
+                  Google LLC — Gemini AI API{'\n'}(Mountain View, CA, USA)
+                </Text>
+              </View>
+              <View style={styles.infoRow}>
+                <Ionicons name="information-circle-outline" size={16} color={colors.textSecondary} />
+                <Text style={[styles.infoText, { color: colors.textSecondary }]}>
+                  Google은 API 요청 데이터를 AI 모델 학습에 사용하지 않습니다
                 </Text>
               </View>
             </View>
@@ -146,10 +157,16 @@ export function AIConsentModal({ visible, onAccept, onDecline }: AIConsentModalP
               </View>
             </View>
 
-            {/* 개인정보처리방침 링크 안내 */}
-            <Text style={[styles.policyNote, { color: colors.textTertiary }]}>
-              자세한 내용은 설정 {'>'} 개인정보처리방침에서 확인하세요.
-            </Text>
+            {/* 개인정보처리방침 링크 */}
+            <TouchableOpacity
+              style={styles.policyLinkButton}
+              onPress={() => Linking.openURL('https://baln.app/privacy').catch(() => {})}
+            >
+              <Ionicons name="document-text-outline" size={14} color={colors.primary} />
+              <Text style={[styles.policyLinkText, { color: colors.primary }]}>
+                개인정보처리방침 전문 보기 (Privacy Policy)
+              </Text>
+            </TouchableOpacity>
           </ScrollView>
 
           {/* 버튼 */}
@@ -236,11 +253,24 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     flex: 1,
   },
-  policyNote: {
-    fontSize: 12,
+  titleEn: {
+    fontSize: 13,
     textAlign: 'center',
+    marginBottom: 12,
+  },
+  policyLinkButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
     marginTop: 4,
     marginBottom: 16,
+    paddingVertical: 8,
+  },
+  policyLinkText: {
+    fontSize: 13,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
   buttonContainer: {
     flexDirection: 'row',

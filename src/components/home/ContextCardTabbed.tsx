@@ -14,6 +14,7 @@ import { ContextLayerTabs, type ContextLayer } from './ContextLayerTabs';
 import { SentimentBadge } from './SentimentBadge';
 import { PortfolioImpactSection } from './PortfolioImpactSection';
 import { useTheme } from '../../hooks/useTheme';
+import { shareContent } from '../../services/shareService';
 
 interface ContextCardTabbedProps {
   /** Premium 여부 */
@@ -118,10 +119,7 @@ export function ContextCardTabbed({ isPremium = false, onPressPremium }: Context
           {/* 우측: 공유 버튼 */}
           <TouchableOpacity
             style={s.shareButton}
-            onPress={() => {
-              // TODO: 공유 기능 구현
-              console.log('공유 기능');
-            }}
+            onPress={() => shareContent('context', cardData.date, { headline: cardData.headline })}
           >
             <Ionicons name="share-outline" size={22} color="#4CAF50" />
           </TouchableOpacity>

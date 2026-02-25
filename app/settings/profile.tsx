@@ -18,21 +18,35 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '../../src/context/AuthContext';
 import { useTheme } from '../../src/hooks/useTheme';
 import { HeaderBar } from '../../src/components/common/HeaderBar';
+import supabase from '../../src/services/supabase';
 
 export default function ProfileSettingsScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { colors } = useTheme();
-  const [displayName, setDisplayName] = useState(user?.email?.split('@')[0] || '');
+  const [displayName, setDisplayName] = useState(
+    user?.user_metadata?.display_name || user?.email?.split('@')[0] || ''
+  );
   const [loading, setLoading] = useState(false);
 
   const handleSave = async () => {
+    if (!displayName.trim()) {
+      Alert.alert('오류', '표시 이름을 입력해주세요.');
+      return;
+    }
     setLoading(true);
-    // TODO: Supabase에 프로필 업데이트 로직 추가
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        data: { display_name: displayName.trim() },
+      });
+      if (error) throw error;
       Alert.alert('성공', '프로필이 저장되었습니다.');
-    }, 1000);
+    } catch (error: any) {
+      console.warn('[Profile] 저장 실패:', error?.message);
+      Alert.alert('오류', '프로필 저장에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

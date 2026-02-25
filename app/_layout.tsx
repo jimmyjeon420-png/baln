@@ -24,6 +24,7 @@ import { useWelcomeBonus } from '../src/hooks/useRewards';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ErrorBoundary from '../src/components/common/ErrorBoundary';
 import WelcomeBonusModal from '../src/components/WelcomeBonusModal';
+import { AIConsentModal, hasAIConsent } from '../src/components/common/AIConsentModal';
 import { useDeepLink } from '../src/hooks/useDeepLink';
 import { useAnalyticsInit } from '../src/hooks/useAnalytics';
 import { usePrefetchCheckup } from '../src/hooks/usePrefetchCheckup';
@@ -72,6 +73,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   const segments = useSegments();
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [welcomeCredits, setWelcomeCredits] = useState(10);
+  const [showAIConsent, setShowAIConsent] = useState(false);
 
   // ★ 인증 완료 전에는 데이터 훅을 실행하지 않음 (콜드 스타트 레이스 컨디션 방지)
   // loading=true이거나 user=null이면 enabled: false로 쿼리 자체를 차단
@@ -114,7 +116,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     let cancelled = false;
 
     // 로그인 사용자는 어느 경로에서 들어오든 온보딩 완료 상태를 단일 기준으로 분기한다.
-    AsyncStorage.getItem('@baln:onboarding_completed').then((completed) => {
+    AsyncStorage.getItem('@baln:onboarding_completed').then(async (completed) => {
       if (cancelled) return;
 
       const isCompleted = completed === 'true';
@@ -125,6 +127,14 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 
       if (isCompleted && (inAuthGroup || inOnboarding)) {
         router.replace('/(tabs)');
+      }
+
+      // 온보딩 완료 후: AI 데이터 공유 동의 여부 확인 (Apple 5.1.1/5.1.2)
+      if (isCompleted) {
+        const consent = await hasAIConsent();
+        if (!consent) {
+          setShowAIConsent(true);
+        }
       }
     }).catch((err) => {
       console.warn('[AuthGate] 온보딩 상태 조회 실패:', err);
@@ -151,6 +161,11 @@ function AuthGate({ children }: { children: React.ReactNode }) {
         visible={showWelcomeModal}
         creditsEarned={welcomeCredits}
         onDismiss={() => setShowWelcomeModal(false)}
+      />
+      <AIConsentModal
+        visible={showAIConsent}
+        onAccept={() => setShowAIConsent(false)}
+        onDecline={() => setShowAIConsent(false)}
       />
     </>
   );

@@ -14,12 +14,16 @@
 
 import React from 'react';
 import { View, Text, ScrollView, StyleSheet, Alert } from 'react-native';
+import { useRouter } from 'expo-router';
 import { MarketplaceCard } from './MarketplaceCard';
 import { useMyCredits } from '../../hooks/useCredits';
 import { MARKETPLACE_ITEMS, getItemsByTier } from '../../data/marketplaceItems';
+import { spendCredits } from '../../services/creditService';
+import queryClient from '../../services/queryClient';
 
 export function MarketplaceGrid() {
   const { data: credits } = useMyCredits();
+  const router = useRouter();
   const currentBalance = credits?.balance ?? 0;
 
   // Tier별 상품 필터링
@@ -34,7 +38,7 @@ export function MarketplaceGrid() {
     // 비활성화 상품
     if (!item.enabled) {
       Alert.alert(
-        '곧 공개 예정 🔐',
+        '곧 공개 예정',
         'Premium 구독 시스템이 안정화되면 오픈됩니다. 조금만 기다려주세요!',
         [{ text: '확인' }]
       );
@@ -48,7 +52,7 @@ export function MarketplaceGrid() {
         `${item.name}을(를) 구매하려면 ${item.price - currentBalance}C가 더 필요합니다.`,
         [
           { text: '취소', style: 'cancel' },
-          { text: '충전하기', onPress: () => {/* TODO: 충전 화면 이동 */} },
+          { text: '충전하기', onPress: () => router.push('/marketplace/credits') },
         ]
       );
       return;
@@ -62,9 +66,14 @@ export function MarketplaceGrid() {
         { text: '취소', style: 'cancel' },
         {
           text: '구매',
-          onPress: () => {
-            // TODO: 실제 구매 로직 (creditService에 purchaseMarketplaceItem 추가)
-            Alert.alert('구매 완료 ✨', `${item.name}이(가) 적용되었습니다!`);
+          onPress: async () => {
+            const result = await spendCredits(item.price, 'deep_dive', item.id);
+            if (result.success) {
+              queryClient.invalidateQueries({ queryKey: ['credits'] });
+              Alert.alert('구매 완료', `${item.name}이(가) 적용되었습니다!`);
+            } else {
+              Alert.alert('구매 실패', result.errorMessage || '다시 시도해주세요.');
+            }
           },
         },
       ]

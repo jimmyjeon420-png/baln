@@ -20,6 +20,7 @@ import {
   KeyboardAvoidingView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as AppleAuthentication from 'expo-apple-authentication';
 import { useAuth, OAuthProvider } from '../src/context/AuthContext';
 import { SIZES } from '../src/styles/theme';
 import { useTheme } from '../src/hooks/useTheme';
@@ -203,22 +204,21 @@ export default function LoginScreen() {
               )}
             </TouchableOpacity>
 
-            {/* Apple 로그인 (iOS에서만 표시) — Apple HIG: 다크 배경에서 흰색 버튼 */}
+            {/* Apple 로그인 (iOS에서만 표시) — Apple 공식 버튼 컴포넌트 사용 */}
             {Platform.OS === 'ios' && (
-              <TouchableOpacity
-                style={[styles.socialButton, styles.appleButton]}
-                onPress={handleAppleLogin}
-                disabled={isAnyLoading}
-              >
-                {loadingProvider === 'apple' ? (
+              loadingProvider === 'apple' ? (
+                <View style={[styles.socialButton, styles.appleButton]}>
                   <ActivityIndicator color="#000000" size="small" />
-                ) : (
-                  <>
-                    <Text style={styles.appleIcon}></Text>
-                    <Text style={styles.appleButtonText}>Apple로 시작하기</Text>
-                  </>
-                )}
-              </TouchableOpacity>
+                </View>
+              ) : (
+                <AppleAuthentication.AppleAuthenticationButton
+                  buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+                  buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE}
+                  cornerRadius={SIZES.rMd}
+                  style={styles.appleOfficialButton}
+                  onPress={handleAppleLogin}
+                />
+              )
             )}
           </View>
 
@@ -397,18 +397,15 @@ const styles = StyleSheet.create({
     color: '#000000',
   },
 
-  // Apple 버튼 — Apple HIG: 다크 배경에서 흰색 스타일 사용
+  // Apple 공식 버튼 — Apple HIG 자동 준수
+  appleOfficialButton: {
+    width: '100%',
+    height: 50,
+  },
+  // Apple 로딩 상태용 플레이스홀더
   appleButton: {
     backgroundColor: '#FFFFFF',
-  },
-  appleIcon: {
-    fontSize: 19,
-    color: '#000000',
-  },
-  appleButtonText: {
-    fontSize: SIZES.fBase,
-    fontWeight: '600',
-    color: '#000000',
+    height: 50,
   },
 
   // 구분선 섹션
