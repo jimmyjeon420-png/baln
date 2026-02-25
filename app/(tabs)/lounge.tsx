@@ -55,6 +55,10 @@ import { Gathering } from '../../src/types/database';
 import { useTheme } from '../../src/hooks/useTheme';
 import supabase, { getCurrentUser } from '../../src/services/supabase';
 import { useSharedPortfolio } from '../../src/hooks/useSharedPortfolio';
+import { useLocale } from '../../src/context/LocaleContext';
+import { useWeather } from '../../src/hooks/useWeather';
+import { getDailyQuote } from '../../src/data/guruQuoteBank';
+import WeatherBadge from '../../src/components/common/WeatherBadge';
 
 // ══════════════════════════════════════════
 // 상수
@@ -357,6 +361,11 @@ function LoungeScreenInner() {
   const sortChipInactiveIconColor = isLightTheme ? themeColors.textSecondary : '#E7EDF4';
   const welcomeBannerBackground = isLightTheme ? '#EAF4ED' : 'rgba(76, 175, 80, 0.08)';
   const welcomeBannerTitleColor = isLightTheme ? (themeColors.primaryDark || '#1F6A25') : '#4CAF50';
+
+  // 구루 카페 분위기
+  const { language } = useLocale();
+  const { weather } = useWeather();
+  const dailyQuote = getDailyQuote();
 
   // 세그먼트 상태
   const [activeSegment, setActiveSegment] = useState<Segment>('community');
@@ -701,6 +710,21 @@ function LoungeScreenInner() {
           <TouchableOpacity onPress={handleDiagnose} style={{ padding: 8 }}>
             <Ionicons name="pulse" size={22} color={themeColors.textTertiary} />
           </TouchableOpacity>
+        </View>
+
+        {/* 구루 카페 분위기 */}
+        <View style={[styles.cafeHeader, { backgroundColor: themeColors.surface }]}>
+          <View style={styles.cafeHeaderRow}>
+            <Text style={[styles.cafeTitle, { color: themeColors.textPrimary }]}>
+              {'☕ '}{language === 'ko' ? '구루 카페' : 'Guru Café'}
+            </Text>
+            {weather && <WeatherBadge weather={weather} compact colors={themeColors} locale={language} />}
+          </View>
+          <Text style={[styles.cafeSubtitle, { color: themeColors.textTertiary }]}>
+            {dailyQuote.quote.length > 50
+              ? dailyQuote.quote.slice(0, 50) + '…'
+              : dailyQuote.quote}
+          </Text>
         </View>
 
         {/* 세그먼트 컨트롤 (토스 스타일 pill) */}
@@ -1611,5 +1635,29 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: '#FFFFFF',
+  },
+
+  // ── 구루 카페 분위기 헤더 ──
+  cafeHeader: {
+    marginHorizontal: 16,
+    marginBottom: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 14,
+  },
+  cafeHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  cafeTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  cafeSubtitle: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontStyle: 'italic',
   },
 });

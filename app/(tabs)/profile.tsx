@@ -23,6 +23,9 @@ import { CreditDisplay } from '../../src/components/common/CreditDisplay';
 import { useIsAdmin } from '../../src/hooks/useAdminDashboard';
 import { useGuruStyle, GURU_DISPLAY_NAME } from '../../src/hooks/useGuruStyle';
 import { useLocale } from '../../src/context/LocaleContext';
+import { useGuruFriendship } from '../../src/hooks/useGuruFriendship';
+import { useVillageProsperity } from '../../src/hooks/useVillageProsperity';
+import { CharacterAvatar } from '../../src/components/character/CharacterAvatar';
 
 const APP_VERSION = Constants.expoConfig?.version ?? '1.0.0';
 
@@ -54,12 +57,15 @@ interface MenuSection {
 export default function ProfileScreen() {
   useScreenTracking('more');
   const router = useRouter();
-  const { t } = useLocale();
+  const { t, language } = useLocale();
   const { user, signOut } = useAuth();
   const { unlockedCount, totalCount } = useAchievementCount();
   const { themeMode, setThemeMode, colors } = useTheme();
   const { data: isAdmin } = useIsAdmin();
   const { guruStyle } = useGuruStyle();
+  const { getTopFriends } = useGuruFriendship();
+  const { prosperity, level: prosperityLevel } = useVillageProsperity();
+  const topFriends = getTopFriends(3); // top 3 guru friends
 
   // 화면 포커스 시 AsyncStorage에서 최신 guru style 읽기 (guru-style.tsx 변경 후 즉시 반영)
   const [latestGuruStyle, setLatestGuruStyle] = React.useState(guruStyle);
@@ -309,6 +315,42 @@ export default function ProfileScreen() {
           </View>
         )}
 
+        {/* ── 마을 현황 ── */}
+        {user && (
+          <View style={[styles.villageSection, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.villageSectionTitle, { color: colors.textPrimary }]}>
+              {language === 'ko' ? '🏘️ 마을 현황' : '🏘️ Village Status'}
+            </Text>
+
+            {/* 번영도 */}
+            <View style={styles.villageRow}>
+              <Text style={{ color: colors.textSecondary }}>
+                {language === 'ko' ? '번영도' : 'Prosperity'}
+              </Text>
+              <Text style={{ color: colors.primary, fontWeight: '700' }}>
+                Lv.{prosperityLevel}
+              </Text>
+            </View>
+
+            {/* 친한 구루 Top 3 */}
+            <View style={styles.villageRow}>
+              <Text style={{ color: colors.textSecondary }}>
+                {language === 'ko' ? '친한 구루' : 'Top Gurus'}
+              </Text>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                {topFriends.map(f => (
+                  <CharacterAvatar key={f.guruId} guruId={f.guruId} size="sm" />
+                ))}
+                {topFriends.length === 0 && (
+                  <Text style={{ color: colors.textTertiary, fontSize: 12 }}>
+                    {language === 'ko' ? '마을에서 구루와 대화해보세요' : 'Chat with gurus in the village'}
+                  </Text>
+                )}
+              </View>
+            </View>
+          </View>
+        )}
+
         {/* ── 관리자 대시보드 (관리자만 표시) ── */}
         {user && isAdmin && (
           <TouchableOpacity
@@ -555,5 +597,25 @@ const styles = StyleSheet.create({
     fontSize: SIZES.fXs,
     marginTop: SIZES.xxl,
     marginBottom: 40,
+  },
+
+  // ---------------------------------------------------------------------------
+  // 마을 현황 섹션
+  // ---------------------------------------------------------------------------
+  villageSection: {
+    borderRadius: SIZES.card.borderRadius,
+    padding: SIZES.card.padding,
+    marginBottom: SIZES.xxl,
+  },
+  villageSectionTitle: {
+    fontSize: SIZES.fBase,
+    fontWeight: '700',
+    marginBottom: SIZES.md,
+  },
+  villageRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 6,
   },
 });

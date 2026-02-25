@@ -14,7 +14,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Modal } from 'react-native';
+import { View, Text, StyleSheet, Modal } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
@@ -84,6 +84,12 @@ import { useStreak } from '../../src/hooks/useStreak';
 import { useStreakRecovery } from '../../src/hooks/useStreakRecovery';
 import { useGuruStyle } from '../../src/hooks/useGuruStyle';
 
+// 마을 세계관 연동
+import { useWeather } from '../../src/hooks/useWeather';
+import { useMarketSentiment } from '../../src/hooks/useMarketSentiment';
+import { getDailyQuote } from '../../src/data/guruQuoteBank';
+import WeatherBadge from '../../src/components/common/WeatherBadge';
+
 function extractTaggedLine(source: string | null | undefined, tag: string): string | null {
   if (!source) return null;
   const regex = new RegExp(`^${tag}:\\s*(.+)$`, 'm');
@@ -142,7 +148,7 @@ function buildReviewSource(source: string | null | undefined): string | undefine
 // ============================================================================
 
 export default function HomeScreen() {
-  const { t } = useLocale();
+  const { t, language } = useLocale();
 
   // 화면 진입 추적 + Push 알림 초기화
   useScreenTracking('today');
@@ -155,6 +161,11 @@ export default function HomeScreen() {
   const queryClient = useQueryClient();
   const { colors } = useTheme();
   const { guruStyle } = useGuruStyle();
+
+  // 마을 연동: 날씨 + 시장 심리 + 오늘의 명언
+  const { weather, clothingLevel } = useWeather();
+  const { sentiment, setSentimentFromPortfolio } = useMarketSentiment();
+  const dailyQuote = getDailyQuote();
 
   // ──────────────────────────────────────────────────────────────────────
   // 스트릭 복구 & 마일스톤 축하
@@ -281,6 +292,13 @@ export default function HomeScreen() {
     if (weightCovered < 0.3) return null;
     return weightedChange;
   }, [liquidAssetsForHome, homeLivePrices, totalAssets]);
+
+  // 시장 심리 피드 (포트폴리오 변동률 → 마을 감정 연동)
+  useEffect(() => {
+    if (dailyChangeRate !== null && dailyChangeRate !== undefined) {
+      setSentimentFromPortfolio(dailyChangeRate);
+    }
+  }, [dailyChangeRate, setSentimentFromPortfolio]);
 
   // ──────────────────────────────────────────────────────────────────────
   // 1. 건강 신호등 카드 데이터
@@ -704,6 +722,25 @@ export default function HomeScreen() {
         creditBalance={creditBalance?.balance ?? null}
       />
 
+      {/* 마을 날씨 배지 (compact — 스트릭 배너 아래, 좌측 정렬) */}
+      <View style={styles.weatherRow}>
+        <WeatherBadge
+          weather={weather}
+          clothingLevel={clothingLevel}
+          compact
+          colors={colors}
+          locale={language}
+        />
+        {sentiment && (
+          <View style={[styles.sentimentBadge, { backgroundColor: colors.surfaceLight }]}>
+            <Text style={styles.sentimentEmoji}>{sentiment.emoji}</Text>
+            <Text style={[styles.sentimentLabel, { color: colors.textSecondary }]}>
+              {language === 'ko' ? sentiment.label : sentiment.labelEn}
+            </Text>
+          </View>
+        )}
+      </View>
+
       {/* 크로스탭 연동 배너는 일정 이상 습관이 형성된 사용자에게만 노출 */}
       {currentStreak >= 3 && <CrossTabBanners />}
 
@@ -759,6 +796,33 @@ export default function HomeScreen() {
           />
         </ErrorBoundary>
       </CardSwipeContainer>
+
+      {/* 오늘의 투자 명언 (구루 명언 은행 — 날짜 기반 결정론적 선택) */}
+      {dailyQuote && (
+        <View style={[styles.quoteCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Text style={styles.quoteEmoji}>💬</Text>
+          <Text style={[styles.quoteText, { color: colors.textSecondary }]}>
+            "{language === 'ko' ? dailyQuote.quote : dailyQuote.quoteEn}"
+          </Text>
+          <Text style={[styles.quoteAuthor, { color: colors.textTertiary }]}>
+            {(() => {
+              const GURU_LABELS: Record<string, string> = {
+                buffett: '워렌 버핏 🦉',
+                dalio: '레이 달리오 🦌',
+                cathie_wood: '캐시 우드 🦊',
+                druckenmiller: '드러킨밀러 🐆',
+                saylor: '마이클 세일러 🐺',
+                dimon: '제이미 다이먼 🦁',
+                musk: '일론 머스크 🦎',
+                lynch: '피터 린치 🐻',
+                marks: '하워드 막스 🐢',
+                rogers: '짐 로저스 🐯',
+              };
+              return '— ' + (GURU_LABELS[dailyQuote.guruId] ?? dailyQuote.guruId);
+            })()}
+          </Text>
+        </View>
+      )}
 
       {/* 맥락 카드 전체 모달 (4겹 레이어) */}
       <Modal
@@ -829,5 +893,51 @@ const styles = StyleSheet.create({
     flex: 1,
     // backgroundColor는 동적으로 적용됨
     paddingTop: 60, // Safe area
+  },
+  // ── 마을 날씨 배지 (WeatherBadge + 시장 심리) ──
+  weatherRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+    gap: 8,
+  },
+  sentimentBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    borderRadius: 10,
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+  },
+  sentimentEmoji: {
+    fontSize: 13,
+  },
+  sentimentLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  // ── 오늘의 투자 명언 카드 ──
+  quoteCard: {
+    marginHorizontal: 16,
+    marginBottom: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    gap: 6,
+  },
+  quoteEmoji: {
+    fontSize: 18,
+  },
+  quoteText: {
+    fontSize: 13,
+    lineHeight: 19,
+    fontStyle: 'italic',
+  },
+  quoteAuthor: {
+    fontSize: 12,
+    fontWeight: '500',
+    textAlign: 'right',
   },
 });

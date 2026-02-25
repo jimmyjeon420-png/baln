@@ -54,6 +54,8 @@ import DisclaimerBanner from '../../src/components/common/DisclaimerBanner';
 import { AIConsentModal, hasAIConsent } from '../../src/components/common/AIConsentModal';
 import supabase, { getCurrentUser } from '../../src/services/supabase';
 import { useLocale } from '../../src/context/LocaleContext';
+import { CharacterAvatar } from '../../src/components/character/CharacterAvatar';
+import { getQuotesForGuru } from '../../src/data/guruQuoteBank';
 
 // ── 단일 통합 뷰 컴포넌트 (P2-A) ──
 import AdvancedCheckupView from '../../src/components/checkup/AdvancedCheckupView';
@@ -344,7 +346,7 @@ async function runAnalysisDiagnostic() {
 export default function CheckupScreen() {
   useScreenTracking('checkup');
   const router = useRouter();
-  const { t } = useLocale();
+  const { t, language } = useLocale();
   const { colors } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
   const [showToast, setShowToast] = useState(false);
@@ -700,6 +702,21 @@ export default function CheckupScreen() {
           <FreePeriodBanner compact={true} />
         </View>
 
+        {/* 하워드 막스 — 분석실 상주 의사 */}
+        <View style={[s.drMarksCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <CharacterAvatar guruId="marks" size="sm" expression="neutral" />
+          <View style={s.drMarksText}>
+            <Text style={[s.drMarksName, { color: colors.textPrimary }]}>
+              {language === 'ko' ? '🐢 Dr. 막스' : '🐢 Dr. Marks'}
+            </Text>
+            <Text style={[s.drMarksQuote, { color: colors.textSecondary }]} numberOfLines={2}>
+              {language === 'ko'
+                ? '"가장 중요한 것은 위험을 아는 것입니다"'
+                : '"The most important thing is understanding risk"'}
+            </Text>
+          </View>
+        </View>
+
         {/* 면책 고지 배너 */}
         {!disclaimerDismissed && (
           <View style={s.disclaimerBannerWrap}>
@@ -1043,5 +1060,28 @@ const s = StyleSheet.create({
     fontSize: 15,
     marginTop: 2,
     lineHeight: 22,
+  },
+  drMarksCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    marginHorizontal: 16,
+    marginBottom: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 12,
+  },
+  drMarksText: {
+    flex: 1,
+  },
+  drMarksName: {
+    fontSize: 13,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  drMarksQuote: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontStyle: 'italic',
   },
 });
