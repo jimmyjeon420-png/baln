@@ -133,7 +133,7 @@ export const POLL_DIFFICULTY_INFO: Record<PollDifficulty, {
 // ============================================================================
 
 export const PREDICTION_REWARDS = {
-  correct: 2,           // 기본 적중 보상
+  correct: 3,           // 기본 적중 보상 (CLAUDE.md 기준 3C)
   subscriberMultiplier: 2, // 구독자 보상 배수
   streak5Bonus: 3,      // 5연속 적중 보너스
   streak10Bonus: 10,    // 10연속 적중 보너스

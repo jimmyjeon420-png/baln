@@ -32,6 +32,8 @@ import {
   callGeminiWithSearch,
   cleanJsonResponse,
   logTaskResult,
+  getKSTDate,
+  getKSTDateStr,
 } from './_shared.ts';
 
 // ============================================================================
@@ -50,6 +52,10 @@ export interface GuruInsightResult {
   reasoning: string;
   relevantAssets: string[];
   source: string;
+  action?: 'BUY' | 'SELL' | 'HOLD';
+  target_tickers?: string[];
+  sector?: string;
+  conviction_level?: number;
 }
 
 export interface GuruAnalysisResult {
@@ -72,8 +78,7 @@ export interface GuruAnalysisResult {
  * @returns GuruInsightResult 또는 null (에러 시)
  */
 async function analyzeGuruInsight(guru: typeof GURU_LIST[0]): Promise<GuruInsightResult | null> {
-  const today = new Date();
-  const dateStr = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`;
+  const dateStr = getKSTDateStr();
 
   const prompt = `당신은 baln(발른) 앱의 투자 거장 분석 AI입니다.
 오늘(${dateStr}) ${guru.nameEn}(${guru.name})의 최근 투자 동향을 분석하세요.
@@ -93,6 +98,10 @@ async function analyzeGuruInsight(guru: typeof GURU_LIST[0]): Promise<GuruInsigh
 4. reasoning: 왜 이런 입장인지 2~3문장으로 설명 (한국어)
 5. relevantAssets: 관련 티커 최대 5개 (문자열 배열)
 6. source: 뉴스 출처명
+7. action: 이 거장의 현재 투자 행동. "BUY", "SELL", "HOLD" 중 하나.
+8. target_tickers: 이 거장이 주목하는 종목 코드 최대 3개. 예: ["AAPL", "005930", "TSLA"]
+9. sector: 이 거장이 주목하는 섹터. "기술", "금융", "에너지", "헬스케어", "소비재", "산업재" 중 하나.
+10. conviction_level: 확신도 1~5 (1=매우 낮음, 5=매우 확신).
 
 [응답 형식 — 아래 JSON만 출력. 설명문, 마크다운 금지.]
 {
@@ -103,7 +112,11 @@ async function analyzeGuruInsight(guru: typeof GURU_LIST[0]): Promise<GuruInsigh
   "sentiment": "CAUTIOUS",
   "reasoning": "현재 시장 밸류에이션이 역사적 평균을 크게 상회하고 있어, 새로운 대형 매수보다 현금 확보에 집중하는 모습입니다. 다만 이는 위기 대비가 아니라 더 좋은 기회를 기다리는 전략으로 해석됩니다.",
   "relevantAssets": ["AAPL", "BRK.B", "OXY"],
-  "source": "Bloomberg"
+  "source": "Bloomberg",
+  "action": "HOLD",
+  "target_tickers": ["AAPL", "OXY"],
+  "sector": "기술",
+  "conviction_level": 3
 }
 `;
 
@@ -112,6 +125,9 @@ async function analyzeGuruInsight(guru: typeof GURU_LIST[0]): Promise<GuruInsigh
     const responseText = await callGeminiWithSearch(prompt);
     const cleanJson = cleanJsonResponse(responseText);
     const parsed = JSON.parse(cleanJson);
+
+    const validActions = ['BUY', 'SELL', 'HOLD'];
+    const validSectors = ['기술', '금융', '에너지', '헬스케어', '소비재', '산업재'];
 
     return {
       guruName: String(parsed.guruName || guru.name),
@@ -125,6 +141,10 @@ async function analyzeGuruInsight(guru: typeof GURU_LIST[0]): Promise<GuruInsigh
       reasoning: String(parsed.reasoning || '분석 데이터를 불러오지 못했습니다.'),
       relevantAssets: Array.isArray(parsed.relevantAssets) ? parsed.relevantAssets.map(String) : [],
       source: String(parsed.source || ''),
+      action: validActions.includes(parsed.action) ? parsed.action : undefined,
+      target_tickers: Array.isArray(parsed.target_tickers) ? parsed.target_tickers.slice(0, 3).map(String) : undefined,
+      sector: validSectors.includes(parsed.sector) ? parsed.sector : undefined,
+      conviction_level: typeof parsed.conviction_level === 'number' && parsed.conviction_level >= 1 && parsed.conviction_level <= 5 ? parsed.conviction_level : undefined,
     };
   } catch (error) {
     console.error(`[Task C] ${guru.name} 분석 실패:`, error.message);
@@ -160,8 +180,7 @@ async function analyzeGuruInsight(guru: typeof GURU_LIST[0]): Promise<GuruInsigh
  * @returns { insights, marketContext }
  */
 async function analyzeGuruInsights(): Promise<GuruAnalysisResult> {
-  const today = new Date();
-  const dateStr = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`;
+  const dateStr = getKSTDateStr();
 
   console.log('[Task C] 투자 거장 인사이트 순차 분석 시작...');
 
@@ -200,7 +219,7 @@ async function analyzeGuruInsights(): Promise<GuruAnalysisResult> {
  * @param data - 분석 결과 (insights, marketContext)
  */
 async function upsertGuruInsights(data: GuruAnalysisResult): Promise<void> {
-  const today = new Date().toISOString().split('T')[0];
+  const today = getKSTDate();
 
   const { error } = await supabase
     .from('guru_insights')

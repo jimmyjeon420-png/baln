@@ -17,6 +17,12 @@ import supabase from '../services/supabase';
 
 export type PredictionCategory = 'stock' | 'crypto' | 'macro';
 
+export interface AiConsensus {
+  direction: 'YES' | 'NO';
+  confidence: number; // 0~100
+  reasoning_ko: string;
+}
+
 export interface WhaleSignal {
   score: number;           // 0~100
   direction: 'YES' | 'NO' | 'MIXED';
@@ -53,6 +59,7 @@ export interface PredictionItem {
   summary_ko: string | null;
   end_date: string | null;
   slug: string | null;
+  ai_consensus?: AiConsensus | null;
   updated_at: string;
   created_at: string;
 }

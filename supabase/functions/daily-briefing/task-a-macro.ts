@@ -263,13 +263,27 @@ ${realDataContext}
         { sector: 'consumer', name: '소비재' },
       ];
       const baseSentiment = parsed.macroSummary?.marketSentiment || 'NEUTRAL';
-      const sectorRows = sectors.map(s => ({
-        date: todayDate,
-        sector: s.sector,
-        sentiment: baseSentiment,
-        score: parsed.bitcoinAnalysis?.score ? Math.round(parsed.bitcoinAnalysis.score) : 50,
-        reasoning: `${s.name} 섹터 — ${dateStr} 기준 시장 전반 센티먼트 반영`,
-      }));
+      const baseScore = parsed.bitcoinAnalysis?.score ? Math.round(parsed.bitcoinAnalysis.score) : 50;
+      // 섹터별 가중치: 비트코인 상관관계에 따라 차등 적용
+      const sectorWeights: Record<string, number> = {
+        technology: 1.0,   // 기술주: 비트코인과 높은 상관관계
+        finance: 0.7,      // 금융: 중간 상관관계
+        energy: 0.5,       // 에너지: 낮은 상관관계
+        healthcare: 0.3,   // 헬스케어: 방어적 섹터
+        consumer: 0.6,     // 소비재: 중간 상관관계
+      };
+      const sectorRows = sectors.map(s => {
+        const weight = sectorWeights[s.sector] ?? 0.5;
+        // 가중치 적용: 50(중립)에서 baseScore까지의 편차를 가중치로 조절
+        const adjustedScore = Math.round(50 + (baseScore - 50) * weight);
+        return {
+          date: todayDate,
+          sector: s.sector,
+          sentiment: baseSentiment,
+          score: Math.max(0, Math.min(100, adjustedScore)),
+          reasoning: `${s.name} 섹터 — ${dateStr} 기준 시장 센티먼트 반영 (가중치 ${(weight * 100).toFixed(0)}%)`,
+        };
+      });
 
       const { error: sectorError } = await supabase
         .from('sector_sentiments')

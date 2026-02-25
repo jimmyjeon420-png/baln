@@ -14,8 +14,8 @@ import supabase from '../services/supabase';
 const STORAGE_KEY = '@baln:emotion_history';
 
 function getTodayString(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  // KST 기준 오늘 날짜 (UTC+9)
+  return new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().split('T')[0];
 }
 
 export interface EmotionEntry {

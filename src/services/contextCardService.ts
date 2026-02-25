@@ -20,12 +20,12 @@ import type {
 } from '../types/contextCard';
 
 /**
- * 로컬 날짜를 YYYY-MM-DD 형식으로 반환
- * UTC가 아닌 기기 로컬 시간 기준 (한국 기기 = KST)
+ * KST 기준 날짜를 YYYY-MM-DD 형식으로 반환
+ * Edge Function(centralKitchen)과 동일한 KST 기준 사용 → 날짜 불일치 방지
  */
 function getLocalDate(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const kst = new Date(Date.now() + 9 * 60 * 60 * 1000);
+  return kst.toISOString().split('T')[0];
 }
 
 // Re-export types for convenience
@@ -256,7 +256,7 @@ export async function getTodayContextCard(
     // 1단계: 오늘의 맥락 카드 조회 (최신 time_slot 우선)
     const { data: cardData, error: cardError } = await supabase
       .from('context_cards')
-      .select('*')
+      .select('id, date, headline, historical_context, macro_chain, political_context, institutional_behavior, sentiment, is_premium_only, market_data, created_at')
       .eq('date', today)
       .order('created_at', { ascending: false })
       .limit(1)
@@ -268,7 +268,7 @@ export async function getTodayContextCard(
       // 폴백: 가장 최근 맥락 카드 조회 (어제 또는 그 이전)
       const { data: latestCard, error: latestError } = await supabase
         .from('context_cards')
-        .select('*')
+        .select('id, date, headline, historical_context, macro_chain, political_context, institutional_behavior, sentiment, is_premium_only, market_data, created_at')
         .lt('date', today)
         .order('date', { ascending: false })
         .limit(1)
@@ -282,7 +282,7 @@ export async function getTodayContextCard(
       // 최근 카드의 유저 영향도 조회
       const { data: latestImpact } = await supabase
         .from('user_context_impacts')
-        .select('*')
+        .select('id, user_id, context_card_id, percent_change, health_score_change, impact_message, calculated_at')
         .eq('user_id', userId)
         .eq('context_card_id', latestCard.id)
         .maybeSingle();
@@ -333,7 +333,7 @@ export async function getTodayContextCard(
     // 2단계: 유저별 영향도 조회
     const { data: impactData, error: impactError } = await supabase
       .from('user_context_impacts')
-      .select('*')
+      .select('id, user_id, context_card_id, percent_change, health_score_change, impact_message, calculated_at')
       .eq('user_id', userId)
       .eq('context_card_id', cardData.id)
       .maybeSingle(); // 없어도 에러 아님
@@ -425,7 +425,7 @@ export async function getRecentContextCards(
     // 1단계: 최근 N일 맥락 카드 목록 (최신 time_slot 우선)
     const { data: cardsData, error: cardsError } = await supabase
       .from('context_cards')
-      .select('*')
+      .select('id, date, headline, historical_context, macro_chain, political_context, institutional_behavior, sentiment, is_premium_only, market_data, created_at')
       .gte('date', startDateStr)
       .lte('date', endDateStr)
       .order('date', { ascending: false })
@@ -444,7 +444,7 @@ export async function getRecentContextCards(
     const cardIds = cardsData.map((c) => c.id);
     const { data: impactsData, error: impactsError } = await supabase
       .from('user_context_impacts')
-      .select('*')
+      .select('id, user_id, context_card_id, percent_change, health_score_change, impact_message, calculated_at')
       .eq('user_id', userId)
       .in('context_card_id', cardIds);
 

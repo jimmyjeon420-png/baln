@@ -61,8 +61,7 @@ export interface StockQuantResult {
 async function analyzeStockBatch(
   stocks: typeof STOCK_LIST
 ): Promise<StockQuantResult[]> {
-  const today = new Date();
-  const dateStr = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`;
+  const dateStr = getKSTDateStr();
 
   const tickerList = stocks.map(s => `${s.ticker}(${s.name})`).join(', ');
 
@@ -233,13 +232,12 @@ export async function analyzeStockSubset(startIdx: number, endIdx: number): Prom
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
   console.log(`[Task B subset] ${savedCount}/${allResults.length}개 저장 완료 (${elapsed}초)`);
 
-  await logTaskResult({
-    functionName: 'daily-briefing',
-    taskName: `Task B (subset ${startIdx}-${endIdx})`,
-    status: 'SUCCESS',
-    elapsedMs: Date.now() - startTime,
-    resultSummary: { analyzed: allResults.length, saved: savedCount },
-  });
+  await logTaskResult(
+    `stocks_subset_${startIdx}_${endIdx}`,
+    'SUCCESS',
+    Date.now() - startTime,
+    { analyzed: allResults.length, saved: savedCount },
+  );
 
   return allResults;
 }

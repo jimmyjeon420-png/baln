@@ -488,7 +488,7 @@ ${snapshotContext}
           no_label: q.no_label || '아니오',
           deadline: deadline.toISOString(),
           status: 'active',
-          reward_credits: 2,
+          reward_credits: 3,
           difficulty: q.difficulty || 'medium',
           context_hint: q.context_hint || null,
           related_ticker: q.related_ticker || null,

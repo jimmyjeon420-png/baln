@@ -226,6 +226,12 @@ function classifyByKeywords(question: string, description: string): PredictionCa
 // Phase 3: Gemini 배치 처리 — 한국어 번역 + 카테고리 확정 + 영향 분석
 // ============================================================================
 
+interface AiConsensus {
+  direction: 'YES' | 'NO';
+  confidence: number; // 0~100
+  reasoning_ko: string;
+}
+
 interface GeminiAnalyzedMarket {
   polymarket_id: string;
   question_ko: string;
@@ -243,6 +249,7 @@ interface GeminiAnalyzedMarket {
   summary_ko: string | null;
   end_date: string | null;
   slug: string;
+  ai_consensus: AiConsensus | null;
 }
 
 async function callGeminiDirect(prompt: string): Promise<string> {
@@ -336,7 +343,12 @@ ${tickerRef}
     },
     "yes_label": "YES 라벨 한국어 (예: '오른다', '인하한다')",
     "no_label": "NO 라벨 한국어 (예: '내린다', '동결한다')",
-    "summary_ko": "한국 투자자에게 중요한 이유를 1~2문장으로 (포트폴리오 영향 관점)"
+    "summary_ko": "한국 투자자에게 중요한 이유를 1~2문장으로 (포트폴리오 영향 관점)",
+    "ai_consensus": {
+      "direction": "YES 또는 NO (이 예측이 실현될 가능성에 대한 AI 판단)",
+      "confidence": 75,
+      "reasoning_ko": "한 줄 근거(한국어, 예: '연준 금리 동결 가능성 높음')"
+    }
   }
 ]
 
@@ -364,6 +376,19 @@ ${tickerRef}
     const original = batch[idx];
     const category = validateCategory(item.category, original.pre_category);
 
+    // ai_consensus 유효성 검사
+    let aiConsensus: AiConsensus | null = null;
+    if (item.ai_consensus &&
+        (item.ai_consensus.direction === 'YES' || item.ai_consensus.direction === 'NO') &&
+        typeof item.ai_consensus.confidence === 'number' &&
+        typeof item.ai_consensus.reasoning_ko === 'string') {
+      aiConsensus = {
+        direction: item.ai_consensus.direction,
+        confidence: Math.min(100, Math.max(0, Math.round(item.ai_consensus.confidence))),
+        reasoning_ko: item.ai_consensus.reasoning_ko,
+      };
+    }
+
     results.push({
       polymarket_id: original.polymarket_id,
       question_ko: item.question_ko || original.question_en,
@@ -381,6 +406,7 @@ ${tickerRef}
       summary_ko: item.summary_ko || null,
       end_date: original.end_date,
       slug: original.slug,
+      ai_consensus: aiConsensus,
     });
   }
 
@@ -426,6 +452,7 @@ function createFallbackResult(market: ProcessedMarket): GeminiAnalyzedMarket {
     summary_ko: null,
     end_date: market.end_date,
     slug: market.slug,
+    ai_consensus: null,
   };
 }
 
@@ -455,6 +482,7 @@ async function upsertPredictions(
     summary_ko: p.summary_ko,
     end_date: p.end_date,
     slug: p.slug,
+    ai_consensus: p.ai_consensus,
     updated_at: new Date().toISOString(),
   }));
 

@@ -30,7 +30,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
 import { ContextLayerCard } from './ContextLayerCard';
-import type { ContextCardData } from '../../types/contextCard';
+import type { ContextCardData, PriceCatalyst } from '../../types/contextCard';
 
 // ============================================================================
 // Android LayoutAnimation 활성화
@@ -72,6 +72,8 @@ interface ContextCardFlatProps {
   updateTimeLabel?: string;
   /** 시간대 아이콘 이름 (Ionicons) */
   timeSlotIcon?: string;
+  /** 가격 촉매 (주목 종목 변동 원인) */
+  priceCatalysts?: PriceCatalyst[];
   data?: never;
   onClose?: never;
 }
@@ -126,6 +128,7 @@ interface NormalizedData {
   onClose?: () => void;
   updateTimeLabel?: string;
   timeSlotIcon?: string;
+  priceCatalysts?: PriceCatalyst[];
 }
 
 /** Props를 정규화된 내부 구조로 변환 */
@@ -151,6 +154,7 @@ function normalizeProps(props: ContextCardProps): NormalizedData {
       onClose: props.onClose,
       updateTimeLabel: (props as any).updateTimeLabel,
       timeSlotIcon: (props as any).timeSlotIcon,
+      priceCatalysts: d.priceCatalysts,
     };
   }
 
@@ -166,6 +170,7 @@ function normalizeProps(props: ContextCardProps): NormalizedData {
     onPressPremium: props.onPressPremium,
     updateTimeLabel: props.updateTimeLabel,
     timeSlotIcon: props.timeSlotIcon,
+    priceCatalysts: props.priceCatalysts,
   };
 }
 
@@ -187,6 +192,7 @@ export default function ContextCard(props: ContextCardProps) {
     onClose,
     updateTimeLabel,
     timeSlotIcon,
+    priceCatalysts,
   } = normalizeProps(props);
 
   return (
@@ -334,6 +340,43 @@ export default function ContextCard(props: ContextCardProps) {
             </View>
           </View>
         </ContextLayerCard>
+
+        {/* 가격 촉매 섹션 (데이터 있을 때만 렌더링) */}
+        {priceCatalysts && priceCatalysts.length > 0 && (
+          <View style={[s.catalystSection, { backgroundColor: colors.surface }]}>
+            <View style={s.catalystDivider} />
+            <View style={s.catalystHeader}>
+              <Ionicons name="bar-chart-outline" size={16} color={colors.textTertiary} />
+              <Text style={[s.catalystHeaderText, { color: colors.textTertiary }]}>
+                가격 촉매
+              </Text>
+            </View>
+            {priceCatalysts.map((item, index) => (
+              <View key={index} style={s.catalystItem}>
+                <View style={s.catalystRow}>
+                  <Text style={[s.catalystTicker, { color: colors.textPrimary }]}>
+                    {item.ticker}
+                  </Text>
+                  <Text
+                    style={[
+                      s.catalystChange,
+                      { color: item.change_percent >= 0 ? '#4CAF50' : '#CF6679' },
+                    ]}
+                  >
+                    {item.change_percent > 0 ? '+' : ''}
+                    {item.change_percent.toFixed(1)}%
+                  </Text>
+                </View>
+                <Text style={[s.catalystText, { color: colors.textSecondary }]}>
+                  {item.catalyst}
+                </Text>
+                <Text style={[s.catalystSource, { color: colors.textQuaternary }]}>
+                  {item.source}
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
       </View>
     </View>
   );
@@ -457,5 +500,57 @@ const s = StyleSheet.create({
   impactValue: {
     fontSize: 17,
     fontWeight: '600',
+  },
+
+  // 가격 촉매
+  catalystSection: {
+    marginTop: 4,
+    paddingHorizontal: 4,
+    paddingBottom: 4,
+  },
+  catalystDivider: {
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    marginBottom: 10,
+  },
+  catalystHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 10,
+    paddingHorizontal: 4,
+  },
+  catalystHeaderText: {
+    fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  catalystItem: {
+    paddingHorizontal: 4,
+    paddingVertical: 6,
+    marginBottom: 2,
+  },
+  catalystRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 3,
+  },
+  catalystTicker: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  catalystChange: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  catalystText: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 2,
+  },
+  catalystSource: {
+    fontSize: 12,
   },
 });

@@ -78,12 +78,13 @@ const MAX_RECOVERY_DAYS = 3;
 /**
  * 오늘 날짜 (YYYY-MM-DD)
  *
- * 주의: streakService.ts의 getTodayString()과 동일한 방식(UTC 기준)을 사용해야 합니다.
- * streakService가 lastVisitDate를 UTC 기준으로 저장하므로,
- * 여기서도 UTC를 사용해야 daysMissed 계산이 정확합니다.
+ * 주의: streakService.ts의 getTodayString()과 동일한 방식(KST 기준)을 사용해야 합니다.
+ * streakService가 lastVisitDate를 KST 기준으로 저장하므로,
+ * 여기서도 KST를 사용해야 daysMissed 계산이 정확합니다.
  */
 function getTodayKST(): string {
-  return new Date().toISOString().split('T')[0];
+  // KST 기준 오늘 날짜 (UTC+9)
+  return new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().split('T')[0];
 }
 
 /** 두 날짜 사이의 일수 차이 계산 */

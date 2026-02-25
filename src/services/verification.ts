@@ -15,9 +15,10 @@ import {
   FRAUD_DETECTION_CONFIG,
 } from '../types/verification';
 
-// Gemini AI 초기화
+// Gemini AI 초기화 (모듈 레벨 싱글턴)
 // ⚠️ 보안: EXPO_PUBLIC_ 키는 클라이언트 번들에 포함됩니다. 프로덕션에서는 서버 프록시 권장.
-const genAI = new GoogleGenerativeAI(process.env.EXPO_PUBLIC_GEMINI_API_KEY || '');
+const GEMINI_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY || '';
+const genAI = GEMINI_KEY ? new GoogleGenerativeAI(GEMINI_KEY) : null;
 
 /**
  * AI OCR로 증권사 스크린샷에서 자산 정보 추출
@@ -26,6 +27,7 @@ export const extractAssetsFromScreenshot = async (
   base64Image: string
 ): Promise<{ items: OcrExtractedItem[]; total: number }> => {
   try {
+    if (!genAI) throw new Error('Gemini API 키가 설정되지 않았습니다');
     const model = genAI.getGenerativeModel({ model: process.env.EXPO_PUBLIC_GEMINI_MODEL || 'gemini-3-flash-preview' });
 
     const prompt = `

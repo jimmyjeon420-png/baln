@@ -27,6 +27,13 @@ import { fetchRealMarketData, buildRealDataContext, type RealMarketData } from '
 // 타입 정의
 // ============================================================================
 
+export interface PriceCatalyst {
+  ticker: string;
+  change_percent: number;
+  catalyst: string;
+  source: string;
+}
+
 export interface ContextCardData {
   headline: string;
   historical_context: string;
@@ -34,6 +41,7 @@ export interface ContextCardData {
   political_context: string;
   institutional_behavior: string;
   sentiment: 'calm' | 'caution' | 'alert';
+  price_catalysts?: PriceCatalyst[];
 }
 
 export interface ContextCardResult {
@@ -151,12 +159,13 @@ ${macroContext}
 - "한국 경제 정치 뉴스 오늘"
 - "미국 경제지표 발표 오늘"
 
-[5겹 분석 레이어]
+[5겹 분석 레이어 + 가격 촉매]
 1. 역사적 맥락: 과거 유사 패턴 + 회복 기간 (반드시 연도/퍼센트 포함, 2~3문장)
 2. 거시경제 체인: 오늘 시장을 움직인 인과관계 (배열 4~6단계, 각 단계에 수치 포함)
 3. 정치 맥락: 관세/선거/지정학 등 정치 이벤트의 시장 영향 (2~3문장, 없으면 "현재 주요 정치 리스크는 제한적" 명시)
 4. 기관 행동: 외국인/기관 방향·규모·의미 (2~3문장, 반드시 방향 포함)
 5. 시장 분위기: VIX 실값 기준 calm(<15) / caution(15~25) / alert(>25)
+6. 가격 촉매: 오늘 한국 시장에서 주목할 종목 3~5개의 가격 변동 원인. 각 항목은 {ticker: "종목코드", change_percent: 변동률숫자, catalyst: "한국어 한 줄 원인 설명", source: "뉴스출처"} 형태의 배열.
 
 [응답 형식 — JSON만 출력. 설명문·마크다운·코드블록 절대 금지.]
 {
@@ -165,7 +174,11 @@ ${macroContext}
   "macro_chain": ["미국 CPI 2.4% 발표(예상 하회)", "인플레이션 완화 확인 (FRB)", "금리 인하 기대감 유지", "기술주 중심 매수세 유입 (Yahoo Finance)", "코스피 연동 상승"],
   "political_context": "트럼프 행정부의 대중 관세 25% 부과 발표로 단기 불확실성이 높아졌지만, 역사적으로 무역 분쟁은 1~2분기 변동성 확대 후 안정화 패턴을 보였습니다. (출처: Bloomberg)",
   "institutional_behavior": "외국인이 코스피에서 3거래일 연속 순매수(+2,300억원 추정)를 기록하고 있습니다. 이는 달러 약세와 신흥국 자금 유입 흐름과 일치하며, 패닉이 아닌 전략적 매수입니다.",
-  "sentiment": "caution"
+  "sentiment": "caution",
+  "price_catalysts": [
+    {"ticker": "005930", "change_percent": 2.3, "catalyst": "HBM3 수주 확대 소식으로 외국인 매수 집중", "source": "한국경제"},
+    {"ticker": "000660", "change_percent": -1.5, "catalyst": "D램 가격 하락 우려로 차익실현 매물 출회", "source": "매일경제"}
+  ]
 }
 `;
 
@@ -213,6 +226,9 @@ ${macroContext}
         political_context: parsed.political_context || '',
         institutional_behavior: parsed.institutional_behavior || '',
         sentiment: parsed.sentiment || 'calm',
+        market_data: {
+          price_catalysts: Array.isArray(parsed.price_catalysts) ? parsed.price_catalysts : [],
+        },
         updated_at: new Date().toISOString(),
       },
       { onConflict: 'date,time_slot' }

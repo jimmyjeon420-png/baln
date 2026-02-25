@@ -46,4 +46,8 @@ coverage/
 # Backup files
 *.bak
 
+# Build artifacts
+*.ipa
+*.cer
+
 nul

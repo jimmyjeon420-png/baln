@@ -85,6 +85,11 @@ export interface GuruInsight {
   reasoning: string;         // AI 분석 2-3문장
   relevantAssets: string[];  // 관련 티커
   source: string;            // 뉴스 출처
+  // 구조화 분석 필드 (선택)
+  action?: 'BUY' | 'SELL' | 'HOLD';
+  target_tickers?: string[];
+  sector?: string;
+  conviction_level?: number;
 }
 
 /** guru_insights 테이블 행 */
@@ -160,6 +165,8 @@ export interface CentralKitchenResult {
   stockReports: StockQuantReport[];
   /** 거시경제 인사이트 */
   marketInsight: DailyMarketInsight | null;
+  /** 이 분석에 사용된 데이터 출처 (3~5개) */
+  sources?: string[];
 }
 
 // ============================================================================
@@ -175,7 +182,7 @@ export async function getTodayMarketInsight(): Promise<DailyMarketInsight | null
 
   const { data, error } = await supabase
     .from('daily_market_insights')
-    .select('*')
+    .select('date, macro_summary, bitcoin_analysis, market_sentiment, cfo_weather, vix_level, global_liquidity')
     .eq('date', today)
     .single();
 
@@ -202,7 +209,7 @@ export async function getTodayStockReports(
 
   const { data, error } = await supabase
     .from('stock_quant_reports')
-    .select('*')
+    .select('ticker, date, valuation_score, signal, analysis, metrics, sector')
     .eq('date', today)
     .in('ticker', tickers);
 
@@ -297,6 +304,48 @@ function buildBriefingFromKitchen(
 }
 
 // ============================================================================
+// 출처 구성 헬퍼
+// ============================================================================
+
+/**
+ * 거시경제 인사이트 + 퀀트 리포트에서 출처 레이블 3~5개 추출
+ * "이 분석에 사용된 데이터"를 사용자에게 표시하기 위한 짧은 레이블 배열
+ */
+function buildSources(
+  insight: DailyMarketInsight,
+  stockReports: StockQuantReport[]
+): string[] {
+  const sources: string[] = [];
+
+  // 1) 거시경제 핵심 지표 (항상 포함)
+  sources.push('한국은행 / Fed 금리 데이터');
+
+  // 2) VIX (시장 변동성 지수)
+  if (insight.vix_level != null) {
+    sources.push(`VIX ${insight.vix_level.toFixed(1)}`);
+  }
+
+  // 3) 글로벌 유동성 언급 여부
+  if (insight.global_liquidity) {
+    sources.push('글로벌 유동성 지표');
+  }
+
+  // 4) 종목 퀀트 리포트 섹터 (중복 제거)
+  const sectors = [...new Set(stockReports.map(r => r.sector).filter(Boolean))];
+  if (sectors.length > 0) {
+    sources.push(`${sectors.slice(0, 2).join(' / ')} 퀀트 분석`);
+  }
+
+  // 5) 비트코인 분석 포함 여부
+  if (insight.bitcoin_analysis?.score != null) {
+    sources.push('BTC 온체인 데이터');
+  }
+
+  // 최대 5개로 제한
+  return sources.slice(0, 5);
+}
+
+// ============================================================================
 // 메인 API: Central Kitchen 우선 → 라이브 Gemini 폴백
 // ============================================================================
 
@@ -329,11 +378,16 @@ export async function loadMorningBriefing(
       if (__DEV__) console.log('[Central Kitchen] ✅ DB 데이터 사용 (빠른 경로)');
       const briefing = buildBriefingFromKitchen(insight, stockReports, portfolio);
       if (__DEV__) console.log('[디버그] briefing.macroSummary:', briefing.macroSummary);
+
+      // 출처 구성: 거시경제 하이라이트 + 종목 섹터 + 글로벌 유동성 지표
+      const sources = buildSources(insight, stockReports);
+
       return {
         source: 'central-kitchen',
         morningBriefing: briefing,
         stockReports,
         marketInsight: insight,
+        sources,
       };
     } else {
       if (__DEV__) console.log('[Central Kitchen] ❌ DB 검증 실패 → 라이브 폴백');
@@ -576,7 +630,7 @@ export async function getTodayGuruInsights(): Promise<GuruInsightsData | null> {
 
   const { data, error } = await supabase
     .from('guru_insights')
-    .select('*')
+    .select('date, insights, market_context')
     .eq('date', today)
     .single();
 

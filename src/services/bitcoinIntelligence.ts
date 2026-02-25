@@ -168,6 +168,20 @@ async function fetchMarketDominance(): Promise<number> {
   }
 }
 
+// 모듈 레벨 싱글턴 (매 호출마다 재생성 방지)
+const _genAI = API_KEY ? new GoogleGenerativeAI(API_KEY) : null;
+const _btcModel = _genAI
+  ? _genAI.getGenerativeModel({
+      model: MODEL_NAME,
+      tools: [
+        {
+          // @ts-ignore - Gemini 2.0 Google Search Tool
+          google_search: {},
+        },
+      ],
+    })
+  : null;
+
 /** Gemini AI 비트코인 분석 (Google Search 그라운딩) */
 async function analyzeBitcoinWithGemini(): Promise<GeminiInsight> {
   const defaultInsight: GeminiInsight = {
@@ -179,19 +193,10 @@ async function analyzeBitcoinWithGemini(): Promise<GeminiInsight> {
     keyEvents: [],
   };
 
-  if (!API_KEY) return defaultInsight;
+  if (!_btcModel) return defaultInsight;
 
   try {
-    const genAI = new GoogleGenerativeAI(API_KEY);
-    const model = genAI.getGenerativeModel({
-      model: MODEL_NAME,
-      tools: [
-        {
-          // @ts-ignore - Gemini 2.0 Google Search Tool
-          google_search: {},
-        },
-      ],
-    });
+    const model = _btcModel;
 
     const prompt = `
 당신은 Goldman Sachs 디지털 자산 리서치팀 수석 분석가입니다.

@@ -11,6 +11,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../hooks/useTheme';
 import { useGuruStyleChange } from '../../hooks/useGuruStyleChange';
 import { useInvestmentStandards } from '../../hooks/useInvestmentStandards';
@@ -19,6 +20,7 @@ import { useBadgeNotification } from '../../hooks/useBadgeNotification';
 export default function CrossTabBanners() {
   const router = useRouter();
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const { hasChange, fromName, toName, dismiss: dismissGuru } = useGuruStyleChange();
   const { standards } = useInvestmentStandards();
   const { notification: badgeNotif, dismiss: dismissBadge } = useBadgeNotification();
@@ -27,7 +29,7 @@ export default function CrossTabBanners() {
   if (!hasBanners) return null;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { top: insets.top + 56 }]}>
       {/* 투자 철학 변경 알림 */}
       {hasChange && (
         <View style={[styles.banner, { backgroundColor: `${colors.primary}15` }]}>
@@ -104,7 +106,7 @@ export default function CrossTabBanners() {
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    top: 50,
+    // top is applied dynamically: insets.top + 56 (DailyProgressBanner height + padding)
     left: 16,
     right: 16,
     zIndex: 100,

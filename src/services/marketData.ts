@@ -248,14 +248,12 @@ async function getCryptoPrice(ticker: string): Promise<PriceData | null> {
  * 배치 가격 조회 (여러 티커)
  */
 export async function getBatchPrices(tickers: string[]): Promise<PriceData[]> {
-  const results: PriceData[] = [];
+  const settled = await Promise.allSettled(
+    tickers.map(ticker => getRealTimePrice(ticker))
+  );
 
-  for (const ticker of tickers) {
-    const price = await getRealTimePrice(ticker);
-    if (price) {
-      results.push(price);
-    }
-  }
-
-  return results;
+  return settled
+    .filter((r): r is PromiseFulfilledResult<PriceData | null> => r.status === 'fulfilled')
+    .map(r => r.value)
+    .filter((v): v is PriceData => v !== null);
 }

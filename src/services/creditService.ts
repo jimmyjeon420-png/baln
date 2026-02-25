@@ -40,7 +40,7 @@ export async function getMyCredits(): Promise<UserCredits | null> {
 
     const { data, error } = await supabase
       .from('user_credits')
-      .select('*')
+      .select('user_id, balance, lifetime_purchased, lifetime_spent, last_bonus_at, updated_at')
       .eq('user_id', user.id)
       .single();
 
@@ -241,7 +241,7 @@ export async function getCreditHistory(
 
     const { data, error } = await supabase
       .from('credit_transactions')
-      .select('*')
+      .select('id, user_id, amount, type, feature_type, feature_ref_id, metadata, created_at')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(limit);

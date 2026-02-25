@@ -149,13 +149,11 @@ function CrisisBanner({
   const showPremiumCTA =
     !isPremium && (crisisLevel === 'severe' || crisisLevel === 'extreme');
 
-  const styles = createStyles(colors, config);
-
   return (
     <Animated.View
       style={[
         styles.container,
-        { opacity, transform: [{ translateY }] },
+        { backgroundColor: colors.surface, borderColor: config.accentColor + '30', opacity, transform: [{ translateY }] },
       ]}
       accessibilityRole="alert"
       accessibilityLabel={`${config.levelLabel}: ${crisisMessage}`}
@@ -246,88 +244,81 @@ function CrisisBanner({
 }
 
 // =============================================================================
-// 스타일 팩토리 (테마 + 위기 수준에 따라 동적 생성)
+// 스타일 (정적 — 테마/위기 수준 의존 값은 인라인 스타일로 적용)
 // =============================================================================
 
-function createStyles(
-  colors: ReturnType<typeof useTheme>['colors'],
-  config: CrisisConfig,
-) {
-  return StyleSheet.create({
-    container: {
-      backgroundColor: colors.surface,
-      borderRadius: 14,
-      marginHorizontal: 16,
-      marginBottom: 8,
-      padding: 14,
-      borderWidth: 1,
-      borderColor: config.accentColor + '30', // ~18% 불투명도 테두리
-      overflow: 'hidden',
-    },
-    row: {
-      flexDirection: 'row',
-      alignItems: 'center',
-    },
-    icon: {
-      marginRight: 10,
-      flexShrink: 0,
-    },
-    textBlock: {
-      flex: 1,
-      marginRight: 10,
-    },
-    titleRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      flexWrap: 'nowrap',
-      marginBottom: 2,
-    },
-    levelLabel: {
-      fontSize: 14,
-      fontWeight: '700',
-      letterSpacing: 0.2,
-    },
-    marketInfo: {
-      fontSize: 13,
-      fontWeight: '500',
-    },
-    crisisMessage: {
-      fontSize: 13,
-      lineHeight: 18,
-    },
-    ctaButton: {
-      flexShrink: 0,
-      paddingVertical: 5,
-      paddingHorizontal: 10,
-      borderRadius: 8,
-      borderWidth: 1,
-    },
-    ctaText: {
-      fontSize: 13,
-      fontWeight: '600',
-    },
-    reassurance: {
-      fontSize: 12,
-      marginTop: 8,
-      // 아이콘 너비(22px) + 오른쪽 마진(10px)에 맞춰 들여쓰기
-      marginLeft: 32,
-    },
-    premiumCTA: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginTop: 6,
-      marginLeft: 32,
-      alignSelf: 'flex-start',
-    },
-    premiumLockIcon: {
-      marginRight: 4,
-    },
-    premiumCTAText: {
-      fontSize: 12,
-      fontWeight: '600',
-    },
-  });
-}
+const styles = StyleSheet.create({
+  container: {
+    borderRadius: 14,
+    marginHorizontal: 16,
+    marginBottom: 8,
+    padding: 14,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  icon: {
+    marginRight: 10,
+    flexShrink: 0,
+  },
+  textBlock: {
+    flex: 1,
+    marginRight: 10,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'nowrap',
+    marginBottom: 2,
+  },
+  levelLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
+  marketInfo: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  crisisMessage: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  ctaButton: {
+    flexShrink: 0,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  ctaText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  reassurance: {
+    fontSize: 12,
+    marginTop: 8,
+    // 아이콘 너비(22px) + 오른쪽 마진(10px)에 맞춰 들여쓰기
+    marginLeft: 32,
+  },
+  premiumCTA: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 6,
+    marginLeft: 32,
+    alignSelf: 'flex-start',
+  },
+  premiumLockIcon: {
+    marginRight: 4,
+  },
+  premiumCTAText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+});
 
 // React.memo로 불필요한 리렌더링 방지
 // (crisisLevel, crisisMessage, primaryMarket, primaryChange, onViewContext가 같으면 리렌더 스킵)

@@ -135,6 +135,32 @@ export default function PredictionCard({ item, onPress }: PredictionCardProps) {
         )}
       </View>
 
+      {/* AI 컨센서스 배지 */}
+      {item.ai_consensus && (
+        <View style={[styles.aiConsensusBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View style={styles.aiConsensusHeader}>
+            <Text style={[styles.aiLabel, { color: colors.textSecondary }]}>🤖 AI 의견</Text>
+            <View style={[
+              styles.directionBadge,
+              { backgroundColor: item.ai_consensus.direction === 'YES' ? '#4CAF5020' : '#CF667920' },
+            ]}>
+              <Text style={[
+                styles.directionText,
+                { color: item.ai_consensus.direction === 'YES' ? '#4CAF50' : '#CF6679' },
+              ]}>
+                {item.ai_consensus.direction}
+              </Text>
+            </View>
+            <Text style={[styles.confidenceText, { color: colors.textTertiary }]}>
+              확신도 {item.ai_consensus.confidence}%
+            </Text>
+          </View>
+          <Text style={[styles.reasoningText, { color: colors.textSecondary }]}>
+            {item.ai_consensus.reasoning_ko}
+          </Text>
+        </View>
+      )}
+
       {/* 포트폴리오 영향 배지 */}
       <PortfolioImpactBadge
         relatedTickers={item.related_tickers}
@@ -198,5 +224,37 @@ const styles = StyleSheet.create({
   },
   infoText: {
     fontSize: 13,
+  },
+  aiConsensusBox: {
+    borderRadius: 10,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    gap: 4,
+  },
+  aiConsensusHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  aiLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  directionBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  directionText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  confidenceText: {
+    fontSize: 12,
+  },
+  reasoningText: {
+    fontSize: 12,
+    lineHeight: 18,
   },
 });

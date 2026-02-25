@@ -32,6 +32,13 @@ function guruNameToId(name: string): string | null {
   return null;
 }
 
+// 행동 배지 색상
+const ACTION_COLORS: Record<string, string> = {
+  BUY: '#4CAF50',
+  SELL: '#CF6679',
+  HOLD: '#FFD700',
+};
+
 // 센티먼트 필터 옵션
 type SentimentFilter = 'ALL' | 'BULLISH' | 'BEARISH' | 'CAUTIOUS' | 'NEUTRAL';
 
@@ -81,9 +88,9 @@ export default function GuruInsightsScreen() {
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+            <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.title}>투자 거장 인사이트</Text>
+          <Text style={[styles.title, { color: colors.textPrimary }]}>투자 거장 인사이트</Text>
           <View style={styles.headerBadge}>
             <Text style={styles.headerBadgeText}>GURU</Text>
           </View>
@@ -101,9 +108,9 @@ export default function GuruInsightsScreen() {
       {/* 헤더 */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+          <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.title}>투자 거장 인사이트</Text>
+        <Text style={[styles.title, { color: colors.textPrimary }]}>투자 거장 인사이트</Text>
         <View style={styles.headerBadge}>
           <Text style={styles.headerBadgeText}>GURU</Text>
         </View>
@@ -242,6 +249,45 @@ function GuruCard({ guru }: { guru: GuruInsight }) {
           </Text>
         </View>
       </View>
+
+      {/* 구조화 메타데이터: 행동 배지 + 섹터 + 확신도 */}
+      {(guru.action || guru.sector || guru.conviction_level) && (
+        <View style={styles.metaRow}>
+          {guru.action && (
+            <View style={[styles.actionBadge, { backgroundColor: ACTION_COLORS[guru.action] + '25', borderColor: ACTION_COLORS[guru.action] }]}>
+              <Text style={[styles.actionBadgeText, { color: ACTION_COLORS[guru.action] }]}>
+                {guru.action}
+              </Text>
+            </View>
+          )}
+          {guru.sector && (
+            <View style={styles.sectorChip}>
+              <Text style={styles.sectorChipText}>{guru.sector}</Text>
+            </View>
+          )}
+          {guru.conviction_level && (
+            <View style={styles.convictionRow}>
+              {[1, 2, 3, 4, 5].map((i) => (
+                <Text key={i} style={[styles.convictionDot, { color: i <= guru.conviction_level! ? '#4CAF50' : '#333333' }]}>
+                  ●
+                </Text>
+              ))}
+            </View>
+          )}
+        </View>
+      )}
+
+      {/* 주목 종목 (target_tickers) */}
+      {guru.target_tickers && guru.target_tickers.length > 0 && (
+        <View style={styles.targetTickerRow}>
+          <Text style={styles.targetTickerLabel}>주목</Text>
+          {guru.target_tickers.map((ticker: string) => (
+            <View key={ticker} style={styles.targetTickerChip}>
+              <Text style={styles.targetTickerText}>{ticker}</Text>
+            </View>
+          ))}
+        </View>
+      )}
 
       {/* 최근 행동 */}
       <View style={styles.section}>
@@ -429,6 +475,71 @@ const styles = StyleSheet.create({
   },
   sentimentText: {
     fontSize: 12,
+    fontWeight: '700',
+  },
+
+  // 구조화 메타데이터
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 10,
+    flexWrap: 'wrap',
+  },
+  actionBadge: {
+    paddingHorizontal: 9,
+    paddingVertical: 3,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  actionBadgeText: {
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  sectorChip: {
+    paddingHorizontal: 9,
+    paddingVertical: 3,
+    borderRadius: 8,
+    backgroundColor: '#2A2A2A',
+  },
+  sectorChipText: {
+    fontSize: 12,
+    color: '#AAAAAA',
+    fontWeight: '500',
+  },
+  convictionRow: {
+    flexDirection: 'row',
+    gap: 3,
+  },
+  convictionDot: {
+    fontSize: 10,
+  },
+  targetTickerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 12,
+    flexWrap: 'wrap',
+  },
+  targetTickerLabel: {
+    fontSize: 11,
+    color: '#666666',
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  targetTickerChip: {
+    backgroundColor: '#1A2A1A',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#2A4A2A',
+  },
+  targetTickerText: {
+    fontSize: 12,
+    color: '#4CAF50',
     fontWeight: '700',
   },
 

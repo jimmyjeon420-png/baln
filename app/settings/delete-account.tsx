@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * 계정 삭제 확인 화면
  *
@@ -24,7 +23,6 @@ import {
   ActivityIndicator,
   ScrollView,
   Share,
-  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -486,14 +484,14 @@ function LossItem({
   label,
   value,
 }: {
-  icon: string;
+  icon: keyof typeof Ionicons.glyphMap;
   label: string;
   value: string;
 }) {
   return (
     <View style={styles.lossItem}>
       <View style={styles.lossItemLeft}>
-        <Ionicons name={icon as any} size={20} color="#CF6679" />
+        <Ionicons name={icon} size={20} color="#CF6679" />
         <Text style={styles.lossItemLabel}>{label}</Text>
       </View>
       <Text style={styles.lossItemValue}>{value}</Text>

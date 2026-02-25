@@ -14,7 +14,7 @@
 //   - 앱에서 alert 카드를 별도 UI로 강조 표시
 // ============================================================================
 
-import { supabase, callGeminiWithSearch, logTaskResult, sleep } from './_shared.ts';
+import { supabase, callGeminiWithSearch, logTaskResult, sleep, getKSTDate } from './_shared.ts';
 
 // ============================================================================
 // 타입 정의
@@ -238,7 +238,7 @@ ${crisisDesc}
     // ── Step 4: context_cards 테이블에 위기 맥락 카드 UPSERT (sentiment='alert') ──
     if (allContextSummaries.length > 0) {
       try {
-        const todayDate = new Date().toISOString().split('T')[0];
+        const todayDate = getKSTDate();
         const triggeredNames = crisisIndices.map((c: any) =>
           c._isVix ? `VIX ${c.change_percent}` : `${c.name} ${c.change_percent}%`
         );
@@ -255,11 +255,13 @@ ${crisisDesc}
           '맥락 이해로 패닉셀 방지',
         ].filter(Boolean) as string[];
 
+        // 위기 카드는 time_slot='crisis'로 저장하여 일반 카드와 분리
         const { error: upsertError } = await supabase
           .from('context_cards')
           .upsert(
             {
               date: todayDate,
+              time_slot: 'crisis',
               headline,
               historical_context: allContextSummaries.join('\n\n'),
               macro_chain: macroChain,
@@ -279,7 +281,7 @@ ${crisisDesc}
               },
               updated_at: new Date().toISOString(),
             },
-            { onConflict: 'date' }
+            { onConflict: 'date,time_slot' }
           );
 
         if (upsertError) {

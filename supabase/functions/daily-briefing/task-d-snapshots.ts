@@ -31,6 +31,7 @@ import {
   supabase,
   getAssetBracket,
   getTier,
+  getKSTDate,
   logTaskResult,
 } from './_shared.ts';
 
@@ -71,8 +72,11 @@ export interface SnapshotResult {
  */
 export async function takePortfolioSnapshots(): Promise<SnapshotResult> {
   const startTime = Date.now();
-  const today = new Date().toISOString().split('T')[0];
-  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+  const today = getKSTDate();
+  // KST 기준 어제 날짜 계산
+  const kstNow = new Date(Date.now() + 9 * 60 * 60 * 1000);
+  const kstYesterday = new Date(kstNow.getTime() - 86400000);
+  const yesterday = kstYesterday.toISOString().split('T')[0];
 
   try {
     console.log('[Task D] 포트폴리오 스냅샷 시작...');

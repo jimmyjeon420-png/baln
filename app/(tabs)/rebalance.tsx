@@ -617,7 +617,7 @@ export default function CheckupScreen() {
           <Text style={[s.emptyTitle, { color: colors.textPrimary }]}>
             {isNetworkIssue ? '데이터를 불러올 수 없습니다' : '포트폴리오를 등록해주세요'}
           </Text>
-          <Text style={s.emptyDesc}>
+          <Text style={[s.emptyDesc, { color: colors.textSecondary }]}>
             {isNetworkIssue
               ? 'WiFi 연결을 확인하고\n아래 버튼을 눌러 다시 시도해주세요'
               : <>보유 자산을 등록하시면{'\n'}<Text style={{ color: '#4CAF50', fontWeight: '700' }}>AI 진단 + 맞춤 처방전</Text>을 받아보실 수 있습니다</>
@@ -867,7 +867,7 @@ const s = StyleSheet.create({
   },
   emptyDesc: {
     fontSize: 17,
-    color: '#9E9E9E',
+    color: '#888888',
     textAlign: 'center',
     lineHeight: 24,
     marginBottom: 32,

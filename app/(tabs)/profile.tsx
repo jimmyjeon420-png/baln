@@ -217,7 +217,10 @@ export default function ProfileScreen() {
       <Text style={[styles.menuLabel, { color: colors.textPrimary }]}>{item.label}</Text>
       {item.badge && (
         <View style={[styles.badge, { backgroundColor: item.badgeColor || colors.primary }]}>
-          <Text style={[styles.badgeText, { color: colors.textPrimary }]}>{item.badge}</Text>
+          <Text style={[
+            styles.badgeText,
+            { color: (item.badgeColor?.length ?? 0) > 7 ? colors.textPrimary : '#000000' },
+          ]}>{item.badge}</Text>
         </View>
       )}
       <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />

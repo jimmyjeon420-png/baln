@@ -128,6 +128,11 @@ export default function GuruDetailScreen() {
   );
 
   const isMyPhilosophy = guruStyle === profile.id;
+  const actionColors: Record<string, string> = {
+    BUY: '#4CAF50',
+    SELL: '#CF6679',
+    HOLD: '#FFD700',
+  };
   const sentimentColors: Record<string, string> = {
     BULLISH: '#4CAF50',
     BEARISH: '#CF6679',
@@ -201,6 +206,69 @@ export default function GuruDetailScreen() {
           </View>
           <Text style={styles.cardBody}>{profile.track}</Text>
         </View>
+
+        {/* ── 구조화 분석 카드 (structured data 있을 때만) ── */}
+        {todayInsight?.action && (
+          <View style={styles.card}>
+            <View style={styles.cardTitleRow}>
+              <Text style={styles.cardIcon}>📈</Text>
+              <Text style={styles.cardTitle}>구조화 분석</Text>
+            </View>
+
+            {/* 행동 배지 */}
+            <View style={styles.structuredRow}>
+              <Text style={styles.structuredLabel}>행동</Text>
+              <View style={[
+                styles.actionBadge,
+                {
+                  backgroundColor: (actionColors[todayInsight.action] || '#FFD700') + '25',
+                  borderColor: actionColors[todayInsight.action] || '#FFD700',
+                }
+              ]}>
+                <Text style={[styles.actionBadgeText, { color: actionColors[todayInsight.action] || '#FFD700' }]}>
+                  {todayInsight.action}
+                </Text>
+              </View>
+            </View>
+
+            {/* 주목 종목 */}
+            {todayInsight.target_tickers && todayInsight.target_tickers.length > 0 && (
+              <View style={styles.structuredRow}>
+                <Text style={styles.structuredLabel}>주목 종목</Text>
+                <View style={styles.structuredTickerRow}>
+                  {todayInsight.target_tickers.map((ticker: string) => (
+                    <View key={ticker} style={[styles.structuredTickerChip, { backgroundColor: profile.accentColor + '20' }]}>
+                      <Text style={[styles.structuredTickerText, { color: profile.accentColor }]}>{ticker}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            {/* 섹터 */}
+            {todayInsight.sector && (
+              <View style={styles.structuredRow}>
+                <Text style={styles.structuredLabel}>섹터</Text>
+                <Text style={styles.structuredValue}>{todayInsight.sector}</Text>
+              </View>
+            )}
+
+            {/* 확신도 별점 */}
+            {todayInsight.conviction_level && (
+              <View style={styles.structuredRow}>
+                <Text style={styles.structuredLabel}>확신도</Text>
+                <View style={styles.starRow}>
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <Text key={i} style={[styles.starIcon, { color: i <= todayInsight.conviction_level! ? profile.accentColor : '#333333' }]}>
+                      {i <= todayInsight.conviction_level! ? '★' : '☆'}
+                    </Text>
+                  ))}
+                  <Text style={styles.convictionLabel}>({todayInsight.conviction_level}/5)</Text>
+                </View>
+              </View>
+            )}
+          </View>
+        )}
 
         {/* ── 오늘의 인사이트 ── */}
         <View style={styles.card}>
@@ -404,6 +472,64 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     lineHeight: 21,
   },
+  // ── 구조화 분석 ──
+  structuredRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 12,
+    flexWrap: 'wrap',
+  },
+  structuredLabel: {
+    fontSize: 13,
+    color: '#6B7280',
+    fontWeight: '600',
+    minWidth: 60,
+  },
+  structuredValue: {
+    fontSize: 14,
+    color: '#D1D5DB',
+    fontWeight: '500',
+  },
+  actionBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  actionBadgeText: {
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  structuredTickerRow: {
+    flexDirection: 'row',
+    gap: 6,
+    flexWrap: 'wrap',
+  },
+  structuredTickerChip: {
+    paddingHorizontal: 9,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  structuredTickerText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  starRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  starIcon: {
+    fontSize: 18,
+  },
+  convictionLabel: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginLeft: 4,
+  },
+
   // ── LIVE 뱃지 ──
   liveBadge: {
     backgroundColor: '#FF453A20',

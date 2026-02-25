@@ -54,7 +54,9 @@ async function callGemini(prompt: string, timeoutMs: number = 30000): Promise<st
       throw new Error('Gemini API가 빈 응답을 반환했습니다');
     }
 
-    const rawText = data.candidates[0]?.content?.parts?.[0]?.text || '';
+    // 모든 parts의 텍스트를 합쳐서 반환 (그라운딩 응답에 여러 part가 있을 수 있음)
+    const allParts = data.candidates[0]?.content?.parts || [];
+    const rawText = allParts.map((p: any) => p.text || '').join('');
     if (!rawText) {
       throw new Error('Gemini API 응답에 텍스트가 없습니다');
     }
@@ -93,7 +95,9 @@ serve(async (req: Request) => {
   }
 
   try {
-    const today = new Date().toISOString().split('T')[0];
+    // KST 기준 날짜
+    const kst = new Date(Date.now() + 9 * 60 * 60 * 1000);
+    const today = kst.toISOString().split('T')[0];
     console.log(`[맥락 카드 생성] 시작: ${today}`);
 
     // Step 1: Gemini로 5겹 맥락 분석
@@ -164,17 +168,24 @@ serve(async (req: Request) => {
     console.log('[맥락 카드 생성] Gemini 응답 성공:', card.headline);
 
     // Step 2: DB에 저장 (upsert — 같은 날짜면 덮어쓰기)
+    // KST 시간 기반 time_slot 자동 결정 (3시간 간격)
+    const kstHour = (kst.getUTCHours()) % 24; // 이미 KST로 변환됨
+    const slotHour = Math.floor(kstHour / 3) * 3;
+    const timeSlot = `h${String(slotHour).padStart(2, '0')}`;
+
     const { data: savedCard, error: insertError } = await supabase
       .from('context_cards')
       .upsert({
         date: today,
+        time_slot: timeSlot,
         headline: card.headline || '오늘의 시장 분석',
         sentiment: card.sentiment || 'calm',
         historical_context: card.historical_context || '',
         macro_chain: card.macro_chain || [],
         political_context: card.political_context || '',
         institutional_behavior: card.institutional_behavior || '',
-      }, { onConflict: 'date' })
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'date,time_slot' })
       .select()
       .single();
 

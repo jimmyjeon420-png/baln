@@ -8,6 +8,14 @@
 /** 센티먼트 타입 (시장 분위기) */
 export type ContextCardSentiment = 'calm' | 'caution' | 'alert';
 
+/** 가격 촉매 (주목할 종목의 가격 변동 원인) */
+export interface PriceCatalyst {
+  ticker: string;
+  change_percent: number;
+  catalyst: string;
+  source: string;
+}
+
 /** DB 맥락 카드 (context_cards 테이블) */
 export interface ContextCard {
   id: string;
@@ -21,8 +29,9 @@ export interface ContextCard {
   is_premium_only: boolean;             // 프리미엄 잠금 여부
   market_data: Record<string, any>;     // 추가 시장 데이터
   created_at: string;
-  time_slot?: 'morning' | 'afternoon' | 'evening';  // 시간대 (하루 3회)
+  time_slot?: string;  // 시간대 (h00~h21 3시간 간격, 또는 레거시 morning/afternoon/evening)
   updated_at?: string;  // 마지막 업데이트 시각
+  price_catalysts?: PriceCatalyst[];    // 가격 촉매 (주목 종목 변동 원인)
 }
 
 /** 유저별 영향도 (user_context_impacts 테이블) */
@@ -81,24 +90,10 @@ export interface ContextCardData {
 
   /** Premium 콘텐츠 여부 (3-4번 레이어 잠금) */
   isPremiumContent: boolean;
+
+  /** 가격 촉매 — 오늘 주목할 종목 변동 원인 */
+  priceCatalysts?: PriceCatalyst[];
 }
-
-/** 맥락 카드 시간대 */
-export type ContextCardTimeSlot = 'morning' | 'afternoon' | 'evening';
-
-/** 시간대별 라벨 */
-export const TIME_SLOT_LABELS: Record<ContextCardTimeSlot, string> = {
-  morning: '오전',
-  afternoon: '오후',
-  evening: '저녁',
-} as const;
-
-/** 시간대별 아이콘 (Ionicons) */
-export const TIME_SLOT_ICONS: Record<ContextCardTimeSlot, string> = {
-  morning: 'sunny-outline',
-  afternoon: 'partly-sunny-outline',
-  evening: 'moon-outline',
-} as const;
 
 /**
  * 센티먼트별 색상 매핑

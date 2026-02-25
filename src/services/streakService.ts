@@ -43,8 +43,8 @@ const DEFAULT_STREAK: StreakData = {
  * 오늘 날짜를 YYYY-MM-DD 형식으로 반환
  */
 function getTodayString(): string {
-  const today = new Date();
-  return today.toISOString().split('T')[0];
+  // KST 기준 오늘 날짜 (UTC+9)
+  return new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().split('T')[0];
 }
 
 /**

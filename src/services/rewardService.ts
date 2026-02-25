@@ -58,16 +58,15 @@ const KEYS = {
 // 유틸리티
 // ============================================================================
 
-/** 오늘 날짜 키 (YYYY-MM-DD) */
+/** 오늘 날짜 키 (YYYY-MM-DD, KST 기준) */
 function getTodayKey(): string {
-  return new Date().toISOString().slice(0, 10);
+  return new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
 }
 
-/** 어제 날짜 키 */
+/** 어제 날짜 키 (KST 기준) */
 function getYesterdayKey(): string {
-  const d = new Date();
-  d.setDate(d.getDate() - 1);
-  return d.toISOString().slice(0, 10);
+  const kstNow = Date.now() + 9 * 60 * 60 * 1000;
+  return new Date(kstNow - 86400000).toISOString().slice(0, 10);
 }
 
 /** add_credits RPC 호출 (보상 타입, 최대 2회 재시도) */

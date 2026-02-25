@@ -66,6 +66,8 @@ interface AIAnalysisData {
   riskAnalysis: RiskAnalysisResult | null;
   /** Central Kitchen 결과 소스 ('central-kitchen' | 'live-gemini') */
   source: string;
+  /** 이 분석에 사용된 데이터 출처 레이블 (3~5개) */
+  sources?: string[];
 }
 
 /**
@@ -175,6 +177,7 @@ export async function fetchAIAnalysis(
     morningBriefing: validatedBriefing,
     riskAnalysis: validatedRisk,
     source: kitchenResult?.source ?? 'failed',
+    sources: kitchenResult?.sources,
   };
 
   // [이승건: 최종 디버그] 반환값 확인
@@ -253,6 +256,7 @@ export function useSharedAnalysis(portfolioAssets: PortfolioAsset[]) {
     morningBriefing: query.data?.morningBriefing ?? null,
     riskAnalysis: query.data?.riskAnalysis ?? null,
     source: query.data?.source ?? '',
+    sources: query.data?.sources,
   };
 }
 

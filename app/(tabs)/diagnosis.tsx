@@ -40,6 +40,7 @@ import FreePeriodBanner from '../../src/components/FreePeriodBanner';
 import { isFreePeriod } from '../../src/config/freePeriod';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DisclaimerBanner from '../../src/components/common/DisclaimerBanner';
+import SourceChips from '../../src/components/home/SourceChips';
 
 const DIAGNOSIS_DISCLAIMER_KEY = '@baln:diagnosis_disclaimer_dismissed';
 
@@ -99,6 +100,7 @@ export default function DiagnosisScreen() {
     riskAnalysis: analysisResult,
     isFetched: analysisReady,
     refresh: refreshAnalysis,
+    sources,
   } = useSharedAnalysis(portfolio);
 
   // 또래 비교: 내 자산 구간의 Panic Shield 평균 점수
@@ -345,6 +347,11 @@ export default function DiagnosisScreen() {
               <Ionicons name="chatbubble-ellipses" size={16} color="#4CAF50" />
               <Text style={[styles.cfoMessageText, { color: colors.textPrimary }]}>{morningBriefing.cfoWeather.message}</Text>
             </View>
+
+            {/* 분석 데이터 출처 */}
+            {sources && sources.length > 0 && (
+              <SourceChips sources={sources} />
+            )}
           </View>
         )}
 
