@@ -18,6 +18,10 @@ import {
   StreakMessage,
 } from '../services/streakService';
 import { cancelStreakWarningForToday } from '../services/pushNotificationService';
+import {
+  addStreakProsperityPoints,
+  handleStreakBreak,
+} from '../services/streakProsperityBridge';
 
 export interface UseStreakReturn {
   currentStreak: number;       // 현재 연속 일수
@@ -46,15 +50,30 @@ export function useStreak(): UseStreakReturn {
   const checkStreak = async () => {
     try {
       setIsLoading(true);
+
+      // 이전 스트릭 데이터 먼저 읽기 (checkAndUpdateStreak가 덮어쓰기 전)
+      const prevStreakData = await getStreakData();
+
       const result = await checkAndUpdateStreak();
       setData(result.data);
       setIsNewDay(result.updated);
       setIsNewStreak(result.isNewStreak);
 
       // P2.1: 오늘 처음 방문한 경우 스트릭 경고 알림 취소
-      // (오늘 방문했으니 21:00 경고 알림은 필요 없음)
       if (result.updated) {
         cancelStreakWarningForToday().catch(() => {});
+
+        // P2.2: 스트릭 ↔ 마을 번영도 연동
+        if (!result.isNewStreak && result.data.currentStreak > 1) {
+          // 스트릭 유지 → 번영도 +5 포인트
+          addStreakProsperityPoints().catch(() => {});
+        } else if (result.isNewStreak && prevStreakData.lastVisitDate) {
+          // 스트릭 리셋 → 이전 방문일 기준으로 빠진 일수 계산 → 번영도 감소 + 구루 편지
+          const lastDate = new Date(prevStreakData.lastVisitDate);
+          const today = new Date();
+          const daysMissed = Math.floor((today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+          handleStreakBreak(daysMissed).catch(() => {});
+        }
       }
     } catch (error) {
       console.warn('[useStreak] checkStreak 에러:', error);

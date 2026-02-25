@@ -26,6 +26,7 @@ import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import supabase from './supabase';
 import { getStreakData } from './streakService';
+import { getCurrentLanguage } from '../locales';
 
 // ============================================================================
 // Expo Push Token 획득
@@ -169,13 +170,34 @@ export async function scheduleMorningBriefingNotification(): Promise<void> {
     // 기존 아침 알림 취소 (중복 예약 방지)
     await Notifications.cancelScheduledNotificationAsync('morning-briefing').catch(() => {});
 
-    // 매일 아침 7:30 알림 예약
+    // 구루 배달 메시지 로테이션 (매일 다른 구루가 배달, 로케일 인식)
+    const lang = getCurrentLanguage();
+    const guruMessages = lang === 'ko'
+      ? [
+          { title: '버핏 올빼미의 아침 배달', body: '어젯밤 시장을 분석했어요. 오늘의 맥락 카드를 확인해보세요.' },
+          { title: '달리오 사슴이 뉴스를 가져왔어요', body: '거시경제 흐름이 바뀌고 있어요. 5분만 투자해볼까요?' },
+          { title: '캐시 여우의 혁신 리포트', body: '기술주에 변화가 있어요! 마을에서 확인해보세요.' },
+          { title: '린치 곰의 숨은 인사이트', body: '일상 속에서 투자 기회를 발견했어요. 함께 볼까요?' },
+          { title: '막스 거북이의 신중한 분석', body: '시장 사이클을 점검했어요. 오늘의 맥락을 읽어보세요.' },
+        ]
+      : [
+          { title: 'Buffett Owl\'s Morning Delivery', body: 'Last night\'s markets analyzed. Check today\'s Context Card.' },
+          { title: 'Dalio\'s Deer Brought the News', body: 'Macro trends are shifting. Invest 5 minutes today?' },
+          { title: 'Cathie Fox\'s Innovation Report', body: 'Tech stocks are moving! Check the village for insights.' },
+          { title: 'Lynch Bear\'s Hidden Insight', body: 'An everyday investment opportunity spotted. Want to look together?' },
+          { title: 'Marks Turtle\'s Careful Analysis', body: 'Market cycle check complete. Read today\'s context.' },
+        ];
+    // 요일 기반 로테이션
+    const dayIndex = new Date().getDay() % guruMessages.length;
+    const msg = guruMessages[dayIndex];
+
+    // 매일 아침 7:30 알림 예약 — 마을 구루 배달 스타일
     await Notifications.scheduleNotificationAsync({
       identifier: 'morning-briefing',
       content: {
-        title: '오늘의 시장 맥락',
-        body: '어제 시장에서 무슨 일이 있었는지 확인하세요. 5분이면 충분합니다!',
-        data: { type: 'morning-briefing' },
+        title: msg.title,
+        body: msg.body,
+        data: { type: 'morning-briefing', deepLink: 'baln://village' },
         sound: true,
       },
       trigger: {
@@ -185,7 +207,7 @@ export async function scheduleMorningBriefingNotification(): Promise<void> {
       },
     });
 
-    if (__DEV__) console.log('[Push] 아침 맥락 카드 알림 예약 완료 (07:30)');
+    if (__DEV__) console.log('[Push] 구루 배달 알림 예약 완료 (07:30)');
   } catch (e) {
     console.warn('[Push] 아침 알림 예약 실패:', e);
   }
@@ -304,11 +326,19 @@ export async function scheduleStreakWarningNotification(userId: string): Promise
 
     // 5. 매일 21:00(기기 로컬 타임존 기준)에 알림 예약
     //    한국 사용자 기기는 KST이므로 21:00 = 오후 9시
+    const streakLang = getCurrentLanguage();
+    const streakTitle = streakLang === 'ko'
+      ? '오늘 아직 방문 안 하셨네요!'
+      : 'You haven\'t visited today!';
+    const streakBody = streakLang === 'ko'
+      ? `🔥 ${currentStreak}일 연속 기록이 끊어지기 3시간 전입니다. 오늘 맥락 카드를 확인해보세요!`
+      : `🔥 Your ${currentStreak}-day streak ends in 3 hours. Check today's Context Card!`;
+
     await Notifications.scheduleNotificationAsync({
       identifier: 'streak-warning',
       content: {
-        title: '오늘 아직 방문 안 하셨네요!',
-        body: `🔥 ${currentStreak}일 연속 기록이 끊어지기 3시간 전입니다. 오늘 맥락 카드를 확인해보세요!`,
+        title: streakTitle,
+        body: streakBody,
         data: { type: 'streak-warning', streak: currentStreak, userId },
         sound: true,
       },

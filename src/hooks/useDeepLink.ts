@@ -10,7 +10,8 @@
  * - 현재는 독립 파일로 생성하며, 사용자가 나중에 _layout.tsx에 통합
  *
  * 지원하는 딥링크 패턴:
- * - baln://context/{date}       → 오늘 탭 (맥락 카드)
+ * - baln://context/{date}       → 광장 탭 (맥락 카드)
+ * - baln://village              → 마을 탭
  * - baln://prediction/{pollId}  → 예측 게임 화면
  * - baln://achievement/{badgeId} → 업적 화면
  * - baln://community/{postId}   → 커뮤니티 게시글 상세
@@ -41,8 +42,13 @@ function handleDeepLink(url: string, router: any) {
 
     switch (type) {
       case 'context':
-        // 맥락 카드 딥링크 → 오늘 탭(홈)으로 이동
+        // 맥락 카드 딥링크 → 광장 탭(홈)으로 이동
         router.replace('/(tabs)');
+        break;
+
+      case 'village':
+        // 마을 딥링크 → 마을 탭으로 이동 (아침 푸시 알림에서 사용)
+        router.replace('/(tabs)/village');
         break;
 
       case 'prediction':

@@ -22,6 +22,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
 import type { ThemeColors } from '../../styles/colors';
 import { success, lightTap } from '../../services/hapticService';
+import { GuruPredictionComment } from './GuruPredictionComment';
+import { useLocale } from '../../context/LocaleContext';
 
 // ============================================================================
 // Props 인터페이스
@@ -195,6 +197,7 @@ function YesterdayReviewCard({
   onStartPrediction,
 }: YesterdayReviewCardProps) {
   const { colors } = useTheme();
+  const { language } = useLocale();
   const styles = React.useMemo(() => createStyles(colors), [colors]);
   const COLORS = colors; // 하위 호환성
 
@@ -298,6 +301,14 @@ function YesterdayReviewCard({
           </View>
         )}
       </View>
+
+      {/* 구루 코멘트 (적중률 기반 피드백 + 명언) */}
+      <GuruPredictionComment
+        correctCount={correctCount}
+        totalCount={totalCount}
+        colors={COLORS}
+        locale={language}
+      />
 
       {/* 구분선 */}
       <View style={styles.divider} />

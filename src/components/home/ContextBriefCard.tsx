@@ -32,6 +32,8 @@ import { useTheme } from '../../hooks/useTheme';
 import { useTrackEvent } from '../../hooks/useAnalytics';
 import { useHabitLoopTracking } from '../../hooks/useHabitLoopTracking';
 import type { ThemeColors } from '../../styles/colors';
+import { getLocaleCode } from '../../utils/formatters';
+import { useLocale } from '../../context/LocaleContext';
 
 // Android LayoutAnimation 활성화
 if (
@@ -170,11 +172,11 @@ const SENTIMENT_BG_COLORS = {
   alert: 'rgba(207, 102, 121, 0.12)',
 };
 
-function formatTrustTime(timestamp?: string | null): string {
-  if (!timestamp) return '시간 미표기';
+function formatTrustTime(timestamp: string | null | undefined, timeUnknown: string): string {
+  if (!timestamp) return timeUnknown;
   const dt = new Date(timestamp);
-  if (Number.isNaN(dt.getTime())) return '시간 미표기';
-  return dt.toLocaleString('ko-KR', {
+  if (Number.isNaN(dt.getTime())) return timeUnknown;
+  return dt.toLocaleString(getLocaleCode(), {
     month: 'numeric',
     day: 'numeric',
     hour: '2-digit',
@@ -182,10 +184,13 @@ function formatTrustTime(timestamp?: string | null): string {
   });
 }
 
-function simplifySourceLabel(source?: string | null): string {
-  if (!source) return 'baln 분석 엔진';
-  if (source.includes('fallback') || source.includes('폴백')) return '표준 맥락 폴백';
-  if (source.includes('Google')) return 'baln + Google Search';
+function simplifySourceLabel(
+  source: string | null | undefined,
+  labels: { fallback: string; google: string; default: string },
+): string {
+  if (!source) return labels.default;
+  if (source.includes('fallback') || source.includes('폴백')) return labels.fallback;
+  if (source.includes('Google')) return labels.google;
   return source;
 }
 
@@ -260,6 +265,12 @@ interface LayerSectionProps {
   styles: any;
   /** 색상 객체 */
   COLORS: any;
+  /** 잠금 상태에 표시할 가격 라벨 (로케일 인식) */
+  premiumPriceLabel?: string;
+  /** 잠금 상태 블러 프리뷰 텍스트 */
+  lockedPreviewText?: string;
+  /** Premium CTA 버튼 라벨 */
+  premiumCtaLabel?: string;
 }
 
 function LayerSection({
@@ -275,6 +286,9 @@ function LayerSection({
   children,
   styles,
   COLORS,
+  premiumPriceLabel = '',
+  lockedPreviewText = '',
+  premiumCtaLabel = 'Premium',
 }: LayerSectionProps) {
   return (
     <View style={styles.layerContainer}>
@@ -283,11 +297,7 @@ function LayerSection({
         style={styles.layerHeader}
         onPress={isLocked ? onPressPremium : onToggle}
         activeOpacity={0.7}
-        accessibilityLabel={
-          isLocked
-            ? `${title} 레이어 — 프리미엄 잠금`
-            : `${title} 레이어 ${isExpanded ? '접기' : '펼치기'}`
-        }
+        accessibilityLabel={`${title} ${isLocked ? '— Premium locked' : (isExpanded ? 'collapse' : 'expand')}`}
         accessibilityRole="button"
       >
         {/* 좌측: 번호 배지 + 아이콘 + 제목 */}
@@ -332,20 +342,18 @@ function LayerSection({
           style={styles.lockedContent}
           onPress={onPressPremium}
           activeOpacity={0.7}
-          accessibilityLabel={`${title} 프리미엄 구독으로 잠금 해제`}
+          accessibilityLabel={`${title} — unlock with Premium`}
           accessibilityRole="button"
         >
           <View style={styles.lockedBlur}>
             <Text style={styles.lockedBlurText}>
-              {layerNum === 4
-                ? '기관 투자자의 움직임과 의미를...'
-                : '당신의 포트폴리오에 미치는 영향을...'}
+              {lockedPreviewText}
             </Text>
           </View>
           <View style={styles.lockedCTA}>
             <Ionicons name="star" size={14} color={COLORS.premium.gold} />
-            <Text style={styles.lockedCTAText}>Premium으로 전체 보기</Text>
-            <Text style={styles.lockedCTAPrice}>월 4,900</Text>
+            <Text style={styles.lockedCTAText}>{premiumCtaLabel}</Text>
+            <Text style={styles.lockedCTAPrice}>{premiumPriceLabel}</Text>
           </View>
         </TouchableOpacity>
       )}
@@ -444,6 +452,7 @@ const PortfolioImpactVisual = React.memo(function PortfolioImpactVisual({
   isCalculating?: boolean;
 }) {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const styles = React.useMemo(() => createStyles(colors), [colors]);
   const [timedOut, setTimedOut] = React.useState(false);
   const timeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -474,7 +483,7 @@ const PortfolioImpactVisual = React.memo(function PortfolioImpactVisual({
       <View style={styles.impactContainer}>
         <Ionicons name="time-outline" size={28} color="#FF9800" />
         <Text style={[styles.impactMessage, { textAlign: 'center', marginTop: 8 }]}>
-          영향도 데이터를 가져올 수 없습니다.{'\n'}내일 아침 다시 확인해주세요.
+          {t('context_brief.impact_timeout')}
         </Text>
       </View>
     );
@@ -484,7 +493,7 @@ const PortfolioImpactVisual = React.memo(function PortfolioImpactVisual({
   if (isCalculating) {
     return (
       <View style={[styles.impactContainer, { alignItems: 'center', paddingVertical: 16 }]}>
-        <Text style={styles.impactMessage}>영향도 계산 중...</Text>
+        <Text style={styles.impactMessage}>{t('context_brief.impact_calculating')}</Text>
       </View>
     );
   }
@@ -500,7 +509,7 @@ const PortfolioImpactVisual = React.memo(function PortfolioImpactVisual({
           <Text style={[styles.impactBigNumber, { color: changeColor }]}>
             {isPositive ? '+' : ''}{percentChange.toFixed(1)}%
           </Text>
-          <Text style={styles.impactBigLabel}>자산 변동</Text>
+          <Text style={styles.impactBigLabel}>{t('context_brief.impact_asset_change')}</Text>
         </View>
 
         <View style={styles.impactMetaColumn}>
@@ -524,9 +533,9 @@ const PortfolioImpactVisual = React.memo(function PortfolioImpactVisual({
               }
             />
             <Text style={styles.impactMetaText}>
-              건강 점수{' '}
+              {t('context_brief.impact_health_label')}{' '}
               {healthScoreChange === 0
-                ? '변동 없음'
+                ? t('context_brief.impact_health_no_change')
                 : `${healthScoreChange > 0 ? '+' : ''}${healthScoreChange}`}
             </Text>
           </View>
@@ -644,11 +653,13 @@ export default React.forwardRef<View, ContextBriefCardProps>(
     ref
   ) => {
     const { colors } = useTheme();
+    const { t } = useLocale();
     const track = useTrackEvent();
     const { trackStep } = useHabitLoopTracking();
     const hasTrackedRead = useRef(false);
     const styles = React.useMemo(() => createStyles(colors), [colors]);
     const COLORS = colors; // 하위 호환성을 위해 COLORS 별칭 생성
+    const premiumPriceLabel = t('premium.price_monthly');
 
     const sentimentColor = SENTIMENT_COLORS[sentiment];
     const sentimentBg = SENTIMENT_BG_COLORS[sentiment];
@@ -787,8 +798,8 @@ export default React.forwardRef<View, ContextBriefCardProps>(
         </View>
 
         <View style={styles.trustMetaRow}>
-          <Text style={styles.trustMetaText}>출처: {simplifySourceLabel(dataSource)}</Text>
-          <Text style={styles.trustMetaText}>생성: {formatTrustTime(dataTimestamp)}</Text>
+          <Text style={styles.trustMetaText}>출처: {simplifySourceLabel(dataSource, { fallback: '폴백', google: 'Gemini', default: '—' })}</Text>
+          <Text style={styles.trustMetaText}>생성: {formatTrustTime(dataTimestamp, '—')}</Text>
           {freshnessLabel && <Text style={styles.trustMetaText}>신선도: {freshnessLabel}</Text>}
           {typeof confidenceScore === 'number' && (
             <Text style={styles.trustMetaText}>신뢰도: {confidenceScore}점(추정)</Text>
@@ -881,6 +892,7 @@ export default React.forwardRef<View, ContextBriefCardProps>(
             onPressPremium={onLearnMore}
             styles={styles}
             COLORS={COLORS}
+            premiumPriceLabel={premiumPriceLabel}
           >
             <Text style={styles.layerBodyText}>
               {institutionalBehavior || '기관 투자자 데이터를 분석 중입니다...'}
@@ -899,6 +911,7 @@ export default React.forwardRef<View, ContextBriefCardProps>(
             onPressPremium={onLearnMore}
             styles={styles}
             COLORS={COLORS}
+            premiumPriceLabel={premiumPriceLabel}
           >
             {portfolioImpact ? (
               <PortfolioImpactVisual

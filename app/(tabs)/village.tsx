@@ -45,6 +45,7 @@ import EventBanner from '../../src/components/village/EventBanner';
 import WeatherBadge from '../../src/components/common/WeatherBadge';
 import { CharacterAvatar } from '../../src/components/character/CharacterAvatar';
 import { VillageTutorialOverlay } from '../../src/components/village/VillageTutorialOverlay';
+import { VillageCheckInReward } from '../../src/components/village/VillageCheckInReward';
 
 // 동물의숲 스타일 배경 레이어 (하늘→구름→지면→나무→가구→캐릭터 순)
 import { VillageClouds } from '../../src/components/village/VillageClouds';
@@ -463,6 +464,12 @@ export default function VillageScreen() {
         onChat={handleGuruChat}
         onGift={handleGuruGift}
         onViewProfile={handleGuruViewProfile}
+        colors={colors}
+        locale={language}
+      />
+
+      {/* ── 마을 출석 보상 팝업 (하루 1회) ────────────────────────────────── */}
+      <VillageCheckInReward
         colors={colors}
         locale={language}
       />
