@@ -39,8 +39,10 @@ async function callRoundtableGemini(systemPrompt: string, userPrompt: string): P
   });
 
   if (error) throw new Error(`Gemini 호출 실패: ${error.message}`);
-  if (!data?.result) throw new Error('빈 응답');
-  return typeof data.result === 'string' ? data.result : JSON.stringify(data.result);
+  // Edge Function 응답: { success, data: { result: text } }
+  const rawResult = data?.data?.result ?? data?.result;
+  if (!rawResult) throw new Error('빈 응답');
+  return typeof rawResult === 'string' ? rawResult : JSON.stringify(rawResult);
 }
 
 function parseJsonResponse<T>(text: string): T {

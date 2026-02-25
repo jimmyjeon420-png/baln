@@ -1229,6 +1229,25 @@ serve(async (req: Request) => {
         break;
       }
 
+      // ════════════════════════════════════════════════════════════════════
+      // 범용 프롬프트 패스스루 (마을 대화, 뉴스 반응, 라운드테이블 등)
+      // body: { prompt, systemPrompt, type, lang }
+      // ════════════════════════════════════════════════════════════════════
+      case 'village_conversation':
+      case 'news_reaction':
+      case 'roundtable':
+      case 'guru_chat': {
+        const genericPrompt = (body as any).prompt || '';
+        const genericSystemPrompt = (body as any).systemPrompt || '';
+        const fullPrompt = genericSystemPrompt
+          ? `${genericSystemPrompt}\n\n${genericPrompt}`
+          : genericPrompt;
+        const responseText = await callGeminiWithSearch(fullPrompt, 30000, 1);
+        // 클라이언트가 data.result로 접근하므로 { result: text } 형태로 반환
+        result = { result: responseText };
+        break;
+      }
+
       default:
         throw new Error(`Unknown request type: ${(body as any).type}`);
     }

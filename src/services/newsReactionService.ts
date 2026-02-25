@@ -159,9 +159,11 @@ ${marketContext ? `[오늘 시장 맥락]\n${marketContext}\n` : ''}
 
     if (error) throw new Error(`Gemini 호출 실패: ${error.message}`);
 
-    const resultText = typeof data?.result === 'string'
-      ? data.result
-      : JSON.stringify(data?.result || '');
+    // Edge Function 응답: { success, data: { result: text } }
+    const rawResult = data?.data?.result ?? data?.result;
+    const resultText = typeof rawResult === 'string'
+      ? rawResult
+      : JSON.stringify(rawResult || '');
 
     const cleaned = resultText
       .replace(/```json\s*/gi, '')
