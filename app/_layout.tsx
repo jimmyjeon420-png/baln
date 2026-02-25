@@ -78,6 +78,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [welcomeCredits, setWelcomeCredits] = useState(10);
   const [showAIConsent, setShowAIConsent] = useState(false);
+  const lastRedirectRef = useRef<string | null>(null); // 중복 리다이렉트 방지
 
   // ★ 인증 완료 전에는 데이터 훅을 실행하지 않음 (콜드 스타트 레이스 컨디션 방지)
   // loading=true이거나 user=null이면 enabled: false로 쿼리 자체를 차단
@@ -110,10 +111,16 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     const inOnboarding = segments[0] === 'onboarding';
 
     if (!user && !inAuthGroup) {
-      // 로그인되지 않았고, 로그인 페이지가 아니면 로그인으로 리다이렉트
-      router.replace('/login');
+      // 중복 리다이렉트 방지 — 이미 /login으로 보냈으면 재호출하지 않음
+      if (lastRedirectRef.current !== '/login') {
+        lastRedirectRef.current = '/login';
+        router.replace('/login');
+      }
       return;
     }
+
+    // 리다이렉트 성공 후 플래그 리셋
+    lastRedirectRef.current = null;
 
     if (!user) return;
 
@@ -150,7 +157,9 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [user, loading, segments, router]);
+    // router는 유틸리티 객체 — 변경에 반응할 필요 없음 (무한 루프 방지)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, loading, segments]);
 
   // ★ 인증 로딩 중에는 자식을 렌더링하지 않음 (콜드 스타트 레이스 컨디션 방지)
   // BrandSplash는 AuthGate 외부(RootLayout)에서 렌더되므로 사용자는 스플래시를 봄
