@@ -21,6 +21,7 @@ import {
   ActivityIndicator,
   ScrollView,
   Platform,
+  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -43,6 +44,12 @@ import GuruDetailSheet from '../../src/components/village/GuruDetailSheet';
 import EventBanner from '../../src/components/village/EventBanner';
 import WeatherBadge from '../../src/components/common/WeatherBadge';
 import { CharacterAvatar } from '../../src/components/character/CharacterAvatar';
+
+// 동물의숲 스타일 배경 레이어 (하늘→구름→지면→나무→가구→캐릭터 순)
+import { VillageClouds } from '../../src/components/village/VillageClouds';
+import { VillageGroundLayer } from '../../src/components/village/VillageGroundLayer';
+import { VillageScenery } from '../../src/components/village/VillageScenery';
+import { VillageFurniture } from '../../src/components/village/VillageFurniture';
 
 // Character config for name lookups
 import { GURU_CHARACTER_CONFIGS } from '../../src/data/guruCharacterConfig';
@@ -105,6 +112,7 @@ export default function VillageScreen() {
   const router = useRouter();
   const timeOfDayTheme = useTimeOfDay();
   const { sentiment } = useMarketSentiment();
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
 
   // Analytics
   useScreenTracking('village');
@@ -223,6 +231,12 @@ export default function VillageScreen() {
         timeOfDay={mappedTimeOfDay}
         colors={colors}
       >
+        {/* ── 동물의숲 배경 레이어 (하늘 위에 순서대로) ────────────── */}
+        <VillageClouds
+          timeOfDay={mappedTimeOfDay}
+          weather={weather?.condition}
+        />
+
         <SafeAreaView style={styles.safeArea} edges={['top']}>
           {/* ── Header Bar (translucent) ──────────────────────────────── */}
           <View style={[styles.header, { backgroundColor: colors.surface + '88' }]}>
@@ -285,6 +299,25 @@ export default function VillageScreen() {
 
           {/* ── Village Map Area (~70% of screen) ─────────────────────── */}
           <View style={styles.villageMap}>
+            {/* 레이어 순서: 지면 → 나무/덤불 → 가구 → 캐릭터 */}
+            <VillageGroundLayer
+              width={screenWidth}
+              height={screenHeight * 0.5}
+              timeOfDay={mappedTimeOfDay}
+              prosperityLevel={prosperityLevel}
+            />
+            <VillageScenery
+              width={screenWidth}
+              height={screenHeight * 0.5}
+              timeOfDay={mappedTimeOfDay}
+            />
+            <VillageFurniture
+              width={screenWidth}
+              height={screenHeight * 0.5}
+              timeOfDay={mappedTimeOfDay}
+              prosperityLevel={prosperityLevel}
+            />
+
             {positions.map((pos) => {
               const guruState = guruStates.get(pos.guruId);
               const config = GURU_CHARACTER_CONFIGS[pos.guruId];
