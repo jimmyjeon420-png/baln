@@ -22,6 +22,7 @@ import { EggPhase, EggCycleAnalysis, InvestmentAction } from '../types/kostolany
 import { EGG_CYCLE_PHASES, PHASE_TRANSITIONS } from '../constants/eggCycleData';
 import { useRateCycleEvidence } from '../hooks/useSharedAnalysis';
 import type { RateCycleEvidence, EvidenceItem, EconIndicator, ConfidenceFactor } from '../services/centralKitchen';
+import { getLocaleCode } from '../utils/formatters';
 
 // ══════════════════════════════════════════
 // Props
@@ -777,7 +778,7 @@ const KostolanyEggCard: React.FC<KostolanyEggCardProps> = ({
                   {/* 생성 시각 */}
                   {evidence.generatedAt && (
                     <Text style={styles.evidenceTimestamp}>
-                      데이터 기준: {new Date(evidence.generatedAt).toLocaleString('ko-KR')}
+                      데이터 기준: {new Date(evidence.generatedAt).toLocaleString(getLocaleCode())}
                     </Text>
                   )}
                 </>

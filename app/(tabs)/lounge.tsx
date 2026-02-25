@@ -51,6 +51,7 @@ import {
   LOUNGE_POST_THRESHOLD,
 } from '../../src/types/community';
 import { formatAssetAmount, formatCommunityDisplayTag } from '../../src/utils/communityUtils';
+import { getLocaleCode } from '../../src/utils/formatters';
 import { Gathering } from '../../src/types/database';
 import { useTheme } from '../../src/hooks/useTheme';
 import supabase, { getCurrentUser } from '../../src/services/supabase';
@@ -88,7 +89,7 @@ const GATHERING_CATEGORY_FILTERS: { key: Gathering['category'] | 'all'; label: s
 
 async function runLoungeDiagnostic(): Promise<string> {
   const results: string[] = [];
-  const ts = new Date().toLocaleTimeString('ko-KR');
+  const ts = new Date().toLocaleTimeString(getLocaleCode());
   results.push(`[VIP 라운지 진단] ${ts}\n`);
 
   // 1. Auth 세션

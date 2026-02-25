@@ -11,6 +11,7 @@ import { useQuery } from '@tanstack/react-query';
 import { priceService } from '../../services/PriceService';
 import { AssetClass } from '../../types/price';
 import { useTheme } from '../../hooks/useTheme';
+import { isKoreanLocale } from '../../utils/formatters';
 import type { ThemeColors } from '../../styles/colors';
 
 // -- 벤치마크 지수 --
@@ -63,8 +64,11 @@ const BenchmarkChip = ({ myGainPercent }: BenchmarkChipProps) => {
   const comparison = useMemo(() => {
     if (!benchmarkPrices || Object.keys(benchmarkPrices).length === 0) return null;
 
-    // KOSPI 우선, 없으면 S&P
-    const bmLabel = benchmarkPrices['KOSPI'] != null ? 'KOSPI' : benchmarkPrices['S&P'] != null ? 'S&P' : null;
+    // 한국 로케일이면 KOSPI 우선, 영어 로케일이면 S&P 우선
+    const koreanLocale = isKoreanLocale();
+    const bmLabel = koreanLocale
+      ? (benchmarkPrices['KOSPI'] != null ? 'KOSPI' : benchmarkPrices['S&P'] != null ? 'S&P' : null)
+      : (benchmarkPrices['S&P'] != null ? 'S&P' : benchmarkPrices['KOSPI'] != null ? 'KOSPI' : null);
     if (!bmLabel) return null;
 
     const bmReturn = benchmarkPrices[bmLabel];

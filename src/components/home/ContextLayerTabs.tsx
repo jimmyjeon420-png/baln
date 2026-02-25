@@ -15,46 +15,21 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 
 /** 레이어 타입 */
 export type ContextLayer = 'historical' | 'macro' | 'institution' | 'portfolio';
 
-/** 레이어 정의 */
-const LAYERS: Array<{
+/** 레이어 색상 + 아이콘 (번역 불필요 고정값) */
+const LAYER_META: Array<{
   id: ContextLayer;
   icon: keyof typeof Ionicons.glyphMap;
-  label: string;
-  shortLabel: string; // 작은 화면용
   color: string;
 }> = [
-  {
-    id: 'historical',
-    icon: 'time-outline',
-    label: '역사적 맥락',
-    shortLabel: '역사',
-    color: '#4CAF50', // 초록
-  },
-  {
-    id: 'macro',
-    icon: 'git-network-outline',
-    label: '거시경제',
-    shortLabel: '거시',
-    color: '#2196F3', // 파랑
-  },
-  {
-    id: 'institution',
-    icon: 'business-outline',
-    label: '기관 행동',
-    shortLabel: '기관',
-    color: '#FF9800', // 주황
-  },
-  {
-    id: 'portfolio',
-    icon: 'trending-up-outline',
-    label: '내 자산',
-    shortLabel: '내 자산',
-    color: '#9C27B0', // 보라
-  },
+  { id: 'historical', icon: 'time-outline',         color: '#4CAF50' }, // 초록
+  { id: 'macro',      icon: 'git-network-outline',  color: '#2196F3' }, // 파랑
+  { id: 'institution',icon: 'business-outline',     color: '#FF9800' }, // 주황
+  { id: 'portfolio',  icon: 'trending-up-outline',  color: '#9C27B0' }, // 보라
 ];
 
 interface ContextLayerTabsProps {
@@ -90,6 +65,32 @@ export function ContextLayerTabs({
   onPressPremium,
 }: ContextLayerTabsProps) {
   const { colors } = useTheme();
+  const { t } = useLocale();
+
+  /** 번역된 레이어 목록 — 언어 변경 시 자동 재계산 */
+  const LAYERS = React.useMemo(() => [
+    {
+      ...LAYER_META[0],
+      label:      t('format.context_layer_historical'),
+      shortLabel: t('format.tab_historical'),
+    },
+    {
+      ...LAYER_META[1],
+      label:      t('format.context_layer_macro'),
+      shortLabel: t('format.tab_macro'),
+    },
+    {
+      ...LAYER_META[2],
+      label:      t('format.context_layer_institution'),
+      shortLabel: t('format.tab_institution'),
+    },
+    {
+      ...LAYER_META[3],
+      label:      t('format.context_layer_portfolio'),
+      shortLabel: t('format.tab_portfolio'),
+    },
+  ], [t]);
+
   // 언더라인 애니메이션
   const activeIndex = LAYERS.findIndex(l => l.id === activeLayer);
   const underlinePosition = useSharedValue(activeIndex * 25); // 25% 간격

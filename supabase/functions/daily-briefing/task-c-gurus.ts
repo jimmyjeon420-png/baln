@@ -80,12 +80,16 @@ export interface GuruAnalysisResult {
 async function analyzeGuruInsight(guru: typeof GURU_LIST[0], langInstruction = '한국어로 자연스럽게 작성한다.'): Promise<GuruInsightResult | null> {
   const dateStr = getKSTDateStr();
 
+  const audienceContext = langInstruction.startsWith('Write')
+    ? 'Help retail investors understand the market through this guru\'s moves. Use "~is estimated" for speculation.'
+    : '한국 개인투자자가 거장의 행보를 통해 시장을 이해하도록 돕는다. 추측은 "~로 추정됩니다"로 표현한다.';
+
   const prompt = `당신은 baln(발른) 앱의 투자 거장 분석 AI입니다.
 오늘(${dateStr}) ${guru.nameEn}(${guru.name})의 최근 투자 동향을 분석하세요.
 
 [핵심 원칙]
-- 한국 개인투자자가 거장의 행보를 통해 시장을 이해하도록 돕는다.
-- 확인된 사실만 서술한다. 추측은 "~로 추정됩니다"로 표현한다.
+- ${audienceContext}
+- 확인된 사실만 서술한다.
 - ${langInstruction}
 
 [Google Search 검색]

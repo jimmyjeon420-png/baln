@@ -566,6 +566,7 @@ function HeadlineSection({
   const [expanded, setExpanded] = useState(false);
   const [needsExpand, setNeedsExpand] = useState(false);
   const measuredRef = useRef(false);
+  const { t } = useLocale();
 
   // onTextLayout으로 잘린 텍스트의 실제 줄 수를 측정하면 numberOfLines에 의해
   // 이미 클램프된 줄 수만 보고하므로 정확하지 않음.
@@ -584,8 +585,8 @@ function HeadlineSection({
   }, []);
 
   return (
-    <View style={styles.headlineSection} accessibilityLabel="오늘의 시장 헤드라인" accessibilityRole="header">
-      <Text style={styles.headlineText}>{fact || '시장 데이터 준비 중'}</Text>
+    <View style={styles.headlineSection} accessibilityRole="header">
+      <Text style={styles.headlineText}>{fact || t('context_brief.headline_placeholder')}</Text>
       {mechanism ? (
         <View>
           {/* 숨겨진 측정 텍스트: numberOfLines 없이 렌더링하여 실제 줄 수를 측정 */}
@@ -611,7 +612,7 @@ function HeadlineSection({
               style={styles.expandToggleButton}
             >
               <Text style={styles.expandToggle}>
-                {expanded ? '접기' : '더보기'}
+                {expanded ? t('context_brief.expand_less') : t('context_brief.expand_more')}
               </Text>
             </TouchableOpacity>
           )}
@@ -748,9 +749,9 @@ export default React.forwardRef<View, ContextBriefCardProps>(
           </View>
           <View style={styles.centerArea}>
             <Ionicons name="analytics-outline" size={64} color={COLORS.textTertiary} />
-            <Text style={styles.emptyText}>오늘의 맥락을 분석하고 있어요</Text>
+            <Text style={styles.emptyText}>{t('context_brief.empty_title')}</Text>
             <Text style={styles.emptySubtext}>
-              새로운 분석을 준비하고 있어요
+              {t('context_brief.empty_subtitle')}
             </Text>
           </View>
         </View>
@@ -761,7 +762,7 @@ export default React.forwardRef<View, ContextBriefCardProps>(
     // 데이터 상태 (4겹 레이어 브리핑)
     // ──────────────────────────────────────────────────────────────
     return (
-      <View ref={ref} style={styles.card} accessibilityLabel="오늘의 맥락 브리핑 카드">
+      <View ref={ref} style={styles.card}>
         {/* ── 헤더: 센티먼트 + 무료체험 D-day + 공유 + baln ── */}
         <View style={styles.headerRow}>
           <View style={[styles.sentimentBadge, { backgroundColor: sentimentBg }]}>
@@ -787,7 +788,6 @@ export default React.forwardRef<View, ContextBriefCardProps>(
                 onPress={() => { track('share_card', { source: 'context_brief' }); onShare(); }}
                 activeOpacity={0.7}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                accessibilityLabel="맥락 카드 공유하기"
                 accessibilityRole="button"
               >
                 <Ionicons name="share-social-outline" size={18} color={COLORS.textTertiary} />
@@ -798,11 +798,29 @@ export default React.forwardRef<View, ContextBriefCardProps>(
         </View>
 
         <View style={styles.trustMetaRow}>
-          <Text style={styles.trustMetaText}>출처: {simplifySourceLabel(dataSource, { fallback: '폴백', google: 'Gemini', default: '—' })}</Text>
-          <Text style={styles.trustMetaText}>생성: {formatTrustTime(dataTimestamp, '—')}</Text>
-          {freshnessLabel && <Text style={styles.trustMetaText}>신선도: {freshnessLabel}</Text>}
+          <Text style={styles.trustMetaText}>
+            {t('context_brief.trust_source', {
+              label: simplifySourceLabel(dataSource, {
+                fallback: t('context_brief.source_fallback'),
+                google: t('context_brief.source_google'),
+                default: t('context_brief.source_default'),
+              }),
+            })}
+          </Text>
+          <Text style={styles.trustMetaText}>
+            {t('context_brief.trust_generated', {
+              time: formatTrustTime(dataTimestamp, t('context_brief.time_unknown')),
+            })}
+          </Text>
+          {freshnessLabel && (
+            <Text style={styles.trustMetaText}>
+              {t('context_brief.trust_freshness', { label: freshnessLabel })}
+            </Text>
+          )}
           {typeof confidenceScore === 'number' && (
-            <Text style={styles.trustMetaText}>신뢰도: {confidenceScore}점(추정)</Text>
+            <Text style={styles.trustMetaText}>
+              {t('context_brief.trust_confidence', { score: confidenceScore })}
+            </Text>
           )}
           {!!confidenceNote && (
             <Text style={styles.trustMetaNote} numberOfLines={1}>
@@ -828,7 +846,7 @@ export default React.forwardRef<View, ContextBriefCardProps>(
           <LayerSection
             layerNum={1}
             icon="time-outline"
-            title="역사적 맥락"
+            title={t('format.context_layer_historical')}
             subtitle="Historical Context"
             color={LAYER_COLORS.historical}
             isExpanded={expandedLayers[1]}
@@ -837,14 +855,14 @@ export default React.forwardRef<View, ContextBriefCardProps>(
             COLORS={COLORS}
           >
             <Text style={styles.layerBodyText}>
-              {historicalContext || fact || '역사적 맥락 데이터를 불러오는 중입니다...'}
+              {historicalContext || fact || t('context_brief.layer_historical_loading')}
             </Text>
           </LayerSection>
 
           <LayerSection
             layerNum={2}
             icon="git-network-outline"
-            title="거시경제 체인"
+            title={t('format.context_layer_macro')}
             subtitle="Macro Chain"
             color={LAYER_COLORS.macro}
             isExpanded={expandedLayers[2]}
@@ -859,7 +877,7 @@ export default React.forwardRef<View, ContextBriefCardProps>(
               />
             ) : (
               <Text style={styles.layerBodyText}>
-                {mechanism || '거시경제 연쇄 반응을 분석 중입니다...'}
+                {mechanism || t('context_brief.layer_macro_loading')}
               </Text>
             )}
           </LayerSection>
@@ -867,7 +885,7 @@ export default React.forwardRef<View, ContextBriefCardProps>(
           <LayerSection
             layerNum={3}
             icon="flag-outline"
-            title="정치 맥락"
+            title={t('format.context_layer_political')}
             subtitle="Political Context"
             color={LAYER_COLORS.political}
             isExpanded={expandedLayers[3]}
@@ -876,14 +894,14 @@ export default React.forwardRef<View, ContextBriefCardProps>(
             COLORS={COLORS}
           >
             <Text style={styles.layerBodyText}>
-              {politicalContext || '역사적으로 정치 이벤트는 단기 시장 변동을 만들었지만, 장기 투자 관점에서 영향은 제한적이었습니다.'}
+              {politicalContext || t('context_brief.layer_political_default')}
             </Text>
           </LayerSection>
 
           <LayerSection
             layerNum={4}
             icon="business-outline"
-            title="기관 행동"
+            title={t('format.context_layer_institution')}
             subtitle="Institutional Flow"
             color={LAYER_COLORS.institutional}
             isExpanded={expandedLayers[4]}
@@ -892,17 +910,19 @@ export default React.forwardRef<View, ContextBriefCardProps>(
             onPressPremium={onLearnMore}
             styles={styles}
             COLORS={COLORS}
-            premiumPriceLabel={premiumPriceLabel}
+            premiumPriceLabel={t('context_brief.premium_price')}
+            lockedPreviewText={t('context_brief.locked_institutional')}
+            premiumCtaLabel={t('context_brief.premium_cta')}
           >
             <Text style={styles.layerBodyText}>
-              {institutionalBehavior || '기관 투자자 데이터를 분석 중입니다...'}
+              {institutionalBehavior || t('context_brief.layer_institutional_loading')}
             </Text>
           </LayerSection>
 
           <LayerSection
             layerNum={5}
             icon="wallet-outline"
-            title="내 포트폴리오 영향"
+            title={t('format.context_layer_portfolio')}
             subtitle="Portfolio Impact"
             color={LAYER_COLORS.portfolio}
             isExpanded={expandedLayers[5]}
@@ -911,7 +931,9 @@ export default React.forwardRef<View, ContextBriefCardProps>(
             onPressPremium={onLearnMore}
             styles={styles}
             COLORS={COLORS}
-            premiumPriceLabel={premiumPriceLabel}
+            premiumPriceLabel={t('context_brief.premium_price')}
+            lockedPreviewText={t('context_brief.locked_portfolio')}
+            premiumCtaLabel={t('context_brief.premium_cta')}
           >
             {portfolioImpact ? (
               <PortfolioImpactVisual
@@ -925,10 +947,10 @@ export default React.forwardRef<View, ContextBriefCardProps>(
                 <Ionicons name="analytics-outline" size={24} color={LAYER_COLORS.portfolio} />
                 <Text style={[styles.layerBodyText, { textAlign: 'center' }]}>
                   {sentiment === 'calm'
-                    ? '시장이 안정적입니다. 포트폴리오에 큰 변동이 없을 것으로 보입니다.'
+                    ? t('context_brief.portfolio_calm')
                     : sentiment === 'caution'
-                      ? '시장에 주의 신호가 있습니다. 포트폴리오 점검을 권장합니다.'
-                      : '시장이 경계 상태입니다. 포트폴리오 점검이 필요합니다.'}
+                      ? t('context_brief.portfolio_caution')
+                      : t('context_brief.portfolio_alert')}
                 </Text>
               </View>
             )}

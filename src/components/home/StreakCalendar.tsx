@@ -15,6 +15,8 @@ import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
+import { formatMonthYear } from '../../utils/formatters';
+import { useLocale } from '../../context/LocaleContext';
 
 // ── Props ──
 interface StreakCalendarProps {
@@ -28,8 +30,7 @@ interface StreakCalendarProps {
   attendanceRate: number; // 0~100
 }
 
-// ── 요일 라벨 ──
-const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
+// ── 요일 라벨 (로케일 기반 — 컴포넌트 내부에서 결정) ──
 
 // ── 날짜 유틸 ──
 function getDaysInMonth(year: number, month: number): number {
@@ -41,9 +42,7 @@ function getFirstDayOfWeek(year: number, month: number): number {
 }
 
 function formatMonthTitle(date: Date): string {
-  const year = date.getFullYear();
-  const month = date.getMonth() + 1;
-  return `${year}년 ${month}월`;
+  return formatMonthYear(date);
 }
 
 function isToday(dateStr: string): boolean {
@@ -75,6 +74,13 @@ export default function StreakCalendar({
   attendanceRate,
 }: StreakCalendarProps) {
   const { colors } = useTheme();
+  const { t } = useLocale();
+
+  const DAY_LABELS = [
+    t('health.weekdays.sun'), t('health.weekdays.mon'), t('health.weekdays.tue'),
+    t('health.weekdays.wed'), t('health.weekdays.thu'), t('health.weekdays.fri'),
+    t('health.weekdays.sat'),
+  ];
 
   const year = currentMonth.getFullYear();
   const month = currentMonth.getMonth();
@@ -226,7 +232,7 @@ export default function StreakCalendar({
         {/* 출석률 */}
         <View style={styles.rateSection}>
           <Text style={[styles.rateLabel, { color: colors.textTertiary }]}>
-            이번 달 출석률
+            {t('format.attendance_label')}
           </Text>
           <Text
             style={[
@@ -242,15 +248,15 @@ export default function StreakCalendar({
         <View style={styles.legendRow}>
           <View style={styles.legendItem}>
             <View style={[styles.legendDot, { backgroundColor: colors.border }]} />
-            <Text style={[styles.legendText, { color: colors.textTertiary }]}>미출석</Text>
+            <Text style={[styles.legendText, { color: colors.textTertiary }]}>{t('format.legend_missed')}</Text>
           </View>
           <View style={styles.legendItem}>
             <View style={[styles.legendDot, { backgroundColor: `${colors.streak.active}88` }]} />
-            <Text style={[styles.legendText, { color: colors.textTertiary }]}>출석</Text>
+            <Text style={[styles.legendText, { color: colors.textTertiary }]}>{t('format.legend_attended')}</Text>
           </View>
           <View style={styles.legendItem}>
             <View style={[styles.legendDot, { backgroundColor: colors.streak.active }]} />
-            <Text style={[styles.legendText, { color: colors.textTertiary }]}>적중</Text>
+            <Text style={[styles.legendText, { color: colors.textTertiary }]}>{t('format.legend_correct')}</Text>
           </View>
         </View>
       </View>

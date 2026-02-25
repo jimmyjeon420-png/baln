@@ -36,12 +36,14 @@ export interface TodayProgress {
 /** AsyncStorage 키 프리픽스 */
 const STORAGE_KEY_PREFIX = '@baln:habit_loop:';
 
-/** 오늘 날짜를 YYYY-MM-DD 형식으로 반환 (KST 기준) */
+/** 오늘 날짜를 YYYY-MM-DD 형식으로 반환 (사용자 로컬 시간 기준) */
 function getTodayKST(): string {
   const now = new Date();
-  // KST (UTC+9) 기준으로 날짜 계산 — UTC 자정 문제 방지
-  const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
-  return kst.toISOString().split('T')[0];
+  // 로컬 날짜를 YYYY-MM-DD로 포맷 (UTC 자정 문제 방지)
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 /** 기본 진행 상태 */

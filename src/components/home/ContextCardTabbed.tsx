@@ -15,6 +15,8 @@ import { SentimentBadge } from './SentimentBadge';
 import { PortfolioImpactSection } from './PortfolioImpactSection';
 import { useTheme } from '../../hooks/useTheme';
 import { shareContent } from '../../services/shareService';
+import { formatLocalDate } from '../../utils/formatters';
+import { useLocale } from '../../context/LocaleContext';
 
 interface ContextCardTabbedProps {
   /** Premium 여부 */
@@ -37,6 +39,7 @@ interface ContextCardTabbedProps {
 export function ContextCardTabbed({ isPremium = false, onPressPremium }: ContextCardTabbedProps) {
   const { data, isLoading, error } = useContextCard();
   const { colors } = useTheme();
+  const { t } = useLocale();
   const [activeLayer, setActiveLayer] = useState<ContextLayer>('historical');
 
   // 로딩 상태
@@ -61,10 +64,10 @@ export function ContextCardTabbed({ isPremium = false, onPressPremium }: Context
         <View style={s.errorContainer}>
           <Ionicons name="cloud-offline-outline" size={48} color="#9E9E9E" />
           <Text style={[s.errorText, { color: colors.textSecondary }]}>
-            맥락 카드를 불러올 수 없습니다.
+            {t('format.context_card_error')}
           </Text>
           <Text style={[s.errorSubtext, { color: colors.textTertiary }]}>
-            네트워크 연결을 확인해주세요.
+            {t('format.context_card_error_sub')}
           </Text>
         </View>
       </View>
@@ -79,11 +82,8 @@ export function ContextCardTabbed({ isPremium = false, onPressPremium }: Context
     ? ['institution', 'portfolio']
     : [];
 
-  // 날짜 포맷 (2026-02-08 → 2월 8일)
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return `${date.getMonth() + 1}월 ${date.getDate()}일`;
-  };
+  // 날짜 포맷 (로케일 기반)
+  const formatDate = (dateStr: string) => formatLocalDate(dateStr);
 
   return (
     <View style={[s.card, { backgroundColor: colors.surface }]}>
@@ -142,7 +142,7 @@ export function ContextCardTabbed({ isPremium = false, onPressPremium }: Context
         {activeLayer === 'historical' && (
           <LayerContent
             icon="time-outline"
-            title="역사적 맥락"
+            title={t('format.context_layer_historical')}
             color="#4CAF50"
           >
             <Text style={[s.contentText, { color: colors.textSecondary }]}>
@@ -154,7 +154,7 @@ export function ContextCardTabbed({ isPremium = false, onPressPremium }: Context
         {activeLayer === 'macro' && (
           <LayerContent
             icon="git-network-outline"
-            title="거시경제 체인"
+            title={t('format.context_layer_macro')}
             color="#2196F3"
           >
             <View>
@@ -180,7 +180,7 @@ export function ContextCardTabbed({ isPremium = false, onPressPremium }: Context
         {activeLayer === 'institution' && (
           <LayerContent
             icon="business-outline"
-            title="기관 행동"
+            title={t('format.context_layer_institution')}
             color="#FF9800"
             isLocked={lockedLayers.includes('institution')}
             onPressPremium={onPressPremium}
@@ -194,7 +194,7 @@ export function ContextCardTabbed({ isPremium = false, onPressPremium }: Context
         {activeLayer === 'portfolio' && (
           <LayerContent
             icon="trending-up-outline"
-            title="내 포트폴리오 영향"
+            title={t('format.context_layer_portfolio')}
             color="#9C27B0"
             isLocked={lockedLayers.includes('portfolio')}
             onPressPremium={onPressPremium}
@@ -227,6 +227,7 @@ function LayerContent({
   isLocked = false,
   onPressPremium,
 }: LayerContentProps) {
+  const { t } = useLocale();
   if (isLocked) {
     return (
       <View>
@@ -243,10 +244,10 @@ function LayerContent({
           <Ionicons name="lock-closed" size={20} color="#FFC107" />
           <View style={s.premiumCtaTextContainer}>
             <Text style={s.premiumCtaTitle}>
-              Premium 전용 콘텐츠
+              {t('format.context_premium_title')}
             </Text>
             <Text style={s.premiumCtaSubtitle}>
-              기관 행동과 포트폴리오 영향을 확인하려면 Premium이 필요합니다.
+              {t('format.context_premium_subtitle')}
             </Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color="#FFC107" />

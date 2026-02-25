@@ -5,6 +5,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { getLocaleCode } from '../utils/formatters';
 
 interface ChatBubbleProps {
   role: 'user' | 'assistant';
@@ -40,7 +41,7 @@ export default function ChatBubble({
         <View style={styles.footer}>
           {timestamp && (
             <Text style={styles.timestamp}>
-              {new Date(timestamp).toLocaleTimeString('ko-KR', {
+              {new Date(timestamp).toLocaleTimeString(getLocaleCode(), {
                 hour: '2-digit',
                 minute: '2-digit',
               })}

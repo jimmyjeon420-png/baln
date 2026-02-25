@@ -81,8 +81,9 @@ serve(async (req: Request) => {
     // 미지정 시 전체 실행 (기존 cron 동작)
     // ========================================================================
     let selectedTasks: Set<string> | null = null;
-    let lang = 'ko'; // 언어 기본값
     const url = new URL(req.url);
+    // URL 쿼리 파라미터에서 lang 우선 읽기 (GET 요청용)
+    let lang = url.searchParams.get('lang') || 'ko';
     let triggerSource = url.searchParams.get('trigger_source') || 'manual';
 
     // URL 쿼리 파라미터 확인
@@ -104,7 +105,9 @@ serve(async (req: Request) => {
           }
         }
 
+        // POST body의 lang이 URL 파라미터보다 우선
         if (body?.lang === 'en') lang = 'en';
+        else if (body?.lang === 'ko') lang = 'ko';
 
         if (typeof body?.trigger_source === 'string' && body.trigger_source.trim()) {
           triggerSource = body.trigger_source.slice(0, 80);

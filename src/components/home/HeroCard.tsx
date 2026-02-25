@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity, TextStyle } from 'react-nativ
 import { Ionicons } from '@expo/vector-icons';
 import { SIZES } from '../../styles/theme';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
+import { getCurrencySymbol, formatLocalAmount } from '../../utils/formatters';
 import RollingNumber from '../RollingNumber';
 
 // ============================================================================
@@ -41,13 +43,14 @@ export default function HeroCard({
   onRealEstatePress,
 }: HeroCardProps) {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const isPositive = totalPnL >= 0;
 
   return (
     <View style={[styles.card, { backgroundColor: colors.surface }]}>
       {/* 상단: 총 평가금액 라벨 + 등급 배지 */}
       <View style={styles.topRow}>
-        <Text style={[styles.label, { color: colors.textSecondary }]}>총 평가금액</Text>
+        <Text style={[styles.label, { color: colors.textSecondary }]}>{t('hero.total_assets_label')}</Text>
         <View style={[styles.gradeBadge, { backgroundColor: healthGradeBgColor }]}>
           <Text style={[styles.gradeText, { color: healthGradeColor }]}>
             {healthGrade} {healthGradeLabel}
@@ -59,7 +62,7 @@ export default function HeroCard({
       <RollingNumber
         value={totalAssets}
         format="currency"
-        prefix="₩"
+        prefix={getCurrencySymbol()}
         style={StyleSheet.flatten([styles.totalValue, { color: colors.textPrimary }]) as TextStyle}
         duration={1000}
       />
@@ -67,7 +70,7 @@ export default function HeroCard({
       {/* 손익 표시 */}
       <View style={styles.pnlRow}>
         <Text style={[styles.pnlText, { color: isPositive ? colors.primary : colors.error }]}>
-          {isPositive ? '+' : ''}₩{Math.abs(Math.round(totalPnL)).toLocaleString('ko-KR')}
+          {isPositive ? '+' : '-'}{formatLocalAmount(Math.abs(Math.round(totalPnL)))}
           {' '}({isPositive ? '+' : ''}{totalPnLPercent.toFixed(2)}%)
           {' '}{isPositive ? '▲' : '▼'}
         </Text>
@@ -83,7 +86,7 @@ export default function HeroCard({
         >
           <Ionicons name="home-outline" size={14} color={colors.warning} />
           <Text style={[styles.realEstateText, { color: colors.warning }]}>
-            부동산 ₩{totalRealEstate.toLocaleString('ko-KR', { maximumFractionDigits: 0 })} 포함
+            {t('hero.real_estate_row', { amount: formatLocalAmount(Math.round(totalRealEstate)) })}
           </Text>
           {onRealEstatePress && (
             <Ionicons name="add-circle-outline" size={14} color={colors.textTertiary} />
@@ -94,7 +97,7 @@ export default function HeroCard({
       {/* 하단 버튼 2개: 건강 점수 | AI 진단 받기 */}
       <View style={styles.actions}>
         <View style={[styles.actionBtn, { backgroundColor: colors.background }]}>
-          <Text style={[styles.actionLabel, { color: colors.textSecondary }]}>건강 점수</Text>
+          <Text style={[styles.actionLabel, { color: colors.textSecondary }]}>{t('hero.health_score_label')}</Text>
           <View style={styles.scoreRow}>
             <Text style={[styles.scoreValue, { color: healthGradeColor }]}>
               {healthScore}점
@@ -107,7 +110,7 @@ export default function HeroCard({
           onPress={onDiagnosisPress}
           activeOpacity={0.7}
         >
-          <Text style={[styles.actionLabel, { color: colors.textSecondary }]}>AI 진단 받기</Text>
+          <Text style={[styles.actionLabel, { color: colors.textSecondary }]}>{t('hero.ai_diagnosis_label')}</Text>
           <View style={styles.diagnosisArrow}>
             <Ionicons name="analytics-outline" size={20} color={colors.primary} />
             <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />

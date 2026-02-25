@@ -43,6 +43,7 @@ import {
   PREDICTION_REWARDS,
 } from '../../src/types/prediction';
 import { useTheme } from '../../src/hooks/useTheme';
+import { getLocaleCode } from '../../src/utils/formatters';
 
 // 3탭: 투표하기 / 내 기록 / 리더보드
 type TabType = 'vote' | 'history' | 'leaderboard';
@@ -353,7 +354,7 @@ export default function PredictionsScreen() {
                     {/* 날짜 */}
                     <Text style={[styles.historyDate, { color: colors.textTertiary }]}>
                       {poll.resolved_at
-                        ? new Date(poll.resolved_at).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' })
+                        ? new Date(poll.resolved_at).toLocaleDateString(getLocaleCode(), { month: 'numeric', day: 'numeric' })
                         : '-'}
                     </Text>
                     {/* 카테고리 점 */}

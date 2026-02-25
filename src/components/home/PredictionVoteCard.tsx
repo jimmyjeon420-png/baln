@@ -32,6 +32,8 @@ import { useTrackEvent } from '../../hooks/useAnalytics';
 import { useHabitLoopTracking } from '../../hooks/useHabitLoopTracking';
 import { mediumTap, success as successHaptic } from '../../services/hapticService';
 import AITrackRecordBanner from './AITrackRecordBanner';
+import { getLocaleCode } from '../../utils/formatters';
+import { useLocale } from '../../context/LocaleContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -42,11 +44,12 @@ const POLL_SLIDE_WIDTH = SCREEN_WIDTH - 32 - 40; // 카드 marginHorizontal 16*2
 // 카테고리 정보 (색상 + 라벨)
 // ============================================================================
 
-const CATEGORY_INFO: Record<string, { label: string; emoji: string; color: string }> = {
-  stocks:  { label: '주식',     emoji: '📈', color: '#4CAF50' },
-  crypto:  { label: '코인',     emoji: '₿',  color: '#F7931A' },
-  macro:   { label: '거시경제', emoji: '🌍', color: '#2196F3' },
-  event:   { label: '이벤트',   emoji: '⚡', color: '#FF9800' },
+// CATEGORY_COLORS: stable category display data (emoji + color only; labels come from i18n)
+const CATEGORY_COLORS: Record<string, { emoji: string; color: string }> = {
+  stocks: { emoji: '📈', color: '#4CAF50' },
+  crypto: { emoji: '₿',  color: '#F7931A' },
+  macro:  { emoji: '🌍', color: '#2196F3' },
+  event:  { emoji: '⚡', color: '#FF9800' },
 };
 
 // ============================================================================
@@ -140,11 +143,11 @@ interface PredictionVoteCardProps {
   };
 }
 
-function formatMetaTimestamp(timestamp?: string | null): string {
-  if (!timestamp) return '시간 미표기';
+function formatMetaTimestamp(timestamp: string | null | undefined, timeUnknown: string): string {
+  if (!timestamp) return timeUnknown;
   const dt = new Date(timestamp);
-  if (Number.isNaN(dt.getTime())) return '시간 미표기';
-  return dt.toLocaleString('ko-KR', {
+  if (Number.isNaN(dt.getTime())) return timeUnknown;
+  return dt.toLocaleString(getLocaleCode(), {
     month: 'numeric',
     day: 'numeric',
     hour: '2-digit',
@@ -180,6 +183,7 @@ export default function PredictionVoteCard({
   const { colors } = useTheme();
   const track = useTrackEvent();
   const { trackStep } = useHabitLoopTracking();
+  const { t } = useLocale();
   const styles = React.useMemo(() => createStyles(colors), [colors]);
   const scrollRef = React.useRef<ScrollView>(null);
   const [currentIndex, setCurrentIndex] = React.useState(0);
@@ -268,7 +272,7 @@ export default function PredictionVoteCard({
         <View style={styles.centerArea}>
           <ActivityIndicator size="large" color={colors.textSecondary} />
           <Text style={[styles.loadingText, { marginTop: 16 }]}>
-            오늘의 예측을 불러오는 중...
+            {t('prediction.card.loading')}
           </Text>
         </View>
       </View>
@@ -287,14 +291,14 @@ export default function PredictionVoteCard({
         </View>
         <View style={styles.centerArea}>
           <Text style={styles.emptyEmoji}>🎯</Text>
-          <Text style={styles.emptyText}>오늘의 예측이 아직 준비되지 않았어요</Text>
+          <Text style={styles.emptyText}>{t('prediction.card.empty')}</Text>
           {onViewContext && (
             <TouchableOpacity
               style={styles.emptyCta}
               onPress={onViewContext}
               activeOpacity={0.7}
             >
-              <Text style={styles.emptyCtaText}>맥락 카드 읽기</Text>
+              <Text style={styles.emptyCtaText}>{t('prediction.card.empty_cta')}</Text>
               <Ionicons name="chevron-forward" size={14} color={colors.primary} />
             </TouchableOpacity>
           )}
@@ -309,16 +313,19 @@ export default function PredictionVoteCard({
   const renderPollSlide = ({ item }: { item: PollItem; index: number }) => {
     const pollVote = getMyVoteForPoll(item.id);
     const hasVoted = pollVote !== null;
-    const catInfo = CATEGORY_INFO[item.category];
+    const catColors = CATEGORY_COLORS[item.category];
+    const categoryLabel = catColors
+      ? t(`prediction.card.category_${item.category}` as Parameters<typeof t>[0])
+      : item.category;
 
     return (
       <View style={styles.pollSlide}>
         {/* 카테고리 칩 */}
-        {catInfo && (
-          <View style={[styles.pollCategoryChip, { borderColor: catInfo.color }]}>
-            <Text style={styles.pollCategoryEmoji}>{catInfo.emoji}</Text>
-            <Text style={[styles.pollCategoryLabel, { color: catInfo.color }]}>
-              {catInfo.label}
+        {catColors && (
+          <View style={[styles.pollCategoryChip, { borderColor: catColors.color }]}>
+            <Text style={styles.pollCategoryEmoji}>{catColors.emoji}</Text>
+            <Text style={[styles.pollCategoryLabel, { color: catColors.color }]}>
+              {categoryLabel}
             </Text>
           </View>
         )}
@@ -337,7 +344,7 @@ export default function PredictionVoteCard({
               <View style={styles.reasonBox}>
                 <Text style={styles.reasonIcon}>📰</Text>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.reasonLabel}>오를 근거</Text>
+                  <Text style={styles.reasonLabel}>{t('prediction.card.up_reason')}</Text>
                   <Text style={styles.reasonText} numberOfLines={2}>{item.upReason}</Text>
                 </View>
               </View>
@@ -346,7 +353,7 @@ export default function PredictionVoteCard({
               <View style={styles.reasonBox}>
                 <Text style={styles.reasonIcon}>📰</Text>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.reasonLabel}>내릴 근거</Text>
+                  <Text style={styles.reasonLabel}>{t('prediction.card.down_reason')}</Text>
                   <Text style={styles.reasonText} numberOfLines={2}>{item.downReason}</Text>
                 </View>
               </View>
@@ -429,10 +436,10 @@ export default function PredictionVoteCard({
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <Text style={styles.headerEmoji}>🎯</Text>
-          <Text style={styles.headerText}>오늘의 예측</Text>
+          <Text style={styles.headerText}>{t('prediction.card.title')}</Text>
           {isFallbackData && (
             <View style={styles.fallbackBadge}>
-              <Text style={styles.fallbackBadgeText}>표준 질문</Text>
+              <Text style={styles.fallbackBadgeText}>{t('prediction.card.fallback_badge')}</Text>
             </View>
           )}
         </View>
@@ -467,13 +474,13 @@ export default function PredictionVoteCard({
       >
         {trustMeta && (
           <View style={styles.trustMetaRow}>
-            <Text style={styles.trustMetaText}>출처: {trustMeta.sourceLabel}</Text>
-            <Text style={styles.trustMetaText}>생성: {formatMetaTimestamp(trustMeta.generatedAt)}</Text>
+            <Text style={styles.trustMetaText}>{t('prediction.card.trust_source', { label: trustMeta.sourceLabel })}</Text>
+            <Text style={styles.trustMetaText}>{t('prediction.card.trust_generated', { time: formatMetaTimestamp(trustMeta.generatedAt, t('prediction.card.time_unknown')) })}</Text>
             {trustMeta.freshnessLabel && (
-              <Text style={styles.trustMetaText}>신선도: {trustMeta.freshnessLabel}</Text>
+              <Text style={styles.trustMetaText}>{t('prediction.card.trust_freshness', { label: trustMeta.freshnessLabel })}</Text>
             )}
             {typeof trustMeta.confidenceScore === 'number' && (
-              <Text style={styles.trustMetaText}>신뢰도: {trustMeta.confidenceScore}점(추정)</Text>
+              <Text style={styles.trustMetaText}>{t('prediction.card.trust_confidence', { score: trustMeta.confidenceScore })}</Text>
             )}
           </View>
         )}
@@ -482,10 +489,10 @@ export default function PredictionVoteCard({
         {allPolls.length > 1 && (
           <View style={styles.pollCounterRow}>
             <Text style={styles.pollCounterText}>
-              {currentIndex + 1} / {allPolls.length}
+              {t('prediction.card.poll_counter', { current: currentIndex + 1, total: allPolls.length })}
             </Text>
             {currentIndex < allPolls.length - 1 && (
-              <Text style={styles.pollSwipeHint}>스와이프하여 다음 퀴즈 →</Text>
+              <Text style={styles.pollSwipeHint}>{t('prediction.card.swipe_hint')}</Text>
             )}
           </View>
         )}
@@ -517,7 +524,7 @@ export default function PredictionVoteCard({
         {allVoted && (
           <Animated.View style={[styles.allVotedBanner, { opacity: completeFade }]}>
             <Text style={styles.allVotedText}>
-              🎯 모두 투표 완료! 내일 결과를 확인하세요!
+              {t('prediction.card.all_voted')}
             </Text>
             <View style={styles.allVotedCTARow}>
               {onViewContext && (
@@ -525,10 +532,10 @@ export default function PredictionVoteCard({
                   style={styles.allVotedCTAButton}
                   onPress={onViewContext}
                   accessibilityRole="button"
-                  accessibilityLabel="맥락 카드 읽기"
+                  accessibilityLabel={t('prediction.card.view_context')}
                 >
                   <Text style={[styles.allVotedCTAText, { color: colors.primary }]}>
-                    맥락 카드 읽기
+                    {t('prediction.card.view_context')}
                   </Text>
                   <Ionicons name="chevron-forward" size={14} color={colors.primary} />
                 </TouchableOpacity>
@@ -538,10 +545,10 @@ export default function PredictionVoteCard({
                   style={styles.allVotedCTAButton}
                   onPress={onViewHistory}
                   accessibilityRole="button"
-                  accessibilityLabel="이전 결과 보기"
+                  accessibilityLabel={t('prediction.card.view_history')}
                 >
                   <Text style={[styles.allVotedCTAText, { color: colors.primary }]}>
-                    이전 결과 보기
+                    {t('prediction.card.view_history')}
                   </Text>
                   <Ionicons name="chevron-forward" size={14} color={colors.primary} />
                 </TouchableOpacity>
@@ -553,7 +560,7 @@ export default function PredictionVoteCard({
         {/* 복기 섹션 */}
         {recentResults.length > 0 && (
           <View style={styles.reviewArea}>
-            <Text style={styles.reviewTitle}>─── 지난 복기 ───</Text>
+            <Text style={styles.reviewTitle}>{t('prediction.card.review_section')}</Text>
             {recentResults.slice(0, 3).map((result, index) => {
               const isExpanded = expandedReviewIndex === index;
               const hasExplanation = result.description || result.source;
@@ -619,12 +626,12 @@ export default function PredictionVoteCard({
             {/* 적중률 */}
             {accuracyRate !== null && accuracyRate >= 0 && (
               <Text style={styles.accuracyText}>
-                적중률: {accuracyRate.toFixed(0)}%
+                {t('prediction.card.accuracy_label', { rate: accuracyRate.toFixed(0) })}
               </Text>
             )}
             {accuracyRate === null && (
               <Text style={styles.accuracyHint}>
-                5회 이상 투표 시 적중률 표시
+                {t('prediction.card.accuracy_hint')}
               </Text>
             )}
           </View>
@@ -639,8 +646,8 @@ export default function PredictionVoteCard({
 
         {/* 하단: [전체 기록 보기] 프리미엄 게이트 */}
         {onViewHistory && (
-          <TouchableOpacity style={styles.historyButton} onPress={() => { track('prediction_history_viewed'); onViewHistory(); }} accessibilityRole="button" accessibilityLabel="상세 통계 보기">
-            <Text style={styles.historyText}>📊 상세 통계 보기</Text>
+          <TouchableOpacity style={styles.historyButton} onPress={() => { track('prediction_history_viewed'); onViewHistory(); }} accessibilityRole="button" accessibilityLabel={t('prediction.card.stats_button')}>
+            <Text style={styles.historyText}>{t('prediction.card.stats_button')}</Text>
             <Ionicons name="arrow-forward" size={18} color={colors.textSecondary} />
           </TouchableOpacity>
         )}

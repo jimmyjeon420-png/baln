@@ -25,7 +25,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMyCredits, usePurchaseCredits, useCreditHistory } from '../../src/hooks/useCredits';
 import { useHaptics } from '../../src/hooks/useHaptics';
 import { CREDIT_PACKAGES, type CreditTransaction } from '../../src/types/marketplace';
-import { CREDIT_TO_KRW } from '../../src/utils/formatters';
+import { CREDIT_TO_KRW, getLocaleCode } from '../../src/utils/formatters';
 import { getMyReferralCode, applyReferralCode } from '../../src/services/rewardService';
 import { useTheme } from '../../src/hooks/useTheme';
 import {
@@ -476,7 +476,7 @@ export default function CreditsScreen() {
                 <View style={styles.txInfo}>
                   <Text style={styles.txLabel}>{getTransactionLabel(tx)}</Text>
                   <Text style={styles.txDate}>
-                    {new Date(tx.created_at).toLocaleDateString('ko-KR')}
+                    {new Date(tx.created_at).toLocaleDateString(getLocaleCode())}
                   </Text>
                 </View>
                 <View style={styles.txRight}>

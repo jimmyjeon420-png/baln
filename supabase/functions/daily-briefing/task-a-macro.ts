@@ -75,8 +75,12 @@ export async function analyzeMacroAndBitcoin(lang = 'ko'): Promise<MacroAnalysis
   }
   const realDataContext = realData ? buildRealDataContext(realData) : '';
 
+  const audienceContext = lang === 'ko'
+    ? '시장 상황을 한국 개인투자자에게 설명합니다. KOSPI와 코스닥 동향을 우선 언급하세요.'
+    : 'Explain the market situation to a US retail investor. Prioritize S&P 500 and NASDAQ commentary.';
+
   const prompt = `당신은 baln(발른) 앱의 글로벌 매크로 전략 AI입니다.
-오늘(${dateStr}) 시장 상황을 한국 개인투자자에게 설명합니다.
+오늘(${dateStr}) ${audienceContext}
 ${realDataContext}
 
 [핵심 원칙]

@@ -24,6 +24,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { SIZES } from '../../styles/theme';
 import { useTheme } from '../../hooks/useTheme';
 import supabase, { getCurrentUser } from '../../services/supabase';
+import { getLocaleCode } from '../../utils/formatters';
 
 const REPORT_SLA_HOURS = 24;
 
@@ -96,7 +97,7 @@ export default function ReportModal({
         dueAt.setHours(dueAt.getHours() + REPORT_SLA_HOURS);
         Alert.alert(
           '이미 접수된 신고',
-          `이미 같은 대상에 대한 신고가 접수되어 있습니다.\n1차 검토 예정: ${dueAt.toLocaleString('ko-KR')}`,
+          `이미 같은 대상에 대한 신고가 접수되어 있습니다.\n1차 검토 예정: ${dueAt.toLocaleString(getLocaleCode())}`,
         );
         return;
       }
@@ -115,7 +116,7 @@ export default function ReportModal({
       const dueAt = new Date();
       dueAt.setHours(dueAt.getHours() + REPORT_SLA_HOURS);
 
-      Alert.alert('신고 완료', `신고가 접수되었습니다.\n${REPORT_SLA_HOURS}시간 내 1차 검토를 목표로 처리합니다.\n예정 시각: ${dueAt.toLocaleString('ko-KR')}`, [
+      Alert.alert('신고 완료', `신고가 접수되었습니다.\n${REPORT_SLA_HOURS}시간 내 1차 검토를 목표로 처리합니다.\n예정 시각: ${dueAt.toLocaleString(getLocaleCode())}`, [
         {
           text: '확인',
           onPress: () => {

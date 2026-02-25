@@ -28,6 +28,7 @@ import { useTheme } from '../../hooks/useTheme';
 import { CharacterAvatar } from '../character/CharacterAvatar';
 import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
 import { useLocale } from '../../context/LocaleContext';
+import { formatDateWithTime, formatCompactAmount, isKoreanLocale } from '../../utils/formatters';
 
 
 // ============================================================================
@@ -109,14 +110,8 @@ function getMiniSignalEmoji(signal: 'green' | 'yellow' | 'red'): string {
 // 날짜 포맷 유틸
 // ============================================================================
 
-function formatDate(weekdayNames: string[]): string {
-  const now = new Date();
-  const month = now.getMonth() + 1;
-  const day = now.getDate();
-  const weekday = weekdayNames[now.getDay()] ?? '';
-  const hours = String(now.getHours()).padStart(2, '0');
-  const minutes = String(now.getMinutes()).padStart(2, '0');
-  return `${month}월 ${day}일 ${weekday} · ${hours}:${minutes}`;
+function formatDateLocale(weekdayNames: string[]): string {
+  return formatDateWithTime(new Date(), weekdayNames);
 }
 
 // ============================================================================
@@ -124,17 +119,7 @@ function formatDate(weekdayNames: string[]): string {
 // ============================================================================
 
 function formatAssetAmount(amount: number): string {
-  if (amount >= 100000000) {
-    // 1억 이상: "1.2억"
-    const eok = amount / 100000000;
-    return eok >= 10 ? `${Math.round(eok)}억` : `${eok.toFixed(1)}억`;
-  }
-  if (amount >= 10000) {
-    // 1만 이상: "5,000만"
-    const man = Math.round(amount / 10000);
-    return `${man.toLocaleString()}만`;
-  }
-  return `${amount.toLocaleString()}`;
+  return formatCompactAmount(amount);
 }
 
 // ============================================================================
@@ -179,7 +164,7 @@ const HealthSignalCard = React.memo(({
     return (
       <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <View style={styles.headerRow}>
-          <Text style={[styles.dateText, { color: colors.textSecondary }]}>{formatDate(weekdayNames)}</Text>
+          <Text style={[styles.dateText, { color: colors.textSecondary }]}>{formatDateLocale(weekdayNames)}</Text>
           <Text style={[styles.cardLogo, { color: colors.textSecondary }]}>bal<Text style={{ color: '#4CAF50' }}>n</Text></Text>
         </View>
         <View style={styles.centerArea}>
@@ -199,7 +184,7 @@ const HealthSignalCard = React.memo(({
     return (
       <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <View style={styles.headerRow}>
-          <Text style={[styles.dateText, { color: colors.textSecondary }]}>{formatDate(weekdayNames)}</Text>
+          <Text style={[styles.dateText, { color: colors.textSecondary }]}>{formatDateLocale(weekdayNames)}</Text>
           <Text style={[styles.cardLogo, { color: colors.textSecondary }]}>bal<Text style={{ color: '#4CAF50' }}>n</Text></Text>
         </View>
         <View style={styles.centerArea}>
@@ -223,7 +208,7 @@ const HealthSignalCard = React.memo(({
     <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
       {/* 상단: 날짜 + 구루 아바타 + baln 로고 */}
       <View style={styles.headerRow}>
-        <Text style={[styles.dateText, { color: colors.textSecondary }]}>{formatDate(weekdayNames)}</Text>
+        <Text style={[styles.dateText, { color: colors.textSecondary }]}>{formatDateLocale(weekdayNames)}</Text>
         <View style={styles.headerRight}>
           {selectedGuruId && GURU_CHARACTER_CONFIGS[selectedGuruId] && (
             <View style={styles.guruAvatarMini}>
@@ -240,10 +225,10 @@ const HealthSignalCard = React.memo(({
       </View>
 
       {/* 중앙: 거대 신호등 */}
-      <TouchableOpacity style={styles.centerArea} onPress={() => setShowDetail(true)} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={`건강 점수 ${healthScore}점, ${gradeLabel} ${healthGrade}등급. 탭하여 상세 보기`}>
+      <TouchableOpacity style={styles.centerArea} onPress={() => setShowDetail(true)} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={`${t('format.context_health_score')} ${healthScore}${t('format.score_unit')}`}>
         <Text style={styles.signalEmoji}>{signalEmoji}</Text>
         <Text style={[styles.gradeLabel, { color: signalColor }]}>
-          {gradeLabel || t('health.grade_analyzing')} {healthGrade ? `(${healthGrade}등급)` : ''}
+          {gradeLabel || t('health.grade_analyzing')} {healthGrade ? t('format.grade_suffix', { grade: healthGrade }) : ''}
         </Text>
         <View style={styles.scoreRow}>
           <Text style={[styles.scoreNumber, { color: signalColor }]}>
@@ -335,7 +320,7 @@ const HealthSignalCard = React.memo(({
               </Text>
               <View style={styles.modalScoreBox}>
                 <Text style={[styles.modalScore, { color: colors.textPrimary }]}>{healthScore}</Text>
-                <Text style={[styles.modalGrade, { color: colors.textSecondary }]}>{gradeLabel || t('health.grade_analyzing')} {healthGrade ? `(${healthGrade}등급)` : ''}</Text>
+                <Text style={[styles.modalGrade, { color: colors.textSecondary }]}>{gradeLabel || t('health.grade_analyzing')} {healthGrade ? t('format.grade_suffix', { grade: healthGrade }) : ''}</Text>
               </View>
 
               {/* 6팩터 상세 */}
@@ -352,7 +337,7 @@ const HealthSignalCard = React.memo(({
                         styles.factorScore,
                         { color: factor.score >= 70 ? '#4CAF50' : factor.score >= 50 ? '#FFB74D' : '#CF6679' }
                       ]}>
-                        {factor.score}점
+                        {factor.score}{t('format.score_unit')}
                       </Text>
                     </View>
                   ))}

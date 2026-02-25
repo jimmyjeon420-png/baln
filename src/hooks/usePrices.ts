@@ -5,11 +5,12 @@
  * 이전: useState + setInterval → 탭 간 캐시 미공유, 장외시간 불필요 API 호출
  * 현재: TanStack Query → 캐시 공유, 시장 개장 시간 인식, 선택적 리렌더링
  *
- * [시장 시간 인식]
- * - 한국 주식: 평일 09:00~15:30 KST → 개장 중 2분마다, 장외 10분
- * - 미국 주식: 평일 23:30~06:00 KST → 개장 중 2분마다, 장외 10분
- * - 암호화폐: 24시간 → 항상 5분마다
- * - 주말: 주식은 10분, 암호화폐는 5분
+ * [시장 시간 인식] (로케일 기반)
+ * - 한국어 로케일: 한국 주식 개장(KST 09:00~15:30 = UTC 00:00~06:30) 우선
+ * - 영어 로케일: 미국 주식 개장(EST 09:30~16:00 = UTC 14:30~21:00) 우선
+ * - 혼합 포트폴리오: 어느 쪽 시장이든 개장 중이면 2분 갱신 적용
+ * - 암호화폐: 로케일 무관 24시간 → 항상 2분마다
+ * - 주말/장외: 주식은 10분, 암호화폐는 2분
  */
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -17,6 +18,7 @@ import { useMemo } from 'react';
 import { PriceData, AssetClass } from '../types/price';
 import { Asset } from '../types/asset';
 import { priceService } from '../services/PriceService';
+import { isKoreanLocale } from '../utils/formatters';
 
 // ── 쿼리 키 (외부에서 invalidate 할 때 사용) ──
 export const LIVE_PRICES_KEY = ['live-prices'];
@@ -53,14 +55,21 @@ const inferAssetClass = (ticker: string): AssetClass => {
 
 // ── 시장 개장 시간 판별 ──
 
-/** 한국 시간(KST) 기준 현재 시각 반환 */
-function getKSTDate(): Date {
+/** UTC 기준 분(minutes) 반환 — KST/EST 오프셋 계산에 사용 */
+function getUTCMinutes(): number {
   const now = new Date();
-  // UTC + 9시간
-  return new Date(now.getTime() + (9 * 60 - now.getTimezoneOffset()) * 60 * 1000);
+  return now.getUTCDay() * 24 * 60 + now.getUTCHours() * 60 + now.getUTCMinutes();
 }
 
-/** 자산 유형별 갱신 주기 계산 (ms) */
+/**
+ * 자산 유형별 갱신 주기 계산 (ms)
+ *
+ * 로케일 기반 주요 시장 판별:
+ * - 한국어 로케일: 한국 주식 개장(KST 09:00~15:30) → 2분 갱신
+ * - 영어 로케일: 미국 주식 개장(EST 09:30~16:00 = UTC 14:30~21:00) → 2분 갱신
+ * - 양쪽 로케일 모두: 상대 시장도 개장 중이면 2분 적용 (포트폴리오 혼합 대비)
+ * - 암호화폐: 로케일 무관 24시간 → 2분 갱신
+ */
 function getRefreshInterval(tickers: string[]): number {
   if (tickers.length === 0) return 0;
 
@@ -70,19 +79,28 @@ function getRefreshInterval(tickers: string[]): number {
     return cls === AssetClass.STOCK || cls === AssetClass.ETF;
   });
 
-  const kst = getKSTDate();
-  const day = kst.getDay(); // 0=일, 6=토
-  const hour = kst.getHours();
-  const minute = kst.getMinutes();
-  const timeInMinutes = hour * 60 + minute;
-  const isWeekday = day >= 1 && day <= 5;
+  // UTC 기반 요일+시각으로 각 시장 개장 여부 판단
+  const now = new Date();
+  const utcDay = now.getUTCDay(); // 0=일, 6=토
+  const utcHour = now.getUTCHours();
+  const utcMinute = now.getUTCMinutes();
+  const utcTimeInMinutes = utcHour * 60 + utcMinute;
+  const isWeekday = utcDay >= 1 && utcDay <= 5;
 
-  // 한국 주식 개장: 평일 09:00~15:30 (540~930분)
-  const krMarketOpen = isWeekday && timeInMinutes >= 540 && timeInMinutes <= 930;
-  // 미국 주식 개장: 평일 23:30~06:00 KST 다음날 (1410~360분, 자정 걸침)
-  const usMarketOpen = isWeekday && (timeInMinutes >= 1410 || timeInMinutes <= 360);
+  // 한국 주식 개장: KST 09:00~15:30 = UTC 00:00~06:30 (0~390분)
+  const krMarketOpen = isWeekday && utcTimeInMinutes >= 0 && utcTimeInMinutes <= 390;
 
-  const stockMarketOpen = krMarketOpen || usMarketOpen;
+  // 미국 주식 개장: EST 09:30~16:00 = UTC 14:30~21:00 (870~1260분)
+  // 서머타임 적용 시 UTC 13:30~20:00이지만 보수적으로 14:30~21:00 사용
+  const usMarketOpen = isWeekday && utcTimeInMinutes >= 870 && utcTimeInMinutes <= 1260;
+
+  // 로케일 기반 주요 시장 우선 결정
+  const isKorean = isKoreanLocale();
+  const primaryMarketOpen = isKorean ? krMarketOpen : usMarketOpen;
+  const secondaryMarketOpen = isKorean ? usMarketOpen : krMarketOpen;
+
+  // 주요 또는 보조 시장 개장 중이면 빠른 갱신 (혼합 포트폴리오 지원)
+  const stockMarketOpen = primaryMarketOpen || secondaryMarketOpen;
 
   if (hasStock && stockMarketOpen) {
     // 장중: 2분마다 (빠른 갱신)

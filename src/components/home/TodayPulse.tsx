@@ -7,6 +7,7 @@ import { useHaptics } from '../../hooks/useHaptics';
 import { useSharedPortfolio } from '../../hooks/useSharedPortfolio';
 import { useSharedMarketData } from '../../hooks/useSharedAnalysis';
 import { calculateHealthScore } from '../../services/rebalanceScore';
+import { formatLocalAmount } from '../../utils/formatters';
 
 /**
  * 오늘의 Pulse (한 줄 요약 계기판)
@@ -45,7 +46,7 @@ export default function TodayPulse({ totalAssets, yesterdayChange }: TodayPulseP
     } else if (value >= 10_000) {
       return `${Math.round(value / 10_000)}만원`;
     }
-    return `${Math.round(value).toLocaleString()}원`;
+    return formatLocalAmount(Math.round(value));
   };
 
   // 수익률 포맷팅: +0.3%, -1.2%

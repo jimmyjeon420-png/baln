@@ -35,6 +35,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTheme } from '../../src/hooks/useTheme';
+import { useLocale } from '../../src/context/LocaleContext';
 import supabase, { getCurrentUser } from '../../src/services/supabase';
 import { searchStocks, StockItem, getCategoryColor } from '../../src/data/stockList';
 import { calculateHealthScore, HealthScoreResult } from '../../src/services/rebalanceScore';
@@ -129,6 +130,7 @@ export default function OnboardingScreen() {
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
   const { colors } = useTheme();
+  const { t } = useLocale();
 
   // 현재 단계 (0-indexed: 0=환영, 1=구루선택, 2=경험, 3=목표, 4=자산등록, 5=건강점수)
   const [currentStep, setCurrentStep] = useState(0);
@@ -634,7 +636,7 @@ export default function OnboardingScreen() {
           <Ionicons name="search" size={18} color={colors.textTertiary} style={{ marginRight: 8 }} />
           <TextInput
             style={[styles.searchInput, { color: colors.textPrimary }]}
-            placeholder="삼성전자, NVDA, 비트코인..."
+            placeholder={t('onboarding.search_placeholder')}
             placeholderTextColor={colors.textTertiary}
             value={searchQuery}
             onChangeText={(text) => {

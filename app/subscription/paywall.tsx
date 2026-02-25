@@ -30,7 +30,7 @@ import { useTheme } from '../../src/hooks/useTheme';
 import supabase, { getCurrentUser } from '../../src/services/supabase';
 import { useTrackEvent } from '../../src/hooks/useAnalytics';
 import { useABExperiment } from '../../src/hooks/useABExperiment';
-import { CREDIT_TO_KRW } from '../../src/utils/formatters';
+import { CREDIT_TO_KRW, getLocaleCode } from '../../src/utils/formatters';
 
 // 가격 정보
 const PRICING = {
@@ -118,7 +118,7 @@ const FEATURE_LABEL_MAP: Record<string, string> = {
 };
 
 function formatMetaTime(iso: string): string {
-  return new Date(iso).toLocaleString('ko-KR', {
+  return new Date(iso).toLocaleString(getLocaleCode(), {
     month: 'short',
     day: 'numeric',
     hour: '2-digit',

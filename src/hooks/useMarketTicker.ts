@@ -15,6 +15,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { isKoreanLocale } from '../utils/formatters';
 
 export interface MarketTickerItem {
   symbol: string;       // Yahoo Finance 심볼 (^KS11 등)
@@ -23,17 +24,36 @@ export interface MarketTickerItem {
   changePercent: number; // 전일 대비 등락률 (%)
 }
 
-// 전광판에 표시할 글로벌 시장 지표
-const MARKET_SYMBOLS: { symbol: string; label: string }[] = [
-  { symbol: '^KS11',   label: 'KOSPI' },
-  { symbol: '^KQ11',   label: 'KOSDAQ' },
-  { symbol: '^GSPC',   label: 'S&P500' },
-  { symbol: '^IXIC',   label: 'NASDAQ' },
+// ─── 공통 지표 (로케일 무관) ───────────────────────────────────────────────
+const COMMON_SYMBOLS: { symbol: string; label: string }[] = [
   { symbol: 'BTC-USD', label: 'BTC' },
   { symbol: 'ETH-USD', label: 'ETH' },
   { symbol: 'GC=F',    label: 'GOLD' },
   { symbol: 'KRW=X',   label: 'USD/KRW' },
 ];
+
+// ─── 한국 우선 지표 ────────────────────────────────────────────────────────
+const KR_FIRST_SYMBOLS: { symbol: string; label: string }[] = [
+  { symbol: '^KS11',   label: 'KOSPI' },
+  { symbol: '^KQ11',   label: 'KOSDAQ' },
+  { symbol: '^GSPC',   label: 'S&P500' },
+  { symbol: '^IXIC',   label: 'NASDAQ' },
+  ...COMMON_SYMBOLS,
+];
+
+// ─── 영어(미국) 우선 지표 ─────────────────────────────────────────────────
+const EN_FIRST_SYMBOLS: { symbol: string; label: string }[] = [
+  { symbol: '^GSPC',   label: 'S&P500' },
+  { symbol: '^IXIC',   label: 'NASDAQ' },
+  { symbol: '^KS11',   label: 'KOSPI' },
+  { symbol: '^KQ11',   label: 'KOSDAQ' },
+  ...COMMON_SYMBOLS,
+];
+
+/** 현재 로케일에 맞는 시장 지표 목록 반환 */
+function getMarketSymbols(): { symbol: string; label: string }[] {
+  return isKoreanLocale() ? KR_FIRST_SYMBOLS : EN_FIRST_SYMBOLS;
+}
 
 /**
  * Yahoo Finance v8 Chart API로 단일 지표 가격 조회
@@ -85,8 +105,9 @@ export function useMarketTicker(refreshMs = 300000) {
 
   const fetchAll = useCallback(async () => {
     // 각 지표를 병렬 조회 (실패해도 나머지는 표시)
+    // 로케일 기반으로 순서가 결정됨 (한국어: KOSPI/KOSDAQ 먼저, 영어: S&P500/NASDAQ 먼저)
     const results = await Promise.allSettled(
-      MARKET_SYMBOLS.map(async ({ symbol, label }) => {
+      getMarketSymbols().map(async ({ symbol, label }) => {
         // 요청 간 100ms 간격 (rate limit 방지)
         await new Promise(r => setTimeout(r, Math.random() * 200));
 

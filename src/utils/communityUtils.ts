@@ -13,6 +13,7 @@
 
 import { Ionicons } from '@expo/vector-icons';
 import { HoldingSnapshot, TIER_THRESHOLDS } from '../types/community';
+import { getLocaleCode } from './formatters';
 
 /**
  * 자산 금액 → 티어 판정
@@ -88,7 +89,7 @@ export const getRelativeTime = (dateString: string): string => {
   if (diffMins < 60) return `${diffMins}분 전`;
   if (diffHours < 24) return `${diffHours}시간 전`;
   if (diffDays < 7) return `${diffDays}일 전`;
-  return date.toLocaleDateString('ko-KR');
+  return date.toLocaleDateString(getLocaleCode());
 };
 
 /** 금액 포맷 (3단계: 억/만원/원) */

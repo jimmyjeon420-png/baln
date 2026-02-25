@@ -31,6 +31,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
 import { ContextLayerCard } from './ContextLayerCard';
 import type { ContextCardData, PriceCatalyst } from '../../types/contextCard';
+import { formatLocalDate } from '../../utils/formatters';
+import { t as rawT } from '../../locales';
+import { useLocale } from '../../context/LocaleContext';
 
 // ============================================================================
 // Android LayoutAnimation 활성화
@@ -106,10 +109,9 @@ export type ContextCardProps = ContextCardFlatProps | ContextCardLegacyProps;
 // 유틸 함수
 // ============================================================================
 
-/** 날짜 포맷: "2026-02-12" → "2월 12일" */
+/** 날짜 포맷: 로케일 기반 ("2월 12일" / "Feb 12") */
 function formatDate(dateStr: string): string {
-  const d = new Date(dateStr);
-  return `${d.getMonth() + 1}월 ${d.getDate()}일`;
+  return formatLocalDate(dateStr);
 }
 
 // ============================================================================
@@ -145,7 +147,7 @@ function normalizeProps(props: ContextCardProps): NormalizedData {
         changePercent: d.portfolioImpact.percentChange,
         healthScoreChange:
           d.portfolioImpact.healthScoreChange === 0
-            ? '변동 없음'
+            ? rawT('format.context_no_change')
             : `${d.portfolioImpact.healthScoreChange > 0 ? '+' : ''}${d.portfolioImpact.healthScoreChange}`,
       },
       isPremium: props.isPremium ?? false,
@@ -180,6 +182,7 @@ function normalizeProps(props: ContextCardProps): NormalizedData {
 
 export default function ContextCard(props: ContextCardProps) {
   const { colors, shadows } = useTheme();
+  const { t } = useLocale();
   const {
     historicalContext,
     macroChain,
@@ -215,7 +218,7 @@ export default function ContextCard(props: ContextCardProps) {
         <View style={s.headerLeft}>
           <Ionicons name="newspaper-outline" size={20} color={colors.primary} />
           <Text style={[s.headerTitle, { color: colors.textPrimary }]}>
-            오늘의 맥락
+            {t('format.context_card_title')}
           </Text>
         </View>
         <View style={s.headerRight}>
@@ -240,7 +243,7 @@ export default function ContextCard(props: ContextCardProps) {
         {/* 1번 레이어: 역사적 맥락 (무료 — 기본 펼침) */}
         <ContextLayerCard
           icon="time-outline"
-          title="역사적 맥락"
+          title={t('format.context_layer_historical')}
           color={colors.primary}
           initiallyExpanded
         >
@@ -252,7 +255,7 @@ export default function ContextCard(props: ContextCardProps) {
         {/* 2번 레이어: 거시경제 체인 (무료) */}
         <ContextLayerCard
           icon="git-network-outline"
-          title="거시경제 체인"
+          title={t('format.context_layer_macro')}
           color={colors.info}
         >
           <View style={s.chainContainer}>
@@ -281,18 +284,18 @@ export default function ContextCard(props: ContextCardProps) {
         {/* 3번 레이어: 정치 맥락 (무료 — 역사로 감싼 안심 톤) */}
         <ContextLayerCard
           icon="flag-outline"
-          title="정치 맥락"
+          title={t('format.context_layer_political')}
           color="#7E57C2"
         >
           <Text style={[s.layerText, { color: colors.textSecondary }]}>
-            {politicalContext || '역사적으로 정치 이벤트는 단기 변동을 만들었지만, 장기 투자 관점에서 영향은 제한적이었습니다.'}
+            {politicalContext || t('format.context_political_default')}
           </Text>
         </ContextLayerCard>
 
         {/* 4번 레이어: 기관 행동 (Premium) */}
         <ContextLayerCard
           icon="business-outline"
-          title="기관 행동"
+          title={t('format.context_layer_institution')}
           color={colors.warning}
           isLocked={!isPremium}
           onPressPremium={onPressPremium}
@@ -305,7 +308,7 @@ export default function ContextCard(props: ContextCardProps) {
         {/* 5번 레이어: 내 포트폴리오 영향 (Premium) */}
         <ContextLayerCard
           icon="pie-chart-outline"
-          title="내 포트폴리오 영향"
+          title={t('format.context_layer_portfolio')}
           color={colors.premium.purple}
           isLocked={!isPremium}
           onPressPremium={onPressPremium}
@@ -313,7 +316,7 @@ export default function ContextCard(props: ContextCardProps) {
           <View style={s.impactContainer}>
             <View style={s.impactRow}>
               <Text style={[s.impactLabel, { color: colors.textTertiary }]}>
-                변동률
+                {t('format.context_change_rate')}
               </Text>
               <Text
                 style={[
@@ -332,7 +335,7 @@ export default function ContextCard(props: ContextCardProps) {
             </View>
             <View style={s.impactRow}>
               <Text style={[s.impactLabel, { color: colors.textTertiary }]}>
-                건강 점수
+                {t('format.context_health_score')}
               </Text>
               <Text style={[s.impactValue, { color: colors.textSecondary }]}>
                 {portfolioImpact.healthScoreChange}
@@ -348,7 +351,7 @@ export default function ContextCard(props: ContextCardProps) {
             <View style={s.catalystHeader}>
               <Ionicons name="bar-chart-outline" size={16} color={colors.textTertiary} />
               <Text style={[s.catalystHeaderText, { color: colors.textTertiary }]}>
-                가격 촉매
+                {t('format.context_price_catalyst')}
               </Text>
             </View>
             {priceCatalysts.map((item, index) => (

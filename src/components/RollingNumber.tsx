@@ -13,6 +13,7 @@ import Animated, {
   Easing,
   useDerivedValue,
 } from 'react-native-reanimated';
+import { isKoreanLocale } from '../utils/formatters';
 
 // Reanimated AnimatedProps를 위한 TextInput 래핑
 const AnimatedTextInput = Animated.createAnimatedComponent(TextInput);
@@ -39,6 +40,8 @@ export default function RollingNumber({
   format = 'plain',
 }: RollingNumberProps) {
   const animatedValue = useSharedValue(0);
+  // 로케일 코드를 JS 스레드에서 결정 — worklet 안에서 사용하기 위해 공유값으로 전달
+  const localeCode = isKoreanLocale() ? 'ko-KR' : 'en-US';
 
   useEffect(() => {
     animatedValue.value = withTiming(value, {
@@ -53,15 +56,15 @@ export default function RollingNumber({
 
     let formatted: string;
     if (format === 'currency') {
-      // 원화 포맷: 1,234,567
-      formatted = Math.round(current).toLocaleString('ko-KR');
+      // 로케일 기반 숫자 포맷
+      formatted = Math.round(current).toLocaleString(localeCode);
     } else if (format === 'percent') {
       formatted = current.toFixed(decimals);
     } else {
       if (decimals > 0) {
         formatted = current.toFixed(decimals);
       } else {
-        formatted = Math.round(current).toLocaleString('ko-KR');
+        formatted = Math.round(current).toLocaleString(localeCode);
       }
     }
 

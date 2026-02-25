@@ -21,6 +21,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
 import type { DeepDiveResult } from '../../types/marketplace';
+import { getLocaleCode } from '../../utils/formatters';
 
 // 기존 컴포넌트 import
 import ScoreRadar from './ScoreRadar';
@@ -485,7 +486,7 @@ export default function DeepDiveReport({ result }: DeepDiveReportProps) {
             </View>
           ))}
           <Text style={[styles.sourceDetail, { color: colors.textTertiary, marginTop: 8 }]}>
-            점검 시각: {new Date(result.verification.checkedAt).toLocaleString('ko-KR')}
+            점검 시각: {new Date(result.verification.checkedAt).toLocaleString(getLocaleCode())}
           </Text>
         </View>
       )}
@@ -497,7 +498,7 @@ export default function DeepDiveReport({ result }: DeepDiveReportProps) {
         <Text style={[styles.disclaimerText, { color: colors.textQuaternary }]}>
           본 분석은 AI가 생성한 참고 자료이며, 투자 권유가 아닙니다.
           모든 투자 결정은 본인의 판단과 책임 하에 이루어져야 합니다.
-          분석 시점: {new Date(result.generatedAt).toLocaleString('ko-KR')}
+          분석 시점: {new Date(result.generatedAt).toLocaleString(getLocaleCode())}
         </Text>
       </View>
     </View>
@@ -518,7 +519,7 @@ function formatLargeNumber(value: number): string {
   if (abs >= 1_0000) {
     return `${sign}약 ${(abs / 1_0000).toFixed(0)}만원`;
   }
-  return `${sign}${abs.toLocaleString()}원`;
+  return `${sign}${abs.toLocaleString(getLocaleCode())}원`;
 }
 
 // ── 유틸: 시그널 색상 ──

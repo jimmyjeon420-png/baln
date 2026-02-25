@@ -36,6 +36,7 @@ import ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { HeaderBar } from '../../src/components/common/HeaderBar';
 import { useTheme } from '../../src/hooks/useTheme';
+import { getLocaleCode } from '../../src/utils/formatters';
 import { useMyCredits, useSpendCredits } from '../../src/hooks/useCredits';
 import { useShareReward } from '../../src/hooks/useRewards';
 import { FEATURE_COSTS } from '../../src/types/marketplace';
@@ -644,7 +645,7 @@ export default function CFOChatScreen() {
           )}
 
           <Text style={[s.timestamp, { color: colors.textTertiary, marginTop: 8 }]}>
-            {item.timestamp.toLocaleTimeString('ko-KR', {
+            {item.timestamp.toLocaleTimeString(getLocaleCode(), {
               hour: '2-digit',
               minute: '2-digit',
             })}
@@ -690,7 +691,7 @@ export default function CFOChatScreen() {
           <Text
             style={[s.timestamp, { color: isUser ? 'rgba(255,255,255,0.7)' : colors.textTertiary }]}
           >
-            {item.timestamp.toLocaleTimeString('ko-KR', {
+            {item.timestamp.toLocaleTimeString(getLocaleCode(), {
               hour: '2-digit',
               minute: '2-digit',
             })}

@@ -14,6 +14,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
+import { getLocaleCode } from '../../utils/formatters';
+import { useLocale } from '../../context/LocaleContext';
 
 interface PortfolioImpactData {
   /** 수익률 변화 (%) */
@@ -54,6 +56,7 @@ const CALCULATING_TIMEOUT_MS = 30_000;
  */
 export function PortfolioImpactSection({ data, onRetry }: PortfolioImpactSectionProps) {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const [timedOut, setTimedOut] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -87,17 +90,17 @@ export function PortfolioImpactSection({ data, onRetry }: PortfolioImpactSection
         <View style={s.headerRow}>
           <Ionicons name="analytics-outline" size={18} color="#FF9800" />
           <Text style={[s.headerText, { color: colors.textSecondary }]}>
-            오늘 맥락이 내 자산에 미친 영향
+            {t('portfolio_impact.section_title')}
           </Text>
         </View>
 
         <View style={[s.fallbackBox, { backgroundColor: colors.surface }]}>
           <Ionicons name="time-outline" size={32} color="#FF9800" />
           <Text style={[s.fallbackTitle, { color: colors.textPrimary }]}>
-            영향도 데이터를 가져올 수 없습니다
+            {t('portfolio_impact.timeout_title')}
           </Text>
           <Text style={[s.fallbackDesc, { color: colors.textSecondary }]}>
-            서버에서 영향도 계산이 아직 완료되지 않았습니다.{'\n'}내일 아침 다시 확인해주세요.
+            {t('portfolio_impact.timeout_desc')}
           </Text>
 
           {onRetry && (
@@ -107,7 +110,7 @@ export function PortfolioImpactSection({ data, onRetry }: PortfolioImpactSection
               activeOpacity={0.7}
             >
               <Ionicons name="refresh" size={16} color="#FF9800" />
-              <Text style={[s.retryText, { color: '#FF9800' }]}>다시 시도</Text>
+              <Text style={[s.retryText, { color: '#FF9800' }]}>{t('portfolio_impact.retry')}</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -122,14 +125,14 @@ export function PortfolioImpactSection({ data, onRetry }: PortfolioImpactSection
         <View style={s.headerRow}>
           <Ionicons name="analytics-outline" size={18} color="#2196F3" />
           <Text style={[s.headerText, { color: colors.textSecondary }]}>
-            오늘 맥락이 내 자산에 미친 영향
+            {t('portfolio_impact.section_title')}
           </Text>
         </View>
 
         <View style={[s.calculatingBox, { backgroundColor: colors.surface }]}>
           <ActivityIndicator size="small" color="#2196F3" />
           <Text style={[s.calculatingText, { color: colors.textSecondary }]}>
-            영향도 계산 중...
+            {t('portfolio_impact.calculating')}
           </Text>
         </View>
       </View>
@@ -144,11 +147,12 @@ export function PortfolioImpactSection({ data, onRetry }: PortfolioImpactSection
     ? 'rgba(76, 175, 80, 0.1)'
     : 'rgba(207, 102, 121, 0.1)';
 
-  // 원화 환산 (임시: -1.2% → -120,000원)
+  // 환산 (임시: -1.2% → -120,000원 / -$1,200)
+  const localeCode = getLocaleCode();
   const krwImpact = (data.percentChange * 1000000).toFixed(0);
-  const formattedKRW = new Intl.NumberFormat('ko-KR', {
+  const formattedKRW = new Intl.NumberFormat(localeCode, {
     style: 'currency',
-    currency: 'KRW',
+    currency: localeCode === 'ko-KR' ? 'KRW' : 'USD',
     maximumFractionDigits: 0,
   }).format(Number(krwImpact));
 
@@ -158,7 +162,7 @@ export function PortfolioImpactSection({ data, onRetry }: PortfolioImpactSection
       <View style={s.headerRow}>
         <Ionicons name="analytics-outline" size={18} color="#2196F3" />
         <Text style={[s.headerText, { color: colors.textSecondary }]}>
-          오늘 맥락이 내 자산에 미친 영향
+          {t('portfolio_impact.section_title')}
         </Text>
       </View>
 
@@ -169,19 +173,19 @@ export function PortfolioImpactSection({ data, onRetry }: PortfolioImpactSection
           {data.percentChange.toFixed(1)}%
         </Text>
         <Text style={[s.changeLabel, { color: colors.textSecondary }]}>
-          {data.percentChange >= 0 ? '예상 수익' : '예상 손실'}: {formattedKRW}
+          {data.percentChange >= 0 ? t('portfolio_impact.profit_label') : t('portfolio_impact.loss_label')}: {formattedKRW}
         </Text>
       </View>
 
       {/* 건강 점수 변화 */}
       <View style={[s.healthBox, { backgroundColor: colors.surface }]}>
-        <Text style={[s.healthLabel, { color: colors.textSecondary }]}>건강 점수</Text>
+        <Text style={[s.healthLabel, { color: colors.textSecondary }]}>{t('portfolio_impact.health_label')}</Text>
         <View style={s.healthValueRow}>
           {data.healthScoreChange === 0 ? (
             <>
               <Ionicons name="checkmark-circle" size={18} color="#4CAF50" />
               <Text style={[s.healthValue, { color: colors.textPrimary }]}>
-                변동 없음
+                {t('portfolio_impact.health_no_change')}
               </Text>
             </>
           ) : (

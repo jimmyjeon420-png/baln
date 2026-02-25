@@ -30,6 +30,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
 import { ThemeColors } from '../../styles/colors';
 import { useKostolalyPhase } from '../../hooks/useKostolalyPhase';
+import { getLocaleCode } from '../../utils/formatters';
+import { useLocale } from '../../context/LocaleContext';
 import {
   KostolalyPhase,
   KOSTOLANY_PHASE_NAMES,
@@ -117,6 +119,7 @@ interface KostolalyPhaseCardProps {
 
 export default function KostolalyPhaseCard({ onApplyPhase }: KostolalyPhaseCardProps) {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const { data, phase, target, isLoading, isError } = useKostolalyPhase();
   const [showDetail, setShowDetail] = useState(false);
   const s = createStyles(colors);
@@ -128,7 +131,7 @@ export default function KostolalyPhaseCard({ onApplyPhase }: KostolalyPhaseCardP
         <View style={s.loadingRow}>
           <ActivityIndicator size="small" color={colors.success} />
           <Text style={[s.loadingText, { color: colors.textTertiary }]}>
-            코스톨라니 국면 분석 중...
+            {t('rebalance.kostolany_phase.loading')}
           </Text>
         </View>
       </View>
@@ -142,7 +145,7 @@ export default function KostolalyPhaseCard({ onApplyPhase }: KostolalyPhaseCardP
         <View style={s.errorRow}>
           <Ionicons name="analytics-outline" size={18} color={colors.textTertiary} />
           <Text style={[s.errorText, { color: colors.textTertiary }]}>
-            국면 분석 데이터를 불러오는 중이에요
+            {t('rebalance.kostolany_phase.error')}
           </Text>
         </View>
       </View>
@@ -228,13 +231,13 @@ export default function KostolalyPhaseCard({ onApplyPhase }: KostolalyPhaseCardP
         <View style={s.headerLeft}>
           <View style={[s.phaseTag, { backgroundColor: phaseColor + '20', borderColor: phaseColor + '40' }]}>
             <Text style={[s.phaseTagText, { color: phaseColor }]}>
-              {phaseEmoji} {phase}국면
+              {phaseEmoji} {t('rebalance.kostolany_phase.phase_label', { phase })}
             </Text>
           </View>
           <View>
             <Text style={[s.phaseName, { color: colors.textPrimary }]}>{phaseName}</Text>
             <Text style={[s.phaseNameEn, { color: colors.textTertiary }]}>
-              Kostolany Egg Model · 신뢰도 {data.confidence}%
+              Kostolany Egg Model · {t('rebalance.kostolany_phase.confidence_label', { pct: data.confidence })}
             </Text>
           </View>
         </View>
@@ -258,7 +261,7 @@ export default function KostolalyPhaseCard({ onApplyPhase }: KostolalyPhaseCardP
         <View style={[s.reasonSection, { backgroundColor: colors.surfaceElevated }]}>
           <View style={s.reasonHeader}>
             <Ionicons name="sparkles-outline" size={13} color={colors.textSecondary} />
-            <Text style={[s.reasonTitle, { color: colors.textSecondary }]}>AI 분석 근거</Text>
+            <Text style={[s.reasonTitle, { color: colors.textSecondary }]}>{t('rebalance.kostolany_phase.ai_reasoning_title')}</Text>
           </View>
           {data.reasoning.map((reason: string, idx: number) => (
             <View key={idx} style={s.reasonRow}>
@@ -291,7 +294,7 @@ export default function KostolalyPhaseCard({ onApplyPhase }: KostolalyPhaseCardP
       {showDetail && (
         <View style={[s.targetPreview, { backgroundColor: colors.surfaceElevated }]}>
           <Text style={[s.targetPreviewTitle, { color: colors.textSecondary }]}>
-            {phase}국면 추천 배분
+            {t('rebalance.kostolany_phase.allocation_preview_title', { phase })}
           </Text>
           <View style={s.targetGrid}>
             {(Object.entries(phaseTarget) as [AssetCategory, number][])
@@ -316,18 +319,18 @@ export default function KostolalyPhaseCard({ onApplyPhase }: KostolalyPhaseCardP
             <View style={s.histPerfHeader}>
               <Ionicons name="bar-chart-outline" size={12} color={phaseColor} />
               <Text style={[s.histPerfTitle, { color: phaseColor }]}>
-                {phase}국면 배분의 역사적 참고 성과
+                {t('rebalance.kostolany_phase.historical_perf_title', { phase })}
               </Text>
             </View>
             <View style={s.histPerfStats}>
               <View style={s.histPerfStat}>
                 <Text style={[s.histPerfStatValue, { color: colors.success }]}>{perf.annualReturn}</Text>
-                <Text style={[s.histPerfStatLabel, { color: colors.textTertiary }]}>연간 기대 수익률</Text>
+                <Text style={[s.histPerfStatLabel, { color: colors.textTertiary }]}>{t('rebalance.kostolany_phase.annual_return_label')}</Text>
               </View>
               <View style={[s.histPerfDivider, { backgroundColor: colors.border }]} />
               <View style={s.histPerfStat}>
                 <Text style={[s.histPerfStatValue, { color: colors.error }]}>{perf.maxDrawdown}</Text>
-                <Text style={[s.histPerfStatLabel, { color: colors.textTertiary }]}>최대 낙폭 기준</Text>
+                <Text style={[s.histPerfStatLabel, { color: colors.textTertiary }]}>{t('rebalance.kostolany_phase.max_drawdown_label')}</Text>
               </View>
             </View>
             <View style={[s.histPerfNote, { backgroundColor: colors.surfaceElevated }]}>
@@ -335,7 +338,7 @@ export default function KostolalyPhaseCard({ onApplyPhase }: KostolalyPhaseCardP
               <Text style={[s.histPerfNoteText, { color: colors.textTertiary }]}>{perf.note}</Text>
             </View>
             <Text style={[s.histPerfDisclaimer, { color: colors.textTertiary }]}>
-              * 과거 성과가 미래를 보장하지 않습니다. 참고 목적의 역사적 데이터입니다.
+              {t('rebalance.kostolany_phase.disclaimer')}
             </Text>
           </View>
         );
@@ -350,14 +353,14 @@ export default function KostolalyPhaseCard({ onApplyPhase }: KostolalyPhaseCardP
         >
           <Ionicons name="checkmark-circle-outline" size={16} color="#fff" />
           <Text style={s.applyButtonText}>
-            {phase}국면 배분을 목표로 적용하기
+            {t('rebalance.kostolany_phase.apply_button', { phase })}
           </Text>
         </TouchableOpacity>
       )}
 
       {/* 업데이트 시각 */}
       <Text style={[s.updatedAt, { color: colors.textTertiary }]}>
-        국면 업데이트: {new Date(data.updated_at).toLocaleDateString('ko-KR', {
+        {t('rebalance.kostolany_phase.updated_at')} {new Date(data.updated_at).toLocaleDateString(getLocaleCode(), {
           month: 'long', day: 'numeric',
         })}
       </Text>

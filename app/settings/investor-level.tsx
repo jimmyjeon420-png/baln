@@ -35,6 +35,7 @@ import {
 } from '../../src/types/level';
 import { useTheme } from '../../src/hooks/useTheme';
 import { useLocale } from '../../src/context/LocaleContext';
+import { getLocaleCode } from '../../src/utils/formatters';
 
 export default function InvestorLevelScreen() {
   const router = useRouter();
@@ -95,7 +96,7 @@ export default function InvestorLevelScreen() {
     if (hours < 24) return t('format.hours_ago', { n: hours });
     const days = Math.floor(hours / 24);
     if (days < 7) return t('format.days_ago', { n: days });
-    return new Date(dateStr).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
+    return new Date(dateStr).toLocaleDateString(getLocaleCode(), { month: 'short', day: 'numeric' });
   };
 
   return (

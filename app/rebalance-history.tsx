@@ -18,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRebalanceHistory, useOverallStats } from '../src/hooks/useRebalanceHistory';
 import { SkeletonBlock } from '../src/components/SkeletonLoader';
 import { useTheme } from '../src/hooks/useTheme';
+import { getLocaleCode } from '../src/utils/formatters';
 
 export default function RebalanceHistoryScreen() {
   const router = useRouter();
@@ -123,7 +124,7 @@ export default function RebalanceHistoryScreen() {
             {/* 날짜 헤더 */}
             <View style={s.historyHeader}>
               <Text style={[s.historyDate, { color: colors.textPrimary }]}>
-                {new Date(item.date).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric', weekday: 'short' })}
+                {new Date(item.date).toLocaleDateString(getLocaleCode(), { month: 'short', day: 'numeric', weekday: 'short' })}
               </Text>
               {item.stats.executedActions > 0 && (
                 <View style={s.executedBadge}>

@@ -3,10 +3,11 @@
  *
  * 역할: "무료 vs Premium 비교 테이블"
  * - 무료/프리미엄 기능 비교 표시
- * - 연간 할인 토글 (월 ₩4,900 vs 연 ₩39,000, 33% 할인)
- * - CTA 버튼: "월 ₩4,900으로 시작하기"
+ * - 연간 할인 토글 (월간 vs 연간)
+ * - CTA 버튼: 로케일에 따라 가격 표시 자동 전환
  *
  * useTheme()으로 다크/라이트 모드 대응
+ * useLocale()으로 한국어/영어 자동 전환
  */
 
 import React, { useState, useCallback, useRef } from 'react';
@@ -20,7 +21,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
-import { formatCredits } from '../../utils/formatters';
+import { useLocale } from '../../context/LocaleContext';
+import { isKoreanLocale } from '../../utils/formatters';
 
 // ============================================================================
 // Props 인터페이스
@@ -34,48 +36,16 @@ export interface PremiumBenefitCardProps {
 }
 
 // ============================================================================
-// 혜택 비교 데이터
+// 혜택 비교 행 아이콘 (텍스트는 컴포넌트 내부에서 t()로 생성)
 // ============================================================================
 
-interface BenefitRow {
-  feature: string;
-  free: string;
-  premium: string;
-  icon: string;
-}
-
-const BENEFIT_ROWS: BenefitRow[] = [
-  {
-    feature: '맥락 카드',
-    free: '요약만',
-    premium: '전체 4겹 + 기관행동',
-    icon: 'layers-outline',
-  },
-  {
-    feature: 'AI 진단',
-    free: '1회/일',
-    premium: '3회/일',
-    icon: 'analytics-outline',
-  },
-  {
-    feature: '예측 게임',
-    free: '3문제/일',
-    premium: '3문제 + 해설 + 복기',
-    icon: 'game-controller-outline',
-  },
-  {
-    feature: '크레딧 보너스',
-    free: '-',
-    premium: `${formatCredits(30)}/월`,
-    icon: 'star-outline',
-  },
-  {
-    feature: '또래 비교',
-    free: '내 등급만',
-    premium: '전체 등급 비교',
-    icon: 'people-outline',
-  },
-];
+const BENEFIT_ICONS = [
+  'layers-outline',
+  'analytics-outline',
+  'game-controller-outline',
+  'star-outline',
+  'people-outline',
+] as const;
 
 // ============================================================================
 // 메인 컴포넌트
@@ -88,8 +58,10 @@ export default function PremiumBenefitCard({
   yearlyPrice,
 }: PremiumBenefitCardProps) {
   const { colors, shadows } = useTheme();
+  const { t } = useLocale();
   const [isYearly, setIsYearly] = useState(false);
   const isPremium = currentPlan === 'premium';
+  const isKorean = isKoreanLocale();
 
   // CTA 버튼 스케일 애니메이션
   const ctaScale = useRef(new Animated.Value(1)).current;
@@ -118,6 +90,48 @@ export default function PremiumBenefitCard({
     ((monthlyPrice * 12 - yearlyPrice) / (monthlyPrice * 12)) * 100
   );
 
+  // 로케일 기반 혜택 비교 데이터
+  const BENEFIT_ROWS = [
+    {
+      feature: t('premium.benefit_context_card'),
+      free: t('premium.benefit_context_card_free'),
+      premium: t('premium.benefit_context_card_premium'),
+      icon: BENEFIT_ICONS[0],
+    },
+    {
+      feature: t('premium.benefit_ai_diagnosis'),
+      free: t('premium.benefit_ai_diagnosis_free'),
+      premium: t('premium.benefit_ai_diagnosis_premium'),
+      icon: BENEFIT_ICONS[1],
+    },
+    {
+      feature: t('premium.benefit_prediction'),
+      free: t('premium.benefit_prediction_free'),
+      premium: t('premium.benefit_prediction_premium'),
+      icon: BENEFIT_ICONS[2],
+    },
+    {
+      feature: t('premium.benefit_credits'),
+      free: t('premium.benefit_credits_free'),
+      premium: t('premium.benefit_credits_premium'),
+      icon: BENEFIT_ICONS[3],
+    },
+    {
+      feature: t('premium.benefit_peer'),
+      free: t('premium.benefit_peer_free'),
+      premium: t('premium.benefit_peer_premium'),
+      icon: BENEFIT_ICONS[4],
+    },
+  ];
+
+  // 로케일 기반 가격 포맷
+  const formatPrice = (amount: number): string => {
+    if (isKorean) {
+      return amount.toLocaleString();
+    }
+    return amount.toLocaleString();
+  };
+
   return (
     <View
       style={[styles.container, { backgroundColor: colors.surface }, shadows.md]}
@@ -131,7 +145,7 @@ export default function PremiumBenefitCard({
             color={colors.premium.gold}
           />
           <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
-            Premium 혜택
+            {t('premium.benefit_header')}
           </Text>
         </View>
         {isPremium && (
@@ -143,7 +157,7 @@ export default function PremiumBenefitCard({
           >
             <Ionicons name="checkmark-circle" size={14} color={colors.primary} />
             <Text style={[styles.currentBadgeText, { color: colors.primary }]}>
-              이용 중
+              {t('premium.benefit_in_use')}
             </Text>
           </View>
         )}
@@ -166,12 +180,12 @@ export default function PremiumBenefitCard({
           <Text
             style={[styles.tableHeaderCell, styles.featureCell, { color: colors.textSecondary }]}
           >
-            기능
+            {t('premium.benefit_col_feature')}
           </Text>
           <Text
             style={[styles.tableHeaderCell, styles.planCell, { color: colors.textTertiary }]}
           >
-            무료
+            {t('premium.benefit_col_free')}
           </Text>
           <Text
             style={[
@@ -180,14 +194,14 @@ export default function PremiumBenefitCard({
               { color: colors.premium.gold },
             ]}
           >
-            Premium
+            {t('premium.benefit_col_premium')}
           </Text>
         </View>
 
         {/* 테이블 바디 */}
         {BENEFIT_ROWS.map((row, index) => (
           <View
-            key={row.feature}
+            key={index}
             style={[
               styles.tableRow,
               {
@@ -254,7 +268,7 @@ export default function PremiumBenefitCard({
               { color: !isYearly ? colors.textPrimary : colors.textTertiary },
             ]}
           >
-            월간
+            {t('premium.billing_monthly')}
           </Text>
           <Switch
             value={isYearly}
@@ -271,7 +285,7 @@ export default function PremiumBenefitCard({
               { color: isYearly ? colors.textPrimary : colors.textTertiary },
             ]}
           >
-            연간
+            {t('premium.billing_yearly')}
           </Text>
           {isYearly && (
             <View
@@ -281,7 +295,7 @@ export default function PremiumBenefitCard({
               ]}
             >
               <Text style={[styles.discountText, { color: colors.error }]}>
-                {discountPercent}% 할인
+                {t('premium.billing_discount', { percent: discountPercent })}
               </Text>
             </View>
           )}
@@ -294,19 +308,19 @@ export default function PremiumBenefitCard({
           {isYearly ? (
             <View style={styles.priceRow}>
               <Text style={[styles.priceStrike, { color: colors.textQuaternary }]}>
-                ₩{(monthlyPrice * 12).toLocaleString()}/년
+                {t('premium.price_yearly_original', { price: formatPrice(monthlyPrice * 12) })}
               </Text>
               <Text style={[styles.priceMain, { color: colors.premium.gold }]}>
-                ₩{yearlyPrice.toLocaleString()}/년
+                {t('premium.price_yearly_label', { price: formatPrice(yearlyPrice) })}
               </Text>
               <Text style={[styles.priceMonthly, { color: colors.textSecondary }]}>
-                (월 ₩{monthlyEquivalent.toLocaleString()})
+                {t('premium.price_monthly_equivalent', { price: formatPrice(monthlyEquivalent) })}
               </Text>
             </View>
           ) : (
             <View style={styles.priceRow}>
               <Text style={[styles.priceMain, { color: colors.premium.gold }]}>
-                ₩{monthlyPrice.toLocaleString()}/월
+                {t('premium.price_monthly_label', { price: formatPrice(monthlyPrice) })}
               </Text>
             </View>
           )}
@@ -331,8 +345,8 @@ export default function PremiumBenefitCard({
             <Ionicons name="diamond" size={18} color="#1A1A1A" />
             <Text style={styles.ctaText}>
               {isYearly
-                ? `연 ₩${yearlyPrice.toLocaleString()}으로 시작하기`
-                : `월 ₩${monthlyPrice.toLocaleString()}으로 시작하기`}
+                ? t('premium.cta_yearly', { price: formatPrice(yearlyPrice) })
+                : t('premium.cta_monthly', { price: formatPrice(monthlyPrice) })}
             </Text>
           </TouchableOpacity>
         </Animated.View>

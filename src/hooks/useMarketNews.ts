@@ -13,6 +13,7 @@ import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import supabase from '../services/supabase';
 import { getLangParam } from '../utils/promptLanguage';
+import { getCurrentLanguage } from '../locales';
 
 // ============================================================================
 // 타입 정의
@@ -100,7 +101,7 @@ function isAllowedFallbackLink(rawLink: string): boolean {
   }
 }
 
-const FALLBACK_FEEDS: Record<NewsCategoryFilter, FallbackFeedSource[]> = {
+const FALLBACK_FEEDS_KO: Record<NewsCategoryFilter, FallbackFeedSource[]> = {
   all: [
     { name: '한국경제', url: 'https://www.hankyung.com/feed/all-news' },
     { name: '연합뉴스', url: 'https://www.yna.co.kr/rss/economy.xml' },
@@ -121,6 +122,32 @@ const FALLBACK_FEEDS: Record<NewsCategoryFilter, FallbackFeedSource[]> = {
     { name: '한국경제', url: 'https://www.hankyung.com/feed/all-news' },
   ],
 };
+
+const FALLBACK_FEEDS_EN: Record<NewsCategoryFilter, FallbackFeedSource[]> = {
+  all: [
+    { name: 'Reuters', url: 'https://feeds.reuters.com/reuters/businessNews' },
+    { name: 'CNBC', url: 'https://www.cnbc.com/id/10000664/device/rss/rss.html' },
+    { name: 'Yahoo Finance', url: 'https://finance.yahoo.com/news/rssindex' },
+  ],
+  crypto: [
+    { name: 'CoinDesk', url: 'https://www.coindesk.com/arc/outboundfeeds/rss/' },
+    { name: 'Bitcoin Magazine', url: 'https://bitcoinmagazine.com/.rss/full/' },
+  ],
+  stock: [
+    { name: 'Reuters', url: 'https://feeds.reuters.com/reuters/businessNews' },
+    { name: 'CNBC', url: 'https://www.cnbc.com/id/10000664/device/rss/rss.html' },
+    { name: 'Yahoo Finance', url: 'https://finance.yahoo.com/news/rssindex' },
+  ],
+  macro: [
+    { name: 'Reuters', url: 'https://feeds.reuters.com/reuters/businessNews' },
+    { name: 'CNBC', url: 'https://www.cnbc.com/id/100003114/device/rss/rss.html' },
+    { name: 'Yahoo Finance', url: 'https://finance.yahoo.com/news/rssindex' },
+  ],
+};
+
+function getFallbackFeeds(): Record<NewsCategoryFilter, FallbackFeedSource[]> {
+  return getCurrentLanguage() === 'ko' ? FALLBACK_FEEDS_KO : FALLBACK_FEEDS_EN;
+}
 
 function safeDateISO(value?: string): string {
   if (!value) return new Date().toISOString();
@@ -376,6 +403,7 @@ function dedupeAndSortNews(items: MarketNewsItem[]): MarketNewsItem[] {
 }
 
 async function fetchFallbackMarketNews(category: NewsCategoryFilter): Promise<MarketNewsItem[]> {
+  const FALLBACK_FEEDS = getFallbackFeeds();
   const feeds = FALLBACK_FEEDS[category] ?? FALLBACK_FEEDS.all;
   const collected: MarketNewsItem[] = [];
 

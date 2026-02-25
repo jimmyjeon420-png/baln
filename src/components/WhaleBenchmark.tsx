@@ -9,6 +9,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { WhaleAllocation, AllocationComparison, DEFAULT_TARGET_PERSONA } from '../services/whaleApi';
+import { getLocaleCode } from '../utils/formatters';
 
 interface WhaleBenchmarkProps {
   userAllocation: WhaleAllocation | undefined;
@@ -212,7 +213,7 @@ export default function WhaleBenchmark({
 
       {/* 업데이트 시간 */}
       <Text style={styles.updateTime}>
-        마지막 업데이트: {new Date(whaleAllocation.updatedAt).toLocaleDateString('ko-KR')}
+        마지막 업데이트: {new Date(whaleAllocation.updatedAt).toLocaleDateString(getLocaleCode())}
       </Text>
     </View>
   );

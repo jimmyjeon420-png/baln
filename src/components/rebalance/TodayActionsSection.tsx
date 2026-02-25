@@ -16,7 +16,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { SkeletonBlock } from '../SkeletonLoader';
 import { estimateTax } from '../../utils/taxEstimator';
-import { formatCurrency } from '../../utils/formatters';
+import { formatCurrency, getLocaleCode } from '../../utils/formatters';
 import { useTheme } from '../../hooks/useTheme';
 import { ThemeColors } from '../../styles/colors';
 import type { PortfolioAction, RebalancePortfolioAsset, LivePriceData } from '../../types/rebalanceTypes';
@@ -767,7 +767,7 @@ export default function TodayActionsSection({
             {/* P0-2: 데이터 신선도 타임스탬프 */}
             {phaseData?.updated_at && (
               <Text style={[s.phaseBasisText, { color: colors.textTertiary }]}>
-                {' '}· 판정: {new Date(phaseData.updated_at).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' })}
+                {' '}· 판정: {new Date(phaseData.updated_at).toLocaleDateString(getLocaleCode(), { month: 'numeric', day: 'numeric' })}
               </Text>
             )}
           </View>
@@ -1290,22 +1290,22 @@ export default function TodayActionsSection({
                         {tax.transactionTax > 0 && (
                           <View style={s.taxRow}>
                             <Text style={[s.taxLabel, { color: colors.textTertiary }]}>거래세</Text>
-                            <Text style={[s.taxValue, { color: colors.textTertiary }]}>{'\u20A9'}{Math.floor(tax.transactionTax).toLocaleString()}</Text>
+                            <Text style={[s.taxValue, { color: colors.textTertiary }]}>{'\u20A9'}{Math.floor(tax.transactionTax).toLocaleString(getLocaleCode())}</Text>
                           </View>
                         )}
                         <View style={s.taxRow}>
                           <Text style={[s.taxLabel, { color: colors.textTertiary }]}>수수료</Text>
-                          <Text style={[s.taxValue, { color: colors.textTertiary }]}>{'\u20A9'}{Math.floor(tax.brokerageFee).toLocaleString()}</Text>
+                          <Text style={[s.taxValue, { color: colors.textTertiary }]}>{'\u20A9'}{Math.floor(tax.brokerageFee).toLocaleString(getLocaleCode())}</Text>
                         </View>
                         {tax.capitalGainsTax > 0 && (
                           <View style={s.taxRow}>
                             <Text style={[s.taxLabel, { color: colors.textTertiary }]}>양도소득세</Text>
-                            <Text style={[s.taxValue, { color: colors.error }]}>{'\u20A9'}{Math.floor(tax.capitalGainsTax).toLocaleString()}</Text>
+                            <Text style={[s.taxValue, { color: colors.error }]}>{'\u20A9'}{Math.floor(tax.capitalGainsTax).toLocaleString(getLocaleCode())}</Text>
                           </View>
                         )}
                         <View style={[s.taxRow, s.taxTotalRow, { borderTopColor: `${colors.info}4D` }]}>
                           <Text style={[s.taxTotalLabel, { color: colors.info }]}>실수령 예상</Text>
-                          <Text style={[s.taxTotalValue, { color: colors.textPrimary }]}>{'\u20A9'}{Math.floor(tax.netProceeds).toLocaleString()}</Text>
+                          <Text style={[s.taxTotalValue, { color: colors.textPrimary }]}>{'\u20A9'}{Math.floor(tax.netProceeds).toLocaleString(getLocaleCode())}</Text>
                         </View>
                       </View>
                       {tax.note ? <Text style={[s.taxNote, { color: colors.info }]}>{tax.note}</Text> : null}

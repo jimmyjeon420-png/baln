@@ -42,6 +42,7 @@ import type { UserTier } from '../../src/types/database';
 import { FEATURE_LABELS, TIER_DISCOUNTS, type AIFeatureType } from '../../src/types/marketplace';
 import { getDiscountedCost } from '../../src/services/creditService';
 import { useTheme } from '../../src/hooks/useTheme';
+import { getLocaleCode } from '../../src/utils/formatters';
 import { ItemPurchaseModal } from '../../src/components/marketplace/ItemPurchaseModal';
 import { type MarketplaceItem, getItemsByTier } from '../../src/data/marketplaceItems';
 
@@ -296,7 +297,7 @@ export default function MarketplaceScreen() {
 
           <View style={s.heroTrustRow}>
             <Text style={s.heroTrustChip}>출처: {recommendation.sourceLabel}</Text>
-            <Text style={s.heroTrustChip}>생성: {new Date(recommendationGeneratedAt).toLocaleString('ko-KR')}</Text>
+            <Text style={s.heroTrustChip}>생성: {new Date(recommendationGeneratedAt).toLocaleString(getLocaleCode())}</Text>
             <Text style={s.heroTrustChip}>신뢰도: {recommendation.confidenceScore}점(추정)</Text>
           </View>
 
@@ -419,7 +420,7 @@ export default function MarketplaceScreen() {
                       {FEATURE_LABELS[item.feature_type as AIFeatureType]}
                     </Text>
                     <Text style={s.historyDate}>
-                      {new Date(item.created_at).toLocaleDateString('ko-KR')}
+                      {new Date(item.created_at).toLocaleDateString(getLocaleCode())}
                     </Text>
                   </View>
                   <View style={s.historyCostBadge}>

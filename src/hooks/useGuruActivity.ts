@@ -55,10 +55,9 @@ const CHECK_INTERVAL_MS = 30 * 1000;
 /** 최소 활동 유지 시간: 2분 (너무 잦은 전환 방지) */
 const MIN_ACTIVITY_DURATION_MS = 2 * 60 * 1000;
 
-/** KST 시간 반환 (0~23) */
+/** 사용자 로컬 시간 반환 (0~23) */
 function getKSTHour(): number {
-  const now = new Date();
-  return (now.getUTCHours() + 9) % 24;
+  return new Date().getHours();
 }
 
 /** 구루 전체 ID 목록 */

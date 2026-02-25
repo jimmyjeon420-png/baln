@@ -16,6 +16,7 @@ import { Platform, Alert } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import supabase, { getCurrentUser } from './supabase';
+import { getCurrentLanguage } from '../locales';
 
 // ============================================================================
 // 스토리지 키
@@ -246,13 +247,20 @@ export async function scheduleMorningBriefing(
     await cancelScheduledNotifications('morning-briefing');
     if (weekdays.length === 0) return null;
 
-    const body = topHoldingName
-      ? `${topHoldingName} 포함 보유 자산 기준으로 오늘의 시장 동향을 확인하세요.`
-      : 'AI가 분석한 오늘의 시장 동향과 포트폴리오 처방전을 확인하세요.';
+    const lang = getCurrentLanguage();
+    const isKorean = lang === 'ko';
+    const title = isKorean ? '☀️ 오늘의 시장 브리핑 준비 완료' : '☀️ Today\'s Market Briefing Ready';
+    const body = isKorean
+      ? (topHoldingName
+        ? `${topHoldingName} 포함 보유 자산 기준으로 오늘의 시장 동향을 확인하세요.`
+        : 'AI가 분석한 오늘의 시장 동향과 포트폴리오 처방전을 확인하세요.')
+      : (topHoldingName
+        ? `Check today's market trends based on your holdings including ${topHoldingName}.`
+        : 'Check today\'s AI-analyzed market trends and portfolio prescription.');
 
     const ids = await scheduleWeeklyNotifications({
       type: 'morning-briefing',
-      title: '☀️ 오늘의 시장 브리핑 준비 완료',
+      title,
       body,
       screen: '/(tabs)/diagnosis',
       weekdays,
@@ -286,12 +294,18 @@ export async function scheduleInactivityReminder(): Promise<string | null> {
     const now = new Date();
     const diffMs = threeDaysLater.getTime() - now.getTime();
 
+    const inactivityLang = getCurrentLanguage();
+    const inactivityTitle = inactivityLang === 'ko' ? '⏰ 포트폴리오 점검 필요' : '⏰ Portfolio Check Needed';
+    const inactivityBody = inactivityLang === 'ko'
+      ? '3일간 포트폴리오를 확인하지 않았습니다. 시장 변화를 점검해보세요.'
+      : 'You haven\'t checked your portfolio in 3 days. Review recent market changes.';
+
     if (diffMs <= 0) {
       // 이미 3일 지남 → 즉시 알림
       const id = await Notifications.scheduleNotificationAsync({
         content: {
-          title: '⏰ 포트폴리오 점검 필요',
-          body: '3일간 포트폴리오를 확인하지 않았습니다. 시장 변화를 점검해보세요.',
+          title: inactivityTitle,
+          body: inactivityBody,
           data: { type: 'inactivity-reminder', screen: '/(tabs)/diagnosis' },
           ...(Platform.OS === 'android' && { channelId: 'rebalancing' }),
         },
@@ -303,8 +317,8 @@ export async function scheduleInactivityReminder(): Promise<string | null> {
     // 3일 후 알림 예약
     const id = await Notifications.scheduleNotificationAsync({
       content: {
-        title: '⏰ 포트폴리오 점검 필요',
-        body: '3일간 포트폴리오를 확인하지 않았습니다. 시장 변화를 점검해보세요.',
+        title: inactivityTitle,
+        body: inactivityBody,
         data: { type: 'inactivity-reminder', screen: '/(tabs)/diagnosis' },
         ...(Platform.OS === 'android' && { channelId: 'rebalancing' }),
       },
@@ -332,10 +346,16 @@ export async function scheduleRebalancingReminder(): Promise<string | null> {
 
     await cancelScheduledNotifications('rebalancing-reminder');
 
+    const rebalanceLang = getCurrentLanguage();
+    const rebalanceTitle = rebalanceLang === 'ko' ? '⚖️ 주간 리밸런싱 점검' : '⚖️ Weekly Rebalancing Check';
+    const rebalanceBody = rebalanceLang === 'ko'
+      ? '포트폴리오 배분이 목표와 벗어났는지 확인해보세요. 작은 조정이 큰 차이를 만듭니다.'
+      : 'Check if your portfolio allocation has drifted from your target. Small adjustments make a big difference.';
+
     const id = await Notifications.scheduleNotificationAsync({
       content: {
-        title: '⚖️ 주간 리밸런싱 점검',
-        body: '포트폴리오 배분이 목표와 벗어났는지 확인해보세요. 작은 조정이 큰 차이를 만듭니다.',
+        title: rebalanceTitle,
+        body: rebalanceBody,
         data: { type: 'rebalancing-reminder', screen: '/(tabs)/rebalance' },
         ...(Platform.OS === 'android' && { channelId: 'rebalancing' }),
       },
@@ -377,14 +397,20 @@ export async function schedulePriceChangeReminder(options?: {
     if (weekdays.length === 0) return null;
 
     const threshold = clamp(Math.round(options?.thresholdPercent ?? 5), 1, 20);
-    const body = options?.topHoldingName
-      ? `${options.topHoldingName} 포함 보유 종목에서 ±${threshold}% 이상 변동 가능성을 점검해보세요.`
-      : `보유 종목의 전일 대비 ±${threshold}% 이상 변동 가능성을 점검해보세요.`;
+    const priceLang = getCurrentLanguage();
+    const priceTitle = priceLang === 'ko' ? '📊 보유 종목 가격 변동 확인' : '📊 Check Holding Price Changes';
+    const priceBody = priceLang === 'ko'
+      ? (options?.topHoldingName
+        ? `${options.topHoldingName} 포함 보유 종목에서 ±${threshold}% 이상 변동 가능성을 점검해보세요.`
+        : `보유 종목의 전일 대비 ±${threshold}% 이상 변동 가능성을 점검해보세요.`)
+      : (options?.topHoldingName
+        ? `Check for potential ±${threshold}% moves in your holdings including ${options.topHoldingName}.`
+        : `Check your holdings for potential ±${threshold}% moves vs. prior close.`);
 
     const ids = await scheduleWeeklyNotifications({
       type: 'price-alert',
-      title: '📊 보유 종목 가격 변동 확인',
-      body,
+      title: priceTitle,
+      body: priceBody,
       screen: '/(tabs)/diagnosis',
       weekdays,
       hour: 7,

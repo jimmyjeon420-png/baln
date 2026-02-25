@@ -20,6 +20,7 @@ import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { useLocale } from '../../src/context/LocaleContext';
 import { t as rawT } from '../../src/locales';
+import { getLocaleCode } from '../../src/utils/formatters';
 
 // 3카드 시스템
 import CardSwipeContainer from '../../src/components/home/CardSwipeContainer';
@@ -409,7 +410,7 @@ export default function HomeScreen() {
         impact: fallbackBriefing?.impact || null,
         sentiment: (fallbackBriefing?.sentiment || 'calm') as 'calm' | 'caution' | 'alert',
         sentimentLabel: fallbackBriefing?.sentimentLabel || t('home.context_sentiment.calm'),
-        date: new Date().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' }),
+        date: new Date().toLocaleDateString(getLocaleCode(), { month: 'long', day: 'numeric' }),
         onLearnMore: () => router.push('/marketplace'),
         isPremium: isPremium || false,
         onShare: undefined,
@@ -455,7 +456,7 @@ export default function HomeScreen() {
       impact: briefing.impact,
       sentiment: briefing.sentiment,
       sentimentLabel: briefing.sentimentLabel,
-      date: new Date().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' }),
+      date: new Date().toLocaleDateString(getLocaleCode(), { month: 'long', day: 'numeric' }),
       onLearnMore: () => {
         setContextModalVisible(true);
         // P1.1: 맥락 카드를 처음 열면 알림 권한 요청 자격 부여

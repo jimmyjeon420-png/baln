@@ -24,6 +24,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { useSaveExecution } from '../src/hooks/useExecutions';
 import type { ExecutionInput } from '../src/types/rebalanceExecution';
 import { useTheme } from '../src/hooks/useTheme';
+import { getLocaleCode } from '../src/utils/formatters';
 
 export default function LogTradeScreen() {
   const router = useRouter();
@@ -143,7 +144,7 @@ export default function LogTradeScreen() {
               <Text style={[s.label, { color: colors.textSecondary }]}>실행 일시 *</Text>
               <TouchableOpacity style={[s.dateButton, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => setShowDatePicker(true)}>
                 <Ionicons name="calendar-outline" size={20} color={colors.primary} />
-                <Text style={[s.dateText, { color: colors.textPrimary }]}>{executedAt.toLocaleString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</Text>
+                <Text style={[s.dateText, { color: colors.textPrimary }]}>{executedAt.toLocaleString(getLocaleCode(), { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</Text>
               </TouchableOpacity>
               {showDatePicker && (
                 <DateTimePicker

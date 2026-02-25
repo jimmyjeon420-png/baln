@@ -28,6 +28,7 @@ import { CharacterAvatar } from '../../src/components/character/CharacterAvatar'
 import { GURU_CHARACTER_CONFIGS } from '../../src/data/guruCharacterConfig';
 import { isFreePeriod } from '../../src/config/freePeriod';
 import { useLocale } from '../../src/context/LocaleContext';
+import { getLocaleCode } from '../../src/utils/formatters';
 
 const ALL_GURUS = Object.values(GURU_CHARACTER_CONFIGS);
 
@@ -221,7 +222,7 @@ export default function RoundtableIndexScreen() {
               {t('roundtable.section_recent')}
             </Text>
             {recentSessions.slice(0, 5).map(s => {
-              const dateStr = new Date(s.createdAt).toLocaleDateString('ko-KR', {
+              const dateStr = new Date(s.createdAt).toLocaleDateString(getLocaleCode(), {
                 month: 'short', day: 'numeric',
               });
               return (

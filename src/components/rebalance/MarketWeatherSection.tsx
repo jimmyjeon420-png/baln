@@ -9,6 +9,8 @@ import { SkeletonBlock } from '../SkeletonLoader';
 import { useTheme } from '../../hooks/useTheme';
 import { ThemeColors } from '../../styles/colors';
 import type { MorningBriefingData } from '../../types/rebalanceTypes';
+import { getLocaleCode } from '../../utils/formatters';
+import { useLocale } from '../../context/LocaleContext';
 
 interface MarketWeatherSectionProps {
   morningBriefing: MorningBriefingData | null;
@@ -20,6 +22,7 @@ export default function MarketWeatherSection({
   isAILoading,
 }: MarketWeatherSectionProps) {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const [showDetail, setShowDetail] = useState(false);
 
   const styles = createStyles(colors);
@@ -42,13 +45,17 @@ export default function MarketWeatherSection({
 
   const sentiment = morningBriefing.macroSummary.marketSentiment;
   const sentimentColor = sentiment === 'BULLISH' ? colors.success : sentiment === 'BEARISH' ? colors.error : colors.warning;
-  const sentimentLabel = sentiment === 'BULLISH' ? '낙관' : sentiment === 'BEARISH' ? '비관' : '중립';
+  const sentimentLabel = sentiment === 'BULLISH'
+    ? t('rebalance.market_weather.sentiment_bullish')
+    : sentiment === 'BEARISH'
+      ? t('rebalance.market_weather.sentiment_bearish')
+      : t('rebalance.market_weather.sentiment_neutral');
 
   return (
     <View style={styles.card}>
       <View style={styles.marketHeader}>
         <View>
-          <Text style={[styles.cardLabel, { color: colors.textPrimary }]}>시장 날씨</Text>
+          <Text style={[styles.cardLabel, { color: colors.textPrimary }]}>{t('rebalance.market_weather.title')}</Text>
           <Text style={[styles.cardLabelEn, { color: colors.textTertiary }]}>Market Sentiment</Text>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -60,7 +67,7 @@ export default function MarketWeatherSection({
             style={styles.expandButton}
             onPress={() => setShowDetail(!showDetail)}
           >
-            <Text style={[styles.expandButtonText, { color: colors.textTertiary }]}>{showDetail ? '접기' : '상세'}</Text>
+            <Text style={[styles.expandButtonText, { color: colors.textTertiary }]}>{showDetail ? t('rebalance.market_weather.collapse') : t('rebalance.market_weather.expand')}</Text>
             <Ionicons name={showDetail ? 'chevron-up' : 'chevron-down'} size={14} color={colors.textTertiary} />
           </TouchableOpacity>
         </View>
@@ -123,7 +130,7 @@ export default function MarketWeatherSection({
 
           {/* 생성 시간 */}
           <Text style={[styles.detailTime, { color: colors.textTertiary }]}>
-            분석 시간: {new Date(morningBriefing.generatedAt).toLocaleString('ko-KR', { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}
+            {t('rebalance.market_weather.analysis_time')} {new Date(morningBriefing.generatedAt).toLocaleString(getLocaleCode(), { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}
           </Text>
         </View>
       )}
@@ -135,7 +142,7 @@ export default function MarketWeatherSection({
           onPress={() => setShowDetail(true)}
         >
           <Text style={[styles.showMoreHintText, { color: colors.primaryDark ?? colors.primary }]}>
-            +{morningBriefing.macroSummary.highlights.length - 3}개 항목 더보기
+            {t('rebalance.market_weather.more_items', { count: morningBriefing.macroSummary.highlights.length - 3 })}
           </Text>
           <Ionicons name="chevron-down" size={12} color={colors.primaryDark ?? colors.primary} />
         </TouchableOpacity>

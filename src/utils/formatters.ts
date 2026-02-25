@@ -7,7 +7,127 @@
  * - 날짜 포맷
  */
 
-import { t } from '../locales';
+import { t, getCurrentLanguage } from '../locales';
+
+// ============================================================================
+// 로케일 기반 포맷 유틸리티 (L10n)
+// ============================================================================
+
+/** 현재 로케일 코드 반환 ('en-US' | 'ko-KR') */
+export function getLocaleCode(): string {
+  return t('format.locale_code');
+}
+
+/** 현재 통화 기호 ($, ₩) */
+export function getCurrencySymbol(): string {
+  return t('format.currency_symbol');
+}
+
+/** 현재 로케일이 한국어인지 */
+export function isKoreanLocale(): boolean {
+  return getCurrentLanguage() === 'ko';
+}
+
+/**
+ * 로케일 기반 날짜 포맷 ("2월 12일" / "Feb 12")
+ */
+export function formatLocalDate(dateStr: string | Date): string {
+  const d = typeof dateStr === 'string' ? new Date(dateStr) : dateStr;
+  const month = d.getMonth() + 1;
+  const day = d.getDate();
+  if (isKoreanLocale()) {
+    return t('format.date_short', { month, day });
+  }
+  const monthNames = t('format.month_names').split(',');
+  return t('format.date_short', { month: monthNames[d.getMonth()], day });
+}
+
+/**
+ * 로케일 기반 전체 날짜 ("2026년 2월 12일" / "February 12, 2026")
+ */
+export function formatLocalDateFull(dateStr: string | Date): string {
+  const d = typeof dateStr === 'string' ? new Date(dateStr) : dateStr;
+  const year = d.getFullYear();
+  const month = d.getMonth() + 1;
+  const day = d.getDate();
+  if (isKoreanLocale()) {
+    return t('format.date_full', { year, month, day });
+  }
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'];
+  return t('format.date_full', { year, monthName: monthNames[d.getMonth()], day });
+}
+
+/**
+ * 로케일 기반 월+년 ("2026년 3월" / "March 2026")
+ */
+export function formatMonthYear(date: Date): string {
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+  if (isKoreanLocale()) {
+    return t('format.date_month_year', { year, month });
+  }
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'];
+  return t('format.date_month_year', { year, monthName: monthNames[date.getMonth()] });
+}
+
+/**
+ * 로케일 기반 날짜+시간 ("3월 1일 토 · 14:30" / "Sat, 3/1 · 2:30 PM")
+ */
+export function formatDateWithTime(date: Date, weekdayNames: string[]): string {
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  const weekday = weekdayNames[date.getDay()] ?? '';
+  const hours = date.getHours();
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+
+  if (isKoreanLocale()) {
+    const time = `${String(hours).padStart(2, '0')}:${minutes}`;
+    return t('format.date_with_time', { month, day, weekday, time });
+  }
+  // English: 12-hour format
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  const h12 = hours % 12 || 12;
+  const time = `${h12}:${minutes} ${ampm}`;
+  const monthNames = t('format.month_names').split(',');
+  return t('format.date_with_time', { month: monthNames[date.getMonth()], day, weekday, time });
+}
+
+/**
+ * 로케일 기반 금액 포맷 (₩120,000 / $120,000)
+ * 자산 통화가 아닌 "표시 통화"를 기준으로 함
+ */
+export function formatLocalAmount(amount: number, compact = false): string {
+  if (isKoreanLocale()) {
+    return formatKRW(amount, compact);
+  }
+  return formatUSD(amount, compact);
+}
+
+/**
+ * 로케일 기반 컴팩트 금액 ("1.2억" / "$120M")
+ */
+export function formatCompactAmount(amount: number): string {
+  if (isKoreanLocale()) {
+    if (amount >= 1_000_000_000_000) return t('format.compact_trillion', { n: Math.round(amount / 1_000_000_000_000).toLocaleString() });
+    if (amount >= 100_000_000) return t('format.compact_billion', { n: (amount / 100_000_000).toFixed(1) });
+    if (amount >= 10_000) return t('format.compact_thousand', { n: Math.floor(amount / 10_000).toLocaleString() });
+    return `₩${amount.toLocaleString()}`;
+  }
+  if (amount >= 1_000_000_000_000) return t('format.compact_trillion', { n: (amount / 1_000_000_000_000).toFixed(1) });
+  if (amount >= 1_000_000_000) return t('format.compact_billion', { n: (amount / 1_000_000_000).toFixed(1) });
+  if (amount >= 1_000_000) return t('format.compact_million', { n: (amount / 1_000_000).toFixed(1) });
+  if (amount >= 1_000) return t('format.compact_thousand', { n: (amount / 1_000).toFixed(1) });
+  return `$${amount.toLocaleString()}`;
+}
+
+/**
+ * 로케일 기반 숫자 포맷 (toLocaleString 래퍼)
+ */
+export function formatNumber(num: number): string {
+  return num.toLocaleString(isKoreanLocale() ? 'ko-KR' : 'en-US');
+}
 
 // ============================================================================
 // 크레딧 시스템 (출시 후 조정 가능한 상수)
@@ -20,33 +140,58 @@ import { t } from '../locales';
 export const CREDIT_TO_KRW = 100;
 
 /**
- * 크레딧 표시 이름 (출시 후 리브랜딩 시 이것만 변경)
+ * 크레딧 USD 환율 (1크레딧 ≈ $0.08)
+ * 출시 후 사용자 피드백에 따라 조정 가능 (CREDIT_TO_KRW / ~1300 KRW/USD)
  */
+export const CREDIT_TO_USD = 0.08;
+
+/**
+ * 크레딧 표시 이름 (로케일 기반 — 출시 후 리브랜딩 시 이것만 변경)
+ * Korean: '크레딧' | English: 'Credit'
+ */
+export function getCreditName(): string {
+  return t('credit.name');
+}
+/** @deprecated 한국어 고정 이름. 로케일 무관 코드에서만 사용. 가능하면 getCreditName() 사용 권장 */
 export const CREDIT_NAME = '크레딧';
 export const CREDIT_SYMBOL = 'C';
 
 /**
- * 크레딧 포맷 (원화 병기 옵션)
+ * 크레딧 포맷 (로케일 기반 통화 병기)
  * @param credits 크레딧 수량
- * @param showKRW 원화 표시 여부 (기본: true)
- * @returns "10C (₩1,000)" 형태
+ * @param showValue 통화 가치 표시 여부 (기본: true)
+ * @returns Korean: "10C (₩1,000)" | English: "10C ($0.80)"
+ *
+ * 기존 호출자 하위 호환:
+ *   formatCredits(10)         → locale에 따라 자동 표시
+ *   formatCredits(10, false)  → "10C" (통화 숨김)
+ *   formatCredits(10, true)   → 기존 동작 유지
  */
-export function formatCredits(credits: number, showKRW = true): string {
-  if (showKRW) {
+export function formatCredits(credits: number, showValue = true): string {
+  if (!showValue) {
+    return `${credits}${CREDIT_SYMBOL}`;
+  }
+  if (isKoreanLocale()) {
     const krw = (credits * CREDIT_TO_KRW).toLocaleString();
     return `${credits}${CREDIT_SYMBOL} (₩${krw})`;
   }
-  return `${credits}${CREDIT_SYMBOL}`;
+  // English: USD display
+  const usd = (credits * CREDIT_TO_USD).toFixed(2);
+  return `${credits}${CREDIT_SYMBOL} ($${usd})`;
 }
 
 /**
  * 크레딧 획득 메시지 포맷
  * @param credits 획득 크레딧
- * @returns "+10C (₩1,000) 획득" / "+10C ($1.00) earned" 형태
+ * @returns Korean: "+10C (₩1,000) 획득" | English: "+10C ($0.80) earned"
  */
 export function formatCreditReward(credits: number): string {
-  const krw = credits * CREDIT_TO_KRW;
-  return t('credit.reward', { amount: credits, value: krw.toLocaleString() });
+  if (isKoreanLocale()) {
+    const krw = credits * CREDIT_TO_KRW;
+    return t('credit.reward', { amount: credits, value: krw.toLocaleString() });
+  }
+  const usd = (credits * CREDIT_TO_USD).toFixed(2);
+  return t('credit.reward', { amount: credits, value: usd });
 }
 
 // ============================================================================

@@ -212,14 +212,72 @@ async function fetchMarketSnapshot(): Promise<Record<MarketSnapshotPoint['key'],
 
 function buildFallbackQuestions(
   snapshot: Record<MarketSnapshotPoint['key'], MarketSnapshotPoint>,
+  lang = 'ko',
 ): Record<PredictionCategory, PredictionQuestion> {
-  const kospiNow = snapshot.kospi.price ?? 2800;
-  const kospiStep = guessStep(kospiNow);
-  const kospiTarget = roundByStep(kospiNow * 1.01, kospiStep, 'up');
-
   const btcNow = snapshot.btc.price ?? 90000;
   const btcStep = guessStep(btcNow);
   const btcTarget = roundByStep(btcNow * 1.03, Math.max(100, btcStep), 'up');
+
+  if (lang !== 'ko') {
+    // English fallback questions — S&P 500, NASDAQ, Fed decisions
+    const sp500Now = snapshot.sp500.price ?? 5200;
+    const sp500Step = guessStep(sp500Now);
+    const sp500Target = roundByStep(sp500Now * 1.01, sp500Step, 'up');
+
+    const nasdaq100Now = snapshot.nasdaq100.price ?? 18000;
+    const nasdaq100Step = guessStep(nasdaq100Now);
+    const nasdaq100Target = roundByStep(nasdaq100Now * 1.01, nasdaq100Step, 'up');
+
+    return {
+      stocks: {
+        question: `Will the S&P 500 close above ${formatNumber(sp500Target)} within 24 hours?`,
+        description: `The S&P 500 is currently near ${formatNumber(sp500Now)} pts. This question checks whether the short-term momentum continues.`,
+        category: 'stocks',
+        yes_label: 'Yes, above',
+        no_label: 'No, stays below',
+        deadline_hours: 24,
+        difficulty: 'easy',
+        context_hint: 'Index prediction is less about direction and more about setting a reference line for later review.',
+        related_ticker: '^GSPC',
+        up_reason: 'Strong earnings and institutional buying could push the index higher.',
+        down_reason: 'Profit-taking after recent gains may delay a breakout.',
+        generation_source: 'fallback',
+      },
+      crypto: {
+        question: `Will Bitcoin break above $${formatNumber(btcTarget)} within 48 hours?`,
+        description: `Bitcoin is currently around $${formatNumber(btcNow, 0)}. This checks ETF flow momentum and volatility expansion.`,
+        category: 'crypto',
+        yes_label: 'Yes, breaks out',
+        no_label: 'No, stays below',
+        deadline_hours: 48,
+        difficulty: 'medium',
+        context_hint: 'Watch for volume spikes at key levels — they often confirm directional moves.',
+        related_ticker: 'BTC',
+        up_reason: 'Continued spot ETF inflows increase the probability of an upside breakout.',
+        down_reason: 'Leverage liquidations and profit-taking near resistance are common obstacles.',
+        generation_source: 'fallback',
+      },
+      macro: {
+        question: `Will the NASDAQ 100 outperform the S&P 500 this week?`,
+        description: `NASDAQ 100 is near ${formatNumber(nasdaq100Now)} pts. Tech-heavy indices often diverge from broad markets around Fed decisions.`,
+        category: 'macro',
+        yes_label: 'Yes, outperforms',
+        no_label: 'No, underperforms',
+        deadline_hours: 48,
+        difficulty: 'hard',
+        context_hint: 'Rate expectations and tech earnings guidance are the main drivers of NASDAQ vs. S&P divergence.',
+        related_ticker: '^NDX',
+        up_reason: 'Dovish Fed signals boost growth stocks more than value stocks.',
+        down_reason: 'Rising yields tend to compress tech multiples disproportionately.',
+        generation_source: 'fallback',
+      },
+    };
+  }
+
+  // Korean fallback questions — KOSPI, BTC, USD/KRW
+  const kospiNow = snapshot.kospi.price ?? 2800;
+  const kospiStep = guessStep(kospiNow);
+  const kospiTarget = roundByStep(kospiNow * 1.01, kospiStep, 'up');
 
   const usdkrwNow = snapshot.usdkrw.price ?? 1450;
   const fxStep = usdkrwNow >= 1000 ? 1 : 0.1;
@@ -394,7 +452,7 @@ export async function generatePredictionPolls(lang = 'ko'): Promise<PredictionGe
     }
 
     const snapshot = await fetchMarketSnapshot();
-    const fallbackByCategory = buildFallbackQuestions(snapshot);
+    const fallbackByCategory = buildFallbackQuestions(snapshot, lang);
     const snapshotContext = [
       formatSnapshotLine(snapshot.kospi),
       formatSnapshotLine(snapshot.sp500),

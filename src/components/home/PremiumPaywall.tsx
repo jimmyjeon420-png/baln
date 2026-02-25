@@ -24,6 +24,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 
 // ============================================================================
 // Props
@@ -39,36 +40,16 @@ interface PremiumPaywallProps {
 }
 
 // ============================================================================
-// 기능 목록
+// 기능 목록 (아이콘 상수만 — 텍스트는 컴포넌트 내부에서 t()로 생성)
 // ============================================================================
 
-const PREMIUM_FEATURES = [
-  {
-    icon: 'layers-outline' as const,
-    title: '맥락 카드 전체 보기',
-    desc: '역사적·거시경제·기관행동·포트폴리오 4겹 분석',
-  },
-  {
-    icon: 'analytics-outline' as const,
-    title: 'AI 진단 3회/일',
-    desc: '무료 1회 → Premium 3회로 확장',
-  },
-  {
-    icon: 'people-outline' as const,
-    title: '또래 비교 전체 등급',
-    desc: '같은 자산 구간 투자자와 상세 비교',
-  },
-  {
-    icon: 'gift-outline' as const,
-    title: '월 30크레딧 보너스',
-    desc: '매월 30C (\u20A93,000) 자동 지급',
-  },
-  {
-    icon: 'school-outline' as const,
-    title: '예측 해설 + 복기',
-    desc: '적중/오답 이유 AI 해설 제공',
-  },
-];
+const FEATURE_ICONS = [
+  'layers-outline',
+  'analytics-outline',
+  'people-outline',
+  'gift-outline',
+  'school-outline',
+] as const;
 
 // ============================================================================
 // 컴포넌트
@@ -81,18 +62,48 @@ export default function PremiumPaywall({
   onPurchase,
 }: PremiumPaywallProps) {
   const { colors } = useTheme();
+  const { t } = useLocale();
+
+  // 로케일 기반 기능 목록
+  const PREMIUM_FEATURES = [
+    {
+      icon: FEATURE_ICONS[0],
+      title: t('premium.feature_context_card_title'),
+      desc: t('premium.feature_context_card_desc'),
+    },
+    {
+      icon: FEATURE_ICONS[1],
+      title: t('premium.feature_ai_diagnosis_title'),
+      desc: t('premium.feature_ai_diagnosis_desc'),
+    },
+    {
+      icon: FEATURE_ICONS[2],
+      title: t('premium.feature_peer_compare_title'),
+      desc: t('premium.feature_peer_compare_desc'),
+    },
+    {
+      icon: FEATURE_ICONS[3],
+      title: t('premium.feature_credit_bonus_title'),
+      desc: t('premium.feature_credit_bonus_desc'),
+    },
+    {
+      icon: FEATURE_ICONS[4],
+      title: t('premium.feature_prediction_title'),
+      desc: t('premium.feature_prediction_desc'),
+    },
+  ];
 
   // 트리거 기능에 따른 상단 메시지
   const triggerMessage: Record<string, string> = {
-    context_card: '맥락 카드 전체를 보려면',
-    ai_diagnosis: 'AI 진단을 더 받으려면',
-    peer_compare: '또래 비교 상세를 보려면',
-    prediction_detail: '예측 해설을 보려면',
+    context_card: t('premium.trigger_context_card'),
+    ai_diagnosis: t('premium.trigger_ai_diagnosis'),
+    peer_compare: t('premium.trigger_peer_compare'),
+    prediction_detail: t('premium.trigger_prediction_detail'),
   };
 
   const topMessage = triggerFeature
-    ? triggerMessage[triggerFeature] || 'Premium으로 더 많은 기능을'
-    : '더 깊은 투자 인사이트를 원하시나요?';
+    ? triggerMessage[triggerFeature] || t('premium.trigger_more')
+    : t('premium.trigger_default');
 
   return (
     <Modal
@@ -121,7 +132,7 @@ export default function PremiumPaywall({
               {topMessage}
             </Text>
             <Text style={[styles.heroSubtitle, { color: colors.textSecondary }]}>
-              매일 5분, 투자 감각을 키우는 최고의 도구
+              {t('premium.hero_subtitle')}
             </Text>
           </View>
 
@@ -149,15 +160,14 @@ export default function PremiumPaywall({
 
           {/* 가격 */}
           <View style={[styles.priceCard, { backgroundColor: colors.premium.gold + '0D', borderColor: colors.premium.gold + '33' }]}>
-            <Text style={[styles.priceLabel, { color: colors.textSecondary }]}>월간 구독</Text>
+            <Text style={[styles.priceLabel, { color: colors.textSecondary }]}>{t('premium.title')}</Text>
             <View style={styles.priceRow}>
               <Text style={[styles.priceAmount, { color: colors.premium.gold }]}>
-                {'\u20A9'}4,900
+                {t('premium.price_monthly')}
               </Text>
-              <Text style={[styles.pricePeriod, { color: colors.textTertiary }]}>/월</Text>
             </View>
             <Text style={[styles.priceNote, { color: colors.textTertiary }]}>
-              하루 약 {'\u20A9'}163 {'\u00B7'} 언제든 해지 가능
+              {t('premium.cancel_anytime')}
             </Text>
           </View>
 
@@ -167,13 +177,12 @@ export default function PremiumPaywall({
             onPress={onPurchase}
             activeOpacity={0.8}
           >
-            <Text style={styles.purchaseText}>Premium 시작하기</Text>
+            <Text style={styles.purchaseText}>{t('premium.subscribe_button')}</Text>
           </TouchableOpacity>
 
           {/* 안내 */}
           <Text style={[styles.disclaimer, { color: colors.textTertiary }]}>
-            iTunes 계정으로 결제되며, 구독 기간 종료 24시간 전에 자동 갱신됩니다.{'\n'}
-            설정 {'>'} 구독에서 언제든 해지할 수 있습니다.
+            {t('premium.payment_disclaimer')}
           </Text>
         </ScrollView>
       </View>

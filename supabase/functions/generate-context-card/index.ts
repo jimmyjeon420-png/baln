@@ -109,34 +109,26 @@ serve(async (req: Request) => {
     console.log(`[맥락 카드 생성] 시작: ${today}`);
 
     // Step 1: Gemini로 5겹 맥락 분석
-    const prompt = `당신은 baln(발른) 앱의 맥락 카드 AI입니다.
-오늘(${today}) 글로벌 금융 시장의 핵심 맥락을 분석하여 한국 개인투자자가 쉽게 이해할 수 있도록 설명하세요.
+    const audienceContext = lang === 'ko'
+      ? '한국 개인투자자가 쉽게 이해할 수 있도록 설명하세요. 코스피/코스닥 동향을 우선 언급하세요.'
+      : 'Explain in a way that is easy for a US retail investor to understand. Prioritize S&P 500 and NASDAQ.';
 
-[핵심 원칙]
-- "안심을 판다, 불안을 팔지 않는다." — 하락장에서도 맥락으로 이해를 돕는다.
-- "급락", "폭락", "공포" 같은 감정적 표현 대신 "조정", "하락", "변동성 확대"를 사용한다.
-- 과거 사례를 들 때는 회복 경험을 반드시 포함한다.
-- ${langInstruction}
-
-[political_context 작성 원칙 — 버핏+달리오 합의]
+    const politicalContextRule = lang === 'ko'
+      ? `[political_context 작성 원칙 — 버핏+달리오 합의]
 - 현재 미국 정치 이벤트(관세, 연준 압박, 규제 변화 등)를 역사적 유사 사례와 함께 설명한다.
 - 반드시 "역사적으로 이런 패턴이 있었고, 이후 어떻게 됐는지"를 포함한다.
 - 마지막 문장은 반드시 "당신의 포트폴리오에 미치는 영향은 [제한적/단기적]입니다"로 끝낸다.
 - 정치적 편향 없이 시장 영향만 분석한다. 공포를 조장하지 않는다.
-- 오늘 특별한 정치 이벤트가 없으면 최근 주요 정치 동향 1가지를 선택한다.
+- 오늘 특별한 정치 이벤트가 없으면 최근 주요 정치 동향 1가지를 선택한다.`
+      : `[political_context writing rules — Buffett+Dalio consensus]
+- Describe current US political events (tariffs, Fed pressure, regulatory changes) with historical parallels.
+- Always include "this pattern has occurred historically, and here is what happened next."
+- End the last sentence with "The impact on your diversified portfolio is [limited/short-term]."
+- Analyze only market impact without political bias. Do not induce fear.
+- If no major political event today, pick one recent notable political trend.`;
 
-[응답 형식 — 아래 JSON만 출력. 설명문, 마크다운, 코드블록 금지.]
-{
-  "headline": "시장 핵심 한 줄 (20자 이내)",
-  "sentiment": "calm 또는 caution 또는 alert 중 하나",
-  "historical_context": "과거 유사 상황과 이후 회복 과정 2~3문장 (안심 톤)",
-  "macro_chain": ["원인 이벤트", "중간 영향", "최종 결과", "투자자 시사점"],
-  "political_context": "현재 미국 정치 이벤트 + 역사적 유사 사례 + 포트폴리오 영향 (제한적) 2~3문장",
-  "institutional_behavior": "기관 투자자 동향 1~2문장",
-  "market_summary": "주요 지수 동향 1~2문장"
-}
-
-[예시]
+    const exampleBlock = lang === 'ko'
+      ? `[예시]
 {
   "headline": "트럼프 관세로 변동성 확대",
   "sentiment": "caution",
@@ -145,7 +137,41 @@ serve(async (req: Request) => {
   "political_context": "트럼프 대통령이 주요 교역국에 대한 상호관세를 발표했습니다. 1930년 스무트-홀리 관세법 이후 유사한 보호무역 기조가 등장했을 때 시장은 단기 조정을 거쳤지만 2년 내 회복했습니다. 당신의 분산된 포트폴리오에 미치는 영향은 단기적이고 제한적입니다.",
   "institutional_behavior": "외국인이 코스피에서 3일 연속 순매도를 기록했으나, 이는 패닉이 아닌 분기말 리밸런싱 영향으로 분석됩니다.",
   "market_summary": "S&P 500 -0.5%, 코스피 -1.2% 하락. 달러 강세로 원화 약세 압력 지속."
+}`
+      : `[Example]
+{
+  "headline": "Tariff Uncertainty Widens Volatility",
+  "sentiment": "caution",
+  "historical_context": "During the 2018–2019 US-China trade war, the S&P 500 saw short-term corrections but recovered to new highs within six months of the trade deal.",
+  "macro_chain": ["Trump tariff announcement on key trading partners", "Global supply chain disruption fears", "Tech and semiconductor sector selloff", "Foreign institutional outflows from equities"],
+  "political_context": "The current tariff announcements echo the Smoot-Hawley Tariff era of 1930. Markets historically experienced short-term disruptions but recovered within two years. The impact on your diversified portfolio is short-term and limited.",
+  "institutional_behavior": "Institutional investors recorded three consecutive days of net selling, but analysts attribute this to quarter-end rebalancing rather than panic.",
+  "market_summary": "S&P 500 -0.5%, NASDAQ -0.8%. Dollar strength continues to pressure risk assets."
+}`;
+
+    const prompt = `You are the Context Card AI for the baln investing habit app.
+Analyze the key market context for today (${today}). ${audienceContext}
+
+[Core principles]
+- "Sell reassurance, not anxiety." — Even in downturns, help users understand through context.
+- Replace emotional words ("crash", "panic") with factual language ("correction", "increased volatility").
+- When citing past examples, always include the recovery that followed.
+- ${langInstruction}
+
+${politicalContextRule}
+
+[Response format — output only the JSON below. No explanation text, markdown, or code blocks.]
+{
+  "headline": "One-line market headline (max 20 chars for ko / max 60 chars for en)",
+  "sentiment": "calm or caution or alert",
+  "historical_context": "2-3 sentences on past similar situation and subsequent recovery (reassuring tone)",
+  "macro_chain": ["trigger event", "intermediate impact", "final result", "investor implication"],
+  "political_context": "Current political event + historical parallel + portfolio impact (limited) — 2-3 sentences",
+  "institutional_behavior": "1-2 sentences on institutional investor activity",
+  "market_summary": "1-2 sentences on major index movements"
 }
+
+${exampleBlock}
 
 [중요] 위 예시는 구조 참고용입니다. 반드시 오늘(${today})의 실제 시장 및 정치 상황을 기반으로 작성하세요.
 `;
@@ -156,22 +182,40 @@ serve(async (req: Request) => {
       card = JSON.parse(raw);
     } catch (parseErr) {
       console.error('[맥락 카드 생성] Gemini 응답 파싱 실패 — 기본값 사용:', parseErr);
-      card = {
-        headline: '시장 분석 업데이트 중',
-        sentiment: 'calm',
-        historical_context: '시장 데이터를 수집하고 있습니다. 잠시 후 다시 확인해주세요.',
-        macro_chain: ['데이터 수집 중'],
-        political_context: '정치 동향을 분석 중입니다. 잠시 후 다시 확인해주세요.',
-        institutional_behavior: '기관 투자자 동향을 분석 중입니다.',
-        market_summary: '시장 데이터를 불러오는 중입니다.',
-      };
+      if (lang === 'ko') {
+        card = {
+          headline: '시장 분석 업데이트 중',
+          sentiment: 'calm',
+          historical_context: '시장 데이터를 수집하고 있습니다. 잠시 후 다시 확인해주세요.',
+          macro_chain: ['데이터 수집 중'],
+          political_context: '정치 동향을 분석 중입니다. 잠시 후 다시 확인해주세요.',
+          institutional_behavior: '기관 투자자 동향을 분석 중입니다.',
+          market_summary: '시장 데이터를 불러오는 중입니다.',
+        };
+      } else {
+        card = {
+          headline: 'Market analysis updating',
+          sentiment: 'calm',
+          historical_context: 'Market data is being collected. Please check back shortly.',
+          macro_chain: ['Collecting data'],
+          political_context: 'Political context is being analyzed. Please check back shortly.',
+          institutional_behavior: 'Institutional investor activity is being analyzed.',
+          market_summary: 'Market data is loading.',
+        };
+      }
     }
 
     // 필수 필드 검증
-    if (!card.headline || typeof card.headline !== 'string') card.headline = '오늘의 시장 분석';
+    if (!card.headline || typeof card.headline !== 'string') {
+      card.headline = lang === 'ko' ? '오늘의 시장 분석' : 'Today\'s Market Analysis';
+    }
     if (!['calm', 'caution', 'alert'].includes(card.sentiment as string)) card.sentiment = 'calm';
-    if (!Array.isArray(card.macro_chain) || (card.macro_chain as unknown[]).length === 0) card.macro_chain = ['시장 데이터 수집 중'];
-    if (!card.political_context || typeof card.political_context !== 'string') card.political_context = '정치 동향 분석 중입니다.';
+    if (!Array.isArray(card.macro_chain) || (card.macro_chain as unknown[]).length === 0) {
+      card.macro_chain = lang === 'ko' ? ['시장 데이터 수집 중'] : ['Collecting market data'];
+    }
+    if (!card.political_context || typeof card.political_context !== 'string') {
+      card.political_context = lang === 'ko' ? '정치 동향 분석 중입니다.' : 'Analyzing political context.';
+    }
 
     console.log('[맥락 카드 생성] Gemini 응답 성공:', card.headline);
 

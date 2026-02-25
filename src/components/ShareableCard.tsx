@@ -18,6 +18,7 @@ import { TIER_LABELS } from '../hooks/useGatherings';
 import { UserTier } from '../types/database';
 import { MorningBriefingResult } from '../services/gemini';
 import { REWARD_AMOUNTS } from '../services/rewardService';
+import { formatLocalDateFull } from '../utils/formatters';
 
 interface ShareableCardProps {
   tier: UserTier;
@@ -160,11 +161,7 @@ export default function ShareableCard({
           <Text style={styles.logoSubtext}>AI Portfolio Optimizer</Text>
         </View>
         <Text style={styles.dateText}>
-          {new Date().toLocaleDateString('ko-KR', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-          })}
+          {formatLocalDateFull(new Date())}
         </Text>
       </View>
 

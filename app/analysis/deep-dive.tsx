@@ -32,6 +32,7 @@ import DeepDiveReport from '../../src/components/deep-dive/DeepDiveReport';
 import type { DeepDiveInput, DeepDiveResult } from '../../src/types/marketplace';
 import supabase, { getCurrentUser } from '../../src/services/supabase';
 import { AIConsentModal, hasAIConsent } from '../../src/components/common/AIConsentModal';
+import { isKoreanLocale } from '../../src/utils/formatters';
 
 // ============================================================================
 // 한국 주요 종목 + 글로벌 인기 종목 DB (오프라인 검색용)
@@ -44,7 +45,7 @@ interface StockItem {
   market: 'KRX' | 'NASDAQ' | 'NYSE' | 'CRYPTO';
 }
 
-const STOCK_DB: StockItem[] = [
+const STOCK_DB_KR: StockItem[] = [
   // 한국 대형주
   { ticker: '005930', name: '삼성전자', nameEn: 'Samsung Electronics', market: 'KRX' },
   { ticker: '000660', name: 'SK하이닉스', nameEn: 'SK Hynix', market: 'KRX' },
@@ -104,6 +105,23 @@ const STOCK_DB: StockItem[] = [
   { ticker: 'PLTR', name: '팔란티어', nameEn: 'Palantir', market: 'NASDAQ' },
   { ticker: 'SOFI', name: '소파이', nameEn: 'SoFi Technologies', market: 'NASDAQ' },
 ];
+
+/**
+ * 로케일에 따라 주식 DB 순서 반환
+ * - 한국 로케일: 한국 주식 우선 (기존 순서 유지)
+ * - 영어 로케일: 미국 주식(AAPL, MSFT 등) 우선
+ */
+function getOrderedStockDB(): StockItem[] {
+  if (isKoreanLocale()) return STOCK_DB_KR;
+  // 영어 로케일: US/CRYPTO 먼저, KRX 나중에
+  const usPriority = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META'];
+  const usFirst = STOCK_DB_KR.filter(s => s.market !== 'KRX');
+  const krStocks = STOCK_DB_KR.filter(s => s.market === 'KRX');
+  // 우선 티커들을 맨 앞으로
+  const priority = usFirst.filter(s => usPriority.includes(s.ticker));
+  const rest = usFirst.filter(s => !usPriority.includes(s.ticker));
+  return [...priority, ...rest, ...krStocks];
+}
 
 // ============================================================================
 // 진단 함수 (딥다이브 분석 환경 점검)
@@ -288,9 +306,9 @@ export default function DeepDiveScreen() {
     return () => clearTimeout(timer);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // 검색 필터 (한국어 이름, 영문 이름, 티커 모두 검색)
+  // 검색 필터 (한국어 이름, 영문 이름, 티커 모두 검색 — 로케일 기반 정렬)
   const filteredStocks = query.trim().length > 0
-    ? STOCK_DB.filter(s => {
+    ? getOrderedStockDB().filter(s => {
         const q = query.toLowerCase();
         return (
           s.name.toLowerCase().includes(q) ||

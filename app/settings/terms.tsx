@@ -1,5 +1,6 @@
 /**
- * 이용약관 화면
+ * 이용약관 화면 / Terms of Service Screen
+ * 로케일 기반으로 한국어/영어 전환
  */
 
 import React from 'react';
@@ -8,10 +9,24 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../src/hooks/useTheme';
 import { HeaderBar } from '../../src/components/common/HeaderBar';
+import { useLocale } from '../../src/context/LocaleContext';
 
 export default function TermsScreen() {
   const { colors } = useTheme();
+  const { language } = useLocale();
+  const isKorean = language === 'ko';
 
+  if (!isKorean) {
+    return <TermsScreenEN colors={colors} />;
+  }
+  return <TermsScreenKO colors={colors} />;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Korean Terms
+// ─────────────────────────────────────────────────────────────────────────────
+
+function TermsScreenKO({ colors }: { colors: ReturnType<typeof useTheme>['colors'] }) {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <HeaderBar title="이용약관" />
@@ -157,6 +172,145 @@ export default function TermsScreen() {
         <Text style={[styles.footer, { color: colors.textTertiary, borderTopColor: colors.border }]}>
           본 약관에 동의하지 않으실 경우 서비스 이용이 제한될 수 있습니다.{'\n'}
           본 약관은 대한민국 법률에 따라 해석되며, 관할 법원은 서울중앙지방법원으로 합니다.
+        </Text>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// English Terms
+// ─────────────────────────────────────────────────────────────────────────────
+
+function TermsScreenEN({ colors }: { colors: ReturnType<typeof useTheme>['colors'] }) {
+  return (
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <HeaderBar title="Terms of Service" />
+
+      <ScrollView style={styles.content}>
+        <Text style={[styles.title, { color: colors.textPrimary }]}>baln Terms of Service</Text>
+        <Text style={[styles.date, { color: colors.textTertiary }]}>Last updated: February 21, 2026</Text>
+
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.primary }]}>1. Purpose</Text>
+          <Text style={[styles.sectionContent, { color: colors.textSecondary }]}>
+            These Terms of Service ("Terms") govern your access to and use of the portfolio management and investment education service ("Service") provided by Baln Co., Ltd. ("Company"). By using the Service, you agree to be bound by these Terms.
+          </Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.primary }]}>2. Service Description</Text>
+          <Text style={[styles.sectionContent, { color: colors.textSecondary }]}>
+            The Service includes:{'\n'}
+            1. Portfolio tracking and visualization{'\n'}
+            2. AI-based asset analysis{'\n'}
+            3. Context Cards — daily market context explained through 4 lenses (historical, macro, institutional, portfolio){'\n'}
+            4. Prediction Game — AI-generated market quizzes and review{'\n'}
+            5. Real-time market news feed and portfolio impact analysis{'\n'}
+            6. Rebalancing suggestions and simulations{'\n'}
+            7. Credit-based AI premium features{'\n'}
+            8. Other portfolio-related services
+          </Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.primary }]}>3. Disclaimer & Investment Risk Disclosure</Text>
+          <View style={[styles.warningBox, { borderColor: `${colors.error}4D` }]}>
+            <Text style={[styles.warningText, { color: colors.error }]}>
+              ⚠️ Risk Warning: You may lose some or all of your invested principal.
+            </Text>
+          </View>
+          <Text style={[styles.sectionContent, { color: colors.textSecondary }]}>
+            1. The Service is an educational tool and does not constitute investment advice, a solicitation, or an offer to buy or sell any security or financial instrument. The Company is not a registered investment adviser.{'\n\n'}
+            2. All content provided by the Service (AI analysis, rebalancing suggestions, tax calculations, stock analysis, etc.) is for general informational and educational purposes only. You are solely responsible for your investment decisions.{'\n\n'}
+            3. The Company is not liable for any direct or indirect investment losses arising from use of the Service.{'\n\n'}
+            4. AI analysis results are based on historical data and statistical models. Past performance does not guarantee future results. Actual outcomes may differ materially from analysis.{'\n\n'}
+            5. The Service is not insured or guaranteed by any government deposit protection scheme. Principal is not guaranteed.{'\n\n'}
+            6. Any tax-related information is provided for reference purposes only. Please consult a qualified tax professional for advice specific to your situation. Tax laws may change without notice.
+          </Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.primary }]}>4. Privacy</Text>
+          <Text style={[styles.sectionContent, { color: colors.textSecondary }]}>
+            The Company protects your personal information in accordance with applicable law. Please review our Privacy Policy for details on how we collect, use, and protect your information.
+          </Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.primary }]}>5. Prohibited Conduct</Text>
+          <Text style={[styles.sectionContent, { color: colors.textSecondary }]}>
+            Your access to the Service may be suspended or terminated if you:{'\n'}
+            1. Impersonate another person or misuse another user's credentials{'\n'}
+            2. Interfere with the operation of the Service{'\n'}
+            3. Violate any applicable law or regulation{'\n'}
+            4. Breach any other rule established by the Company
+          </Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.primary }]}>6. Community & Gatherings</Text>
+          <Text style={[styles.sectionContent, { color: colors.textSecondary }]}>
+            1. The VIP Lounge gathering feature is a peer-matching platform for voluntary meetups. The Company is not the organizer of any gathering.{'\n\n'}
+            2. The Company is not responsible for any accident, dispute, or loss arising from gatherings facilitated through the Service.{'\n\n'}
+            3. All risks and responsibilities relating to participation in gatherings rest solely with the participants.{'\n\n'}
+            4. A 10% platform fee applies to paid gathering registrations and will be disclosed at checkout.{'\n\n'}
+            5. Cancellation and refund policies for individual gatherings are determined by the gathering host.
+          </Text>
+        </View>
+
+        <View style={styles.section}>
+          <View style={styles.dangerSectionHeader}>
+            <Ionicons name="warning" size={18} color={colors.error} />
+            <Text style={[styles.sectionTitle, styles.dangerSectionTitle, { color: colors.error }]}>7. Prohibited Financial Activity</Text>
+          </View>
+          <View style={[styles.dangerBox, { backgroundColor: `${colors.error}15`, borderColor: `${colors.error}4D` }]}>
+            <Text style={[styles.sectionContent, { color: colors.textSecondary }]}>
+              You must not use the Service to:{'\n\n'}
+              {'  '}a. <Text style={[styles.dangerHighlight, { color: colors.error }]}>Operate a "stock tip" group</Text>: direct unspecified individuals to buy or sell specific securities, or engage in unregistered investment advisory activities.{'\n\n'}
+              {'  '}b. <Text style={[styles.dangerHighlight, { color: colors.error }]}>Guarantee returns</Text>: use expressions such as "guaranteed principal", "fixed return of X%", or "100% profit".{'\n\n'}
+              {'  '}c. <Text style={[styles.dangerHighlight, { color: colors.error }]}>Solicit off-platform</Text>: direct users to external messaging apps (KakaoTalk, Telegram, etc.) to solicit investments or request money.{'\n\n'}
+              {'  '}d. <Text style={[styles.dangerHighlight, { color: colors.error }]}>Charge for stock recommendations</Text>: accept compensation for investment recommendations without proper regulatory registration.{'\n\n'}
+              Violations may result in <Text style={[styles.dangerHighlight, { color: colors.error }]}>immediate permanent account suspension</Text> and referral to relevant authorities.
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.primary }]}>8. Credits & Refund Policy</Text>
+          <Text style={[styles.sectionContent, { color: colors.textSecondary }]}>
+            1. Credits are in-app points used to access AI premium features. 1 Credit ≈ $0.08 USD in value.{'\n\n'}
+            2. Purchased credits may be refunded within 7 days of purchase, provided they have not been used.{'\n\n'}
+            3. Used (deducted) credits are non-refundable.{'\n\n'}
+            4. Subscription bonus credits and promotional credits are non-refundable.{'\n\n'}
+            5. If a technical error prevents delivery of an AI analysis, any deducted credits will be automatically restored.{'\n\n'}
+            6. Credits expire 1 year after the last earn date. You will be notified 30 days before expiration.{'\n\n'}
+            7. Credits cannot be exchanged for cash, gift cards, or any other form of payment, and cannot be transferred to another user.{'\n\n'}
+            8. Refund requests: baln.logic@gmail.com or via in-app support.
+          </Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.primary }]}>9. Age Requirement</Text>
+          <Text style={[styles.sectionContent, { color: colors.textSecondary }]}>
+            1. You must be at least 14 years old (or the minimum age required by the laws of your jurisdiction) to use this Service.{'\n\n'}
+            2. If the Company discovers that a user is under the minimum age, the account will be suspended and relevant data deleted.
+          </Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.primary }]}>10. AI Automated Decision-Making</Text>
+          <Text style={[styles.sectionContent, { color: colors.textSecondary }]}>
+            1. The Company uses AI to automatically analyze portfolio data (risk assessment, rebalancing suggestions, etc.).{'\n\n'}
+            2. You may opt out of automated AI analysis by disabling the feature in Settings.{'\n\n'}
+            3. AI analysis does not automatically execute investment transactions. All final investment decisions are made by you.{'\n\n'}
+            4. Your account may be assigned a tier classification based on activity and portfolio data, which may affect access to certain features.
+          </Text>
+        </View>
+
+        <Text style={[styles.footer, { color: colors.textTertiary, borderTopColor: colors.border }]}>
+          If you do not agree to these Terms, you may not use the Service.{'\n'}
+          These Terms are governed by applicable law. For Korean users, the governing law is the Republic of Korea and the competent court is the Seoul Central District Court.
         </Text>
       </ScrollView>
     </SafeAreaView>

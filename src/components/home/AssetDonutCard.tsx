@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import Svg, { Circle, Text as SvgText } from 'react-native-svg';
 import { SIZES } from '../../styles/theme';
 import { useTheme } from '../../hooks/useTheme';
+import { formatLocalAmount, formatNumber } from '../../utils/formatters';
 
 // ============================================================================
 // 타입 정의
@@ -34,13 +35,13 @@ function formatAbbreviated(amount: number): string {
   }
   if (amount >= 1000_0000) {
     const man = Math.round(amount / 10000);
-    return `${man.toLocaleString('ko-KR')}만`;
+    return `${formatNumber(man)}만`;
   }
   if (amount >= 100_0000) {
     const man = Math.round(amount / 10000);
-    return `${man.toLocaleString('ko-KR')}만`;
+    return `${formatNumber(man)}만`;
   }
-  return `₩${Math.round(amount).toLocaleString('ko-KR')}`;
+  return formatLocalAmount(Math.round(amount));
 }
 
 // ============================================================================
