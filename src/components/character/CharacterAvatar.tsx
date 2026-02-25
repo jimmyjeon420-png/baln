@@ -14,6 +14,10 @@ import { CHARACTER_SIZE_MAP } from '../../types/character';
 import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
 import { sentimentToExpression } from '../../services/characterService';
 import { useIdleAnimation } from './animations/useIdleAnimation';
+import { ClothingOverlay } from './layers/ClothingOverlay';
+import { AccessoryOverlay, AccessoryType } from './layers/AccessoryOverlay';
+import { MoodParticles } from './layers/MoodParticles';
+import type { ClothingLevel, GuruMood, GuruActivity } from '../../types/village';
 
 // SVG 캐릭터 컴포넌트 임포트 (주토피아 × 동물의숲 10종)
 import { BuffettCharacter } from './characters/BuffettCharacter';
@@ -40,6 +44,16 @@ interface CharacterAvatarProps {
   fallbackEmoji?: string;
   /** idle 애니메이션 활성화 (라운드테이블 등에서 사용) */
   animated?: boolean;
+  /** 의상 레이어 (기온 기반) */
+  clothingLevel?: ClothingLevel;
+  /** 구루 감정 상태 (파티클 이펙트용) */
+  mood?: GuruMood;
+  /** 구루 현재 활동 (파티클 이펙트용) */
+  activity?: GuruActivity;
+  /** 장식 아이템 목록 */
+  accessories?: AccessoryType[];
+  /** 감정 파티클 이펙트 표시 여부 (기본값 false) */
+  showParticles?: boolean;
 }
 
 /** guruId → SVG 컴포넌트 매핑 (주토피아 동물 10종) */
@@ -62,11 +76,21 @@ function StaticAvatar({
   pixelSize,
   resolvedExpression,
   fallbackEmoji,
+  clothingLevel,
+  mood,
+  activity,
+  accessories,
+  showParticles,
 }: {
   guruId: string;
   pixelSize: number;
   resolvedExpression: CharacterExpression;
   fallbackEmoji?: string;
+  clothingLevel?: ClothingLevel;
+  mood?: GuruMood;
+  activity?: GuruActivity;
+  accessories?: AccessoryType[];
+  showParticles?: boolean;
 }) {
   const config = GURU_CHARACTER_CONFIGS[guruId];
   const SvgComponent = CHARACTER_COMPONENTS[guruId];
@@ -79,6 +103,28 @@ function StaticAvatar({
           expression={resolvedExpression}
           accentColor={config.accentColor}
         />
+        {clothingLevel && (
+          <ClothingOverlay
+            size={pixelSize}
+            clothingLevel={clothingLevel}
+            guruId={guruId}
+            accentColor={config.accentColor}
+          />
+        )}
+        {accessories && accessories.length > 0 && (
+          <AccessoryOverlay
+            size={pixelSize}
+            accessories={accessories}
+            accentColor={config.accentColor}
+          />
+        )}
+        {showParticles && mood && (
+          <MoodParticles
+            size={pixelSize}
+            mood={mood}
+            activity={activity}
+          />
+        )}
       </View>
     );
   }
@@ -112,11 +158,21 @@ function AnimatedAvatar({
   pixelSize,
   resolvedExpression,
   fallbackEmoji,
+  clothingLevel,
+  mood,
+  activity,
+  accessories,
+  showParticles,
 }: {
   guruId: string;
   pixelSize: number;
   resolvedExpression: CharacterExpression;
   fallbackEmoji?: string;
+  clothingLevel?: ClothingLevel;
+  mood?: GuruMood;
+  activity?: GuruActivity;
+  accessories?: AccessoryType[];
+  showParticles?: boolean;
 }) {
   const config = GURU_CHARACTER_CONFIGS[guruId];
   const SvgComponent = CHARACTER_COMPONENTS[guruId];
@@ -138,6 +194,28 @@ function AnimatedAvatar({
           accentColor={config.accentColor}
           blinkPhase={blinkPhaseRef.current}
         />
+        {clothingLevel && (
+          <ClothingOverlay
+            size={pixelSize}
+            clothingLevel={clothingLevel}
+            guruId={guruId}
+            accentColor={config.accentColor}
+          />
+        )}
+        {accessories && accessories.length > 0 && (
+          <AccessoryOverlay
+            size={pixelSize}
+            accessories={accessories}
+            accentColor={config.accentColor}
+          />
+        )}
+        {showParticles && mood && (
+          <MoodParticles
+            size={pixelSize}
+            mood={mood}
+            activity={activity}
+          />
+        )}
       </Animated.View>
     );
   }
@@ -174,6 +252,11 @@ export function CharacterAvatar({
   sentiment,
   fallbackEmoji,
   animated = false,
+  clothingLevel,
+  mood,
+  activity,
+  accessories,
+  showParticles = false,
 }: CharacterAvatarProps) {
   const pixelSize = CHARACTER_SIZE_MAP[size];
 
@@ -188,6 +271,11 @@ export function CharacterAvatar({
         pixelSize={pixelSize}
         resolvedExpression={resolvedExpression}
         fallbackEmoji={fallbackEmoji}
+        clothingLevel={clothingLevel}
+        mood={mood}
+        activity={activity}
+        accessories={accessories}
+        showParticles={showParticles}
       />
     );
   }
@@ -198,6 +286,11 @@ export function CharacterAvatar({
       pixelSize={pixelSize}
       resolvedExpression={resolvedExpression}
       fallbackEmoji={fallbackEmoji}
+      clothingLevel={clothingLevel}
+      mood={mood}
+      activity={activity}
+      accessories={accessories}
+      showParticles={showParticles}
     />
   );
 }
