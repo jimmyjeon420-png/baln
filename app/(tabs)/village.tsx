@@ -312,12 +312,16 @@ export default function VillageScreen() {
                     />
                   )}
 
-                  {/* Character avatar */}
+                  {/* Character avatar + 의상/파티클 레이어 */}
                   <CharacterAvatar
                     guruId={pos.guruId}
                     size="md"
                     expression={guruState?.expression ?? 'neutral'}
                     animated
+                    clothingLevel={clothingLevel}
+                    mood={guruState?.mood}
+                    activity={guruState?.activity}
+                    showParticles
                   />
 
                   {/* Guru name label */}
