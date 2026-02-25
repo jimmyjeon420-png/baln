@@ -31,6 +31,7 @@ import { fetchStockFundamentals } from '../../src/services/stockDataService';
 import DeepDiveReport from '../../src/components/deep-dive/DeepDiveReport';
 import type { DeepDiveInput, DeepDiveResult } from '../../src/types/marketplace';
 import supabase, { getCurrentUser } from '../../src/services/supabase';
+import { AIConsentModal, hasAIConsent } from '../../src/components/common/AIConsentModal';
 
 // ============================================================================
 // 한국 주요 종목 + 글로벌 인기 종목 DB (오프라인 검색용)
@@ -261,6 +262,8 @@ export default function DeepDiveScreen() {
   const [loadingMessage, setLoadingMessage] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showAIConsent, setShowAIConsent] = useState(false);
+  const [pendingAnalysis, setPendingAnalysis] = useState<(() => void) | null>(null);
 
   // 처방전 카드에서 직접 진입 시 자동 분석
   useEffect(() => {
@@ -304,11 +307,24 @@ export default function DeepDiveScreen() {
     Keyboard.dismiss();
   }, []);
 
+  // AI 동의 확인 래퍼 — 동의 없으면 모달 표시 후 콜백 대기
+  const ensureAIConsent = async (onConsented: () => void): Promise<boolean> => {
+    const consent = await hasAIConsent();
+    if (consent) return true;
+    setPendingAnalysis(() => onConsented);
+    setShowAIConsent(true);
+    return false;
+  };
+
   // stock 인자를 직접 받는 버전 (자동 분석용 — state가 아직 반영 안 됐을 때 사용)
   const handleAnalyzeWithStock = async (stock: StockItem) => {
     const targetName = stock.name;
     const targetTicker = stock.ticker;
     if (!targetName) return;
+
+    // AI 동의 확인 (Apple Guideline 5.1.1(i))
+    const consented = await ensureAIConsent(() => handleAnalyzeWithStock(stock));
+    if (!consented) return;
 
     setIsLoading(true);
     setLoadingMessage('재무 데이터 조회 중...');
@@ -345,6 +361,10 @@ export default function DeepDiveScreen() {
     const targetTicker = selectedStock?.ticker || query.trim().toUpperCase();
 
     if (!targetName) return;
+
+    // AI 동의 확인 (Apple Guideline 5.1.1(i))
+    const consented = await ensureAIConsent(() => handleAnalyze());
+    if (!consented) return;
 
     setIsLoading(true);
     setLoadingMessage('재무 데이터 조회 중...');
@@ -431,6 +451,21 @@ export default function DeepDiveScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+      {/* AI 데이터 공유 동의 모달 */}
+      <AIConsentModal
+        visible={showAIConsent}
+        onAccept={() => {
+          setShowAIConsent(false);
+          if (pendingAnalysis) {
+            pendingAnalysis();
+            setPendingAnalysis(null);
+          }
+        }}
+        onDecline={() => {
+          setShowAIConsent(false);
+          setPendingAnalysis(null);
+        }}
+      />
       <HeaderBar
         title="종목 딥다이브"
         rightElement={

@@ -51,6 +51,7 @@ import { useQuickContextSentiment } from '../../src/hooks/useContextCard';
 import { useKostolalyPhase } from '../../src/hooks/useKostolalyPhase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DisclaimerBanner from '../../src/components/common/DisclaimerBanner';
+import { AIConsentModal, hasAIConsent } from '../../src/components/common/AIConsentModal';
 import supabase, { getCurrentUser } from '../../src/services/supabase';
 
 // ── 단일 통합 뷰 컴포넌트 (P2-A) ──
@@ -427,9 +428,31 @@ export default function CheckupScreen() {
   const {
     morningBriefing,
     riskAnalysis: analysisResult,
+    source: analysisSource,
     isFetched: analysisReady,
     refresh: refreshAnalysis,
   } = useSharedAnalysis(portfolio);
+
+  // ── AI 데이터 공유 동의 모달 (Apple Guideline 5.1.1(i)) ──
+  const [showAIConsent, setShowAIConsent] = useState(false);
+
+  useEffect(() => {
+    // analysisSource가 'consent-required'이면 동의가 필요한 상태
+    if (analysisSource === 'consent-required' && hasAssets) {
+      setShowAIConsent(true);
+    }
+  }, [analysisSource, hasAssets]);
+
+  const handleAIConsentAccept = () => {
+    setShowAIConsent(false);
+    // 동의 후 분석 재실행
+    refreshAnalysis();
+  };
+
+  const handleAIConsentDecline = () => {
+    setShowAIConsent(false);
+    // 동의 거부 시 분석 없이 진행 (기본 UI만 표시)
+  };
 
   // ── 레벨별 뷰 (초급/중급/고급) ──
   const { level, isLoading: levelLoading, setLevel } = useCheckupLevel();
@@ -645,6 +668,13 @@ export default function CheckupScreen() {
 
   return (
     <SafeAreaView style={[s.container, { backgroundColor: colors.background }]} edges={['top']}>
+      {/* AI 데이터 공유 동의 모달 (Apple Guideline 5.1.1(i)) */}
+      <AIConsentModal
+        visible={showAIConsent}
+        onAccept={handleAIConsentAccept}
+        onDecline={handleAIConsentDecline}
+      />
+
       {/* 새로고침 완료 토스트 */}
       <RefreshToast key={toastKeyRef.current} visible={showToast} />
 

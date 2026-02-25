@@ -48,6 +48,7 @@ import {
 import supabase, { getCurrentUser } from '../services/supabase';
 import { validateAndCorrectRiskAnalysis, validatePortfolioActions } from '../utils/aiResponseValidator';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { hasAIConsent } from '../components/common/AIConsentModal';
 
 // 쿼리 키 (외부에서 invalidate 할 때 사용)
 export const AI_ANALYSIS_KEY = ['shared-ai-analysis'];
@@ -132,7 +133,14 @@ export async function fetchAIAnalysis(
     }
   }
 
-  // 4) 캐시 미스 → Gemini 병렬 호출 (기존 로직 유지)
+  // 4) 캐시 미스 → Gemini 호출 전 AI 데이터 공유 동의 확인
+  // Apple App Store Guideline 5.1.1(i) / 5.1.2(i) 준수
+  const consent = await hasAIConsent();
+  if (!consent) {
+    // 동의 없으면 AI 호출 차단 — UI에서 동의 모달 표시 필요
+    return { morningBriefing: null, riskAnalysis: null, source: 'consent-required' };
+  }
+
   // 구루 스타일 읽기 (Morning Briefing 프롬프트에 철학 주입)
   let guruStyle: string | undefined;
   try {

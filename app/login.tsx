@@ -201,7 +201,7 @@ export default function LoginScreen() {
               )}
             </TouchableOpacity>
 
-            {/* Apple 로그인 (iOS에서만 표시) */}
+            {/* Apple 로그인 (iOS에서만 표시) — Apple HIG: 다크 배경에서 흰색 버튼 */}
             {Platform.OS === 'ios' && (
               <TouchableOpacity
                 style={[styles.socialButton, styles.appleButton]}
@@ -209,7 +209,7 @@ export default function LoginScreen() {
                 disabled={isAnyLoading}
               >
                 {loadingProvider === 'apple' ? (
-                  <ActivityIndicator color="#FFFFFF" size="small" />
+                  <ActivityIndicator color="#000000" size="small" />
                 ) : (
                   <>
                     <Text style={styles.appleIcon}></Text>
@@ -381,18 +381,18 @@ const styles = StyleSheet.create({
     color: '#000000',
   },
 
-  // Apple 버튼
+  // Apple 버튼 — Apple HIG: 다크 배경에서 흰색 스타일 사용
   appleButton: {
-    backgroundColor: '#000000',
+    backgroundColor: '#FFFFFF',
   },
   appleIcon: {
     fontSize: 19,
-    color: '#FFFFFF',
+    color: '#000000',
   },
   appleButtonText: {
     fontSize: SIZES.fBase,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: '#000000',
   },
 
   // 구분선 섹션
