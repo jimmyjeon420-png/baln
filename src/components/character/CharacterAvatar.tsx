@@ -14,6 +14,8 @@ import { CHARACTER_SIZE_MAP } from '../../types/character';
 import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
 import { sentimentToExpression } from '../../services/characterService';
 import { useIdleAnimation } from './animations/useIdleAnimation';
+import { useActivityAnimation } from './animations/useActivityAnimation';
+import { useWanderAnimation } from './animations/useWanderAnimation';
 import { ClothingOverlay } from './layers/ClothingOverlay';
 import { AccessoryOverlay, AccessoryType } from './layers/AccessoryOverlay';
 import { MoodParticles } from './layers/MoodParticles';
@@ -177,15 +179,24 @@ function AnimatedAvatar({
   const config = GURU_CHARACTER_CONFIGS[guruId];
   const SvgComponent = CHARACTER_COMPONENTS[guruId];
   const { breathingStyle, swayStyle, blinkPhaseRef } = useIdleAnimation();
+  const { activityStyle } = useActivityAnimation({ activity, isActive: true });
+  const { wanderStyle } = useWanderAnimation({ enabled: true, activity });
 
   if (SvgComponent && config) {
     return (
+      <Animated.View
+        style={[
+          { width: pixelSize, height: pixelSize },
+          wanderStyle,
+        ]}
+      >
       <Animated.View
         style={[
           styles.container,
           { width: pixelSize, height: pixelSize },
           breathingStyle,
           swayStyle,
+          activityStyle,
         ]}
       >
         <SvgComponent
@@ -217,6 +228,7 @@ function AnimatedAvatar({
           />
         )}
       </Animated.View>
+      </Animated.View>
     );
   }
 
@@ -226,21 +238,24 @@ function AnimatedAvatar({
   const emojiSize = pixelSize * 0.52;
 
   return (
-    <Animated.View
-      style={[
-        styles.emojiFallback,
-        {
-          width: pixelSize,
-          height: pixelSize,
-          borderRadius: pixelSize / 2,
-          backgroundColor: bgColor + '20',
-          borderColor: bgColor + '60',
-        },
-        breathingStyle,
-        swayStyle,
-      ]}
-    >
-      <Text style={{ fontSize: emojiSize }}>{emoji}</Text>
+    <Animated.View style={[wanderStyle]}>
+      <Animated.View
+        style={[
+          styles.emojiFallback,
+          {
+            width: pixelSize,
+            height: pixelSize,
+            borderRadius: pixelSize / 2,
+            backgroundColor: bgColor + '20',
+            borderColor: bgColor + '60',
+          },
+          breathingStyle,
+          swayStyle,
+          activityStyle,
+        ]}
+      >
+        <Text style={{ fontSize: emojiSize }}>{emoji}</Text>
+      </Animated.View>
     </Animated.View>
   );
 }
