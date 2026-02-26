@@ -25,10 +25,12 @@ import { useSaveExecution } from '../src/hooks/useExecutions';
 import type { ExecutionInput } from '../src/types/rebalanceExecution';
 import { useTheme } from '../src/hooks/useTheme';
 import { getLocaleCode } from '../src/utils/formatters';
+import { useLocale } from '../src/context/LocaleContext';
 
 export default function LogTradeScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { t } = useLocale();
   const params = useLocalSearchParams<{
     ticker: string;
     name: string;
@@ -52,27 +54,27 @@ export default function LogTradeScreen() {
     const qty = parseInt(executedQty, 10);
 
     if (isNaN(price) || price <= 0) {
-      Alert.alert('입력 오류', '체결 가격을 정확히 입력해주세요.');
+      Alert.alert(t('log_trade.alert_price_title'), t('log_trade.alert_price_msg'));
       return;
     }
 
     if (isNaN(qty) || qty <= 0) {
-      Alert.alert('입력 오류', '체결 수량을 정확히 입력해주세요.');
+      Alert.alert(t('log_trade.alert_qty_title'), t('log_trade.alert_qty_msg'));
       return;
     }
 
     // 확인 모달
     Alert.alert(
-      '실행 기록 저장',
-      `${params.name} (${params.ticker})\n${params.action === 'BUY' ? '매수' : '매도'} ${qty}주 @ ₩${Math.floor(price).toLocaleString()}\n\n본 앱은 실제 매매를 대행하지 않습니다. 직접 증권사에서 실행한 내역을 기록용으로 저장하시겠습니까?`,
+      t('log_trade.confirm_title'),
+      `${params.name} (${params.ticker})\n${params.action === 'BUY' ? t('log_trade.action_buy') : t('log_trade.action_sell')} ${qty} × ₩${Math.floor(price).toLocaleString()}\n\n${t('log_trade.disclaimer')}`,
       [
-        { text: '취소', style: 'cancel' },
+        { text: t('log_trade.confirm_cancel'), style: 'cancel' },
         {
-          text: '저장',
+          text: t('log_trade.confirm_save'),
           onPress: async () => {
             try {
               const input: ExecutionInput = {
-                prescription_date: new Date().toISOString().split('T')[0], // 오늘 날짜
+                prescription_date: new Date().toISOString().split('T')[0],
                 action_ticker: params.ticker,
                 action_name: params.name,
                 action_type: params.action,
@@ -86,11 +88,11 @@ export default function LogTradeScreen() {
 
               await saveExecution(input);
 
-              Alert.alert('✅ 저장 완료', '실행 기록이 저장되었습니다.', [
-                { text: '확인', onPress: () => router.back() },
+              Alert.alert(t('log_trade.saved_title'), t('log_trade.saved_msg'), [
+                { text: t('common.ok'), onPress: () => router.back() },
               ]);
             } catch (error: any) {
-              Alert.alert('저장 실패', error.message || '알 수 없는 오류가 발생했습니다.');
+              Alert.alert(t('log_trade.save_failed_title'), error.message || t('log_trade.save_failed_msg'));
             }
           },
         },
@@ -111,8 +113,8 @@ export default function LogTradeScreen() {
               <Ionicons name="close" size={28} color={colors.textPrimary} />
             </TouchableOpacity>
             <View style={{ flex: 1 }}>
-              <Text style={[s.headerTitle, { color: colors.textPrimary }]}>실행 기록</Text>
-              <Text style={[s.headerSubtitle, { color: colors.textTertiary }]}>증권사에서 직접 실행한 내역을 입력하세요</Text>
+              <Text style={[s.headerTitle, { color: colors.textPrimary }]}>{t('log_trade.title')}</Text>
+              <Text style={[s.headerSubtitle, { color: colors.textTertiary }]}>{t('log_trade.subtitle')}</Text>
             </View>
           </View>
 
@@ -120,7 +122,7 @@ export default function LogTradeScreen() {
           <View style={[s.tickerCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={[s.actionBadge, { backgroundColor: params.action === 'BUY' ? 'rgba(76,175,80,0.15)' : 'rgba(207,102,121,0.15)' }]}>
               <Text style={[s.actionBadgeText, { color: params.action === 'BUY' ? colors.buy : colors.sell }]}>
-                {params.action === 'BUY' ? '매수' : '매도'}
+                {params.action === 'BUY' ? t('log_trade.action_buy') : t('log_trade.action_sell')}
               </Text>
             </View>
             <Text style={[s.tickerName, { color: colors.textPrimary }]}>{params.name}</Text>
@@ -132,7 +134,7 @@ export default function LogTradeScreen() {
             <View style={s.suggestionBox}>
               <Ionicons name="information-circle-outline" size={16} color={colors.info} />
               <Text style={[s.suggestionText, { color: colors.info }]}>
-                AI 제안 시점: ₩{Math.floor(parseFloat(params.suggestedPrice)).toLocaleString()} × {params.suggestedQty || 0}주
+                {t('log_trade.ai_suggestion_ref', { price: Math.floor(parseFloat(params.suggestedPrice)).toLocaleString(), qty: String(params.suggestedQty || 0) })}
               </Text>
             </View>
           )}
@@ -141,7 +143,7 @@ export default function LogTradeScreen() {
           <View style={s.form}>
             {/* 실행 일시 */}
             <View style={s.formGroup}>
-              <Text style={[s.label, { color: colors.textSecondary }]}>실행 일시 *</Text>
+              <Text style={[s.label, { color: colors.textSecondary }]}>{t('log_trade.date_label')}</Text>
               <TouchableOpacity style={[s.dateButton, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => setShowDatePicker(true)}>
                 <Ionicons name="calendar-outline" size={20} color={colors.primary} />
                 <Text style={[s.dateText, { color: colors.textPrimary }]}>{executedAt.toLocaleString(getLocaleCode(), { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</Text>
@@ -161,38 +163,38 @@ export default function LogTradeScreen() {
 
             {/* 체결 가격 */}
             <View style={s.formGroup}>
-              <Text style={[s.label, { color: colors.textSecondary }]}>체결 가격 (KRW) *</Text>
+              <Text style={[s.label, { color: colors.textSecondary }]}>{t('log_trade.price_label')}</Text>
               <TextInput
                 style={[s.input, { backgroundColor: colors.surface, color: colors.textPrimary, borderColor: colors.border }]}
                 value={executedPrice}
                 onChangeText={setExecutedPrice}
                 keyboardType="numeric"
-                placeholder="예: 50000"
+                placeholder={t('log_trade.price_placeholder')}
                 placeholderTextColor={colors.textQuaternary}
               />
             </View>
 
             {/* 체결 수량 */}
             <View style={s.formGroup}>
-              <Text style={[s.label, { color: colors.textSecondary }]}>체결 수량 (주) *</Text>
+              <Text style={[s.label, { color: colors.textSecondary }]}>{t('log_trade.qty_label')}</Text>
               <TextInput
                 style={[s.input, { backgroundColor: colors.surface, color: colors.textPrimary, borderColor: colors.border }]}
                 value={executedQty}
                 onChangeText={setExecutedQty}
                 keyboardType="number-pad"
-                placeholder="예: 10"
+                placeholder={t('log_trade.qty_placeholder')}
                 placeholderTextColor={colors.textQuaternary}
               />
             </View>
 
             {/* 메모 */}
             <View style={s.formGroup}>
-              <Text style={[s.label, { color: colors.textSecondary }]}>메모 (선택)</Text>
+              <Text style={[s.label, { color: colors.textSecondary }]}>{t('log_trade.note_label')}</Text>
               <TextInput
                 style={[s.input, s.textArea, { backgroundColor: colors.surface, color: colors.textPrimary, borderColor: colors.border }]}
                 value={note}
                 onChangeText={setNote}
-                placeholder="증권사, 주문 방식 등 (예: 키움증권 시장가)"
+                placeholder={t('log_trade.note_placeholder')}
                 placeholderTextColor={colors.textQuaternary}
                 multiline
                 numberOfLines={3}
@@ -204,7 +206,7 @@ export default function LogTradeScreen() {
           <View style={s.disclaimer}>
             <Ionicons name="alert-circle-outline" size={14} color={colors.textTertiary} />
             <Text style={[s.disclaimerText, { color: colors.textTertiary }]}>
-              본 앱은 실제 매매를 대행하지 않습니다. 직접 증권사에서 실행한 내역을 기록용으로 저장하는 기능입니다.
+              {t('log_trade.disclaimer')}
             </Text>
           </View>
 
@@ -215,11 +217,11 @@ export default function LogTradeScreen() {
             disabled={isPending}
           >
             {isPending ? (
-              <Text style={s.submitButtonText}>저장 중...</Text>
+              <Text style={s.submitButtonText}>{t('log_trade.saving_btn')}</Text>
             ) : (
               <>
                 <Ionicons name="checkmark-circle" size={20} color={colors.background} />
-                <Text style={s.submitButtonText}>기록 저장</Text>
+                <Text style={s.submitButtonText}>{t('log_trade.save_btn')}</Text>
               </>
             )}
           </TouchableOpacity>

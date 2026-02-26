@@ -19,10 +19,12 @@ import { useRebalanceHistory, useOverallStats } from '../src/hooks/useRebalanceH
 import { SkeletonBlock } from '../src/components/SkeletonLoader';
 import { useTheme } from '../src/hooks/useTheme';
 import { getLocaleCode } from '../src/utils/formatters';
+import { useLocale } from '../src/context/LocaleContext';
 
 export default function RebalanceHistoryScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { t } = useLocale();
   const [period, setPeriod] = useState<30 | 90>(30);
 
   const { data: history, isLoading } = useRebalanceHistory(period);
@@ -37,8 +39,8 @@ export default function RebalanceHistoryScreen() {
             <Ionicons name="chevron-back" size={28} color={colors.textPrimary} />
           </TouchableOpacity>
           <View style={{ flex: 1 }}>
-            <Text style={[s.headerTitle, { color: colors.textPrimary }]}>처방전 히스토리</Text>
-            <Text style={[s.headerSubtitle, { color: colors.textTertiary }]}>AI 제안 vs 실제 실행 vs 결과</Text>
+            <Text style={[s.headerTitle, { color: colors.textPrimary }]}>{t('rebalance_history.title')}</Text>
+            <Text style={[s.headerSubtitle, { color: colors.textTertiary }]}>{t('rebalance_history.subtitle')}</Text>
           </View>
         </View>
 
@@ -48,37 +50,37 @@ export default function RebalanceHistoryScreen() {
             style={[s.periodButton, { backgroundColor: colors.surface, borderColor: colors.border }, period === 30 && s.periodButtonActive]}
             onPress={() => setPeriod(30)}
           >
-            <Text style={[s.periodButtonText, { color: colors.textSecondary }, period === 30 && s.periodButtonTextActive]}>30일</Text>
+            <Text style={[s.periodButtonText, { color: colors.textSecondary }, period === 30 && s.periodButtonTextActive]}>{t('rebalance_history.period_30')}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[s.periodButton, { backgroundColor: colors.surface, borderColor: colors.border }, period === 90 && s.periodButtonActive]}
             onPress={() => setPeriod(90)}
           >
-            <Text style={[s.periodButtonText, { color: colors.textSecondary }, period === 90 && s.periodButtonTextActive]}>90일</Text>
+            <Text style={[s.periodButtonText, { color: colors.textSecondary }, period === 90 && s.periodButtonTextActive]}>{t('rebalance_history.period_90')}</Text>
           </TouchableOpacity>
         </View>
 
         {/* 전체 통계 */}
         <View style={[s.statsCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Text style={[s.statsTitle, { color: colors.textPrimary }]}>전체 요약</Text>
+          <Text style={[s.statsTitle, { color: colors.textPrimary }]}>{t('rebalance_history.stats_title')}</Text>
           <View style={s.statsGrid}>
             <View style={s.statItem}>
-              <Text style={[s.statValue, { color: colors.textPrimary }]}>{overallStats.totalDays}일</Text>
-              <Text style={[s.statLabel, { color: colors.textTertiary }]}>처방전 받음</Text>
+              <Text style={[s.statValue, { color: colors.textPrimary }]}>{overallStats.totalDays}</Text>
+              <Text style={[s.statLabel, { color: colors.textTertiary }]}>{t('rebalance_history.stat_prescriptions')}</Text>
             </View>
             <View style={[s.statDivider, { backgroundColor: colors.border }]} />
             <View style={s.statItem}>
-              <Text style={[s.statValue, { color: colors.textPrimary }]}>{overallStats.totalActions}건</Text>
-              <Text style={[s.statLabel, { color: colors.textTertiary }]}>AI 제안</Text>
+              <Text style={[s.statValue, { color: colors.textPrimary }]}>{overallStats.totalActions}</Text>
+              <Text style={[s.statLabel, { color: colors.textTertiary }]}>{t('rebalance_history.stat_suggestions')}</Text>
             </View>
             <View style={[s.statDivider, { backgroundColor: colors.border }]} />
             <View style={s.statItem}>
-              <Text style={[s.statValue, { color: colors.primary }]}>{overallStats.totalExecutions}건</Text>
-              <Text style={[s.statLabel, { color: colors.textTertiary }]}>실제 실행</Text>
+              <Text style={[s.statValue, { color: colors.primary }]}>{overallStats.totalExecutions}</Text>
+              <Text style={[s.statLabel, { color: colors.textTertiary }]}>{t('rebalance_history.stat_executed')}</Text>
             </View>
           </View>
           <View style={s.executionRateRow}>
-            <Text style={[s.executionRateLabel, { color: colors.textSecondary }]}>실행률</Text>
+            <Text style={[s.executionRateLabel, { color: colors.textSecondary }]}>{t('rebalance_history.execution_rate_label')}</Text>
             <View style={[s.executionRateBar, { backgroundColor: colors.surfaceLight }]}>
               <View style={[s.executionRateFill, { width: `${Math.min(overallStats.overallExecutionRate, 100)}%` }]} />
             </View>
@@ -88,11 +90,11 @@ export default function RebalanceHistoryScreen() {
             <View style={[s.resultRow, { borderTopColor: colors.border }]}>
               <View style={s.resultItem}>
                 <Ionicons name="trending-up" size={16} color={colors.buy} />
-                <Text style={[s.resultText, { color: colors.buy }]}>{overallStats.profitableCount}건 수익</Text>
+                <Text style={[s.resultText, { color: colors.buy }]}>{overallStats.profitableCount} {t('rebalance_history.result_profit')}</Text>
               </View>
               <View style={s.resultItem}>
                 <Ionicons name="trending-down" size={16} color={colors.sell} />
-                <Text style={[s.resultText, { color: colors.sell }]}>{overallStats.lossMakingCount}건 손실</Text>
+                <Text style={[s.resultText, { color: colors.sell }]}>{overallStats.lossMakingCount} {t('rebalance_history.result_loss')}</Text>
               </View>
             </View>
           )}
@@ -114,8 +116,8 @@ export default function RebalanceHistoryScreen() {
         {!isLoading && history && history.length === 0 && (
           <View style={s.emptyContainer}>
             <Ionicons name="calendar-outline" size={48} color={colors.textQuaternary} />
-            <Text style={[s.emptyTitle, { color: colors.textSecondary }]}>처방전 기록이 없습니다</Text>
-            <Text style={[s.emptyDesc, { color: colors.textTertiary }]}>AI 제안을 받으면 여기에 기록됩니다</Text>
+            <Text style={[s.emptyTitle, { color: colors.textSecondary }]}>{t('rebalance_history.empty_title')}</Text>
+            <Text style={[s.emptyDesc, { color: colors.textTertiary }]}>{t('rebalance_history.empty_desc')}</Text>
           </View>
         )}
 
@@ -129,7 +131,7 @@ export default function RebalanceHistoryScreen() {
               {item.stats.executedActions > 0 && (
                 <View style={s.executedBadge}>
                   <Ionicons name="checkmark-circle" size={12} color={colors.primary} />
-                  <Text style={s.executedBadgeText}>{item.stats.executedActions}건 실행</Text>
+                  <Text style={s.executedBadgeText}>{item.stats.executedActions} {t('rebalance_history.executed_badge')}</Text>
                 </View>
               )}
             </View>
@@ -137,13 +139,13 @@ export default function RebalanceHistoryScreen() {
             {/* AI 제안 요약 */}
             {item.prescription.morningBriefing && (
               <View style={s.prescriptionSummary}>
-                <Text style={[s.prescriptionLabel, { color: colors.textSecondary }]}>AI 제안</Text>
+                <Text style={[s.prescriptionLabel, { color: colors.textSecondary }]}>{t('rebalance_history.ai_suggestion_label')}</Text>
                 <Text style={[s.prescriptionValue, { color: colors.textSecondary }]}>
-                  {item.stats.totalActions}건 (BUY/SELL/WATCH)
+                  {item.stats.totalActions} (BUY/SELL/WATCH)
                 </Text>
                 {item.stats.totalActions > 0 && (
                   <Text style={s.prescriptionRate}>
-                    실행률 {item.stats.executionRate.toFixed(0)}%
+                    {t('rebalance_history.execution_rate_label')} {item.stats.executionRate.toFixed(0)}%
                   </Text>
                 )}
               </View>
@@ -163,13 +165,13 @@ export default function RebalanceHistoryScreen() {
                         <Text style={[s.actionBadgeText, {
                           color: exec.action_type === 'BUY' ? colors.buy : colors.sell,
                         }]}>
-                          {exec.action_type === 'BUY' ? '매수' : '매도'}
+                          {exec.action_type === 'BUY' ? t('rebalance_history.action_buy') : t('rebalance_history.action_sell')}
                         </Text>
                       </View>
                       <View style={s.executionInfo}>
                         <Text style={[s.executionTicker, { color: colors.textPrimary }]}>{exec.action_ticker}</Text>
                         <Text style={[s.executionDetail, { color: colors.textSecondary }]}>
-                          {exec.executed_qty}주 @ ₩{Math.floor(exec.executed_price).toLocaleString()}
+                          {exec.executed_qty} × ₩{Math.floor(exec.executed_price).toLocaleString()}
                         </Text>
                       </View>
                       {hasResult && (
@@ -189,7 +191,7 @@ export default function RebalanceHistoryScreen() {
             {item.stats.totalActions > 0 && item.stats.executedActions === 0 && (
               <View style={s.noExecutionBanner}>
                 <Ionicons name="alert-circle-outline" size={14} color={colors.textTertiary} />
-                <Text style={[s.noExecutionText, { color: colors.textTertiary }]}>이날 제안은 실행하지 않았습니다</Text>
+                <Text style={[s.noExecutionText, { color: colors.textTertiary }]}>{t('rebalance_history.no_execution_msg')}</Text>
               </View>
             )}
           </View>
@@ -199,7 +201,7 @@ export default function RebalanceHistoryScreen() {
         <View style={s.infoBox}>
           <Ionicons name="information-circle-outline" size={16} color={colors.info} />
           <Text style={[s.infoText, { color: colors.info }]}>
-            "실행 완료 기록"을 통해 직접 입력한 매매만 여기에 표시됩니다. AI 제안 성과를 추적하려면 실행 후 꼭 기록해주세요.
+            {t('rebalance_history.info_text')}
           </Text>
         </View>
       </ScrollView>

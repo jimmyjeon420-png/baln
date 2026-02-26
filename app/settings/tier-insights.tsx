@@ -31,6 +31,7 @@ import {
 import { FEATURE_COSTS, TIER_DISCOUNTS } from '../../src/types/marketplace';
 import { TIER_COLORS, TIER_LABELS } from '../../src/types/community';
 import { useTheme } from '../../src/hooks/useTheme';
+import { useLocale } from '../../src/context/LocaleContext';
 
 // 자산 유형별 색상
 const ASSET_COLORS = {
@@ -42,13 +43,13 @@ const ASSET_COLORS = {
   btc: '#F7931A',
 };
 
-// 자산 유형별 라벨
+// 자산 유형별 라벨 (fallback — actual labels provided via t() at render time)
 const ASSET_LABELS = {
-  stock: '주식',
-  crypto: '코인',
-  realestate: '부동산',
-  cash: '현금',
-  other: '기타',
+  stock: 'Stocks',
+  crypto: 'Crypto',
+  realestate: 'Real Estate',
+  cash: 'Cash',
+  other: 'Other',
 };
 
 // 티어 결정
@@ -80,6 +81,7 @@ function WeightBar({ label, weight, color, maxWeight }: {
 // 등급별 배분 카드 컴포넌트
 function TierAllocationCard({ stat, isMyTier }: { stat: TierAllocationStat; isMyTier: boolean }) {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const tierColor = TIER_COLORS[stat.tier] || '#FFFFFF';
   const tierLabel = TIER_LABELS[stat.tier] || stat.tier;
   const maxWeight = Math.max(
@@ -100,25 +102,25 @@ function TierAllocationCard({ stat, isMyTier }: { stat: TierAllocationStat; isMy
             </View>
           )}
         </View>
-        <Text style={[styles.tierCardUsers, { color: colors.textTertiary }]}>{stat.user_count}명</Text>
+        <Text style={[styles.tierCardUsers, { color: colors.textTertiary }]}>{t('tier_insights.members_count', { count: String(stat.user_count) })}</Text>
       </View>
 
       {/* 배분 비중 바 차트 */}
       <View style={styles.weightBars}>
-        <WeightBar label="주식" weight={stat.avg_stock_weight} color={ASSET_COLORS.stock} maxWeight={maxWeight} />
-        <WeightBar label="코인" weight={stat.avg_crypto_weight} color={ASSET_COLORS.crypto} maxWeight={maxWeight} />
+        <WeightBar label={t('tier_insights.asset_stock')} weight={stat.avg_stock_weight} color={ASSET_COLORS.stock} maxWeight={maxWeight} />
+        <WeightBar label={t('tier_insights.asset_crypto')} weight={stat.avg_crypto_weight} color={ASSET_COLORS.crypto} maxWeight={maxWeight} />
         {stat.avg_realestate_weight > 0.1 && (
-          <WeightBar label="부동산" weight={stat.avg_realestate_weight} color={ASSET_COLORS.realestate} maxWeight={maxWeight} />
+          <WeightBar label={t('tier_insights.asset_realestate')} weight={stat.avg_realestate_weight} color={ASSET_COLORS.realestate} maxWeight={maxWeight} />
         )}
         {stat.avg_cash_weight > 0.1 && (
-          <WeightBar label="현금" weight={stat.avg_cash_weight} color={ASSET_COLORS.cash} maxWeight={maxWeight} />
+          <WeightBar label={t('tier_insights.asset_cash')} weight={stat.avg_cash_weight} color={ASSET_COLORS.cash} maxWeight={maxWeight} />
         )}
       </View>
 
       {/* BTC 비중 (있는 경우) */}
       {stat.avg_btc_weight > 0.1 && (
         <View style={[styles.btcRow, { borderTopColor: colors.surfaceLight }]}>
-          <Text style={[styles.btcLabel, { color: colors.textSecondary }]}>BTC 비중</Text>
+          <Text style={[styles.btcLabel, { color: colors.textSecondary }]}>{t('tier_insights.btc_weight')}</Text>
           <Text style={[styles.btcValue, { color: ASSET_COLORS.btc }]}>{stat.avg_btc_weight.toFixed(1)}%</Text>
         </View>
       )}
@@ -126,7 +128,7 @@ function TierAllocationCard({ stat, isMyTier }: { stat: TierAllocationStat; isMy
       {/* 인기 종목 TOP 5 */}
       {stat.top_holdings && stat.top_holdings.length > 0 && (
         <View style={[styles.topHoldingsSection, { borderTopColor: colors.surfaceLight }]}>
-          <Text style={[styles.topHoldingsTitle, { color: colors.textSecondary }]}>인기 종목</Text>
+          <Text style={[styles.topHoldingsTitle, { color: colors.textSecondary }]}>{t('tier_insights.popular_holdings')}</Text>
           <View style={styles.topHoldingsList}>
             {stat.top_holdings.slice(0, 5).map((h, i) => (
               <View key={h.ticker} style={styles.topHoldingItem}>
@@ -146,6 +148,7 @@ function TierAllocationCard({ stat, isMyTier }: { stat: TierAllocationStat; isMy
 export default function TierInsightsScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { t } = useLocale();
   const [isUnlocked, setIsUnlocked] = useState(false);
 
   // 내 자산/등급 정보
@@ -176,31 +179,30 @@ export default function TierInsightsScreen() {
 
     if (balance < actualCost) {
       Alert.alert(
-        '크레딧 부족',
-        `${actualCost} 크레딧이 필요합니다.\n현재 잔액: ${balance} 크레딧`,
+        t('tier_insights.insufficient_credits_title'),
+        t('tier_insights.insufficient_credits_message', { cost: String(actualCost), balance: String(balance) }),
         [
-          { text: '취소', style: 'cancel' },
-          { text: '충전하기', onPress: () => router.push('/marketplace/credits' as any) },
+          { text: t('common.cancel'), style: 'cancel' },
+          { text: t('tier_insights.charge_credits'), onPress: () => router.push('/marketplace/credits' as any) },
         ]
       );
       return;
     }
 
     Alert.alert(
-      '투자 DNA 잠금 해제',
-      `${actualCost} 크레딧을 사용하여 전체 등급 비교를 확인하시겠습니까?${
-        discountPercent > 0 ? `\n(${myTier} 등급 ${discountPercent}% 할인 적용)` : ''
-      }`,
+      t('tier_insights.unlock_confirm_title'),
+      t('tier_insights.unlock_confirm_message', { cost: String(actualCost) }) +
+        (discountPercent > 0 ? `\n${t('tier_insights.discount_note', { tier: myTier, pct: String(discountPercent) })}` : ''),
       [
-        { text: '취소', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: `${actualCost} 크레딧 사용`,
+          text: t('tier_insights.use_credits', { cost: String(actualCost) }),
           onPress: async () => {
             try {
               await unlockMutation.mutateAsync(myTier as any);
               setIsUnlocked(true);
             } catch (error: any) {
-              Alert.alert('오류', error.message || '잠금 해제에 실패했습니다.');
+              Alert.alert(t('tier_insights.unlock_error_title'), error.message || t('tier_insights.unlock_error_default'));
             }
           },
         },
@@ -214,10 +216,10 @@ export default function TierInsightsScreen() {
     // 간단히 코인 비중 차이를 Hook으로 사용 (토스 스타일)
     const avgCrypto = myTierData.avg_crypto_weight;
     if (avgCrypto > 15) {
-      return `${TIER_LABELS[myTier]} 회원들은 평균적으로 코인을 ${avgCrypto.toFixed(0)}% 담고 있어요`;
+      return t('tier_insights.hook_crypto', { tier: TIER_LABELS[myTier] || myTier, pct: avgCrypto.toFixed(0) });
     }
     const avgStock = myTierData.avg_stock_weight;
-    return `${TIER_LABELS[myTier]} 회원들은 주식을 평균 ${avgStock.toFixed(0)}% 담고 있어요`;
+    return t('tier_insights.hook_stock', { tier: TIER_LABELS[myTier] || myTier, pct: avgStock.toFixed(0) });
   };
 
   return (
@@ -227,7 +229,7 @@ export default function TierInsightsScreen() {
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={28} color={colors.primary} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>투자 DNA</Text>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{t('tier_insights.title')}</Text>
         <View style={[styles.creditBadge, { backgroundColor: colors.surfaceLight }]}>
           <Ionicons name="diamond" size={14} color="#7C4DFF" />
           <Text style={[styles.creditBadgeText, { color: colors.textPrimary }]}>{credits?.balance || 0}</Text>
@@ -238,9 +240,9 @@ export default function TierInsightsScreen() {
         {/* 히어로 섹션: Hook 텍스트 */}
         <View style={styles.heroSection}>
           <Text style={styles.heroEmoji}>🧬</Text>
-          <Text style={[styles.heroTitle, { color: colors.textPrimary }]}>등급별 투자 DNA</Text>
+          <Text style={[styles.heroTitle, { color: colors.textPrimary }]}>{t('tier_insights.hero_title')}</Text>
           <Text style={[styles.heroSubtitle, { color: colors.textTertiary }]}>
-            같은 등급 회원들은 어떤 자산에 투자하고 있을까요?
+            {t('tier_insights.hero_subtitle')}
           </Text>
         </View>
 
@@ -248,7 +250,7 @@ export default function TierInsightsScreen() {
         {myLoading ? (
           <View style={styles.loadingBox}>
             <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={[styles.loadingText, { color: colors.textTertiary }]}>내 등급 데이터 불러오는 중...</Text>
+            <Text style={[styles.loadingText, { color: colors.textTertiary }]}>{t('tier_insights.loading_my_tier')}</Text>
           </View>
         ) : myTierData ? (
           <View>
@@ -265,15 +267,15 @@ export default function TierInsightsScreen() {
             <View style={styles.socialProof}>
               <Ionicons name="people" size={14} color={colors.textTertiary} />
               <Text style={[styles.socialProofText, { color: colors.textTertiary }]}>
-                {myTierData.user_count}명의 {TIER_LABELS[myTier]} 회원 데이터 기반
+                {t('tier_insights.social_proof', { count: String(myTierData.user_count), tier: TIER_LABELS[myTier] || myTier })}
               </Text>
             </View>
           </View>
         ) : (
           <View style={styles.noDataBox}>
             <Ionicons name="analytics-outline" size={48} color={colors.textTertiary} />
-            <Text style={[styles.noDataText, { color: colors.textPrimary }]}>아직 데이터가 수집되지 않았습니다</Text>
-            <Text style={[styles.noDataSubtext, { color: colors.textTertiary }]}>내일부터 등급별 통계가 표시됩니다</Text>
+            <Text style={[styles.noDataText, { color: colors.textPrimary }]}>{t('tier_insights.no_data_title')}</Text>
+            <Text style={[styles.noDataSubtext, { color: colors.textTertiary }]}>{t('tier_insights.no_data_subtitle')}</Text>
           </View>
         )}
 
@@ -282,7 +284,7 @@ export default function TierInsightsScreen() {
           <View style={[styles.lockedSection, { backgroundColor: colors.surface }]}>
             <View style={styles.lockedHeader}>
               <Ionicons name="lock-closed" size={20} color="#FFC107" />
-              <Text style={styles.lockedTitle}>전체 등급 비교</Text>
+              <Text style={styles.lockedTitle}>{t('tier_insights.locked_title')}</Text>
             </View>
 
             {/* 미리보기 (블러 효과 모방) */}
@@ -304,7 +306,7 @@ export default function TierInsightsScreen() {
                       {TIER_LABELS[tier]}
                     </Text>
                     {isMyTierItem ? (
-                      <Text style={[styles.previewUnlocked, { color: colors.primary }]}>내 등급</Text>
+                      <Text style={[styles.previewUnlocked, { color: colors.primary }]}>{t('tier_insights.my_tier_label')}</Text>
                     ) : (
                       <View style={[styles.previewBlur, { backgroundColor: colors.border }]}>
                         <Text style={[styles.previewBlurText, { color: colors.textTertiary }]}>??%</Text>
@@ -317,7 +319,7 @@ export default function TierInsightsScreen() {
 
             {/* CTA: 궁금증 유발 */}
             <Text style={[styles.lockedCta, { color: colors.textPrimary }]}>
-              다이아몬드 회원들은 비트코인을 얼마나 담고 있을까?
+              {t('tier_insights.locked_cta')}
             </Text>
 
             {/* 잠금 해제 버튼 */}
@@ -332,7 +334,7 @@ export default function TierInsightsScreen() {
                 <>
                   <Ionicons name="diamond" size={16} color="#FFFFFF" />
                   <Text style={styles.unlockButtonText}>
-                    {actualCost} 크레딧으로 잠금 해제
+                    {t('tier_insights.unlock_button', { cost: String(actualCost) })}
                   </Text>
                   {discountPercent > 0 && (
                     <View style={styles.discountBadge}>
@@ -345,7 +347,7 @@ export default function TierInsightsScreen() {
 
             {/* 안내 */}
             <Text style={[styles.lockedNote, { color: colors.textTertiary }]}>
-              * 데이터는 매일 07:00에 업데이트됩니다
+              {t('tier_insights.locked_note')}
             </Text>
           </View>
         ) : (
@@ -353,7 +355,7 @@ export default function TierInsightsScreen() {
           <View style={styles.unlockedSection}>
             <View style={styles.unlockedHeader}>
               <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
-              <Text style={[styles.unlockedTitle, { color: colors.primary }]}>전체 등급 비교</Text>
+              <Text style={[styles.unlockedTitle, { color: colors.primary }]}>{t('tier_insights.unlocked_title')}</Text>
             </View>
 
             {allLoading ? (
@@ -364,7 +366,7 @@ export default function TierInsightsScreen() {
               <>
                 {/* 비트코인 비중 하이라이트 */}
                 <View style={[styles.btcHighlight, { backgroundColor: colors.surface }]}>
-                  <Text style={styles.btcHighlightTitle}>등급별 비트코인 비중</Text>
+                  <Text style={styles.btcHighlightTitle}>{t('tier_insights.btc_highlight_title')}</Text>
                   <View style={styles.btcBarsContainer}>
                     {allTierData.map((stat) => {
                       const tierColor = TIER_COLORS[stat.tier] || '#888';
@@ -375,7 +377,7 @@ export default function TierInsightsScreen() {
                       return (
                         <View key={stat.tier} style={styles.btcBarRow}>
                           <Text style={[styles.btcBarLabel, { color: colors.textSecondary }, isMe && { color: tierColor, fontWeight: '700' }]}>
-                            {tierLabel}{isMe ? ' (나)' : ''}
+                            {tierLabel}{isMe ? ` ${t('tier_insights.me_label')}` : ''}
                           </Text>
                           <View style={[styles.btcBarTrack, { backgroundColor: colors.surfaceLight }]}>
                             <View style={[styles.btcBarFill, { width: `${barW}%`, backgroundColor: ASSET_COLORS.btc }]} />
@@ -402,13 +404,13 @@ export default function TierInsightsScreen() {
                 <View style={styles.socialProof}>
                   <Ionicons name="people" size={14} color={colors.textTertiary} />
                   <Text style={[styles.socialProofText, { color: colors.textTertiary }]}>
-                    총 {allTierData.reduce((s, t) => s + t.user_count, 0)}명의 회원 데이터 기반
+                    {t('tier_insights.social_proof_total', { count: String(allTierData.reduce((s, item) => s + item.user_count, 0)) })}
                   </Text>
                 </View>
               </>
             ) : (
               <View style={styles.noDataBox}>
-                <Text style={[styles.noDataText, { color: colors.textPrimary }]}>데이터가 아직 준비되지 않았습니다</Text>
+                <Text style={[styles.noDataText, { color: colors.textPrimary }]}>{t('tier_insights.no_data_yet')}</Text>
               </View>
             )}
           </View>
@@ -417,7 +419,7 @@ export default function TierInsightsScreen() {
         {/* 면책 문구 */}
         <View style={[styles.disclaimerBox, { borderColor: colors.border }]}>
           <Text style={[styles.disclaimer, { color: colors.textTertiary }]}>
-            본 통계는 익명화된 사용자 데이터를 기반으로 한 참고 정보이며, 투자자문업에 해당하지 않습니다. 개인 식별 정보는 포함되지 않으며, 과거 데이터가 미래 수익을 보장하지 않습니다. 특정 종목의 매수·매도를 권유하는 것이 아닙니다. 투자 결정은 본인의 판단과 책임 하에 이루어져야 합니다.
+            {t('tier_insights.disclaimer')}
           </Text>
         </View>
       </ScrollView>

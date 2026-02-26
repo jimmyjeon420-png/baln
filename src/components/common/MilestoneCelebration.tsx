@@ -26,6 +26,7 @@ import {
   Platform,
 } from 'react-native';
 import { DARK_COLORS } from '../../styles/colors';
+import { useLocale } from '../../context/LocaleContext';
 
 // ============================================================================
 // 타입 정의
@@ -46,50 +47,50 @@ interface MilestoneCelebrationProps {
 
 interface MilestoneInfo {
   badge: string;
-  badgeName: string;
-  title: string;
-  subtitle: string;
+  badgeNameKey: string;
+  titleKey: string;
+  subtitleKey: string;
   confetti: string[];
 }
 
 const MILESTONES: Record<number, MilestoneInfo> = {
   7: {
-    badge: '\uD83D\uDD25', // fire
-    badgeName: '\uD83D\uDD25 일주일 전사',
-    title: '7일 연속 달성!',
-    subtitle: '꾸준함의 시작, 일주일 전사 뱃지를 획득했어요',
+    badge: '\uD83D\uDD25',
+    badgeNameKey: 'milestone_celebration.badge_7',
+    titleKey: 'milestone_celebration.title_7',
+    subtitleKey: 'milestone_celebration.subtitle_7',
     confetti: ['\uD83D\uDD25', '\u2B50', '\u2728', '\uD83C\uDF89', '\uD83D\uDCAA'],
   },
   30: {
-    badge: '\uD83D\uDCAA', // flexed biceps
-    badgeName: '\uD83D\uDCAA 한 달 마스터',
-    title: '30일 연속 달성!',
-    subtitle: '한 달을 함께한 당신, 투자 습관이 자리잡았어요',
+    badge: '\uD83D\uDCAA',
+    badgeNameKey: 'milestone_celebration.badge_30',
+    titleKey: 'milestone_celebration.title_30',
+    subtitleKey: 'milestone_celebration.subtitle_30',
     confetti: ['\uD83D\uDCAA', '\uD83D\uDC8E', '\u2B50', '\uD83C\uDF89', '\uD83C\uDFC6'],
   },
   90: {
-    badge: '\uD83D\uDCAA', // flexed biceps
-    badgeName: '\uD83D\uDCAA 철인',
-    title: '90일 연속 달성!',
-    subtitle: '3개월을 버틴 당신은 진정한 철인입니다',
+    badge: '\uD83D\uDCAA',
+    badgeNameKey: 'milestone_celebration.badge_90',
+    titleKey: 'milestone_celebration.title_90',
+    subtitleKey: 'milestone_celebration.subtitle_90',
     confetti: ['\uD83D\uDCAA', '\uD83C\uDFC6', '\uD83D\uDC8E', '\uD83D\uDE80', '\u2B50'],
   },
   365: {
-    badge: '\uD83C\uDFC6', // trophy
-    badgeName: '\uD83C\uDFC6 레전드',
-    title: '365일 연속 달성!',
-    subtitle: '1년을 함께한 전설의 투자자, 레전드 뱃지 획득!',
+    badge: '\uD83C\uDFC6',
+    badgeNameKey: 'milestone_celebration.badge_365',
+    titleKey: 'milestone_celebration.title_365',
+    subtitleKey: 'milestone_celebration.subtitle_365',
     confetti: ['\uD83C\uDFC6', '\uD83D\uDC51', '\uD83D\uDE80', '\uD83C\uDF1F', '\uD83D\uDC8E'],
   },
 };
 
 /** 마일스톤이 아닌 일수에 대한 기본 데이터 */
-function getDefaultMilestone(milestone: number): MilestoneInfo {
+function getDefaultMilestoneTemplate(milestone: number): MilestoneInfo {
   return {
-    badge: '\u2728', // sparkles
-    badgeName: `\u2728 ${milestone}일 달성`,
-    title: `${milestone}일 연속 달성!`,
-    subtitle: '꾸준한 투자 습관을 만들어가고 있어요',
+    badge: '\u2728',
+    badgeNameKey: 'milestone_celebration.badge_default',
+    titleKey: 'milestone_celebration.title_default',
+    subtitleKey: 'milestone_celebration.subtitle_default',
     confetti: ['\u2728', '\u2B50', '\uD83C\uDF89', '\uD83D\uDD25', '\uD83D\uDCAA'],
   };
 }
@@ -156,7 +157,15 @@ export default function MilestoneCelebration({
   visible,
   onClose,
 }: MilestoneCelebrationProps) {
-  const data = MILESTONES[milestone] ?? getDefaultMilestone(milestone);
+  const { t } = useLocale();
+  const template = MILESTONES[milestone] ?? getDefaultMilestoneTemplate(milestone);
+  const data = {
+    badge: template.badge,
+    badgeName: t(template.badgeNameKey as any, { count: milestone }),
+    title: t(template.titleKey as any, { count: milestone }),
+    subtitle: t(template.subtitleKey as any, { count: milestone }),
+    confetti: template.confetti,
+  };
 
   // 애니메이션 값
   const scaleAnim = useRef(new Animated.Value(0.5)).current;
@@ -201,9 +210,10 @@ export default function MilestoneCelebration({
   // 공유하기
   const handleShare = async () => {
     try {
+      const shareMsg = t('milestone_celebration.share_message', { count: milestone, badge: data.badgeName });
       const message = Platform.select({
-        ios: `baln 앱에서 ${milestone}일 연속 투자 습관을 달성했어요! ${data.badgeName} 뱃지 획득! #baln #투자습관`,
-        default: `baln 앱에서 ${milestone}일 연속 투자 습관을 달성했어요! ${data.badgeName} 뱃지 획득! #baln #투자습관`,
+        ios: shareMsg,
+        default: shareMsg,
       });
 
       await Share.share({
@@ -251,11 +261,11 @@ export default function MilestoneCelebration({
           {/* 뱃지 획득 카드 */}
           <View style={styles.badgeCard}>
             <View style={styles.badgeCardHeader}>
-              <Text style={styles.badgeCardLabel}>뱃지 획득!</Text>
+              <Text style={styles.badgeCardLabel}>{t('streak.badge_earned')}</Text>
             </View>
             <Text style={styles.badgeCardName}>{data.badgeName}</Text>
             <Text style={styles.badgeCardDesc}>
-              {milestone}일 연속 출석 달성
+              {t('streak.badge_days_achieved', { count: milestone })}
             </Text>
           </View>
 
@@ -267,7 +277,7 @@ export default function MilestoneCelebration({
               onPress={handleShare}
               activeOpacity={0.8}
             >
-              <Text style={styles.shareButtonText}>공유하기</Text>
+              <Text style={styles.shareButtonText}>{t('streak.badge_share')}</Text>
             </TouchableOpacity>
 
             {/* 확인 버튼 */}
@@ -276,7 +286,7 @@ export default function MilestoneCelebration({
               onPress={onClose}
               activeOpacity={0.8}
             >
-              <Text style={styles.confirmButtonText}>확인</Text>
+              <Text style={styles.confirmButtonText}>{t('streak.badge_confirm')}</Text>
             </TouchableOpacity>
           </View>
         </Animated.View>

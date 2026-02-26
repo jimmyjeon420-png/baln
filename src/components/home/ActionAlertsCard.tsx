@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SIZES } from '../../styles/theme';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 
 // ============================================================================
 // 타입 정의
@@ -31,6 +32,7 @@ const ActionAlertsCard = ({
   isLoading,
 }: ActionAlertsCardProps) => {
   const { colors } = useTheme();
+  const { t } = useLocale();
 
   // 타입별 색상 (테마 동적)
   const alertColors: Record<AlertItem['type'], string> = {
@@ -47,8 +49,8 @@ const ActionAlertsCard = ({
       <View style={[styles.card, { backgroundColor: colors.surface }]}>
         <View style={styles.calmState}>
           <Ionicons name="checkmark-circle" size={32} color={colors.primary} />
-          <Text style={[styles.calmTitle, { color: colors.textPrimary }]}>포트폴리오가 안정적이에요</Text>
-          <Text style={[styles.calmDesc, { color: colors.textSecondary }]}>현재 긴급한 알림이 없습니다</Text>
+          <Text style={[styles.calmTitle, { color: colors.textPrimary }]}>{t('common_ui.alerts.portfolio_stable_title')}</Text>
+          <Text style={[styles.calmDesc, { color: colors.textSecondary }]}>{t('common_ui.alerts.portfolio_stable_desc')}</Text>
         </View>
       </View>
     );
@@ -59,11 +61,11 @@ const ActionAlertsCard = ({
       {/* 헤더 */}
       <View style={styles.header}>
         <View>
-          <Text style={[styles.title, { color: colors.textPrimary }]}>주의 알림</Text>
+          <Text style={[styles.title, { color: colors.textPrimary }]}>{t('common_ui.alerts.alerts_title')}</Text>
           <Text style={[styles.subtitle, { color: colors.textTertiary }]}>Action Alerts</Text>
         </View>
         <View style={styles.countBadge}>
-          <Text style={[styles.countText, { color: colors.error }]}>{alerts.length}건</Text>
+          <Text style={[styles.countText, { color: colors.error }]}>{t('common_ui.alerts.alerts_count', { count: alerts.length })}</Text>
         </View>
       </View>
 
@@ -90,7 +92,7 @@ const ActionAlertsCard = ({
 
       {/* CTA 버튼 */}
       <TouchableOpacity style={styles.ctaBtn} onPress={onPressCTA} activeOpacity={0.7}>
-        <Text style={[styles.ctaText, { color: colors.primary }]}>처방전 보기</Text>
+        <Text style={[styles.ctaText, { color: colors.primary }]}>{t('common_ui.alerts.view_prescription')}</Text>
         <Ionicons name="arrow-forward" size={16} color={colors.primary} />
       </TouchableOpacity>
     </View>

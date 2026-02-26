@@ -46,90 +46,17 @@ interface CategoryConfig {
   color: string;
 }
 
-// ── 자산군별 상세 정보 (ⓘ 버튼 탭 시 표시) ──
-interface CategoryDetail {
-  title: string;
-  role: string;       // 포트폴리오에서의 역할
-  dalio: string;      // 달리오 All Weather 관점
-  buffett: string;    // 버핏 Berkshire 관점
-  whenGood: string;   // 이 자산이 좋을 때 (어떤 경제 환경)
-  whenBad: string;    // 이 자산이 나쁠 때
-  tip: string;        // 두 거장 합의 실용 팁
-}
-
-const CATEGORY_DETAILS: Record<AssetCategory, CategoryDetail> = {
-  large_cap: {
-    title: '📈 주식 (대형주)',
-    role: '포트폴리오의 성장 엔진. 기업 이익에 참여하는 생산적 자산',
-    dalio: '달리오: "성장+물가안정 환경에서 최강. 하지만 경기침체 시 50%+ 하락 가능 — 분산이 필수"',
-    buffett: '버핏: "주식은 가장 위대한 자산. S&P500 인덱스 펀드에 90%를 넣어라. 10년 이상 보유하면 거의 무조건 이긴다"',
-    whenGood: '경제 성장기, 금리 안정기, 기업 실적 호조 시',
-    whenBad: '경기침체, 급격한 금리 인상, 신용위기 시 (2008: -50%, 2022: -25%)',
-    tip: '두 거장 모두 주식 보유에 동의. 목표 40% 유지. 버핏은 더 높여도 된다고 하지만, 달리오는 분산을 위해 40%가 적정선',
-  },
-  bond: {
-    title: '🏛️ 채권',
-    role: '포트폴리오의 안전판. 주식 하락 시 반대로 오르는 경향',
-    dalio: '달리오: "경기침체·디플레이션 환경의 최강자. All Weather 포트폴리오의 핵심 — 55% 권장"',
-    buffett: '버핏: "채권은 지금 끔찍한 투자다. 인플레이션이 오면 채권 투자자는 세금도 내고 구매력도 잃는 이중 손실을 본다"',
-    whenGood: '경기침체, 디플레이션, 금리 하락기 (금리↓ = 채권가격↑)',
-    whenBad: '인플레이션, 금리 급등기 (2022년: 채권 -17%, 역사적 최악)',
-    tip: '달리오는 55%, 버핏은 최소화를 원함. 합의점 15% — 극단적 침체 시 완충재로만 보유',
-  },
-  bitcoin: {
-    title: '₿ 비트코인',
-    role: '디지털 금. 공급량 제한(2,100만개)으로 인플레이션 헤지 + 고위험 성장 자산',
-    dalio: '달리오(2024): "비트코인을 소량 보유하는 것이 합리적. 디지털 가치 저장 수단으로 인정"',
-    buffett: '버핏: "쥐약의 제곱(Rat poison squared). 아무것도 생산하지 않는다. 100달러를 줘도 사지 않겠다" — 2024년에도 입장 변화 없음',
-    whenGood: '유동성 풍부기, 인플레이션 우려 시, 기관 투자자 진입 시',
-    whenBad: '금리 급등, 규제 강화, 시장 전반 패닉 시 (높은 베타)',
-    tip: '두 거장이 가장 크게 대립하는 자산. 달리오 1-3% vs 버핏 0%. 현실적 합의 10% — 위험 허용도 스스로 판단 필수',
-  },
-  altcoin: {
-    title: '🪙 알트코인',
-    role: '고위험·고수익 투기적 자산. 비트코인보다 3-5배 변동성',
-    dalio: '달리오: "직접 언급 없음. 단, 투기적 자산은 전체의 5% 이하로 엄격히 제한해야 한다"',
-    buffett: '버핏: "내가 이해할 수 없는 것에는 투자하지 않는다. 알트코인은 카지노와 다를 바 없다. 생산하는 것이 없다"',
-    whenGood: '강세장(Bull market), 비트코인 강세 후 알트시즌 도래 시',
-    whenBad: '약세장 시 비트코인보다 훨씬 큰 폭 하락 (90%+ 손실 가능)',
-    tip: '두 거장 모두 강하게 반대. 5% 상한선 고수 — 손실 시 세금 절세(TLH) 기회로만 활용',
-  },
-  gold: {
-    title: '🥇 금/귀금속',
-    role: '5,000년의 가치 저장 수단. 달러 약세·인플레이션·지정학적 위기 시 상승',
-    dalio: '달리오: "모든 포트폴리오에 금이 있어야 한다. 지폐가 아닌 유일한 진짜 화폐. 인플레이션과 위기의 궁극적 헤지"',
-    buffett: '버핏: "금은 아무것도 생산하지 않는다. 그냥 창고에 앉아 있을 뿐. 같은 돈으로 미국 농경지 전체를 사거나 엑슨모빌을 살 수 있다 — 금은 절대 안 산다"',
-    whenGood: '인플레이션, 달러 약세, 지정학적 위기, 중앙은행 불신 시 (스태그플레이션 최강)',
-    whenBad: '달러 강세, 실질금리 급등 시 (금은 이자가 없어 기회비용 발생)',
-    tip: '달리오 완승. 버핏의 "생산 없음" 비판은 맞지만, 분산 효과와 위기 헤지 가치는 검증됨. 12% 유지',
-  },
-  commodity: {
-    title: '🛢️ 원자재',
-    role: '인플레이션을 직접 반영하는 자산. 원유·농산물·광물 포함',
-    dalio: '달리오 All Weather: "원자재 7.5% 보유. 인플레이션이 오면 원자재가 포트폴리오를 지켜준다"',
-    buffett: '버핏: "원자재 ETF는 사지 않는다. 단, 에너지 기업(Chevron, Occidental)은 보유 — 원자재보다 그 기업의 이익이 더 중요하다"',
-    whenGood: '인플레이션, 공급망 충격, 달러 약세, 지정학적 분쟁 시',
-    whenBad: '경기침체·디플레이션 시 (수요 감소 → 원자재 가격 하락)',
-    tip: '버핏은 ETF 대신 에너지 기업 주식을 선호. 원자재 ETF(PDBC, DJP)는 달리오 방식 — 8% 목표',
-  },
-  cash: {
-    title: '💵 현금',
-    role: '기회 포착의 실탄. 시장 급락 시 저가 매수 자금. 단기 유동성 확보',
-    dalio: '달리오: "현금은 쓰레기다(Cash is trash). 장기 보유 시 인플레이션이 가치를 갉아먹는다 — 최소한만 보유"',
-    buffett: '버핏: "버크셔는 항상 최소 200억 달러 이상 현금을 유지한다. 공포가 최대일 때 현금이 있는 사람이 이긴다"',
-    whenGood: '시장 급락 직전, 투자 기회 대기 시, 단기 지출 예정 시',
-    whenBad: '인플레이션 시 (현금의 실질 구매력이 매년 감소)',
-    tip: '버핏이 승. 기회 실탄으로 10% 유지. 달리오는 최소화를 원하지만 급락 시 매수 기회를 위해 10%는 필요',
-  },
-  realestate: {
-    title: '🏠 부동산',
-    role: '비유동 장기 자산. 리밸런싱 대상이 아닌 포트폴리오의 기반',
-    dalio: '달리오: "실물 자산은 금융 위기 시 완충재. 인플레이션 환경에서 구매력 보존 — 단, LTV 관리가 핵심"',
-    buffett: '버핏: "부동산은 좋은 투자이지만 내 전문이 아니다. 직접 부동산보다 훌륭한 기업 주식이 더 낫다. 자택 구매는 훌륭한 재정적 결정"',
-    whenGood: '인플레이션, 저금리, 인구 증가 지역 (실질 가치 보존)',
-    whenBad: '금리 급등, 인구 감소, 신용 위기 (LTV 높으면 강제 매각 위험)',
-    tip: '두 거장 모두 자택 보유는 인정. 유동 자산 리밸런싱에서 제외하고 별도 관리. LTV 60% 이하 유지 권장',
-  },
+// ── 자산군별 상세 정보 키 매핑 (ⓘ 버튼 탭 시 표시) ──
+// locale allocation_drift.category_details.X 경로에서 모든 필드를 t()로 조회
+const VALID_CATEGORY_DETAIL_KEYS: Record<string, boolean> = {
+  large_cap: true,
+  bond: true,
+  bitcoin: true,
+  altcoin: true,
+  gold: true,
+  commodity: true,
+  cash: true,
+  realestate: true,
 };
 
 // 유동 자산 7개 카테고리 (부동산은 비유동 → 별도 표시)
@@ -212,11 +139,16 @@ interface AllocationDriftSectionProps {
 type ViewMode = 'bar' | 'pie';
 
 /**
- * "왜 이탈이 생겼는가" 요약 생성
+ * "왜 이탈이 생겼는가" — locale key + params 반환
  */
-function generateDriftWhyExplanation(driftItems: DriftItem[], totalDrift: number): string {
+interface WhyResult {
+  key: string;
+  params: Record<string, string>;
+}
+
+function getDriftWhyLocaleData(driftItems: DriftItem[], totalDrift: number): WhyResult {
   if (totalDrift <= 3) {
-    return '목표 배분과 거의 일치합니다. 현재 균형이 잘 유지되고 있어요.';
+    return { key: 'allocation_drift.why_balanced', params: {} };
   }
 
   const sorted = [...driftItems]
@@ -224,54 +156,70 @@ function generateDriftWhyExplanation(driftItems: DriftItem[], totalDrift: number
     .sort((a, b) => Math.abs(b.drift) - Math.abs(a.drift));
 
   const biggest = sorted[0];
-  if (!biggest) return '';
+  if (!biggest) return { key: 'allocation_drift.why_balanced', params: {} };
 
   const isOver = biggest.drift > 0;
   const driftAbs = Math.abs(biggest.drift).toFixed(1);
-  const direction = isOver ? '초과' : '부족';
+
+  if (isOver && sorted.length >= 2 && Math.abs(sorted[1].drift) > 5) {
+    const second = sorted[1];
+    const dir2 = second.drift > 0 ? 'over' : 'under';
+    return {
+      key: 'allocation_drift.why_over_two',
+      params: {
+        cat1: biggest.category.key,
+        drift1: driftAbs,
+        cat2: second.category.key,
+        drift2: Math.abs(second.drift).toFixed(1),
+        dir2,
+      },
+    };
+  }
 
   if (isOver) {
-    if (sorted.length >= 2 && Math.abs(sorted[1].drift) > 5) {
-      const second = sorted[1];
-      const secondDir = second.drift > 0 ? '초과' : '부족';
-      return `${biggest.category.label} 비중이 목표 대비 ${driftAbs}%p ${direction}하고, ${second.category.label}이(가) ${Math.abs(second.drift).toFixed(1)}%p ${secondDir}한 상태예요.`;
-    }
-    return `${biggest.category.label} 비중이 목표 대비 ${driftAbs}%p ${direction}한 상태예요. 해당 자산의 가치 상승이 원인일 수 있습니다.`;
-  } else {
-    return `${biggest.category.label} 비중이 목표 대비 ${driftAbs}%p ${direction}해요. 다른 자산이 상대적으로 많이 늘어난 것이 원인일 수 있습니다.`;
+    return {
+      key: 'allocation_drift.why_over_one',
+      params: { cat: biggest.category.key, drift: driftAbs },
+    };
   }
+
+  return {
+    key: 'allocation_drift.why_under_one',
+    params: { cat: biggest.category.key, drift: driftAbs },
+  };
 }
 
 /**
- * "어떻게 해야 하는가" 액션 가이드 생성
+ * "어떻게 해야 하는가" — locale key + params 반환
  */
-function generateDriftActionGuidance(driftItems: DriftItem[], totalDrift: number): string | null {
+interface ActionResult {
+  key: string;
+  params: Record<string, string>;
+}
+
+function getDriftActionLocaleData(driftItems: DriftItem[], totalDrift: number): ActionResult | null {
   if (totalDrift <= 3) return null;
 
-  const overItems = driftItems
-    .filter(d => d.drift > 5)
-    .sort((a, b) => b.drift - a.drift);
-  const underItems = driftItems
-    .filter(d => d.drift < -5)
-    .sort((a, b) => a.drift - b.drift);
+  const overItems = driftItems.filter(d => d.drift > 5).sort((a, b) => b.drift - a.drift);
+  const underItems = driftItems.filter(d => d.drift < -5).sort((a, b) => a.drift - b.drift);
 
-  const parts: string[] = [];
+  if (overItems.length === 0 && underItems.length === 0) {
+    return { key: 'allocation_drift.action_minor', params: {} };
+  }
+
+  if (overItems.length > 0 && underItems.length > 0) {
+    const over = overItems.slice(0, 2).map(d => d.category.key).join(', ');
+    const under = underItems.slice(0, 2).map(d => d.category.key).join(', ');
+    return { key: 'allocation_drift.action_over_under', params: { over, under } };
+  }
 
   if (overItems.length > 0) {
-    const names = overItems.slice(0, 2).map(d => d.category.label).join(', ');
-    parts.push(`${names} 비중을 줄이고`);
+    const over = overItems.slice(0, 2).map(d => d.category.key).join(', ');
+    return { key: 'allocation_drift.action_reduce', params: { over } };
   }
 
-  if (underItems.length > 0) {
-    const names = underItems.slice(0, 2).map(d => d.category.label).join(', ');
-    parts.push(`${names} 비중을 늘리는 것`);
-  }
-
-  if (parts.length === 0) {
-    return '소폭 이탈이므로 급하지 않지만, 다음 매매 시 목표 배분을 참고해보세요.';
-  }
-
-  return `${parts.join(' ')}을 고려해보세요. 아래 "오늘의 액션"에서 구체적인 매매 제안을 확인할 수 있어요.`;
+  const under = underItems.slice(0, 2).map(d => d.category.key).join(', ');
+  return { key: 'allocation_drift.action_increase', params: { under } };
 }
 
 export default function AllocationDriftSection({
@@ -281,6 +229,7 @@ export default function AllocationDriftSection({
   kostolalyPhase,
 }: AllocationDriftSectionProps) {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const [showDetail, setShowDetail] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('bar');
@@ -290,7 +239,7 @@ export default function AllocationDriftSection({
 
   // ── ⓘ 카테고리 상세 정보 모달 ──
   const [infoKey, setInfoKey] = useState<AssetCategory | null>(null);
-  const infoDetail = infoKey ? CATEGORY_DETAILS[infoKey] : null;
+  const infoDetail = infoKey ? VALID_CATEGORY_DETAIL_KEYS[infoKey] : false;
 
   // 로드된 철학을 ref로 추적 (kostolalyTarget useEffect에서 참조)
   const storedPhilRef = useRef<InvestmentPhilosophy>('dalio');
@@ -425,17 +374,56 @@ export default function AllocationDriftSection({
   );
 
   const driftColor = totalDrift <= 5 ? colors.success : totalDrift <= 15 ? colors.warning : colors.error;
-  const driftLabel = totalDrift <= 5 ? '균형' : totalDrift <= 15 ? '소폭 이탈' : '조정 필요';
+  const driftLabel = totalDrift <= 5
+    ? t('allocation_drift.drift_balanced')
+    : totalDrift <= 15
+    ? t('allocation_drift.drift_minor')
+    : t('allocation_drift.drift_adjust');
 
-  // "왜" + "어떻게" 설명 계산
-  const whyExplanation = useMemo(
-    () => generateDriftWhyExplanation(driftItems, totalDrift),
+  // "왜" + "어떻게" 설명 계산 (locale 적용)
+  const whyLocaleData = useMemo(
+    () => getDriftWhyLocaleData(driftItems, totalDrift),
     [driftItems, totalDrift],
   );
-  const actionGuidance = useMemo(
-    () => generateDriftActionGuidance(driftItems, totalDrift),
+  const actionLocaleData = useMemo(
+    () => getDriftActionLocaleData(driftItems, totalDrift),
     [driftItems, totalDrift],
   );
+
+  // locale key → translated string (cat key placeholders replaced with labels)
+  const whyExplanation = useMemo(() => {
+    const resolveParams = (params: Record<string, string>) => {
+      const resolved: Record<string, string> = {};
+      for (const [k, v] of Object.entries(params)) {
+        if (['cat', 'cat1', 'cat2', 'over', 'under'].includes(k)) {
+          resolved[k] = t(`allocation_drift.cat_labels.${v}`);
+        } else if (k === 'dir2') {
+          resolved[k] = v === 'over' ? t('allocation_drift.detail_over') : t('allocation_drift.detail_under');
+        } else {
+          resolved[k] = v;
+        }
+      }
+      return resolved;
+    };
+    return t(whyLocaleData.key, resolveParams(whyLocaleData.params));
+  }, [whyLocaleData, t]);
+
+  const actionGuidance = useMemo(() => {
+    if (!actionLocaleData) return null;
+    const resolveParams = (params: Record<string, string>) => {
+      const resolved: Record<string, string> = {};
+      for (const [k, v] of Object.entries(params)) {
+        if (['over', 'under'].includes(k)) {
+          // could be comma-separated keys
+          resolved[k] = v.split(', ').map(key => t(`allocation_drift.cat_labels.${key.trim()}`)).join(', ');
+        } else {
+          resolved[k] = v;
+        }
+      }
+      return resolved;
+    };
+    return t(actionLocaleData.key, resolveParams(actionLocaleData.params));
+  }, [actionLocaleData, t]);
 
   // 파이 차트 슬라이스 데이터 (유동 자산만)
   const pieSlices: PieSlice[] = useMemo(() => {
@@ -451,7 +439,7 @@ export default function AllocationDriftSection({
       .filter(cat => currentMap[cat.key] > 0)
       .map(cat => ({
         key: cat.key,
-        label: cat.label,
+        label: cat.key, // will be resolved by t() at render
         value: currentMap[cat.key],
         color: cat.color,
         icon: cat.icon,
@@ -477,7 +465,7 @@ export default function AllocationDriftSection({
     });
 
     if (sum !== 100) {
-      Alert.alert('합계 오류', `목표 배분의 합이 100%여야 합니다. (현재: ${sum}%)`);
+      Alert.alert(t('allocation_drift.alert_sum_title'), t('allocation_drift.alert_sum_msg', { sum: String(sum) }));
       return;
     }
 
@@ -531,37 +519,37 @@ export default function AllocationDriftSection({
 
               {/* 역할 */}
               <View style={[s.infoSection, { backgroundColor: colors.surfaceLight }]}>
-                <Text style={[s.infoSectionLabel, { color: colors.textTertiary }]}>포트폴리오 역할</Text>
+                <Text style={[s.infoSectionLabel, { color: colors.textTertiary }]}>{t('allocation_drift.info_role_label')}</Text>
                 <Text style={[s.infoSectionText, { color: colors.textPrimary }]}>{infoDetail.role}</Text>
               </View>
 
               {/* 달리오 관점 */}
               <View style={[s.infoSection, { backgroundColor: '#4CAF5015' }]}>
-                <Text style={[s.infoSectionLabel, { color: '#4CAF50' }]}>🌊 레이 달리오 (All Weather)</Text>
+                <Text style={[s.infoSectionLabel, { color: '#4CAF50' }]}>{t('allocation_drift.info_dalio_label')}</Text>
                 <Text style={[s.infoSectionText, { color: colors.textSecondary }]}>{infoDetail.dalio}</Text>
               </View>
 
               {/* 버핏 관점 */}
               <View style={[s.infoSection, { backgroundColor: '#FFB74D15' }]}>
-                <Text style={[s.infoSectionLabel, { color: '#FFB74D' }]}>🔴 워렌 버핏 (Berkshire)</Text>
+                <Text style={[s.infoSectionLabel, { color: '#FFB74D' }]}>{t('allocation_drift.info_buffett_label')}</Text>
                 <Text style={[s.infoSectionText, { color: colors.textSecondary }]}>{infoDetail.buffett}</Text>
               </View>
 
               {/* 좋을 때 */}
               <View style={[s.infoSection, { backgroundColor: '#66BB6A15' }]}>
-                <Text style={[s.infoSectionLabel, { color: '#66BB6A' }]}>✅ 유리한 환경</Text>
+                <Text style={[s.infoSectionLabel, { color: '#66BB6A' }]}>{t('allocation_drift.info_good_label')}</Text>
                 <Text style={[s.infoSectionText, { color: colors.textSecondary }]}>{infoDetail.whenGood}</Text>
               </View>
 
               {/* 나쁠 때 */}
               <View style={[s.infoSection, { backgroundColor: '#FF8A6515' }]}>
-                <Text style={[s.infoSectionLabel, { color: '#FF8A65' }]}>⚠️ 불리한 환경</Text>
+                <Text style={[s.infoSectionLabel, { color: '#FF8A65' }]}>{t('allocation_drift.info_bad_label')}</Text>
                 <Text style={[s.infoSectionText, { color: colors.textSecondary }]}>{infoDetail.whenBad}</Text>
               </View>
 
               {/* 실용 팁 */}
               <View style={[s.infoSection, { backgroundColor: '#64B5F615' }]}>
-                <Text style={[s.infoSectionLabel, { color: '#64B5F6' }]}>💡 실용 팁</Text>
+                <Text style={[s.infoSectionLabel, { color: '#64B5F6' }]}>{t('allocation_drift.info_tip_label')}</Text>
                 <Text style={[s.infoSectionText, { color: colors.textSecondary }]}>{infoDetail.tip}</Text>
               </View>
 
@@ -569,7 +557,7 @@ export default function AllocationDriftSection({
                 style={[s.infoCloseBtn, { backgroundColor: colors.surfaceElevated }]}
                 onPress={() => setInfoKey(null)}
               >
-                <Text style={[s.infoCloseBtnText, { color: colors.textSecondary }]}>닫기</Text>
+                <Text style={[s.infoCloseBtnText, { color: colors.textSecondary }]}>{t('allocation_drift.info_modal_close')}</Text>
               </TouchableOpacity>
             </ScrollView>
           )}
@@ -586,10 +574,10 @@ export default function AllocationDriftSection({
       >
         <View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <Text style={[s.cardLabel, { color: colors.inverseText }]}>배분 이탈도</Text>
+            <Text style={[s.cardLabel, { color: colors.inverseText }]}>{t('allocation_drift.card_label')}</Text>
             <TermTooltip term="배분 이탈도" style={{ color: colors.textTertiary, fontSize: 14 }}>ⓘ</TermTooltip>
           </View>
-          <Text style={[s.cardLabelEn, { color: colors.textTertiary }]}>Allocation Drift</Text>
+          <Text style={[s.cardLabelEn, { color: colors.textTertiary }]}>{t('allocation_drift.card_label_en')}</Text>
         </View>
         <View style={s.headerRight}>
           <View style={[s.driftBadge, { backgroundColor: driftColor + '20' }]}>
@@ -617,7 +605,7 @@ export default function AllocationDriftSection({
             >
               <Text style={s.philosophyEmoji}>{cfg.emoji}</Text>
               <Text style={[s.philosophyBtnText, isActive && { color: colors.success, fontWeight: '700' }]}>
-                {cfg.label}
+                {t(`allocation_drift.${cfg.labelKey}`)}
               </Text>
             </TouchableOpacity>
           );
@@ -632,20 +620,20 @@ export default function AllocationDriftSection({
         >
           <Text style={s.philosophyEmoji}>{PHILOSOPHY_CONFIG.custom.emoji}</Text>
           <Text style={[s.philosophyBtnText, philosophy === 'custom' && { color: colors.success, fontWeight: '700' }]}>
-            {PHILOSOPHY_CONFIG.custom.label}
+            {t(`allocation_drift.${PHILOSOPHY_CONFIG.custom.labelKey}`)}
           </Text>
         </TouchableOpacity>
       </View>
       {/* 선택된 철학 설명 */}
       <Text style={[s.philosophyDesc, { color: colors.textTertiary }]}>
-        {PHILOSOPHY_CONFIG[philosophy]?.desc ?? ''}
+        {PHILOSOPHY_CONFIG[philosophy] ? t(`allocation_drift.${PHILOSOPHY_CONFIG[philosophy].descKey}`) : ''}
       </Text>
 
       {/* 국면 배지 — 구루 선택 시 코스톨라니 국면 반영 상태 표시 */}
       {philosophy !== 'custom' && kostolalyPhase && (
         <View style={s.phaseBadgeRow}>
           <Text style={s.phaseBadgeText}>
-            {KOSTOLANY_PHASE_EMOJIS[kostolalyPhase]} {KOSTOLANY_PHASE_NAMES[kostolalyPhase]} ({kostolalyPhase}국면) · 목표 배분에 반영 중
+            {t('allocation_drift.phase_badge', { emoji: KOSTOLANY_PHASE_EMOJIS[kostolalyPhase], name: KOSTOLANY_PHASE_NAMES[kostolalyPhase], phase: kostolalyPhase })}
           </Text>
         </View>
       )}
@@ -654,7 +642,7 @@ export default function AllocationDriftSection({
       <View style={s.whySection}>
         <View style={s.whyRow}>
           <Ionicons name="help-circle-outline" size={14} color={colors.textSecondary} />
-          <Text style={s.whyLabel}>왜 이탈이 생겼나요?</Text>
+          <Text style={s.whyLabel}>{t('allocation_drift.why_label')}</Text>
         </View>
         <Text style={s.whyText}>{whyExplanation}</Text>
       </View>
@@ -664,7 +652,7 @@ export default function AllocationDriftSection({
         <View style={s.actionGuideSection}>
           <View style={s.actionGuideRow}>
             <Ionicons name="arrow-forward-circle-outline" size={14} color={colors.primaryDark ?? colors.primary} />
-            <Text style={s.actionGuideLabel}>어떻게 조정하나요?</Text>
+            <Text style={s.actionGuideLabel}>{t('allocation_drift.action_guide_label')}</Text>
           </View>
           <Text style={s.actionGuideText}>{actionGuidance}</Text>
         </View>
@@ -678,7 +666,7 @@ export default function AllocationDriftSection({
           activeOpacity={0.7}
         >
           <Ionicons name="bar-chart-outline" size={14} color={viewMode === 'bar' ? colors.inverseText : colors.textTertiary} />
-          <Text style={[s.toggleText, viewMode === 'bar' && s.toggleTextActive]}>바 차트</Text>
+          <Text style={[s.toggleText, viewMode === 'bar' && s.toggleTextActive]}>{t('allocation_drift.view_bar')}</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[s.toggleBtn, viewMode === 'pie' && s.toggleBtnActive]}
@@ -686,7 +674,7 @@ export default function AllocationDriftSection({
           activeOpacity={0.7}
         >
           <Ionicons name="pie-chart-outline" size={14} color={viewMode === 'pie' ? colors.inverseText : colors.textTertiary} />
-          <Text style={[s.toggleText, viewMode === 'pie' && s.toggleTextActive]}>파이 차트</Text>
+          <Text style={[s.toggleText, viewMode === 'pie' && s.toggleTextActive]}>{t('allocation_drift.view_pie')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -718,7 +706,7 @@ export default function AllocationDriftSection({
                   {/* 이모티콘 + 자산 이름 + ⓘ 버튼 */}
                   <View style={s.driftLabelGroup}>
                     <Text style={[s.driftIcon, item.category.key === 'bitcoin' && { color: '#F5A623' }]}>{item.category.icon}</Text>
-                    <Text style={[s.driftLabel, { color: colors.textSecondary }]} numberOfLines={1}>{item.category.label}</Text>
+                    <Text style={[s.driftLabel, { color: colors.textSecondary }]} numberOfLines={1}>{t(`allocation_drift.cat_labels.${item.category.key}`)}</Text>
                     <TouchableOpacity
                       onPress={() => setInfoKey(item.category.key)}
                       hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
@@ -748,11 +736,11 @@ export default function AllocationDriftSection({
           <View style={s.legend}>
             <View style={s.legendItem}>
               <View style={[s.legendBar, { backgroundColor: colors.success }]} />
-              <Text style={s.legendText}>현재</Text>
+              <Text style={s.legendText}>{t('allocation_drift.legend_current')}</Text>
             </View>
             <View style={s.legendItem}>
               <View style={[s.legendBar, { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.textTertiary }]} />
-              <Text style={s.legendText}>목표</Text>
+              <Text style={s.legendText}>{t('allocation_drift.legend_target')}</Text>
             </View>
           </View>
         </>
@@ -768,14 +756,14 @@ export default function AllocationDriftSection({
             return (
               <View key={item.category.key} style={s.detailRow}>
                 <Text style={s.detailIcon}>{item.category.icon}</Text>
-                <Text style={s.detailLabel}>{item.category.label}</Text>
+                <Text style={s.detailLabel}>{t(`allocation_drift.cat_labels.${item.category.key}`)}</Text>
                 <Text style={s.detailCurrent}>{item.currentPct.toFixed(1)}%</Text>
                 <Ionicons name="arrow-forward" size={10} color={colors.textTertiary} />
                 <Text style={s.detailTarget}>{item.targetPct}%</Text>
                 {needsAction && (
                   <View style={[s.detailDriftBadge, { backgroundColor: isOver ? `${colors.error}1F` : `${colors.success}1F` }]}>
                     <Text style={[s.detailDriftText, { color: isOver ? colors.error : colors.success }]}>
-                      {isOver ? '초과' : '부족'} {driftAbs.toFixed(1)}%
+                      {isOver ? t('allocation_drift.detail_over') : t('allocation_drift.detail_under')} {driftAbs.toFixed(1)}%
                     </Text>
                   </View>
                 )}
@@ -789,11 +777,11 @@ export default function AllocationDriftSection({
       {/* 편집 모드 */}
       {isEditing && (
         <View style={s.editContainer}>
-          <Text style={s.editTitle}>목표 배분 설정 (합계 100%)</Text>
+          <Text style={s.editTitle}>{t('allocation_drift.edit_title')}</Text>
           {CATEGORIES.map(cat => (
             <View key={cat.key} style={s.editRow}>
               <Text style={[s.editIcon, cat.key === 'bitcoin' && { color: '#F5A623' }]}>{cat.icon}</Text>
-              <Text style={s.editLabel}>{cat.label}</Text>
+              <Text style={s.editLabel}>{t(`allocation_drift.cat_labels.${cat.key}`)}</Text>
               <TextInput
                 style={s.editInput}
                 value={editValues[cat.key]}
@@ -807,18 +795,18 @@ export default function AllocationDriftSection({
           ))}
           <View style={s.editFooter}>
             <Text style={[s.editSum, { color: editSum === 100 ? colors.success : colors.error }]}>
-              합계: {editSum}%
+              {t('allocation_drift.edit_sum_label', { sum: String(editSum) })}
             </Text>
             <View style={s.editButtons}>
               <TouchableOpacity style={s.editCancel} onPress={() => setIsEditing(false)}>
-                <Text style={s.editCancelText}>취소</Text>
+                <Text style={s.editCancelText}>{t('allocation_drift.edit_cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[s.editSave, editSum !== 100 && { opacity: 0.4 }]}
                 onPress={saveTarget}
                 disabled={editSum !== 100}
               >
-                <Text style={s.editSaveText}>저장</Text>
+                <Text style={s.editSaveText}>{t('allocation_drift.edit_save')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -830,8 +818,8 @@ export default function AllocationDriftSection({
         <View style={s.realEstateCard}>
           <View style={s.realEstateHeader}>
             <Text style={s.realEstateIcon}>🏠</Text>
-            <Text style={[s.realEstateTitle, { color: colors.inverseText }]}>안정 자산 기반</Text>
-            <Text style={[s.realEstateSubtitle, { color: colors.textTertiary }]}>Stable Foundation</Text>
+            <Text style={[s.realEstateTitle, { color: colors.inverseText }]}>{t('allocation_drift.realestate_title')}</Text>
+            <Text style={[s.realEstateSubtitle, { color: colors.textTertiary }]}>{t('allocation_drift.realestate_subtitle')}</Text>
             {/* 부동산도 ⓘ 버튼 */}
             <TouchableOpacity
               onPress={() => setInfoKey('realestate')}
@@ -843,14 +831,14 @@ export default function AllocationDriftSection({
           </View>
           <View style={s.realEstateBody}>
             <Text style={[s.realEstateValue, { color: colors.inverseText }]}>
-              부동산 ₩{Math.round(realEstateInfo.grossValue / 100000000)}억
+              {t('allocation_drift.realestate_value', { amount: String(Math.round(realEstateInfo.grossValue / 100000000)) })}
               <Text style={[s.realEstateRatio, { color: colors.textSecondary }]}>
-                {' '}(전체 자산의 {realEstateRatio.toFixed(0)}%)
+                {t('allocation_drift.realestate_ratio', { pct: realEstateRatio.toFixed(0) })}
               </Text>
             </Text>
             {realEstateInfo.totalDebt > 0 && (
               <Text style={[s.realEstateDebt, { color: colors.textTertiary }]}>
-                대출 ₩{(realEstateInfo.totalDebt / 100000000).toFixed(1)}억 (LTV {realEstateInfo.avgLtv.toFixed(0)}%)
+                {t('allocation_drift.realestate_debt', { amount: (realEstateInfo.totalDebt / 100000000).toFixed(1), ltv: realEstateInfo.avgLtv.toFixed(0) })}
               </Text>
             )}
 
@@ -859,7 +847,7 @@ export default function AllocationDriftSection({
               <View style={s.realEstateBonusRow}>
                 <View style={[s.realEstateBonusBadge, { backgroundColor: colors.success + '22' }]}>
                   <Text style={[s.realEstateBonusText, { color: colors.success }]}>
-                    +{realEstateBonus.bonus}점 건강 점수 기여
+                    {t('allocation_drift.realestate_bonus', { bonus: String(realEstateBonus.bonus) })}
                   </Text>
                 </View>
                 <Text style={[s.realEstateBonusReason, { color: colors.textSecondary }]}>
@@ -868,7 +856,7 @@ export default function AllocationDriftSection({
               </View>
             ) : (
               <Text style={[s.realEstateMessage, { color: colors.textTertiary }]}>
-                {realEstateBonus.reason || 'LTV를 낮추거나 비중을 조정하면 건강 점수에 기여할 수 있어요'}
+                {realEstateBonus.reason || t('allocation_drift.realestate_no_bonus')}
               </Text>
             )}
           </View>

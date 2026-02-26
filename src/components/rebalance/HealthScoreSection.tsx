@@ -56,81 +56,16 @@ function getFactorStatusKey(score: number): { key: string; color: string } {
   return { key: 'factor_status_improve', color: '#B23A48' };
 }
 
-/** 팩터 상세 설명 (ⓘ 툴팁용) */
-interface FactorDetail {
-  summary: string;
-  whenHigh: string;
-  whenLow: string;
-  formula: string;
-  dataSource: string;
-  tip: string;
-}
-
-const FACTOR_DETAILS: Record<string, FactorDetail> = {
-  '배분 이탈도': {
-    summary: '각 자산의 비중이 처음 매수 시점 또는 설정한 목표와 얼마나 달라졌는지 측정해요.',
-    whenHigh: '각 자산의 비중이 목표와 5% 이내로 유지되고 있어요.\n포트폴리오가 원래 전략대로 운영되고 있는 상태예요.',
-    whenLow: '아직 목표 비중을 설정하지 않았거나, 특정 자산이 크게 오르내려 비중이 많이 달라진 상태예요.\n⚠️ 목표 비중 미설정 시 0점으로 계산돼요.',
-    formula: '각 자산의 (실제 비중 - 목표 비중) 절댓값 합계 ÷ 2\n→ 이탈이 0%면 100점, 25% 이상이면 0점',
-    dataSource: '내가 직접 입력한 자산 가격 + 각 자산에 설정한 목표 비중(%)',
-    tip: '분석 탭의 각 자산 상세에서 목표 비중(%)을 입력하면 이 점수가 올라가요.',
-  },
-  '자산 집중도': {
-    summary: '위험이 특정 자산 하나에 집중되지 않고 고르게 분산되어 있는지 측정해요.',
-    whenHigh: '어떤 한 자산도 전체 위험의 40% 미만을 차지해요.\n한 종목이 폭락해도 전체 포트폴리오 피해가 제한돼요.',
-    whenLow: '특정 자산 하나가 전체 위험의 절반 이상을 담당하고 있어요.\n그 자산이 -30% 내리면 포트폴리오 전체가 크게 흔들려요.',
-    formula: '자산별 위험 기여도(자산가치 × 변동성)의 HHI 집중도 지수\n→ 고르게 분산될수록 100점, 한 자산 집중일수록 0점',
-    dataSource: '내가 입력한 자산 가격 + 자산 유형별 기준 변동성\n(예: 국내주식 30%, 코인 80%, 채권 5%)',
-    tip: '비중이 가장 높은 자산을 일부 줄이고 채권, 현금, 다른 자산군을 추가하세요.',
-  },
-  '위험 집중도': {
-    summary: '위험이 특정 자산 하나에 집중되지 않고 고르게 분산되어 있는지 측정해요.',
-    whenHigh: '어떤 한 자산도 전체 위험의 40% 미만을 차지해요.\n한 종목이 폭락해도 전체 포트폴리오 피해가 제한돼요.',
-    whenLow: '특정 자산 하나가 전체 위험의 절반 이상을 담당하고 있어요.\n그 자산이 -30% 내리면 포트폴리오 전체가 크게 흔들려요.',
-    formula: '자산별 위험 기여도(자산가치 × 변동성)의 HHI 집중도 지수\n→ 고르게 분산될수록 100점, 한 자산 집중일수록 0점',
-    dataSource: '내가 입력한 자산 가격 + 자산 유형별 기준 변동성\n(예: 국내주식 30%, 코인 80%, 채권 5%)',
-    tip: '비중이 가장 높은 자산을 일부 줄이고 채권, 현금, 다른 자산군을 추가하세요.',
-  },
-  '상관관계': {
-    summary: '각 자산이 서로 다른 방향으로 움직이는지 측정해요. 따로 움직일수록 진짜 분산이에요.',
-    whenHigh: '주식이 내릴 때 채권이 오르는 것처럼, 자산들이 서로 독립적으로 움직여요.\n시장이 나빠져도 일부 자산이 완충 역할을 해요.',
-    whenLow: '보유한 자산들이 모두 같은 방향으로 움직여요.\n주식, 코인, 성장주만 보유하면 전부 동시에 올라가거나 내려가요.',
-    formula: '자산 유형별 기준 상관계수를 보유 비중으로 가중 평균\n→ 상관계수 -0.3 이하면 100점, 0.8 이상이면 0점',
-    dataSource: '자산 유형 조합별 역사적 상관계수 (앱 내 기준값)\n예: 주식↔채권 -0.1, 주식↔코인 +0.5, 주식↔금 +0.1',
-    tip: '주식 외에 채권, 금, 현금처럼 반대로 움직이는 자산을 포트폴리오에 추가하세요.',
-  },
-  '변동성': {
-    summary: '포트폴리오 전체의 가격이 얼마나 크게 출렁이는지 측정해요.',
-    whenHigh: '연간 가격 변동폭이 18% 미만이에요.\n시장이 출렁여도 내 자산이 비교적 안정적으로 유지돼요.',
-    whenLow: '연간 가격 변동폭이 30% 이상이에요.\n코인, 성장주 비중이 높아 심리적 압박이 크고 패닉셀 위험이 높아요.',
-    formula: '자산 유형별 연간 기준 변동성 × 보유 비중의 가중 평균\n→ 18% 미만이면 100점, 30% 이상이면 0점',
-    dataSource: '자산 유형별 기준 연간 변동성 (앱 내 기준값)\n예: 국내주식 30% / 채권 5% / 코인 80% / 현금 0%',
-    tip: '암호화폐, 개별 성장주 비중을 줄이고 채권 ETF, 현금 비중을 늘려 변동폭을 줄이세요.',
-  },
-  '하방 리스크': {
-    summary: '현재 손실 중인 자산이 얼마나 있는지 측정해요.',
-    whenHigh: '손실 중인 자산이 없거나 매우 적어요.\n포트폴리오 대부분이 수익 또는 원금 유지 상태예요.',
-    whenLow: '손실 중인 자산이 포트폴리오의 상당 부분을 차지해요.\n추가 하락 시 손실이 복리로 커질 수 있어요.',
-    formula: '손실 자산의 (취득가 - 현재가) ÷ 취득가 × 보유 비중 가중 평균\n→ 손실 없으면 100점, 가중 손실 33% 이상이면 0점',
-    dataSource: '내가 직접 입력한 취득가(매입가) + 현재 자산 평가액',
-    tip: '장기 보유 전략이라면 손실 자산의 평균 매입가 낮추기를, 단기라면 손절 기준을 명확히 정하세요.',
-  },
-  '세금 효율': {
-    summary: '절세할 수 있는 기회를 얼마나 활용하고 있는지 측정해요.',
-    whenHigh: '5% 이상 손실 중인 자산이 없거나, 절세 매도를 이미 활용했어요.\n세금 효율이 최적화된 상태예요.',
-    whenLow: '5% 이상 손실 중인 자산이 여럿 있어요.\n이 자산들을 연말 전에 매도하면 다른 수익과 상계해 세금을 줄일 수 있어요.',
-    formula: '5% 이상 손실 자산 수 ÷ 전체 유동자산 수\n→ 절세 기회 없으면 100점, 절반 이상이 기회 자산이면 0점',
-    dataSource: '내가 직접 입력한 취득가(매입가) + 현재 자산 평가액',
-    tip: '손실 자산 매도 후 비슷한 다른 자산을 즉시 매수하면, 투자 포지션은 유지하면서 절세 혜택을 받을 수 있어요.',
-  },
-  '레버리지 건전성': {
-    summary: '대출이나 레버리지를 안전한 수준으로 사용하고 있는지 측정해요.',
-    whenHigh: '부채가 없거나, 안정 자산(부동산 등) 기반 LTV가 60% 미만이에요.\n자산 가치가 내려도 반대매매 위험이 없어요.',
-    whenLow: '고변동 자산(코인, 성장주)에 레버리지를 사용 중이에요.\n자산 가치가 급락하면 강제 청산(반대매매)이 발생할 수 있어요.',
-    formula: 'LTV × 자산 변동성 × 자산가치의 총합 ÷ 전체 자산\n→ 위험 수치 10% 미만이면 100점, 높을수록 0점에 가까워짐',
-    dataSource: '내가 입력한 대출액(LTV) + 자산 가격 + 자산 유형별 기준 변동성',
-    tip: '레버리지는 부동산처럼 안정적인 자산에만 제한적으로 사용하세요. 변동성 큰 자산의 레버리지는 매우 위험해요.',
-  },
+/** 팩터 상세 설명 키 매핑 (ⓘ 툴팁용) — locale factor_details.X 경로에서 조회 */
+const FACTOR_DETAIL_KEYS: Record<string, string> = {
+  '배분 이탈도': 'drift',
+  '자산 집중도': 'concentration',
+  '위험 집중도': 'concentration',
+  '상관관계': 'correlation',
+  '변동성': 'volatility',
+  '하방 리스크': 'downside',
+  '세금 효율': 'tax',
+  '레버리지 건전성': 'leverage',
 };
 
 /** 팩터별 개선 제안 locale key 매핑 (40점 미만 시) */
@@ -590,10 +525,11 @@ export default function HealthScoreSection({ healthScore, onScoreImproved, total
         >
           <TouchableOpacity activeOpacity={1} style={[s.tooltipModal, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             {(() => {
-              const detail = FACTOR_DETAILS[tooltipFactorKey];
               const labelKey = FACTOR_LABEL_KEYS[tooltipFactorKey] || 'drift';
+              const detailKey = FACTOR_DETAIL_KEYS[tooltipFactorKey];
               const friendlyLabel = t(`health_section.factor_labels.${labelKey}`);
-              if (!detail) return null;
+              if (!detailKey) return null;
+              const dk = `health_section.factor_details.${detailKey}`;
               return (
                 <>
                   {/* 헤더 */}
@@ -605,36 +541,36 @@ export default function HealthScoreSection({ healthScore, onScoreImproved, total
                   </View>
                   <ScrollView style={s.tooltipScroll} showsVerticalScrollIndicator={true} contentContainerStyle={{ paddingBottom: 16 }}>
                     {/* 한 줄 요약 */}
-                    <Text style={[s.tooltipSummary, { color: colors.textSecondary }]}>{detail.summary}</Text>
+                    <Text style={[s.tooltipSummary, { color: colors.textSecondary }]}>{t(`${dk}.summary`)}</Text>
 
                     {/* 높을 때 */}
                     <View style={[s.tooltipSection, { backgroundColor: `${colors.success}20`, borderLeftColor: colors.success }]}>
                       <Text style={[s.tooltipSectionTitle, { color: colors.success }]}>{t('health_section.tooltip_when_high_title')}</Text>
-                      <Text style={[s.tooltipSectionText, { color: colors.textSecondary }]}>{detail.whenHigh}</Text>
+                      <Text style={[s.tooltipSectionText, { color: colors.textSecondary }]}>{t(`${dk}.when_high`)}</Text>
                     </View>
 
                     {/* 낮을 때 */}
                     <View style={[s.tooltipSection, { backgroundColor: `${colors.error}20`, borderLeftColor: colors.error }]}>
                       <Text style={[s.tooltipSectionTitle, { color: colors.error }]}>{t('health_section.tooltip_when_low_title')}</Text>
-                      <Text style={[s.tooltipSectionText, { color: colors.textSecondary }]}>{detail.whenLow}</Text>
+                      <Text style={[s.tooltipSectionText, { color: colors.textSecondary }]}>{t(`${dk}.when_low`)}</Text>
                     </View>
 
                     {/* 계산 공식 */}
                     <View style={[s.tooltipSection, { backgroundColor: colors.surfaceElevated, borderLeftColor: colors.border }]}>
                       <Text style={[s.tooltipSectionTitle, { color: colors.textSecondary }]}>{t('health_section.tooltip_formula_title')}</Text>
-                      <Text style={[s.tooltipSectionText, { color: colors.textSecondary, fontFamily: 'monospace' }]}>{detail.formula}</Text>
+                      <Text style={[s.tooltipSectionText, { color: colors.textSecondary, fontFamily: 'monospace' }]}>{t(`${dk}.formula`)}</Text>
                     </View>
 
                     {/* 데이터 소스 */}
                     <View style={[s.tooltipSection, { backgroundColor: colors.surfaceElevated, borderLeftColor: colors.border }]}>
                       <Text style={[s.tooltipSectionTitle, { color: colors.textSecondary }]}>{t('health_section.tooltip_data_source_title')}</Text>
-                      <Text style={[s.tooltipSectionText, { color: colors.textSecondary }]}>{detail.dataSource}</Text>
+                      <Text style={[s.tooltipSectionText, { color: colors.textSecondary }]}>{t(`${dk}.data_source`)}</Text>
                     </View>
 
                     {/* 개선 팁 */}
                     <View style={[s.tooltipSection, { backgroundColor: colors.success + '15', borderLeftColor: colors.success }]}>
                       <Text style={[s.tooltipSectionTitle, { color: colors.success }]}>{t('health_section.tooltip_tip_title')}</Text>
-                      <Text style={[s.tooltipSectionText, { color: colors.textSecondary }]}>{detail.tip}</Text>
+                      <Text style={[s.tooltipSectionText, { color: colors.textSecondary }]}>{t(`${dk}.tip`)}</Text>
                     </View>
                   </ScrollView>
                 </>

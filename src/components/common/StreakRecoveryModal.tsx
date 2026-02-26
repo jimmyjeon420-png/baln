@@ -26,6 +26,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { DARK_COLORS } from '../../styles/colors';
 import { formatCredits } from '../../utils/formatters';
+import { useLocale } from '../../context/LocaleContext';
 
 // ============================================================================
 // 타입 정의
@@ -54,22 +55,10 @@ const RECOVERY_COSTS: Record<number, number> = {
   3: 8,  // 3일 경과 = 8크레딧
 };
 
-const RECOVERY_MESSAGES: Record<number, { title: string; subtitle: string; emoji: string }> = {
-  1: {
-    title: '아직 늦지 않았어요!',
-    subtitle: '지금 복구하면 기록이 이어집니다',
-    emoji: '⏰',
-  },
-  2: {
-    title: '조금 서두르세요',
-    subtitle: '복구 비용이 올라가고 있어요',
-    emoji: '⚡',
-  },
-  3: {
-    title: '마지막 기회!',
-    subtitle: '내일이면 복구할 수 없어요',
-    emoji: '🚨',
-  },
+const RECOVERY_EMOJI: Record<number, string> = {
+  1: '⏰',
+  2: '⚡',
+  3: '🚨',
 };
 
 // ============================================================================
@@ -84,10 +73,13 @@ export default function StreakRecoveryModal({
   onRecover,
 }: StreakRecoveryModalProps) {
   const [isRecovering, setIsRecovering] = useState(false);
+  const { t } = useLocale();
 
   const canRecover = daysMissed >= 1 && daysMissed <= 3;
   const cost = RECOVERY_COSTS[daysMissed] ?? 0;
-  const messageData = RECOVERY_MESSAGES[daysMissed];
+  const recoveryEmoji = RECOVERY_EMOJI[daysMissed] ?? '⏰';
+  const recoveryTitle = t(`streak.recovery_title_${daysMissed}` as any) || t('streak.recovery_title_1');
+  const recoverySubtitle = t(`streak.recovery_subtitle_${daysMissed}` as any) || '';
 
   const handleRecover = async () => {
     if (!canRecover || isRecovering) return;
@@ -116,24 +108,24 @@ export default function StreakRecoveryModal({
           <View style={styles.card}>
             {/* 헤더 */}
             <Text style={styles.emoji}>🌱</Text>
-            <Text style={styles.title}>새로운 시작도 멋져요</Text>
+            <Text style={styles.title}>{t('streak.recovery_expired_title')}</Text>
             <Text style={styles.subtitle}>
               {previousStreak > 0
-                ? `${previousStreak}일의 기록은 역대 최장 기록으로 남아있어요`
-                : '오늘부터 새로운 기록을 시작해보세요'}
+                ? t('streak.recovery_expired_subtitle_with_streak', { count: previousStreak })
+                : t('streak.recovery_expired_subtitle_new')}
             </Text>
 
             {/* 경과 일수 표시 */}
             <View style={styles.infoBox}>
               <Ionicons name="time-outline" size={18} color={DARK_COLORS.textTertiary} />
               <Text style={styles.infoText}>
-                {daysMissed}일 경과 — 복구 기간이 지났습니다
+                {t('streak.recovery_days_elapsed', { count: daysMissed })}
               </Text>
             </View>
 
             {/* 확인 버튼 */}
             <TouchableOpacity style={styles.secondaryButton} onPress={onClose}>
-              <Text style={styles.secondaryButtonText}>새롭게 시작하기</Text>
+              <Text style={styles.secondaryButtonText}>{t('streak.recovery_new_start')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -152,28 +144,28 @@ export default function StreakRecoveryModal({
       <View style={styles.overlay}>
         <View style={styles.card}>
           {/* 이모지 & 제목 */}
-          <Text style={styles.emoji}>{messageData?.emoji ?? '⏰'}</Text>
-          <Text style={styles.title}>{messageData?.title ?? '스트릭을 복구하세요'}</Text>
-          <Text style={styles.subtitle}>{messageData?.subtitle ?? ''}</Text>
+          <Text style={styles.emoji}>{recoveryEmoji}</Text>
+          <Text style={styles.title}>{recoveryTitle}</Text>
+          <Text style={styles.subtitle}>{recoverySubtitle}</Text>
 
           {/* 스트릭 정보 카드 */}
           <View style={styles.streakInfoCard}>
             <View style={styles.streakInfoRow}>
               <Ionicons name="flame" size={20} color={DARK_COLORS.streak.active} />
-              <Text style={styles.streakInfoLabel}>끊긴 스트릭</Text>
-              <Text style={styles.streakInfoValue}>{previousStreak}일</Text>
+              <Text style={styles.streakInfoLabel}>{t('streak.recovery_broken_streak')}</Text>
+              <Text style={styles.streakInfoValue}>{t('streak.days', { count: previousStreak })}</Text>
             </View>
             <View style={styles.divider} />
             <View style={styles.streakInfoRow}>
               <Ionicons name="time-outline" size={20} color={DARK_COLORS.textTertiary} />
-              <Text style={styles.streakInfoLabel}>경과 일수</Text>
-              <Text style={styles.streakInfoValue}>{daysMissed}일</Text>
+              <Text style={styles.streakInfoLabel}>{t('streak.recovery_days_missed')}</Text>
+              <Text style={styles.streakInfoValue}>{t('streak.days', { count: daysMissed })}</Text>
             </View>
           </View>
 
           {/* 복구 비용 */}
           <View style={styles.costBox}>
-            <Text style={styles.costLabel}>복구 비용</Text>
+            <Text style={styles.costLabel}>{t('streak.recovery_cost')}</Text>
             <Text style={styles.costValue}>{formatCredits(cost)}</Text>
           </View>
 
@@ -190,7 +182,7 @@ export default function StreakRecoveryModal({
               <>
                 <Ionicons name="refresh" size={18} color="#FFFFFF" />
                 <Text style={styles.primaryButtonText}>
-                  스트릭 복구하기 ({formatCredits(cost, false)})
+                  {t('streak.recovery_btn', { cost: formatCredits(cost, false) })}
                 </Text>
               </>
             )}
@@ -202,7 +194,7 @@ export default function StreakRecoveryModal({
             onPress={onClose}
             disabled={isRecovering}
           >
-            <Text style={styles.secondaryButtonText}>포기하기</Text>
+            <Text style={styles.secondaryButtonText}>{t('streak.recovery_give_up')}</Text>
           </TouchableOpacity>
         </View>
       </View>

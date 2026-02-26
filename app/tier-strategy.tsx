@@ -29,6 +29,7 @@ import { useSharedPortfolio } from '../src/hooks/useSharedPortfolio';
 import { useSharedAnalysis } from '../src/hooks/useSharedAnalysis';
 import { useHaptics } from '../src/hooks/useHaptics';
 import { useTheme } from '../src/hooks/useTheme';
+import { useLocale } from '../src/context/LocaleContext';
 import {
   TIER_STRATEGIES,
   TIER_STRATEGY_DETAILS,
@@ -45,6 +46,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 export default function TierStrategyScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { t } = useLocale();
   const { lightTap, mediumTap } = useHaptics();
 
   // 공유 훅 데이터
@@ -150,7 +152,7 @@ export default function TierStrategyScreen() {
         >
           <Ionicons name="chevron-back" size={24} color="#FFF" />
         </TouchableOpacity>
-        <Text style={s.navTitle}>{tierLabel} 맞춤 전략</Text>
+        <Text style={s.navTitle}>{t('tier_strategy.nav_title', { tier: tierLabel })}</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -196,8 +198,8 @@ export default function TierStrategyScreen() {
         {/* ═══ Section 2: 핵심 전략 4개 (아코디언) ═══ */}
         <View style={s.section}>
           <View style={s.sectionHeader}>
-            <Text style={s.sectionTitle}>핵심 전략</Text>
-            <Text style={s.sectionSubtitle}>탭하여 상세 내용을 확인하세요</Text>
+            <Text style={s.sectionTitle}>{t('tier_strategy.core_strategy_title')}</Text>
+            <Text style={s.sectionSubtitle}>{t('tier_strategy.core_strategy_subtitle')}</Text>
           </View>
 
           {tierDetail.strategies.map((strategy, idx) => {
@@ -237,7 +239,7 @@ export default function TierStrategyScreen() {
                   <View style={s.accordionBody}>
                     <Text style={s.accordionDesc}>{strategy.description}</Text>
                     <View style={s.tipsContainer}>
-                      <Text style={s.tipsLabel}>실천 팁</Text>
+                      <Text style={s.tipsLabel}>{t('tier_strategy.tips_label')}</Text>
                       {strategy.tips.map((tip, tidx) => (
                         <View key={tidx} style={s.tipItem}>
                           <View style={[s.tipBullet, { backgroundColor: tierColor }]}>
@@ -258,9 +260,9 @@ export default function TierStrategyScreen() {
         <View style={s.section}>
           <View style={s.sectionHeader}>
             <View style={s.sectionHeaderRow}>
-              <Text style={s.sectionTitle}>이번 분기 할 일</Text>
+              <Text style={s.sectionTitle}>{t('tier_strategy.quarterly_title')}</Text>
               <View style={s.progressBadge}>
-                <Text style={s.progressText}>{checkedCount}/{totalActions} 완료</Text>
+                <Text style={s.progressText}>{t('tier_strategy.progress_text', { done: String(checkedCount), total: String(totalActions) })}</Text>
               </View>
             </View>
 
@@ -276,9 +278,9 @@ export default function TierStrategyScreen() {
           {tierDetail.quarterlyActions.map((action, idx) => {
             const isChecked = checkedActions.has(idx);
             const priorityConfig = {
-              HIGH:   { label: '높음', color: '#CF6679', bg: 'rgba(207,102,121,0.12)' },
-              MEDIUM: { label: '보통', color: '#FFC107', bg: 'rgba(255,193,7,0.12)' },
-              LOW:    { label: '낮음', color: '#888', bg: 'rgba(136,136,136,0.12)' },
+              HIGH:   { label: t('tier_strategy.priority_high'), color: '#CF6679', bg: 'rgba(207,102,121,0.12)' },
+              MEDIUM: { label: t('tier_strategy.priority_medium'), color: '#FFC107', bg: 'rgba(255,193,7,0.12)' },
+              LOW:    { label: t('tier_strategy.priority_low'), color: '#888', bg: 'rgba(136,136,136,0.12)' },
             };
             const pc = priorityConfig[action.priority];
 
@@ -304,8 +306,8 @@ export default function TierStrategyScreen() {
         {/* ═══ Section 4: 내 포트폴리오 적합도 (게이지 바) ═══ */}
         <View style={s.section}>
           <View style={s.sectionHeader}>
-            <Text style={s.sectionTitle}>포트폴리오 적합도</Text>
-            <Text style={s.sectionSubtitle}>녹색 영역이 {tierLabel} 티어 이상 범위입니다</Text>
+            <Text style={s.sectionTitle}>{t('tier_strategy.portfolio_fit_title')}</Text>
+            <Text style={s.sectionSubtitle}>{t('tier_strategy.portfolio_fit_subtitle', { tier: tierLabel })}</Text>
           </View>
 
           {tierDetail.fitCriteria.map((criterion, idx) => {
@@ -349,7 +351,7 @@ export default function TierStrategyScreen() {
                 <View style={s.gaugeRangeRow}>
                   <Text style={s.gaugeRangeText}>0%</Text>
                   <Text style={s.gaugeRangeIdeal}>
-                    이상: {criterion.idealMin}~{criterion.idealMax}%
+                    {t('tier_strategy.ideal_range_label', { min: String(criterion.idealMin), max: String(criterion.idealMax) })}
                   </Text>
                   <Text style={s.gaugeRangeText}>100%</Text>
                 </View>
@@ -360,7 +362,7 @@ export default function TierStrategyScreen() {
           {!fitData && (
             <View style={s.noDataCard}>
               <Ionicons name="information-circle-outline" size={20} color="#666" />
-              <Text style={s.noDataText}>포트폴리오 데이터가 필요합니다</Text>
+              <Text style={s.noDataText}>{t('tier_strategy.no_portfolio_data')}</Text>
             </View>
           )}
         </View>
@@ -369,7 +371,7 @@ export default function TierStrategyScreen() {
         {nextTier ? (
           <View style={s.section}>
             <View style={s.sectionHeader}>
-              <Text style={s.sectionTitle}>다음 목표</Text>
+              <Text style={s.sectionTitle}>{t('tier_strategy.next_goal_title')}</Text>
             </View>
 
             <View style={[s.nextTierCard, { borderColor: nextTier.tierColor + '40' }]}>
@@ -380,10 +382,10 @@ export default function TierStrategyScreen() {
                 </View>
                 <View style={s.nextTierHeaderText}>
                   <Text style={[s.nextTierName, { color: nextTier.tierColor }]}>
-                    {nextTier.tierName} 등급
+                    {nextTier.tierName}{t('tier_strategy.tier_grade_suffix')}
                   </Text>
                   <Text style={s.nextTierRequired}>
-                    ₩{Math.floor(nextTier.requiredAssets).toLocaleString()} 이상
+                    {t('tier_strategy.required_assets', { amount: Math.floor(nextTier.requiredAssets).toLocaleString() })}
                   </Text>
                 </View>
               </View>
@@ -405,14 +407,14 @@ export default function TierStrategyScreen() {
                   }]} />
                 </View>
                 <Text style={s.nextTierProgressText}>
-                  {nextTierProgress.toFixed(1)}% 달성
+                  {t('tier_strategy.progress_achieved', { pct: nextTierProgress.toFixed(1) })}
                 </Text>
               </View>
 
               {/* 남은 금액 */}
               {totalAssets < nextTier.requiredAssets && (
                 <Text style={s.nextTierRemaining}>
-                  ₩{Math.floor(nextTier.requiredAssets - totalAssets).toLocaleString()} 더 필요합니다
+                  {t('tier_strategy.remaining_needed', { amount: Math.floor(nextTier.requiredAssets - totalAssets).toLocaleString() })}
                 </Text>
               )}
             </View>
@@ -426,9 +428,9 @@ export default function TierStrategyScreen() {
                 <Ionicons name="trophy" size={28} color="#FFD700" />
                 <Ionicons name="diamond" size={28} color={tierColor} />
               </View>
-              <Text style={[s.diamondTitle, { color: tierColor }]}>최고 등급을 달성하셨습니다</Text>
+              <Text style={[s.diamondTitle, { color: tierColor }]}>{t('tier_strategy.diamond_title')}</Text>
               <Text style={s.diamondSubtitle}>
-                다이아몬드 회원으로서 모든 프리미엄 전략과{'\n'}서비스를 이용하실 수 있습니다
+                {t('tier_strategy.diamond_subtitle')}
               </Text>
             </View>
           </View>
@@ -445,11 +447,11 @@ export default function TierStrategyScreen() {
             activeOpacity={0.8}
           >
             <Ionicons name="sync" size={20} color="#000" />
-            <Text style={s.ctaText}>포트폴리오 조정하기</Text>
+            <Text style={s.ctaText}>{t('tier_strategy.cta_button')}</Text>
           </TouchableOpacity>
 
           <Text style={s.disclaimer}>
-            이 정보는 투자 자문이 아닙니다. 투자 결정은 전적으로 본인의 판단 하에 이루어져야 합니다.
+            {t('tier_strategy.disclaimer')}
           </Text>
         </View>
 

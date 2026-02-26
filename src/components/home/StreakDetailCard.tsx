@@ -15,13 +15,14 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 
-// ── 마일스톤 목록 ──
-const MILESTONES = [
-  { target: 7, label: '1주 연속', emoji: '\uD83D\uDD25' },
-  { target: 30, label: '1개월 연속', emoji: '\uD83D\uDCAA' },
-  { target: 90, label: '철인 달성', emoji: '\uD83D\uDCAA' },
-  { target: 365, label: '레전드', emoji: '\uD83C\uDFC6' },
+// ── 마일스톤 목록 (labels resolved at render time via t()) ──
+const MILESTONES_DATA = [
+  { target: 7, labelKey: 'streak.milestone_1w', emoji: '\uD83D\uDD25' },
+  { target: 30, labelKey: 'streak.milestone_1m', emoji: '\uD83D\uDCAA' },
+  { target: 90, labelKey: 'streak.milestone_iron', emoji: '\uD83D\uDCAA' },
+  { target: 365, labelKey: 'streak.milestone_legend', emoji: '\uD83C\uDFC6' },
 ];
 
 // ── Props ──
@@ -34,13 +35,12 @@ interface StreakDetailCardProps {
   onCheckIn?: () => void;
 }
 
-// ── 다음 마일스톤 계산 ──
-function getNextMilestone(current: number): { target: number; label: string; emoji: string } {
-  for (const m of MILESTONES) {
+// ── 다음 마일스톤 계산 (returns labelKey so callers can use t()) ──
+function getNextMilestoneData(current: number): { target: number; labelKey: string; emoji: string } {
+  for (const m of MILESTONES_DATA) {
     if (current < m.target) return m;
   }
-  // 365일 이상이면 다음 목표는 현재+100
-  return { target: current + 100, label: `${current + 100}일 도전`, emoji: '\uD83C\uDFC6' };
+  return { target: current + 100, labelKey: 'streak.milestone_days_challenge', emoji: '\uD83C\uDFC6' };
 }
 
 // ── 메인 컴포넌트 ──
@@ -53,11 +53,14 @@ export default function StreakDetailCard({
   onCheckIn,
 }: StreakDetailCardProps) {
   const { colors } = useTheme();
+  const { t } = useLocale();
 
   // 프로그레스 계산
-  const computed = getNextMilestone(currentStreak);
-  const milestone = nextMilestone.target > 0 ? nextMilestone : computed;
-  const prevMilestone = MILESTONES.filter(m => m.target <= currentStreak).pop();
+  const computed = getNextMilestoneData(currentStreak);
+  const milestoneTarget = nextMilestone.target > 0 ? nextMilestone.target : computed.target;
+  const milestoneLabel = nextMilestone.target > 0 ? nextMilestone.label : t(computed.labelKey, { count: computed.target });
+  const milestone = { target: milestoneTarget, label: milestoneLabel };
+  const prevMilestone = MILESTONES_DATA.filter(m => m.target <= currentStreak).pop();
   const base = prevMilestone ? prevMilestone.target : 0;
   const range = milestone.target - base;
   const progress = range > 0 ? Math.min((currentStreak - base) / range, 1) : 1;
@@ -77,7 +80,7 @@ export default function StreakDetailCard({
               {currentStreak}
             </Text>
             <Text style={[styles.streakLabel, { color: colors.textSecondary }]}>
-              일 연속 방문
+              {t('streak.days_visited')}
             </Text>
           </View>
         </View>
@@ -88,14 +91,14 @@ export default function StreakDetailCard({
             <>
               <Text style={styles.recordEmoji}>{'\u2B50'}</Text>
               <Text style={[styles.recordText, { color: colors.streak.active }]}>
-                기록 갱신 중!
+                {t('streak.record_breaking')}
               </Text>
             </>
           ) : (
             <>
               <Text style={styles.recordEmoji}>{'\uD83C\uDFC6'}</Text>
               <Text style={[styles.recordText, { color: colors.textSecondary }]}>
-                최장 {longestStreak}일
+                {t('streak.longest_record', { count: longestStreak })}
               </Text>
             </>
           )}
@@ -106,10 +109,10 @@ export default function StreakDetailCard({
       <View style={styles.milestoneSection}>
         <View style={styles.milestoneHeader}>
           <Text style={[styles.milestoneLabel, { color: colors.textSecondary }]}>
-            다음 목표: {milestone.label}
+            {t('streak.next_goal', { label: milestone.label })}
           </Text>
           <Text style={[styles.milestoneRemaining, { color: colors.streak.active }]}>
-            {remaining > 0 ? `${remaining}일 남음` : '달성!'}
+            {remaining > 0 ? t('streak.days_remaining', { count: remaining }) : t('streak.achieved')}
           </Text>
         </View>
 
@@ -128,7 +131,7 @@ export default function StreakDetailCard({
 
         {/* 마일스톤 도트 */}
         <View style={styles.milestoneDotsRow}>
-          {MILESTONES.map((m) => {
+          {MILESTONES_DATA.map((m) => {
             const achieved = currentStreak >= m.target;
             return (
               <View key={m.target} style={styles.milestoneDot}>
@@ -150,7 +153,7 @@ export default function StreakDetailCard({
                     { color: achieved ? colors.streak.active : colors.textTertiary },
                   ]}
                 >
-                  {m.target}일
+                  {t('streak.days', { count: m.target })}
                 </Text>
               </View>
             );
@@ -163,7 +166,7 @@ export default function StreakDetailCard({
         <View style={[styles.checkedInBanner, { backgroundColor: colors.streak.background }]}>
           <Ionicons name="checkmark-circle" size={18} color={colors.streak.active} />
           <Text style={[styles.checkedInText, { color: colors.streak.active }]}>
-            오늘 출석 완료!
+            {t('streak.today_checked_in')}
           </Text>
         </View>
       ) : (
@@ -174,7 +177,7 @@ export default function StreakDetailCard({
         >
           <Ionicons name="flame" size={18} color={colors.background} />
           <Text style={[styles.checkInButtonText, { color: colors.background }]}>
-            출석 체크하기
+            {t('streak.check_in')}
           </Text>
         </TouchableOpacity>
       )}
@@ -182,7 +185,7 @@ export default function StreakDetailCard({
       {/* ── 주간 미니 캘린더 (월~일) ── */}
       <View style={styles.weeklySection}>
         <Text style={[styles.weeklySectionTitle, { color: colors.textTertiary }]}>
-          이번 주
+          {t('streak.this_week')}
         </Text>
         <View style={styles.weeklyRow}>
           {weeklyData.map((item, idx) => (

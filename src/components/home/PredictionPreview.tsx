@@ -25,9 +25,11 @@ import {
   useSubmitVote,
 } from '../../hooks/usePredictions';
 import { useHaptics } from '../../hooks/useHaptics';
+import { useLocale } from '../../context/LocaleContext';
 
 export default function PredictionPreview() {
   const router = useRouter();
+  const { t } = useLocale();
   const { mediumTap } = useHaptics();
   const { data: activePolls, isLoading } = usePollsWithMyVotes();
   const submitVote = useSubmitVote();
@@ -43,8 +45,8 @@ export default function PredictionPreview() {
         { pollId, vote },
         {
           onError: (error: Error) => {
-            console.warn('[예측 미리보기] 투표 실패:', error.message);
-            Alert.alert('투표 실패', '투표를 처리할 수 없습니다. 잠시 후 다시 시도해주세요.');
+            if (__DEV__) console.warn('[PredictionPreview] vote failed:', error.message);
+            Alert.alert(t('prediction.preview_vote_error_title'), t('prediction.preview_vote_error_msg'));
           },
         },
       );
@@ -63,7 +65,7 @@ export default function PredictionPreview() {
     return (
       <View style={styles.card}>
         <ActivityIndicator size="small" color="#4CAF50" />
-        <Text style={styles.loadingText}>오늘의 예측 불러오는 중...</Text>
+        <Text style={styles.loadingText}>{t('prediction.preview_loading')}</Text>
       </View>
     );
   }
@@ -75,7 +77,7 @@ export default function PredictionPreview() {
         <View style={styles.emptyState}>
           <Text style={styles.emptyEmoji}>🔮</Text>
           <Text style={styles.emptyText}>
-            오늘의 예측 질문이{'\n'}아직 준비되지 않았습니다
+            {t('prediction.preview_empty')}
           </Text>
         </View>
       </View>
@@ -96,18 +98,18 @@ export default function PredictionPreview() {
       <View style={styles.header}>
         <View style={styles.titleRow}>
           <Text style={styles.emoji}>🎯</Text>
-          <Text style={styles.title}>오늘의 예측</Text>
+          <Text style={styles.title}>{t('prediction.preview_title')}</Text>
         </View>
 
         {hasVoted ? (
           <View style={styles.votedBadge}>
             <Ionicons name="checkmark-circle" size={14} color="#4CAF50" />
-            <Text style={styles.votedText}>투표 완료</Text>
+            <Text style={styles.votedText}>{t('prediction.preview_voted')}</Text>
           </View>
         ) : (
           <View style={styles.activeBadge}>
             <View style={styles.pulseDot} />
-            <Text style={styles.activeText}>투표하기</Text>
+            <Text style={styles.activeText}>{t('prediction.preview_vote_cta')}</Text>
           </View>
         )}
       </View>
@@ -161,9 +163,9 @@ export default function PredictionPreview() {
           <View style={styles.votedInfo}>
             <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
             <Text style={styles.votedInfoText}>
-              당신은 <Text style={styles.votedChoice}>
-                {firstPoll.myVote === 'YES' ? firstPoll.yes_label : firstPoll.no_label}
-              </Text>에 투표했습니다
+              {t('prediction.preview_voted_info', {
+                choice: firstPoll.myVote === 'YES' ? firstPoll.yes_label : firstPoll.no_label,
+              })}
             </Text>
           </View>
         </View>
@@ -174,7 +176,7 @@ export default function PredictionPreview() {
         <View style={styles.footer}>
           <Ionicons name="arrow-forward" size={14} color="#4CAF50" />
           <Text style={styles.footerText}>
-            {remainingPolls}개 더 보기
+            {t('prediction.preview_more', { count: remainingPolls })}
           </Text>
         </View>
       )}

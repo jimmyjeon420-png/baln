@@ -67,20 +67,20 @@ export default function ManageHeartsScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <HeaderBar title="Heart 자산 관리" />
+      <HeaderBar title={t('manage_hearts.title')} />
 
       {/* 목록 */}
       {isLoading ? (
-        <Text style={[styles.emptyText, { color: colors.textSecondary }]}>로딩 중...</Text>
+        <Text style={[styles.emptyText, { color: colors.textSecondary }]}>{t('manage_hearts.loading')}</Text>
       ) : heartAssets.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyEmoji}>❤️</Text>
-          <Text style={[styles.emptyText, { color: colors.textSecondary }]}>Heart한 자산이 없습니다</Text>
+          <Text style={[styles.emptyText, { color: colors.textSecondary }]}>{t('manage_hearts.empty_text')}</Text>
           <TouchableOpacity
             style={[styles.addButton, { backgroundColor: colors.primary }]}
             onPress={() => router.push('/add-asset')}
           >
-            <Text style={[styles.addButtonText, { color: colors.textPrimary }]}>자산 추가하기</Text>
+            <Text style={[styles.addButtonText, { color: colors.textPrimary }]}>{t('manage_hearts.add_button')}</Text>
           </TouchableOpacity>
         </View>
       ) : (

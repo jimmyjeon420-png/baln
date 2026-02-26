@@ -19,6 +19,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Sentry from '@sentry/react-native';
 import { DARK_COLORS } from '../../styles/colors';
 import supabase, { getCurrentUser } from '../../services/supabase';
+import { t as rawT } from '../../locales';
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
@@ -158,16 +159,16 @@ export default class ErrorBoundary extends React.Component<
 
   // ─── 문제 신고 ───
   handleReportIssue = () => {
-    const errorMessage = this.state.error?.message ?? '알 수 없는 오류';
+    const errorMessage = this.state.error?.message ?? rawT('common.error');
 
     // 서버에 신고 기록
     reportIssueToServer(errorMessage);
 
     // 사용자에게 확인 알림
     Alert.alert(
-      '신고 접수 완료',
-      '문제가 접수되었습니다. 빠르게 확인하겠습니다.',
-      [{ text: '확인', style: 'default' }],
+      rawT('common_ui.error_boundary.reported'),
+      rawT('common.error'),
+      [{ text: rawT('common.confirm'), style: 'default' }],
     );
 
     this.setState({ reported: true });
@@ -182,15 +183,15 @@ export default class ErrorBoundary extends React.Component<
       return (
         <View style={styles.container}>
           <Ionicons name="alert-circle-outline" size={64} color={DARK_COLORS.error} />
-          <Text style={styles.title}>문제가 발생했습니다</Text>
+          <Text style={styles.title}>{rawT('common_ui.error_boundary.title')}</Text>
           <Text style={styles.message}>
-            잠시 후 다시 시도해 주세요.
+            {rawT('common_ui.error_boundary.message')}
           </Text>
 
           {/* 개발 모드에서만 에러 상세 정보 표시 */}
           {__DEV__ && this.state.error && (
             <View style={styles.devErrorBox}>
-              <Text style={styles.devErrorTitle}>개발 모드 에러 정보:</Text>
+              <Text style={styles.devErrorTitle}>{rawT('common_ui.error_boundary.dev_error_title')}</Text>
               <Text style={styles.devErrorText}>
                 {this.state.error.message}
               </Text>
@@ -205,7 +206,7 @@ export default class ErrorBoundary extends React.Component<
           {/* 재시도 횟수 표시 (2회 이상 실패 시) */}
           {this.state.retryCount >= 2 && (
             <Text style={styles.retryHint}>
-              재시도 {this.state.retryCount}회 실패. 앱을 재시작해 보세요.
+              {rawT('common_ui.error_boundary.retry_hint', { count: this.state.retryCount })}
             </Text>
           )}
 
@@ -217,7 +218,7 @@ export default class ErrorBoundary extends React.Component<
               onPress={this.handleRetry}
             >
               <Ionicons name="refresh" size={18} color="#FFFFFF" />
-              <Text style={styles.primaryButtonText}>재시도</Text>
+              <Text style={styles.primaryButtonText}>{rawT('common_ui.error_boundary.retry')}</Text>
             </TouchableOpacity>
 
             {/* 문제 신고 버튼 */}
@@ -240,7 +241,7 @@ export default class ErrorBoundary extends React.Component<
                   this.state.reported && styles.reportButtonTextDone,
                 ]}
               >
-                {this.state.reported ? '신고 완료' : '문제 신고'}
+                {this.state.reported ? rawT('common_ui.error_boundary.reported') : rawT('common_ui.error_boundary.report')}
               </Text>
             </TouchableOpacity>
           </View>

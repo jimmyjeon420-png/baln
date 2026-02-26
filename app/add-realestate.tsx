@@ -23,12 +23,14 @@ import {
 import { formatPrice } from '../src/services/realEstateApi';
 import { sqmToPyeong, type ApartmentComplex, type AreaPriceSummary } from '../src/types/realestate';
 import { useTheme } from '../src/hooks/useTheme';
+import { useLocale } from '../src/context/LocaleContext';
 
 // 2단계 스텝 흐름 (간소화)
 type Step = 'search' | 'input';
 
 export default function AddRealEstateScreen() {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const router = useRouter();
 
   // 스텝 상태
@@ -68,19 +70,19 @@ export default function AddRealEstateScreen() {
     // 면적 검증
     const area = parseFloat(customArea);
     if (!area || area < 10 || area > 300) {
-      Alert.alert('입력 오류', '전용면적을 10~300㎡ 범위로 입력해주세요.');
+      Alert.alert(t('add_realestate.alert_area_title'), t('add_realestate.alert_area_msg'));
       return;
     }
 
     // 시세 검증
     if (!purchasePrice || !purchasePrice.trim()) {
-      Alert.alert('입력 오류', '현재 시세를 입력해주세요.');
+      Alert.alert(t('add_realestate.alert_price_title'), t('add_realestate.alert_price_msg'));
       return;
     }
 
     const priceValue = parseInt(purchasePrice.replace(/[^0-9]/g, ''), 10) * 10000;
     if (!priceValue || priceValue <= 0) {
-      Alert.alert('입력 오류', '올바른 금액을 입력해주세요.');
+      Alert.alert(t('add_realestate.alert_price_title'), t('add_realestate.alert_price_invalid'));
       return;
     }
 
@@ -89,11 +91,11 @@ export default function AddRealEstateScreen() {
     if (hasDebt) {
       debtValue = parseInt(debtAmount.replace(/[^0-9]/g, ''), 10) * 10000;
       if (!debtValue || debtValue <= 0) {
-        Alert.alert('입력 오류', '올바른 대출 금액을 입력해주세요.');
+        Alert.alert(t('add_realestate.alert_price_title'), t('add_realestate.alert_debt_invalid'));
         return;
       }
       if (debtValue >= priceValue) {
-        Alert.alert('입력 오류', '대출 금액이 시세보다 클 수 없습니다.');
+        Alert.alert(t('add_realestate.alert_price_title'), t('add_realestate.alert_debt_exceeds'));
         return;
       }
     }
@@ -116,21 +118,21 @@ export default function AddRealEstateScreen() {
         : '';
 
       Alert.alert(
-        '등록 완료',
-        `${selectedComplex.complexName} ${Math.round(area)}㎡\n시세: ${formatPrice(priceValue)}${ltvText}\n\n포트폴리오에 추가되었습니다.`,
+        t('add_realestate.alert_save_title'),
+        `${selectedComplex.complexName} ${Math.round(area)}㎡\n${formatPrice(priceValue)}${ltvText}\n\n${t('add_realestate.alert_save_msg')}`,
         [
           {
-            text: '포트폴리오 보기',
+            text: t('add_realestate.alert_view_portfolio'),
             onPress: () => router.replace('/(tabs)/rebalance'),
           },
           {
-            text: '확인',
+            text: t('add_realestate.alert_confirm'),
             onPress: () => router.back(),
           },
         ],
       );
     } catch (error: any) {
-      Alert.alert('저장 실패', error.message || '부동산 자산 저장 중 오류가 발생했습니다.');
+      Alert.alert(t('add_realestate.alert_save_error'), error.message || t('add_realestate.alert_save_error_msg'));
     }
   }, [selectedComplex, customArea, purchasePrice, hasDebt, debtAmount, saveMutation, router]);
 
@@ -154,7 +156,7 @@ export default function AddRealEstateScreen() {
           >
             <Ionicons name="chevron-back" size={28} color="#4CAF50" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>부동산 자산 추가</Text>
+          <Text style={styles.headerTitle}>{t('add_realestate.title')}</Text>
           <View style={{ width: 28 }} />
         </View>
 
@@ -176,14 +178,14 @@ export default function AddRealEstateScreen() {
         {/* ============================================================ */}
         {step === 'search' && (
           <View style={styles.stepContainer}>
-            <Text style={styles.stepTitle}>아파트 단지 검색</Text>
-            <Text style={styles.stepDesc}>단지명 또는 지역명을 입력하세요</Text>
+            <Text style={styles.stepTitle}>{t('add_realestate.step_search_title')}</Text>
+            <Text style={styles.stepDesc}>{t('add_realestate.step_search_desc')}</Text>
 
             <View style={styles.searchBox}>
               <Ionicons name="search" size={20} color="#888" />
               <TextInput
                 style={styles.searchInput}
-                placeholder="예: 래미안, 잠실, 강남"
+                placeholder={t('add_realestate.search_placeholder')}
                 placeholderTextColor="#666"
                 value={query}
                 onChangeText={setQuery}
@@ -217,10 +219,10 @@ export default function AddRealEstateScreen() {
                     <Text style={styles.resultAddress}>{item.address}</Text>
                     <View style={styles.resultMeta}>
                       {item.totalUnits ? (
-                        <Text style={styles.metaText}>{item.totalUnits.toLocaleString()}세대</Text>
+                        <Text style={styles.metaText}>{item.totalUnits.toLocaleString()}{t('add_realestate.units_suffix')}</Text>
                       ) : null}
                       {item.buildYear ? (
-                        <Text style={styles.metaText}>{item.buildYear}년 준공</Text>
+                        <Text style={styles.metaText}>{item.buildYear}{t('add_realestate.year_built_suffix')}</Text>
                       ) : null}
                       {item.areas.length > 0 ? (
                         <Text style={styles.metaText}>
@@ -236,17 +238,17 @@ export default function AddRealEstateScreen() {
                 query.length >= 2 && !searching ? (
                   <View style={styles.emptyContainer}>
                     <Ionicons name="search-outline" size={40} color="#444" />
-                    <Text style={styles.emptyText}>검색 결과가 없습니다</Text>
+                    <Text style={styles.emptyText}>{t('add_realestate.empty_no_results')}</Text>
                     <Text style={styles.emptySubtext}>
-                      다른 검색어로 다시 시도해보세요
+                      {t('add_realestate.empty_no_results_sub')}
                     </Text>
                   </View>
                 ) : query.length > 0 ? (
-                  <Text style={styles.emptyText}>2자 이상 입력해주세요</Text>
+                  <Text style={styles.emptyText}>{t('add_realestate.empty_min_chars')}</Text>
                 ) : (
                   <View style={styles.emptyContainer}>
                     <Text style={styles.emptySubtext}>
-                      아파트, 빌라, 오피스텔 등 부동산을 검색하세요
+                      {t('add_realestate.empty_hint')}
                     </Text>
                   </View>
                 )
@@ -258,7 +260,7 @@ export default function AddRealEstateScreen() {
               <View style={styles.myRealEstateSection}>
                 <View style={styles.sectionHeader}>
                   <Ionicons name="home" size={20} color="#4CAF50" />
-                  <Text style={styles.sectionHeaderText}>내 부동산 자산</Text>
+                  <Text style={styles.sectionHeaderText}>{t('add_realestate.my_realestate_title')}</Text>
                 </View>
                 {myRealEstates.map((asset) => {
                   const unitArea = asset.unit_area || 0;
@@ -288,7 +290,7 @@ export default function AddRealEstateScreen() {
                         </View>
                         {debtAmount > 0 && (
                           <Text style={styles.myRealEstateNet}>
-                            순자산 {formatPrice(netValue)}
+                            {t('add_realestate.net_asset_label')} {formatPrice(netValue)}
                           </Text>
                         )}
                       </View>
@@ -308,7 +310,7 @@ export default function AddRealEstateScreen() {
                         }}
                       >
                         <Ionicons name="pencil" size={16} color="#4CAF50" />
-                        <Text style={styles.editButtonText}>수정</Text>
+                        <Text style={styles.editButtonText}>{t('add_realestate.edit_btn')}</Text>
                       </TouchableOpacity>
                     </View>
                   );
@@ -341,8 +343,8 @@ export default function AddRealEstateScreen() {
             </View>
 
             {/* 전용면적 입력 */}
-            <Text style={styles.sectionLabel}>전용면적 *</Text>
-            <Text style={styles.sectionHint}>㎡ 또는 평형으로 입력하세요 (한쪽만 입력하면 자동 변환됩니다)</Text>
+            <Text style={styles.sectionLabel}>{t('add_realestate.area_label')}</Text>
+            <Text style={styles.sectionHint}>{t('add_realestate.area_hint')}</Text>
             <View style={styles.dualInputRow}>
               <View style={styles.inputGroup}>
                 <TextInput
@@ -364,7 +366,7 @@ export default function AddRealEstateScreen() {
                 <Text style={styles.unitLabel}>㎡</Text>
               </View>
 
-              <Text style={styles.orText}>또는</Text>
+              <Text style={styles.orText}>{t('add_realestate.or_text')}</Text>
 
               <View style={styles.inputGroup}>
                 <TextInput
@@ -388,11 +390,11 @@ export default function AddRealEstateScreen() {
             </View>
 
             {/* 매입가 입력 */}
-            <Text style={styles.sectionLabel}>매입가 또는 현재 시세 *</Text>
-            <Text style={styles.sectionHint}>만원 단위로 입력하세요 (예: 50000 = 5억)</Text>
+            <Text style={styles.sectionLabel}>{t('add_realestate.purchase_price_label')}</Text>
+            <Text style={styles.sectionHint}>{t('add_realestate.purchase_price_hint')}</Text>
             <TextInput
               style={styles.priceInput}
-              placeholder="예: 50000"
+              placeholder={t('add_realestate.purchase_price_placeholder')}
               placeholderTextColor="#666"
               keyboardType="numeric"
               value={purchasePrice}
@@ -418,16 +420,16 @@ export default function AddRealEstateScreen() {
                   size={24}
                   color={hasDebt ? '#4CAF50' : '#666'}
                 />
-                <Text style={styles.debtCheckboxLabel}>이 부동산에 대출이 있어요</Text>
+                <Text style={styles.debtCheckboxLabel}>{t('add_realestate.debt_checkbox')}</Text>
               </TouchableOpacity>
 
               {hasDebt && (
                 <View style={styles.debtInputContainer}>
-                  <Text style={styles.sectionLabel}>대출 잔액</Text>
-                  <Text style={styles.sectionHint}>만원 단위로 입력하세요</Text>
+                  <Text style={styles.sectionLabel}>{t('add_realestate.debt_balance_label')}</Text>
+                  <Text style={styles.sectionHint}>{t('add_realestate.debt_balance_hint')}</Text>
                   <TextInput
                     style={styles.priceInput}
-                    placeholder="예: 20000 (= 2억)"
+                    placeholder={t('add_realestate.debt_placeholder')}
                     placeholderTextColor="#666"
                     keyboardType="numeric"
                     value={debtAmount}
@@ -436,16 +438,16 @@ export default function AddRealEstateScreen() {
                   {debtAmount && purchasePrice ? (
                     <View style={styles.debtPreview}>
                       <Text style={styles.debtPreviewText}>
-                        대출: {formatPrice(parseInt(debtAmount.replace(/[^0-9]/g, ''), 10) * 10000 || 0)}
+                        {t('add_realestate.debt_label')}: {formatPrice(parseInt(debtAmount.replace(/[^0-9]/g, ''), 10) * 10000 || 0)}
                       </Text>
                       <Text style={styles.debtPreviewLTV}>
-                        LTV: {(
+                        {t('add_realestate.ltv_label')}: {(
                           (parseInt(debtAmount.replace(/[^0-9]/g, ''), 10) /
                             parseInt(purchasePrice.replace(/[^0-9]/g, ''), 10)) * 100
                         ).toFixed(0)}%
                       </Text>
                       <Text style={styles.debtPreviewNet}>
-                        순자산: {formatPrice(
+                        {t('add_realestate.net_asset_label')}: {formatPrice(
                           (parseInt(purchasePrice.replace(/[^0-9]/g, ''), 10) -
                             parseInt(debtAmount.replace(/[^0-9]/g, ''), 10)) * 10000
                         )}
@@ -460,9 +462,7 @@ export default function AddRealEstateScreen() {
             <View style={styles.infoBox}>
               <Ionicons name="information-circle" size={16} color="#888" />
               <Text style={styles.infoText}>
-                {hasDebt
-                  ? '대출 정보를 입력하면 순자산 기준으로 정확한 포트폴리오 분석을 받을 수 있어요.'
-                  : '입력하신 정보는 포트폴리오 분석에 사용됩니다. 정확한 면적과 가격을 입력해주세요.'}
+                {hasDebt ? t('add_realestate.info_with_debt') : t('add_realestate.info_no_debt')}
               </Text>
             </View>
 
@@ -477,7 +477,7 @@ export default function AddRealEstateScreen() {
               ) : (
                 <>
                   <Ionicons name="home" size={20} color="#FFF" />
-                  <Text style={styles.saveButtonText}>포트폴리오에 추가</Text>
+                  <Text style={styles.saveButtonText}>{t('add_realestate.save_btn')}</Text>
                 </>
               )}
             </TouchableOpacity>

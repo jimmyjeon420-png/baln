@@ -2329,6 +2329,80 @@
       "altcoin": "Altcoins",
       "cash": "Cash",
       "realestate": "Real Estate"
+    },
+    "category_details": {
+      "large_cap": {
+        "title": "📈 Stocks (Large Cap)",
+        "role": "The growth engine of your portfolio. Participates in corporate earnings — a productive asset.",
+        "dalio": "Dalio: \"Strongest in growth + stable inflation environments. But can drop 50%+ in recession — diversification is essential.\"",
+        "buffett": "Buffett: \"Stocks are the greatest asset class. Put 90% into an S&P 500 index fund. Hold 10+ years and you almost certainly win.\"",
+        "when_good": "During economic expansion, stable interest rates, strong corporate earnings",
+        "when_bad": "During recession, rapid rate hikes, credit crises (2008: −50%, 2022: −25%)",
+        "tip": "Both agree on holding stocks. Maintain 40% target. Buffett would go higher, but Dalio says 40% is right for diversification."
+      },
+      "bond": {
+        "title": "🏛️ Bonds",
+        "role": "The safety net of your portfolio. Tends to rise when stocks fall.",
+        "dalio": "Dalio: \"The king in recession and deflation. The cornerstone of All Weather — 55% recommended.\"",
+        "buffett": "Buffett: \"Bonds are a terrible investment right now. When inflation hits, bond investors face a double loss — taxes and purchasing power.\"",
+        "when_good": "During recession, deflation, falling interest rates (rates ↓ = bond prices ↑)",
+        "when_bad": "During inflation, rapid rate spikes (2022: bonds −17%, historically worst)",
+        "tip": "Dalio wants 55%, Buffett wants to minimize. Compromise: 15% — hold only as a buffer in extreme downturns."
+      },
+      "bitcoin": {
+        "title": "₿ Bitcoin",
+        "role": "Digital gold. Capped supply (21M) makes it an inflation hedge + high-risk growth asset.",
+        "dalio": "Dalio (2024): \"It's reasonable to hold a small amount of Bitcoin. Recognizing it as a digital store of value.\"",
+        "buffett": "Buffett: \"Rat poison squared. It produces nothing. I wouldn't buy it for $100.\" — Position unchanged as of 2024.",
+        "when_good": "Abundant liquidity, inflation fears, institutional adoption",
+        "when_bad": "Sharp rate hikes, regulatory crackdowns, broad market panic (high beta)",
+        "tip": "The biggest disagreement between them. Dalio: 1–3% vs Buffett: 0%. Practical compromise: 10% — decide based on your risk tolerance."
+      },
+      "altcoin": {
+        "title": "🪙 Altcoins",
+        "role": "High-risk, high-reward speculative assets. 3–5× more volatile than Bitcoin.",
+        "dalio": "Dalio: \"No direct statement. But speculative assets should be strictly capped at under 5% of total.\"",
+        "buffett": "Buffett: \"I don't invest in things I don't understand. Altcoins are no different from a casino. They produce nothing.\"",
+        "when_good": "Bull markets, post-Bitcoin rally altcoin seasons",
+        "when_bad": "Bear markets — drop far harder than Bitcoin (90%+ losses possible)",
+        "tip": "Both strongly oppose. Stick to a 5% ceiling — use only for tax-loss harvesting when in the red."
+      },
+      "gold": {
+        "title": "🥇 Gold / Precious Metals",
+        "role": "5,000 years of value storage. Rises on dollar weakness, inflation, and geopolitical crises.",
+        "dalio": "Dalio: \"Every portfolio should have gold. It's the only real money that isn't printed. The ultimate hedge against inflation and crisis.\"",
+        "buffett": "Buffett: \"Gold produces nothing. Just sits in a vault. For the same money you could buy all US farmland or ExxonMobil — I'd never buy gold.\"",
+        "when_good": "Inflation, weak dollar, geopolitical crises, central bank distrust (strongest in stagflation)",
+        "when_bad": "Strong dollar, real interest rate spikes (gold pays no yield — opportunity cost rises)",
+        "tip": "Dalio wins this one. Buffett's 'no production' critique is valid, but diversification and crisis-hedge value is proven. Keep 12%."
+      },
+      "commodity": {
+        "title": "🛢️ Commodities",
+        "role": "Assets that directly reflect inflation. Includes oil, agricultural goods, and metals.",
+        "dalio": "Dalio All Weather: \"Hold 7.5% in commodities. When inflation hits, commodities protect the portfolio.\"",
+        "buffett": "Buffett: \"I don't buy commodity ETFs. But I hold energy companies (Chevron, Occidental) — their earnings matter more than the commodity itself.\"",
+        "when_good": "Inflation, supply shocks, weak dollar, geopolitical conflicts",
+        "when_bad": "Recession / deflation (falling demand → commodity prices drop)",
+        "tip": "Buffett prefers energy stocks over ETFs. Commodity ETFs (PDBC, DJP) are the Dalio approach — target 8%."
+      },
+      "cash": {
+        "title": "💵 Cash",
+        "role": "Ammunition for opportunity. Funds for buying dips. Ensures short-term liquidity.",
+        "dalio": "Dalio: \"Cash is trash. Held long-term, inflation eats away its value — keep only the minimum.\"",
+        "buffett": "Buffett: \"Berkshire always keeps at least $20B in cash. The person with cash when fear is at its peak wins.\"",
+        "when_good": "Just before a market crash, waiting for investment opportunities, ahead of planned expenses",
+        "when_bad": "During inflation (real purchasing power of cash erodes every year)",
+        "tip": "Buffett wins. Keep 10% as opportunity ammunition. Dalio wants to minimize, but 10% is needed to buy during crashes."
+      },
+      "realestate": {
+        "title": "🏠 Real Estate",
+        "role": "Illiquid long-term asset. The foundation of your portfolio — not a rebalancing target.",
+        "dalio": "Dalio: \"Hard assets act as a buffer in financial crises. Preserves purchasing power in inflation — but LTV management is key.\"",
+        "buffett": "Buffett: \"Real estate is a fine investment but not my specialty. Great company stocks beat direct real estate. Buying a home is an excellent financial decision.\"",
+        "when_good": "Inflation, low interest rates, population growth areas (preserves real value)",
+        "when_bad": "Rapid rate hikes, population decline, credit crises (high LTV risks forced sale)",
+        "tip": "Both agree on owning your primary home. Exclude from liquid asset rebalancing and manage separately. Keep LTV below 60%."
+      }
     }
   },
   "today_actions": {

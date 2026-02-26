@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '../../hooks/useTheme';
 import { SIZES } from '../../styles/theme';
+import { useLocale } from '../../context/LocaleContext';
 
 // ============================================================================
 // SourceChips — AI 분석 출처 칩 목록
@@ -17,13 +18,14 @@ interface SourceChipsProps {
 
 const SourceChips = ({ sources }: SourceChipsProps) => {
   const { colors } = useTheme();
+  const { t } = useLocale();
 
   if (!sources || sources.length === 0) return null;
 
   return (
     <View style={styles.container}>
       <Text style={[styles.label, { color: colors.textTertiary }]}>
-        출처
+        {t('common_ui.source_chips.label')}
       </Text>
       <View style={styles.chipRow}>
         {sources.map((src, idx) => (

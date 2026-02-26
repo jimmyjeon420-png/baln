@@ -28,6 +28,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { SIZES } from '../src/styles/theme';
 import { useTheme } from '../src/hooks/useTheme';
+import { useLocale } from '../src/context/LocaleContext';
 import {
   NotificationItem,
   NotificationCategoryFilter,
@@ -47,6 +48,7 @@ const FILTER_CHIPS: NotificationCategoryFilter[] = ['all', 'investment', 'social
 export default function NotificationCenterScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { t } = useLocale();
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -171,14 +173,14 @@ export default function NotificationCenterScreen() {
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={28} color={colors.primary} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>알림</Text>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{t('notifications_screen.title')}</Text>
         <View style={styles.headerActions}>
           {unreadCount > 0 && (
             <TouchableOpacity
               onPress={handleMarkAllAsRead}
               style={[styles.markAllBtn, { backgroundColor: colors.primary + '20' }]}
             >
-              <Text style={[styles.markAllText, { color: colors.primary }]}>모두 읽음</Text>
+              <Text style={[styles.markAllText, { color: colors.primary }]}>{t('notifications_screen.mark_all_read')}</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -234,10 +236,12 @@ export default function NotificationCenterScreen() {
           <View style={styles.emptyContainer}>
             <Ionicons name="notifications-off-outline" size={48} color={colors.textQuaternary} />
             <Text style={[styles.emptyTitle, { color: colors.textSecondary }]}>
-              {activeFilter === 'all' ? '알림이 없습니다' : `${NOTIFICATION_CATEGORIES[activeFilter].label} 알림이 없습니다`}
+              {activeFilter === 'all'
+                ? t('notifications_screen.empty_all')
+                : t('notifications_screen.empty_category', { category: NOTIFICATION_CATEGORIES[activeFilter].label })}
             </Text>
             <Text style={[styles.emptyDesc, { color: colors.textTertiary }]}>
-              새로운 알림이 오면 여기에 표시됩니다
+              {t('notifications_screen.empty_desc')}
             </Text>
 
             {/* 개발용: 샘플 알림 생성 */}
@@ -247,7 +251,7 @@ export default function NotificationCenterScreen() {
                 onPress={handleCreateSamples}
               >
                 <Ionicons name="add-circle" size={18} color={colors.primary} />
-                <Text style={[styles.sampleBtnText, { color: colors.primary }]}>[DEV] 샘플 알림 생성</Text>
+                <Text style={[styles.sampleBtnText, { color: colors.primary }]}>{t('notifications_screen.dev_sample')}</Text>
               </TouchableOpacity>
             )}
           </View>

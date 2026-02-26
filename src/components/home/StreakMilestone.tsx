@@ -24,6 +24,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
 import { formatCredits } from '../../utils/formatters';
+import { useLocale } from '../../context/LocaleContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const PARTICLE_COUNT = 12;
@@ -119,6 +120,7 @@ export default function StreakMilestone({
   onShare,
 }: StreakMilestoneProps) {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const badgeBounce = useRef(new Animated.Value(0)).current;
 
@@ -146,11 +148,11 @@ export default function StreakMilestone({
 
   // 마일스톤별 메시지
   const getMessage = () => {
-    if (milestone >= 365) return '당신은 진정한 투자자입니다!';
-    if (milestone >= 90) return '대단해요! 습관이 체화되었습니다';
-    if (milestone >= 30) return '훌륭해요! 한 달을 함께 했습니다';
-    if (milestone >= 7) return '좋은 습관의 시작입니다!';
-    return '축하합니다!';
+    if (milestone >= 365) return t('streak.milestone_message_365');
+    if (milestone >= 90) return t('streak.milestone_message_90');
+    if (milestone >= 30) return t('streak.milestone_message_30');
+    if (milestone >= 7) return t('streak.milestone_message_7');
+    return t('streak.milestone_message_default');
   };
 
   const particleColors = [
@@ -199,7 +201,7 @@ export default function StreakMilestone({
 
           {/* 축하 타이틀 */}
           <Text style={[styles.congrats, { color: colors.streak.active }]}>
-            {'\uD83C\uDF89'} 마일스톤 달성!
+            {'\uD83C\uDF89'} {t('streak.milestone_achieved_title')}
           </Text>
 
           {/* 뱃지 ── 바운스 애니메이션 */}
@@ -227,7 +229,7 @@ export default function StreakMilestone({
             {badgeName}
           </Text>
           <Text style={[styles.milestoneDay, { color: colors.textSecondary }]}>
-            {milestone}일 연속 출석 달성
+            {t('streak.milestone_day_count', { count: milestone })}
           </Text>
 
           {/* 메시지 */}
@@ -239,7 +241,7 @@ export default function StreakMilestone({
           {creditReward > 0 && (
             <View style={[styles.rewardBox, { backgroundColor: colors.streak.background }]}>
               <Text style={[styles.rewardLabel, { color: colors.textSecondary }]}>
-                보상 획득
+                {t('streak.milestone_reward_label')}
               </Text>
               <Text style={[styles.rewardValue, { color: colors.streak.active }]}>
                 +{formatCredits(creditReward)}
@@ -257,7 +259,7 @@ export default function StreakMilestone({
               >
                 <Ionicons name="share-outline" size={16} color={colors.textSecondary} />
                 <Text style={[styles.shareText, { color: colors.textSecondary }]}>
-                  공유하기
+                  {t('streak.milestone_share')}
                 </Text>
               </TouchableOpacity>
             )}
@@ -268,7 +270,7 @@ export default function StreakMilestone({
               activeOpacity={0.8}
             >
               <Text style={[styles.confirmText, { color: colors.background }]}>
-                확인
+                {t('streak.milestone_confirm')}
               </Text>
             </TouchableOpacity>
           </View>

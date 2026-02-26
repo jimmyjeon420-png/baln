@@ -1199,7 +1199,7 @@ export default function TodayActionsSection({
             {!isExpanded && (
               <Text style={[s.actionReason, { color: colors.textTertiary }]} numberOfLines={2}>
                 {action.reason?.includes('분석 데이터를 불러오지 못했습니다')
-                  ? '현재 적정 비중으로 유지하는 것이 좋습니다. AI 분석이 업데이트되면 구체적인 제안을 받으실 수 있어요.'
+                  ? t('today_actions.ai_data_fallback')
                   : action.reason}
               </Text>
             )}
@@ -1287,33 +1287,33 @@ export default function TodayActionsSection({
                     <View style={[s.taxBox, { backgroundColor: `${colors.info}1A`, borderColor: `${colors.info}4D` }]}>
                       <View style={s.taxHeader}>
                         <Ionicons name="receipt-outline" size={13} color={colors.info} />
-                        <Text style={[s.taxHeaderText, { color: colors.info }]}>전량 매도 시 예상 비용</Text>
+                        <Text style={[s.taxHeaderText, { color: colors.info }]}>{t('today_actions.tax_header')}</Text>
                         <Text style={[s.taxAssetType, { color: colors.textTertiary, backgroundColor: colors.surfaceElevated }]}>{tax.assetTypeLabel}</Text>
                       </View>
                       <View style={s.taxRows}>
                         {tax.transactionTax > 0 && (
                           <View style={s.taxRow}>
-                            <Text style={[s.taxLabel, { color: colors.textTertiary }]}>거래세</Text>
+                            <Text style={[s.taxLabel, { color: colors.textTertiary }]}>{t('today_actions.tax_transaction')}</Text>
                             <Text style={[s.taxValue, { color: colors.textTertiary }]}>{'\u20A9'}{Math.floor(tax.transactionTax).toLocaleString(getLocaleCode())}</Text>
                           </View>
                         )}
                         <View style={s.taxRow}>
-                          <Text style={[s.taxLabel, { color: colors.textTertiary }]}>수수료</Text>
+                          <Text style={[s.taxLabel, { color: colors.textTertiary }]}>{t('today_actions.tax_brokerage')}</Text>
                           <Text style={[s.taxValue, { color: colors.textTertiary }]}>{'\u20A9'}{Math.floor(tax.brokerageFee).toLocaleString(getLocaleCode())}</Text>
                         </View>
                         {tax.capitalGainsTax > 0 && (
                           <View style={s.taxRow}>
-                            <Text style={[s.taxLabel, { color: colors.textTertiary }]}>양도소득세</Text>
+                            <Text style={[s.taxLabel, { color: colors.textTertiary }]}>{t('today_actions.tax_capital_gains')}</Text>
                             <Text style={[s.taxValue, { color: colors.error }]}>{'\u20A9'}{Math.floor(tax.capitalGainsTax).toLocaleString(getLocaleCode())}</Text>
                           </View>
                         )}
                         <View style={[s.taxRow, s.taxTotalRow, { borderTopColor: `${colors.info}4D` }]}>
-                          <Text style={[s.taxTotalLabel, { color: colors.info }]}>실수령 예상</Text>
+                          <Text style={[s.taxTotalLabel, { color: colors.info }]}>{t('today_actions.tax_net_proceeds')}</Text>
                           <Text style={[s.taxTotalValue, { color: colors.textPrimary }]}>{'\u20A9'}{Math.floor(tax.netProceeds).toLocaleString(getLocaleCode())}</Text>
                         </View>
                       </View>
                       {tax.note ? <Text style={[s.taxNote, { color: colors.info }]}>{tax.note}</Text> : null}
-                      <Text style={[s.taxDisclaimer, { color: colors.textTertiary }]}>* 참고용이며 실제 세금은 개인 상황에 따라 다릅니다</Text>
+                      <Text style={[s.taxDisclaimer, { color: colors.textTertiary }]}>{t('today_actions.tax_disclaimer')}</Text>
                     </View>
                   );
                 })()}
@@ -1340,7 +1340,7 @@ export default function TodayActionsSection({
                     }}
                   >
                     <Ionicons name="checkbox-outline" size={14} color={colors.success} />
-                    <Text style={[s.logExecutionText, { color: colors.success }]}>실행 완료 기록</Text>
+                    <Text style={[s.logExecutionText, { color: colors.success }]}>{t('today_actions.log_execution_btn')}</Text>
                     <Ionicons name="chevron-forward" size={14} color={colors.success} />
                   </TouchableOpacity>
                 )}
@@ -1355,7 +1355,7 @@ export default function TodayActionsSection({
                   })}
                 >
                   <Ionicons name="sparkles" size={14} color={colors.premium.purple} />
-                  <Text style={[s.deepDiveText, { color: colors.premium.purple }]}>AI 딥다이브 분석 보기</Text>
+                  <Text style={[s.deepDiveText, { color: colors.premium.purple }]}>{t('today_actions.deep_dive_btn')}</Text>
                   <Ionicons name="chevron-forward" size={14} color={colors.premium.purple} />
                 </TouchableOpacity>
               </View>

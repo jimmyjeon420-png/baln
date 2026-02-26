@@ -16,64 +16,66 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../src/hooks/useTheme';
 import { HeaderBar } from '../../src/components/common/HeaderBar';
+import { useLocale } from '../../src/context/LocaleContext';
 
 export default function WebsiteScreen() {
   const { colors } = useTheme();
+  const { t } = useLocale();
 
   // 핵심 기능
   const features = [
     {
       icon: 'layers' as const,
-      title: '맥락 카드',
-      desc: '오늘 시장이 왜 이렇게 움직였는지, 역사·거시경제·기관행동·내 자산 4겹 레이어로 5분 안에 이해합니다.',
+      title: t('website.feature_context_card_title'),
+      desc: t('website.feature_context_card_desc'),
     },
     {
       icon: 'bulb' as const,
-      title: '예측 게임',
-      desc: 'AI가 출제하는 투자 퀴즈로 매일 판단력을 시험하고, 다음날 복기하며 자기 기준을 형성합니다.',
+      title: t('website.feature_prediction_title'),
+      desc: t('website.feature_prediction_desc'),
     },
     {
       icon: 'newspaper' as const,
-      title: '실시간 뉴스',
-      desc: '내 보유 자산에 영향을 주는 뉴스만 필터링하여 AI 영향도 분석과 함께 제공합니다.',
+      title: t('website.feature_news_title'),
+      desc: t('website.feature_news_desc'),
     },
     {
       icon: 'analytics' as const,
-      title: '포트폴리오 진단',
-      desc: '변동성, 집중도, 섹터 편중을 분석하여 건강 점수를 산출하고 AI 처방전을 제안합니다.',
+      title: t('website.feature_diagnosis_title'),
+      desc: t('website.feature_diagnosis_desc'),
     },
     {
       icon: 'camera' as const,
-      title: 'AI 스크린샷 분석',
-      desc: '증권사 앱 캡처 한 장으로 포트폴리오 자동 등록. Gemini 3 Flash AI가 즉시 인식합니다.',
+      title: t('website.feature_ocr_title'),
+      desc: t('website.feature_ocr_desc'),
     },
     {
       icon: 'shield-checkmark' as const,
-      title: 'Zero-Knowledge 보안',
-      desc: '증권사 비밀번호, 계좌번호를 수집하지 않습니다. 스크린샷 분석 후 원본은 즉시 삭제됩니다.',
+      title: t('website.feature_security_title'),
+      desc: t('website.feature_security_desc'),
     },
   ];
 
   // 신뢰 지표
   const trustBadges = [
-    { icon: 'lock-closed' as const, label: 'AES-256\n암호화' },
-    { icon: 'server' as const, label: 'Supabase\n인프라' },
-    { icon: 'shield' as const, label: 'Zero-Knowledge\n보안' },
-    { icon: 'time' as const, label: '매일 5분\n습관 형성' },
+    { icon: 'lock-closed' as const, label: t('website.trust_encryption') },
+    { icon: 'server' as const, label: t('website.trust_infra') },
+    { icon: 'shield' as const, label: t('website.trust_security') },
+    { icon: 'time' as const, label: t('website.trust_habit') },
   ];
 
   // 회사 연혁
   const milestones = [
-    { date: '2025.06', event: '프로젝트 기획 및 시장 조사 착수' },
-    { date: '2025.09', event: 'Supabase 백엔드 아키텍처 설계' },
-    { date: '2025.12', event: 'AI OCR 엔진 (Gemini) 통합 완료' },
-    { date: '2026.01', event: 'Beta 출시 및 사용자 피드백 수집' },
-    { date: '2026.02', event: 'v3.0 — 습관 루프 + 맥락카드 + 뉴스피드 + 예측게임' },
+    { date: '2025.06', event: t('website.milestone_1_event') },
+    { date: '2025.09', event: t('website.milestone_2_event') },
+    { date: '2025.12', event: t('website.milestone_3_event') },
+    { date: '2026.01', event: t('website.milestone_4_event') },
+    { date: '2026.02', event: t('website.milestone_5_event') },
   ];
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <HeaderBar title="baln" />
+      <HeaderBar title={t('website.title')} />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* 히어로 섹션 */}
@@ -84,22 +86,20 @@ export default function WebsiteScreen() {
           <Text style={[styles.heroTitle, { color: colors.textPrimary }]}>
             bal<Text style={{ color: colors.primary }}>n</Text>
           </Text>
-          <Text style={[styles.heroSubtitle, { color: colors.primary }]}>올바른 투자의 시작</Text>
+          <Text style={[styles.heroSubtitle, { color: colors.primary }]}>{t('website.hero_subtitle')}</Text>
           <Text style={[styles.heroTagline, { color: colors.textTertiary }]}>
-            "매일 5분, 투자 기준을 만드는 습관"
+            {t('website.hero_tagline')}
           </Text>
         </View>
 
         {/* 미션 섹션 */}
         <View style={[styles.missionSection, { backgroundColor: colors.surface }]}>
-          <Text style={[styles.sectionLabel, { color: colors.primary }]}>OUR MISSION</Text>
+          <Text style={[styles.sectionLabel, { color: colors.primary }]}>{t('website.mission_label')}</Text>
           <Text style={[styles.missionTitle, { color: colors.textPrimary }]}>
-            안심을 판다,{'\n'}불안을 팔지 않는다
+            {t('website.mission_title')}
           </Text>
           <Text style={[styles.missionDesc, { color: colors.textSecondary }]}>
-            bal<Text style={{ color: colors.primary }}>n</Text>은 시장이 흔들릴 때
-            맥락을 이해하면 공포가 이해로 바뀐다는 철학으로 만들어졌습니다.
-            매일 5분, 시장의 맥락을 읽으며 자기만의 투자 기준을 형성하도록 돕습니다.
+            {t('website.mission_desc')}
           </Text>
         </View>
 
@@ -130,7 +130,7 @@ export default function WebsiteScreen() {
         </View>
 
         {/* 기술 스택 */}
-        <Text style={[styles.sectionLabel, { color: colors.primary }]}>TECHNOLOGY</Text>
+        <Text style={[styles.sectionLabel, { color: colors.primary }]}>{t('website.tech_label')}</Text>
         <View style={[styles.techSection, { backgroundColor: colors.surface }]}>
           <View style={styles.techRow}>
             <View style={[styles.techBadge, { backgroundColor: colors.surfaceLight, borderColor: colors.border }]}>
@@ -155,13 +155,12 @@ export default function WebsiteScreen() {
             </View>
           </View>
           <Text style={[styles.techDesc, { color: colors.textSecondary }]}>
-            글로벌 핀테크 표준을 준수하는 최신 기술 스택으로 구축되었습니다.
-            크로스 플랫폼 지원으로 iOS와 Android에서 동일한 경험을 제공합니다.
+            {t('website.tech_desc')}
           </Text>
         </View>
 
         {/* 회사 연혁 */}
-        <Text style={[styles.sectionLabel, { color: colors.primary }]}>MILESTONES</Text>
+        <Text style={[styles.sectionLabel, { color: colors.primary }]}>{t('website.milestones_label')}</Text>
         <View style={[styles.timelineSection, { backgroundColor: colors.surface }]}>
           {milestones.map((item, index) => (
             <View key={index} style={styles.timelineItem}>
@@ -180,7 +179,7 @@ export default function WebsiteScreen() {
         </View>
 
         {/* 팀 소개 */}
-        <Text style={[styles.sectionLabel, { color: colors.primary }]}>THE TEAM</Text>
+        <Text style={[styles.sectionLabel, { color: colors.primary }]}>{t('website.team_label')}</Text>
         <View style={styles.teamSection}>
           <View style={[styles.teamCard, { backgroundColor: colors.surface }]}>
             <View style={[styles.teamAvatar, { backgroundColor: `${colors.primary}20` }]}>
@@ -192,15 +191,14 @@ export default function WebsiteScreen() {
               </Text>
               <Text style={[styles.teamRole, { color: colors.primary }]}>Seoul, South Korea</Text>
               <Text style={[styles.teamBio, { color: colors.textSecondary }]}>
-                전직 펀드매니저가 직접 만드는 투자 습관 앱.{'\n'}
-                "매일 읽는 사람이 결국 이긴다" — 이것이 우리의 철학입니다.
+                {t('website.team_bio')}
               </Text>
             </View>
           </View>
         </View>
 
         {/* 연락처 */}
-        <Text style={[styles.sectionLabel, { color: colors.primary }]}>CONTACT</Text>
+        <Text style={[styles.sectionLabel, { color: colors.primary }]}>{t('website.contact_label')}</Text>
         <View style={[styles.contactSection, { backgroundColor: colors.surface }]}>
           <TouchableOpacity
             style={styles.contactItem}
@@ -215,25 +213,21 @@ export default function WebsiteScreen() {
           </TouchableOpacity>
           <View style={styles.contactItem}>
             <Ionicons name="location" size={20} color={colors.primary} />
-            <Text style={[styles.contactText, { color: colors.textPrimary }]}>서울특별시, 대한민국</Text>
+            <Text style={[styles.contactText, { color: colors.textPrimary }]}>{t('website.contact_location')}</Text>
           </View>
         </View>
 
         {/* 법적 면책 */}
         <View style={[styles.disclaimerSection, { backgroundColor: `${colors.error}15`, borderLeftColor: colors.error }]}>
-          <Text style={[styles.disclaimerTitle, { color: colors.error }]}>투자 유의사항</Text>
+          <Text style={[styles.disclaimerTitle, { color: colors.error }]}>{t('website.disclaimer_label')}</Text>
           <Text style={[styles.disclaimerText, { color: colors.textTertiary }]}>
-            bal<Text style={{ color: colors.primary }}>n</Text>은 투자 참고 정보를 제공하며, 투자 권유나 종목 추천이
-            아닙니다. 모든 투자 판단과 책임은 사용자 본인에게 있습니다.
-            본 서비스는 금융위원회에 등록된 투자자문업이 아니며,
-            제공하는 정보의 정확성을 보증하지 않습니다.
+            {t('website.disclaimer_text')}
           </Text>
         </View>
 
         {/* 하단 */}
         <Text style={[styles.footerText, { color: colors.textQuaternary }]}>
-          © 2026 발른 주식회사. All rights reserved.{'\n'}
-          Made with 💚 in Seoul
+          {t('website.footer')}
         </Text>
       </ScrollView>
     </SafeAreaView>
