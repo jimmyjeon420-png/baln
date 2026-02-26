@@ -217,6 +217,9 @@
       "vote": "Vote",
       "review": "Review"
     },
+    "step_read": "Read",
+    "step_vote": "Vote",
+    "step_review": "Review",
     "streak_label": "day streak",
     "consecutive_days": "day streak",
     "all_done": "All done today!",
@@ -2052,7 +2055,8 @@
     "alert_view_portfolio": "View Portfolio",
     "alert_confirm": "OK",
     "alert_save_error": "Save Failed",
-    "alert_save_error_msg": "An error occurred while saving the property."
+    "alert_save_error_msg": "An error occurred while saving the property.",
+    "pyeong_unit": "pyeong"
   },
   "rebalance_history": {
     "title": "Prescription History",
@@ -2125,7 +2129,11 @@
     "disclaimer": "This information is not investment advice. All investment decisions are solely your own responsibility.",
     "priority_high": "High",
     "priority_medium": "Medium",
-    "priority_low": "Low"
+    "priority_low": "Low",
+    "tier_silver": "Silver",
+    "tier_gold": "Gold",
+    "tier_platinum": "Platinum",
+    "tier_diamond": "Diamond"
   },
   "health_section": {
     "card_label": "Portfolio Condition",

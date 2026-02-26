@@ -767,7 +767,7 @@ export default function HomeScreen() {
 
       {/* 🏘️ 구루 마을 — 동물의숲 × 주토피아 (구루들이 살아 움직이는 마을) */}
       <GuruVillage
-        height={240}
+        height={150}
         onRoundtablePress={() => router.push('/roundtable')}
       />
 

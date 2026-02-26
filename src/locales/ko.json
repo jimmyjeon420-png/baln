@@ -217,6 +217,9 @@
       "vote": "투표",
       "review": "복기"
     },
+    "step_read": "읽기",
+    "step_vote": "투표",
+    "step_review": "복기",
     "streak_label": "일 연속",
     "consecutive_days": "일 연속",
     "all_done": "오늘 완료!",
@@ -2096,7 +2099,8 @@
     "alert_view_portfolio": "포트폴리오 보기",
     "alert_confirm": "확인",
     "alert_save_error": "저장 실패",
-    "alert_save_error_msg": "부동산 자산 저장 중 오류가 발생했습니다."
+    "alert_save_error_msg": "부동산 자산 저장 중 오류가 발생했습니다.",
+    "pyeong_unit": "평"
   },
   "rebalance_history": {
     "title": "처방전 히스토리",
@@ -2169,7 +2173,11 @@
     "disclaimer": "이 정보는 투자 자문이 아닙니다. 투자 결정은 전적으로 본인의 판단 하에 이루어져야 합니다.",
     "priority_high": "높음",
     "priority_medium": "보통",
-    "priority_low": "낮음"
+    "priority_low": "낮음",
+    "tier_silver": "실버",
+    "tier_gold": "골드",
+    "tier_platinum": "플래티넘",
+    "tier_diamond": "다이아몬드"
   },
   "daily_quiz": {
     "title": "오늘의 투자 퀴즈",
