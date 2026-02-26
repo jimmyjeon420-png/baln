@@ -6,6 +6,7 @@
 
 import * as LocalAuthentication from 'expo-local-authentication';
 import * as SecureStore from 'expo-secure-store';
+import { t as rawT } from '../locales';
 
 // SecureStore 키
 const BIOMETRIC_ENABLED_KEY = 'biometric_enabled';
@@ -45,11 +46,11 @@ export async function getBiometricTypeName(): Promise<string> {
       return 'Face ID';
     }
     if (types.includes(LocalAuthentication.AuthenticationType.FINGERPRINT)) {
-      return '지문 인식';
+      return rawT('security.biometric_fingerprint');
     }
-    return '생체 인증';
+    return rawT('security.biometric_generic');
   } catch {
-    return '생체 인증';
+    return rawT('security.biometric_generic');
   }
 }
 
@@ -60,8 +61,8 @@ export async function getBiometricTypeName(): Promise<string> {
 export async function authenticateWithBiometric(): Promise<boolean> {
   try {
     const result = await LocalAuthentication.authenticateAsync({
-      promptMessage: '본인 확인을 위해 인증해주세요',
-      cancelLabel: '취소',
+      promptMessage: rawT('security.biometric_prompt'),
+      cancelLabel: rawT('security.biometric_cancel'),
       disableDeviceFallback: false, // PIN 폴백 허용
     });
     return result.success;

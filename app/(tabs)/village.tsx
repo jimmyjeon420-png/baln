@@ -210,12 +210,10 @@ export default function VillageScreen() {
       <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
         <ActivityIndicator size="large" color={colors.primary} />
         <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
-          {language === 'ko' ? '마을 준비 중...' : 'Preparing village...'}
+          {t('village.loading')}
         </Text>
         <Text style={[styles.loadingSubText, { color: colors.textTertiary }]}>
-          {language === 'ko'
-            ? '구루들이 자리를 잡고 있어요'
-            : 'Gurus are settling in'}
+          {t('village.preparing')}
         </Text>
       </View>
     );
@@ -245,7 +243,7 @@ export default function VillageScreen() {
             {/* Village name */}
             <View style={styles.headerLeft}>
               <Text style={[styles.villageName, { color: colors.textPrimary }]}>
-                {isKo ? '발른 마을' : 'Baln Village'}
+                {t('village.baln_village')}
               </Text>
               <WeatherBadge
                 weather={weather}
@@ -386,7 +384,7 @@ export default function VillageScreen() {
                 {'\uD83D\uDCEC'}
               </Text>
               <Text style={[styles.actionLabel, { color: colors.textPrimary }]}>
-                {isKo ? '우체통' : 'Mailbox'}
+                {t('village.letter.inbox_title')}
               </Text>
               {unreadCount > 0 && (
                 <View style={[styles.actionBadge, { backgroundColor: colors.error }]}>
@@ -405,7 +403,7 @@ export default function VillageScreen() {
                 {'\uD83C\uDFEA'}
               </Text>
               <Text style={[styles.actionLabel, { color: colors.textPrimary }]}>
-                {isKo ? '시장 거리' : 'Market St.'}
+                {t('village.market_street')}
               </Text>
             </TouchableOpacity>
 
@@ -419,7 +417,7 @@ export default function VillageScreen() {
                 {'\uD83D\uDCF0'}
               </Text>
               <Text style={[styles.actionLabel, { color: colors.textPrimary }]}>
-                {isKo ? '마을 신문' : 'Village News'}
+                {t('village.village_news')}
               </Text>
             </TouchableOpacity>
 
@@ -433,7 +431,7 @@ export default function VillageScreen() {
                 {'\uD83D\uDCAC'}
               </Text>
               <Text style={[styles.actionLabel, { color: colors.textPrimary }]}>
-                {isKo ? '라운드테이블' : 'Roundtable'}
+                {t('village.roundtable')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -493,7 +491,7 @@ export default function VillageScreen() {
               <View style={[styles.handleBar, { backgroundColor: colors.border }]} />
             </View>
             <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
-              {isKo ? '우체통' : 'Mailbox'}
+              {t('village.letter.inbox_title')}
               {unreadCount > 0 && ` (${unreadCount})`}
             </Text>
             <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
@@ -503,9 +501,7 @@ export default function VillageScreen() {
                     {'\uD83D\uDCEC'}
                   </Text>
                   <Text style={[styles.emptyText, { color: colors.textTertiary }]}>
-                    {isKo
-                      ? '아직 편지가 없어요.\n구루와 우정을 쌓으면 편지가 옵니다!'
-                      : 'No letters yet.\nBuild friendships with gurus to receive letters!'}
+                    {t('village.letter_empty_desc')}
                   </Text>
                 </View>
               ) : (
@@ -546,9 +542,11 @@ export default function VillageScreen() {
                           style={[styles.letterFrom, { color: colors.textTertiary }]}
                           numberOfLines={1}
                         >
-                          {isKo
-                            ? `${fromConfig?.guruName ?? letter.fromGuruId}으로부터`
-                            : `From ${fromConfig?.guruNameEn ?? letter.fromGuruId}`}
+                          {t('village.letter_from', {
+                            name: isKo
+                              ? (fromConfig?.guruName ?? letter.fromGuruId)
+                              : (fromConfig?.guruNameEn ?? letter.fromGuruId),
+                          })}
                         </Text>
                       </View>
                       {!letter.isRead && (
@@ -565,7 +563,7 @@ export default function VillageScreen() {
               activeOpacity={0.8}
             >
               <Text style={[styles.modalCloseBtnText, { color: colors.textPrimary }]}>
-                {isKo ? '닫기' : 'Close'}
+                {t('common.close')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -585,16 +583,14 @@ export default function VillageScreen() {
               <View style={[styles.handleBar, { backgroundColor: colors.border }]} />
             </View>
             <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
-              {isKo ? '시장 거리' : 'Market Street'}
+              {t('village.market_street')}
             </Text>
             <View style={styles.emptyState}>
               <Text style={styles.emptyEmoji}>
                 {'\uD83C\uDFEA'}
               </Text>
               <Text style={[styles.emptyText, { color: colors.textTertiary }]}>
-                {isKo
-                  ? '시장 거리 준비 중...\n마을이 더 성장하면 상점이 열려요!'
-                  : 'Market Street coming soon...\nGrow your village to unlock shops!'}
+                {t('village.market_street_desc')}
               </Text>
             </View>
             <TouchableOpacity
@@ -603,7 +599,7 @@ export default function VillageScreen() {
               activeOpacity={0.8}
             >
               <Text style={[styles.modalCloseBtnText, { color: colors.textPrimary }]}>
-                {isKo ? '닫기' : 'Close'}
+                {t('common.close')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -623,16 +619,14 @@ export default function VillageScreen() {
               <View style={[styles.handleBar, { backgroundColor: colors.border }]} />
             </View>
             <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
-              {isKo ? '마을 신문' : 'Village News'}
+              {t('village.village_news')}
             </Text>
             <View style={styles.emptyState}>
               <Text style={styles.emptyEmoji}>
                 {'\uD83D\uDCF0'}
               </Text>
               <Text style={[styles.emptyText, { color: colors.textTertiary }]}>
-                {isKo
-                  ? '오늘의 마을 소식이 곧 도착해요!\n구루들이 뉴스를 정리하고 있습니다.'
-                  : 'Village news arriving soon!\nGurus are preparing today\'s stories.'}
+                {t('village.village_news_desc')}
               </Text>
             </View>
             <TouchableOpacity
@@ -641,7 +635,7 @@ export default function VillageScreen() {
               activeOpacity={0.8}
             >
               <Text style={[styles.modalCloseBtnText, { color: colors.textPrimary }]}>
-                {isKo ? '닫기' : 'Close'}
+                {t('common.close')}
               </Text>
             </TouchableOpacity>
           </View>

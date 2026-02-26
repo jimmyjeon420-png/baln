@@ -27,6 +27,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 
 // =============================================================================
 // 타입 정의
@@ -60,8 +61,8 @@ type CrisisConfig = {
   accentColor: string;
   /** Ionicons 아이콘 이름 */
   iconName: 'alert-circle' | 'warning' | 'thunderstorm';
-  /** 위기 수준 제목 (한국어) */
-  levelLabel: string;
+  /** 위기 수준 제목 i18n key */
+  levelLabelKey: string;
 };
 
 const CRISIS_CONFIG: Record<Exclude<CrisisBannerProps['crisisLevel'], 'none'>, CrisisConfig> = {
@@ -69,19 +70,19 @@ const CRISIS_CONFIG: Record<Exclude<CrisisBannerProps['crisisLevel'], 'none'>, C
     backgroundTint: '#FFB74D15',
     accentColor: '#FFB74D',
     iconName: 'alert-circle',
-    levelLabel: '시장 변동',
+    levelLabelKey: 'crisis_banner.level_moderate',
   },
   severe: {
     backgroundTint: '#FF980015',
     accentColor: '#FF9800',
     iconName: 'warning',
-    levelLabel: '시장 급락',
+    levelLabelKey: 'crisis_banner.level_severe',
   },
   extreme: {
     backgroundTint: '#CF667915',
     accentColor: '#CF6679',
     iconName: 'thunderstorm',
-    levelLabel: '시장 위기',
+    levelLabelKey: 'crisis_banner.level_extreme',
   },
 };
 
@@ -99,6 +100,7 @@ function CrisisBanner({
   onPremiumPress,
 }: CrisisBannerProps): React.ReactElement | null {
   const { colors } = useTheme();
+  const { t } = useLocale();
 
   // 애니메이션 값: opacity (0 → 1) + translateY (-12 → 0)
   const opacity = useRef(new Animated.Value(0)).current;
@@ -156,7 +158,7 @@ function CrisisBanner({
         { backgroundColor: colors.surface, borderColor: config.accentColor + '30', opacity, transform: [{ translateY }] },
       ]}
       accessibilityRole="alert"
-      accessibilityLabel={`${config.levelLabel}: ${crisisMessage}`}
+      accessibilityLabel={`${t(config.levelLabelKey)}: ${crisisMessage}`}
     >
       {/* ---- 메인 행: 아이콘 / 텍스트 / 버튼 ---- */}
       <View style={styles.row}>
@@ -173,7 +175,7 @@ function CrisisBanner({
           {/* Line 1: 위기 수준 제목 + 시장명/변동률 */}
           <View style={styles.titleRow}>
             <Text style={[styles.levelLabel, { color: config.accentColor }]}>
-              {config.levelLabel}
+              {t(config.levelLabelKey)}
             </Text>
             {/* 시장명 + 변동률 (있을 때만) */}
             {primaryMarket !== null && changeText !== null && (
@@ -205,18 +207,18 @@ function CrisisBanner({
           ]}
           activeOpacity={0.7}
           accessibilityRole="button"
-          accessibilityLabel="맥락 확인"
+          accessibilityLabel={t('crisis_banner.view_context')}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
           <Text style={[styles.ctaText, { color: config.accentColor }]}>
-            맥락 확인
+            {t('crisis_banner.view_context')}
           </Text>
         </TouchableOpacity>
       </View>
 
       {/* ---- 하단: 안심 메시지 ---- */}
       <Text style={[styles.reassurance, { color: colors.textTertiary }]}>
-        침착하게 맥락을 먼저 확인하세요
+        {t('crisis_banner.reassurance')}
       </Text>
 
       {/* ---- Premium CTA: 기관 행동 레이어 (severe/extreme + 비프리미엄) ---- */}
@@ -226,7 +228,7 @@ function CrisisBanner({
           style={styles.premiumCTA}
           activeOpacity={0.7}
           accessibilityRole="button"
-          accessibilityLabel="프리미엄 기능: 기관 행동 보기"
+          accessibilityLabel={t('crisis_banner.institutional_action_label')}
         >
           <Ionicons
             name="lock-closed"
@@ -235,7 +237,7 @@ function CrisisBanner({
             style={styles.premiumLockIcon}
           />
           <Text style={[styles.premiumCTAText, { color: config.accentColor }]}>
-            기관들은 지금 어떻게 행동하고 있을까?
+            {t('crisis_banner.institutional_action_cta')}
           </Text>
         </TouchableOpacity>
       )}

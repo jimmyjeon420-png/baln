@@ -29,6 +29,7 @@ import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
 import { CharacterAvatar } from '../character/CharacterAvatar';
 import ActivityBubble from './ActivityBubble';
 import FriendshipMeter from './FriendshipMeter';
+import { useLocale } from '../../context/LocaleContext';
 
 // ============================================================================
 // 타입
@@ -236,6 +237,7 @@ const GuruDetailSheet = React.memo(function GuruDetailSheet({
   colors,
   locale = 'ko',
 }: GuruDetailSheetProps) {
+  const { t } = useLocale();
   const isKo = locale === 'ko';
   const isVisible = guruId !== null;
 
@@ -347,7 +349,7 @@ const GuruDetailSheet = React.memo(function GuruDetailSheet({
                 {animalType}
               </Text>
               <Text style={[styles.moodLabel, { color: colors.textTertiary }]}>
-                {isKo ? `기분: ${moodLabel}` : `Mood: ${moodLabel}`}
+                {t('village_ui.guru_detail.mood_label', { mood: moodLabel })}
               </Text>
             </View>
           </View>
@@ -389,7 +391,7 @@ const GuruDetailSheet = React.memo(function GuruDetailSheet({
             >
               <Text style={styles.actionBtnEmoji}>💬</Text>
               <Text style={[styles.actionBtnLabel, { color: accentColor }]}>
-                {isKo ? '대화하기' : 'Chat'}
+                {t('village_ui.guru_detail.chat')}
               </Text>
             </TouchableOpacity>
 
@@ -404,7 +406,7 @@ const GuruDetailSheet = React.memo(function GuruDetailSheet({
             >
               <Text style={styles.actionBtnEmoji}>🎁</Text>
               <Text style={[styles.actionBtnLabel, { color: colors.premium.gold }]}>
-                {isKo ? '선물하기' : 'Gift'}
+                {t('village_ui.guru_detail.gift')}
               </Text>
               <Text style={[styles.actionBtnSubLabel, { color: colors.textTertiary }]}>
                 5C
@@ -422,7 +424,7 @@ const GuruDetailSheet = React.memo(function GuruDetailSheet({
             >
               <Text style={styles.actionBtnEmoji}>📋</Text>
               <Text style={[styles.actionBtnLabel, { color: colors.info }]}>
-                {isKo ? '프로필' : 'Profile'}
+                {t('village_ui.guru_detail.profile')}
               </Text>
             </TouchableOpacity>
           </View>

@@ -26,36 +26,36 @@ import { useStreak } from '../src/hooks/useStreak';
 import { useMyPredictionStats } from '../src/hooks/usePredictions';
 import { useTheme } from '../src/hooks/useTheme';
 import { useEmotionCheck } from '../src/hooks/useEmotionCheck';
+import { useLocale } from '../src/context/LocaleContext';
 import { ACHIEVEMENT_REWARDS } from '../src/services/rewardService';
 import type { AchievementWithStatus } from '../src/services/achievementService';
 
 // ============================================================================
-// 감정 상수
+// 감정 상수 (keys only — labels come from t())
 // ============================================================================
 
-const EMOTIONS = [
-  { key: 'anxious',   emoji: '😰', label: '불안',  color: '#FF5252', bgColor: '#FF525220' },
-  { key: 'worried',   emoji: '😟', label: '걱정',  color: '#FF8A65', bgColor: '#FF8A6520' },
-  { key: 'neutral',   emoji: '😐', label: '보통',  color: '#90A4AE', bgColor: '#90A4AE20' },
-  { key: 'calm',      emoji: '😊', label: '안심',  color: '#4CAF50', bgColor: '#4CAF5020' },
-  { key: 'confident', emoji: '🤑', label: '확신',  color: '#2196F3', bgColor: '#2196F320' },
+const EMOTION_KEYS = [
+  { key: 'anxious',   emoji: '😰', color: '#FF5252', bgColor: '#FF525220', tKey: 'emotion_anxious',   fbKey: 'feedback_anxious' },
+  { key: 'worried',   emoji: '😟', color: '#FF8A65', bgColor: '#FF8A6520', tKey: 'emotion_worried',   fbKey: 'feedback_worried' },
+  { key: 'neutral',   emoji: '😐', color: '#90A4AE', bgColor: '#90A4AE20', tKey: 'emotion_neutral',   fbKey: 'feedback_neutral' },
+  { key: 'calm',      emoji: '😊', color: '#4CAF50', bgColor: '#4CAF5020', tKey: 'emotion_calm',      fbKey: 'feedback_calm' },
+  { key: 'confident', emoji: '🤑', color: '#2196F3', bgColor: '#2196F320', tKey: 'emotion_confident', fbKey: 'feedback_confident' },
 ];
 
-function getEmotionFeedback(key: string): string {
-  switch (key) {
-    case 'anxious':   return '불안할 땐 매매를 쉬어가는 것도 전략이에요';
-    case 'worried':   return '걱정될 때는 원칙을 다시 확인해보세요';
-    case 'neutral':   return '차분한 마음이 좋은 결정을 만들어요';
-    case 'calm':      return '안정된 마음으로 투자하고 계시네요';
-    case 'confident': return '확신이 있을 때도 분산투자는 유지하세요';
-    default: return '';
-  }
-}
-
-function getTodayLabel(): string {
+function getTodayLabel(t: (key: string) => string): string {
   const d = new Date();
-  const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
-  return `${d.getMonth() + 1}월 ${d.getDate()}일 ${weekdays[d.getDay()]}요일`;
+  const weekdayKeys = [
+    'achievements.weekday_sun',
+    'achievements.weekday_mon',
+    'achievements.weekday_tue',
+    'achievements.weekday_wed',
+    'achievements.weekday_thu',
+    'achievements.weekday_fri',
+    'achievements.weekday_sat',
+  ];
+  const weekday = t(weekdayKeys[d.getDay()]);
+  // Use locale-appropriate date format
+  return d.toLocaleDateString(undefined, { month: 'long', day: 'numeric' }) + ' ' + weekday;
 }
 
 // ============================================================================
@@ -65,6 +65,7 @@ function getTodayLabel(): string {
 export default function AchievementsScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { t } = useLocale();
   const {
     achievements,
     unlockedCount,
@@ -122,7 +123,7 @@ export default function AchievementsScreen() {
       if (newBadge) {
         const reward = ACHIEVEMENT_REWARDS[newBadge.id] || 0;
         const rewardText = reward > 0 ? ` +${reward}C` : '';
-        showToast(`${newBadge.emoji} ${newBadge.title} 배지 획득!${rewardText}`);
+        showToast(`${newBadge.emoji} ${newBadge.title} ${t('achievements.badge_section_title')}!${rewardText}`);
         triggerHaptic();
       }
       clearNewlyUnlocked();
@@ -132,7 +133,11 @@ export default function AchievementsScreen() {
   // 감정 저장 후 애니메이션
   useEffect(() => {
     if (rewardCredits > 0) {
-      showToast(`감정 기록 완료! +${rewardCredits}C (₩${rewardCredits * 100})`);
+      showToast(
+        t('achievements.toast_emotion_saved')
+          .replace('{{credits}}', String(rewardCredits))
+          .replace('{{krw}}', String(rewardCredits * 100))
+      );
       Animated.sequence([
         Animated.timing(savedAnim, { toValue: 1, duration: 400, useNativeDriver: true }),
         Animated.delay(1500),
@@ -164,7 +169,7 @@ export default function AchievementsScreen() {
     setIsSaving(false);
   };
 
-  const selectedEmotion = EMOTIONS.find(e => e.key === todayEmotion);
+  const selectedEmotionDef = EMOTION_KEYS.find(e => e.key === todayEmotion);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
@@ -173,7 +178,7 @@ export default function AchievementsScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={[styles.title, { color: colors.textPrimary }]}>나의 성취</Text>
+        <Text style={[styles.title, { color: colors.textPrimary }]}>{t('achievements.title')}</Text>
         <View style={{ width: 32 }} />
       </View>
 
@@ -192,10 +197,10 @@ export default function AchievementsScreen() {
             <View style={styles.emotionSectionHeader}>
               <View>
                 <Text style={[styles.emotionSectionTitle, { color: colors.textPrimary }]}>
-                  오늘의 투자 감정
+                  {t('achievements.emotion_section_title')}
                 </Text>
                 <Text style={[styles.emotionSectionDate, { color: colors.textTertiary }]}>
-                  {getTodayLabel()}
+                  {getTodayLabel(t)}
                 </Text>
               </View>
               {/* 히스토리 보기 링크 */}
@@ -203,29 +208,29 @@ export default function AchievementsScreen() {
                 style={styles.historyLink}
                 onPress={() => router.push('/journal/emotion-history')}
               >
-                <Text style={[styles.historyLinkText, { color: colors.primary }]}>히스토리</Text>
+                <Text style={[styles.historyLinkText, { color: colors.primary }]}>{t('achievements.history_link')}</Text>
                 <Ionicons name="chevron-forward" size={14} color={colors.primary} />
               </TouchableOpacity>
             </View>
 
-            {todayIsChecked && selectedEmotion ? (
+            {todayIsChecked && selectedEmotionDef ? (
               /* ── 이미 기록한 경우: 기록 결과 표시 ── */
               <View style={styles.checkedContainer}>
-                <View style={[styles.checkedEmojiBubble, { backgroundColor: selectedEmotion.bgColor }]}>
-                  <Text style={styles.checkedEmoji}>{selectedEmotion.emoji}</Text>
+                <View style={[styles.checkedEmojiBubble, { backgroundColor: selectedEmotionDef.bgColor }]}>
+                  <Text style={styles.checkedEmoji}>{selectedEmotionDef.emoji}</Text>
                 </View>
                 <View style={{ flex: 1 }}>
                   <View style={styles.checkedTopRow}>
-                    <Text style={[styles.checkedLabel, { color: selectedEmotion.color }]}>
-                      {selectedEmotion.label}
+                    <Text style={[styles.checkedLabel, { color: selectedEmotionDef.color }]}>
+                      {t(`achievements.${selectedEmotionDef.tKey}`)}
                     </Text>
                     <View style={styles.checkedBadge}>
                       <Ionicons name="checkmark-circle" size={14} color="#4CAF50" />
-                      <Text style={styles.checkedBadgeText}>기록 완료</Text>
+                      <Text style={styles.checkedBadgeText}>{t('achievements.emotion_recorded')}</Text>
                     </View>
                   </View>
                   <Text style={[styles.checkedFeedback, { color: colors.textSecondary }]}>
-                    {getEmotionFeedback(selectedEmotion.key)}
+                    {t(`achievements.${selectedEmotionDef.fbKey}`)}
                   </Text>
                   {todayMemo ? (
                     <Text style={[styles.checkedMemo, { color: colors.textTertiary }]} numberOfLines={2}>
@@ -237,7 +242,7 @@ export default function AchievementsScreen() {
                     <View style={styles.checkedMarket}>
                       {nasdaqClose !== undefined && (
                         <Text style={styles.checkedMarketText}>
-                          나스닥 {nasdaqClose.toLocaleString()}
+                          {t('achievements.nasdaq_label')} {nasdaqClose.toLocaleString()}
                         </Text>
                       )}
                       {btcClose !== undefined && (
@@ -254,12 +259,12 @@ export default function AchievementsScreen() {
               <View style={styles.inputArea}>
                 {/* 보상 안내 */}
                 <View style={styles.rewardHint}>
-                  <Text style={styles.rewardHintText}>기록하면 +5C (₩500) 적립</Text>
+                  <Text style={styles.rewardHintText}>{t('achievements.reward_hint')}</Text>
                 </View>
 
                 {/* 감정 이모지 선택 */}
                 <View style={styles.emotionRow}>
-                  {EMOTIONS.map(e => (
+                  {EMOTION_KEYS.map(e => (
                     <TouchableOpacity
                       key={e.key}
                       style={[
@@ -278,24 +283,24 @@ export default function AchievementsScreen() {
                         styles.emotionBtnLabel,
                         { color: todayEmotion === e.key ? e.color : colors.textSecondary },
                       ]}>
-                        {e.label}
+                        {t(`achievements.${e.tKey}`)}
                       </Text>
                     </TouchableOpacity>
                   ))}
                 </View>
 
                 {/* 감정 선택 후 추가 입력 */}
-                {todayEmotion && (
+                {todayEmotion && selectedEmotionDef && (
                   <View style={styles.detailInputs}>
                     {/* 감정 피드백 문구 */}
-                    <Text style={[styles.feedbackText, { color: selectedEmotion?.color }]}>
-                      {getEmotionFeedback(todayEmotion)}
+                    <Text style={[styles.feedbackText, { color: selectedEmotionDef.color }]}>
+                      {t(`achievements.${selectedEmotionDef.fbKey}`)}
                     </Text>
 
                     {/* 메모 입력 */}
                     <TextInput
                       style={[styles.memoInput, { color: colors.textPrimary, borderColor: colors.surfaceLight }]}
-                      placeholder="오늘 투자 한 줄 일기 (선택)"
+                      placeholder={t('achievements.memo_placeholder')}
                       placeholderTextColor={colors.textTertiary}
                       value={todayMemo}
                       onChangeText={setMemo}
@@ -314,7 +319,7 @@ export default function AchievementsScreen() {
                         color={colors.textTertiary}
                       />
                       <Text style={[styles.marketToggleText, { color: colors.textTertiary }]}>
-                        나스닥·BTC 종가 기록 (선택)
+                        {t('achievements.market_toggle')}
                       </Text>
                     </TouchableOpacity>
 
@@ -322,7 +327,7 @@ export default function AchievementsScreen() {
                       <View style={styles.marketInputRow}>
                         <View style={styles.marketInputItem}>
                           <Text style={[styles.marketInputLabel, { color: colors.textTertiary }]}>
-                            나스닥
+                            {t('achievements.nasdaq_label')}
                           </Text>
                           <TextInput
                             style={[styles.marketInput, { color: colors.textPrimary, borderColor: colors.surfaceLight }]}
@@ -338,7 +343,7 @@ export default function AchievementsScreen() {
                         </View>
                         <View style={styles.marketInputItem}>
                           <Text style={[styles.marketInputLabel, { color: colors.textTertiary }]}>
-                            BTC ($)
+                            {t('achievements.btc_label')}
                           </Text>
                           <TextInput
                             style={[styles.marketInput, { color: colors.textPrimary, borderColor: colors.surfaceLight }]}
@@ -357,13 +362,13 @@ export default function AchievementsScreen() {
 
                     {/* 저장 버튼 */}
                     <TouchableOpacity
-                      style={[styles.saveBtn, { backgroundColor: selectedEmotion?.color || colors.primary }]}
+                      style={[styles.saveBtn, { backgroundColor: selectedEmotionDef.color || colors.primary }]}
                       onPress={handleSave}
                       disabled={isSaving}
                       activeOpacity={0.8}
                     >
                       <Text style={styles.saveBtnText}>
-                        {isSaving ? '저장 중...' : '기록 저장하기'}
+                        {isSaving ? t('achievements.saving_btn') : t('achievements.save_btn')}
                       </Text>
                     </TouchableOpacity>
                   </View>
@@ -376,7 +381,7 @@ export default function AchievementsScreen() {
               섹션 2: 나의 배지
           ================================================================ */}
           <View style={styles.badgeSectionHeader}>
-            <Text style={[styles.badgeSectionTitle, { color: colors.textPrimary }]}>나의 배지</Text>
+            <Text style={[styles.badgeSectionTitle, { color: colors.textPrimary }]}>{t('achievements.badge_section_title')}</Text>
             <Text style={[styles.badgeSectionCount, { color: colors.primary }]}>
               {unlockedCount}/{totalCount}
             </Text>
@@ -393,9 +398,9 @@ export default function AchievementsScreen() {
           <View style={styles.rewardInfoCard}>
             <Ionicons name="diamond" size={18} color="#7C4DFF" />
             <View style={{ flex: 1 }}>
-              <Text style={styles.rewardInfoTitle}>배지 보상</Text>
+              <Text style={styles.rewardInfoTitle}>{t('achievements.reward_info_title')}</Text>
               <Text style={styles.rewardInfoDesc}>
-                배지를 해금하면 크레딧을 받아요! 모두 모으면 총 128C (₩12,800)
+                {t('achievements.reward_info_desc')}
               </Text>
             </View>
           </View>
@@ -404,8 +409,7 @@ export default function AchievementsScreen() {
           <View style={[styles.infoCard, { backgroundColor: colors.surface }]}>
             <Ionicons name="information-circle-outline" size={16} color={colors.textTertiary} />
             <Text style={[styles.infoText, { color: colors.textTertiary }]}>
-              배지는 앱 사용 활동에 따라 자동으로 해금됩니다.{'\n'}
-              매일 방문하고, 예측에 참여하면 배지를 모을 수 있어요!
+              {t('achievements.info_text')}
             </Text>
           </View>
         </ScrollView>

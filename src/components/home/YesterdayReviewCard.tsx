@@ -66,11 +66,13 @@ const ReviewResultItem = React.memo(({
   index,
   styles,
   COLORS,
+  t,
 }: {
   result: YesterdayReviewResult;
   index: number;
   styles: ReturnType<typeof createStyles>;
   COLORS: ThemeColors;
+  t: (key: string) => string;
 }) => {
   // 해설 펼침/접힘 상태
   const [expanded, setExpanded] = React.useState(false);
@@ -131,7 +133,7 @@ const ReviewResultItem = React.memo(({
         {/* 투표 결과 행 */}
         <View style={styles.resultVoteRow}>
           <Text style={styles.resultVoteLabel}>
-            {result.isCorrect ? '✅' : ''} {result.myVote}로 투표
+            {result.isCorrect ? '✅' : ''} {t('yesterday_review.voted')} {result.myVote}
           </Text>
           <Ionicons
             name="arrow-forward"
@@ -139,7 +141,7 @@ const ReviewResultItem = React.memo(({
             color={COLORS.textTertiary}
           />
           <Text style={styles.resultVoteLabel}>
-            정답 {result.correctAnswer}
+            {t('yesterday_review.correct_answer')} {result.correctAnswer}
           </Text>
           {result.isCorrect && result.reward > 0 && (
             <View style={styles.rewardBadge}>
@@ -157,7 +159,7 @@ const ReviewResultItem = React.memo(({
               color={COLORS.textTertiary}
             />
             <Text style={styles.expandHintText}>
-              {expanded ? '접기' : '해설 보기'}
+              {expanded ? t('yesterday_review.collapse') : t('yesterday_review.show_explanation')}
             </Text>
           </View>
         )}
@@ -168,14 +170,14 @@ const ReviewResultItem = React.memo(({
         <View style={styles.explanationArea}>
           {result.description && (
             <View style={styles.explanationSection}>
-              <Text style={styles.explanationLabel}>💡 배경</Text>
+              <Text style={styles.explanationLabel}>💡 {t('yesterday_review.explanation_background')}</Text>
               <Text style={styles.explanationText}>{result.description}</Text>
             </View>
           )}
           {result.source && (
             <View style={styles.explanationSection}>
               <Text style={styles.explanationLabel}>
-                {result.isCorrect ? '🎯 정답 근거' : '📌 정답 근거'}
+                {result.isCorrect ? `🎯 ${t('yesterday_review.explanation_basis')}` : `📌 ${t('yesterday_review.explanation_basis')}`}
               </Text>
               <Text style={styles.explanationText}>{result.source}</Text>
             </View>
@@ -197,7 +199,7 @@ function YesterdayReviewCard({
   onStartPrediction,
 }: YesterdayReviewCardProps) {
   const { colors } = useTheme();
-  const { language } = useLocale();
+  const { language, t } = useLocale();
   const styles = React.useMemo(() => createStyles(colors), [colors]);
   const COLORS = colors; // 하위 호환성
 
@@ -236,13 +238,13 @@ function YesterdayReviewCard({
       <View style={styles.card}>
         <View style={styles.headerRow}>
           <Text style={styles.headerEmoji}>📊</Text>
-          <Text style={styles.headerText}>어제의 예측 결과</Text>
+          <Text style={styles.headerText}>{t('yesterday_review.header')}</Text>
         </View>
         <View style={styles.emptyArea}>
           <Text style={styles.emptyEmoji}>🔮</Text>
-          <Text style={styles.emptyText}>아직 복기할 예측이 없어요</Text>
+          <Text style={styles.emptyText}>{t('yesterday_review.empty_text')}</Text>
           <Text style={styles.emptySubtext}>
-            오늘 예측에 참여하면 내일 결과를 확인할 수 있어요
+            {t('yesterday_review.empty_subtext')}
           </Text>
           {onStartPrediction && (
             <TouchableOpacity
@@ -250,7 +252,7 @@ function YesterdayReviewCard({
               onPress={onStartPrediction}
               activeOpacity={0.7}
             >
-              <Text style={styles.emptyCtaText}>오늘 예측하러 가기</Text>
+              <Text style={styles.emptyCtaText}>{t('yesterday_review.empty_cta')}</Text>
               <Ionicons name="chevron-forward" size={14} color={colors.primary} />
             </TouchableOpacity>
           )}
@@ -269,7 +271,7 @@ function YesterdayReviewCard({
       {/* 헤더 */}
       <View style={styles.headerRow}>
         <Text style={styles.headerEmoji}>📊</Text>
-        <Text style={styles.headerText}>어제의 예측 결과</Text>
+        <Text style={styles.headerText}>{t('yesterday_review.header')}</Text>
       </View>
 
       {/* 요약 행 */}
@@ -278,12 +280,12 @@ function YesterdayReviewCard({
           <Text style={styles.summaryValue}>
             {correctCount}/{totalCount}
           </Text>
-          <Text style={styles.summaryLabel}>적중</Text>
+          <Text style={styles.summaryLabel}>{t('yesterday_review.summary_hits')}</Text>
         </View>
         {accuracyRate !== null && (
           <View style={styles.summaryItem}>
             <Text style={styles.summaryValue}>{accuracyRate}%</Text>
-            <Text style={styles.summaryLabel}>누적 적중률</Text>
+            <Text style={styles.summaryLabel}>{t('yesterday_review.summary_accuracy')}</Text>
           </View>
         )}
         {totalReward > 0 && (
@@ -297,7 +299,7 @@ function YesterdayReviewCard({
             >
               +{totalReward}C
             </Animated.Text>
-            <Text style={styles.summaryLabel}>획득</Text>
+            <Text style={styles.summaryLabel}>{t('yesterday_review.summary_earned')}</Text>
           </View>
         )}
       </View>
@@ -321,12 +323,13 @@ function YesterdayReviewCard({
           index={index}
           styles={styles}
           COLORS={COLORS}
+          t={t}
         />
       ))}
 
       {/* 하단: 전체 기록 보기 */}
       <TouchableOpacity style={styles.historyButton} onPress={onViewHistory}>
-        <Text style={styles.historyText}>전체 기록 보기</Text>
+        <Text style={styles.historyText}>{t('yesterday_review.view_history')}</Text>
         <Ionicons name="arrow-forward" size={16} color={COLORS.textSecondary} />
       </TouchableOpacity>
     </View>

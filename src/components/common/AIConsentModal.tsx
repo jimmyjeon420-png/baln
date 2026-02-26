@@ -21,6 +21,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../../hooks/useTheme';
 import { SIZES } from '../../styles/theme';
+import { useLocale } from '../../context/LocaleContext';
 
 const AI_CONSENT_KEY = '@baln/ai_data_consent';
 
@@ -52,6 +53,7 @@ interface AIConsentModalProps {
 
 export function AIConsentModal({ visible, onAccept, onDecline }: AIConsentModalProps) {
   const { colors } = useTheme();
+  const { t } = useLocale();
 
   const handleAccept = async () => {
     await grantAIConsent();
@@ -77,38 +79,37 @@ export function AIConsentModal({ visible, onAccept, onDecline }: AIConsentModalP
 
             {/* 제목 */}
             <Text style={[styles.title, { color: colors.textPrimary }]}>
-              AI 분석 데이터 공유 동의
+              {t('common_ui.ai_consent.title')}
             </Text>
             <Text style={[styles.titleEn, { color: colors.textTertiary }]}>
-              AI Data Sharing Consent
+              {t('common_ui.ai_consent.title_en')}
             </Text>
 
             <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-              맞춤형 투자 분석을 위해 아래 데이터가 외부 AI 서비스에 전송됩니다.{'\n'}
-              동의 전에는 데이터가 전송되지 않습니다.
+              {t('common_ui.ai_consent.subtitle')}
             </Text>
 
             {/* 전송 데이터 */}
             <View style={[styles.infoBox, { backgroundColor: colors.background }]}>
               <Text style={[styles.infoTitle, { color: colors.textPrimary }]}>
-                전송되는 데이터
+                {t('common_ui.ai_consent.data_shared_title')}
               </Text>
               <View style={styles.infoRow}>
                 <Ionicons name="pie-chart-outline" size={16} color={colors.textSecondary} />
                 <Text style={[styles.infoText, { color: colors.textSecondary }]}>
-                  포트폴리오 종목 및 비중 (종목 코드, 수량, 비율)
+                  {t('common_ui.ai_consent.data_portfolio')}
                 </Text>
               </View>
               <View style={styles.infoRow}>
                 <Ionicons name="trending-up-outline" size={16} color={colors.textSecondary} />
                 <Text style={[styles.infoText, { color: colors.textSecondary }]}>
-                  시장 데이터 (주가, 환율, 지수)
+                  {t('common_ui.ai_consent.data_market')}
                 </Text>
               </View>
               <View style={styles.infoRow}>
                 <Ionicons name="analytics-outline" size={16} color={colors.textSecondary} />
                 <Text style={[styles.infoText, { color: colors.textSecondary }]}>
-                  건강 점수 및 리스크 팩터
+                  {t('common_ui.ai_consent.data_health')}
                 </Text>
               </View>
             </View>
@@ -116,18 +117,18 @@ export function AIConsentModal({ visible, onAccept, onDecline }: AIConsentModalP
             {/* 전송 대상 (Data Recipient) */}
             <View style={[styles.infoBox, { backgroundColor: colors.background }]}>
               <Text style={[styles.infoTitle, { color: colors.textPrimary }]}>
-                전송 대상 (Data Recipient)
+                {t('common_ui.ai_consent.recipient_title')}
               </Text>
               <View style={styles.infoRow}>
                 <Ionicons name="business-outline" size={16} color={colors.textSecondary} />
                 <Text style={[styles.infoText, { color: colors.textSecondary }]}>
-                  Google LLC — Gemini AI API{'\n'}(Mountain View, CA, USA)
+                  {t('common_ui.ai_consent.recipient_google')}
                 </Text>
               </View>
               <View style={styles.infoRow}>
                 <Ionicons name="information-circle-outline" size={16} color={colors.textSecondary} />
                 <Text style={[styles.infoText, { color: colors.textSecondary }]}>
-                  Google은 API 요청 데이터를 AI 모델 학습에 사용하지 않습니다
+                  {t('common_ui.ai_consent.recipient_note')}
                 </Text>
               </View>
             </View>
@@ -135,24 +136,24 @@ export function AIConsentModal({ visible, onAccept, onDecline }: AIConsentModalP
             {/* 안전 보장 */}
             <View style={[styles.infoBox, { backgroundColor: colors.background }]}>
               <Text style={[styles.infoTitle, { color: colors.textPrimary }]}>
-                개인정보 보호
+                {t('common_ui.ai_consent.privacy_title')}
               </Text>
               <View style={styles.infoRow}>
                 <Ionicons name="checkmark-circle" size={16} color={colors.primary} />
                 <Text style={[styles.infoText, { color: colors.textSecondary }]}>
-                  이름, 계좌번호 등 개인 식별 정보는 전송되지 않습니다
+                  {t('common_ui.ai_consent.privacy_no_personal')}
                 </Text>
               </View>
               <View style={styles.infoRow}>
                 <Ionicons name="checkmark-circle" size={16} color={colors.primary} />
                 <Text style={[styles.infoText, { color: colors.textSecondary }]}>
-                  모든 데이터는 TLS 1.3으로 암호화 전송됩니다
+                  {t('common_ui.ai_consent.privacy_encrypted')}
                 </Text>
               </View>
               <View style={styles.infoRow}>
                 <Ionicons name="checkmark-circle" size={16} color={colors.primary} />
                 <Text style={[styles.infoText, { color: colors.textSecondary }]}>
-                  설정에서 언제든지 동의를 철회할 수 있습니다
+                  {t('common_ui.ai_consent.privacy_revoke')}
                 </Text>
               </View>
             </View>
@@ -164,7 +165,7 @@ export function AIConsentModal({ visible, onAccept, onDecline }: AIConsentModalP
             >
               <Ionicons name="document-text-outline" size={14} color={colors.primary} />
               <Text style={[styles.policyLinkText, { color: colors.primary }]}>
-                개인정보처리방침 전문 보기 (Privacy Policy)
+                {t('common_ui.ai_consent.policy_link')}
               </Text>
             </TouchableOpacity>
           </ScrollView>
@@ -176,7 +177,7 @@ export function AIConsentModal({ visible, onAccept, onDecline }: AIConsentModalP
               onPress={onDecline}
             >
               <Text style={[styles.declineButtonText, { color: colors.textSecondary }]}>
-                동의하지 않음
+                {t('common_ui.ai_consent.decline')}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -184,7 +185,7 @@ export function AIConsentModal({ visible, onAccept, onDecline }: AIConsentModalP
               onPress={handleAccept}
             >
               <Text style={styles.acceptButtonText}>
-                동의하고 시작
+                {t('common_ui.ai_consent.accept')}
               </Text>
             </TouchableOpacity>
           </View>

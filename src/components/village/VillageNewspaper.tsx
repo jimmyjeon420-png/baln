@@ -29,6 +29,7 @@ import type { ThemeColors } from '../../styles/colors';
 import { CharacterAvatar } from '../character/CharacterAvatar';
 import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
 import { getMoodEmoji, moodToExpression } from '../../services/moodEngine';
+import { useLocale } from '../../context/LocaleContext';
 
 // ============================================================================
 // 타입
@@ -98,6 +99,7 @@ function GuruReactionRow({
   locale: string;
   onGuruPress?: (guruId: string) => void;
 }) {
+  const { t } = useLocale();
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   if (!reactions || reactions.length === 0) return null;
@@ -105,7 +107,7 @@ function GuruReactionRow({
   return (
     <View style={reactionStyles.container}>
       <Text style={[reactionStyles.label, { color: colors.textTertiary }]}>
-        {locale === 'ko' ? '구루 반응' : 'Guru Reactions'}
+        {t('village_ui.newspaper.guru_reactions')}
       </Text>
       <View style={reactionStyles.row}>
         {reactions.map((reaction) => {
@@ -176,6 +178,7 @@ function ArticleCard({
   onPredictionPress?: (predictionId: string) => void;
   onGuruPress?: (guruId: string) => void;
 }) {
+  const { t } = useLocale();
   const category = CATEGORY_CONFIG[article.category] || CATEGORY_CONFIG.market;
   const isKo = locale === 'ko';
 
@@ -215,7 +218,7 @@ function ArticleCard({
           activeOpacity={0.7}
         >
           <Text style={[articleStyles.predictionText, { color: colors.primary }]}>
-            {isKo ? '관련 예측 보기' : 'View Related Prediction'}
+            {t('village_ui.newspaper.related_prediction')}
           </Text>
         </TouchableOpacity>
       )}
@@ -236,6 +239,7 @@ const VillageNewspaper = React.memo(({
   onPredictionPress,
   onGuruPress,
 }: VillageNewspaperProps) => {
+  const { t } = useLocale();
   const isKo = locale === 'ko';
 
   return (
@@ -250,7 +254,7 @@ const VillageNewspaper = React.memo(({
         <View style={[styles.header, { borderBottomColor: colors.border }]}>
           <View style={styles.headerTop}>
             <Text style={[styles.newspaperTitle, { color: colors.textPrimary }]}>
-              {isKo ? '발른 마을 신문' : 'Baln Village Times'}
+              {t('village_ui.newspaper.title')}
             </Text>
             <TouchableOpacity
               onPress={onClose}
@@ -258,7 +262,7 @@ const VillageNewspaper = React.memo(({
               hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             >
               <Text style={[styles.closeText, { color: colors.textSecondary }]}>
-                {isKo ? '닫기' : 'Close'}
+                {t('village_ui.newspaper.close')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -267,7 +271,7 @@ const VillageNewspaper = React.memo(({
               {formatNewspaperDate(locale)}
             </Text>
             <Text style={[styles.editionText, { color: colors.textTertiary }]}>
-              {isKo ? `${articles.length}개 기사` : `${articles.length} articles`}
+              {t('village_ui.newspaper.article_count', { count: articles.length })}
             </Text>
           </View>
         </View>
@@ -283,10 +287,10 @@ const VillageNewspaper = React.memo(({
             <View style={styles.emptyState}>
               <Text style={styles.emptyEmoji}>{'\uD83D\uDCF0'}</Text>
               <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
-                {isKo ? '오늘의 신문이 아직 도착하지 않았어요' : 'Today\'s newspaper hasn\'t arrived yet'}
+                {t('village_ui.newspaper.empty_title')}
               </Text>
               <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
-                {isKo ? '조금만 기다려주세요!' : 'Please wait a moment!'}
+                {t('village_ui.newspaper.empty_subtitle')}
               </Text>
             </View>
           ) : (

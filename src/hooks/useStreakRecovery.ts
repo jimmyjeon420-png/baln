@@ -16,6 +16,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import supabase, { getCurrentUser } from '../services/supabase';
 import { getStreakData } from '../services/streakService';
+import { t as rawT } from '../locales';
 
 // ============================================================================
 // 타입 정의
@@ -183,7 +184,7 @@ export function useStreakRecovery(): UseStreakRecoveryReturn {
   const recoverStreak = useCallback(async (): Promise<RecoverResult> => {
     // 동시 실행 방지
     if (recoverInProgress.current) {
-      return { success: false, errorMessage: '복구 처리 중입니다.' };
+      return { success: false, errorMessage: rawT('streak_recovery.in_progress') };
     }
     recoverInProgress.current = true;
     setIsRecovering(true);
@@ -191,13 +192,13 @@ export function useStreakRecovery(): UseStreakRecoveryReturn {
     try {
       // 1. 복구 가능 여부 재확인
       if (!canRecover) {
-        return { success: false, errorMessage: '복구 기간이 지났습니다.' };
+        return { success: false, errorMessage: rawT('streak_recovery.period_expired') };
       }
 
       // 2. 로그인 확인
       const user = await getCurrentUser();
       if (!user) {
-        return { success: false, errorMessage: '로그인이 필요합니다.' };
+        return { success: false, errorMessage: rawT('streak_recovery.sign_in_required') };
       }
 
       // 3. 크레딧 차감 (spend_credits RPC)
@@ -217,7 +218,7 @@ export function useStreakRecovery(): UseStreakRecoveryReturn {
       if (!row || !row.success) {
         return {
           success: false,
-          errorMessage: row?.error_message || '크레딧이 부족합니다.',
+          errorMessage: row?.error_message || rawT('streak_recovery.insufficient_credits'),
           newBalance: row?.new_balance ?? 0,
         };
       }
@@ -244,7 +245,7 @@ export function useStreakRecovery(): UseStreakRecoveryReturn {
       console.warn('[useStreakRecovery] recoverStreak 예외:', error);
       return {
         success: false,
-        errorMessage: error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.',
+        errorMessage: error instanceof Error ? error.message : rawT('streak_recovery.unknown_error'),
       };
     } finally {
       setIsRecovering(false);

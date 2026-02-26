@@ -30,6 +30,7 @@ import {
 import type { BrandShop, BrandCategory } from '../../types/village';
 import { BRAND_SHOPS } from '../../data/brandWorldConfig';
 import { BrandShopCard } from './BrandShopCard';
+import { useLocale } from '../../context/LocaleContext';
 
 // ============================================================================
 // 타입

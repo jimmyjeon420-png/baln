@@ -5,6 +5,7 @@
 
 import * as Sentry from '@sentry/react-native';
 import supabase, { getCurrentUser } from './supabase';
+import { t as rawT } from '../locales';
 import {
   type AIFeatureType,
   type CreditTransaction,
@@ -101,7 +102,7 @@ export async function spendCredits(
     const user = await getCurrentUser();
 
     if (!user) {
-      return { success: false, newBalance: 0, errorMessage: '로그인이 필요합니다.' };
+      return { success: false, newBalance: 0, errorMessage: rawT('credit_service.sign_in_required') };
     }
 
     // 무료 기간에도 크레딧 차감 (활동 참여로 얻은 크레딧 순환 경제)
@@ -126,7 +127,7 @@ export async function spendCredits(
 
     const row = data?.[0];
     if (!row) {
-      return { success: false, newBalance: 0, errorMessage: '크레딧 차감 실패' };
+      return { success: false, newBalance: 0, errorMessage: rawT('credit_service.deduct_failed') };
     }
 
     return {
@@ -143,7 +144,7 @@ export async function spendCredits(
     return {
       success: false,
       newBalance: 0,
-      errorMessage: err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.',
+      errorMessage: err instanceof Error ? err.message : rawT('credit_service.unknown_error'),
     };
   }
 }

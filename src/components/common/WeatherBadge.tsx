@@ -16,6 +16,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import type { VillageWeather, ClothingLevel } from '../../types/village';
 import type { ThemeColors } from '../../styles/colors';
+import { useLocale } from '../../context/LocaleContext';
 
 // ============================================================================
 // 타입
@@ -96,6 +97,7 @@ const WeatherBadge = React.memo(({
   colors,
   locale = 'ko',
 }: WeatherBadgeProps) => {
+  const { t } = useLocale();
   // 로딩 상태
   if (!weather) {
     return (
@@ -115,8 +117,8 @@ const WeatherBadge = React.memo(({
   const extended = weather as VillageWeather & { emoji?: string };
   const weatherEmoji = weather.icon || extended.emoji || '\u2600\uFE0F';
   const weatherLabel = isKo
-    ? WEATHER_LABEL_KO[weather.condition] || weather.description || '맑음'
-    : WEATHER_LABEL_EN[weather.condition] || 'Clear';
+    ? WEATHER_LABEL_KO[weather.condition] || weather.description || WEATHER_LABEL_KO.clear
+    : WEATHER_LABEL_EN[weather.condition] || WEATHER_LABEL_EN.clear;
   const tempString = `${Math.round(weather.temperature)}\u00B0C`;
 
   // 컴팩트 모드: 이모지 + 기온만
@@ -158,7 +160,7 @@ const WeatherBadge = React.memo(({
             style={[styles.hintText, { color: colors.textTertiary }]}
             numberOfLines={1}
           >
-            {isKo ? `구루 의상: ${clothingHint}` : `Guru outfit: ${clothingHint}`}
+            {t('common_ui.weather.guru_outfit', { hint: clothingHint })}
           </Text>
         )}
       </View>

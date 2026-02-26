@@ -29,6 +29,7 @@ import {
   type CrisisLevel,
   type CrisisDetectionResult,
 } from '../services/crisisDetection';
+import { t as rawT } from '../locales';
 
 // ============================================================================
 // 스토리지 키

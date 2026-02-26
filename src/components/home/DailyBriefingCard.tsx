@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { SIZES } from '../../styles/theme';
 import { useTheme } from '../../hooks/useTheme';
 import { SkeletonBlock } from '../SkeletonLoader';
+import { useLocale } from '../../context/LocaleContext';
 
 // ============================================================================
 // 타입 정의
@@ -14,15 +15,15 @@ interface DailyBriefingCardProps {
   isLoading: boolean;
 }
 
-// 센티먼트 → 한국어 + 색상 (시맨틱 컬러 - 테마에서 동적으로 가져옴)
-function getSentimentChip(sentiment: 'BULLISH' | 'BEARISH' | 'NEUTRAL', themeColors: { primary: string; error: string; neutral: string }) {
+// 센티먼트 → 색상 (시맨틱 컬러 - 테마에서 동적으로 가져옴)
+function getSentimentChipColors(sentiment: 'BULLISH' | 'BEARISH' | 'NEUTRAL', themeColors: { primary: string; error: string; neutral: string }) {
   switch (sentiment) {
     case 'BULLISH':
-      return { label: '강세', color: themeColors.primary, bgColor: 'rgba(76,175,80,0.15)' };
+      return { color: themeColors.primary, bgColor: 'rgba(76,175,80,0.15)' };
     case 'BEARISH':
-      return { label: '약세', color: themeColors.error, bgColor: 'rgba(207,102,121,0.15)' };
+      return { color: themeColors.error, bgColor: 'rgba(207,102,121,0.15)' };
     default:
-      return { label: '보합', color: themeColors.neutral, bgColor: 'rgba(158,158,158,0.15)' };
+      return { color: themeColors.neutral, bgColor: 'rgba(158,158,158,0.15)' };
   }
 }
 
@@ -36,6 +37,7 @@ const DailyBriefingCard = ({
   isLoading,
 }: DailyBriefingCardProps) => {
   const { colors } = useTheme();
+  const { t } = useLocale();
 
   // 로딩 중 → 스켈레톤
   if (isLoading) {
@@ -50,7 +52,14 @@ const DailyBriefingCard = ({
   // 데이터 없음 → 표시하지 않음
   if (!cfoWeather && !sentiment) return null;
 
-  const chip = sentiment ? getSentimentChip(sentiment, colors) : null;
+  const chipColors = sentiment ? getSentimentChipColors(sentiment, colors) : null;
+  const chipLabel = sentiment
+    ? sentiment === 'BULLISH'
+      ? t('home.sentiment.bullish')
+      : sentiment === 'BEARISH'
+      ? t('home.sentiment.bearish')
+      : t('home.sentiment.neutral')
+    : null;
 
   return (
     <View style={[styles.card, { backgroundColor: colors.surface }]}>
@@ -58,14 +67,14 @@ const DailyBriefingCard = ({
       <View style={styles.header}>
         <View>
           <Text style={[styles.title, { color: colors.textPrimary }]}>
-            {cfoWeather?.emoji || '📊'} 오늘의 브리핑
+            {cfoWeather?.emoji || '📊'} {t('home.daily_briefing_title')}
           </Text>
-          <Text style={[styles.subtitle, { color: colors.textTertiary }]}>Daily Briefing</Text>
+          <Text style={[styles.subtitle, { color: colors.textTertiary }]}>{t('home.daily_briefing_subtitle')}</Text>
         </View>
-        {chip && (
-          <View style={[styles.chip, { backgroundColor: chip.bgColor }]}>
-            <Text style={[styles.chipText, { color: chip.color }]}>
-              {chip.label}
+        {chipColors && chipLabel && (
+          <View style={[styles.chip, { backgroundColor: chipColors.bgColor }]}>
+            <Text style={[styles.chipText, { color: chipColors.color }]}>
+              {chipLabel}
             </Text>
           </View>
         )}

@@ -20,6 +20,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 
 // ============================================================================
 // Props 인터페이스
@@ -96,6 +97,7 @@ function ComparisonBar({
   peerRatio,
 }: ComparisonBarProps) {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const isBetter = myRatio >= peerRatio;
   const barColor = isBetter ? colors.success : colors.warning;
 
@@ -123,7 +125,7 @@ function ComparisonBar({
 
       {/* 내 바 */}
       <View style={s.barRow}>
-        <Text style={[s.barLabel, { color: colors.primary }]}>나</Text>
+        <Text style={[s.barLabel, { color: colors.primary }]}>{t('peer_comparison.me')}</Text>
         <View style={[s.barTrack, { backgroundColor: colors.border }]}>
           <View
             style={[
@@ -139,7 +141,7 @@ function ComparisonBar({
 
       {/* 또래 평균 바 */}
       <View style={s.barRow}>
-        <Text style={[s.barLabel, { color: colors.textTertiary }]}>또래</Text>
+        <Text style={[s.barLabel, { color: colors.textTertiary }]}>{t('peer_comparison.peers')}</Text>
         <View style={[s.barTrack, { backgroundColor: colors.border }]}>
           <View
             style={[
@@ -172,6 +174,7 @@ export default function PeerComparisonCard({
   nudgeMessage,
 }: PeerComparisonCardProps) {
   const { colors, shadows } = useTheme();
+  const { t } = useLocale();
 
   const isTopPerformer = myPercentile <= 30;
 
@@ -183,15 +186,15 @@ export default function PeerComparisonCard({
           <View style={[s.bracketBadge, { backgroundColor: colors.primary + '15' }]}>
             <Text style={s.bracketEmoji}>💰</Text>
             <Text style={[s.bracketText, { color: colors.primary }]}>
-              {myBracket} 구간
+              {myBracket} {t('peer_comparison.bracket_label')}
             </Text>
           </View>
           <Text style={[s.percentileText, { color: isTopPerformer ? colors.success : colors.textTertiary }]}>
-            상위 {myPercentile}%
+            {t('peer_comparison.top_percentile', { pct: myPercentile })}
           </Text>
         </View>
         <Text style={[s.title, { color: colors.textPrimary }]}>
-          나 vs 또래 비교
+          {t('peer_comparison.title')}
         </Text>
       </View>
 
@@ -199,17 +202,17 @@ export default function PeerComparisonCard({
       <View style={s.comparisons}>
         {/* 1. 건강 점수 */}
         <ComparisonBar
-          label="건강 점수"
+          label={t('peer_comparison.health_score')}
           icon="heart-outline"
-          myValueLabel={`${myHealthGrade}등급`}
-          peerValueLabel={`${peerAvgHealthGrade}등급`}
+          myValueLabel={`${myHealthGrade}${t('peer_comparison.grade_suffix')}`}
+          peerValueLabel={`${peerAvgHealthGrade}${t('peer_comparison.grade_suffix')}`}
           myRatio={gradeToScore(myHealthGrade)}
           peerRatio={gradeToScore(peerAvgHealthGrade)}
         />
 
         {/* 2. 예측 적중률 */}
         <ComparisonBar
-          label="예측 적중률"
+          label={t('peer_comparison.prediction_accuracy')}
           icon="analytics-outline"
           myValueLabel={`${myAccuracy}%`}
           peerValueLabel={`${peerAvgAccuracy}%`}
@@ -219,10 +222,10 @@ export default function PeerComparisonCard({
 
         {/* 3. 연속 출석 */}
         <ComparisonBar
-          label="연속 출석"
+          label={t('peer_comparison.streak')}
           icon="flame-outline"
-          myValueLabel={`${myStreak}일`}
-          peerValueLabel={`${peerAvgStreak}일`}
+          myValueLabel={`${myStreak}${t('peer_comparison.days_suffix')}`}
+          peerValueLabel={`${peerAvgStreak}${t('peer_comparison.days_suffix')}`}
           myRatio={myStreak}
           peerRatio={peerAvgStreak}
         />
@@ -242,7 +245,7 @@ export default function PeerComparisonCard({
 
       {/* 익명 고지 */}
       <Text style={[s.disclaimer, { color: colors.textQuaternary }]}>
-        모든 비교는 익명 통계 기반이며, 개인정보는 포함되지 않습니다.
+        {t('peer_comparison.disclaimer')}
       </Text>
     </View>
   );

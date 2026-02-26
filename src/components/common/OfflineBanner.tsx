@@ -25,6 +25,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Text, StyleSheet, Animated } from 'react-native';
 import NetInfo, { NetInfoState } from '@react-native-community/netinfo';
 import { Ionicons } from '@expo/vector-icons';
+import { useLocale } from '../../context/LocaleContext';
 
 // ──────────────────────────────────────────────
 // 상수 정의
@@ -59,6 +60,7 @@ type BannerState =
 // ──────────────────────────────────────────────
 
 export default function OfflineBanner() {
+  const { t } = useLocale();
   // 배너 상태 관리
   const [bannerState, setBannerState] = useState<BannerState>('hidden');
 
@@ -170,8 +172,8 @@ export default function OfflineBanner() {
   const backgroundColor = isOfflineState ? OFFLINE_COLOR : ONLINE_COLOR;
   const iconName = isOfflineState ? 'cloud-offline-outline' : 'checkmark-circle-outline';
   const message = isOfflineState
-    ? '인터넷 연결 없음 — 오프라인 모드'
-    : '다시 연결되었습니다';
+    ? t('common_ui.offline.offline_message')
+    : t('common_ui.offline.reconnected_message');
 
   return (
     <Animated.View

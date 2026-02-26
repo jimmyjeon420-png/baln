@@ -17,6 +17,8 @@
  * TODO: 외국인/기관 매도 감지
  */
 
+import { t as rawT } from '../locales';
+
 // ============================================================================
 // 타입 정의
 // ============================================================================
@@ -155,7 +157,7 @@ export function detectCrisis(data: MarketChangeData): CrisisDetectionResult {
   let message: string;
   if (vixCrisis && (!worst || worstChange > -3)) {
     // VIX만 트리거된 경우
-    message = `VIX 공포지수 ${vixLevel!.toFixed(0)}으로 급등. 맥락 카드에서 배경을 확인하세요`;
+    message = rawT('crisis_detection.vix_spike', { level: vixLevel!.toFixed(0) });
   } else {
     message = getCrisisMessage(finalLevel, primaryMarket || '');
   }
@@ -187,13 +189,13 @@ export function detectCrisis(data: MarketChangeData): CrisisDetectionResult {
 function getCrisisMessage(level: CrisisLevel, market: string): string {
   switch (level) {
     case 'moderate':
-      return `${market}가 흔들리고 있어요. 맥락 카드에서 이유를 확인하세요`;
+      return rawT('crisis_detection.moderate', { market });
 
     case 'severe':
-      return `${market}에 큰 변동이 감지됐습니다. 기관들은 지금 어떻게 하고 있을까요?`;
+      return rawT('crisis_detection.severe', { market });
 
     case 'extreme':
-      return `${market} 역사적 급락입니다. 과거 비슷한 상황을 맥락 카드에서 확인하세요`;
+      return rawT('crisis_detection.extreme', { market });
 
     default:
       return '';

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SIZES } from '../../styles/theme';
 import { useTheme } from '../../hooks/useTheme';
 import { useHaptics } from '../../hooks/useHaptics';
+import { useLocale } from '../../context/LocaleContext';
 
 // ============================================================================
 // 타입 정의
@@ -14,11 +15,11 @@ interface QuickActionsBarProps {
   onPrediction: () => void;
 }
 
-// 퀵 액션 설정
-const ACTIONS = [
-  { key: 'add', icon: '📸', label: '자산추가' },
-  { key: 'realestate', icon: '🏠', label: '부동산' },
-  { key: 'prediction', icon: '🎮', label: '예측게임' },
+// 퀵 액션 아이콘 (라벨은 i18n)
+const ACTION_ICONS = [
+  { key: 'add', icon: '📸' },
+  { key: 'realestate', icon: '🏠' },
+  { key: 'prediction', icon: '🎮' },
 ] as const;
 
 // ============================================================================
@@ -32,6 +33,7 @@ const QuickActionsBar = ({
 }: QuickActionsBarProps) => {
   const haptics = useHaptics();
   const { colors } = useTheme();
+  const { t } = useLocale();
 
   const handlers: Record<string, () => void> = {
     add: onAddAsset,
@@ -39,9 +41,15 @@ const QuickActionsBar = ({
     prediction: onPrediction,
   };
 
+  const actionLabels: Record<string, string> = {
+    add: t('quick_actions.add_asset'),
+    realestate: t('quick_actions.real_estate'),
+    prediction: t('quick_actions.prediction_game'),
+  };
+
   return (
     <View style={styles.container}>
-      {ACTIONS.map((action) => (
+      {ACTION_ICONS.map((action) => (
         <TouchableOpacity
           key={action.key}
           style={styles.button}
@@ -54,7 +62,7 @@ const QuickActionsBar = ({
           <View style={[styles.iconCircle, { backgroundColor: colors.surfaceLight }]}>
             <Text style={styles.iconText}>{action.icon}</Text>
           </View>
-          <Text style={[styles.label, { color: colors.textSecondary }]}>{action.label}</Text>
+          <Text style={[styles.label, { color: colors.textSecondary }]}>{actionLabels[action.key]}</Text>
         </TouchableOpacity>
       ))}
     </View>

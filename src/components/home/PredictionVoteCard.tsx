@@ -409,7 +409,7 @@ export default function PredictionVoteCard({
                 style={[styles.voteButton, styles.voteButtonYes]}
                 onPress={() => handleVote(item.id, 'YES')}
                 accessibilityRole="button"
-                accessibilityLabel={`${item.question} 예측에 YES 투표`}
+                accessibilityLabel={t('prediction.card.vote_yes_label', { question: item.question })}
               >
                 <Text style={styles.voteButtonText}>👍 YES</Text>
               </TouchableOpacity>
@@ -417,7 +417,7 @@ export default function PredictionVoteCard({
                 style={[styles.voteButton, styles.voteButtonNo]}
                 onPress={() => handleVote(item.id, 'NO')}
                 accessibilityRole="button"
-                accessibilityLabel={`${item.question} 예측에 NO 투표`}
+                accessibilityLabel={t('prediction.card.vote_no_label', { question: item.question })}
               >
                 <Text style={styles.voteButtonText}>👎 NO</Text>
               </TouchableOpacity>
@@ -606,14 +606,14 @@ export default function PredictionVoteCard({
                     <View style={styles.explanationBox}>
                       {result.description && (
                         <View style={styles.explanationSection}>
-                          <Text style={styles.explanationLabel}>{isKo ? '💡 배경' : '💡 Context'}</Text>
+                          <Text style={styles.explanationLabel}>{t('prediction.card.explanation_context')}</Text>
                           <Text style={styles.explanationText}>{result.description}</Text>
                         </View>
                       )}
                       {result.source && (
                         <View style={styles.explanationSection}>
                           <Text style={styles.explanationLabel}>
-                            {result.isCorrect ? (isKo ? '🎯 정답 근거' : '🎯 Correct Reasoning') : (isKo ? '📌 정답 근거' : '📌 Answer Key')}
+                            {result.isCorrect ? t('prediction.card.explanation_correct') : t('prediction.card.explanation_answer_key')}
                           </Text>
                           <Text style={styles.explanationText}>{result.source}</Text>
                         </View>

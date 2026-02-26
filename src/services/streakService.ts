@@ -15,6 +15,7 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { tryAutoUseFreeze } from '../hooks/useStreakFreeze';
+import { t as rawT } from '../locales';
 
 // 스트릭 데이터 타입
 export interface StreakData {
@@ -162,7 +163,7 @@ export function getStreakMessage(streak: number): StreakMessage {
   if (streak >= 100) {
     return {
       emoji: '🏆',
-      message: `${streak}일 연속! 당신은 진정한 투자자입니다`,
+      message: rawT('streak_service.days_100_plus', { streak }),
       isMilestone: streak % 10 === 0, // 110, 120, 130...
     };
   }
@@ -171,7 +172,7 @@ export function getStreakMessage(streak: number): StreakMessage {
   if (streak >= 30) {
     return {
       emoji: '💎',
-      message: `${streak}일 연속! 투자 내공이 쌓이고 있어요`,
+      message: rawT('streak_service.days_30_plus', { streak }),
       isMilestone: streak === 30 || streak === 50 || streak === 75,
     };
   }
@@ -180,7 +181,7 @@ export function getStreakMessage(streak: number): StreakMessage {
   if (streak >= 7) {
     return {
       emoji: '🔥',
-      message: `${streak}일 연속! 투자 습관이 자리잡고 있어요`,
+      message: rawT('streak_service.days_7_plus', { streak }),
       isMilestone: streak % 7 === 0, // 7, 14, 21...
     };
   }
@@ -189,7 +190,7 @@ export function getStreakMessage(streak: number): StreakMessage {
   if (streak >= 3) {
     return {
       emoji: '✨',
-      message: `${streak}일 연속! 잘하고 있어요`,
+      message: rawT('streak_service.days_3_plus', { streak }),
       isMilestone: false,
     };
   }
@@ -197,7 +198,7 @@ export function getStreakMessage(streak: number): StreakMessage {
   // 1-2일
   return {
     emoji: '🌱',
-    message: `${streak}일 연속! 좋은 시작이에요`,
+    message: rawT('streak_service.days_start', { streak }),
     isMilestone: false,
   };
 }

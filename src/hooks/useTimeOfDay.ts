@@ -10,6 +10,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { t as rawT } from '../locales';
 
 export type TimeOfDay = 'dawn' | 'morning' | 'afternoon' | 'evening' | 'night';
 
@@ -23,53 +24,52 @@ interface TimeOfDayTheme {
   greeting: string;                 // 인사말
 }
 
-const TIME_THEMES: Record<TimeOfDay, TimeOfDayTheme> = {
+// Static visual properties only — locale strings resolved at call time via rawT
+const TIME_VISUALS: Record<TimeOfDay, Omit<TimeOfDayTheme, 'label' | 'greeting'>> = {
   dawn: {
     period: 'dawn',
-    label: '새벽',
     skyGradient: ['#1A1040', '#E88B96'],
     groundColor: '#1A2030',
     starOpacity: 0.3,
     ambientColor: '#E88B9620',
-    greeting: '이른 아침부터 대단해요',
   },
   morning: {
     period: 'morning',
-    label: '아침',
     skyGradient: ['#4A90B8', '#F0C060'],
     groundColor: '#162E1E',
     starOpacity: 0,
     ambientColor: '#F0C06020',
-    greeting: '좋은 아침이에요!',
   },
   afternoon: {
     period: 'afternoon',
-    label: '낮',
     skyGradient: ['#3A7CC0', '#5DADE2'],
     groundColor: '#1A3520',
     starOpacity: 0,
     ambientColor: '#5DADE220',
-    greeting: '오늘 시장은 어떨까요?',
   },
   evening: {
     period: 'evening',
-    label: '저녁',
     skyGradient: ['#2E1A4A', '#E87040'],
     groundColor: '#1A1520',
     starOpacity: 0.15,
     ambientColor: '#E8704020',
-    greeting: '오늘 하루 수고했어요',
   },
   night: {
     period: 'night',
-    label: '밤',
     skyGradient: ['#0A1028', '#162040'],
     groundColor: '#0D1520',
     starOpacity: 0.8,
     ambientColor: '#5DADE210',
-    greeting: '늦은 밤까지 열심이시네요',
   },
 };
+
+function getTheme(period: TimeOfDay): TimeOfDayTheme {
+  return {
+    ...TIME_VISUALS[period],
+    label: rawT(`time_of_day.${period}`),
+    greeting: rawT(`time_of_day.greeting.${period}`),
+  };
+}
 
 function getKSTHour(): number {
   const now = new Date();
@@ -102,5 +102,5 @@ export function useTimeOfDay(): TimeOfDayTheme {
     return () => clearInterval(interval);
   }, []);
 
-  return TIME_THEMES[period];
+  return getTheme(period);
 }

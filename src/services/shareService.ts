@@ -13,6 +13,7 @@
  */
 
 import { Share, Platform } from 'react-native';
+import { t as rawT } from '../locales';
 
 // 앱 딥링크 스킴 (app.json의 "scheme": "baln"과 일치)
 const APP_SCHEME = 'baln';
@@ -58,23 +59,31 @@ export function createWebLink(type: ShareType, id: string): string {
 function getShareMessage(type: ShareType, data?: ShareData): string {
   switch (type) {
     case 'context':
-      // 맥락 카드 공유: 오늘의 시장 분석을 친구에게 보내기
-      return `📊 오늘의 시장 맥락 — ${data?.headline || '확인해보세요'}\n\nbaln으로 매일 5분, 시장을 읽는 습관을 만들어보세요.`;
+      // Context card share: send today's market analysis to a friend
+      return rawT('share.message.context', {
+        headline: data?.headline || rawT('share.message.context_default'),
+      });
 
     case 'prediction':
-      // 예측 게임 공유: 친구에게 예측 질문 보내기
-      return `🎯 투자 예측 게임 — ${data?.question || '당신의 예측은?'}\n\nbaln에서 함께 예측해보세요!`;
+      // Prediction game share: send a prediction question to a friend
+      return rawT('share.message.prediction', {
+        question: data?.question || rawT('share.message.prediction_default'),
+      });
 
     case 'achievement':
-      // 업적 배지 공유: 획득한 배지 자랑하기
-      return `🏆 배지 획득! — ${data?.name || ''}\n\nbaln에서 투자 습관을 기르고 배지를 모아보세요!`;
+      // Achievement badge share: show off an earned badge
+      return rawT('share.message.achievement', {
+        name: data?.name || '',
+      });
 
     case 'community':
-      // 커뮤니티 글 공유: VIP 라운지 글 공유
-      return `💬 VIP 라운지 — ${data?.title || '새 글이 올라왔어요'}\n\nbaln 커뮤니티에서 확인하세요.`;
+      // Community post share: share a VIP lounge post
+      return rawT('share.message.community', {
+        title: data?.title || rawT('share.message.community_default'),
+      });
 
     default:
-      return 'baln — 매일 5분, 시장을 읽는 습관';
+      return rawT('share.message.default_cta');
   }
 }
 

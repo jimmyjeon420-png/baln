@@ -29,6 +29,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../hooks/useTheme';
 import { selection } from '../../services/hapticService';
+import { useLocale } from '../../context/LocaleContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -65,7 +66,7 @@ interface CardSwipeContainerProps {
 
 export default function CardSwipeContainer({
   children,
-  labels = ['내 자산', '오늘 시장', '내 예측'],
+  labels: labelsProp,
   onSettingsPress,
   initialIndex = 0,
   onCardChange,
@@ -77,6 +78,8 @@ export default function CardSwipeContainer({
   const scrollViewRef = useRef<ScrollView>(null);
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
+  const { t } = useLocale();
+  const labels = labelsProp ?? [t('card_swipe.label_assets'), t('card_swipe.label_market'), t('card_swipe.label_predictions')];
   const [showSwipeHint, setShowSwipeHint] = useState(true);
   const hintOpacity = useRef(new Animated.Value(1)).current;
   const hintTranslateX = useRef(new Animated.Value(0)).current;
@@ -173,7 +176,7 @@ export default function CardSwipeContainer({
             { opacity: hintOpacity, transform: [{ translateX: hintTranslateX }] },
           ]}
         >
-          <Text style={styles.swipeHintText}>스와이프하여 더 보기 →</Text>
+          <Text style={styles.swipeHintText}>{t('card_swipe.hint')}</Text>
         </Animated.View>
       )}
 

@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 
 interface DailyProgressBannerProps {
   currentStreak: number;
@@ -12,10 +13,10 @@ interface DailyProgressBannerProps {
   creditBalance?: number | null;
 }
 
-const STEPS: Array<{ key: keyof DailyProgressBannerProps['todayProgress']; label: string }> = [
-  { key: 'cardRead', label: '읽기' },
-  { key: 'voted',    label: '투표' },
-  { key: 'reviewed', label: '복기' },
+const STEP_KEYS: Array<{ key: keyof DailyProgressBannerProps['todayProgress']; labelKey: string }> = [
+  { key: 'cardRead', labelKey: 'daily_progress.step_read' },
+  { key: 'voted',    labelKey: 'daily_progress.step_vote' },
+  { key: 'reviewed', labelKey: 'daily_progress.step_review' },
 ];
 
 const GREEN = '#4CAF50';
@@ -26,9 +27,10 @@ const DailyProgressBanner = React.memo(function DailyProgressBanner({
   creditBalance,
 }: DailyProgressBannerProps) {
   const { colors } = useTheme();
+  const { t } = useLocale();
 
-  const completedCount = STEPS.filter(s => todayProgress[s.key]).length;
-  const allDone = completedCount === STEPS.length;
+  const completedCount = STEP_KEYS.filter(s => todayProgress[s.key]).length;
+  const allDone = completedCount === STEP_KEYS.length;
 
   return (
     <View
@@ -41,7 +43,7 @@ const DailyProgressBanner = React.memo(function DailyProgressBanner({
       <View style={styles.streakRow}>
         <Text style={styles.fireEmoji}>🔥</Text>
         <Text style={[styles.streakNumber, { color: GREEN }]}>{currentStreak}</Text>
-        <Text style={[styles.streakLabel, { color: colors.textSecondary }]}>일 연속</Text>
+        <Text style={[styles.streakLabel, { color: colors.textSecondary }]}>{t('daily_progress.consecutive_days')}</Text>
       </View>
 
       {/* 가운데: 크레딧 잔액 (잔액이 있을 때만 표시) */}
@@ -55,14 +57,14 @@ const DailyProgressBanner = React.memo(function DailyProgressBanner({
       {/* 오른쪽: 진행 단계 */}
       <View style={styles.progressSection}>
         {allDone ? (
-          <Text style={[styles.allDoneText, { color: GREEN }]}>오늘 완료!</Text>
+          <Text style={[styles.allDoneText, { color: GREEN }]}>{t('daily_progress.all_done')}</Text>
         ) : (
           <Text style={[styles.progressCount, { color: colors.textTertiary }]}>
-            {completedCount}/3 완료
+            {t('daily_progress.progress_count', { done: completedCount, total: STEP_KEYS.length })}
           </Text>
         )}
         <View style={styles.dotsRow}>
-          {STEPS.map(step => {
+          {STEP_KEYS.map(step => {
             const done = todayProgress[step.key];
             return (
               <View key={step.key} style={styles.dotWrapper}>
@@ -75,7 +77,7 @@ const DailyProgressBanner = React.memo(function DailyProgressBanner({
                   ]}
                 />
                 <Text style={[styles.dotLabel, { color: colors.textTertiary }]}>
-                  {step.label}
+                  {t(step.labelKey)}
                 </Text>
               </View>
             );

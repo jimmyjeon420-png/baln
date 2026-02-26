@@ -10,6 +10,7 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import supabase, { getCurrentUser } from './supabase';
+import { t as rawT } from '../locales';
 
 // ============================================================================
 // 상수 정의
@@ -609,18 +610,18 @@ export async function applyReferralCode(code: string): Promise<{
 }> {
   try {
     const user = await getCurrentUser();
-    if (!user) return { success: false, message: '로그인이 필요합니다.' };
+    if (!user) return { success: false, message: rawT('reward_service.referral_sign_in_required') };
 
     // 자기 자신 코드 방지
     const myCode = await getMyReferralCode();
     if (code.toUpperCase() === myCode) {
-      return { success: false, message: '본인의 추천 코드는 사용할 수 없습니다.' };
+      return { success: false, message: rawT('reward_service.referral_self_use') };
     }
 
     // 이미 추천 코드를 사용했는지 확인
     const alreadyUsed = await AsyncStorage.getItem('@baln:referral_used');
     if (alreadyUsed) {
-      return { success: false, message: '이미 추천 코드를 사용했습니다.' };
+      return { success: false, message: rawT('reward_service.referral_already_used') };
     }
 
     // 추천인 찾기 (코드 = userId 앞 6자리)
@@ -631,7 +632,7 @@ export async function applyReferralCode(code: string): Promise<{
       .limit(1);
 
     if (error || !profiles || profiles.length === 0) {
-      return { success: false, message: '유효하지 않은 추천 코드입니다.' };
+      return { success: false, message: rawT('reward_service.referral_invalid') };
     }
 
     const referrerId = profiles[0].id;
@@ -655,10 +656,10 @@ export async function applyReferralCode(code: string): Promise<{
 
     return {
       success: true,
-      message: '추천 코드가 적용되었습니다! 10크레딧을 받았어요.\n추천인에게는 3일 연속 접속 후 보상이 지급됩니다.',
+      message: rawT('reward_service.referral_success'),
     };
   } catch (err) {
     console.warn('[Reward] 추천 코드 적용 실패:', err);
-    return { success: false, message: '오류가 발생했습니다.' };
+    return { success: false, message: rawT('reward_service.referral_error') };
   }
 }

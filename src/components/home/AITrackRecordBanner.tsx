@@ -17,6 +17,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 
 interface AITrackRecordBannerProps {
   /** 커뮤니티 예측 적중률 (0~100, null이면 배너 숨김) */
@@ -33,6 +34,7 @@ export default function AITrackRecordBanner({
   onPress,
 }: AITrackRecordBannerProps) {
   const { colors } = useTheme();
+  const { t } = useLocale();
 
   // 데이터가 없거나 집계 수가 너무 적으면 숨김 (신뢰성 없는 수치 방지)
   if (accuracy === null || resolvedCount < 3) return null;
@@ -65,10 +67,10 @@ export default function AITrackRecordBanner({
         </View>
         <View>
           <Text style={[styles.label, { color: colors.textTertiary }]}>
-            지난 30일 커뮤니티 예측
+            {t('ai_track.label')}
           </Text>
           <Text style={[styles.sublabel, { color: colors.textTertiary }]}>
-            {resolvedCount}개 질문 집계
+            {t('ai_track.resolved_count', { count: resolvedCount })}
           </Text>
         </View>
       </View>
@@ -79,7 +81,7 @@ export default function AITrackRecordBanner({
           {accuracy}%
         </Text>
         <Text style={[styles.accuracyLabel, { color: accuracyColor }]}>
-          적중
+          {t('ai_track.hit')}
         </Text>
         {onPress && (
           <Ionicons

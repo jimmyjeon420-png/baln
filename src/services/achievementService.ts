@@ -20,6 +20,7 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { t as rawT } from '../locales';
 
 // ============================================================================
 // 스토리지 키
@@ -76,71 +77,71 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   {
     id: 'first_visit',
     emoji: '🔥',
-    title: '첫 출석',
-    description: 'baln에 오신 걸 환영합니다',
+    get title() { return rawT('badge.first_visit_title'); },
+    get description() { return rawT('badge.first_visit_desc'); },
     category: 'streak',
   },
   {
     id: 'streak_7',
     emoji: '🔥',
-    title: '7일 연속',
-    description: '일주일 연속 방문! 습관이 시작됐어요',
+    get title() { return rawT('badge.streak_7_title'); },
+    get description() { return rawT('badge.streak_7_desc'); },
     category: 'streak',
   },
   {
     id: 'streak_30',
     emoji: '💎',
-    title: '30일 연속',
-    description: '한 달 연속! 투자 고수의 습관',
+    get title() { return rawT('badge.streak_30_title'); },
+    get description() { return rawT('badge.streak_30_desc'); },
     category: 'streak',
   },
   {
     id: 'first_correct',
     emoji: '🎯',
-    title: '첫 적중',
-    description: '첫 예측 적중! 시작이 좋아요',
+    get title() { return rawT('badge.first_correct_title'); },
+    get description() { return rawT('badge.first_correct_desc'); },
     category: 'prediction',
   },
   {
     id: 'streak_correct_5',
     emoji: '🎯',
-    title: '5연속 적중',
-    description: '5연속! 시장을 읽는 눈이 생겼어요',
+    get title() { return rawT('badge.streak_correct_5_title'); },
+    get description() { return rawT('badge.streak_correct_5_desc'); },
     category: 'prediction',
   },
   {
     id: 'accuracy_80',
     emoji: '🏆',
-    title: '적중률 80%',
-    description: '상위 1%! 시장 분석가 수준',
+    get title() { return rawT('badge.accuracy_80_title'); },
+    get description() { return rawT('badge.accuracy_80_desc'); },
     category: 'prediction',
   },
   {
     id: 'first_diagnosis',
     emoji: '📊',
-    title: '첫 AI 진단',
-    description: '첫 포트폴리오 진단 완료',
+    get title() { return rawT('badge.first_diagnosis_title'); },
+    get description() { return rawT('badge.first_diagnosis_desc'); },
     category: 'portfolio',
   },
   {
     id: 'assets_100m',
     emoji: '💰',
-    title: '1억 달성',
-    description: '자산 1억 돌파! 축하합니다',
+    get title() { return rawT('badge.assets_100m_title'); },
+    get description() { return rawT('badge.assets_100m_desc'); },
     category: 'portfolio',
   },
   {
     id: 'first_share',
     emoji: '📤',
-    title: '첫 공유',
-    description: '맥락 카드를 공유했어요',
+    get title() { return rawT('badge.first_share_title'); },
+    get description() { return rawT('badge.first_share_desc'); },
     category: 'social',
   },
   {
     id: 'first_post',
     emoji: '✍️',
-    title: '첫 게시글',
-    description: '커뮤니티 첫 글 작성',
+    get title() { return rawT('badge.first_post_title'); },
+    get description() { return rawT('badge.first_post_desc'); },
     category: 'social',
   },
 ];

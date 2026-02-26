@@ -36,6 +36,7 @@ import { useStreak } from '../../hooks/useStreak';
 import { useStreakFreeze } from '../../hooks/useStreakFreeze';
 import { useHaptics } from '../../hooks/useHaptics';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 
 export default function StreakBanner() {
   const { currentStreak, longestStreak, streakMessage, isNewStreak, isLoading } = useStreak();
@@ -49,6 +50,7 @@ export default function StreakBanner() {
   } = useStreakFreeze();
   const { mediumTap, lightTap } = useHaptics();
   const { colors } = useTheme();
+  const { t } = useLocale();
   const [showModal, setShowModal] = useState(false);
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [freezeUsedToast, setFreezeUsedToast] = useState(false);
@@ -86,17 +88,17 @@ export default function StreakBanner() {
       if (result.success) {
         mediumTap();
         Alert.alert(
-          '스트릭 보호 구매 완료',
-          `보호권 ${result.newFreezeCount}개 보유 중\n잔여 크레딧: ${result.newCreditBalance}C`,
+          t('streak_banner.purchase_success_title'),
+          t('streak_banner.purchase_success_body', { count: result.newFreezeCount, credits: result.newCreditBalance }),
         );
       } else {
         Alert.alert(
-          '구매 실패',
-          result.errorMessage || '크레딧이 부족합니다. (필요: 3C)',
+          t('streak_banner.purchase_fail_title'),
+          result.errorMessage || t('streak_banner.purchase_fail_body'),
         );
       }
     } catch {
-      Alert.alert('오류', '구매 중 문제가 발생했습니다.');
+      Alert.alert(t('streak_banner.error_title'), t('streak_banner.error_body'));
     } finally {
       setIsPurchasing(false);
     }
@@ -121,7 +123,7 @@ export default function StreakBanner() {
       {freezeUsedToast && (
         <View style={[styles.freezeToast, { backgroundColor: '#1565C0' }]}>
           <Text style={styles.freezeToastText}>
-            {'\u{1F6E1}\uFE0F'} 스트릭 보호가 사용되었습니다!
+            {'\u{1F6E1}\uFE0F'} {t('streak_banner.freeze_used_toast')}
           </Text>
         </View>
       )}
@@ -143,7 +145,7 @@ export default function StreakBanner() {
           <View style={styles.left}>
             <Text style={styles.emoji}>{streakMessage.emoji}</Text>
             <Text style={[styles.text, { color: colors.textSecondary }]}>
-              <Text style={[styles.number, { color: colors.primary }]}>{currentStreak}일</Text> 연속 방문 중
+              <Text style={[styles.number, { color: colors.primary }]}>{t('streak_banner.days', { count: currentStreak })}</Text> {t('streak_banner.consecutive_visits')}
             </Text>
             {/* 프리즈 보유 수 표시 */}
             {freezeCount > 0 && (
@@ -167,7 +169,7 @@ export default function StreakBanner() {
       >
         <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
           <View style={[styles.modalHeader, { borderBottomColor: colors.textPrimary + '0F' }]}>
-            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>연속 기록</Text>
+            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>{t('streak_banner.modal_title')}</Text>
             <TouchableOpacity
               onPress={() => {
                 mediumTap();
@@ -186,8 +188,8 @@ export default function StreakBanner() {
               style={[styles.currentCard, { borderColor: colors.primary + '33' }]}
             >
               <Text style={styles.currentEmoji}>{streakMessage.emoji}</Text>
-              <Text style={[styles.currentNumber, { color: colors.primary }]}>{currentStreak}일</Text>
-              <Text style={[styles.currentLabel, { color: colors.textSecondary }]}>연속 방문 중</Text>
+              <Text style={[styles.currentNumber, { color: colors.primary }]}>{t('streak_banner.days', { count: currentStreak })}</Text>
+              <Text style={[styles.currentLabel, { color: colors.textSecondary }]}>{t('streak_banner.consecutive_visits')}</Text>
               <Text style={[styles.currentMessage, { color: colors.textTertiary }]}>{streakMessage.message}</Text>
             </LinearGradient>
 
@@ -196,18 +198,18 @@ export default function StreakBanner() {
               <View style={styles.freezeHeader}>
                 <View style={styles.freezeTitleRow}>
                   <Text style={styles.freezeIcon}>{'\u{1F6E1}\uFE0F'}</Text>
-                  <Text style={[styles.freezeTitle, { color: colors.textPrimary }]}>스트릭 보호</Text>
+                  <Text style={[styles.freezeTitle, { color: colors.textPrimary }]}>{t('streak_banner.freeze_title')}</Text>
                 </View>
                 <Text style={[styles.freezeCountLabel, { color: '#1565C0' }]}>
-                  {freezeCount}개 보유
+                  {t('streak_banner.freeze_count', { count: freezeCount })}
                 </Text>
               </View>
               <Text style={[styles.freezeDesc, { color: colors.textTertiary }]}>
-                하루 미접속 시 자동으로 스트릭을 보호합니다.
+                {t('streak_banner.freeze_desc')}
               </Text>
               {lastUsedDate && (
                 <Text style={[styles.freezeLastUsed, { color: colors.textTertiary }]}>
-                  마지막 사용: {lastUsedDate}
+                  {t('streak_banner.freeze_last_used', { date: lastUsedDate })}
                 </Text>
               )}
               <TouchableOpacity
@@ -224,7 +226,7 @@ export default function StreakBanner() {
                   <ActivityIndicator size="small" color="#1565C0" />
                 ) : (
                   <Text style={[styles.freezePurchaseText, { color: '#1565C0' }]}>
-                    보호권 구매  3C ({'\u20A9'}300)
+                    {t('streak_banner.freeze_purchase_button')}
                   </Text>
                 )}
               </TouchableOpacity>
@@ -234,11 +236,11 @@ export default function StreakBanner() {
             {longestStreak > currentStreak && (
               <View style={[styles.longestCard, { backgroundColor: colors.premium.gold + '14', borderColor: colors.premium.gold + '33' }]}>
                 <View style={styles.longestRow}>
-                  <Text style={[styles.longestLabel, { color: colors.textSecondary }]}>역대 최장 기록</Text>
-                  <Text style={[styles.longestNumber, { color: colors.premium.gold }]}>🏆 {longestStreak}일</Text>
+                  <Text style={[styles.longestLabel, { color: colors.textSecondary }]}>{t('streak_banner.longest_record')}</Text>
+                  <Text style={[styles.longestNumber, { color: colors.premium.gold }]}>🏆 {t('streak_banner.days', { count: longestStreak })}</Text>
                 </View>
                 <Text style={[styles.longestHint, { color: colors.textTertiary }]}>
-                  {longestStreak - currentStreak}일만 더 가면 자기 기록 경신!
+                  {t('streak_banner.longest_hint', { remaining: longestStreak - currentStreak })}
                 </Text>
               </View>
             )}
@@ -246,49 +248,49 @@ export default function StreakBanner() {
             {longestStreak === currentStreak && currentStreak > 1 && (
               <View style={[styles.longestCard, { backgroundColor: colors.premium.gold + '14', borderColor: colors.premium.gold + '33' }]}>
                 <View style={styles.longestRow}>
-                  <Text style={[styles.longestLabel, { color: colors.textSecondary }]}>역대 최장 기록</Text>
-                  <Text style={[styles.longestNumber, { color: colors.premium.gold }]}>🏆 {longestStreak}일</Text>
+                  <Text style={[styles.longestLabel, { color: colors.textSecondary }]}>{t('streak_banner.longest_record')}</Text>
+                  <Text style={[styles.longestNumber, { color: colors.premium.gold }]}>🏆 {t('streak_banner.days', { count: longestStreak })}</Text>
                 </View>
-                <Text style={[styles.longestHint, { color: colors.textTertiary }]}>자기 기록 갱신 중!</Text>
+                <Text style={[styles.longestHint, { color: colors.textTertiary }]}>{t('streak_banner.longest_hint_breaking')}</Text>
               </View>
             )}
 
             {/* 마일스톤 목록 */}
             <View style={styles.milestonesSection}>
-              <Text style={[styles.milestonesTitle, { color: colors.textPrimary }]}>마일스톤</Text>
+              <Text style={[styles.milestonesTitle, { color: colors.textPrimary }]}>{t('streak_banner.milestones_title')}</Text>
               <View style={styles.milestonesList}>
                 <MilestoneItem
                   emoji="🌱"
                   days={1}
-                  label="첫 방문"
+                  label={t('streak_banner.milestone_first_visit')}
                   achieved={currentStreak >= 1}
                   colors={colors}
                 />
                 <MilestoneItem
                   emoji="✨"
                   days={3}
-                  label="습관 시작"
+                  label={t('streak_banner.milestone_habit_start')}
                   achieved={currentStreak >= 3}
                   colors={colors}
                 />
                 <MilestoneItem
                   emoji="🔥"
                   days={7}
-                  label="1주 연속"
+                  label={t('streak_banner.milestone_one_week')}
                   achieved={currentStreak >= 7}
                   colors={colors}
                 />
                 <MilestoneItem
                   emoji="💎"
                   days={30}
-                  label="1개월 연속"
+                  label={t('streak_banner.milestone_one_month')}
                   achieved={currentStreak >= 30}
                   colors={colors}
                 />
                 <MilestoneItem
                   emoji="🏆"
                   days={100}
-                  label="진정한 투자자"
+                  label={t('streak_banner.milestone_true_investor')}
                   achieved={currentStreak >= 100}
                   colors={colors}
                 />
@@ -298,9 +300,7 @@ export default function StreakBanner() {
             {/* 하단 설명 */}
             <View style={[styles.infoBox, { backgroundColor: colors.primary + '0F', borderColor: colors.primary + '1A' }]}>
               <Text style={[styles.infoText, { color: colors.textTertiary }]}>
-                매일 앱에 접속하면 연속 기록이 쌓입니다.{'\n'}
-                하루라도 건너뛰면 1일부터 다시 시작됩니다.{'\n'}
-                {'\u{1F6E1}\uFE0F'} 스트릭 보호권이 있으면 하루를 건너뛰어도 기록이 유지됩니다.
+                {t('streak_banner.info_text')}
               </Text>
             </View>
           </ScrollView>
@@ -338,7 +338,7 @@ function MilestoneItem({
           {label}
         </Text>
         <Text style={[styles.milestoneDays, { color: colors.textTertiary }, !achieved && styles.milestoneDisabled]}>
-          {days}일
+          {days}d
         </Text>
       </View>
       {achieved && (

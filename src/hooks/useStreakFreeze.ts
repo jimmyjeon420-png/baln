@@ -15,6 +15,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import supabase, { getCurrentUser } from '../services/supabase';
+import { t as rawT } from '../locales';
 
 // ============================================================================
 // 타입 정의
@@ -202,7 +203,7 @@ export function useStreakFreeze(): UseStreakFreezeReturn {
         success: false,
         newFreezeCount: data.count,
         newCreditBalance: 0,
-        errorMessage: '구매 처리 중입니다. 잠시 기다려주세요.',
+        errorMessage: rawT('streak_freeze.purchase_in_progress'),
       };
     }
     purchaseInProgress.current = true;
@@ -216,7 +217,7 @@ export function useStreakFreeze(): UseStreakFreezeReturn {
           success: false,
           newFreezeCount: data.count,
           newCreditBalance: 0,
-          errorMessage: '로그인이 필요합니다.',
+          errorMessage: rawT('streak_freeze.sign_in_required'),
         };
       }
 
@@ -244,7 +245,7 @@ export function useStreakFreeze(): UseStreakFreezeReturn {
           success: false,
           newFreezeCount: data.count,
           newCreditBalance: row?.new_balance ?? 0,
-          errorMessage: row?.error_message || '크레딧이 부족합니다.',
+          errorMessage: row?.error_message || rawT('streak_freeze.insufficient_credits'),
         };
       }
 
@@ -268,7 +269,7 @@ export function useStreakFreeze(): UseStreakFreezeReturn {
         success: false,
         newFreezeCount: data.count,
         newCreditBalance: 0,
-        errorMessage: error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.',
+        errorMessage: error instanceof Error ? error.message : rawT('streak_freeze.unknown_error'),
       };
     } finally {
       purchaseInProgress.current = false;

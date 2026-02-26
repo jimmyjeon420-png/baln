@@ -15,6 +15,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { CharacterAvatar } from '../character/CharacterAvatar';
 import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
 import type { WeeklyReportData } from '../../hooks/useWeeklyReport';
+import { useLocale } from '../../context/LocaleContext';
 
 interface WeeklyReportCardProps {
   report: WeeklyReportData;
@@ -83,15 +84,11 @@ function getWeeklyGuruComment(report: WeeklyReportData, locale: string) {
 
 export function WeeklyReportCard({ report, colors, locale }: WeeklyReportCardProps) {
   const isKo = locale === 'ko';
+  const { t } = useLocale();
   const guru = getWeeklyGuruComment(report, locale);
   const guruConfig = GURU_CHARACTER_CONFIGS[guru.guruId];
 
   const completionRate = Math.round((report.habitCompleteDays / 7) * 100);
-
-  // 7일 진행도 바 데이터
-  const dayLabels = isKo
-    ? ['월', '화', '수', '목', '금', '토', '일']
-    : ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
   return (
     <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -100,7 +97,7 @@ export function WeeklyReportCard({ report, colors, locale }: WeeklyReportCardPro
         <Text style={[styles.headerEmoji]}>📋</Text>
         <View style={styles.headerTextBlock}>
           <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
-            {isKo ? '주간 리포트' : 'Weekly Report'}
+            {t('weekly_report.title')}
           </Text>
           <Text style={[styles.headerPeriod, { color: colors.textTertiary }]}>
             {report.weekStart} ~ {report.weekEnd}
@@ -115,16 +112,16 @@ export function WeeklyReportCard({ report, colors, locale }: WeeklyReportCardPro
             {report.habitCompleteDays}/7
           </Text>
           <Text style={[styles.statLabel, { color: colors.textTertiary }]}>
-            {isKo ? '습관 완료' : 'Habits'}
+            {t('weekly_report.stat_habits')}
           </Text>
         </View>
         <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
         <View style={styles.statItem}>
           <Text style={[styles.statValue, { color: colors.textPrimary }]}>
-            {report.currentStreak}{isKo ? '일' : 'd'}
+            {report.currentStreak}{t('weekly_report.streak_unit')}
           </Text>
           <Text style={[styles.statLabel, { color: colors.textTertiary }]}>
-            {isKo ? '연속' : 'Streak'}
+            {t('weekly_report.stat_streak')}
           </Text>
         </View>
         <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
@@ -133,7 +130,7 @@ export function WeeklyReportCard({ report, colors, locale }: WeeklyReportCardPro
             Lv.{report.prosperityLevel}
           </Text>
           <Text style={[styles.statLabel, { color: colors.textTertiary }]}>
-            {isKo ? '번영도' : 'Prosperity'}
+            {t('weekly_report.stat_prosperity')}
           </Text>
         </View>
       </View>
@@ -143,19 +140,19 @@ export function WeeklyReportCard({ report, colors, locale }: WeeklyReportCardPro
         <View style={styles.detailItem}>
           <Text style={[styles.detailIcon]}>📰</Text>
           <Text style={[styles.detailText, { color: colors.textSecondary }]}>
-            {isKo ? `맥락 ${report.cardReadDays}일` : `Cards ${report.cardReadDays}d`}
+            {t('weekly_report.detail_cards', { count: report.cardReadDays })}
           </Text>
         </View>
         <View style={styles.detailItem}>
           <Text style={[styles.detailIcon]}>🎯</Text>
           <Text style={[styles.detailText, { color: colors.textSecondary }]}>
-            {isKo ? `예측 ${report.votedDays}일` : `Votes ${report.votedDays}d`}
+            {t('weekly_report.detail_votes', { count: report.votedDays })}
           </Text>
         </View>
         <View style={styles.detailItem}>
           <Text style={[styles.detailIcon]}>📊</Text>
           <Text style={[styles.detailText, { color: colors.textSecondary }]}>
-            {isKo ? `복기 ${report.reviewedDays}일` : `Review ${report.reviewedDays}d`}
+            {t('weekly_report.detail_review', { count: report.reviewedDays })}
           </Text>
         </View>
       </View>
@@ -164,7 +161,7 @@ export function WeeklyReportCard({ report, colors, locale }: WeeklyReportCardPro
       <View style={styles.progressSection}>
         <View style={styles.progressLabelRow}>
           <Text style={[styles.progressLabel, { color: colors.textSecondary }]}>
-            {isKo ? '주간 완료율' : 'Weekly completion'}
+            {t('weekly_report.completion_label')}
           </Text>
           <Text style={[styles.progressPercent, { color: colors.primary }]}>
             {completionRate}%

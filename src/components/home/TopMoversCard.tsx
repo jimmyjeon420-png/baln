@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { SIZES } from '../../styles/theme';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 
 // ============================================================================
 // 타입 정의
@@ -25,6 +26,7 @@ interface TopMoversCardProps {
 
 const TopMoversCard = ({ gainers, losers }: TopMoversCardProps) => {
   const { colors } = useTheme();
+  const { t } = useLocale();
 
   // 데이터 부족 시 렌더링 안 함
   if (gainers.length + losers.length < 2) return null;
@@ -32,14 +34,14 @@ const TopMoversCard = ({ gainers, losers }: TopMoversCardProps) => {
   return (
     <View style={[styles.card, { backgroundColor: colors.surface }]}>
       {/* 헤더 */}
-      <Text style={[styles.title, { color: colors.textPrimary }]}>등락률 Top</Text>
-      <Text style={[styles.subtitle, { color: colors.textTertiary }]}>Top Movers</Text>
+      <Text style={[styles.title, { color: colors.textPrimary }]}>{t('top_movers.title')}</Text>
+      <Text style={[styles.subtitle, { color: colors.textTertiary }]}>{t('top_movers.subtitle')}</Text>
 
       {/* 2열 레이아웃 */}
       <View style={styles.columns}>
         {/* 왼쪽: 상승 */}
         <View style={styles.column}>
-          <Text style={[styles.columnHeader, { color: colors.textSecondary }]}>상승 ▲</Text>
+          <Text style={[styles.columnHeader, { color: colors.textSecondary }]}>{t('top_movers.gainers')}</Text>
           {gainers.map((item) => (
             <View key={item.ticker} style={styles.moverRow}>
               <View style={[styles.tickerIcon, { backgroundColor: colors.background }]}>
@@ -64,7 +66,7 @@ const TopMoversCard = ({ gainers, losers }: TopMoversCardProps) => {
 
         {/* 오른쪽: 하락 */}
         <View style={styles.column}>
-          <Text style={[styles.columnHeader, { color: colors.textSecondary }]}>하락 ▼</Text>
+          <Text style={[styles.columnHeader, { color: colors.textSecondary }]}>{t('top_movers.losers')}</Text>
           {losers.map((item) => (
             <View key={item.ticker} style={styles.moverRow}>
               <View style={[styles.tickerIcon, { backgroundColor: colors.background }]}>
