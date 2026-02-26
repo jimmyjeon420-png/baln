@@ -75,7 +75,7 @@ interface MenuSection {
 export default function ProfileScreen() {
   useScreenTracking('more');
   const router = useRouter();
-  const { t, language } = useLocale();
+  const { t, language, setAppLanguage } = useLocale();
   const { user, signOut } = useAuth();
   const { unlockedCount, totalCount } = useAchievementCount();
   const { themeMode, setThemeMode, colors } = useTheme();
@@ -203,6 +203,16 @@ export default function ProfileScreen() {
           icon: 'shield-checkmark-outline',
           label: t('profile.menu.security'),
           onPress: () => router.push('/settings/security'),
+        },
+        {
+          icon: 'language-outline',
+          label: t('profile.menu.language') || '언어 / Language',
+          onPress: () => {
+            const next = language === 'ko' ? 'en' : 'ko';
+            setAppLanguage(next);
+          },
+          badge: language === 'ko' ? '한국어' : 'English',
+          badgeColor: '#4CAF5033',
         },
         {
           icon: 'information-circle-outline',
