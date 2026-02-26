@@ -57,12 +57,33 @@ function getTodayKey(): string {
   return new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
 }
 
-/** 카테고리에 맞는 구루 2명 선택 (랜덤) */
-function selectTwoGurus(category: CommunityCategory): string[] {
+/** 카테고리에 맞는 구루 3명 선택 (랜덤) */
+function selectThreeGurus(category: CommunityCategory): string[] {
   const gurus = COMMUNITY_CATEGORY_GURU_MAP[category] || COMMUNITY_CATEGORY_GURU_MAP.stocks;
-  // 셔플 후 2명 선택
+  // 셔플 후 3명 선택
   const shuffled = [...gurus].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, 2);
+  return shuffled.slice(0, Math.min(3, shuffled.length));
+}
+
+/** 구루의 라이벌 찾기 */
+const GURU_RIVAL_MAP: Record<string, string[]> = {
+  buffett: ['cathie_wood', 'saylor'],
+  cathie_wood: ['buffett', 'dimon'],
+  saylor: ['buffett', 'dimon'],
+  dalio: [],
+  musk: ['dimon', 'marks'],
+  dimon: ['saylor', 'musk', 'cathie_wood'],
+  druckenmiller: [],
+  lynch: [],
+  marks: ['musk'],
+  rogers: [],
+};
+
+function findRival(guruId: string, excluded: string[]): string | null {
+  const rivals = GURU_RIVAL_MAP[guruId] || [];
+  const available = rivals.filter(r => !excluded.includes(r));
+  if (available.length === 0) return null;
+  return available[Math.floor(Math.random() * available.length)];
 }
 
 /** 일일 사용량 체크 + 증가 */
@@ -102,14 +123,24 @@ export async function generateGuruCommentsForPost(
       return;
     }
 
-    // 구루 2명 선택
-    const guruIds = selectTwoGurus(category);
-    const personaText = guruIds
+    // 구루 3명 선택
+    const guruIds = selectThreeGurus(category);
+
+    // 첫 번째 구루의 라이벌 찾기 (반박 댓글용)
+    const rivalId = findRival(guruIds[0], guruIds);
+    const allGuruIds = rivalId ? [...guruIds, rivalId] : guruIds;
+
+    const personaText = allGuruIds
       .map(id => GURU_COMMENT_PERSONAS[id])
       .filter(Boolean)
       .join('\n');
 
     const langInstruction = getPromptLanguageInstruction();
+
+    // 라이벌 반박 지시문
+    const rivalInstruction = rivalId
+      ? `\n5. ${GURU_COMMENT_PERSONAS[rivalId]?.split(':')[0] ?? rivalId}는 ${GURU_COMMENT_PERSONAS[guruIds[0]]?.split(':')[0] ?? guruIds[0]}의 의견에 대해 정중하지만 날카롭게 반박합니다. replyToGuruId를 "${guruIds[0]}"로 설정하세요.`
+      : '';
 
     // Gemini 프롬프트 구성
     const systemPrompt = `당신은 투자 거장들이 커뮤니티 게시물에 반응하는 AI입니다.
@@ -122,7 +153,7 @@ ${personaText}
 1. 각 거장의 성격과 투자 철학에 맞는 자연스러운 반응
 2. 1~2문장, 구어체. ${langInstruction}
 3. sentiment: BULLISH(낙관), BEARISH(비관), NEUTRAL(중립), CAUTIOUS(주의) 중 하나
-4. 영어 번역도 함께 제공
+4. 영어 번역도 함께 제공${rivalInstruction}
 
 [JSON 형식으로만 응답]
 {
@@ -131,12 +162,13 @@ ${personaText}
       "guruId": "구루ID",
       "content": "한국어 댓글",
       "contentEn": "English comment",
-      "sentiment": "NEUTRAL"
+      "sentiment": "NEUTRAL",
+      "replyToGuruId": null
     }
   ]
 }`;
 
-    const userPrompt = `게시물 카테고리: ${category}\n게시물 내용: ${content}\n\n위 게시물에 대해 ${guruIds.join(', ')} 구루의 댓글을 생성해주세요.`;
+    const userPrompt = `게시물 카테고리: ${category}\n게시물 내용: ${content}\n\n위 게시물에 대해 ${allGuruIds.join(', ')} 구루의 댓글을 생성해주세요.${rivalId ? ` ${rivalId}는 ${guruIds[0]}에 대한 반박입니다.` : ''}`;
 
     // Gemini 호출 (gemini-proxy Edge Function)
     const { data, error } = await supabase.functions.invoke('gemini-proxy', {
@@ -180,6 +212,9 @@ ${personaText}
           ? comment.sentiment
           : 'NEUTRAL';
 
+      // 반박 대상 구루 ID
+      const replyToGuruId = comment.replyToGuruId || comment.reply_to_guru_id || null;
+
       const { error: insertError } = await supabase
         .from('community_guru_comments')
         .insert({
@@ -188,6 +223,7 @@ ${personaText}
           content: comment.content,
           content_en: comment.contentEn || comment.content_en || null,
           sentiment,
+          ...(replyToGuruId ? { reply_to_guru_id: replyToGuruId } : {}),
         });
 
       if (insertError) {

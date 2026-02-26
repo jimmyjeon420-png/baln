@@ -12,6 +12,7 @@
 
 import React, { useEffect, useRef, useMemo, useCallback } from 'react';
 import { View, StyleSheet, Animated, Text } from 'react-native';
+import Svg, { Defs, LinearGradient, Stop, Rect, Circle, RadialGradient } from 'react-native-svg';
 import type { VillageWeather } from '../../types/village';
 import type { ThemeColors } from '../../styles/colors';
 
@@ -32,12 +33,28 @@ interface VillageWeatherBackgroundProps {
 // 시간대별 하늘 색상 (그라데이션 느낌을 배경색 1개로 표현)
 // ---------------------------------------------------------------------------
 
-const SKY_COLORS: Record<TimeOfDay, string> = {
-  dawn: '#FF8C5A',        // 따뜻한 오렌지 핑크 (여명)
-  morning: '#AED6F1',     // 연한 하늘색 (아침)
-  afternoon: '#5DADE2',   // 밝은 하늘색 (낮)
-  evening: '#D4788A',     // 오렌지-핑크-보라 (저녁노을)
-  night: '#0D1B2A',       // 깊은 네이비 (밤)
+const SKY_COLORS: Record<TimeOfDay, { top: string; bottom: string }> = {
+  dawn: { top: '#FF8C5A', bottom: '#F6B58A' },        // 따뜻한 오렌지 핑크 (여명)
+  morning: { top: '#AED6F1', bottom: '#DDF2FF' },     // 연한 하늘색 (아침)
+  afternoon: { top: '#5DADE2', bottom: '#B7E4FF' },   // 밝은 하늘색 (낮)
+  evening: { top: '#D4788A', bottom: '#F2B37D' },     // 오렌지-핑크-보라 (저녁노을)
+  night: { top: '#0D1B2A', bottom: '#21364E' },       // 깊은 네이비 (밤)
+};
+
+const HORIZON_TINT: Record<TimeOfDay, string> = {
+  dawn: 'rgba(255, 220, 170, 0.25)',
+  morning: 'rgba(255, 255, 255, 0.15)',
+  afternoon: 'rgba(255, 255, 255, 0.08)',
+  evening: 'rgba(255, 185, 120, 0.22)',
+  night: 'rgba(120, 160, 210, 0.09)',
+};
+
+const CELESTIAL: Record<TimeOfDay, { show: boolean; x: number; y: number; color: string; glow: string }> = {
+  dawn: { show: true, x: 0.18, y: 0.22, color: '#FFD57E', glow: 'rgba(255, 190, 110, 0.45)' },
+  morning: { show: true, x: 0.2, y: 0.2, color: '#FFE39E', glow: 'rgba(255, 226, 154, 0.35)' },
+  afternoon: { show: true, x: 0.8, y: 0.18, color: '#FFF2BF', glow: 'rgba(255, 242, 191, 0.28)' },
+  evening: { show: true, x: 0.82, y: 0.26, color: '#FFD08A', glow: 'rgba(255, 170, 110, 0.35)' },
+  night: { show: true, x: 0.82, y: 0.2, color: '#E8F1FF', glow: 'rgba(180, 210, 255, 0.25)' },
 };
 
 // ---------------------------------------------------------------------------
@@ -314,13 +331,14 @@ const STARS: StarProps[] = Array.from({ length: 18 }, (_, i) => ({
 export const VillageWeatherBackground: React.FC<VillageWeatherBackgroundProps> = ({
   weather,
   timeOfDay,
-  colors,
+  colors: _colors,
   children,
 }) => {
   // ── 하늘 색상 크로스페이드 ───────────────────────────────────────────────
   const overlayOpacity = useRef(new Animated.Value(0)).current;
   const prevSkyColor = useRef(SKY_COLORS[timeOfDay]);
   const currentSkyColor = SKY_COLORS[timeOfDay];
+  const celestial = CELESTIAL[timeOfDay];
 
   useEffect(() => {
     overlayOpacity.setValue(0);
@@ -363,17 +381,59 @@ export const VillageWeatherBackground: React.FC<VillageWeatherBackgroundProps> =
   return (
     <View style={styles.container}>
       {/* 레이어 1: 이전 하늘색 (배경) */}
-      <View
-        style={[styles.skyLayer, { backgroundColor: prevSkyColor.current }]}
-      />
+      <View style={styles.skyLayer}>
+        <Svg width="100%" height="100%" preserveAspectRatio="none">
+          <Defs>
+            <LinearGradient id="skyGradPrev" x1="0" y1="0" x2="0" y2="1">
+              <Stop offset="0" stopColor={prevSkyColor.current.top} stopOpacity="1" />
+              <Stop offset="1" stopColor={prevSkyColor.current.bottom} stopOpacity="1" />
+            </LinearGradient>
+            <RadialGradient id="vignettePrev" cx="50%" cy="55%" rx="75%" ry="65%">
+              <Stop offset="0" stopColor="#00000000" />
+              <Stop offset="1" stopColor="#00000028" />
+            </RadialGradient>
+          </Defs>
+          <Rect x="0" y="0" width="100%" height="100%" fill="url(#skyGradPrev)" />
+          <Rect x="0" y="58%" width="100%" height="42%" fill={HORIZON_TINT[timeOfDay]} />
+          {celestial.show && (
+            <>
+              <Circle cx={`${celestial.x * 100}%`} cy={`${celestial.y * 100}%`} r="58" fill={celestial.glow} />
+              <Circle cx={`${celestial.x * 100}%`} cy={`${celestial.y * 100}%`} r="18" fill={celestial.color} />
+            </>
+          )}
+          <Rect x="0" y="0" width="100%" height="100%" fill="url(#vignettePrev)" />
+        </Svg>
+      </View>
 
       {/* 레이어 2: 현재 하늘색 (크로스페이드) */}
       <Animated.View
         style={[
           styles.skyLayer,
-          { backgroundColor: currentSkyColor, opacity: overlayOpacity },
+          { opacity: overlayOpacity },
         ]}
-      />
+      >
+        <Svg width="100%" height="100%" preserveAspectRatio="none">
+          <Defs>
+            <LinearGradient id="skyGradCurrent" x1="0" y1="0" x2="0" y2="1">
+              <Stop offset="0" stopColor={currentSkyColor.top} stopOpacity="1" />
+              <Stop offset="1" stopColor={currentSkyColor.bottom} stopOpacity="1" />
+            </LinearGradient>
+            <RadialGradient id="vignetteCurrent" cx="50%" cy="55%" rx="75%" ry="65%">
+              <Stop offset="0" stopColor="#00000000" />
+              <Stop offset="1" stopColor="#00000028" />
+            </RadialGradient>
+          </Defs>
+          <Rect x="0" y="0" width="100%" height="100%" fill="url(#skyGradCurrent)" />
+          <Rect x="0" y="58%" width="100%" height="42%" fill={HORIZON_TINT[timeOfDay]} />
+          {celestial.show && (
+            <>
+              <Circle cx={`${celestial.x * 100}%`} cy={`${celestial.y * 100}%`} r="58" fill={celestial.glow} />
+              <Circle cx={`${celestial.x * 100}%`} cy={`${celestial.y * 100}%`} r="18" fill={celestial.color} />
+            </>
+          )}
+          <Rect x="0" y="0" width="100%" height="100%" fill="url(#vignetteCurrent)" />
+        </Svg>
+      </Animated.View>
 
       {/* 레이어 3: 밤하늘 별 */}
       {isNight &&

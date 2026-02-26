@@ -14,6 +14,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Sentry from '@sentry/react-native';
 import { GURU_CHARACTER_CONFIGS } from '../data/guruCharacterConfig';
 import { getPromptLanguageInstruction, getLangParam } from '../utils/promptLanguage';
+import {
+  getFreshnessPromptSuffix,
+  markSeen,
+  hashContent,
+} from './contentFreshnessService';
 
 const STORAGE_KEY = '@baln:village_conversations';
 const CACHE_DURATION = 3 * 60 * 60 * 1000; // 3시간
@@ -104,9 +109,14 @@ ${guruInfo}
   ]
 }`;
 
-  const userPrompt = marketContext
+  // 중복 방지: 최근 본 대화 해시를 프롬프트에 추가
+  const freshnessSuffix = await getFreshnessPromptSuffix().catch(() => '');
+
+  const basePrompt = marketContext
     ? `오늘의 시장 상황:\n${marketContext}\n\n이 상황에서 거장들이 마을에서 나누는 대화를 만들어주세요. 트럼프 관세, 금리, AI 같은 핫이슈가 있으면 거장들이 각자 반응하게 해주세요.`
     : '거장들이 마을에서 평소처럼 투자에 대해 이야기하는 장면을 만들어주세요. 최근 글로벌 시장 트렌드를 반영해주세요.';
+
+  const userPrompt = freshnessSuffix ? `${basePrompt}\n\n${freshnessSuffix}` : basePrompt;
 
   try {
     const { default: supabase } = await import('./supabase');
@@ -150,6 +160,13 @@ ${guruInfo}
     };
 
     await saveBatch(batch);
+
+    // 생성된 대화를 "이미 봤음"으로 기록 (다음 생성 시 중복 방지)
+    for (const conv of batch.conversations) {
+      const triggerHash = hashContent(conv.trigger);
+      markSeen('conversations', triggerHash).catch(() => {});
+    }
+
     return batch;
   } catch (err) {
     if (__DEV__) console.error('[Village] 대화 생성 실패:', err);

@@ -280,9 +280,12 @@ export const useCreatePost = () => {
     onSuccess: (newPost, variables) => {
       queryClient.invalidateQueries({ queryKey: ['communityPosts'] });
 
-      // 구루 AI 댓글 트리거 (fire-and-forget)
+      // 구루 AI 댓글 트리거 — 30~120초 랜덤 딜레이 (자연스러운 시간차)
       if (newPost?.id) {
-        generateGuruCommentsForPost(newPost.id, variables.content, variables.category).catch(() => {});
+        const delayMs = 30000 + Math.random() * 90000; // 30초~2분
+        setTimeout(() => {
+          generateGuruCommentsForPost(newPost.id, variables.content, variables.category).catch(() => {});
+        }, delayMs);
       }
 
       // 게시물 작성 보상 (fire-and-forget)

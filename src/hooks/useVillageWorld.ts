@@ -20,12 +20,16 @@ import { useGuruFriendship } from './useGuruFriendship';
 import { useVillageProsperity } from './useVillageProsperity';
 import { useVillageLetters } from './useVillageLetters';
 import { useGuruVillage } from './useGuruVillage';
+import { useVillageReactions } from './useVillageReactions';
+import { useVillageAnalytics } from './useVillageAnalytics';
+import type { ActiveReaction } from './useVillageReactions';
+import type { VillageReactionType } from '../services/villageReactionService';
 import type { GuruMood, GuruActivity, FriendshipTier } from '../types/village';
 import type { CharacterExpression } from '../types/character';
 import type { GuruFriendship } from '../types/village';
 import type { GuruActivityState } from './useGuruActivity';
 import type { GuruPosition } from './useGuruVillage';
-import type { VillageConversation } from '../services/villageConversationService';
+import type { VillageConversation, VillageMessage } from '../services/villageConversationService';
 import type { ProsperityContribution, GuruLetter } from '../types/village';
 import type { VillageWeather, ClothingLevel } from '../types/village';
 
@@ -87,7 +91,11 @@ export interface UseVillageWorldReturn {
   positions: GuruPosition[];
   conversations: VillageConversation[];
   userChatGuru: string | null;
+  userChatMessages: VillageMessage[];
   isUserChatLoading: boolean;
+  userChatError: boolean;
+  sendMessageToGuru: (message: string) => Promise<void>;
+  retryLastMessage: () => void;
 
   // 번영도
   prosperityLevel: number;
@@ -106,7 +114,20 @@ export interface UseVillageWorldReturn {
 
   // 우정
   friendships: Record<string, GuruFriendship>;
+  addInteraction: (guruId: string, type: string) => Promise<void>;
   getTopFriends: (n: number) => GuruFriendship[];
+
+  // 리액션
+  /** 현재 활성 구루 반응 (축하/인사 등). null이면 없음 */
+  activeReaction: ActiveReaction | null;
+  /** 구루 반응 트리거 (예측 적중, 스트릭, 맥락카드 읽기 등) */
+  triggerReaction: (type: VillageReactionType, closestGuruId?: string) => void;
+
+  // 분석
+  /** 마을 이벤트 트래킹 (예: trackEvent('guru_chat', { guruId: 'buffett' })) */
+  trackEvent: (eventName: string, data?: Record<string, string | number | boolean>) => Promise<void>;
+  /** 참여 점수 (0~100, 기능 다양성 기준) */
+  getEngagementScore: () => number;
 
   // 로딩
   isLoading: boolean;
@@ -170,6 +191,16 @@ export function useVillageWorld(marketSentiment?: number): UseVillageWorldReturn
   const { letters, unreadCount, openLetter } = useVillageLetters(friendshipsMap);
 
   const village = useGuruVillage();
+
+  // 가장 친한 구루 ID (리액션 대표 구루용)
+  const topFriend = getTopFriends(1)[0];
+  const closestGuruId = topFriend?.guruId;
+
+  // 구루 반응 시스템 (축하/인사/이벤트)
+  const { activeReaction, triggerReaction } = useVillageReactions(closestGuruId);
+
+  // 마을 분석 (참여 지표 추적)
+  const { trackEvent, getEngagementScore } = useVillageAnalytics();
 
   // ── 통합 구루 상태 맵 (useMemo로 캐싱) ───────────────────────────────────
 
@@ -256,6 +287,9 @@ export function useVillageWorld(marketSentiment?: number): UseVillageWorldReturn
           if (__DEV__) console.warn('[useVillageWorld] 번영 포인트 적립 실패 (무시)');
         });
 
+        // 4. 분석 이벤트 기록 (best-effort)
+        trackEvent('guru_chat', { guruId }).catch(() => {});
+
         if (__DEV__) {
           console.log(`[useVillageWorld] chatWithGuru: ${guruId} → "${message.slice(0, 30)}..."`);
         }
@@ -291,7 +325,11 @@ export function useVillageWorld(marketSentiment?: number): UseVillageWorldReturn
     positions: village.positions,
     conversations: village.conversations,
     userChatGuru: village.userChatGuru,
+    userChatMessages: village.userChatMessages,
     isUserChatLoading: village.isUserChatLoading,
+    userChatError: village.userChatError,
+    sendMessageToGuru: village.sendMessageToGuru,
+    retryLastMessage: village.retryLastMessage,
 
     // 번영도
     prosperityLevel,
@@ -306,7 +344,16 @@ export function useVillageWorld(marketSentiment?: number): UseVillageWorldReturn
 
     // 우정
     friendships,
+    addInteraction,
     getTopFriends,
+
+    // 리액션
+    activeReaction,
+    triggerReaction,
+
+    // 분석
+    trackEvent,
+    getEngagementScore,
 
     // 로딩
     isLoading,

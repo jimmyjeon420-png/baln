@@ -7,7 +7,7 @@
  * animated=true 시 idle 애니메이션 적용 (숨쉬기, 깜빡임, 흔들림)
  */
 
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
 import type { CharacterExpression, CharacterSize } from '../../types/character';
 import { CHARACTER_SIZE_MAP } from '../../types/character';
@@ -16,6 +16,7 @@ import { sentimentToExpression } from '../../services/characterService';
 import { useIdleAnimation } from './animations/useIdleAnimation';
 import { useActivityAnimation } from './animations/useActivityAnimation';
 import { useWanderAnimation } from './animations/useWanderAnimation';
+import { useSignatureMove } from './animations/useSignatureMove';
 import { ClothingOverlay } from './layers/ClothingOverlay';
 import { AccessoryOverlay, AccessoryType } from './layers/AccessoryOverlay';
 import { MoodParticles } from './layers/MoodParticles';
@@ -154,7 +155,7 @@ function StaticAvatar({
   );
 }
 
-/** animated=true 버전 (idle 애니메이션 적용) */
+/** animated=true 버전 (idle + 시그니처 무브 + 감정 크로스페이드 적용) */
 function AnimatedAvatar({
   guruId,
   pixelSize,
@@ -181,6 +182,28 @@ function AnimatedAvatar({
   const { breathingStyle, swayStyle, blinkPhaseRef } = useIdleAnimation();
   const { activityStyle } = useActivityAnimation({ activity, isActive: true });
   const { wanderStyle } = useWanderAnimation({ enabled: true, activity, guruId });
+  const { signatureStyle } = useSignatureMove({ guruId });
+
+  // ── P0-3: 감정 크로스페이드 (이전→새 표정 0.4초 전환) ──────────────
+  const prevExpressionRef = useRef<CharacterExpression>(resolvedExpression);
+  const crossfadeOpacity = useRef(new Animated.Value(1)).current;
+  const showPrev = useRef(false);
+
+  useEffect(() => {
+    if (prevExpressionRef.current !== resolvedExpression) {
+      // 이전 표정 기억 + 크로스페이드 시작
+      showPrev.current = true;
+      crossfadeOpacity.setValue(0);
+      Animated.timing(crossfadeOpacity, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+      }).start(() => {
+        showPrev.current = false;
+        prevExpressionRef.current = resolvedExpression;
+      });
+    }
+  }, [resolvedExpression, crossfadeOpacity]);
 
   if (SvgComponent && config) {
     return (
@@ -197,14 +220,34 @@ function AnimatedAvatar({
           breathingStyle,
           swayStyle,
           activityStyle,
+          signatureStyle,
         ]}
       >
-        <SvgComponent
-          size={pixelSize}
-          expression={resolvedExpression}
-          accentColor={config.accentColor}
-          blinkPhase={blinkPhaseRef.current}
-        />
+        {/* 이전 표정 (크로스페이드 아웃) */}
+        {showPrev.current && prevExpressionRef.current !== resolvedExpression && (
+          <Animated.View
+            style={[
+              StyleSheet.absoluteFill,
+              { opacity: Animated.subtract(new Animated.Value(1), crossfadeOpacity) },
+            ]}
+          >
+            <SvgComponent
+              size={pixelSize}
+              expression={prevExpressionRef.current}
+              accentColor={config.accentColor}
+              blinkPhase={blinkPhaseRef.current}
+            />
+          </Animated.View>
+        )}
+        {/* 현재 표정 (크로스페이드 인) */}
+        <Animated.View style={{ opacity: crossfadeOpacity }}>
+          <SvgComponent
+            size={pixelSize}
+            expression={resolvedExpression}
+            accentColor={config.accentColor}
+            blinkPhase={blinkPhaseRef.current}
+          />
+        </Animated.View>
         {clothingLevel && (
           <ClothingOverlay
             size={pixelSize}
@@ -252,6 +295,7 @@ function AnimatedAvatar({
           breathingStyle,
           swayStyle,
           activityStyle,
+          signatureStyle,
         ]}
       >
         <Text style={{ fontSize: emojiSize }}>{emoji}</Text>

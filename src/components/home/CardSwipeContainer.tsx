@@ -134,7 +134,6 @@ export default function CardSwipeContainer({
         scrollEventThrottle={16}
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
-        removeClippedSubviews={true}
       >
         {childArray.map((child, index) => (
           <View key={index} style={[styles.cardWrapper, scrollViewHeight > 0 && { height: scrollViewHeight }]}>
@@ -216,7 +215,7 @@ const styles = StyleSheet.create({
     paddingTop: 4,
   },
   cardScrollContent: {
-    paddingBottom: 16,
+    paddingBottom: 24,
   },
   bottomNav: {
     flexDirection: 'row',

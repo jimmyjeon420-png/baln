@@ -175,12 +175,14 @@ export function GuruVillage({ height = VILLAGE_HEIGHT, onRoundtablePress }: Guru
         groundColor={timeTheme.groundColor}
         starOpacity={timeTheme.starOpacity}
       >
-        {/* 마을 간판 */}
-        <VillageSignBoard
-          greeting={timeTheme.greeting}
-          label={timeTheme.label}
-          villageName={t('village.title')}
-        />
+        {/* 마을 간판 — 미니뷰(광장)에서는 숨김 (캐릭터 가림 방지) */}
+        {height >= VILLAGE_HEIGHT && (
+          <VillageSignBoard
+            greeting={timeTheme.greeting}
+            label={timeTheme.label}
+            villageName={t('village.title')}
+          />
+        )}
 
         {/* 동물의숲 장식: 나무 */}
         <VillageTree x={80} size="md" />

@@ -33,6 +33,8 @@ import {
   formatPortfolioRatio,
 } from '../utils/communityUtils';
 import { useTheme } from '../hooks/useTheme';
+import { useGuruComments } from '../hooks/useGuruComments';
+import { GURU_CHARACTER_CONFIGS } from '../data/guruCharacterConfig';
 
 interface CommunityPostCardProps {
   post: CommunityPost;
@@ -198,9 +200,8 @@ export default function CommunityPostCard({
         </ScrollView>
       )}
 
-      {/* TODO: 구루 AI 댓글 미리보기 — community_guru_comments 테이블에서 1건 조회 필요
-         CommunityPost 타입에 guru_comment 필드가 없으므로, useGuruComments 훅을 통해 데이터를 가져오거나
-         게시물 쿼리에 join을 추가해야 함. 추후 구현 예정. */}
+      {/* 구루 AI 댓글 미리보기 (최대 2개) */}
+      <GuruCommentPreview postId={post.id} colors={colors} />
 
       {/* 푸터: 좋아요 토글 + 댓글 수 */}
       <View style={[styles.footer, { borderTopColor: colors.border }]}>
@@ -229,6 +230,57 @@ export default function CommunityPostCard({
     </TouchableOpacity>
   );
 }
+
+/** 구루 AI 댓글 미리보기 — 최대 2개 표시 */
+function GuruCommentPreview({ postId, colors }: { postId: string; colors: any }) {
+  const { data: guruComments } = useGuruComments(postId);
+  // 독립 댓글만 (reply 제외), 최대 2개
+  const previews = (guruComments || [])
+    .filter(c => !c.reply_to_guru_id)
+    .slice(0, 2);
+
+  if (previews.length === 0) return null;
+
+  return (
+    <View style={guruStyles.container}>
+      {previews.map(comment => {
+        const guru = GURU_CHARACTER_CONFIGS[comment.guru_id];
+        return (
+          <View key={comment.id} style={[guruStyles.row, { backgroundColor: colors.surfaceLight || colors.surface }]}>
+            <Text style={guruStyles.emoji}>{guru?.emoji ?? '🤖'}</Text>
+            <View style={guruStyles.textWrap}>
+              <Text style={[guruStyles.name, { color: guru?.accentColor || colors.primary }]}>
+                {guru?.guruName ?? comment.guru_id}
+              </Text>
+              <Text
+                style={[guruStyles.content, { color: colors.textSecondary }]}
+                numberOfLines={1}
+              >
+                {comment.content}
+              </Text>
+            </View>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+const guruStyles = StyleSheet.create({
+  container: { gap: 6, marginBottom: 12 },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 10,
+  },
+  emoji: { fontSize: 18 },
+  textWrap: { flex: 1 },
+  name: { fontSize: 11, fontWeight: '700', marginBottom: 1 },
+  content: { fontSize: 12, lineHeight: 16 },
+});
 
 const styles = StyleSheet.create({
   container: {

@@ -9,7 +9,7 @@
  * - 작성자 아바타 탭 → 프로필 페이지
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -69,9 +69,11 @@ import CommentItem from '../../src/components/community/CommentItem';
 import ReplySection from '../../src/components/community/ReplySection';
 import ReportModal from '../../src/components/community/ReportModal';
 import GuruCommentBubble from '../../src/components/community/GuruCommentBubble';
+import type { GuruComment } from '../../src/types/guruComment';
 import { useAuth } from '../../src/context/AuthContext';
 import { useMyBookmarks, useToggleBookmark } from '../../src/hooks/useBookmarks';
 import { useGuruComments } from '../../src/hooks/useGuruComments';
+import { generateGuruCommentsForPost } from '../../src/services/guruCommentService';
 import { validateContent, getViolationMessage } from '../../src/services/contentFilter';
 import { useTheme } from '../../src/hooks/useTheme';
 
@@ -124,10 +126,77 @@ export default function PostDetailScreen() {
   const isBookmarked = myBookmarks?.has(id || '') ?? false;
 
   // 구루 AI 댓글
-  const { data: guruComments, isLoading: guruCommentsLoading } = useGuruComments(id || '');
+  const { data: guruComments, isLoading: guruCommentsLoading, refetch: refetchGuruComments } = useGuruComments(id || '');
+
+  // 기존 게시글에 구루 댓글이 없으면 자동 생성 (1회만, 10~30초 딜레이)
+  const guruGenAttempted = useRef(false);
+  useEffect(() => {
+    if (
+      !guruGenAttempted.current &&
+      !guruCommentsLoading &&
+      guruComments !== undefined &&
+      guruComments.length === 0 &&
+      post?.id &&
+      post.content &&
+      post.category
+    ) {
+      guruGenAttempted.current = true;
+      const delayMs = 10000 + Math.random() * 20000; // 10~30초
+      const timer = setTimeout(() => {
+        generateGuruCommentsForPost(post.id, post.content, post.category)
+          .then(() => setTimeout(() => refetchGuruComments(), 4000))
+          .catch(() => {});
+      }, delayMs);
+      return () => clearTimeout(timer);
+    }
+  }, [guruComments, guruCommentsLoading, post, refetchGuruComments]);
 
   // 삭제 중인 댓글 ID 추적 (개별 로딩 상태)
   const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
+
+  // ── 통합 피드: 유저 댓글 + 구루 댓글을 시간순 정렬 ──
+  type FeedItem =
+    | { type: 'user_comment'; data: CommunityComment }
+    | { type: 'guru_comment'; data: GuruComment };
+
+  const integratedFeed = useMemo<FeedItem[]>(() => {
+    const topLevelComments = (comments?.filter(c => !c.parent_id) || [])
+      .map(c => ({ type: 'user_comment' as const, data: c }));
+
+    // 구루 댓글: reply_to_guru_id가 없는 것들은 독립, 있는 것들은 부모 뒤에 삽입
+    const independentGuru: FeedItem[] = [];
+    const replyGuru: FeedItem[] = [];
+    (guruComments || []).forEach(gc => {
+      if (gc.reply_to_guru_id) {
+        replyGuru.push({ type: 'guru_comment', data: gc });
+      } else {
+        independentGuru.push({ type: 'guru_comment', data: gc });
+      }
+    });
+
+    // 시간순 통합 정렬
+    const allItems: FeedItem[] = [...topLevelComments, ...independentGuru];
+    allItems.sort((a, b) => {
+      const aTime = new Date(a.data.created_at).getTime();
+      const bTime = new Date(b.data.created_at).getTime();
+      return aTime - bTime;
+    });
+
+    // reply_to_guru_id가 있는 댓글은 부모 구루 댓글 바로 뒤에 삽입
+    const result: FeedItem[] = [];
+    for (const item of allItems) {
+      result.push(item);
+      if (item.type === 'guru_comment') {
+        const parentGuruId = (item.data as GuruComment).guru_id;
+        const replies = replyGuru.filter(
+          r => (r.data as GuruComment).reply_to_guru_id === parentGuruId
+        );
+        result.push(...replies);
+      }
+    }
+
+    return result;
+  }, [comments, guruComments]);
 
   // 새로고침
   const [refreshing, setRefreshing] = useState(false);
@@ -284,18 +353,34 @@ export default function PostDetailScreen() {
     );
   };
 
-  // ── 댓글 아이템 (최상위 + 답글 섹션) ──
-  const renderComment = ({ item }: { item: CommunityComment }) => {
-    const replies = comments?.filter((c) => c.parent_id === item.id) || [];
+  // ── 통합 피드 아이템 렌더 (유저 댓글 + 구루 댓글) ──
+  const renderFeedItem = ({ item }: { item: FeedItem }) => {
+    if (item.type === 'guru_comment') {
+      const gc = item.data as GuruComment;
+      return (
+        <GuruCommentBubble
+          key={gc.id}
+          guruId={gc.guru_id}
+          content={gc.content}
+          contentEn={gc.content_en}
+          sentiment={gc.sentiment}
+          createdAt={gc.created_at}
+          replyToGuruId={gc.reply_to_guru_id}
+        />
+      );
+    }
+
+    // 유저 댓글
+    const comment = item.data as CommunityComment;
+    const replies = comments?.filter((c) => c.parent_id === comment.id) || [];
 
     return (
       <>
-        {/* 최상위 댓글 */}
         <CommentItem
-          comment={item}
+          comment={comment}
           currentUserId={user?.id}
-          isLiked={myCommentLikes?.has(item.id) ?? false}
-          isBestAnswer={bestAnswer?.comment_id === item.id}
+          isLiked={myCommentLikes?.has(comment.id) ?? false}
+          isBestAnswer={bestAnswer?.comment_id === comment.id}
           canSelectBest={post?.user_id === user?.id}
           onSelectBest={handleSelectBestAnswer}
           isSelectingBest={selectBestAnswer.isPending}
@@ -306,7 +391,7 @@ export default function PostDetailScreen() {
           onAuthorPress={handleAuthorPress}
           onReport={(commentId) => handleReport('comment', commentId)}
           isUpdating={updateComment.isPending}
-          isDeleting={deletingCommentId === item.id}
+          isDeleting={deletingCommentId === comment.id}
         />
 
         {/* 답글 섹션 (접기/펼치기 + 초록 바 디자인) */}
@@ -521,39 +606,19 @@ export default function PostDetailScreen() {
         </View>
       </View>
 
-      {/* 구루들의 반응 섹션 */}
-      {(guruComments && guruComments.length > 0) || guruCommentsLoading ? (
-        <View style={styles.guruReactionsSection}>
-          <Text style={[styles.guruReactionsTitle, { color: colors.textSecondary }]}>
-            구루들의 반응
-          </Text>
-          {guruCommentsLoading ? (
-            <View style={styles.guruThinkingContainer}>
-              <ActivityIndicator size="small" color={colors.primary} />
-              <Text style={[styles.guruThinkingText, { color: colors.textTertiary }]}>
-                구루들이 생각 중...
-              </Text>
-            </View>
-          ) : (
-            guruComments?.map((gc) => (
-              <GuruCommentBubble
-                key={gc.id}
-                guruId={gc.guru_id}
-                content={gc.content}
-                contentEn={gc.content_en}
-                sentiment={gc.sentiment}
-                createdAt={gc.created_at}
-              />
-            ))
-          )}
-        </View>
-      ) : null}
-
-      {/* 댓글 섹션 헤더 */}
+      {/* 댓글 섹션 헤더 + 구루 로딩 인라인 표시 */}
       <View style={styles.commentsHeader}>
         <Text style={[styles.commentsTitle, { color: colors.textPrimary }]}>
-          댓글 {comments?.length || 0}
+          댓글 {(comments?.length || 0) + (guruComments?.length || 0)}
         </Text>
+        {guruCommentsLoading && (
+          <View style={styles.guruThinkingInline}>
+            <ActivityIndicator size="small" color={colors.primary} />
+            <Text style={[styles.guruThinkingText, { color: colors.textTertiary }]}>
+              구루들이 생각 중...
+            </Text>
+          </View>
+        )}
       </View>
 
       {bestAnswerComment && (
@@ -607,11 +672,11 @@ export default function PostDetailScreen() {
           {!post && <View style={{ width: 28 }} />}
         </View>
 
-        {/* 댓글 목록 (최상위 댓글만 -- 대댓글은 각 아이템 내에서 렌더링) */}
+        {/* 댓글 목록 (유저 댓글 + 구루 댓글 시간순 통합) */}
         <FlatList
-          data={comments?.filter((c) => !c.parent_id) || []}
-          keyExtractor={(item) => item.id}
-          renderItem={renderComment}
+          data={integratedFeed}
+          keyExtractor={(item) => item.data.id}
+          renderItem={renderFeedItem}
           ListHeaderComponent={renderHeader}
           contentContainerStyle={styles.listContent}
 
@@ -872,25 +937,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 
-  // ── 구루 반응 섹션 ──
-  guruReactionsSection: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    gap: 8,
-  },
-  guruReactionsTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-  guruThinkingContainer: {
+  // ── 구루 로딩 인라인 (댓글 헤더 옆) ──
+  guruThinkingInline: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingVertical: 12,
+    gap: 6,
+    marginLeft: 8,
   },
   guruThinkingText: {
-    fontSize: 13,
+    fontSize: 12,
   },
 
   // ── 댓글 섹션 ──
@@ -898,6 +953,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 20,
     paddingBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   commentsTitle: {
     fontSize: 16,

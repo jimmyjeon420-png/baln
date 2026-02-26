@@ -12,7 +12,7 @@
  *       사용자와 상호작용하는 핵심 킬링 피처 화면
  */
 
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -22,6 +22,11 @@ import {
   ScrollView,
   Platform,
   useWindowDimensions,
+  Modal,
+  TextInput,
+  KeyboardAvoidingView,
+  FlatList,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -34,6 +39,8 @@ import { useMarketSentiment } from '../../src/hooks/useMarketSentiment';
 import { useVillageWorld } from '../../src/hooks/useVillageWorld';
 import { useVillageEvents } from '../../src/hooks/useVillageEvents';
 import { useScreenTracking } from '../../src/hooks/useAnalytics';
+import { useVillageDecay } from '../../src/hooks/useVillageDecay';
+import { useVillageSeason } from '../../src/hooks/useVillageSeason';
 
 // Village world components
 import { VillageWeatherBackground } from '../../src/components/village/VillageWeatherBackground';
@@ -53,8 +60,26 @@ import { VillageGroundLayer } from '../../src/components/village/VillageGroundLa
 import { VillageScenery } from '../../src/components/village/VillageScenery';
 import { VillageFurniture } from '../../src/components/village/VillageFurniture';
 
+// P0-5 + P1 세계관 강화 컴포넌트
+import LevelUpCelebration from '../../src/components/village/LevelUpCelebration';
+import GuruInteractionEffect from '../../src/components/village/GuruInteractionEffect';
+import AmbientSoundText from '../../src/components/village/AmbientSoundText';
+import SpecialDayBanner from '../../src/components/village/SpecialDayBanner';
+import SeasonParticles from '../../src/components/village/SeasonParticles';
+import GuruGiftModal from '../../src/components/village/GuruGiftModal';
+
 // Character config for name lookups
 import { GURU_CHARACTER_CONFIGS } from '../../src/data/guruCharacterConfig';
+
+// Guru relations for proximity indicators
+import { GURU_RELATIONS } from '../../src/hooks/useGuruVillage';
+
+// 세계관 강화: 이스터에그, 집, 기념품, 린치 마트, 편지 답장
+import { EasterEggToast } from '../../src/components/village/EasterEggToast';
+import { useEasterEggs } from '../../src/hooks/useEasterEggs';
+import HouseView from '../../src/components/village/HouseView';
+import { useHouseSystem } from '../../src/hooks/useHouseSystem';
+import { LynchMartTour } from '../../src/components/village/LynchMartTour';
 
 // Modals (Market Street & Village Newspaper)
 import BrandMarket from '../../src/components/village/BrandMarket';
@@ -91,19 +116,62 @@ function mapTimeOfDay(hookPeriod: HookTimeOfDay): WeatherTimeOfDay {
 interface SpeechBubbleProps {
   text: string;
   colors: any;
+  /** 대화 상대 이름 (있으면 "→ 상대에게" 표시) */
+  replyToName?: string;
+  /** 말하는 구루 이름 */
+  speakerName?: string;
+  /** 말하는 구루 시그니처 컬러 */
+  speakerAccent?: string;
+  /** 꼬리 위치: top(캐릭터 위 말풍선) / bottom(캐릭터 아래 말풍선) */
+  tailAt?: 'top' | 'bottom';
 }
 
-const SpeechBubble = React.memo(({ text, colors }: SpeechBubbleProps) => {
+const SpeechBubble = React.memo(({
+  text,
+  colors,
+  replyToName,
+  speakerName,
+  speakerAccent,
+  tailAt = 'top',
+}: SpeechBubbleProps) => {
   if (!text) return null;
   return (
-    <View style={[styles.speechBubble, { backgroundColor: colors.surface + 'E0', borderColor: colors.border }]}>
-      <Text
-        style={[styles.speechText, { color: colors.textPrimary }]}
-        numberOfLines={2}
-      >
+    <View
+      style={[
+        styles.speechBubble,
+        {
+          backgroundColor: colors.surface + 'E0',
+          borderColor: speakerAccent ? `${speakerAccent}88` : colors.border,
+        },
+      ]}
+    >
+      {speakerName ? (
+        <Text
+          style={[styles.speechSpeaker, { color: colors.textSecondary }]}
+          numberOfLines={1}
+        >
+          {speakerName}
+        </Text>
+      ) : null}
+      {replyToName ? (
+        <Text
+          style={[styles.speechReplyTo, { color: colors.primary }]}
+          numberOfLines={1}
+        >
+          {'\u2192'} {replyToName}
+        </Text>
+      ) : null}
+      <Text style={[styles.speechText, { color: colors.textPrimary }]}>
         {text}
       </Text>
-      <View style={[styles.speechTail, { borderTopColor: colors.surface + 'D0' }]} />
+      <View
+        style={[
+          styles.speechTail,
+          tailAt === 'top'
+            ? [styles.speechTailTop, { borderBottomColor: colors.surface + 'D0' }]
+            : [styles.speechTailBottom, { borderTopColor: colors.surface + 'D0' }],
+        ]}
+      />
     </View>
   );
 });
@@ -135,6 +203,13 @@ export default function VillageScreen() {
     closeGuruChat,
     positions,
     conversations,
+    userChatGuru,
+    userChatMessages,
+    isUserChatLoading,
+    userChatError,
+    sendMessageToGuru,
+    retryLastMessage,
+    addInteraction,
     prosperityLevel,
     prosperityProgress,
     todayPoints,
@@ -150,12 +225,37 @@ export default function VillageScreen() {
   // Village events
   const { activeEvent, dismissEvent } = useVillageEvents(prosperityLevel);
 
+  // P0-5: 이탈 쇠퇴 효과 (타마고치)
+  const decay = useVillageDecay();
+
+  // P1-1: 계절 시스템
+  const seasonVisuals = useVillageSeason();
+
+  // Easter eggs
+  const { easterEggToast, dismissToast } = useEasterEggs();
+
+  // House system
+  const {
+    houseLevel,
+    placedFurniture,
+    maxSlots,
+    wasUpgraded,
+    acknowledgeUpgrade,
+  } = useHouseSystem(prosperityLevel);
+
+  // House interior modal state
+  const [showHouseInterior, setShowHouseInterior] = useState(false);
+
   // Local state for modals/sheets
   const [selectedGuruId, setSelectedGuruId] = useState<string | null>(null);
   const [showMailbox, setShowMailbox] = useState(false);
   const [showMarket, setShowMarket] = useState(false);
   const [showNewspaper, setShowNewspaper] = useState(false);
   const [newspaperArticles, setNewspaperArticles] = useState<NewspaperArticle[]>([]);
+  const [showGiftModal, setShowGiftModal] = useState(false);
+  const [giftTargetGuruId, setGiftTargetGuruId] = useState<string | null>(null);
+  const [showLevelUp, setShowLevelUp] = useState(false);
+  const [newLevelForCelebration, setNewLevelForCelebration] = useState(1);
 
   // 신문 데이터 로드: 캐시 → 폴백
   useEffect(() => {
@@ -187,16 +287,24 @@ export default function VillageScreen() {
   }, [addContribution]);
 
   const handleGuruChat = useCallback((guruId: string) => {
-    openGuruChat(guruId);
-    setSelectedGuruId(null);
-    // Navigate to guru chat screen (future: inline chat)
-    router.push(`/settings/guru-detail/${guruId}`);
-  }, [openGuruChat, router]);
+    setSelectedGuruId(null); // 디테일 시트 닫기
+    openGuruChat(guruId);    // 채팅 모달 열기
+  }, [openGuruChat]);
 
   const handleGuruGift = useCallback((guruId: string) => {
-    // TODO: Implement gift system (5C cost)
-    if (__DEV__) console.log('[VillageScreen] Gift to guru:', guruId);
+    setGiftTargetGuruId(guruId);
+    setShowGiftModal(true);
+    setSelectedGuruId(null); // 디테일 시트 닫기
   }, []);
+
+  const handleGiftSend = useCallback(async (guruId: string, cost: number, friendshipGain: number) => {
+    // 선물 보내기 → 우정 포인트 + 번영 포인트
+    // 1. 우정 포인트 적립 (gift 타입 — 기본 5점 + 선물 크기별 추가)
+    await addInteraction(guruId, 'gift').catch(() => {});
+    // 2. 번영 포인트 적립
+    await addContribution('guru_chat').catch(() => {});
+    // 모달은 GuruGiftModal 내부에서 자동 닫힘 (2초 후)
+  }, [addInteraction, addContribution]);
 
   const handleGuruViewProfile = useCallback((guruId: string) => {
     setSelectedGuruId(null);
@@ -305,6 +413,14 @@ export default function VillageScreen() {
             </View>
           </View>
 
+          {/* ── P2-4: 특별한 날 배너 (구루 생일/기념일) ─────────────── */}
+          <View style={styles.eventBannerContainer}>
+            <SpecialDayBanner colors={colors} locale={language} />
+          </View>
+
+          {/* ── 린치의 화요 마트 순찰 (화요일만 표시) ─────────────── */}
+          <LynchMartTour colors={colors} locale={language} />
+
           {/* ── Event Banner ──────────────────────────────────────────── */}
           <View style={styles.eventBannerContainer}>
             <EventBanner
@@ -324,11 +440,18 @@ export default function VillageScreen() {
               height={screenHeight * 0.5}
               timeOfDay={mappedTimeOfDay}
               prosperityLevel={prosperityLevel}
+              season={seasonVisuals.season}
+              flowerOpacity={decay.flowerOpacity}
+              weedCount={decay.weedCount}
             />
             <VillageScenery
               width={screenWidth}
               height={screenHeight * 0.5}
               timeOfDay={mappedTimeOfDay}
+              season={seasonVisuals.season}
+              prosperityLevel={prosperityLevel}
+              dustOverlayOpacity={decay.dustOverlayOpacity}
+              desaturationAmount={decay.desaturationAmount}
             />
             <VillageFurniture
               width={screenWidth}
@@ -337,58 +460,281 @@ export default function VillageScreen() {
               prosperityLevel={prosperityLevel}
             />
 
+            {/* ── 내 집 ─────────────────────────────────── */}
+            <HouseView
+              houseLevel={houseLevel}
+              placedCount={placedFurniture.length}
+              maxSlots={maxSlots}
+              showUpgradeBadge={wasUpgraded}
+              onPress={() => {
+                acknowledgeUpgrade();
+                setShowHouseInterior(true);
+              }}
+              locale={language}
+            />
+
+            {/* ── P1-1: 계절 파티클 (벚꽃/반딧불/낙엽/눈) ──────── */}
+            <SeasonParticles
+              particleType={seasonVisuals.particleType}
+              particleEmoji={seasonVisuals.particleEmoji}
+              screenWidth={screenWidth}
+            />
+
+            {/* ── P2-2: 마을 사운드스케이프 (텍스트) ──────────── */}
+            <AmbientSoundText
+              weather={weather?.condition}
+              timeOfDay={mappedTimeOfDay}
+              season={seasonVisuals.season}
+              colors={colors}
+              locale={language}
+            />
+
+            {/* ── P1-6: 구루 관계 상호작용 이펙트 ──────────────── */}
+            <GuruInteractionEffect
+              interactions={(() => {
+                const pairs: Array<{ guru1Id: string; guru2Id: string; relation: 'ally' | 'rival' | 'neutral'; midX: number; midY: number; distance: number }> = [];
+                const seen = new Set<string>();
+                for (let i = 0; i < positions.length; i++) {
+                  for (let j = i + 1; j < positions.length; j++) {
+                    const a = positions[i];
+                    const b = positions[j];
+                    const dx = a.x - b.x;
+                    const dy = a.y - b.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist > 0.15) continue;
+                    const pairKey = `${a.guruId}-${b.guruId}`;
+                    if (seen.has(pairKey)) continue;
+                    seen.add(pairKey);
+                    const relation = GURU_RELATIONS[a.guruId]?.[b.guruId]
+                      || GURU_RELATIONS[b.guruId]?.[a.guruId]
+                      || 'neutral';
+                    if (relation === 'neutral') continue;
+                    pairs.push({
+                      guru1Id: a.guruId,
+                      guru2Id: b.guruId,
+                      relation,
+                      midX: (a.x + b.x) / 2,
+                      midY: (a.y + b.y) / 2,
+                      distance: dist,
+                    });
+                  }
+                }
+                return pairs;
+              })()}
+              screenWidth={screenWidth}
+            />
+
+            {/* ── 대화 연결선 (캐릭터 레이어 아래) ────────────────── */}
             {positions.map((pos) => {
-              const guruState = guruStates.get(pos.guruId);
-              const config = GURU_CHARACTER_CONFIGS[pos.guruId];
+              if (!pos.talkingTo || !pos.bubble) return null;
+              const partner = positions.find(p => p.guruId === pos.talkingTo);
+              if (!partner) return null;
+
+              // 두 구루 사이 연결선 계산 (% 기반)
+              const x1 = pos.x * 100;
+              const y1 = pos.y * 100;
+              const x2 = partner.x * 100;
+              const y2 = partner.y * 100;
+              const midX = (x1 + x2) / 2;
+              const midY = (y1 + y2) / 2;
+              const dx = x2 - x1;
+              const dy = y2 - y1;
+              const length = Math.sqrt(dx * dx + dy * dy);
+              const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+
+              if (length < 2) return null; // 너무 가까우면 선 불필요
 
               return (
-                <TouchableOpacity
-                  key={pos.guruId}
+                <View
+                  key={`line-${pos.guruId}-${pos.talkingTo}`}
                   style={[
-                    styles.guruContainer,
+                    styles.connectionLine,
                     {
-                      left: `${Math.round(pos.x * 100)}%` as any,
-                      top: `${Math.round(pos.y * 100)}%` as any,
+                      left: `${midX}%` as any,
+                      top: `${midY}%` as any,
+                      width: `${length}%` as any,
+                      borderColor: colors.primary + '40',
+                      transform: [
+                        { translateX: -(length / 2) * (screenWidth / 100) / 2 },
+                        { rotate: `${angle}deg` },
+                      ],
                     },
                   ]}
-                  onPress={() => handleGuruTap(pos.guruId)}
-                  activeOpacity={0.8}
-                >
-                  {/* 말풍선 — 캐릭터 위에 표시 (겹침 방지) */}
-                  {pos.bubble && (
-                    <SpeechBubble text={pos.bubble} colors={colors} />
-                  )}
-
-                  {/* Character avatar (sm 사이즈 — 5명 배치 시 겹침 방지) */}
-                  <CharacterAvatar
-                    guruId={pos.guruId}
-                    size="sm"
-                    expression={guruState?.expression ?? 'neutral'}
-                    animated
-                    clothingLevel={clothingLevel}
-                    mood={guruState?.mood}
-                    activity={guruState?.activity}
-                    showParticles
-                  />
-
-                  {/* Guru name label */}
-                  <Text
-                    style={[
-                      styles.guruNameLabel,
-                      {
-                        color: colors.textPrimary,
-                        backgroundColor: colors.surface + 'AA',
-                      },
-                    ]}
-                    numberOfLines={1}
-                  >
-                    {isKo
-                      ? (config?.guruName ?? pos.guruId)
-                      : (config?.guruNameEn ?? pos.guruId)}
-                  </Text>
-                </TouchableOpacity>
+                />
               );
             })}
+
+            {/* ── 근접 관계 표시 (동료:💚 / 라이벌:⚡) ──────────── */}
+            {(() => {
+              const pairs: React.ReactNode[] = [];
+              const seen = new Set<string>();
+              for (let i = 0; i < positions.length; i++) {
+                for (let j = i + 1; j < positions.length; j++) {
+                  const a = positions[i];
+                  const b = positions[j];
+                  const dx = a.x - b.x;
+                  const dy = a.y - b.y;
+                  const dist = Math.sqrt(dx * dx + dy * dy);
+                  if (dist > 0.15) continue;
+                  // 대화 중인 쌍은 이미 연결선이 있으므로 제외
+                  if ((a.talkingTo === b.guruId && a.bubble) || (b.talkingTo === a.guruId && b.bubble)) continue;
+                  const pairKey = `${a.guruId}-${b.guruId}`;
+                  if (seen.has(pairKey)) continue;
+                  seen.add(pairKey);
+                  const relation = GURU_RELATIONS[a.guruId]?.[b.guruId]
+                    || GURU_RELATIONS[b.guruId]?.[a.guruId];
+                  if (!relation || relation === 'neutral') continue;
+                  const midX = ((a.x + b.x) / 2) * 100;
+                  const midY = ((a.y + b.y) / 2) * 100;
+                  pairs.push(
+                    <View
+                      key={`rel-${pairKey}`}
+                      style={[
+                        styles.proximityIndicator,
+                        { left: `${midX}%` as any, top: `${midY}%` as any },
+                      ]}
+                    >
+                      <Text style={styles.proximityEmoji}>
+                        {relation === 'ally' ? '\uD83D\uDC9A' : '\u26A1'}
+                      </Text>
+                    </View>
+                  );
+                }
+              }
+              return pairs;
+            })()}
+
+            {/* ── 구루 캐릭터들 ─────────────────────────────────── */}
+            {(() => {
+              // 대화 상대 guruId 집합 (하이라이트용)
+              const talkingTargets = new Set<string>();
+              positions.forEach(p => {
+                if (p.talkingTo && p.bubble) talkingTargets.add(p.talkingTo);
+              });
+
+              return positions.map((pos) => {
+                const guruState = guruStates.get(pos.guruId);
+                const config = GURU_CHARACTER_CONFIGS[pos.guruId];
+                const hasBubble = !!pos.bubble;
+                const isBeingTalkedTo = talkingTargets.has(pos.guruId);
+                const bubbleWidth = Math.min(220, Math.max(180, screenWidth * 0.52));
+                const bubbleAbove = pos.y > 0.56;
+                const baseBubbleLeft = pos.x < 0.2
+                  ? -8
+                  : pos.x > 0.8
+                    ? -(bubbleWidth - 40)
+                    : -(bubbleWidth / 2 - 24);
+                const containerLeft = Math.round(pos.x * screenWidth);
+                const minBubbleLeft = 8 - containerLeft;
+                const maxBubbleLeft = screenWidth - bubbleWidth - 8 - containerLeft;
+                const bubbleLeft = Math.max(minBubbleLeft, Math.min(maxBubbleLeft, baseBubbleLeft));
+
+                // 대화 상대 이름 조회
+                let replyToName: string | undefined;
+                if (pos.talkingTo && hasBubble) {
+                  const partnerConfig = GURU_CHARACTER_CONFIGS[pos.talkingTo];
+                  replyToName = isKo
+                    ? (partnerConfig?.guruName ?? pos.talkingTo)
+                    : (partnerConfig?.guruNameEn ?? pos.talkingTo);
+                }
+                const speakerName = isKo
+                  ? (config?.guruName ?? pos.guruId)
+                  : (config?.guruNameEn ?? pos.guruId);
+                const speakerAccent = config?.accentColor;
+
+                return (
+                  <TouchableOpacity
+                    key={pos.guruId}
+                    style={[
+                      styles.guruContainer,
+                      {
+                        left: `${Math.round(pos.x * 100)}%` as any,
+                        top: `${Math.round(pos.y * 100)}%` as any,
+                      },
+                      // ★ 말풍선 있는 구루 → 맨 앞으로 (다른 캐릭터에 안 가려지게)
+                      hasBubble && { zIndex: 100 },
+                      // 대화 상대 하이라이트 테두리
+                      isBeingTalkedTo && {
+                        borderWidth: 2,
+                        borderColor: colors.primary + '60',
+                        borderRadius: 28,
+                        padding: 2,
+                      },
+                    ]}
+                    onPress={() => handleGuruTap(pos.guruId)}
+                    activeOpacity={0.8}
+                  >
+                    {/* Character avatar */}
+                    <CharacterAvatar
+                      guruId={pos.guruId}
+                      size="sm"
+                      expression={guruState?.expression ?? 'neutral'}
+                      animated
+                      clothingLevel={clothingLevel}
+                      mood={guruState?.mood}
+                      activity={guruState?.activity}
+                      showParticles
+                    />
+
+                    {/* 리액션 이모지 — 캐릭터 우상단 (말풍선 없을 때만) */}
+                    {!hasBubble && pos.reaction && (
+                      <View style={styles.reactionBadge}>
+                        <Text style={styles.reactionEmoji}>{pos.reaction}</Text>
+                      </View>
+                    )}
+
+                    {/* 이름 + 감정 이모지 */}
+                    <Text
+                      style={[
+                        styles.guruNameLabel,
+                        {
+                          color: colors.textPrimary,
+                          backgroundColor: colors.surface + 'AA',
+                        },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {isKo
+                        ? (config?.guruName ?? pos.guruId)
+                        : (config?.guruNameEn ?? pos.guruId)}
+                      {guruState?.moodEmoji ? ` ${guruState.moodEmoji}` : ''}
+                    </Text>
+
+                    {/* 활동 배지 — 말풍선이 없을 때만 표시 (겹침 방지) */}
+                    {!hasBubble && guruState?.activityEmoji && (
+                      <View style={[styles.activityBadge, { backgroundColor: colors.surface + 'CC' }]}>
+                        <Text style={styles.activityBadgeText}>
+                          {guruState.activityEmoji}{' '}
+                          {isKo
+                            ? guruState.activityDescription?.ko
+                            : guruState.activityDescription?.en}
+                        </Text>
+                      </View>
+                    )}
+
+                    {/* 말풍선 — 캐릭터+이름 아래에 표시 (상단 잘림 방지) */}
+                    {hasBubble && (
+                      <View
+                        style={[
+                          styles.speechBubbleWrap,
+                          bubbleAbove ? styles.speechBubbleWrapAbove : styles.speechBubbleWrapBelow,
+                          { left: bubbleLeft, width: bubbleWidth },
+                        ]}
+                      >
+                        <SpeechBubble
+                          text={pos.bubble!}
+                          colors={colors}
+                          replyToName={replyToName}
+                          speakerName={speakerName}
+                          speakerAccent={speakerAccent}
+                          tailAt={bubbleAbove ? 'bottom' : 'top'}
+                        />
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                );
+              });
+            })()}
           </View>
 
           {/* ── Bottom Action Bar (above tab bar, translucent) ────────── */}
@@ -615,9 +961,376 @@ export default function VillageScreen() {
           router.push(`/settings/guru-detail/${guruId}`);
         }}
       />
+
+      {/* ── P1-2: 구루 선물 모달 ──────────────────────────────────────── */}
+      <GuruGiftModal
+        visible={showGiftModal}
+        guruId={giftTargetGuruId}
+        onClose={() => { setShowGiftModal(false); setGiftTargetGuruId(null); }}
+        onGift={handleGiftSend}
+        colors={colors}
+        locale={language}
+      />
+
+      {/* ── 구루 1:1 채팅 모달 ──────────────────────────────────────── */}
+      <GuruChatModalInline
+        guruId={userChatGuru}
+        messages={userChatMessages}
+        isLoading={isUserChatLoading}
+        hasError={userChatError}
+        onSend={chatWithGuru}
+        onRetry={retryLastMessage}
+        onClose={closeGuruChat}
+        colors={colors}
+        locale={language}
+      />
+
+      {/* ── P1-5: 번영도 레벨업 축하 연출 ──────────────────────────────── */}
+      <LevelUpCelebration
+        visible={showLevelUp}
+        newLevel={newLevelForCelebration}
+        onDismiss={() => setShowLevelUp(false)}
+        colors={colors}
+        locale={language}
+      />
+
+      {/* ── 이스터에그 토스트 ──────────────────────────────────────── */}
+      <EasterEggToast
+        egg={easterEggToast?.egg ?? null}
+        visible={easterEggToast?.visible ?? false}
+        onDismiss={dismissToast}
+        colors={colors}
+        locale={language}
+      />
     </View>
   );
 }
+
+// ============================================================================
+// 구루 1:1 채팅 모달 (인라인)
+// ============================================================================
+
+interface GuruChatModalInlineProps {
+  guruId: string | null;
+  messages: Array<{ id: string; speaker: string; message: string; sentiment: string; replyTo?: string }>;
+  isLoading: boolean;
+  hasError: boolean;
+  onSend: (guruId: string, message: string) => Promise<void>;
+  onRetry: () => void;
+  onClose: () => void;
+  colors: any;
+  locale: string;
+}
+
+function GuruChatModalInline({
+  guruId,
+  messages,
+  isLoading,
+  hasError,
+  onSend,
+  onRetry,
+  onClose,
+  colors,
+  locale,
+}: GuruChatModalInlineProps) {
+  const [inputText, setInputText] = useState('');
+  const flatListRef = useRef<FlatList>(null);
+  const isKo = locale === 'ko';
+
+  if (!guruId) return null;
+
+  const config = GURU_CHARACTER_CONFIGS[guruId];
+  const guruName = isKo ? (config?.guruName ?? guruId) : (config?.guruNameEn ?? guruId);
+  const accentColor = config?.accentColor ?? '#4CAF50';
+
+  const handleSend = async () => {
+    const text = inputText.trim();
+    if (!text || isLoading) return;
+    setInputText('');
+    await onSend(guruId, text);
+    // 스크롤 맨 아래로
+    setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 200);
+  };
+
+  return (
+    <Modal
+      visible={!!guruId}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+      statusBarTranslucent
+    >
+      <KeyboardAvoidingView
+        style={chatStyles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        {/* 헤더 */}
+        <View style={[chatStyles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+          <TouchableOpacity onPress={onClose} style={chatStyles.backBtn}>
+            <Text style={[chatStyles.backText, { color: colors.textPrimary }]}>{'←'}</Text>
+          </TouchableOpacity>
+          <View style={chatStyles.headerCenter}>
+            <Text style={chatStyles.headerEmoji}>{config?.emoji ?? '🐾'}</Text>
+            <Text style={[chatStyles.headerName, { color: colors.textPrimary }]}>{guruName}</Text>
+          </View>
+          <View style={chatStyles.backBtn} />
+        </View>
+
+        {/* 채팅 메시지 목록 */}
+        <FlatList
+          ref={flatListRef}
+          data={messages}
+          keyExtractor={(item) => item.id}
+          style={[chatStyles.messageList, { backgroundColor: colors.background }]}
+          contentContainerStyle={chatStyles.messageListContent}
+          onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
+          ListEmptyComponent={
+            <View style={chatStyles.emptyChat}>
+              <CharacterAvatar guruId={guruId} size="lg" animated />
+              <Text style={[chatStyles.emptyChatText, { color: colors.textSecondary }]}>
+                {isKo
+                  ? `${guruName}에게 무엇이든 물어보세요!`
+                  : `Ask ${guruName} anything!`}
+              </Text>
+              <Text style={[chatStyles.emptyChatHint, { color: colors.textTertiary }]}>
+                {isKo
+                  ? '투자 철학, 시장 전망, 포트폴리오 조언...'
+                  : 'Investment philosophy, market outlook, portfolio advice...'}
+              </Text>
+            </View>
+          }
+          renderItem={({ item }) => {
+            const isUser = item.speaker === 'user';
+            return (
+              <View style={[chatStyles.msgRow, isUser && chatStyles.msgRowUser]}>
+                {!isUser && (
+                  <Text style={chatStyles.msgAvatar}>{config?.emoji ?? '🐾'}</Text>
+                )}
+                <View
+                  style={[
+                    chatStyles.msgBubble,
+                    isUser
+                      ? [chatStyles.msgBubbleUser, { backgroundColor: accentColor }]
+                      : [chatStyles.msgBubbleGuru, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }],
+                  ]}
+                >
+                  <Text
+                    style={[
+                      chatStyles.msgText,
+                      { color: isUser ? '#FFFFFF' : colors.textPrimary },
+                    ]}
+                  >
+                    {item.message}
+                  </Text>
+                </View>
+              </View>
+            );
+          }}
+        />
+
+        {/* 에러 표시 */}
+        {hasError && (
+          <View style={[chatStyles.errorBar, { backgroundColor: colors.error + '20' }]}>
+            <Text style={[chatStyles.errorText, { color: colors.error }]}>
+              {isKo ? '응답 실패' : 'Response failed'}
+            </Text>
+            <TouchableOpacity onPress={onRetry} style={[chatStyles.retryBtn, { backgroundColor: colors.error }]}>
+              <Text style={chatStyles.retryText}>{isKo ? '다시 시도' : 'Retry'}</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* 로딩 표시 */}
+        {isLoading && (
+          <View style={[chatStyles.typingBar, { backgroundColor: colors.surface }]}>
+            <Text style={chatStyles.typingEmoji}>{config?.emoji ?? '🐾'}</Text>
+            <Text style={[chatStyles.typingText, { color: colors.textTertiary }]}>
+              {isKo ? `${guruName} 생각 중...` : `${guruName} is thinking...`}
+            </Text>
+          </View>
+        )}
+
+        {/* 입력 영역 */}
+        <View style={[chatStyles.inputBar, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
+          <TextInput
+            style={[chatStyles.textInput, { backgroundColor: colors.surfaceElevated, color: colors.textPrimary }]}
+            value={inputText}
+            onChangeText={setInputText}
+            placeholder={isKo ? '메시지를 입력하세요...' : 'Type a message...'}
+            placeholderTextColor={colors.textTertiary}
+            multiline
+            maxLength={300}
+            returnKeyType="send"
+            onSubmitEditing={handleSend}
+            blurOnSubmit={false}
+          />
+          <TouchableOpacity
+            style={[
+              chatStyles.sendBtn,
+              { backgroundColor: inputText.trim() ? accentColor : colors.border },
+            ]}
+            onPress={handleSend}
+            disabled={!inputText.trim() || isLoading}
+          >
+            <Text style={chatStyles.sendBtnText}>{'↑'}</Text>
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
+
+const chatStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: Platform.OS === 'ios' ? 56 : 16,
+    paddingBottom: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+  },
+  backBtn: {
+    width: 40,
+    alignItems: 'center',
+  },
+  backText: {
+    fontSize: 24,
+    fontWeight: '600',
+  },
+  headerCenter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  headerEmoji: {
+    fontSize: 24,
+  },
+  headerName: {
+    fontSize: 17,
+    fontWeight: '700',
+  },
+  messageList: {
+    flex: 1,
+  },
+  messageListContent: {
+    padding: 16,
+    gap: 12,
+  },
+  emptyChat: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 80,
+    gap: 12,
+  },
+  emptyChatText: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginTop: 12,
+  },
+  emptyChatHint: {
+    fontSize: 13,
+    textAlign: 'center',
+  },
+  msgRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 8,
+  },
+  msgRowUser: {
+    flexDirection: 'row-reverse',
+  },
+  msgAvatar: {
+    fontSize: 20,
+    marginBottom: 2,
+  },
+  msgBubble: {
+    maxWidth: '75%',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 18,
+  },
+  msgBubbleUser: {
+    borderBottomRightRadius: 4,
+  },
+  msgBubbleGuru: {
+    borderBottomLeftRadius: 4,
+    borderWidth: 1,
+  },
+  msgText: {
+    fontSize: 15,
+    lineHeight: 22,
+  },
+  errorBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    paddingVertical: 8,
+  },
+  errorText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  retryBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 8,
+  },
+  retryText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  typingBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+  },
+  typingEmoji: {
+    fontSize: 16,
+  },
+  typingText: {
+    fontSize: 13,
+    fontStyle: 'italic',
+  },
+  inputBar: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    paddingBottom: Platform.OS === 'ios' ? 34 : 12,
+    borderTopWidth: 1,
+  },
+  textInput: {
+    flex: 1,
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    fontSize: 15,
+    maxHeight: 100,
+  },
+  sendBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sendBtnText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '800',
+  },
+});
 
 // ============================================================================
 // 스타일
@@ -726,7 +1439,7 @@ const styles = StyleSheet.create({
   villageMap: {
     flex: 1,
     position: 'relative',
-    overflow: 'hidden',
+    overflow: 'visible',
   },
   guruContainer: {
     position: 'absolute',
@@ -751,35 +1464,109 @@ const styles = StyleSheet.create({
 
   // ── Speech Bubble (캐릭터 위에 표시, 컴팩트) ───────────────────────────
   speechBubble: {
-    maxWidth: 120,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    width: '100%',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     borderRadius: 10,
     borderWidth: 1,
-    marginBottom: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 2,
   },
+  speechReplyTo: {
+    fontSize: 8,
+    fontWeight: '700',
+    marginBottom: 1,
+  },
+  speechSpeaker: {
+    fontSize: 9,
+    fontWeight: '800',
+    marginBottom: 2,
+  },
   speechText: {
-    fontSize: 10,
-    lineHeight: 13,
+    fontSize: 11,
+    lineHeight: 16,
   },
   speechTail: {
     position: 'absolute',
-    bottom: -5,
-    left: '50%' as any,
-    marginLeft: -4,
     width: 0,
     height: 0,
     borderLeftWidth: 4,
     borderRightWidth: 4,
-    borderBottomWidth: 0,
-    borderTopWidth: 5,
     borderLeftColor: 'transparent',
     borderRightColor: 'transparent',
+  },
+  speechTailTop: {
+    top: -5,
+    left: '50%' as any,
+    marginLeft: -4,
+    borderTopWidth: 0,
+    borderBottomWidth: 5,
+  },
+  speechTailBottom: {
+    bottom: -5,
+    left: '50%' as any,
+    marginLeft: -4,
+    borderTopWidth: 5,
+    borderBottomWidth: 0,
+  },
+  speechBubbleWrap: {
+    position: 'absolute',
+    width: 220,
+    zIndex: 120,
+    pointerEvents: 'none',
+  },
+  speechBubbleWrapAbove: {
+    bottom: 62,
+  },
+  speechBubbleWrapBelow: {
+    top: 58,
+  },
+
+  // ── Connection Line (대화 중인 구루 사이 점선) ────────────────────────
+  connectionLine: {
+    position: 'absolute',
+    height: 0,
+    borderTopWidth: 1,
+    borderStyle: 'dashed',
+    zIndex: 5,
+  },
+
+  // ── Proximity Indicator (근접 관계 💚/⚡) ────────────────────────────
+  proximityIndicator: {
+    position: 'absolute',
+    zIndex: 4,
+    marginLeft: -10,
+    marginTop: -10,
+  },
+  proximityEmoji: {
+    fontSize: 18,
+  },
+
+  // ── Reaction Emoji (캐릭터 우상단 리액션) ──────────────────────────
+  reactionBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -14,
+    zIndex: 12,
+  },
+  reactionEmoji: {
+    fontSize: 16,
+  },
+
+  // ── Activity Badge (말풍선 없을 때 활동 표시) ─────────────────────────
+  activityBadge: {
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 6,
+    marginTop: 1,
+  },
+  activityBadgeText: {
+    fontSize: 9,
+    color: '#E0E8F0',
+    opacity: 0.9,
   },
 
   // ── Prosperity Floating Card ─────────────────────────────────────────────

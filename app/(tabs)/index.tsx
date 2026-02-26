@@ -14,7 +14,8 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Modal } from 'react-native';
+import { View, Text, StyleSheet, Modal, ScrollView, Dimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
@@ -52,6 +53,16 @@ import MilestoneCelebration from '../../src/components/common/MilestoneCelebrati
 
 // 동물의숲 × 주토피아 — 구루 마을
 import { GuruVillage } from '../../src/components/village/GuruVillage';
+
+// P1-3: 오늘 탭 구루 반응 배너
+import GuruReactionBanner from '../../src/components/home/GuruReactionBanner';
+import { getReaction, type VillageReactionType } from '../../src/services/villageReactionService';
+import { GURU_CHARACTER_CONFIGS } from '../../src/data/guruCharacterConfig';
+
+// 세계관 강화: 예측 리그, 광장 헤더, 구루 스코어카드
+import PredictionLeagueCard from '../../src/components/home/PredictionLeagueCard';
+import { usePredictionLeague } from '../../src/hooks/usePredictionLeague';
+import { PlazaThemeHeader } from '../../src/components/home/PlazaThemeHeader';
 
 // 맥락 카드 전체 모달
 import ContextCard from '../../src/components/home/ContextCard';
@@ -165,6 +176,7 @@ function buildReviewSource(source: string | null | undefined): string | undefine
 
 export default function HomeScreen() {
   const { t, language } = useLocale();
+  const insets = useSafeAreaInsets();
 
   // 화면 진입 추적 + Push 알림 초기화
   useScreenTracking('today');
@@ -191,6 +203,9 @@ export default function HomeScreen() {
   const { weather, clothingLevel } = useWeather();
   const { sentiment, setSentimentFromPortfolio } = useMarketSentiment();
   const dailyQuote = getDailyQuote();
+
+  // 예측 리그
+  const predictionLeague = usePredictionLeague();
 
   // ──────────────────────────────────────────────────────────────────────
   // 스트릭 복구 & 마일스톤 축하
@@ -277,6 +292,45 @@ export default function HomeScreen() {
   const [toastVisible, setToastVisible] = React.useState(false);
   const [toastMessage, setToastMessage] = React.useState('');
   const [toastType, setToastType] = React.useState<ToastType>('info');
+
+  // P1-3: 구루 반응 배너 상태
+  const [guruBannerReaction, setGuruBannerReaction] = React.useState<{
+    guruId: string;
+    message: string;
+    emoji: string;
+  } | null>(null);
+  const bannerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  /** 구루 반응 배너 표시 (6초 후 자동 소멸) */
+  const showGuruBanner = React.useCallback((type: VillageReactionType) => {
+    const reaction = getReaction(type, guruStyle ?? 'buffett', new Date().getDay());
+    if (!reaction) return;
+
+    const primaryGuru = reaction.reactingGurus[0] ?? 'buffett';
+    const msg = reaction.messages[primaryGuru];
+    const emoji = reaction.emojis[primaryGuru] ?? GURU_CHARACTER_CONFIGS[primaryGuru]?.emoji ?? '🐾';
+    const isKo = language === 'ko';
+
+    setGuruBannerReaction({
+      guruId: primaryGuru,
+      message: isKo ? (msg?.ko ?? '') : (msg?.en ?? ''),
+      emoji,
+    });
+
+    // 이전 타이머 정리 + 6초 후 소멸
+    if (bannerTimerRef.current) clearTimeout(bannerTimerRef.current);
+    bannerTimerRef.current = setTimeout(() => {
+      setGuruBannerReaction(null);
+      bannerTimerRef.current = null;
+    }, 6000);
+  }, [guruStyle, language]);
+
+  // 배너 타이머 정리
+  useEffect(() => {
+    return () => {
+      if (bannerTimerRef.current) clearTimeout(bannerTimerRef.current);
+    };
+  }, []);
 
   // Pull-to-refresh 핸들러
   const handleRefresh = React.useCallback(async () => {
@@ -508,6 +562,8 @@ export default function HomeScreen() {
         // P1.1: 맥락 카드를 처음 열면 알림 권한 요청 자격 부여
         // 이후 앱 재실행 시 usePushSetup이 이 키를 확인해 권한 팝업을 표시함
         AsyncStorage.setItem(PUSH_PERMISSION_ELIGIBLE_KEY, 'true').catch(() => {});
+        // P1-3: 맥락카드 읽기 → 달리오가 끄덕임 배너
+        showGuruBanner('context_card_read');
       },
       isPremium: isPremium || false,
       onShare: () => setShareModalVisible(true),
@@ -537,6 +593,7 @@ export default function HomeScreen() {
     isPremium,
     router,
     showToast,
+    showGuruBanner,
     updateTimeLabel,
     isContextFallback,
     isContextStale,
@@ -615,7 +672,7 @@ export default function HomeScreen() {
       });
   }, [resolvedPolls, myVotesMap, isPremium]);
 
-  // B-1: 예측 결과 기반 뱃지 해금 + B-2: 정답 시 번영도 기여
+  // B-1: 예측 결과 기반 뱃지 해금 + B-2: 정답 시 번영도 기여 + P1-3: 구루 축하 배너
   useEffect(() => {
     if (recentResults.length > 0) {
       const correctCount = recentResults.filter(r => r.isCorrect).length;
@@ -626,6 +683,8 @@ export default function HomeScreen() {
       }).catch(() => {});
       if (correctCount > 0) {
         addContribution('prediction_correct').catch(() => {});
+        // P1-3: 예측 적중 시 가장 친한 구루가 축하 배너 (2초 딜레이)
+        setTimeout(() => showGuruBanner('prediction_correct'), 2000);
       }
     }
   }, [recentResults.length]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -785,6 +844,15 @@ export default function HomeScreen() {
   // ──────────────────────────────────────────────────────────────────────
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <ScrollView
+        style={styles.mainScroll}
+        contentContainerStyle={[
+          styles.mainScrollContent,
+          { paddingBottom: Math.max(96, insets.bottom + 96) },
+        ]}
+        showsVerticalScrollIndicator={false}
+        nestedScrollEnabled
+      >
       {/* 진단용: Supabase 연결 상태 (개발 모드에서만 표시) */}
       {__DEV__ && <ConnectionStatus />}
 
@@ -814,6 +882,14 @@ export default function HomeScreen() {
         )}
       </View>
 
+      {/* ── 발른 광장 헤더 ──────────────────────────── */}
+      <PlazaThemeHeader
+        weatherEmoji={weather?.emoji}
+        temperature={weather?.temperature}
+        colors={colors}
+        locale={language}
+      />
+
       {/* 크로스탭 연동 배너는 일정 이상 습관이 형성된 사용자에게만 노출 */}
       {currentStreak >= 3 && <CrossTabBanners />}
 
@@ -826,9 +902,16 @@ export default function HomeScreen() {
         onViewContext={() => setContextModalVisible(true)}
       />
 
+      {/* P1-3: 구루 반응 배너 (맥락카드 읽기/예측 적중 등) */}
+      <GuruReactionBanner
+        reaction={guruBannerReaction}
+        colors={colors}
+        locale={language}
+      />
+
       {/* 🏘️ 구루 마을 — 동물의숲 × 주토피아 (구루들이 살아 움직이는 마을) */}
       <GuruVillage
-        height={150}
+        height={170}
         onRoundtablePress={() => router.push('/roundtable')}
       />
 
@@ -838,52 +921,69 @@ export default function HomeScreen() {
           {t('home.square_header')}
         </Text>
         <Text style={[styles.squareSubtitle, { color: colors.textTertiary }]}>
-          {dailyQuote.quote.length > 40
-            ? `"${dailyQuote.quote.slice(0, 40)}…"`
-            : `"${dailyQuote.quote}"`}
+          {`"${dailyQuote.quote}"`}
         </Text>
       </View>
 
-      <CardSwipeContainer
-        labels={[
-          t('home.card_labels.my_assets'),
-          t('home.card_labels.today_market'),
-          t('home.card_labels.my_predictions'),
-          t('home.card_labels.yesterday_review'),
-        ]}
-        initialIndex={0}
-        onCardChange={handleCardChange}
-        onRefresh={handleRefresh}
-        refreshing={refreshing}
-      >
-        {/* 카드 1: 건강 신호등 + 총자산 Pulse */}
-        <ErrorBoundary>
-          <HealthSignalCard {...healthSignalProps} />
-        </ErrorBoundary>
+      <View style={styles.cardSwipeWrapper}>
+        <CardSwipeContainer
+          labels={[
+            t('home.card_labels.my_assets'),
+            t('home.card_labels.today_market'),
+            t('home.card_labels.my_predictions'),
+            t('home.card_labels.yesterday_review'),
+          ]}
+          initialIndex={0}
+          onCardChange={handleCardChange}
+          onRefresh={handleRefresh}
+          refreshing={refreshing}
+        >
+          {/* 카드 1: 건강 신호등 + 총자산 Pulse */}
+          <ErrorBoundary>
+            <HealthSignalCard {...healthSignalProps} />
+          </ErrorBoundary>
 
-        {/* 카드 2: 맥락 브리핑 */}
-        <ErrorBoundary>
-          <ContextBriefCard {...contextBriefProps} />
-        </ErrorBoundary>
+          {/* 카드 2: 맥락 브리핑 */}
+          <ErrorBoundary>
+            <ContextBriefCard {...contextBriefProps} />
+          </ErrorBoundary>
 
-        {/* 카드 3: 예측 투표 (3개 질문 수평 스크롤) */}
-        <ErrorBoundary>
-          <PredictionVoteCard {...predictionVoteProps} />
-        </ErrorBoundary>
+          {/* 카드 3: 예측 투표 (3개 질문 수평 스크롤) */}
+          <ErrorBoundary>
+            <PredictionVoteCard {...predictionVoteProps} />
+          </ErrorBoundary>
 
-        {/* 카드 4: 어제 예측 복기 (습관 루프 완성) */}
-        <ErrorBoundary>
-          <YesterdayReviewCard
-            results={recentResults}
-            accuracyRate={myStats?.accuracy_rate ?? null}
-            onViewHistory={() => router.push('/games/predictions')}
-            onStartPrediction={() => router.push('/games/predictions')}
-          />
-        </ErrorBoundary>
-      </CardSwipeContainer>
+          {/* 카드 4: 어제 예측 복기 (습관 루프 완성) */}
+          <ErrorBoundary>
+            <YesterdayReviewCard
+              results={recentResults}
+              accuracyRate={myStats?.accuracy_rate ?? null}
+              onViewHistory={() => router.push('/games/predictions')}
+              onStartPrediction={() => router.push('/games/predictions')}
+            />
+          </ErrorBoundary>
+        </CardSwipeContainer>
+      </View>
 
-      {/* 오늘의 투자 명언 — CardSwipeContainer 밖에서는 공간 부족으로 잘림
-         TODO: 추후 카드 내부(HealthSignalCard 하단)로 이동 검토 */}
+      {/* ── 예측 리그 카드 ──────────────────────────── */}
+      <View style={{ paddingHorizontal: 16, marginTop: 12 }}>
+        <PredictionLeagueCard
+          currentTier={predictionLeague.currentTier}
+          rating={predictionLeague.rating}
+          weeklyCorrect={predictionLeague.weeklyCorrect}
+          weeklyTotal={predictionLeague.weeklyTotal}
+          weeklyRank={predictionLeague.weeklyRank}
+          tierProgress={predictionLeague.tierProgress}
+          nextTier={predictionLeague.nextTier}
+          inPromotionZone={predictionLeague.inPromotionZone}
+          inRelegationZone={predictionLeague.inRelegationZone}
+          isPromoted={predictionLeague.isPromoted}
+          onPress={() => router.push('/games/predictions')}
+          locale={language}
+        />
+      </View>
+
+      </ScrollView>
 
       {/* 맥락 카드 전체 모달 (4겹 레이어) */}
       <Modal
@@ -945,10 +1045,23 @@ export default function HomeScreen() {
 // 스타일
 // ============================================================================
 
+const SCREEN_HEIGHT = Dimensions.get('window').height;
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     // backgroundColor는 동적으로 적용됨
+  },
+  mainScroll: {
+    flex: 1,
+  },
+  mainScrollContent: {
+    paddingBottom: 32,
+  },
+  cardSwipeWrapper: {
+    // 카드 스와이프 영역 — 카드 내용이 잘리지 않도록 충분한 높이 확보
+    height: SCREEN_HEIGHT * 0.55,
+    minHeight: 420,
   },
   modalContainer: {
     flex: 1,

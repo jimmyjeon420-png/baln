@@ -85,6 +85,34 @@ export function WanderingGuru({ position, onPress, villageHeight }: WanderingGur
 
   const accentColor = config?.accentColor || '#5DBB63';
 
+  // 캐릭터 x 위치에 따라 말풍선 정렬 방향 결정
+  // 왼쪽(0~0.3): 오른쪽으로 펼침, 중간: 가운데, 오른쪽(0.7~1): 왼쪽으로 펼침
+  const bubbleTailAlign = position.x < 0.3
+    ? 'flex-start' as const
+    : position.x > 0.7
+      ? 'flex-end' as const
+      : 'center' as const;
+
+  const bubbleWidth = Math.min(
+    220,
+    Math.max(170, SCREEN_WIDTH * (villageHeight < 200 ? 0.56 : 0.62))
+  );
+  const baseLeft = position.x < 0.3
+    ? -10
+    : position.x > 0.7
+      ? -(bubbleWidth - 50)
+      : -(bubbleWidth / 2 - 30);
+  const containerLeft = position.x * (SCREEN_WIDTH - 60);
+  const minLeft = 8 - containerLeft;
+  const maxLeft = SCREEN_WIDTH - bubbleWidth - 8 - containerLeft;
+  const clampedBubbleLeft = Math.max(minLeft, Math.min(maxLeft, baseLeft));
+  const bubbleAbove = position.y > (villageHeight < 200 ? 0.42 : 0.6);
+  const tailPlacementStyle = bubbleTailAlign === 'flex-start'
+    ? styles.tailStart
+    : bubbleTailAlign === 'flex-end'
+      ? styles.tailEnd
+      : styles.tailCenter;
+
   return (
     <Animated.View
       style={[
@@ -94,30 +122,11 @@ export function WanderingGuru({ position, onPress, villageHeight }: WanderingGur
             { translateX: animX },
             { translateY: animY },
           ],
+          // ★ 말풍선 있는 구루 → 맨 앞으로
+          zIndex: position.bubble ? 100 : 5,
         },
       ]}
     >
-      {/* 말풍선 (위에 표시) */}
-      {position.bubble && (
-        <Animated.View
-          style={[
-            styles.bubbleWrapper,
-            {
-              opacity: bubbleOpacity,
-              transform: [{ scale: bubbleScale }],
-            },
-          ]}
-        >
-          <View style={[styles.bubble, { borderColor: accentColor + '40' }]}>
-            <Text style={styles.bubbleText} numberOfLines={3}>
-              {position.bubble}
-            </Text>
-          </View>
-          {/* 말풍선 꼬리 */}
-          <View style={[styles.bubbleTail, { borderTopColor: '#1E2E3E' }]} />
-        </Animated.View>
-      )}
-
       {/* 캐릭터 아바타 (탭 가능) */}
       <TouchableOpacity
         onPress={() => onPress(position.guruId)}
@@ -136,6 +145,49 @@ export function WanderingGuru({ position, onPress, villageHeight }: WanderingGur
           {config?.guruName || position.guruId}
         </Text>
       </TouchableOpacity>
+
+      {/* 말풍선 (캐릭터 아래 표시) — 위치 기반 정렬 */}
+      {position.bubble && (
+        <Animated.View
+          style={[
+            styles.bubbleWrapper,
+            bubbleAbove ? styles.bubbleWrapperAbove : styles.bubbleWrapperBelow,
+            {
+              left: clampedBubbleLeft,
+              width: bubbleWidth,
+              alignItems: bubbleTailAlign,
+              opacity: bubbleOpacity,
+              transform: [{ scale: bubbleScale }],
+            },
+          ]}
+        >
+          {bubbleAbove ? (
+            <>
+              <View style={[styles.bubble, { borderColor: accentColor + '40' }]}>
+                <Text style={[styles.bubbleSpeaker, { color: accentColor }]}>
+                  {config?.guruName || position.guruId}
+                </Text>
+                <Text style={styles.bubbleText}>
+                  {position.bubble}
+                </Text>
+              </View>
+              <View style={[styles.bubbleTailDown, tailPlacementStyle, { borderTopColor: '#1E2E3E' }]} />
+            </>
+          ) : (
+            <>
+              <View style={[styles.bubbleTailUp, tailPlacementStyle, { borderBottomColor: '#1E2E3E' }]} />
+              <View style={[styles.bubble, { borderColor: accentColor + '40' }]}>
+                <Text style={[styles.bubbleSpeaker, { color: accentColor }]}>
+                  {config?.guruName || position.guruId}
+                </Text>
+                <Text style={styles.bubbleText}>
+                  {position.bubble}
+                </Text>
+              </View>
+            </>
+          )}
+        </Animated.View>
+      )}
 
       {/* 그림자 (바닥에) */}
       <View style={styles.shadow} />
@@ -168,26 +220,43 @@ const styles = StyleSheet.create({
   },
   bubbleWrapper: {
     position: 'absolute',
-    bottom: '100%',
-    left: -40,
-    width: 140,
-    marginBottom: 4,
-    alignItems: 'center',
+    zIndex: 20,
+  },
+  bubbleWrapperBelow: {
+    top: 54,
+  },
+  bubbleWrapperAbove: {
+    bottom: 56,
   },
   bubble: {
     backgroundColor: '#1E2E3E',
     borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     borderWidth: 1,
-    maxWidth: 140,
   },
   bubbleText: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#E0E0E0',
-    lineHeight: 15,
+    lineHeight: 17,
   },
-  bubbleTail: {
+  bubbleSpeaker: {
+    fontSize: 10,
+    fontWeight: '800',
+    marginBottom: 2,
+  },
+  bubbleTailUp: {
+    width: 0,
+    height: 0,
+    borderLeftWidth: 5,
+    borderRightWidth: 5,
+    borderBottomWidth: 6,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderBottomColor: 'transparent',
+    marginBottom: -1,
+  },
+  bubbleTailDown: {
     width: 0,
     height: 0,
     borderLeftWidth: 5,
@@ -195,5 +264,18 @@ const styles = StyleSheet.create({
     borderTopWidth: 6,
     borderLeftColor: 'transparent',
     borderRightColor: 'transparent',
+    borderTopColor: 'transparent',
+    marginTop: -1,
+  },
+  tailStart: {
+    alignSelf: 'flex-start',
+    marginLeft: 20,
+  },
+  tailCenter: {
+    alignSelf: 'center',
+  },
+  tailEnd: {
+    alignSelf: 'flex-end',
+    marginRight: 20,
   },
 });

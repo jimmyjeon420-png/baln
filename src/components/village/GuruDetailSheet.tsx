@@ -29,6 +29,7 @@ import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
 import { CharacterAvatar } from '../character/CharacterAvatar';
 import ActivityBubble from './ActivityBubble';
 import FriendshipMeter from './FriendshipMeter';
+import GuruScheduleCard from './GuruScheduleCard';
 import { useLocale } from '../../context/LocaleContext';
 
 // ============================================================================
@@ -428,6 +429,13 @@ const GuruDetailSheet = React.memo(function GuruDetailSheet({
               </Text>
             </TouchableOpacity>
           </View>
+
+          {/* ── P2-1: 오늘의 일과표 ── */}
+          <GuruScheduleCard
+            guruId={guruId}
+            colors={colors}
+            locale={locale}
+          />
 
           {/* ── 오늘의 명언 ── */}
           <View

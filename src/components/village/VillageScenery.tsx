@@ -14,6 +14,7 @@ import Svg, {
   Circle,
   Ellipse,
   Path,
+  Line,
   G,
   Defs,
   LinearGradient,
@@ -33,6 +34,12 @@ export interface VillageSceneryProps {
   height: number;
   timeOfDay: TimeOfDay;
   season?: Season;
+  /** 번영도 레벨 (1-10, P0-4 환경 변화용) */
+  prosperityLevel?: number;
+  /** 먼지 오버레이 투명도 (useVillageDecay, 0=없음, 0.4=최대) */
+  dustOverlayOpacity?: number;
+  /** 색 빠짐 효과 (useVillageDecay, 0=없음, 0.5=최대) */
+  desaturationAmount?: number;
 }
 
 // ─────────────────────────────────────────────
@@ -631,7 +638,15 @@ function Fence({ x, y, posts, postSpacing, palette }: FenceProps) {
 // Main Component
 // ─────────────────────────────────────────────
 
-export function VillageScenery({ width, height, timeOfDay, season }: VillageSceneryProps) {
+export function VillageScenery({
+  width,
+  height,
+  timeOfDay,
+  season,
+  prosperityLevel = 1,
+  dustOverlayOpacity = 0,
+  desaturationAmount = 0,
+}: VillageSceneryProps) {
   const rawPalette = PALETTES[timeOfDay];
   const palette = applySeasonLeaf(rawPalette, season, timeOfDay);
 
@@ -655,6 +670,17 @@ export function VillageScenery({ width, height, timeOfDay, season }: VillageScen
         <RadialGradient id="groundShadowRad" cx="50%" cy="50%" rx="50%" ry="50%">
           <Stop offset="0" stopColor="rgba(0,0,0,0.3)" stopOpacity="1" />
           <Stop offset="1" stopColor="rgba(0,0,0,0)" stopOpacity="1" />
+        </RadialGradient>
+        {/* 대기 원근감 (상단 밝고 하단 짙게) */}
+        <LinearGradient id="atmosphericDepth" x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0" stopColor="rgba(255,255,255,0.10)" />
+          <Stop offset="0.45" stopColor="rgba(255,255,255,0.03)" />
+          <Stop offset="1" stopColor="rgba(0,0,0,0.16)" />
+        </LinearGradient>
+        {/* 중앙 광원 (낮/아침) */}
+        <RadialGradient id="focusLight" cx="52%" cy="28%" rx="46%" ry="38%">
+          <Stop offset="0" stopColor="rgba(255,255,255,0.18)" />
+          <Stop offset="1" stopColor="rgba(255,255,255,0)" />
         </RadialGradient>
       </Defs>
 
@@ -724,6 +750,81 @@ export function VillageScenery({ width, height, timeOfDay, season }: VillageScen
         />
       ))}
 
+      {/* ── 저녁/밤: 캠프파이어 + 텐트 + 고양이 ── */}
+      {(timeOfDay === 'evening' || timeOfDay === 'night') && (
+        <G>
+          {/* 캠프파이어 — 마을 중앙 하단 */}
+          <G transform={`translate(${px(0.45)}, ${py(0.72)})`}>
+            {/* 불빛 glow */}
+            <Circle cx={0} cy={-4} r={18} fill="#FF8C00" opacity={0.15} />
+            <Circle cx={0} cy={-4} r={10} fill="#FF6600" opacity={0.25} />
+            {/* 장작 */}
+            <Line x1={-8} y1={4} x2={8} y2={0} stroke="#5C3A1E" strokeWidth={3} strokeLinecap="round" />
+            <Line x1={-6} y1={0} x2={9} y2={4} stroke="#4A2E16" strokeWidth={3} strokeLinecap="round" />
+            {/* 불꽃 */}
+            <Path d="M0,-2 Q-4,-10 -1,-16 Q0,-12 2,-17 Q5,-10 0,-2Z" fill="#FF4500" opacity={0.9} />
+            <Path d="M0,-4 Q-2,-9 0,-13 Q2,-9 0,-4Z" fill="#FFD700" opacity={0.85} />
+            {/* 불똥 */}
+            <Circle cx={-3} cy={-18} r={1} fill="#FFA500" opacity={0.7} />
+            <Circle cx={4} cy={-20} r={0.8} fill="#FFD700" opacity={0.6} />
+          </G>
+
+          {/* 텐트 1 — 좌측 */}
+          <G transform={`translate(${px(0.12)}, ${py(0.68)})`}>
+            <Path d="M0,-20 L-16,4 L16,4 Z" fill="#4A6741" stroke="#3A5731" strokeWidth={1} />
+            <Path d="M0,-20 L-5,4 L5,4 Z" fill="#3A5731" opacity={0.6} />
+            <Line x1={0} y1={-20} x2={0} y2={-24} stroke="#8B7355" strokeWidth={1.5} />
+          </G>
+
+          {/* 텐트 2 — 좌측 안쪽 */}
+          <G transform={`translate(${px(0.22)}, ${py(0.74)})`}>
+            <Path d="M0,-16 L-13,3 L13,3 Z" fill="#6B4E3D" stroke="#5A3E2E" strokeWidth={1} />
+            <Path d="M0,-16 L-4,3 L4,3 Z" fill="#5A3E2E" opacity={0.6} />
+            <Line x1={0} y1={-16} x2={0} y2={-20} stroke="#8B7355" strokeWidth={1.5} />
+          </G>
+
+          {/* 텐트 3 — 우측 */}
+          <G transform={`translate(${px(0.78)}, ${py(0.70)})`}>
+            <Path d="M0,-18 L-14,3 L14,3 Z" fill="#5B6B8A" stroke="#4A5A78" strokeWidth={1} />
+            <Path d="M0,-18 L-4,3 L4,3 Z" fill="#4A5A78" opacity={0.6} />
+            <Line x1={0} y1={-18} x2={0} y2={-22} stroke="#8B7355" strokeWidth={1.5} />
+          </G>
+
+          {/* 텐트 4 — 우측 안쪽 */}
+          <G transform={`translate(${px(0.88)}, ${py(0.76)})`}>
+            <Path d="M0,-15 L-12,3 L12,3 Z" fill="#8B6B5A" stroke="#7A5A4A" strokeWidth={1} />
+            <Path d="M0,-15 L-3,3 L3,3 Z" fill="#7A5A4A" opacity={0.6} />
+            <Line x1={0} y1={-15} x2={0} y2={-18} stroke="#8B7355" strokeWidth={1.5} />
+          </G>
+
+          {/* 텐트 5 — 캠프파이어 근처 */}
+          <G transform={`translate(${px(0.58)}, ${py(0.78)})`}>
+            <Path d="M0,-14 L-11,3 L11,3 Z" fill="#4A6741" stroke="#3A5731" strokeWidth={1} />
+            <Path d="M0,-14 L-3,3 L3,3 Z" fill="#3A5731" opacity={0.6} />
+          </G>
+
+        </G>
+      )}
+
+      {/* ── 고양이 2마리 (항상 표시) ── */}
+      {/* 고양이 1 — 주황 고양이, 마을 중앙 하단 */}
+      <G transform={`translate(${px(0.52)}, ${py(0.71)})`}>
+        <Ellipse cx={0} cy={0} rx={5} ry={3.5} fill="#F4A460" />
+        <Circle cx={5} cy={-2} r={3} fill="#F4A460" />
+        <Path d="M3.5,-4.5 L4,-6.5 L5.5,-4 Z" fill="#D2691E" />
+        <Path d="M6,-4.5 L6.5,-6.5 L7.5,-4 Z" fill="#D2691E" />
+        <Path d="M-5,0 Q-8,-3 -6,-5" stroke="#D2691E" strokeWidth={1.5} fill="none" strokeLinecap="round" />
+      </G>
+
+      {/* 고양이 2 — 회색 고양이, 좌측 하단 */}
+      <G transform={`translate(${px(0.16)}, ${py(0.73)})`}>
+        <Ellipse cx={0} cy={0} rx={4.5} ry={3} fill="#808080" />
+        <Circle cx={-5} cy={-1.5} r={2.8} fill="#808080" />
+        <Path d="M-6.5,-3.5 L-7,-5.5 L-5.5,-3 Z" fill="#606060" />
+        <Path d="M-4,-3.5 L-3.5,-5.5 L-2.5,-3 Z" fill="#606060" />
+        <Path d="M4.5,0 Q7,-4 6,-7" stroke="#606060" strokeWidth={1.5} fill="none" strokeLinecap="round" />
+      </G>
+
       {/* ── Tint overlay (dawn / evening / night atmosphere) ── */}
       {(timeOfDay === 'dawn' || timeOfDay === 'evening' || timeOfDay === 'night') && (
         <Rect
@@ -732,6 +833,36 @@ export function VillageScenery({ width, height, timeOfDay, season }: VillageScen
           width={width}
           height={height}
           fill={`url(#tintGrad)`}
+        />
+      )}
+
+      {/* ── 실사풍 깊이감 레이어 ── */}
+      <Rect x={0} y={0} width={width} height={height} fill="url(#atmosphericDepth)" />
+      {(timeOfDay === 'morning' || timeOfDay === 'afternoon') && (
+        <Rect x={0} y={0} width={width} height={height} fill="url(#focusLight)" />
+      )}
+
+      {/* ── P0-5: 먼지 오버레이 (이탈 쇠퇴 시) ── */}
+      {dustOverlayOpacity > 0 && (
+        <Rect
+          x={0}
+          y={0}
+          width={width}
+          height={height}
+          fill="#8B7355"
+          opacity={dustOverlayOpacity}
+        />
+      )}
+
+      {/* ── P0-5: 색 빠짐 효과 (장기 이탈 시 회색 필터) ── */}
+      {desaturationAmount > 0 && (
+        <Rect
+          x={0}
+          y={0}
+          width={width}
+          height={height}
+          fill="#808080"
+          opacity={desaturationAmount}
         />
       )}
     </Svg>

@@ -10,6 +10,8 @@ interface GuruCommentBubbleProps {
   contentEn?: string;
   sentiment: 'BULLISH' | 'BEARISH' | 'NEUTRAL' | 'CAUTIOUS';
   createdAt: string;
+  /** 답글 대상 구루 ID (라이벌 토론용) */
+  replyToGuruId?: string;
 }
 
 const SENTIMENT_CONFIG: Record<
@@ -41,6 +43,7 @@ export default function GuruCommentBubble({
   contentEn,
   sentiment,
   createdAt,
+  replyToGuruId,
 }: GuruCommentBubbleProps) {
   const guruConfig: GuruCharacterConfig | undefined = GURU_CHARACTER_CONFIGS[guruId];
 
@@ -50,8 +53,15 @@ export default function GuruCommentBubble({
 
   const sentimentInfo = SENTIMENT_CONFIG[sentiment];
 
+  // 답글 대상 구루 정보
+  const replyToConfig = replyToGuruId ? GURU_CHARACTER_CONFIGS[replyToGuruId] : undefined;
+  const isReply = !!replyToGuruId;
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, isReply && styles.replyContainer]}>
+      {/* 답글 사이드바 */}
+      {isReply && <View style={styles.replySidebar} />}
+
       {/* Avatar */}
       <View style={[styles.avatarCircle, { backgroundColor: accentColor }]}>
         <Text style={styles.avatarEmoji}>{emoji}</Text>
@@ -59,6 +69,13 @@ export default function GuruCommentBubble({
 
       {/* Bubble */}
       <View style={styles.bubbleWrapper}>
+        {/* 답글 대상 표시 */}
+        {replyToConfig && (
+          <Text style={styles.replyToLabel}>
+            {'\u2192'} {replyToConfig.emoji} {replyToConfig.guruName}
+          </Text>
+        )}
+
         {/* Header row: name + sentiment badge + time */}
         <View style={styles.headerRow}>
           <Text style={styles.guruName}>{guruName}</Text>
@@ -89,6 +106,22 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     paddingHorizontal: 12,
     paddingVertical: 8,
+  },
+  replyContainer: {
+    paddingLeft: 24,
+  },
+  replySidebar: {
+    width: 3,
+    backgroundColor: '#4CAF50',
+    borderRadius: 2,
+    marginRight: 8,
+    alignSelf: 'stretch',
+  },
+  replyToLabel: {
+    color: '#4CAF50',
+    fontSize: 11,
+    fontWeight: '700',
+    marginBottom: 3,
   },
   avatarCircle: {
     width: 32,

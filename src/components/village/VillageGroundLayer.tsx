@@ -32,6 +32,12 @@ interface VillageGroundLayerProps {
   height: number;
   timeOfDay: TimeOfDay;
   prosperityLevel?: number;
+  /** 계절 (P1-1 계절 시스템용) */
+  season?: 'spring' | 'summer' | 'autumn' | 'winter';
+  /** 꽃 투명도 배율 (useVillageDecay.flowerOpacity, 기본 1.0) */
+  flowerOpacity?: number;
+  /** 잡초 개수 (useVillageDecay.weedCount, 기본 0) */
+  weedCount?: number;
 }
 
 // ─────────────────────────────────────────────
@@ -276,23 +282,89 @@ const Pond: React.FC<PondProps> = ({ w, h, colors }) => {
 // 메인 컴포넌트
 // ─────────────────────────────────────────────
 
+// ─────────────────────────────────────────────
+// P0-4: 번영도 레벨별 잔디 색상 보정
+// Lv1-2: 갈색(황무지), Lv3-4: 연녹색, Lv5-6: 진녹색, Lv7-8: 짙은녹, Lv9-10: 에메랄드
+// ─────────────────────────────────────────────
+
+function blendColor(base: string, target: string, ratio: number): string {
+  const parseHex = (h: string) => [
+    parseInt(h.slice(1, 3), 16),
+    parseInt(h.slice(3, 5), 16),
+    parseInt(h.slice(5, 7), 16),
+  ];
+  const b = parseHex(base);
+  const t = parseHex(target);
+  const r = Math.round(b[0] + (t[0] - b[0]) * ratio);
+  const g = Math.round(b[1] + (t[1] - b[1]) * ratio);
+  const bl = Math.round(b[2] + (t[2] - b[2]) * ratio);
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${bl.toString(16).padStart(2, '0')}`;
+}
+
+/** 번영도 기반 잔디 색상 오버레이 (황무지→에메랄드) */
+const PROSPERITY_GRASS_TINT: Record<number, string> = {
+  1: '#8B7355',  // 갈색 (황무지)
+  2: '#8B7355',
+  3: '#7DA34A',  // 연녹색
+  4: '#6BBF59',
+  5: '#5DAE4B',  // 진녹색
+  6: '#4E9E3C',
+  7: '#3D8C30',  // 짙은녹
+  8: '#2E7D20',
+  9: '#00897B',  // 에메랄드
+  10: '#00695C',
+};
+
+/** 번영도 기반 연못 특수 효과 */
+const PROSPERITY_POND_GLOW: Record<number, string | null> = {
+  7: '#FFD70030', // 금빛
+  8: '#FFD70040',
+  9: '#00E5FF30', // 무지개빛
+  10: '#E040FB30',
+};
+
+/** 잡초 위치 (고정 — 이탈 쇠퇴용) */
+const WEED_POSITIONS = [
+  { cx: 0.15, cy: 0.35 },
+  { cx: 0.75, cy: 0.45 },
+  { cx: 0.30, cy: 0.70 },
+  { cx: 0.60, cy: 0.25 },
+  { cx: 0.85, cy: 0.65 },
+];
+
 export const VillageGroundLayer: React.FC<VillageGroundLayerProps> = ({
   width,
   height,
   timeOfDay,
   prosperityLevel = 0,
+  season,
+  flowerOpacity = 1.0,
+  weedCount = 0,
 }) => {
   const grass = GRASS_COLORS[timeOfDay];
   const path = PATH_COLORS[timeOfDay];
   const water = WATER_COLORS[timeOfDay];
 
-  // 번영도에 따른 꽃 목록 조합
+  // P0-4: 번영도 기반 잔디 색상 블렌딩
+  const level = Math.max(1, Math.min(10, prosperityLevel || 1));
+  const prosperityTint = PROSPERITY_GRASS_TINT[level] || grass.base;
+  const blendRatio = level <= 2 ? 0.3 : level <= 6 ? 0.15 : 0.1;
+  const tintedGrassBase = blendColor(grass.base, prosperityTint, blendRatio);
+  const tintedGrassMid = blendColor(grass.mid, prosperityTint, blendRatio);
+
+  // P0-4: 번영도에 따른 꽃 목록 조합 (레벨 1-2는 꽃 절반만)
+  const baseFlowers = level <= 2
+    ? BASE_FLOWER_CLUSTERS.slice(0, 3)
+    : BASE_FLOWER_CLUSTERS;
   const flowerClusters = [
-    ...BASE_FLOWER_CLUSTERS,
-    ...(prosperityLevel >= 5 ? EXTRA_FLOWER_CLUSTERS : []),
-    ...(prosperityLevel >= 8 ? LUXURY_FLOWER_CLUSTERS : []),
+    ...baseFlowers,
+    ...(level >= 5 ? EXTRA_FLOWER_CLUSTERS : []),
+    ...(level >= 8 ? LUXURY_FLOWER_CLUSTERS : []),
   ];
-  const isLuxury = prosperityLevel >= 8;
+  const isLuxury = level >= 8;
+
+  // P0-4: 연못 특수 효과 (Lv7+ 금빛/무지개)
+  const pondGlow = PROSPERITY_POND_GLOW[level] || null;
 
   // Y자 경로 좌표 계산
   const pathCenterX = width * 0.50;
@@ -344,15 +416,32 @@ export const VillageGroundLayer: React.FC<VillageGroundLayerProps> = ({
     <View style={[styles.container, { width, height }]}>
       <Svg width={width} height={height}>
         <Defs>
-          {/* 잔디 베이스 그라디언트 (위→아래) */}
+          {/* 잔디 베이스 그라디언트 (위→아래, 번영도 보정 적용) */}
           <LinearGradient id="grassGrad" x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0" stopColor={grass.mid} stopOpacity="1" />
-            <Stop offset="1" stopColor={grass.base} stopOpacity="1" />
+            <Stop offset="0" stopColor={tintedGrassMid} stopOpacity="1" />
+            <Stop offset="1" stopColor={tintedGrassBase} stopOpacity="1" />
           </LinearGradient>
           {/* 경로 그라디언트 */}
           <LinearGradient id="pathGrad" x1="0" y1="0" x2="0" y2="1">
             <Stop offset="0" stopColor={path.fill} stopOpacity="0.9" />
             <Stop offset="1" stopColor={path.fill} stopOpacity="1" />
+          </LinearGradient>
+          {/* 잔디 미세 텍스처 (실사 느낌) */}
+          <Pattern id="grassNoise" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse">
+            <Circle cx="1" cy="1" r="0.8" fill={grass.dark} opacity="0.16" />
+            <Circle cx="6" cy="2" r="0.7" fill={grass.patch} opacity="0.12" />
+            <Circle cx="3" cy="7" r="0.8" fill={grass.dark} opacity="0.1" />
+            <Circle cx="8" cy="8" r="0.7" fill={grass.patch} opacity="0.14" />
+          </Pattern>
+          {/* 하단 접지 음영 */}
+          <LinearGradient id="groundAO" x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0" stopColor="#00000000" />
+            <Stop offset="1" stopColor="#0000002A" />
+          </LinearGradient>
+          {/* 상단 페이드 */}
+          <LinearGradient id="topFade" x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0" stopColor="#00000030" stopOpacity="1" />
+            <Stop offset="1" stopColor="#00000000" stopOpacity="1" />
           </LinearGradient>
         </Defs>
 
@@ -371,6 +460,7 @@ export const VillageGroundLayer: React.FC<VillageGroundLayerProps> = ({
             opacity={0.35}
           />
         ))}
+        <Rect x={0} y={0} width={width} height={height} fill="url(#grassNoise)" opacity={0.8} />
 
         {/* ── 레이어 3: 어두운 패치 (깊이감) ── */}
         <Ellipse cx={width * 0.22} cy={height * 0.55} rx={30} ry={12} fill={grass.dark} opacity={0.18} />
@@ -409,18 +499,65 @@ export const VillageGroundLayer: React.FC<VillageGroundLayerProps> = ({
         {/* ── 레이어 6: 연못 ── */}
         <Pond w={width} h={height} colors={water} />
 
-        {/* ── 레이어 7: 꽃 클러스터 ── */}
-        {flowerClusters.map((cluster, i) => (
-          <FlowerCluster
-            key={`fc-${i}`}
-            cx={cluster.cx}
-            cy={cluster.cy}
-            color={cluster.color}
-            count={cluster.count}
-            w={width}
-            h={height}
-            isLuxury={isLuxury}
+        {/* ── 레이어 6.5: 연못 금빛/무지개 글로우 (Lv7+) ── */}
+        {pondGlow && (
+          <Ellipse
+            cx={width * 0.80}
+            cy={height * 0.72}
+            rx={width * 0.13}
+            ry={height * 0.13}
+            fill={pondGlow}
           />
+        )}
+
+        {/* ── 레이어 7: 꽃 클러스터 (쇠퇴 시 투명도 감소) ── */}
+        <G opacity={flowerOpacity}>
+          {flowerClusters.map((cluster, i) => (
+            <FlowerCluster
+              key={`fc-${i}`}
+              cx={cluster.cx}
+              cy={cluster.cy}
+              color={cluster.color}
+              count={cluster.count}
+              w={width}
+              h={height}
+              isLuxury={isLuxury}
+            />
+          ))}
+        </G>
+
+        {/* ── 레이어 7.5: 잡초 (이탈 쇠퇴 시) ── */}
+        {weedCount > 0 && WEED_POSITIONS.slice(0, weedCount).map((weed, i) => (
+          <G key={`weed-${i}`}>
+            {/* 잡초 줄기 */}
+            <Path
+              d={`M ${weed.cx * width} ${weed.cy * height}
+                  C ${weed.cx * width - 3} ${weed.cy * height - 12},
+                    ${weed.cx * width + 5} ${weed.cy * height - 18},
+                    ${weed.cx * width + 2} ${weed.cy * height - 22}`}
+              fill="none"
+              stroke="#6B8040"
+              strokeWidth={2}
+              opacity={0.7}
+            />
+            {/* 잡초 잎 */}
+            <Ellipse
+              cx={weed.cx * width + 2}
+              cy={weed.cy * height - 22}
+              rx={5}
+              ry={3}
+              fill="#7A9C45"
+              opacity={0.6}
+            />
+            <Ellipse
+              cx={weed.cx * width - 2}
+              cy={weed.cy * height - 14}
+              rx={4}
+              ry={2.5}
+              fill="#8AA855"
+              opacity={0.5}
+            />
+          </G>
         ))}
 
         {/* ── 레이어 8: 잔디 꽃대 ── */}
@@ -438,11 +575,8 @@ export const VillageGroundLayer: React.FC<VillageGroundLayerProps> = ({
         ))}
 
         {/* ── 레이어 9: 상단 가장자리 그림자 (배경과 자연스럽게 연결) ── */}
-        <LinearGradient id="topFade" x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0" stopColor="#00000030" stopOpacity="1" />
-          <Stop offset="1" stopColor="#00000000" stopOpacity="1" />
-        </LinearGradient>
         <Rect x={0} y={0} width={width} height={height * 0.06} fill="url(#topFade)" />
+        <Rect x={0} y={0} width={width} height={height} fill="url(#groundAO)" />
       </Svg>
     </View>
   );

@@ -44,6 +44,7 @@ import { usePrices } from '../../src/hooks/usePrices';
 import { AssetType } from '../../src/types/asset';
 import { useScreenTracking } from '../../src/hooks/useAnalytics';
 import { useCheckupLevel } from '../../src/hooks/useCheckupLevel';
+import HospitalHeader from '../../src/components/rebalance/HospitalHeader';
 import { useHoldingPeriod } from '../../src/hooks/useHoldingPeriod';
 import { useEmotionCheck } from '../../src/hooks/useEmotionCheck';
 import { useTheme } from '../../src/hooks/useTheme';
@@ -354,7 +355,7 @@ async function runAnalysisDiagnostic() {
 export default function CheckupScreen() {
   useScreenTracking('checkup');
   const router = useRouter();
-  const { t } = useLocale();
+  const { t, language } = useLocale();
   const { colors } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
   const [showToast, setShowToast] = useState(false);
@@ -708,6 +709,22 @@ export default function CheckupScreen() {
         {/* 무료 기간 배너 */}
         <View style={s.freeBannerWrap}>
           <FreePeriodBanner compact={true} />
+        </View>
+
+        {/* P2-3: 마을 병원 세계관 헤더 */}
+        <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
+          <HospitalHeader
+            healthGrade={
+              healthScore != null && typeof healthScore === 'object' && 'overallScore' in healthScore
+                ? ((healthScore as any).overallScore >= 80 ? 'A'
+                  : (healthScore as any).overallScore >= 60 ? 'B'
+                  : (healthScore as any).overallScore >= 40 ? 'C'
+                  : (healthScore as any).overallScore >= 20 ? 'D' : 'F')
+                : undefined
+            }
+            colors={colors}
+            locale={language}
+          />
         </View>
 
         {/* 🏥 클리닉 헤더 + 하워드 막스 원장 */}

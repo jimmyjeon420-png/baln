@@ -67,7 +67,14 @@ import { getDailyQuote } from '../../src/data/guruQuoteBank';
 import WeatherBadge from '../../src/components/common/WeatherBadge';
 import { CharacterAvatar } from '../../src/components/character/CharacterAvatar';
 import { useScreenTracking } from '../../src/hooks/useAnalytics';
+import CafeAmbiance from '../../src/components/lounge/CafeAmbiance';
 import InviteBanner from '../../src/components/lounge/InviteBanner';
+// 세계관 강화: 카페 테이블, 구루 방문 배너, 카페 등급
+import GuruVisitBanner from '../../src/components/lounge/GuruVisitBanner';
+import CafeTableList from '../../src/components/lounge/CafeTableList';
+import CafeRankBadge from '../../src/components/lounge/CafeRankBadge';
+import { useCafeFeatures } from '../../src/hooks/useCafeFeatures';
+import type { CafeTable } from '../../src/data/cafeConfig';
 
 // ══════════════════════════════════════════
 // 상수
@@ -390,6 +397,10 @@ function LoungeScreenInner() {
   const [newPostContent, setNewPostContent] = useState('');
   const [isComposing, setIsComposing] = useState(false);
   const [postCategory, setPostCategory] = useState<CommunityCategory>('stocks');
+
+  // 카페 세계관 기능 (구루 방문, 등급, 리액션)
+  const { visitingGurus, cafeRank } = useCafeFeatures();
+  const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
 
   // 모임 상태
   const [gatheringCategory, setGatheringCategory] = useState<Gathering['category'] | 'all'>('all');
@@ -718,12 +729,19 @@ function LoungeScreenInner() {
               <Ionicons name="diamond" size={14} color={vipBadgeColor} />
               <Text style={[styles.vipBadgeText, { color: vipBadgeColor }]}>PRIVATE</Text>
             </View>
+            <CafeRankBadge rank={cafeRank} />
           </View>
           {/* 맥박 진단 버튼 */}
           <TouchableOpacity onPress={handleDiagnose} style={{ padding: 8 }}>
             <Ionicons name="pulse" size={22} color={themeColors.textTertiary} />
           </TouchableOpacity>
         </View>
+
+        {/* P1-4: 구루 카페 분위기 헤더 (시간대별 + 명언) */}
+        <CafeAmbiance colors={themeColors} locale={language} />
+
+        {/* ── 구루 방문 배너 (특정 시간대에만) ──────────────── */}
+        <GuruVisitBanner visitingGurus={visitingGurus} />
 
         {/* 구루 카페 분위기 */}
         <View style={[styles.cafeHeader, { backgroundColor: themeColors.surface }]}>
@@ -859,6 +877,12 @@ function LoungeScreenInner() {
                 </TouchableOpacity>
               ))}
             </View>
+
+            {/* ── 카페 테이블 (토픽별) ──────────────────────────── */}
+            <CafeTableList
+              onSelectTable={(table: CafeTable) => setSelectedTableId(table.id)}
+              selectedTableId={selectedTableId}
+            />
 
             {/* 글쓰기 영역 */}
             {isComposing && (

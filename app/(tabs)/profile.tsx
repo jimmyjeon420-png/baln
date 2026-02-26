@@ -26,8 +26,26 @@ import { useLocale } from '../../src/context/LocaleContext';
 import { useGuruFriendship } from '../../src/hooks/useGuruFriendship';
 import { useVillageProsperity } from '../../src/hooks/useVillageProsperity';
 import { CharacterAvatar } from '../../src/components/character/CharacterAvatar';
+import CityHallHeader from '../../src/components/profile/CityHallHeader';
+// 세계관 강화: 시청 섹션 테마
+import { CITY_HALL_SECTIONS } from '../../src/components/profile/CityHallSections';
 
 const APP_VERSION = Constants.expoConfig?.version ?? '1.0.0';
+
+// ---------------------------------------------------------------------------
+// 시청 세계관: 섹션 인덱스 → CITY_HALL_SECTIONS 매핑
+// Section 0 (나의 활동) → marketplace (마을 상점)
+// Section 1 (더 알아보기) → mentor (멘토 사무실)
+// Section 2 (설정) → settings (민원실)
+// ---------------------------------------------------------------------------
+const SECTION_CITY_HALL_MAP: Record<number, string> = { 0: 'marketplace', 1: 'mentor', 2: 'settings' };
+
+function getCityHallEmoji(sectionIndex: number): string {
+  const id = SECTION_CITY_HALL_MAP[sectionIndex];
+  if (!id) return '';
+  const found = CITY_HALL_SECTIONS.find(s => s.id === id);
+  return found ? found.emoji + ' ' : '';
+}
 
 // =============================================================================
 // 타입 정의
@@ -57,7 +75,7 @@ interface MenuSection {
 export default function ProfileScreen() {
   useScreenTracking('more');
   const router = useRouter();
-  const { t } = useLocale();
+  const { t, language } = useLocale();
   const { user, signOut } = useAuth();
   const { unlockedCount, totalCount } = useAchievementCount();
   const { themeMode, setThemeMode, colors } = useTheme();
@@ -247,7 +265,9 @@ export default function ProfileScreen() {
   // ---------------------------------------------------------------------------
   const renderSection = (section: MenuSection, sectionIndex: number) => (
     <View key={`section-${sectionIndex}`} style={styles.section}>
-      <Text style={[styles.sectionTitle, { color: colors.textTertiary }]}>{section.title}</Text>
+      <Text style={[styles.sectionTitle, { color: colors.textTertiary }]}>
+        {getCityHallEmoji(sectionIndex)}{section.title}
+      </Text>
       <View style={[styles.sectionCard, { backgroundColor: colors.surface }]}>
         {section.items.map((item, idx) =>
           renderMenuItem(item, idx, idx === section.items.length - 1)
@@ -285,6 +305,16 @@ export default function ProfileScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        {/* P2-5: 시청 세계관 헤더 */}
+        <View style={{ marginHorizontal: 16, marginBottom: 12 }}>
+          <CityHallHeader
+            prosperityLevel={prosperityLevel}
+            guruCount={10}
+            colors={colors}
+            locale={language}
+          />
+        </View>
+
         {/* ── 프로필 카드 ── */}
         <TouchableOpacity
           style={[styles.profileCard, { backgroundColor: colors.surface }]}

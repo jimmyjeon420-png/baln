@@ -17,4 +17,6 @@ export interface GuruComment {
   content_en?: string;
   sentiment: GuruCommentSentiment;
   created_at: string;
+  /** 답글 대상 구루 ID (라이벌 토론용) */
+  reply_to_guru_id?: string;
 }
