@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../src/hooks/useTheme';
 import { HeaderBar } from '../../src/components/common/HeaderBar';
+import { useLocale } from '../../src/context/LocaleContext';
 
 // 라이선스 타입 정의
 interface LicenseEntry {
@@ -33,278 +34,285 @@ interface LicenseCategory {
   packages: LicenseEntry[];
 }
 
-// 실제 사용 중인 패키지 목록 (package.json 기반)
-const LICENSE_DATA: LicenseCategory[] = [
-  {
-    title: '코어 프레임워크',
-    icon: 'code-slash',
-    packages: [
-      {
-        name: 'React',
-        version: '19.1.0',
-        license: 'MIT',
-        url: 'https://github.com/facebook/react',
-        description: 'UI 구축을 위한 JavaScript 라이브러리',
-      },
-      {
-        name: 'React Native',
-        version: '0.81.5',
-        license: 'MIT',
-        url: 'https://github.com/facebook/react-native',
-        description: 'React를 사용한 네이티브 모바일 앱 개발 프레임워크',
-      },
-      {
-        name: 'Expo',
-        version: '54.0.0',
-        license: 'MIT',
-        url: 'https://github.com/expo/expo',
-        description: 'React Native 앱 개발 플랫폼 및 도구',
-      },
-      {
-        name: 'TypeScript',
-        version: '5.3.0',
-        license: 'Apache-2.0',
-        url: 'https://github.com/microsoft/TypeScript',
-        description: 'JavaScript에 타입 시스템을 추가한 프로그래밍 언어',
-      },
-    ],
-  },
-  {
-    title: 'AI & 백엔드',
-    icon: 'sparkles',
-    packages: [
-      {
-        name: '@google/generative-ai',
-        version: '0.24.1',
-        license: 'Apache-2.0',
-        url: 'https://github.com/google/generative-ai-js',
-        description: 'Google Gemini 3 Flash SDK — OCR 분석 및 AI 진단 엔진',
-      },
-      {
-        name: '@supabase/supabase-js',
-        version: '2.38.0',
-        license: 'MIT',
-        url: 'https://github.com/supabase/supabase-js',
-        description: 'Supabase 클라이언트 — 인증, 데이터베이스, 스토리지',
-      },
-      {
-        name: 'Axios',
-        version: '1.6.0',
-        license: 'MIT',
-        url: 'https://github.com/axios/axios',
-        description: 'HTTP 통신 라이브러리',
-      },
-    ],
-  },
-  {
-    title: '네비게이션 & 상태 관리',
-    icon: 'navigate',
-    packages: [
-      {
-        name: 'Expo Router',
-        version: '6.0.22',
-        license: 'MIT',
-        url: 'https://github.com/expo/router',
-        description: '파일 기반 네비게이션 시스템',
-      },
-      {
-        name: '@tanstack/react-query',
-        version: '5.28.0',
-        license: 'MIT',
-        url: 'https://github.com/TanStack/query',
-        description: '서버 상태 관리 및 데이터 캐싱',
-      },
-      {
-        name: 'React Native Screens',
-        version: '4.16.0',
-        license: 'MIT',
-        url: 'https://github.com/software-mansion/react-native-screens',
-        description: '네이티브 화면 컨테이너 최적화',
-      },
-    ],
-  },
-  {
-    title: 'UI & 애니메이션',
-    icon: 'color-palette',
-    packages: [
-      {
-        name: 'React Native Reanimated',
-        version: '4.1.1',
-        license: 'MIT',
-        url: 'https://github.com/software-mansion/react-native-reanimated',
-        description: '고성능 네이티브 애니메이션 라이브러리',
-      },
-      {
-        name: 'React Native SVG',
-        version: '15.12.1',
-        license: 'MIT',
-        url: 'https://github.com/software-mansion/react-native-svg',
-        description: 'SVG 그래픽 렌더링 — 파이 차트, 아이콘',
-      },
-      {
-        name: 'React Native Gesture Handler',
-        version: '2.28.0',
-        license: 'MIT',
-        url: 'https://github.com/software-mansion/react-native-gesture-handler',
-        description: '네이티브 제스처 인식 시스템',
-      },
-      {
-        name: '@expo/vector-icons',
-        version: '15.0.3',
-        license: 'MIT',
-        url: 'https://github.com/expo/vector-icons',
-        description: 'Ionicons 등 벡터 아이콘 라이브러리',
-      },
-      {
-        name: 'React Native Chart Kit',
-        version: '6.12.0',
-        license: 'MIT',
-        url: 'https://github.com/indiespirit/react-native-chart-kit',
-        description: '차트 및 그래프 시각화',
-      },
-      {
-        name: 'Expo Linear Gradient',
-        version: '15.0.8',
-        license: 'MIT',
-        url: 'https://github.com/expo/expo',
-        description: '그라데이션 배경 효과',
-      },
-      {
-        name: 'Expo Haptics',
-        version: '15.0.8',
-        license: 'MIT',
-        url: 'https://github.com/expo/expo',
-        description: '햅틱(진동) 피드백',
-      },
-    ],
-  },
-  {
-    title: '보안 & 저장소',
-    icon: 'shield-checkmark',
-    packages: [
-      {
-        name: 'Expo Secure Store',
-        version: '15.0.8',
-        license: 'MIT',
-        url: 'https://github.com/expo/expo',
-        description: '암호화된 키-값 저장소 (토큰, 민감 데이터)',
-      },
-      {
-        name: 'Expo Local Authentication',
-        version: '17.0.8',
-        license: 'MIT',
-        url: 'https://github.com/expo/expo',
-        description: '생체 인증 (지문, Face ID)',
-      },
-      {
-        name: 'Expo Crypto',
-        version: '15.0.8',
-        license: 'MIT',
-        url: 'https://github.com/expo/expo',
-        description: '암호화 유틸리티 (해시, 랜덤 생성)',
-      },
-      {
-        name: '@react-native-async-storage/async-storage',
-        version: '2.2.0',
-        license: 'MIT',
-        url: 'https://github.com/react-native-async-storage/async-storage',
-        description: '비동기 키-값 로컬 저장소',
-      },
-    ],
-  },
-  {
-    title: '미디어 & 공유',
-    icon: 'share-social',
-    packages: [
-      {
-        name: 'Expo Image Picker',
-        version: '17.0.10',
-        license: 'MIT',
-        url: 'https://github.com/expo/expo',
-        description: '카메라 및 갤러리 이미지 선택',
-      },
-      {
-        name: 'Expo Image Manipulator',
-        version: '14.0.8',
-        license: 'MIT',
-        url: 'https://github.com/expo/expo',
-        description: '이미지 리사이즈, 크롭, 압축 처리',
-      },
-      {
-        name: 'Expo File System',
-        version: '19.0.21',
-        license: 'MIT',
-        url: 'https://github.com/expo/expo',
-        description: '파일 읽기/쓰기 시스템',
-      },
-      {
-        name: 'Expo Sharing',
-        version: '14.0.8',
-        license: 'MIT',
-        url: 'https://github.com/expo/expo',
-        description: '소셜 미디어 공유 기능',
-      },
-      {
-        name: 'Expo Media Library',
-        version: '18.2.1',
-        license: 'MIT',
-        url: 'https://github.com/expo/expo',
-        description: '기기 미디어 라이브러리 접근',
-      },
-      {
-        name: 'React Native View Shot',
-        version: '4.0.3',
-        license: 'MIT',
-        url: 'https://github.com/gre/react-native-view-shot',
-        description: '화면 캡처 — 공유 카드 이미지 생성',
-      },
-    ],
-  },
-  {
-    title: '유틸리티 & 기타',
-    icon: 'build',
-    packages: [
-      {
-        name: 'Expo Notifications',
-        version: '0.32.16',
-        license: 'MIT',
-        url: 'https://github.com/expo/expo',
-        description: '푸시 알림 및 로컬 알림',
-      },
-      {
-        name: 'Expo Localization',
-        version: '17.0.8',
-        license: 'MIT',
-        url: 'https://github.com/expo/expo',
-        description: '다국어 지원 (한국어/영어 자동 감지)',
-      },
-      {
-        name: 'i18n-js',
-        version: '4.5.1',
-        license: 'MIT',
-        url: 'https://github.com/fnando/i18n',
-        description: '국제화(i18n) 텍스트 번역 엔진',
-      },
-      {
-        name: 'React Native Worklets',
-        version: '0.5.1',
-        license: 'MIT',
-        url: 'https://github.com/software-mansion/react-native-worklets',
-        description: 'UI 스레드 작업 처리 엔진',
-      },
-      {
-        name: 'React Native Keyboard Controller',
-        version: '1.18.5',
-        license: 'MIT',
-        url: 'https://github.com/kirillzyusko/react-native-keyboard-controller',
-        description: '키보드 동작 제어 및 애니메이션',
-      },
-    ],
-  },
-];
+// 실제 사용 중인 패키지 목록 (package.json 기반) — i18n 적용
+function getLicenseData(t: (key: string, options?: Record<string, unknown>) => string): LicenseCategory[] {
+  return [
+    {
+      title: t('licenses.category_core'),
+      icon: 'code-slash',
+      packages: [
+        {
+          name: 'React',
+          version: '19.1.0',
+          license: 'MIT',
+          url: 'https://github.com/facebook/react',
+          description: t('licenses.desc_react'),
+        },
+        {
+          name: 'React Native',
+          version: '0.81.5',
+          license: 'MIT',
+          url: 'https://github.com/facebook/react-native',
+          description: t('licenses.desc_react_native'),
+        },
+        {
+          name: 'Expo',
+          version: '54.0.0',
+          license: 'MIT',
+          url: 'https://github.com/expo/expo',
+          description: t('licenses.desc_expo'),
+        },
+        {
+          name: 'TypeScript',
+          version: '5.3.0',
+          license: 'Apache-2.0',
+          url: 'https://github.com/microsoft/TypeScript',
+          description: t('licenses.desc_typescript'),
+        },
+      ],
+    },
+    {
+      title: t('licenses.category_ai_backend'),
+      icon: 'sparkles',
+      packages: [
+        {
+          name: '@google/generative-ai',
+          version: '0.24.1',
+          license: 'Apache-2.0',
+          url: 'https://github.com/google/generative-ai-js',
+          description: t('licenses.desc_gemini'),
+        },
+        {
+          name: '@supabase/supabase-js',
+          version: '2.38.0',
+          license: 'MIT',
+          url: 'https://github.com/supabase/supabase-js',
+          description: t('licenses.desc_supabase'),
+        },
+        {
+          name: 'Axios',
+          version: '1.6.0',
+          license: 'MIT',
+          url: 'https://github.com/axios/axios',
+          description: t('licenses.desc_axios'),
+        },
+      ],
+    },
+    {
+      title: t('licenses.category_nav_state'),
+      icon: 'navigate',
+      packages: [
+        {
+          name: 'Expo Router',
+          version: '6.0.22',
+          license: 'MIT',
+          url: 'https://github.com/expo/router',
+          description: t('licenses.desc_expo_router'),
+        },
+        {
+          name: '@tanstack/react-query',
+          version: '5.28.0',
+          license: 'MIT',
+          url: 'https://github.com/TanStack/query',
+          description: t('licenses.desc_tanstack_query'),
+        },
+        {
+          name: 'React Native Screens',
+          version: '4.16.0',
+          license: 'MIT',
+          url: 'https://github.com/software-mansion/react-native-screens',
+          description: t('licenses.desc_rn_screens'),
+        },
+      ],
+    },
+    {
+      title: t('licenses.category_ui_animation'),
+      icon: 'color-palette',
+      packages: [
+        {
+          name: 'React Native Reanimated',
+          version: '4.1.1',
+          license: 'MIT',
+          url: 'https://github.com/software-mansion/react-native-reanimated',
+          description: t('licenses.desc_reanimated'),
+        },
+        {
+          name: 'React Native SVG',
+          version: '15.12.1',
+          license: 'MIT',
+          url: 'https://github.com/software-mansion/react-native-svg',
+          description: t('licenses.desc_rn_svg'),
+        },
+        {
+          name: 'React Native Gesture Handler',
+          version: '2.28.0',
+          license: 'MIT',
+          url: 'https://github.com/software-mansion/react-native-gesture-handler',
+          description: t('licenses.desc_gesture_handler'),
+        },
+        {
+          name: '@expo/vector-icons',
+          version: '15.0.3',
+          license: 'MIT',
+          url: 'https://github.com/expo/vector-icons',
+          description: t('licenses.desc_vector_icons'),
+        },
+        {
+          name: 'React Native Chart Kit',
+          version: '6.12.0',
+          license: 'MIT',
+          url: 'https://github.com/indiespirit/react-native-chart-kit',
+          description: t('licenses.desc_chart_kit'),
+        },
+        {
+          name: 'Expo Linear Gradient',
+          version: '15.0.8',
+          license: 'MIT',
+          url: 'https://github.com/expo/expo',
+          description: t('licenses.desc_linear_gradient'),
+        },
+        {
+          name: 'Expo Haptics',
+          version: '15.0.8',
+          license: 'MIT',
+          url: 'https://github.com/expo/expo',
+          description: t('licenses.desc_haptics'),
+        },
+      ],
+    },
+    {
+      title: t('licenses.category_security_storage'),
+      icon: 'shield-checkmark',
+      packages: [
+        {
+          name: 'Expo Secure Store',
+          version: '15.0.8',
+          license: 'MIT',
+          url: 'https://github.com/expo/expo',
+          description: t('licenses.desc_secure_store'),
+        },
+        {
+          name: 'Expo Local Authentication',
+          version: '17.0.8',
+          license: 'MIT',
+          url: 'https://github.com/expo/expo',
+          description: t('licenses.desc_local_auth'),
+        },
+        {
+          name: 'Expo Crypto',
+          version: '15.0.8',
+          license: 'MIT',
+          url: 'https://github.com/expo/expo',
+          description: t('licenses.desc_crypto'),
+        },
+        {
+          name: '@react-native-async-storage/async-storage',
+          version: '2.2.0',
+          license: 'MIT',
+          url: 'https://github.com/react-native-async-storage/async-storage',
+          description: t('licenses.desc_async_storage'),
+        },
+      ],
+    },
+    {
+      title: t('licenses.category_media_share'),
+      icon: 'share-social',
+      packages: [
+        {
+          name: 'Expo Image Picker',
+          version: '17.0.10',
+          license: 'MIT',
+          url: 'https://github.com/expo/expo',
+          description: t('licenses.desc_image_picker'),
+        },
+        {
+          name: 'Expo Image Manipulator',
+          version: '14.0.8',
+          license: 'MIT',
+          url: 'https://github.com/expo/expo',
+          description: t('licenses.desc_image_manipulator'),
+        },
+        {
+          name: 'Expo File System',
+          version: '19.0.21',
+          license: 'MIT',
+          url: 'https://github.com/expo/expo',
+          description: t('licenses.desc_file_system'),
+        },
+        {
+          name: 'Expo Sharing',
+          version: '14.0.8',
+          license: 'MIT',
+          url: 'https://github.com/expo/expo',
+          description: t('licenses.desc_sharing'),
+        },
+        {
+          name: 'Expo Media Library',
+          version: '18.2.1',
+          license: 'MIT',
+          url: 'https://github.com/expo/expo',
+          description: t('licenses.desc_media_library'),
+        },
+        {
+          name: 'React Native View Shot',
+          version: '4.0.3',
+          license: 'MIT',
+          url: 'https://github.com/gre/react-native-view-shot',
+          description: t('licenses.desc_view_shot'),
+        },
+      ],
+    },
+    {
+      title: t('licenses.category_utilities'),
+      icon: 'build',
+      packages: [
+        {
+          name: 'Expo Notifications',
+          version: '0.32.16',
+          license: 'MIT',
+          url: 'https://github.com/expo/expo',
+          description: t('licenses.desc_notifications'),
+        },
+        {
+          name: 'Expo Localization',
+          version: '17.0.8',
+          license: 'MIT',
+          url: 'https://github.com/expo/expo',
+          description: t('licenses.desc_localization'),
+        },
+        {
+          name: 'i18n-js',
+          version: '4.5.1',
+          license: 'MIT',
+          url: 'https://github.com/fnando/i18n',
+          description: t('licenses.desc_i18n_js'),
+        },
+        {
+          name: 'React Native Worklets',
+          version: '0.5.1',
+          license: 'MIT',
+          url: 'https://github.com/software-mansion/react-native-worklets',
+          description: t('licenses.desc_worklets'),
+        },
+        {
+          name: 'React Native Keyboard Controller',
+          version: '1.18.5',
+          license: 'MIT',
+          url: 'https://github.com/kirillzyusko/react-native-keyboard-controller',
+          description: t('licenses.desc_keyboard_controller'),
+        },
+      ],
+    },
+  ];
+}
 
 export default function LicensesScreen() {
   const { colors } = useTheme();
+  const { t } = useLocale();
+
+  // 라이선스 데이터 (i18n 적용)
+  const LICENSE_DATA = getLicenseData(t);
+
   // 펼쳐진 카테고리 인덱스 관리
   const [expandedCategories, setExpandedCategories] = useState<number[]>([0]);
 
@@ -322,15 +330,14 @@ export default function LicensesScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <HeaderBar title="오픈소스 라이선스" />
+      <HeaderBar title={t('licenses.header_title')} />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* 안내 문구 */}
         <View style={[styles.introSection, { backgroundColor: colors.surface }]}>
           <Ionicons name="heart" size={20} color={colors.error} />
           <Text style={[styles.introText, { color: colors.textSecondary }]}>
-            bal<Text style={{ color: colors.primary }}>n</Text>은 {totalPackages}개의 오픈소스 프로젝트 위에
-            만들어졌습니다. 오픈소스 커뮤니티에 깊은 감사를 드립니다.
+            bal<Text style={{ color: colors.primary }}>n</Text>{t('licenses.intro_text', { count: totalPackages })}
           </Text>
         </View>
 
@@ -338,15 +345,15 @@ export default function LicensesScreen() {
         <View style={styles.summaryRow}>
           <View style={[styles.summaryBadge, { backgroundColor: colors.surface }]}>
             <Text style={[styles.summaryNumber, { color: colors.primary }]}>{totalPackages}</Text>
-            <Text style={[styles.summaryLabel, { color: colors.textTertiary }]}>패키지</Text>
+            <Text style={[styles.summaryLabel, { color: colors.textTertiary }]}>{t('licenses.label_packages')}</Text>
           </View>
           <View style={[styles.summaryBadge, { backgroundColor: colors.surface }]}>
             <Text style={[styles.summaryNumber, { color: colors.primary }]}>MIT</Text>
-            <Text style={[styles.summaryLabel, { color: colors.textTertiary }]}>주요 라이선스</Text>
+            <Text style={[styles.summaryLabel, { color: colors.textTertiary }]}>{t('licenses.label_primary_license')}</Text>
           </View>
           <View style={[styles.summaryBadge, { backgroundColor: colors.surface }]}>
             <Text style={[styles.summaryNumber, { color: colors.primary }]}>{LICENSE_DATA.length}</Text>
-            <Text style={[styles.summaryLabel, { color: colors.textTertiary }]}>카테고리</Text>
+            <Text style={[styles.summaryLabel, { color: colors.textTertiary }]}>{t('licenses.label_categories')}</Text>
           </View>
         </View>
 
@@ -413,7 +420,7 @@ export default function LicensesScreen() {
                         size={14}
                         color={colors.textQuaternary}
                       />
-                      <Text style={[styles.packageUrl, { color: colors.textQuaternary }]}>GitHub에서 보기</Text>
+                      <Text style={[styles.packageUrl, { color: colors.textQuaternary }]}>{t('licenses.view_on_github')}</Text>
                     </View>
                   </TouchableOpacity>
                 ))}
@@ -465,8 +472,8 @@ export default function LicensesScreen() {
         </View>
 
         <Text style={[styles.footerText, { color: colors.textQuaternary }]}>
-          © 2026 발른 주식회사{'\n'}
-          오픈소스 라이선스 정보는 앱 버전에 따라 변경될 수 있습니다.
+          {t('licenses.footer_copyright')}{'\n'}
+          {t('licenses.footer_note')}
         </Text>
       </ScrollView>
     </SafeAreaView>
