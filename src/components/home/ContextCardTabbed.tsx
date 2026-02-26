@@ -15,6 +15,7 @@ import { SentimentBadge } from './SentimentBadge';
 import { PortfolioImpactSection } from './PortfolioImpactSection';
 import { useTheme } from '../../hooks/useTheme';
 import { shareContent } from '../../services/shareService';
+import { useVillageProsperity } from '../../hooks/useVillageProsperity';
 import { formatLocalDate } from '../../utils/formatters';
 import { useLocale } from '../../context/LocaleContext';
 
@@ -40,6 +41,7 @@ export function ContextCardTabbed({ isPremium = false, onPressPremium }: Context
   const { data, isLoading, error } = useContextCard();
   const { colors } = useTheme();
   const { t } = useLocale();
+  const { addContribution } = useVillageProsperity();
   const [activeLayer, setActiveLayer] = useState<ContextLayer>('historical');
 
   // 로딩 상태
@@ -119,7 +121,9 @@ export function ContextCardTabbed({ isPremium = false, onPressPremium }: Context
           {/* 우측: 공유 버튼 */}
           <TouchableOpacity
             style={s.shareButton}
-            onPress={() => shareContent('context', cardData.date, { headline: cardData.headline })}
+            onPress={() => shareContent('context', cardData.date, { headline: cardData.headline }).then(shared => {
+              if (shared) addContribution('share').catch(() => {});
+            })}
           >
             <Ionicons name="share-outline" size={22} color="#4CAF50" />
           </TouchableOpacity>

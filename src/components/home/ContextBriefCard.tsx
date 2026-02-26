@@ -31,6 +31,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
 import { useTrackEvent } from '../../hooks/useAnalytics';
 import { useHabitLoopTracking } from '../../hooks/useHabitLoopTracking';
+import { useVillageProsperity } from '../../hooks/useVillageProsperity';
 import type { ThemeColors } from '../../styles/colors';
 import { getLocaleCode } from '../../utils/formatters';
 import { useLocale } from '../../context/LocaleContext';
@@ -657,6 +658,7 @@ export default React.forwardRef<View, ContextBriefCardProps>(
     const { t } = useLocale();
     const track = useTrackEvent();
     const { trackStep } = useHabitLoopTracking();
+    const { addContribution } = useVillageProsperity();
     const hasTrackedRead = useRef(false);
     const styles = React.useMemo(() => createStyles(colors), [colors]);
     const COLORS = colors; // 하위 호환성을 위해 COLORS 별칭 생성
@@ -667,14 +669,15 @@ export default React.forwardRef<View, ContextBriefCardProps>(
     const freeTrial = isFreeTrial();
     const daysRemaining = getDaysRemaining();
 
-    // 맥락 카드 데이터가 로드되면 context_card_read 이벤트 기록 (1회만)
+    // 맥락 카드 데이터가 로드되면 context_card_read 이벤트 기록 (1회만) + B-2: 번영도 기여
     useEffect(() => {
       if (!isLoading && fact && !hasTrackedRead.current) {
         hasTrackedRead.current = true;
         track('context_card_read', { sentiment, date });
         trackStep('context_card_read');
+        addContribution('context_card_read').catch(() => {});
       }
-    }, [isLoading, fact, sentiment, date, track, trackStep]);
+    }, [isLoading, fact, sentiment, date, track, trackStep, addContribution]);
 
     // 무료 체험 기간에는 프리미엄처럼 취급
     const effectivePremium = isPremium || freeTrial;

@@ -24,14 +24,17 @@ import {
   type PurchaseError,
   type Product,
 } from 'react-native-iap';
-import { CREDIT_PACKAGES } from '../types/marketplace';
+import { CREDIT_PACKAGES, SUBSCRIPTION_PRODUCTS } from '../types/marketplace';
 
 // ============================================================================
 // 상수
 // ============================================================================
 
-/** Apple Product ID 목록 (App Store Connect에 등록한 것과 동일해야 함) */
+/** Apple Product ID 목록 — 소모품(크레딧) */
 export const APPLE_PRODUCT_IDS = CREDIT_PACKAGES.map(pkg => pkg.appleProductId);
+
+/** Apple Product ID 목록 — 구독(Premium) */
+export const APPLE_SUBSCRIPTION_IDS = Object.values(SUBSCRIPTION_PRODUCTS).map(p => p.appleProductId);
 
 // ============================================================================
 // 연결 관리
@@ -86,7 +89,7 @@ export async function fetchIAPProducts(): Promise<Product[]> {
 // 구매 실행
 // ============================================================================
 
-/** Apple IAP 구매 요청 (Consumable 상품) */
+/** Apple IAP 구매 요청 (Consumable 상품 — 크레딧) */
 export async function purchaseProduct(appleProductId: string): Promise<void> {
   try {
     if (__DEV__) console.log('[IAP] 구매 요청:', appleProductId);
@@ -100,6 +103,23 @@ export async function purchaseProduct(appleProductId: string): Promise<void> {
     // 결과는 purchaseUpdatedListener에서 수신됨
   } catch (err) {
     console.warn('[IAP] 구매 요청 실패:', err);
+    throw err;
+  }
+}
+
+/** Apple IAP 구독 요청 (Auto-Renewable Subscription — Premium) */
+export async function purchaseSubscription(appleProductId: string): Promise<void> {
+  try {
+    if (__DEV__) console.log('[IAP] 구독 요청:', appleProductId);
+    await requestPurchase({
+      type: 'subs',
+      request: {
+        apple: { sku: appleProductId },
+      },
+    });
+    // 결과는 purchaseUpdatedListener에서 수신됨
+  } catch (err) {
+    console.warn('[IAP] 구독 요청 실패:', err);
     throw err;
   }
 }

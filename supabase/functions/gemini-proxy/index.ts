@@ -221,8 +221,8 @@ async function callGeminiWithSearch(prompt: string, timeoutMs: number = 30000, m
         const errorText = await response.text();
         const statusCode = response.status;
 
-        // 429/503은 재시도 가능
-        if (attempt < maxRetries && (statusCode === 429 || statusCode === 503)) {
+        // 429/500/503은 재시도 가능
+        if (attempt < maxRetries && (statusCode === 429 || statusCode === 500 || statusCode === 503)) {
           const delay = Math.pow(2, attempt) * 1000;
           console.log(`[Gemini Proxy] 재시도 ${attempt + 1}/${maxRetries} (HTTP ${statusCode}, ${delay}ms 후)`);
           clearTimeout(timeoutId);

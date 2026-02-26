@@ -208,10 +208,28 @@ JSON으로만 응답:
     };
   } catch (err) {
     if (__DEV__) console.error('[Village] 구루 답변 실패:', err);
+    Sentry.captureException(err, { tags: { service: 'village', action: 'guru_chat', guruId } });
+
+    // 구루별 맞춤 폴백 메시지 — 캐릭터 성격 유지
+    const guruFallbacks: Record<string, string> = {
+      buffett: '허허, 지금 시장이 좀 복잡하네. 잠시 코카콜라 한 잔 하고 다시 생각해보겠네.',
+      dalio: '시스템에 일시적 이상이 감지되었습니다. 데이터를 재분석하겠습니다.',
+      cathie_wood: '앗, 잠시 기술적 이슈가 있어요! 곧 돌아올게요!',
+      druckenmiller: '잠깐, 시장 데이터를 다시 확인하고 있어.',
+      saylor: '네트워크 지연... 비트코인 블록처럼 곧 확인될 거야!',
+      dimon: '잠시 시스템 점검 중입니다. 곧 준비됩니다.',
+      musk: '서버 재시작 중... 화성에서 오는 신호라 좀 느려요 😅',
+      lynch: '슈퍼마켓 계산대가 좀 밀렸나 봐요. 잠시만 기다려주세요!',
+      marks: '2차적 사고를 위해 잠시 시간이 필요합니다. 곧 돌아오겠습니다.',
+      rogers: '글로벌 네트워크 연결이 좀 불안정하군요. 잠시 후 다시 시도해주세요.',
+    };
+
+    const fallbackMsg = guruFallbacks[guruId] || '잠시 후 다시 시도해주세요...';
+
     return {
       id: `vm_${Date.now()}_fallback`,
       speaker: guruId,
-      message: '흠, 좀 더 생각해볼게요...',
+      message: fallbackMsg,
       sentiment: 'NEUTRAL',
     };
   }

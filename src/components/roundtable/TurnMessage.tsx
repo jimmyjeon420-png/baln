@@ -7,7 +7,7 @@
  * - 센티먼트 배지 표시
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { CharacterAvatar } from '../character/CharacterAvatar';
 import { TypewriterText } from './TypewriterText';
@@ -39,14 +39,26 @@ export function TurnMessage({ turn, isCurrent, onTypewriterComplete }: TurnMessa
   const sentimentText = t(`roundtable.sentiment.${sentimentKey}`);
   const accentColor = config?.accentColor || '#4CAF50';
 
+  // 표정 전환: 타자기 진행 중 → 'neutral' (생각 중), 완료 후 → 실제 sentiment 표정
+  const [isTyping, setIsTyping] = useState(isCurrent);
+  const currentExpression = isCurrent && isTyping
+    ? ('neutral' as const)
+    : sentimentToExpression(turn.sentiment);
+
+  const handleTypewriterComplete = () => {
+    setIsTyping(false);
+    onTypewriterComplete?.();
+  };
+
   return (
     <View style={styles.container}>
-      {/* 아바타 */}
+      {/* 아바타 — 발언 시 thinking → sentiment 전환 */}
       <View style={styles.avatarSection}>
         <CharacterAvatar
           guruId={turn.speaker}
           size="sm"
-          expression={sentimentToExpression(turn.sentiment)}
+          expression={currentExpression}
+          animated={isCurrent}
           fallbackEmoji={config?.emoji}
         />
       </View>
@@ -71,7 +83,7 @@ export function TurnMessage({ turn, isCurrent, onTypewriterComplete }: TurnMessa
             <TypewriterText
               text={turn.message}
               speed={25}
-              onComplete={onTypewriterComplete}
+              onComplete={handleTypewriterComplete}
             />
           ) : (
             <Text style={styles.messageText}>{turn.message}</Text>

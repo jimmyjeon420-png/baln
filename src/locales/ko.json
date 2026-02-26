@@ -85,6 +85,8 @@
     }
   },
   "home": {
+    "square_header": "오늘의 광장 소식",
+    "square_subtitle": "구루가 전하는 오늘의 소식",
     "card_labels": {
       "my_assets": "내 자산",
       "today_market": "오늘 시장",
@@ -274,6 +276,8 @@
       },
       "format": "{{month}}월 {{day}}일 {{weekday}}요일"
     },
+    "clinic_header": "🏥 투자 건강 클리닉",
+    "clinic_subtitle": "건강 진단서",
     "dr_marks": {
       "name": "🐢 Dr. 막스",
       "quote": "\"가장 중요한 것은 위험을 아는 것입니다\""
@@ -407,6 +411,7 @@
     "gatherings_empty_title": "아직 등록된 모임이 없습니다",
     "gatherings_empty_desc": "첫 번째 모임을 만들어보세요!",
     "cafe_title": "구루 카페",
+    "cafe_subtitle": "구루들이 모여 이야기하는 공간",
     "guru_reactions_title": "구루들의 반응",
     "guru_thinking": "구루들이 생각 중...",
     "guru_no_reactions": "아직 구루 반응이 없습니다",
@@ -424,16 +429,19 @@
     "silver_motivation_cta": "자산 등록하기",
     "reward_post_write": "게시물 작성 보상 +3C",
     "reward_best_answer": "베스트 답변 보상 +5C",
-    "reward_ten_likes": "10좋아요 달성 보상 +3C"
+    "reward_ten_likes": "10좋아요 달성 보상 +3C",
+    "invite_banner_title": "친구 초대하면 5C 보너스!",
+    "invite_banner_subtitle": "초대 링크를 공유하세요",
+    "invite_share_message": "발른(baln)에서 매일 5분 시장 맥락을 읽고 있어요. 같이 해봐요!"
   },
   "profile": {
-    "title": "전체",
+    "title": "🏛️ 시청",
     "section": {
       "portfolio": "내 포트폴리오",
       "premium": "Premium",
-      "community": "커뮤니티",
-      "investment": "투자 학습",
-      "settings": "설정",
+      "community": "🏪 마을 상점가",
+      "investment": "📚 마을 도서관",
+      "settings": "🏛️ 시청 민원실",
       "support": "지원"
     },
     "menu": {
@@ -860,6 +868,8 @@
       "night": "좋은 밤이에요"
     },
     "chat_placeholder": "구루에게 질문해보세요...",
+    "chat_error": "연결에 문제가 있어요. 잠시 후 다시 시도해주세요.",
+    "chat_retry": "다시 시도",
     "chat_send": "보내기",
     "village_square": "마을 광장",
     "guru_house": "{{name}}의 집",
@@ -1981,19 +1991,19 @@
     }
   },
   "milestone_celebration": {
-    "badge_7": "\uD83D\uDD25 일주일 전사",
+    "badge_7": "🔥 일주일 전사",
     "title_7": "7일 연속 달성!",
     "subtitle_7": "꾸준함의 시작, 일주일 전사 뱃지를 획득했어요",
-    "badge_30": "\uD83D\uDCAA 한 달 마스터",
+    "badge_30": "💪 한 달 마스터",
     "title_30": "30일 연속 달성!",
     "subtitle_30": "한 달을 함께한 당신, 투자 습관이 자리잡았어요",
-    "badge_90": "\uD83D\uDCAA 철인",
+    "badge_90": "💪 철인",
     "title_90": "90일 연속 달성!",
     "subtitle_90": "3개월을 버틴 당신은 진정한 철인입니다",
-    "badge_365": "\uD83C\uDFC6 레전드",
+    "badge_365": "🏆 레전드",
     "title_365": "365일 연속 달성!",
     "subtitle_365": "1년을 함께한 전설의 투자자, 레전드 뱃지 획득!",
-    "badge_default": "\u2728 {{count}}일 달성",
+    "badge_default": "✨ {{count}}일 달성",
     "title_default": "{{count}}일 연속 달성!",
     "subtitle_default": "꾸준한 투자 습관을 만들어가고 있어요",
     "share_message": "baln 앱에서 {{count}}일 연속 투자 습관을 달성했어요! {{badge}} 뱃지 획득! #baln #투자습관"

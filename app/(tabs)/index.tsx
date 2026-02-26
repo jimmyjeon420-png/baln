@@ -86,6 +86,18 @@ import { useStreak } from '../../src/hooks/useStreak';
 import { useStreakRecovery } from '../../src/hooks/useStreakRecovery';
 import { useGuruStyle } from '../../src/hooks/useGuruStyle';
 
+// A-1: 매일 출석 체크인 (습관 루프 보상)
+import { useDailyCheckIn } from '../../src/hooks/useRewards';
+
+// B-1: 실시간 뱃지/업적 체크
+import { useAchievements } from '../../src/hooks/useAchievements';
+
+// B-2: 마을 번영도 기여
+import { useVillageProsperity } from '../../src/hooks/useVillageProsperity';
+
+// B-3: 출석 완료 시 스트릭 경고 알림 취소
+import { onCheckInComplete } from '../../src/services/streakNotificationService';
+
 // 마을 세계관 연동
 import { useWeather } from '../../src/hooks/useWeather';
 import { useMarketSentiment } from '../../src/hooks/useMarketSentiment';
@@ -166,6 +178,15 @@ export default function HomeScreen() {
   const { colors } = useTheme();
   const { guruStyle } = useGuruStyle();
 
+  // A-1: 매일 출석 체크인
+  const { checkedIn, checkIn } = useDailyCheckIn();
+
+  // B-1: 실시간 뱃지/업적 체크
+  const { checkAchievements } = useAchievements();
+
+  // B-2: 마을 번영도 기여
+  const { addContribution } = useVillageProsperity();
+
   // 마을 연동: 날씨 + 시장 심리 + 오늘의 명언
   const { weather, clothingLevel } = useWeather();
   const { sentiment, setSentimentFromPortfolio } = useMarketSentiment();
@@ -223,6 +244,23 @@ export default function HomeScreen() {
 
     checkMilestone();
   }, [currentStreak, isNewStreak]);
+
+  // A-1: 매일 출석 체크인 (마운트 시 1회) + B-2: 번영도 기여 + B-3: 스트릭 경고 취소
+  useEffect(() => {
+    if (!checkedIn) {
+      checkIn().then(() => {
+        addContribution('streak_maintained').catch(() => {});
+        onCheckInComplete().catch(() => {}); // 스트릭 경고 알림 취소 + 리인게이지먼트 리셋
+      }).catch(() => {});
+    }
+  }, [checkedIn, checkIn, addContribution]);
+
+  // B-1: 스트릭 기반 뱃지 자동 해금
+  useEffect(() => {
+    if (currentStreak > 0) {
+      checkAchievements({ currentStreak }).catch(() => {});
+    }
+  }, [currentStreak, checkAchievements]);
 
   // 스트릭 복구 핸들러 (StreakRecoveryModal의 onRecover 시그니처에 맞춤)
   const handleStreakRecover = React.useCallback(async (_cost: number) => {
@@ -577,6 +615,21 @@ export default function HomeScreen() {
       });
   }, [resolvedPolls, myVotesMap, isPremium]);
 
+  // B-1: 예측 결과 기반 뱃지 해금 + B-2: 정답 시 번영도 기여
+  useEffect(() => {
+    if (recentResults.length > 0) {
+      const correctCount = recentResults.filter(r => r.isCorrect).length;
+      checkAchievements({
+        currentStreak,
+        correctVotes: correctCount,
+        predictionAccuracy: myStats?.accuracy_rate ?? undefined,
+      }).catch(() => {});
+      if (correctCount > 0) {
+        addContribution('prediction_correct').catch(() => {});
+      }
+    }
+  }, [recentResults.length]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // 3개 질문 → PollItem 배열로 변환
   const pollsForCard = React.useMemo(() => {
     return todayPolls.map(poll => {
@@ -662,6 +715,10 @@ export default function HomeScreen() {
           {
             onSuccess: () => {
               showToast(t('home.toast.vote_success'), 'success');
+              // B-1: 투표 후 뱃지 체크
+              checkAchievements({ currentStreak }).catch(() => {});
+              // B-2: 번영도 기여
+              addContribution('prediction_vote').catch(() => {});
             },
             onError: (error: any) => {
               showToast(error?.message || t('home.toast.vote_error'), 'error');
@@ -676,6 +733,10 @@ export default function HomeScreen() {
           {
             onSuccess: () => {
               showToast(t('home.toast.multi_vote_success'), 'success');
+              // B-1: 투표 후 뱃지 체크
+              checkAchievements({ currentStreak }).catch(() => {});
+              // B-2: 번영도 기여
+              addContribution('prediction_vote').catch(() => {});
             },
             onError: (error: any) => {
               showToast(error?.message || t('home.toast.multi_vote_error'), 'error');
@@ -694,7 +755,7 @@ export default function HomeScreen() {
       isFallbackData: todayPolls.some((poll) => poll.source === 'fallback'),
       trustMeta: predictionTrustMeta,
     };
-  }, [currentPoll, pollsForCard, myVote, myVotesChoiceMap, recentResults, myStats, globalStats, router, submitVote, showToast, isVoting, todayPolls, predictionTrustMeta, t]);
+  }, [currentPoll, pollsForCard, myVote, myVotesChoiceMap, recentResults, myStats, globalStats, router, submitVote, showToast, isVoting, todayPolls, predictionTrustMeta, t, checkAchievements, addContribution, currentStreak]);
 
   // ──────────────────────────────────────────────────────────────────────
   // 맥락 카드 전체 데이터 (모달용)
@@ -770,6 +831,18 @@ export default function HomeScreen() {
         height={150}
         onRoundtablePress={() => router.push('/roundtable')}
       />
+
+      {/* 광장 소식 헤더 — 구루가 전하는 오늘의 소식 */}
+      <View style={styles.squareHeader}>
+        <Text style={[styles.squareTitle, { color: colors.textPrimary }]}>
+          {t('home.square_header')}
+        </Text>
+        <Text style={[styles.squareSubtitle, { color: colors.textTertiary }]}>
+          {dailyQuote.quote.length > 40
+            ? `"${dailyQuote.quote.slice(0, 40)}…"`
+            : `"${dailyQuote.quote}"`}
+        </Text>
+      </View>
 
       <CardSwipeContainer
         labels={[
@@ -904,6 +977,22 @@ const styles = StyleSheet.create({
   sentimentLabel: {
     fontSize: 12,
     fontWeight: '500',
+  },
+  // ── 광장 소식 헤더 ──
+  squareHeader: {
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 4,
+    gap: 2,
+  },
+  squareTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
+  squareSubtitle: {
+    fontSize: 12,
+    fontStyle: 'italic',
   },
   // ── 오늘의 투자 명언 카드 ──
   quoteCard: {

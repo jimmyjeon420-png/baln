@@ -24,10 +24,12 @@ import { useSubscriptionBonus } from '../src/hooks/useCredits';
 import { useWelcomeBonus } from '../src/hooks/useRewards';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ErrorBoundary from '../src/components/common/ErrorBoundary';
+import { OfflineBanner } from '../src/components/common';
 import WelcomeBonusModal from '../src/components/WelcomeBonusModal';
 import { AIConsentModal, hasAIConsent } from '../src/components/common/AIConsentModal';
 import { useDeepLink } from '../src/hooks/useDeepLink';
 import { useAnalyticsInit } from '../src/hooks/useAnalytics';
+import { initStreakNotifications } from '../src/services/streakNotificationService';
 import { usePrefetchCheckup } from '../src/hooks/usePrefetchCheckup';
 import queryClient from '../src/services/queryClient';
 import * as Sentry from '@sentry/react-native';
@@ -270,6 +272,8 @@ function RootLayout() {
         ]);
         if (granted) {
           await syncNotificationSchedule(settings);
+          // B-3/B-4: 스트릭 경고 + 리인게이지먼트 알림 초기화
+          initStreakNotifications().catch(() => {});
         }
       } catch (err) {
         console.error('Notification setup failed (non-fatal):', err);
@@ -283,9 +287,24 @@ function RootLayout() {
     });
 
     // 알림 탭 리스너 (사용자가 알림을 탭했을 때)
-    responseListener.current = Notifications.addNotificationResponseReceivedListener(() => {
-      // 알림 탭 시 진단 화면으로 이동은 AuthGate 내에서 처리 가능
-      // 딥링크 처리를 위해서는 expo-router의 linking config 활용
+    responseListener.current = Notifications.addNotificationResponseReceivedListener((response) => {
+      const data = response.notification.request.content.data;
+      if (data?.type === 'crisis_alert') {
+        // 위기 알림 → 오늘 탭(맥락 카드)으로 이동
+        ref.navigate('(tabs)/index' as never);
+      } else if (data?.type === 'daily_briefing') {
+        // 일일 브리핑 → 오늘 탭
+        ref.navigate('(tabs)/index' as never);
+      } else if (data?.type === 'rebalance_reminder') {
+        // 리밸런싱 리마인더 → 분석 탭
+        ref.navigate('(tabs)/rebalance' as never);
+      } else if (data?.type === 'streak_warning') {
+        // 스트릭 경고 → 오늘 탭
+        ref.navigate('(tabs)/index' as never);
+      } else if (data?.type === 'reengagement') {
+        // 리인게이지먼트 → 마을 탭
+        ref.navigate('(tabs)/village' as never);
+      }
     });
 
     return () => {
@@ -312,6 +331,8 @@ function RootLayout() {
           <ThemeProvider>
             {/* 테마 적용 배경 (다크/라이트 모드 자동 전환) */}
             <ThemedAppContainer>
+              {/* D-2: 오프라인 배너 — 네트워크 끊기면 상단에 표시 */}
+              <OfflineBanner />
               <ErrorBoundary onError={(error, errorInfo) => {
                 // Sentry에 React 컴포넌트 에러 전달 (DSN 없으면 무시됨)
                 if (SENTRY_DSN && !__DEV__) {

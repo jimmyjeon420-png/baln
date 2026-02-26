@@ -378,6 +378,25 @@ export const TIER_DISCOUNTS: Record<UserTier, number> = {
   DIAMOND: 30,
 };
 
+/** Premium 구독 상품 ID (App Store Connect에 등록 필요) */
+export const SUBSCRIPTION_PRODUCTS = {
+  monthly: {
+    id: 'monthly',
+    appleProductId: 'com.smartrebalancer.premium.monthly',
+    price: 4900,
+    priceLabel: '₩4,900/월',
+    period: 'monthly' as const,
+  },
+  yearly: {
+    id: 'yearly',
+    appleProductId: 'com.smartrebalancer.premium.yearly',
+    price: 39000,
+    priceLabel: '₩39,000/년',
+    period: 'yearly' as const,
+    badge: '33% 할인',
+  },
+} as const;
+
 /** 구독자 월 보너스 크레딧 */
 export const SUBSCRIPTION_MONTHLY_BONUS = 30;
 

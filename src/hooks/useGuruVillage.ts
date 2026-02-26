@@ -143,6 +143,8 @@ export function useGuruVillage(hasActiveEvent: boolean = false) {
   const [userChatGuru, setUserChatGuru] = useState<string | null>(null);
   const [userChatMessages, setUserChatMessages] = useState<VillageMessage[]>([]);
   const [isUserChatLoading, setIsUserChatLoading] = useState(false);
+  const [userChatError, setUserChatError] = useState(false);
+  const lastQuestionRef = useRef<string | null>(null);
   const convTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const moveTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -321,6 +323,8 @@ export function useGuruVillage(hasActiveEvent: boolean = false) {
   const sendMessageToGuru = useCallback(async (question: string) => {
     if (!userChatGuru) return;
     setIsUserChatLoading(true);
+    setUserChatError(false);
+    lastQuestionRef.current = question;
 
     // 사용자 메시지 추가
     const userMsg: VillageMessage = {
@@ -333,13 +337,31 @@ export function useGuruVillage(hasActiveEvent: boolean = false) {
 
     try {
       const reply = await askGuruDirectly(userChatGuru, question);
+      // 폴백 메시지인지 확인 (id에 _fallback 포함)
+      if (reply.id.includes('_fallback')) {
+        setUserChatError(true);
+      }
       setUserChatMessages(prev => [...prev, reply]);
     } catch {
-      // 에러 처리는 서비스에서
+      setUserChatError(true);
     } finally {
       setIsUserChatLoading(false);
     }
   }, [userChatGuru]);
+
+  const retryLastMessage = useCallback(() => {
+    if (!lastQuestionRef.current || !userChatGuru) return;
+    // 마지막 폴백 메시지 제거 후 재시도
+    setUserChatMessages(prev => {
+      const lastMsg = prev[prev.length - 1];
+      if (lastMsg && lastMsg.id.includes('_fallback')) {
+        return prev.slice(0, -1);
+      }
+      return prev;
+    });
+    setUserChatError(false);
+    sendMessageToGuru(lastQuestionRef.current);
+  }, [userChatGuru, sendMessageToGuru]);
 
   // 새 대화 생성 요청 (수동 리프레시)
   const refreshConversations = useCallback(async (marketContext?: string) => {
@@ -372,9 +394,11 @@ export function useGuruVillage(hasActiveEvent: boolean = false) {
     userChatGuru,
     userChatMessages,
     isUserChatLoading,
+    userChatError,
     openGuruChat,
     closeGuruChat,
     sendMessageToGuru,
+    retryLastMessage,
     // 리프레시
     refreshConversations,
     // 관계

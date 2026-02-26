@@ -31,6 +31,17 @@ import supabase, { getCurrentUser } from '../../src/services/supabase';
 import { useTrackEvent } from '../../src/hooks/useAnalytics';
 import { useABExperiment } from '../../src/hooks/useABExperiment';
 import { CREDIT_TO_KRW, getLocaleCode } from '../../src/utils/formatters';
+import { SUBSCRIPTION_PRODUCTS } from '../../src/types/marketplace';
+import {
+  purchaseSubscription,
+  isExpoGo,
+  isUserCancelledError,
+  connectToStore,
+  disconnectFromStore,
+  setupPurchaseListeners,
+  completePurchase,
+} from '../../src/services/appleIAP';
+import type { Purchase, PurchaseError } from '../../src/services/appleIAP';
 
 // 가격 정보
 const PRICING = {
@@ -212,6 +223,57 @@ export default function PaywallScreen() {
     return valueProof.inferredKrwValue - MONTHLY_PRICE_KRW;
   }, [valueProof.inferredKrwValue]);
 
+  // IAP 구매 리스너 — 구독 성공 시 프로필 업데이트
+  useEffect(() => {
+    if (freePeriodActive) return; // 무료 기간 중에는 리스너 불필요
+
+    const handlePurchaseSuccess = async (purchase: Purchase) => {
+      try {
+        // 1. Apple에 트랜잭션 완료 전송
+        await completePurchase(purchase);
+
+        // 2. Supabase 프로필에 premium 상태 업데이트
+        const user = await getCurrentUser();
+        if (user) {
+          const expiresAt = new Date();
+          // 구매한 상품 ID로 기간 결정
+          const isYearly = purchase.productId?.includes('yearly');
+          if (isYearly) {
+            expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+          } else {
+            expiresAt.setMonth(expiresAt.getMonth() + 1);
+          }
+
+          await supabase
+            .from('profiles')
+            .update({
+              plan_type: 'premium',
+              premium_expires_at: expiresAt.toISOString(),
+            })
+            .eq('id', user.id);
+        }
+
+        track('paywall_purchase_success', { productId: purchase.productId ?? 'unknown' });
+        Alert.alert(
+          'Premium 활성화!',
+          'Premium 구독이 시작되었습니다.\n모든 프리미엄 기능을 이용하세요!',
+          [{ text: '확인', onPress: () => router.back() }]
+        );
+      } catch (err) {
+        console.warn('[Paywall] 구매 처리 에러:', err);
+      }
+    };
+
+    const handlePurchaseError = (error: PurchaseError) => {
+      // 사용자 취소는 에러 아님
+      if (isUserCancelledError(error)) return;
+      track('paywall_purchase_listener_error', { code: error.code, message: error.message });
+    };
+
+    const listeners = setupPurchaseListeners(handlePurchaseSuccess, handlePurchaseError);
+    return () => listeners.remove();
+  }, [freePeriodActive, track, router]);
+
   useEffect(() => {
     if (isLoading || hasTrackedViewRef.current) return;
     hasTrackedViewRef.current = true;
@@ -283,8 +345,8 @@ export default function PaywallScreen() {
     );
   };
 
-  // 유료 구독 핸들러 (placeholder)
-  const handleSubscribe = (period: 'monthly' | 'yearly') => {
+  // IAP 구독 구매 핸들러
+  const handleSubscribe = async (period: 'monthly' | 'yearly') => {
     heavyTap();
     track('paywall_plan_selected', {
       period,
@@ -293,23 +355,38 @@ export default function PaywallScreen() {
       state: isTrialActive ? 'trial_active' : isTrialExpired ? 'trial_expired' : 'new_user',
     });
 
-    if (!freePeriodActive) {
-      track('paywall_purchase_intent', {
-        period,
-      });
+    // 무료 기간 중 → 구매 불필요 안내
+    if (freePeriodActive) {
+      track('paywall_subscribe_blocked_free_period', { period });
       Alert.alert(
-        '구독 준비 중',
-        '인앱 구독 결제 연동을 준비 중입니다.\n준비 완료 시 앱 공지로 안내드리겠습니다.'
+        '무료 체험 기간',
+        '현재 모든 프리미엄 기능을 무료로 체험하실 수 있습니다.\n2026년 5월 31일까지 무제한 이용 가능합니다!',
+        [{ text: '확인' }]
       );
       return;
     }
 
-    track('paywall_subscribe_blocked_free_period', { period });
-    Alert.alert(
-      '무료 체험 기간',
-      '현재 모든 프리미엄 기능을 무료로 체험하실 수 있습니다.\n2026년 5월 31일까지 무제한 이용 가능합니다!',
-      [{ text: '확인' }]
-    );
+    // Expo Go 환경 → IAP 불가 안내
+    if (isExpoGo()) {
+      Alert.alert('개발 모드', '인앱 결제는 실제 빌드에서만 사용 가능합니다.');
+      return;
+    }
+
+    // 실제 IAP 구독 구매 요청
+    const product = SUBSCRIPTION_PRODUCTS[period];
+    track('paywall_purchase_intent', { period, productId: product.appleProductId });
+
+    try {
+      await connectToStore();
+      await purchaseSubscription(product.appleProductId);
+      // 구매 결과는 purchaseUpdatedListener에서 처리됨
+    } catch (err: any) {
+      track('paywall_purchase_error', { period, error: err?.message ?? 'unknown' });
+      Alert.alert(
+        '구독 오류',
+        '결제 처리 중 문제가 발생했습니다.\n잠시 후 다시 시도해주세요.',
+      );
+    }
   };
 
   // 로딩 중 표시

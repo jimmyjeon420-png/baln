@@ -161,9 +161,11 @@ export function GuruVillage({ height = VILLAGE_HEIGHT, onRoundtablePress }: Guru
     userChatGuru,
     userChatMessages,
     isUserChatLoading,
+    userChatError,
     openGuruChat,
     closeGuruChat,
     sendMessageToGuru,
+    retryLastMessage,
   } = useGuruVillage();
 
   return (
@@ -230,7 +232,9 @@ export function GuruVillage({ height = VILLAGE_HEIGHT, onRoundtablePress }: Guru
         guruId={userChatGuru}
         messages={userChatMessages}
         isLoading={isUserChatLoading}
+        hasError={userChatError}
         onSend={sendMessageToGuru}
+        onRetry={retryLastMessage}
         onClose={closeGuruChat}
       />
     </View>

@@ -65,6 +65,9 @@ import { useLocale } from '../../src/context/LocaleContext';
 import { useWeather } from '../../src/hooks/useWeather';
 import { getDailyQuote } from '../../src/data/guruQuoteBank';
 import WeatherBadge from '../../src/components/common/WeatherBadge';
+import { CharacterAvatar } from '../../src/components/character/CharacterAvatar';
+import { useScreenTracking } from '../../src/hooks/useAnalytics';
+import InviteBanner from '../../src/components/lounge/InviteBanner';
 
 // ══════════════════════════════════════════
 // 상수
@@ -355,6 +358,7 @@ class LoungeErrorBoundary extends React.Component<
 // ══════════════════════════════════════════
 
 function LoungeScreenInner() {
+  useScreenTracking('lounge');
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { theme, colors: themeColors } = useTheme();
@@ -729,10 +733,19 @@ function LoungeScreenInner() {
             </Text>
             {weather && <WeatherBadge weather={weather} compact colors={themeColors} locale={language} />}
           </View>
-          <Text style={[styles.cafeSubtitle, { color: themeColors.textTertiary }]}>
+          {/* 카페에 모인 구루 아바타 */}
+          <View style={styles.cafeGuruRow}>
+            <CharacterAvatar guruId="buffett" size="sm" />
+            <CharacterAvatar guruId="dalio" size="sm" />
+            <CharacterAvatar guruId="cathie_wood" size="sm" />
+            <Text style={[styles.cafeGuruHint, { color: themeColors.textTertiary }]}>
+              {t('lounge.cafe_subtitle')}
+            </Text>
+          </View>
+          <Text style={[styles.cafeQuote, { color: themeColors.textTertiary }]}>
             {dailyQuote.quote.length > 50
-              ? dailyQuote.quote.slice(0, 50) + '…'
-              : dailyQuote.quote}
+              ? `"${dailyQuote.quote.slice(0, 50)}…"`
+              : `"${dailyQuote.quote}"`}
           </Text>
         </View>
 
@@ -1015,6 +1028,9 @@ function LoungeScreenInner() {
                 {eligibility && eligibility.totalAssets < TIER_THRESHOLDS.GOLD && (
                   <SilverMotivationBanner totalAssets={eligibility.totalAssets} />
                 )}
+
+                {/* 친구 초대 배너 */}
+                <InviteBanner />
 
                 {/* DIAMOND 전용 필터 (인라인) */}
                 {eligibility && eligibility.totalAssets >= TIER_THRESHOLDS.DIAMOND && (
@@ -1759,7 +1775,17 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
   },
-  cafeSubtitle: {
+  cafeGuruRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
+  },
+  cafeGuruHint: {
+    fontSize: 11,
+    marginLeft: 4,
+  },
+  cafeQuote: {
     fontSize: 12,
     lineHeight: 16,
     fontStyle: 'italic',

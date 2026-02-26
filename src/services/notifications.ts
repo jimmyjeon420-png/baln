@@ -540,6 +540,42 @@ async function checkNotificationPermission(): Promise<boolean> {
   }
 }
 
+/** 위기 감지 즉시 알림 (시장 -3% 이상 급락 시) */
+export async function sendCrisisNotification(options: {
+  crisisLevel: 'moderate' | 'severe' | 'extreme';
+  market: string;
+  changePercent: number;
+}): Promise<string | null> {
+  const settings = await loadNotificationSettings();
+  if (!settings.pushEnabled) return null;
+
+  const levelEmoji = {
+    moderate: '⚠️',
+    severe: '🔴',
+    extreme: '🚨',
+  };
+
+  const title = `${levelEmoji[options.crisisLevel]} 시장 급변 감지`;
+  const body = `${options.market} ${options.changePercent > 0 ? '+' : ''}${options.changePercent.toFixed(1)}% — 맥락 카드를 확인하세요`;
+
+  try {
+    const id = await Notifications.scheduleNotificationAsync({
+      content: {
+        title,
+        body,
+        data: { type: 'crisis_alert', crisisLevel: options.crisisLevel, market: options.market },
+        sound: 'default',
+      },
+      trigger: null, // 즉시 전송
+    });
+    if (__DEV__) console.log('[알림] 위기 알림 전송:', id);
+    return id;
+  } catch (err) {
+    console.error('[알림] 위기 알림 전송 실패:', err);
+    return null;
+  }
+}
+
 /** 모든 예약 알림 초기화 */
 export async function cancelAllNotifications() {
   try {

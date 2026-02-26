@@ -12,7 +12,7 @@
  *       사용자와 상호작용하는 핵심 킬링 피처 화면
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -56,8 +56,13 @@ import { VillageFurniture } from '../../src/components/village/VillageFurniture'
 // Character config for name lookups
 import { GURU_CHARACTER_CONFIGS } from '../../src/data/guruCharacterConfig';
 
+// Modals (Market Street & Village Newspaper)
+import BrandMarket from '../../src/components/village/BrandMarket';
+import VillageNewspaper from '../../src/components/village/VillageNewspaper';
+import { getCachedReactions, getFallbackReactions } from '../../src/services/newsReactionService';
+
 // Types
-import type { GuruLetter } from '../../src/types/village';
+import type { GuruLetter, NewspaperArticle, BrandShop } from '../../src/types/village';
 import type { TimeOfDay as HookTimeOfDay } from '../../src/hooks/useTimeOfDay';
 
 // ============================================================================
@@ -150,6 +155,20 @@ export default function VillageScreen() {
   const [showMailbox, setShowMailbox] = useState(false);
   const [showMarket, setShowMarket] = useState(false);
   const [showNewspaper, setShowNewspaper] = useState(false);
+  const [newspaperArticles, setNewspaperArticles] = useState<NewspaperArticle[]>([]);
+
+  // 신문 데이터 로드: 캐시 → 폴백
+  useEffect(() => {
+    if (!showNewspaper) return;
+    let cancelled = false;
+    (async () => {
+      const cached = await getCachedReactions();
+      if (!cancelled) {
+        setNewspaperArticles(cached ?? getFallbackReactions());
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [showNewspaper]);
 
   // Computed: selected guru's full state for detail sheet
   const selectedGuruState = useMemo(() => {
@@ -570,77 +589,32 @@ export default function VillageScreen() {
         </View>
       )}
 
-      {/* ── Market Street Modal (placeholder — future component) ──────── */}
-      {showMarket && (
-        <View style={styles.modalOverlay}>
-          <TouchableOpacity
-            style={styles.modalDim}
-            onPress={() => setShowMarket(false)}
-            activeOpacity={1}
-          />
-          <View style={[styles.modalSheet, { backgroundColor: colors.surface }]}>
-            <View style={styles.modalHandle}>
-              <View style={[styles.handleBar, { backgroundColor: colors.border }]} />
-            </View>
-            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
-              {t('village.market_street')}
-            </Text>
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyEmoji}>
-                {'\uD83C\uDFEA'}
-              </Text>
-              <Text style={[styles.emptyText, { color: colors.textTertiary }]}>
-                {t('village.market_street_desc')}
-              </Text>
-            </View>
-            <TouchableOpacity
-              style={[styles.modalCloseBtn, { backgroundColor: colors.surfaceElevated }]}
-              onPress={() => setShowMarket(false)}
-              activeOpacity={0.8}
-            >
-              <Text style={[styles.modalCloseBtnText, { color: colors.textPrimary }]}>
-                {t('common.close')}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
+      {/* ── Market Street (BrandMarket full modal) ─────────────────────── */}
+      <BrandMarket
+        isVisible={showMarket}
+        onClose={() => setShowMarket(false)}
+        onBrandPress={(brand: BrandShop) => {
+          setShowMarket(false);
+          if (brand.ticker) {
+            router.push(`/settings/guru-detail/${brand.ticker}`);
+          }
+        }}
+        colors={colors}
+        locale={language}
+      />
 
-      {/* ── Village Newspaper Modal (placeholder — future component) ──── */}
-      {showNewspaper && (
-        <View style={styles.modalOverlay}>
-          <TouchableOpacity
-            style={styles.modalDim}
-            onPress={() => setShowNewspaper(false)}
-            activeOpacity={1}
-          />
-          <View style={[styles.modalSheet, { backgroundColor: colors.surface }]}>
-            <View style={styles.modalHandle}>
-              <View style={[styles.handleBar, { backgroundColor: colors.border }]} />
-            </View>
-            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
-              {t('village.village_news')}
-            </Text>
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyEmoji}>
-                {'\uD83D\uDCF0'}
-              </Text>
-              <Text style={[styles.emptyText, { color: colors.textTertiary }]}>
-                {t('village.village_news_desc')}
-              </Text>
-            </View>
-            <TouchableOpacity
-              style={[styles.modalCloseBtn, { backgroundColor: colors.surfaceElevated }]}
-              onPress={() => setShowNewspaper(false)}
-              activeOpacity={0.8}
-            >
-              <Text style={[styles.modalCloseBtnText, { color: colors.textPrimary }]}>
-                {t('common.close')}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
+      {/* ── Village Newspaper (full modal with articles) ────────────────── */}
+      <VillageNewspaper
+        articles={newspaperArticles}
+        isVisible={showNewspaper}
+        onClose={() => setShowNewspaper(false)}
+        colors={colors}
+        locale={language}
+        onGuruPress={(guruId: string) => {
+          setShowNewspaper(false);
+          router.push(`/settings/guru-detail/${guruId}`);
+        }}
+      />
     </View>
   );
 }

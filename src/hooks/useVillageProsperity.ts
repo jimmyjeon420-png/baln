@@ -151,6 +151,28 @@ async function saveDailyTracker(data: DailyTracker): Promise<void> {
 // 훅
 // ============================================================================
 
+// ============================================================================
+// 건강 점수 ↔ 번영도 연동 (Sprint 5-2)
+// ============================================================================
+
+/**
+ * 건강 점수 등급 → 번영도 시각 보너스 레벨
+ * 건강 점수가 높을수록 마을 외관이 더 풍성하게 보임
+ * (실제 레벨은 변하지 않고, 표시용 보너스만 추가)
+ */
+const HEALTH_VISUAL_BONUS: Record<string, number> = {
+  A: 1,  // A등급: +1레벨 외관
+  B: 0,  // B등급: 보너스 없음
+  C: 0,
+  D: 0,
+  F: -1, // F등급: -1레벨 외관 (마을이 조금 칙칙해 보임)
+};
+
+export function getHealthVisualBonus(healthGrade: string | null): number {
+  if (!healthGrade) return 0;
+  return HEALTH_VISUAL_BONUS[healthGrade.toUpperCase()] ?? 0;
+}
+
 export interface UseVillageProsperityReturn {
   /** 번영도 데이터 */
   prosperity: VillageProsperity;
@@ -172,6 +194,8 @@ export interface UseVillageProsperityReturn {
   remainingToday: number;
   /** 로딩 중 여부 */
   isLoading: boolean;
+  /** 건강 점수 기반 시각 보너스 적용 레벨 */
+  visualLevel: (healthGrade: string | null) => number;
 }
 
 export function useVillageProsperity(): UseVillageProsperityReturn {
@@ -297,6 +321,12 @@ export function useVillageProsperity(): UseVillageProsperityReturn {
     unlocked: !!m.unlockedAt || m.level <= level,
   }));
 
+  // 건강 점수 기반 시각 보너스 레벨 (마을 외관용)
+  const visualLevel = useCallback((healthGrade: string | null) => {
+    const bonus = getHealthVisualBonus(healthGrade);
+    return Math.max(1, Math.min(10, level + bonus));
+  }, [level]);
+
   return {
     prosperity,
     addContribution,
@@ -306,5 +336,6 @@ export function useVillageProsperity(): UseVillageProsperityReturn {
     todayPoints,
     remainingToday: Math.max(0, DAILY_CAP - todayPoints),
     isLoading,
+    visualLevel,
   };
 }

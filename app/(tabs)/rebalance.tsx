@@ -710,15 +710,26 @@ export default function CheckupScreen() {
           <FreePeriodBanner compact={true} />
         </View>
 
-        {/* 하워드 막스 — 분석실 상주 의사 */}
-        <View style={[s.drMarksCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <CharacterAvatar guruId="marks" size="sm" expression="neutral" />
-          <View style={s.drMarksText}>
-            <Text style={[s.drMarksName, { color: colors.textPrimary }]}>
-              {t('rebalance.dr_marks.name')}
-            </Text>
-            <Text style={[s.drMarksQuote, { color: colors.textSecondary }]} numberOfLines={2}>
-              {t('rebalance.dr_marks.quote')}
+        {/* 🏥 클리닉 헤더 + 하워드 막스 원장 */}
+        <View style={[s.clinicHeader, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Text style={[s.clinicTitle, { color: colors.primary }]}>
+            {t('rebalance.clinic_header')}
+          </Text>
+          <View style={s.drMarksRow}>
+            <CharacterAvatar guruId="marks" size="sm" expression="neutral" />
+            <View style={s.drMarksText}>
+              <Text style={[s.drMarksName, { color: colors.textPrimary }]}>
+                {t('rebalance.dr_marks.name')}
+              </Text>
+              <Text style={[s.drMarksQuote, { color: colors.textSecondary }]} numberOfLines={2}>
+                {t('rebalance.dr_marks.quote')}
+              </Text>
+            </View>
+          </View>
+          <View style={[s.clinicSubtitleRow, { borderTopColor: colors.borderLight }]}>
+            <Ionicons name="document-text-outline" size={14} color={colors.textTertiary} />
+            <Text style={[s.clinicSubtitle, { color: colors.textTertiary }]}>
+              {t('rebalance.clinic_subtitle')}
             </Text>
           </View>
         </View>
@@ -1067,14 +1078,26 @@ const s = StyleSheet.create({
     marginTop: 2,
     lineHeight: 22,
   },
-  drMarksCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
+  clinicHeader: {
     marginHorizontal: 16,
     marginBottom: 12,
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
+    overflow: 'hidden',
+  },
+  clinicTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+    paddingHorizontal: 14,
+    paddingTop: 10,
+    paddingBottom: 6,
+  },
+  drMarksRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingBottom: 10,
     gap: 12,
   },
   drMarksText: {
@@ -1089,5 +1112,17 @@ const s = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
     fontStyle: 'italic',
+  },
+  clinicSubtitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  clinicSubtitle: {
+    fontSize: 12,
+    fontWeight: '600',
   },
 });

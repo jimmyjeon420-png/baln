@@ -36,7 +36,9 @@ interface GuruChatModalProps {
   guruId: string | null;
   messages: VillageMessage[];
   isLoading: boolean;
+  hasError?: boolean;
   onSend: (question: string) => void;
+  onRetry?: () => void;
   onClose: () => void;
 }
 
@@ -118,7 +120,9 @@ export function GuruChatModal({
   guruId,
   messages,
   isLoading,
+  hasError,
   onSend,
+  onRetry,
   onClose,
 }: GuruChatModalProps) {
   const [inputText, setInputText] = useState('');
@@ -216,6 +220,22 @@ export function GuruChatModal({
               <Text style={styles.thinkingText}>
                 {config.guruName} {t('village.thinking')}
               </Text>
+            </View>
+          )}
+
+          {/* 에러 상태: 재시도 버튼 표시 */}
+          {hasError && !isLoading && (
+            <View style={styles.errorRow}>
+              <Ionicons name="cloud-offline-outline" size={18} color="#FF6B6B" />
+              <Text style={styles.errorText}>
+                {t('village.chat_error')}
+              </Text>
+              {onRetry && (
+                <TouchableOpacity onPress={onRetry} style={styles.retryBtn}>
+                  <Ionicons name="refresh" size={16} color="#5DBB63" />
+                  <Text style={styles.retryText}>{t('village.chat_retry')}</Text>
+                </TouchableOpacity>
+              )}
             </View>
           )}
 
@@ -435,6 +455,37 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#7A8DA0',
     fontStyle: 'italic',
+  },
+  // 에러 상태
+  errorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: '#FF6B6B15',
+    marginHorizontal: 16,
+    borderRadius: 12,
+    marginBottom: 4,
+  },
+  errorText: {
+    fontSize: 12,
+    color: '#FF6B6B',
+    flex: 1,
+  },
+  retryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#5DBB6320',
+    borderRadius: 12,
+  },
+  retryText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#5DBB63',
   },
   // 입력
   inputRow: {

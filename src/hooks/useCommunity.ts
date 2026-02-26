@@ -28,6 +28,7 @@ import {
 import { formatCommunityDisplayTag } from '../utils/communityUtils';
 import { generateGuruCommentsForPost } from '../services/guruCommentService';
 import { grantPostWriteReward, grantLikeMilestoneReward, grantBestAnswerReward } from '../services/loungeRewardService';
+import { useVillageProsperity } from './useVillageProsperity';
 
 /**
  * 자산을 "X.X억" 또는 "X만" 형식으로 변환
@@ -207,6 +208,7 @@ export const useCommunityPosts = (
 
 export const useCreatePost = () => {
   const queryClient = useQueryClient();
+  const { addContribution } = useVillageProsperity();
 
   return useMutation({
     mutationFn: async (input: CreatePostInput & { displayTag: string; assetMix: string; totalAssets: number; imageUrls?: string[] }) => {
@@ -285,6 +287,9 @@ export const useCreatePost = () => {
 
       // 게시물 작성 보상 (fire-and-forget)
       grantPostWriteReward().catch(() => {});
+
+      // 마을 번영도 기여 (fire-and-forget)
+      addContribution('community_post').catch(() => {});
     },
   });
 };
@@ -471,17 +476,29 @@ export const useLikePost = () => {
       queryClient.invalidateQueries({ queryKey: ['myLikes'] });
       queryClient.invalidateQueries({ queryKey: ['communityPost'] });
 
-      // 10좋아요 달성 보상 체크 (fire-and-forget)
-      // 게시물 likes_count를 최신 데이터에서 확인
+      // 10좋아요 달성 보상 체크 + 좋아요 알림 (fire-and-forget)
+      // 게시물 likes_count + user_id를 최신 데이터에서 확인
       Promise.resolve(
         supabase
           .from('community_posts')
-          .select('likes_count')
+          .select('likes_count, user_id')
           .eq('id', postId)
           .single()
       ).then(({ data: post }) => {
         if (post && post.likes_count >= 10) {
           grantLikeMilestoneReward(postId).catch(() => {});
+        }
+        // 좋아요 알림 전송 (게시물 작성자에게)
+        if (post?.user_id) {
+          Promise.resolve(
+            supabase.from('notifications').insert({
+              user_id: post.user_id,
+              type: 'like',
+              title: '좋아요',
+              message: '회원님의 글에 좋아요가 달렸습니다',
+              data: { post_id: postId },
+            })
+          ).catch(() => {});
         }
       }).catch(() => {});
     },

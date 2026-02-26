@@ -198,6 +198,10 @@ export default function CommunityPostCard({
         </ScrollView>
       )}
 
+      {/* TODO: 구루 AI 댓글 미리보기 — community_guru_comments 테이블에서 1건 조회 필요
+         CommunityPost 타입에 guru_comment 필드가 없으므로, useGuruComments 훅을 통해 데이터를 가져오거나
+         게시물 쿼리에 join을 추가해야 함. 추후 구현 예정. */}
+
       {/* 푸터: 좋아요 토글 + 댓글 수 */}
       <View style={[styles.footer, { borderTopColor: colors.border }]}>
         <TouchableOpacity
