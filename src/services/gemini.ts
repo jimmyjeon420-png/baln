@@ -2,6 +2,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import * as Sentry from '@sentry/react-native';
 import supabase from './supabase';
 import { getPromptLanguageInstruction, getResponseLanguage, getLangParam, getFinanceTermGuide } from '../utils/promptLanguage';
+import { getCurrentDisplayLanguage } from '../context/LocaleContext';
 
 // ============================================================================
 // [마켓플레이스] AI 종목 딥다이브 — 재무/기술/뉴스/AI 의견
@@ -1677,9 +1678,12 @@ export const analyzePortfolioRisk = async (
     });
 
     const today = new Date();
-    const dateStr = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`;
+    const isKo = getCurrentDisplayLanguage() === 'ko';
+    const dateStr = isKo
+      ? `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`
+      : `${today.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`;
 
-    const prompt = `
+    const prompt = isKo ? `
 당신은 행동재무학 전문가입니다. 다음 포트폴리오를 분석하여 "Panic Shield"와 "FOMO Vaccine" 지표를 계산해주세요.
 
 **[중요] 실시간 시장 데이터 활용:**
@@ -1704,7 +1708,7 @@ ${JSON.stringify(portfolioWithAllocation.map(p => ({
   currentPrice: p.currentPrice,
   currentValue: p.currentValue,
   allocation: p.allocation.toFixed(1) + '%',
-  profit_loss_rate: p.profit_loss_rate.toFixed(2) + '%', // 손익률 명시
+  profit_loss_rate: p.profit_loss_rate.toFixed(2) + '%',
 })), null, 2)}
 
 **수익률 기반 분석 지침:**
@@ -1770,6 +1774,99 @@ ${JSON.stringify(portfolioWithAllocation.map(p => ({
     }
   ],
   "personalizedAdvice": ["[실시간 반영] 조언1", "조언2", "조언3"],
+  "diversificationScore": number
+}
+` : `
+You are a behavioral finance expert. Analyze the following portfolio and calculate the "Panic Shield" and "FOMO Vaccine" metrics.
+
+**[IMPORTANT] Use real-time market data:**
+- Use Google Search to look up today's market situation for each ticker
+- Example search queries: "${portfolioWithAllocation.map(p => p.ticker).join(' stock price')}", "VIX index", "Fear & Greed index"
+- Incorporate real-time news into your risk assessment
+
+**Today's Date:** ${dateStr}
+
+**User Profile:**
+${profile.age > 0 ? `- Age: ${profile.age}` : '- Age: Not provided (analyze based on portfolio data)'}
+- Risk tolerance: ${profile.riskTolerance}
+- Investment goal: ${profile.investmentGoal}
+${profile.dependents > 0 ? `- Dependents: ${profile.dependents}` : '- Dependents: Not provided'}
+
+**Portfolio (including return rates):**
+${JSON.stringify(portfolioWithAllocation.map(p => ({
+  ticker: p.ticker,
+  name: p.name,
+  quantity: p.quantity,
+  avgPrice: p.avgPrice,
+  currentPrice: p.currentPrice,
+  currentValue: p.currentValue,
+  allocation: p.allocation.toFixed(1) + '%',
+  profit_loss_rate: p.profit_loss_rate.toFixed(2) + '%',
+})), null, 2)}
+
+**Return-based analysis guidelines:**
+- profit_loss_rate > +30%: FOMO high risk (consider taking profits)
+- profit_loss_rate > +50%: FOMO extreme risk (strongly recommend partial profit-taking)
+- profit_loss_rate < -10%: Panic caution (review stop-loss levels)
+- profit_loss_rate < -20%: Panic danger (immediate action needed)
+
+**Analysis Requested:**
+
+1. **Panic Shield Index (0-100)**
+   - Overall portfolio stability score
+   - 70+: SAFE
+   - 40-69: CAUTION
+   - Below 40: DANGER
+   - Factors: diversification, high-volatility asset weight, loss-making asset weight, *real-time market volatility*
+
+2. **Stop-Loss Guidelines**
+   - Recommended stop-loss level per asset (%)
+   - Compare with current profit_loss_rate to determine action:
+     - HOLD: before stop-loss level
+     - WATCH: approaching stop-loss (within 5%)
+     - REVIEW: stop-loss exceeded (needs review)
+   - If *real-time news* affects stop-loss judgment, mention it in reason
+
+3. **FOMO Vaccine (Overvaluation Alerts)**
+   - Prioritize assets with high profit_loss_rate
+   - Assess overvaluation based on *latest news* (e.g., "last night's earnings miss")
+   - overvaluationScore: 0-100
+   - severity: LOW (0-30), MEDIUM (31-60), HIGH (61-100)
+   - Specific reasons (e.g., "Currently +45% gains, 200% surge over past 3 months")
+
+4. **Personalized Advice**
+   - ${profile.age > 0 ? `From the perspective of a ${profile.age}-year-old ${profile.dependents > 0 ? 'with dependents' : 'investor'}` : 'Based on portfolio data'}, 3 key pieces of advice
+   - ${profile.dependents > 0 ? 'Practical advice considering family financial responsibilities' : 'Practical advice based on portfolio composition'}
+   - Timing advice reflecting *today's market conditions*
+
+**Output format (JSON only, no markdown code blocks):**
+{
+  "panicShieldIndex": number,
+  "panicShieldLevel": "SAFE" | "CAUTION" | "DANGER",
+  "panicShieldReason": "One-line explanation of the score (e.g., 20% cash position keeps it stable / many losing positions = danger / well diversified)",
+  "panicSubScores": {
+    "portfolioLoss": 0-100,
+    "concentrationRisk": 0-100,
+    "volatilityExposure": 0-100,
+    "stopLossProximity": 0-100,
+    "marketSentiment": 0-100
+  },
+  "stopLossGuidelines": [...],
+  "fomoAlerts": [
+    {
+      "ticker": "NVDA",
+      "name": "NVIDIA",
+      "overvaluationScore": 75,
+      "severity": "HIGH",
+      "reason": "explanation",
+      "subScores": {
+        "valuationHeat": 0-100,
+        "shortTermSurge": 0-100,
+        "marketOverheat": 0-100
+      }
+    }
+  ],
+  "personalizedAdvice": ["[Real-time] advice1", "advice2", "advice3"],
   "diversificationScore": number
 }
 `;
@@ -1915,7 +2012,8 @@ export const generateOptimalAllocation = async (
       value: a.currentValue,
     }));
 
-    const prompt = `
+    const isKo = getCurrentDisplayLanguage() === 'ko';
+    const prompt = isKo ? `
 당신은 포트폴리오 최적화 전문가입니다. 다음 포트폴리오의 건강 점수를 최대화하는 배분을 제안하세요.
 
 **현재 포트폴리오 (상위 5개):**
@@ -1951,6 +2049,42 @@ ${JSON.stringify(assetsSummary, null, 2)}
 }
 
 중요: 유효한 JSON만 반환. 마크다운 금지. ${getPromptLanguageInstruction()}
+` : `
+You are a portfolio optimization expert. Suggest an allocation that maximizes the Health Score for the following portfolio.
+
+**Current Portfolio (top 5 holdings):**
+${JSON.stringify(assetsSummary, null, 2)}
+
+**Current Health Score:** ${input.currentHealthScore}
+
+**Optimization Goals:**
+1. Maximize Health Score (target: 80+)
+2. Minimize allocation drift (balanced portfolio)
+3. Diversify risk (prevent over-concentration in any single asset)
+
+**Proposal Rules:**
+- Adjustment range per asset: -50% to +100%
+- Adjust minimum 2, maximum 5 assets
+- Provide specific reasons (e.g., "reduce concentration", "revert to target allocation")
+
+**Output format (JSON only):**
+{
+  "summary": "Overall summary in 1-2 sentences",
+  "recommendations": [
+    {
+      "ticker": "NVDA",
+      "name": "NVIDIA",
+      "currentAllocation": 25.0,
+      "suggestedAllocation": 20.0,
+      "adjustmentPercent": -20,
+      "reason": "Reduce concentration to improve diversification"
+    }
+  ],
+  "expectedHealthScore": 90,
+  "expectedImprovement": 10
+}
+
+Important: Return valid JSON only. No markdown. ${getPromptLanguageInstruction()}
 `;
 
     const text = await callGeminiSafe(model, prompt);
@@ -1972,6 +2106,9 @@ ${JSON.stringify(assetsSummary, null, 2)}
 export const generateDeepDive = async (
   input: DeepDiveInput
 ): Promise<DeepDiveResult> => {
+  // 언어 설정
+  const isKo = getCurrentDisplayLanguage() === 'ko';
+
   // 팩트 데이터가 있으면 프롬프트에 주입
   const fundamentals = input.fundamentals;
   const hasFundamentals = fundamentals != null && fundamentals.marketCap != null;
@@ -1989,7 +2126,7 @@ export const generateDeepDive = async (
   };
 
   // --- 팩트 데이터 섹션 (API 조회 성공 시) ---
-  const factDataSection = hasFundamentals ? `
+  const factDataSection = hasFundamentals ? (isKo ? `
 [★★★ 실제 API 조회 데이터 — 이 숫자를 그대로 사용하세요 ★★★]
 아래 데이터는 Yahoo Finance API에서 실시간 조회한 팩트 데이터입니다.
 이 숫자들을 임의로 변경하거나 추측하지 마세요. 그대로 metrics에 반영하세요.
@@ -2018,6 +2155,34 @@ ${fundamentals!.quarterlyEarnings && fundamentals!.quarterlyEarnings.length > 0
 없는 항목만 Google Search로 보완하세요.
 ${isUSD ? `[중요] marketCap 필드에는 원화 환산값(숫자)을 넣으세요. quarterlyData의 매출/영업이익/순이익도 모두 원화(₩)로 환산하세요. 환율: ${exchangeRate?.toFixed(2) || '1450'}원.` : ''}
 ` : `
+[★★★ Actual API data — use these numbers as-is ★★★]
+The following data was retrieved in real-time from the Yahoo Finance API.
+Do not modify or estimate these numbers. Use them directly in the metrics fields.
+${isUSD && exchangeRate ? `\n[Exchange Rate Applied] 1 USD = ${exchangeRate.toFixed(2)} KRW (real-time)` : ''}
+${isUSD ? '\n[★ KRW Conversion Rule] This is a US-listed stock; convert all monetary amounts (market cap, revenue, operating income, net income, etc.) to KRW (₩).' : ''}
+
+Market Cap: ${fundamentals!.marketCapKRW != null ? fmtKRW(fundamentals!.marketCapKRW) : fundamentals!.marketCap!.toLocaleString() + ' KRW'}${isUSD && fundamentals!.marketCap ? ` ($${(fundamentals!.marketCap / 1e9).toFixed(1)}B)` : ''}
+${fundamentals!.currentPrice != null ? (isUSD && exchangeRate ? `Current Price: ₩${Math.round(fundamentals!.currentPrice * exchangeRate).toLocaleString()} ($${fundamentals!.currentPrice.toLocaleString()})` : `Current Price: ₩${fundamentals!.currentPrice.toLocaleString()}`) : ''}
+${fundamentals!.trailingPE != null ? `P/E Ratio (Trailing): ${fundamentals!.trailingPE.toFixed(2)}` : 'P/E Ratio: No data — look up via Google Search'}
+${fundamentals!.forwardPE != null ? `P/E Ratio (Forward): ${fundamentals!.forwardPE.toFixed(2)}` : ''}
+${fundamentals!.priceToBook != null ? `P/B Ratio: ${fundamentals!.priceToBook.toFixed(2)}` : 'P/B Ratio: No data — look up via Google Search'}
+${fundamentals!.returnOnEquity != null ? `ROE: ${(fundamentals!.returnOnEquity * 100).toFixed(2)}%` : ''}
+${fundamentals!.operatingMargins != null ? `Operating Margin: ${(fundamentals!.operatingMargins * 100).toFixed(2)}%` : ''}
+${fundamentals!.profitMargins != null ? `Net Profit Margin: ${(fundamentals!.profitMargins * 100).toFixed(2)}%` : ''}
+${fundamentals!.revenueGrowth != null ? `Revenue Growth (YoY): ${(fundamentals!.revenueGrowth * 100).toFixed(2)}%` : ''}
+${fundamentals!.debtToEquity != null ? `Debt-to-Equity Ratio: ${fundamentals!.debtToEquity.toFixed(2)}%` : ''}
+${fundamentals!.quarterlyEarnings && fundamentals!.quarterlyEarnings.length > 0
+    ? '\nQuarterly Earnings (API data, KRW-converted):\n' + fundamentals!.quarterlyEarnings.map(q => {
+        const revDisplay = q.revenueKRW != null ? fmtKRW(q.revenueKRW) : (q.revenue != null ? `$${q.revenue.toLocaleString()}` : 'N/A');
+        const earnDisplay = q.earningsKRW != null ? fmtKRW(q.earningsKRW) : (q.earnings != null ? `$${q.earnings.toLocaleString()}` : 'N/A');
+        return `- ${q.quarter}: Revenue ${revDisplay}, Net Income ${earnDisplay}`;
+      }).join('\n')
+    : ''}
+
+[IMPORTANT] Use the above data directly in financial.metrics and in the marketCap/per/pbr fields.
+Only supplement missing data via Google Search.
+${isUSD ? `[IMPORTANT] The marketCap field must contain the KRW-converted value (number only). Also convert all revenue/operating income/net income in quarterlyData to KRW (₩). Exchange rate: ${exchangeRate?.toFixed(2) || '1450'}.` : ''}
+`) : (isKo ? `
 [★★★ 데이터 정확성 — 최우선 원칙 ★★★]
 API 데이터 조회에 실패하여 Google Search를 활용합니다.
 
@@ -2032,9 +2197,24 @@ API 데이터 조회에 실패하여 Google Search를 활용합니다.
 3. **분기 실적**: "${input.name} quarterly earnings 2024" 검색하여 실제 발표 실적 사용
    - 가짜 숫자를 만들지 마세요.
    - **매출, 영업이익, 순이익은 원화(₩)로 환산하여 표시**
-`;
+` : `
+[★★★ Data Accuracy — Top Priority ★★★]
+API data retrieval failed. Use Google Search to obtain real data.
 
-  const prompt = `
+1. **Market Cap**: Search Google for "${input.ticker} market cap" to find the latest USD market cap.
+   - Reference: Tesla ~$1.1T, Samsung Electronics ~$350B, Apple ~$3.4T, NVIDIA ~$3.2T
+   - Apply real-time exchange rate for USD → KRW conversion (default: 1,450 KRW)
+   - Tesla cannot be worth 2 trillion KRW (actual ~1,600 trillion KRW). Always verify.
+   - **Express all amounts in KRW (₩)**
+
+2. **P/E and P/B Ratios**: Search "${input.ticker} PE ratio PBR" for actual values.
+
+3. **Quarterly Earnings**: Search "${input.name} quarterly earnings 2024" for actual reported results.
+   - Do not fabricate numbers.
+   - **Convert revenue, operating income, and net income to KRW (₩)**
+`);
+
+  const prompt = (isKo ? `
 당신은 CFA 자격을 보유한 골드만삭스 수석 애널리스트입니다.
 ${hasFundamentals
     ? '아래 제공된 실제 API 데이터를 기반으로 분석 리포트를 작성하세요. 기술적 분석과 뉴스는 Google Search를 활용하세요.'
@@ -2044,7 +2224,17 @@ ${hasFundamentals
 - 종목: ${input.name} (${input.ticker})
 ${input.currentPrice ? `- 현재가: ₩${input.currentPrice.toLocaleString()}` : ''}
 ${input.avgPrice ? `- 평균 매수가: ₩${input.avgPrice.toLocaleString()}` : ''}
-${input.quantity ? `- 보유 수량: ${input.quantity}주` : ''}
+${input.quantity ? `- 보유 수량: ${input.quantity}주` : ''}` : `
+You are a senior Goldman Sachs analyst with a CFA designation.
+${hasFundamentals
+    ? 'Write an analysis report based on the actual API data provided below. Use Google Search for technical analysis and news.'
+    : 'Use Google Search to retrieve **real-time data** before writing the analysis report.'}
+
+[Subject of Analysis]
+- Stock: ${input.name} (${input.ticker})
+${input.currentPrice ? `- Current Price: ₩${input.currentPrice.toLocaleString()}` : ''}
+${input.avgPrice ? `- Average Buy Price: ₩${input.avgPrice.toLocaleString()}` : ''}
+${input.quantity ? `- Shares Held: ${input.quantity}` : ''}`) + `
 
 ${factDataSection}
 
