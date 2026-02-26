@@ -9,7 +9,7 @@
  * - 평소 5명 / 특별한 날(주말) 10명 전원 등장
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   generateVillageConversations,
   getCachedBatch,
@@ -131,7 +131,8 @@ function detectSpecialDay(hasActiveEvent: boolean = false): boolean {
 
 export function useGuruVillage(hasActiveEvent: boolean = false) {
   const isSpecialDay = detectSpecialDay(hasActiveEvent);
-  const visibleGuruIds = selectVisibleGurus(isSpecialDay);
+  // ★ useMemo 필수: selectVisibleGurus는 매번 새 배열을 반환 → useCallback deps가 매 렌더 변경 → 무한 루프
+  const visibleGuruIds = useMemo(() => selectVisibleGurus(isSpecialDay), [isSpecialDay]);
   const isFullVillage = isSpecialDay;
 
   const [positions, setPositions] = useState<GuruPosition[]>([]);
