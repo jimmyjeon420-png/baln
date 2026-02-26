@@ -27,6 +27,7 @@ import { useKostolalyPhase } from '../../hooks/useKostolalyPhase';
 import { usePrescriptionResults } from '../../hooks/usePrescriptionResults';
 import TermTooltip from '../common/TermTooltip';
 import { CAT_ICONS } from '../../constants/categoryIcons';
+import { useLocale } from '../../context/LocaleContext';
 
 // ── ETF 추천 맵 (없는 카테고리에 ETF 제안) ──
 const ETF_RECOMMENDATIONS: Partial<Record<AssetCategory, { tickers: string[]; note: string }>> = {
@@ -36,11 +37,11 @@ const ETF_RECOMMENDATIONS: Partial<Record<AssetCategory, { tickers: string[]; no
   large_cap: { tickers: ['SPY', 'QQQ', 'KODEX200'],        note: 'S&P500 / 나스닥100 / 코스피200' },
 };
 
-// ── 카테고리 한국어 라벨 ──
-const CAT_LABEL: Record<AssetCategory, string> = {
-  large_cap: '주식', bond: '채권', bitcoin: '비트코인',
-  gold: '금/귀금속', commodity: '원자재', altcoin: '알트코인',
-  cash: '현금', realestate: '부동산',
+// ── 카테고리 라벨 키 ──
+const CAT_LABEL_KEYS: Record<AssetCategory, string> = {
+  large_cap: 'large_cap', bond: 'bond', bitcoin: 'bitcoin',
+  gold: 'gold', commodity: 'commodity', altcoin: 'altcoin',
+  cash: 'cash', realestate: 'realestate',
 };
 
 const CAT_ICON: Record<AssetCategory, string> = {
@@ -68,6 +69,7 @@ function formatCategoryPct(category: AssetCategory, pct: number): string {
 
 function CompletionBanner({ visible }: { visible: boolean }) {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const opacity = useRef(new RNAnimated.Value(0)).current;
   const scale = useRef(new RNAnimated.Value(0.9)).current;
 
@@ -122,12 +124,12 @@ function CompletionBanner({ visible }: { visible: boolean }) {
           fontWeight: '800',
           color: colors.success,
           marginBottom: 4,
-        }}>모든 액션 완료!</Text>
+        }}>{t('today_actions.completion_title')}</Text>
         <Text style={{
           fontSize: 15,
           color: colors.success,
           fontWeight: '500',
-        }}>오늘도 성실한 투자자네요</Text>
+        }}>{t('today_actions.completion_subtitle')}</Text>
       </View>
     </RNAnimated.View>
   );
@@ -231,80 +233,66 @@ function useActionChecklist() {
 }
 
 /**
- * "왜 이 액션들이 나왔는가" 전체 요약 생성
+ * "왜 이 액션들이 나왔는가" — locale parts 반환
  */
-function generateActionsSummary(actions: PortfolioAction[]): string {
-  if (actions.length === 0) return '';
+interface ActionSummaryData {
+  parts: Array<{ key: string; params: Record<string, string> }>;
+  highCount: number;
+}
 
+function buildActionsSummaryData(actions: PortfolioAction[]): ActionSummaryData {
   const buyCount = actions.filter(a => a.action === 'BUY').length;
   const sellCount = actions.filter(a => a.action === 'SELL').length;
   const watchCount = actions.filter(a => a.action === 'WATCH').length;
   const holdCount = actions.filter(a => a.action === 'HOLD').length;
   const highPriorityCount = actions.filter(a => a.priority === 'HIGH').length;
-
-  const parts: string[] = [];
-
-  if (sellCount > 0) parts.push(`비중 조정을 위한 매도 ${sellCount}건`);
-  if (buyCount > 0) parts.push(`포트폴리오 보강을 위한 매수 ${buyCount}건`);
-  if (watchCount > 0) parts.push(`모니터링 대상 ${watchCount}건`);
-  if (holdCount > 0) parts.push(`현상 유지 ${holdCount}건`);
-
-  let summary = parts.join(', ') + '이 제안되었어요.';
-
-  if (highPriorityCount > 0) {
-    summary += ` 이 중 ${highPriorityCount}건은 긴급(HIGH) 우선순위입니다.`;
-  }
-
-  return summary;
+  const parts: Array<{ key: string; params: Record<string, string> }> = [];
+  if (sellCount > 0) parts.push({ key: 'today_actions.summary_sell', params: { count: String(sellCount) } });
+  if (buyCount > 0) parts.push({ key: 'today_actions.summary_buy', params: { count: String(buyCount) } });
+  if (watchCount > 0) parts.push({ key: 'today_actions.summary_watch', params: { count: String(watchCount) } });
+  if (holdCount > 0) parts.push({ key: 'today_actions.summary_hold', params: { count: String(holdCount) } });
+  return { parts, highCount: highPriorityCount };
 }
 
 /**
- * "어떤 순서로 실행하면 좋은가" 가이드 생성
+ * "어떤 순서로 실행하면 좋은가" — locale key + params 반환
  */
-function generatePriorityGuidance(actions: PortfolioAction[]): string | null {
-  if (actions.length <= 1) return null;
+type PriorityGuidanceData = {
+  key: string;
+  params: Record<string, string>;
+} | null;
 
+function buildPriorityGuidanceData(actions: PortfolioAction[]): { key: string; params: Record<string, string> } | null {
+  if (actions.length <= 1) return null;
   const highActions = actions.filter(a => a.priority === 'HIGH');
   const sellFirst = actions.filter(a => a.action === 'SELL' && a.priority !== 'LOW');
   const buyActions = actions.filter(a => a.action === 'BUY');
-
   if (highActions.length > 0 && (sellFirst.length > 0 || buyActions.length > 0)) {
     if (sellFirst.length > 0 && buyActions.length > 0) {
-      return '매도를 먼저 실행해 현금을 확보한 후, 매수를 진행하면 추가 입금 없이 리밸런싱할 수 있어요.';
+      return { key: 'today_actions.priority_sell_buy', params: {} };
     }
-    return `긴급 표시(!)된 ${highActions.length}건을 먼저 처리하는 것을 추천합니다.`;
+    return { key: 'today_actions.priority_urgent_first', params: { count: String(highActions.length) } };
   }
-
   if (sellFirst.length > 0 && buyActions.length > 0) {
-    return '매도 후 매수 순서로 진행하면 자금 효율이 좋아요.';
+    return { key: 'today_actions.priority_sell_then_buy', params: {} };
   }
-
   return null;
 }
 
 /**
- * 각 액션의 "이 액션을 하면 어떤 효과가 있는가" 미니 설명 생성
+ * 각 액션의 기대 효과 — locale key + params 반환
  */
-function generateActionEffect(action: PortfolioAction, assetWeight: string | null): string {
-  const { action: act, priority } = action;
-
+function buildActionEffectData(action: PortfolioAction, assetWeight: string | null): { key: string; params: Record<string, string> } {
+  const { action: act } = action;
   if (act === 'SELL') {
     if (assetWeight && parseFloat(assetWeight) > 20) {
-      return `현재 비중(${assetWeight}%)이 높아 매도 시 집중도 위험이 줄어듭니다.`;
+      return { key: 'today_actions.action_effect_sell_heavy', params: { weight: assetWeight } };
     }
-    return '매도하면 포트폴리오 균형이 개선되고, 다른 자산 매수 여력이 생겨요.';
+    return { key: 'today_actions.action_effect_sell', params: {} };
   }
-
-  if (act === 'BUY') {
-    return '매수하면 부족한 비중이 채워져 목표 배분에 가까워져요.';
-  }
-
-  if (act === 'WATCH') {
-    return '지금은 관망하되, 가격 변동에 따라 매매 타이밍을 잡아보세요.';
-  }
-
-  // HOLD
-  return '현재 적정 비중이므로 유지하는 것이 좋습니다.';
+  if (act === 'BUY') return { key: 'today_actions.action_effect_buy', params: {} };
+  if (act === 'WATCH') return { key: 'today_actions.action_effect_watch', params: {} };
+  return { key: 'today_actions.action_effect_hold', params: {} };
 }
 
 // ── 카테고리별 리밸런싱 액션 ──
@@ -358,6 +346,7 @@ export default function TodayActionsSection({
   contextHeadline,
 }: TodayActionsSectionProps) {
   const { colors, shadows } = useTheme();
+  const { t } = useLocale();
 
   // USD/KRW 환율 — USDT KRW 가격으로 추정 (미국 주식 수익률 계산용)
   // rebalance.tsx에서 priceTargets에 USDT를 항상 포함시켜 이 값을 보장함
@@ -588,9 +577,23 @@ export default function TodayActionsSection({
     return { currentScore, projectedScore, change };
   }, [allAssets, normalizedTarget, categoryRebalancePlan, currentHealthScore, totalAssets, guruStyle]);
 
-  // 전체 요약 + 우선순위 가이드 계산
-  const actionsSummary = useMemo(() => generateActionsSummary(sortedActions), [sortedActions]);
-  const priorityGuidance = useMemo(() => generatePriorityGuidance(sortedActions), [sortedActions]);
+  // 전체 요약 + 우선순위 가이드 계산 (locale 적용)
+  const actionsSummaryData = useMemo(() => buildActionsSummaryData(sortedActions), [sortedActions]);
+  const actionsSummary = useMemo(() => {
+    if (actionsSummaryData.parts.length === 0) return '';
+    const partsStr = actionsSummaryData.parts.map(p => t(p.key, p.params)).join(', ');
+    let summary = partsStr + t('today_actions.summary_suffix');
+    if (actionsSummaryData.highCount > 0) {
+      summary += t('today_actions.summary_urgent', { count: String(actionsSummaryData.highCount) });
+    }
+    return summary;
+  }, [actionsSummaryData, t]);
+
+  const priorityGuidanceData = useMemo(() => buildPriorityGuidanceData(sortedActions), [sortedActions]);
+  const priorityGuidance = useMemo(() => {
+    if (!priorityGuidanceData) return null;
+    return t(priorityGuidanceData.key, priorityGuidanceData.params);
+  }, [priorityGuidanceData, t]);
 
   // 전체 완료 시 축하 배너 표시 (한 번만)
   useEffect(() => {
@@ -610,19 +613,19 @@ export default function TodayActionsSection({
 
   // 액션 색상 매핑 (테마 반응형)
   const ACTION_COLORS: Record<string, { bg: string; text: string; label: string }> = {
-    BUY:   { bg: `${colors.success}26`, text: colors.success, label: '매수' },
-    SELL:  { bg: `${colors.error}26`, text: colors.error, label: '매도' },
-    HOLD:  { bg: `${colors.textTertiary}26`, text: colors.textTertiary, label: '보유' },
-    WATCH: { bg: `${colors.warning}26`, text: colors.warning, label: '주시' },
+    BUY:   { bg: `${colors.success}26`, text: colors.success, label: t('today_actions.action_badge_buy') },
+    SELL:  { bg: `${colors.error}26`, text: colors.error, label: t('today_actions.action_badge_sell') },
+    HOLD:  { bg: `${colors.textTertiary}26`, text: colors.textTertiary, label: t('today_actions.action_badge_hold') },
+    WATCH: { bg: `${colors.warning}26`, text: colors.warning, label: t('today_actions.action_badge_watch') },
   };
 
   // 티커 스타일 뱃지 (tickerProfile 연동)
   const STYLE_BADGE: Record<string, { label: string; color: string }> = {
-    growth:     { label: '성장주', color: '#4CAF50' },
-    value:      { label: '가치주', color: '#2196F3' },
-    dividend:   { label: '배당주', color: '#9C27B0' },
-    speculative:{ label: '투기주', color: '#FF5722' },
-    index:      { label: '인덱스', color: '#607D8B' },
+    growth:     { label: t('today_actions.style_growth'), color: '#4CAF50' },
+    value:      { label: t('today_actions.style_value'), color: '#2196F3' },
+    dividend:   { label: t('today_actions.style_dividend'), color: '#9C27B0' },
+    speculative:{ label: t('today_actions.style_speculative'), color: '#FF5722' },
+    index:      { label: t('today_actions.style_index'), color: '#607D8B' },
   };
 
   // AI 로딩 중 스켈레톤
@@ -649,20 +652,20 @@ export default function TodayActionsSection({
       <View style={s.headerRow}>
         <View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <Text style={[s.cardLabel, { color: colors.textPrimary }]}>이번 달 처방전</Text>
+            <Text style={[s.cardLabel, { color: colors.textPrimary }]}>{t('today_actions.card_label')}</Text>
             <TermTooltip term="처방전" style={{ color: colors.textTertiary, fontSize: 14 }}>ⓘ</TermTooltip>
           </View>
-          <Text style={[s.cardLabelEn, { color: colors.textSecondary }]}>Monthly Prescription</Text>
+          <Text style={[s.cardLabelEn, { color: colors.textSecondary }]}>{t('today_actions.card_label_en')}</Text>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
           {completedCount > 0 && (
             <View style={s.completedCount}>
               <Ionicons name="checkmark-circle" size={12} color={colors.success} />
-              <Text style={[s.completedCountText, { color: colors.success }]}>{completedCount}완료</Text>
+              <Text style={[s.completedCountText, { color: colors.success }]}>{t('today_actions.completed_count', { count: String(completedCount) })}</Text>
             </View>
           )}
           <View style={[s.actionCount, { backgroundColor: `${colors.success}1A` }]}>
-            <Text style={[s.actionCountText, { color: colors.primaryDark ?? colors.primary }]}>{sortedActions.length}건</Text>
+            <Text style={[s.actionCountText, { color: colors.primaryDark ?? colors.primary }]}>{t('today_actions.actions_count', { count: String(sortedActions.length) })}</Text>
           </View>
         </View>
       </View>
@@ -676,7 +679,7 @@ export default function TodayActionsSection({
           <View style={s.lastMonthHeader}>
             <Ionicons name="calendar-outline" size={11} color={colors.textTertiary} />
             <Text style={[s.lastMonthTitle, { color: colors.textTertiary }]}>
-              지난달 처방전 결과 ({lastMonthResult.month})
+              {t('today_actions.last_month_title', { month: lastMonthResult.month })}
             </Text>
           </View>
           <View style={s.lastMonthStats}>
@@ -688,7 +691,7 @@ export default function TodayActionsSection({
                 {lastMonthRate != null ? `${lastMonthRate}%` : '-'}
               </Text>
               <Text style={[s.lastMonthStatLabel, { color: colors.textTertiary }]}>
-                {lastMonthResult.actions_completed}/{lastMonthResult.actions_recommended}건 실행
+                {t('today_actions.last_month_executed', { done: String(lastMonthResult.actions_completed), rec: String(lastMonthResult.actions_recommended) })}
               </Text>
             </View>
             {/* 건강 점수 변화 */}
@@ -702,7 +705,7 @@ export default function TodayActionsSection({
                 }]}>
                   {lastMonthScoreChange >= 0 ? '+' : ''}{lastMonthScoreChange}점
                 </Text>
-                <Text style={[s.lastMonthStatLabel, { color: colors.textTertiary }]}>건강 점수 변화</Text>
+                <Text style={[s.lastMonthStatLabel, { color: colors.textTertiary }]}>{t('today_actions.last_month_score_label')}</Text>
               </View>
             )}
           </View>
@@ -726,7 +729,7 @@ export default function TodayActionsSection({
             </View>
             {phaseData?.confidence != null && (
               <Text style={[s.phaseConfidence, { color: colors.textTertiary }]}>
-                신뢰도 {phaseData.confidence}%
+                {t('today_actions.phase_confidence', { pct: String(phaseData.confidence) })}
               </Text>
             )}
           </View>
@@ -754,7 +757,7 @@ export default function TodayActionsSection({
             }]}>
               <Ionicons name="alert-circle-outline" size={10} color={colors.warning} />
               <Text style={[s.phaseNuanceText, { color: colors.warning }]}>
-                {phaseData.confidence >= 70 ? '시장 해석이 다소 엇갈려요' : '시장 신호가 불분명해요'}
+                {phaseData.confidence >= 70 ? t('today_actions.phase_nuance_high') : t('today_actions.phase_nuance_low')}
               </Text>
             </View>
           )}
@@ -762,12 +765,12 @@ export default function TodayActionsSection({
           <View style={s.phaseBasisRow}>
             <Ionicons name="compass-outline" size={10} color={colors.textTertiary} />
             <Text style={[s.phaseBasisText, { color: colors.textTertiary }]}>
-              코스톨라니 {activePhase}단계 기준 · 달리오 All Weather 적용
+              {t('today_actions.phase_basis', { phase: activePhase })}
             </Text>
             {/* P0-2: 데이터 신선도 타임스탬프 */}
             {phaseData?.updated_at && (
               <Text style={[s.phaseBasisText, { color: colors.textTertiary }]}>
-                {' '}· 판정: {new Date(phaseData.updated_at).toLocaleDateString(getLocaleCode(), { month: 'numeric', day: 'numeric' })}
+                {t('today_actions.phase_updated', { date: new Date(phaseData.updated_at).toLocaleDateString(getLocaleCode(), { month: 'numeric', day: 'numeric' }) })}
               </Text>
             )}
           </View>
@@ -775,7 +778,7 @@ export default function TodayActionsSection({
       ) : (
         <View style={[s.basisRow, { backgroundColor: `${colors.textTertiary}0D`, borderColor: `${colors.textTertiary}20` }]}>
           <Ionicons name="compass-outline" size={11} color={colors.textTertiary} />
-          <Text style={[s.basisText, { color: colors.textTertiary }]}>달리오 All Weather 기준</Text>
+          <Text style={[s.basisText, { color: colors.textTertiary }]}>{t('today_actions.basis_dalio')}</Text>
         </View>
       )}
 
@@ -789,7 +792,7 @@ export default function TodayActionsSection({
                 <View style={[s.planStepNum, { backgroundColor: colors.error }]}>
                   <Text style={s.planStepNumText}>1</Text>
                 </View>
-                <Text style={[s.planStepTitle, { color: colors.error }]}>초과 자산 매도 (현금 확보)</Text>
+                <Text style={[s.planStepTitle, { color: colors.error }]}>{t('today_actions.step1_title')}</Text>
               </View>
               {categoryRebalancePlan
                 .filter(a => a.drift > 0)
@@ -801,22 +804,22 @@ export default function TodayActionsSection({
                     <View key={item.category} style={[s.planCatItem, { borderColor: `${colors.error}20` }]}>
                       <View style={s.planCatHeader}>
                         <Text style={[s.planCatIcon, item.category === 'bitcoin' && { color: '#F5A623' }]}>{CAT_ICON[item.category]}</Text>
-                        <Text style={[s.planCatLabel, { color: colors.textPrimary }]}>{CAT_LABEL[item.category]}</Text>
+                        <Text style={[s.planCatLabel, { color: colors.textPrimary }]}>{t(`today_actions.cat_labels.${CAT_LABEL_KEYS[item.category]}`)}</Text>
                         <Text style={[s.planCatDrift, { color: colors.textTertiary }]}>
                           {formatCategoryPct(item.category, item.currentPct)}% → {formatCategoryPct(item.category, item.targetPct)}%
                         </Text>
                         <View style={[s.planCatAmtBadge, { backgroundColor: `${colors.error}20` }]}>
-                          <Text style={[s.planCatAmtText, { color: colors.error }]}>▼ 매도 {amtStr}</Text>
+                          <Text style={[s.planCatAmtText, { color: colors.error }]}>{t('today_actions.sell_badge', { amount: amtStr })}</Text>
                         </View>
                       </View>
                       {/* 매도 추천 자산 (수익률 높은 순) */}
                       {item.assets.slice(0, 3).map((a, idx) => {
                         // 수익률 기반 힌트 — 손실 중인 자산에 "수익 실현 우선" 방지
                         const sellHint = a.returnPct === null
-                          ? '매도 검토'
+                          ? t('today_actions.sell_hint_review')
                           : a.returnPct > 0
-                            ? (idx === 0 ? '수익 실현 우선' : '일부 매도 검토')
-                            : '비중 조정 매도';  // 손실이어도 비중 초과 → 리밸런싱 매도
+                            ? (idx === 0 ? t('today_actions.sell_hint_profit') : t('today_actions.sell_hint_partial'))
+                            : t('today_actions.sell_hint_rebalance');
                         return (
                           <View key={idx} style={[s.planAssetRow, { borderTopColor: colors.border }]}>
                             <Text style={[s.planAssetTicker, { color: colors.textPrimary }]}>{a.ticker || a.name}</Text>
@@ -844,7 +847,7 @@ export default function TodayActionsSection({
                 <View style={[s.planStepNum, { backgroundColor: colors.success }]}>
                   <Text style={s.planStepNumText}>2</Text>
                 </View>
-                <Text style={[s.planStepTitle, { color: colors.success }]}>부족 자산 매수 (비중 보강)</Text>
+                <Text style={[s.planStepTitle, { color: colors.success }]}>{t('today_actions.step2_title')}</Text>
               </View>
               {categoryRebalancePlan
                 .filter(a => a.drift < 0)
@@ -858,12 +861,12 @@ export default function TodayActionsSection({
                     <View key={item.category} style={[s.planCatItem, { borderColor: `${colors.success}20` }]}>
                       <View style={s.planCatHeader}>
                         <Text style={[s.planCatIcon, item.category === 'bitcoin' && { color: '#F5A623' }]}>{CAT_ICON[item.category]}</Text>
-                        <Text style={[s.planCatLabel, { color: colors.textPrimary }]}>{CAT_LABEL[item.category]}</Text>
+                        <Text style={[s.planCatLabel, { color: colors.textPrimary }]}>{t(`today_actions.cat_labels.${CAT_LABEL_KEYS[item.category]}`)}</Text>
                         <Text style={[s.planCatDrift, { color: colors.textTertiary }]}>
                           {formatCategoryPct(item.category, item.currentPct)}% → {formatCategoryPct(item.category, item.targetPct)}%
                         </Text>
                         <View style={[s.planCatAmtBadge, { backgroundColor: `${colors.success}20` }]}>
-                          <Text style={[s.planCatAmtText, { color: colors.success }]}>▲ 매수 {amtStr}</Text>
+                          <Text style={[s.planCatAmtText, { color: colors.success }]}>{t('today_actions.buy_badge', { amount: amtStr })}</Text>
                         </View>
                       </View>
                       {/* 기존 보유 자산이 있으면 추가 매수 */}
@@ -875,7 +878,7 @@ export default function TodayActionsSection({
                               {a.returnPct >= 0 ? '+' : ''}{a.returnPct.toFixed(1)}%
                             </Text>
                           )}
-                          <Text style={[s.planAssetHint, { color: colors.textTertiary }]}>추가 매수</Text>
+                          <Text style={[s.planAssetHint, { color: colors.textTertiary }]}>{t('today_actions.buy_hint_add')}</Text>
                         </View>
                       ))}
                       {/* 없는 카테고리 → ETF 추천 */}
@@ -883,7 +886,7 @@ export default function TodayActionsSection({
                         <View style={[s.etfRec, { borderTopColor: colors.border, backgroundColor: `${colors.warning}0A` }]}>
                           <Ionicons name="information-circle-outline" size={12} color={colors.warning} />
                           <View style={{ flex: 1 }}>
-                            <Text style={[s.etfRecLabel, { color: colors.warning }]}>ETF 추천</Text>
+                            <Text style={[s.etfRecLabel, { color: colors.warning }]}>{t('today_actions.etf_rec_label')}</Text>
                             <Text style={[s.etfRecTickers, { color: colors.textPrimary }]}>
                               {etfRec.tickers.join(' · ')}
                             </Text>
@@ -918,18 +921,18 @@ export default function TodayActionsSection({
             <Text style={[s.scorePreviewLabel, {
               color: expectedScoreChange.change > 0 ? colors.success : colors.warning,
             }]}>
-              처방전 전체 실행 시 예상 변화
+              {t('today_actions.score_preview_label')}
             </Text>
           </View>
           <View style={s.scorePreviewRow}>
             <Text style={[s.scorePreviewCurrent, { color: colors.textSecondary }]}>
-              현재 {expectedScoreChange.currentScore}점
+              {t('today_actions.score_current', { score: String(expectedScoreChange.currentScore) })}
             </Text>
             <Ionicons name="arrow-forward" size={12} color={colors.textTertiary} />
             <Text style={[s.scorePreviewProjected, {
               color: expectedScoreChange.change > 0 ? colors.success : colors.warning,
             }]}>
-              {expectedScoreChange.projectedScore}점 예상
+              {t('today_actions.score_projected', { score: String(expectedScoreChange.projectedScore) })}
             </Text>
             <View style={[s.scorePreviewBadge, {
               backgroundColor: expectedScoreChange.change > 0
@@ -955,7 +958,7 @@ export default function TodayActionsSection({
         >
           <Ionicons name="sparkles-outline" size={13} color={colors.premium ? colors.premium.purple : colors.textSecondary} />
           <Text style={[s.aiToggleBtnText, { color: colors.textSecondary }]}>
-            AI 맞춤 추천 ({sortedActions.length}건)
+            {t('today_actions.ai_toggle_label', { count: String(sortedActions.length) })}
           </Text>
           <Ionicons
             name={showAIActions ? 'chevron-up' : 'chevron-down'}
@@ -972,7 +975,7 @@ export default function TodayActionsSection({
           <View style={[s.whySection, { backgroundColor: colors.surfaceElevated }]}>
             <View style={s.whyRow}>
               <Ionicons name="help-circle-outline" size={14} color={colors.textSecondary} />
-              <Text style={[s.whyLabel, { color: colors.textSecondary }]}>왜 이 액션들이 나왔나요?</Text>
+              <Text style={[s.whyLabel, { color: colors.textSecondary }]}>{t('today_actions.why_label')}</Text>
             </View>
             <Text style={[s.whyText, { color: colors.textSecondary }]}>{actionsSummary}</Text>
           </View>
@@ -982,7 +985,7 @@ export default function TodayActionsSection({
             <View style={[s.actionGuideSection, { backgroundColor: `${colors.success}1A`, borderLeftColor: `${colors.success}4D` }]}>
               <View style={s.actionGuideRow}>
                 <Ionicons name="arrow-forward-circle-outline" size={14} color={colors.success} />
-                <Text style={[s.actionGuideLabel, { color: colors.primaryDark ?? colors.primary }]}>실행 순서 가이드</Text>
+                <Text style={[s.actionGuideLabel, { color: colors.primaryDark ?? colors.primary }]}>{t('today_actions.execution_order_label')}</Text>
               </View>
               <Text style={[s.actionGuideText, { color: colors.textSecondary }]}>{priorityGuidance}</Text>
             </View>
@@ -999,7 +1002,7 @@ export default function TodayActionsSection({
           <View style={[s.whySection, { backgroundColor: colors.surfaceElevated }]}>
             <View style={s.whyRow}>
               <Ionicons name="help-circle-outline" size={14} color={colors.textSecondary} />
-              <Text style={[s.whyLabel, { color: colors.textSecondary }]}>왜 이 액션들이 나왔나요?</Text>
+              <Text style={[s.whyLabel, { color: colors.textSecondary }]}>{t('today_actions.why_label')}</Text>
             </View>
             <Text style={[s.whyText, { color: colors.textSecondary }]}>{actionsSummary}</Text>
           </View>
@@ -1007,7 +1010,7 @@ export default function TodayActionsSection({
             <View style={[s.actionGuideSection, { backgroundColor: `${colors.success}1A`, borderLeftColor: `${colors.success}4D` }]}>
               <View style={s.actionGuideRow}>
                 <Ionicons name="arrow-forward-circle-outline" size={14} color={colors.success} />
-                <Text style={[s.actionGuideLabel, { color: colors.primaryDark ?? colors.primary }]}>실행 순서 가이드</Text>
+                <Text style={[s.actionGuideLabel, { color: colors.primaryDark ?? colors.primary }]}>{t('today_actions.execution_order_label')}</Text>
               </View>
               <Text style={[s.actionGuideText, { color: colors.textSecondary }]}>{priorityGuidance}</Text>
             </View>
@@ -1021,10 +1024,10 @@ export default function TodayActionsSection({
         <View style={[s.journalCard, { backgroundColor: colors.surfaceElevated, borderColor: `${colors.success}30` }]}>
           <View style={s.journalHeader}>
             <Ionicons name="journal-outline" size={13} color={colors.success} />
-            <Text style={[s.journalTitle, { color: colors.success }]}>이번 달 투자 일지</Text>
+            <Text style={[s.journalTitle, { color: colors.success }]}>{t('today_actions.journal_title')}</Text>
             {isSaved && (
               <View style={[s.journalSavedBadge, { backgroundColor: `${colors.success}20` }]}>
-                <Text style={[s.journalSavedText, { color: colors.success }]}>저장됨</Text>
+                <Text style={[s.journalSavedText, { color: colors.success }]}>{t('today_actions.journal_saved_badge')}</Text>
               </View>
             )}
           </View>
@@ -1032,7 +1035,7 @@ export default function TodayActionsSection({
             style={[s.journalInput, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: colors.surface }]}
             multiline
             numberOfLines={3}
-            placeholder="이번 달 처방전을 실행하며 느낀 점을 짧게 남겨보세요 (선택)"
+            placeholder={t('today_actions.journal_placeholder')}
             placeholderTextColor={colors.textTertiary}
             value={memo}
             onChangeText={setMemo}
@@ -1045,7 +1048,7 @@ export default function TodayActionsSection({
               activeOpacity={0.7}
             >
               <Ionicons name="checkmark-outline" size={13} color={colors.success} />
-              <Text style={[s.journalSaveBtnText, { color: colors.success }]}>저장</Text>
+              <Text style={[s.journalSaveBtnText, { color: colors.success }]}>{t('today_actions.journal_save_btn')}</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -1068,7 +1071,7 @@ export default function TodayActionsSection({
             color={contextSentiment === 'alert' ? colors.error : contextSentiment === 'caution' ? colors.warning : colors.success}
           />
           <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 13, color: colors.textTertiary, marginBottom: 2 }}>오늘의 시장 맥락</Text>
+            <Text style={{ fontSize: 13, color: colors.textTertiary, marginBottom: 2 }}>{t('today_actions.context_label')}</Text>
             <Text style={{ fontSize: 14, fontWeight: '600', color: colors.textPrimary }} numberOfLines={2}>
               {contextHeadline}
             </Text>
@@ -1110,14 +1113,15 @@ export default function TodayActionsSection({
 
         // 우선순위 설정
         const priorityConfig: Record<string, { label: string; color: string; bg: string }> = {
-          HIGH:   { label: '긴급', color: colors.error, bg: `${colors.error}1F` },
-          MEDIUM: { label: '보통', color: colors.warning, bg: `${colors.warning}1F` },
-          LOW:    { label: '참고', color: colors.textTertiary, bg: `${colors.textTertiary}1F` },
+          HIGH:   { label: t('today_actions.priority_urgent'), color: colors.error, bg: `${colors.error}1F` },
+          MEDIUM: { label: t('today_actions.priority_medium'), color: colors.warning, bg: `${colors.warning}1F` },
+          LOW:    { label: t('today_actions.priority_low'), color: colors.textTertiary, bg: `${colors.textTertiary}1F` },
         };
         const pc = priorityConfig[action.priority] || priorityConfig.LOW;
 
-        // 이 액션의 기대 효과
-        const actionEffect = generateActionEffect(action, assetWeight);
+        // 이 액션의 기대 효과 (locale)
+        const actionEffectData = buildActionEffectData(action, assetWeight);
+        const actionEffect = t(actionEffectData.key, actionEffectData.params);
 
         return (
           <TouchableOpacity
@@ -1150,7 +1154,7 @@ export default function TodayActionsSection({
               })()}
               {hasMismatch && !isDone && (
                 <View style={[s.mismatchBadge]}>
-                  <Text style={s.mismatchBadgeText}>철학 불일치</Text>
+                  <Text style={s.mismatchBadgeText}>{t('today_actions.mismatch_badge')}</Text>
                 </View>
               )}
               <Text style={[s.actionName, { color: colors.textTertiary }]} numberOfLines={1}>{action.name}</Text>
@@ -1211,7 +1215,7 @@ export default function TodayActionsSection({
                 {/* 우선순위 뱃지 */}
                 <View style={[s.priorityBadge, { backgroundColor: pc.bg }]}>
                   <View style={[s.priorityDot, { backgroundColor: pc.color }]} />
-                  <Text style={[s.priorityText, { color: pc.color }]}>우선순위: {pc.label}</Text>
+                  <Text style={[s.priorityText, { color: pc.color }]}>{pc.label}</Text>
                 </View>
 
                 {/* 전체 사유 */}
@@ -1219,7 +1223,7 @@ export default function TodayActionsSection({
                   <Ionicons name="chatbubble-outline" size={13} color={colors.textTertiary} />
                   <Text style={[s.reasonFullText, { color: colors.textTertiary }]}>
                     {action.reason?.includes('분석 데이터를 불러오지 못했습니다')
-                      ? '현재 적정 비중으로 유지하는 것이 좋습니다. AI 분석이 업데이트되면 구체적인 제안을 받으실 수 있어요.'
+                      ? t('today_actions.ai_data_fallback')
                       : action.reason}
                   </Text>
                 </View>
@@ -1228,7 +1232,7 @@ export default function TodayActionsSection({
                 <View style={[s.actionEffectExpanded, { backgroundColor: `${colors.success}1A`, borderLeftColor: `${colors.success}4D` }]}>
                   <View style={s.actionEffectRow}>
                     <Ionicons name="trending-up-outline" size={13} color={colors.success} />
-                    <Text style={[s.actionEffectLabel, { color: colors.primaryDark ?? colors.primary }]}>이 액션의 기대 효과</Text>
+                    <Text style={[s.actionEffectLabel, { color: colors.primaryDark ?? colors.primary }]}>{t('today_actions.action_effect_label')}</Text>
                   </View>
                   <Text style={[s.actionEffectText, { color: colors.textSecondary }]}>{actionEffect}</Text>
                 </View>
@@ -1236,22 +1240,22 @@ export default function TodayActionsSection({
                 {/* 내 보유 현황 */}
                 {matchedAsset && (
                   <View style={[s.portfolioInfo, { backgroundColor: `${colors.success}1A`, borderColor: `${colors.success}4D` }]}>
-                    <Text style={[s.portfolioTitle, { color: colors.textTertiary }]}>내 보유 현황</Text>
+                    <Text style={[s.portfolioTitle, { color: colors.textTertiary }]}>{t('today_actions.holding_title')}</Text>
                     <View style={s.portfolioRow}>
                       <View style={s.portfolioItem}>
-                        <Text style={[s.portfolioLabel, { color: colors.textTertiary }]}>현재가{isLive ? ' (실시간)' : ''}</Text>
+                        <Text style={[s.portfolioLabel, { color: colors.textTertiary }]}>{isLive ? t('today_actions.price_live_label') : t('today_actions.price_label')}</Text>
                         <Text style={[s.portfolioValue, { color: colors.textPrimary }]}>{formatCurrency(displayPrice, (liveData?.currency as 'KRW' | 'USD' | undefined) ?? 'KRW')}</Text>
                       </View>
                       <View style={[s.portfolioDivider, { backgroundColor: `${colors.success}4D` }]} />
                       <View style={s.portfolioItem}>
-                        <Text style={[s.portfolioLabel, { color: colors.textTertiary }]}>수익률</Text>
+                        <Text style={[s.portfolioLabel, { color: colors.textTertiary }]}>{t('today_actions.return_label')}</Text>
                         <Text style={[s.portfolioValue, { color: (assetGl ?? 0) >= 0 ? colors.success : colors.error }]}>
                           {(assetGl ?? 0) >= 0 ? '+' : ''}{(assetGl ?? 0).toFixed(1)}%
                         </Text>
                       </View>
                       <View style={[s.portfolioDivider, { backgroundColor: `${colors.success}4D` }]} />
                       <View style={s.portfolioItem}>
-                        <Text style={[s.portfolioLabel, { color: colors.textTertiary }]}>비중</Text>
+                        <Text style={[s.portfolioLabel, { color: colors.textTertiary }]}>{t('today_actions.weight_label')}</Text>
                         <Text style={[s.portfolioValue, { color: colors.textPrimary }]}>{assetWeight}%</Text>
                       </View>
                     </View>
@@ -1264,10 +1268,10 @@ export default function TodayActionsSection({
                     <Ionicons name="calculator-outline" size={13} color={colors.warning} />
                     <Text style={[s.suggestText, { color: colors.warning }]}>
                       {action.action === 'BUY'
-                        ? `제안: ${displayPrice > 0 ? Math.floor(totalAssets * 0.02 / displayPrice) : 0}주 (${formatCurrency(Math.floor(totalAssets * 0.02), 'KRW')}, 총자산 2%)`
+                        ? t('today_actions.suggest_buy', { qty: String(displayPrice > 0 ? Math.floor(totalAssets * 0.02 / displayPrice) : 0), amount: formatCurrency(Math.floor(totalAssets * 0.02), 'KRW') })
                         : matchedAsset
-                          ? `보유 ${matchedAsset.quantity ?? 0}주 중 일부 매도 검토`
-                          : '매도 수량은 보유량에 따라 결정'
+                          ? t('today_actions.suggest_sell_qty', { qty: String(matchedAsset.quantity ?? 0) })
+                          : t('today_actions.suggest_sell_na')
                       }
                     </Text>
                   </View>
