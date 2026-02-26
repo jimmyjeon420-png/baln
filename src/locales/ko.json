@@ -223,7 +223,8 @@
     "streak_label": "일 연속",
     "consecutive_days": "일 연속",
     "all_done": "오늘 완료!",
-    "completed_count": "{{done}}/{{total}} 완료"
+    "completed_count": "{{done}}/{{total}} 완료",
+    "progress_count": "{{done}}/{{total}} 완료"
   },
   "rebalance": {
     "toast": {

@@ -223,7 +223,8 @@
     "streak_label": "day streak",
     "consecutive_days": "day streak",
     "all_done": "All done today!",
-    "completed_count": "{{done}}/{{total}} done"
+    "completed_count": "{{done}}/{{total}} done",
+    "progress_count": "{{done}}/{{total}} done"
   },
   "rebalance": {
     "toast": {

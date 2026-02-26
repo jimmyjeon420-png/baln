@@ -141,7 +141,7 @@ export default function CardSwipeContainer({
   }, [currentPage, childCount, onCardChange]);
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top + 8, backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* 수평 스와이프 영역 */}
       <ScrollView
         ref={scrollViewRef}
@@ -210,7 +210,7 @@ export default function CardSwipeContainer({
       </View>
 
       {/* 페이지 카운터 (1/3 형태) */}
-      <View style={[styles.pageCounter, { paddingBottom: insets.bottom + 68 }]}>
+      <View style={[styles.pageCounter, { paddingBottom: insets.bottom + 60 }]}>
         <Text style={[styles.pageCounterText, { color: colors.textTertiary }]}>
           {currentPage + 1} / {childCount}
         </Text>
@@ -233,8 +233,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     gap: 32,
-    paddingTop: 10,
-    paddingBottom: 4,
+    paddingTop: 6,
+    paddingBottom: 2,
   },
   navItem: {
     alignItems: 'center',
@@ -266,10 +266,10 @@ const styles = StyleSheet.create({
   },
   cardWrapper: {
     width: SCREEN_WIDTH,
-    paddingTop: 8,
+    paddingTop: 4,
   },
   cardScrollContent: {
-    paddingBottom: 16,
+    paddingBottom: 8,
   },
   swipeHint: {
     position: 'absolute',
