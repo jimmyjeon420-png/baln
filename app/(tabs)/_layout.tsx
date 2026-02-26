@@ -104,6 +104,7 @@ export default function TabLayout() {
       tabBar={(props) => <CustomTabBar {...props} />}
       screenOptions={{
         headerShown: false,
+        lazy: true, // 활성 탭만 마운트 — 비활성 탭 애니메이션 동시 실행 방지
       }}
     >
       {/* ═══ 발른 마을 5탭: 광장 / 병원 / 마을 / 카페 / 시청 ═══ */}

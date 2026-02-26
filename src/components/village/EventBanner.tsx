@@ -26,6 +26,7 @@ import {
   Platform,
 } from 'react-native';
 import type { VillageEvent, VillageEventType } from '../../types/village';
+import { useLocale } from '../../context/LocaleContext';
 
 // ============================================================================
 // 타입
@@ -119,6 +120,7 @@ const EventBanner = React.memo(function EventBanner({
   colors,
   locale = 'ko',
 }: EventBannerProps) {
+  const { t } = useLocale();
   const isKo = locale === 'ko';
 
   // 슬라이드 다운 애니메이션 값 (-80 = 위 화면 밖)
@@ -253,7 +255,7 @@ const EventBanner = React.memo(function EventBanner({
           activeOpacity={0.8}
         >
           <Text style={styles.joinBtnText}>
-            {isKo ? '참여' : 'Join'}
+            {t('village_ui.event_banner.join')}
           </Text>
         </TouchableOpacity>
 

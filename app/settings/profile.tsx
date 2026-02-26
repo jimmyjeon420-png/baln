@@ -19,11 +19,13 @@ import { useAuth } from '../../src/context/AuthContext';
 import { useTheme } from '../../src/hooks/useTheme';
 import { HeaderBar } from '../../src/components/common/HeaderBar';
 import supabase from '../../src/services/supabase';
+import { useLocale } from '../../src/context/LocaleContext';
 
 export default function ProfileSettingsScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { colors } = useTheme();
+  const { t } = useLocale();
   const [displayName, setDisplayName] = useState(
     user?.user_metadata?.display_name || user?.email?.split('@')[0] || ''
   );
@@ -31,7 +33,7 @@ export default function ProfileSettingsScreen() {
 
   const handleSave = async () => {
     if (!displayName.trim()) {
-      Alert.alert('오류', '표시 이름을 입력해주세요.');
+      Alert.alert(t('settings.profile.error_title'), t('settings.profile.error_name_required'));
       return;
     }
     setLoading(true);
@@ -40,10 +42,10 @@ export default function ProfileSettingsScreen() {
         data: { display_name: displayName.trim() },
       });
       if (error) throw error;
-      Alert.alert('성공', '프로필이 저장되었습니다.');
+      Alert.alert(t('settings.profile.success_title'), t('settings.profile.success_message'));
     } catch (error: any) {
       console.warn('[Profile] 저장 실패:', error?.message);
-      Alert.alert('오류', '프로필 저장에 실패했습니다. 다시 시도해주세요.');
+      Alert.alert(t('settings.profile.error_title'), t('settings.profile.error_save_failed'));
     } finally {
       setLoading(false);
     }
@@ -51,26 +53,26 @@ export default function ProfileSettingsScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <HeaderBar title="프로필 설정" />
+      <HeaderBar title={t('settings.profile.title')} />
 
       {/* 컨텐츠 */}
       <View style={styles.content}>
         {/* 이메일 (읽기 전용) */}
         <View style={styles.inputGroup}>
-          <Text style={[styles.label, { color: colors.textSecondary }]}>이메일</Text>
+          <Text style={[styles.label, { color: colors.textSecondary }]}>{t('settings.profile.email_label')}</Text>
           <View style={[styles.readOnlyInput, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text style={[styles.readOnlyText, { color: colors.textTertiary }]}>{user?.email || '로그인 필요'}</Text>
+            <Text style={[styles.readOnlyText, { color: colors.textTertiary }]}>{user?.email || t('settings.profile.email_placeholder')}</Text>
           </View>
         </View>
 
         {/* 표시 이름 */}
         <View style={styles.inputGroup}>
-          <Text style={[styles.label, { color: colors.textSecondary }]}>표시 이름</Text>
+          <Text style={[styles.label, { color: colors.textSecondary }]}>{t('settings.profile.display_name_label')}</Text>
           <TextInput
             style={[styles.input, { backgroundColor: colors.surface, color: colors.textPrimary, borderColor: colors.border }]}
             value={displayName}
             onChangeText={setDisplayName}
-            placeholder="표시 이름 입력"
+            placeholder={t('settings.profile.display_name_placeholder')}
             placeholderTextColor={colors.textTertiary}
           />
         </View>
@@ -84,7 +86,7 @@ export default function ProfileSettingsScreen() {
           {loading ? (
             <ActivityIndicator color={colors.background} size="small" />
           ) : (
-            <Text style={[styles.saveButtonText, { color: colors.background }]}>저장</Text>
+            <Text style={[styles.saveButtonText, { color: colors.background }]}>{t('settings.profile.save_button')}</Text>
           )}
         </TouchableOpacity>
 
@@ -97,11 +99,11 @@ export default function ProfileSettingsScreen() {
           onPress={() => router.push('/settings/delete-account')}
         >
           <Ionicons name="trash-outline" size={20} color={colors.error} />
-          <Text style={[styles.deleteAccountText, { color: colors.error }]}>계정 삭제</Text>
+          <Text style={[styles.deleteAccountText, { color: colors.error }]}>{t('settings.profile.delete_account')}</Text>
           <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
         </TouchableOpacity>
         <Text style={[styles.deleteAccountHint, { color: colors.textTertiary }]}>
-          계정과 모든 데이터가 영구적으로 삭제됩니다
+          {t('settings.profile.delete_account_hint')}
         </Text>
       </View>
     </SafeAreaView>

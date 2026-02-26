@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import { useTheme } from '../../hooks/useTheme';
 import { usePredictionLeaderboard } from '../../hooks/usePredictionLeaderboard';
+import { useLocale } from '../../context/LocaleContext';
 
 // ============================================================================
 // 메인 컴포넌트
@@ -23,6 +24,7 @@ import { usePredictionLeaderboard } from '../../hooks/usePredictionLeaderboard';
 
 export default function PredictionLeaderboard() {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const {
     leaderboard,
     myRank,
@@ -49,10 +51,10 @@ export default function PredictionLeaderboard() {
       {/* 헤더 */}
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.textPrimary }]}>
-          {'\u{1F3C6}'} 예측 순위표
+          {'\u{1F3C6}'} {t('prediction.leaderboard_title')}
         </Text>
         <Text style={[styles.subtitle, { color: colors.textTertiary }]}>
-          {totalParticipants}명 참여 중
+          {t('prediction.leaderboard_participants', { count: totalParticipants })}
         </Text>
       </View>
 
@@ -62,24 +64,24 @@ export default function PredictionLeaderboard() {
           <View style={styles.myStatsRow}>
             <View style={styles.statItem}>
               <Text style={[styles.statValue, { color: colors.primary }]}>{weeklyStats.totalVotes}</Text>
-              <Text style={[styles.statLabel, { color: colors.textTertiary }]}>이번 주</Text>
+              <Text style={[styles.statLabel, { color: colors.textTertiary }]}>{t('prediction.leaderboard_this_week')}</Text>
             </View>
             <View style={styles.statItem}>
               <Text style={[styles.statValue, { color: colors.primary }]}>{weeklyStats.accuracyRate}%</Text>
-              <Text style={[styles.statLabel, { color: colors.textTertiary }]}>적중률</Text>
+              <Text style={[styles.statLabel, { color: colors.textTertiary }]}>{t('prediction.leaderboard_accuracy')}</Text>
             </View>
             <View style={styles.statItem}>
               <Text style={[styles.statValue, { color: colors.primary }]}>
                 {myRank ? `#${myRank}` : '-'}
               </Text>
-              <Text style={[styles.statLabel, { color: colors.textTertiary }]}>내 순위</Text>
+              <Text style={[styles.statLabel, { color: colors.textTertiary }]}>{t('prediction.leaderboard_my_rank')}</Text>
             </View>
             {myPercentile !== null && (
               <View style={styles.statItem}>
                 <Text style={[styles.statValue, { color: colors.premium.gold }]}>
-                  상위 {myPercentile}%
+                  {t('prediction.leaderboard_top_percentile', { pct: myPercentile })}
                 </Text>
-                <Text style={[styles.statLabel, { color: colors.textTertiary }]}>등급</Text>
+                <Text style={[styles.statLabel, { color: colors.textTertiary }]}>{t('prediction.leaderboard_grade')}</Text>
               </View>
             )}
           </View>
@@ -111,10 +113,10 @@ export default function PredictionLeaderboard() {
             <View style={styles.nameCell}>
               <Text style={[styles.nameText, { color: colors.textPrimary }]} numberOfLines={1}>
                 {entry.display_name}
-                {entry.isMe ? ' (나)' : ''}
+                {entry.isMe ? t('prediction.leaderboard_me_suffix') : ''}
               </Text>
               <Text style={[styles.votesText, { color: colors.textTertiary }]}>
-                {entry.total_votes}회 투표
+                {t('prediction.leaderboard_votes', { count: entry.total_votes })}
               </Text>
             </View>
 

@@ -22,10 +22,12 @@ import { useRouter } from 'expo-router';
 import { useTodayQuiz, useMyQuizAttempt, useSubmitQuiz, useQuizStats } from '../../src/hooks/useQuiz';
 import QuizCard from '../../src/components/QuizCard';
 import { useTheme } from '../../src/hooks/useTheme';
+import { useLocale } from '../../src/context/LocaleContext';
 
 export default function DailyQuizScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { t } = useLocale();
   const { data: quiz, isLoading: quizLoading, isError: quizError, refetch: refetchQuiz } = useTodayQuiz();
   const { data: attempt, isLoading: attemptLoading } = useMyQuizAttempt(quiz?.id);
   const submitQuiz = useSubmitQuiz();
@@ -83,7 +85,7 @@ export default function DailyQuizScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>오늘의 투자 퀴즈</Text>
+        <Text style={styles.headerTitle}>{t('daily_quiz.title')}</Text>
         <View style={{ width: 32 }} />
       </View>
 
@@ -92,7 +94,7 @@ export default function DailyQuizScreen() {
         {isLoading && (
           <View style={styles.loadingBox}>
             <ActivityIndicator size="large" color="#4CAF50" />
-            <Text style={styles.loadingText}>퀴즈를 불러오는 중...</Text>
+            <Text style={styles.loadingText}>{t('daily_quiz.loading')}</Text>
           </View>
         )}
 
@@ -100,13 +102,13 @@ export default function DailyQuizScreen() {
         {quizError && !quiz && (
           <View style={styles.emptyBox}>
             <Text style={styles.emptyIcon}>⚠️</Text>
-            <Text style={styles.emptyTitle}>퀴즈를 불러오지 못했습니다</Text>
-            <Text style={styles.emptySubtitle}>네트워크를 확인하고 다시 시도해주세요</Text>
+            <Text style={styles.emptyTitle}>{t('daily_quiz.error_title')}</Text>
+            <Text style={styles.emptySubtitle}>{t('daily_quiz.error_subtitle')}</Text>
             <TouchableOpacity
               onPress={() => refetchQuiz()}
               style={{ marginTop: 12, backgroundColor: '#4CAF50', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8 }}
             >
-              <Text style={{ color: '#FFFFFF', fontWeight: '600' }}>다시 시도</Text>
+              <Text style={{ color: '#FFFFFF', fontWeight: '600' }}>{t('daily_quiz.retry')}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -115,8 +117,8 @@ export default function DailyQuizScreen() {
         {!isLoading && !quiz && !quizError && (
           <View style={styles.emptyBox}>
             <Text style={styles.emptyIcon}>📝</Text>
-            <Text style={styles.emptyTitle}>오늘의 퀴즈가 아직 도착하지 않았어요</Text>
-            <Text style={styles.emptySubtitle}>잠시 후 다시 확인해주세요</Text>
+            <Text style={styles.emptyTitle}>{t('daily_quiz.empty_title')}</Text>
+            <Text style={styles.emptySubtitle}>{t('daily_quiz.empty_subtitle')}</Text>
           </View>
         )}
 
@@ -134,7 +136,7 @@ export default function DailyQuizScreen() {
         <View style={styles.bottomSection}>
           {/* 다음 퀴즈 카운트다운 */}
           <View style={styles.countdownCard}>
-            <Text style={styles.countdownLabel}>다음 퀴즈까지</Text>
+            <Text style={styles.countdownLabel}>{t('daily_quiz.next_quiz')}</Text>
             <Text style={styles.countdownTimer}>{countdown}</Text>
           </View>
 
@@ -144,13 +146,13 @@ export default function DailyQuizScreen() {
               {stats.streak > 0 && (
                 <View style={styles.statsRow}>
                   <Text style={styles.statsIcon}>🔥</Text>
-                  <Text style={styles.statsText}>퀴즈 스트릭: {stats.streak}일 연속</Text>
+                  <Text style={styles.statsText}>{t('daily_quiz.streak', { days: String(stats.streak) })}</Text>
                 </View>
               )}
               <View style={styles.statsRow}>
                 <Text style={styles.statsIcon}>📊</Text>
                 <Text style={styles.statsText}>
-                  정답률: {stats.accuracy}% ({stats.correct}/{stats.total})
+                  {t('daily_quiz.accuracy', { pct: String(stats.accuracy), correct: String(stats.correct), total: String(stats.total) })}
                 </Text>
               </View>
             </View>
@@ -158,17 +160,17 @@ export default function DailyQuizScreen() {
 
           {/* 안내 */}
           <View style={styles.tipCard}>
-            <Text style={styles.tipTitle}>💡 퀴즈 보상</Text>
-            <Text style={styles.tipText}>• 정답: 1~3 크레딧 + 20 XP</Text>
-            <Text style={styles.tipText}>• 오답: 참여 5 XP (경험치는 쌓여요!)</Text>
-            <Text style={styles.tipText}>• 매일 1문제, 투자 지식을 키워보세요</Text>
+            <Text style={styles.tipTitle}>💡 {t('daily_quiz.rewards_title')}</Text>
+            <Text style={styles.tipText}>• {t('daily_quiz.reward_correct')}</Text>
+            <Text style={styles.tipText}>• {t('daily_quiz.reward_wrong')}</Text>
+            <Text style={styles.tipText}>• {t('daily_quiz.reward_tip')}</Text>
           </View>
         </View>
 
         {/* 면책 조항 */}
         <View style={styles.disclaimerBox}>
           <Text style={styles.disclaimerText}>
-            본 퀴즈는 투자 교육 목적이며, 특정 투자를 권유하지 않습니다.
+            {t('daily_quiz.disclaimer')}
           </Text>
         </View>
       </ScrollView>

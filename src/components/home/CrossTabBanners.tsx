@@ -16,10 +16,12 @@ import { useTheme } from '../../hooks/useTheme';
 import { useGuruStyleChange } from '../../hooks/useGuruStyleChange';
 import { useInvestmentStandards } from '../../hooks/useInvestmentStandards';
 import { useBadgeNotification } from '../../hooks/useBadgeNotification';
+import { useLocale } from '../../context/LocaleContext';
 
 export default function CrossTabBanners() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { t } = useLocale();
   const insets = useSafeAreaInsets();
   const { hasChange, fromName, toName, dismiss: dismissGuru } = useGuruStyleChange();
   const { standards } = useInvestmentStandards();
@@ -37,10 +39,10 @@ export default function CrossTabBanners() {
             <Ionicons name="swap-horizontal" size={16} color={colors.primary} />
             <View style={{ flex: 1 }}>
               <Text style={[styles.bannerTitle, { color: colors.textPrimary }]}>
-                투자 철학이 변경되었습니다
+                {t('common_ui.cross_tab.philosophy_changed_title')}
               </Text>
               <Text style={[styles.bannerSubtitle, { color: colors.textSecondary }]}>
-                {fromName} → {toName} · 분석 탭에서 재진단받아보세요
+                {t('common_ui.cross_tab.philosophy_changed_subtitle', { from: fromName, to: toName })}
               </Text>
             </View>
             <TouchableOpacity onPress={dismissGuru} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
@@ -51,7 +53,7 @@ export default function CrossTabBanners() {
             style={[styles.bannerAction, { backgroundColor: colors.primary }]}
             onPress={() => { dismissGuru(); router.push('/(tabs)/rebalance'); }}
           >
-            <Text style={styles.bannerActionText}>분석 탭 보기</Text>
+            <Text style={styles.bannerActionText}>{t('common_ui.cross_tab.view_analysis')}</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -63,7 +65,7 @@ export default function CrossTabBanners() {
             <Text style={{ fontSize: 21 }}>{badgeNotif.badgeEmoji}</Text>
             <View style={{ flex: 1 }}>
               <Text style={[styles.bannerTitle, { color: colors.textPrimary }]}>
-                {badgeNotif.badgeName} 획득!
+                {t('common_ui.cross_tab.badge_earned_title', { name: badgeNotif.badgeName })}
               </Text>
               <Text style={[styles.bannerSubtitle, { color: colors.textSecondary }]}>
                 {badgeNotif.message}
@@ -83,11 +85,11 @@ export default function CrossTabBanners() {
             <Ionicons name="bookmark" size={16} color={colors.info ?? '#29B6F6'} />
             <View style={{ flex: 1 }}>
               <Text style={[styles.bannerTitle, { color: colors.textPrimary }]}>
-                나의 투자 기준
+                {t('common_ui.cross_tab.standards_title')}
               </Text>
               <Text style={[styles.bannerSubtitle, { color: colors.textSecondary }]} numberOfLines={1}>
                 {standards.actions.slice(0, 2).map(a => `${a.action} ${a.ticker}`).join(', ')}
-                {standards.actions.length > 2 ? ` 외 ${standards.actions.length - 2}건` : ''}
+                {standards.actions.length > 2 ? ` ${t('common_ui.cross_tab.standards_more', { count: standards.actions.length - 2 })}` : ''}
               </Text>
             </View>
           </View>
@@ -95,7 +97,7 @@ export default function CrossTabBanners() {
             style={[styles.bannerAction, { backgroundColor: colors.info ?? '#29B6F6' }]}
             onPress={() => router.push('/(tabs)/rebalance')}
           >
-            <Text style={styles.bannerActionText}>처방전 확인</Text>
+            <Text style={styles.bannerActionText}>{t('common_ui.cross_tab.view_prescription')}</Text>
           </TouchableOpacity>
         </View>
       )}

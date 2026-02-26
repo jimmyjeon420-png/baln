@@ -35,6 +35,7 @@ import { useTheme } from '../../hooks/useTheme';
 import { ThemeColors } from '../../styles/colors';
 import TermTooltip from '../common/TermTooltip';
 import { CAT_ICONS } from '../../constants/categoryIcons';
+import { useLocale } from '../../context/LocaleContext';
 
 // ── 카테고리 설정 ──
 
@@ -133,14 +134,15 @@ const CATEGORY_DETAILS: Record<AssetCategory, CategoryDetail> = {
 
 // 유동 자산 7개 카테고리 (부동산은 비유동 → 별도 표시)
 // 달리오 All Weather 철학 기반 분류
+// label은 locale에서 동적으로 가져오므로 placeholder로만 사용
 const CATEGORIES: CategoryConfig[] = [
-  { key: 'large_cap', label: '주식',     icon: '📈', color: '#4CAF50' },
-  { key: 'bond',      label: '채권',     icon: '🏛️', color: '#64B5F6' },
-  { key: 'bitcoin',   label: '비트코인', icon: '₿',  color: '#F7931A' },
-  { key: 'gold',      label: '금/귀금속',icon: '🥇', color: '#FFD700' },
-  { key: 'commodity', label: '원자재',   icon: '🛢️', color: '#FF8A65' },
-  { key: 'altcoin',   label: '알트코인', icon: '🪙', color: '#9C27B0' },
-  { key: 'cash',      label: '현금',     icon: '💵', color: '#78909C' },
+  { key: 'large_cap', label: 'large_cap', icon: '📈', color: '#4CAF50' },
+  { key: 'bond',      label: 'bond',      icon: '🏛️', color: '#64B5F6' },
+  { key: 'bitcoin',   label: 'bitcoin',   icon: '₿',  color: '#F7931A' },
+  { key: 'gold',      label: 'gold',      icon: '🥇', color: '#FFD700' },
+  { key: 'commodity', label: 'commodity', icon: '🛢️', color: '#FF8A65' },
+  { key: 'altcoin',   label: 'altcoin',   icon: '🪙', color: '#9C27B0' },
+  { key: 'cash',      label: 'cash',      icon: '💵', color: '#78909C' },
 ];
 
 // DEFAULT_TARGET은 rebalanceScore.ts에서 import (건강 점수 엔진과 동일한 기준 사용)
@@ -151,11 +153,11 @@ const PHILOSOPHY_STORAGE_KEY = '@investment_philosophy';
 
 export type InvestmentPhilosophy = 'dalio' | 'cathie_wood' | 'buffett' | 'custom';
 
-const PHILOSOPHY_CONFIG: Record<InvestmentPhilosophy, { label: string; emoji: string; target: Record<AssetCategory, number>; desc: string }> = {
-  dalio:       { label: '달리오',   emoji: '🌊', target: DALIO_TARGET,        desc: 'All Weather — 분산·안정 중심' },
-  buffett:     { label: '버핏',     emoji: '🔴', target: BUFFETT_TARGET,      desc: 'Berkshire — 주식·현금 중심' },
-  cathie_wood: { label: '캐시우드', emoji: '🚀', target: CATHIE_WOOD_TARGET,  desc: 'ARK — 혁신·크립토 집중' },
-  custom:      { label: '직접설정', emoji: '✏️', target: DEFAULT_TARGET,      desc: '내가 직접 목표 설정' },
+const PHILOSOPHY_CONFIG: Record<InvestmentPhilosophy, { labelKey: string; emoji: string; target: Record<AssetCategory, number>; descKey: string }> = {
+  dalio:       { labelKey: 'philosophy_label_dalio',   emoji: '🌊', target: DALIO_TARGET,       descKey: 'philosophy_desc_dalio' },
+  buffett:     { labelKey: 'philosophy_label_buffett', emoji: '🔴', target: BUFFETT_TARGET,     descKey: 'philosophy_desc_buffett' },
+  cathie_wood: { labelKey: 'philosophy_label_cathie',  emoji: '🚀', target: CATHIE_WOOD_TARGET, descKey: 'philosophy_desc_cathie' },
+  custom:      { labelKey: 'philosophy_label_custom',  emoji: '✏️', target: DEFAULT_TARGET,     descKey: 'philosophy_desc_custom' },
 };
 
 // ── 이탈도 계산 ──

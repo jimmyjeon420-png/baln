@@ -11,6 +11,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CharacterAvatar } from '../character/CharacterAvatar';
+import { useLocale } from '../../context/LocaleContext';
 
 const VILLAGE_CHECKIN_KEY = '@baln:village_checkin_shown';
 
@@ -23,23 +24,14 @@ interface VillageCheckInRewardProps {
 
 // 요일 기반 배달 구루 (매일 다른 구루가 환영)
 const DAILY_GURUS = ['buffett', 'dalio', 'cathie_wood', 'lynch', 'marks', 'rogers', 'musk'];
-const DAILY_MESSAGES_KO = [
-  '좋은 아침! 오늘도 마을에 오셨군요.',
-  '반가워요! 시장 소식을 가져왔어요.',
-  '어서 와요! 혁신의 바람이 불고 있어요.',
-  '잘 왔어요! 숨은 기회를 찾아봐요.',
-  '천천히 둘러봐요. 좋은 소식이 있어요.',
-  '오늘도 세계 곳곳의 소식이 있어요!',
-  '새로운 아이디어가 떠올랐어요!',
-];
-const DAILY_MESSAGES_EN = [
-  'Good morning! Welcome back to the village.',
-  'Great to see you! I brought market news.',
-  'Welcome! Innovation winds are blowing.',
-  'Hi there! Let\'s find hidden opportunities.',
-  'Take your time. Good news awaits.',
-  'News from around the world today!',
-  'I\'ve got a new idea to share!',
+const DAILY_MESSAGE_KEYS = [
+  'village_ui.checkin.msg_0',
+  'village_ui.checkin.msg_1',
+  'village_ui.checkin.msg_2',
+  'village_ui.checkin.msg_3',
+  'village_ui.checkin.msg_4',
+  'village_ui.checkin.msg_5',
+  'village_ui.checkin.msg_6',
 ];
 
 function getTodayKey(): string {
@@ -55,7 +47,7 @@ export function VillageCheckInReward({
   const [visible, setVisible] = useState(false);
   const slideAnim = useRef(new Animated.Value(-120)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
-  const isKo = locale === 'ko';
+  const { t } = useLocale();
 
   useEffect(() => {
     (async () => {
@@ -105,7 +97,7 @@ export function VillageCheckInReward({
 
   const dayIndex = new Date().getDay() % DAILY_GURUS.length;
   const guruId = DAILY_GURUS[dayIndex];
-  const message = isKo ? DAILY_MESSAGES_KO[dayIndex] : DAILY_MESSAGES_EN[dayIndex];
+  const message = t(DAILY_MESSAGE_KEYS[dayIndex] ?? 'village_ui.checkin.msg_0');
 
   return (
     <Animated.View
@@ -130,7 +122,7 @@ export function VillageCheckInReward({
           </Text>
           {currentStreak > 1 && (
             <Text style={[styles.streakText, { color: colors.textTertiary }]}>
-              {isKo ? `${currentStreak}일 연속` : `${currentStreak}-day streak`}
+              {t('village_ui.checkin.streak_label', { count: currentStreak })}
             </Text>
           )}
         </View>

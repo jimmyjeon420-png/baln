@@ -17,20 +17,22 @@ import { Ionicons } from '@expo/vector-icons';
 import { HeaderBar } from '../../src/components/common/HeaderBar';
 import { useHeartAssets } from '../../src/hooks/useHeartAssets';
 import { useTheme } from '../../src/hooks/useTheme';
+import { useLocale } from '../../src/context/LocaleContext';
 
 export default function ManageHeartsScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { t } = useLocale();
   const { heartAssets, removeHeartAsset, updateHeartAsset, isLoading } = useHeartAssets();
 
   const handleDelete = (ticker: string, name: string) => {
     Alert.alert(
-      'Heart 삭제',
-      `${name}을(를) Heart에서 제거하시겠습니까?`,
+      t('manage_hearts.delete_title'),
+      t('manage_hearts.delete_message', { name }),
       [
-        { text: '취소', style: 'cancel' },
+        { text: t('manage_hearts.delete_cancel'), style: 'cancel' },
         {
-          text: '삭제',
+          text: t('manage_hearts.delete_confirm'),
           style: 'destructive',
           onPress: () => removeHeartAsset(ticker),
         },
@@ -40,19 +42,19 @@ export default function ManageHeartsScreen() {
 
   const handleEdit = (item: any) => {
     Alert.prompt(
-      'Heart 이름 변경',
-      `${item.name}의 새 이름을 입력하세요`,
+      t('manage_hearts.rename_title'),
+      t('manage_hearts.rename_message', { name: item.name }),
       [
-        { text: '취소', style: 'cancel' },
+        { text: t('manage_hearts.rename_cancel'), style: 'cancel' },
         {
-          text: '변경',
+          text: t('manage_hearts.rename_confirm'),
           onPress: async (newName?: string) => {
             if (newName && newName.trim()) {
               try {
                 updateHeartAsset({ ticker: item.ticker, newName: newName.trim() });
-                Alert.alert('완료', '이름이 변경되었습니다.');
+                Alert.alert(t('manage_hearts.rename_success_title'), t('manage_hearts.rename_success_message'));
               } catch (error) {
-                Alert.alert('오류', '이름 변경에 실패했습니다.');
+                Alert.alert(t('manage_hearts.rename_error_title'), t('manage_hearts.rename_error_message'));
               }
             }
           },

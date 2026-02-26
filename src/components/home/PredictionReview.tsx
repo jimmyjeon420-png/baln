@@ -26,6 +26,7 @@ import { useTheme } from '../../hooks/useTheme';
 import { useTrackEvent } from '../../hooks/useAnalytics';
 import { useHabitLoopTracking } from '../../hooks/useHabitLoopTracking';
 import { formatCredits } from '../../utils/formatters';
+import { useLocale } from '../../context/LocaleContext';
 
 // Android LayoutAnimation 활성화
 if (
@@ -71,6 +72,7 @@ interface ReviewItemProps {
 
 function ReviewItem({ review, index }: ReviewItemProps) {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const [expanded, setExpanded] = useState(false);
   const rotateValue = useRef(new Animated.Value(0)).current;
 
@@ -158,7 +160,7 @@ function ReviewItem({ review, index }: ReviewItemProps) {
               <Text
                 style={[styles.answerLabel, { color: colors.textTertiary }]}
               >
-                내 답변
+                {t('prediction.review_my_answer')}
               </Text>
               <Text
                 style={[
@@ -182,7 +184,7 @@ function ReviewItem({ review, index }: ReviewItemProps) {
               <Text
                 style={[styles.answerLabel, { color: colors.textTertiary }]}
               >
-                정답
+                {t('prediction.review_correct_answer')}
               </Text>
               <Text
                 style={[styles.answerValue, { color: colors.success }]}
@@ -206,7 +208,7 @@ function ReviewItem({ review, index }: ReviewItemProps) {
               <Text
                 style={[styles.explanationLabel, { color: colors.primary }]}
               >
-                해설
+                {t('prediction.review_explanation')}
               </Text>
               <Text
                 style={[
@@ -235,6 +237,7 @@ export default function PredictionReview({
   creditsEarned,
 }: PredictionReviewProps) {
   const { colors, shadows } = useTheme();
+  const { t } = useLocale();
   const track = useTrackEvent();
   const { trackStep } = useHabitLoopTracking();
   const hasTrackedReview = useRef(false);
@@ -262,12 +265,12 @@ export default function PredictionReview({
         <View style={styles.header}>
           <Text style={styles.headerEmoji}>📋</Text>
           <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
-            어제의 복기
+            {t('prediction.review_header')}
           </Text>
         </View>
         <View style={styles.emptyState}>
           <Text style={[styles.emptyText, { color: colors.textTertiary }]}>
-            아직 복기할 예측이 없습니다
+            {t('prediction.review_empty')}
           </Text>
         </View>
       </View>
@@ -281,7 +284,7 @@ export default function PredictionReview({
         <View style={styles.headerLeft}>
           <Text style={styles.headerEmoji}>📋</Text>
           <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
-            어제의 복기
+            {t('prediction.review_header')}
           </Text>
         </View>
         {/* 적중 요약 */}
@@ -292,7 +295,7 @@ export default function PredictionReview({
           ]}
         >
           <Text style={[styles.resultSummaryText, { color: colors.success }]}>
-            {correctCount}/{reviews.length} 적중
+            {t('prediction.review_hit_summary', { correct: correctCount, total: reviews.length })}
           </Text>
         </View>
       </View>
@@ -319,7 +322,7 @@ export default function PredictionReview({
             </Text>
           </View>
           <Text style={[styles.statLabel, { color: colors.textTertiary }]}>
-            연속 적중
+            {t('prediction.review_consecutive')}
           </Text>
         </View>
 
@@ -349,7 +352,7 @@ export default function PredictionReview({
             </Text>
           </View>
           <Text style={[styles.statLabel, { color: colors.textTertiary }]}>
-            나의 적중률
+            {t('prediction.review_my_accuracy')}
           </Text>
         </View>
 
@@ -379,7 +382,7 @@ export default function PredictionReview({
             </Text>
           </View>
           <Text style={[styles.statLabel, { color: colors.textTertiary }]}>
-            획득
+            {t('prediction.review_earned')}
           </Text>
         </View>
       </View>
@@ -404,7 +407,9 @@ export default function PredictionReview({
             {streak >= 10 ? '🏆' : streak >= 5 ? '💪' : '🔥'}
           </Text>
           <Text style={[styles.streakText, { color: colors.warning }]}>
-            {streak}연속 적중! {streak >= 10 ? '레전드 달성!' : '계속 가보자!'}
+            {streak >= 10
+              ? t('prediction.review_streak_message_legend', { count: streak })
+              : t('prediction.review_streak_message_go', { count: streak })}
           </Text>
         </View>
       )}

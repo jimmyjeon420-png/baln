@@ -27,6 +27,7 @@ import { useTheme } from '../../hooks/useTheme';
 import { saveHealthScore, loadPreviousHealthScore } from '../../utils/storage';
 import { useHealthScoreHistory } from '../../hooks/useHealthScoreHistory';
 import { useBracketPerformance } from '../../hooks/useBracketPerformance';
+import { useLocale } from '../../context/LocaleContext';
 
 interface HealthScoreSectionProps {
   healthScore: HealthScoreResult;
@@ -36,23 +37,23 @@ interface HealthScoreSectionProps {
   panicScore?: number;
 }
 
-/** 팩터별 직관적 한글 라벨 (이모티콘 옆에 표시) */
-const FACTOR_LABELS: Record<string, string> = {
-  '배분 이탈도': '비중 균형 상태',
-  '자산 집중도': '위험 분산도',
-  '위험 집중도': '위험 분산도',
-  '상관관계': '자산 독립성',
-  '변동성': '가격 안정성',
-  '하방 리스크': '손실 방어력',
-  '세금 효율': '절세 효율',
-  '레버리지 건전성': '부채 건전성',
+/** 팩터별 직관적 라벨 키 매핑 (locale key → factor_labels.X) */
+const FACTOR_LABEL_KEYS: Record<string, string> = {
+  '배분 이탈도': 'drift',
+  '자산 집중도': 'concentration',
+  '위험 집중도': 'concentration',
+  '상관관계': 'correlation',
+  '변동성': 'volatility',
+  '하방 리스크': 'downside',
+  '세금 효율': 'tax',
+  '레버리지 건전성': 'leverage',
 };
 
-/** 팩터 점수 → 상태 라벨 */
-function getFactorStatus(score: number): { label: string; color: string } {
-  if (score >= 70) return { label: '좋음', color: '#4CAF50' };
-  if (score >= 40) return { label: '주의', color: '#B56A00' };
-  return { label: '개선 필요', color: '#B23A48' };
+/** 팩터 점수 → 상태 라벨 키 */
+function getFactorStatusKey(score: number): { key: string; color: string } {
+  if (score >= 70) return { key: 'factor_status_good', color: '#4CAF50' };
+  if (score >= 40) return { key: 'factor_status_caution', color: '#B56A00' };
+  return { key: 'factor_status_improve', color: '#B23A48' };
 }
 
 /** 팩터 상세 설명 (ⓘ 툴팁용) */
@@ -132,23 +133,24 @@ const FACTOR_DETAILS: Record<string, FactorDetail> = {
   },
 };
 
-/** 팩터별 개선 제안 (40점 미만 시) */
-const FACTOR_SUGGESTIONS: Record<string, string> = {
-  '배분 이탈도': '일부 종목의 비중이 많이 달라졌어요.\n\n아래 "오늘의 액션"에서 어떤 종목을 얼마나 조정하면 좋은지 알려드려요.',
-  '자산 집중도': '특정 자산에 쏠려 있습니다.\n\n분산 투자를 고려해보세요. 채권이나 현금 비중을 늘리면 안정성이 높아져요.',
-  '상관관계': '자산들이 비슷하게 움직입니다.\n\n상관관계가 낮은 자산(채권, 현금, 비트코인 등)을 추가하면 분산 효과가 커져요.',
-  '변동성': '포트폴리오 변동성이 높습니다.\n\n안정적인 자산(채권, 현금)의 비중을 늘리면 변동폭을 줄일 수 있어요.',
-  '하방 리스크': '손실 중인 종목이 많습니다.\n\n손절 또는 평단 낮추기를 고려해보세요. 아래 AI 분석을 확인해보세요.',
-  '세금 효율': '절세 기회를 활용하지 못하고 있어요.\n\n5% 이상 손실 종목을 매도 후 유사 종목으로 갈아타면 세금을 절약할 수 있어요.',
+/** 팩터별 개선 제안 locale key 매핑 (40점 미만 시) */
+const FACTOR_SUGGESTION_KEYS: Record<string, string> = {
+  '배분 이탈도': 'drift',
+  '자산 집중도': 'concentration',
+  '위험 집중도': 'concentration',
+  '상관관계': 'correlation',
+  '변동성': 'volatility',
+  '하방 리스크': 'downside',
+  '세금 효율': 'tax',
 };
 
-/** 등급별 상세 해석 */
-const GRADE_INTERPRETATIONS: Record<string, string> = {
-  'S': '완벽한 포트폴리오입니다!\n\n현재 상태를 유지하시면 장기적으로 안정적인 수익을 기대할 수 있어요.',
-  'A': '우수한 포트폴리오입니다.\n\n소폭 조정만 하면 더욱 최적화할 수 있어요.',
-  'B': '일부 개선이 필요합니다.\n\n아래 취약한 팩터를 중심으로 조정해보세요.',
-  'C': '리밸런싱을 권장합니다.\n\n현재 상태로는 위험이 높을 수 있어요. 오늘의 액션을 꼭 확인해주세요.',
-  'D': '긴급 조정이 필요합니다!\n\n포트폴리오가 매우 불안정한 상태예요. 즉시 리밸런싱을 실행해주세요.',
+/** 등급별 상세 해석 — locale keys */
+const GRADE_INTERPRETATION_KEYS: Record<string, string> = {
+  'S': 'S',
+  'A': 'A',
+  'B': 'B',
+  'C': 'C',
+  'D': 'D',
 };
 
 /** 등급별 아이콘 */
@@ -160,12 +162,12 @@ const GRADE_ICONS: Record<string, string> = {
   'D': '🚨',
 };
 
-/** 점수 → 행동 언어 상태 설명 */
-function getConditionLabel(score: number): string {
-  if (score >= 80) return '균형 잡힌 상태예요';
-  if (score >= 60) return '약간 무리한 상태예요';
-  if (score >= 40) return '조정이 필요한 상태예요';
-  return '지금 리밸런싱이 필요해요';
+/** 점수 → 행동 언어 상태 설명 locale key */
+function getConditionLabelKey(score: number): string {
+  if (score >= 80) return 'condition_great';
+  if (score >= 60) return 'condition_ok';
+  if (score >= 40) return 'condition_adjust';
+  return 'condition_rebalance';
 }
 
 /**
@@ -175,76 +177,20 @@ function getConditionLabel(score: number): string {
  * 예: "자산 집중도와 변동성이 낮아서 전체 점수가 내려갔어요."
  * 예: "모든 팩터가 양호합니다. 현재 전략을 유지하세요."
  */
-// 팩터 이름 → 일반인 친화적 표현
-const FACTOR_PLAIN: Record<string, string> = {
-  '배분 이탈도': '종목 비중',
-  '위험 집중도': '집중 위험',
-  '상관관계': '분산 효과',
-  '변동성': '가격 변동',
-  '하방 리스크': '손실 위험',
-  '세금 효율': '절세 기회',
+// 팩터 이름 → locale key 매핑 (action_map keys)
+const FACTOR_ACTION_KEYS: Record<string, string> = {
+  '배분 이탈도': 'drift',
+  '자산 집중도': 'concentration',
+  '위험 집중도': 'concentration',
+  '상관관계': 'correlation',
+  '변동성': 'volatility',
+  '하방 리스크': 'downside',
+  '세금 효율': 'tax',
 };
-
-function generateWhyExplanation(healthScore: HealthScoreResult): string {
-  const { factors, totalScore } = healthScore;
-
-  // 모든 팩터가 70점 이상이면 → 긍정 메시지
-  const weakFactors = factors.filter((f: FactorResult) => f.score < 70);
-  if (weakFactors.length === 0) {
-    return '모든 지표가 고르게 양호해요. 현재 투자 전략이 잘 작동하고 있어요.';
-  }
-
-  // 가장 취약한 순으로 정렬 (점수 낮은 순)
-  const sorted = [...weakFactors].sort((a, b) => a.score - b.score);
-
-  // 가장 낮은 팩터 (친화적 이름으로)
-  const worst = sorted[0];
-  const worstName = FACTOR_PLAIN[worst.label] || worst.label;
-
-  if (sorted.length === 1) {
-    return `${worstName}이 달라져서 전체 점수가 낮아졌어요. 분석 탭에서 조정할 수 있어요.`;
-  }
-
-  // 2개 이상 취약
-  const secondWorst = sorted[1];
-  const secondName = FACTOR_PLAIN[secondWorst.label] || secondWorst.label;
-  if (sorted.length === 2) {
-    return `${worstName}과 ${secondName}을 조정하면 점수가 올라가요.`;
-  }
-
-  // 3개 이상 취약
-  return `${worstName}을 포함해 ${sorted.length}개 항목을 조정하면 ${Math.min(totalScore + 15, 100)}점까지 올릴 수 있어요.`;
-}
-
-/**
- * "지금 할 수 있는 것" 액션 가이드 생성
- *
- * 등급 + 가장 취약한 팩터에 맞는 구체적 행동을 제안한다.
- */
-function generateActionGuidance(healthScore: HealthScoreResult): string | null {
-  const { grade, factors } = healthScore;
-
-  // S등급이면 특별한 액션 불필요
-  if (grade === 'S') return null;
-
-  // 가장 취약한 팩터를 기반으로 구체적 액션 제안
-  const sorted = [...factors].sort((a, b) => a.score - b.score);
-  const worst = sorted[0];
-
-  const ACTION_MAP: Record<string, string> = {
-    '배분 이탈도': '아래 "오늘의 액션"에서 매매 제안을 확인하고, 목표 비율에 맞춰 조정해보세요.',
-    '자산 집중도': '가장 비중이 높은 자산을 일부 줄이고, 다른 자산군으로 분산하는 것을 고려해보세요.',
-    '상관관계': '현재 보유 자산과 움직임이 다른 자산(채권, 원자재 등)을 추가해보세요.',
-    '변동성': '변동성이 큰 종목의 비중을 줄이거나, 채권/현금 비중을 늘려 안정성을 높여보세요.',
-    '하방 리스크': '손실 중인 종목의 손절 또는 추가 매수 여부를 검토해보세요.',
-    '세금 효율': '손실 종목 매도 후 유사 종목 매수(절세 매도)를 검토해보세요.',
-  };
-
-  return ACTION_MAP[worst.label] || '아래 상세 내역을 펼쳐서 각 팩터별 개선점을 확인해보세요.';
-}
 
 export default function HealthScoreSection({ healthScore, onScoreImproved, totalAssets, panicScore }: HealthScoreSectionProps) {
   const { colors, shadows } = useTheme();
+  const { t } = useLocale();
   const [showDetail, setShowDetail] = useState(false);
   const [tooltipVisible, setTooltipVisible] = useState(false);
   const [tooltipFactorKey, setTooltipFactorKey] = useState<string>('');
@@ -261,9 +207,44 @@ export default function HealthScoreSection({ healthScore, onScoreImproved, total
   // P2-B: 또래 비교 (자산 구간 평균)
   const { peerData, bracketLabel } = useBracketPerformance(totalAssets ?? 0);
 
-  // "왜 이 점수인가" + "지금 할 수 있는 것" 계산
-  const whyExplanation = useMemo(() => generateWhyExplanation(healthScore), [healthScore]);
-  const actionGuidance = useMemo(() => generateActionGuidance(healthScore), [healthScore]);
+  // "왜 이 점수인가" + "지금 할 수 있는 것" 계산 (locale 적용)
+  const whyExplanation = useMemo(() => {
+    const { factors, totalScore } = healthScore;
+    const weakFactors = factors.filter((f: FactorResult) => f.score < 70);
+    if (weakFactors.length === 0) {
+      return t('health_section.why_all_good');
+    }
+    const sorted = [...weakFactors].sort((a, b) => a.score - b.score);
+    const worst = sorted[0];
+    const worstKey = FACTOR_LABEL_KEYS[worst.label] || 'drift';
+    const worstName = t(`health_section.factor_labels.${worstKey}`);
+    if (sorted.length === 1) {
+      return t('health_section.why_one_factor', { factor: worstName });
+    }
+    const secondWorst = sorted[1];
+    const secondKey = FACTOR_LABEL_KEYS[secondWorst.label] || 'drift';
+    const secondName = t(`health_section.factor_labels.${secondKey}`);
+    if (sorted.length === 2) {
+      return t('health_section.why_two_factors', { factor1: worstName, factor2: secondName });
+    }
+    return t('health_section.why_many_factors', {
+      factor: worstName,
+      count: String(sorted.length - 1),
+      projected: String(Math.min(totalScore + 15, 100)),
+    });
+  }, [healthScore, t]);
+
+  const actionGuidance = useMemo(() => {
+    const { grade, factors } = healthScore;
+    if (grade === 'S') return null;
+    const sorted = [...factors].sort((a, b) => a.score - b.score);
+    const worst = sorted[0];
+    const actionKey = FACTOR_ACTION_KEYS[worst.label];
+    if (actionKey) {
+      return t(`health_section.action_map.${actionKey}`);
+    }
+    return t('health_section.action_map.default_');
+  }, [healthScore, t]);
 
   // 건강 점수 개선 감지 (최초 로드 시에만 실행)
   useEffect(() => {
@@ -321,9 +302,11 @@ export default function HealthScoreSection({ healthScore, onScoreImproved, total
   /** 팩터별 개선 제안 렌더링 (40점 미만 시) */
   const renderSuggestion = (factor: { label: string; score: number }) => {
     if (factor.score >= 40) return null;
+    const suggKey = FACTOR_SUGGESTION_KEYS[factor.label];
+    const suggText = suggKey ? t(`health_section.factor_suggestions.${suggKey}`) : '';
     return (
       <Text style={[s.suggestion, { color: colors.error, backgroundColor: colors.error + '1A', borderLeftColor: colors.error }]}>
-        {FACTOR_SUGGESTIONS[factor.label] || ''}
+        {suggText}
       </Text>
     );
   };
@@ -335,8 +318,8 @@ export default function HealthScoreSection({ healthScore, onScoreImproved, total
         <Animated.View style={[s.improveToast, { opacity: improveOpacity, backgroundColor: colors.premium.gold + '26', borderColor: colors.premium.gold + '4D' }]}>
           <Ionicons name="sparkles" size={20} color={colors.premium.gold} />
           <View style={s.improveToastContent}>
-            <Text style={[s.improveToastTitle, { color: colors.premium.gold }]}>건강 점수가 {improveToast.improvement}점 올랐어요!</Text>
-            <Text style={[s.improveToastSubtitle, { color: colors.premium.gold + 'CC' }]}>보상으로 AI 분석 1회 무료 (1C 적립)</Text>
+            <Text style={[s.improveToastTitle, { color: colors.premium.gold }]}>{t('health_section.toast_title', { points: String(improveToast.improvement) })}</Text>
+            <Text style={[s.improveToastSubtitle, { color: colors.premium.gold + 'CC' }]}>{t('health_section.toast_subtitle')}</Text>
           </View>
         </Animated.View>
       )}
@@ -356,17 +339,17 @@ export default function HealthScoreSection({ healthScore, onScoreImproved, total
           <View style={{ flex: 1 }}>
             {/* 행동 언어 — 숫자보다 먼저 눈에 들어오도록 */}
             <Text style={[s.conditionStatus, { color: healthScore.gradeColor }]}>
-              {getConditionLabel(healthScore.totalScore)}
+              {t(`health_section.${getConditionLabelKey(healthScore.totalScore)}`)}
             </Text>
             <View style={s.titleRow}>
-              <Text style={[s.cardLabel, { color: colors.textPrimary }]}>포트폴리오 컨디션</Text>
+              <Text style={[s.cardLabel, { color: colors.textPrimary }]}>{t('health_section.card_label')}</Text>
               <View style={[s.gradeBadge, { backgroundColor: healthScore.gradeBgColor }]}>
                 <Text style={[s.gradeText, { color: healthScore.gradeColor }]}>
-                  {healthScore.grade}등급
+                  {healthScore.grade}{t('health_section.grade_suffix')}
                 </Text>
               </View>
             </View>
-            <Text style={[s.cardLabelEn, { color: colors.textTertiary }]}>Health Score · {healthScore.totalScore}점</Text>
+            <Text style={[s.cardLabelEn, { color: colors.textTertiary }]}>{t('health_section.card_label_en')} · {healthScore.totalScore}pts</Text>
           </View>
         </View>
         <Ionicons name={showDetail ? 'chevron-up' : 'chevron-down'} size={14} color={colors.textSecondary} />
@@ -384,9 +367,9 @@ export default function HealthScoreSection({ healthScore, onScoreImproved, total
             <Text style={[s.sparklineLabel, {
               color: trend === 'up' ? colors.success : trend === 'down' ? colors.error : colors.textTertiary,
             }]}>
-              {trend === 'up' ? '최근 상승 추세' : trend === 'down' ? '최근 하락 추세' : '최근 보합'}
+              {trend === 'up' ? t('health_section.trend_up') : trend === 'down' ? t('health_section.trend_down') : t('health_section.trend_flat')}
             </Text>
-            <Text style={[s.sparklinePeriod, { color: colors.textTertiary }]}>최근 {sparklineData.length}일</Text>
+            <Text style={[s.sparklinePeriod, { color: colors.textTertiary }]}>{t('health_section.sparkline_period', { days: String(sparklineData.length) })}</Text>
           </View>
           <LineChart
             data={{
@@ -419,42 +402,42 @@ export default function HealthScoreSection({ healthScore, onScoreImproved, total
 
       {/* 등급별 상세 해석 */}
       <Text style={[s.summary, { color: healthScore.gradeColor }]}>
-        {GRADE_ICONS[healthScore.grade]} {GRADE_INTERPRETATIONS[healthScore.grade]}
+        {GRADE_ICONS[healthScore.grade]} {t(`health_section.grade_interpretations.${GRADE_INTERPRETATION_KEYS[healthScore.grade] ?? healthScore.grade}`)}
       </Text>
 
       {/* [NEW] 역사적 맥락 비교 — 달리오 철학 */}
       <View style={[s.historicalContext, { backgroundColor: colors.surfaceElevated }]}>
         <View style={s.historicalRow}>
           <Ionicons name="time-outline" size={14} color={colors.textSecondary} />
-          <Text style={[s.historicalLabel, { color: colors.textSecondary }]}>역사적 기준점 — 레이 달리오 원칙</Text>
+          <Text style={[s.historicalLabel, { color: colors.textSecondary }]}>{t('health_section.historical_title')}</Text>
         </View>
         <Text style={[s.historicalIntro, { color: colors.textSecondary }]}>
-          과거 금융위기 때 대부분의 투자자 점수는 아래와 같았어요.{'\n'}당신의 점수는 그 위기 때보다 얼마나 안전한지 확인하세요.
+          {t('health_section.historical_intro')}
         </Text>
         <View style={s.historicalComparison}>
           {/* 2008년 비교 */}
           <View style={[s.historicalCompareRow, { borderColor: colors.border }]}>
-            <Text style={[s.historicalCrisisLabel, { color: colors.textSecondary }]}>📉 2008년 금융위기 당시</Text>
+            <Text style={[s.historicalCrisisLabel, { color: colors.textSecondary }]}>{t('health_section.historical_2008_label')}</Text>
             <View style={s.historicalScoreRow}>
-              <Text style={[s.historicalCrisisScore, { color: colors.textSecondary }]}>평균 <Text style={{ fontWeight: '800' }}>35점</Text></Text>
+              <Text style={[s.historicalCrisisScore, { color: colors.textSecondary }]}>{t('health_section.historical_avg')}<Text style={{ fontWeight: '800' }}>35{t('health_section.historical_pts_label')}</Text></Text>
               <View style={[s.historicalDiffBadge, { backgroundColor: colors.success + '22' }]}>
-                <Text style={[s.historicalDiffText, { color: colors.success }]}>+{healthScore.totalScore - 35}점 ↑</Text>
+                <Text style={[s.historicalDiffText, { color: colors.success }]}>{t('health_section.historical_diff', { diff: String(healthScore.totalScore - 35) })}</Text>
               </View>
             </View>
           </View>
           {/* 2020년 비교 */}
           <View style={[s.historicalCompareRow, { borderColor: colors.border }]}>
-            <Text style={[s.historicalCrisisLabel, { color: colors.textSecondary }]}>🦠 2020년 코로나 팬데믹 당시</Text>
+            <Text style={[s.historicalCrisisLabel, { color: colors.textSecondary }]}>{t('health_section.historical_2020_label')}</Text>
             <View style={s.historicalScoreRow}>
-              <Text style={[s.historicalCrisisScore, { color: colors.textSecondary }]}>평균 <Text style={{ fontWeight: '800' }}>42점</Text></Text>
+              <Text style={[s.historicalCrisisScore, { color: colors.textSecondary }]}>{t('health_section.historical_avg')}<Text style={{ fontWeight: '800' }}>42{t('health_section.historical_pts_label')}</Text></Text>
               <View style={[s.historicalDiffBadge, { backgroundColor: colors.success + '22' }]}>
-                <Text style={[s.historicalDiffText, { color: colors.success }]}>+{healthScore.totalScore - 42}점 ↑</Text>
+                <Text style={[s.historicalDiffText, { color: colors.success }]}>{t('health_section.historical_diff', { diff: String(healthScore.totalScore - 42) })}</Text>
               </View>
             </View>
           </View>
         </View>
         <Text style={[s.historicalNote, { color: colors.textSecondary }]}>
-          💡 저 점수들은 시장이 극도로 불안할 때도 버텨낸 기준이에요.{'\n'}현재 당신은 그보다 높으니 패닉셀 할 이유가 없어요.
+          {t('health_section.historical_note')}
         </Text>
       </View>
 
@@ -462,7 +445,7 @@ export default function HealthScoreSection({ healthScore, onScoreImproved, total
       <View style={[s.whySection, { backgroundColor: colors.surfaceElevated }]}>
         <View style={s.whyRow}>
           <Ionicons name="help-circle-outline" size={14} color={colors.textSecondary} />
-          <Text style={[s.whyLabel, { color: colors.textSecondary }]}>왜 이 점수인가요?</Text>
+          <Text style={[s.whyLabel, { color: colors.textSecondary }]}>{t('health_section.why_label')}</Text>
         </View>
         <Text style={[s.whyText, { color: colors.textSecondary }]}>{whyExplanation}</Text>
       </View>
@@ -473,7 +456,7 @@ export default function HealthScoreSection({ healthScore, onScoreImproved, total
           <View style={s.peerHeader}>
             <Ionicons name="people-outline" size={13} color={colors.textSecondary} />
             <Text style={[s.peerLabel, { color: colors.textSecondary }]}>
-              같은 {bracketLabel} 구간 평균
+              {t('health_section.peer_label', { bracket: bracketLabel })}
             </Text>
           </View>
           <View style={s.peerStats}>
@@ -483,7 +466,7 @@ export default function HealthScoreSection({ healthScore, onScoreImproved, total
               }]}>
                 {peerData.avgReturnRate >= 0 ? '+' : ''}{peerData.avgReturnRate.toFixed(1)}%
               </Text>
-              <Text style={[s.peerStatLabel, { color: colors.textTertiary }]}>구간 평균 수익률</Text>
+              <Text style={[s.peerStatLabel, { color: colors.textTertiary }]}>{t('health_section.peer_avg_return')}</Text>
             </View>
             {peerData.top10ReturnRate > 0 && (
               <>
@@ -492,13 +475,13 @@ export default function HealthScoreSection({ healthScore, onScoreImproved, total
                   <Text style={[s.peerStatValue, { color: colors.success }]}>
                     +{peerData.top10ReturnRate.toFixed(1)}%
                   </Text>
-                  <Text style={[s.peerStatLabel, { color: colors.textTertiary }]}>상위 10%</Text>
+                  <Text style={[s.peerStatLabel, { color: colors.textTertiary }]}>{t('health_section.peer_top10')}</Text>
                 </View>
               </>
             )}
           </View>
           <Text style={[s.peerNote, { color: colors.textTertiary }]}>
-            {peerData.userCount.toLocaleString()}명의 {bracketLabel} 투자자 기준 · {peerData.statDate}
+            {t('health_section.peer_note', { count: peerData.userCount.toLocaleString(), bracket: bracketLabel, date: peerData.statDate })}
           </Text>
         </View>
       )}
@@ -508,7 +491,7 @@ export default function HealthScoreSection({ healthScore, onScoreImproved, total
         <View style={[s.actionGuideSection, { backgroundColor: colors.success + '1A', borderLeftColor: colors.success + '4D' }]}>
           <View style={s.actionGuideRow}>
             <Ionicons name="arrow-forward-circle-outline" size={14} color={colors.success} />
-            <Text style={[s.actionGuideLabel, { color: colors.success }]}>지금 할 수 있는 것</Text>
+            <Text style={[s.actionGuideLabel, { color: colors.success }]}>{t('health_section.action_guide_label')}</Text>
           </View>
           <Text style={[s.actionGuideText, { color: colors.textSecondary }]}>{actionGuidance}</Text>
         </View>
@@ -519,18 +502,18 @@ export default function HealthScoreSection({ healthScore, onScoreImproved, total
         <View style={[s.panicShield, { backgroundColor: colors.surfaceElevated }]}>
           <View style={s.panicShieldRow}>
             <Ionicons name="shield-checkmark-outline" size={15} color={colors.primaryDark ?? colors.primary} />
-            <Text style={[s.panicShieldLabel, { color: colors.textSecondary }]}>시장 위기 대비력</Text>
-            <Text style={[s.panicShieldScore, { color: colors.primaryDark ?? colors.primary }]}>{Math.round(panicScore)}점</Text>
+            <Text style={[s.panicShieldLabel, { color: colors.textSecondary }]}>{t('health_section.panic_shield_label')}</Text>
+            <Text style={[s.panicShieldScore, { color: colors.primaryDark ?? colors.primary }]}>{Math.round(panicScore)}pts</Text>
             <Text style={[s.panicShieldStatus, {
               color: panicScore >= 70 ? colors.success : panicScore >= 50 ? colors.warning : colors.error,
-            }]}>{panicScore >= 70 ? '안정' : panicScore >= 50 ? '보통' : '주의'}</Text>
+            }]}>{panicScore >= 70 ? t('health_section.panic_stable') : panicScore >= 50 ? t('health_section.panic_ok') : t('health_section.panic_caution')}</Text>
           </View>
           <Text style={[s.panicShieldReason, { color: colors.textTertiary }]}>
             {panicScore >= 70
-              ? '시장이 급락해도 버틸 수 있는 안정적인 구조예요'
+              ? t('health_section.panic_reason_stable')
               : panicScore >= 50
-              ? '괜찮은 편이지만, 현금이나 채권을 조금 더 늘리면 안심이 돼요'
-              : '급락 시 불안해질 수 있어요. 현금이나 채권 비중을 늘려보세요'}
+              ? t('health_section.panic_reason_ok')
+              : t('health_section.panic_reason_caution')}
           </Text>
         </View>
       )}
@@ -540,13 +523,14 @@ export default function HealthScoreSection({ healthScore, onScoreImproved, total
         <View style={s.miniFactors}>
           {/* 헤더: 높을수록 좋다는 안내 */}
           <View style={[s.factorHeaderRow, { borderBottomColor: colors.border }]}>
-            <Text style={[s.factorHeaderLabel, { color: colors.textSecondary }]}>지표</Text>
-            <Text style={[s.factorHeaderHint, { color: colors.textSecondary }]}>← 낮음 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 높을수록 좋음 →</Text>
+            <Text style={[s.factorHeaderLabel, { color: colors.textSecondary }]}>{t('health_section.factor_header_label')}</Text>
+            <Text style={[s.factorHeaderHint, { color: colors.textSecondary }]}>{t('health_section.factor_header_hint')}</Text>
           </View>
           {healthScore.factors.map((factor, idx) => {
             const barColor = factor.score >= 70 ? colors.success : factor.score >= 40 ? colors.warning : colors.error;
-            const status = getFactorStatus(factor.score);
-            const friendlyLabel = FACTOR_LABELS[factor.label] || factor.label;
+            const statusInfo = getFactorStatusKey(factor.score);
+            const labelKey = FACTOR_LABEL_KEYS[factor.label] || 'drift';
+            const friendlyLabel = t(`health_section.factor_labels.${labelKey}`);
             return (
               <View key={idx} style={s.miniFactor}>
                 <Text style={s.miniIcon}>{factor.icon}</Text>
@@ -556,7 +540,7 @@ export default function HealthScoreSection({ healthScore, onScoreImproved, total
                 </View>
                 <Text style={[s.miniScore, { color: barColor }]}>{factor.score}</Text>
                 <View style={[s.miniStatusBadge, { backgroundColor: barColor + '22' }]}>
-                  <Text style={[s.miniStatusText, { color: barColor }]}>{status.label}</Text>
+                  <Text style={[s.miniStatusText, { color: barColor }]}>{t(`health_section.${statusInfo.key}`)}</Text>
                 </View>
 
                 {/* 툴팁 아이콘 */}
@@ -581,7 +565,7 @@ export default function HealthScoreSection({ healthScore, onScoreImproved, total
           {/* 팩터별 개선 제안 (40점 미만) */}
           {healthScore.factors.some(f => f.score < 40) && (
             <View style={[s.suggestionsSection, { borderTopColor: colors.border }]}>
-              <Text style={[s.suggestionsTitle, { color: colors.warning }]}>개선 제안</Text>
+              <Text style={[s.suggestionsTitle, { color: colors.warning }]}>{t('health_section.suggestions_title')}</Text>
               {healthScore.factors.map((factor, idx) => (
                 <View key={idx}>
                   {renderSuggestion(factor)}
@@ -607,7 +591,8 @@ export default function HealthScoreSection({ healthScore, onScoreImproved, total
           <TouchableOpacity activeOpacity={1} style={[s.tooltipModal, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             {(() => {
               const detail = FACTOR_DETAILS[tooltipFactorKey];
-              const friendlyLabel = FACTOR_LABELS[tooltipFactorKey] || tooltipFactorKey;
+              const labelKey = FACTOR_LABEL_KEYS[tooltipFactorKey] || 'drift';
+              const friendlyLabel = t(`health_section.factor_labels.${labelKey}`);
               if (!detail) return null;
               return (
                 <>
@@ -624,31 +609,31 @@ export default function HealthScoreSection({ healthScore, onScoreImproved, total
 
                     {/* 높을 때 */}
                     <View style={[s.tooltipSection, { backgroundColor: `${colors.success}20`, borderLeftColor: colors.success }]}>
-                      <Text style={[s.tooltipSectionTitle, { color: colors.success }]}>✅ 점수가 높을 때 (70점 이상)</Text>
+                      <Text style={[s.tooltipSectionTitle, { color: colors.success }]}>{t('health_section.tooltip_when_high_title')}</Text>
                       <Text style={[s.tooltipSectionText, { color: colors.textSecondary }]}>{detail.whenHigh}</Text>
                     </View>
 
                     {/* 낮을 때 */}
                     <View style={[s.tooltipSection, { backgroundColor: `${colors.error}20`, borderLeftColor: colors.error }]}>
-                      <Text style={[s.tooltipSectionTitle, { color: colors.error }]}>⚠️ 점수가 낮을 때 (40점 미만)</Text>
+                      <Text style={[s.tooltipSectionTitle, { color: colors.error }]}>{t('health_section.tooltip_when_low_title')}</Text>
                       <Text style={[s.tooltipSectionText, { color: colors.textSecondary }]}>{detail.whenLow}</Text>
                     </View>
 
                     {/* 계산 공식 */}
                     <View style={[s.tooltipSection, { backgroundColor: colors.surfaceElevated, borderLeftColor: colors.border }]}>
-                      <Text style={[s.tooltipSectionTitle, { color: colors.textSecondary }]}>📐 계산 방식</Text>
+                      <Text style={[s.tooltipSectionTitle, { color: colors.textSecondary }]}>{t('health_section.tooltip_formula_title')}</Text>
                       <Text style={[s.tooltipSectionText, { color: colors.textSecondary, fontFamily: 'monospace' }]}>{detail.formula}</Text>
                     </View>
 
                     {/* 데이터 소스 */}
                     <View style={[s.tooltipSection, { backgroundColor: colors.surfaceElevated, borderLeftColor: colors.border }]}>
-                      <Text style={[s.tooltipSectionTitle, { color: colors.textSecondary }]}>📊 데이터 출처</Text>
+                      <Text style={[s.tooltipSectionTitle, { color: colors.textSecondary }]}>{t('health_section.tooltip_data_source_title')}</Text>
                       <Text style={[s.tooltipSectionText, { color: colors.textSecondary }]}>{detail.dataSource}</Text>
                     </View>
 
                     {/* 개선 팁 */}
                     <View style={[s.tooltipSection, { backgroundColor: colors.success + '15', borderLeftColor: colors.success }]}>
-                      <Text style={[s.tooltipSectionTitle, { color: colors.success }]}>💡 개선 방법</Text>
+                      <Text style={[s.tooltipSectionTitle, { color: colors.success }]}>{t('health_section.tooltip_tip_title')}</Text>
                       <Text style={[s.tooltipSectionText, { color: colors.textSecondary }]}>{detail.tip}</Text>
                     </View>
                   </ScrollView>
