@@ -180,37 +180,36 @@ export default function CardSwipeContainer({
         </Animated.View>
       )}
 
-      {/* 카드 아래: 탭 형태 네비게이터 (터치 + 스와이프 모두 지원) */}
-      <View style={styles.bottomNav}>
-        {labels.map((label, index) => (
-          <TouchableOpacity
-            key={index}
-            style={styles.navItem}
-            onPress={() => handleTabPress(index)}
-            activeOpacity={0.6}
-          >
-            <Text
-              style={[
-                styles.label,
-                { color: colors.textTertiary },
-                index === currentPage && [styles.labelActive, { color: colors.textPrimary }],
-              ]}
+      {/* 하단 고정: 탭 네비게이터 + 페이지 카운터 */}
+      <View style={[styles.bottomFixed, { bottom: insets.bottom + 56, backgroundColor: colors.background }]}>
+        <View style={styles.bottomNav}>
+          {labels.map((label, index) => (
+            <TouchableOpacity
+              key={index}
+              style={styles.navItem}
+              onPress={() => handleTabPress(index)}
+              activeOpacity={0.6}
             >
-              {label}
-            </Text>
-            <View
-              style={[
-                styles.indicator,
-                { backgroundColor: colors.border },
-                index === currentPage && [styles.indicatorActive, { backgroundColor: colors.primary }],
-              ]}
-            />
-          </TouchableOpacity>
-        ))}
-      </View>
+              <Text
+                style={[
+                  styles.label,
+                  { color: colors.textTertiary },
+                  index === currentPage && [styles.labelActive, { color: colors.textPrimary }],
+                ]}
+              >
+                {label}
+              </Text>
+              <View
+                style={[
+                  styles.indicator,
+                  { backgroundColor: colors.border },
+                  index === currentPage && [styles.indicatorActive, { backgroundColor: colors.primary }],
+                ]}
+              />
+            </TouchableOpacity>
+          ))}
+        </View>
 
-      {/* 페이지 카운터 (1/3 형태) */}
-      <View style={[styles.pageCounter, { paddingBottom: insets.bottom + 60 }]}>
         <Text style={[styles.pageCounterText, { color: colors.textTertiary }]}>
           {currentPage + 1} / {childCount}
         </Text>
@@ -228,13 +227,20 @@ const styles = StyleSheet.create({
     flex: 1,
     // backgroundColor는 동적으로 적용됨 (colors.background)
   },
+  bottomFixed: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    paddingTop: 8,
+    paddingBottom: 6,
+  },
   bottomNav: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     gap: 32,
-    paddingTop: 6,
-    paddingBottom: 2,
+    paddingBottom: 4,
   },
   navItem: {
     alignItems: 'center',
@@ -287,13 +293,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 0.3,
   },
-  pageCounter: {
-    alignItems: 'center',
-    // paddingBottom is applied dynamically via insets.bottom + 68 (tab bar height + 8px buffer)
-  },
   pageCounterText: {
     fontSize: 12,
     fontWeight: '500',
     letterSpacing: 1,
+    marginTop: 2,
   },
 });
