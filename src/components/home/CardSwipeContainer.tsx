@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
     paddingTop: 4,
   },
   cardScrollContent: {
-    paddingBottom: 8,
+    paddingBottom: 72,
   },
   swipeHint: {
     position: 'absolute',
