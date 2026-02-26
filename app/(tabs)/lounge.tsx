@@ -42,6 +42,10 @@ import {
 import CommunityPostCard from '../../src/components/CommunityPostCard';
 import GatheringCard from '../../src/components/GatheringCard';
 import { LoungeSkeleton } from '../../src/components/SkeletonLoader';
+import VerifyAssetsModal from '../../src/components/lounge/VerifyAssetsModal';
+import SilverMotivationBanner from '../../src/components/lounge/SilverMotivationBanner';
+import { useVerificationStatus } from '../../src/hooks/useVerification';
+import { getTierFeatures } from '../../src/config/tierFeatures';
 import {
   CATEGORY_INFO,
   CommunityCategory,
@@ -49,6 +53,7 @@ import {
   LOUNGE_VIEW_THRESHOLD,
   LOUNGE_COMMENT_THRESHOLD,
   LOUNGE_POST_THRESHOLD,
+  TIER_THRESHOLDS,
 } from '../../src/types/community';
 import { formatAssetAmount, formatCommunityDisplayTag } from '../../src/utils/communityUtils';
 import { getLocaleCode } from '../../src/utils/formatters';
@@ -367,6 +372,10 @@ function LoungeScreenInner() {
   const { language, t } = useLocale();
   const { weather } = useWeather();
   const dailyQuote = getDailyQuote();
+
+  // 자산 인증 상태
+  const { data: verificationStatus, invalidate: invalidateVerification } = useVerificationStatus();
+  const [verifyModalVisible, setVerifyModalVisible] = useState(false);
 
   // 세그먼트 상태
   const [activeSegment, setActiveSegment] = useState<Segment>('community');
@@ -917,6 +926,7 @@ function LoungeScreenInner() {
                 );
               }}
               ListHeaderComponent={
+                <>
                 <View style={[styles.welcomeBanner, { backgroundColor: welcomeBannerBackground }]}>
                   <View style={styles.welcomeTop}>
                     <Text style={styles.welcomeIcon}>{'🏦'}</Text>
@@ -969,7 +979,53 @@ function LoungeScreenInner() {
                       </Text>
                     </View>
                   </View>
+
+                  {/* 자산 인증 버튼 */}
+                  <TouchableOpacity
+                    style={[
+                      styles.verifyButton,
+                      {
+                        backgroundColor: verificationStatus.isVerified
+                          ? 'rgba(76, 175, 80, 0.15)'
+                          : 'rgba(33, 150, 243, 0.15)',
+                      },
+                    ]}
+                    onPress={() => {
+                      if (!verificationStatus.isVerified) {
+                        setVerifyModalVisible(true);
+                      }
+                    }}
+                    disabled={verificationStatus.isVerified}
+                  >
+                    <Text style={{ fontSize: 14 }}>
+                      {verificationStatus.isVerified ? '✅' : '🔒'}
+                    </Text>
+                    <Text style={[
+                      styles.verifyButtonText,
+                      { color: verificationStatus.isVerified ? '#4CAF50' : '#2196F3' },
+                    ]}>
+                      {verificationStatus.isVerified
+                        ? t('lounge.verified_badge')
+                        : t('lounge.verify_assets_button')}
+                    </Text>
+                  </TouchableOpacity>
                 </View>
+
+                {/* SILVER 유저 동기부여 배너 */}
+                {eligibility && eligibility.totalAssets < TIER_THRESHOLDS.GOLD && (
+                  <SilverMotivationBanner totalAssets={eligibility.totalAssets} />
+                )}
+
+                {/* DIAMOND 전용 필터 (인라인) */}
+                {eligibility && eligibility.totalAssets >= TIER_THRESHOLDS.DIAMOND && (
+                  <View style={styles.diamondFilterContainer}>
+                    <Text style={{ fontSize: 14 }}>{'💎'}</Text>
+                    <Text style={[styles.diamondFilterText, { color: '#B9F2FF' }]}>
+                      {t('lounge.diamond_exclusive')}
+                    </Text>
+                  </View>
+                )}
+                </>
               }
               ListEmptyComponent={
                 postsLoading ? (
@@ -1150,6 +1206,17 @@ function LoungeScreenInner() {
           </>
         )}
       </KeyboardAvoidingView>
+
+      {/* 자산 인증 모달 */}
+      <VerifyAssetsModal
+        visible={verifyModalVisible}
+        onClose={() => setVerifyModalVisible(false)}
+        totalAssets={eligibility?.totalAssets ?? 0}
+        onVerified={() => {
+          invalidateVerification();
+          setVerifyModalVisible(false);
+        }}
+      />
     </View>
   );
 }
@@ -1461,6 +1528,39 @@ const styles = StyleSheet.create({
   },
   accessBadgeLabel: {
     fontSize: 12,
+    fontWeight: '600',
+  },
+
+  // ── 자산 인증 버튼 ──
+  verifyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginTop: 12,
+    alignSelf: 'flex-start',
+  },
+  verifyButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+
+  // ── DIAMOND 전용 필터 ──
+  diamondFilterContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: 'rgba(185, 242, 255, 0.08)',
+    borderRadius: 8,
+    marginBottom: 12,
+    alignSelf: 'flex-start',
+  },
+  diamondFilterText: {
+    fontSize: 13,
     fontWeight: '600',
   },
 

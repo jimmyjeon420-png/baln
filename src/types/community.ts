@@ -69,6 +69,7 @@ export interface CommunityPost {
   total_assets_at_post: number;
   top_holdings: HoldingSnapshot[];  // 작성자 상위 보유종목
   image_urls?: string[];     // 첨부 이미지 URL 배열 (최대 3장)
+  is_author_verified?: boolean; // 작성자 자산 인증 여부 (작성 시점 스냅샷)
   created_at: string;
 }
 

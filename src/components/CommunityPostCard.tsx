@@ -16,7 +16,9 @@ import {
   HoldingSnapshot,
   TIER_COLORS,
   CATEGORY_INFO,
+  TIER_THRESHOLDS,
 } from '../types/community';
+import { getTierFeatures } from '../config/tierFeatures';
 import {
   getTierFromAssets,
   getTierIcon,
@@ -127,6 +129,14 @@ export default function CommunityPostCard({
                   <Ionicons name="help-circle" size={10} color={colors.primaryDark ?? colors.success} />
                   <Text style={[styles.beginnerBadgeLabel, { color: colors.primaryDark ?? colors.success }]}>초보 질문</Text>
                 </View>
+              )}
+              {/* 자산 인증 뱃지 */}
+              {(post as any).is_author_verified && (
+                <Text style={styles.verifiedBadge}>✅</Text>
+              )}
+              {/* 왕관 뱃지 (PLATINUM/DIAMOND) */}
+              {getTierFeatures(tier).crownBadge && (
+                <Text style={styles.crownBadge}>👑</Text>
               )}
             </View>
             {assetMixText && (
@@ -284,6 +294,12 @@ const styles = StyleSheet.create({
   beginnerBadgeLabel: {
     fontSize: 11,
     fontWeight: '700',
+  },
+  verifiedBadge: {
+    fontSize: 12,
+  },
+  crownBadge: {
+    fontSize: 12,
   },
 
   // ── 보유종목 칩 ──

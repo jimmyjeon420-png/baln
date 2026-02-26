@@ -68,8 +68,10 @@ import {
 import CommentItem from '../../src/components/community/CommentItem';
 import ReplySection from '../../src/components/community/ReplySection';
 import ReportModal from '../../src/components/community/ReportModal';
+import GuruCommentBubble from '../../src/components/community/GuruCommentBubble';
 import { useAuth } from '../../src/context/AuthContext';
 import { useMyBookmarks, useToggleBookmark } from '../../src/hooks/useBookmarks';
+import { useGuruComments } from '../../src/hooks/useGuruComments';
 import { validateContent, getViolationMessage } from '../../src/services/contentFilter';
 import { useTheme } from '../../src/hooks/useTheme';
 
@@ -120,6 +122,9 @@ export default function PostDetailScreen() {
   const { data: myBookmarks } = useMyBookmarks();
   const toggleBookmark = useToggleBookmark();
   const isBookmarked = myBookmarks?.has(id || '') ?? false;
+
+  // 구루 AI 댓글
+  const { data: guruComments, isLoading: guruCommentsLoading } = useGuruComments(id || '');
 
   // 삭제 중인 댓글 ID 추적 (개별 로딩 상태)
   const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
@@ -398,6 +403,10 @@ export default function PostDetailScreen() {
                     <Text style={[styles.beginnerBadgeText, { color: colors.primary }]}>초보 질문</Text>
                   </View>
                 )}
+                {/* 자산 인증 뱃지 */}
+                {(post as any).is_author_verified && (
+                  <Text style={{ fontSize: 12 }}>✅</Text>
+                )}
               </View>
               {assetMixText ? (
                 <Text style={[styles.postAssetMix, { color: colors.textTertiary }]}>{assetMixText}</Text>
@@ -511,6 +520,34 @@ export default function PostDetailScreen() {
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* 구루들의 반응 섹션 */}
+      {(guruComments && guruComments.length > 0) || guruCommentsLoading ? (
+        <View style={styles.guruReactionsSection}>
+          <Text style={[styles.guruReactionsTitle, { color: colors.textSecondary }]}>
+            구루들의 반응
+          </Text>
+          {guruCommentsLoading ? (
+            <View style={styles.guruThinkingContainer}>
+              <ActivityIndicator size="small" color={colors.primary} />
+              <Text style={[styles.guruThinkingText, { color: colors.textTertiary }]}>
+                구루들이 생각 중...
+              </Text>
+            </View>
+          ) : (
+            guruComments?.map((gc) => (
+              <GuruCommentBubble
+                key={gc.id}
+                guruId={gc.guru_id}
+                content={gc.content}
+                contentEn={gc.content_en}
+                sentiment={gc.sentiment}
+                createdAt={gc.created_at}
+              />
+            ))
+          )}
+        </View>
+      ) : null}
 
       {/* 댓글 섹션 헤더 */}
       <View style={styles.commentsHeader}>
@@ -833,6 +870,27 @@ const styles = StyleSheet.create({
   },
   postActionText: {
     fontSize: 14,
+  },
+
+  // ── 구루 반응 섹션 ──
+  guruReactionsSection: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    gap: 8,
+  },
+  guruReactionsTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  guruThinkingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 12,
+  },
+  guruThinkingText: {
+    fontSize: 13,
   },
 
   // ── 댓글 섹션 ──

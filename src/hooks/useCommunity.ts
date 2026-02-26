@@ -26,6 +26,8 @@ import {
   LOUNGE_POST_THRESHOLD,
 } from '../types/community';
 import { formatCommunityDisplayTag } from '../utils/communityUtils';
+import { generateGuruCommentsForPost } from '../services/guruCommentService';
+import { grantPostWriteReward, grantLikeMilestoneReward, grantBestAnswerReward } from '../services/loungeRewardService';
 
 /**
  * 자산을 "X.X억" 또는 "X만" 형식으로 변환
@@ -243,6 +245,17 @@ export const useCreatePost = () => {
         })
         .filter((holding) => holding.value > 0);
 
+      // 작성자 인증 상태 조회 (best-effort)
+      let isAuthorVerified = false;
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('is_verified')
+          .eq('id', user.id)
+          .single();
+        isAuthorVerified = !!profile?.is_verified;
+      } catch { /* 실패 시 false 유지 */ }
+
       const { data, error } = await supabase
         .from('community_posts')
         .insert({
@@ -253,7 +266,8 @@ export const useCreatePost = () => {
           category: input.category,
           total_assets_at_post: input.totalAssets,
           top_holdings: topHoldings,
-          image_urls: input.imageUrls || null, // 이미지 URL 배열 추가
+          image_urls: input.imageUrls || null,
+          is_author_verified: isAuthorVerified,
         })
         .select()
         .single();
@@ -261,8 +275,16 @@ export const useCreatePost = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (newPost, variables) => {
       queryClient.invalidateQueries({ queryKey: ['communityPosts'] });
+
+      // 구루 AI 댓글 트리거 (fire-and-forget)
+      if (newPost?.id) {
+        generateGuruCommentsForPost(newPost.id, variables.content, variables.category).catch(() => {});
+      }
+
+      // 게시물 작성 보상 (fire-and-forget)
+      grantPostWriteReward().catch(() => {});
     },
   });
 };
@@ -443,11 +465,25 @@ export const useLikePost = () => {
       }
     },
 
-    // 서버 진실성 확보
-    onSettled: () => {
+    // 서버 진실성 확보 + 10좋아요 보상 체크
+    onSettled: (_data, _error, postId) => {
       queryClient.invalidateQueries({ queryKey: ['communityPosts'] });
       queryClient.invalidateQueries({ queryKey: ['myLikes'] });
       queryClient.invalidateQueries({ queryKey: ['communityPost'] });
+
+      // 10좋아요 달성 보상 체크 (fire-and-forget)
+      // 게시물 likes_count를 최신 데이터에서 확인
+      Promise.resolve(
+        supabase
+          .from('community_posts')
+          .select('likes_count')
+          .eq('id', postId)
+          .single()
+      ).then(({ data: post }) => {
+        if (post && post.likes_count >= 10) {
+          grantLikeMilestoneReward(postId).catch(() => {});
+        }
+      }).catch(() => {});
     },
   });
 };
@@ -1038,11 +1074,24 @@ export const useSelectBestAnswer = (postId: string) => {
         throw error;
       }
     },
-    onSuccess: () => {
+    onSuccess: (_data, commentId) => {
       queryClient.invalidateQueries({ queryKey: ['communityBestAnswer', postId] });
       queryClient.invalidateQueries({ queryKey: ['communityComments', postId] });
       queryClient.invalidateQueries({ queryKey: ['communityPost', postId] });
       queryClient.invalidateQueries({ queryKey: ['communityPosts'] });
+
+      // 베스트 답변 채택 보상: 댓글 작성자에게 5C (fire-and-forget)
+      Promise.resolve(
+        supabase
+          .from('community_comments')
+          .select('user_id')
+          .eq('id', commentId)
+          .single()
+      ).then(({ data: comment }) => {
+        if (comment?.user_id) {
+          grantBestAnswerReward(comment.user_id).catch(() => {});
+        }
+      }).catch(() => {});
     },
   });
 };
