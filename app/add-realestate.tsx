@@ -114,7 +114,7 @@ export default function AddRealEstateScreen() {
       // 순자산 계산
       const netValue = priceValue - debtValue;
       const ltvText = debtValue > 0
-        ? `\n대출: ${formatPrice(debtValue)} (LTV ${((debtValue / priceValue) * 100).toFixed(0)}%)\n순자산: ${formatPrice(netValue)}`
+        ? `\n${t('add_realestate.debt_label')}: ${formatPrice(debtValue)} (${t('add_realestate.ltv_label')} ${((debtValue / priceValue) * 100).toFixed(0)}%)\n${t('add_realestate.net_asset_label')}: ${formatPrice(netValue)}`
         : '';
 
       Alert.alert(
@@ -226,7 +226,7 @@ export default function AddRealEstateScreen() {
                       ) : null}
                       {item.areas.length > 0 ? (
                         <Text style={styles.metaText}>
-                          {item.areas.map(a => `${Math.round(sqmToPyeong(a))}평`).join(' / ')}
+                          {item.areas.map(a => `${Math.round(sqmToPyeong(a))}${t('add_realestate.pyeong_unit')}`).join(' / ')}
                         </Text>
                       ) : null}
                     </View>
@@ -275,7 +275,7 @@ export default function AddRealEstateScreen() {
                         <Text style={styles.myRealEstateName}>{asset.name}</Text>
                         {unitArea > 0 && (
                           <Text style={styles.myRealEstateArea}>
-                            {unitArea.toFixed(1)}㎡ ({Math.round(sqmToPyeong(unitArea))}평)
+                            {unitArea.toFixed(1)}㎡ ({Math.round(sqmToPyeong(unitArea))}{t('add_realestate.pyeong_unit')})
                           </Text>
                         )}
                         <View style={styles.myRealEstatePriceRow}>
@@ -371,7 +371,7 @@ export default function AddRealEstateScreen() {
               <View style={styles.inputGroup}>
                 <TextInput
                   style={styles.dualInput}
-                  placeholder="평"
+                  placeholder={t('add_realestate.pyeong_unit')}
                   placeholderTextColor="#666"
                   keyboardType="numeric"
                   value={customAreaPyeong}
@@ -385,7 +385,7 @@ export default function AddRealEstateScreen() {
                     }
                   }}
                 />
-                <Text style={styles.unitLabel}>평</Text>
+                <Text style={styles.unitLabel}>{t('add_realestate.pyeong_unit')}</Text>
               </View>
             </View>
 

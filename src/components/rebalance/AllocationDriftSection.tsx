@@ -509,56 +509,63 @@ export default function AllocationDriftSection({
           style={[s.infoModal, { maxHeight: SCREEN_H * 0.78 }]}
           onPress={() => {}}
         >
-          {infoDetail && (
+          {infoDetail && infoKey && (
             <ScrollView
               showsVerticalScrollIndicator={false}
               contentContainerStyle={{ paddingBottom: 16 }}
             >
-              {/* 제목 */}
-              <Text style={[s.infoModalTitle, { color: colors.textPrimary }]}>{infoDetail.title}</Text>
+              {(() => {
+                const dk = `allocation_drift.category_details.${infoKey}`;
+                return (
+                  <>
+                    {/* 제목 */}
+                    <Text style={[s.infoModalTitle, { color: colors.textPrimary }]}>{t(`${dk}.title`)}</Text>
 
-              {/* 역할 */}
-              <View style={[s.infoSection, { backgroundColor: colors.surfaceLight }]}>
-                <Text style={[s.infoSectionLabel, { color: colors.textTertiary }]}>{t('allocation_drift.info_role_label')}</Text>
-                <Text style={[s.infoSectionText, { color: colors.textPrimary }]}>{infoDetail.role}</Text>
-              </View>
+                    {/* 역할 */}
+                    <View style={[s.infoSection, { backgroundColor: colors.surfaceLight }]}>
+                      <Text style={[s.infoSectionLabel, { color: colors.textTertiary }]}>{t('allocation_drift.info_role_label')}</Text>
+                      <Text style={[s.infoSectionText, { color: colors.textPrimary }]}>{t(`${dk}.role`)}</Text>
+                    </View>
 
-              {/* 달리오 관점 */}
-              <View style={[s.infoSection, { backgroundColor: '#4CAF5015' }]}>
-                <Text style={[s.infoSectionLabel, { color: '#4CAF50' }]}>{t('allocation_drift.info_dalio_label')}</Text>
-                <Text style={[s.infoSectionText, { color: colors.textSecondary }]}>{infoDetail.dalio}</Text>
-              </View>
+                    {/* 달리오 관점 */}
+                    <View style={[s.infoSection, { backgroundColor: '#4CAF5015' }]}>
+                      <Text style={[s.infoSectionLabel, { color: '#4CAF50' }]}>{t('allocation_drift.info_dalio_label')}</Text>
+                      <Text style={[s.infoSectionText, { color: colors.textSecondary }]}>{t(`${dk}.dalio`)}</Text>
+                    </View>
 
-              {/* 버핏 관점 */}
-              <View style={[s.infoSection, { backgroundColor: '#FFB74D15' }]}>
-                <Text style={[s.infoSectionLabel, { color: '#FFB74D' }]}>{t('allocation_drift.info_buffett_label')}</Text>
-                <Text style={[s.infoSectionText, { color: colors.textSecondary }]}>{infoDetail.buffett}</Text>
-              </View>
+                    {/* 버핏 관점 */}
+                    <View style={[s.infoSection, { backgroundColor: '#FFB74D15' }]}>
+                      <Text style={[s.infoSectionLabel, { color: '#FFB74D' }]}>{t('allocation_drift.info_buffett_label')}</Text>
+                      <Text style={[s.infoSectionText, { color: colors.textSecondary }]}>{t(`${dk}.buffett`)}</Text>
+                    </View>
 
-              {/* 좋을 때 */}
-              <View style={[s.infoSection, { backgroundColor: '#66BB6A15' }]}>
-                <Text style={[s.infoSectionLabel, { color: '#66BB6A' }]}>{t('allocation_drift.info_good_label')}</Text>
-                <Text style={[s.infoSectionText, { color: colors.textSecondary }]}>{infoDetail.whenGood}</Text>
-              </View>
+                    {/* 좋을 때 */}
+                    <View style={[s.infoSection, { backgroundColor: '#66BB6A15' }]}>
+                      <Text style={[s.infoSectionLabel, { color: '#66BB6A' }]}>{t('allocation_drift.info_good_label')}</Text>
+                      <Text style={[s.infoSectionText, { color: colors.textSecondary }]}>{t(`${dk}.when_good`)}</Text>
+                    </View>
 
-              {/* 나쁠 때 */}
-              <View style={[s.infoSection, { backgroundColor: '#FF8A6515' }]}>
-                <Text style={[s.infoSectionLabel, { color: '#FF8A65' }]}>{t('allocation_drift.info_bad_label')}</Text>
-                <Text style={[s.infoSectionText, { color: colors.textSecondary }]}>{infoDetail.whenBad}</Text>
-              </View>
+                    {/* 나쁠 때 */}
+                    <View style={[s.infoSection, { backgroundColor: '#FF8A6515' }]}>
+                      <Text style={[s.infoSectionLabel, { color: '#FF8A65' }]}>{t('allocation_drift.info_bad_label')}</Text>
+                      <Text style={[s.infoSectionText, { color: colors.textSecondary }]}>{t(`${dk}.when_bad`)}</Text>
+                    </View>
 
-              {/* 실용 팁 */}
-              <View style={[s.infoSection, { backgroundColor: '#64B5F615' }]}>
-                <Text style={[s.infoSectionLabel, { color: '#64B5F6' }]}>{t('allocation_drift.info_tip_label')}</Text>
-                <Text style={[s.infoSectionText, { color: colors.textSecondary }]}>{infoDetail.tip}</Text>
-              </View>
+                    {/* 실용 팁 */}
+                    <View style={[s.infoSection, { backgroundColor: '#64B5F615' }]}>
+                      <Text style={[s.infoSectionLabel, { color: '#64B5F6' }]}>{t('allocation_drift.info_tip_label')}</Text>
+                      <Text style={[s.infoSectionText, { color: colors.textSecondary }]}>{t(`${dk}.tip`)}</Text>
+                    </View>
 
-              <TouchableOpacity
-                style={[s.infoCloseBtn, { backgroundColor: colors.surfaceElevated }]}
-                onPress={() => setInfoKey(null)}
-              >
-                <Text style={[s.infoCloseBtnText, { color: colors.textSecondary }]}>{t('allocation_drift.info_modal_close')}</Text>
-              </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[s.infoCloseBtn, { backgroundColor: colors.surfaceElevated }]}
+                      onPress={() => setInfoKey(null)}
+                    >
+                      <Text style={[s.infoCloseBtnText, { color: colors.textSecondary }]}>{t('allocation_drift.info_modal_close')}</Text>
+                    </TouchableOpacity>
+                  </>
+                );
+              })()}
             </ScrollView>
           )}
         </TouchableOpacity>

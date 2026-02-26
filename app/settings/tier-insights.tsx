@@ -134,7 +134,7 @@ function TierAllocationCard({ stat, isMyTier }: { stat: TierAllocationStat; isMy
               <View key={h.ticker} style={styles.topHoldingItem}>
                 <Text style={[styles.topHoldingRank, { color: colors.textTertiary }]}>{i + 1}</Text>
                 <Text style={[styles.topHoldingTicker, { color: colors.textPrimary }]}>{h.ticker}</Text>
-                <Text style={[styles.topHoldingHolders, { color: colors.textTertiary }]}>{h.holders}명</Text>
+                <Text style={[styles.topHoldingHolders, { color: colors.textTertiary }]}>{t('tier_insights.members_count', { count: String(h.holders) })}</Text>
                 <Text style={[styles.topHoldingWeight, { color: colors.primary }]}>{h.avg_weight.toFixed(1)}%</Text>
               </View>
             ))}

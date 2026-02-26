@@ -64,7 +64,8 @@ export default function TierStrategyScreen() {
   const tierBasic = TIER_STRATEGIES[userTier];
   const tierDetail = TIER_STRATEGY_DETAILS[userTier];
   const tierColor = TIER_COLORS[userTier] || '#FFD700';
-  const tierLabel = TIER_LABELS[userTier] || '골드';
+  const tierLabelKey = `tier_strategy.tier_${(userTier || 'GOLD').toLowerCase()}` as const;
+  const tierLabel = t(tierLabelKey) || TIER_LABELS[userTier] || t('tier_strategy.tier_gold');
   const tierIcon = TIER_ICONS[userTier] || 'trophy';
 
   // 아코디언 펼침 상태 (null = 모두 접힘)
@@ -127,6 +128,17 @@ export default function TierStrategyScreen() {
       }
       return next;
     });
+  };
+
+  // 티어명 번역 헬퍼 (data는 한국어 고정값 → locale로 변환)
+  const getLocalizedTierName = (koreanName: string): string => {
+    const map: Record<string, string> = {
+      '실버': t('tier_strategy.tier_silver'),
+      '골드': t('tier_strategy.tier_gold'),
+      '플래티넘': t('tier_strategy.tier_platinum'),
+      '다이아몬드': t('tier_strategy.tier_diamond'),
+    };
+    return map[koreanName] || koreanName;
   };
 
   // 다음 티어 진행률 계산
@@ -382,7 +394,7 @@ export default function TierStrategyScreen() {
                 </View>
                 <View style={s.nextTierHeaderText}>
                   <Text style={[s.nextTierName, { color: nextTier.tierColor }]}>
-                    {nextTier.tierName}{t('tier_strategy.tier_grade_suffix')}
+                    {getLocalizedTierName(nextTier.tierName)}{t('tier_strategy.tier_grade_suffix')}
                   </Text>
                   <Text style={s.nextTierRequired}>
                     {t('tier_strategy.required_assets', { amount: Math.floor(nextTier.requiredAssets).toLocaleString() })}
