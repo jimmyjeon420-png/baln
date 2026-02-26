@@ -1,16 +1,10 @@
 /**
- * CardSwipeContainer.tsx - 3카드 수평 스와이프 컨테이너
+ * CardSwipeContainer.tsx - 카드 수평 스와이프 컨테이너
  *
  * 역할: "카드 네비게이션 컨트롤러"
- * - 3개 카드를 수평으로 배치
+ * - 카드를 수평으로 배치
  * - Instagram Stories 스타일 스와이프
  * - 페이지 인디케이터 + 카드 라벨
- * - 상단 헤더 (baln + ⚙️ 설정)
- *
- * Anti-Toss 원칙:
- * - Gateway: 스와이프 3번이면 모든 정보 확인
- * - 빼기 전략: ScrollView 수직 스크롤 제거, 탭바 제거
- * - One Page One Card: 한 화면에 카드 1장만
  */
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -26,7 +20,6 @@ import {
   LayoutChangeEvent,
   TouchableOpacity,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../hooks/useTheme';
 import { selection } from '../../services/hapticService';
 import { useLocale } from '../../context/LocaleContext';
@@ -38,24 +31,18 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 // ============================================================================
 
 interface CardSwipeContainerProps {
-  /** 카드 컴포넌트 배열 (정확히 3개) */
+  /** 카드 컴포넌트 배열 */
   children: React.ReactNode[];
-
-  /** 카드 라벨 (하단 인디케이터 아래 텍스트) */
-  labels?: string[]; // default: ['건강', '맥락', '예측']
-
-  /** ⚙️ 설정 버튼 탭 콜백 (deprecated - 제거됨) */
+  /** 카드 라벨 */
+  labels?: string[];
+  /** ⚙️ 설정 버튼 탭 콜백 (deprecated) */
   onSettingsPress?: () => void;
-
-  /** 초기 카드 인덱스 (기본 0) */
+  /** 초기 카드 인덱스 */
   initialIndex?: number;
-
-  /** 카드 전환 콜백 (analytics 등) */
+  /** 카드 전환 콜백 */
   onCardChange?: (index: number) => void;
-
   /** Pull-to-refresh 콜백 */
   onRefresh?: () => Promise<void>;
-
   /** 새로고침 중 여부 */
   refreshing?: boolean;
 }
@@ -76,7 +63,6 @@ export default function CardSwipeContainer({
   const [currentPage, setCurrentPage] = useState(initialIndex);
   const [scrollViewHeight, setScrollViewHeight] = useState(0);
   const scrollViewRef = useRef<ScrollView>(null);
-  const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const { t } = useLocale();
   const labels = labelsProp ?? [t('card_swipe.label_assets'), t('card_swipe.label_market'), t('card_swipe.label_predictions')];
@@ -87,7 +73,6 @@ export default function CardSwipeContainer({
   // 스와이프 힌트 애니메이션 (첫 페이지에서만 3초간 표시)
   useEffect(() => {
     if (currentPage === 0 && showSwipeHint) {
-      // 좌우 흔들기 애니메이션
       const shake = Animated.loop(
         Animated.sequence([
           Animated.timing(hintTranslateX, { toValue: -8, duration: 400, useNativeDriver: true }),
@@ -97,7 +82,6 @@ export default function CardSwipeContainer({
       );
       shake.start();
 
-      // 3초 후 페이드아웃
       const timeout = setTimeout(() => {
         Animated.timing(hintOpacity, {
           toValue: 0,
@@ -115,23 +99,20 @@ export default function CardSwipeContainer({
     }
   }, [currentPage, showSwipeHint, hintTranslateX, hintOpacity]);
 
-  // children 개수 기반 동적 처리 (빈 배열/비배열 안전 처리)
   const childArray = Array.isArray(children) ? children : [];
   const childCount = childArray.length;
 
-  // 스크롤 종료 시 페이지 추적 (범위 가드 추가)
   const handleScrollEnd = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    if (childCount <= 0) return; // 빈 상태 가드
+    if (childCount <= 0) return;
     const offsetX = e.nativeEvent.contentOffset.x;
     const page = Math.min(Math.max(Math.round(offsetX / SCREEN_WIDTH), 0), childCount - 1);
     if (page !== currentPage && page >= 0) {
       setCurrentPage(page);
-      selection(); // 햅틱 피드백
+      selection();
       onCardChange?.(page);
     }
   }, [childCount, currentPage, onCardChange]);
 
-  // 탭 라벨 터치 시 해당 페이지로 스크롤
   const handleTabPress = useCallback((index: number) => {
     if (index === currentPage || index < 0 || index >= childCount) return;
     scrollViewRef.current?.scrollTo({ x: index * SCREEN_WIDTH, animated: true });
@@ -142,7 +123,7 @@ export default function CardSwipeContainer({
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* 수평 스와이프 영역 */}
+      {/* 수평 스와이프 영역 — flex: 1로 남은 공간 전부 차지 */}
       <ScrollView
         ref={scrollViewRef}
         horizontal
@@ -168,7 +149,7 @@ export default function CardSwipeContainer({
         ))}
       </ScrollView>
 
-      {/* 스와이프 힌트 (첫 페이지에서만, 3초 후 사라짐) */}
+      {/* 스와이프 힌트 */}
       {showSwipeHint && currentPage === 0 && (
         <Animated.View
           style={[
@@ -180,40 +161,39 @@ export default function CardSwipeContainer({
         </Animated.View>
       )}
 
-      {/* 하단 고정: 탭 네비게이터 + 페이지 카운터 */}
-      <View style={[styles.bottomFixed, { bottom: insets.bottom + 56, backgroundColor: colors.background }]}>
-        <View style={styles.bottomNav}>
-          {labels.map((label, index) => (
-            <TouchableOpacity
-              key={index}
-              style={styles.navItem}
-              onPress={() => handleTabPress(index)}
-              activeOpacity={0.6}
+      {/* 탭 네비게이터 — ScrollView 바로 아래 (flow 레이아웃) */}
+      <View style={styles.bottomNav}>
+        {labels.map((label, index) => (
+          <TouchableOpacity
+            key={index}
+            style={styles.navItem}
+            onPress={() => handleTabPress(index)}
+            activeOpacity={0.6}
+          >
+            <Text
+              style={[
+                styles.label,
+                { color: colors.textTertiary },
+                index === currentPage && [styles.labelActive, { color: colors.textPrimary }],
+              ]}
             >
-              <Text
-                style={[
-                  styles.label,
-                  { color: colors.textTertiary },
-                  index === currentPage && [styles.labelActive, { color: colors.textPrimary }],
-                ]}
-              >
-                {label}
-              </Text>
-              <View
-                style={[
-                  styles.indicator,
-                  { backgroundColor: colors.border },
-                  index === currentPage && [styles.indicatorActive, { backgroundColor: colors.primary }],
-                ]}
-              />
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <Text style={[styles.pageCounterText, { color: colors.textTertiary }]}>
-          {currentPage + 1} / {childCount}
-        </Text>
+              {label}
+            </Text>
+            <View
+              style={[
+                styles.indicator,
+                { backgroundColor: colors.border },
+                index === currentPage && [styles.indicatorActive, { backgroundColor: colors.primary }],
+              ]}
+            />
+          </TouchableOpacity>
+        ))}
       </View>
+
+      {/* 페이지 카운터 */}
+      <Text style={[styles.pageCounterText, { color: colors.textTertiary }]}>
+        {currentPage + 1} / {childCount}
+      </Text>
     </View>
   );
 }
@@ -225,32 +205,35 @@ export default function CardSwipeContainer({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    // backgroundColor는 동적으로 적용됨 (colors.background)
   },
-  bottomFixed: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    paddingTop: 8,
-    paddingBottom: 6,
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+  },
+  cardWrapper: {
+    width: SCREEN_WIDTH,
+    paddingTop: 4,
+  },
+  cardScrollContent: {
+    paddingBottom: 16,
   },
   bottomNav: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     gap: 32,
-    paddingBottom: 4,
+    paddingTop: 6,
+    paddingBottom: 2,
   },
   navItem: {
     alignItems: 'center',
-    gap: 6,
+    gap: 4,
   },
   indicator: {
     width: 6,
     height: 4,
     borderRadius: 2,
-    // backgroundColor는 동적으로 적용됨 (colors.border)
   },
   indicatorActive: {
     width: 24,
@@ -265,21 +248,16 @@ const styles = StyleSheet.create({
   labelActive: {
     fontWeight: '700',
   },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-  },
-  cardWrapper: {
-    width: SCREEN_WIDTH,
-    paddingTop: 4,
-  },
-  cardScrollContent: {
-    paddingBottom: 72,
+  pageCounterText: {
+    fontSize: 12,
+    fontWeight: '500',
+    letterSpacing: 1,
+    textAlign: 'center',
+    paddingVertical: 4,
   },
   swipeHint: {
     position: 'absolute',
-    bottom: 120,
+    bottom: 80,
     alignSelf: 'center',
     backgroundColor: 'rgba(76, 175, 80, 0.9)',
     paddingHorizontal: 16,
@@ -292,11 +270,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     letterSpacing: 0.3,
-  },
-  pageCounterText: {
-    fontSize: 12,
-    fontWeight: '500',
-    letterSpacing: 1,
-    marginTop: 2,
   },
 });
