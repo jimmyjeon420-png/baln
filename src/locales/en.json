@@ -218,6 +218,7 @@
       "review": "Review"
     },
     "streak_label": "day streak",
+    "consecutive_days": "day streak",
     "all_done": "All done today!",
     "completed_count": "{{done}}/{{total}} done"
   },
@@ -1877,6 +1878,24 @@
       "label": "Sources"
     }
   },
+  "milestone_celebration": {
+    "badge_7": "\uD83D\uDD25 One-Week Warrior",
+    "title_7": "7-Day Streak!",
+    "subtitle_7": "A consistent start — you've earned the One-Week Warrior badge",
+    "badge_30": "\uD83D\uDCAA Monthly Master",
+    "title_30": "30-Day Streak!",
+    "subtitle_30": "A month together — your investment habit is taking hold",
+    "badge_90": "\uD83D\uDCAA Iron Investor",
+    "title_90": "90-Day Streak!",
+    "subtitle_90": "3 months in — you are a true iron investor",
+    "badge_365": "\uD83C\uDFC6 Legend",
+    "title_365": "365-Day Streak!",
+    "subtitle_365": "A full year together — the legendary investor badge is yours!",
+    "badge_default": "\u2728 {{count}}-Day Achievement",
+    "title_default": "{{count}}-Day Streak!",
+    "subtitle_default": "You're building a steady investment habit",
+    "share_message": "I hit a {{count}}-day investment streak on baln! {{badge}} badge earned! #baln #InvestingHabits"
+  },
   "reward_service": {
     "referral_sign_in_required": "Please sign in.",
     "referral_self_use": "You cannot use your own referral code.",
@@ -2190,7 +2209,65 @@
     "why_all_good": "All indicators are healthy. Your current investment strategy is working well.",
     "why_one_factor": "{{factor}} has shifted, pulling your overall score down. You can adjust it in the Analysis tab.",
     "why_two_factors": "Adjusting {{factor1}} and {{factor2}} would raise your score.",
-    "why_many_factors": "Adjusting {{factor}} and {{count}} other factors could bring your score up to {{projected}}."
+    "why_many_factors": "Adjusting {{factor}} and {{count}} other factors could bring your score up to {{projected}}.",
+    "factor_details": {
+      "drift": {
+        "summary": "Measures how far each asset's weight has drifted from your original purchase or target allocation.",
+        "when_high": "Each asset is within 5% of its target weight.\nYour portfolio is running as originally planned.",
+        "when_low": "You haven't set target weights yet, or certain assets have moved significantly.\n⚠️ Score is 0 if no target allocation is set.",
+        "formula": "Sum of |actual weight − target weight| for each asset ÷ 2\n→ 100 pts if drift is 0%, 0 pts if drift ≥ 25%",
+        "data_source": "Your manually entered asset prices + target weights (%) you've set per asset",
+        "tip": "Enter target weights (%) in the Analysis tab detail view to raise this score."
+      },
+      "concentration": {
+        "summary": "Measures whether risk is spread across assets rather than concentrated in any single one.",
+        "when_high": "No single asset accounts for more than 40% of total risk.\nEven if one asset crashes, the overall damage is limited.",
+        "when_low": "One asset is carrying more than half your total portfolio risk.\nIf that asset drops 30%, your entire portfolio is significantly impacted.",
+        "formula": "HHI concentration index of each asset's risk contribution (value × volatility)\n→ 100 pts when evenly spread, 0 pts when fully concentrated",
+        "data_source": "Your entered asset prices + standard volatility by asset type\n(e.g. Korean stocks 30%, crypto 80%, bonds 5%)",
+        "tip": "Trim the largest position and add bonds, cash, or other asset classes."
+      },
+      "correlation": {
+        "summary": "Measures whether your assets move in different directions. The more independently they move, the better the diversification.",
+        "when_high": "Assets move independently — like bonds rising when stocks fall.\nSome assets act as a buffer when markets turn.",
+        "when_low": "All your assets move in the same direction.\nHolding only stocks, crypto, and growth names means everything rises and falls together.",
+        "formula": "Weighted average of historical correlations between asset types by weight\n→ 100 pts if avg correlation ≤ −0.3, 0 pts if ≥ 0.8",
+        "data_source": "Historical correlation coefficients by asset-type pair (built-in reference values)\nExamples: Stocks↔Bonds −0.1, Stocks↔Crypto +0.5, Stocks↔Gold +0.1",
+        "tip": "Add assets that tend to move opposite to stocks — bonds, gold, or cash."
+      },
+      "volatility": {
+        "summary": "Measures how much your total portfolio value fluctuates.",
+        "when_high": "Annual price swings are under 18%.\nYour portfolio holds relatively stable even during market turbulence.",
+        "when_low": "Annual price swings exceed 30%.\nHigh crypto or growth stock exposure creates psychological pressure and panic-sell risk.",
+        "formula": "Weighted average of annual volatility per asset type × holding weight\n→ 100 pts if < 18%, 0 pts if ≥ 30%",
+        "data_source": "Standard annual volatility by asset type (built-in reference values)\nExamples: Korean stocks 30% / bonds 5% / crypto 80% / cash 0%",
+        "tip": "Reduce crypto or individual growth stock exposure; increase bond ETFs and cash to lower swings."
+      },
+      "downside": {
+        "summary": "Measures how many of your assets are currently at a loss.",
+        "when_high": "Few or no assets are at a loss.\nMost of your portfolio is at or above your cost basis.",
+        "when_low": "A significant portion of your portfolio is sitting at a loss.\nFurther declines can compound losses.",
+        "formula": "Weighted average of (cost basis − current price) ÷ cost basis × holding weight for losing assets\n→ 100 pts if no losses, 0 pts if weighted loss ≥ 33%",
+        "data_source": "Your manually entered cost basis (purchase price) + current asset value",
+        "tip": "For a long-term strategy, consider averaging down. For shorter-term, set a clear stop-loss level."
+      },
+      "tax": {
+        "summary": "Measures how well you're utilizing tax-loss harvesting opportunities.",
+        "when_high": "No assets are down more than 5%, or you've already harvested losses.\nYour tax efficiency is optimized.",
+        "when_low": "Several assets are down more than 5%.\nSelling them before year-end can offset gains elsewhere and reduce your tax bill.",
+        "formula": "Number of assets down ≥ 5% ÷ total liquid assets\n→ 100 pts if no harvesting opportunities, 0 pts if more than half qualify",
+        "data_source": "Your manually entered cost basis + current asset value",
+        "tip": "Sell losing assets then immediately buy similar ones — you keep your position while capturing the tax benefit."
+      },
+      "leverage": {
+        "summary": "Measures whether debt or leverage is being used at a safe level.",
+        "when_high": "No debt, or LTV is below 60% on stable assets (e.g. real estate).\nNo forced liquidation risk even if values decline.",
+        "when_low": "You're using leverage on high-volatility assets (crypto, growth stocks).\nA sharp drop could trigger forced liquidation (margin call).",
+        "formula": "LTV × asset volatility × asset value, summed across holdings ÷ total portfolio\n→ 100 pts if risk metric < 10%, approaches 0 as it rises",
+        "data_source": "Your entered loan-to-value ratio + asset price + standard volatility per asset type",
+        "tip": "Only use leverage on stable assets like real estate. Leveraged volatile assets carry extreme risk."
+      }
+    }
   },
   "allocation_drift": {
     "card_label": "Allocation Drift",
