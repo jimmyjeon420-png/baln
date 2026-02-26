@@ -199,6 +199,7 @@ export function GuruVillage({ height = VILLAGE_HEIGHT, onRoundtablePress }: Guru
               key={pos.guruId}
               position={pos}
               onPress={openGuruChat}
+              villageHeight={height}
             />
           ))}
         </View>

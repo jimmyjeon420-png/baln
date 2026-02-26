@@ -15,18 +15,19 @@ import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
 import { sentimentToExpression } from '../../services/characterService';
 import type { GuruPosition } from '../../hooks/useGuruVillage';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-const VILLAGE_HEIGHT = 280; // 마을 영역 높이
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface WanderingGuruProps {
   position: GuruPosition;
   onPress: (guruId: string) => void;
+  /** 마을 실제 높이 (px) — GuruVillage에서 전달 */
+  villageHeight: number;
 }
 
-export function WanderingGuru({ position, onPress }: WanderingGuruProps) {
+export function WanderingGuru({ position, onPress, villageHeight }: WanderingGuruProps) {
   const config = GURU_CHARACTER_CONFIGS[position.guruId];
   const animX = useRef(new Animated.Value(position.x * (SCREEN_WIDTH - 60))).current;
-  const animY = useRef(new Animated.Value(position.y * VILLAGE_HEIGHT)).current;
+  const animY = useRef(new Animated.Value(position.y * villageHeight)).current;
   const bubbleOpacity = useRef(new Animated.Value(0)).current;
   const bubbleScale = useRef(new Animated.Value(0.8)).current;
 
@@ -39,7 +40,7 @@ export function WanderingGuru({ position, onPress }: WanderingGuruProps) {
         useNativeDriver: true,
       }),
       Animated.timing(animY, {
-        toValue: position.y * VILLAGE_HEIGHT,
+        toValue: position.y * villageHeight,
         duration: 2500,
         useNativeDriver: true,
       }),

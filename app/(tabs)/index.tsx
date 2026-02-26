@@ -809,32 +809,8 @@ export default function HomeScreen() {
         </ErrorBoundary>
       </CardSwipeContainer>
 
-      {/* 오늘의 투자 명언 (구루 명언 은행 — 날짜 기반 결정론적 선택) */}
-      {dailyQuote && (
-        <View style={[styles.quoteCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Text style={styles.quoteEmoji}>💬</Text>
-          <Text style={[styles.quoteText, { color: colors.textSecondary }]}>
-            "{language === 'ko' ? dailyQuote.quote : dailyQuote.quoteEn}"
-          </Text>
-          <Text style={[styles.quoteAuthor, { color: colors.textTertiary }]}>
-            {(() => {
-              const GURU_LABELS: Record<string, string> = {
-                buffett: t('home.quote_author.buffett'),
-                dalio: t('home.quote_author.dalio'),
-                cathie_wood: t('home.quote_author.cathie_wood'),
-                druckenmiller: t('home.quote_author.druckenmiller'),
-                saylor: t('home.quote_author.saylor'),
-                dimon: t('home.quote_author.dimon'),
-                musk: t('home.quote_author.musk'),
-                lynch: t('home.quote_author.lynch'),
-                marks: t('home.quote_author.marks'),
-                rogers: t('home.quote_author.rogers'),
-              };
-              return '— ' + (GURU_LABELS[dailyQuote.guruId] ?? dailyQuote.guruId);
-            })()}
-          </Text>
-        </View>
-      )}
+      {/* 오늘의 투자 명언 — CardSwipeContainer 밖에서는 공간 부족으로 잘림
+         TODO: 추후 카드 내부(HealthSignalCard 하단)로 이동 검토 */}
 
       {/* 맥락 카드 전체 모달 (4겹 레이어) */}
       <Modal
