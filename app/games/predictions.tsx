@@ -381,7 +381,7 @@ export default function PredictionsScreen() {
                       </View>
                     )}
                     {poll.myCreditsEarned > 0 && (
-                      <Text style={styles.historyCreditText}>+{poll.myCreditsEarned}C</Text>
+                      <Text style={styles.historyCreditText}>+{poll.myCreditsEarned}개</Text>
                     )}
                   </View>
                 </View>

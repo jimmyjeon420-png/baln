@@ -36,9 +36,9 @@ export default function CreditBadge({
   };
 
   const sizeStyles = {
-    small: { paddingH: 8, paddingV: 4, fontSize: 13, iconSize: 12 },
-    medium: { paddingH: 12, paddingV: 6, fontSize: 15, iconSize: 14 },
-    large: { paddingH: 16, paddingV: 8, fontSize: 17, iconSize: 16 },
+    small: { paddingH: 8, paddingV: 4, fontSize: 13, iconSize: 24 },
+    medium: { paddingH: 12, paddingV: 6, fontSize: 15, iconSize: 28 },
+    large: { paddingH: 16, paddingV: 8, fontSize: 17, iconSize: 32 },
   }[size];
 
   return (
@@ -56,12 +56,7 @@ export default function CreditBadge({
       activeOpacity={0.7}
     >
       {showIcon && (
-        <Ionicons
-          name="diamond"
-          size={sizeStyles.iconSize}
-          color={colors.premium.purple}
-          style={styles.icon}
-        />
+        <Text style={[styles.icon, { fontSize: sizeStyles.iconSize }]}>🌰</Text>
       )}
       <Text style={[styles.text, { fontSize: sizeStyles.fontSize, color: colors.textPrimary }]}>
         {balance.toLocaleString()}

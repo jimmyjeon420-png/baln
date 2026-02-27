@@ -11,6 +11,7 @@ import { View, Text, StyleSheet, Animated } from 'react-native';
 import { CharacterAvatar } from '../character/CharacterAvatar';
 import { useSpeakingAnimation } from '../character/animations/useSpeakingAnimation';
 import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
+import { getGuruDisplayName } from '../../services/characterService';
 
 interface ParticipantRowProps {
   /** 참석자 guruId 배열 */
@@ -65,7 +66,7 @@ function ParticipantAvatar({
         </View>
       </Animated.View>
       <Text style={[styles.name, isActive && { color: accentColor, fontWeight: '700' }]} numberOfLines={1}>
-        {config?.guruName || guruId}
+        {getGuruDisplayName(guruId)}
       </Text>
     </View>
   );

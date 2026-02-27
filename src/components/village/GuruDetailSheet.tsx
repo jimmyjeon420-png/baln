@@ -26,6 +26,7 @@ import {
 } from 'react-native';
 import type { GuruMood, GuruActivity, FriendshipTier, GuruFriendship } from '../../types/village';
 import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
+import { getGuruDisplayName } from '../../services/characterService';
 import { CharacterAvatar } from '../character/CharacterAvatar';
 import ActivityBubble from './ActivityBubble';
 import FriendshipMeter from './FriendshipMeter';
@@ -283,7 +284,7 @@ const GuruDetailSheet = React.memo(function GuruDetailSheet({
   if (!isVisible || !guruId) return null;
 
   const config = GURU_CHARACTER_CONFIGS[guruId];
-  const guruName = isKo ? (config?.guruName ?? guruId) : (config?.guruNameEn ?? guruId);
+  const guruName = getGuruDisplayName(guruId);
   const animalType = isKo ? (config?.characterConcept ?? '') : (config?.characterConceptEn ?? '');
   const moodEmoji = getMoodEmoji(mood);
   const moodLabel = getMoodLabel(mood, isKo);

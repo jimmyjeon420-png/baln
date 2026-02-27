@@ -21,6 +21,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../src/hooks/useTheme';
+import { useLocale } from '../../src/context/LocaleContext';
 import {
   usePredictionFeed,
   type PredictionItem,
@@ -41,11 +42,11 @@ import PredictionCard from '../../src/components/prediction/PredictionCard';
 
 type NewsTab = MarketNewsCategory | 'polymarket';
 
-const CATEGORY_TABS: { key: NewsTab; label: string }[] = [
-  { key: 'stock', label: '주식' },
-  { key: 'crypto', label: '암호화폐' },
-  { key: 'macro', label: '거시경제' },
-  { key: 'polymarket', label: '폴리마켓' },
+const TAB_KEYS: { key: NewsTab; labelKey: string }[] = [
+  { key: 'stock', labelKey: 'news.tab_stock' },
+  { key: 'crypto', labelKey: 'news.tab_crypto' },
+  { key: 'macro', labelKey: 'news.tab_macro' },
+  { key: 'polymarket', labelKey: 'news.tab_polymarket' },
 ];
 
 // Format update time (HH:MM)
@@ -79,6 +80,7 @@ function openNewsArticle(item: MarketNewsItem) {
 export default function NewsTabScreen() {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
+  const { t } = useLocale();
   const [category, setCategory] = useState<NewsTab>('stock');
 
   // 뉴스 상세 바텀시트 상태
@@ -130,11 +132,11 @@ export default function NewsTabScreen() {
 
   // Focus banner 텍스트
   const focusBannerText = useMemo(() => {
-    if (isPolymarket) return '실시간 Polymarket 예측 확률';
-    if (category === 'stock') return '실시간 주식/ETF 뉴스 피드';
-    if (category === 'crypto') return '실시간 암호화폐 뉴스 피드';
-    return '실시간 금리/환율/거시경제 뉴스 피드';
-  }, [category, isPolymarket]);
+    if (isPolymarket) return t('news.focus_polymarket');
+    if (category === 'stock') return t('news.focus_stock');
+    if (category === 'crypto') return t('news.focus_crypto');
+    return t('news.focus_macro');
+  }, [category, isPolymarket, t]);
 
   // 뉴스 카드 탭 → 바텀시트 열기
   const handleNewsPress = useCallback((item: MarketNewsItem) => {
@@ -148,19 +150,19 @@ export default function NewsTabScreen() {
   }, []);
 
   // 빈 상태 텍스트
-  const emptyTitle = isPolymarket ? '표시할 예측이 없습니다' : '표시할 뉴스가 없습니다';
+  const emptyTitle = isPolymarket ? t('news.empty_predictions') : t('news.empty_news');
   const emptySubtitle = isPolymarket
-    ? '예측 데이터가 수집되면 자동으로 표시됩니다'
-    : '해당 카테고리의 뉴스가 수집되면 자동으로 표시됩니다';
-  const errorTitle = isPolymarket ? '예측 데이터를 불러오지 못했습니다' : '뉴스를 불러오지 못했습니다';
+    ? t('news.empty_predictions_subtitle')
+    : t('news.empty_news_subtitle');
+  const errorTitle = isPolymarket ? t('news.error_predictions') : t('news.error_news');
 
   return (
     <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.background }]}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>뉴스</Text>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{t('news.title')}</Text>
         {updateTimeStr ? (
-          <Text style={[styles.updateTime, { color: colors.textTertiary }]}>{updateTimeStr} 업데이트</Text>
+          <Text style={[styles.updateTime, { color: colors.textTertiary }]}>{t('news.updated_time', { time: updateTimeStr })}</Text>
         ) : null}
       </View>
 
@@ -173,7 +175,7 @@ export default function NewsTabScreen() {
               <Text style={styles.pickBadgeText}>NEWS PiCK</Text>
             </View>
             <Text style={[styles.pickSubtitle, { color: colors.textTertiary }]}>
-              AI 선정 주요 뉴스
+              {t('news.pick_subtitle')}
             </Text>
           </View>
           <ScrollView
@@ -207,7 +209,7 @@ export default function NewsTabScreen() {
 
       {/* Category Tabs */}
       <View style={[styles.modeTabs, { borderBottomColor: colors.border }]}>
-        {CATEGORY_TABS.map((tab) => {
+        {TAB_KEYS.map((tab) => {
           const active = category === tab.key;
           return (
             <TouchableOpacity
@@ -216,7 +218,7 @@ export default function NewsTabScreen() {
               onPress={() => setCategory(tab.key)}
             >
               <Text style={[styles.modeTabText, { color: active ? colors.textPrimary : colors.textTertiary }]}>
-                {tab.label}
+                {t(tab.labelKey)}
               </Text>
               <View
                 style={[
@@ -246,12 +248,12 @@ export default function NewsTabScreen() {
         <View style={styles.emptyContainer}>
           <Ionicons name="cloud-offline-outline" size={46} color={colors.textTertiary} />
           <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>{errorTitle}</Text>
-          <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>네트워크를 확인하고 다시 시도해 주세요</Text>
+          <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>{t('news.error_network')}</Text>
           <TouchableOpacity
             style={[styles.retryButton, { backgroundColor: colors.primary }]}
             onPress={onRefresh}
           >
-            <Text style={styles.retryButtonText}>다시 시도</Text>
+            <Text style={styles.retryButtonText}>{t('news.retry')}</Text>
           </TouchableOpacity>
         </View>
       ) : itemCount === 0 ? (

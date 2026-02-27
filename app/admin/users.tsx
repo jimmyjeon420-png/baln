@@ -139,7 +139,7 @@ function formatShortDate(dateStr: string): string {
 /** 크레딧을 원화 병기 형식으로 포맷 (예: "10C (₩1,000)") */
 function formatCredits(credits: number): string {
   const krw = credits * 100;
-  return `${credits}C (₩${krw.toLocaleString()})`;
+  return `${credits}개 (₩${krw.toLocaleString()})`;
 }
 
 /** 예측 정확도를 퍼센트 문자열로 포맷 */
@@ -469,7 +469,7 @@ export default function AdminUsersScreen() {
 
     Alert.alert(
       '보너스 지급 확인',
-      `${selectedUser.email || selectedUser.id}\n\n지급 금액: ${amount}C (₩${(amount * 100).toLocaleString()})\n${grantMemo ? `메모: ${grantMemo}` : ''}`,
+      `${selectedUser.email || selectedUser.id}\n\n지급 금액: ${amount}개 (₩${(amount * 100).toLocaleString()})\n${grantMemo ? `메모: ${grantMemo}` : ''}`,
       [
         { text: '취소', style: 'cancel' },
         {
@@ -499,7 +499,7 @@ export default function AdminUsersScreen() {
                 );
                 Alert.alert(
                   '지급 완료',
-                  `${amount}C (₩${(amount * 100).toLocaleString()})를 지급했습니다.\n새 잔액: ${result.new_balance ?? '-'}C`
+                  `${amount}개 (₩${(amount * 100).toLocaleString()})를 지급했습니다.\n새 잔액: ${result.new_balance ?? '-'}개`
                 );
               } else {
                 Alert.alert('지급 실패', result.error || '알 수 없는 오류');
@@ -623,7 +623,7 @@ export default function AdminUsersScreen() {
                   <ActivityIndicator size="small" color="#FFFFFF" />
                 ) : (
                   <Text style={styles.grantConfirmText}>
-                    {amount > 0 ? `${amount}C 지급` : '지급'}
+                    {amount > 0 ? `${amount}개 지급` : '지급'}
                   </Text>
                 )}
               </TouchableOpacity>

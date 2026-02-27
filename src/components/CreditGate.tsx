@@ -70,24 +70,24 @@ export default function CreditGate({
         <View style={styles.modal}>
           {/* 헤더 */}
           <View style={styles.header}>
-            <Ionicons
-              name={hasEnough ? 'diamond' : 'alert-circle'}
-              size={40}
-              color={hasEnough ? '#7C4DFF' : '#CF6679'}
-            />
+            {hasEnough ? (
+              <Text style={{ fontSize: 80 }}>🌰</Text>
+            ) : (
+              <Ionicons name="alert-circle" size={40} color="#CF6679" />
+            )}
             <Text style={styles.title}>
-              {hasEnough ? featureLabel : '크레딧 부족'}
+              {hasEnough ? featureLabel : '도토리 부족'}
             </Text>
           </View>
 
           {/* 비용 정보 */}
           <View style={styles.costContainer}>
-            <Text style={styles.costLabel}>필요 크레딧</Text>
+            <Text style={styles.costLabel}>필요 도토리</Text>
             <View style={styles.costRow}>
               {discountPercent > 0 && (
                 <Text style={styles.originalCost}>{originalCost}</Text>
               )}
-              <Ionicons name="diamond" size={18} color="#7C4DFF" />
+              <Text style={{ fontSize: 36 }}>🌰</Text>
               <Text style={styles.discountedCost}>{discountedCost}</Text>
               {discountPercent > 0 && (
                 <View style={styles.discountBadge}>
@@ -104,7 +104,7 @@ export default function CreditGate({
 
           {/* 잔액 */}
           <View style={styles.balanceContainer}>
-            <Text style={styles.balanceLabel}>보유 크레딧</Text>
+            <Text style={styles.balanceLabel}>보유 도토리</Text>
             <Text style={[styles.balanceValue, !hasEnough && styles.insufficientBalance]}>
               {balance.toLocaleString()}
             </Text>
@@ -112,7 +112,7 @@ export default function CreditGate({
 
           {!hasEnough && (
             <Text style={styles.shortageText}>
-              {discountedCost - balance} 크레딧이 부족합니다
+              {discountedCost - balance} 도토리가 부족합니다
             </Text>
           )}
 
@@ -120,7 +120,7 @@ export default function CreditGate({
           {!hasEnough && (
             <View style={styles.earnHint}>
               <Text style={styles.earnHintText}>
-                출석(+2C) · 퀴즈 적중(+3C) · 공유(+5C)로 크레딧을 모아보세요!
+                출석(+2개) · 퀴즈 적중(+3개) · 공유(+5개)로 도토리를 모아보세요!
               </Text>
             </View>
           )}
@@ -174,7 +174,7 @@ export default function CreditGate({
               activeOpacity={0.7}
             >
               <Text style={styles.subscriptionHintText}>
-                구독하면 매월 30 크레딧 무료!
+                구독하면 매월 30 도토리 무료!
               </Text>
               <Ionicons name="arrow-forward" size={14} color="#4CAF50" />
             </TouchableOpacity>

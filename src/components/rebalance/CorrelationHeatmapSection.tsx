@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { Asset } from '../../types/asset';
 import { classifyAsset, type AssetCategory } from '../../services/rebalanceScore';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 import { ThemeColors } from '../../styles/colors';
 import type { ActiveTheme } from '../../contexts/ThemeContext';
 
@@ -30,26 +31,26 @@ const CORR: Record<AssetCategory, Record<AssetCategory, number>> = {
   commodity: { cash: 0.00, bond: -0.10, large_cap: 0.25, realestate: 0.30, bitcoin: 0.10, altcoin: 0.05, gold: 0.60,  commodity: 1.00 },
 };
 
-const CATEGORY_LABELS: Record<AssetCategory, string> = {
-  cash: '현금',
-  bond: '채권',
-  large_cap: '주식',
-  realestate: '부동산',
-  bitcoin: 'BTC',
-  altcoin: '알트',
-  gold: '금',
-  commodity: '원자재',
+const CATEGORY_LABEL_KEYS: Record<AssetCategory, string> = {
+  cash: 'correlation_section.cat_label_cash',
+  bond: 'correlation_section.cat_label_bond',
+  large_cap: 'correlation_section.cat_label_large_cap',
+  realestate: 'correlation_section.cat_label_realestate',
+  bitcoin: 'correlation_section.cat_label_bitcoin',
+  altcoin: 'correlation_section.cat_label_altcoin',
+  gold: 'correlation_section.cat_label_gold',
+  commodity: 'correlation_section.cat_label_commodity',
 };
 
-const CATEGORY_SHORT: Record<AssetCategory, string> = {
-  cash: '현금',
-  bond: '채권',
-  large_cap: '주식',
-  realestate: '부산',
-  bitcoin: 'BTC',
-  altcoin: '알트',
-  gold: '금',
-  commodity: '원자재',
+const CATEGORY_SHORT_KEYS: Record<AssetCategory, string> = {
+  cash: 'correlation_section.cat_cash',
+  bond: 'correlation_section.cat_bond',
+  large_cap: 'correlation_section.cat_large_cap',
+  realestate: 'correlation_section.cat_realestate',
+  bitcoin: 'correlation_section.cat_bitcoin',
+  altcoin: 'correlation_section.cat_altcoin',
+  gold: 'correlation_section.cat_gold',
+  commodity: 'correlation_section.cat_commodity',
 };
 
 // ── 상관 계수 → 색상 변환 (테마 인식) ──
@@ -88,6 +89,7 @@ interface CorrelationHeatmapSectionProps {
 
 const CorrelationHeatmapSection = ({ assets, totalAssets }: CorrelationHeatmapSectionProps) => {
   const { colors, theme } = useTheme();
+  const { t } = useLocale();
   const [showDetail, setShowDetail] = useState(false);
 
   // 보유 중인 자산 카테고리만 추출 (비중 > 0)
@@ -119,7 +121,7 @@ const CorrelationHeatmapSection = ({ assets, totalAssets }: CorrelationHeatmapSe
   // 2개 카테고리 미만이면 표시 안 함
   if (activeCategories.length < 2) return null;
 
-  const diversificationLevel = avgCorrelation < 0.15 ? '우수' : avgCorrelation < 0.35 ? '양호' : '개선 필요';
+  const diversificationLevel = avgCorrelation < 0.15 ? t('correlation_section.div_excellent') : avgCorrelation < 0.35 ? t('correlation_section.div_good') : t('correlation_section.div_needs_improvement');
   const divColor = avgCorrelation < 0.15 ? colors.success : avgCorrelation < 0.35 ? colors.warning : colors.error;
 
   const styles = createStyles(colors);
@@ -128,18 +130,18 @@ const CorrelationHeatmapSection = ({ assets, totalAssets }: CorrelationHeatmapSe
     <View style={[styles.card, { backgroundColor: colors.inverseSurface, borderColor: colors.border }]}>
       <View style={styles.headerRow}>
         <View>
-          <Text style={[styles.cardLabel, { color: colors.inverseText }]}>자산 상관관계</Text>
+          <Text style={[styles.cardLabel, { color: colors.inverseText }]}>{t('correlation_section.title')}</Text>
           <Text style={[styles.cardLabelEn, { color: colors.textTertiary }]}>Correlation Matrix</Text>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <View style={[styles.divBadge, { backgroundColor: divColor + '20' }]}>
-            <Text style={[styles.divBadgeText, { color: divColor }]}>분산 {diversificationLevel}</Text>
+            <Text style={[styles.divBadgeText, { color: divColor }]}>{t('correlation_section.div_badge', { level: diversificationLevel })}</Text>
           </View>
           <TouchableOpacity
             style={styles.expandButton}
             onPress={() => setShowDetail(!showDetail)}
           >
-            <Text style={[styles.expandButtonText, { color: colors.textTertiary }]}>{showDetail ? '접기' : '상세'}</Text>
+            <Text style={[styles.expandButtonText, { color: colors.textTertiary }]}>{showDetail ? t('correlation_section.collapse') : t('correlation_section.details')}</Text>
             <Ionicons name={showDetail ? 'chevron-up' : 'chevron-down'} size={14} color={colors.textTertiary} />
           </TouchableOpacity>
         </View>
@@ -148,21 +150,21 @@ const CorrelationHeatmapSection = ({ assets, totalAssets }: CorrelationHeatmapSe
       {/* 요약: 평균 상관 계수 + 해석 */}
       <View style={styles.summaryRow}>
         <View style={styles.summaryItem}>
-          <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>평균 상관계수</Text>
+          <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>{t('correlation_section.avg_correlation')}</Text>
           <Text style={[styles.summaryValue, { color: corrToTextColor(avgCorrelation, colors) }]}>
             {avgCorrelation >= 0 ? '+' : ''}{avgCorrelation.toFixed(2)}
           </Text>
         </View>
         <View style={[styles.summaryDivider, { backgroundColor: colors.border }]} />
         <View style={styles.summaryItem}>
-          <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>보유 자산군</Text>
-          <Text style={[styles.summaryValue, { color: colors.inverseText }]}>{activeCategories.length}종류</Text>
+          <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>{t('correlation_section.asset_classes')}</Text>
+          <Text style={[styles.summaryValue, { color: colors.inverseText }]}>{t('correlation_section.types_count', { count: String(activeCategories.length) })}</Text>
         </View>
         <View style={[styles.summaryDivider, { backgroundColor: colors.border }]} />
         <View style={styles.summaryItem}>
-          <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>해석</Text>
+          <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>{t('correlation_section.analysis')}</Text>
           <Text style={[styles.summaryValue, { color: divColor, fontSize: 13 }]}>
-            {avgCorrelation < 0.15 ? '헤지 효과 큼' : avgCorrelation < 0.35 ? '적정 분산' : '쏠림 위험'}
+            {avgCorrelation < 0.15 ? t('correlation_section.analysis_excellent') : avgCorrelation < 0.35 ? t('correlation_section.analysis_good') : t('correlation_section.analysis_poor')}
           </Text>
         </View>
       </View>
@@ -173,13 +175,13 @@ const CorrelationHeatmapSection = ({ assets, totalAssets }: CorrelationHeatmapSe
           {/* 범례 */}
           <View style={styles.legend}>
             <View style={[styles.legendItem, { backgroundColor: `${colors.info}30` }]}>
-              <Text style={[styles.legendText, { color: colors.textSecondary }]}>음(-) 헤지</Text>
+              <Text style={[styles.legendText, { color: colors.textSecondary }]}>{t('correlation_section.legend_negative')}</Text>
             </View>
             <View style={[styles.legendItem, { backgroundColor: `${colors.border}40` }]}>
-              <Text style={[styles.legendText, { color: colors.textSecondary }]}>무상관</Text>
+              <Text style={[styles.legendText, { color: colors.textSecondary }]}>{t('correlation_section.legend_neutral')}</Text>
             </View>
             <View style={[styles.legendItem, { backgroundColor: `${colors.error}30` }]}>
-              <Text style={[styles.legendText, { color: colors.textPrimary }]}>양(+) 집중</Text>
+              <Text style={[styles.legendText, { color: colors.textPrimary }]}>{t('correlation_section.legend_positive')}</Text>
             </View>
           </View>
 
@@ -190,7 +192,7 @@ const CorrelationHeatmapSection = ({ assets, totalAssets }: CorrelationHeatmapSe
               <View style={styles.gridCorner} />
               {activeCategories.map(cat => (
                 <View key={cat} style={styles.gridHeaderCell}>
-                  <Text style={[styles.gridHeaderText, { color: colors.textTertiary }]}>{CATEGORY_SHORT[cat]}</Text>
+                  <Text style={[styles.gridHeaderText, { color: colors.textTertiary }]}>{t(CATEGORY_SHORT_KEYS[cat])}</Text>
                 </View>
               ))}
             </View>
@@ -199,7 +201,7 @@ const CorrelationHeatmapSection = ({ assets, totalAssets }: CorrelationHeatmapSe
             {activeCategories.map(rowCat => (
               <View key={rowCat} style={styles.gridRow}>
                 <View style={styles.gridRowLabel}>
-                  <Text style={[styles.gridRowLabelText, { color: colors.textTertiary }]}>{CATEGORY_LABELS[rowCat]}</Text>
+                  <Text style={[styles.gridRowLabelText, { color: colors.textTertiary }]}>{t(CATEGORY_LABEL_KEYS[rowCat])}</Text>
                 </View>
                 {activeCategories.map(colCat => {
                   const corr = CORR[rowCat][colCat];
@@ -229,10 +231,10 @@ const CorrelationHeatmapSection = ({ assets, totalAssets }: CorrelationHeatmapSe
           <View style={[styles.guideBox, { backgroundColor: `${colors.surfaceElevated}` }]}>
             <Text style={[styles.guideText, { color: colors.textSecondary }]}>
               {avgCorrelation < 0.15
-                ? '자산 간 상관관계가 낮아 분산 효과가 우수합니다. 한 자산이 하락해도 다른 자산이 방어할 수 있습니다.'
+                ? t('correlation_section.guide_excellent')
                 : avgCorrelation < 0.35
-                  ? '적정 수준의 분산입니다. 채권이나 현금 비중을 늘리면 상관관계를 더 낮출 수 있습니다.'
-                  : '자산들이 비슷하게 움직여 동반 하락 위험이 있습니다. 채권/현금 등 음의 상관 자산을 추가하세요.'}
+                  ? t('correlation_section.guide_good')
+                  : t('correlation_section.guide_poor')}
             </Text>
           </View>
         </View>

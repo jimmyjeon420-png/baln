@@ -42,7 +42,7 @@ export const ExtremeScenarioGrid: React.FC<ExtremeScenarioGridProps> = ({
         시나리오를 선택하세요
       </Text>
       <Text style={[styles.sectionDesc, { color: colors.textTertiary }]}>
-        시나리오 열람은 무료, 내 포트폴리오 시뮬레이션은 2C
+        시나리오 열람은 무료, 내 포트폴리오 시뮬레이션은 2개
       </Text>
 
       <View style={styles.grid}>

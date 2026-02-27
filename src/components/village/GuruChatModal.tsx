@@ -25,7 +25,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { CharacterAvatar } from '../character/CharacterAvatar';
 import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
-import { sentimentToExpression } from '../../services/characterService';
+import { sentimentToExpression, getGuruDisplayName } from '../../services/characterService';
 import type { VillageMessage } from '../../services/villageConversationService';
 import { useLocale } from '../../context/LocaleContext';
 
@@ -100,7 +100,7 @@ function ChatBubble({ msg, isUser }: { msg: VillageMessage; isUser: boolean }) {
       </View>
       <View style={styles.guruBubbleWrap}>
         <Text style={styles.guruNameInBubble}>
-          {config?.guruName || msg.speaker}
+          {getGuruDisplayName(msg.speaker)}
         </Text>
         <View
           style={[
@@ -171,7 +171,7 @@ export function GuruChatModal({
                 fallbackEmoji={config.emoji}
               />
               <View style={styles.headerInfo}>
-                <Text style={styles.headerName}>{config.guruName}</Text>
+                <Text style={styles.headerName}>{getGuruDisplayName(guruId)}</Text>
                 <Text style={styles.headerOrg}>{config.characterConcept}</Text>
               </View>
             </View>
@@ -190,8 +190,7 @@ export function GuruChatModal({
               <View style={styles.welcomeBubble}>
                 <Text style={styles.welcomeEmoji}>💬</Text>
                 <Text style={styles.welcomeText}>
-                  {config.guruName}에게 무엇이든 물어보세요!{'\n'}
-                  투자 철학, 시장 전망, 포트폴리오 조언...
+                  {t('village.chat_welcome', { name: getGuruDisplayName(guruId) })}
                 </Text>
               </View>
             </View>
@@ -218,7 +217,7 @@ export function GuruChatModal({
                 <ThinkingDot delay={400} />
               </View>
               <Text style={styles.thinkingText}>
-                {config.guruName} {t('village.thinking')}
+                {getGuruDisplayName(guruId)} {t('village.thinking')}
               </Text>
             </View>
           )}

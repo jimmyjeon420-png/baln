@@ -26,6 +26,7 @@ import {
 import type { GuruLetter } from '../../types/village';
 import { CharacterAvatar } from '../character/CharacterAvatar';
 import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
+import { getGuruDisplayName } from '../../services/characterService';
 import { useLocale } from '../../context/LocaleContext';
 
 // ---------------------------------------------------------------------------
@@ -134,9 +135,7 @@ export function LetterDetail({
 
   const guruId = letter.fromGuruId || letter.guruId || '';
   const config = GURU_CHARACTER_CONFIGS[guruId];
-  const guruName = config
-    ? (isKo ? config.guruName : (config.guruNameEn ?? config.guruName))
-    : guruId;
+  const guruName = getGuruDisplayName(guruId);
   const subject = isKo ? letter.subject : (letter.subjectEn ?? letter.subject);
   const bodyText = isKo ? letter.body : (letter.bodyEn ?? letter.body);
 

@@ -161,7 +161,7 @@ const CFOShareModal: React.FC<{
       });
       const result = await claimReward();
       if (result.success) {
-        setRewardMessage(`+${result.creditsEarned} 크레딧 획득!`);
+        setRewardMessage(`+${result.creditsEarned} 도토리 획득!`);
         setTimeout(() => setRewardMessage(null), 3000);
       }
     } catch (err) {
@@ -303,7 +303,7 @@ const CFOShareModal: React.FC<{
                 <Text style={cfoShareStyles.shareButtonText}>인스타그램 공유</Text>
                 {!rewarded && (
                   <View style={cfoShareStyles.rewardHint}>
-                    <Text style={cfoShareStyles.rewardHintText}>+{REWARD_AMOUNTS.shareCard}C</Text>
+                    <Text style={cfoShareStyles.rewardHintText}>+{REWARD_AMOUNTS.shareCard}개</Text>
                   </View>
                 )}
               </>
@@ -382,8 +382,8 @@ export default function CFOChatScreen() {
     const balance = credits?.balance ?? 0;
     if (balance < chatCost) {
       Alert.alert(
-        '크레딧 부족',
-        `질문 1회에 ${chatCost}크레딧(\u20A9${chatCost * 100})이 필요합니다.\n현재 잔액: ${balance}크레딧\n\n출석(+2C), 퀴즈 적중(+3C), 공유(+5C)로 모아보세요!`,
+        '도토리 부족',
+        `질문 1회에 ${chatCost}도토리(\u20A9${chatCost * 100})이 필요합니다.\n현재 잔액: ${balance}도토리\n\n출석(+2개), 퀴즈 적중(+3개), 공유(+5개)로 모아보세요!`,
         [{ text: '확인' }]
       );
       return;
@@ -638,7 +638,7 @@ export default function CFOChatScreen() {
               <Text style={s.shareDebateText}>인스타 공유</Text>
               {!rewarded && (
                 <View style={s.shareRewardBadge}>
-                  <Text style={s.shareRewardBadgeText}>+{REWARD_AMOUNTS.shareCard}C</Text>
+                  <Text style={s.shareRewardBadgeText}>+{REWARD_AMOUNTS.shareCard}개</Text>
                 </View>
               )}
             </TouchableOpacity>
@@ -707,7 +707,7 @@ export default function CFOChatScreen() {
         title="AI 버핏과 티타임"
         rightElement={
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-            <Ionicons name="diamond" size={14} color="#7C4DFF" />
+            <Text style={{ fontSize: 28 }}>🌰</Text>
             <Text style={{ color: '#7C4DFF', fontSize: 15, fontWeight: '600' }}>
               {credits?.balance ?? 0}
             </Text>

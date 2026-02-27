@@ -20,7 +20,7 @@ import {
   HoldingSnapshot,
   CommunityCategoryFilter,
   TIER_THRESHOLDS,
-  TIER_LABELS,
+  getCommunityTierLabel,
   LOUNGE_VIEW_THRESHOLD,
   LOUNGE_COMMENT_THRESHOLD,
   LOUNGE_POST_THRESHOLD,
@@ -127,7 +127,7 @@ export const useUserDisplayInfo = (totalAssets: number, _totalGain: number): Use
     displayTag,
     assetMix,
     tier,
-    tierLabel: TIER_LABELS[tier],
+    tierLabel: getCommunityTierLabel(tier),
   };
 };
 

@@ -133,7 +133,7 @@ const ReviewResultItem = React.memo(({
         {/* 투표 결과 행 */}
         <View style={styles.resultVoteRow}>
           <Text style={styles.resultVoteLabel}>
-            {result.isCorrect ? '✅' : ''} {t('yesterday_review.voted')} {result.myVote}
+            {result.isCorrect ? '✅' : ''} {t('home.yesterday_review.voted')} {result.myVote}
           </Text>
           <Ionicons
             name="arrow-forward"
@@ -141,11 +141,11 @@ const ReviewResultItem = React.memo(({
             color={COLORS.textTertiary}
           />
           <Text style={styles.resultVoteLabel}>
-            {t('yesterday_review.correct_answer')} {result.correctAnswer}
+            {t('home.yesterday_review.correct_answer')} {result.correctAnswer}
           </Text>
           {result.isCorrect && result.reward > 0 && (
             <View style={styles.rewardBadge}>
-              <Text style={styles.rewardText}>+{result.reward}C</Text>
+              <Text style={styles.rewardText}>+{result.reward}개</Text>
             </View>
           )}
         </View>
@@ -159,7 +159,7 @@ const ReviewResultItem = React.memo(({
               color={COLORS.textTertiary}
             />
             <Text style={styles.expandHintText}>
-              {expanded ? t('yesterday_review.collapse') : t('yesterday_review.show_explanation')}
+              {expanded ? t('home.yesterday_review.collapse') : t('home.yesterday_review.show_explanation')}
             </Text>
           </View>
         )}
@@ -170,14 +170,14 @@ const ReviewResultItem = React.memo(({
         <View style={styles.explanationArea}>
           {result.description && (
             <View style={styles.explanationSection}>
-              <Text style={styles.explanationLabel}>💡 {t('yesterday_review.explanation_background')}</Text>
+              <Text style={styles.explanationLabel}>💡 {t('home.yesterday_review.explanation_background')}</Text>
               <Text style={styles.explanationText}>{result.description}</Text>
             </View>
           )}
           {result.source && (
             <View style={styles.explanationSection}>
               <Text style={styles.explanationLabel}>
-                {result.isCorrect ? `🎯 ${t('yesterday_review.explanation_basis')}` : `📌 ${t('yesterday_review.explanation_basis')}`}
+                {result.isCorrect ? `🎯 ${t('home.yesterday_review.explanation_basis')}` : `📌 ${t('home.yesterday_review.explanation_basis')}`}
               </Text>
               <Text style={styles.explanationText}>{result.source}</Text>
             </View>
@@ -238,13 +238,13 @@ function YesterdayReviewCard({
       <View style={styles.card}>
         <View style={styles.headerRow}>
           <Text style={styles.headerEmoji}>📊</Text>
-          <Text style={styles.headerText}>{t('yesterday_review.header')}</Text>
+          <Text style={styles.headerText}>{t('home.yesterday_review.header')}</Text>
         </View>
         <View style={styles.emptyArea}>
           <Text style={styles.emptyEmoji}>🔮</Text>
-          <Text style={styles.emptyText}>{t('yesterday_review.empty_text')}</Text>
+          <Text style={styles.emptyText}>{t('home.yesterday_review.empty_text')}</Text>
           <Text style={styles.emptySubtext}>
-            {t('yesterday_review.empty_subtext')}
+            {t('home.yesterday_review.empty_subtext')}
           </Text>
           {onStartPrediction && (
             <TouchableOpacity
@@ -252,7 +252,7 @@ function YesterdayReviewCard({
               onPress={onStartPrediction}
               activeOpacity={0.7}
             >
-              <Text style={styles.emptyCtaText}>{t('yesterday_review.empty_cta')}</Text>
+              <Text style={styles.emptyCtaText}>{t('home.yesterday_review.empty_cta')}</Text>
               <Ionicons name="chevron-forward" size={14} color={colors.primary} />
             </TouchableOpacity>
           )}
@@ -271,7 +271,7 @@ function YesterdayReviewCard({
       {/* 헤더 */}
       <View style={styles.headerRow}>
         <Text style={styles.headerEmoji}>📊</Text>
-        <Text style={styles.headerText}>{t('yesterday_review.header')}</Text>
+        <Text style={styles.headerText}>{t('home.yesterday_review.header')}</Text>
       </View>
 
       {/* 요약 행 */}
@@ -280,12 +280,12 @@ function YesterdayReviewCard({
           <Text style={styles.summaryValue}>
             {correctCount}/{totalCount}
           </Text>
-          <Text style={styles.summaryLabel}>{t('yesterday_review.summary_hits')}</Text>
+          <Text style={styles.summaryLabel}>{t('home.yesterday_review.summary_hits')}</Text>
         </View>
         {accuracyRate !== null && (
           <View style={styles.summaryItem}>
             <Text style={styles.summaryValue}>{accuracyRate}%</Text>
-            <Text style={styles.summaryLabel}>{t('yesterday_review.summary_accuracy')}</Text>
+            <Text style={styles.summaryLabel}>{t('home.yesterday_review.summary_accuracy')}</Text>
           </View>
         )}
         {totalReward > 0 && (
@@ -299,7 +299,7 @@ function YesterdayReviewCard({
             >
               +{totalReward}C
             </Animated.Text>
-            <Text style={styles.summaryLabel}>{t('yesterday_review.summary_earned')}</Text>
+            <Text style={styles.summaryLabel}>{t('home.yesterday_review.summary_earned')}</Text>
           </View>
         )}
       </View>
@@ -329,7 +329,7 @@ function YesterdayReviewCard({
 
       {/* 하단: 전체 기록 보기 */}
       <TouchableOpacity style={styles.historyButton} onPress={onViewHistory}>
-        <Text style={styles.historyText}>{t('yesterday_review.view_history')}</Text>
+        <Text style={styles.historyText}>{t('home.yesterday_review.view_history')}</Text>
         <Ionicons name="arrow-forward" size={16} color={COLORS.textSecondary} />
       </TouchableOpacity>
     </View>

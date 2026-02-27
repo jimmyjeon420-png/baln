@@ -13,6 +13,7 @@ import {
   type MorningBriefingResult,
   type RiskAnalysisResult,
 } from './gemini';
+import { getCurrentLanguage } from '../locales';
 
 /**
  * KST 기준 날짜를 YYYY-MM-DD 형식으로 반환
@@ -363,37 +364,43 @@ export async function loadMorningBriefing(
   options?: { includeRealEstate?: boolean; realEstateContext?: string; guruStyle?: string }
 ): Promise<CentralKitchenResult> {
   const tickers = portfolio.map(p => p.ticker);
+  const isKo = getCurrentLanguage() === 'ko';
 
-  try {
-    // 1단계: Central Kitchen에서 동시 조회
-    const [insight, stockReports] = await Promise.all([
-      getTodayMarketInsight(),
-      getTodayStockReports(tickers),
-    ]);
+  // Central Kitchen DB 데이터는 한국어로 생성됨 — 영어 모드에서는 스킵하고 라이브 Gemini 호출
+  if (isKo) {
+    try {
+      // 1단계: Central Kitchen에서 동시 조회
+      const [insight, stockReports] = await Promise.all([
+        getTodayMarketInsight(),
+        getTodayStockReports(tickers),
+      ]);
 
-    // Central Kitchen 데이터가 있으면 병합하여 반환
-    if (__DEV__) console.log('[디버그] insight:', !!insight, 'macro_summary:', insight?.macro_summary, 'title:', insight?.macro_summary?.title);
+      // Central Kitchen 데이터가 있으면 병합하여 반환
+      if (__DEV__) console.log('[디버그] insight:', !!insight, 'macro_summary:', insight?.macro_summary, 'title:', insight?.macro_summary?.title);
 
-    if (insight && insight.macro_summary?.title) {
-      if (__DEV__) console.log('[Central Kitchen] ✅ DB 데이터 사용 (빠른 경로)');
-      const briefing = buildBriefingFromKitchen(insight, stockReports, portfolio);
-      if (__DEV__) console.log('[디버그] briefing.macroSummary:', briefing.macroSummary);
+      if (insight && insight.macro_summary?.title) {
+        if (__DEV__) console.log('[Central Kitchen] ✅ DB 데이터 사용 (빠른 경로)');
+        const briefing = buildBriefingFromKitchen(insight, stockReports, portfolio);
+        if (__DEV__) console.log('[디버그] briefing.macroSummary:', briefing.macroSummary);
 
-      // 출처 구성: 거시경제 하이라이트 + 종목 섹터 + 글로벌 유동성 지표
-      const sources = buildSources(insight, stockReports);
+        // 출처 구성: 거시경제 하이라이트 + 종목 섹터 + 글로벌 유동성 지표
+        const sources = buildSources(insight, stockReports);
 
-      return {
-        source: 'central-kitchen',
-        morningBriefing: briefing,
-        stockReports,
-        marketInsight: insight,
-        sources,
-      };
-    } else {
-      if (__DEV__) console.log('[Central Kitchen] ❌ DB 검증 실패 → 라이브 폴백');
+        return {
+          source: 'central-kitchen',
+          morningBriefing: briefing,
+          stockReports,
+          marketInsight: insight,
+          sources,
+        };
+      } else {
+        if (__DEV__) console.log('[Central Kitchen] ❌ DB 검증 실패 → 라이브 폴백');
+      }
+    } catch (err) {
+      console.warn('[Central Kitchen] DB 조회 실패, 라이브 폴백:', err);
     }
-  } catch (err) {
-    console.warn('[Central Kitchen] DB 조회 실패, 라이브 폴백:', err);
+  } else {
+    if (__DEV__) console.log('[Central Kitchen] 영어 모드 → DB 스킵, 라이브 Gemini 직행');
   }
 
   // 2단계: 라이브 Gemini 호출 (폴백)

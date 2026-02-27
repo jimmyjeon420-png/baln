@@ -29,7 +29,7 @@ import CommunityPostCard from '../../../src/components/CommunityPostCard';
 import {
   HoldingSnapshot,
   TIER_COLORS,
-  TIER_LABELS,
+  getCommunityTierLabel,
 } from '../../../src/types/community';
 import {
   getTierFromAssets,
@@ -111,7 +111,7 @@ export default function AuthorProfileScreen() {
   const tier = getTierFromAssets(latestPost.total_assets_at_post);
   const tierColor = TIER_COLORS[tier] || '#C0C0C0';
   const tierIcon = getTierIcon(tier);
-  const tierLabel = TIER_LABELS[tier] || tier;
+  const tierLabel = getCommunityTierLabel(tier);
 
   // 보유종목 합산 (가장 최근 게시물 기준)
   const holdings = (latestPost.top_holdings || []).slice(0, 10);

@@ -7,7 +7,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Gathering, GATHERING_CATEGORY_LABELS, UserTier } from '../types/database';
-import { formatAssetInBillion, TIER_COLORS, canAccessTier, TIER_LABELS } from '../hooks/useGatherings';
+import { formatAssetInBillion, TIER_COLORS, canAccessTier, getCommunityTierLabel } from '../hooks/useGatherings';
 
 interface GatheringCardProps {
   gathering: Gathering;
@@ -97,7 +97,7 @@ export default function GatheringCard({ gathering, onPress, userTier }: Gatherin
           <View style={[styles.lockedBadge, { borderColor: minTierColor }]}>
             <Ionicons name="lock-closed" size={14} color={minTierColor} />
             <Text style={[styles.lockedText, { color: minTierColor }]}>
-              {TIER_LABELS[minTierRequired]} 이상
+              {getCommunityTierLabel(minTierRequired)} 이상
             </Text>
           </View>
         </View>
@@ -117,7 +117,7 @@ export default function GatheringCard({ gathering, onPress, userTier }: Gatherin
             <View style={[styles.tierRequirementBadge, { backgroundColor: `${minTierColor}20` }]}>
               <Ionicons name={minTierIcon} size={10} color={minTierColor} />
               <Text style={[styles.tierRequirementText, { color: minTierColor }]}>
-                {TIER_LABELS[minTierRequired]}+
+                {getCommunityTierLabel(minTierRequired)}+
               </Text>
             </View>
           )}

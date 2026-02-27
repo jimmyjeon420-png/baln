@@ -8,6 +8,7 @@ import { useSharedPortfolio } from '../../hooks/useSharedPortfolio';
 import { useSharedMarketData } from '../../hooks/useSharedAnalysis';
 import { calculateHealthScore } from '../../services/rebalanceScore';
 import { formatLocalAmount } from '../../utils/formatters';
+import { useLocale } from '../../context/LocaleContext';
 
 /**
  * 오늘의 Pulse (한 줄 요약 계기판)
@@ -28,6 +29,7 @@ interface TodayPulseProps {
 export default function TodayPulse({ totalAssets, yesterdayChange }: TodayPulseProps) {
   const router = useRouter();
   const haptics = useHaptics();
+  const { t } = useLocale();
   const { colors, shadows } = useTheme();
   const { assets } = useSharedPortfolio();
 
@@ -40,11 +42,11 @@ export default function TodayPulse({ totalAssets, yesterdayChange }: TodayPulseP
   // 자산 포맷팅: 1.2억, 5,000만원 등
   const formatAssets = (value: number): string => {
     if (value >= 100_000_000) {
-      return `${(value / 100_000_000).toFixed(1)}억`;
+      return t('format.amount_eok', { n: (value / 100_000_000).toFixed(1) });
     } else if (value >= 10_000_000) {
-      return `${Math.round(value / 10_000_000) * 1000}만원`;
+      return t('format.amount_manwon', { n: Math.round(value / 10_000_000) * 1000 });
     } else if (value >= 10_000) {
-      return `${Math.round(value / 10_000)}만원`;
+      return t('format.amount_manwon', { n: Math.round(value / 10_000) });
     }
     return formatLocalAmount(Math.round(value));
   };
@@ -83,7 +85,7 @@ export default function TodayPulse({ totalAssets, yesterdayChange }: TodayPulseP
         <View style={styles.section}>
           <Text style={styles.emoji}>🏥</Text>
           <Text style={[styles.value, { color: healthScore.gradeColor }]}>
-            {healthScore.grade}등급
+            {t('format.grade_label', { grade: healthScore.grade })}
           </Text>
         </View>
 

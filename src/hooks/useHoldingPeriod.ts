@@ -7,18 +7,18 @@
 
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { t } from '../locales';
 
 const STORAGE_KEY = '@baln:first_asset_date';
 
 function computeLabel(days: number): string {
-  if (days < 30) return '신규 투자자';
-  if (days < 90) return '1개월차';
+  if (days < 30) return t('holding_period.new_investor');
   if (days < 365) {
     const months = Math.floor(days / 30);
-    return `${months}개월차`;
+    return t('holding_period.months', { months: String(months) });
   }
   const years = Math.floor(days / 365);
-  return `${years}년차 베테랑`;
+  return t('holding_period.years_veteran', { years: String(years) });
 }
 
 interface HoldingPeriodResult {

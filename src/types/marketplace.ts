@@ -10,7 +10,7 @@ import { UserTier } from './database';
 // ============================================================================
 
 /** 마켓플레이스에서 제공하는 AI 기능 종류 */
-export type AIFeatureType = 'deep_dive' | 'what_if' | 'tax_report' | 'ai_cfo_chat' | 'tier_insights';
+export type AIFeatureType = 'deep_dive' | 'what_if' | 'tax_report' | 'ai_cfo_chat' | 'tier_insights' | 'guru_chat' | 'roundtable';
 
 /** 크레딧 거래 유형 */
 export type CreditTransactionType = 'purchase' | 'spend' | 'refund' | 'bonus' | 'subscription_bonus';
@@ -359,6 +359,8 @@ export const FEATURE_COSTS: Record<AIFeatureType, number> = {
   tax_report: 10,     // ₩1,000 — 천원에 세금 계산
   ai_cfo_chat: 1,     // ₩100/메시지 — 부담 없이 대화
   tier_insights: 3,   // ₩300 — 웹툰 1화
+  guru_chat: 1,       // ₩100 — 구루 1:1 대화 1회
+  roundtable: 1,      // ₩100 — 거장 라운드테이블 1세션
 };
 
 /** 기능별 한국어 라벨 */
@@ -368,6 +370,8 @@ export const FEATURE_LABELS: Record<AIFeatureType, string> = {
   tax_report: '세금 최적화 리포트',
   ai_cfo_chat: 'AI 버핏과 티타임',
   tier_insights: '투자 DNA 비교',
+  guru_chat: '구루 1:1 대화',
+  roundtable: '거장 라운드테이블',
 };
 
 /** 티어별 할인율 (%) — 고액 자산가 록인 강화 */

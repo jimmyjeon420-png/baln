@@ -4,6 +4,7 @@ import Svg, { Circle, Text as SvgText } from 'react-native-svg';
 import { SIZES } from '../../styles/theme';
 import { useTheme } from '../../hooks/useTheme';
 import { formatLocalAmount, formatNumber } from '../../utils/formatters';
+import { useLocale } from '../../context/LocaleContext';
 
 // ============================================================================
 // 타입 정의
@@ -26,20 +27,19 @@ interface AssetDonutCardProps {
 // 유틸: 금액 약어 (1.4억, 5,300만 등)
 // ============================================================================
 
-function formatAbbreviated(amount: number): string {
+function formatAbbreviated(amount: number, t: (key: string, opts?: any) => string): string {
   if (amount >= 1_0000_0000) {
     const eok = amount / 1_0000_0000;
-    return eok >= 10
-      ? `${Math.round(eok)}억`
-      : `${eok.toFixed(1)}억`;
+    const n = eok >= 10 ? `${Math.round(eok)}` : `${eok.toFixed(1)}`;
+    return t('format.amount_eok', { n });
   }
   if (amount >= 1000_0000) {
     const man = Math.round(amount / 10000);
-    return `${formatNumber(man)}만`;
+    return t('format.amount_man', { n: formatNumber(man) });
   }
   if (amount >= 100_0000) {
     const man = Math.round(amount / 10000);
-    return `${formatNumber(man)}만`;
+    return t('format.amount_man', { n: formatNumber(man) });
   }
   return formatLocalAmount(Math.round(amount));
 }
@@ -59,6 +59,7 @@ const CENTER = SIZE / 2;
 // ============================================================================
 
 const AssetDonutCard = ({ slices, totalAssets }: AssetDonutCardProps) => {
+  const { t } = useLocale();
   const { colors } = useTheme();
 
   // 데이터 없으면 렌더링 안 함
@@ -70,8 +71,8 @@ const AssetDonutCard = ({ slices, totalAssets }: AssetDonutCardProps) => {
   return (
     <View style={[styles.card, { backgroundColor: colors.surface }]}>
       {/* 헤더 */}
-      <Text style={[styles.title, { color: colors.textPrimary }]}>자산 배분</Text>
-      <Text style={[styles.subtitle, { color: colors.textTertiary }]}>Asset Allocation</Text>
+      <Text style={[styles.title, { color: colors.textPrimary }]}>{t('donut.title')}</Text>
+      <Text style={[styles.subtitle, { color: colors.textTertiary }]}>{t('donut.subtitle')}</Text>
 
       {/* SVG 도넛 */}
       <View style={styles.chartContainer}>
@@ -118,7 +119,7 @@ const AssetDonutCard = ({ slices, totalAssets }: AssetDonutCardProps) => {
             fontSize="16"
             fontWeight="700"
           >
-            {formatAbbreviated(totalAssets)}
+            {formatAbbreviated(totalAssets, t)}
           </SvgText>
           <SvgText
             x={CENTER}
@@ -127,7 +128,7 @@ const AssetDonutCard = ({ slices, totalAssets }: AssetDonutCardProps) => {
             fill={colors.textSecondary}
             fontSize="11"
           >
-            총 자산
+            {t('format.total_assets_label')}
           </SvgText>
         </Svg>
       </View>

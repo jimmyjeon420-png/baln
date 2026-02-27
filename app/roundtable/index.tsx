@@ -108,7 +108,7 @@ export default function RoundtableIndexScreen() {
           {t('roundtable.title')}
         </Text>
         <View style={styles.creditBadge}>
-          <Text style={styles.creditText}>{isFree ? t('roundtable.free_badge') : '2C'}</Text>
+          <Text style={styles.creditText}>{isFree ? t('roundtable.free_badge') : '2개'}</Text>
         </View>
       </View>
 

@@ -8,6 +8,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 import type { ThemeColors } from '../../styles/colors';
 import type { MorningBriefingResult } from '../../services/gemini';
 
@@ -21,11 +22,11 @@ interface MarketTemperatureProps {
  * 활성 상태에서는 색상을 배경으로 사용하고 텍스트는 흰색으로 처리하여
  * 라이트 모드에서도 대비 확보.
  */
-function getSentimentConfig(colors: ThemeColors) {
+function getSentimentConfig(colors: ThemeColors, t: (key: string) => string) {
   return {
-    BULLISH: { emoji: '🔥', label: '과열', color: colors.error, bg: `${colors.error}20` },
-    NEUTRAL: { emoji: '😐', label: '보통', color: colors.warning, bg: `${colors.warning}20` },
-    BEARISH: { emoji: '🧊', label: '냉각', color: colors.info, bg: `${colors.info}20` },
+    BULLISH: { emoji: '🔥', label: t('market_temperature.sentiment_overheat'), color: colors.error, bg: `${colors.error}20` },
+    NEUTRAL: { emoji: '😐', label: t('market_temperature.sentiment_normal'), color: colors.warning, bg: `${colors.warning}20` },
+    BEARISH: { emoji: '🧊', label: t('market_temperature.sentiment_cold'), color: colors.info, bg: `${colors.info}20` },
   } as const;
 }
 
@@ -37,14 +38,15 @@ function SkeletonLine({ width, backgroundColor }: { width: number; backgroundCol
 
 export default function MarketTemperature({ morningBriefing, isAILoading }: MarketTemperatureProps) {
   const { colors, shadows } = useTheme();
+  const { t } = useLocale();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const SENTIMENT_CONFIG = useMemo(() => getSentimentConfig(colors), [colors]);
+  const SENTIMENT_CONFIG = useMemo(() => getSentimentConfig(colors, t), [colors, t]);
 
   // AI 로딩 중: 스켈레톤
   if (isAILoading) {
     return (
       <View style={[styles.card, shadows.sm]}>
-        <Text style={styles.cardTitle}>시장 온도계</Text>
+        <Text style={styles.cardTitle}>{t('market_temperature.title')}</Text>
         <View style={sk.container}>
           <SkeletonLine width={80} backgroundColor={colors.inverseSurface} />
           <SkeletonLine width={200} backgroundColor={colors.inverseSurface} />
@@ -58,9 +60,9 @@ export default function MarketTemperature({ morningBriefing, isAILoading }: Mark
   if (!morningBriefing) {
     return (
       <View style={[styles.card, shadows.sm]}>
-        <Text style={styles.cardTitle}>시장 온도계</Text>
-        <Text style={styles.emptyText}>시장 데이터를 가져올 수 없습니다</Text>
-        <Text style={styles.emptySubText}>화면을 아래로 당겨 새로고침해 주세요</Text>
+        <Text style={styles.cardTitle}>{t('market_temperature.title')}</Text>
+        <Text style={styles.emptyText}>{t('market_temperature.empty_text')}</Text>
+        <Text style={styles.emptySubText}>{t('market_temperature.empty_sub_text')}</Text>
       </View>
     );
   }
@@ -72,7 +74,7 @@ export default function MarketTemperature({ morningBriefing, isAILoading }: Mark
 
   return (
     <View style={[styles.card, shadows.sm]}>
-      <Text style={styles.cardTitle}>시장 온도계</Text>
+      <Text style={styles.cardTitle}>{t('market_temperature.title')}</Text>
 
       {/* 온도계 인디케이터 */}
       <View style={styles.gaugeRow}>

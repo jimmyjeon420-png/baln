@@ -24,6 +24,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 import { type MarketNewsItem, getTimeAgo } from '../../hooks/useMarketNews';
 import { useNewsPortfolioMatch } from '../../hooks/useNewsPortfolioMatch';
 import { getCurrentLanguage } from '../../locales';
@@ -34,11 +35,11 @@ const SCREEN_HEIGHT = Dimensions.get('window').height;
 // 카테고리 설정
 // ============================================================================
 
-const CATEGORY_CONFIG: Record<string, { icon: string; color: string; label: string }> = {
-  crypto: { icon: 'logo-bitcoin', color: '#F7931A', label: '암호화폐' },
-  stock: { icon: 'trending-up', color: '#4CAF50', label: '주식' },
-  macro: { icon: 'globe-outline', color: '#29B6F6', label: '거시경제' },
-  general: { icon: 'newspaper-outline', color: '#9E9E9E', label: '일반' },
+const CATEGORY_CONFIG: Record<string, { icon: string; color: string; labelKey: string }> = {
+  crypto: { icon: 'logo-bitcoin', color: '#F7931A', labelKey: 'news.category_crypto' },
+  stock: { icon: 'trending-up', color: '#4CAF50', labelKey: 'news.category_stock' },
+  macro: { icon: 'globe-outline', color: '#29B6F6', labelKey: 'news.category_macro' },
+  general: { icon: 'newspaper-outline', color: '#9E9E9E', labelKey: 'news.category_general' },
 };
 
 // ============================================================================
@@ -57,6 +58,7 @@ interface NewsDetailSheetProps {
 
 export default function NewsDetailSheet({ item, visible, onClose }: NewsDetailSheetProps) {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const insets = useSafeAreaInsets();
   const { matchedAssets, totalExposure, hasMatch } = useNewsPortfolioMatch(item?.tags ?? []);
   const catConfig = CATEGORY_CONFIG[item?.category ?? 'general'] || CATEGORY_CONFIG.general;
@@ -96,7 +98,7 @@ export default function NewsDetailSheet({ item, visible, onClose }: NewsDetailSh
             <View style={styles.topMeta}>
               <View style={[styles.categoryChip, { backgroundColor: catConfig.color + '20' }]}>
                 <Ionicons name={catConfig.icon as any} size={12} color={catConfig.color} />
-                <Text style={[styles.categoryLabel, { color: catConfig.color }]}>{catConfig.label}</Text>
+                <Text style={[styles.categoryLabel, { color: catConfig.color }]}>{t(catConfig.labelKey)}</Text>
               </View>
               {item.is_pick && (
                 <View style={styles.pickBadge}>
@@ -151,14 +153,14 @@ export default function NewsDetailSheet({ item, visible, onClose }: NewsDetailSh
               <View style={styles.impactHeader}>
                 <Ionicons name="pie-chart-outline" size={16} color={colors.primary} />
                 <Text style={[styles.impactTitle, { color: colors.textPrimary }]}>
-                  내 포트폴리오 영향
+                  {t('news.portfolio_impact')}
                 </Text>
               </View>
 
               {hasMatch ? (
                 <>
                   <Text style={[styles.impactDesc, { color: colors.textSecondary }]}>
-                    이 뉴스는 보유 자산 중 {matchedAssets.map(a => a.name).join(', ')}에 영향을 줄 수 있습니다
+                    {t('news.portfolio_impact_match', { assets: matchedAssets.map(a => a.name).join(', ') })}
                   </Text>
                   {matchedAssets.map((asset) => (
                     <View key={asset.ticker} style={styles.assetRow}>
@@ -176,7 +178,7 @@ export default function NewsDetailSheet({ item, visible, onClose }: NewsDetailSh
                   ))}
                   <View style={[styles.totalRow, { borderTopColor: colors.border }]}>
                     <Text style={[styles.totalLabel, { color: colors.textSecondary }]}>
-                      관련 자산 비중 합계
+                      {t('news.total_exposure')}
                     </Text>
                     <Text style={[styles.totalValue, { color: colors.primary }]}>
                       {totalExposure}%
@@ -185,7 +187,7 @@ export default function NewsDetailSheet({ item, visible, onClose }: NewsDetailSh
                 </>
               ) : (
                 <Text style={[styles.impactDesc, { color: colors.textTertiary }]}>
-                  현재 보유 자산과 직접적인 관련이 없는 뉴스입니다
+                  {t('news.portfolio_impact_none')}
                 </Text>
               )}
             </View>
@@ -198,7 +200,7 @@ export default function NewsDetailSheet({ item, visible, onClose }: NewsDetailSh
             activeOpacity={0.8}
           >
             <Ionicons name="open-outline" size={16} color="#000" />
-            <Text style={styles.openButtonText}>원문 보기</Text>
+            <Text style={styles.openButtonText}>{t('news.view_original')}</Text>
           </TouchableOpacity>
         </View>
       </View>

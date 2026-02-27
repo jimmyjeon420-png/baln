@@ -14,6 +14,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { CharacterAvatar } from '../character/CharacterAvatar';
 import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
+import { getGuruDisplayName } from '../../services/characterService';
 import type { WeeklyReportData } from '../../hooks/useWeeklyReport';
 import { useLocale } from '../../context/LocaleContext';
 
@@ -190,7 +191,7 @@ export function WeeklyReportCard({ report, colors, locale }: WeeklyReportCardPro
         />
         <View style={styles.guruTextBlock}>
           <Text style={[styles.guruName, { color: colors.primary }]}>
-            {isKo ? (guruConfig?.guruName ?? guru.guruId) : (guruConfig?.guruNameEn ?? guru.guruId)}
+            {getGuruDisplayName(guru.guruId)}
           </Text>
           <Text style={[styles.guruCommentText, { color: colors.textPrimary }]}>
             {guru.comment}

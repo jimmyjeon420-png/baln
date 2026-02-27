@@ -589,7 +589,7 @@ export default function PredictionVoteCard({
                       {result.question}
                     </Text>
                     {result.isCorrect && (
-                      <Text style={styles.reviewReward}>+{result.reward}C</Text>
+                      <Text style={styles.reviewReward}>+{result.reward}개</Text>
                     )}
                     {hasExplanation && (
                       <Ionicons

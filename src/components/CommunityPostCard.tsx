@@ -16,6 +16,7 @@ import {
   HoldingSnapshot,
   TIER_COLORS,
   CATEGORY_INFO,
+  getCategoryLabel,
   TIER_THRESHOLDS,
 } from '../types/community';
 import { getTierFeatures } from '../config/tierFeatures';
@@ -35,6 +36,7 @@ import {
 import { useTheme } from '../hooks/useTheme';
 import { useGuruComments } from '../hooks/useGuruComments';
 import { GURU_CHARACTER_CONFIGS } from '../data/guruCharacterConfig';
+import { getGuruDisplayName } from '../services/characterService';
 
 interface CommunityPostCardProps {
   post: CommunityPost;
@@ -122,7 +124,7 @@ export default function CommunityPostCard({
                     color={categoryInfo.color}
                   />
                   <Text style={[styles.categoryLabel, { color: categoryInfo.color }]}>
-                    {categoryInfo.label}
+                    {getCategoryLabel(post.category)}
                   </Text>
                 </View>
               )}
@@ -250,7 +252,7 @@ function GuruCommentPreview({ postId, colors }: { postId: string; colors: any })
             <Text style={guruStyles.emoji}>{guru?.emoji ?? '🤖'}</Text>
             <View style={guruStyles.textWrap}>
               <Text style={[guruStyles.name, { color: guru?.accentColor || colors.primary }]}>
-                {guru?.guruName ?? comment.guru_id}
+                {getGuruDisplayName(comment.guru_id)}
               </Text>
               <Text
                 style={[guruStyles.content, { color: colors.textSecondary }]}

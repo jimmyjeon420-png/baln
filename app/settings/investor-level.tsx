@@ -154,7 +154,7 @@ export default function InvestorLevelScreen() {
                   <Text style={[styles.milestoneLabel, reached && styles.milestoneLabelActive]}>
                     {ms.label}
                   </Text>
-                  <Text style={styles.milestoneCredits}>+{ms.credits}C</Text>
+                  <Text style={styles.milestoneCredits}>+{ms.credits}개</Text>
                 </View>
               );
             })}

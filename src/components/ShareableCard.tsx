@@ -14,7 +14,7 @@ import ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { useHaptics } from '../hooks/useHaptics';
 import { useShareReward } from '../hooks/useRewards';
-import { TIER_LABELS } from '../hooks/useGatherings';
+import { getCommunityTierLabel } from '../hooks/useGatherings';
 import { UserTier } from '../types/database';
 import { MorningBriefingResult } from '../services/gemini';
 import { REWARD_AMOUNTS } from '../services/rewardService';
@@ -212,7 +212,7 @@ export default function ShareableCard({
             color={tierStyle.accent}
           />
           <Text style={[styles.tierText, { color: tierStyle.accent }]}>
-            {TIER_LABELS[tier]}
+            {getCommunityTierLabel(tier)}
           </Text>
         </View>
 

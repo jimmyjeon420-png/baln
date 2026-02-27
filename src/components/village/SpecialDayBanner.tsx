@@ -18,6 +18,7 @@
 import React, { useMemo, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
 import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
+import { getGuruDisplayName } from '../../services/characterService';
 import { getTodaySpecialDays } from '../../data/guruSpecialDays';
 
 // =============================================================================
@@ -88,9 +89,7 @@ function SpecialDayBanner({
 
   // 구루 정보
   const guruConfig = GURU_CHARACTER_CONFIGS[todaySpecial.guruId];
-  const guruName = guruConfig
-    ? (isKo ? guruConfig.guruName : guruConfig.guruNameEn)
-    : todaySpecial.guruId;
+  const guruName = getGuruDisplayName(todaySpecial.guruId);
   const guruEmoji = guruConfig?.emoji ?? '';
 
   // 유형 라벨

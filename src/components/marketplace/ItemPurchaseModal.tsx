@@ -157,16 +157,16 @@ export function ItemPurchaseModal({
               {/* 잔액 & 비용 */}
               <View style={styles.infoBox}>
                 <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>보유 크레딧</Text>
+                  <Text style={styles.infoLabel}>보유 도토리</Text>
                   <Text style={styles.infoValue}>
-                    {freePeriod ? '∞ (무료 기간)' : `${balance}C (₩${(balance * 100).toLocaleString()})`}
+                    {freePeriod ? '∞ (무료 기간)' : `${balance}개 (₩${(balance * 100).toLocaleString()})`}
                   </Text>
                 </View>
                 <View style={styles.divider} />
                 <View style={styles.infoRow}>
                   <Text style={styles.infoLabel}>비용</Text>
                   <Text style={styles.infoCost}>
-                    {freePeriod ? '무료' : `${item.price}C (₩${item.priceKRW.toLocaleString()})`}
+                    {freePeriod ? '무료' : `${item.price}개 (₩${item.priceKRW.toLocaleString()})`}
                   </Text>
                 </View>
               </View>
@@ -175,7 +175,7 @@ export function ItemPurchaseModal({
               {!freePeriod && !canAfford && (
                 <View style={styles.warningBox}>
                   <Text style={styles.warningText}>
-                    크레딧이 부족합니다. {item.price - balance}C 더 필요해요.
+                    도토리가 부족합니다. {item.price - balance}개 더 필요해요.
                   </Text>
                 </View>
               )}

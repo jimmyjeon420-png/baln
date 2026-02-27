@@ -37,6 +37,7 @@ import CommunityPostCard from '../../src/components/CommunityPostCard';
 import {
   CommunityCategoryFilter,
   CATEGORY_INFO,
+  getCategoryLabel,
   LOUNGE_VIEW_THRESHOLD,
   LOUNGE_POST_THRESHOLD,
 } from '../../src/types/community';
@@ -137,7 +138,7 @@ export default function CommunityMainScreen() {
                   isActive && { color: info.color, fontWeight: '700' },
                 ]}
               >
-                {info.label}
+                {getCategoryLabel(cat)}
               </Text>
             </TouchableOpacity>
           );

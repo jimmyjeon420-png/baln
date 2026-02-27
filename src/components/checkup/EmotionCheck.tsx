@@ -9,6 +9,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 
 interface EmotionCheckProps {
   todayEmotion: string | null;
@@ -20,13 +21,10 @@ interface EmotionCheckProps {
   rewardCredits?: number;
 }
 
-const EMOTIONS = [
-  { key: 'anxious', emoji: '😰', label: '불안' },
-  { key: 'worried', emoji: '😟', label: '걱정' },
-  { key: 'neutral', emoji: '😐', label: '보통' },
-  { key: 'calm', emoji: '😊', label: '안심' },
-  { key: 'confident', emoji: '🤑', label: '확신' },
-] as const;
+const EMOTION_KEYS = ['anxious', 'worried', 'neutral', 'calm', 'confident'] as const;
+const EMOTION_EMOJIS: Record<string, string> = {
+  anxious: '😰', worried: '😟', neutral: '😐', calm: '😊', confident: '🤑',
+};
 
 export default function EmotionCheck({
   todayEmotion,
@@ -37,44 +35,44 @@ export default function EmotionCheck({
   rewardCredits = 0,
 }: EmotionCheckProps) {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const isChecked = todayEmotion !== null && memo.length > 0;
-  const selectedItem = EMOTIONS.find(e => e.key === todayEmotion);
 
   return (
     <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
       <View style={s.headerRow}>
-        <Text style={[s.cardTitle, { color: colors.textPrimary }]}>오늘의 투자 감정</Text>
+        <Text style={[s.cardTitle, { color: colors.textPrimary }]}>{t('emotion_check.title')}</Text>
         {isChecked && (
           <View style={[s.checkedBadge, { backgroundColor: `${colors.primary}1F` }]}>
-            <Text style={[s.checkedText, { color: colors.primaryDark ?? colors.primary }]}>기록됨 ✓</Text>
+            <Text style={[s.checkedText, { color: colors.primaryDark ?? colors.primary }]}>{t('emotion_check.recorded')}</Text>
           </View>
         )}
       </View>
 
       {/* 이모지 버튼 */}
       <View style={s.emotionRow}>
-        {EMOTIONS.map((item) => {
-          const isSelected = todayEmotion === item.key;
+        {EMOTION_KEYS.map((key) => {
+          const isSelected = todayEmotion === key;
           return (
             <TouchableOpacity
-              key={item.key}
+              key={key}
               style={[
                 s.emotionButton,
                 { backgroundColor: colors.surfaceElevated, borderColor: colors.border },
                 isSelected && { backgroundColor: `${colors.primary}1F`, borderColor: `${colors.primary}4D` },
               ]}
-              onPress={() => onSelect(item.key)}
+              onPress={() => onSelect(key)}
               activeOpacity={0.7}
             >
               <Text style={[s.emotionEmoji, isSelected && s.emotionEmojiSelected]}>
-                {item.emoji}
+                {EMOTION_EMOJIS[key]}
               </Text>
               <Text style={[
                 s.emotionLabel,
                 { color: colors.textSecondary },
                 isSelected && { color: colors.primaryDark ?? colors.primary, fontWeight: '700' as const },
               ]}>
-                {item.label}
+                {t(`emotion_check.${key}`)}
               </Text>
             </TouchableOpacity>
           );
@@ -84,10 +82,10 @@ export default function EmotionCheck({
       {/* 메모 입력 (감정 선택 시에만 표시) */}
       {todayEmotion && (
         <View style={[s.memoSection, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}>
-          <Text style={[s.memoLabel, { color: colors.textPrimary }]}>오늘 왜 이런 감정이었나요?</Text>
+          <Text style={[s.memoLabel, { color: colors.textPrimary }]}>{t('emotion_check.memo_prompt')}</Text>
           <TextInput
             style={[s.memoInput, { backgroundColor: colors.background, color: colors.textPrimary, borderColor: colors.border }]}
-            placeholder="30자 이내로 입력해주세요"
+            placeholder={t('emotion_check.memo_placeholder')}
             placeholderTextColor={colors.textTertiary}
             maxLength={30}
             value={memo}
@@ -107,7 +105,7 @@ export default function EmotionCheck({
               disabled={!todayEmotion}
               activeOpacity={0.7}
             >
-              <Text style={[s.saveButtonText, !todayEmotion ? { color: colors.disabledText } : { color: '#FFFFFF' }]}>기록하기 +5C</Text>
+              <Text style={[s.saveButtonText, !todayEmotion ? { color: colors.disabledText } : { color: '#FFFFFF' }]}>{t('emotion_check.save_button', { credits: '5' })}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -117,32 +115,21 @@ export default function EmotionCheck({
       {rewardCredits > 0 && (
         <View style={[s.rewardToast, { backgroundColor: `${colors.primary}1F`, borderColor: `${colors.primary}33` }]}>
           <Text style={[s.rewardToastText, { color: colors.primary }]}>
-            🎉 감정 기록 보상 +{rewardCredits}C (₩{rewardCredits * 100}) 적립!
+            {t('emotion_check.reward_toast', { credits: String(rewardCredits), amount: String(rewardCredits * 100) })}
           </Text>
         </View>
       )}
 
       {/* 선택된 감정 피드백 */}
-      {isChecked && selectedItem && (
+      {isChecked && todayEmotion && (
         <View style={[s.feedbackRow, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}>
           <Text style={[s.feedbackText, { color: colors.textSecondary }]}>
-            {selectedItem.emoji} {getFeedback(selectedItem.key)}
+            {EMOTION_EMOJIS[todayEmotion]} {t(`emotion_check.feedback_${todayEmotion}`)}
           </Text>
         </View>
       )}
     </View>
   );
-}
-
-function getFeedback(key: string): string {
-  switch (key) {
-    case 'anxious': return '불안할 땐 매매를 쉬어가는 것도 전략이에요';
-    case 'worried': return '걱정될 때는 원칙을 다시 확인해보세요';
-    case 'neutral': return '차분한 마음이 좋은 결정을 만들어요';
-    case 'calm': return '안정된 마음으로 투자하고 계시네요';
-    case 'confident': return '확신이 있을 때도 분산투자는 유지하세요';
-    default: return '';
-  }
 }
 
 const s = StyleSheet.create({

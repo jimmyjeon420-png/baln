@@ -14,6 +14,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { HoldingSnapshot, TIER_THRESHOLDS } from '../types/community';
 import { getLocaleCode } from './formatters';
+import { t } from '../locales';
 
 /**
  * 자산 금액 → 티어 판정
@@ -45,7 +46,12 @@ export const TIER_COLORS: Record<string, string> = {
   SILVER: '#C0C0C0',
 };
 
-/** 티어별 라벨 */
+/** 티어별 라벨 (i18n) */
+export const getTierLabel = (tier: string): string => {
+  return t(`community_tier.${tier.toLowerCase()}`);
+};
+
+/** @deprecated Use getTierLabel() for localized labels */
 export const TIER_LABELS: Record<string, string> = {
   DIAMOND: '다이아몬드',
   PLATINUM: '플래티넘',
@@ -85,18 +91,18 @@ export const getRelativeTime = (dateString: string): string => {
   const diffHours = Math.floor(diffMs / 3600000);
   const diffDays = Math.floor(diffMs / 86400000);
 
-  if (diffMins < 1) return '방금 전';
-  if (diffMins < 60) return `${diffMins}분 전`;
-  if (diffHours < 24) return `${diffHours}시간 전`;
-  if (diffDays < 7) return `${diffDays}일 전`;
+  if (diffMins < 1) return t('format.just_now');
+  if (diffMins < 60) return t('format.minutes_ago', { n: diffMins });
+  if (diffHours < 24) return t('format.hours_ago', { n: diffHours });
+  if (diffDays < 7) return t('format.days_ago', { n: diffDays });
   return date.toLocaleDateString(getLocaleCode());
 };
 
 /** 금액 포맷 (3단계: 억/만원/원) */
 export const formatAssetAmount = (amount: number): string => {
-  if (amount >= 100000000) return `${(amount / 100000000).toFixed(1)}억`;
-  if (amount >= 10000) return `${(amount / 10000).toFixed(0)}만원`;
-  return `${amount.toLocaleString()}원`;
+  if (amount >= 100000000) return t('format.amount_eok', { n: (amount / 100000000).toFixed(1) });
+  if (amount >= 10000) return t('format.amount_manwon', { n: (amount / 10000).toFixed(0) });
+  return t('format.amount_won', { n: amount.toLocaleString() });
 };
 
 const EOK = 100000000;
@@ -107,15 +113,15 @@ const EOK = 100000000;
  */
 export const formatCommunityAssetBand = (amount: number): string => {
   const safeAmount = Number.isFinite(amount) ? amount : 0;
-  if (safeAmount >= 20 * EOK) return '20억 이상';
-  if (safeAmount >= 10 * EOK) return '10억 이상';
-  if (safeAmount >= 3 * EOK) return '3억 이상';
-  if (safeAmount >= 1 * EOK) return '1억 이상';
-  return '1억 미만';
+  if (safeAmount >= 20 * EOK) return t('community_display.band_20b_plus');
+  if (safeAmount >= 10 * EOK) return t('community_display.band_10b_plus');
+  if (safeAmount >= 3 * EOK) return t('community_display.band_3b_plus');
+  if (safeAmount >= 1 * EOK) return t('community_display.band_1b_plus');
+  return t('community_display.band_under_1b');
 };
 
 export const formatCommunityDisplayTag = (totalAssets: number): string => {
-  return `[자산: ${formatCommunityAssetBand(totalAssets)}]`;
+  return t('community_display.asset_tag', { band: formatCommunityAssetBand(totalAssets) });
 };
 
 function isRealEstateHolding(holding: Pick<HoldingSnapshot, 'type' | 'ticker'>): boolean {
@@ -136,8 +142,8 @@ function getPortfolioRatioDenominator(totalAssets: number, holdings: HoldingSnap
 export const getCommunityHoldingLabel = (
   holding: Pick<HoldingSnapshot, 'type' | 'ticker' | 'name'>
 ): string => {
-  if (isRealEstateHolding(holding)) return '부동산';
-  return holding.ticker || holding.name || '기타';
+  if (isRealEstateHolding(holding)) return t('community_display.realestate_label');
+  return holding.ticker || holding.name || t('community_display.other_label');
 };
 
 export const getCommunityHoldingRatio = (
@@ -181,10 +187,10 @@ export const buildCommunityAssetMixFromHoldings = (
   const parts: string[] = [];
 
   if (realEstateValue > 0) {
-    parts.push(`부동산 ${formatPortfolioRatio((realEstateValue / denominator) * 100)}`);
+    parts.push(t('community_display.realestate_ratio', { pct: formatPortfolioRatio((realEstateValue / denominator) * 100) }));
   }
   if (financialValue > 0) {
-    parts.push(`금융자산 ${formatPortfolioRatio((financialValue / denominator) * 100)}`);
+    parts.push(t('community_display.financial_ratio', { pct: formatPortfolioRatio((financialValue / denominator) * 100) }));
   }
 
   return parts.join(', ');

@@ -25,7 +25,7 @@ import {
   useCurrentUserInfo,
   formatAssetInBillion,
   TIER_COLORS,
-  TIER_LABELS,
+  getCommunityTierLabel,
   canAccessTier,
 } from '../../src/hooks/useGatherings';
 import { GATHERING_CATEGORY_LABELS, UserTier } from '../../src/types/database';
@@ -91,10 +91,10 @@ export default function GatheringDetailScreen() {
 
     // 티어 체크
     if (!canJoinByTier) {
-      const requiredLabel = TIER_LABELS[requiredTier] || requiredTier;
+      const requiredLabel = getCommunityTierLabel(requiredTier);
       Alert.alert(
         '참가 불가',
-        `이 모임은 ${requiredLabel} 등급 이상만 참가할 수 있습니다.\n\n현재 회원님의 등급: ${TIER_LABELS[userTier]}`,
+        `이 모임은 ${requiredLabel} 등급 이상만 참가할 수 있습니다.\n\n현재 회원님의 등급: ${getCommunityTierLabel(userTier)}`,
         [{ text: '확인' }]
       );
       return;
@@ -330,7 +330,7 @@ export default function GatheringDetailScreen() {
             <View style={styles.infoContent}>
               <Text style={[styles.infoLabel, { color: themeColors.textTertiary }]}>최소 입장 조건</Text>
               <Text style={[styles.infoValue, { color: TIER_COLORS[requiredTier] }]}>
-                {TIER_LABELS[requiredTier]} 등급 이상
+                {getCommunityTierLabel(requiredTier)} 등급 이상
               </Text>
             </View>
             {canJoinByTier ? (
@@ -352,8 +352,8 @@ export default function GatheringDetailScreen() {
             <View style={styles.tierWarningContent}>
               <Text style={[styles.tierWarningTitle, { color: themeColors.warning }]}>등급 제한 모임</Text>
               <Text style={[styles.tierWarningText, { color: themeColors.textSecondary }]}>
-                이 모임은 {TIER_LABELS[requiredTier]} 등급 이상만 참가 가능합니다.{'\n'}
-                현재 회원님의 등급: {TIER_LABELS[userTier]}
+                이 모임은 {getCommunityTierLabel(requiredTier)} 등급 이상만 참가 가능합니다.{'\n'}
+                현재 회원님의 등급: {getCommunityTierLabel(userTier)}
               </Text>
             </View>
           </View>
@@ -419,7 +419,7 @@ export default function GatheringDetailScreen() {
           <View style={[styles.tierBlockedButton, { borderColor: themeColors.warning }]}>
             <Ionicons name="lock-closed" size={20} color={themeColors.warning} />
             <Text style={[styles.tierBlockedButtonText, { color: themeColors.warning }]}>
-              {TIER_LABELS[requiredTier]} 등급 이상만 참가 가능
+              {getCommunityTierLabel(requiredTier)} 등급 이상만 참가 가능
             </Text>
           </View>
         ) : canJoin ? (

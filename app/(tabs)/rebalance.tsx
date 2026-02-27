@@ -713,22 +713,6 @@ export default function CheckupScreen() {
           <FreePeriodBanner compact={true} />
         </View>
 
-        {/* P2-3: 마을 병원 세계관 헤더 */}
-        <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
-          <HospitalHeader
-            healthGrade={
-              healthScore != null && typeof healthScore === 'object' && 'overallScore' in healthScore
-                ? ((healthScore as any).overallScore >= 80 ? 'A'
-                  : (healthScore as any).overallScore >= 60 ? 'B'
-                  : (healthScore as any).overallScore >= 40 ? 'C'
-                  : (healthScore as any).overallScore >= 20 ? 'D' : 'F')
-                : undefined
-            }
-            colors={colors}
-            locale={language}
-          />
-        </View>
-
         {/* 🏥 클리닉 헤더 + 하워드 막스 원장 */}
         <View style={[s.clinicHeader, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text style={[s.clinicTitle, { color: colors.primary }]}>

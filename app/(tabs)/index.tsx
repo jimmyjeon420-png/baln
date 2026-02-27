@@ -862,20 +862,21 @@ export default function HomeScreen() {
         creditBalance={creditBalance?.balance ?? null}
       />
 
-      {/* 마을 날씨 배지 (compact — 스트릭 배너 아래, 좌측 정렬) */}
+      {/* 감정 배지 + 도토리 잔액 */}
       <View style={styles.weatherRow}>
-        <WeatherBadge
-          weather={weather}
-          clothingLevel={clothingLevel}
-          compact
-          colors={colors}
-          locale={language}
-        />
         {sentiment && (
           <View style={[styles.sentimentBadge, { backgroundColor: colors.surfaceLight }]}>
             <Text style={styles.sentimentEmoji}>{sentiment.emoji}</Text>
             <Text style={[styles.sentimentLabel, { color: colors.textSecondary }]}>
               {language === 'ko' ? sentiment.label : sentiment.labelEn}
+            </Text>
+          </View>
+        )}
+        {creditBalance && creditBalance.balance > 0 && (
+          <View style={[styles.sentimentBadge, { backgroundColor: colors.surfaceLight }]}>
+            <Text style={{ fontSize: 14 }}>🌰</Text>
+            <Text style={{ fontSize: 13, fontWeight: '600', color: '#FFC107' }}>
+              {creditBalance.balance.toLocaleString()}개
             </Text>
           </View>
         )}
@@ -922,7 +923,7 @@ export default function HomeScreen() {
           {t('home.square_header')}
         </Text>
         <Text style={[styles.squareSubtitle, { color: colors.textTertiary }]}>
-          {`"${dailyQuote.quote}"`}
+          {`"${language === 'ko' ? dailyQuote.quote : dailyQuote.quoteEn}"`}
         </Text>
       </View>
 

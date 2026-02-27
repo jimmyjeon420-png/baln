@@ -19,6 +19,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 import { MarketNewsItem, getTimeAgo, isRecentNews } from '../../hooks/useMarketNews';
 import { useNewsPortfolioMatch } from '../../hooks/useNewsPortfolioMatch';
 import { getCurrentLanguage } from '../../locales';
@@ -58,11 +59,11 @@ function getImpactIcon(score: number | null): keyof typeof Ionicons.glyphMap {
 // 카테고리 설정
 // ============================================================================
 
-const CATEGORY_CONFIG: Record<string, { icon: string; color: string; label: string }> = {
-  crypto: { icon: 'logo-bitcoin', color: '#F7931A', label: '암호화폐' },
-  stock: { icon: 'trending-up', color: '#4CAF50', label: '주식' },
-  macro: { icon: 'globe-outline', color: '#29B6F6', label: '거시경제' },
-  general: { icon: 'newspaper-outline', color: '#9E9E9E', label: '일반' },
+const CATEGORY_CONFIG: Record<string, { icon: string; color: string; labelKey: string }> = {
+  crypto: { icon: 'logo-bitcoin', color: '#F7931A', labelKey: 'news.category_crypto' },
+  stock: { icon: 'trending-up', color: '#4CAF50', labelKey: 'news.category_stock' },
+  macro: { icon: 'globe-outline', color: '#29B6F6', labelKey: 'news.category_macro' },
+  general: { icon: 'newspaper-outline', color: '#9E9E9E', labelKey: 'news.category_general' },
 };
 
 // ============================================================================
@@ -83,6 +84,7 @@ interface NewsCardProps {
 
 export default function NewsCard({ item, compact = false, onPress }: NewsCardProps) {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const catConfig = CATEGORY_CONFIG[item.category] || CATEGORY_CONFIG.general;
   const recent = isRecentNews(item.published_at);
   const { matchedAssets, hasMatch } = useNewsPortfolioMatch(item.tags ?? []);
@@ -143,7 +145,7 @@ export default function NewsCard({ item, compact = false, onPress }: NewsCardPro
       <View style={styles.topRow}>
         <View style={[styles.categoryChip, { backgroundColor: catConfig.color + '20' }]}>
           <Ionicons name={catConfig.icon as any} size={12} color={catConfig.color} />
-          <Text style={[styles.categoryLabel, { color: catConfig.color }]}>{catConfig.label}</Text>
+          <Text style={[styles.categoryLabel, { color: catConfig.color }]}>{t(catConfig.labelKey)}</Text>
         </View>
         {item.is_pick && (
           <View style={styles.pickBadge}>
@@ -191,7 +193,7 @@ export default function NewsCard({ item, compact = false, onPress }: NewsCardPro
           {hasMatch && (
             <View style={[styles.tagChip, { backgroundColor: '#2E7D3220' }]}>
               <Text style={[styles.tagText, { color: '#2E7D32', fontWeight: '700' }]}>
-                내 자산 {matchedAssets.slice(0, 2).map(a => `${a.name} ${a.weight}%`).join(', ')}
+                {t('news.my_holding', { assets: matchedAssets.slice(0, 2).map(a => `${a.name} ${a.weight}%`).join(', ') })}
               </Text>
             </View>
           )}

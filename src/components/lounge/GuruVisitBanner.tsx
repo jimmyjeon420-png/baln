@@ -13,6 +13,7 @@ import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { useTheme } from '../../hooks/useTheme';
 import { useLocale } from '../../context/LocaleContext';
+import { getGuruDisplayName } from '../../services/characterService';
 import type { VisitingGuru } from '../../services/cafeGuruVisitService';
 
 // =============================================================================
@@ -83,8 +84,8 @@ function GuruVisitBanner({ visitingGurus, onTalkToGuru }: GuruVisitBannerProps):
             <View style={styles.guruTextWrap}>
               <Text style={[styles.guruName, { color: colors.textPrimary }]}>
                 {isKo
-                  ? `${guru.guruName}이 카페에 방문 중!`
-                  : `${guru.guruNameEn} is visiting the cafe!`}
+                  ? `${getGuruDisplayName(guru.guruId)}이 카페에 방문 중!`
+                  : `${getGuruDisplayName(guru.guruId)} is visiting the cafe!`}
               </Text>
               <Text style={[styles.timeText, { color: colors.textSecondary }]}>
                 {formatHour(guru.startHour)}~{formatHour(guru.endHour)}
@@ -114,7 +115,7 @@ function GuruVisitBanner({ visitingGurus, onTalkToGuru }: GuruVisitBannerProps):
           {upcomingGurus.map((guru) => (
             <View key={guru.guruId} style={styles.upcomingRow}>
               <Text style={[styles.upcomingText, { color: colors.textPrimary }]}>
-                {guru.emoji} {isKo ? guru.guruName : guru.guruNameEn}{' '}
+                {guru.emoji} {getGuruDisplayName(guru.guruId)}{' '}
                 <Text style={{ color: colors.textSecondary }}>
                   ({formatHour(guru.startHour)}~{formatHour(guru.endHour)})
                 </Text>

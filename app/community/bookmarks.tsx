@@ -22,7 +22,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useBookmarkedPosts, useMyBookmarks, useToggleBookmark } from '../../src/hooks/useBookmarks';
 import { useMyLikes, useLikePost } from '../../src/hooks/useCommunity';
-import { CommunityPost, TIER_COLORS, CATEGORY_INFO } from '../../src/types/community';
+import { CommunityPost, TIER_COLORS, CATEGORY_INFO, getCategoryLabel } from '../../src/types/community';
 import { getTierFromAssets, getTierIcon, getRelativeTime, formatCommunityDisplayTag } from '../../src/utils/communityUtils';
 import { useTheme } from '../../src/hooks/useTheme';
 import { t } from '../../src/locales';
@@ -71,7 +71,7 @@ export default function BookmarksScreen() {
             {categoryInfo && (
               <View style={[styles.categoryBadge, { backgroundColor: categoryInfo.color + '20' }]}>
                 <Text style={[styles.categoryLabel, { color: categoryInfo.color }]}>
-                  {categoryInfo.label}
+                  {getCategoryLabel(item.category)}
                 </Text>
               </View>
             )}

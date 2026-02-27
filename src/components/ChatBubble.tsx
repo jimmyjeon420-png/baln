@@ -49,7 +49,7 @@ export default function ChatBubble({
           )}
           {isUser && creditsCharged && creditsCharged > 0 ? (
             <View style={styles.creditTag}>
-              <Ionicons name="diamond" size={10} color="#7C4DFF" />
+              <Text style={{ fontSize: 20 }}>🌰</Text>
               <Text style={styles.creditText}>{creditsCharged}</Text>
             </View>
           ) : null}

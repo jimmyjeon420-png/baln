@@ -26,6 +26,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
+import { getGuruDisplayName } from '../../services/characterService';
 import { t, getCurrentLanguage } from '../../locales';
 
 // ============================================================================
@@ -226,7 +227,7 @@ export function VillageWelcome({ onComplete, colors }: VillageWelcomeProps) {
             <Text style={styles.guruEmoji}>{g.emoji}</Text>
             <View style={styles.guruInfo}>
               <Text style={[styles.guruName, { color: colors.textPrimary }]}>
-                {isKo ? g.guruName : g.guruNameEn}
+                {getGuruDisplayName(g.guruId)}
               </Text>
               <Text style={[styles.guruDesc, { color: colors.textTertiary }]}>
                 {isKo ? g.characterConcept : g.characterConceptEn}

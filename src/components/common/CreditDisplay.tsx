@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useMyCredits } from '../../hooks/useCredits';
 import { formatCredits } from '../../utils/formatters';
+import { useLocale } from '../../context/LocaleContext';
 
 /** 충전 기능 오픈일 (6월 1일부터 활성화) */
 const CHARGE_OPEN_DATE = new Date('2026-06-01T00:00:00');
@@ -33,6 +34,7 @@ interface CreditDisplayProps {
 }
 
 export function CreditDisplay({ onPress }: CreditDisplayProps) {
+  const { t } = useLocale();
   const { data: credits, isLoading } = useMyCredits();
   const balance = credits?.balance ?? 0;
   const chargingOpen = isChargingOpen();
@@ -68,9 +70,9 @@ export function CreditDisplay({ onPress }: CreditDisplayProps) {
           {/* 헤더 */}
           <View style={styles.header}>
             <View style={styles.iconContainer}>
-              <Ionicons name="diamond" size={20} color="#FFF" />
+              <Text style={{ fontSize: 40 }}>🌰</Text>
             </View>
-            <Text style={styles.label}>내 크레딧</Text>
+            <Text style={styles.label}>{t('credit.my_credits')}</Text>
           </View>
 
           {/* 크레딧 잔액 */}
@@ -94,7 +96,7 @@ export function CreditDisplay({ onPress }: CreditDisplayProps) {
               />
             </View>
             <Text style={styles.footerText}>
-              {chargingOpen ? '충전하기' : `${FREE_TRIAL_LABEL}까지 무료 체험 중`}
+              {chargingOpen ? t('credit.charge') : t('credit.free_trial', { date: FREE_TRIAL_LABEL })}
             </Text>
           </View>
 

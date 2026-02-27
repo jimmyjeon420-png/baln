@@ -281,7 +281,7 @@ export default function StreakBanner() {
                   colors={colors}
                 />
                 <MilestoneItem
-                  emoji="💎"
+                  emoji="🌰"
                   days={30}
                   label={t('streak_banner.milestone_one_month')}
                   achieved={currentStreak >= 30}

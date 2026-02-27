@@ -228,7 +228,7 @@ export default function PollCard({ poll, onVote, isVoting }: PollCardProps) {
 
         {isResolved && poll.myIsCorrect && poll.myCreditsEarned > 0 && (
           <View style={styles.creditBadge}>
-            <Text style={styles.creditBadgeText}>+{poll.myCreditsEarned} 크레딧</Text>
+            <Text style={styles.creditBadgeText}>+{poll.myCreditsEarned} 도토리</Text>
           </View>
         )}
 
@@ -237,7 +237,7 @@ export default function PollCard({ poll, onVote, isVoting }: PollCardProps) {
         )}
 
         {!isResolved && (
-          <Text style={styles.rewardHint}>적중 시 +{poll.reward_credits} 크레딧</Text>
+          <Text style={styles.rewardHint}>적중 시 +{poll.reward_credits} 도토리</Text>
         )}
       </View>
 

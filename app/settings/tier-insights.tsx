@@ -29,7 +29,7 @@ import {
   TierAllocationStat,
 } from '../../src/hooks/useTierAllocation';
 import { FEATURE_COSTS, TIER_DISCOUNTS } from '../../src/types/marketplace';
-import { TIER_COLORS, TIER_LABELS } from '../../src/types/community';
+import { TIER_COLORS, getCommunityTierLabel } from '../../src/types/community';
 import { useTheme } from '../../src/hooks/useTheme';
 import { useLocale } from '../../src/context/LocaleContext';
 
@@ -83,7 +83,7 @@ function TierAllocationCard({ stat, isMyTier }: { stat: TierAllocationStat; isMy
   const { colors } = useTheme();
   const { t } = useLocale();
   const tierColor = TIER_COLORS[stat.tier] || '#FFFFFF';
-  const tierLabel = TIER_LABELS[stat.tier] || stat.tier;
+  const tierLabel = getCommunityTierLabel(stat.tier);
   const maxWeight = Math.max(
     stat.avg_stock_weight, stat.avg_crypto_weight,
     stat.avg_realestate_weight, stat.avg_cash_weight, stat.avg_other_weight, 1
@@ -216,10 +216,10 @@ export default function TierInsightsScreen() {
     // 간단히 코인 비중 차이를 Hook으로 사용 (토스 스타일)
     const avgCrypto = myTierData.avg_crypto_weight;
     if (avgCrypto > 15) {
-      return t('tier_insights.hook_crypto', { tier: TIER_LABELS[myTier] || myTier, pct: avgCrypto.toFixed(0) });
+      return t('tier_insights.hook_crypto', { tier: getCommunityTierLabel(myTier), pct: avgCrypto.toFixed(0) });
     }
     const avgStock = myTierData.avg_stock_weight;
-    return t('tier_insights.hook_stock', { tier: TIER_LABELS[myTier] || myTier, pct: avgStock.toFixed(0) });
+    return t('tier_insights.hook_stock', { tier: getCommunityTierLabel(myTier), pct: avgStock.toFixed(0) });
   };
 
   return (
@@ -231,7 +231,7 @@ export default function TierInsightsScreen() {
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{t('tier_insights.title')}</Text>
         <View style={[styles.creditBadge, { backgroundColor: colors.surfaceLight }]}>
-          <Ionicons name="diamond" size={14} color="#7C4DFF" />
+          <Text style={{ fontSize: 28 }}>🌰</Text>
           <Text style={[styles.creditBadgeText, { color: colors.textPrimary }]}>{credits?.balance || 0}</Text>
         </View>
       </View>
@@ -267,7 +267,7 @@ export default function TierInsightsScreen() {
             <View style={styles.socialProof}>
               <Ionicons name="people" size={14} color={colors.textTertiary} />
               <Text style={[styles.socialProofText, { color: colors.textTertiary }]}>
-                {t('tier_insights.social_proof', { count: String(myTierData.user_count), tier: TIER_LABELS[myTier] || myTier })}
+                {t('tier_insights.social_proof', { count: String(myTierData.user_count), tier: getCommunityTierLabel(myTier) })}
               </Text>
             </View>
           </View>
@@ -303,7 +303,7 @@ export default function TierInsightsScreen() {
                   >
                     <View style={[styles.previewDot, { backgroundColor: tierColor }]} />
                     <Text style={[styles.previewTier, { color: isMyTierItem ? tierColor : colors.textTertiary }]}>
-                      {TIER_LABELS[tier]}
+                      {getCommunityTierLabel(tier)}
                     </Text>
                     {isMyTierItem ? (
                       <Text style={[styles.previewUnlocked, { color: colors.primary }]}>{t('tier_insights.my_tier_label')}</Text>
@@ -332,7 +332,7 @@ export default function TierInsightsScreen() {
                 <ActivityIndicator size="small" color="#FFFFFF" />
               ) : (
                 <>
-                  <Ionicons name="diamond" size={16} color="#FFFFFF" />
+                  <Text style={{ fontSize: 32 }}>🌰</Text>
                   <Text style={styles.unlockButtonText}>
                     {t('tier_insights.unlock_button', { cost: String(actualCost) })}
                   </Text>
@@ -370,7 +370,7 @@ export default function TierInsightsScreen() {
                   <View style={styles.btcBarsContainer}>
                     {allTierData.map((stat) => {
                       const tierColor = TIER_COLORS[stat.tier] || '#888';
-                      const tierLabel = TIER_LABELS[stat.tier] || stat.tier;
+                      const tierLabel = getCommunityTierLabel(stat.tier);
                       const isMe = stat.tier === myTier;
                       const maxBtc = Math.max(...allTierData.map(s => s.avg_btc_weight), 1);
                       const barW = Math.max((stat.avg_btc_weight / maxBtc) * 100, 3);

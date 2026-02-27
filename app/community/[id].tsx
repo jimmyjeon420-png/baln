@@ -49,6 +49,7 @@ import {
   HoldingSnapshot,
   TIER_COLORS,
   CATEGORY_INFO,
+  getCategoryLabel,
   LOUNGE_COMMENT_THRESHOLD,
 } from '../../src/types/community';
 import {
@@ -479,7 +480,7 @@ export default function PostDetailScreen() {
                   <View style={[styles.postCategoryBadge, { backgroundColor: categoryInfo.color + '20' }]}>
                     <Ionicons name={categoryInfo.icon as any} size={10} color={categoryInfo.color} />
                     <Text style={[styles.postCategoryLabel, { color: categoryInfo.color }]}>
-                      {categoryInfo.label}
+                      {getCategoryLabel(post.category)}
                     </Text>
                   </View>
                 )}

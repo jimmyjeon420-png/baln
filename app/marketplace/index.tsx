@@ -341,7 +341,7 @@ export default function MarketplaceScreen() {
 
                 {/* 크레딧 비용 */}
                 <View style={s.toolCostRow}>
-                  <Ionicons name="diamond" size={11} color="#7C4DFF" />
+                  <Text style={{ fontSize: 22 }}>🌰</Text>
                   {hasDiscount && (
                     <Text style={s.toolOriginalCost}>{originalCost}</Text>
                   )}
@@ -376,15 +376,15 @@ export default function MarketplaceScreen() {
         >
           <View style={s.creditLeft}>
             <View style={s.creditIconBg}>
-              <Ionicons name="diamond" size={22} color="#7C4DFF" />
+              <Text style={{ fontSize: 44 }}>🌰</Text>
             </View>
             <View>
-              <Text style={s.creditLabel}>보유 크레딧</Text>
+              <Text style={s.creditLabel}>보유 도토리</Text>
               <Text style={s.creditBalance}>{balance.toLocaleString()}</Text>
             </View>
           </View>
           <View style={s.creditCta}>
-            <Text style={s.creditCtaText}>크레딧 모으기</Text>
+            <Text style={s.creditCtaText}>도토리 모으기</Text>
             <Ionicons name="arrow-forward" size={14} color="#7C4DFF" />
           </View>
         </TouchableOpacity>
@@ -424,7 +424,7 @@ export default function MarketplaceScreen() {
                     </Text>
                   </View>
                   <View style={s.historyCostBadge}>
-                    <Ionicons name="diamond" size={10} color="#7C4DFF" />
+                    <Text style={{ fontSize: 20 }}>🌰</Text>
                     <Text style={s.historyCost}>{item.credits_charged}</Text>
                   </View>
                 </View>
@@ -435,7 +435,7 @@ export default function MarketplaceScreen() {
 
         {/* ── 7.5. 크레딧 상점 (Tier 1/2 아이템) ── */}
         <View style={s.shopSection}>
-          <Text style={s.sectionTitle}>크레딧 상점</Text>
+          <Text style={s.sectionTitle}>도토리 상점</Text>
           {[...getItemsByTier('instant'), ...getItemsByTier('experience')].map((item) => (
             <TouchableOpacity
               key={item.id}
@@ -453,8 +453,8 @@ export default function MarketplaceScreen() {
                 <Text style={s.shopItemDesc} numberOfLines={1}>{item.description}</Text>
               </View>
               <View style={s.shopItemPrice}>
-                <Ionicons name="diamond" size={11} color="#7C4DFF" />
-                <Text style={s.shopItemPriceText}>{item.price}C</Text>
+                <Text style={{ fontSize: 22 }}>🌰</Text>
+                <Text style={s.shopItemPriceText}>{item.price}개</Text>
               </View>
             </TouchableOpacity>
           ))}

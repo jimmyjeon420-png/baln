@@ -28,6 +28,7 @@ import type { NewspaperArticle, GuruNewsReaction } from '../../types/village';
 import type { ThemeColors } from '../../styles/colors';
 import { CharacterAvatar } from '../character/CharacterAvatar';
 import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
+import { getGuruDisplayName } from '../../services/characterService';
 import { getMoodEmoji, moodToExpression } from '../../services/moodEngine';
 import { useLocale } from '../../context/LocaleContext';
 
@@ -149,7 +150,7 @@ function GuruReactionRow({
               {isExpanded && (
                 <View style={[reactionStyles.bubble, { backgroundColor: colors.surfaceElevated }]}>
                   <Text style={[reactionStyles.bubbleName, { color: colors.primary }]}>
-                    {config.emoji} {isKo ? config.guruName : config.guruNameEn}
+                    {config.emoji} {getGuruDisplayName(reaction.guruId)}
                   </Text>
                   <Text style={[reactionStyles.bubbleText, { color: colors.textPrimary }]}>
                     {isKo ? reaction.reaction : reaction.reactionEn}

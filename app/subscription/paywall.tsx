@@ -66,9 +66,9 @@ const BENEFITS = [
     desc: '매일 방문 스트릭 + 마일스톤 보상 + 패닉셀 방지',
   },
   {
-    icon: 'diamond' as const,
-    title: '매월 30 크레딧 보너스',
-    desc: '₩3,000 가치의 크레딧 자동 지급 (Deep Dive 6회분)',
+    icon: 'gift' as const,
+    title: '매월 30 도토리 보너스',
+    desc: '₩3,000 가치의 도토리 자동 지급 (Deep Dive 6회분)',
   },
   {
     icon: 'flash' as const,
@@ -432,10 +432,10 @@ export default function PaywallScreen() {
 
           {/* 크레딧 적립 안내 */}
           <View style={styles.creditInfo}>
-            <Text style={styles.creditInfoTitle}>지금 크레딧을 적립하세요!</Text>
+            <Text style={styles.creditInfoTitle}>지금 도토리를 적립하세요!</Text>
             <Text style={styles.creditInfoDesc}>
-              매일 출석 +2 크레딧 · 공유 +3 크레딧{'\n'}
-              적립한 크레딧은 6월 이후에도 사용 가능합니다
+              매일 출석 +2 도토리 · 공유 +3 도토리{'\n'}
+              적립한 도토리는 6월 이후에도 사용 가능합니다
             </Text>
           </View>
 
@@ -477,7 +477,7 @@ export default function PaywallScreen() {
 
           <Text style={styles.legalText}>
             2026년 5월 31일까지 무료 기간입니다.{'\n'}
-            6월부터 구독 또는 크레딧으로 이용 가능합니다.
+            6월부터 구독 또는 도토리로 이용 가능합니다.
           </Text>
         </ScrollView>
       </SafeAreaView>
@@ -761,10 +761,10 @@ export default function PaywallScreen() {
 
         {/* 크레딧 안내 */}
         <View style={styles.creditInfo}>
-          <Text style={styles.creditInfoTitle}>AI 기능은 크레딧으로 이용</Text>
+          <Text style={styles.creditInfoTitle}>AI 기능은 도토리로 이용</Text>
           <Text style={styles.creditInfoDesc}>
-            AI 분석 1회 ₩300~ · 구독 없이도 크레딧 구매로 이용 가능{'\n'}
-            크레딧 패키지: ₩5,000 / ₩10,000 / ₩30,000
+            AI 분석 1회 ₩300~ · 구독 없이도 도토리 구매로 이용 가능{'\n'}
+            도토리 패키지: ₩5,000 / ₩10,000 / ₩30,000
           </Text>
         </View>
 

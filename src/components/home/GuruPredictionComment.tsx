@@ -13,6 +13,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { CharacterAvatar } from '../character/CharacterAvatar';
 import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
+import { getGuruDisplayName } from '../../services/characterService';
 import { getDailyQuote, getRandomQuote } from '../../data/guruQuoteBank';
 import type { ThemeColors } from '../../styles/colors';
 
@@ -73,7 +74,7 @@ export function GuruPredictionComment({
 
   // 오늘의 관련 명언
   const quote = getDailyQuote();
-  const guruName = isKo ? (config?.guruName ?? guruId) : (config?.guruNameEn ?? guruId);
+  const guruName = getGuruDisplayName(guruId);
 
   // 적중률에 따른 표정
   const rate = correctCount / totalCount;
@@ -103,9 +104,7 @@ export function GuruPredictionComment({
           "{isKo ? quote.quote : quote.quoteEn}"
         </Text>
         <Text style={[styles.quoteSource, { color: colors.textTertiary }]}>
-          — {isKo
-            ? (GURU_CHARACTER_CONFIGS[quote.guruId]?.guruName ?? quote.guruId)
-            : (GURU_CHARACTER_CONFIGS[quote.guruId]?.guruNameEn ?? quote.guruId)}
+          — {getGuruDisplayName(quote.guruId)}
         </Text>
       </View>
     </View>

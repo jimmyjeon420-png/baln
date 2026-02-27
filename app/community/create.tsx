@@ -40,6 +40,7 @@ import { useSharedPortfolio } from '../../src/hooks/useSharedPortfolio';
 import {
   CommunityCategory,
   CATEGORY_INFO,
+  getCategoryLabel,
   LOUNGE_POST_THRESHOLD,
 } from '../../src/types/community';
 import { useTheme } from '../../src/hooks/useTheme';
@@ -47,7 +48,7 @@ import {
   formatAssetAmount,
   getTierFromAssets,
   TIER_COLORS,
-  TIER_LABELS,
+  getTierLabel,
   BEGINNER_QUESTION_PREFIX,
 } from '../../src/utils/communityUtils';
 import { validateContent, getViolationMessage } from '../../src/services/contentFilter';
@@ -301,7 +302,7 @@ export default function CreatePostScreen() {
   // 티어 정보
   const tier = getTierFromAssets(eligibility.totalAssets);
   const tierColor = TIER_COLORS[tier] || '#C0C0C0';
-  const tierLabel = TIER_LABELS[tier] || tier;
+  const tierLabel = getTierLabel(tier);
 
   // 메인 화면
   return (
@@ -394,7 +395,7 @@ export default function CreatePostScreen() {
                         isSelected && { color: info.color, fontWeight: '700' },
                       ]}
                     >
-                      {info.label}
+                      {getCategoryLabel(cat)}
                     </Text>
                   </TouchableOpacity>
                 );

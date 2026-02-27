@@ -21,6 +21,7 @@ import {
 } from 'react-native';
 import { CharacterAvatar } from '../character/CharacterAvatar';
 import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
+import { getGuruDisplayName } from '../../services/characterService';
 
 // ============================================================================
 // 타입
@@ -148,7 +149,7 @@ function GuruGiftModal({
   const config = GURU_CHARACTER_CONFIGS[guruId];
   if (!config) return null;
 
-  const guruName = isKo ? config.guruName : config.guruNameEn;
+  const guruName = getGuruDisplayName(guruId);
 
   return (
     <Modal

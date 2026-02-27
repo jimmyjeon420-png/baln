@@ -7,6 +7,8 @@
  *   글쓰기: 3,000만원+
  */
 
+import { t } from '../locales';
+
 // ================================================================
 // 접근제어 상수
 // ================================================================
@@ -28,7 +30,7 @@ export const LOUNGE_POST_THRESHOLD = 30000000;
 export type CommunityCategory = 'stocks' | 'crypto' | 'realestate';
 export type CommunityCategoryFilter = CommunityCategory | 'all';
 
-// 카테고리 정보 상수
+// 카테고리 아이콘/색상 상수 (label은 getCategoryLabel()로 i18n 지원)
 export const CATEGORY_INFO: Record<CommunityCategoryFilter, {
   label: string;
   icon: string;
@@ -38,6 +40,11 @@ export const CATEGORY_INFO: Record<CommunityCategoryFilter, {
   stocks: { label: '주식방', icon: 'trending-up', color: '#4CAF50' },
   crypto: { label: '코인방', icon: 'logo-bitcoin', color: '#F7931A' },
   realestate: { label: '부동산방', icon: 'home', color: '#2196F3' },
+};
+
+/** 카테고리 라벨 (i18n) - CATEGORY_INFO.label 대신 사용 */
+export const getCategoryLabel = (category: CommunityCategoryFilter): string => {
+  return t(`community_category.${category}`);
 };
 
 // ================================================================
@@ -143,6 +150,7 @@ export const TIER_LEVELS: { [key: string]: number } = {
   DIAMOND: 4,
 };
 
+/** @deprecated Use getCommunityTierLabel() for localized labels */
 export const TIER_LABELS: { [key: string]: string } = {
   SILVER: '실버',
   GOLD: '골드',
@@ -150,11 +158,22 @@ export const TIER_LABELS: { [key: string]: string } = {
   DIAMOND: '다이아몬드',
 };
 
+/** 티어 라벨 (i18n) */
+export const getCommunityTierLabel = (tier: string): string => {
+  return t(`community_tier.${tier.toLowerCase()}`);
+};
+
+/** @deprecated Use getCommunityTierDescription() for localized descriptions */
 export const TIER_DESCRIPTIONS: { [key: string]: string } = {
   SILVER: '1억 미만',
   GOLD: '1억 ~ 5억',
   PLATINUM: '5억 ~ 10억',
   DIAMOND: '10억 이상',
+};
+
+/** 티어 설명 (i18n) */
+export const getCommunityTierDescription = (tier: string): string => {
+  return t(`community_tier.desc_${tier.toLowerCase()}`);
 };
 
 export const TIER_COLORS: { [key: string]: string } = {
@@ -190,7 +209,7 @@ export type ReportReason =
   | 'harassment'     // 욕설/비방
   | 'other';         // 기타
 
-/** 신고 사유 라벨 */
+/** @deprecated Use getReportReasonLabel() for localized labels */
 export const REPORT_REASON_LABELS: Record<ReportReason, string> = {
   spam: '스팸/도배',
   inappropriate: '부적절한 내용',
@@ -198,6 +217,11 @@ export const REPORT_REASON_LABELS: Record<ReportReason, string> = {
   illegal: '불법 리딩방',
   harassment: '욕설/비방',
   other: '기타',
+};
+
+/** 신고 사유 라벨 (i18n) */
+export const getReportReasonLabel = (reason: ReportReason): string => {
+  return t(`report_reason.${reason}`);
 };
 
 /** 신고 데이터 (DB community_reports 테이블) */

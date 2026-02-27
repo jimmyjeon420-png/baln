@@ -12,7 +12,7 @@ import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated, TouchableOpacity, Dimensions } from 'react-native';
 import { CharacterAvatar } from '../character/CharacterAvatar';
 import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
-import { sentimentToExpression } from '../../services/characterService';
+import { sentimentToExpression, getGuruDisplayName } from '../../services/characterService';
 import type { GuruPosition } from '../../hooks/useGuruVillage';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -159,7 +159,7 @@ export function WanderingGuru({ position, onPress, villageHeight }: WanderingGur
         />
         {/* 이름 라벨 */}
         <Text style={[styles.nameLabel, { color: accentColor }]} numberOfLines={1}>
-          {config?.guruName || position.guruId}
+          {getGuruDisplayName(position.guruId)}
         </Text>
       </TouchableOpacity>
 
@@ -182,7 +182,7 @@ export function WanderingGuru({ position, onPress, villageHeight }: WanderingGur
             <>
               <View style={[styles.bubble, { borderColor: accentColor + '40' }]}>
                 <Text style={[styles.bubbleSpeaker, { color: accentColor }]}>
-                  {config?.guruName || position.guruId}
+                  {getGuruDisplayName(position.guruId)}
                 </Text>
                 <Text
                   style={styles.bubbleText}
@@ -199,7 +199,7 @@ export function WanderingGuru({ position, onPress, villageHeight }: WanderingGur
               <View style={[styles.bubbleTailUp, tailPlacementStyle, { borderBottomColor: '#1E2E3E' }]} />
               <View style={[styles.bubble, { borderColor: accentColor + '40' }]}>
                 <Text style={[styles.bubbleSpeaker, { color: accentColor }]}>
-                  {config?.guruName || position.guruId}
+                  {getGuruDisplayName(position.guruId)}
                 </Text>
                 <Text
                   style={styles.bubbleText}

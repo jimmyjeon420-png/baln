@@ -28,7 +28,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useReports, useUpdateReportStatus, useDeleteReportedContent } from '../../src/hooks/useReports';
-import { ReportWithContent, ReportStatus, REPORT_REASON_LABELS } from '../../src/types/community';
+import { ReportWithContent, ReportStatus, getReportReasonLabel } from '../../src/types/community';
 import { COLORS } from '../../src/styles/theme';
 
 type FilterStatus = 'all' | ReportStatus;
@@ -192,7 +192,7 @@ export default function AdminReportsScreen() {
               size={16}
               color={COLORS.textSecondary}
             />
-            <Text style={styles.reportReason}>{REPORT_REASON_LABELS[item.reason]}</Text>
+            <Text style={styles.reportReason}>{getReportReasonLabel(item.reason)}</Text>
             {/* 긴급 표시: 24시간 초과 대기 */}
             {urgent && (
               <View style={styles.urgentBadge}>
@@ -345,7 +345,7 @@ export default function AdminReportsScreen() {
                 <Text style={styles.modalSectionTitle}>신고 정보</Text>
                 <View style={styles.infoRow}>
                   <Text style={styles.infoLabel}>사유:</Text>
-                  <Text style={styles.infoValue}>{REPORT_REASON_LABELS[selectedReport.reason]}</Text>
+                  <Text style={styles.infoValue}>{getReportReasonLabel(selectedReport.reason)}</Text>
                 </View>
                 {selectedReport.description && (
                   <View style={styles.infoRow}>

@@ -11,16 +11,17 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Svg, { Path, Line, Circle } from 'react-native-svg';
 import { SkeletonBlock } from '../SkeletonLoader';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 import { ThemeColors } from '../../styles/colors';
 import type { PortfolioSnapshot } from '../../hooks/usePortfolioSnapshots';
 
 // ── 기간 탭 ──
 
 type Period = '1W' | '1M' | '3M';
-const PERIOD_OPTIONS: { key: Period; label: string; days: number }[] = [
-  { key: '1W', label: '1주', days: 7 },
-  { key: '1M', label: '1개월', days: 30 },
-  { key: '3M', label: '3개월', days: 90 },
+const PERIOD_OPTIONS: { key: Period; labelKey: string; days: number }[] = [
+  { key: '1W', labelKey: 'asset_trend.period_1w', days: 7 },
+  { key: '1M', labelKey: 'asset_trend.period_1m', days: 30 },
+  { key: '3M', labelKey: 'asset_trend.period_3m', days: 90 },
 ];
 
 // ── Props ──
@@ -71,6 +72,7 @@ export default function AssetTrendSection({
   currentTotal,
 }: AssetTrendSectionProps) {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const [period, setPeriod] = useState<Period>('1M');
 
   const selectedDays = PERIOD_OPTIONS.find(p => p.key === period)?.days ?? 30;
@@ -138,8 +140,8 @@ export default function AssetTrendSection({
       {/* 헤더 */}
       <View style={styles.headerRow}>
         <View>
-          <Text style={[styles.cardLabel, { color: colors.textPrimary }]}>자산 추이</Text>
-          <Text style={[styles.cardLabelEn, { color: colors.textTertiary }]}>Asset Trend</Text>
+          <Text style={[styles.cardLabel, { color: colors.textPrimary }]}>{t('asset_trend.title')}</Text>
+          <Text style={[styles.cardLabelEn, { color: colors.textTertiary }]}>{t('asset_trend.subtitle')}</Text>
         </View>
         {/* 기간 변동 */}
         <View style={[styles.changeBadge, { backgroundColor: isPositive ? `${colors.buy}1F` : `${colors.sell}1F` }]}>
@@ -165,7 +167,7 @@ export default function AssetTrendSection({
               styles.periodTabText,
               { color: period === opt.key ? colors.primaryDark ?? colors.primary : colors.textTertiary },
             ]}>
-              {opt.label}
+              {t(opt.labelKey)}
             </Text>
           </TouchableOpacity>
         ))}
@@ -211,15 +213,15 @@ export default function AssetTrendSection({
       {/* 기간 요약 */}
       <View style={styles.summaryRow}>
         <View style={styles.summaryItem}>
-          <Text style={[styles.summaryLabel, { color: colors.textTertiary }]}>{selectedDays}일 전</Text>
+          <Text style={[styles.summaryLabel, { color: colors.textTertiary }]}>{t('asset_trend.days_ago', { days: String(selectedDays) })}</Text>
           <Text style={[styles.summaryValue, { color: colors.textPrimary }]}>₩{chartValues[0] != null ? Math.floor(chartValues[0]).toLocaleString() : '0'}</Text>
         </View>
         <View style={styles.summaryItem}>
-          <Text style={[styles.summaryLabel, { color: colors.textTertiary }]}>현재</Text>
+          <Text style={[styles.summaryLabel, { color: colors.textTertiary }]}>{t('asset_trend.current')}</Text>
           <Text style={[styles.summaryValue, { color: lineColor }]}>₩{Math.floor(currentTotal).toLocaleString()}</Text>
         </View>
         <View style={styles.summaryItem}>
-          <Text style={[styles.summaryLabel, { color: colors.textTertiary }]}>변동</Text>
+          <Text style={[styles.summaryLabel, { color: colors.textTertiary }]}>{t('asset_trend.change')}</Text>
           <Text style={[styles.summaryValue, { color: lineColor }]}>
             {isPositive ? '+' : ''}₩{Math.floor(Math.abs(periodChange.amount)).toLocaleString()}
           </Text>

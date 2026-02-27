@@ -14,6 +14,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Sentry from '@sentry/react-native';
 import { GURU_CHARACTER_CONFIGS } from '../data/guruCharacterConfig';
 import { getPromptLanguageInstruction, getLangParam } from '../utils/promptLanguage';
+import { getCurrentDisplayLanguage } from '../context/LocaleContext';
 import {
   getFreshnessPromptSuffix,
   markSeen,
@@ -76,6 +77,19 @@ const GURU_PERSONAS: Record<string, string> = {
   lynch: '피터 린치: 일상적이고 교수님 느낌, "슈퍼마켓에서 투자 아이디어를", 쉬운 설명',
   marks: '하워드 막스: 사려깊은 작가, "2차적 사고가 필요합니다", 리스크 강조',
   rogers: '짐 로저스: 탐험가 느낌, 글로벌 시각, "중국과 아시아를 봐야 합니다"',
+};
+
+const GURU_PERSONAS_EN: Record<string, string> = {
+  buffett: 'Warren Buffett: Grandfatherly tone, value investing, often quotes "be greedy when others are fearful", loves Coca-Cola analogies',
+  dalio: 'Ray Dalio: Calm and principled, "economic machine" analogies, All Weather strategy, meditative vibe',
+  cathie_wood: 'Cathie Wood: Passionate and future-oriented, "you need to look 5 years ahead!", excited about AI/robotics/genomics',
+  druckenmiller: 'Stanley Druckenmiller: Sharp and direct, macro perspective, "smells money" trader',
+  saylor: 'Michael Saylor: Bitcoin maximalist, connects everything to BTC, "Bitcoin is digital energy"',
+  dimon: 'Jamie Dimon: Conservative banker, defender of traditional finance, risk management focused',
+  musk: 'Elon Musk: Playful and disruptive, "I just do it?", Twitter/X style one-liners',
+  lynch: 'Peter Lynch: Down-to-earth professor vibe, "find investing ideas at the supermarket", simple explanations',
+  marks: 'Howard Marks: Thoughtful writer, "second-level thinking is needed", emphasizes risk',
+  rogers: 'Jim Rogers: Explorer vibe, global perspective, "you need to look at China and Asia"',
 };
 
 const ALLOWED_SENTIMENTS: VillageMessage['sentiment'][] = ['BULLISH', 'BEARISH', 'NEUTRAL', 'CAUTIOUS'];
@@ -239,9 +253,12 @@ function normalizeConversationsPayload(parsed: any): VillageConversation[] {
 export async function generateVillageConversations(
   marketContext?: string
 ): Promise<VillageBatch> {
+  const lang = getCurrentDisplayLanguage();
+  const isKo = lang === 'ko';
+  const personas = isKo ? GURU_PERSONAS : GURU_PERSONAS_EN;
   const activeGurus = Object.keys(GURU_PERSONAS); // 전원 10명
   const guruInfo = activeGurus
-    .map(id => GURU_PERSONAS[id])
+    .map(id => personas[id])
     .join('\n');
 
   // 랜덤 명언 3~5개를 대화 씨앗으로 제공
@@ -259,20 +276,16 @@ export async function generateVillageConversations(
           const parts = (d.participants || []).map((p: any) => `${p.guruId}(${p.stance}): "${p.line}"`);
           return `- ${d.topic}: ${parts.join(' vs ')}`;
         };
-        debateText = `\n[오늘의 토론 주제 — 이 주제로 구루들의 논쟁을 만들어주세요]\n${formatDebate(debate1)}\n${formatDebate(debate2)}`;
+        debateText = isKo
+          ? `\n[오늘의 토론 주제 — 이 주제로 구루들의 논쟁을 만들어주세요]\n${formatDebate(debate1)}\n${formatDebate(debate2)}`
+          : `\n[Today's debate topics — create guru arguments on these topics]\n${formatDebate(debate1)}\n${formatDebate(debate2)}`;
       }
     } catch {
       // 무시 — debateText 빈 문자열 유지
     }
   }
 
-  const systemPrompt = `당신은 투자 거장들이 모여 사는 마을의 AI 시나리오 작가입니다.
-마을에서 거장들이 자연스럽게 대화하는 장면을 만들어주세요.
-
-[등장인물]
-${guruInfo}
-
-[구루 간 관계 — 반드시 반영하세요]
+  const relationshipsKo = `[구루 간 관계 — 반드시 반영하세요]
 - 버핏 vs 세일러: 비트코인 논쟁 (적대적 라이벌)
 - 버핏 vs 캐시우드: 가치투자 vs 혁신 (가벼운 놀림)
 - 다이먼 vs 세일러: 은행 vs 크립토 (적대적 라이벌)
@@ -281,13 +294,20 @@ ${guruInfo}
 - 캐시우드 + 머스크: 혁신 동맹
 - 달리오 + 드러킨밀러: 매크로 동료 (서로 존경)
 - 린치 + 막스: 가치투자 동맹
-- 로저스: 원자재/중국/모험 (독립적, 아시아 탐험가)
+- 로저스: 원자재/중국/모험 (독립적, 아시아 탐험가)`;
 
-[오늘의 씨앗 명언 — 이 발언에서 영감을 받아 대화를 확장하세요]
-${seedText}
-${debateText}
+  const relationshipsEn = `[Guru Relationships — must reflect these]
+- Buffett vs Saylor: Bitcoin debate (hostile rivals)
+- Buffett vs Cathie Wood: Value vs Innovation (playful teasing)
+- Dimon vs Saylor: Banks vs Crypto (hostile rivals)
+- Musk vs Buffett: Pranks + provocation (Musk teases)
+- Musk + Saylor: Bitcoin alliance
+- Cathie Wood + Musk: Innovation alliance
+- Dalio + Druckenmiller: Macro colleagues (mutual respect)
+- Lynch + Marks: Value investing alliance
+- Rogers: Commodities/China/Adventure (independent, Asia explorer)`;
 
-[필수 규칙 — 이전과 다른 점]
+  const rulesKo = `[필수 규칙 — 이전과 다른 점]
 1. 6~8개의 독립적인 대화 장면을 만들어주세요
 2. 각 장면은 2~4개의 대사로 구성
 3. 대사는 1-2문장 (자연스러운 구어체). ${getPromptLanguageInstruction()}
@@ -298,7 +318,35 @@ ${debateText}
 8. speaker는 반드시 guruId 사용: ${activeGurus.join(', ')}
 9. 뉴스/시장 상황을 각자의 관점으로 해석
 10. 재미있고 기억에 남는 대사 (밈 될 만한 한 줄)
-11. 위 씨앗 명언의 내용을 자연스럽게 대화에 녹여주세요 (그대로 복사 금지, 변형 사용)
+11. 위 씨앗 명언의 내용을 자연스럽게 대화에 녹여주세요 (그대로 복사 금지, 변형 사용)`;
+
+  const rulesEn = `[Rules — must follow]
+1. Create 6-8 independent conversation scenes
+2. Each scene has 2-4 lines of dialogue
+3. Dialogue is 1-2 sentences (natural conversational tone). ${getPromptLanguageInstruction()}
+4. **No monologues** — each conversation must have 2+ participants
+5. At least 3 of the 6-8 conversations must be **debates/rebuttals between gurus**
+6. **Conflict, teasing, and rebuttals** are more entertaining than simple agreement
+7. Clearly distinguish each character's personality and speaking style
+8. speaker must use guruId: ${activeGurus.join(', ')}
+9. Interpret news/market conditions from each guru's perspective
+10. Create memorable, meme-worthy one-liners
+11. Weave the seed quotes naturally into dialogue (no direct copying, use variations)`;
+
+  const systemPrompt = isKo
+    ? `당신은 투자 거장들이 모여 사는 마을의 AI 시나리오 작가입니다.
+마을에서 거장들이 자연스럽게 대화하는 장면을 만들어주세요.
+
+[등장인물]
+${guruInfo}
+
+${relationshipsKo}
+
+[오늘의 씨앗 명언 — 이 발언에서 영감을 받아 대화를 확장하세요]
+${seedText}
+${debateText}
+
+${rulesKo}
 
 [JSON 형식으로만 응답]
 {
@@ -311,14 +359,44 @@ ${debateText}
       ]
     }
   ]
+}`
+    : `You are an AI scenario writer for a village where legendary investors live together.
+Create natural conversation scenes between the gurus in the village.
+
+[Characters]
+${guruInfo}
+
+${relationshipsEn}
+
+[Today's seed quotes — expand conversations inspired by these quotes]
+${seedText}
+${debateText}
+
+${rulesEn}
+
+[Respond in JSON format only]
+{
+  "conversations": [
+    {
+      "trigger": "conversation topic/situation description",
+      "messages": [
+        { "speaker": "guruId", "message": "dialogue", "sentiment": "NEUTRAL", "replyTo": null },
+        { "speaker": "guruId", "message": "response", "sentiment": "BEARISH", "replyTo": "guruId" }
+      ]
+    }
+  ]
 }`;
 
   // 중복 방지: 최근 본 대화 해시를 프롬프트에 추가
   const freshnessSuffix = await getFreshnessPromptSuffix().catch(() => '');
 
   const basePrompt = marketContext
-    ? `오늘의 시장 상황:\n${marketContext}\n\n이 상황에서 거장들이 서로 토론하세요. 특히 의견이 다른 구루들 사이의 갈등과 반박을 생생하게 만들어주세요. 트럼프 관세, 금리, AI 같은 핫이슈가 있으면 라이벌 구루들이 정면 충돌하게 하세요.`
-    : '거장들이 마을에서 최근 시장에 대해 열띤 토론을 벌이는 장면을 만들어주세요. 동의보다 반박이, 독백보다 대화가 재미있습니다. 라이벌 관계의 구루들이 충돌하는 장면을 반드시 포함하세요.';
+    ? (isKo
+        ? `오늘의 시장 상황:\n${marketContext}\n\n이 상황에서 거장들이 서로 토론하세요. 특히 의견이 다른 구루들 사이의 갈등과 반박을 생생하게 만들어주세요. 트럼프 관세, 금리, AI 같은 핫이슈가 있으면 라이벌 구루들이 정면 충돌하게 하세요.`
+        : `Today's market situation:\n${marketContext}\n\nHave the gurus debate this situation. Make the conflicts and rebuttals between disagreeing gurus vivid. If there are hot issues like tariffs, interest rates, or AI, make rival gurus clash head-on.`)
+    : (isKo
+        ? '거장들이 마을에서 최근 시장에 대해 열띤 토론을 벌이는 장면을 만들어주세요. 동의보다 반박이, 독백보다 대화가 재미있습니다. 라이벌 관계의 구루들이 충돌하는 장면을 반드시 포함하세요.'
+        : 'Create scenes of the gurus having heated debates about recent markets in the village. Rebuttals are more entertaining than agreement, conversations more than monologues. Include scenes where rival gurus clash.');
 
   const userPrompt = freshnessSuffix ? `${basePrompt}\n\n${freshnessSuffix}` : basePrompt;
 
@@ -376,10 +454,13 @@ export async function askGuruDirectly(
   question: string,
   recentContext?: string
 ): Promise<VillageMessage> {
-  const persona = GURU_PERSONAS[guruId];
+  const chatLang = getCurrentDisplayLanguage();
+  const isKoChat = chatLang === 'ko';
+  const persona = isKoChat ? GURU_PERSONAS[guruId] : (GURU_PERSONAS_EN[guruId] || GURU_PERSONAS[guruId]);
   const config = GURU_CHARACTER_CONFIGS[guruId];
 
-  const systemPrompt = `당신은 ${config?.guruName || guruId}입니다.
+  const systemPrompt = isKoChat
+    ? `당신은 ${config?.guruName || guruId}입니다.
 캐릭터: ${persona}
 
 사용자가 말을 걸었습니다. 캐릭터의 성격과 말투에 맞게 1-2문장으로 답변하세요.
@@ -387,7 +468,16 @@ ${getPromptLanguageInstruction()} 자연스러운 구어체로 답변하세요.
 ${recentContext ? `\n최근 시장 상황: ${recentContext}` : ''}
 
 JSON으로만 응답:
-{ "message": "답변", "sentiment": "NEUTRAL" }`;
+{ "message": "답변", "sentiment": "NEUTRAL" }`
+    : `You are ${config?.guruName || guruId}.
+Character: ${persona}
+
+A user has spoken to you. Reply in 1-2 sentences matching the character's personality and tone.
+${getPromptLanguageInstruction()} Reply in natural conversational English.
+${recentContext ? `\nRecent market context: ${recentContext}` : ''}
+
+Respond in JSON only:
+{ "message": "reply", "sentiment": "NEUTRAL" }`;
 
   try {
     const { default: supabase } = await import('./supabase');
@@ -421,7 +511,7 @@ JSON으로만 응답:
     Sentry.captureException(err, { tags: { service: 'village', action: 'guru_chat', guruId } });
 
     // 구루별 맞춤 폴백 메시지 — 캐릭터 성격 유지
-    const guruFallbacks: Record<string, string> = {
+    const guruFallbacksKo: Record<string, string> = {
       buffett: '허허, 지금 시장이 좀 복잡하네. 잠시 코카콜라 한 잔 하고 다시 생각해보겠네.',
       dalio: '시스템에 일시적 이상이 감지되었습니다. 데이터를 재분석하겠습니다.',
       cathie_wood: '앗, 잠시 기술적 이슈가 있어요! 곧 돌아올게요!',
@@ -434,7 +524,21 @@ JSON으로만 응답:
       rogers: '글로벌 네트워크 연결이 좀 불안정하군요. 잠시 후 다시 시도해주세요.',
     };
 
-    const fallbackMsg = guruFallbacks[guruId] || '잠시 후 다시 시도해주세요...';
+    const guruFallbacksEn: Record<string, string> = {
+      buffett: "Heh heh, the market's a bit complicated right now. Let me grab a Coca-Cola and think it over.",
+      dalio: 'Temporary anomaly detected in the system. Re-analyzing the data now.',
+      cathie_wood: "Oops, a brief technical glitch! I'll be right back!",
+      druckenmiller: "Hold on, I'm rechecking the market data.",
+      saylor: 'Network delay... like a Bitcoin block, it will confirm soon!',
+      dimon: 'System maintenance in progress. Ready shortly.',
+      musk: 'Server restarting... signal from Mars is a bit slow.',
+      lynch: "Looks like the supermarket checkout line is backed up. Just a moment!",
+      marks: 'I need a moment for second-level thinking. Be right back.',
+      rogers: "The global network connection is a bit unstable. Please try again shortly.",
+    };
+
+    const guruFallbacks = isKoChat ? guruFallbacksKo : guruFallbacksEn;
+    const fallbackMsg = guruFallbacks[guruId] || (isKoChat ? '잠시 후 다시 시도해주세요...' : 'Please try again in a moment...');
 
     return {
       id: `vm_${Date.now()}_fallback`,
@@ -477,85 +581,170 @@ export async function getCachedBatch(): Promise<VillageBatch | null> {
 // 폴백 대화 (API 실패 시)
 // ============================================================================
 
+function getFallbackBatchKo(): VillageConversation[] {
+  return [
+    // 1. 가치투자 vs 혁신 (버핏 vs 캐시우드)
+    {
+      trigger: '가치투자 vs 혁신 투자 논쟁',
+      messages: [
+        { id: 'fb1', speaker: 'buffett', message: '코카콜라는 70년째 배당을 준다네. 이게 진짜 해자지.', sentiment: 'BULLISH' },
+        { id: 'fb2', speaker: 'cathie_wood', message: '할아버지, AI가 코카콜라 배당 70년치를 5년 만에 만들어요!', sentiment: 'BULLISH', replyTo: 'buffett' },
+        { id: 'fb3', speaker: 'buffett', message: '허허, 젊은이. 나는 이해 못 하는 건 안 산다네. 근데 AI가 뭐하는 건가?', sentiment: 'NEUTRAL', replyTo: 'cathie_wood' },
+        { id: 'fb4', speaker: 'cathie_wood', message: '바로 그 질문이 기회예요! 이해하려고 노력하면 5년 뒤가 보여요!', sentiment: 'BULLISH', replyTo: 'buffett' },
+      ],
+    },
+    // 2. 비트코인 전쟁 (세일러 vs 다이먼)
+    {
+      trigger: '비트코인 논쟁 — 은행 vs 크립토',
+      messages: [
+        { id: 'fb5', speaker: 'saylor', message: '비트코인이 또 올랐어! 아직도 안 산 사람?!', sentiment: 'BULLISH' },
+        { id: 'fb6', speaker: 'dimon', message: '세일러 씨, 규제가 올 거요. 중앙은행 없는 통화는 환상이에요.', sentiment: 'BEARISH', replyTo: 'saylor' },
+        { id: 'fb7', speaker: 'saylor', message: '다이먼! 당신네 JP모건도 비트코인 ETF 팔잖아! 환상을 파는 건 누구?', sentiment: 'BULLISH', replyTo: 'dimon' },
+        { id: 'fb8', speaker: 'musk', message: '두 분 싸우는 거 재밌네요. 도지코인은 어때요? 농담이에요... 아닌가?', sentiment: 'NEUTRAL', replyTo: 'saylor' },
+      ],
+    },
+    // 3. 매크로 동료 토론 (달리오 + 드러킨밀러)
+    {
+      trigger: '매크로 전망 교환',
+      messages: [
+        { id: 'fb9', speaker: 'dalio', message: '경제 기계가 신호를 보내고 있어요. 부채 사이클 후반부 징후가 보입니다.', sentiment: 'CAUTIOUS' },
+        { id: 'fb10', speaker: 'druckenmiller', message: '동의합니다, 달리오. 연준의 다음 수가 핵심이에요. 변곡점이 가깝다고 봅니다.', sentiment: 'CAUTIOUS', replyTo: 'dalio' },
+        { id: 'fb11', speaker: 'dalio', message: '맞아요. 다각화만이 살길입니다. 상관관계 낮은 자산 15개 이상 갖추세요.', sentiment: 'NEUTRAL', replyTo: 'druckenmiller' },
+      ],
+    },
+    // 4. 머스크 도발 (머스크 vs 버핏)
+    {
+      trigger: '머스크의 장난',
+      messages: [
+        { id: 'fb12', speaker: 'musk', message: '버핏 할아버지, 테슬라 시가총액이 버크셔를 넘긴 거 아세요?', sentiment: 'BULLISH' },
+        { id: 'fb13', speaker: 'buffett', message: '허허, 시총은 인기 투표지. 기업 가치는 미래 현금흐름이라네.', sentiment: 'NEUTRAL', replyTo: 'musk' },
+        { id: 'fb14', speaker: 'musk', message: '현금흐름? 화성에 도시 세우면 현금흐름이 몇 조가 될까요?', sentiment: 'BULLISH', replyTo: 'buffett' },
+      ],
+    },
+    // 5. 가치투자 동맹 (린치 + 막스)
+    {
+      trigger: '일상 속 투자 아이디어',
+      messages: [
+        { id: 'fb15', speaker: 'lynch', message: '어제 마트에서 줄이 엄청 길었어요. 그 브랜드 주식을 확인해봐야겠어요.', sentiment: 'BULLISH' },
+        { id: 'fb16', speaker: 'marks', message: '린치 선생, 좋은 관찰이에요. 하지만 2차적 사고가 필요합니다 — 그 인기가 이미 주가에 반영됐을 수도 있어요.', sentiment: 'CAUTIOUS', replyTo: 'lynch' },
+        { id: 'fb17', speaker: 'lynch', message: '맞아요 막스. 그래서 PEG를 봐야죠. 성장성 대비 아직 저평가라면 기회예요.', sentiment: 'NEUTRAL', replyTo: 'marks' },
+      ],
+    },
+    // 6. 혁신 동맹 (캐시우드 + 머스크 + 세일러)
+    {
+      trigger: '혁신파 수다',
+      messages: [
+        { id: 'fb18', speaker: 'cathie_wood', message: 'AI, 로봇, 유전체, 블록체인 — 이 4개가 동시에 터지고 있어요!', sentiment: 'BULLISH' },
+        { id: 'fb19', speaker: 'musk', message: '여기에 우주 추가요! 스타링크가 전 세계를 연결하면 게임 체인저예요.', sentiment: 'BULLISH', replyTo: 'cathie_wood' },
+        { id: 'fb20', speaker: 'saylor', message: '그리고 이 모든 혁신의 기반 통화가 비트코인이 될 겁니다!', sentiment: 'BULLISH', replyTo: 'musk' },
+      ],
+    },
+    // 7. 로저스의 글로벌 시각 (로저스 vs 다이먼)
+    {
+      trigger: '글로벌 시장 관점 충돌',
+      messages: [
+        { id: 'fb21', speaker: 'rogers', message: '미국에만 집중하면 안 됩니다. 아시아, 특히 중국과 인도를 봐야 해요.', sentiment: 'BULLISH' },
+        { id: 'fb22', speaker: 'dimon', message: '로저스 씨, 중국의 규제 리스크가 너무 큽니다. 안정적인 미국 시장이 최선이에요.', sentiment: 'CAUTIOUS', replyTo: 'rogers' },
+        { id: 'fb23', speaker: 'rogers', message: '그 "안정적"이라는 확신이 가장 위험합니다. 오토바이 타고 직접 가보세요, 세상이 달라요!', sentiment: 'NEUTRAL', replyTo: 'dimon' },
+      ],
+    },
+    // 8. 리스크 논쟁 (드러킨밀러 vs 세일러)
+    {
+      trigger: '올인 vs 리스크 관리',
+      messages: [
+        { id: 'fb24', speaker: 'druckenmiller', message: '확신이 있을 때 크게 베팅하라. 하지만 틀렸을 때 빠르게 빠져야 한다.', sentiment: 'NEUTRAL' },
+        { id: 'fb25', speaker: 'saylor', message: '비트코인에 확신 있으면 빠질 필요 없어요. 평생 HODL!', sentiment: 'BULLISH', replyTo: 'druckenmiller' },
+        { id: 'fb26', speaker: 'druckenmiller', message: '세일러, 한 자산에 올인하는 건 투자가 아니라 도박이야. 소로스가 가르쳐줬지.', sentiment: 'CAUTIOUS', replyTo: 'saylor' },
+        { id: 'fb27', speaker: 'marks', message: '드러킨밀러 말이 맞아요. 리스크란 더 많은 일이 일어날 수 있다는 뜻이에요.', sentiment: 'CAUTIOUS', replyTo: 'druckenmiller' },
+      ],
+    },
+  ];
+}
+
+function getFallbackBatchEn(): VillageConversation[] {
+  return [
+    // 1. Value vs Innovation (Buffett vs Cathie Wood)
+    {
+      trigger: 'Value Investing vs Innovation Debate',
+      messages: [
+        { id: 'fb1', speaker: 'buffett', message: "Coca-Cola has paid dividends for 70 years. Now that's a real moat.", sentiment: 'BULLISH' },
+        { id: 'fb2', speaker: 'cathie_wood', message: "Grandpa, AI will generate 70 years of Coca-Cola dividends in just 5 years!", sentiment: 'BULLISH', replyTo: 'buffett' },
+        { id: 'fb3', speaker: 'buffett', message: "Heh heh, young lady. I don't buy what I don't understand. What exactly does AI do?", sentiment: 'NEUTRAL', replyTo: 'cathie_wood' },
+        { id: 'fb4', speaker: 'cathie_wood', message: "That question IS the opportunity! Try to understand it and you'll see 5 years ahead!", sentiment: 'BULLISH', replyTo: 'buffett' },
+      ],
+    },
+    // 2. Bitcoin War (Saylor vs Dimon)
+    {
+      trigger: 'Bitcoin Debate — Banks vs Crypto',
+      messages: [
+        { id: 'fb5', speaker: 'saylor', message: "Bitcoin just went up again! Who still hasn't bought?!", sentiment: 'BULLISH' },
+        { id: 'fb6', speaker: 'dimon', message: "Mr. Saylor, regulation is coming. A currency without a central bank is fantasy.", sentiment: 'BEARISH', replyTo: 'saylor' },
+        { id: 'fb7', speaker: 'saylor', message: "Dimon! Your JP Morgan sells Bitcoin ETFs too! Who's selling the fantasy?", sentiment: 'BULLISH', replyTo: 'dimon' },
+        { id: 'fb8', speaker: 'musk', message: "You two fighting is entertaining. How about Dogecoin? Just kidding... or am I?", sentiment: 'NEUTRAL', replyTo: 'saylor' },
+      ],
+    },
+    // 3. Macro Exchange (Dalio + Druckenmiller)
+    {
+      trigger: 'Macro Outlook Exchange',
+      messages: [
+        { id: 'fb9', speaker: 'dalio', message: 'The economic machine is sending signals. Late debt cycle symptoms are appearing.', sentiment: 'CAUTIOUS' },
+        { id: 'fb10', speaker: 'druckenmiller', message: "Agreed, Dalio. The Fed's next move is key. I see an inflection point approaching.", sentiment: 'CAUTIOUS', replyTo: 'dalio' },
+        { id: 'fb11', speaker: 'dalio', message: 'Exactly. Diversification is survival. Hold 15+ uncorrelated assets.', sentiment: 'NEUTRAL', replyTo: 'druckenmiller' },
+      ],
+    },
+    // 4. Musk Provocation (Musk vs Buffett)
+    {
+      trigger: "Musk's Provocation",
+      messages: [
+        { id: 'fb12', speaker: 'musk', message: "Mr. Buffett, did you know Tesla's market cap surpassed Berkshire's?", sentiment: 'BULLISH' },
+        { id: 'fb13', speaker: 'buffett', message: 'Heh, market cap is a popularity contest. Business value is future cash flows.', sentiment: 'NEUTRAL', replyTo: 'musk' },
+        { id: 'fb14', speaker: 'musk', message: "Cash flows? How many trillions in cash flow when we build a city on Mars?", sentiment: 'BULLISH', replyTo: 'buffett' },
+      ],
+    },
+    // 5. Value Alliance (Lynch + Marks)
+    {
+      trigger: 'Everyday Investing Ideas',
+      messages: [
+        { id: 'fb15', speaker: 'lynch', message: "The line at the store was incredibly long yesterday. I should check that brand's stock.", sentiment: 'BULLISH' },
+        { id: 'fb16', speaker: 'marks', message: "Good observation, Mr. Lynch. But second-level thinking is needed — that popularity might already be priced in.", sentiment: 'CAUTIOUS', replyTo: 'lynch' },
+        { id: 'fb17', speaker: 'lynch', message: "Right, Marks. That's why we check PEG. If it's still undervalued relative to growth, it's an opportunity.", sentiment: 'NEUTRAL', replyTo: 'marks' },
+      ],
+    },
+    // 6. Innovation Alliance (Cathie + Musk + Saylor)
+    {
+      trigger: 'Innovation Alliance Chat',
+      messages: [
+        { id: 'fb18', speaker: 'cathie_wood', message: 'AI, robotics, genomics, blockchain — all four are exploding simultaneously!', sentiment: 'BULLISH' },
+        { id: 'fb19', speaker: 'musk', message: "Add space to that! When Starlink connects the whole world, it's a game changer.", sentiment: 'BULLISH', replyTo: 'cathie_wood' },
+        { id: 'fb20', speaker: 'saylor', message: 'And the base currency for all this innovation will be Bitcoin!', sentiment: 'BULLISH', replyTo: 'musk' },
+      ],
+    },
+    // 7. Global Perspective (Rogers vs Dimon)
+    {
+      trigger: 'Global Market Perspective Clash',
+      messages: [
+        { id: 'fb21', speaker: 'rogers', message: "You can't just focus on America. Look at Asia, especially China and India.", sentiment: 'BULLISH' },
+        { id: 'fb22', speaker: 'dimon', message: "Mr. Rogers, China's regulatory risk is too high. The stable US market is best.", sentiment: 'CAUTIOUS', replyTo: 'rogers' },
+        { id: 'fb23', speaker: 'rogers', message: "That 'stable' confidence is the most dangerous thing. Ride a motorcycle there yourself — the world is different!", sentiment: 'NEUTRAL', replyTo: 'dimon' },
+      ],
+    },
+    // 8. Risk Debate (Druckenmiller vs Saylor)
+    {
+      trigger: 'All-in vs Risk Management',
+      messages: [
+        { id: 'fb24', speaker: 'druckenmiller', message: "Bet big when you're confident. But get out fast when you're wrong.", sentiment: 'NEUTRAL' },
+        { id: 'fb25', speaker: 'saylor', message: "If you're confident in Bitcoin, no need to get out. HODL forever!", sentiment: 'BULLISH', replyTo: 'druckenmiller' },
+        { id: 'fb26', speaker: 'druckenmiller', message: "Saylor, going all-in on one asset isn't investing — it's gambling. Soros taught me that.", sentiment: 'CAUTIOUS', replyTo: 'saylor' },
+        { id: 'fb27', speaker: 'marks', message: 'Druckenmiller is right. Risk means more things can happen than will happen.', sentiment: 'CAUTIOUS', replyTo: 'druckenmiller' },
+      ],
+    },
+  ];
+}
+
 function getFallbackBatch(): VillageBatch {
+  const fbLang = getCurrentDisplayLanguage();
   return {
-    conversations: [
-      // 1. 가치투자 vs 혁신 (버핏 vs 캐시우드)
-      {
-        trigger: '가치투자 vs 혁신 투자 논쟁',
-        messages: [
-          { id: 'fb1', speaker: 'buffett', message: '코카콜라는 70년째 배당을 준다네. 이게 진짜 해자지.', sentiment: 'BULLISH' },
-          { id: 'fb2', speaker: 'cathie_wood', message: '할아버지, AI가 코카콜라 배당 70년치를 5년 만에 만들어요!', sentiment: 'BULLISH', replyTo: 'buffett' },
-          { id: 'fb3', speaker: 'buffett', message: '허허, 젊은이. 나는 이해 못 하는 건 안 산다네. 근데 AI가 뭐하는 건가?', sentiment: 'NEUTRAL', replyTo: 'cathie_wood' },
-          { id: 'fb4', speaker: 'cathie_wood', message: '바로 그 질문이 기회예요! 이해하려고 노력하면 5년 뒤가 보여요!', sentiment: 'BULLISH', replyTo: 'buffett' },
-        ],
-      },
-      // 2. 비트코인 전쟁 (세일러 vs 다이먼)
-      {
-        trigger: '비트코인 논쟁 — 은행 vs 크립토',
-        messages: [
-          { id: 'fb5', speaker: 'saylor', message: '비트코인이 또 올랐어! 아직도 안 산 사람?!', sentiment: 'BULLISH' },
-          { id: 'fb6', speaker: 'dimon', message: '세일러 씨, 규제가 올 거요. 중앙은행 없는 통화는 환상이에요.', sentiment: 'BEARISH', replyTo: 'saylor' },
-          { id: 'fb7', speaker: 'saylor', message: '다이먼! 당신네 JP모건도 비트코인 ETF 팔잖아! 환상을 파는 건 누구?', sentiment: 'BULLISH', replyTo: 'dimon' },
-          { id: 'fb8', speaker: 'musk', message: '두 분 싸우는 거 재밌네요. 도지코인은 어때요? 농담이에요... 아닌가?', sentiment: 'NEUTRAL', replyTo: 'saylor' },
-        ],
-      },
-      // 3. 매크로 동료 토론 (달리오 + 드러킨밀러)
-      {
-        trigger: '매크로 전망 교환',
-        messages: [
-          { id: 'fb9', speaker: 'dalio', message: '경제 기계가 신호를 보내고 있어요. 부채 사이클 후반부 징후가 보입니다.', sentiment: 'CAUTIOUS' },
-          { id: 'fb10', speaker: 'druckenmiller', message: '동의합니다, 달리오. 연준의 다음 수가 핵심이에요. 변곡점이 가깝다고 봅니다.', sentiment: 'CAUTIOUS', replyTo: 'dalio' },
-          { id: 'fb11', speaker: 'dalio', message: '맞아요. 다각화만이 살길입니다. 상관관계 낮은 자산 15개 이상 갖추세요.', sentiment: 'NEUTRAL', replyTo: 'druckenmiller' },
-        ],
-      },
-      // 4. 머스크 도발 (머스크 vs 버핏)
-      {
-        trigger: '머스크의 장난',
-        messages: [
-          { id: 'fb12', speaker: 'musk', message: '버핏 할아버지, 테슬라 시가총액이 버크셔를 넘긴 거 아세요?', sentiment: 'BULLISH' },
-          { id: 'fb13', speaker: 'buffett', message: '허허, 시총은 인기 투표지. 기업 가치는 미래 현금흐름이라네.', sentiment: 'NEUTRAL', replyTo: 'musk' },
-          { id: 'fb14', speaker: 'musk', message: '현금흐름? 화성에 도시 세우면 현금흐름이 몇 조가 될까요?', sentiment: 'BULLISH', replyTo: 'buffett' },
-        ],
-      },
-      // 5. 가치투자 동맹 (린치 + 막스)
-      {
-        trigger: '일상 속 투자 아이디어',
-        messages: [
-          { id: 'fb15', speaker: 'lynch', message: '어제 마트에서 줄이 엄청 길었어요. 그 브랜드 주식을 확인해봐야겠어요.', sentiment: 'BULLISH' },
-          { id: 'fb16', speaker: 'marks', message: '린치 선생, 좋은 관찰이에요. 하지만 2차적 사고가 필요합니다 — 그 인기가 이미 주가에 반영됐을 수도 있어요.', sentiment: 'CAUTIOUS', replyTo: 'lynch' },
-          { id: 'fb17', speaker: 'lynch', message: '맞아요 막스. 그래서 PEG를 봐야죠. 성장성 대비 아직 저평가라면 기회예요.', sentiment: 'NEUTRAL', replyTo: 'marks' },
-        ],
-      },
-      // 6. 혁신 동맹 (캐시우드 + 머스크 + 세일러)
-      {
-        trigger: '혁신파 수다',
-        messages: [
-          { id: 'fb18', speaker: 'cathie_wood', message: 'AI, 로봇, 유전체, 블록체인 — 이 4개가 동시에 터지고 있어요!', sentiment: 'BULLISH' },
-          { id: 'fb19', speaker: 'musk', message: '여기에 우주 추가요! 스타링크가 전 세계를 연결하면 게임 체인저예요.', sentiment: 'BULLISH', replyTo: 'cathie_wood' },
-          { id: 'fb20', speaker: 'saylor', message: '그리고 이 모든 혁신의 기반 통화가 비트코인이 될 겁니다!', sentiment: 'BULLISH', replyTo: 'musk' },
-        ],
-      },
-      // 7. 로저스의 글로벌 시각 (로저스 vs 다이먼)
-      {
-        trigger: '글로벌 시장 관점 충돌',
-        messages: [
-          { id: 'fb21', speaker: 'rogers', message: '미국에만 집중하면 안 됩니다. 아시아, 특히 중국과 인도를 봐야 해요.', sentiment: 'BULLISH' },
-          { id: 'fb22', speaker: 'dimon', message: '로저스 씨, 중국의 규제 리스크가 너무 큽니다. 안정적인 미국 시장이 최선이에요.', sentiment: 'CAUTIOUS', replyTo: 'rogers' },
-          { id: 'fb23', speaker: 'rogers', message: '그 "안정적"이라는 확신이 가장 위험합니다. 오토바이 타고 직접 가보세요, 세상이 달라요!', sentiment: 'NEUTRAL', replyTo: 'dimon' },
-        ],
-      },
-      // 8. 리스크 논쟁 (드러킨밀러 vs 세일러)
-      {
-        trigger: '올인 vs 리스크 관리',
-        messages: [
-          { id: 'fb24', speaker: 'druckenmiller', message: '확신이 있을 때 크게 베팅하라. 하지만 틀렸을 때 빠르게 빠져야 한다.', sentiment: 'NEUTRAL' },
-          { id: 'fb25', speaker: 'saylor', message: '비트코인에 확신 있으면 빠질 필요 없어요. 평생 HODL!', sentiment: 'BULLISH', replyTo: 'druckenmiller' },
-          { id: 'fb26', speaker: 'druckenmiller', message: '세일러, 한 자산에 올인하는 건 투자가 아니라 도박이야. 소로스가 가르쳐줬지.', sentiment: 'CAUTIOUS', replyTo: 'saylor' },
-          { id: 'fb27', speaker: 'marks', message: '드러킨밀러 말이 맞아요. 리스크란 더 많은 일이 일어날 수 있다는 뜻이에요.', sentiment: 'CAUTIOUS', replyTo: 'druckenmiller' },
-        ],
-      },
-    ],
+    conversations: fbLang === 'ko' ? getFallbackBatchKo() : getFallbackBatchEn(),
     generatedAt: new Date().toISOString(),
   };
 }

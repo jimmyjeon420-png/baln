@@ -9,6 +9,7 @@ import { SkeletonBlock } from '../SkeletonLoader';
 import PanicShieldCard from '../PanicShieldCard';
 import FomoVaccineCard from '../FomoVaccineCard';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 import type { ThemeColors } from '../../styles/colors';
 import type { RiskAnalysisResult } from '../../services/gemini';
 import type { PeerComparison } from '../../types/rebalanceTypes';
@@ -28,6 +29,7 @@ export default function RiskDashboardSection({
   contextSentiment,
 }: RiskDashboardSectionProps) {
   const { colors, shadows } = useTheme();
+  const { t } = useLocale();
   const [showDetail, setShowDetail] = useState(false);
 
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -77,14 +79,14 @@ export default function RiskDashboardSection({
     <View style={styles.card}>
       <View style={styles.headerRow}>
         <View>
-          <Text style={styles.cardLabel}>리스크 체크</Text>
-          <Text style={styles.cardLabelEn}>Risk Dashboard</Text>
+          <Text style={styles.cardLabel}>{t('risk_dashboard.title')}</Text>
+          <Text style={styles.cardLabelEn}>{t('risk_dashboard.subtitle')}</Text>
         </View>
         <TouchableOpacity
           style={styles.expandButton}
           onPress={() => setShowDetail(!showDetail)}
         >
-          <Text style={styles.expandButtonText}>{showDetail ? '접기' : '상세'}</Text>
+          <Text style={styles.expandButtonText}>{showDetail ? t('risk_dashboard.collapse') : t('risk_dashboard.details')}</Text>
           <Ionicons name={showDetail ? 'chevron-up' : 'chevron-down'} size={14} color={colors.textTertiary} />
         </TouchableOpacity>
       </View>
@@ -101,7 +103,7 @@ export default function RiskDashboardSection({
             <Text style={[styles.summaryValue, {
               color: panicLevel === 'DANGER' ? colors.error : panicLevel === 'CAUTION' ? colors.warning : (colors.primaryDark ?? colors.success)
             }]}>
-              {panicIndex}/100 {panicLevel === 'SAFE' ? '안전' : panicLevel === 'CAUTION' ? '주의' : '위험'}
+              {panicIndex}/100 {panicLevel === 'SAFE' ? t('risk_dashboard.panic_safe') : panicLevel === 'CAUTION' ? t('risk_dashboard.panic_caution') : t('risk_dashboard.panic_danger')}
             </Text>
             {/* 패닉 실드 점수 이유 */}
             {analysisResult.panicShieldReason && (
@@ -118,7 +120,7 @@ export default function RiskDashboardSection({
           <View>
             <Text style={styles.summaryLabel}>FOMO Vaccine</Text>
             <Text style={[styles.summaryValue, { color: highFomoCount > 0 ? colors.error : (colors.primaryDark ?? colors.success) }]}>
-              {highFomoCount > 0 ? `경고 ${analysisResult.fomoAlerts.length}건` : '경고 없음'}
+              {highFomoCount > 0 ? t('risk_dashboard.fomo_warnings', { count: String(analysisResult.fomoAlerts.length) }) : t('risk_dashboard.fomo_no_warnings')}
             </Text>
           </View>
         </View>
@@ -138,8 +140,8 @@ export default function RiskDashboardSection({
           <Ionicons name="information-circle" size={16} color={colors.warning} />
           <Text style={{ flex: 1, fontSize: 13, lineHeight: 18, color: colors.textSecondary }}>
             {contextSentiment === 'calm' && panicLevel === 'DANGER'
-              ? '시장 심리는 안정적이지만, 포트폴리오 위험 신호가 감지되었습니다. 배분 이탈도를 확인하세요.'
-              : '시장에 경고 신호가 있지만, 당신의 포트폴리오는 안전합니다. 현재 기준을 유지하세요.'}
+              ? t('risk_dashboard.sentiment_mismatch_calm')
+              : t('risk_dashboard.sentiment_mismatch_alert')}
           </Text>
         </View>
       )}

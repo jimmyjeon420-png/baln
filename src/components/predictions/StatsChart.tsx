@@ -94,7 +94,7 @@ export default function StatsChart() {
   const tabs: { key: ChartTab; label: string; emoji: string }[] = [
     { key: 'accuracy', label: '적중률', emoji: '📊' },
     { key: 'category', label: '카테고리', emoji: '🎯' },
-    { key: 'credits', label: '크레딧', emoji: '💰' },
+    { key: 'credits', label: '도토리', emoji: '🌰' },
   ];
 
   // 로딩 상태
@@ -425,7 +425,7 @@ function CreditsChart({ data }: CreditsChartProps) {
   if (data.length === 0) {
     return (
       <View style={[styles.emptyChart, { backgroundColor: colors.background, borderColor: colors.border }]}>
-        <Text style={[styles.emptyChartText, { color: colors.textSecondary }]}>크레딧 획득 기록 없음</Text>
+        <Text style={[styles.emptyChartText, { color: colors.textSecondary }]}>도토리 획득 기록 없음</Text>
         <Text style={[styles.emptyChartSubtext, { color: colors.textTertiary }]}>첫 정답을 맞춰보세요!</Text>
       </View>
     );
@@ -454,7 +454,7 @@ function CreditsChart({ data }: CreditsChartProps) {
 
   return (
     <View>
-      <Text style={[styles.chartTitle, { color: colors.textPrimary }]}>크레딧 누적 그래프</Text>
+      <Text style={[styles.chartTitle, { color: colors.textPrimary }]}>도토리 누적 그래프</Text>
       <Text style={[styles.chartSubtitle, { color: colors.textSecondary }]}>
         총 획득: {data[data.length - 1]?.value || 0}C
       </Text>

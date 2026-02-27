@@ -228,8 +228,8 @@ function LeagueStandingModal({
           <View style={styles.rewardBanner}>
             <Text style={styles.rewardText}>
               {isKo
-                ? `주간 보상: ${currentTier.weeklyRewardCredits}C (\u20A9${currentTier.weeklyRewardCredits * 100})`
-                : `Weekly Reward: ${currentTier.weeklyRewardCredits}C`}
+                ? `주간 보상: ${currentTier.weeklyRewardCredits}개 (\u20A9${currentTier.weeklyRewardCredits * 100})`
+                : `Weekly Reward: ${currentTier.weeklyRewardCredits}개`}
             </Text>
           </View>
         </Animated.View>

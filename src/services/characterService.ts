@@ -8,6 +8,7 @@
 import type { CharacterExpression } from '../types/character';
 import { GURU_CHARACTER_CONFIGS, findCharacterConfigByName } from '../data/guruCharacterConfig';
 import type { GuruCharacterConfig } from '../types/character';
+import { getCurrentLanguage } from '../locales';
 
 /**
  * 센티먼트 → 캐릭터 표정 변환
@@ -43,6 +44,16 @@ export function getCharacterConfig(guruId: string): GuruCharacterConfig | null {
 export function guruNameToCharacterId(name: string): string | null {
   const config = findCharacterConfigByName(name);
   return config?.guruId || null;
+}
+
+/**
+ * 현재 언어에 맞는 구루 표시 이름 반환
+ * ko → guruName (워렌 버핏), en → guruNameEn (Warren Buffett)
+ */
+export function getGuruDisplayName(guruId: string): string {
+  const config = GURU_CHARACTER_CONFIGS[guruId];
+  if (!config) return guruId;
+  return getCurrentLanguage() === 'ko' ? config.guruName : (config.guruNameEn || config.guruName);
 }
 
 /**

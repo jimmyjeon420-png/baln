@@ -122,7 +122,7 @@ export default function AchievementsScreen() {
       const newBadge = achievements.find(a => a.id === newlyUnlocked[0]);
       if (newBadge) {
         const reward = ACHIEVEMENT_REWARDS[newBadge.id] || 0;
-        const rewardText = reward > 0 ? ` +${reward}C` : '';
+        const rewardText = reward > 0 ? ` +${reward}개` : '';
         showToast(`${newBadge.emoji} ${newBadge.title} ${t('achievements.badge_section_title')}!${rewardText}`);
         triggerHaptic();
       }
@@ -396,7 +396,7 @@ export default function AchievementsScreen() {
 
           {/* 배지 보상 안내 */}
           <View style={styles.rewardInfoCard}>
-            <Ionicons name="diamond" size={18} color="#7C4DFF" />
+            <Text style={{ fontSize: 36 }}>🌰</Text>
             <View style={{ flex: 1 }}>
               <Text style={styles.rewardInfoTitle}>{t('achievements.reward_info_title')}</Text>
               <Text style={styles.rewardInfoDesc}>
@@ -439,7 +439,7 @@ function BadgeCard({ badge }: { badge: AchievementWithStatus }) {
       {reward > 0 && (
         <View style={[styles.rewardBadge, isUnlocked && styles.rewardBadgeClaimed]}>
           <Text style={[styles.rewardBadgeText, isUnlocked && styles.rewardBadgeTextClaimed]}>
-            {isUnlocked ? '✓' : `+${reward}C`}
+            {isUnlocked ? '✓' : `+${reward}개`}
           </Text>
         </View>
       )}

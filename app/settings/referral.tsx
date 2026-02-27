@@ -106,14 +106,14 @@ export default function ReferralScreen() {
     {
       icon: 'gift-outline' as const,
       title: t('settings.referral.my_reward_title'),
-      amount: `${REWARD_AMOUNTS.referral}C`,
+      amount: `${REWARD_AMOUNTS.referral}개`,
       krw: `${(REWARD_AMOUNTS.referral * 100).toLocaleString()}`,
       desc: t('settings.referral.my_reward_desc'),
     },
     {
       icon: 'people-outline' as const,
       title: t('settings.referral.friend_reward_title'),
-      amount: '10C',
+      amount: '10개',
       krw: '1,000',
       desc: t('settings.referral.friend_reward_desc'),
     },

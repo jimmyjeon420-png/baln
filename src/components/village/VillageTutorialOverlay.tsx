@@ -26,6 +26,7 @@ import {
 import type { TutorialStep, TutorialState } from '../../services/villageTutorialService';
 import { CharacterAvatar } from '../character/CharacterAvatar';
 import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
+import { getGuruDisplayName } from '../../services/characterService';
 
 interface VillageTutorialOverlayProps {
   colors: any;
@@ -140,9 +141,7 @@ export function VillageTutorialOverlay({
           />
           <View style={styles.guruInfo}>
             <Text style={[styles.guruName, { color: colors.primary }]}>
-              {isKo
-                ? guruConfig?.guruName ?? currentStep.guruId
-                : guruConfig?.guruNameEn ?? currentStep.guruId}
+              {getGuruDisplayName(currentStep.guruId)}
             </Text>
             <Text style={[styles.stepCounter, { color: colors.textTertiary }]}>
               {stepNumber}/{stepCount}

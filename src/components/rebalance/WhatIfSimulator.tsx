@@ -23,17 +23,18 @@ import { useTheme } from '../../hooks/useTheme';
 import { ThemeColors } from '../../styles/colors';
 import { useMyCredits, useSpendCredits } from '../../hooks/useCredits';
 import { FEATURE_COSTS } from '../../types/marketplace';
+import { useLocale } from '../../context/LocaleContext';
 
 // ── 카테고리 표시 설정 (부동산 제외) ──
-interface CatConfig { key: AssetCategory; label: string; icon: string; color: string }
+interface CatConfig { key: AssetCategory; labelKey: string; icon: string; color: string }
 const SIM_CATEGORIES: CatConfig[] = [
-  { key: 'large_cap', label: '주식',     icon: '📈', color: '#4CAF50' },
-  { key: 'bond',      label: '채권',     icon: '🏛️', color: '#64B5F6' },
-  { key: 'bitcoin',   label: '비트코인', icon: '₿',  color: '#F7931A' },
-  { key: 'gold',      label: '금/귀금속',icon: '🥇', color: '#FFD700' },
-  { key: 'commodity', label: '원자재',   icon: '🛢️', color: '#FF8A65' },
-  { key: 'altcoin',   label: '알트코인', icon: '🪙', color: '#9C27B0' },
-  { key: 'cash',      label: '현금',     icon: '💵', color: '#78909C' },
+  { key: 'large_cap', labelKey: 'what_if_sim.cat_stocks',    icon: '📈', color: '#4CAF50' },
+  { key: 'bond',      labelKey: 'what_if_sim.cat_bonds',     icon: '🏛️', color: '#64B5F6' },
+  { key: 'bitcoin',   labelKey: 'what_if_sim.cat_bitcoin',   icon: '₿',  color: '#F7931A' },
+  { key: 'gold',      labelKey: 'what_if_sim.cat_gold',      icon: '🥇', color: '#FFD700' },
+  { key: 'commodity', labelKey: 'what_if_sim.cat_commodity',  icon: '🛢️', color: '#FF8A65' },
+  { key: 'altcoin',   labelKey: 'what_if_sim.cat_altcoin',   icon: '🪙', color: '#9C27B0' },
+  { key: 'cash',      labelKey: 'what_if_sim.cat_cash',      icon: '💵', color: '#78909C' },
 ];
 
 interface WhatIfSimulatorProps {
@@ -51,6 +52,7 @@ export default function WhatIfSimulator({
 }: WhatIfSimulatorProps) {
   const router = useRouter();
   const { colors } = useTheme();
+  const { t } = useLocale();
   const { data: credits } = useMyCredits();
   const spendMutation = useSpendCredits();
   const [showSimulator, setShowSimulator] = useState(false);
@@ -174,10 +176,14 @@ export default function WhatIfSimulator({
 
   const handleRecommendedAdjustment = async () => {
     if (currentBalance < cost) {
-      Alert.alert('크레딧 부족', `AI 배분 최적화에는 ${cost}C가 필요합니다.\n현재 잔액: ${currentBalance}C`, [
-        { text: '취소', style: 'cancel' },
-        { text: '충전하기', onPress: () => router.push('/marketplace/credits') },
-      ]);
+      Alert.alert(
+        t('what_if_sim.credit_insufficient_title'),
+        t('what_if_sim.credit_insufficient_msg', { cost: String(cost), balance: String(currentBalance) }),
+        [
+          { text: t('what_if_sim.credit_cancel'), style: 'cancel' },
+          { text: t('what_if_sim.credit_charge'), onPress: () => router.push('/marketplace/credits') },
+        ],
+      );
       return;
     }
     try {
@@ -253,14 +259,14 @@ export default function WhatIfSimulator({
         <View>
           <View style={s.titleRow}>
             <Ionicons name="flask-outline" size={16} color={colors.premium.purple} />
-            <Text style={s.cardLabel}>What-if 시뮬레이터</Text>
+            <Text style={s.cardLabel}>{t('what_if_sim.title')}</Text>
           </View>
-          <Text style={s.cardLabelEn}>Portfolio Simulation</Text>
+          <Text style={s.cardLabelEn}>{t('what_if_sim.subtitle')}</Text>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           {hasAdjustments && (
             <View style={s.activeBadge}>
-              <Text style={s.activeBadgeText}>조정 중</Text>
+              <Text style={s.activeBadgeText}>{t('what_if_sim.adjusting')}</Text>
             </View>
           )}
           <Ionicons name={showSimulator ? 'chevron-up' : 'chevron-down'} size={14} color={colors.textTertiary} />
@@ -269,7 +275,7 @@ export default function WhatIfSimulator({
 
       {!showSimulator && (
         <Text style={s.collapsedDesc}>
-          자산군 비중을 가상으로 조정해서 건강 점수 변화를 미리 확인하세요
+          {t('what_if_sim.collapsed_desc')}
         </Text>
       )}
 
@@ -278,7 +284,7 @@ export default function WhatIfSimulator({
           {/* 건강 점수 미리보기 */}
           <View style={[s.healthPreview, { backgroundColor: colors.surfaceElevated }]}>
             <View style={s.healthItem}>
-              <Text style={s.healthLabel}>현재</Text>
+              <Text style={s.healthLabel}>{t('what_if_sim.current')}</Text>
               <Text style={[s.healthValue, { color: colors.textTertiary }]}>{currentHealthScore}</Text>
             </View>
             <Ionicons
@@ -287,7 +293,7 @@ export default function WhatIfSimulator({
               color={healthDelta > 2 ? colors.success : healthDelta < -2 ? colors.error : colors.textTertiary}
             />
             <View style={s.healthItem}>
-              <Text style={s.healthLabel}>예상</Text>
+              <Text style={s.healthLabel}>{t('what_if_sim.expected')}</Text>
               <Text style={[s.healthValue, { color: healthDelta > 0 ? colors.success : healthDelta < 0 ? colors.error : colors.textTertiary }]}>
                 {simulatedHealthScore}
               </Text>
@@ -295,7 +301,9 @@ export default function WhatIfSimulator({
             {healthDelta !== 0 && (
               <View style={[s.healthDelta, { backgroundColor: healthDelta > 0 ? `${colors.success}20` : `${colors.error}20` }]}>
                 <Text style={[s.healthDeltaText, { color: healthDelta > 0 ? colors.success : colors.error }]}>
-                  {healthDelta > 0 ? '+' : ''}{healthDelta.toFixed(0)}점 {healthDelta > 0 ? '개선' : '악화'}
+                  {healthDelta > 0
+                    ? t('what_if_sim.points_improved', { points: healthDelta.toFixed(0) })
+                    : t('what_if_sim.points_worsened', { points: healthDelta.toFixed(0) })}
                 </Text>
               </View>
             )}
@@ -306,8 +314,8 @@ export default function WhatIfSimulator({
             <View style={[s.tradeGuideSection, { backgroundColor: colors.surfaceElevated }]}>
               <View style={s.tradeGuideHeader}>
                 <Ionicons name="swap-horizontal-outline" size={13} color={colors.textSecondary} />
-                <Text style={[s.tradeGuideTitle, { color: colors.textSecondary }]}>리밸런싱 가이드</Text>
-                <Text style={[s.tradeGuideSub, { color: colors.textTertiary }]}>유동자산 총액 유지</Text>
+                <Text style={[s.tradeGuideTitle, { color: colors.textSecondary }]}>{t('what_if_sim.rebalance_guide')}</Text>
+                <Text style={[s.tradeGuideSub, { color: colors.textTertiary }]}>{t('what_if_sim.liquid_total_maintained')}</Text>
               </View>
               {SIM_CATEGORIES.map(cat => {
                 const curAmt = liquidTotal * (currentCatPct[cat.key] || 0) / 100;
@@ -315,14 +323,14 @@ export default function WhatIfSimulator({
                 const delta = tgtAmt - curAmt;
                 if (Math.abs(delta) < liquidTotal * 0.003) return null; // 0.3% 미만 무시
                 const amtStr = Math.abs(delta) >= 100000000
-                  ? `${(Math.abs(delta) / 100000000).toFixed(1)}억`
-                  : `${Math.round(Math.abs(delta) / 10000)}만원`;
+                  ? t('what_if_sim.amount_billion', { amount: (Math.abs(delta) / 100000000).toFixed(1) })
+                  : t('what_if_sim.amount_million', { amount: String(Math.round(Math.abs(delta) / 10000)) });
                 return (
                   <View key={cat.key} style={s.tradeRow}>
                     <Text style={[s.tradeIcon, cat.key === 'bitcoin' && { color: '#F5A623' }]}>{cat.icon}</Text>
-                    <Text style={[s.tradeName, { color: colors.textSecondary }]}>{cat.label}</Text>
+                    <Text style={[s.tradeName, { color: colors.textSecondary }]}>{t(cat.labelKey)}</Text>
                     <Text style={[s.tradeAmount, { color: delta > 0 ? colors.success : colors.error }]}>
-                      {delta > 0 ? '▲ 매수' : '▼ 매도'} {amtStr}
+                      {delta > 0 ? t('what_if_sim.buy') : t('what_if_sim.sell')} {amtStr}
                     </Text>
                   </View>
                 );
@@ -337,16 +345,16 @@ export default function WhatIfSimulator({
             ) : (
               <>
                 <Ionicons name="sparkles-outline" size={16} color={colors.inverseText} />
-                <Text style={s.recommendButtonText}>AI 배분 최적화 ({cost}C)</Text>
+                <Text style={s.recommendButtonText}>{t('what_if_sim.ai_optimize', { cost: String(cost) })}</Text>
               </>
             )}
           </TouchableOpacity>
 
           {/* 합계 표시 */}
           <View style={[s.sumRow, { backgroundColor: sumOk ? `${colors.success}15` : `${colors.warning}15` }]}>
-            <Text style={[s.sumLabel, { color: colors.textSecondary }]}>목표 합계</Text>
+            <Text style={[s.sumLabel, { color: colors.textSecondary }]}>{t('what_if_sim.target_sum')}</Text>
             <Text style={[s.sumValue, { color: sumOk ? colors.success : colors.warning }]}>
-              {catSum.toFixed(0)}% {sumOk ? '✓' : '⚠️ 100%가 되어야 해요'}
+              {catSum.toFixed(0)}% {sumOk ? '✓' : `⚠️ ${t('what_if_sim.sum_warning')}`}
             </Text>
           </View>
 
@@ -362,15 +370,15 @@ export default function WhatIfSimulator({
                   <View style={s.catHeader}>
                     <View style={s.catNameRow}>
                       <Text style={[s.catIcon, cat.key === 'bitcoin' && { color: '#F5A623' }]}>{cat.icon}</Text>
-                      <Text style={[s.catLabel, { color: colors.textPrimary }]}>{cat.label}</Text>
+                      <Text style={[s.catLabel, { color: colors.textPrimary }]}>{t(cat.labelKey)}</Text>
                     </View>
                     <View style={s.catWeightRow}>
                       <Text style={[s.catCurrentPct, { color: colors.textTertiary }]}>
-                        현재 {curPct.toFixed(0)}%
+                        {t('what_if_sim.current_label', { pct: curPct.toFixed(0) })}
                       </Text>
                       <Text style={[s.catArrow, { color: colors.textTertiary }]}> → </Text>
                       <Text style={[s.catTargetPct, { color: cat.color, fontWeight: '700' }]}>
-                        목표 {tgtPct.toFixed(0)}%
+                        {t('what_if_sim.target_label', { pct: tgtPct.toFixed(0) })}
                       </Text>
                       {delta !== 0 && (
                         <Text style={[s.catDelta, { color: delta > 0 ? colors.success : colors.error }]}>
@@ -406,7 +414,7 @@ export default function WhatIfSimulator({
           <View style={s.buttonGroup}>
             <TouchableOpacity style={s.resetButton} onPress={handleReset} activeOpacity={0.7}>
               <Ionicons name="refresh" size={14} color={colors.textTertiary} />
-              <Text style={s.resetButtonText}>초기화</Text>
+              <Text style={s.resetButtonText}>{t('what_if_sim.reset')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[s.aiButton, (!hasAdjustments || !sumOk) && s.aiButtonDisabled]}
@@ -416,13 +424,13 @@ export default function WhatIfSimulator({
             >
               <Ionicons name="sparkles" size={14} color={(hasAdjustments && sumOk) ? colors.inverseText : colors.disabledText} />
               <Text style={[s.aiButtonText, (!hasAdjustments || !sumOk) && s.aiButtonTextDisabled]}>
-                AI 분석 받기 (3C)
+                {t('what_if_sim.ai_analysis', { cost: '3' })}
               </Text>
             </TouchableOpacity>
           </View>
 
           <Text style={s.hint}>
-            슬라이더로 목표 비중을 조정하고 합계를 100%로 맞추면 건강 점수 변화를 확인할 수 있어요
+            {t('what_if_sim.hint')}
           </Text>
         </View>
       )}

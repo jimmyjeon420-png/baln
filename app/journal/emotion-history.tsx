@@ -231,7 +231,7 @@ export default function EmotionHistoryScreen() {
               </Text>
               <View style={[s.badge, { backgroundColor: `${colors.primary}1F` }]}>
                 <Text style={[s.badgeText, { color: colors.primary }]}>
-                  {isSaved ? '✓ 기록됨' : '+5C'}
+                  {isSaved ? '✓ 기록됨' : '+5개'}
                 </Text>
               </View>
             </View>
@@ -388,7 +388,7 @@ export default function EmotionHistoryScreen() {
                       activeOpacity={0.7}
                       disabled={isSaving}
                     >
-                      <Text style={s.saveBtnText}>{isSaving ? '저장 중...' : '기록하기 +5C'}</Text>
+                      <Text style={s.saveBtnText}>{isSaving ? '저장 중...' : '기록하기 +5개'}</Text>
                     </TouchableOpacity>
                   </View>
                 ) : (
@@ -405,7 +405,7 @@ export default function EmotionHistoryScreen() {
             <Animated.View style={[s.rewardToast, { backgroundColor: `${colors.primary}15`, borderColor: `${colors.primary}30`, opacity: toastOpacity }]}>
               <Ionicons name="gift" size={14} color={colors.primary} />
               <Text style={[s.rewardToastText, { color: colors.primary }]}>
-                감정 기록 보상 +{rewardCredits}C 적립!
+                감정 기록 보상 +{rewardCredits}개 적립!
               </Text>
             </Animated.View>
           )}

@@ -49,6 +49,7 @@ import supabase, { getCurrentUser } from '../services/supabase';
 import { validateAndCorrectRiskAnalysis, validatePortfolioActions } from '../utils/aiResponseValidator';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { hasAIConsent } from '../components/common/AIConsentModal';
+import { getCurrentLanguage } from '../locales';
 
 // 쿼리 키 (외부에서 invalidate 할 때 사용)
 export const AI_ANALYSIS_KEY = ['shared-ai-analysis'];
@@ -57,6 +58,30 @@ export const BITCOIN_KEY = ['shared-bitcoin'];
 export const BITCOIN_PRICE_KEY = ['shared-bitcoin-price'];
 export const GURU_INSIGHTS_KEY = ['shared-guru-insights'];
 export const RATE_CYCLE_EVIDENCE_KEY = ['shared-rate-cycle-evidence'];
+
+// 분석 파이프라인이 영구 pending 상태에 빠지지 않도록 단계별 타임아웃 강제
+const STEP_TIMEOUT_MS = 35000;
+const CACHE_TIMEOUT_MS = 7000;
+const AUTH_TIMEOUT_MS = 10000;
+const TOTAL_TIMEOUT_MS = 60000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error(`[AI분석 타임아웃] ${label} (${Math.round(ms / 1000)}초)`));
+    }, ms);
+
+    promise
+      .then((value) => {
+        clearTimeout(timer);
+        resolve(value);
+      })
+      .catch((error) => {
+        clearTimeout(timer);
+        reject(error);
+      });
+  });
+}
 
 // ============================================================================
 // AI 분석 결과 (진단 + 처방전 공유)
@@ -89,16 +114,21 @@ export async function fetchAIAnalysis(
   }
 
   // 1) 유저 ID 가져오기
-  const user = await getCurrentUser();
+  const user = await withTimeout(getCurrentUser(), AUTH_TIMEOUT_MS, '사용자 인증 조회');
   const userId = user?.id;
 
-  // 2) 포트폴리오 해시 계산
-  const portfolioHash = computePortfolioHash(portfolioAssets);
+  // 2) 포트폴리오 해시 계산 (언어 포함 — 한/영 캐시 분리)
+  const lang = getCurrentLanguage();
+  const portfolioHash = computePortfolioHash(portfolioAssets) + `_${lang}`;
 
   // 3) DB 캐시 조회 (유저 로그인 상태일 때만)
   if (userId) {
     try {
-      const cached = await getTodayPrescription(userId, portfolioHash);
+      const cached = await withTimeout(
+        getTodayPrescription(userId, portfolioHash),
+        CACHE_TIMEOUT_MS,
+        '오늘 처방전 캐시 조회'
+      );
       if (cached) {
         // [이승건: 캐시 검증 강화] morningBriefing이 null이면 무효
         if (!cached.morningBriefing || !cached.morningBriefing.macroSummary) {
@@ -149,17 +179,31 @@ export async function fetchAIAnalysis(
   } catch { /* 실패해도 무시 */ }
 
   const [kitchenResult, riskResult] = await Promise.all([
-    loadMorningBriefing(portfolioAssets, { includeRealEstate: false, guruStyle })
+    withTimeout(
+      loadMorningBriefing(portfolioAssets, { includeRealEstate: false, guruStyle }),
+      STEP_TIMEOUT_MS,
+      '모닝 브리핑 생성'
+    )
       .catch((err) => {
         console.warn('[공유분석] Morning Briefing 실패:', err);
         return null;
       }),
-    analyzePortfolioRisk(portfolioAssets)
+    withTimeout(
+      analyzePortfolioRisk(portfolioAssets),
+      STEP_TIMEOUT_MS,
+      '포트폴리오 리스크 분석'
+    )
       .catch((err) => {
         console.warn('[공유분석] Risk Analysis 실패:', err);
         return null;
       }),
   ]);
+
+  // ★ 핵심 수정: 둘 다 실패하면 에러 throw → TanStack Query error 상태 전환
+  // 이전: null 데이터를 "성공"으로 반환 → isError 영원히 false → 무한 로딩
+  if (!kitchenResult?.morningBriefing && !riskResult) {
+    throw new Error('AI 분석에 실패했습니다. 잠시 후 다시 시도해주세요.');
+  }
 
   // 4-B) AI 응답 검증 및 보정 (감사 부서 역할)
   let validatedRisk = riskResult;
@@ -202,12 +246,16 @@ export async function fetchAIAnalysis(
   if (userId && (result.morningBriefing || result.riskAnalysis)) {
     try {
       // 5-1) DB 저장 완료까지 대기 (타이밍 이슈 방지)
-      await savePrescription(
-        userId,
-        portfolioHash,
-        result.morningBriefing,
-        result.riskAnalysis,
-        result.source
+      await withTimeout(
+        savePrescription(
+          userId,
+          portfolioHash,
+          result.morningBriefing,
+          result.riskAnalysis,
+          result.source
+        ),
+        CACHE_TIMEOUT_MS,
+        '처방전 캐시 저장'
       );
 
       // 5-2) queryClient 캐시도 즉시 업데이트 (다음 로드 0ms)
@@ -240,12 +288,18 @@ export function useSharedAnalysis(portfolioAssets: PortfolioAsset[]) {
   const queryClient = useQueryClient();
   const hasAssets = portfolioAssets.length > 0;
 
-  // 포트폴리오 해시 계산 (자산 내용이 바뀌면 캐시 무효화)
-  const portfolioHash = hasAssets ? computePortfolioHash(portfolioAssets) : '';
+  // 포트폴리오 해시 계산 (자산 내용이 바뀌면 캐시 무효화, 언어 포함)
+  const currentLang = getCurrentLanguage();
+  const portfolioHash = hasAssets ? computePortfolioHash(portfolioAssets) + `_${currentLang}` : '';
 
   const query = useQuery({
     queryKey: [...AI_ANALYSIS_KEY, portfolioHash],
-    queryFn: () => fetchAIAnalysis(portfolioAssets, queryClient),
+    queryFn: () =>
+      withTimeout(
+        fetchAIAnalysis(portfolioAssets, queryClient),
+        TOTAL_TIMEOUT_MS,
+        'AI 분석 파이프라인'
+      ),
     enabled: hasAssets,
     staleTime: 0,                      // 항상 최신 데이터 조회
     gcTime: 1000 * 60 * 15,

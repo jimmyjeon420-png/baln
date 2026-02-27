@@ -14,6 +14,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
+import { getGuruDisplayName } from '../../services/characterService';
 import { t, getCurrentLanguage } from '../../locales';
 
 // =============================================================================
@@ -86,8 +87,8 @@ function HospitalHeader({
     ? GURU_CHARACTER_CONFIGS[gradeConfig.guruId]
     : null;
   const guruEmoji = guruConfig?.emoji ?? '';
-  const guruName = guruConfig
-    ? (isKo ? guruConfig.guruName : guruConfig.guruNameEn)
+  const guruName = gradeConfig
+    ? getGuruDisplayName(gradeConfig.guruId)
     : '';
   const accentColor = gradeConfig?.color ?? colors.textTertiary;
 

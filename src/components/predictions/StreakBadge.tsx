@@ -92,7 +92,7 @@ export default function StreakBadge({ currentStreak, isBroken }: StreakBadgeProp
           {isBroken ? `${currentStreak}연속 끊김...` : streakLevel.label}
         </Text>
         {!isBroken && streakLevel.bonus > 0 && (
-          <Text style={styles.bonusText}>+{streakLevel.bonus} 크레딧 보너스 획득!</Text>
+          <Text style={styles.bonusText}>+{streakLevel.bonus} 도토리 보너스 획득!</Text>
         )}
         {!isBroken && currentStreak >= 3 && currentStreak < 5 && (
           <Text style={styles.nextGoalText}>5연속 시 +3 보너스!</Text>

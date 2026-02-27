@@ -12,7 +12,7 @@ import {
   GatheringParticipantInsert,
   UserTier,
 } from '../types/database';
-import { TIER_THRESHOLDS, TIER_LABELS, TIER_LEVELS, TIER_DESCRIPTIONS } from '../types/community';
+import { TIER_THRESHOLDS, TIER_LABELS, TIER_LEVELS, TIER_DESCRIPTIONS, getCommunityTierLabel, getCommunityTierDescription } from '../types/community';
 
 // 모임 생성 최소 자산 (1억 = Gold 티어)
 const MINIMUM_ASSETS_FOR_HOSTING = 100000000;
@@ -73,8 +73,9 @@ export const TIER_COLORS: Record<UserTier, string> = {
   DIAMOND: '#B9F2FF',
 };
 
-// TIER_LABELS와 TIER_DESCRIPTIONS re-export
+// TIER_LABELS와 TIER_DESCRIPTIONS re-export (deprecated: use getter functions)
 export { TIER_LABELS, TIER_DESCRIPTIONS, TIER_LEVELS };
+export { getCommunityTierLabel, getCommunityTierDescription };
 
 /**
  * 모임 목록 조회 훅
@@ -525,7 +526,7 @@ export const useJoinGathering = () => {
 
         // 3. 티어 기반 접근 제어 (TBAC) - 클라이언트 검증
         if (!canAccessTier(userTier, requiredTier)) {
-          const requiredLabel = TIER_LABELS[requiredTier] || requiredTier;
+          const requiredLabel = getCommunityTierLabel(requiredTier);
           throw new Error(`이 모임은 ${requiredLabel} 등급 이상만 참가할 수 있습니다.`);
         }
 

@@ -6,6 +6,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 import { ThemeColors } from '../../styles/colors';
 import type { RebalancePortfolioAsset } from '../../types/rebalanceTypes';
 
@@ -27,6 +28,7 @@ export default function HoldingsSection({
   snapshot,
 }: HoldingsSectionProps) {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const [showAssets, setShowAssets] = useState(false);
   const isPositive = (snapshot?.totalGainLoss ?? 0) >= 0;
 
@@ -41,8 +43,8 @@ export default function HoldingsSection({
       >
         <View style={styles.collapsibleLeft}>
           <Ionicons name="pie-chart-outline" size={16} color={colors.primary} />
-          <Text style={[styles.collapsibleTitle, { color: colors.textPrimary }]}>유동자산 (주식·ETF·크립토)</Text>
-          <Text style={[styles.collapsibleCount, { color: colors.textTertiary }]}>{portfolio.length}개</Text>
+          <Text style={[styles.collapsibleTitle, { color: colors.textPrimary }]}>{t('holdings_section.title')}</Text>
+          <Text style={[styles.collapsibleCount, { color: colors.textTertiary }]}>{t('holdings_section.count', { count: String(portfolio.length) })}</Text>
         </View>
         <Ionicons name={showAssets ? 'chevron-up' : 'chevron-down'} size={16} color={colors.textTertiary} />
       </TouchableOpacity>
@@ -53,14 +55,14 @@ export default function HoldingsSection({
           {snapshot && (
             <View style={[styles.snapshotRow, { borderBottomColor: colors.border }]}>
               <View style={styles.snapshotItem}>
-                <Text style={[styles.snapshotLabel, { color: colors.textTertiary }]}>총 손익</Text>
+                <Text style={[styles.snapshotLabel, { color: colors.textTertiary }]}>{t('holdings_section.total_gain_loss')}</Text>
                 <Text style={[styles.snapshotValue, { color: isPositive ? colors.buy : colors.sell }]}>
                   {isPositive ? '+' : ''}₩{Math.floor(Math.abs(snapshot.totalGainLoss ?? 0)).toLocaleString()}
                 </Text>
               </View>
               <View style={[styles.snapshotDivider, { backgroundColor: colors.border }]} />
               <View style={styles.snapshotItem}>
-                <Text style={[styles.snapshotLabel, { color: colors.textTertiary }]}>분산 점수</Text>
+                <Text style={[styles.snapshotLabel, { color: colors.textTertiary }]}>{t('holdings_section.diversification_score')}</Text>
                 <Text style={[styles.snapshotValue, { color: colors.textPrimary }]}>{snapshot.diversificationScore}/100</Text>
               </View>
             </View>

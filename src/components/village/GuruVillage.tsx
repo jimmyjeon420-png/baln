@@ -269,8 +269,8 @@ const styles = StyleSheet.create({
   },
   roundtableBtn: {
     position: 'absolute',
-    bottom: 10,
-    right: 12,
+    top: 10,
+    left: 12,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
@@ -280,7 +280,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
     borderColor: '#F0C06030',
-    zIndex: 10,
+    zIndex: 2,
   },
   roundtableBtnText: {
     fontSize: 11,

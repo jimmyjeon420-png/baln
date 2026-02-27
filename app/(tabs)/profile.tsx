@@ -146,7 +146,7 @@ export default function ProfileScreen() {
           icon: 'gift-outline',
           label: t('profile.menu.referral'),
           onPress: () => router.push('/settings/referral'),
-          badge: '20C',
+          badge: '20개',
           badgeColor: '#4CAF50',
         },
       ],

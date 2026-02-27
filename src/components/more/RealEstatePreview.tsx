@@ -15,24 +15,24 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSharedPortfolio } from '../../hooks/useSharedPortfolio';
 import { useTheme } from '../../hooks/useTheme';
-
-/** 금액 포맷: 억/만원 */
-const formatAmount = (amount: number): string => {
-  if (amount >= 100000000) {
-    const billions = (amount / 100000000).toFixed(1);
-    return `${billions}억`;
-  }
-  if (amount >= 10000) {
-    return `${(amount / 10000).toFixed(0)}만원`;
-  }
-  return `${amount.toLocaleString()}원`;
-};
+import { t } from '../../locales';
 
 export default function RealEstatePreview() {
   const router = useRouter();
   const { colors } = useTheme();
   const { realEstateAssets, totalRealEstate, isLoading } = useSharedPortfolio();
   const styles = createStyles(colors);
+
+  /** 금액 포맷: 억/만원 (localized) */
+  const formatAmount = (amount: number): string => {
+    if (amount >= 100000000) {
+      return t('format.amount_eok', { n: (amount / 100000000).toFixed(1) });
+    }
+    if (amount >= 10000) {
+      return t('format.amount_manwon', { n: (amount / 10000).toFixed(0) });
+    }
+    return t('format.amount_won', { n: amount.toLocaleString() });
+  };
 
   // 부동산 자산이 없으면 미리보기 카드 표시 안 함
   if (isLoading || realEstateAssets.length === 0) return null;
@@ -50,9 +50,9 @@ export default function RealEstatePreview() {
 
       {/* 요약 정보 */}
       <View style={styles.info}>
-        <Text style={styles.title}>보유 부동산</Text>
+        <Text style={styles.title}>{t('realestate_preview.title')}</Text>
         <Text style={styles.summary}>
-          {realEstateAssets.length}건 | 총 {formatAmount(totalRealEstate)}
+          {t('realestate_preview.summary', { count: realEstateAssets.length, total: formatAmount(totalRealEstate) })}
         </Text>
       </View>
 

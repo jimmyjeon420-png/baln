@@ -18,6 +18,9 @@ import {
 import type { VillageBatch, VillageConversation, VillageMessage } from '../services/villageConversationService';
 import { VILLAGE_ZONES, getZonesForGuru } from '../data/villageZoneConfig';
 import { getRandomQuote } from '../data/guruQuoteBank';
+import { spendCredits } from '../services/creditService';
+import { FEATURE_COSTS } from '../types/marketplace';
+import { getCurrentLanguage } from '../locales';
 
 // ============================================================================
 // 타입
@@ -495,7 +498,8 @@ export function useGuruVillage(options: UseGuruVillageOptions | boolean = false)
 
         // 명언 DB에서 해당 구루의 랜덤 명언 가져오기
         const quoteObj = getRandomQuote(chosen.guruId);
-        const line = trimQuoteForBubble(quoteObj.quote);
+        const isKo = getCurrentLanguage() === 'ko';
+        const line = trimQuoteForBubble(isKo ? quoteObj.quote : quoteObj.quoteEn);
 
         lastSpeakerRef.current = chosen.guruId;
 
@@ -533,6 +537,15 @@ export function useGuruVillage(options: UseGuruVillageOptions | boolean = false)
     setIsUserChatLoading(true);
     setUserChatError(false);
     lastQuestionRef.current = question;
+
+    // 크레딧 차감 (1C)
+    const cost = FEATURE_COSTS.guru_chat;
+    const spendResult = await spendCredits(cost, 'guru_chat', userChatGuru);
+    if (!spendResult.success) {
+      console.warn('[GuruChat] 크레딧 부족:', spendResult.errorMessage);
+      setIsUserChatLoading(false);
+      // 크레딧 부족해도 대화는 허용 (best-effort 차감)
+    }
 
     // 사용자 메시지 추가
     const userMsg: VillageMessage = {

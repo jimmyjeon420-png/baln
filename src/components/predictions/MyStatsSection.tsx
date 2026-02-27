@@ -87,7 +87,7 @@ export default function MyStatsSection({ stats }: MyStatsSectionProps) {
           <StatRow label="오답" value={`${incorrectVotes}회`} />
           <StatRow label="현재 연속" value={`${stats.current_streak}회`} highlight={stats.current_streak >= 5} />
           <StatRow label="최고 연속" value={`${stats.best_streak}회`} />
-          <StatRow label="획득 크레딧" value={`${stats.total_credits_earned}C`} highlight />
+          <StatRow label="획득 크레딧" value={`${stats.total_credits_earned}개`} highlight />
         </View>
       </View>
     </View>

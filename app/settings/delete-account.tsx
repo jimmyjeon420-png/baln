@@ -238,7 +238,7 @@ export default function DeleteAccountScreen() {
                 label={t('settings.delete_account.lose_credit')}
                 value={
                   dataSummary
-                    ? `${dataSummary.creditBalance}C`
+                    ? `${dataSummary.creditBalance}개`
                     : t('settings.delete_account.loading')
                 }
               />

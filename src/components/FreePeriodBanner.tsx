@@ -11,6 +11,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { t } from '../locales';
 import { isFreePeriod, getFreePeriodDaysLeft } from '../config/freePeriod';
 
 interface FreePeriodBannerProps {
@@ -29,7 +30,7 @@ export default function FreePeriodBanner({ compact = false }: FreePeriodBannerPr
       <View style={styles.compactBanner}>
         <Ionicons name="gift" size={14} color="#4CAF50" />
         <Text style={styles.compactText}>
-          창립 멤버 혜택 — 2026년 5월 31일까지 모든 기능 무료!
+          {t('free_period.compact')}
         </Text>
         <View style={styles.dDayBadge}>
           <Text style={styles.dDayText}>D-{daysLeft}</Text>
@@ -43,40 +44,40 @@ export default function FreePeriodBanner({ compact = false }: FreePeriodBannerPr
     <View style={styles.fullBanner}>
       <View style={styles.fullHeader}>
         <Ionicons name="gift" size={20} color="#4CAF50" />
-        <Text style={styles.fullTitle}>창립 멤버 혜택</Text>
+        <Text style={styles.fullTitle}>{t('free_period.title')}</Text>
         <View style={styles.dDayBadge}>
           <Text style={styles.dDayText}>D-{daysLeft}</Text>
         </View>
       </View>
 
       <Text style={styles.fullSubtitle}>
-        2026년 5월 31일까지 모든 기능 무료!
+        {t('free_period.subtitle')}
       </Text>
 
       {/* 혜택 목록 */}
       <View style={styles.benefitList}>
         <View style={styles.benefitRow}>
           <Ionicons name="checkmark-circle" size={14} color="#4CAF50" />
-          <Text style={styles.benefitText}>AI 딥다이브 분석 무제한</Text>
+          <Text style={styles.benefitText}>{t('free_period.benefit_ai')}</Text>
         </View>
         <View style={styles.benefitRow}>
           <Ionicons name="checkmark-circle" size={14} color="#4CAF50" />
-          <Text style={styles.benefitText}>What-If 시뮬레이션 무제한</Text>
+          <Text style={styles.benefitText}>{t('free_period.benefit_whatif')}</Text>
         </View>
         <View style={styles.benefitRow}>
           <Ionicons name="checkmark-circle" size={14} color="#4CAF50" />
-          <Text style={styles.benefitText}>세금 리포트 / AI 버핏 티타임</Text>
+          <Text style={styles.benefitText}>{t('free_period.benefit_tax')}</Text>
         </View>
         <View style={styles.benefitRow}>
           <Ionicons name="checkmark-circle" size={14} color="#4CAF50" />
-          <Text style={styles.benefitText}>예측 게임 해설 + 복기</Text>
+          <Text style={styles.benefitText}>{t('free_period.benefit_prediction')}</Text>
         </View>
       </View>
 
       <View style={styles.creditHint}>
-        <Ionicons name="diamond" size={12} color="#7C4DFF" />
+        <Text style={{ fontSize: 24 }}>🌰</Text>
         <Text style={styles.creditHintText}>
-          매일 출석 +2, 공유 +3 크레딧 적립 {'>'} 6월 이후에도 사용 가능!
+          {t('free_period.credit_hint')}
         </Text>
       </View>
     </View>

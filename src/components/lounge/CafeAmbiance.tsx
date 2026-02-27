@@ -14,6 +14,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
+import { getGuruDisplayName } from '../../services/characterService';
 
 /** 현재 시간 기반 시간대 자동 감지 (KST) */
 function detectTimeOfDay(): 'dawn' | 'morning' | 'afternoon' | 'evening' | 'night' {
@@ -109,7 +110,7 @@ function CafeAmbiance({
 
     return {
       emoji: guruConfig?.emoji ?? '',
-      name: guruConfig ? (isKo ? guruConfig.guruName : guruConfig.guruNameEn) : guruId,
+      name: getGuruDisplayName(guruId),
       text: quote ? (isKo ? quote.ko : quote.en) : '',
     };
   }, [isKo]);

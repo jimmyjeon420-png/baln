@@ -35,7 +35,7 @@ import {
   TIER_STRATEGY_DETAILS,
 } from '../src/constants/tierStrategy';
 import {
-  TIER_LABELS,
+  getCommunityTierLabel,
   TIER_ICONS,
   TIER_COLORS,
   TIER_THRESHOLDS,
@@ -65,7 +65,7 @@ export default function TierStrategyScreen() {
   const tierDetail = TIER_STRATEGY_DETAILS[userTier];
   const tierColor = TIER_COLORS[userTier] || '#FFD700';
   const tierLabelKey = `tier_strategy.tier_${(userTier || 'GOLD').toLowerCase()}` as const;
-  const tierLabel = t(tierLabelKey) || TIER_LABELS[userTier] || t('tier_strategy.tier_gold');
+  const tierLabel = t(tierLabelKey) || getCommunityTierLabel(userTier) || t('tier_strategy.tier_gold');
   const tierIcon = TIER_ICONS[userTier] || 'trophy';
 
   // 아코디언 펼침 상태 (null = 모두 접힘)

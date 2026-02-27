@@ -48,6 +48,7 @@ import { useVerificationStatus } from '../../src/hooks/useVerification';
 import { getTierFeatures } from '../../src/config/tierFeatures';
 import {
   CATEGORY_INFO,
+  getCategoryLabel,
   CommunityCategory,
   CommunityCategoryFilter,
   LOUNGE_VIEW_THRESHOLD,
@@ -858,7 +859,7 @@ function LoungeScreenInner() {
                           { color: themeColors.textSecondary },
                           isActive && { color: info.color || '#4CAF50', fontWeight: '700' },
                         ]}>
-                          {info.label || key}
+                          {getCategoryLabel(key)}
                         </Text>
                       </TouchableOpacity>
                     );
@@ -924,7 +925,7 @@ function LoungeScreenInner() {
                           >
                             <Ionicons name={(info.icon || 'apps') as any} size={12} color={isActive ? (info.color || '#4CAF50') : themeColors.textTertiary} />
                             <Text style={[styles.composeCategoryText, { color: themeColors.textSecondary }, isActive && { color: info.color || '#4CAF50' }]}>
-                              {info.label || key}
+                              {getCategoryLabel(key)}
                             </Text>
                           </TouchableOpacity>
                         );
@@ -1055,7 +1056,7 @@ function LoungeScreenInner() {
                 {/* DIAMOND 전용 필터 (인라인) */}
                 {eligibility && eligibility.totalAssets >= TIER_THRESHOLDS.DIAMOND && (
                   <View style={styles.diamondFilterContainer}>
-                    <Text style={{ fontSize: 14 }}>{'💎'}</Text>
+                    <Text style={{ fontSize: 28 }}>{'🌰'}</Text>
                     <Text style={[styles.diamondFilterText, { color: '#B9F2FF' }]}>
                       {t('lounge.diamond_exclusive')}
                     </Text>

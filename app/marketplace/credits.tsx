@@ -88,7 +88,7 @@ export default function CreditsScreen() {
     mediumTap();
     try {
       await Share.share({
-        message: `baln(발른)에서 투자 습관을 만들어보세요! 내 추천 코드: ${myReferralCode}\n가입 시 10크레딧(₩1,000) 보너스!`,
+        message: `baln(발른)에서 투자 습관을 만들어보세요! 내 추천 코드: ${myReferralCode}\n가입 시 10도토리(₩1,000) 보너스!`,
       });
     } catch (err) {
       // 사용자가 공유를 취소한 경우에도 에러가 발생할 수 있으므로 경고만 로그
@@ -185,11 +185,11 @@ export default function CreditsScreen() {
       const pkg = CREDIT_PACKAGES.find(p => p.id === packageId);
       Alert.alert(
         '구매 완료!',
-        `${(pkg?.credits ?? 0) + (pkg?.bonus ?? 0)} 크레딧이 충전되었습니다.`
+        `${(pkg?.credits ?? 0) + (pkg?.bonus ?? 0)} 도토리가 충전되었습니다.`
       );
     } catch (err: any) {
       console.error('[IAP] 구매 후 처리 실패:', err);
-      Alert.alert('오류', '결제는 완료되었으나 크레딧 충전에 실패했습니다.\n고객센터에 문의해 주세요.');
+      Alert.alert('오류', '결제는 완료되었으나 도토리 충전에 실패했습니다.\n고객센터에 문의해 주세요.');
     } finally {
       setPurchasing(false);
       purchasingPackageRef.current = null;
@@ -224,8 +224,8 @@ export default function CreditsScreen() {
     // Expo Go 또는 비-iOS → 시뮬레이션 모드
     if (isExpoGoEnv || Platform.OS !== 'ios') {
       Alert.alert(
-        '크레딧 구매',
-        `${pkg.name} 패키지 (${pkg.credits + pkg.bonus} 크레딧)를\n${pkg.priceLabel}에 구매하시겠습니까?\n\n⚠️ EAS 빌드에서만 실제 결제가 진행됩니다.\n(현재: 시뮬레이션 모드)`,
+        '도토리 구매',
+        `${pkg.name} 패키지 (${pkg.credits + pkg.bonus} 도토리)를\n${pkg.priceLabel}에 구매하시겠습니까?\n\n⚠️ EAS 빌드에서만 실제 결제가 진행됩니다.\n(현재: 시뮬레이션 모드)`,
         [
           { text: '취소', style: 'cancel' },
           {
@@ -234,7 +234,7 @@ export default function CreditsScreen() {
               try {
                 await purchaseMutation.mutateAsync({ packageId });
                 success();
-                Alert.alert('구매 완료!', `${pkg.credits + pkg.bonus} 크레딧이 충전되었습니다.`);
+                Alert.alert('구매 완료!', `${pkg.credits + pkg.bonus} 도토리가 충전되었습니다.`);
               } catch (err: any) {
                 Alert.alert('오류', err.message || '구매에 실패했습니다');
               }
@@ -287,8 +287,8 @@ export default function CreditsScreen() {
 
   const getTransactionLabel = (tx: CreditTransaction) => {
     const labels: Record<string, string> = {
-      purchase: '크레딧 구매',
-      spend: '크레딧 사용',
+      purchase: '도토리 구매',
+      spend: '도토리 사용',
       refund: '환불',
       bonus: '보너스',
       subscription_bonus: '구독 보너스',
@@ -319,7 +319,7 @@ export default function CreditsScreen() {
           <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7}>
             <Ionicons name="close" size={24} color="#FFF" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>크레딧 안내</Text>
+          <Text style={styles.headerTitle}>도토리 안내</Text>
           <View style={{ width: 24 }} />
         </View>
 
@@ -336,10 +336,10 @@ export default function CreditsScreen() {
 
         {/* 현재 잔액 */}
         <View style={styles.balanceCard}>
-          <Ionicons name="diamond" size={32} color="#7C4DFF" />
-          <Text style={styles.balanceLabel}>보유 크레딧</Text>
+          <Text style={{ fontSize: 64 }}>🌰</Text>
+          <Text style={styles.balanceLabel}>보유 도토리</Text>
           <Text style={styles.balanceValue}>
-            {creditsLoading ? '...' : (credits?.balance ?? 0).toLocaleString()}C
+            {creditsLoading ? '...' : (credits?.balance ?? 0).toLocaleString()}개
           </Text>
           <Text style={styles.balanceKRW}>
             {creditsLoading ? '' : `₩${((credits?.balance ?? 0) * CREDIT_TO_KRW).toLocaleString()} 상당`}
@@ -351,9 +351,9 @@ export default function CreditsScreen() {
           <View style={styles.trialBanner}>
             <Ionicons name="gift" size={24} color="#4CAF50" />
             <View style={{ flex: 1, marginLeft: 12 }}>
-              <Text style={styles.trialTitle}>무료로 크레딧을 모아보세요!</Text>
+              <Text style={styles.trialTitle}>무료로 도토리를 모아보세요!</Text>
               <Text style={styles.trialDesc}>
-                아래 활동으로 크레딧을 획득하면{'\n'}
+                아래 활동으로 도토리를 획득하면{'\n'}
                 2026년 6월 1일 이후에도 AI 분석/시뮬레이션에 사용할 수 있어요.
               </Text>
             </View>
@@ -363,13 +363,13 @@ export default function CreditsScreen() {
         {/* 크레딧 획득 방법 카드 */}
         {!chargingOpen && (
           <View style={styles.earnSection}>
-            <Text style={styles.sectionTitle}>크레딧 획득 방법</Text>
+            <Text style={styles.sectionTitle}>도토리 획득 방법</Text>
             {[
               { icon: 'calendar-outline' as const, label: '매일 출석 체크', credits: 2, desc: '앱을 열면 자동 적립', route: null },
               { icon: 'checkmark-circle-outline' as const, label: '예측 적중', credits: 3, desc: '투표 결과가 맞으면 보상', route: '/(tabs)' as const },
               { icon: 'heart-outline' as const, label: '투자 감정 기록', credits: 5, desc: '오늘의 감정을 기록하면 보상', route: '/(tabs)/rebalance' as const },
               { icon: 'share-social-outline' as const, label: '인스타 공유', credits: 5, desc: '분석 결과를 캡처해서 공유', route: '/analysis/what-if' as const },
-              { icon: 'trophy-outline' as const, label: '성취 배지 해금', credits: '3~30', desc: '배지 획득 시 크레딧 보상 (총 128C)', route: '/achievements' as const },
+              { icon: 'trophy-outline' as const, label: '성취 배지 해금', credits: '3~30', desc: '배지 획득 시 크레딧 보상 (총 128개)', route: '/achievements' as const },
               { icon: 'people-outline' as const, label: '친구 추천', credits: 50, desc: '내 추천 코드로 친구가 가입', route: 'referral' as const },
               { icon: 'wallet-outline' as const, label: '자산 3개 등록', credits: 20, desc: '자산 3종목 이상 등록 시 1회', route: '/add-asset' as const },
               { icon: 'sparkles-outline' as const, label: '환영 보너스', credits: 10, desc: '신규 가입 시 1회 지급', route: null },
@@ -397,7 +397,7 @@ export default function CreditsScreen() {
                   <Text style={styles.earnDesc}>{item.desc}</Text>
                 </View>
                 <View style={styles.earnBadge}>
-                  <Text style={styles.earnBadgeText}>+{item.credits}C</Text>
+                  <Text style={styles.earnBadgeText}>+{item.credits}개</Text>
                 </View>
                 {item.route && (
                   <Ionicons name="chevron-forward" size={16} color="#555" style={{ marginLeft: 4 }} />
@@ -418,7 +418,7 @@ export default function CreditsScreen() {
                       <Text style={styles.referralShareText}>공유하기</Text>
                     </TouchableOpacity>
                   </View>
-                  <Text style={styles.referralHint}>친구가 가입하고 3일 접속하면 나에게 20C, 친구에게 즉시 10C!</Text>
+                  <Text style={styles.referralHint}>친구가 가입하고 3일 접속하면 나에게 20개, 친구에게 즉시 10개!</Text>
                 </View>
 
                 {/* 친구 코드 입력 */}
@@ -453,7 +453,7 @@ export default function CreditsScreen() {
             <View style={styles.earnTip}>
               <Ionicons name="information-circle" size={16} color="#7C4DFF" />
               <Text style={styles.earnTipText}>
-                획득한 크레딧으로 딥다이브 분석, 위기 시뮬레이션, AI 버핏 티타임 등을 이용하세요!
+                획득한 도토리로 딥다이브 분석, 위기 시뮬레이션, AI 버핏 티타임 등을 이용하세요!
               </Text>
             </View>
           </View>
@@ -497,11 +497,11 @@ export default function CreditsScreen() {
 
         {/* 안내 */}
         <View style={styles.infoSection}>
-          <Text style={styles.infoTitle}>크레딧 안내</Text>
+          <Text style={styles.infoTitle}>도토리 안내</Text>
           <Text style={styles.infoText}>
-            - 크레딧은 AI 프리미엄 기능 이용에 사용됩니다{'\n'}
-            - AI 분석 실패 시 크레딧이 자동 환불됩니다{'\n'}
-            - 다양한 활동으로 무료 크레딧을 획득할 수 있습니다{'\n'}
+            - 도토리는 AI 프리미엄 기능 이용에 사용됩니다{'\n'}
+            - AI 분석 실패 시 도토리가 자동 환불됩니다{'\n'}
+            - 다양한 활동으로 무료 도토리를 획득할 수 있습니다{'\n'}
             - 충전소는 2026년 6월 1일부터 순차 오픈됩니다
           </Text>
         </View>

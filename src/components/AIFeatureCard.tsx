@@ -58,7 +58,7 @@ export default function AIFeatureCard({
               <Text style={styles.originalCost}>{originalCost}</Text>
             )}
             <View style={styles.costRow}>
-              <Ionicons name="diamond" size={12} color="#7C4DFF" />
+              <Text style={{ fontSize: 24 }}>🌰</Text>
               <Text style={styles.cost}>{discountedCost}</Text>
             </View>
             {discountPercent > 0 && (

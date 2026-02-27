@@ -498,7 +498,7 @@ const ShareStoryModal: React.FC<{
                 <Text style={shareStyles.shareButtonText}>인스타그램 공유</Text>
                 {!rewarded && (
                   <View style={shareStyles.rewardHint}>
-                    <Text style={shareStyles.rewardHintText}>+{REWARD_AMOUNTS.shareCard}C</Text>
+                    <Text style={shareStyles.rewardHintText}>+{REWARD_AMOUNTS.shareCard}개</Text>
                   </View>
                 )}
               </>

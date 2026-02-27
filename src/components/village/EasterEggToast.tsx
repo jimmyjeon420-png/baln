@@ -144,7 +144,7 @@ export function EasterEggToast({
 
         {/* Credits reward */}
         <View style={styles.rewardBadge}>
-          <Text style={styles.rewardText}>+{egg.rewardCredits}C</Text>
+          <Text style={styles.rewardText}>+{egg.rewardCredits}개</Text>
         </View>
       </TouchableOpacity>
     </Animated.View>

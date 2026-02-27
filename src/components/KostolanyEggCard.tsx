@@ -23,6 +23,7 @@ import { EGG_CYCLE_PHASES, PHASE_TRANSITIONS } from '../constants/eggCycleData';
 import { useRateCycleEvidence } from '../hooks/useSharedAnalysis';
 import type { RateCycleEvidence, EvidenceItem, EconIndicator, ConfidenceFactor } from '../services/centralKitchen';
 import { getLocaleCode } from '../utils/formatters';
+import { useLocale } from '../context/LocaleContext';
 
 // ══════════════════════════════════════════
 // Props
@@ -59,10 +60,10 @@ const PHASE_POSITIONS: Record<EggPhase, { x: number; y: number }> = {
 };
 
 // 액션 색상
-const ACTION_STYLE: Record<InvestmentAction, { bg: string; text: string; label: string }> = {
-  [InvestmentAction.BUY]:  { bg: 'rgba(76,175,80,0.15)',  text: '#4CAF50', label: '매수' },
-  [InvestmentAction.SELL]: { bg: 'rgba(207,102,121,0.15)', text: '#CF6679', label: '매도' },
-  [InvestmentAction.HOLD]: { bg: 'rgba(136,136,136,0.15)', text: '#888888', label: '보유' },
+const ACTION_STYLE: Record<InvestmentAction, { bg: string; text: string; labelKey: string }> = {
+  [InvestmentAction.BUY]:  { bg: 'rgba(76,175,80,0.15)',  text: '#4CAF50', labelKey: 'kostolany.action_buy' },
+  [InvestmentAction.SELL]: { bg: 'rgba(207,102,121,0.15)', text: '#CF6679', labelKey: 'kostolany.action_sell' },
+  [InvestmentAction.HOLD]: { bg: 'rgba(136,136,136,0.15)', text: '#888888', labelKey: 'kostolany.action_hold' },
 };
 
 // ══════════════════════════════════════════
@@ -462,6 +463,7 @@ const KostolanyEggCard: React.FC<KostolanyEggCardProps> = ({
   analysis,
   interestRateText,
 }) => {
+  const { t } = useLocale();
   const [expanded, setExpanded] = useState(false);
   const [guideExpanded, setGuideExpanded] = useState(false);
   const [evidenceExpanded, setEvidenceExpanded] = useState(false);
@@ -580,7 +582,7 @@ const KostolanyEggCard: React.FC<KostolanyEggCardProps> = ({
             {/* 추천 액션 배지 */}
             <View style={[styles.actionBadge, { backgroundColor: actionStyle.bg }]}>
               <Text style={[styles.actionBadgeText, { color: actionStyle.text }]}>
-                {analysis.actionKorean}
+                {t(actionStyle.labelKey)}
               </Text>
               <Text style={styles.confidenceText}>
                 신뢰도 {analysis.confidence}%

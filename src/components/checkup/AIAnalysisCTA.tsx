@@ -78,7 +78,7 @@ export default function AIAnalysisCTA() {
         <Ionicons name="sparkles" size={24} color={colors.premium.purple} />
         <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>AI 심화 분석</Text>
         <View style={[styles.freeBadge, { backgroundColor: colors.premium.purple }]}>
-          <Text style={styles.freeBadgeText}>1C/회</Text>
+          <Text style={styles.freeBadgeText}>1개/회</Text>
         </View>
       </View>
 

@@ -281,6 +281,16 @@ export const KOSTOLANY_PHASE_NAMES: Record<KostolalyPhase, string> = {
   F: '극비관 국면',
 };
 
+/** 국면 영어 이름 */
+export const KOSTOLANY_PHASE_NAMES_EN: Record<KostolalyPhase, string> = {
+  A: 'Bottom',
+  B: 'Uptrend',
+  C: 'Overheated',
+  D: 'Early Decline',
+  E: 'Panic',
+  F: 'Stagnation',
+};
+
 /** 국면 이모지 */
 export const KOSTOLANY_PHASE_EMOJIS: Record<KostolalyPhase, string> = {
   A: '🌱', B: '📈', C: '🔥', D: '⚠️', E: '💥', F: '🕳️',
@@ -294,6 +304,16 @@ export const KOSTOLANY_PHASE_DESCRIPTIONS: Record<KostolalyPhase, string> = {
   D: '상승 추세 꺾임. 실망 매도 시작. 하락세 초기. 추세 추종자 이탈',
   E: '패닉 매도. 기관투자자 손절. 거래량 폭증. 신용융자 강제청산',
   F: '극단적 비관론. 거래량 감소. 무관심. 주식 관련 뉴스 실종. A 국면 전 단계',
+};
+
+/** 국면 설명 영어 (투자 관점) */
+export const KOSTOLANY_PHASE_DESCRIPTIONS_EN: Record<KostolalyPhase, string> = {
+  A: 'Pessimism at peak, stocks at bottom. Banks lending to buy stocks. Kostolany says "Now is the buying opportunity"',
+  B: 'Stock prices rising. Volume increasing. Institutional investors entering. Trend followers joining',
+  C: 'Market overheated. Everyone is optimistic. Retail investors flooding in. News full of bullish sentiment. Prepare to sell',
+  D: 'Uptrend broken. Disappointment selling begins. Early decline. Trend followers exiting',
+  E: 'Panic selling. Institutional stop-losses. Volume surging. Margin calls triggered',
+  F: 'Post-crash stagnation. Fear lingers. Only contrarians start buying. Smart money accumulating quietly',
 };
 
 /**

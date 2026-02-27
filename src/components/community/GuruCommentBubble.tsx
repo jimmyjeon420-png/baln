@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
 import type { GuruCharacterConfig } from '../../types/character';
+import { getGuruDisplayName } from '../../services/characterService';
 import { t } from '../../locales';
 
 interface GuruCommentBubbleProps {
@@ -48,7 +49,7 @@ export default function GuruCommentBubble({
   const guruConfig: GuruCharacterConfig | undefined = GURU_CHARACTER_CONFIGS[guruId];
 
   const emoji = guruConfig?.emoji ?? '🤖';
-  const guruName = guruConfig?.guruName ?? guruId;
+  const guruName = getGuruDisplayName(guruId);
   const accentColor = guruConfig?.accentColor ?? '#4CAF50';
 
   const sentimentInfo = SENTIMENT_CONFIG[sentiment];
@@ -72,7 +73,7 @@ export default function GuruCommentBubble({
         {/* 답글 대상 표시 */}
         {replyToConfig && (
           <Text style={styles.replyToLabel}>
-            {'\u2192'} {replyToConfig.emoji} {replyToConfig.guruName}
+            {'\u2192'} {replyToConfig.emoji} {getGuruDisplayName(replyToGuruId!)}
           </Text>
         )}
 

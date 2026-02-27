@@ -77,14 +77,14 @@ function formatNumber(value: number): string {
 }
 
 function formatCredits(value: number): string {
-  return `${formatNumber(value)}C`;
+  return `${formatNumber(value)}개`;
 }
 
 const CREDIT_SYMBOL = '\u20A9'; // ₩
 
 function formatCreditsWithKrw(value: number): string {
   const krw = value * 100;
-  return `${formatNumber(value)}C (${CREDIT_SYMBOL}${formatNumber(krw)})`;
+  return `${formatNumber(value)}개 (${CREDIT_SYMBOL}${formatNumber(krw)})`;
 }
 
 function getRelativeTime(dateString: string): string {

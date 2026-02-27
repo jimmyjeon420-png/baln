@@ -16,6 +16,7 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
 import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
+import { getGuruDisplayName } from '../../services/characterService';
 
 // =============================================================================
 // 타입 정의
@@ -110,9 +111,7 @@ function GuruReactionBanner({
 
   // 구루 설정 조회
   const guruConfig = GURU_CHARACTER_CONFIGS[reaction.guruId];
-  const guruName = guruConfig
-    ? (isKo ? guruConfig.guruName : guruConfig.guruNameEn)
-    : reaction.guruId;
+  const guruName = getGuruDisplayName(reaction.guruId);
   const guruEmoji = guruConfig?.emoji ?? reaction.emoji;
 
   return (

@@ -25,8 +25,8 @@ import {
   useCreateGathering,
   formatAssetInBillion,
   TIER_COLORS,
-  TIER_LABELS,
-  TIER_DESCRIPTIONS,
+  getCommunityTierLabel,
+  getCommunityTierDescription,
   getAvailableMinTiers,
 } from '../../src/hooks/useGatherings';
 import { Gathering, GATHERING_CATEGORY_LABELS, UserTier } from '../../src/types/database';
@@ -502,9 +502,9 @@ export default function CreateGatheringScreen() {
                   </View>
                   <View style={styles.tierOptionText}>
                     <Text style={[styles.tierOptionLabel, { color: colors.textPrimary }, minTierRequired === tier && { color: TIER_COLORS[tier] }]}>
-                      {TIER_LABELS[tier]}
+                      {getCommunityTierLabel(tier)}
                     </Text>
-                    <Text style={[styles.tierOptionDesc, { color: colors.textTertiary }]}>{TIER_DESCRIPTIONS[tier]}</Text>
+                    <Text style={[styles.tierOptionDesc, { color: colors.textTertiary }]}>{getCommunityTierDescription(tier)}</Text>
                   </View>
                   {minTierRequired === tier && (
                     <Ionicons name="checkmark-circle" size={20} color={TIER_COLORS[tier]} />

@@ -18,6 +18,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
+import { getGuruDisplayName } from '../../services/characterService';
 
 // ============================================================================
 // i18n
@@ -85,7 +86,7 @@ export function GuruScorecardCard({ locale = 'ko', colors }: GuruScorecardCardPr
 
   const champion = scorecards[0];
   const championConfig = GURU_CHARACTER_CONFIGS[champion.guruId];
-  const championName = isKo ? championConfig.guruName : championConfig.guruNameEn;
+  const championName = getGuruDisplayName(champion.guruId);
 
   return (
     <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -98,7 +99,7 @@ export function GuruScorecardCard({ locale = 'ko', colors }: GuruScorecardCardPr
       <View style={styles.list}>
         {scorecards.map((item, index) => {
           const config = GURU_CHARACTER_CONFIGS[item.guruId];
-          const name = isKo ? config.guruName : config.guruNameEn;
+          const name = getGuruDisplayName(item.guruId);
           const medal = index < 3 ? MEDALS[index] : '';
           const barWidth = `${item.accuracy}%` as const;
 

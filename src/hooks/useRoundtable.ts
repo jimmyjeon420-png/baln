@@ -14,6 +14,8 @@ import {
   askFollowUp,
   getRecentSessions,
 } from '../services/roundtableService';
+import { spendCredits } from '../services/creditService';
+import { FEATURE_COSTS } from '../types/marketplace';
 
 interface UseRoundtableReturn {
   /** 현재 세션 */
@@ -69,6 +71,14 @@ export function useRoundtable(): UseRoundtableReturn {
     setIsGenerating(true);
     setSession(null);
     setCurrentTurnIndex(-1);
+
+    // 크레딧 차감 (1C)
+    const cost = FEATURE_COSTS.roundtable;
+    const spendResult = await spendCredits(cost, 'roundtable', topic);
+    if (!spendResult.success) {
+      console.warn('[Roundtable] 크레딧 부족:', spendResult.errorMessage);
+      // 크레딧 부족해도 토론은 허용 (best-effort 차감)
+    }
 
     try {
       const newSession = await generateRoundtable(topic, participantIds);

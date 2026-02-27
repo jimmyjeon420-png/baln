@@ -26,6 +26,7 @@ import {
 import type { GuruLetter, FriendshipTier } from '../../types/village';
 import { CharacterAvatar } from '../character/CharacterAvatar';
 import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
+import { getGuruDisplayName } from '../../services/characterService';
 import { useLocale } from '../../context/LocaleContext';
 
 // ---------------------------------------------------------------------------
@@ -103,7 +104,7 @@ const LetterCard = React.memo(function LetterCard({
   const isKo = locale === 'ko';
   const guruId = letter.fromGuruId || letter.guruId || '';
   const config = GURU_CHARACTER_CONFIGS[guruId];
-  const guruName = config ? (isKo ? config.guruName : (config.guruNameEn ?? config.guruName)) : guruId;
+  const guruName = getGuruDisplayName(guruId);
   const subject = isKo ? letter.subject : (letter.subjectEn ?? letter.subject);
   const tier = letter.friendshipRequired;
   const badgeColor = TIER_BADGE_COLOR[tier] ?? TIER_BADGE_COLOR.stranger;

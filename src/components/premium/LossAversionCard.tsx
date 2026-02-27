@@ -116,8 +116,8 @@ export default function LossAversionCard({
     lossItems.push({
       icon: 'star',
       iconColor: colors.premium.gold,
-      title: `누적 크레딧 ${formatCredits(totalCredits)} 소멸`,
-      description: '지금까지 모은 크레딧이 사라져요',
+      title: `누적 도토리 ${formatCredits(totalCredits)} 소멸`,
+      description: '지금까지 모은 도토리가 사라져요',
       bgColor: colors.premium.gold + '08',
     });
   }

@@ -21,7 +21,7 @@ import { useTheme } from '../../hooks/useTheme';
 import { ThemeColors } from '../../styles/colors';
 import type { PortfolioAction, RebalancePortfolioAsset, LivePriceData } from '../../types/rebalanceTypes';
 import type { Asset } from '../../types/asset';
-import { classifyAsset, AssetCategory, getNetAssetValue, KostolalyPhase, KOSTOLANY_PHASE_NAMES, KOSTOLANY_PHASE_EMOJIS, KOSTOLANY_PHASE_DESCRIPTIONS, calculateHealthScore, LIQUID_ASSET_CATEGORIES, normalizeLiquidTarget } from '../../services/rebalanceScore';
+import { classifyAsset, AssetCategory, getNetAssetValue, KostolalyPhase, KOSTOLANY_PHASE_NAMES, KOSTOLANY_PHASE_NAMES_EN, KOSTOLANY_PHASE_EMOJIS, KOSTOLANY_PHASE_DESCRIPTIONS, KOSTOLANY_PHASE_DESCRIPTIONS_EN, calculateHealthScore, LIQUID_ASSET_CATEGORIES, normalizeLiquidTarget } from '../../services/rebalanceScore';
 import { getTickerProfile, getCachedTickerProfile } from '../../data/tickerProfile';
 import { useKostolalyPhase } from '../../hooks/useKostolalyPhase';
 import { usePrescriptionResults } from '../../hooks/usePrescriptionResults';
@@ -346,7 +346,7 @@ export default function TodayActionsSection({
   contextHeadline,
 }: TodayActionsSectionProps) {
   const { colors, shadows } = useTheme();
-  const { t } = useLocale();
+  const { t, language } = useLocale();
 
   // USD/KRW 환율 — USDT KRW 가격으로 추정 (미국 주식 수익률 계산용)
   // rebalance.tsx에서 priceTargets에 USDT를 항상 포함시켜 이 값을 보장함
@@ -703,7 +703,7 @@ export default function TodayActionsSection({
                 <Text style={[s.lastMonthStatValue, {
                   color: lastMonthScoreChange >= 0 ? colors.success : colors.error,
                 }]}>
-                  {lastMonthScoreChange >= 0 ? '+' : ''}{lastMonthScoreChange}점
+                  {lastMonthScoreChange >= 0 ? '+' : ''}{lastMonthScoreChange}{t('today_actions.last_month_score_unit')}
                 </Text>
                 <Text style={[s.lastMonthStatLabel, { color: colors.textTertiary }]}>{t('today_actions.last_month_score_label')}</Text>
               </View>
@@ -724,7 +724,7 @@ export default function TodayActionsSection({
               borderColor: `${PHASE_COLORS[activePhase]}50`,
             }]}>
               <Text style={[s.phasePreviewTagText, { color: PHASE_COLORS[activePhase] }]}>
-                {KOSTOLANY_PHASE_EMOJIS[activePhase]} {activePhase}단계 · {KOSTOLANY_PHASE_NAMES[activePhase]}
+                {KOSTOLANY_PHASE_EMOJIS[activePhase]} {language === 'ko' ? `${activePhase}단계 · ${KOSTOLANY_PHASE_NAMES[activePhase]}` : `Phase ${activePhase} · ${KOSTOLANY_PHASE_NAMES_EN[activePhase]}`}
               </Text>
             </View>
             {phaseData?.confidence != null && (
@@ -734,7 +734,7 @@ export default function TodayActionsSection({
             )}
           </View>
           <Text style={[s.phasePreviewDesc, { color: colors.textSecondary }]} numberOfLines={2}>
-            {KOSTOLANY_PHASE_DESCRIPTIONS[activePhase]}
+            {language === 'ko' ? KOSTOLANY_PHASE_DESCRIPTIONS[activePhase] : KOSTOLANY_PHASE_DESCRIPTIONS_EN[activePhase]}
           </Text>
 
           {/* P0-1: 코스톨라니 판정 근거 지표 (최대 3개) */}

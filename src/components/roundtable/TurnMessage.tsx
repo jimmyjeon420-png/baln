@@ -12,7 +12,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { CharacterAvatar } from '../character/CharacterAvatar';
 import { TypewriterText } from './TypewriterText';
 import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
-import { sentimentToExpression } from '../../services/characterService';
+import { sentimentToExpression, getGuruDisplayName } from '../../services/characterService';
 import { useLocale } from '../../context/LocaleContext';
 import type { RoundtableTurn } from '../../types/roundtable';
 
@@ -68,7 +68,7 @@ export function TurnMessage({ turn, isCurrent, onTypewriterComplete }: TurnMessa
         {/* 이름 + 센티먼트 배지 */}
         <View style={styles.nameRow}>
           <Text style={[styles.guruName, { color: accentColor }]}>
-            {config?.guruName || turn.speaker}
+            {getGuruDisplayName(turn.speaker)}
           </Text>
           <View style={[styles.sentimentBadge, { backgroundColor: sentimentColor + '20' }]}>
             <Text style={[styles.sentimentText, { color: sentimentColor }]}>

@@ -25,6 +25,7 @@ import {
 } from 'react-native';
 import type { GuruNewsReaction } from '../../types/village';
 import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
+import { getGuruDisplayName } from '../../services/characterService';
 
 // ============================================================================
 // i18n
@@ -177,7 +178,7 @@ export function NewsReactionDetailModal({
             {reactions.map(r => {
               const config = GURU_CHARACTER_CONFIGS[r.guruId];
               if (!config) return null;
-              const name = isKo ? config.guruName : config.guruNameEn;
+              const name = getGuruDisplayName(r.guruId);
               const comment = isKo ? r.reaction : (r.reactionEn || r.reaction);
               return (
                 <TouchableOpacity
