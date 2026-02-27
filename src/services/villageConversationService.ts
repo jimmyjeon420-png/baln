@@ -33,8 +33,20 @@ try {
   // 파일 미존재 시 무시 — 폴백으로 동작
 }
 
-const STORAGE_KEY = '@baln:village_conversations';
+const STORAGE_KEY_BASE = '@baln:village_conversations';
+const LEGACY_STORAGE_KEY = STORAGE_KEY_BASE;
 const CACHE_DURATION = 3 * 60 * 60 * 1000; // 3시간
+type ConversationLanguage = 'ko' | 'en';
+
+function getConversationLanguage(): ConversationLanguage {
+  return getCurrentDisplayLanguage() === 'ko' ? 'ko' : 'en';
+}
+
+function getStorageKey(lang: ConversationLanguage = getConversationLanguage()): string {
+  return `${STORAGE_KEY_BASE}:${lang}`;
+}
+
+let legacyCacheCleared = false;
 
 // ============================================================================
 // 타입
@@ -61,6 +73,7 @@ export interface VillageConversation {
 export interface VillageBatch {
   conversations: VillageConversation[];
   generatedAt: string;
+  language?: ConversationLanguage;
 }
 
 // ============================================================================
@@ -254,8 +267,8 @@ function normalizeConversationsPayload(parsed: any): VillageConversation[] {
 export async function generateVillageConversations(
   marketContext?: string
 ): Promise<VillageBatch> {
-  const lang = getCurrentDisplayLanguage();
-  const isKo = lang === 'ko';
+  const language = getConversationLanguage();
+  const isKo = language === 'ko';
   const personas = isKo ? GURU_PERSONAS : GURU_PERSONAS_EN;
   const activeGurus = Object.keys(GURU_PERSONAS); // 전원 10명
   const guruInfo = activeGurus
@@ -427,6 +440,7 @@ ${rulesEn}
     const batch: VillageBatch = {
       conversations: normalizedConversations,
       generatedAt: new Date().toISOString(),
+      language,
     };
 
     await saveBatch(batch);
@@ -576,7 +590,13 @@ Respond in JSON only:
 
 async function saveBatch(batch: VillageBatch): Promise<void> {
   try {
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(batch));
+    const language = batch.language ?? getConversationLanguage();
+    const payload: VillageBatch = { ...batch, language };
+    await AsyncStorage.setItem(getStorageKey(language), JSON.stringify(payload));
+    if (!legacyCacheCleared) {
+      legacyCacheCleared = true;
+      await AsyncStorage.removeItem(LEGACY_STORAGE_KEY);
+    }
   } catch {
     // 무시
   }
@@ -584,15 +604,23 @@ async function saveBatch(batch: VillageBatch): Promise<void> {
 
 export async function getCachedBatch(): Promise<VillageBatch | null> {
   try {
-    const raw = await AsyncStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
+    const language = getConversationLanguage();
+    const raw = await AsyncStorage.getItem(getStorageKey(language));
+    if (!raw) {
+      if (!legacyCacheCleared) {
+        legacyCacheCleared = true;
+        await AsyncStorage.removeItem(LEGACY_STORAGE_KEY);
+      }
+      return null;
+    }
     const batch = JSON.parse(raw) as VillageBatch;
+    if (batch.language && batch.language !== language) return null;
 
     // 캐시 유효 시간 체크
     const age = Date.now() - new Date(batch.generatedAt).getTime();
     if (age > CACHE_DURATION) return null;
 
-    return batch;
+    return { ...batch, language };
   } catch {
     return null;
   }
@@ -763,9 +791,10 @@ function getFallbackBatchEn(): VillageConversation[] {
 }
 
 function getFallbackBatch(): VillageBatch {
-  const fbLang = getCurrentDisplayLanguage();
+  const fbLang = getConversationLanguage();
   return {
     conversations: fbLang === 'ko' ? getFallbackBatchKo() : getFallbackBatchEn(),
     generatedAt: new Date().toISOString(),
+    language: fbLang,
   };
 }

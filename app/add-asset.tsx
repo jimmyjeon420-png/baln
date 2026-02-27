@@ -82,6 +82,17 @@ interface ParsedAsset {
   currentValueKRW?: number;
 }
 
+interface SavePortfolioAssetInput {
+  userId: string;
+  ticker: string;
+  name: string;
+  quantity: number;
+  avgPrice: number;
+  currentValue: number;
+  currency: 'KRW' | 'USD';
+  existingId?: string | null;
+}
+
 // ── 유틸리티 ──
 
 /** 타임아웃 래퍼 */
@@ -108,121 +119,6 @@ function getCurrencySymbol(ticker: string): string {
     return '₩';
   }
   return '$';
-}
-
-function parseNumberCell(value: string | undefined): number {
-  if (!value) return 0;
-  const cleaned = value.replace(/[^0-9.-]/g, '');
-  const parsed = Number(cleaned);
-  return Number.isFinite(parsed) ? parsed : 0;
-}
-
-function splitCsvLine(line: string, delimiter: string): string[] {
-  const cells: string[] = [];
-  let current = '';
-  let inQuotes = false;
-
-  for (let i = 0; i < line.length; i += 1) {
-    const char = line[i];
-    if (char === '"') {
-      if (inQuotes && line[i + 1] === '"') {
-        current += '"';
-        i += 1;
-      } else {
-        inQuotes = !inQuotes;
-      }
-      continue;
-    }
-    if (char === delimiter && !inQuotes) {
-      cells.push(current.trim());
-      current = '';
-      continue;
-    }
-    current += char;
-  }
-
-  cells.push(current.trim());
-  return cells;
-}
-
-function detectDelimiter(sampleLine: string): string {
-  const candidates = [',', '\t', ';'];
-  const counts = candidates.map((d) => ({
-    delimiter: d,
-    count: sampleLine.split(d).length - 1,
-  }));
-  counts.sort((a, b) => b.count - a.count);
-  return counts[0].count > 0 ? counts[0].delimiter : ',';
-}
-
-function parsePastedCsv(raw: string): ParsedAsset[] {
-  const lines = raw
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean);
-
-  if (lines.length === 0) return [];
-
-  const delimiter = detectDelimiter(lines[0]);
-  const rows = lines.map((line) => splitCsvLine(line, delimiter));
-  const header = rows[0].map((cell) => cell.toLowerCase());
-
-  const hasHeader = header.some((cell) =>
-    /(ticker|종목코드|코드|symbol|name|종목명|수량|quantity|qty|금액|amount|cost|평가)/i.test(cell)
-  );
-
-  const tickerIdx = hasHeader
-    ? header.findIndex((cell) => /(ticker|종목코드|코드|symbol|심볼)/i.test(cell))
-    : (rows[0].length >= 3 ? 1 : 0);
-  const nameIdx = hasHeader
-    ? header.findIndex((cell) => /(name|종목명|자산명)/i.test(cell))
-    : 0;
-  const quantityIdx = hasHeader
-    ? header.findIndex((cell) => /(quantity|qty|수량|보유수량)/i.test(cell))
-    : (rows[0].length >= 3 ? 2 : 1);
-  const totalCostIdx = hasHeader
-    ? header.findIndex((cell) => /(총매수금액|매수금액|매입금액|cost|total|원금)/i.test(cell))
-    : (rows[0].length >= 4 ? 3 : -1);
-  const currentValueIdx = hasHeader
-    ? header.findIndex((cell) => /(평가금액|현재가치|current|value)/i.test(cell))
-    : -1;
-
-  const dataRows = hasHeader ? rows.slice(1) : rows;
-  const aggregated = new Map<string, ParsedAsset>();
-
-  for (const row of dataRows) {
-    const tickerRaw = row[tickerIdx] || '';
-    const ticker = tickerRaw.replace(/\s+/g, '').toUpperCase();
-    if (!ticker) continue;
-
-    const name = (row[nameIdx] || ticker).trim();
-    const quantity = parseNumberCell(row[quantityIdx]);
-    if (!quantity || quantity <= 0) continue;
-
-    const totalCostKRW = Math.max(0, parseNumberCell(row[totalCostIdx]));
-    const currentValueKRW = Math.max(0, parseNumberCell(row[currentValueIdx]));
-
-    const key = `${ticker}:${name}`;
-    const existing = aggregated.get(key);
-    if (existing) {
-      existing.quantity += quantity;
-      existing.totalCostKRW += totalCostKRW;
-      if (currentValueKRW > 0) {
-        existing.currentValueKRW = (existing.currentValueKRW ?? 0) + currentValueKRW;
-      }
-      continue;
-    }
-
-    aggregated.set(key, {
-      ticker,
-      name,
-      quantity,
-      totalCostKRW,
-      currentValueKRW: currentValueKRW > 0 ? currentValueKRW : undefined,
-    });
-  }
-
-  return Array.from(aggregated.values()).slice(0, 50);
 }
 
 // ── 진단 함수 (Supabase 연결 테스트) ──
@@ -332,10 +228,6 @@ export default function AddAssetScreen() {
   const [infoExpanded, setInfoExpanded] = useState(false);
   const [screenshotParsing, setScreenshotParsing] = useState(false);
   const [parsedAssets, setParsedAssets] = useState<ParsedAsset[] | null>(null);
-  const [parsedSource, setParsedSource] = useState<'ocr' | 'csv' | null>(null);
-  const [csvModalVisible, setCsvModalVisible] = useState(false);
-  const [csvInput, setCsvInput] = useState('');
-  const [csvParsing, setCsvParsing] = useState(false);
 
   // --- 저장 상태 ---
   const [saving, setSaving] = useState(false);
@@ -539,6 +431,79 @@ export default function AddAssetScreen() {
     ) ?? null;
   }, [selectedStock, existingAssets]);
 
+  /**
+   * 저장 안정화: onConflict 제약 의존 제거
+   * - 기존: upsert(onConflict) → 운영 DB 제약 불일치 시 직접추가/OCR 동시 실패
+   * - 개선: update(기존 row) / insert(신규 row) 2단계 처리
+   */
+  const savePortfolioAsset = useCallback(async (input: SavePortfolioAssetInput) => {
+    const basePayload = {
+      ticker: input.ticker.trim(),
+      name: input.name.trim(),
+      quantity: input.quantity,
+      avg_price: input.avgPrice,
+      current_price: input.avgPrice,
+      current_value: input.currentValue,
+      target_allocation: 0,
+      asset_type: 'liquid' as const,
+      currency: input.currency,
+    };
+
+    const updateById = async (id: string) => {
+      const { data, error } = await withTimeout(
+        supabase
+          .from('portfolios')
+          .update(basePayload)
+          .eq('id', id)
+          .eq('user_id', input.userId)
+          .select('id'),
+        15000,
+        t('add_asset.alert_save_timeout_msg'),
+      );
+      if (error) throw error;
+      return data?.[0] ?? null;
+    };
+
+    if (input.existingId) {
+      const updated = await updateById(input.existingId);
+      if (updated) return updated;
+    }
+
+    const { data: byTicker, error: tickerLookupError } = await withTimeout(
+      supabase
+        .from('portfolios')
+        .select('id')
+        .eq('user_id', input.userId)
+        .eq('ticker', basePayload.ticker)
+        .limit(1),
+      10000,
+      t('add_asset.alert_save_timeout_msg'),
+    );
+
+    if (tickerLookupError) throw tickerLookupError;
+
+    const targetId = byTicker?.[0]?.id;
+    if (targetId) {
+      const updated = await updateById(targetId);
+      if (updated) return updated;
+    }
+
+    const { data, error } = await withTimeout(
+      supabase
+        .from('portfolios')
+        .insert({
+          user_id: input.userId,
+          ...basePayload,
+        })
+        .select('id'),
+      15000,
+      t('add_asset.alert_save_timeout_msg'),
+    );
+
+    if (error) throw error;
+    return data?.[0] ?? null;
+  }, [t]);
+
   // ─── 현금 저장 ───
 
   const CASH_META: Record<string, { name: string; symbol: string }> = {
@@ -567,28 +532,17 @@ export default function AddAssetScreen() {
       }
 
       const meta = CASH_META[cashType];
-      const upsertData = {
-        user_id: user.id,
+      const existingCash = existingAssets.find((asset) => asset.ticker === cashType);
+      await savePortfolioAsset({
+        userId: user.id,
         ticker: cashType,
         name: meta.name,
         quantity: 1,
-        avg_price: krwAmount,
-        current_price: krwAmount,
-        current_value: krwAmount,
-        target_allocation: 0,
-        asset_type: 'liquid' as const,
-        currency: 'KRW' as const,
-      };
-
-      const { error } = await withTimeout(
-        supabase
-          .from('portfolios')
-          .upsert(upsertData, { onConflict: 'user_id,ticker', ignoreDuplicates: false })
-          .select(),
-        15000,
-        t('add_asset.alert_save_timeout_msg'),
-      );
-      if (error) throw error;
+        avgPrice: krwAmount,
+        currentValue: krwAmount,
+        currency: 'KRW',
+        existingId: existingCash?.id ?? null,
+      });
 
       queryClient.invalidateQueries({ queryKey: SHARED_PORTFOLIO_KEY });
       await loadExistingAssets();
@@ -660,34 +614,18 @@ export default function AddAssetScreen() {
       const currentValue = finalAvgPrice > 0 ? finalQuantity * finalAvgPrice : 0;
 
       // 항상 KRW로 저장 (USD 종목은 selectStock에서 이미 환율 변환됨)
-      const currency = 'KRW';
+      const currency: 'KRW' = 'KRW';
 
-      const upsertData = {
-        user_id: user.id,
+      await savePortfolioAsset({
+        userId: user.id,
         ticker,
         name,
         quantity: finalQuantity,
-        avg_price: finalAvgPrice,
-        current_price: finalAvgPrice,
-        current_value: currentValue,
-        target_allocation: 0,
-        asset_type: 'liquid',
+        avgPrice: finalAvgPrice,
+        currentValue,
         currency,
-      };
-
-      const { error: upsertError } = await withTimeout(
-        supabase
-          .from('portfolios')
-          .upsert(upsertData, {
-            onConflict: 'user_id,name',
-            ignoreDuplicates: false,
-          })
-          .select('id'),
-        15000,
-        t('add_asset.alert_save_timeout_msg'),
-      );
-
-      if (upsertError) throw upsertError;
+        existingId: existing?.id ?? null,
+      });
 
       const today = new Date().toISOString().split('T')[0];
       await AsyncStorage.setItem(LAST_SCAN_DATE_KEY, today);
@@ -767,7 +705,6 @@ export default function AddAssetScreen() {
 
   const closeParsedAssetsModal = () => {
     setParsedAssets(null);
-    setParsedSource(null);
   };
 
   const handleScreenshotParse = async () => {
@@ -800,39 +737,11 @@ export default function AddAssetScreen() {
         Alert.alert(t('add_asset.alert_ocr_fail_title'), t('add_asset.alert_ocr_fail_msg'));
         return;
       }
-      setParsedSource('ocr');
       setParsedAssets(data.data.assets);
     } catch (err) {
       Alert.alert(t('add_asset.alert_ocr_error_title'), t('add_asset.alert_ocr_error_msg'));
     } finally {
       setScreenshotParsing(false);
-    }
-  };
-
-  const handleCsvParse = () => {
-    const input = csvInput.trim();
-    if (!input) {
-      Alert.alert(t('add_asset.alert_csv_empty_title'), t('add_asset.alert_csv_empty_msg'));
-      return;
-    }
-
-    setCsvParsing(true);
-    try {
-      const parsed = parsePastedCsv(input);
-      if (parsed.length === 0) {
-        Alert.alert(
-          t('add_asset.alert_csv_fail_title'),
-          t('add_asset.alert_csv_fail_msg')
-        );
-        return;
-      }
-
-      setCsvModalVisible(false);
-      setCsvInput('');
-      setParsedSource('csv');
-      setParsedAssets(parsed);
-    } finally {
-      setCsvParsing(false);
     }
   };
 
@@ -848,18 +757,20 @@ export default function AddAssetScreen() {
         const avgPrice = asset.totalCostKRW > 0 && asset.quantity > 0
           ? Math.round(asset.totalCostKRW / asset.quantity)
           : 0;
-        await supabase.from('portfolios').upsert({
-          user_id: user.id,
+        const existing = existingAssets.find(
+          (row) => row.ticker === asset.ticker || row.name === asset.name
+        );
+        const currentValue = asset.currentValueKRW ?? asset.totalCostKRW;
+        await savePortfolioAsset({
+          userId: user.id,
           ticker: asset.ticker,
           name: asset.name,
           quantity: asset.quantity,
-          avg_price: avgPrice,
-          current_price: avgPrice,
-          current_value: asset.totalCostKRW,
-          target_allocation: 0,
-          asset_type: 'liquid',
+          avgPrice,
+          currentValue,
           currency: 'KRW',
-        }, { onConflict: 'user_id,name', ignoreDuplicates: false });
+          existingId: existing?.id ?? null,
+        });
         successCount++;
       } catch (err) {
         console.warn(`[AddAsset] 일괄 등록 실패 (${asset.name}):`, err);
@@ -1005,15 +916,6 @@ export default function AddAssetScreen() {
               {t('add_asset.quick_import_subtitle')}
             </Text>
             <View style={styles.quickImportRow}>
-              <TouchableOpacity
-                style={[styles.quickImportButton, { backgroundColor: colors.surfaceLight, borderColor: colors.border }]}
-                onPress={() => setCsvModalVisible(true)}
-              >
-                <Ionicons name="document-text-outline" size={18} color={colors.primary} />
-                <Text style={[styles.quickImportTitle, { color: colors.textPrimary }]}>{t('add_asset.csv_button_title')}</Text>
-                <Text style={[styles.quickImportDesc, { color: colors.textSecondary }]}>{t('add_asset.csv_button_desc')}</Text>
-              </TouchableOpacity>
-
               <TouchableOpacity
                 style={[styles.quickImportButton, { backgroundColor: colors.surfaceLight, borderColor: colors.border }]}
                 onPress={handleScreenshotParse}
@@ -1464,52 +1366,6 @@ export default function AddAssetScreen() {
       </ScrollView>
       </KeyboardAvoidingView>
 
-      <Modal
-        visible={csvModalVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setCsvModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContainer, { backgroundColor: colors.surface }]}>
-            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>📄 {t('add_asset.csv_modal_title')}</Text>
-            <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>
-              {t('add_asset.csv_modal_subtitle')}
-            </Text>
-            <TextInput
-              style={[styles.csvInput, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: colors.surfaceLight }]}
-              placeholder={t('add_asset.csv_placeholder')}
-              placeholderTextColor={colors.textTertiary}
-              value={csvInput}
-              onChangeText={setCsvInput}
-              multiline
-              textAlignVertical="top"
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalCancelBtn, { borderColor: colors.border }]}
-                onPress={() => setCsvModalVisible(false)}
-              >
-                <Text style={[styles.modalCancelText, { color: colors.textSecondary }]}>{t('common.cancel')}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalConfirmBtn, { backgroundColor: colors.primary }]}
-                onPress={handleCsvParse}
-                disabled={csvParsing}
-              >
-                {csvParsing ? (
-                  <ActivityIndicator size="small" color="#fff" />
-                ) : (
-                  <Text style={styles.modalConfirmText}>{t('add_asset.csv_preview_button')}</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
       {/* 스크린샷 파싱 결과 모달 */}
       <Modal
         visible={parsedAssets !== null}
@@ -1520,7 +1376,7 @@ export default function AddAssetScreen() {
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContainer, { backgroundColor: colors.surface }]}>
             <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
-              {parsedSource === 'csv' ? `📄 ${t('add_asset.csv_result_title')}` : `📸 ${t('add_asset.screenshot_result_title')}`}
+              {`📸 ${t('add_asset.screenshot_result_title')}`}
             </Text>
             <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>
               {t('add_asset.parsed_assets_subtitle', { count: parsedAssets?.length ?? 0 })}
@@ -2149,15 +2005,6 @@ const styles = StyleSheet.create({
   modalSubtitle: {
     fontSize: 14,
     marginBottom: 14,
-  },
-  csvInput: {
-    minHeight: 180,
-    borderWidth: 1,
-    borderRadius: 10,
-    padding: 12,
-    fontSize: 14,
-    marginBottom: 14,
-    lineHeight: 20,
   },
   parsedAssetRow: {
     flexDirection: 'row',

@@ -14,13 +14,16 @@ import {
   generateVillageConversations,
   getCachedBatch,
   askGuruDirectly,
+  type VillageBatch,
+  type VillageConversation,
+  type VillageMessage,
 } from '../services/villageConversationService';
-import type { VillageBatch, VillageConversation, VillageMessage } from '../services/villageConversationService';
 import { VILLAGE_ZONES, getZonesForGuru } from '../data/villageZoneConfig';
 import { getRandomQuote } from '../data/guruQuoteBank';
 import { spendCredits } from '../services/creditService';
 import { FEATURE_COSTS } from '../types/marketplace';
 import { getCurrentLanguage } from '../locales';
+import { useLocale } from '../context/LocaleContext';
 
 // ============================================================================
 // 타입
@@ -148,6 +151,7 @@ const LAYOUT_KEEP_OUT_ZONES: Record<'full' | 'compact', Array<{ x: number; y: nu
 // ============================================================================
 
 export function useGuruVillage(options: UseGuruVillageOptions | boolean = false) {
+  const { language } = useLocale();
   const layoutMode = typeof options === 'boolean'
     ? 'full'
     : (options.layoutMode ?? 'full');
@@ -252,11 +256,15 @@ export function useGuruVillage(options: UseGuruVillageOptions | boolean = false)
     }
   }, []);
 
-  // 초기화
+  // 초기 위치
   useEffect(() => {
     initPositions();
+  }, [initPositions]);
+
+  // 언어 변경 시 대화 배치 재로딩 (한국어/영어 즉시 동기화)
+  useEffect(() => {
     loadConversations();
-  }, [initPositions, loadConversations]);
+  }, [language, loadConversations]);
 
   // 구루 위치 이동 (3초마다)
   // - 대화 상대에게 빠르게 다가감
