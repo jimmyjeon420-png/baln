@@ -1,5 +1,5 @@
 /**
- * 워렌 버핏 캐릭터 — 지혜로운 올빼미 (2.5D 동물의숲 스타일)
+ * 워렌 버핏 캐릭터 — 오마하의 현자, 가치투자의 대부
  *
  * 디자인 키워드: 통통한 둥근 얼굴, 큰 둥근 안경, 회색 머리, 양복 넥타이
  * 입체감: RadialGradient + 하이라이트 + 그림자 레이어
@@ -150,13 +150,13 @@ export function BuffettCharacter({ size, expression, accentColor, blinkPhase = 0
 
         {/* ── 눈 (안경 안에서 큰 동그란 눈) ── */}
         {blinkPhase >= 1 ? (
-          /* 눈 감은 상태 — 동물의숲 NPC 깜빡임 (선으로 표현) */
+          /* 눈 깜빡임 (선으로 표현) */
           <G>
             <Path d="M 31 42 Q 37 44 43 42" fill="none" stroke="#5D4037" strokeWidth={2.5} strokeLinecap="round" />
             <Path d="M 57 42 Q 63 44 69 42" fill="none" stroke="#5D4037" strokeWidth={2.5} strokeLinecap="round" />
           </G>
         ) : (
-          /* 눈 뜬 상태 (기존) */
+          /* 눈 뜬 상태 */
           <G>
             {/* 왼쪽 눈 */}
             <Circle cx={37} cy={42} r={6} fill="#FFFFFF" />

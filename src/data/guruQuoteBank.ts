@@ -7,8 +7,24 @@
  * 주의:
  *   - 모든 명언은 실제 발언·저술 출처 기반 (가능한 경우 출처 명시)
  *   - 한국어 번역은 의미 전달 우선 (직역보다 자연스러운 의역 허용)
- *   - 8~10개/구루, 합계 80~100개 목표
+ *   - 40~60개/구루, 합계 500개+ 목표
  */
+
+import {
+  BUFFETT_QUOTES_EXT,
+  DALIO_QUOTES_EXT,
+  CATHIE_WOOD_QUOTES_EXT,
+  DRUCKENMILLER_QUOTES_EXT,
+  SAYLOR_QUOTES_EXT,
+  DIMON_QUOTES_EXT,
+  MUSK_QUOTES_EXT,
+  LYNCH_QUOTES_EXT,
+  MARKS_QUOTES_EXT,
+  ROGERS_QUOTES_EXT,
+  DRUCKENMILLER_QUOTES_EXT2,
+  DIMON_QUOTES_EXT2,
+  ROGERS_QUOTES_EXT2,
+} from './guruQuoteBankExt';
 
 // ---------------------------------------------------------------------------
 // GuruQuote 타입 정의
@@ -24,7 +40,7 @@ export interface GuruQuote {
   /** 명언 영어 원문 */
   quoteEn: string;
   /** 명언 카테고리 */
-  category: 'wisdom' | 'market' | 'risk' | 'patience' | 'innovation' | 'humor';
+  category: 'wisdom' | 'market' | 'risk' | 'patience' | 'innovation' | 'humor' | 'debate';
   /** 출처 (책, 인터뷰, 주주서한 등) */
   source?: string;
 }
@@ -792,6 +808,7 @@ const ROGERS_QUOTES: GuruQuote[] = [
 // ---------------------------------------------------------------------------
 
 export const GURU_QUOTES: GuruQuote[] = [
+  // 기존 명언 (86개)
   ...BUFFETT_QUOTES,
   ...DALIO_QUOTES,
   ...CATHIE_WOOD_QUOTES,
@@ -802,6 +819,21 @@ export const GURU_QUOTES: GuruQuote[] = [
   ...LYNCH_QUOTES,
   ...MARKS_QUOTES,
   ...ROGERS_QUOTES,
+  // 확장 명언 (416개+)
+  ...BUFFETT_QUOTES_EXT,
+  ...DALIO_QUOTES_EXT,
+  ...CATHIE_WOOD_QUOTES_EXT,
+  ...DRUCKENMILLER_QUOTES_EXT,
+  ...SAYLOR_QUOTES_EXT,
+  ...DIMON_QUOTES_EXT,
+  ...MUSK_QUOTES_EXT,
+  ...LYNCH_QUOTES_EXT,
+  ...MARKS_QUOTES_EXT,
+  ...ROGERS_QUOTES_EXT,
+  // 추가 확장 (500개 달성용)
+  ...DRUCKENMILLER_QUOTES_EXT2,
+  ...DIMON_QUOTES_EXT2,
+  ...ROGERS_QUOTES_EXT2,
 ];
 
 // ---------------------------------------------------------------------------

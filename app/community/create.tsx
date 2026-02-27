@@ -60,17 +60,21 @@ import {
   PickedImage,
 } from '../../src/services/imageUpload';
 import { getCurrentUser } from '../../src/services/supabase';
+import { t } from '../../src/locales';
 
 const MAX_CONTENT_LENGTH = 500;
 
-// assetType → 한국어 카테고리 매핑 (컴포넌트 외부에 상수로 선언)
-const ASSET_TYPE_KR: Record<string, string> = {
-  liquid: '금융자산',
-  LIQUID: '금융자산',
-  illiquid: '부동산',
-  ILLIQUID: '부동산',
-  other: '기타',
-};
+// assetType → localized category mapping (컴포넌트 외부에 함수로 선언)
+function getAssetTypeLabel(raw: string): string {
+  const map: Record<string, string> = {
+    liquid: t('community.create.asset_type_liquid'),
+    LIQUID: t('community.create.asset_type_liquid'),
+    illiquid: t('community.create.asset_type_illiquid'),
+    ILLIQUID: t('community.create.asset_type_illiquid'),
+    other: t('community.create.asset_type_other'),
+  };
+  return map[raw] ?? raw;
+}
 
 export default function CreatePostScreen() {
   const router = useRouter();
@@ -106,10 +110,10 @@ export default function CreatePostScreen() {
     const byCategory: Record<string, number> = {};
     assets.forEach((asset) => {
       const raw = (asset.assetType as string) || 'other';
-      const cat = ASSET_TYPE_KR[raw] ?? raw;
+      const cat = getAssetTypeLabel(raw);
       const rawValue = Number(asset.currentValue) || 0;
       const debtAmount = Number(asset.debtAmount) || 0;
-      const normalizedValue = cat === '부동산'
+      const normalizedValue = cat === t('community.create.asset_type_illiquid')
         ? Math.max(0, rawValue - debtAmount)
         : Math.max(0, rawValue);
       byCategory[cat] = (byCategory[cat] || 0) + normalizedValue;
@@ -138,13 +142,13 @@ export default function CreatePostScreen() {
       // 유효성 검사
       const validation = validateImages([...selectedImages, ...images]);
       if (!validation.isValid) {
-        Alert.alert('이미지 선택 실패', validation.error);
+        Alert.alert(t('community.create.image_select_failed'), validation.error);
         return;
       }
 
       setSelectedImages([...selectedImages, ...images]);
     } catch (error: any) {
-      Alert.alert('이미지 선택 실패', error.message || '이미지를 선택할 수 없습니다.');
+      Alert.alert(t('community.create.image_select_failed'), error.message || t('community.create.image_cannot_select'));
     }
   };
 
@@ -157,17 +161,17 @@ export default function CreatePostScreen() {
   const handleSubmit = async () => {
     // 유효성 검사
     if (!category) {
-      Alert.alert('카테고리 선택', '게시글 카테고리를 선택해주세요.');
+      Alert.alert(t('community.create.select_category_title'), t('community.create.select_category_msg'));
       return;
     }
 
     if (content.trim().length === 0) {
-      Alert.alert('내용 입력', '게시글 내용을 입력해주세요.');
+      Alert.alert(t('community.create.enter_content_title'), t('community.create.enter_content_msg'));
       return;
     }
 
     if (content.trim().length < 10) {
-      Alert.alert('내용이 너무 짧습니다', '최소 10자 이상 입력해주세요.');
+      Alert.alert(t('community.create.content_too_short_title'), t('community.create.content_too_short_msg'));
       return;
     }
 
@@ -175,16 +179,16 @@ export default function CreatePostScreen() {
     const filterResult = validateContent(content.trim());
     if (!filterResult.isValid) {
       Alert.alert(
-        '부적절한 콘텐츠 감지',
-        getViolationMessage(filterResult) + '\n\n자본시장법에 따라 투자 리딩, 불법 광고 등은 금지됩니다.',
+        t('community.create.inappropriate_content'),
+        getViolationMessage(filterResult) + '\n\n' + t('community.create.capital_market_law_notice'),
       );
       return;
     }
 
     if (!eligibility.canPost) {
       Alert.alert(
-        '글쓰기 제한',
-        `글쓰기는 자산 ${postRequirementLabel} 이상 회원만 가능합니다.\n\n현재 자산: ${formatAssetAmount(eligibility.totalAssets)}`,
+        t('community.create.write_restricted_title'),
+        t('community.create.write_restricted_msg', { requirement: postRequirementLabel, current: formatAssetAmount(eligibility.totalAssets) }),
       );
       return;
     }
@@ -197,7 +201,7 @@ export default function CreatePostScreen() {
       if (selectedImages.length > 0) {
         const user = await getCurrentUser();
         if (!user) {
-          throw new Error('로그인이 필요합니다.');
+          throw new Error(t('common.login_required'));
         }
 
         // 임시 postId 생성 (실제 게시글 ID는 생성 후에 알 수 있음)
@@ -206,7 +210,7 @@ export default function CreatePostScreen() {
         imageUrls = await uploadMultipleImages(selectedImages, user.id, tempPostId);
 
         if (imageUrls.length === 0) {
-          throw new Error('이미지 업로드에 실패했습니다.');
+          throw new Error(t('community.create.image_upload_failed'));
         }
       }
 
@@ -222,21 +226,21 @@ export default function CreatePostScreen() {
         content: finalContent,
         category,
         displayTag: displayInfo.displayTag,
-        assetMix: assetMix || '다양한 자산',
+        assetMix: assetMix || t('community.create.diverse_assets'),
         totalAssets: eligibility.totalAssets,
         imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
       });
 
-      Alert.alert('작성 완료', '게시글이 성공적으로 작성되었습니다.', [
+      Alert.alert(t('community.create.post_complete'), t('community.create.post_success'), [
         {
-          text: '확인',
+          text: t('common.confirm'),
           onPress: () => router.back(),
         },
       ]);
     } catch (error) {
       console.error('Post creation error:', error);
       setIsUploadingImages(false);
-      Alert.alert('오류', '게시글 작성에 실패했습니다. 다시 시도해주세요.');
+      Alert.alert(t('common.error'), t('community.create.post_failed'));
     }
   };
 
@@ -248,7 +252,7 @@ export default function CreatePostScreen() {
           <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={28} color={colors.primary} />
           </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>글쓰기</Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{t('community.create.title')}</Text>
           <View style={{ width: 28 }} />
         </View>
         <View style={styles.loadingContainer}>
@@ -265,7 +269,7 @@ export default function CreatePostScreen() {
           <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={28} color={colors.primary} />
           </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>글쓰기</Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{t('community.create.title')}</Text>
           <View style={{ width: 28 }} />
         </View>
 
@@ -273,21 +277,21 @@ export default function CreatePostScreen() {
           <View style={[styles.lockedIcon, { backgroundColor: colors.surface }]}>
             <Ionicons name="lock-closed" size={48} color="#FFC107" />
           </View>
-          <Text style={[styles.lockedTitle, { color: colors.textPrimary }]}>글쓰기는 잠겨 있습니다</Text>
+          <Text style={[styles.lockedTitle, { color: colors.textPrimary }]}>{t('community.create.locked_title')}</Text>
           <Text style={[styles.lockedDescription, { color: colors.textSecondary }]}>
-            글쓰기는 자산 {postRequirementLabel} 이상 회원만 가능합니다.
+            {t('community.create.locked_description', { requirement: postRequirementLabel })}
           </Text>
           <View style={[styles.lockedAssetBox, { backgroundColor: colors.surface }]}>
-            <Text style={[styles.lockedAssetLabel, { color: colors.textSecondary }]}>현재 자산</Text>
+            <Text style={[styles.lockedAssetLabel, { color: colors.textSecondary }]}>{t('community.create.current_assets')}</Text>
             <Text style={[styles.lockedAssetValue, { color: colors.textPrimary }]}>
               {formatAssetAmount(eligibility.totalAssets)}
             </Text>
             <Text style={styles.lockedShortfall}>
-              {formatAssetAmount(Math.max(0, LOUNGE_POST_THRESHOLD - eligibility.totalAssets))} 더 필요합니다
+              {t('community.create.shortfall', { amount: formatAssetAmount(Math.max(0, LOUNGE_POST_THRESHOLD - eligibility.totalAssets)) })}
             </Text>
           </View>
           <TouchableOpacity style={[styles.lockedButton, { backgroundColor: colors.primary }]} onPress={() => router.back()}>
-            <Text style={styles.lockedButtonText}>돌아가기</Text>
+            <Text style={styles.lockedButtonText}>{t('common.go_back')}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -311,7 +315,7 @@ export default function CreatePostScreen() {
           <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={28} color={colors.primary} />
           </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>글쓰기</Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{t('community.create.title')}</Text>
           <TouchableOpacity
             onPress={handleSubmit}
             disabled={createPost.isPending}
@@ -330,7 +334,7 @@ export default function CreatePostScreen() {
                   (!category || content.trim().length === 0) && { color: colors.textSecondary },
                 ]}
               >
-                작성
+                {t('community.create.submit')}
               </Text>
             )}
           </TouchableOpacity>
@@ -351,7 +355,7 @@ export default function CreatePostScreen() {
                 <Text style={[styles.tierChipText, { color: tierColor }]}>{tierLabel}</Text>
               </View>
               <Text style={[styles.authorAssets, { color: colors.textPrimary }]}>
-                자산: {(eligibility.totalAssets / 100000000).toFixed(2)}억원
+                {t('community.create.assets_label', { amount: (eligibility.totalAssets / 100000000).toFixed(2) })}
               </Text>
               {assetMix && (
                 <Text style={[styles.authorAssetMix, { color: colors.textSecondary }]}>{assetMix}</Text>
@@ -362,7 +366,7 @@ export default function CreatePostScreen() {
           {/* 카테고리 선택 */}
           <View style={styles.section}>
             <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>
-              카테고리 선택 <Text style={{ color: colors.error }}>*</Text>
+              {t('community.create.select_category')} <Text style={{ color: colors.error }}>*</Text>
             </Text>
             <View style={styles.categoryRow}>
               {(['stocks', 'crypto', 'realestate'] as CommunityCategory[]).map((cat) => {
@@ -402,7 +406,7 @@ export default function CreatePostScreen() {
           <View style={styles.section}>
             <View style={styles.labelRow}>
               <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>
-                내용 <Text style={{ color: colors.error }}>*</Text>
+                {t('community.create.content')} <Text style={{ color: colors.error }}>*</Text>
               </Text>
               <Text
                 style={[
@@ -416,7 +420,7 @@ export default function CreatePostScreen() {
             </View>
             <TextInput
               style={[styles.contentInput, { backgroundColor: colors.surface, color: colors.textPrimary }]}
-              placeholder="투자 경험, 전략, 또는 시장 관점을 공유해보세요..."
+              placeholder={t('community.create.content_placeholder')}
               placeholderTextColor={colors.textSecondary}
               multiline
               maxLength={MAX_CONTENT_LENGTH}
@@ -438,10 +442,10 @@ export default function CreatePostScreen() {
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.beginnerQuestionTitle, { color: colors.textPrimary }]}>
-                  초보 질문 태그
+                  {t('community.create.beginner_tag')}
                 </Text>
                 <Text style={[styles.beginnerQuestionDesc, { color: colors.textSecondary }]}>
-                  체크하면 게시글에 "초보 질문" 배지가 표시됩니다.
+                  {t('community.create.beginner_tag_desc')}
                 </Text>
               </View>
             </View>
@@ -455,7 +459,7 @@ export default function CreatePostScreen() {
           {/* 이미지 첨부 */}
           <View style={styles.section}>
             <View style={styles.labelRow}>
-              <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>이미지 첨부 (선택)</Text>
+              <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>{t('community.create.attach_images')}</Text>
               <Text style={[styles.charCount, { color: colors.textSecondary }]}>
                 {selectedImages.length} / {MAX_IMAGES}
               </Text>
@@ -470,7 +474,7 @@ export default function CreatePostScreen() {
               >
                 <Ionicons name="camera" size={24} color={colors.primary} />
                 <Text style={[styles.imagePickButtonText, { color: colors.textSecondary }]}>
-                  이미지 선택 (최대 {MAX_IMAGES}장, 각 5MB 이하)
+                  {t('community.create.image_pick_label', { max: MAX_IMAGES })}
                 </Text>
               </TouchableOpacity>
             )}
@@ -500,7 +504,7 @@ export default function CreatePostScreen() {
             {isUploadingImages && (
               <View style={[styles.uploadingIndicator, { backgroundColor: colors.primary + '15' }]}>
                 <ActivityIndicator size="small" color={colors.primary} />
-                <Text style={[styles.uploadingText, { color: colors.primary }]}>이미지 업로드 중...</Text>
+                <Text style={[styles.uploadingText, { color: colors.primary }]}>{t('community.create.uploading_images')}</Text>
               </View>
             )}
           </View>
@@ -509,7 +513,7 @@ export default function CreatePostScreen() {
           <View style={[styles.infoBox, { backgroundColor: colors.primary + '15' }]}>
             <Ionicons name="information-circle" size={16} color={colors.primary} />
             <Text style={[styles.infoText, { color: colors.textPrimary }]}>
-              게시글 작성 시 보유종목 상위 10개가 자동으로 표시됩니다.
+              {t('community.create.holdings_info')}
             </Text>
           </View>
 
@@ -517,7 +521,7 @@ export default function CreatePostScreen() {
           <View style={styles.warningBox}>
             <Ionicons name="alert-circle" size={16} color="#FFC107" />
             <Text style={styles.warningText}>
-              자본시장법에 따라 투자 리딩, 종목 추천, 수익률 보장 등의 행위는 금지됩니다.
+              {t('community.create.legal_warning')}
             </Text>
           </View>
         </ScrollView>

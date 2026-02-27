@@ -76,6 +76,7 @@ import { useGuruComments } from '../../src/hooks/useGuruComments';
 import { generateGuruCommentsForPost } from '../../src/services/guruCommentService';
 import { validateContent, getViolationMessage } from '../../src/services/contentFilter';
 import { useTheme } from '../../src/hooks/useTheme';
+import { t } from '../../src/locales';
 
 export default function PostDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -219,19 +220,19 @@ export default function PostDetailScreen() {
 
   // 게시글 삭제 확인
   const handleDeletePost = () => {
-    Alert.alert('게시글 삭제', '정말 삭제하시겠습니까?', [
-      { text: '취소', style: 'cancel' },
+    Alert.alert(t('community.detail.delete_post_title'), t('community.detail.confirm_delete'), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: '삭제',
+        text: t('common.delete'),
         style: 'destructive',
         onPress: async () => {
           try {
             await deletePost.mutateAsync(post!.id);
             // 삭제 성공 → 즉시 라운지로 이동 후 알림
             router.replace('/(tabs)/lounge');
-            Alert.alert('삭제 완료', '게시글이 삭제되었습니다.');
+            Alert.alert(t('community.detail.delete_complete'), t('community.detail.post_deleted'));
           } catch (e: any) {
-            Alert.alert('오류', e?.message || '삭제에 실패했습니다.');
+            Alert.alert(t('common.error'), e?.message || t('community.detail.delete_failed'));
           }
         },
       },
@@ -244,11 +245,11 @@ export default function PostDetailScreen() {
     const isOwner = post.user_id === user?.id;
     const buttons: any[] = [];
     if (isOwner) {
-      buttons.push({ text: '삭제', style: 'destructive', onPress: handleDeletePost });
+      buttons.push({ text: t('common.delete'), style: 'destructive', onPress: handleDeletePost });
     }
-    buttons.push({ text: '신고', onPress: () => handleReport('post', post.id) });
-    buttons.push({ text: '취소', style: 'cancel' });
-    Alert.alert('게시물 관리', undefined, buttons);
+    buttons.push({ text: t('community.detail.report'), onPress: () => handleReport('post', post.id) });
+    buttons.push({ text: t('common.cancel'), style: 'cancel' });
+    Alert.alert(t('community.detail.post_menu'), undefined, buttons);
   };
 
   // 대댓글 모드로 전환
@@ -257,7 +258,7 @@ export default function PostDetailScreen() {
     const parentComment = comments?.find((c) => c.id === parentId);
     if (parentComment) {
       const tier = getTierFromAssets(parentComment.total_assets_at_comment);
-      setCommentText(`@${tier} 회원 `);
+      setCommentText(`@${tier} ${t('community.detail.member')} `);
     }
   };
 
@@ -271,7 +272,7 @@ export default function PostDetailScreen() {
   const handleSubmitComment = async () => {
     if (!commentText.trim()) return;
     if (commentText.length > 300) {
-      Alert.alert('알림', '댓글은 300자 이내로 작성해주세요.');
+      Alert.alert(t('common.notice'), t('community.detail.comment_max_length'));
       return;
     }
 
@@ -279,7 +280,7 @@ export default function PostDetailScreen() {
     const filterResult = validateContent(commentText.trim());
     if (!filterResult.isValid) {
       Alert.alert(
-        '부적절한 콘텐츠 감지',
+        t('community.detail.inappropriate_content'),
         getViolationMessage(filterResult),
       );
       return;
@@ -287,8 +288,8 @@ export default function PostDetailScreen() {
 
     if (!eligibility.canComment) {
       Alert.alert(
-        '댓글 작성 제한',
-        `댓글 작성은 자산 ${commentRequirementLabel} 이상 회원만 가능합니다.\n\n현재 자산: ${formatAssetAmount(eligibility.totalAssets)}`,
+        t('community.detail.comment_restricted_title'),
+        t('community.detail.comment_restricted_msg', { requirement: commentRequirementLabel, current: formatAssetAmount(eligibility.totalAssets) }),
       );
       return;
     }
@@ -297,7 +298,7 @@ export default function PostDetailScreen() {
       const commentTier = getTierFromAssets(eligibility.totalAssets);
       await createComment.mutateAsync({
         content: commentText.trim(),
-        displayTag: `${commentTier} 회원`,
+        displayTag: `${commentTier} ${t('community.detail.member')}`,
         totalAssets: eligibility.totalAssets,
         parentId: replyToId || undefined,
       });
@@ -305,8 +306,8 @@ export default function PostDetailScreen() {
       setReplyToId(null);
     } catch (error: any) {
       console.warn('[Community] 댓글 작성 실패:', error);
-      const errorMsg = error?.message || error?.code || '알 수 없는 오류';
-      Alert.alert('오류', `댓글 등록에 실패했습니다.\n\n상세: ${errorMsg}`);
+      const errorMsg = error?.message || error?.code || t('common.unknown_error');
+      Alert.alert(t('common.error'), t('community.detail.comment_submit_failed', { detail: errorMsg }));
     }
   };
 
@@ -321,8 +322,8 @@ export default function PostDetailScreen() {
     try {
       await deleteComment.mutateAsync(commentId);
     } catch (error: any) {
-      const errorMsg = error?.message || '댓글 삭제에 실패했습니다.';
-      Alert.alert('오류', errorMsg);
+      const errorMsg = error?.message || t('community.detail.comment_delete_failed');
+      Alert.alert(t('common.error'), errorMsg);
     } finally {
       setDeletingCommentId(null);
     }
@@ -336,16 +337,16 @@ export default function PostDetailScreen() {
   const handleSelectBestAnswer = (commentId: string) => {
     if (!post || post.user_id !== user?.id) return;
     Alert.alert(
-      '베스트 답변 채택',
-      '이 댓글을 베스트 답변으로 채택하시겠습니까?',
+      t('community.detail.best_answer_title'),
+      t('community.detail.best_answer_confirm'),
       [
-        { text: '취소', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: '채택',
+          text: t('community.detail.select'),
           onPress: () => {
             selectBestAnswer.mutate(commentId, {
-              onSuccess: () => Alert.alert('완료', '베스트 답변이 채택되었습니다.'),
-              onError: (err: any) => Alert.alert('오류', err?.message || '채택에 실패했습니다.'),
+              onSuccess: () => Alert.alert(t('common.complete'), t('community.detail.best_answer_selected')),
+              onError: (err: any) => Alert.alert(t('common.error'), err?.message || t('community.detail.best_answer_failed')),
             });
           },
         },
@@ -431,12 +432,12 @@ export default function PostDetailScreen() {
           <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={28} color={colors.primary} />
           </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>게시물</Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{t('community.detail.post')}</Text>
           <View style={{ width: 28 }} />
         </View>
         <View style={styles.loadingContainer}>
           <Ionicons name="alert-circle-outline" size={48} color={colors.textTertiary} />
-          <Text style={[styles.emptyText, { color: colors.textTertiary }]}>게시물을 찾을 수 없습니다</Text>
+          <Text style={[styles.emptyText, { color: colors.textTertiary }]}>{t('community.detail.post_not_found')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -485,7 +486,7 @@ export default function PostDetailScreen() {
                 {beginnerQuestion && (
                   <View style={[styles.beginnerBadge, { backgroundColor: colors.primary + '20' }]}>
                     <Ionicons name="help-circle" size={10} color={colors.primary} />
-                    <Text style={[styles.beginnerBadgeText, { color: colors.primary }]}>초보 질문</Text>
+                    <Text style={[styles.beginnerBadgeText, { color: colors.primary }]}>{t('community.detail.beginner_question')}</Text>
                   </View>
                 )}
                 {/* 자산 인증 뱃지 */}
@@ -504,7 +505,7 @@ export default function PostDetailScreen() {
         {/* 보유종목 칩 */}
         {holdings.length > 0 && (
           <View style={styles.holdingsSection}>
-            <Text style={[styles.holdingsLabel, { color: colors.textTertiary }]}>보유종목</Text>
+            <Text style={[styles.holdingsLabel, { color: colors.textTertiary }]}>{t('community.detail.holdings')}</Text>
             <View style={styles.holdingsRow}>
               {holdings.map((h: HoldingSnapshot, idx: number) => (
                 <View
@@ -546,7 +547,7 @@ export default function PostDetailScreen() {
                 key={index}
                 style={styles.imageItem}
                 onPress={() => {
-                  Alert.alert('이미지', `이미지 ${index + 1}/${post.image_urls!.length}`);
+                  Alert.alert(t('community.detail.image'), `${t('community.detail.image')} ${index + 1}/${post.image_urls!.length}`);
                 }}
               >
                 <Image
@@ -591,7 +592,7 @@ export default function PostDetailScreen() {
               color={isBookmarked ? colors.primary : colors.textTertiary}
             />
             <Text style={[styles.postActionText, { color: colors.textTertiary }, isBookmarked && { color: colors.primary }]}>
-              {isBookmarked ? '저장됨' : '저장'}
+              {isBookmarked ? t('community.detail.saved') : t('community.detail.save')}
             </Text>
           </TouchableOpacity>
 
@@ -601,7 +602,7 @@ export default function PostDetailScreen() {
             onPress={() => handleAuthorPress(post.user_id)}
           >
             <Ionicons name="person-outline" size={18} color={colors.textTertiary} />
-            <Text style={[styles.postActionText, { color: colors.textTertiary }]}>프로필</Text>
+            <Text style={[styles.postActionText, { color: colors.textTertiary }]}>{t('community.detail.profile')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -609,13 +610,13 @@ export default function PostDetailScreen() {
       {/* 댓글 섹션 헤더 + 구루 로딩 인라인 표시 */}
       <View style={styles.commentsHeader}>
         <Text style={[styles.commentsTitle, { color: colors.textPrimary }]}>
-          댓글 {(comments?.length || 0) + (guruComments?.length || 0)}
+          {t('community.detail.comments')} {(comments?.length || 0) + (guruComments?.length || 0)}
         </Text>
         {guruCommentsLoading && (
           <View style={styles.guruThinkingInline}>
             <ActivityIndicator size="small" color={colors.primary} />
             <Text style={[styles.guruThinkingText, { color: colors.textTertiary }]}>
-              구루들이 생각 중...
+              {t('community.detail.guru_thinking')}
             </Text>
           </View>
         )}
@@ -625,7 +626,7 @@ export default function PostDetailScreen() {
         <View style={[styles.bestAnswerHighlight, { backgroundColor: colors.primary + '10', borderColor: colors.primary + '30' }]}>
           <View style={styles.bestAnswerTitleRow}>
             <Ionicons name="ribbon" size={14} color={colors.primary} />
-            <Text style={[styles.bestAnswerTitle, { color: colors.primary }]}>채택된 답변</Text>
+            <Text style={[styles.bestAnswerTitle, { color: colors.primary }]}>{t('community.detail.best_answer')}</Text>
           </View>
           <Text style={[styles.bestAnswerPreview, { color: colors.textPrimary }]} numberOfLines={2}>
             {bestAnswerComment.content}
@@ -642,7 +643,7 @@ export default function PostDetailScreen() {
       {!commentsLoading && (!comments || comments.length === 0) && (
         <View style={styles.emptyComments}>
           <Ionicons name="chatbubble-ellipses-outline" size={32} color={colors.textTertiary} />
-          <Text style={[styles.emptyCommentsText, { color: colors.textTertiary }]}>첫 번째 댓글을 남겨보세요!</Text>
+          <Text style={[styles.emptyCommentsText, { color: colors.textTertiary }]}>{t('community.detail.first_comment')}</Text>
         </View>
       )}
     </View>
@@ -659,7 +660,7 @@ export default function PostDetailScreen() {
           <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={28} color={colors.primary} />
           </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>게시물</Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{t('community.detail.post')}</Text>
           {post && (
             <TouchableOpacity onPress={handlePostMenu} disabled={deletePost.isPending}>
               {deletePost.isPending ? (
@@ -702,7 +703,7 @@ export default function PostDetailScreen() {
             {replyToId && (
               <View style={styles.replyModeHeader}>
                 <Ionicons name="return-down-forward" size={14} color={colors.primary} />
-                <Text style={[styles.replyModeText, { color: colors.primary }]}>답글 작성 중</Text>
+                <Text style={[styles.replyModeText, { color: colors.primary }]}>{t('community.detail.replying')}</Text>
                 <TouchableOpacity onPress={handleCancelReply} style={styles.replyModeCancel}>
                   <Ionicons name="close" size={16} color={colors.textTertiary} />
                 </TouchableOpacity>
@@ -711,7 +712,7 @@ export default function PostDetailScreen() {
             <View style={styles.commentInputRow}>
               <TextInput
                 style={[styles.commentInput, { backgroundColor: colors.surfaceElevated, color: colors.textPrimary }]}
-                placeholder={replyToId ? "답글을 입력하세요..." : "댓글을 입력하세요..."}
+                placeholder={replyToId ? t('community.detail.reply_placeholder') : t('community.detail.comment_placeholder')}
                 placeholderTextColor={colors.textTertiary}
                 maxLength={300}
                 value={commentText}
@@ -738,7 +739,7 @@ export default function PostDetailScreen() {
           <View style={[styles.commentLockedBar, { borderTopColor: colors.border, backgroundColor: colors.warning + '10' }]}>
             <Ionicons name="lock-closed" size={16} color={colors.warning} />
             <Text style={[styles.commentLockedText, { color: colors.warning }]}>
-              댓글 작성은 자산 {commentRequirementLabel} 이상 회원만 가능합니다
+              {t('community.detail.comment_locked', { requirement: commentRequirementLabel })}
             </Text>
           </View>
         )}

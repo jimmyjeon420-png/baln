@@ -42,6 +42,7 @@ import {
 } from '../../src/types/community';
 import { useTheme } from '../../src/hooks/useTheme';
 import { formatAssetAmount } from '../../src/utils/communityUtils';
+import { t } from '../../src/locales';
 
 type SortMode = 'popular' | 'latest';
 
@@ -100,8 +101,8 @@ export default function CommunityMainScreen() {
   const handleCreatePost = () => {
     if (!eligibility?.canPost) {
       Alert.alert(
-        '글쓰기 제한',
-        `글쓰기는 자산 ${postRequirementLabel} 이상 회원만 가능합니다.\n\n현재 자산: ${formatAssetAmount(eligibility?.totalAssets ?? 0)}`,
+        t('community.index.write_restricted_title'),
+        t('community.index.write_restricted_msg', { requirement: postRequirementLabel, current: formatAssetAmount(eligibility?.totalAssets ?? 0) }),
       );
       return;
     }
@@ -163,7 +164,7 @@ export default function CommunityMainScreen() {
             sortMode === 'popular' && { color: colors.primary, fontWeight: '700' },
           ]}
         >
-          인기순
+          {t('community.index.sort_popular')}
         </Text>
       </TouchableOpacity>
       <TouchableOpacity
@@ -181,7 +182,7 @@ export default function CommunityMainScreen() {
             sortMode === 'latest' && { color: colors.primary, fontWeight: '700' },
           ]}
         >
-          최신순
+          {t('community.index.sort_latest')}
         </Text>
       </TouchableOpacity>
     </View>
@@ -207,7 +208,7 @@ export default function CommunityMainScreen() {
           <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={28} color={colors.primary} />
           </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>VIP 라운지</Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{t('community.index.vip_lounge')}</Text>
           <View style={{ width: 28 }} />
         </View>
         <View style={styles.loadingContainer}>
@@ -227,17 +228,17 @@ export default function CommunityMainScreen() {
           <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={28} color={colors.primary} />
           </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>VIP 라운지</Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{t('community.index.vip_lounge')}</Text>
           <View style={{ width: 28 }} />
         </View>
         <View style={styles.comingSoonContainer}>
           <Ionicons name="wifi-outline" size={48} color="#555" />
-          <Text style={[styles.comingSoonTitle, { color: colors.textPrimary }]}>연결에 실패했습니다</Text>
+          <Text style={[styles.comingSoonTitle, { color: colors.textPrimary }]}>{t('community.index.connection_failed')}</Text>
           <Text style={[styles.comingSoonDescription, { color: colors.textSecondary }]}>
-            네트워크 상태를 확인하고 다시 시도해주세요.
+            {t('community.index.connection_failed_desc')}
           </Text>
           <TouchableOpacity style={styles.comingSoonButton} onPress={() => router.back()}>
-            <Text style={styles.comingSoonButtonText}>돌아가기</Text>
+            <Text style={styles.comingSoonButtonText}>{t('common.go_back')}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -254,7 +255,7 @@ export default function CommunityMainScreen() {
           <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={28} color={colors.primary} />
           </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>VIP 라운지</Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{t('community.index.vip_lounge')}</Text>
           <View style={{ width: 28 }} />
         </View>
 
@@ -262,21 +263,21 @@ export default function CommunityMainScreen() {
           <View style={styles.lockedIcon}>
             <Ionicons name="lock-closed" size={48} color="#FFC107" />
           </View>
-          <Text style={[styles.lockedTitle, { color: colors.textPrimary }]}>VIP 라운지는 잠겨 있습니다</Text>
+          <Text style={[styles.lockedTitle, { color: colors.textPrimary }]}>{t('community.index.locked_title')}</Text>
           <Text style={[styles.lockedDescription, { color: colors.textSecondary }]}>
-            VIP 라운지 열람은 자산 {viewRequirementLabel} 이상 회원만 가능합니다.
+            {t('community.index.locked_description', { requirement: viewRequirementLabel })}
           </Text>
           <View style={[styles.lockedAssetBox, { backgroundColor: colors.surface }]}>
-            <Text style={[styles.lockedAssetLabel, { color: colors.textSecondary }]}>현재 자산</Text>
+            <Text style={[styles.lockedAssetLabel, { color: colors.textSecondary }]}>{t('community.index.current_assets')}</Text>
             <Text style={[styles.lockedAssetValue, { color: colors.textPrimary }]}>
               {formatAssetAmount(eligibility.totalAssets)}
             </Text>
             <Text style={styles.lockedShortfall}>
-              {formatAssetAmount(eligibility.shortfall)} 더 필요합니다
+              {t('community.index.shortfall', { amount: formatAssetAmount(eligibility.shortfall) })}
             </Text>
           </View>
           <TouchableOpacity style={styles.lockedButton} onPress={() => router.back()}>
-            <Text style={styles.lockedButtonText}>돌아가기</Text>
+            <Text style={styles.lockedButtonText}>{t('common.go_back')}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -293,7 +294,7 @@ export default function CommunityMainScreen() {
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={28} color={colors.primary} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>VIP 라운지</Text>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{t('community.index.vip_lounge')}</Text>
         <TouchableOpacity onPress={handleCreatePost}>
           <Ionicons name="create-outline" size={26} color={colors.primary} />
         </TouchableOpacity>
@@ -313,13 +314,13 @@ export default function CommunityMainScreen() {
       ) : posts.length === 0 ? (
         <View style={styles.comingSoonContainer}>
           <Ionicons name="chatbubble-ellipses-outline" size={48} color="#555" />
-          <Text style={[styles.comingSoonTitle, { color: colors.textPrimary }]}>아직 게시물이 없습니다</Text>
+          <Text style={[styles.comingSoonTitle, { color: colors.textPrimary }]}>{t('community.index.no_posts')}</Text>
           <Text style={[styles.comingSoonDescription, { color: colors.textSecondary }]}>
-            첫 번째 투자 인사이트를 공유해보세요!
+            {t('community.index.no_posts_desc')}
           </Text>
           {eligibility?.canPost && (
             <TouchableOpacity style={styles.emptyButton} onPress={handleCreatePost}>
-              <Text style={styles.emptyButtonText}>첫 게시물 작성하기</Text>
+              <Text style={styles.emptyButtonText}>{t('community.index.write_first_post')}</Text>
             </TouchableOpacity>
           )}
         </View>

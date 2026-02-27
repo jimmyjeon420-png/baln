@@ -110,8 +110,8 @@ export interface CafeTable {
 }
 
 export const CAFE_TABLES: CafeTable[] = [
-  { id: 'market_talk',   nameKo: '시장 이야기', nameEn: 'Market Talk',   emoji: '☕', categoryFilter: 'market' },
-  { id: 'stock_debate',  nameKo: '종목 토론',   nameEn: 'Stock Debate',  emoji: '📊', categoryFilter: 'analysis' },
-  { id: 'free_chat',     nameKo: '자유 수다',   nameEn: 'Free Chat',     emoji: '💬', categoryFilter: 'free' },
-  { id: 'beginner_qa',   nameKo: '초보 질문',   nameEn: 'Beginner Q&A',  emoji: '🙋', categoryFilter: 'question' },
+  { id: 'market_talk',   nameKo: '매크로 라운지', nameEn: 'Macro Lounge',    emoji: '🌍', categoryFilter: 'market' },
+  { id: 'stock_debate',  nameKo: '종목 분석방',   nameEn: 'Stock Analysis',  emoji: '📊', categoryFilter: 'analysis' },
+  { id: 'free_chat',     nameKo: '자유 수다',     nameEn: 'Free Chat',       emoji: '💬', categoryFilter: 'free' },
+  { id: 'beginner_qa',   nameKo: '멘토 Q&A',     nameEn: 'Mentor Q&A',      emoji: '🎓', categoryFilter: 'question' },
 ];

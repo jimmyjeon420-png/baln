@@ -36,6 +36,7 @@ import {
   getCardFreshnessLabel,
   formatCardUpdateTime,
   FALLBACK_CONTEXT_CARD,
+  getFallbackContextCard,
   type ContextCardWithImpact,
   type ContextCardSentiment,
 } from '../services/contextCardService';
@@ -166,7 +167,7 @@ export function useContextCard(options?: { retryCount?: number }) {
 
   // 실제로 사용자에게 보여줄 데이터: 최신 > 캐시 > 폴백
   const effectiveData: ContextCardWithImpact =
-    freshData ?? cachedData ?? FALLBACK_CONTEXT_CARD;
+    freshData ?? cachedData ?? getFallbackContextCard();
 
   // 정적 폴백 카드를 표시 중인지
   const isFallback = !freshData && !cachedData;

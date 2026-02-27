@@ -14,6 +14,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import supabase from '../services/supabase';
 import { getLangParam } from '../utils/promptLanguage';
 import { getCurrentLanguage } from '../locales';
+import { isBlockedNews } from '../data/newsFilterConfig';
 
 // ============================================================================
 // 타입 정의
@@ -457,6 +458,7 @@ async function fetchFallbackMarketNews(category: NewsCategoryFilter): Promise<Ma
 
   const fresh = Array.from(deduped.values())
     .filter((item) => (Date.now() - new Date(item.published_at).getTime()) <= FALLBACK_FRESHNESS_MS)
+    .filter((item) => !isBlockedNews(item.title, item.summary))
     .sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime())
     .slice(0, FALLBACK_PAGE_SIZE);
 
@@ -496,7 +498,9 @@ export const useMarketNews = (category: NewsCategoryFilter = 'all') => {
       }
 
       const rows = (data || []) as (MarketNewsItem & { category: unknown })[];
-      const strictRows = rows.filter((row): row is MarketNewsItem => isAllowedNewsCategory(row.category));
+      const strictRows = rows
+        .filter((row): row is MarketNewsItem => isAllowedNewsCategory(row.category))
+        .filter((row) => !isBlockedNews(row.title, row.summary));
       if (strictRows.length > 0) {
         // DB에 데이터가 있어도 너무 오래됐다면 RSS fallback을 합쳐서 신선도 복구
         if (pageParam === 0) {
@@ -551,7 +555,9 @@ export const usePickNews = () => {
       }
 
       const rows = (data || []) as (MarketNewsItem & { category: unknown })[];
-      return rows.filter((row): row is MarketNewsItem => isAllowedNewsCategory(row.category));
+      return rows
+        .filter((row): row is MarketNewsItem => isAllowedNewsCategory(row.category))
+        .filter((row) => !isBlockedNews(row.title, row.summary));
     },
     staleTime: 30000,
   });

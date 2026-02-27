@@ -57,28 +57,28 @@ export interface VillageDecayState {
 function calculateDecay(days: number) {
   if (days >= 7) {
     return {
-      flowerOpacity: 0.3,
-      weedCount: 5,
+      flowerOpacity: 0.65,
+      weedCount: 3,
       forceGuruSad: true,
-      dustOverlayOpacity: 0.4,
-      desaturationAmount: 0.5,
+      dustOverlayOpacity: 0.12,
+      desaturationAmount: 0.12,
       lightsOff: true,
     };
   }
   if (days >= 5) {
     return {
-      flowerOpacity: 0.4,
-      weedCount: 4,
+      flowerOpacity: 0.72,
+      weedCount: 2,
       forceGuruSad: true,
-      dustOverlayOpacity: 0.3,
-      desaturationAmount: 0,
+      dustOverlayOpacity: 0.08,
+      desaturationAmount: 0.05,
       lightsOff: true,
     };
   }
   if (days >= 3) {
     return {
-      flowerOpacity: 0.5,
-      weedCount: 3,
+      flowerOpacity: 0.82,
+      weedCount: 1,
       forceGuruSad: true,
       dustOverlayOpacity: 0,
       desaturationAmount: 0,

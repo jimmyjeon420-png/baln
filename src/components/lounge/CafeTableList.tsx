@@ -111,6 +111,7 @@ function CafeTableList({
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
+        nestedScrollEnabled
         contentContainerStyle={styles.scrollContent}
       >
         {CAFE_TABLES.map((table) => (

@@ -1,14 +1,14 @@
 /**
- * 제이미 다이먼 캐릭터 — 위엄 있는 사자 (2.5D 동물의숲 × 주토피아 스타일)
+ * 제이미 다이먼 캐릭터 — 월스트리트의 수호자
  *
- * 디자인 키워드: 황금 갈기, 따뜻한 황갈색 얼굴, 왕관형 갈기 실루엣, 블루 수트
+ * 디자인 키워드: 실버 머리, 넓은 얼굴, 네이비 핀스트라이프 수트, 레드 넥타이
  * 입체감: RadialGradient + LinearGradient + 하이라이트 + 그림자
- * 표정 변화: bullish(자신감 넘치는 미소) / bearish(엄격한 불만) / cautious(좁힌 회의적 눈) / neutral(위엄 있는 차분)
+ * 표정 변화: bullish(자신감 미소) / bearish(걱정+땀방울) / cautious(생각 중) / neutral(위엄 차분)
  */
 
 import React from 'react';
 import Svg, {
-  Circle, Ellipse, Path, G, Rect,
+  Circle, Ellipse, Path, G, Rect, Line,
   Defs, RadialGradient, LinearGradient, Stop,
 } from 'react-native-svg';
 import type { CharacterRenderProps } from '../../../types/character';
@@ -17,14 +17,14 @@ export function DimonCharacter({ size, expression, accentColor, blinkPhase = 0 }
   const mouthPath = (() => {
     switch (expression) {
       case 'bullish':
-        return 'M 37 62 Q 50 73 63 62';
+        return 'M 38 60 Q 50 70 62 60';
       case 'bearish':
-        return 'M 40 66 Q 50 60 60 66';
+        return 'M 40 64 Q 50 58 60 64';
       case 'cautious':
-        return 'M 42 64 L 58 64';
+        return 'M 42 62 L 58 62';
       case 'neutral':
       default:
-        return 'M 39 62 Q 50 68 61 62';
+        return 'M 40 60 Q 50 66 60 60';
     }
   })();
 
@@ -34,197 +34,193 @@ export function DimonCharacter({ size, expression, accentColor, blinkPhase = 0 }
   return (
     <Svg width={size} height={size} viewBox="0 0 100 100">
       <Defs>
-        {/* 얼굴 입체감 그라데이션 — 따뜻한 황갈색 */}
-        <RadialGradient id="dimonFace" cx="45%" cy="40%" rx="50%" ry="50%">
-          <Stop offset="0%" stopColor="#F5D6A8" />
-          <Stop offset="55%" stopColor="#E8C38A" />
-          <Stop offset="100%" stopColor="#D4A86A" />
+        {/* 피부 그라데이션 — 코카시안 톤 */}
+        <RadialGradient id="dimonSkin" cx="45%" cy="40%" rx="50%" ry="50%">
+          <Stop offset="0%" stopColor="#FFE0C0" />
+          <Stop offset="55%" stopColor="#F5CBA7" />
+          <Stop offset="100%" stopColor="#D4A574" />
         </RadialGradient>
-        {/* 갈기 그라데이션 — 풍성한 황금색 */}
-        <RadialGradient id="dimonMane" cx="50%" cy="35%" rx="55%" ry="55%">
-          <Stop offset="0%" stopColor="#FFD54F" />
-          <Stop offset="50%" stopColor="#F9A825" />
-          <Stop offset="100%" stopColor="#E68A00" />
-        </RadialGradient>
-        {/* 수트 그라데이션 — 로열 블루 */}
+        {/* 머리카락 — 실버/그레이 */}
+        <LinearGradient id="dimonHair" x1="0" y1="0" x2="1" y2="1">
+          <Stop offset="0%" stopColor="#D0D0D0" />
+          <Stop offset="50%" stopColor="#B0B0B0" />
+          <Stop offset="100%" stopColor="#909090" />
+        </LinearGradient>
+        {/* 수트 — 네이비 핀스트라이프 */}
         <LinearGradient id="dimonSuit" x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0%" stopColor="#1565C0" />
-          <Stop offset="100%" stopColor="#0D47A1" />
+          <Stop offset="0%" stopColor="#1A237E" />
+          <Stop offset="100%" stopColor="#0D1642" />
         </LinearGradient>
-        {/* 코 하이라이트 */}
-        <RadialGradient id="dimonNose" cx="40%" cy="35%" rx="50%" ry="50%">
-          <Stop offset="0%" stopColor="#6D4C2A" />
-          <Stop offset="100%" stopColor="#4E342E" />
+        {/* 셔츠 */}
+        <LinearGradient id="dimonShirt" x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0%" stopColor="#FFFFFF" />
+          <Stop offset="100%" stopColor="#E8E8E8" />
+        </LinearGradient>
+        {/* 바지 — 네이비 */}
+        <LinearGradient id="dimonPants" x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0%" stopColor="#1A237E" />
+          <Stop offset="100%" stopColor="#111A5C" />
+        </LinearGradient>
+        {/* 구두 */}
+        <RadialGradient id="dimonShoe" cx="50%" cy="40%" rx="60%" ry="60%">
+          <Stop offset="0%" stopColor="#333333" />
+          <Stop offset="100%" stopColor="#1A1A1A" />
         </RadialGradient>
-        {/* 다리 그라데이션 — 따뜻한 황갈색 (털색) */}
-        <LinearGradient id="dimonLeg" x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0%" stopColor="#E8C38A" />
-          <Stop offset="100%" stopColor="#D4A86A" />
-        </LinearGradient>
       </Defs>
 
-      {/* ── 바닥 그림자 (발 아래) ── */}
+      {/* ── 바닥 그림자 ── */}
       <Ellipse cx={50} cy={97} rx={22} ry={3} fill="#000000" opacity={0.13} />
 
-      {/* ── 다리 & 발 (주토피아 스타일 짧고 귀여운 다리) ── */}
+      {/* ── 다리 & 구두 ── */}
       <G>
-        {/* 왼쪽 다리 */}
-        <Rect x={36} y={82} width={9} height={10} rx={4} fill="url(#dimonLeg)" />
-        {/* 왼쪽 다리 안쪽 그림자 */}
-        <Rect x={36} y={84} width={4} height={6} rx={2} fill="#C49050" opacity={0.15} />
-        {/* 왼쪽 발 (둥글고 넓적한 발바닥) */}
-        <Ellipse cx={40} cy={93} rx={7} ry={4} fill="#D4A86A" />
-        {/* 왼쪽 발 하이라이트 */}
-        <Ellipse cx={39} cy={92} rx={4} ry={2} fill="#E8C38A" opacity={0.5} />
-        {/* 왼쪽 발가락 라인 */}
-        <Path d="M 36 93 Q 37 91 38 93" fill="none" stroke="#C49050" strokeWidth={0.6} opacity={0.4} />
-        <Path d="M 39 92 Q 40 90 41 92" fill="none" stroke="#C49050" strokeWidth={0.6} opacity={0.4} />
+        {/* 왼쪽 바지 다리 */}
+        <Rect x={36} y={82} width={10} height={10} rx={4} fill="url(#dimonPants)" />
+        {/* 왼쪽 핀스트라이프 */}
+        <Line x1={39} y1={82} x2={39} y2={92} stroke="#2A3499" strokeWidth={0.4} opacity={0.3} />
+        <Line x1={43} y1={82} x2={43} y2={92} stroke="#2A3499" strokeWidth={0.4} opacity={0.3} />
+        {/* 왼쪽 구두 */}
+        <Ellipse cx={41} cy={93} rx={7} ry={3.5} fill="url(#dimonShoe)" />
+        <Ellipse cx={40} cy={92} rx={4} ry={1.5} fill="#444444" opacity={0.4} />
 
-        {/* 오른쪽 다리 */}
-        <Rect x={55} y={82} width={9} height={10} rx={4} fill="url(#dimonLeg)" />
-        {/* 오른쪽 다리 안쪽 그림자 */}
-        <Rect x={60} y={84} width={4} height={6} rx={2} fill="#C49050" opacity={0.15} />
-        {/* 오른쪽 발 (둥글고 넓적한 발바닥) */}
-        <Ellipse cx={60} cy={93} rx={7} ry={4} fill="#D4A86A" />
-        {/* 오른쪽 발 하이라이트 */}
-        <Ellipse cx={61} cy={92} rx={4} ry={2} fill="#E8C38A" opacity={0.5} />
-        {/* 오른쪽 발가락 라인 */}
-        <Path d="M 59 92 Q 60 90 61 92" fill="none" stroke="#C49050" strokeWidth={0.6} opacity={0.4} />
-        <Path d="M 62 93 Q 63 91 64 93" fill="none" stroke="#C49050" strokeWidth={0.6} opacity={0.4} />
+        {/* 오른쪽 바지 다리 */}
+        <Rect x={54} y={82} width={10} height={10} rx={4} fill="url(#dimonPants)" />
+        {/* 오른쪽 핀스트라이프 */}
+        <Line x1={57} y1={82} x2={57} y2={92} stroke="#2A3499" strokeWidth={0.4} opacity={0.3} />
+        <Line x1={61} y1={82} x2={61} y2={92} stroke="#2A3499" strokeWidth={0.4} opacity={0.3} />
+        {/* 오른쪽 구두 */}
+        <Ellipse cx={59} cy={93} rx={7} ry={3.5} fill="url(#dimonShoe)" />
+        <Ellipse cx={60} cy={92} rx={4} ry={1.5} fill="#444444" opacity={0.4} />
       </G>
 
-      {/* ── 머리+몸체 그룹 (위로 6유닛 이동 — SD 비율 유지) ── */}
+      {/* ── 머리+몸체 그룹 (SD 비율) ── */}
       <G transform="translate(0, -6)">
-        {/* ── 몸체 (블루 수트) ── */}
-        <Ellipse cx={50} cy={82} rx={26} ry={16} fill="url(#dimonSuit)" />
-        {/* 라펠 */}
-        <Path d="M 38 72 L 50 84 L 46 72 Z" fill="#1976D2" />
-        <Path d="M 62 72 L 50 84 L 54 72 Z" fill="#1976D2" />
-        {/* 넥타이 */}
-        <Path d="M 48 72 L 50 86 L 52 72 Z" fill={accentColor} />
-        <Rect x={47} y={69} width={6} height={4} rx={1.5} fill={accentColor} />
-        {/* 셔츠 V */}
-        <Path d="M 47 72 L 50 78 L 53 72" fill="#FFFFFF" opacity={0.15} />
 
-        {/* ── 갈기 (황금 왕관형 — 여러 겹의 원호) ── */}
-        {/* 바깥 갈기 — 왕관 실루엣 */}
-        <Path
-          d="M 12 52 Q 8 30 20 15 Q 30 4 50 2 Q 70 4 80 15 Q 92 30 88 52
-             Q 90 58 86 62 Q 82 50 78 44
-             Q 84 28 72 14 Q 60 6 50 6 Q 40 6 28 14
-             Q 16 28 22 44 Q 18 50 14 62 Q 10 58 12 52 Z"
-          fill="url(#dimonMane)"
-        />
-        {/* 갈기 중간 레이어 — 볼륨감 */}
-        <Path
-          d="M 18 50 Q 14 32 26 18 Q 38 7 50 6 Q 62 7 74 18 Q 86 32 82 50"
-          fill="none" stroke="#FFB300" strokeWidth={4} opacity={0.5}
-        />
-        {/* 갈기 뾰족한 봉우리 (왕관 효과) */}
-        <Path d="M 24 22 L 28 10 L 32 20" fill="#FFD54F" opacity={0.7} />
-        <Path d="M 38 12 L 42 2 L 46 11" fill="#FFD54F" opacity={0.7} />
-        <Path d="M 54 11 L 58 2 L 62 12" fill="#FFD54F" opacity={0.7} />
-        <Path d="M 68 20 L 72 10 L 76 22" fill="#FFD54F" opacity={0.7} />
-        {/* 갈기 하이라이트 (광택) */}
-        <Path
-          d="M 30 18 Q 42 8 55 10 Q 66 12 74 20"
-          fill="none" stroke="#FFF176" strokeWidth={1.5} opacity={0.4}
-        />
+        {/* ── 몸체 (넓은 수트) ── */}
+        <Ellipse cx={50} cy={82} rx={27} ry={16} fill="url(#dimonSuit)" />
+        {/* 핀스트라이프 라인들 */}
+        <Line x1={32} y1={72} x2={30} y2={94} stroke="#2A3499" strokeWidth={0.4} opacity={0.25} />
+        <Line x1={38} y1={68} x2={37} y2={96} stroke="#2A3499" strokeWidth={0.4} opacity={0.25} />
+        <Line x1={44} y1={67} x2={44} y2={97} stroke="#2A3499" strokeWidth={0.4} opacity={0.25} />
+        <Line x1={56} y1={67} x2={56} y2={97} stroke="#2A3499" strokeWidth={0.4} opacity={0.25} />
+        <Line x1={62} y1={68} x2={63} y2={96} stroke="#2A3499" strokeWidth={0.4} opacity={0.25} />
+        <Line x1={68} y1={72} x2={70} y2={94} stroke="#2A3499" strokeWidth={0.4} opacity={0.25} />
+        {/* 셔츠 V 라인 */}
+        <Path d="M 46 70 L 50 80 L 54 70" fill="url(#dimonShirt)" />
+        {/* 라펠 (수트 옷깃) */}
+        <Path d="M 37 70 L 48 82 L 46 70 Z" fill="#1E2A8A" />
+        <Path d="M 63 70 L 52 82 L 54 70 Z" fill="#1E2A8A" />
+        {/* 넥타이 — accentColor 사용 */}
+        <Path d="M 48 70 L 50 88 L 52 70 Z" fill={accentColor} />
+        <Rect x={47} y={68} width={6} height={3.5} rx={1.5} fill={accentColor} />
+        {/* 넥타이 줄무늬 디테일 */}
+        <Line x1={49} y1={74} x2={51} y2={74} stroke="#FFFFFF" strokeWidth={0.5} opacity={0.25} />
+        <Line x1={49.2} y1={78} x2={50.8} y2={78} stroke="#FFFFFF" strokeWidth={0.5} opacity={0.25} />
+        <Line x1={49.4} y1={82} x2={50.6} y2={82} stroke="#FFFFFF" strokeWidth={0.5} opacity={0.25} />
+        {/* 가슴 포켓 스퀘어 */}
+        <Path d="M 34 74 L 36 72 L 38 74 L 36 73.5 Z" fill="#FFFFFF" opacity={0.5} />
 
-        {/* ── 귀 (갈기 사이로 삐져나온 동그란 귀) ── */}
-        <Circle cx={22} cy={32} r={7} fill="#E8C38A" />
-        <Circle cx={22} cy={32} r={4} fill="#D4A86A" opacity={0.6} />
-        <Circle cx={78} cy={32} r={7} fill="#E8C38A" />
-        <Circle cx={78} cy={32} r={4} fill="#D4A86A" opacity={0.6} />
+        {/* ── 머리카락 (실버, 뒤로 빗어 넘긴 스타일) ── */}
+        <Path
+          d="M 20 40 Q 18 22 28 12 Q 38 4 50 3 Q 62 4 72 12 Q 82 22 80 40
+             Q 78 32 72 24 Q 62 14 50 13 Q 38 14 28 24 Q 22 32 20 40 Z"
+          fill="url(#dimonHair)"
+        />
+        {/* 머리 볼륨 (두꺼운 헤어) */}
+        <Path
+          d="M 22 38 Q 20 24 30 14 Q 40 6 50 5 Q 60 6 70 14 Q 80 24 78 38"
+          fill="none" stroke="#C8C8C8" strokeWidth={3} opacity={0.4}
+        />
+        {/* 빗질 결 (comb lines) */}
+        <Path d="M 32 14 Q 40 8 50 7 Q 58 8 64 12" fill="none" stroke="#E0E0E0" strokeWidth={0.8} opacity={0.3} />
+        <Path d="M 28 20 Q 38 12 50 10 Q 62 12 70 18" fill="none" stroke="#E0E0E0" strokeWidth={0.6} opacity={0.25} />
+        {/* 옆머리 (사이드) */}
+        <Path d="M 20 40 Q 18 34 20 28" fill="none" stroke="#A0A0A0" strokeWidth={2.5} opacity={0.3} />
+        <Path d="M 80 40 Q 82 34 80 28" fill="none" stroke="#A0A0A0" strokeWidth={2.5} opacity={0.3} />
 
-        {/* ── 얼굴 (큰 둥근 원 — 따뜻한 황갈색) ── */}
-        <Circle cx={50} cy={44} r={28} fill="url(#dimonFace)" />
+        {/* ── 귀 ── */}
+        <Ellipse cx={21} cy={42} rx={4} ry={6} fill="#F5CBA7" />
+        <Ellipse cx={21} cy={42} rx={2.5} ry={4} fill="#E8B898" opacity={0.5} />
+        <Ellipse cx={79} cy={42} rx={4} ry={6} fill="#F5CBA7" />
+        <Ellipse cx={79} cy={42} rx={2.5} ry={4} fill="#E8B898" opacity={0.5} />
+
+        {/* ── 얼굴 (넓은 턱) ── */}
+        <Circle cx={50} cy={44} r={28} fill="url(#dimonSkin)" />
         {/* 턱 아래 그림자 */}
-        <Ellipse cx={50} cy={67} rx={20} ry={5} fill="#C49050" opacity={0.25} />
+        <Ellipse cx={50} cy={67} rx={20} ry={5} fill="#C49050" opacity={0.2} />
         {/* 이마 하이라이트 */}
-        <Ellipse cx={46} cy={28} rx={12} ry={7} fill="#FFFFFF" opacity={0.1} />
+        <Ellipse cx={46} cy={28} rx={12} ry={6} fill="#FFFFFF" opacity={0.08} />
+        {/* 넓은 턱 강조 */}
+        <Ellipse cx={50} cy={58} rx={22} ry={8} fill="#E8BB8A" opacity={0.15} />
 
         {/* ── 눈 ── */}
         {blinkPhase >= 0.5 ? (
           <G>
-            <Path d="M 32 44 Q 38 46 44 44" fill="none" stroke="#5D4037" strokeWidth={2.5} strokeLinecap="round" />
-            <Path d="M 56 44 Q 62 46 68 44" fill="none" stroke="#5D4037" strokeWidth={2.5} strokeLinecap="round" />
+            <Path d="M 32 42 Q 38 44 44 42" fill="none" stroke="#4A3728" strokeWidth={2.5} strokeLinecap="round" />
+            <Path d="M 56 42 Q 62 44 68 42" fill="none" stroke="#4A3728" strokeWidth={2.5} strokeLinecap="round" />
           </G>
         ) : expression === 'cautious' ? (
           <G>
-            {/* 좁힌 회의적 눈 */}
-            <Ellipse cx={38} cy={44} rx={5} ry={3} fill="#FFFFFF" />
-            <Circle cx={39} cy={44} r={2.5} fill="#3E2723" />
-            <Circle cx={40} cy={43} r={1} fill="#FFFFFF" />
-            <Ellipse cx={62} cy={44} rx={5} ry={3} fill="#FFFFFF" />
-            <Circle cx={63} cy={44} r={2.5} fill="#3E2723" />
-            <Circle cx={64} cy={43} r={1} fill="#FFFFFF" />
+            {/* 좁힌 생각하는 눈 */}
+            <Ellipse cx={38} cy={42} rx={5} ry={3.5} fill="#FFFFFF" />
+            <Circle cx={39} cy={42} r={2.5} fill="#2C1810" />
+            <Circle cx={40} cy={41} r={1} fill="#FFFFFF" />
+            <Ellipse cx={62} cy={42} rx={5} ry={3.5} fill="#FFFFFF" />
+            <Circle cx={63} cy={42} r={2.5} fill="#2C1810" />
+            <Circle cx={64} cy={41} r={1} fill="#FFFFFF" />
           </G>
         ) : (
           <G>
-            {/* 왼쪽 눈 */}
-            <Circle cx={38} cy={44} r={expression === 'bullish' ? 6 : 5.5} fill="#FFFFFF" />
-            <Circle cx={39} cy={43} r={4} fill="#3E2723" />
-            <Circle cx={40.5} cy={41.5} r={1.5} fill="#FFFFFF" />
-            <Circle cx={38} cy={42} r={0.8} fill="#FFFFFF" opacity={0.6} />
-            {/* 오른쪽 눈 */}
-            <Circle cx={62} cy={44} r={expression === 'bullish' ? 6 : 5.5} fill="#FFFFFF" />
-            <Circle cx={63} cy={43} r={4} fill="#3E2723" />
-            <Circle cx={64.5} cy={41.5} r={1.5} fill="#FFFFFF" />
-            <Circle cx={62} cy={42} r={0.8} fill="#FFFFFF" opacity={0.6} />
+            {/* 자신감 있는 눈 — 약간 좁게 (알파 에너지) */}
+            <Ellipse cx={38} cy={42} rx={expression === 'bullish' ? 6 : 5.5} ry={expression === 'bullish' ? 5 : 4.5} fill="#FFFFFF" />
+            <Circle cx={39} cy={42} r={3.5} fill="#2C1810" />
+            <Circle cx={40} cy={40.5} r={1.5} fill="#FFFFFF" />
+            <Circle cx={38} cy={41} r={0.7} fill="#FFFFFF" opacity={0.5} />
+            <Ellipse cx={62} cy={42} rx={expression === 'bullish' ? 6 : 5.5} ry={expression === 'bullish' ? 5 : 4.5} fill="#FFFFFF" />
+            <Circle cx={63} cy={42} r={3.5} fill="#2C1810" />
+            <Circle cx={64} cy={40.5} r={1.5} fill="#FFFFFF" />
+            <Circle cx={62} cy={41} r={0.7} fill="#FFFFFF" opacity={0.5} />
           </G>
         )}
 
-        {/* bullish일 때 눈 반짝임 */}
+        {/* bullish 눈 반짝임 */}
         {expression === 'bullish' && (
           <G>
-            <Path d="M 35 38 L 36 36 L 37 38 L 35 37 L 37 37 Z" fill="#FFD54F" opacity={0.7} />
-            <Path d="M 59 38 L 60 36 L 61 38 L 59 37 L 61 37 Z" fill="#FFD54F" opacity={0.7} />
+            <Path d="M 35 36 L 36 34 L 37 36 L 35 35 L 37 35 Z" fill="#FFD700" opacity={0.7} />
+            <Path d="M 59 36 L 60 34 L 61 36 L 59 35 L 61 35 Z" fill="#FFD700" opacity={0.7} />
           </G>
         )}
 
-        {/* ── 눈썹 (굵고 위엄있는) ── */}
+        {/* ── 눈썹 (굵고 권위적) ── */}
         {expression === 'bearish' ? (
           <G>
-            <Path d="M 29 36 Q 36 32 45 36" fill="none" stroke="#8D6E63" strokeWidth={2.5} strokeLinecap="round" />
-            <Path d="M 55 36 Q 64 32 71 36" fill="none" stroke="#8D6E63" strokeWidth={2.5} strokeLinecap="round" />
+            <Path d="M 30 35 Q 36 31 45 34" fill="none" stroke="#808080" strokeWidth={2.8} strokeLinecap="round" />
+            <Path d="M 55 34 Q 64 31 70 35" fill="none" stroke="#808080" strokeWidth={2.8} strokeLinecap="round" />
           </G>
         ) : expression === 'bullish' ? (
           <G>
-            <Path d="M 30 36 Q 36 31 45 34" fill="none" stroke="#8D6E63" strokeWidth={2.2} strokeLinecap="round" />
-            <Path d="M 55 34 Q 64 31 70 36" fill="none" stroke="#8D6E63" strokeWidth={2.2} strokeLinecap="round" />
+            <Path d="M 31 34 Q 36 30 45 33" fill="none" stroke="#909090" strokeWidth={2.5} strokeLinecap="round" />
+            <Path d="M 55 33 Q 64 30 69 34" fill="none" stroke="#909090" strokeWidth={2.5} strokeLinecap="round" />
           </G>
         ) : (
           <G>
-            <Path d="M 30 36 Q 36 33 45 35" fill="none" stroke="#8D6E63" strokeWidth={2.2} strokeLinecap="round" />
-            <Path d="M 55 35 Q 64 33 70 36" fill="none" stroke="#8D6E63" strokeWidth={2.2} strokeLinecap="round" />
+            <Path d="M 31 35 Q 36 32 45 34" fill="none" stroke="#909090" strokeWidth={2.5} strokeLinecap="round" />
+            <Path d="M 55 34 Q 64 32 69 35" fill="none" stroke="#909090" strokeWidth={2.5} strokeLinecap="round" />
           </G>
         )}
 
-        {/* ── 코 (사자 코 — 큰 역삼각형) ── */}
-        <Path d="M 46 52 L 50 56 L 54 52 Z" fill="url(#dimonNose)" />
-        <Ellipse cx={49} cy={52} rx={1.5} ry={1} fill="#8D6E63" opacity={0.3} />
-        {/* 코 아래 인중선 */}
-        <Path d="M 50 56 L 50 59" stroke="#C49050" strokeWidth={1.2} opacity={0.4} />
+        {/* ── 코 (사람 코 — 세로 라인 + 콧볼) ── */}
+        <Path d="M 50 46 L 48 54 Q 50 56 52 54 L 50 46" fill="none" stroke="#D4A574" strokeWidth={1.5} opacity={0.6} />
+        <Circle cx={46.5} cy={54} r={2} fill="#E8BB8A" opacity={0.3} />
+        <Circle cx={53.5} cy={54} r={2} fill="#E8BB8A" opacity={0.3} />
 
-        {/* ── 볼터치 (은은한 분홍) ── */}
-        <Circle cx={27} cy={52} r={6} fill="#FF8A80" opacity={0.15} />
-        <Circle cx={73} cy={52} r={6} fill="#FF8A80" opacity={0.15} />
-
-        {/* ── 수염 (사자 특유의 짧은 점 수염) ── */}
-        <G opacity={0.3}>
-          <Circle cx={34} cy={56} r={0.8} fill="#8D6E63" />
-          <Circle cx={30} cy={55} r={0.8} fill="#8D6E63" />
-          <Circle cx={32} cy={58} r={0.8} fill="#8D6E63" />
-          <Circle cx={66} cy={56} r={0.8} fill="#8D6E63" />
-          <Circle cx={70} cy={55} r={0.8} fill="#8D6E63" />
-          <Circle cx={68} cy={58} r={0.8} fill="#8D6E63" />
-        </G>
+        {/* ── 볼터치 ── */}
+        <Circle cx={27} cy={50} r={6} fill="#FF8A80" opacity={0.12} />
+        <Circle cx={73} cy={50} r={6} fill="#FF8A80" opacity={0.12} />
 
         {/* ── 입 (표정별) ── */}
-        <Path d={mouthPath} fill="none" stroke="#8D6E63" strokeWidth={2} strokeLinecap="round" />
+        <Path d={mouthPath} fill="none" stroke="#B87A5A" strokeWidth={2} strokeLinecap="round" />
         {expression === 'bullish' && (
-          <Path d="M 42 65 Q 50 69 58 65" fill="#FFFFFF" opacity={0.35} />
+          <Path d="M 42 63 Q 50 67 58 63" fill="#FFFFFF" opacity={0.3} />
         )}
 
         {/* ── 땀방울 (bearish) ── */}

@@ -1,13 +1,10 @@
 /**
- * PlazaThemeHeader — 오늘 탭 광장 테마 헤더
- *
- * 역할: "마을 광장 안내판" — 오늘 탭 상단에 마을 분위기 표시
- * 비유: 마을 광장 입구의 "발른 광장" 간판 + 날씨 정보
+ * PlazaThemeHeader — 오늘 탭 헤더
  *
  * 기능:
- * - "발른 광장" 타이틀
+ * - 브리핑 타이틀 표시
  * - 현재 날씨 이모지 + 온도
- * - 마을 시간 표시
+ * - KST 시간 표시
  */
 
 import React from 'react';
@@ -16,27 +13,14 @@ import {
   Text,
   StyleSheet,
 } from 'react-native';
-
-// ============================================================================
-// i18n
-// ============================================================================
-
-const TEXT = {
-  ko: {
-    title: '발른 광장',
-    villageTime: '마을 시간',
-  },
-  en: {
-    title: 'Baln Plaza',
-    villageTime: 'Village Time',
-  },
-};
+import { t } from '../../locales';
 
 // ============================================================================
 // Props
 // ============================================================================
 
 interface PlazaThemeHeaderProps {
+  /** @deprecated Use t() from locales instead. Kept for backward compatibility. */
   locale?: string;
   weatherEmoji?: string;
   temperature?: number;
@@ -78,13 +62,10 @@ function getTimeOfDayEmoji(): string {
 // ============================================================================
 
 export function PlazaThemeHeader({
-  locale = 'ko',
   weatherEmoji,
   temperature,
   colors,
 }: PlazaThemeHeaderProps) {
-  const isKo = locale === 'ko';
-  const t = isKo ? TEXT.ko : TEXT.en;
   const timeStr = getKSTTimeString();
   const timeEmoji = getTimeOfDayEmoji();
 
@@ -92,7 +73,7 @@ export function PlazaThemeHeader({
     <View style={styles.container}>
       <View style={styles.leftCol}>
         <Text style={[styles.title, { color: colors.textPrimary }]}>
-          🏛️ {t.title}
+          {t('home.plaza.title')}
         </Text>
       </View>
       <View style={styles.rightCol}>

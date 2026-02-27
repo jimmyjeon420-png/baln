@@ -30,6 +30,7 @@ export function WanderingGuru({ position, onPress, villageHeight }: WanderingGur
   const animY = useRef(new Animated.Value(position.y * villageHeight)).current;
   const bubbleOpacity = useRef(new Animated.Value(0)).current;
   const bubbleScale = useRef(new Animated.Value(0.8)).current;
+  const isCompactVillage = villageHeight < 220;
 
   // 위치 이동 애니메이션
   useEffect(() => {
@@ -94,8 +95,8 @@ export function WanderingGuru({ position, onPress, villageHeight }: WanderingGur
       : 'center' as const;
 
   const bubbleWidth = Math.min(
-    220,
-    Math.max(170, SCREEN_WIDTH * (villageHeight < 200 ? 0.56 : 0.62))
+    isCompactVillage ? 228 : 220,
+    Math.max(isCompactVillage ? 170 : 170, SCREEN_WIDTH * (isCompactVillage ? 0.66 : 0.62))
   );
   const baseLeft = position.x < 0.3
     ? -10
@@ -106,7 +107,23 @@ export function WanderingGuru({ position, onPress, villageHeight }: WanderingGur
   const minLeft = 8 - containerLeft;
   const maxLeft = SCREEN_WIDTH - bubbleWidth - 8 - containerLeft;
   const clampedBubbleLeft = Math.max(minLeft, Math.min(maxLeft, baseLeft));
-  const bubbleAbove = position.y > (villageHeight < 200 ? 0.42 : 0.6);
+  const bubbleMaxLines = isCompactVillage ? 8 : 5;
+  const approxCharsPerLine = isCompactVillage ? 14 : 18;
+  const estimatedLines = Math.max(
+    2,
+    Math.min(bubbleMaxLines, Math.ceil((position.bubble?.length ?? 0) / approxCharsPerLine))
+  );
+  const estimatedBubbleHeight = 26 + estimatedLines * 17;
+  const avatarTop = position.y * villageHeight;
+  const bubbleTopIfBelow = avatarTop + 52;
+  const bubbleTopIfAbove = avatarTop - 56 - estimatedBubbleHeight;
+  const hasSpaceBelow = isCompactVillage
+    ? true
+    : bubbleTopIfBelow + estimatedBubbleHeight <= villageHeight - 6;
+  const hasSpaceAbove = bubbleTopIfAbove >= 4;
+  const bubbleAbove = isCompactVillage
+    ? false
+    : (hasSpaceAbove && (!hasSpaceBelow || position.y > 0.6));
   const tailPlacementStyle = bubbleTailAlign === 'flex-start'
     ? styles.tailStart
     : bubbleTailAlign === 'flex-end'
@@ -167,7 +184,11 @@ export function WanderingGuru({ position, onPress, villageHeight }: WanderingGur
                 <Text style={[styles.bubbleSpeaker, { color: accentColor }]}>
                   {config?.guruName || position.guruId}
                 </Text>
-                <Text style={styles.bubbleText}>
+                <Text
+                  style={styles.bubbleText}
+                  numberOfLines={isCompactVillage ? undefined : bubbleMaxLines}
+                  ellipsizeMode={isCompactVillage ? undefined : 'tail'}
+                >
                   {position.bubble}
                 </Text>
               </View>
@@ -180,7 +201,11 @@ export function WanderingGuru({ position, onPress, villageHeight }: WanderingGur
                 <Text style={[styles.bubbleSpeaker, { color: accentColor }]}>
                   {config?.guruName || position.guruId}
                 </Text>
-                <Text style={styles.bubbleText}>
+                <Text
+                  style={styles.bubbleText}
+                  numberOfLines={isCompactVillage ? undefined : bubbleMaxLines}
+                  ellipsizeMode={isCompactVillage ? undefined : 'tail'}
+                >
                   {position.bubble}
                 </Text>
               </View>
@@ -223,10 +248,10 @@ const styles = StyleSheet.create({
     zIndex: 20,
   },
   bubbleWrapperBelow: {
-    top: 54,
+    top: 50,
   },
   bubbleWrapperAbove: {
-    bottom: 56,
+    bottom: 52,
   },
   bubble: {
     backgroundColor: '#1E2E3E',

@@ -38,7 +38,7 @@ const SKY_COLORS: Record<TimeOfDay, { top: string; bottom: string }> = {
   morning: { top: '#AED6F1', bottom: '#DDF2FF' },     // 연한 하늘색 (아침)
   afternoon: { top: '#5DADE2', bottom: '#B7E4FF' },   // 밝은 하늘색 (낮)
   evening: { top: '#D4788A', bottom: '#F2B37D' },     // 오렌지-핑크-보라 (저녁노을)
-  night: { top: '#0D1B2A', bottom: '#21364E' },       // 깊은 네이비 (밤)
+  night: { top: '#2C608E', bottom: '#85ADD0' },       // 거의 블랙 없이 유지되는 야간 톤
 };
 
 const HORIZON_TINT: Record<TimeOfDay, string> = {
@@ -46,7 +46,7 @@ const HORIZON_TINT: Record<TimeOfDay, string> = {
   morning: 'rgba(255, 255, 255, 0.15)',
   afternoon: 'rgba(255, 255, 255, 0.08)',
   evening: 'rgba(255, 185, 120, 0.22)',
-  night: 'rgba(120, 160, 210, 0.09)',
+  night: 'rgba(188, 219, 247, 0.08)',
 };
 
 const CELESTIAL: Record<TimeOfDay, { show: boolean; x: number; y: number; color: string; glow: string }> = {
@@ -56,6 +56,13 @@ const CELESTIAL: Record<TimeOfDay, { show: boolean; x: number; y: number; color:
   evening: { show: true, x: 0.82, y: 0.26, color: '#FFD08A', glow: 'rgba(255, 170, 110, 0.35)' },
   night: { show: true, x: 0.82, y: 0.2, color: '#E8F1FF', glow: 'rgba(180, 210, 255, 0.25)' },
 };
+
+/**
+ * 가로등 상단 근처(약 34%)부터 밤하늘을 강조하고,
+ * 그 아래로는 자연스럽게 페이드아웃.
+ */
+const NIGHT_SKYLINE_START_PERCENT = 34;
+const NIGHT_SKYLINE_FADE_END_PERCENT = 48;
 
 // ---------------------------------------------------------------------------
 // 날씨별 오버레이 색상 + 불투명도
@@ -318,7 +325,7 @@ const Star: React.FC<StarProps> = ({ top, left, size, delay }) => {
 // ---------------------------------------------------------------------------
 
 const STARS: StarProps[] = Array.from({ length: 18 }, (_, i) => ({
-  top: Math.round(Math.random() * 250),
+  top: Math.round(Math.random() * 230),
   left: Math.round(Math.random() * 360),
   size: 7 + Math.round(Math.random() * 5),
   delay: Math.round(Math.random() * 2000),
@@ -388,12 +395,29 @@ export const VillageWeatherBackground: React.FC<VillageWeatherBackgroundProps> =
               <Stop offset="0" stopColor={prevSkyColor.current.top} stopOpacity="1" />
               <Stop offset="1" stopColor={prevSkyColor.current.bottom} stopOpacity="1" />
             </LinearGradient>
+            <LinearGradient id="nightCapPrev" x1="0" y1="0" x2="0" y2="1">
+              <Stop offset="0" stopColor="#040F22" stopOpacity="0.96" />
+              <Stop offset="0.72" stopColor="#0A254A" stopOpacity="0.8" />
+              <Stop offset="1" stopColor="#0A254A" stopOpacity="0" />
+            </LinearGradient>
             <RadialGradient id="vignettePrev" cx="50%" cy="55%" rx="75%" ry="65%">
               <Stop offset="0" stopColor="#00000000" />
-              <Stop offset="1" stopColor="#00000028" />
+              <Stop offset="1" stopColor="#00000003" />
             </RadialGradient>
           </Defs>
           <Rect x="0" y="0" width="100%" height="100%" fill="url(#skyGradPrev)" />
+          {isNight && (
+            <Rect
+              x="0"
+              y={`${NIGHT_SKYLINE_START_PERCENT}%`}
+              width="100%"
+              height={`${NIGHT_SKYLINE_FADE_END_PERCENT - NIGHT_SKYLINE_START_PERCENT}%`}
+              fill="url(#nightCapPrev)"
+            />
+          )}
+          {isNight && (
+            <Rect x="0" y="0" width="100%" height={`${NIGHT_SKYLINE_START_PERCENT}%`} fill="#041226" opacity={0.92} />
+          )}
           <Rect x="0" y="58%" width="100%" height="42%" fill={HORIZON_TINT[timeOfDay]} />
           {celestial.show && (
             <>
@@ -418,12 +442,29 @@ export const VillageWeatherBackground: React.FC<VillageWeatherBackgroundProps> =
               <Stop offset="0" stopColor={currentSkyColor.top} stopOpacity="1" />
               <Stop offset="1" stopColor={currentSkyColor.bottom} stopOpacity="1" />
             </LinearGradient>
+            <LinearGradient id="nightCapCurrent" x1="0" y1="0" x2="0" y2="1">
+              <Stop offset="0" stopColor="#040F22" stopOpacity="0.96" />
+              <Stop offset="0.72" stopColor="#0A254A" stopOpacity="0.8" />
+              <Stop offset="1" stopColor="#0A254A" stopOpacity="0" />
+            </LinearGradient>
             <RadialGradient id="vignetteCurrent" cx="50%" cy="55%" rx="75%" ry="65%">
               <Stop offset="0" stopColor="#00000000" />
-              <Stop offset="1" stopColor="#00000028" />
+              <Stop offset="1" stopColor="#00000003" />
             </RadialGradient>
           </Defs>
           <Rect x="0" y="0" width="100%" height="100%" fill="url(#skyGradCurrent)" />
+          {isNight && (
+            <Rect
+              x="0"
+              y={`${NIGHT_SKYLINE_START_PERCENT}%`}
+              width="100%"
+              height={`${NIGHT_SKYLINE_FADE_END_PERCENT - NIGHT_SKYLINE_START_PERCENT}%`}
+              fill="url(#nightCapCurrent)"
+            />
+          )}
+          {isNight && (
+            <Rect x="0" y="0" width="100%" height={`${NIGHT_SKYLINE_START_PERCENT}%`} fill="#041226" opacity={0.92} />
+          )}
           <Rect x="0" y="58%" width="100%" height="42%" fill={HORIZON_TINT[timeOfDay]} />
           {celestial.show && (
             <>

@@ -23,10 +23,6 @@ import { CreditDisplay } from '../../src/components/common/CreditDisplay';
 import { useIsAdmin } from '../../src/hooks/useAdminDashboard';
 import { useGuruStyle, GURU_DISPLAY_NAME } from '../../src/hooks/useGuruStyle';
 import { useLocale } from '../../src/context/LocaleContext';
-import { useGuruFriendship } from '../../src/hooks/useGuruFriendship';
-import { useVillageProsperity } from '../../src/hooks/useVillageProsperity';
-import { CharacterAvatar } from '../../src/components/character/CharacterAvatar';
-import CityHallHeader from '../../src/components/profile/CityHallHeader';
 // 세계관 강화: 시청 섹션 테마
 import { CITY_HALL_SECTIONS } from '../../src/components/profile/CityHallSections';
 
@@ -81,9 +77,6 @@ export default function ProfileScreen() {
   const { themeMode, setThemeMode, colors } = useTheme();
   const { data: isAdmin } = useIsAdmin();
   const { guruStyle } = useGuruStyle();
-  const { getTopFriends } = useGuruFriendship();
-  const { prosperity, level: prosperityLevel } = useVillageProsperity();
-  const topFriends = getTopFriends(3); // top 3 guru friends
 
   // 화면 포커스 시 AsyncStorage에서 최신 guru style 읽기 (guru-style.tsx 변경 후 즉시 반영)
   const [latestGuruStyle, setLatestGuruStyle] = React.useState(guruStyle);
@@ -315,16 +308,6 @@ export default function ProfileScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* P2-5: 시청 세계관 헤더 */}
-        <View style={{ marginHorizontal: 16, marginBottom: 12 }}>
-          <CityHallHeader
-            prosperityLevel={prosperityLevel}
-            guruCount={10}
-            colors={colors}
-            locale={language}
-          />
-        </View>
-
         {/* ── 프로필 카드 ── */}
         <TouchableOpacity
           style={[styles.profileCard, { backgroundColor: colors.surface }]}
@@ -352,42 +335,6 @@ export default function ProfileScreen() {
         {user && (
           <View style={styles.creditWrap}>
             <CreditDisplay />
-          </View>
-        )}
-
-        {/* ── 마을 현황 ── */}
-        {user && (
-          <View style={[styles.villageSection, { backgroundColor: colors.surface }]}>
-            <Text style={[styles.villageSectionTitle, { color: colors.textPrimary }]}>
-              {t('profile.village_section_title')}
-            </Text>
-
-            {/* 번영도 */}
-            <View style={styles.villageRow}>
-              <Text style={{ color: colors.textSecondary }}>
-                {t('profile.village_prosperity_label')}
-              </Text>
-              <Text style={{ color: colors.primary, fontWeight: '700' }}>
-                Lv.{prosperityLevel}
-              </Text>
-            </View>
-
-            {/* 친한 구루 Top 3 */}
-            <View style={styles.villageRow}>
-              <Text style={{ color: colors.textSecondary }}>
-                {t('profile.village_top_gurus_label')}
-              </Text>
-              <View style={{ flexDirection: 'row', gap: 8 }}>
-                {topFriends.map(f => (
-                  <CharacterAvatar key={f.guruId} guruId={f.guruId} size="sm" />
-                ))}
-                {topFriends.length === 0 && (
-                  <Text style={{ color: colors.textTertiary, fontSize: 12 }}>
-                    {t('profile.village_no_gurus_hint')}
-                  </Text>
-                )}
-              </View>
-            </View>
           </View>
         )}
 
@@ -639,23 +586,4 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
 
-  // ---------------------------------------------------------------------------
-  // 마을 현황 섹션
-  // ---------------------------------------------------------------------------
-  villageSection: {
-    borderRadius: SIZES.card.borderRadius,
-    padding: SIZES.card.padding,
-    marginBottom: SIZES.xxl,
-  },
-  villageSectionTitle: {
-    fontSize: SIZES.fBase,
-    fontWeight: '700',
-    marginBottom: SIZES.md,
-  },
-  villageRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 6,
-  },
 });

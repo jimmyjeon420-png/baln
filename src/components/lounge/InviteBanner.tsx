@@ -18,7 +18,7 @@ export default function InviteBanner({ onInvite }: InviteBannerProps) {
 
   const handleInvite = async () => {
     try {
-      const message = t('lounge.invite_share_message') || '발른(baln)에서 매일 5분 시장 맥락을 읽고 있어요. 같이 해봐요!';
+      const message = t('lounge.invite_share_message');
       const url = 'https://baln.app';
       await Share.share({
         message: `${message}\n\n${url}`,
@@ -40,10 +40,10 @@ export default function InviteBanner({ onInvite }: InviteBannerProps) {
         <Text style={styles.emoji}>{'🎁'}</Text>
         <View>
           <Text style={[styles.title, { color: colors.primary }]}>
-            {t('lounge.invite_banner_title') || '친구 초대하면 5C 보너스!'}
+            {t('lounge.invite_banner_title')}
           </Text>
           <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-            {t('lounge.invite_banner_subtitle') || '초대 링크를 공유하세요'}
+            {t('lounge.invite_banner_subtitle')}
           </Text>
         </View>
       </View>

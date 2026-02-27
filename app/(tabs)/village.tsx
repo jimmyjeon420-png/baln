@@ -78,6 +78,7 @@ import { GURU_RELATIONS } from '../../src/hooks/useGuruVillage';
 import { EasterEggToast } from '../../src/components/village/EasterEggToast';
 import { useEasterEggs } from '../../src/hooks/useEasterEggs';
 import HouseView from '../../src/components/village/HouseView';
+import HouseInteriorModal from '../../src/components/village/HouseInteriorModal';
 import { useHouseSystem } from '../../src/hooks/useHouseSystem';
 import { LynchMartTour } from '../../src/components/village/LynchMartTour';
 
@@ -188,6 +189,34 @@ export default function VillageScreen() {
   const timeOfDayTheme = useTimeOfDay();
   const { sentiment } = useMarketSentiment();
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const devicePreset = useMemo(() => {
+    const shortEdge = Math.min(screenWidth, screenHeight);
+    const longEdge = Math.max(screenWidth, screenHeight);
+    const isMini = shortEdge <= 375 && longEdge <= 812;
+    const isMax = shortEdge >= 430 || longEdge >= 920;
+    return {
+      bubbleMinWidth: isMini ? 168 : 180,
+      bubbleMaxWidth: isMax ? 240 : isMini ? 210 : 224,
+      bubbleWidthRatio: isMini ? 0.6 : isMax ? 0.48 : 0.52,
+      bubbleAboveThreshold: isMini ? 0.54 : isMax ? 0.58 : 0.56,
+      mapHeightRatio: isMini ? 0.56 : isMax ? 0.62 : 0.59,
+      mapMinHeight: isMini ? 340 : isMax ? 420 : 380,
+    };
+  }, [screenWidth, screenHeight]);
+  const defaultMapHeight = useMemo(
+    () => Math.max(devicePreset.mapMinHeight, Math.round(screenHeight * devicePreset.mapHeightRatio)),
+    [devicePreset.mapHeightRatio, devicePreset.mapMinHeight, screenHeight]
+  );
+  const [villageMapHeight, setVillageMapHeight] = useState(defaultMapHeight);
+  const villageLayerRenderHeight = useMemo(
+    // 지면/풍경/Furniture 레이어는 실제 맵 높이와 1:1로 맞춰야 좌표 왜곡/밋밋한 공백이 생기지 않음
+    () => Math.max(villageMapHeight, defaultMapHeight),
+    [defaultMapHeight, villageMapHeight]
+  );
+
+  useEffect(() => {
+    setVillageMapHeight(defaultMapHeight);
+  }, [defaultMapHeight]);
 
   // Analytics
   useScreenTracking('village');
@@ -238,7 +267,10 @@ export default function VillageScreen() {
   const {
     houseLevel,
     placedFurniture,
+    inventoryFurniture,
     maxSlots,
+    placeFurniture,
+    removeFurniture,
     wasUpgraded,
     acknowledgeUpgrade,
   } = useHouseSystem(prosperityLevel);
@@ -433,11 +465,19 @@ export default function VillageScreen() {
           </View>
 
           {/* ── Village Map Area (~70% of screen) ─────────────────────── */}
-          <View style={styles.villageMap}>
+          <View
+            style={styles.villageMap}
+            onLayout={(event) => {
+              const nextHeight = Math.round(event.nativeEvent.layout.height);
+              if (nextHeight > 0 && Math.abs(nextHeight - villageMapHeight) > 4) {
+                setVillageMapHeight(nextHeight);
+              }
+            }}
+          >
             {/* 레이어 순서: 지면 → 나무/덤불 → 가구 → 캐릭터 */}
             <VillageGroundLayer
               width={screenWidth}
-              height={screenHeight * 0.5}
+              height={villageLayerRenderHeight}
               timeOfDay={mappedTimeOfDay}
               prosperityLevel={prosperityLevel}
               season={seasonVisuals.season}
@@ -446,7 +486,7 @@ export default function VillageScreen() {
             />
             <VillageScenery
               width={screenWidth}
-              height={screenHeight * 0.5}
+              height={villageLayerRenderHeight}
               timeOfDay={mappedTimeOfDay}
               season={seasonVisuals.season}
               prosperityLevel={prosperityLevel}
@@ -455,7 +495,7 @@ export default function VillageScreen() {
             />
             <VillageFurniture
               width={screenWidth}
-              height={screenHeight * 0.5}
+              height={villageLayerRenderHeight}
               timeOfDay={mappedTimeOfDay}
               prosperityLevel={prosperityLevel}
             />
@@ -617,8 +657,11 @@ export default function VillageScreen() {
                 const config = GURU_CHARACTER_CONFIGS[pos.guruId];
                 const hasBubble = !!pos.bubble;
                 const isBeingTalkedTo = talkingTargets.has(pos.guruId);
-                const bubbleWidth = Math.min(220, Math.max(180, screenWidth * 0.52));
-                const bubbleAbove = pos.y > 0.56;
+                const bubbleWidth = Math.min(
+                  devicePreset.bubbleMaxWidth,
+                  Math.max(devicePreset.bubbleMinWidth, screenWidth * devicePreset.bubbleWidthRatio)
+                );
+                const bubbleAbove = pos.y > devicePreset.bubbleAboveThreshold;
                 const baseBubbleLeft = pos.x < 0.2
                   ? -8
                   : pos.x > 0.8
@@ -960,6 +1003,19 @@ export default function VillageScreen() {
           setShowNewspaper(false);
           router.push(`/settings/guru-detail/${guruId}`);
         }}
+      />
+
+      {/* ── House Interior (tent/house tap) ─────────────────────────────── */}
+      <HouseInteriorModal
+        visible={showHouseInterior}
+        onClose={() => setShowHouseInterior(false)}
+        houseLevel={houseLevel}
+        placedFurniture={placedFurniture}
+        inventoryFurniture={inventoryFurniture}
+        maxSlots={maxSlots}
+        onPlaceFurniture={placeFurniture}
+        onRemoveFurniture={removeFurniture}
+        locale={language}
       />
 
       {/* ── P1-2: 구루 선물 모달 ──────────────────────────────────────── */}

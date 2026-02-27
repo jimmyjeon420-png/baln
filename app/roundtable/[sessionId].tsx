@@ -27,7 +27,7 @@ import { useLocale } from '../../src/context/LocaleContext';
 
 export default function RoundtableSessionScreen() {
   const router = useRouter();
-  const { sessionId } = useLocalSearchParams<{ sessionId: string }>();
+  const { sessionId, new: isNewSession } = useLocalSearchParams<{ sessionId: string; new?: string }>();
   const { colors } = useTheme();
   const { t } = useLocale();
   const {
@@ -43,7 +43,7 @@ export default function RoundtableSessionScreen() {
 
   const [loading, setLoading] = useState(false);
 
-  // 세션 로드 (히스토리에서 진입 시)
+  // 세션 로드 (히스토리에서 진입 or 새 세션 생성 직후)
   useEffect(() => {
     if (session && session.id === sessionId) return;
 
@@ -52,12 +52,13 @@ export default function RoundtableSessionScreen() {
       setLoading(true);
       const loaded = await getSessionById(sessionId);
       if (loaded) {
-        loadSession(loaded);
+        // 새 세션이면 처음부터 재생, 히스토리면 마지막 턴 표시
+        loadSession(loaded, isNewSession === 'true');
       }
       setLoading(false);
     }
     load();
-  }, [sessionId, session, loadSession]);
+  }, [sessionId, session, loadSession, isNewSession]);
 
   const handleAskQuestion = useCallback(async (question: string) => {
     await askQuestion(question);

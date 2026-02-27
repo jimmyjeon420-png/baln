@@ -436,11 +436,11 @@ export const VillageGroundLayer: React.FC<VillageGroundLayerProps> = ({
           {/* 하단 접지 음영 */}
           <LinearGradient id="groundAO" x1="0" y1="0" x2="0" y2="1">
             <Stop offset="0" stopColor="#00000000" />
-            <Stop offset="1" stopColor="#0000002A" />
+            <Stop offset="1" stopColor="#00000005" />
           </LinearGradient>
           {/* 상단 페이드 */}
           <LinearGradient id="topFade" x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0" stopColor="#00000030" stopOpacity="1" />
+            <Stop offset="0" stopColor="#00000004" stopOpacity="1" />
             <Stop offset="1" stopColor="#00000000" stopOpacity="1" />
           </LinearGradient>
         </Defs>
@@ -589,7 +589,7 @@ export const VillageGroundLayer: React.FC<VillageGroundLayerProps> = ({
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    bottom: 0,
+    top: 0,
     left: 0,
     overflow: 'hidden',
   },

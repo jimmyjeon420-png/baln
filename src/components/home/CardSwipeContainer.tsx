@@ -128,6 +128,8 @@ export default function CardSwipeContainer({
         ref={scrollViewRef}
         horizontal
         pagingEnabled
+        directionalLockEnabled
+        nestedScrollEnabled
         showsHorizontalScrollIndicator={false}
         onMomentumScrollEnd={handleScrollEnd}
         onLayout={(e: LayoutChangeEvent) => setScrollViewHeight(e.nativeEvent.layout.height)}
@@ -136,14 +138,8 @@ export default function CardSwipeContainer({
         contentContainerStyle={styles.scrollContent}
       >
         {childArray.map((child, index) => (
-          <View key={index} style={[styles.cardWrapper, scrollViewHeight > 0 && { height: scrollViewHeight }]}>
-            <ScrollView
-              showsVerticalScrollIndicator={false}
-              nestedScrollEnabled={true}
-              contentContainerStyle={styles.cardScrollContent}
-            >
-              {child}
-            </ScrollView>
+          <View key={index} style={[styles.cardWrapper, scrollViewHeight > 0 && { minHeight: scrollViewHeight }]}>
+            {child}
           </View>
         ))}
       </ScrollView>
@@ -213,9 +209,7 @@ const styles = StyleSheet.create({
   cardWrapper: {
     width: SCREEN_WIDTH,
     paddingTop: 4,
-  },
-  cardScrollContent: {
-    paddingBottom: 24,
+    paddingBottom: 10,
   },
   bottomNav: {
     flexDirection: 'row',

@@ -6,6 +6,7 @@
  */
 
 import type { MarketNewsCategory } from '../hooks/useMarketNews';
+import { t } from '../locales';
 
 export type ImpactPolarity = '긍정' | '부정' | '중립';
 
@@ -51,10 +52,10 @@ function toGrade(value: number, polarity: ImpactPolarity): string {
 }
 
 function getStrengthLabel(index: number): string {
-  if (index >= 45) return '강함';
-  if (index >= 25) return '보통';
-  if (index >= 10) return '약함';
-  return '미미';
+  if (index >= 45) return t('news_impact.strength_strong');
+  if (index >= 25) return t('news_impact.strength_moderate');
+  if (index >= 10) return t('news_impact.strength_weak');
+  return t('news_impact.strength_minimal');
 }
 
 function getPolarity(score: number): ImpactPolarity {
@@ -64,9 +65,19 @@ function getPolarity(score: number): ImpactPolarity {
 }
 
 function getDirectionLabel(polarity: ImpactPolarity): string {
-  if (polarity === '긍정') return '상승 압력';
-  if (polarity === '부정') return '하락 압력';
-  return '중립';
+  if (polarity === '긍정') return t('news_impact.direction_up');
+  if (polarity === '부정') return t('news_impact.direction_down');
+  return t('news_impact.direction_neutral');
+}
+
+/** Display label for ImpactPolarity (for UI rendering) */
+export function getImpactPolarityLabel(polarity: ImpactPolarity): string {
+  const labels: Record<ImpactPolarity, () => string> = {
+    '긍정': () => t('news_impact.positive'),
+    '부정': () => t('news_impact.negative'),
+    '중립': () => t('news_impact.neutral'),
+  };
+  return labels[polarity]();
 }
 
 function getCategoryHorizonWeights(category: MarketNewsCategory): { short: number; mid: number; long: number } {
@@ -102,13 +113,13 @@ export function calculateNewsImpactSummary(
     return {
       impactIndex: 0,
       polarity: '중립',
-      strengthLabel: '미미',
-      directionLabel: '중립',
+      strengthLabel: t('news_impact.strength_minimal'),
+      directionLabel: t('news_impact.direction_neutral'),
       grades: { short: 'N', mid: 'N', long: 'N' },
       horizons: {
-        short: '1~3영업일',
-        mid: '1~4주',
-        long: '1~3개월',
+        short: t('news_impact.horizon_short'),
+        mid: t('news_impact.horizon_mid'),
+        long: t('news_impact.horizon_long'),
       },
     };
   }
@@ -136,9 +147,9 @@ export function calculateNewsImpactSummary(
       long: toGrade(longValue, polarity),
     },
     horizons: {
-      short: '1~3영업일',
-      mid: '1~4주',
-      long: '1~3개월',
+      short: t('news_impact.horizon_short'),
+      mid: t('news_impact.horizon_mid'),
+      long: t('news_impact.horizon_long'),
     },
   };
 }

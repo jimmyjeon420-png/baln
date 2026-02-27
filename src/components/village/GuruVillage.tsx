@@ -153,6 +153,7 @@ const flowerStyles = StyleSheet.create({
 });
 
 export function GuruVillage({ height = VILLAGE_HEIGHT, onRoundtablePress }: GuruVillageProps) {
+  const isCompactPreview = height < VILLAGE_HEIGHT;
   const timeTheme = useTimeOfDay();
   const { t } = useLocale();
   const {
@@ -166,14 +167,15 @@ export function GuruVillage({ height = VILLAGE_HEIGHT, onRoundtablePress }: Guru
     closeGuruChat,
     sendMessageToGuru,
     retryLastMessage,
-  } = useGuruVillage();
+  } = useGuruVillage({ layoutMode: 'compact' });
 
   return (
-    <View style={[styles.container, { height }]}>
+    <View style={[styles.container, { height }, isCompactPreview && styles.compactContainer]}>
       <VillageBackground
         skyGradient={timeTheme.skyGradient}
         groundColor={timeTheme.groundColor}
         starOpacity={timeTheme.starOpacity}
+        allowOverflow={isCompactPreview}
       >
         {/* 마을 간판 — 미니뷰(광장)에서는 숨김 (캐릭터 가림 방지) */}
         {height >= VILLAGE_HEIGHT && (
@@ -252,6 +254,10 @@ const styles = StyleSheet.create({
     // 동물의숲 카드 테두리 (나무 울타리 느낌)
     borderWidth: 2,
     borderColor: '#2A405830',
+  },
+  compactContainer: {
+    overflow: 'visible',
+    zIndex: 30,
   },
   guruLayer: {
     position: 'absolute',

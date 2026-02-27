@@ -12,6 +12,7 @@ import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { EmotionEntry } from './useEmotionCheck';
 import supabase from '../services/supabase';
+import { t } from '../locales';
 
 const STORAGE_KEY = '@baln:emotion_history';
 
@@ -69,14 +70,14 @@ function getEmotionEmoji(key: string): string {
  * 감정 키를 레이블로 변환
  */
 function getEmotionLabel(key: string): string {
-  const map: Record<string, string> = {
-    anxious: '불안',
-    worried: '걱정',
-    neutral: '보통',
-    calm: '안심',
-    confident: '확신',
+  const map: Record<string, () => string> = {
+    anxious: () => t('emotion.anxious'),
+    worried: () => t('emotion.worried'),
+    neutral: () => t('emotion.neutral'),
+    calm: () => t('emotion.calm'),
+    confident: () => t('emotion.confident'),
   };
-  return map[key] || '보통';
+  return (map[key] || map.neutral)();
 }
 
 /**
@@ -123,11 +124,11 @@ function generateReminder(history: EmotionEntry[]): string | null {
   const newScore = emotionScore[todayEntry.emotion] || 3;
 
   if (newScore > oldScore) {
-    return `💡 한 달 전 당신은 "${oldEmoji}${oldLabel}"이었는데, 지금은 "${newEmoji}${newLabel}"이에요. 감정이 안정되었네요!`;
+    return t('emotion.reminder_improved', { oldEmoji, oldLabel, newEmoji, newLabel });
   } else if (newScore < oldScore) {
-    return `💡 한 달 전 당신은 "${oldEmoji}${oldLabel}"이었어요. 시장은 언제나 변동이 있답니다.`;
+    return t('emotion.reminder_declined', { oldEmoji, oldLabel });
   } else {
-    return `💡 한 달 전과 지금 모두 "${oldEmoji}${oldLabel}"이네요. 일관된 마음가짐입니다.`;
+    return t('emotion.reminder_same', { oldEmoji, oldLabel });
   }
 }
 

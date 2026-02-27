@@ -1,18 +1,14 @@
 /**
- * CityHallHeader — 전체 탭 "시청" 세계관
+ * CityHallHeader — 전체 탭 헤더
  *
- * 역할: "마을 시청 안내판" — 전체 탭 상단에서 마을 통계를
- *       한눈에 요약하여 보여줌 (번영도 + 구루 수 + 연속 출석)
+ * 기능: 계정 현황 요약 (활동 레벨 + 거장 수 + 연속 출석)
  *
- * 비유: 시청 로비에 걸린 "우리 마을 현황" 전광판처럼
- *       마을의 핵심 지표 3가지를 깔끔하게 정리
- *
- * 사용처:
- * - app/(tabs)/profile.tsx 전체 탭 최상단
+ * 사용처: app/(tabs)/profile.tsx 전체 탭 최상단
  */
 
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { t } from '../../locales';
 
 // =============================================================================
 // 타입 정의
@@ -27,8 +23,8 @@ interface CityHallHeaderProps {
   streakDays?: number;
   /** 테마 색상 */
   colors: any;
-  /** 로케일 (ko/en) */
-  locale: string;
+  /** @deprecated Use t() from locales instead. Kept for backward compatibility. */
+  locale?: string;
 }
 
 // =============================================================================
@@ -40,10 +36,7 @@ function CityHallHeader({
   guruCount = 10,
   streakDays = 0,
   colors,
-  locale,
 }: CityHallHeaderProps): React.ReactElement {
-  const isKo = locale === 'ko';
-
   return (
     <View
       style={[
@@ -56,7 +49,7 @@ function CityHallHeader({
     >
       {/* 시청 간판 */}
       <Text style={[styles.signText, { color: colors.textPrimary }]}>
-        {isKo ? '\uD83C\uDFDB 발른 마을 시청' : '\uD83C\uDFDB baln Village City Hall'}
+        {t('profile.city_hall.sign')}
       </Text>
 
       {/* 통계 3종 */}
@@ -64,7 +57,7 @@ function CityHallHeader({
         {/* 마을 번영도 레벨 */}
         <View style={styles.statItem}>
           <Text style={[styles.statLabel, { color: colors.textTertiary }]}>
-            {isKo ? '\uD83C\uDFD8 마을' : '\uD83C\uDFD8 Village'}
+            {t('profile.city_hall.village_label')}
           </Text>
           <Text style={[styles.statValue, { color: colors.primary ?? '#4CAF50' }]}>
             Lv.{prosperityLevel}
@@ -74,20 +67,20 @@ function CityHallHeader({
         {/* 구루 수 */}
         <View style={styles.statItem}>
           <Text style={[styles.statLabel, { color: colors.textTertiary }]}>
-            {isKo ? '\uD83E\uDDD1\u200D\uD83E\uDD1D\u200D\uD83E\uDDD1 구루' : '\uD83E\uDDD1\u200D\uD83E\uDD1D\u200D\uD83E\uDDD1 Gurus'}
+            {t('profile.city_hall.gurus_label')}
           </Text>
           <Text style={[styles.statValue, { color: colors.primary ?? '#4CAF50' }]}>
-            {guruCount}{isKo ? '명' : ''}
+            {guruCount}{t('profile.city_hall.guru_count_suffix')}
           </Text>
         </View>
 
         {/* 연속 출석 */}
         <View style={styles.statItem}>
           <Text style={[styles.statLabel, { color: colors.textTertiary }]}>
-            {isKo ? '\uD83D\uDD25 연속' : '\uD83D\uDD25 Streak'}
+            {t('profile.city_hall.streak_label')}
           </Text>
           <Text style={[styles.statValue, { color: colors.primary ?? '#4CAF50' }]}>
-            {streakDays}{isKo ? '일' : 'd'}
+            {streakDays}{t('profile.city_hall.streak_day_suffix')}
           </Text>
         </View>
       </View>

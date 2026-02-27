@@ -49,6 +49,7 @@ export default function RoundtableIndexScreen() {
     isGenerating,
     recentSessions,
     error,
+    session,
   } = useRoundtable();
 
   const [topic, setTopic] = useState('');
@@ -90,10 +91,9 @@ export default function RoundtableIndexScreen() {
   }, []);
 
   // 최근 세션이 생성되면 즉시 해당 화면으로 이동
-  const { session } = useRoundtable();
   React.useEffect(() => {
     if (session && !isGenerating) {
-      router.push(`/roundtable/${session.id}`);
+      router.push(`/roundtable/${session.id}?new=true`);
     }
   }, [session, isGenerating, router]);
 

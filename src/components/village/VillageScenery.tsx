@@ -250,6 +250,26 @@ const FENCES = [
   { id: 'f2', xFrac: 0.74, yFrac: 0.57, posts: 3, postSpacing: 16 },
 ] as const;
 
+/** 야간 반딧불 좌표 */
+const FIREFLIES = [
+  { xFrac: 0.2, yFrac: 0.56, r: 1.4 },
+  { xFrac: 0.3, yFrac: 0.62, r: 1.1 },
+  { xFrac: 0.42, yFrac: 0.58, r: 1.3 },
+  { xFrac: 0.56, yFrac: 0.64, r: 1.2 },
+  { xFrac: 0.68, yFrac: 0.57, r: 1.4 },
+  { xFrac: 0.8, yFrac: 0.61, r: 1.1 },
+] as const;
+
+/** 주간 공기 입자 좌표 */
+const AMBIENT_DUST = [
+  { xFrac: 0.12, yFrac: 0.34, r: 1.0 },
+  { xFrac: 0.26, yFrac: 0.28, r: 0.9 },
+  { xFrac: 0.38, yFrac: 0.4, r: 1.1 },
+  { xFrac: 0.54, yFrac: 0.32, r: 0.9 },
+  { xFrac: 0.7, yFrac: 0.38, r: 1.0 },
+  { xFrac: 0.86, yFrac: 0.3, r: 0.8 },
+] as const;
+
 // ─────────────────────────────────────────────
 // Sub-components
 // ─────────────────────────────────────────────
@@ -675,7 +695,7 @@ export function VillageScenery({
         <LinearGradient id="atmosphericDepth" x1="0" y1="0" x2="0" y2="1">
           <Stop offset="0" stopColor="rgba(255,255,255,0.10)" />
           <Stop offset="0.45" stopColor="rgba(255,255,255,0.03)" />
-          <Stop offset="1" stopColor="rgba(0,0,0,0.16)" />
+          <Stop offset="1" stopColor="rgba(0,0,0,0.015)" />
         </LinearGradient>
         {/* 중앙 광원 (낮/아침) */}
         <RadialGradient id="focusLight" cx="52%" cy="28%" rx="46%" ry="38%">
@@ -749,6 +769,44 @@ export function VillageScenery({
           palette={palette}
         />
       ))}
+
+      {/* ── Layer 5.5: 생동감 입자 (낮: 대기 먼지 / 밤: 반딧불) ── */}
+      {(timeOfDay === 'morning' || timeOfDay === 'afternoon' || timeOfDay === 'dawn') && (
+        <G>
+          {AMBIENT_DUST.map((p, idx) => (
+            <Circle
+              key={`ambient-dust-${idx}`}
+              cx={px(p.xFrac)}
+              cy={py(p.yFrac)}
+              r={p.r}
+              fill="#FFFFFF"
+              opacity={0.18}
+            />
+          ))}
+        </G>
+      )}
+      {(timeOfDay === 'evening' || timeOfDay === 'night') && (
+        <G>
+          {FIREFLIES.map((f, idx) => (
+            <G key={`firefly-${idx}`}>
+              <Circle
+                cx={px(f.xFrac)}
+                cy={py(f.yFrac)}
+                r={f.r * 3.5}
+                fill="#D9FF8E"
+                opacity={0.12}
+              />
+              <Circle
+                cx={px(f.xFrac)}
+                cy={py(f.yFrac)}
+                r={f.r}
+                fill="#F4FFB0"
+                opacity={0.9}
+              />
+            </G>
+          ))}
+        </G>
+      )}
 
       {/* ── 저녁/밤: 캠프파이어 + 텐트 + 고양이 ── */}
       {(timeOfDay === 'evening' || timeOfDay === 'night') && (

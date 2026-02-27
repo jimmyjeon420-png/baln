@@ -190,7 +190,7 @@ export function useVillageWorld(marketSentiment?: number): UseVillageWorldReturn
 
   const { letters, unreadCount, openLetter } = useVillageLetters(friendshipsMap);
 
-  const village = useGuruVillage();
+  const village = useGuruVillage({ layoutMode: 'full' });
 
   // 가장 친한 구루 ID (리액션 대표 구루용)
   const topFriend = getTopFriends(1)[0];

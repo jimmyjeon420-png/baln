@@ -34,18 +34,38 @@ const COMMUNITY_CATEGORY_GURU_MAP: Record<CommunityCategory, string[]> = {
   realestate: ['lynch', 'buffett', 'marks', 'rogers', 'dalio'],
 };
 
-/** 구루 페르소나 (프롬프트용) */
+/** 구루 페르소나 (프롬프트용 — 성격과 말투를 구체적으로 묘사) */
 const GURU_COMMENT_PERSONAS: Record<string, string> = {
-  buffett: '워렌 버핏(🦉): 가치 투자 관점, 장기적 시각, 침착한 할아버지 톤.',
-  dalio: '레이 달리오(🦌): 거시경제 기계론, 원칙 기반, 차분한 교수 톤.',
-  cathie_wood: '캐시 우드(🦊): 혁신 투자, 5년 미래 지향, 열정적.',
-  druckenmiller: '드러킨밀러(🐆): 매크로 트레이더, 날카로운 분석, 직설적.',
-  saylor: '마이클 세일러(🐺): 비트코인 맥시멀리스트, 모든 걸 BTC로 연결, 열광적.',
-  dimon: '제이미 다이먼(🦁): 은행장, 보수적 리스크 관리, 위엄 있는 톤.',
-  musk: '일론 머스크(🦎): 장난기, 파괴적 사고, 트위터식 한 줄.',
-  lynch: '피터 린치(🐻): 일상 투자, 슈퍼마켓 관점, 친근한 이웃 톤.',
-  marks: '하워드 막스(🐢): 사이클 분석, 2차 사고, 신중한 작가 톤.',
-  rogers: '짐 로저스(🐯): 글로벌 탐험가, 이머징 마켓, 원자재 관점.',
+  buffett: `워렌 버핏: 오마하의 현자. "내가 이해하지 못하는 건 사지 않는다." 가치 투자 신봉자.
+    말투: 여유롭고 유머러스한 할아버지. 코카콜라, 시즈캔디 같은 일상 비유를 즐겨 쓴다.
+    특징: 투기적인 글에는 "그건 투자가 아니라 도박이지" 식으로 살짝 꼬집는다.`,
+  dalio: `레이 달리오: 브릿지워터 창업자. 거시경제를 기계처럼 분석하는 원칙주의자.
+    말투: 차분하고 논리적인 교수 톤. "역사적으로 보면..." "사이클 관점에서..." 로 시작.
+    특징: 감정적인 글에 "원칙을 세워야 합니다" 하고 냉정하게 조언한다.`,
+  cathie_wood: `캐시 우드: ARK Invest CEO. 파괴적 혁신에 올인하는 미래 신봉자.
+    말투: 열정적이고 확신에 찬 톤. "5년 후를 보세요!" "이건 시작에 불과합니다."
+    특징: 전통 가치주 이야기에 "그건 과거의 비즈니스" 하고 도발적으로 반론한다.`,
+  druckenmiller: `스탠리 드러킨밀러: 소로스의 오른팔이었던 매크로 전설.
+    말투: 날카롭고 직설적. 군더더기 없이 핵심만. "타이밍이 핵심이다."
+    특징: 장기 투자 이야기에 "시장은 기다려주지 않아" 하고 현실적으로 지적한다.`,
+  saylor: `마이클 세일러: MicroStrategy CEO. 비트코인 맥시멀리스트.
+    말투: 선교사처럼 열광적. 모든 주제를 비트코인으로 연결. "결국 답은 BTC입니다."
+    특징: 법정화폐나 금 이야기에 "인플레이션이 다 먹어치웁니다" 하고 즉시 반박한다.`,
+  dimon: `제이미 다이먼: JP모건 CEO. 월스트리트의 왕. 보수적 리스크 관리자.
+    말투: 위엄 있고 단호한 은행장 톤. "리스크를 먼저 보세요." "은행은 다릅니다."
+    특징: 코인이나 고위험 투자에 "그건 프랜켄슈타인 자산" 식으로 회의적이다.`,
+  musk: `일론 머스크: 테슬라·스페이스X CEO. 트롤링의 천재.
+    말투: 트위터식 한 줄. 밈, 유머, 파괴적 한마디. "ㅋㅋ" 도 쓸 수 있다.
+    특징: 진지한 분석에 장난기 섞인 한 줄로 분위기를 바꾼다.`,
+  lynch: `피터 린치: 마젤란 펀드 전설. "내 주변에서 투자 아이디어를 찾아라."
+    말투: 친근한 이웃 아저씨 톤. 마트, 식당, 일상에서 투자 기회를 찾는다.
+    특징: 복잡한 분석에 "슈퍼에서 줄 서는 곳을 보세요" 식으로 쉽게 풀어준다.`,
+  marks: `하워드 막스: 오크트리 캐피탈 공동창업자. 2차적 사고의 대가.
+    말투: 신중하고 깊이 있는 작가 톤. "모두가 알고 있다면 이미 가격에 반영됐습니다."
+    특징: 낙관적인 글에 "2차적 사고가 필요합니다" 하고 리스크를 환기시킨다.`,
+  rogers: `짐 로저스: 월드 투어 투자가. 이머징 마켓과 원자재의 달인.
+    말투: 모험가 톤. "난 전 세계를 돌아다니며 투자 기회를 찾았습니다."
+    특징: 미국 중심 시각에 "세계를 넓게 보세요. 기회는 바깥에 있습니다" 하고 시야를 넓혀준다.`,
 };
 
 // ============================================================================
@@ -57,12 +77,13 @@ function getTodayKey(): string {
   return new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
 }
 
-/** 카테고리에 맞는 구루 3명 선택 (랜덤) */
-function selectThreeGurus(category: CommunityCategory): string[] {
+/** 카테고리에 맞는 구루 2~3명 랜덤 선택 */
+function selectRandomGurus(category: CommunityCategory): string[] {
   const gurus = COMMUNITY_CATEGORY_GURU_MAP[category] || COMMUNITY_CATEGORY_GURU_MAP.stocks;
-  // 셔플 후 3명 선택
   const shuffled = [...gurus].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, Math.min(3, shuffled.length));
+  // 2명 또는 3명 랜덤 선택
+  const count = Math.random() < 0.5 ? 2 : 3;
+  return shuffled.slice(0, Math.min(count, shuffled.length));
 }
 
 /** 구루의 라이벌 찾기 */
@@ -123,12 +144,9 @@ export async function generateGuruCommentsForPost(
       return;
     }
 
-    // 구루 3명 선택
-    const guruIds = selectThreeGurus(category);
-
-    // 첫 번째 구루의 라이벌 찾기 (반박 댓글용)
-    const rivalId = findRival(guruIds[0], guruIds);
-    const allGuruIds = rivalId ? [...guruIds, rivalId] : guruIds;
+    // 구루 2~3명 랜덤 선택
+    const guruIds = selectRandomGurus(category);
+    const allGuruIds = [...guruIds];
 
     const personaText = allGuruIds
       .map(id => GURU_COMMENT_PERSONAS[id])
@@ -137,9 +155,9 @@ export async function generateGuruCommentsForPost(
 
     const langInstruction = getPromptLanguageInstruction();
 
-    // 라이벌 반박 지시문
-    const rivalInstruction = rivalId
-      ? `\n5. ${GURU_COMMENT_PERSONAS[rivalId]?.split(':')[0] ?? rivalId}는 ${GURU_COMMENT_PERSONAS[guruIds[0]]?.split(':')[0] ?? guruIds[0]}의 의견에 대해 정중하지만 날카롭게 반박합니다. replyToGuruId를 "${guruIds[0]}"로 설정하세요.`
+    // 라이벌 지시문 (구루 간 의견 차이를 자연스럽게 표현)
+    const rivalInstruction = allGuruIds.length >= 2
+      ? `\n5. 구루들은 서로 의견이 다를 수 있습니다. 같은 주제에 대해 각자의 철학에 맞게 자연스럽게 반응하세요. 반박 시 replyToGuruId에 대상 구루 ID를 넣으세요.`
       : '';
 
     // Gemini 프롬프트 구성
@@ -168,7 +186,7 @@ ${personaText}
   ]
 }`;
 
-    const userPrompt = `게시물 카테고리: ${category}\n게시물 내용: ${content}\n\n위 게시물에 대해 ${allGuruIds.join(', ')} 구루의 댓글을 생성해주세요.${rivalId ? ` ${rivalId}는 ${guruIds[0]}에 대한 반박입니다.` : ''}`;
+    const userPrompt = `게시물 카테고리: ${category}\n게시물 내용: ${content}\n\n위 게시물에 대해 ${allGuruIds.join(', ')} 구루의 댓글을 생성해주세요. 각 구루의 독특한 성격과 말투를 반드시 반영하세요.`;
 
     // Gemini 호출 (gemini-proxy Edge Function)
     const { data, error } = await supabase.functions.invoke('gemini-proxy', {

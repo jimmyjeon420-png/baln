@@ -6,8 +6,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../src/hooks/useTheme';
 import { useLocale } from '../../src/context/LocaleContext';
 
-// 표시할 탭 목록 (5탭 구조: 오늘/분석/마을/라운지/전체)
-const VISIBLE_TABS = ['index', 'rebalance', 'village', 'lounge', 'profile'];
+// 표시할 탭 목록 (5탭 구조: 오늘/분석/뉴스/라운지/전체)
+const VISIBLE_TABS = ['index', 'rebalance', 'news', 'lounge', 'profile'];
 
 // 커스텀 탭 바 컴포넌트 - 플로팅 스캔 버튼 포함
 function CustomTabBar({ state, navigation }: any) {
@@ -44,7 +44,7 @@ function CustomTabBar({ state, navigation }: any) {
           const tabLabels: Record<string, string> = {
             index: t('tab.today'),
             rebalance: t('tab.analysis'),
-            village: t('tab.village'),
+            news: t('tab.news'),
             lounge: t('tab.lounge'),
             profile: t('tab.more'),
           };
@@ -81,14 +81,14 @@ function CustomTabBar({ state, navigation }: any) {
   );
 }
 
-// 탭별 아이콘 이름 반환 (5탭: 광장/병원/마을/카페/시청 세계관)
+// 탭별 아이콘 이름 반환
 function getIconName(routeName: string, isFocused: boolean): keyof typeof Ionicons.glyphMap {
   const icons: Record<string, { active: string; inactive: string }> = {
-    index: { active: 'sunny', inactive: 'sunny-outline' },           // 광장 (오늘의 광장)
-    rebalance: { active: 'pulse', inactive: 'pulse-outline' },       // 병원 (건강 진단)
-    village: { active: 'home', inactive: 'home-outline' },           // 마을 (중심가)
-    lounge: { active: 'cafe', inactive: 'cafe-outline' },            // 카페 (라운지)
-    profile: { active: 'business', inactive: 'business-outline' },   // 시청 (전체 관리)
+    index: { active: 'sunny', inactive: 'sunny-outline' },           // 오늘
+    rebalance: { active: 'pulse', inactive: 'pulse-outline' },       // 분석
+    news: { active: 'newspaper', inactive: 'newspaper-outline' },    // 뉴스
+    lounge: { active: 'cafe', inactive: 'cafe-outline' },            // 라운지
+    profile: { active: 'business', inactive: 'business-outline' },   // 전체
   };
 
   const icon = icons[routeName] || { active: 'help', inactive: 'help-outline' };
@@ -107,9 +107,9 @@ export default function TabLayout() {
         lazy: true, // 활성 탭만 마운트 — 비활성 탭 애니메이션 동시 실행 방지
       }}
     >
-      {/* ═══ 발른 마을 5탭: 광장 / 병원 / 마을 / 카페 / 시청 ═══ */}
+      {/* ═══ baln 5탭: 오늘 / 분석 / 뉴스 / 라운지 / 전체 ═══ */}
 
-      {/* 1. 광장 (Square) — 맥락 카드 + 예측 + 스트릭 + 위기 배너 */}
+      {/* 1. 오늘 (Today) — 맥락 카드 + 예측 + 스트릭 + 위기 배너 */}
       <Tabs.Screen
         name="index"
         options={{
@@ -117,7 +117,7 @@ export default function TabLayout() {
         }}
       />
 
-      {/* 2. 병원 (Clinic) — 건강 점수 + AI 진단 + 처방전 */}
+      {/* 2. 분석 (Analysis) — 건강 점수 + AI 진단 + 처방전 */}
       <Tabs.Screen
         name="rebalance"
         options={{
@@ -125,15 +125,21 @@ export default function TabLayout() {
         }}
       />
 
-      {/* 3. 마을 (Village) — 구루 마을 + 라운드테이블 입장 */}
+      {/* 3. 뉴스 (News) — 뉴스 피드 + 예측 */}
       <Tabs.Screen
-        name="village"
+        name="news"
         options={{
-          title: t('tab.village'),
+          title: t('tab.news'),
         }}
       />
 
-      {/* 4. 카페 (Café) — VIP 라운지 + 커뮤니티 */}
+      {/* 마을 (Village) — 숨김 (라운드테이블 등에서 접근) */}
+      <Tabs.Screen
+        name="village"
+        options={{ href: null }}
+      />
+
+      {/* 4. 라운지 (Lounge) — VIP 라운지 + 커뮤니티 */}
       <Tabs.Screen
         name="lounge"
         options={{
@@ -141,7 +147,7 @@ export default function TabLayout() {
         }}
       />
 
-      {/* 5. 시청 (Hall) — 프로필 + 설정 + 크레딧 + 마켓 */}
+      {/* 5. 전체 (More) — 프로필 + 설정 + 크레딧 + 마켓 */}
       <Tabs.Screen
         name="profile"
         options={{

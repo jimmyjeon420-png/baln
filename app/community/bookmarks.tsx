@@ -25,6 +25,7 @@ import { useMyLikes, useLikePost } from '../../src/hooks/useCommunity';
 import { CommunityPost, TIER_COLORS, CATEGORY_INFO } from '../../src/types/community';
 import { getTierFromAssets, getTierIcon, getRelativeTime, formatCommunityDisplayTag } from '../../src/utils/communityUtils';
 import { useTheme } from '../../src/hooks/useTheme';
+import { t } from '../../src/locales';
 
 export default function BookmarksScreen() {
   const router = useRouter();
@@ -126,7 +127,7 @@ export default function BookmarksScreen() {
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={28} color={colors.primary} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>내 북마크</Text>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{t('community.bookmarks.title')}</Text>
         <View style={{ width: 28 }} />
       </View>
 
@@ -141,9 +142,9 @@ export default function BookmarksScreen() {
       {!isLoading && isError && (
         <View style={styles.emptyContainer}>
           <Ionicons name="cloud-offline-outline" size={48} color={colors.textQuaternary} />
-          <Text style={[styles.emptyTitle, { color: colors.textSecondary }]}>불러오기 실패</Text>
+          <Text style={[styles.emptyTitle, { color: colors.textSecondary }]}>{t('community.bookmarks.load_failed')}</Text>
           <Text style={[styles.emptyDesc, { color: colors.textTertiary }]}>
-            네트워크 연결을 확인하고{'\n'}아래로 당겨서 새로고침해주세요
+            {t('community.bookmarks.load_failed_desc')}
           </Text>
         </View>
       )}
@@ -165,9 +166,9 @@ export default function BookmarksScreen() {
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Ionicons name="bookmark-outline" size={48} color={colors.textQuaternary} />
-              <Text style={[styles.emptyTitle, { color: colors.textSecondary }]}>북마크가 없습니다</Text>
+              <Text style={[styles.emptyTitle, { color: colors.textSecondary }]}>{t('community.bookmarks.empty')}</Text>
               <Text style={[styles.emptyDesc, { color: colors.textTertiary }]}>
-                게시글에서 북마크 아이콘을 탭하면{'\n'}여기에 저장됩니다
+                {t('community.bookmarks.empty_desc')}
               </Text>
             </View>
           }

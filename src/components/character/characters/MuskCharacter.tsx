@@ -1,10 +1,9 @@
 /**
- * 일론 머스크 캐릭터 — 장난꾸러기 카멜레온/게코 (Zootopia 스타일 이족보행)
+ * 일론 머스크 캐릭터 — 예측불가 혁신의 아이콘
  *
- * 디자인 키워드: 일렉트릭 옐로우, 라임 그린 몸체, 번개 마킹, 돔 볏, 말리는 꼬리
- * 컨셉: 예측불가 혁신가 — Rango meets Zootopia, 장난끼 가득한 트릭스터
- * 표정: 카멜레온 특유의 양눈 독립 움직임 + 번개 액센트
- * 다리: 짧고 통통한 SD 이족보행 + 카멜레온 발가락
+ * 디자인 키워드: 다크 브라운 헤어, 뾰족한 이마선, 블랙 터틀넥, 캐주얼 테크 CEO
+ * 입체감: RadialGradient + LinearGradient + 하이라이트 + 그림자
+ * 표정 변화: bullish(씩 웃음+로켓) / bearish(걱정+땀방울) / cautious(생각 중+번개) / neutral(살짝 비죽)
  */
 
 import React from 'react';
@@ -14,267 +13,242 @@ import Svg, {
 } from 'react-native-svg';
 import type { CharacterRenderProps } from '../../../types/character';
 
-/* ── 전체 Y 오프셋: 머리+몸을 위로 7유닛 이동 ── */
-const DY = -7;
-
 export function MuskCharacter({ size, expression, accentColor, blinkPhase = 0 }: CharacterRenderProps) {
   const mouthPath = (() => {
     switch (expression) {
       case 'bullish':
-        return `M 34 ${64 + DY} Q 50 ${76 + DY} 66 ${64 + DY}`;
+        // 한쪽이 올라간 씩 웃음 (smirk)
+        return 'M 38 60 Q 46 68 54 64 Q 58 62 62 58';
       case 'bearish':
-        return `M 40 ${66 + DY} Q 50 ${60 + DY} 60 ${66 + DY}`;
+        return 'M 40 64 Q 50 58 60 64';
       case 'cautious':
-        return `M 42 ${64 + DY} Q 50 ${67 + DY} 58 ${64 + DY}`;
+        // 살짝 삐죽한 입
+        return 'M 40 62 Q 48 60 52 62 Q 56 64 60 62';
       case 'neutral':
       default:
-        return `M 40 ${63 + DY} Q 50 ${69 + DY} 60 ${63 + DY}`;
+        return 'M 40 60 Q 50 65 60 60';
     }
   })();
 
   const showSweat = expression === 'bearish';
-  const showSpark = expression === 'cautious';
-
-  /* 카멜레온 눈 — 표정별 동공 위치 (양눈 독립!) */
-  const leftPupil = (() => {
-    switch (expression) {
-      case 'bullish':  return { cx: 35, cy: 38 + DY };
-      case 'bearish':  return { cx: 34, cy: 41 + DY };
-      case 'cautious': return { cx: 32, cy: 38 + DY };
-      default:         return { cx: 34, cy: 39 + DY };
-    }
-  })();
-  const rightPupil = (() => {
-    switch (expression) {
-      case 'bullish':  return { cx: 65, cy: 38 + DY };
-      case 'bearish':  return { cx: 67, cy: 42 + DY };
-      case 'cautious': return { cx: 68, cy: 37 + DY };
-      default:         return { cx: 66, cy: 39 + DY };
-    }
-  })();
+  const showBolt = expression === 'cautious';
 
   return (
     <Svg width={size} height={size} viewBox="0 0 100 100">
       <Defs>
-        {/* 머리 입체감 — 라임 그린 */}
-        <RadialGradient id="muskHead" cx="44%" cy="38%" rx="50%" ry="50%">
-          <Stop offset="0%" stopColor="#A5D6A7" />
-          <Stop offset="55%" stopColor="#81C784" />
-          <Stop offset="100%" stopColor="#4CAF50" />
+        {/* 피부 — 밝은 코카시안 */}
+        <RadialGradient id="muskSkin" cx="45%" cy="40%" rx="50%" ry="50%">
+          <Stop offset="0%" stopColor="#FFE8D0" />
+          <Stop offset="55%" stopColor="#F5CBA7" />
+          <Stop offset="100%" stopColor="#DEB088" />
         </RadialGradient>
-        {/* 몸체 — 짙은 그린 */}
-        <LinearGradient id="muskBody" x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0%" stopColor="#66BB6A" />
-          <Stop offset="100%" stopColor="#388E3C" />
+        {/* 머리카락 — 다크 브라운 */}
+        <LinearGradient id="muskHair" x1="0" y1="0" x2="1" y2="1">
+          <Stop offset="0%" stopColor="#4A3728" />
+          <Stop offset="50%" stopColor="#3E2E1E" />
+          <Stop offset="100%" stopColor="#2C1F14" />
         </LinearGradient>
-        {/* 배 — 밝은 연두 */}
-        <RadialGradient id="muskBelly" cx="50%" cy="45%" rx="50%" ry="55%">
-          <Stop offset="0%" stopColor="#E8F5E9" />
-          <Stop offset="100%" stopColor="#C8E6C9" />
-        </RadialGradient>
-        {/* 번개 글로우 */}
-        <LinearGradient id="muskBolt" x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0%" stopColor="#FDD835" />
-          <Stop offset="100%" stopColor={accentColor} />
+        {/* 터틀넥 / 티셔츠 — 블랙~다크 그레이 */}
+        <LinearGradient id="muskShirt" x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0%" stopColor="#2C2C2C" />
+          <Stop offset="100%" stopColor="#1A1A1A" />
         </LinearGradient>
-        {/* 다리 그라디언트 */}
-        <LinearGradient id="muskLeg" x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0%" stopColor="#66BB6A" />
-          <Stop offset="100%" stopColor="#43A047" />
+        {/* 청바지 — 다크 인디고 */}
+        <LinearGradient id="muskJeans" x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0%" stopColor="#2C3E6B" />
+          <Stop offset="100%" stopColor="#1E2A4A" />
         </LinearGradient>
-        {/* 발 그라디언트 */}
-        <RadialGradient id="muskFoot" cx="50%" cy="40%" rx="60%" ry="60%">
-          <Stop offset="0%" stopColor="#81C784" />
-          <Stop offset="100%" stopColor="#388E3C" />
+        {/* 스니커즈 */}
+        <RadialGradient id="muskSneaker" cx="50%" cy="40%" rx="60%" ry="60%">
+          <Stop offset="0%" stopColor="#E0E0E0" />
+          <Stop offset="100%" stopColor="#B0B0B0" />
         </RadialGradient>
       </Defs>
 
-      {/* ── 그림자 (발 아래 바닥) ── */}
-      <Ellipse cx={50} cy={97} rx={26} ry={3.5} fill="#000000" opacity={0.13} />
+      {/* ── 바닥 그림자 ── */}
+      <Ellipse cx={50} cy={97} rx={20} ry={3} fill="#000000" opacity={0.13} />
 
-      {/* ── 꼬리 (말리는 카멜레온 꼬리) — 위로 DY 이동 ── */}
-      <Path
-        d={`M 72 ${78 + DY} Q 85 ${72 + DY} 88 ${60 + DY} Q 90 ${52 + DY} 84 ${50 + DY} Q 78 ${49 + DY} 80 ${55 + DY} Q 82 ${60 + DY} 78 ${62 + DY}`}
-        fill="none"
-        stroke="#4CAF50"
-        strokeWidth={4}
-        strokeLinecap="round"
-      />
-      <Path
-        d={`M 72 ${78 + DY} Q 85 ${72 + DY} 88 ${60 + DY} Q 90 ${52 + DY} 84 ${50 + DY} Q 78 ${49 + DY} 80 ${55 + DY} Q 82 ${60 + DY} 78 ${62 + DY}`}
-        fill="none"
-        stroke="#81C784"
-        strokeWidth={2}
-        strokeLinecap="round"
-      />
+      {/* ── 다리 & 스니커즈 ── */}
+      <G>
+        {/* 왼쪽 청바지 */}
+        <Rect x={37} y={82} width={9} height={10} rx={4} fill="url(#muskJeans)" />
+        {/* 왼쪽 청바지 스티칭 */}
+        <Path d="M 40 82 L 40 92" fill="none" stroke="#3D5080" strokeWidth={0.4} opacity={0.3} />
+        {/* 왼쪽 스니커즈 */}
+        <Ellipse cx={41} cy={93.5} rx={7} ry={3.5} fill="url(#muskSneaker)" />
+        <Path d="M 35 93 Q 41 91 47 93" fill="none" stroke="#FFFFFF" strokeWidth={0.8} opacity={0.5} />
+        {/* 스니커즈 솔 */}
+        <Ellipse cx={41} cy={95} rx={6.5} ry={1.5} fill="#505050" opacity={0.4} />
 
-      {/* ── 몸체 — 위로 DY 이동 ── */}
-      <Ellipse cx={50} cy={80 + DY} rx={25} ry={17} fill="url(#muskBody)" />
-      {/* 배 (밝은 부분) */}
-      <Ellipse cx={50} cy={82 + DY} rx={16} ry={11} fill="url(#muskBelly)" />
+        {/* 오른쪽 청바지 */}
+        <Rect x={54} y={82} width={9} height={10} rx={4} fill="url(#muskJeans)" />
+        <Path d="M 60 82 L 60 92" fill="none" stroke="#3D5080" strokeWidth={0.4} opacity={0.3} />
+        {/* 오른쪽 스니커즈 */}
+        <Ellipse cx={59} cy={93.5} rx={7} ry={3.5} fill="url(#muskSneaker)" />
+        <Path d="M 53 93 Q 59 91 65 93" fill="none" stroke="#FFFFFF" strokeWidth={0.8} opacity={0.5} />
+        <Ellipse cx={59} cy={95} rx={6.5} ry={1.5} fill="#505050" opacity={0.4} />
+      </G>
 
-      {/* ── 번개 마킹 (가슴) ── */}
-      <Path
-        d={`M 48 ${72 + DY} L 52 ${72 + DY} L 49 ${78 + DY} L 54 ${78 + DY} L 47 ${87 + DY} L 50 ${80 + DY} L 46 ${80 + DY} Z`}
-        fill="url(#muskBolt)"
-        opacity={0.7}
-      />
+      {/* ── 머리+몸체 그룹 (SD 비율) ── */}
+      <G transform="translate(0, -6)">
 
-      {/* ══════════════════════════════════════════
-          ── 다리 & 발 (Zootopia 스타일 SD 이족보행) ──
-          ══════════════════════════════════════════ */}
-
-      {/* ── 왼쪽 다리 ── */}
-      <Rect x={36} y={82} width={9} height={10} rx={4} fill="url(#muskLeg)" />
-      {/* 왼쪽 무릎 하이라이트 */}
-      <Ellipse cx={40.5} cy={85} rx={3} ry={2} fill="#A5D6A7" opacity={0.25} />
-
-      {/* ── 오른쪽 다리 ── */}
-      <Rect x={55} y={82} width={9} height={10} rx={4} fill="url(#muskLeg)" />
-      {/* 오른쪽 무릎 하이라이트 */}
-      <Ellipse cx={59.5} cy={85} rx={3} ry={2} fill="#A5D6A7" opacity={0.25} />
-
-      {/* ── 왼쪽 발 (카멜레온 — 3갈래 발가락) ── */}
-      <Ellipse cx={39} cy={93} rx={8} ry={3.5} fill="url(#muskFoot)" />
-      {/* 발가락 범프 3개 */}
-      <Circle cx={33} cy={93.5} r={2} fill="#43A047" />
-      <Circle cx={39} cy={94.5} r={2} fill="#43A047" />
-      <Circle cx={45} cy={93.5} r={2} fill="#43A047" />
-      {/* 발가락 하이라이트 */}
-      <Circle cx={33} cy={92.5} r={1} fill="#A5D6A7" opacity={0.35} />
-      <Circle cx={39} cy={93.5} r={1} fill="#A5D6A7" opacity={0.35} />
-      <Circle cx={45} cy={92.5} r={1} fill="#A5D6A7" opacity={0.35} />
-
-      {/* ── 오른쪽 발 (카멜레온 — 3갈래 발가락) ── */}
-      <Ellipse cx={61} cy={93} rx={8} ry={3.5} fill="url(#muskFoot)" />
-      {/* 발가락 범프 3개 */}
-      <Circle cx={55} cy={93.5} r={2} fill="#43A047" />
-      <Circle cx={61} cy={94.5} r={2} fill="#43A047" />
-      <Circle cx={67} cy={93.5} r={2} fill="#43A047" />
-      {/* 발가락 하이라이트 */}
-      <Circle cx={55} cy={92.5} r={1} fill="#A5D6A7" opacity={0.35} />
-      <Circle cx={61} cy={93.5} r={1} fill="#A5D6A7" opacity={0.35} />
-      <Circle cx={67} cy={92.5} r={1} fill="#A5D6A7" opacity={0.35} />
-
-      {/* ── 머리 (돔형 — 카멜레온 크레스트) ── */}
-      <Circle cx={50} cy={42 + DY} r={30} fill="url(#muskHead)" />
-      {/* 돔/볏 (머리 위로 솟은 부분) */}
-      <Path
-        d={`M 30 ${30 + DY} Q 35 ${12 + DY} 50 ${8 + DY} Q 65 ${12 + DY} 70 ${30 + DY}`}
-        fill="#81C784"
-      />
-      {/* 볏 하이라이트 */}
-      <Path
-        d={`M 36 ${22 + DY} Q 44 ${12 + DY} 54 ${12 + DY} Q 62 ${14 + DY} 66 ${24 + DY}`}
-        fill="none"
-        stroke="#FFFFFF"
-        strokeWidth={1.5}
-        opacity={0.2}
-      />
-
-      {/* ── 머리 위 스파이크 (작은 삼각형 리지) ── */}
-      <Path d={`M 38 ${18 + DY} L 40 ${10 + DY} L 42 ${18 + DY} Z`} fill="#66BB6A" />
-      <Path d={`M 45 ${14 + DY} L 47 ${6 + DY}  L 49 ${14 + DY} Z`} fill="#66BB6A" />
-      <Path d={`M 52 ${14 + DY} L 54 ${6 + DY}  L 56 ${14 + DY} Z`} fill="#66BB6A" />
-      <Path d={`M 59 ${18 + DY} L 61 ${10 + DY} L 63 ${18 + DY} Z`} fill="#66BB6A" />
-
-      {/* 이마 하이라이트 */}
-      <Ellipse cx={44} cy={28 + DY} rx={14} ry={8} fill="#FFFFFF" opacity={0.1} />
-      {/* 턱 아래 그림자 */}
-      <Ellipse cx={50} cy={67 + DY} rx={20} ry={5} fill="#388E3C" opacity={0.25} />
-
-      {/* ── 눈 (카멜레온 — 툭 튀어나온 구형 눈) ── */}
-      {/* 눈 둥지 (돔형 눈 소켓) */}
-      <Circle cx={35} cy={40 + DY} r={12} fill="#4CAF50" />
-      <Circle cx={65} cy={40 + DY} r={12} fill="#4CAF50" />
-      <Circle cx={35} cy={40 + DY} r={10} fill="#A5D6A7" />
-      <Circle cx={65} cy={40 + DY} r={10} fill="#A5D6A7" />
-
-      {blinkPhase >= 0.5 ? (
-        /* 눈 감은 상태 */
-        <G>
-          <Path d={`M 27 ${40 + DY} Q 35 ${43 + DY} 43 ${40 + DY}`} fill="none" stroke="#2E7D32" strokeWidth={2.5} strokeLinecap="round" />
-          <Path d={`M 57 ${40 + DY} Q 65 ${43 + DY} 73 ${40 + DY}`} fill="none" stroke="#2E7D32" strokeWidth={2.5} strokeLinecap="round" />
+        {/* ── 몸체 (블랙 터틀넥, 슬림) ── */}
+        <Ellipse cx={50} cy={82} rx={23} ry={15} fill="url(#muskShirt)" />
+        {/* 터틀넥 목 부분 */}
+        <Rect x={44} y={66} width={12} height={6} rx={5} fill="#2C2C2C" />
+        {/* 터틀넥 주름 디테일 */}
+        <Path d="M 46 68 Q 50 70 54 68" fill="none" stroke="#444444" strokeWidth={0.6} opacity={0.4} />
+        <Path d="M 45 70 Q 50 72 55 70" fill="none" stroke="#444444" strokeWidth={0.6} opacity={0.3} />
+        {/* 로켓 핀 — accentColor 사용 */}
+        <G transform="translate(34, 74)">
+          {/* 핀 바탕 */}
+          <Circle cx={0} cy={0} r={3} fill={accentColor} opacity={0.85} />
+          {/* 미니 로켓 아이콘 */}
+          <Path d="M -1 -1.5 L 0 -3 L 1 -1.5 L 0.5 -1.5 L 0.5 1 L -0.5 1 L -0.5 -1.5 Z" fill="#FFFFFF" opacity={0.9} />
+          <Path d="M -0.8 1 L 0 2 L 0.8 1" fill="#FF6B35" opacity={0.8} />
         </G>
-      ) : (
-        /* 눈 뜬 상태 — 큰 동그란 카멜레온 눈 */
-        <G>
-          {/* 왼쪽 눈 */}
-          <Circle cx={35} cy={40 + DY} r={8} fill="#FFFDE7" />
-          <Circle cx={leftPupil.cx} cy={leftPupil.cy} r={4.5} fill="#1B5E20" />
-          <Circle cx={leftPupil.cx} cy={leftPupil.cy} r={2.5} fill="#0D3B0D" />
-          <Circle cx={leftPupil.cx + 1.5} cy={leftPupil.cy - 1.5} r={1.5} fill="#FFFFFF" />
-          {/* 오른쪽 눈 */}
-          <Circle cx={65} cy={40 + DY} r={8} fill="#FFFDE7" />
-          <Circle cx={rightPupil.cx} cy={rightPupil.cy} r={4.5} fill="#1B5E20" />
-          <Circle cx={rightPupil.cx} cy={rightPupil.cy} r={2.5} fill="#0D3B0D" />
-          <Circle cx={rightPupil.cx + 1.5} cy={rightPupil.cy - 1.5} r={1.5} fill="#FFFFFF" />
-        </G>
-      )}
 
-      {/* bullish일 때 눈 반짝임 (별) */}
-      {expression === 'bullish' && (
-        <G>
-          <Path d={`M 28 ${34 + DY} L 29.5 ${31 + DY} L 31 ${34 + DY} L 28 ${33 + DY} L 31 ${33 + DY} Z`} fill="#FDD835" opacity={0.7} />
-          <Path d={`M 58 ${34 + DY} L 59.5 ${31 + DY} L 61 ${34 + DY} L 58 ${33 + DY} L 61 ${33 + DY} Z`} fill="#FDD835" opacity={0.7} />
-        </G>
-      )}
+        {/* ── 머리카락 (다크 브라운, 살짝 헝클어진 스타일 + widow's peak) ── */}
+        {/* 메인 헤어 매스 */}
+        <Path
+          d="M 22 42 Q 20 24 28 14 Q 36 6 50 4 Q 64 6 72 14 Q 80 24 78 42
+             Q 76 32 70 22 Q 62 12 50 11 Q 38 12 30 22 Q 24 32 22 42 Z"
+          fill="url(#muskHair)"
+        />
+        {/* Widow's peak (이마 V자) */}
+        <Path
+          d="M 34 22 Q 40 14 50 10 Q 46 18 50 24 Q 54 18 50 10 Q 60 14 66 22
+             Q 60 16 50 13 Q 40 16 34 22 Z"
+          fill="#3E2E1E"
+        />
+        {/* 헤어 텍스처 (살짝 헝클어진 느낌) */}
+        <Path d="M 26 30 Q 32 18 42 12" fill="none" stroke="#5A4538" strokeWidth={1} opacity={0.3} />
+        <Path d="M 74 30 Q 68 18 58 12" fill="none" stroke="#5A4538" strokeWidth={1} opacity={0.3} />
+        {/* 정수리 삐침 머리 (messy tuft) */}
+        <Path d="M 46 8 Q 48 3 50 7" fill="none" stroke="#4A3728" strokeWidth={1.5} strokeLinecap="round" />
+        <Path d="M 52 7 Q 54 2 56 6" fill="none" stroke="#4A3728" strokeWidth={1.2} strokeLinecap="round" />
+        {/* 옆머리 */}
+        <Path d="M 22 42 Q 20 36 22 30" fill="none" stroke="#3E2E1E" strokeWidth={2} opacity={0.4} />
+        <Path d="M 78 42 Q 80 36 78 30" fill="none" stroke="#3E2E1E" strokeWidth={2} opacity={0.4} />
 
-      {/* bearish일 때 오른쪽 눈 반쯤 감김 */}
-      {expression === 'bearish' && blinkPhase < 0.5 && (
-        <Rect x={57} y={36 + DY} width={16} height={5} rx={2.5} fill="#81C784" opacity={0.55} />
-      )}
+        {/* ── 귀 ── */}
+        <Ellipse cx={21} cy={42} rx={4} ry={6} fill="#F5CBA7" />
+        <Ellipse cx={21} cy={42} rx={2.5} ry={4} fill="#E8B898" opacity={0.5} />
+        <Ellipse cx={79} cy={42} rx={4} ry={6} fill="#F5CBA7" />
+        <Ellipse cx={79} cy={42} rx={2.5} ry={4} fill="#E8B898" opacity={0.5} />
 
-      {/* ── 콧구멍 (작은 점 2개) ── */}
-      <Circle cx={47} cy={53 + DY} r={1.5} fill="#2E7D32" />
-      <Circle cx={53} cy={53 + DY} r={1.5} fill="#2E7D32" />
+        {/* ── 얼굴 (각진 특징) ── */}
+        <Circle cx={50} cy={44} r={27} fill="url(#muskSkin)" />
+        {/* 턱 아래 그림자 */}
+        <Ellipse cx={50} cy={66} rx={18} ry={4} fill="#C49050" opacity={0.18} />
+        {/* 이마 하이라이트 */}
+        <Ellipse cx={46} cy={28} rx={11} ry={6} fill="#FFFFFF" opacity={0.07} />
+        {/* 각진 턱 라인 힌트 */}
+        <Path d="M 28 52 Q 36 64 50 66 Q 64 64 72 52" fill="none" stroke="#D4A574" strokeWidth={0.8} opacity={0.15} />
 
-      {/* ── 입 (표정별) ── */}
-      <Path d={mouthPath} fill="none" stroke="#2E7D32" strokeWidth={2} strokeLinecap="round" />
-      {expression === 'bullish' && (
-        <Path d={`M 40 ${67 + DY} Q 50 ${72 + DY} 60 ${67 + DY}`} fill="#FFFFFF" opacity={0.35} />
-      )}
+        {/* ── 눈 ── */}
+        {blinkPhase >= 0.5 ? (
+          <G>
+            <Path d="M 32 42 Q 38 44 44 42" fill="none" stroke="#4A3728" strokeWidth={2.5} strokeLinecap="round" />
+            <Path d="M 56 42 Q 62 44 68 42" fill="none" stroke="#4A3728" strokeWidth={2.5} strokeLinecap="round" />
+          </G>
+        ) : expression === 'cautious' ? (
+          <G>
+            {/* 한쪽 눈 살짝 찡그림 */}
+            <Ellipse cx={38} cy={42} rx={5.5} ry={4} fill="#FFFFFF" />
+            <Circle cx={39} cy={42} r={3} fill="#3A6B8C" />
+            <Circle cx={40} cy={41} r={1.2} fill="#FFFFFF" />
+            <Ellipse cx={62} cy={42} rx={5} ry={3.5} fill="#FFFFFF" />
+            <Circle cx={63} cy={42} r={2.8} fill="#3A6B8C" />
+            <Circle cx={64} cy={41} r={1} fill="#FFFFFF" />
+          </G>
+        ) : (
+          <G>
+            {/* 크고 밝은 장난꾸러기 눈 — 블루그레이 홍채 */}
+            <Circle cx={38} cy={42} r={expression === 'bullish' ? 6 : 5.5} fill="#FFFFFF" />
+            <Circle cx={39} cy={42} r={3.5} fill="#3A6B8C" />
+            <Circle cx={39} cy={42} r={2} fill="#1A3A50" />
+            <Circle cx={40.5} cy={40.5} r={1.5} fill="#FFFFFF" />
+            <Circle cx={38} cy={41} r={0.7} fill="#FFFFFF" opacity={0.5} />
+            <Circle cx={62} cy={42} r={expression === 'bullish' ? 6 : 5.5} fill="#FFFFFF" />
+            <Circle cx={63} cy={42} r={3.5} fill="#3A6B8C" />
+            <Circle cx={63} cy={42} r={2} fill="#1A3A50" />
+            <Circle cx={64.5} cy={40.5} r={1.5} fill="#FFFFFF" />
+            <Circle cx={62} cy={41} r={0.7} fill="#FFFFFF" opacity={0.5} />
+          </G>
+        )}
 
-      {/* ── 옐로우 스팟 (몸체 무늬) ── */}
-      <Circle cx={36} cy={76 + DY} r={2.5} fill="#FDD835" opacity={0.4} />
-      <Circle cx={62} cy={74 + DY} r={2} fill="#FDD835" opacity={0.35} />
-      <Circle cx={44} cy={86 + DY} r={1.8} fill="#FDD835" opacity={0.3} />
+        {/* bullish 눈 반짝임 */}
+        {expression === 'bullish' && (
+          <G>
+            <Path d="M 35 36 L 36 34 L 37 36 L 35 35 L 37 35 Z" fill="#FDD835" opacity={0.7} />
+            <Path d="M 59 36 L 60 34 L 61 36 L 59 35 L 61 35 Z" fill="#FDD835" opacity={0.7} />
+          </G>
+        )}
 
-      {/* ── 볼터치 (연두빛) ── */}
-      <Circle cx={23} cy={50 + DY} r={6} fill="#FDD835" opacity={0.15} />
-      <Circle cx={77} cy={50 + DY} r={6} fill="#FDD835" opacity={0.15} />
+        {/* ── 눈썹 (짙은 눈썹, 약간 비대칭) ── */}
+        {expression === 'bearish' ? (
+          <G>
+            <Path d="M 30 36 Q 36 32 45 35" fill="none" stroke="#4A3728" strokeWidth={2.2} strokeLinecap="round" />
+            <Path d="M 55 34 Q 64 31 70 35" fill="none" stroke="#4A3728" strokeWidth={2.2} strokeLinecap="round" />
+          </G>
+        ) : expression === 'bullish' ? (
+          <G>
+            {/* 한쪽 치켜올린 눈썹 (장난기) */}
+            <Path d="M 31 35 Q 36 32 45 34" fill="none" stroke="#4A3728" strokeWidth={2} strokeLinecap="round" />
+            <Path d="M 55 32 Q 64 29 69 33" fill="none" stroke="#4A3728" strokeWidth={2} strokeLinecap="round" />
+          </G>
+        ) : (
+          <G>
+            <Path d="M 31 35 Q 36 32 45 34" fill="none" stroke="#4A3728" strokeWidth={2} strokeLinecap="round" />
+            <Path d="M 55 34 Q 64 32 69 35" fill="none" stroke="#4A3728" strokeWidth={2} strokeLinecap="round" />
+          </G>
+        )}
 
-      {/* ── 번개 액센트 (accentColor 하이라이트) ── */}
-      <Path
-        d={`M 14 ${18 + DY} L 17 ${18 + DY} L 15 ${22 + DY} L 19 ${22 + DY} L 13 ${29 + DY} L 15 ${24 + DY} L 12 ${24 + DY} Z`}
-        fill={accentColor}
-        opacity={0.5}
-      />
+        {/* ── 코 (사람 코) ── */}
+        <Path d="M 50 46 L 48 54 Q 50 55.5 52 54 L 50 46" fill="none" stroke="#DEB088" strokeWidth={1.3} opacity={0.5} />
+        <Circle cx={47} cy={54} r={1.8} fill="#E8BB8A" opacity={0.25} />
+        <Circle cx={53} cy={54} r={1.8} fill="#E8BB8A" opacity={0.25} />
 
-      {/* ── 땀방울 (bearish) ── */}
-      {showSweat && (
-        <G>
-          <Path d={`M 80 ${28 + DY} Q 82 ${22 + DY} 84 ${28 + DY} Q 84 ${34 + DY} 82 ${34 + DY} Q 80 ${34 + DY} 80 ${28 + DY} Z`} fill="#64B5F6" opacity={0.55} />
-          <Ellipse cx={81.5} cy={26.5 + DY} rx={1} ry={0.8} fill="#FFFFFF" opacity={0.4} />
-        </G>
-      )}
+        {/* ── 볼터치 ── */}
+        <Circle cx={27} cy={50} r={5.5} fill="#FF8A80" opacity={0.1} />
+        <Circle cx={73} cy={50} r={5.5} fill="#FF8A80" opacity={0.1} />
 
-      {/* ── 전기 스파크 (cautious — 양눈이 다른 곳을 볼 때) ── */}
-      {showSpark && (
-        <G>
-          <Path d={`M 82 ${16 + DY} L 85 ${16 + DY} L 83 ${20 + DY} L 87 ${20 + DY} L 81 ${27 + DY} L 83 ${22 + DY} L 80 ${22 + DY} Z`} fill={accentColor} opacity={0.45} />
-          <Circle cx={86} cy={12 + DY} r={2} fill={accentColor} opacity={0.25} />
-          <Circle cx={14} cy={28 + DY} r={1.5} fill={accentColor} opacity={0.2} />
-        </G>
-      )}
+        {/* ── 입 (표정별) ── */}
+        <Path d={mouthPath} fill="none" stroke="#B87A5A" strokeWidth={2} strokeLinecap="round" />
+        {expression === 'bullish' && (
+          <Path d="M 42 62 Q 50 66 58 62" fill="#FFFFFF" opacity={0.3} />
+        )}
 
-      {/* bullish — 주변 번개 이펙트 */}
-      {expression === 'bullish' && (
-        <G>
-          <Path d={`M 86 ${32 + DY} L 88 ${32 + DY} L 87 ${35 + DY} L 90 ${35 + DY} L 85 ${40 + DY} L 86 ${37 + DY} L 84 ${37 + DY} Z`} fill="#FDD835" opacity={0.4} />
-          <Path d={`M 10 ${35 + DY} L 12 ${35 + DY} L 11 ${38 + DY} L 14 ${38 + DY} L 9 ${43 + DY} L 10 ${40 + DY} L 8 ${40 + DY} Z`} fill="#FDD835" opacity={0.35} />
-        </G>
-      )}
+        {/* ── bullish: 미니 로켓 이펙트 ── */}
+        {expression === 'bullish' && (
+          <G>
+            {/* 미니 로켓 */}
+            <Path d="M 82 16 L 84 8 L 86 16 L 85 16 L 85 20 L 83 20 L 83 16 Z" fill="#E0E0E0" opacity={0.7} />
+            <Path d="M 83 20 L 84 24 L 85 20" fill="#FF6B35" opacity={0.6} />
+            <Circle cx={84} cy={12} r={1} fill={accentColor} opacity={0.5} />
+            {/* 연기 파티클 */}
+            <Circle cx={84} cy={26} r={1.5} fill="#BDBDBD" opacity={0.3} />
+            <Circle cx={82} cy={28} r={1} fill="#BDBDBD" opacity={0.2} />
+          </G>
+        )}
+
+        {/* ── 땀방울 (bearish) ── */}
+        {showSweat && (
+          <G>
+            <Path d="M 82 28 Q 84 22 86 28 Q 86 34 84 34 Q 82 34 82 28 Z" fill="#64B5F6" opacity={0.55} />
+            <Ellipse cx={83.5} cy={27} rx={1} ry={0.8} fill="#FFFFFF" opacity={0.4} />
+          </G>
+        )}
+
+        {/* ── 번개 볼트 (cautious — X/Twitter 레퍼런스) ── */}
+        {showBolt && (
+          <G>
+            <Path d="M 82 14 L 85 14 L 83 19 L 87 19 L 81 27 L 83 21 L 80 21 Z" fill={accentColor} opacity={0.5} />
+            <Circle cx={86} cy={10} r={2} fill={accentColor} opacity={0.2} />
+          </G>
+        )}
+      </G>
     </Svg>
   );
 }

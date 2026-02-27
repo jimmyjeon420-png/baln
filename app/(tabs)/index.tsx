@@ -14,7 +14,7 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Modal, ScrollView, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Modal, ScrollView, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
@@ -59,9 +59,7 @@ import GuruReactionBanner from '../../src/components/home/GuruReactionBanner';
 import { getReaction, type VillageReactionType } from '../../src/services/villageReactionService';
 import { GURU_CHARACTER_CONFIGS } from '../../src/data/guruCharacterConfig';
 
-// 세계관 강화: 예측 리그, 광장 헤더, 구루 스코어카드
-import PredictionLeagueCard from '../../src/components/home/PredictionLeagueCard';
-import { usePredictionLeague } from '../../src/hooks/usePredictionLeague';
+// 광장 헤더
 import { PlazaThemeHeader } from '../../src/components/home/PlazaThemeHeader';
 
 // 맥락 카드 전체 모달
@@ -177,6 +175,7 @@ function buildReviewSource(source: string | null | undefined): string | undefine
 export default function HomeScreen() {
   const { t, language } = useLocale();
   const insets = useSafeAreaInsets();
+  const { height: viewportHeight } = useWindowDimensions();
 
   // 화면 진입 추적 + Push 알림 초기화
   useScreenTracking('today');
@@ -203,9 +202,9 @@ export default function HomeScreen() {
   const { weather, clothingLevel } = useWeather();
   const { sentiment, setSentimentFromPortfolio } = useMarketSentiment();
   const dailyQuote = getDailyQuote();
+  const villagePreviewHeight = Math.max(184, Math.min(220, viewportHeight * 0.235));
+  const cardSwipeHeight = Math.max(520, Math.min(660, viewportHeight * 0.66));
 
-  // 예측 리그
-  const predictionLeague = usePredictionLeague();
 
   // ──────────────────────────────────────────────────────────────────────
   // 스트릭 복구 & 마일스톤 축하
@@ -910,10 +909,12 @@ export default function HomeScreen() {
       />
 
       {/* 🏘️ 구루 마을 — 동물의숲 × 주토피아 (구루들이 살아 움직이는 마을) */}
-      <GuruVillage
-        height={170}
-        onRoundtablePress={() => router.push('/roundtable')}
-      />
+      <View style={styles.villagePreviewBlock}>
+        <GuruVillage
+          height={villagePreviewHeight}
+          onRoundtablePress={() => router.push('/roundtable')}
+        />
+      </View>
 
       {/* 광장 소식 헤더 — 구루가 전하는 오늘의 소식 */}
       <View style={styles.squareHeader}>
@@ -925,7 +926,7 @@ export default function HomeScreen() {
         </Text>
       </View>
 
-      <View style={styles.cardSwipeWrapper}>
+      <View style={[styles.cardSwipeWrapper, { height: cardSwipeHeight }]}>
         <CardSwipeContainer
           labels={[
             t('home.card_labels.my_assets'),
@@ -965,23 +966,6 @@ export default function HomeScreen() {
         </CardSwipeContainer>
       </View>
 
-      {/* ── 예측 리그 카드 ──────────────────────────── */}
-      <View style={{ paddingHorizontal: 16, marginTop: 12 }}>
-        <PredictionLeagueCard
-          currentTier={predictionLeague.currentTier}
-          rating={predictionLeague.rating}
-          weeklyCorrect={predictionLeague.weeklyCorrect}
-          weeklyTotal={predictionLeague.weeklyTotal}
-          weeklyRank={predictionLeague.weeklyRank}
-          tierProgress={predictionLeague.tierProgress}
-          nextTier={predictionLeague.nextTier}
-          inPromotionZone={predictionLeague.inPromotionZone}
-          inRelegationZone={predictionLeague.inRelegationZone}
-          isPromoted={predictionLeague.isPromoted}
-          onPress={() => router.push('/games/predictions')}
-          locale={language}
-        />
-      </View>
 
       </ScrollView>
 
@@ -1045,8 +1029,6 @@ export default function HomeScreen() {
 // 스타일
 // ============================================================================
 
-const SCREEN_HEIGHT = Dimensions.get('window').height;
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -1057,11 +1039,16 @@ const styles = StyleSheet.create({
   },
   mainScrollContent: {
     paddingBottom: 32,
+    overflow: 'visible',
+  },
+  villagePreviewBlock: {
+    position: 'relative',
+    zIndex: 25,
+    overflow: 'visible',
   },
   cardSwipeWrapper: {
-    // 카드 스와이프 영역 — 카드 내용이 잘리지 않도록 충분한 높이 확보
-    height: SCREEN_HEIGHT * 0.55,
-    minHeight: 420,
+    // 카드 스와이프 영역 — 하단 CTA/자산칩이 탭바에 가려지지 않도록 상향
+    minHeight: 520,
   },
   modalContainer: {
     flex: 1,
@@ -1093,10 +1080,12 @@ const styles = StyleSheet.create({
   },
   // ── 광장 소식 헤더 ──
   squareHeader: {
+    position: 'relative',
     paddingHorizontal: 16,
     paddingTop: 10,
     paddingBottom: 4,
     gap: 2,
+    zIndex: 5,
   },
   squareTitle: {
     fontSize: 16,

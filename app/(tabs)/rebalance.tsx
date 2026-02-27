@@ -444,6 +444,7 @@ export default function CheckupScreen() {
     source: analysisSource,
     isFetched: analysisReady,
     refresh: refreshAnalysis,
+    isAnalysisError,
   } = useSharedAnalysis(portfolio);
 
   // ── AI 데이터 공유 동의 모달 (Apple Guideline 5.1.1(i)) ──
@@ -626,8 +627,9 @@ export default function CheckupScreen() {
   // 영속 캐시에 데이터가 있으면 스켈레톤 스킵 → 이전 데이터 즉시 표시
   const hasCachedData = allAssets.length > 0 || totalAssets > 0;
   const isPortfolioLoading = !initialCheckDone || (portfolioLoading && !hasCachedData);
-  const isAILoading = hasAssets && !analysisReady;
-  const analysisFailed = analysisReady && hasAssets && !morningBriefing && !analysisResult;
+  const isAILoading = hasAssets && !analysisReady && !isAnalysisError;
+  const analysisFailed = (analysisReady && hasAssets && !morningBriefing && !analysisResult)
+    || (isAnalysisError && hasAssets);
 
   if (isPortfolioLoading) {
     return (

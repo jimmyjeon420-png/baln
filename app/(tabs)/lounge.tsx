@@ -737,36 +737,6 @@ function LoungeScreenInner() {
           </TouchableOpacity>
         </View>
 
-        {/* P1-4: 구루 카페 분위기 헤더 (시간대별 + 명언) */}
-        <CafeAmbiance colors={themeColors} locale={language} />
-
-        {/* ── 구루 방문 배너 (특정 시간대에만) ──────────────── */}
-        <GuruVisitBanner visitingGurus={visitingGurus} />
-
-        {/* 구루 카페 분위기 */}
-        <View style={[styles.cafeHeader, { backgroundColor: themeColors.surface }]}>
-          <View style={styles.cafeHeaderRow}>
-            <Text style={[styles.cafeTitle, { color: themeColors.textPrimary }]}>
-              {'☕ '}{t('lounge.cafe_title')}
-            </Text>
-            {weather && <WeatherBadge weather={weather} compact colors={themeColors} locale={language} />}
-          </View>
-          {/* 카페에 모인 구루 아바타 */}
-          <View style={styles.cafeGuruRow}>
-            <CharacterAvatar guruId="buffett" size="sm" />
-            <CharacterAvatar guruId="dalio" size="sm" />
-            <CharacterAvatar guruId="cathie_wood" size="sm" />
-            <Text style={[styles.cafeGuruHint, { color: themeColors.textTertiary }]}>
-              {t('lounge.cafe_subtitle')}
-            </Text>
-          </View>
-          <Text style={[styles.cafeQuote, { color: themeColors.textTertiary }]}>
-            {dailyQuote.quote.length > 50
-              ? `"${dailyQuote.quote.slice(0, 50)}…"`
-              : `"${dailyQuote.quote}"`}
-          </Text>
-        </View>
-
         {/* 세그먼트 컨트롤 (토스 스타일 pill) */}
         <View style={styles.segmentContainer}>
           <View style={[styles.segmentControl, { backgroundColor: themeColors.surface }]}>
@@ -819,135 +789,9 @@ function LoungeScreenInner() {
         {/* ════════════ 커뮤니티 세그먼트 ════════════ */}
         {activeSegment === 'community' && (
           <>
-            {/* 카테고리 필터 */}
-            <View style={[styles.categoryTabContainer, { borderBottomColor: themeColors.surfaceLight }]}>
-              {(Object.keys(CATEGORY_INFO) as CommunityCategoryFilter[]).map((key) => {
-                const info = CATEGORY_INFO[key];
-                if (!info) return null;
-                const isActive = communityCategory === key;
-                return (
-                  <TouchableOpacity
-                    key={key}
-                    style={[
-                      styles.categoryTab, { borderColor: themeColors.border, backgroundColor: themeColors.surface },
-                      isActive && { backgroundColor: (info.color || '#4CAF50') + '20', borderColor: info.color || '#4CAF50' },
-                    ]}
-                    onPress={() => setCommunityCategory(key)}
-                  >
-                    <Ionicons
-                      name={(info.icon || 'apps') as any}
-                      size={14}
-                      color={isActive ? (info.color || '#4CAF50') : themeColors.textTertiary}
-                    />
-                    <Text style={[
-                      styles.categoryTabText,
-                      { color: themeColors.textSecondary },
-                      isActive && { color: info.color || '#4CAF50', fontWeight: '700' },
-                    ]}>
-                      {info.label || key}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-
-            {/* 정렬 칩 */}
-            <View style={styles.sortChipContainer}>
-              {SORT_OPTION_KEYS.map((opt) => (
-                <TouchableOpacity
-                  key={opt.key}
-                  style={[
-                    styles.sortChip, { backgroundColor: themeColors.surface, borderColor: themeColors.border },
-                    sortBy === opt.key && [styles.sortChipActive, { backgroundColor: themeColors.primary, borderColor: themeColors.primary }],
-                  ]}
-                  onPress={() => setSortBy(opt.key)}
-                >
-                  <Ionicons
-                    name={opt.icon}
-                    size={12}
-                    color={sortBy === opt.key ? activePillTextColor : sortChipInactiveIconColor}
-                  />
-                  <Text style={[
-                    styles.sortChipText,
-                    { color: sortBy === opt.key ? activePillTextColor : sortChipInactiveTextColor },
-                    sortBy === opt.key && styles.sortChipTextActive,
-                  ]}>
-                    {t(opt.labelKey)}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            {/* ── 카페 테이블 (토픽별) ──────────────────────────── */}
-            <CafeTableList
-              onSelectTable={(table: CafeTable) => setSelectedTableId(table.id)}
-              selectedTableId={selectedTableId}
-            />
-
-            {/* 글쓰기 영역 */}
-            {isComposing && (
-              <View style={[styles.composeContainer, { backgroundColor: themeColors.surface, borderBottomColor: themeColors.surfaceLight }]}>
-                <View style={styles.composeHeader}>
-                  <Text style={[styles.composeTitle, { color: themeColors.textPrimary }]}>{t('lounge.compose_title')}</Text>
-                  <TouchableOpacity onPress={() => setIsComposing(false)}>
-                    <Ionicons name="close" size={24} color={themeColors.textTertiary} />
-                  </TouchableOpacity>
-                </View>
-
-                <View style={styles.composeCategoryRow}>
-                  {(['stocks', 'crypto', 'realestate'] as CommunityCategory[]).map((key) => {
-                    const info = CATEGORY_INFO[key];
-                    if (!info) return null;
-                    const isActive = postCategory === key;
-                    return (
-                      <TouchableOpacity
-                        key={key}
-                        style={[
-                          styles.composeCategoryChip, { borderColor: themeColors.border, backgroundColor: themeColors.surface },
-                          isActive && { backgroundColor: (info.color || '#4CAF50') + '20', borderColor: info.color || '#4CAF50' },
-                        ]}
-                        onPress={() => setPostCategory(key)}
-                      >
-                        <Ionicons name={(info.icon || 'apps') as any} size={12} color={isActive ? (info.color || '#4CAF50') : themeColors.textTertiary} />
-                        <Text style={[styles.composeCategoryText, { color: themeColors.textSecondary }, isActive && { color: info.color || '#4CAF50' }]}>
-                          {info.label || key}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-
-                <TextInput
-                  style={[styles.composeInput, { backgroundColor: themeColors.surfaceLight, color: themeColors.textPrimary }]}
-                  placeholder={t('lounge.compose_placeholder')}
-                  placeholderTextColor={themeColors.textTertiary}
-                  multiline
-                  maxLength={500}
-                  value={newPostContent}
-                  onChangeText={setNewPostContent}
-                />
-                <View style={styles.composeFooter}>
-                  <Text style={[styles.charCount, { color: themeColors.textTertiary }]}>{newPostContent.length}/500</Text>
-                  <TouchableOpacity
-                    style={[styles.submitButton, { opacity: newPostContent.trim() ? 1 : 0.5 }]}
-                    onPress={handleSubmitPost}
-                    disabled={!newPostContent.trim() || createPost.isPending}
-                  >
-                    {createPost.isPending ? (
-                      <ActivityIndicator size="small" color="#FFFFFF" />
-                    ) : (
-                      <Text style={styles.submitButtonText}>{t('lounge.compose_post_button')}</Text>
-                    )}
-                  </TouchableOpacity>
-                </View>
-                <Text style={[styles.holdingsNotice, { color: themeColors.textTertiary }]}>
-                  {t('lounge.compose_holdings_notice')}
-                </Text>
-              </View>
-            )}
-
-            {/* 게시물 목록 (FlatList + 무한 스크롤) */}
+            {/* 게시물 목록 (FlatList + 무한 스크롤) — 전체 페이지가 함께 스크롤 */}
             <FlatList
+              style={{ flex: 1 }}
               data={posts}
               keyExtractor={(item) => item?.id || Math.random().toString()}
               renderItem={({ item }) => {
@@ -964,6 +808,158 @@ function LoungeScreenInner() {
               }}
               ListHeaderComponent={
                 <>
+                {/* 카페 분위기 헤더 */}
+                <CafeAmbiance colors={themeColors} locale={language} />
+                <GuruVisitBanner visitingGurus={visitingGurus} />
+                <View style={[styles.cafeHeader, { backgroundColor: themeColors.surface }]}>
+                  <View style={styles.cafeHeaderRow}>
+                    <Text style={[styles.cafeTitle, { color: themeColors.textPrimary }]}>
+                      {'☕ '}{t('lounge.cafe_title')}
+                    </Text>
+                    {weather && <WeatherBadge weather={weather} compact colors={themeColors} locale={language} />}
+                  </View>
+                  <View style={styles.cafeGuruRow}>
+                    <CharacterAvatar guruId="buffett" size="sm" />
+                    <CharacterAvatar guruId="dalio" size="sm" />
+                    <CharacterAvatar guruId="cathie_wood" size="sm" />
+                    <Text style={[styles.cafeGuruHint, { color: themeColors.textTertiary }]}>
+                      {t('lounge.cafe_subtitle')}
+                    </Text>
+                  </View>
+                  <Text style={[styles.cafeQuote, { color: themeColors.textTertiary }]}>
+                    {dailyQuote.quote.length > 50
+                      ? `"${dailyQuote.quote.slice(0, 50)}…"`
+                      : `"${dailyQuote.quote}"`}
+                  </Text>
+                </View>
+
+                {/* 카테고리 필터 */}
+                <View style={[styles.categoryTabContainer, { borderBottomColor: themeColors.surfaceLight }]}>
+                  {(Object.keys(CATEGORY_INFO) as CommunityCategoryFilter[]).map((key) => {
+                    const info = CATEGORY_INFO[key];
+                    if (!info) return null;
+                    const isActive = communityCategory === key;
+                    return (
+                      <TouchableOpacity
+                        key={key}
+                        style={[
+                          styles.categoryTab, { borderColor: themeColors.border, backgroundColor: themeColors.surface },
+                          isActive && { backgroundColor: (info.color || '#4CAF50') + '20', borderColor: info.color || '#4CAF50' },
+                        ]}
+                        onPress={() => setCommunityCategory(key)}
+                      >
+                        <Ionicons
+                          name={(info.icon || 'apps') as any}
+                          size={14}
+                          color={isActive ? (info.color || '#4CAF50') : themeColors.textTertiary}
+                        />
+                        <Text style={[
+                          styles.categoryTabText,
+                          { color: themeColors.textSecondary },
+                          isActive && { color: info.color || '#4CAF50', fontWeight: '700' },
+                        ]}>
+                          {info.label || key}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+
+                {/* 정렬 칩 */}
+                <View style={styles.sortChipContainer}>
+                  {SORT_OPTION_KEYS.map((opt) => (
+                    <TouchableOpacity
+                      key={opt.key}
+                      style={[
+                        styles.sortChip, { backgroundColor: themeColors.surface, borderColor: themeColors.border },
+                        sortBy === opt.key && [styles.sortChipActive, { backgroundColor: themeColors.primary, borderColor: themeColors.primary }],
+                      ]}
+                      onPress={() => setSortBy(opt.key)}
+                    >
+                      <Ionicons
+                        name={opt.icon}
+                        size={12}
+                        color={sortBy === opt.key ? activePillTextColor : sortChipInactiveIconColor}
+                      />
+                      <Text style={[
+                        styles.sortChipText,
+                        { color: sortBy === opt.key ? activePillTextColor : sortChipInactiveTextColor },
+                        sortBy === opt.key && styles.sortChipTextActive,
+                      ]}>
+                        {t(opt.labelKey)}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                {/* 카페 테이블 (토픽별) */}
+                <CafeTableList
+                  onSelectTable={(table: CafeTable) => setSelectedTableId(table.id)}
+                  selectedTableId={selectedTableId}
+                />
+
+                {/* 글쓰기 영역 */}
+                {isComposing && (
+                  <View style={[styles.composeContainer, { backgroundColor: themeColors.surface, borderBottomColor: themeColors.surfaceLight }]}>
+                    <View style={styles.composeHeader}>
+                      <Text style={[styles.composeTitle, { color: themeColors.textPrimary }]}>{t('lounge.compose_title')}</Text>
+                      <TouchableOpacity onPress={() => setIsComposing(false)}>
+                        <Ionicons name="close" size={24} color={themeColors.textTertiary} />
+                      </TouchableOpacity>
+                    </View>
+
+                    <View style={styles.composeCategoryRow}>
+                      {(['stocks', 'crypto', 'realestate'] as CommunityCategory[]).map((key) => {
+                        const info = CATEGORY_INFO[key];
+                        if (!info) return null;
+                        const isActive = postCategory === key;
+                        return (
+                          <TouchableOpacity
+                            key={key}
+                            style={[
+                              styles.composeCategoryChip, { borderColor: themeColors.border, backgroundColor: themeColors.surface },
+                              isActive && { backgroundColor: (info.color || '#4CAF50') + '20', borderColor: info.color || '#4CAF50' },
+                            ]}
+                            onPress={() => setPostCategory(key)}
+                          >
+                            <Ionicons name={(info.icon || 'apps') as any} size={12} color={isActive ? (info.color || '#4CAF50') : themeColors.textTertiary} />
+                            <Text style={[styles.composeCategoryText, { color: themeColors.textSecondary }, isActive && { color: info.color || '#4CAF50' }]}>
+                              {info.label || key}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+
+                    <TextInput
+                      style={[styles.composeInput, { backgroundColor: themeColors.surfaceLight, color: themeColors.textPrimary }]}
+                      placeholder={t('lounge.compose_placeholder')}
+                      placeholderTextColor={themeColors.textTertiary}
+                      multiline
+                      maxLength={500}
+                      value={newPostContent}
+                      onChangeText={setNewPostContent}
+                    />
+                    <View style={styles.composeFooter}>
+                      <Text style={[styles.charCount, { color: themeColors.textTertiary }]}>{newPostContent.length}/500</Text>
+                      <TouchableOpacity
+                        style={[styles.submitButton, { opacity: newPostContent.trim() ? 1 : 0.5 }]}
+                        onPress={handleSubmitPost}
+                        disabled={!newPostContent.trim() || createPost.isPending}
+                      >
+                        {createPost.isPending ? (
+                          <ActivityIndicator size="small" color="#FFFFFF" />
+                        ) : (
+                          <Text style={styles.submitButtonText}>{t('lounge.compose_post_button')}</Text>
+                        )}
+                      </TouchableOpacity>
+                    </View>
+                    <Text style={[styles.holdingsNotice, { color: themeColors.textTertiary }]}>
+                      {t('lounge.compose_holdings_notice')}
+                    </Text>
+                  </View>
+                )}
+
                 <View style={[styles.welcomeBanner, { backgroundColor: welcomeBannerBackground }]}>
                   <View style={styles.welcomeTop}>
                     <Text style={styles.welcomeIcon}>{'🏦'}</Text>

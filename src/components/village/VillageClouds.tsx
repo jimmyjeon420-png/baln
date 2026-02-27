@@ -36,11 +36,11 @@ const CLOUD_SIZES = {
 
 // Deterministic cloud configurations - no Math.random() on render
 const CLOUD_CONFIGS: CloudConfig[] = [
-  { id: 0, size: 'large',  startX: SCREEN_WIDTH * 0.05, yPosition: SCREEN_HEIGHT * 0.04, duration: 40000, opacity: 0.85, delay: 0 },
-  { id: 1, size: 'medium', startX: SCREEN_WIDTH * 0.35, yPosition: SCREEN_HEIGHT * 0.09, duration: 32000, opacity: 0.75, delay: 5000 },
-  { id: 2, size: 'small',  startX: SCREEN_WIDTH * 0.60, yPosition: SCREEN_HEIGHT * 0.03, duration: 45000, opacity: 0.70, delay: 10000 },
-  { id: 3, size: 'large',  startX: SCREEN_WIDTH * 0.80, yPosition: SCREEN_HEIGHT * 0.12, duration: 36000, opacity: 0.80, delay: 15000 },
-  { id: 4, size: 'medium', startX: SCREEN_WIDTH * 0.20, yPosition: SCREEN_HEIGHT * 0.17, duration: 28000, opacity: 0.65, delay: 8000 },
+  { id: 0, size: 'large',  startX: SCREEN_WIDTH * 0.04, yPosition: 12, duration: 42000, opacity: 0.9, delay: 0 },
+  { id: 1, size: 'medium', startX: SCREEN_WIDTH * 0.32, yPosition: 34, duration: 34000, opacity: 0.82, delay: 5000 },
+  { id: 2, size: 'small',  startX: SCREEN_WIDTH * 0.58, yPosition: 18, duration: 46000, opacity: 0.78, delay: 9000 },
+  { id: 3, size: 'large',  startX: SCREEN_WIDTH * 0.78, yPosition: 56, duration: 38000, opacity: 0.86, delay: 14000 },
+  { id: 4, size: 'medium', startX: SCREEN_WIDTH * 0.16, yPosition: 76, duration: 30000, opacity: 0.74, delay: 7000 },
 ];
 
 function getCloudColor(timeOfDay: TimeOfDay, weather?: string): string {
@@ -66,7 +66,7 @@ function getCloudColor(timeOfDay: TimeOfDay, weather?: string): string {
     case 'morning':   return '#FFFFFF';
     case 'afternoon': return '#F5F5F5';
     case 'evening':   return '#FFB38A';
-    case 'night':     return '#3A4A5C';
+    case 'night':     return '#5A718E';
     default:          return '#FFFFFF';
   }
 }
@@ -86,7 +86,7 @@ function getBaseOpacity(timeOfDay: TimeOfDay, weather?: string): number {
     case 'morning':   return 0.80;
     case 'afternoon': return 0.70;
     case 'evening':   return 0.60;
-    case 'night':     return 0.30;
+    case 'night':     return 0.5;
     default:          return 0.70;
   }
 }
@@ -272,10 +272,10 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    // Cover upper 30% of screen
-    height: SCREEN_HEIGHT * 0.30,
+    // 상단에서 더 오래 보이게 확장
+    height: SCREEN_HEIGHT * 0.40,
     overflow: 'hidden',
-    zIndex: 5,
+    zIndex: 12,
   },
   cloudContainer: {
     position: 'absolute',

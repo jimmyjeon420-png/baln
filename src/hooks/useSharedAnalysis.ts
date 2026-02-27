@@ -250,6 +250,7 @@ export function useSharedAnalysis(portfolioAssets: PortfolioAsset[]) {
     staleTime: 0,                      // 항상 최신 데이터 조회
     gcTime: 1000 * 60 * 15,
     retry: 1,
+    retryDelay: 3000,                  // 재시도 전 3초 대기
     refetchOnMount: true,              // [이승건: 마운트 시 항상 새로고침]
     refetchOnWindowFocus: false,       // 포커스 시 재조회 방지
   });
@@ -265,6 +266,8 @@ export function useSharedAnalysis(portfolioAssets: PortfolioAsset[]) {
     riskAnalysis: query.data?.riskAnalysis ?? null,
     source: query.data?.source ?? '',
     sources: query.data?.sources,
+    /** 에러 발생 여부 (로딩 무한루프 방지) */
+    isAnalysisError: query.isError,
   };
 }
 

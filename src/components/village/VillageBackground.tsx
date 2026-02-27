@@ -17,6 +17,7 @@ interface VillageBackgroundProps {
   skyGradient: [string, string];
   groundColor: string;
   starOpacity: number;
+  allowOverflow?: boolean;
   children?: React.ReactNode;
 }
 
@@ -86,10 +87,11 @@ export function VillageBackground({
   skyGradient,
   groundColor,
   starOpacity,
+  allowOverflow = false,
   children,
 }: VillageBackgroundProps) {
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, allowOverflow && styles.containerOverflowVisible]}>
       {/* 하늘 (상단 그라데이션 — 2색 단순 블렌딩) */}
       <View style={[styles.skyTop, { backgroundColor: skyGradient[0] }]} />
       <View style={[styles.skyBottom, { backgroundColor: skyGradient[1] }]} />
@@ -131,6 +133,9 @@ const styles = StyleSheet.create({
     flex: 1,
     position: 'relative',
     overflow: 'hidden',
+  },
+  containerOverflowVisible: {
+    overflow: 'visible',
   },
   skyTop: {
     position: 'absolute',

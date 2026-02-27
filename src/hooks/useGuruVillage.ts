@@ -17,6 +17,7 @@ import {
 } from '../services/villageConversationService';
 import type { VillageBatch, VillageConversation, VillageMessage } from '../services/villageConversationService';
 import { VILLAGE_ZONES, getZonesForGuru } from '../data/villageZoneConfig';
+import { getRandomQuote } from '../data/guruQuoteBank';
 
 // ============================================================================
 // 타입
@@ -40,6 +41,11 @@ export interface GuruPosition {
   reaction?: string;
   /** 리액션 생성 시각 (ms) — 3초 후 자동 소멸 */
   reactionCreatedAt?: number;
+}
+
+interface UseGuruVillageOptions {
+  /** full: 마을 탭 전체 화면 / compact: 광장 미니 카드 */
+  layoutMode?: 'full' | 'compact';
 }
 
 /** 구루 파벌 (마음 맞는 애들끼리 그룹) */
@@ -80,21 +86,14 @@ const ALL_VILLAGE_GURUS = [
 ];
 
 // ============================================================================
-// 혼잣말/리액션 — 대화 없는 구루가 주기적으로 표시
+// 혼잣말/리액션 — 명언 DB에서 랜덤 선택 (구루당 8~10개 풀)
 // ============================================================================
 
-const IDLE_REACTIONS: Record<string, string[]> = {
-  buffett: ['코카콜라 한 잔...☕', '가치란 뭘까...', '흠, 저평가 종목...', '오래 가는 게 좋아'],
-  dalio: ['원칙이 중요해', '사이클을 읽어야지', '다각화...다각화...', '고통 + 반성 = 성장'],
-  cathie_wood: ['혁신이 답이야!', '5년 후를 봐야지', 'ARK!', '파괴적 혁신~✨'],
-  saylor: ['비트코인은 희망', '디지털 에너지...', 'HODL!💎', '마이크로스트래티지!'],
-  musk: ['화성 갈 사람?🚀', '재밌는 걸 해야지', '도지!🐕', 'X가 세상을 바꿔'],
-  dimon: ['은행이 기본이지', '리스크 관리가 핵심', '안정성 우선', '전통의 힘이란...'],
-  druckenmiller: ['추세를 타야해', '큰 그림을 봐', '확신이 있으면 올인', '시장은 항상 옳아'],
-  lynch: ['발로 뛰어야 해', '내가 아는 종목만', '텐배거!📈', '일상에서 찾아야지'],
-  marks: ['리스크를 알아야지', '2차적 사고가 중요해', '싸게 사는 게 핵심', '메모 써야겠다📝'],
-  rogers: ['원자재가 기본이야', '모험해야 커', '오토바이 타고 세계여행🏍️', '역사가 답이야'],
-};
+/** 명언이 너무 길면 말풍선에 맞게 자르기 (최대 30자) */
+function trimQuoteForBubble(text: string, maxLen = 30): string {
+  if (text.length <= maxLen) return text;
+  return text.slice(0, maxLen - 1) + '\u2026'; // '…'
+}
 
 /** 말풍선 최대 유지 시간 (ms) — 한 명만 말하므로 다음 발화 전까지 유지 */
 const BUBBLE_LIFETIME_MS = 5000;
@@ -116,23 +115,42 @@ const GREETING_EMOJIS: Record<'ally' | 'rival' | 'neutral', string> = {
   neutral: '👋',
 };
 
-const VILLAGE_BOUNDS = {
-  minX: 0.06,
-  maxX: 0.9,
-  minY: 0.24,
-  maxY: 0.66,
+const LAYOUT_BOUNDS: Record<'full' | 'compact', { minX: number; maxX: number; minY: number; maxY: number }> = {
+  full: {
+    minX: 0.07,
+    maxX: 0.92,
+    minY: 0.5,
+    maxY: 0.88,
+  },
+  compact: {
+    minX: 0.08,
+    maxX: 0.9,
+    minY: 0.2,
+    maxY: 0.58,
+  },
 };
 
-const KEEP_OUT_ZONES = [
-  { x: 0.5, y: 0.78, r: 0.16 }, // 하단 중앙 (탭바 근접 영역)
-  { x: 0.5, y: 0.64, r: 0.1 },  // 집/메인 오브젝트 겹침 방지
-];
+const LAYOUT_KEEP_OUT_ZONES: Record<'full' | 'compact', Array<{ x: number; y: number; r: number }>> = {
+  full: [
+    { x: 0.5, y: 0.2, r: 0.18 },  // 집/메인 오브젝트(텐트) 주변
+    { x: 0.5, y: 0.96, r: 0.08 }, // 탭바 바로 위 과밀 방지
+  ],
+  compact: [
+    { x: 0.5, y: 0.78, r: 0.14 },
+  ],
+};
 
 // ============================================================================
 // 훅
 // ============================================================================
 
-export function useGuruVillage(_hasActiveEvent: boolean = false) {
+export function useGuruVillage(options: UseGuruVillageOptions | boolean = false) {
+  const layoutMode = typeof options === 'boolean'
+    ? 'full'
+    : (options.layoutMode ?? 'full');
+  const bounds = useMemo(() => LAYOUT_BOUNDS[layoutMode], [layoutMode]);
+  const keepOutZones = useMemo(() => LAYOUT_KEEP_OUT_ZONES[layoutMode], [layoutMode]);
+
   // ★ 항상 10명 전원 등장
   const visibleGuruIds = useMemo(() => [...ALL_VILLAGE_GURUS], []);
   const isFullVillage = true;
@@ -154,19 +172,21 @@ export function useGuruVillage(_hasActiveEvent: boolean = false) {
   const lastSpeakerRef = useRef<string | null>(null);
 
   // 파벌별 구역 중심점 — 하드코딩 (4구역 분산 보장)
-  // village_square가 전원 frequentGurus라서 동적 계산 시 중앙 수렴 → 고정값 사용
-  // Y 클램프: 0.24~0.72 → 하단 겹침 방지용 여유 확보
-  const ZONE_CENTERS: Record<string, { x: number; y: number }> = useMemo(() => ({
-    value:       { x: 0.18, y: 0.34 },  // 좌상단 — 올빼미 도서관 (버핏/린치/막스)
-    innovation:  { x: 0.78, y: 0.34 },  // 우상단 — 혁신 연구소 (캐시/머스크/세일러)
-    macro:       { x: 0.18, y: 0.58 },  // 좌하단 — 명상 정원 (달리오/드러킨밀러/로저스)
-    traditional: { x: 0.78, y: 0.58 },  // 우하단 — 사자 은행 + 시장 거리 (다이먼)
-  }), []);
+  // full 모드(마을 탭)는 "하단부터 분포"를 기본으로 두고 상단 오브젝트와 겹침을 피한다.
+  const ZONE_CENTERS: Record<string, { x: number; y: number }> = useMemo(() => {
+    const isFull = layoutMode === 'full';
+    return {
+      value:       { x: 0.2, y: isFull ? 0.64 : 0.38 },  // 좌중하단 — 가치
+      innovation:  { x: 0.78, y: isFull ? 0.64 : 0.38 }, // 우중하단 — 혁신
+      macro:       { x: 0.2, y: isFull ? 0.82 : 0.58 },  // 좌하단 — 매크로
+      traditional: { x: 0.78, y: isFull ? 0.82 : 0.58 }, // 우하단 — 전통금융
+    };
+  }, [layoutMode]);
 
   const pushOutFromKeepOutZones = useCallback((x: number, y: number) => {
     let nx = x;
     let ny = y;
-    for (const zone of KEEP_OUT_ZONES) {
+    for (const zone of keepOutZones) {
       const dx = nx - zone.x;
       const dy = ny - zone.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
@@ -177,10 +197,10 @@ export function useGuruVillage(_hasActiveEvent: boolean = false) {
       }
     }
     return {
-      x: Math.max(VILLAGE_BOUNDS.minX, Math.min(VILLAGE_BOUNDS.maxX, nx)),
-      y: Math.max(VILLAGE_BOUNDS.minY, Math.min(VILLAGE_BOUNDS.maxY, ny)),
+      x: Math.max(bounds.minX, Math.min(bounds.maxX, nx)),
+      y: Math.max(bounds.minY, Math.min(bounds.maxY, ny)),
     };
-  }, []);
+  }, [bounds.maxX, bounds.maxY, bounds.minX, bounds.minY, keepOutZones]);
 
   const getAnchorForGuru = useCallback((guruId: string) => {
     const factionEntry = Object.entries(GURU_FACTIONS).find(([, members]) => members.includes(guruId));
@@ -189,26 +209,26 @@ export function useGuruVillage(_hasActiveEvent: boolean = false) {
     const memberIndex = factionEntry ? factionEntry[1].indexOf(guruId) : 0;
     const memberCount = Math.max(1, factionEntry?.[1].length ?? 1);
     const angle = (2 * Math.PI * memberIndex) / memberCount - Math.PI / 2;
-    const radius = 0.075;
+    const radius = layoutMode === 'full' ? 0.09 : 0.075;
     return {
-      x: Math.max(VILLAGE_BOUNDS.minX, Math.min(VILLAGE_BOUNDS.maxX, zone.x + Math.cos(angle) * radius)),
-      y: Math.max(VILLAGE_BOUNDS.minY, Math.min(VILLAGE_BOUNDS.maxY, zone.y + Math.sin(angle) * radius * 0.7)),
+      x: Math.max(bounds.minX, Math.min(bounds.maxX, zone.x + Math.cos(angle) * radius)),
+      y: Math.max(bounds.minY, Math.min(bounds.maxY, zone.y + Math.sin(angle) * radius * 0.7)),
     };
-  }, [ZONE_CENTERS]);
+  }, [ZONE_CENTERS, bounds.maxX, bounds.maxY, bounds.minX, bounds.minY, layoutMode]);
 
   // 초기 위치 배정 — 파벌별 구역 + 삼각형 배치로 겹침 방지
   const initPositions = useCallback(() => {
     const pos: GuruPosition[] = ALL_VILLAGE_GURUS.map((guruId) => {
       const anchor = getAnchorForGuru(guruId);
-      const rawX = Math.max(VILLAGE_BOUNDS.minX, Math.min(VILLAGE_BOUNDS.maxX, anchor.x + (Math.random() - 0.5) * 0.02));
-      const rawY = Math.max(VILLAGE_BOUNDS.minY, Math.min(VILLAGE_BOUNDS.maxY, anchor.y + (Math.random() - 0.5) * 0.02));
+      const rawX = Math.max(bounds.minX, Math.min(bounds.maxX, anchor.x + (Math.random() - 0.5) * 0.02));
+      const rawY = Math.max(bounds.minY, Math.min(bounds.maxY, anchor.y + (Math.random() - 0.5) * 0.02));
       const adjusted = pushOutFromKeepOutZones(rawX, rawY);
 
       return { guruId, x: adjusted.x, y: adjusted.y, targetX: adjusted.x, targetY: adjusted.y };
     });
 
     setPositions(pos);
-  }, [getAnchorForGuru, pushOutFromKeepOutZones]);
+  }, [bounds.maxX, bounds.maxY, bounds.minX, bounds.minY, getAnchorForGuru, pushOutFromKeepOutZones]);
 
   // 대화 배치 로드
   const loadConversations = useCallback(async () => {
@@ -262,8 +282,8 @@ export function useGuruVillage(_hasActiveEvent: boolean = false) {
             if (dist > 0.1) {
               return {
                 ...p,
-                x: Math.max(VILLAGE_BOUNDS.minX, Math.min(VILLAGE_BOUNDS.maxX, p.x + dx * 0.1)),
-                y: Math.max(VILLAGE_BOUNDS.minY, Math.min(VILLAGE_BOUNDS.maxY, p.y + dy * 0.1)),
+                x: Math.max(bounds.minX, Math.min(bounds.maxX, p.x + dx * 0.1)),
+                y: Math.max(bounds.minY, Math.min(bounds.maxY, p.y + dy * 0.1)),
               };
             }
             if (dist <= 0.08 && dist >= 0.04 && !p.reaction) {
@@ -325,7 +345,7 @@ export function useGuruVillage(_hasActiveEvent: boolean = false) {
     return () => {
       if (moveTimerRef.current) clearInterval(moveTimerRef.current);
     };
-  }, [getAnchorForGuru, pushOutFromKeepOutZones]);
+  }, [bounds.maxX, bounds.maxY, bounds.minX, bounds.minY, getAnchorForGuru, pushOutFromKeepOutZones]);
 
   // 대화 자동 재생 (5~7초마다 다음 메시지)
   // ★ 한 번에 한 명만 말함 — 새 발화 시 기존 말풍선 전부 제거
@@ -458,6 +478,7 @@ export function useGuruVillage(_hasActiveEvent: boolean = false) {
   }, [conversations, currentConvIndex, currentMsgIndex]);
 
   // 혼잣말 — 아무도 말 안 할 때 1명만 (15초마다, 직전 발화자 제외)
+  // ★ 명언 DB에서 랜덤 선택 (구루당 8~10개 풀 → 매번 다른 혼잣말)
   useEffect(() => {
     idleTimerRef.current = setInterval(() => {
       setPositions(prev => {
@@ -471,9 +492,10 @@ export function useGuruVillage(_hasActiveEvent: boolean = false) {
 
         // 1명만 선택
         const chosen = candidates[Math.floor(Math.random() * candidates.length)];
-        const lines = IDLE_REACTIONS[chosen.guruId];
-        if (!lines || lines.length === 0) return prev;
-        const line = lines[Math.floor(Math.random() * lines.length)];
+
+        // 명언 DB에서 해당 구루의 랜덤 명언 가져오기
+        const quoteObj = getRandomQuote(chosen.guruId);
+        const line = trimQuoteForBubble(quoteObj.quote);
 
         lastSpeakerRef.current = chosen.guruId;
 

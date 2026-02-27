@@ -15,7 +15,7 @@ import supabase from '../services/supabase';
 // 타입 정의
 // ============================================================================
 
-export type PredictionCategory = 'stock' | 'crypto' | 'macro';
+export type PredictionCategory = 'stock' | 'crypto' | 'macro' | 'all';
 
 export interface AiConsensus {
   direction: 'YES' | 'NO';
@@ -78,10 +78,15 @@ export const usePredictionFeed = (category: PredictionCategory = 'stock') => {
   return useInfiniteQuery({
     queryKey: ['predictions', category],
     queryFn: async ({ pageParam = 0 }) => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('ops_pm_predictions')
-        .select('*')
-        .eq('category', category)
+        .select('*');
+
+      if (category !== 'all') {
+        query = query.eq('category', category);
+      }
+
+      const { data, error } = await query
         .order('volume_24h_usd', { ascending: false, nullsFirst: false })
         .range(pageParam, pageParam + PREDICTION_PAGE_SIZE - 1);
 

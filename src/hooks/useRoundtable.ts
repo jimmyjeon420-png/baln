@@ -26,8 +26,8 @@ interface UseRoundtableReturn {
   isPlaying: boolean;
   /** 토론 시작 */
   startRoundtable: (topic: string, participantIds: string[]) => Promise<void>;
-  /** 기존 세션 로드 */
-  loadSession: (session: RoundtableSession) => void;
+  /** 기존 세션 로드 (playFromStart=true면 처음부터 재생) */
+  loadSession: (session: RoundtableSession, playFromStart?: boolean) => void;
   /** 사용자 질문 */
   askQuestion: (question: string) => Promise<void>;
   /** 현재 턴 타자기 완료 → 다음 턴으로 */
@@ -83,11 +83,16 @@ export function useRoundtable(): UseRoundtableReturn {
     }
   }, []);
 
-  // 기존 세션 로드 (히스토리에서)
-  const loadSession = useCallback((existingSession: RoundtableSession) => {
+  // 기존 세션 로드 (히스토리에서 or 새 세션)
+  const loadSession = useCallback((existingSession: RoundtableSession, playFromStart = false) => {
     setSession(existingSession);
-    setCurrentTurnIndex(existingSession.turns.length - 1);
-    setIsPlaying(false);
+    if (playFromStart) {
+      setCurrentTurnIndex(0);
+      setIsPlaying(true);
+    } else {
+      setCurrentTurnIndex(existingSession.turns.length - 1);
+      setIsPlaying(false);
+    }
     setError(null);
   }, []);
 

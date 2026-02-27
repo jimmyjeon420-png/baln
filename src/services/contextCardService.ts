@@ -12,6 +12,7 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import supabase from './supabase';
+import { t } from '../locales';
 import type {
   ContextCard,
   ContextCardSentiment,
@@ -48,11 +49,37 @@ const CACHE_TIMESTAMP_KEY = '@baln_context_card_cache_ts';
 // ============================================================================
 
 /**
- * FALLBACK_CONTEXT_CARD
+ * getFallbackContextCard
  *
  * DB에도 카드가 없고, 캐시에도 없을 때 보여주는 정적 카드.
  * "안심을 판다, 불안을 팔지 않는다" 원칙에 따라 투자 원칙을 교육하는 콘텐츠.
+ * 함수로 전환: t()가 런타임에 호출되어야 로케일이 올바르게 적용됨.
  */
+export function getFallbackContextCard(): ContextCardWithImpact {
+  return {
+    card: {
+      id: 'fallback-static',
+      date: getLocalDate(),
+      headline: t('context.fallback.headline'),
+      historical_context: t('context.fallback.historical_context'),
+      macro_chain: [
+        t('context.fallback.macro_chain_1'),
+        t('context.fallback.macro_chain_2'),
+        t('context.fallback.macro_chain_3'),
+        t('context.fallback.macro_chain_4'),
+      ],
+      political_context: t('context.fallback.political_context'),
+      institutional_behavior: t('context.fallback.institutional_behavior'),
+      sentiment: 'calm' as ContextCardSentiment,
+      is_premium_only: false,
+      market_data: {},
+      created_at: new Date().toISOString(),
+    },
+    userImpact: null,
+  };
+}
+
+/** @deprecated Use getFallbackContextCard() instead. Kept for backward compatibility. */
 export const FALLBACK_CONTEXT_CARD: ContextCardWithImpact = {
   card: {
     id: 'fallback-static',
@@ -147,12 +174,12 @@ export function formatCardUpdateTime(createdAt: string): string {
     const hours = date.getHours();
     const minutes = String(date.getMinutes()).padStart(2, '0');
 
-    const period = hours < 12 ? '오전' : '오후';
+    const period = hours < 12 ? t('context.time.am') : t('context.time.pm');
     const displayHour = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
 
-    return `${period} ${displayHour}:${minutes} 업데이트`;
+    return t('context.time.updated_at', { period, hour: displayHour, minutes });
   } catch {
-    return '업데이트됨';
+    return t('context.time.updated');
   }
 }
 
@@ -162,19 +189,19 @@ export function formatCardUpdateTime(createdAt: string): string {
 export function getTimeSlotLabel(timeSlot?: string): string {
   switch (timeSlot) {
     // 3시간 간격 슬롯
-    case 'h00': return '야간 글로벌';
-    case 'h03': return '미국 장 마감';
-    case 'h06': return '아침 브리핑';
-    case 'h09': return '장 개장';
-    case 'h12': return '점심 업데이트';
-    case 'h15': return '장 마감';
-    case 'h18': return '저녁 종합';
-    case 'h21': return '미국 프리마켓';
+    case 'h00': return t('context.slot.h00');
+    case 'h03': return t('context.slot.h03');
+    case 'h06': return t('context.slot.h06');
+    case 'h09': return t('context.slot.h09');
+    case 'h12': return t('context.slot.h12');
+    case 'h15': return t('context.slot.h15');
+    case 'h18': return t('context.slot.h18');
+    case 'h21': return t('context.slot.h21');
     // 레거시 호환
-    case 'morning': return '아침 브리핑';
-    case 'afternoon': return '오후 업데이트';
-    case 'evening': return '저녁 마감 정리';
-    default: return '시장 분석';
+    case 'morning': return t('context.slot.h06');
+    case 'afternoon': return t('context.slot.afternoon');
+    case 'evening': return t('context.slot.evening');
+    default: return t('context.slot.default');
   }
 }
 
@@ -188,8 +215,8 @@ export function getCardFreshnessLabel(cardDate: string): string | null {
   yesterday.setDate(yesterday.getDate() - 1);
   const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
 
-  if (cardDate === yesterdayStr) return '어제의 분석';
-  return '이전 분석';
+  if (cardDate === yesterdayStr) return t('context.freshness.yesterday');
+  return t('context.freshness.older');
 }
 
 // ============================================================================
@@ -203,20 +230,20 @@ export function getCardFreshnessLabel(cardDate: string): string | null {
 function sanitizeCardContent(card: ContextCard): ContextCard {
   return {
     ...card,
-    headline: card.headline?.trim() || '오늘의 시장 맥락을 분석 중입니다',
+    headline: card.headline?.trim() || t('context.sanitize.headline_default'),
     historical_context:
       card.historical_context?.trim() ||
-      '역사적으로 시장은 단기 충격 후에도 장기적으로 회복하는 경향을 보였습니다. 매일 맥락을 읽는 습관이 패닉셀을 방지하는 힘입니다.',
+      t('context.sanitize.historical_default'),
     macro_chain:
       card.macro_chain && card.macro_chain.length > 0
         ? card.macro_chain
-        : ['거시경제 데이터 수집 중'],
+        : [t('context.sanitize.macro_collecting')],
     political_context:
       card.political_context?.trim() ||
-      '정치 동향 데이터를 수집하고 있습니다. 역사적으로 정치 이벤트는 단기 변동을 만들었지만, 장기 투자 관점에서 영향은 제한적이었습니다.',
+      t('context.sanitize.political_default'),
     institutional_behavior:
       card.institutional_behavior?.trim() ||
-      '기관 투자자 행동 데이터를 수집하고 있습니다. 기관은 규칙에 따라 리밸런싱하며, 패닉 매도는 하지 않습니다.',
+      t('context.sanitize.institutional_default'),
   };
 }
 
@@ -226,7 +253,7 @@ function sanitizeImpact(impact: UserContextImpact | null): UserContextImpact | n
 
   return {
     ...impact,
-    impact_message: impact.impact_message?.trim() || '오늘의 시장 변동에 따른 영향을 분석했습니다.',
+    impact_message: impact.impact_message?.trim() || t('context.sanitize.impact_default'),
   };
 }
 
@@ -319,8 +346,8 @@ export async function getTodayContextCard(
         card: fallbackCard,
         userImpact: fallbackImpact,
         dataTimestamp: latestCard.created_at || new Date().toISOString(),
-        dataSource: 'baln.logic AI 분석 · Google Search 그라운딩',
-        confidenceNote: '이전 분석 데이터 (캐시)',
+        dataSource: t('context.data_source'),
+        confidenceNote: t('context.confidence.cached'),
       };
 
       // 캐시 저장 (비동기, 에러 무시)
@@ -375,8 +402,8 @@ export async function getTodayContextCard(
       card,
       userImpact,
       dataTimestamp: cardData.created_at || new Date().toISOString(),
-      dataSource: 'baln.logic AI 분석 · Google Search 그라운딩',
-      confidenceNote: '실시간 데이터 기반 분석',
+      dataSource: t('context.data_source'),
+      confidenceNote: t('context.confidence.realtime'),
     };
 
     // 캐시 저장 (비동기, 에러 무시)
@@ -567,15 +594,15 @@ export function convertToContextCardData(
 
   return {
     date: card.date,
-    headline: card.headline || '오늘의 시장 맥락을 분석 중입니다',
-    historicalContext: card.historical_context || '역사적 맥락 데이터가 없습니다.',
+    headline: card.headline || t('context.sanitize.headline_default'),
+    historicalContext: card.historical_context || t('context.convert.no_historical'),
     macroChain: card.macro_chain || [],
-    politicalContext: card.political_context || '역사적으로 정치 이벤트는 단기 시장 변동을 만들었지만, 장기 우량 기업의 가치는 정치 사이클을 초월했습니다. 당신의 분산된 포트폴리오에 미치는 영향은 제한적입니다.',
-    institutionalBehavior: card.institutional_behavior || '기관 행동 데이터가 없습니다.',
+    politicalContext: card.political_context || t('context.sanitize.political_default'),
+    institutionalBehavior: card.institutional_behavior || t('context.convert.no_institutional'),
     portfolioImpact: {
       percentChange: userImpact?.percent_change ?? 0,
       healthScoreChange: userImpact?.health_score_change ?? 0,
-      message: userImpact?.impact_message || '오늘의 시장 변동에 따른 영향을 분석했습니다.',
+      message: userImpact?.impact_message || t('context.sanitize.impact_default'),
       isCalculating: false,
     },
     sentiment: card.sentiment,

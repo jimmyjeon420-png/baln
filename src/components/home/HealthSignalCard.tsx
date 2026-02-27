@@ -433,7 +433,7 @@ const styles = StyleSheet.create({
     marginRight: -8,
   },
   dateText: {
-    fontSize: 15,
+    fontSize: 13,
     flexShrink: 1,
   },
   cardLogo: {
@@ -451,7 +451,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   gradeLabel: {
-    fontSize: 23,
+    fontSize: 20,
     fontWeight: '600',
     marginBottom: 10,
   },
@@ -460,17 +460,17 @@ const styles = StyleSheet.create({
     alignItems: 'baseline',
   },
   scoreNumber: {
-    fontSize: 56,
+    fontSize: 48,
     fontWeight: '800',
-    lineHeight: 64,
+    lineHeight: 56,
   },
   scoreDivider: {
-    fontSize: 29,
+    fontSize: 24,
     fontWeight: '300',
     marginHorizontal: 4,
   },
   scoreMax: {
-    fontSize: 29,
+    fontSize: 24,
     fontWeight: '300',
   },
   loadingText: {
@@ -510,14 +510,14 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   assetPulseText: {
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: '600',
   },
   assetPulseDivider: {
-    fontSize: 15,
+    fontSize: 13,
   },
   assetPulseChange: {
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: '600',
   },
   assetsArea: {
@@ -539,12 +539,12 @@ const styles = StyleSheet.create({
     maxWidth: 140,
   },
   assetName: {
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: '500',
     flexShrink: 1,
   },
   assetSignal: {
-    fontSize: 17,
+    fontSize: 15,
   },
   addAssetChip: {
     flexDirection: 'row',
