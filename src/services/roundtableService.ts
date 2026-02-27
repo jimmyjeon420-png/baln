@@ -11,6 +11,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Sentry from '@sentry/react-native';
 import { GURU_CHARACTER_CONFIGS } from '../data/guruCharacterConfig';
 import { getPromptLanguageInstruction, getLangParam } from '../utils/promptLanguage';
+import { edgeInvokeErrorMessage, isTransientEdgeInvokeError } from '../utils/edgeInvokeError';
 import type {
   RoundtableSession,
   RoundtableTurn,
@@ -28,21 +29,52 @@ const MAX_SESSIONS = 10;
 
 async function callRoundtableGemini(systemPrompt: string, userPrompt: string): Promise<string> {
   const { default: supabase } = await import('./supabase');
+  const maxTransientRetries = 2;
+  let lastError: Error | null = null;
 
-  const { data, error } = await supabase.functions.invoke('gemini-proxy', {
-    body: {
-      prompt: userPrompt,
-      systemPrompt,
-      type: 'roundtable',
-      lang: getLangParam(),
-    },
-  });
+  for (let attempt = 0; attempt <= maxTransientRetries; attempt++) {
+    const invokeResult = await Promise.race([
+      supabase.functions.invoke('gemini-proxy', {
+        body: {
+          prompt: userPrompt,
+          systemPrompt,
+          type: 'roundtable',
+          lang: getLangParam(),
+        },
+      }),
+      new Promise<{ data: null; error: { message: string } }>((resolve) =>
+        setTimeout(() => resolve({ data: null, error: { message: 'Gemini 호출 25초 타임아웃' } }), 25000)
+      ),
+    ]);
 
-  if (error) throw new Error(`Gemini 호출 실패: ${error.message}`);
-  // Edge Function 응답: { success, data: { result: text } }
-  const rawResult = data?.data?.result ?? data?.result;
-  if (!rawResult) throw new Error('빈 응답');
-  return typeof rawResult === 'string' ? rawResult : JSON.stringify(rawResult);
+    const { data, error } = invokeResult as {
+      data: { data?: { result?: string | object }; result?: string | object } | null;
+      error: { message?: string } | null;
+    };
+
+    if (error) {
+      lastError = new Error(`Gemini 호출 실패: ${error.message || JSON.stringify(error)}`);
+      if (attempt < maxTransientRetries && isTransientEdgeInvokeError(lastError)) {
+        await new Promise((resolve) => setTimeout(resolve, (attempt + 1) * 700));
+        continue;
+      }
+      throw lastError;
+    }
+
+    // Edge Function 응답: { success, data: { result: text } }
+    const rawResult = data?.data?.result ?? data?.result;
+    if (!rawResult) {
+      lastError = new Error('빈 응답');
+      if (attempt < maxTransientRetries) {
+        await new Promise((resolve) => setTimeout(resolve, (attempt + 1) * 500));
+        continue;
+      }
+      throw lastError;
+    }
+    return typeof rawResult === 'string' ? rawResult : JSON.stringify(rawResult);
+  }
+
+  throw lastError ?? new Error('Gemini 호출 실패: 알 수 없는 오류');
 }
 
 function parseJsonResponse<T>(text: string): T {
@@ -137,7 +169,12 @@ ${participantInfo}
     return session;
   } catch (err) {
     if (__DEV__) console.error('[Roundtable] 생성 실패:', err);
-    Sentry.captureException(err, { tags: { service: 'roundtable', action: 'generate' } });
+    if (!isTransientEdgeInvokeError(err)) {
+      Sentry.captureException(err, { tags: { service: 'roundtable', action: 'generate' } });
+    }
+    if (isTransientEdgeInvokeError(err)) {
+      throw new Error(`일시적 네트워크 오류로 라운드테이블 생성에 실패했습니다: ${edgeInvokeErrorMessage(err)}`);
+    }
     throw err;
   }
 }
@@ -198,7 +235,12 @@ speaker는 반드시 다음 ID 중 하나: ${session.participants.join(', ')}
     return userQ;
   } catch (err) {
     if (__DEV__) console.error('[Roundtable] 추가 질문 실패:', err);
-    Sentry.captureException(err, { tags: { service: 'roundtable', action: 'follow_up' } });
+    if (!isTransientEdgeInvokeError(err)) {
+      Sentry.captureException(err, { tags: { service: 'roundtable', action: 'follow_up' } });
+    }
+    if (isTransientEdgeInvokeError(err)) {
+      throw new Error(`일시적 네트워크 오류로 추가 질문 처리에 실패했습니다: ${edgeInvokeErrorMessage(err)}`);
+    }
     throw err;
   }
 }

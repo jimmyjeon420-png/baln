@@ -14,6 +14,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Sentry from '@sentry/react-native';
 import { GURU_CHARACTER_CONFIGS } from '../data/guruCharacterConfig';
 import { getPromptLanguageInstruction, getLangParam } from '../utils/promptLanguage';
+import { edgeInvokeErrorMessage, isTransientEdgeInvokeError } from '../utils/edgeInvokeError';
 import type { GuruNewsReaction, NewspaperArticle, NewspaperCategory, ReactionSentiment } from '../types/village';
 
 // ============================================================================
@@ -198,8 +199,18 @@ ${marketContext ? `[오늘 시장 맥락]\n${marketContext}\n` : ''}
 
     return articles;
   } catch (err) {
-    if (__DEV__) console.error('[NewsReaction] 생성 실패:', err);
-    Sentry.captureException(err, { tags: { service: 'news_reaction', action: 'generate' } });
+    const isTransient = isTransientEdgeInvokeError(err);
+    if (__DEV__) {
+      console.error(
+        isTransient
+          ? `[NewsReaction] 일시 오류(폴백 사용): ${edgeInvokeErrorMessage(err)}`
+          : '[NewsReaction] 생성 실패:',
+        err
+      );
+    }
+    if (!isTransient) {
+      Sentry.captureException(err, { tags: { service: 'news_reaction', action: 'generate' } });
+    }
     return getFallbackReactions();
   }
 }

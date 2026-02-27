@@ -14,6 +14,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Sentry from '@sentry/react-native';
 import { GURU_CHARACTER_CONFIGS } from '../data/guruCharacterConfig';
 import { getPromptLanguageInstruction, getLangParam } from '../utils/promptLanguage';
+import { edgeInvokeErrorMessage, isTransientEdgeInvokeError } from '../utils/edgeInvokeError';
 import { getCurrentDisplayLanguage } from '../context/LocaleContext';
 import {
   getFreshnessPromptSuffix,
@@ -438,8 +439,18 @@ ${rulesEn}
 
     return batch;
   } catch (err) {
-    if (__DEV__) console.warn('[Village] 대화 생성 실패(폴백 사용):', err);
-    Sentry.captureException(err, { tags: { service: 'village', action: 'generate' } });
+    const isTransient = isTransientEdgeInvokeError(err);
+    if (__DEV__) {
+      console.warn(
+        isTransient
+          ? `[Village] 대화 생성 일시 오류(폴백 사용): ${edgeInvokeErrorMessage(err)}`
+          : '[Village] 대화 생성 실패(폴백 사용):',
+        err
+      );
+    }
+    if (!isTransient) {
+      Sentry.captureException(err, { tags: { service: 'village', action: 'generate' } });
+    }
     // 폴백: 기본 대화
     return getFallbackBatch();
   }
@@ -507,8 +518,18 @@ Respond in JSON only:
       sentiment: normalizeSentiment(parsed?.sentiment),
     };
   } catch (err) {
-    if (__DEV__) console.warn('[Village] 구루 답변 실패(폴백 사용):', err);
-    Sentry.captureException(err, { tags: { service: 'village', action: 'guru_chat', guruId } });
+    const isTransient = isTransientEdgeInvokeError(err);
+    if (__DEV__) {
+      console.warn(
+        isTransient
+          ? `[Village] 구루 답변 일시 오류(폴백 사용): ${edgeInvokeErrorMessage(err)}`
+          : '[Village] 구루 답변 실패(폴백 사용):',
+        err
+      );
+    }
+    if (!isTransient) {
+      Sentry.captureException(err, { tags: { service: 'village', action: 'guru_chat', guruId } });
+    }
 
     // 구루별 맞춤 폴백 메시지 — 캐릭터 성격 유지
     const guruFallbacksKo: Record<string, string> = {

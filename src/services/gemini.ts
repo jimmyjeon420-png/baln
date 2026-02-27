@@ -2,6 +2,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import * as Sentry from '@sentry/react-native';
 import supabase from './supabase';
 import { getPromptLanguageInstruction, getResponseLanguage, getLangParam, getFinanceTermGuide } from '../utils/promptLanguage';
+import { edgeInvokeErrorMessage, isTransientEdgeInvokeError } from '../utils/edgeInvokeError';
 import { getCurrentDisplayLanguage } from '../context/LocaleContext';
 
 // ============================================================================
@@ -660,29 +661,48 @@ async function invokeGeminiProxy<T>(
   data: unknown,
   timeoutMs: number = 30000,
 ): Promise<T> {
-  const invokeResult = await Promise.race([
-    supabase.functions.invoke('gemini-proxy', {
-      body: { type, data, lang: getLangParam() },
-    }),
-    new Promise<{ data: null; error: { message: string } }>((resolve) =>
-      setTimeout(() => resolve({ data: null, error: { message: `Edge Function 호출 ${Math.round(timeoutMs / 1000)}초 타임아웃` } }), timeoutMs)
-    ),
-  ]);
+  const maxTransientRetries = 2;
+  let lastError: Error | null = null;
 
-  const { data: envelope, error } = invokeResult as {
-    data: GeminiProxyEnvelope<T> | null;
-    error: { message?: string } | null;
-  };
+  for (let attempt = 0; attempt <= maxTransientRetries; attempt++) {
+    const invokeResult = await Promise.race([
+      supabase.functions.invoke('gemini-proxy', {
+        body: { type, data, lang: getLangParam() },
+      }),
+      new Promise<{ data: null; error: { message: string } }>((resolve) =>
+        setTimeout(() => resolve({ data: null, error: { message: `Edge Function 호출 ${Math.round(timeoutMs / 1000)}초 타임아웃` } }), timeoutMs)
+      ),
+    ]);
 
-  if (error) {
-    throw new Error(`gemini-proxy 오류: ${error.message || JSON.stringify(error)}`);
+    const { data: envelope, error } = invokeResult as {
+      data: GeminiProxyEnvelope<T> | null;
+      error: { message?: string } | null;
+    };
+
+    if (error) {
+      lastError = new Error(`gemini-proxy 오류: ${error.message || JSON.stringify(error)}`);
+      if (attempt < maxTransientRetries && isTransientEdgeInvokeError(lastError)) {
+        const backoffMs = (attempt + 1) * 700;
+        await new Promise((resolve) => setTimeout(resolve, backoffMs));
+        continue;
+      }
+      throw lastError;
+    }
+
+    if (!envelope?.success || !envelope.data) {
+      lastError = new Error(`gemini-proxy 응답 오류: ${envelope?.error || 'no data'}`);
+      if (attempt < maxTransientRetries && isTransientEdgeInvokeError(lastError)) {
+        const backoffMs = (attempt + 1) * 700;
+        await new Promise((resolve) => setTimeout(resolve, backoffMs));
+        continue;
+      }
+      throw lastError;
+    }
+
+    return envelope.data;
   }
 
-  if (!envelope?.success || !envelope.data) {
-    throw new Error(`gemini-proxy 응답 오류: ${envelope?.error || 'no data'}`);
-  }
-
-  return envelope.data;
+  throw lastError ?? new Error('gemini-proxy 알 수 없는 오류');
 }
 
 async function generateWhatIfViaProxy(input: WhatIfInput): Promise<WhatIfResult> {
@@ -1597,51 +1617,28 @@ export const generateMorningBriefing = async (
   }
 ): Promise<MorningBriefingResult> => {
   try {
-    // [핵심] Supabase Edge Function으로 Gemini API 프록시 호출
-    // 이유: 클라이언트 측 네트워크 제한 우회 + API 키 보안 강화
-    const invokeResult = await Promise.race([
-      supabase.functions.invoke('gemini-proxy', {
-        body: {
-          type: 'morning-briefing',
-          lang: getLangParam(),
-          data: {
-            portfolio: portfolio.map(p => ({
-              ticker: p.ticker,
-              name: p.name,
-              currentValue: p.currentValue,
-              avgPrice: p.avgPrice,
-              currentPrice: p.currentPrice,
-              allocation: p.allocation,
-            })),
-            options,
-          },
-        },
-      }),
-      new Promise<{ data: null; error: { message: string } }>((resolve) =>
-        setTimeout(() => resolve({ data: null, error: { message: 'Edge Function 호출 30초 타임아웃' } }), 30000)
-      ),
-    ]);
-    const { data, error } = invokeResult;
-
-    if (error) {
-      console.warn('[Edge Function] Error:', error.message || error);
-      throw new Error(`Edge Function Error: ${error.message || JSON.stringify(error)}`);
-    }
-
-    if (!data) {
-      console.warn('[Edge Function] No data returned');
-      throw new Error('Edge Function returned no data');
-    }
-
-    if (!data.success) {
-      console.warn('[Edge Function] Unsuccessful response:', data.error || 'Unknown error');
-      throw new Error(`Edge Function Error: ${data.error || 'Unknown error'}`);
-    }
-
-    return data.data as MorningBriefingResult;
+    return await invokeGeminiProxy<MorningBriefingResult>(
+      'morning-briefing',
+      {
+        portfolio: portfolio.map((p) => ({
+          ticker: p.ticker,
+          name: p.name,
+          currentValue: p.currentValue,
+          avgPrice: p.avgPrice,
+          currentPrice: p.currentPrice,
+          allocation: p.allocation,
+        })),
+        options,
+      },
+      30000
+    );
 
   } catch (error) {
-    console.warn("Morning Briefing Error:", error);
+    if (isTransientEdgeInvokeError(error)) {
+      console.warn('[MorningBriefing] 일시적 네트워크/앱 상태 오류:', edgeInvokeErrorMessage(error));
+    } else {
+      console.warn('Morning Briefing Error:', error);
+    }
     // 에러를 그대로 전파 — 호출자가 null로 처리하도록 함
     // (에러 폴백 데이터를 반환하면 DB 캐시에 저장되어 반복적으로 에러 상태가 됨)
     throw error;
