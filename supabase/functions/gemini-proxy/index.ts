@@ -12,6 +12,8 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 // ============================================================================
 const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')!;
 const GEMINI_MODEL = 'gemini-3-flash-preview';
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
+const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
 
 // ============================================================================
 // 타입 정의
@@ -278,6 +280,47 @@ async function callGeminiWithSearch(prompt: string, timeoutMs: number = 30000, m
   }
 
   throw new Error('Gemini API 호출 실패. 잠시 후 다시 시도해주세요.');
+}
+
+async function runHealthCheck() {
+  const checks: Record<string, any> = {
+    timestamp: new Date().toISOString(),
+    model: GEMINI_MODEL,
+    apiKeySet: !!GEMINI_API_KEY,
+  };
+
+  try {
+    const testUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+    const testBody = {
+      contents: [{ parts: [{ text: 'Reply with only the word OK' }] }],
+      generationConfig: { maxOutputTokens: 5 },
+    };
+    const testController = new AbortController();
+    const testTimeout = setTimeout(() => testController.abort(), 10000);
+    const testResp = await fetch(testUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(testBody),
+      signal: testController.signal,
+    });
+    clearTimeout(testTimeout);
+
+    if (testResp.ok) {
+      const testJson = await testResp.json();
+      const testText = testJson?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      checks.geminiApi = 'OK';
+      checks.geminiResponse = testText.substring(0, 50);
+    } else {
+      const errText = await testResp.text();
+      checks.geminiApi = `ERROR ${testResp.status}`;
+      checks.geminiError = errText.substring(0, 200);
+    }
+  } catch (testErr: any) {
+    checks.geminiApi = testErr.name === 'AbortError' ? 'TIMEOUT (10s)' : `EXCEPTION: ${testErr.message?.substring(0, 100)}`;
+  }
+
+  checks.status = checks.geminiApi === 'OK' ? 'ok' : 'degraded';
+  return checks;
 }
 
 /**
@@ -903,11 +946,17 @@ async function parsePortfolioScreenshot(imageBase64: string, mimeType: string) {
 - quantity: 보유 수량 (숫자)
 - totalCostKRW: 총 매수금액 또는 평균단가×수량 (원화, 숫자)
 - currentValueKRW: 현재 평가금액 (원화, 숫자, 없으면 null)
+- profitLossKRW: 평가손익 (원화, 숫자, 없으면 null)
 
 반환 형식:
-{"assets": [{"name":"삼성전자","ticker":"005930","quantity":100,"totalCostKRW":7200000,"currentValueKRW":7500000}]}
+{"assets": [{"name":"삼성전자","ticker":"005930","quantity":100,"totalCostKRW":7200000,"currentValueKRW":7500000,"profitLossKRW":300000}]}
 
 주의:
+- 티커가 화면에 직접 보이지 않아도 일반적으로 널리 알려진 종목명/ETF명은 추론해서 채우세요
+  예: 엔비디아→NVDA, 알파벳 A→GOOGL, 테슬라→TSLA, 버크셔 해서웨이 B→BRK-B, GLD→GLD, 컨스텔레이션 에너지→CEG
+- 주식 앱 화면에는 보통 종목명/보유수량/평가금액/손익만 보일 수 있습니다. 이 경우 totalCostKRW는 currentValueKRW - profitLossKRW 로 계산하세요.
+- totalCostKRW를 확실히 계산할 수 없으면 profitLossKRW라도 반드시 채우세요. 앱이 후처리로 보정합니다.
+- 숫자 필드는 반드시 순수 숫자만 반환하세요 (쉼표, 원, 주, %, $ 제거)
 - 달러 금액이 있으면 현재 환율 약 1450으로 원화 변환
 - 인식 불가한 자산은 제외
 - JSON만 반환 (설명 없이)`
@@ -1125,6 +1174,13 @@ serve(async (req: Request) => {
     const lang = ((body as any).lang as string) || 'ko';
     const langInstruction = lang === 'ko' ? '한국어로 자연스럽게 작성한다.' : 'Write naturally in English.';
 
+    if (body.type === 'health-check') {
+      return new Response(
+        JSON.stringify({ success: true, data: await runHealthCheck() }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // ========================================================================
     // 인증 확인: 로그인한 사용자만 Gemini API 호출 허용
     // Supabase 클라이언트가 자동으로 Authorization 헤더에 JWT를 포함하므로
@@ -1140,8 +1196,6 @@ serve(async (req: Request) => {
 
     // JWT 유효성 검증 (Supabase auth.getUser로 서명 + 만료 확인)
     const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
-    const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
-    const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
     const authClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       global: { headers: { Authorization: authHeader } },
     });
@@ -1190,51 +1244,6 @@ serve(async (req: Request) => {
       case 'tax-report':
         result = await generateTaxReportAnalysis((body as TaxReportRequest).data, langInstruction);
         break;
-
-      case 'health-check': {
-        // [2026-02-14] 실제 Gemini API 호출 테스트 (단순 OK 반환 → 실제 검증으로 업그레이드)
-        const checks: Record<string, any> = {
-          timestamp: new Date().toISOString(),
-          model: GEMINI_MODEL,
-          apiKeySet: !!GEMINI_API_KEY,
-          apiKeyLength: GEMINI_API_KEY?.length || 0,
-        };
-
-        // 실제 Gemini API 미니 호출 (최소 토큰으로 테스트)
-        try {
-          const testUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
-          const testBody = {
-            contents: [{ parts: [{ text: 'Reply with only the word OK' }] }],
-            generationConfig: { maxOutputTokens: 5 },
-          };
-          const testController = new AbortController();
-          const testTimeout = setTimeout(() => testController.abort(), 10000);
-          const testResp = await fetch(testUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(testBody),
-            signal: testController.signal,
-          });
-          clearTimeout(testTimeout);
-
-          if (testResp.ok) {
-            const testJson = await testResp.json();
-            const testText = testJson?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-            checks.geminiApi = 'OK';
-            checks.geminiResponse = testText.substring(0, 50);
-          } else {
-            const errText = await testResp.text();
-            checks.geminiApi = `ERROR ${testResp.status}`;
-            checks.geminiError = errText.substring(0, 200);
-          }
-        } catch (testErr: any) {
-          checks.geminiApi = testErr.name === 'AbortError' ? 'TIMEOUT (10s)' : `EXCEPTION: ${testErr.message?.substring(0, 100)}`;
-        }
-
-        checks.status = checks.geminiApi === 'OK' ? 'ok' : 'degraded';
-        result = checks;
-        break;
-      }
 
       // ════════════════════════════════════════════════════════════════════
       // 범용 프롬프트 패스스루 (마을 대화, 뉴스 반응, 라운드테이블 등)

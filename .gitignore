@@ -42,6 +42,7 @@ dist/
 # Testing
 coverage/
 .nyc_output/
+reports/
 
 # Backup files
 *.bak

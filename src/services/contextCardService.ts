@@ -43,6 +43,8 @@ export type {
 
 const CACHE_KEY = '@baln_context_card_cache';
 const CACHE_TIMESTAMP_KEY = '@baln_context_card_cache_ts';
+const CONTEXT_CARD_REFRESH_COOLDOWN_KEY = '@baln:context_card_refresh_last_trigger';
+const CONTEXT_CARD_REFRESH_COOLDOWN_MS = 20 * 60 * 1000; // 20분
 
 // ============================================================================
 // 정적 폴백 카드 (API/DB 모두 실패 시 표시)
@@ -180,6 +182,54 @@ export function formatCardUpdateTime(createdAt: string): string {
     return t('context.time.updated_at', { period, hour: displayHour, minutes });
   } catch {
     return t('context.time.updated');
+  }
+}
+
+export function getCurrentContextTimeSlot(date: Date = new Date()): string {
+  const kst = new Date(date.getTime() + 9 * 60 * 60 * 1000);
+  const kstHour = kst.getUTCHours() % 24;
+  const slotHour = Math.floor(kstHour / 3) * 3;
+  return `h${String(slotHour).padStart(2, '0')}`;
+}
+
+export async function triggerContextCardRefreshIfNeeded(reason: 'empty' | 'stale'): Promise<{
+  triggered: boolean;
+  skippedByCooldown: boolean;
+  error?: string;
+}> {
+  try {
+    const now = Date.now();
+    const raw = await AsyncStorage.getItem(CONTEXT_CARD_REFRESH_COOLDOWN_KEY);
+    const lastTriggeredAt = raw ? Number(raw) : 0;
+
+    if (Number.isFinite(lastTriggeredAt) && now - lastTriggeredAt < CONTEXT_CARD_REFRESH_COOLDOWN_MS) {
+      return { triggered: false, skippedByCooldown: true };
+    }
+
+    const { error } = await supabase.functions.invoke('generate-context-card', {
+      body: {
+        lang: 'ko',
+        reason: `context_card_${reason}`,
+        time_slot: getCurrentContextTimeSlot(),
+      },
+    });
+
+    if (error) {
+      return {
+        triggered: false,
+        skippedByCooldown: false,
+        error: error.message || '맥락 카드 복구 호출 실패',
+      };
+    }
+
+    await AsyncStorage.setItem(CONTEXT_CARD_REFRESH_COOLDOWN_KEY, String(now));
+    return { triggered: true, skippedByCooldown: false };
+  } catch (err) {
+    return {
+      triggered: false,
+      skippedByCooldown: false,
+      error: err instanceof Error ? err.message : '알 수 없는 오류',
+    };
   }
 }
 

@@ -77,6 +77,7 @@ export const POPULAR_STOCKS: StockItem[] = [
   { ticker: 'MSTR', name: '마이크로스트래티지', nameEn: 'MicroStrategy', category: 'us_stock' },
   { ticker: 'ARM', name: 'ARM홀딩스', nameEn: 'Arm Holdings', category: 'us_stock' },
   { ticker: 'AVGO', name: '브로드컴', nameEn: 'Broadcom', category: 'us_stock' },
+  { ticker: 'CEG', name: '컨스텔레이션 에너지', nameEn: 'Constellation Energy', category: 'us_stock' },
 
   // ─── 인기 ETF (15개) ───
   { ticker: 'SPY', name: 'S&P 500 ETF', nameEn: 'SPDR S&P 500', category: 'etf' },
@@ -132,6 +133,74 @@ export const POPULAR_STOCKS: StockItem[] = [
   { ticker: 'USDC', name: 'USD코인', nameEn: 'USD Coin', category: 'crypto' },
 ];
 
+function normalizeLookupText(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize('NFKC')
+    .replace(/[()·,'".]/g, '')
+    .replace(/\s+/g, '')
+    .replace(/㈜/g, '')
+    .trim();
+}
+
+function buildLookupTokens(item: StockItem): string[] {
+  const tokens = new Set<string>([
+    item.ticker,
+    item.name,
+    item.nameEn,
+    item.ticker.replace(/[.-]/g, ''),
+  ]);
+
+  const krTickerMatch = item.ticker.match(/^(\d{6})\.(KS|KQ)$/i);
+  if (krTickerMatch) {
+    tokens.add(krTickerMatch[1]);
+  }
+
+  return Array.from(tokens).map(normalizeLookupText).filter(Boolean);
+}
+
+const OCR_ALIAS_TO_TICKER: Record<string, string> = {
+  [normalizeLookupText('알파벳 A')]: 'GOOGL',
+  [normalizeLookupText('알파벳A')]: 'GOOGL',
+  [normalizeLookupText('알파벳')]: 'GOOGL',
+  [normalizeLookupText('Alphabet A')]: 'GOOGL',
+  [normalizeLookupText('Alphabet Class A')]: 'GOOGL',
+  [normalizeLookupText('구글 A')]: 'GOOGL',
+  [normalizeLookupText('알파벳 C')]: 'GOOG',
+  [normalizeLookupText('알파벳C')]: 'GOOG',
+  [normalizeLookupText('Alphabet C')]: 'GOOG',
+  [normalizeLookupText('Alphabet Class C')]: 'GOOG',
+  [normalizeLookupText('버크셔 해서웨이 B')]: 'BRK-B',
+  [normalizeLookupText('버크셔해서웨이B')]: 'BRK-B',
+  [normalizeLookupText('버크셔 해서웨이')]: 'BRK-B',
+  [normalizeLookupText('Berkshire Hathaway B')]: 'BRK-B',
+  [normalizeLookupText('Berkshire Hathaway Class B')]: 'BRK-B',
+  [normalizeLookupText('BRK.B')]: 'BRK-B',
+  [normalizeLookupText('컨스텔레이션 에너지')]: 'CEG',
+  [normalizeLookupText('컨스털레이션 에너지')]: 'CEG',
+  [normalizeLookupText('Constellation Energy Corp')]: 'CEG',
+  [normalizeLookupText('Constellation Energy')]: 'CEG',
+};
+
+const STOCK_LOOKUP_INDEX = (() => {
+  const index = new Map<string, StockItem>();
+  const byTicker = new Map<string, StockItem>();
+
+  for (const item of POPULAR_STOCKS) {
+    byTicker.set(normalizeLookupText(item.ticker), item);
+    for (const token of buildLookupTokens(item)) {
+      index.set(token, item);
+    }
+  }
+
+  for (const [alias, ticker] of Object.entries(OCR_ALIAS_TO_TICKER)) {
+    const item = byTicker.get(normalizeLookupText(ticker));
+    if (item) index.set(alias, item);
+  }
+
+  return index;
+})();
+
 /**
  * 종목 검색 함수 — 한글명, 영문명, 티커 모두 매칭
  * @param query 검색어 (2글자 이상 추천)
@@ -146,6 +215,47 @@ export function searchStocks(query: string): StockItem[] {
     s.nameEn.toLowerCase().includes(q) ||
     s.ticker.toLowerCase().includes(q)
   ).slice(0, 10);
+}
+
+export function findBestStockMatch(query: string, tickerHint?: string): StockItem | null {
+  const rawCandidates = [tickerHint, query]
+    .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+    .flatMap((value) => {
+      const extractedTickers = value.match(/\b[A-Z]{1,5}(?:[.-][A-Z])?\b|\b\d{6}(?:\.(?:KS|KQ))?\b/g) ?? [];
+      return [value, ...extractedTickers];
+    });
+
+  const candidates = rawCandidates
+    .map(normalizeLookupText)
+    .filter(Boolean);
+
+  for (const candidate of candidates) {
+    const direct = STOCK_LOOKUP_INDEX.get(candidate);
+    if (direct) return direct;
+  }
+
+  let best: { item: StockItem; score: number } | null = null;
+
+  for (const item of POPULAR_STOCKS) {
+    const tokens = buildLookupTokens(item);
+    let score = 0;
+
+    for (const candidate of candidates) {
+      for (const token of tokens) {
+        if (candidate === token) {
+          score = Math.max(score, 100);
+        } else if (token.includes(candidate) || candidate.includes(token)) {
+          score = Math.max(score, Math.min(candidate.length, token.length));
+        }
+      }
+    }
+
+    if (score > 0 && (!best || score > best.score)) {
+      best = { item, score };
+    }
+  }
+
+  return best?.item ?? null;
 }
 
 /**

@@ -28,3 +28,6 @@ verify_jwt = false  # JWT 인증 비활성화 (클라이언트 직접 호출 허
 
 [functions.daily-briefing]
 verify_jwt = true  # 배치 작업은 인증 필요
+
+[functions.ops-content-healer]
+verify_jwt = false  # GitHub Actions가 x-ops-token으로 호출

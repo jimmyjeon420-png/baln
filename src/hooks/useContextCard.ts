@@ -22,20 +22,19 @@
  * - 예측 게임: 복기 시 어제/그저께 맥락 카드 표시
  */
 
-import { useEffect, useState, useCallback, useRef } from 'react';
-import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import supabase, { getCurrentUser } from '../services/supabase';
+import { useEffect, useState, useRef } from 'react';
+import { useQuery, useQueryClient, useMutation, type QueryClient } from '@tanstack/react-query';
+import { getCurrentUser } from '../services/supabase';
 import {
   getTodayContextCard,
   getRecentContextCards,
   getQuickContextSentiment,
   getCachedCard,
-  setCachedCard,
   getCachedCardTimestamp,
   isCardStale,
   getCardFreshnessLabel,
   formatCardUpdateTime,
-  FALLBACK_CONTEXT_CARD,
+  triggerContextCardRefreshIfNeeded,
   getFallbackContextCard,
   type ContextCardWithImpact,
   type ContextCardSentiment,
@@ -91,12 +90,14 @@ const DEFAULT_RETRY_COUNT = 2;
  */
 export function useContextCard(options?: { retryCount?: number }) {
   const retryCount = options?.retryCount ?? DEFAULT_RETRY_COUNT;
+  const queryClient = useQueryClient();
 
   // AsyncStorage 캐시 상태
   const [cachedData, setCachedData] = useState<ContextCardWithImpact | null>(null);
   const [lastUpdated, setLastUpdated] = useState<number | null>(null);
   const isCacheLoaded = useRef(false);
   const isCacheLoading = useRef(false);
+  const recoveryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // 앱 실행 시 캐시를 한 번만 로드 (race condition 방지: 이중 guard)
   useEffect(() => {
@@ -184,6 +185,44 @@ export function useContextCard(options?: { retryCount?: number }) {
   const freshnessLabel = effectiveData
     ? getCardFreshnessLabel(effectiveData.card.date)
     : null;
+
+  useEffect(() => {
+    if (query.isLoading || query.isFetching) return;
+
+    const recoveryReason: 'empty' | 'stale' | null = isEmpty
+      ? 'empty'
+      : isStale
+        ? 'stale'
+        : null;
+
+    if (!recoveryReason) return;
+
+    let cancelled = false;
+
+    (async () => {
+      const result = await triggerContextCardRefreshIfNeeded(recoveryReason);
+      if (cancelled || !result.triggered) return;
+
+      if (recoveryTimerRef.current) {
+        clearTimeout(recoveryTimerRef.current);
+      }
+
+      recoveryTimerRef.current = setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: CONTEXT_CARD_TODAY_KEY });
+        queryClient.invalidateQueries({ queryKey: CONTEXT_SENTIMENT_KEY });
+      }, 8000);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isEmpty, isStale, query.isLoading, query.isFetching, queryClient]);
+
+  useEffect(() => () => {
+    if (recoveryTimerRef.current) {
+      clearTimeout(recoveryTimerRef.current);
+    }
+  }, []);
 
   return {
     ...query,
@@ -292,7 +331,7 @@ export function useQuickContextSentiment() {
  * };
  * ```
  */
-export function invalidateContextCardCache(queryClient: any) {
+export function invalidateContextCardCache(queryClient: QueryClient) {
   return Promise.all([
     queryClient.invalidateQueries({ queryKey: CONTEXT_CARD_TODAY_KEY }),
     queryClient.invalidateQueries({ queryKey: ['contextCards'] }), // recent 포함

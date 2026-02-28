@@ -4,6 +4,7 @@ import supabase from './supabase';
 import { getPromptLanguageInstruction, getResponseLanguage, getLangParam, getFinanceTermGuide } from '../utils/promptLanguage';
 import { edgeInvokeErrorMessage, isTransientEdgeInvokeError } from '../utils/edgeInvokeError';
 import { getCurrentDisplayLanguage } from '../context/LocaleContext';
+import { invokeGeminiProxy } from './geminiProxy';
 
 // ============================================================================
 // [마켓플레이스] AI 종목 딥다이브 — 재무/기술/뉴스/AI 의견
@@ -409,12 +410,6 @@ interface ProxyDeepDiveResponse {
   generatedAt?: string;
 }
 
-interface GeminiProxyEnvelope<T> {
-  success?: boolean;
-  data?: T;
-  error?: string;
-}
-
 interface ProxyCFOChatResponse {
   warren?: string;
   dalio?: string;
@@ -654,55 +649,6 @@ async function generateDeepDiveViaProxy(input: DeepDiveInput): Promise<DeepDiveR
   };
 
   return sanitizeDeepDiveResult(rawResult, input);
-}
-
-async function invokeGeminiProxy<T>(
-  type: string,
-  data: unknown,
-  timeoutMs: number = 30000,
-): Promise<T> {
-  const maxTransientRetries = 2;
-  let lastError: Error | null = null;
-
-  for (let attempt = 0; attempt <= maxTransientRetries; attempt++) {
-    const invokeResult = await Promise.race([
-      supabase.functions.invoke('gemini-proxy', {
-        body: { type, data, lang: getLangParam() },
-      }),
-      new Promise<{ data: null; error: { message: string } }>((resolve) =>
-        setTimeout(() => resolve({ data: null, error: { message: `Edge Function 호출 ${Math.round(timeoutMs / 1000)}초 타임아웃` } }), timeoutMs)
-      ),
-    ]);
-
-    const { data: envelope, error } = invokeResult as {
-      data: GeminiProxyEnvelope<T> | null;
-      error: { message?: string } | null;
-    };
-
-    if (error) {
-      lastError = new Error(`gemini-proxy 오류: ${error.message || JSON.stringify(error)}`);
-      if (attempt < maxTransientRetries && isTransientEdgeInvokeError(lastError)) {
-        const backoffMs = (attempt + 1) * 700;
-        await new Promise((resolve) => setTimeout(resolve, backoffMs));
-        continue;
-      }
-      throw lastError;
-    }
-
-    if (!envelope?.success || !envelope.data) {
-      lastError = new Error(`gemini-proxy 응답 오류: ${envelope?.error || 'no data'}`);
-      if (attempt < maxTransientRetries && isTransientEdgeInvokeError(lastError)) {
-        const backoffMs = (attempt + 1) * 700;
-        await new Promise((resolve) => setTimeout(resolve, backoffMs));
-        continue;
-      }
-      throw lastError;
-    }
-
-    return envelope.data;
-  }
-
-  throw lastError ?? new Error('gemini-proxy 알 수 없는 오류');
 }
 
 async function generateWhatIfViaProxy(input: WhatIfInput): Promise<WhatIfResult> {

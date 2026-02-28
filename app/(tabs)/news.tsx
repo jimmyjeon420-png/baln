@@ -93,7 +93,9 @@ export default function NewsTabScreen() {
   const { data: pickNews } = usePickNews();
 
   // 뉴스 훅 (주식/암호화폐/거시경제 탭용) — React 규칙: 항상 호출
-  const newsResult = useMarketNews(isPolymarket ? 'all' : category);
+  const newsResult = useMarketNews(isPolymarket ? 'all' : category, {
+    enabled: !isPolymarket,
+  });
 
   // 예측 훅 (폴리마켓 탭용) — React 규칙: 항상 호출
   const predictionResult = usePredictionFeed('all');

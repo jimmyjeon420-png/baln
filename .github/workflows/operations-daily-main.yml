@@ -1,0 +1,108 @@
+name: Operations Daily Main
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "5 22 * * *"
+
+concurrency:
+  group: operations-daily-main
+  cancel-in-progress: false
+
+jobs:
+  run-main:
+    name: Run Split Daily Briefing
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      SUPABASE_FUNCTIONS_BASE_URL: https://ruqeinfcqhgexrckonsy.supabase.co/functions/v1
+      SUPABASE_PUBLIC_JWT: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1cWVpbmZjcWhnZXhyY2tvbnN5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkyMTE4MDksImV4cCI6MjA4NDc4NzgwOX0.NJmOH_uF59nYaSmjebGMNHlBwvqx5MHIwXOoqzITsXc
+
+    steps:
+      - name: Run split daily briefing tasks
+        shell: bash
+        run: |
+          set -uo pipefail
+
+          invoke_task() {
+            local task="$1"
+            local optional="${2:-false}"
+            local trigger="github-ops-main-${task,,}"
+            local response
+            local body
+            local status
+
+            echo ""
+            echo "=== Trigger daily-briefing task ${task} ==="
+
+            if ! response=$(curl -sS -w '\n%{http_code}' \
+              -X POST "${SUPABASE_FUNCTIONS_BASE_URL}/daily-briefing" \
+              -H "Content-Type: application/json" \
+              -H "Authorization: Bearer ${SUPABASE_PUBLIC_JWT}" \
+              -H "apikey: ${SUPABASE_PUBLIC_JWT}" \
+              --data "{\"tasks\":\"${task}\",\"lang\":\"ko\",\"trigger_source\":\"${trigger}\"}"); then
+              echo "Task ${task} failed before HTTP response"
+              if [ "$optional" = "true" ]; then
+                optional_failures+=("${task}:curl")
+                return 0
+              fi
+              required_failures+=("${task}:curl")
+              return 0
+            fi
+
+            body=$(printf '%s\n' "$response" | sed '$d')
+            status=$(printf '%s\n' "$response" | tail -n1)
+
+            echo "$body"
+
+            if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
+              echo "Task ${task} failed with HTTP ${status}"
+              if [ "$optional" = "true" ]; then
+                optional_failures+=("${task}:http:${status}")
+                return 0
+              fi
+              required_failures+=("${task}:http:${status}")
+              return 0
+            fi
+
+            if printf '%s' "$body" | grep -q '"success":false'; then
+              echo "Task ${task} reported success=false"
+              if [ "$optional" = "true" ]; then
+                optional_failures+=("${task}:success=false")
+                return 0
+              fi
+              required_failures+=("${task}:success=false")
+              return 0
+            fi
+
+            echo "Task ${task} completed"
+            sleep 20
+          }
+
+          required_failures=()
+          optional_failures=()
+
+          invoke_task "D"
+          invoke_task "A"
+          invoke_task "B1"
+          invoke_task "B2"
+          invoke_task "C"
+          invoke_task "E"
+          invoke_task "F" "true"
+          invoke_task "H"
+
+          weekday_kst=$(TZ=Asia/Seoul date +%u)
+          if [ "$weekday_kst" = "1" ]; then
+            invoke_task "I"
+          else
+            echo "Skip Task I (weekday_kst=${weekday_kst})"
+          fi
+
+          if [ "${#optional_failures[@]}" -gt 0 ]; then
+            echo "Optional task failures: ${optional_failures[*]}"
+          fi
+
+          if [ "${#required_failures[@]}" -gt 0 ]; then
+            echo "Required task failures: ${required_failures[*]}"
+            exit 1
+          fi

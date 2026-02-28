@@ -244,13 +244,15 @@ export function convertContextToBriefing(contextData: {
   // IMPACT: 포트폴리오 영향 (가격 텍스트 제거)
   let impact = '오늘의 시장이 내 포트폴리오에 미치는 영향을 확인하세요';
   if (contextData.portfolioImpact?.message) {
-    impact = contextData.portfolioImpact.message
+    const sanitizedImpact = contextData.portfolioImpact.message
       // 가격 관련 문자 제거
       .replace(/₩/g, '')
       .replace(/원/g, '')
       .replace(/\d+,?\d*만/g, '') // "300만원" → ""
       .replace(/-?\d+\.\d+%/g, '') // "-1.2%" → ""
+      .replace(/\s{2,}/g, ' ')
       .trim();
+    impact = sanitizedImpact || impact;
   }
 
   // SENTIMENT

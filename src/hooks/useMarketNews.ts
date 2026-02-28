@@ -12,7 +12,6 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import supabase from '../services/supabase';
-import { getLangParam } from '../utils/promptLanguage';
 import { getCurrentLanguage } from '../locales';
 import { isBlockedNews } from '../data/newsFilterConfig';
 
@@ -471,7 +470,12 @@ async function fetchFallbackMarketNews(category: NewsCategoryFilter): Promise<Ma
 
 const NEWS_PAGE_SIZE = 20;
 
-export const useMarketNews = (category: NewsCategoryFilter = 'all') => {
+export const useMarketNews = (
+  category: NewsCategoryFilter = 'all',
+  options?: { enabled?: boolean }
+) => {
+  const enabled = options?.enabled ?? true;
+
   return useInfiniteQuery({
     queryKey: ['marketNews', category],
     queryFn: async ({ pageParam = 0 }) => {
@@ -492,6 +496,9 @@ export const useMarketNews = (category: NewsCategoryFilter = 'all') => {
       if (error) {
         // 테이블/권한/일시 오류 시 1페이지에서만 RSS fallback 시도
         if (pageParam === 0) {
+          if (category !== 'all') {
+            void triggerNewsCollectionIfNeeded('empty');
+          }
           return fetchFallbackMarketNews(category);
         }
         throw new Error(error.message || '뉴스 조회에 실패했습니다.');
@@ -509,6 +516,9 @@ export const useMarketNews = (category: NewsCategoryFilter = 'all') => {
           const isStale = !Number.isFinite(latestMs) || (Date.now() - latestMs) > NEWS_STALE_THRESHOLD_MS;
 
           if (isStale) {
+            if (category !== 'all') {
+              void triggerNewsCollectionIfNeeded('stale');
+            }
             const fallbackRows = await fetchFallbackMarketNews(category);
             if (fallbackRows.length > 0) {
               return dedupeAndSortNews([...strictRows, ...fallbackRows]);
@@ -521,6 +531,9 @@ export const useMarketNews = (category: NewsCategoryFilter = 'all') => {
 
       // DB가 비었을 때 1페이지 fallback
       if (pageParam === 0) {
+        if (category !== 'all') {
+          void triggerNewsCollectionIfNeeded('empty');
+        }
         return fetchFallbackMarketNews(category);
       }
       return [];
@@ -531,6 +544,7 @@ export const useMarketNews = (category: NewsCategoryFilter = 'all') => {
       return allPages.length * NEWS_PAGE_SIZE;
     },
     staleTime: 30000, // 30초 캐시 (실시간성 강화)
+    enabled,
   });
 };
 
@@ -585,7 +599,7 @@ export async function triggerNewsCollectionIfNeeded(reason: 'empty' | 'stale'): 
       body: {
         tasks: 'J',
         reason: `news_tab_${reason}`,
-        lang: getLangParam(),
+        lang: 'ko',
       },
     });
 
