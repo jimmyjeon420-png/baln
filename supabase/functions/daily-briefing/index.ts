@@ -68,12 +68,34 @@ serve(async (req: Request) => {
   let runLogId: string | null = null;
 
   try {
-    // 인증 확인 (cron 또는 service role만 실행 가능)
+    // 인증 확인 (service role 또는 동일 권한의 내부 요청만 실행 가능)
     const authHeader = req.headers.get('Authorization');
-    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const apiKeyHeader = req.headers.get('apikey')?.trim() ?? '';
+    const SUPABASE_SERVICE_ROLE_KEY = (Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '').trim();
+    const INTERNAL_FUNCTION_JWT = (Deno.env.get('INTERNAL_FUNCTION_JWT') ?? '').trim();
+    const authToken = authHeader?.replace(/^Bearer\s+/i, '').trim() ?? '';
+    const allowedInternalTokens = [INTERNAL_FUNCTION_JWT, SUPABASE_SERVICE_ROLE_KEY].filter(Boolean);
 
-    if (!authHeader?.includes(SUPABASE_SERVICE_ROLE_KEY)) {
-      console.log('[인증] Service Role 직접 매칭 아님 - cron/admin 토큰으로 진행');
+    if (allowedInternalTokens.length === 0) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Server misconfigured',
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const authorized = allowedInternalTokens.some((token) => authToken === token || apiKeyHeader === token);
+
+    if (!authorized) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Unauthorized',
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     // ========================================================================

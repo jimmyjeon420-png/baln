@@ -4,8 +4,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
-const OPS_HEALER_TOKEN = Deno.env.get('OPS_HEALER_TOKEN') ?? '';
-const FALLBACK_PUBLIC_ANON_JWT = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1cWVpbmZjcWhnZXhyY2tvbnN5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkyMTE4MDksImV4cCI6MjA4NDc4NzgwOX0.NJmOH_uF59nYaSmjebGMNHlBwvqx5MHIwXOoqzITsXc';
+const INTERNAL_FUNCTION_JWT = (Deno.env.get('INTERNAL_FUNCTION_JWT') ?? '').trim();
+const OPS_HEALER_TOKEN = (Deno.env.get('OPS_HEALER_TOKEN') ?? '').trim();
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -22,6 +22,7 @@ const MAIN_RUN_COOLDOWN_MS = 3 * 60 * 60 * 1000;
 const CONTEXT_RUN_COOLDOWN_MS = 60 * 60 * 1000;
 const PREDICTION_GENERATE_COOLDOWN_MS = 2 * 60 * 60 * 1000;
 const PREDICTION_RESOLVE_COOLDOWN_MS = 45 * 60 * 1000;
+const EDGE_FUNCTION_TIMEOUT_MS = 180_000;
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
@@ -48,12 +49,7 @@ type ActionResult = {
   payload?: unknown;
 };
 
-function isJwtLike(value: string | null | undefined) {
-  if (!value) return false;
-  return value.split('.').length === 3 && value.startsWith('eyJ');
-}
-
-const FUNCTION_INVOKE_KEY = isJwtLike(SUPABASE_ANON_KEY) ? SUPABASE_ANON_KEY : FALLBACK_PUBLIC_ANON_JWT;
+const FUNCTION_INVOKE_KEY = INTERNAL_FUNCTION_JWT || SUPABASE_ANON_KEY || '';
 
 function response(status: number, body: unknown) {
   return new Response(JSON.stringify(body, null, 2), {
@@ -126,32 +122,63 @@ async function readResponseBody(res: Response) {
   }
 }
 
-async function invokeFunction(path: string, body: Record<string, unknown>) {
-  const res = await fetch(`${SUPABASE_URL}/functions/v1/${path}`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${FUNCTION_INVOKE_KEY}`,
-      apikey: FUNCTION_INVOKE_KEY,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(body),
-  });
+async function fetchWithTimeout(input: string, init: RequestInit, timeoutMs: number) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-  const raw = await readResponseBody(res);
-  let parsed: unknown = raw;
-  if (raw) {
-    try {
-      parsed = JSON.parse(raw);
-    } catch {
-      parsed = raw;
-    }
+  try {
+    return await fetch(input, {
+      ...init,
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+async function invokeFunction(path: string, body: Record<string, unknown>) {
+  if (!FUNCTION_INVOKE_KEY) {
+    throw new Error('Edge Function invoke key is not configured');
   }
 
-  return {
-    ok: res.ok,
-    status: res.status,
-    body: parsed,
-  };
+  try {
+    const res = await fetchWithTimeout(`${SUPABASE_URL}/functions/v1/${path}`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${FUNCTION_INVOKE_KEY}`,
+        apikey: FUNCTION_INVOKE_KEY,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    }, EDGE_FUNCTION_TIMEOUT_MS);
+
+    const raw = await readResponseBody(res);
+    let parsed: unknown = raw;
+    if (raw) {
+      try {
+        parsed = JSON.parse(raw);
+      } catch {
+        parsed = raw;
+      }
+    }
+
+    return {
+      ok: res.ok,
+      status: res.status,
+      body: parsed,
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return {
+      ok: false,
+      status: 504,
+      body: {
+        error: 'Invoke failed',
+        message,
+        path,
+      },
+    };
+  }
 }
 
 async function loadLatestRun(limit = 30) {
@@ -279,26 +306,30 @@ serve(async (req) => {
   const mode = String(requestBody.mode ?? requestUrl.searchParams.get('mode') ?? 'heal').toLowerCase();
   const dryRun = mode === 'status' || requestBody.dry_run === true || requestBody.dryRun === true;
 
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !OPS_HEALER_TOKEN) {
-    return response(500, {
-      ok: false,
-      error: 'Missing required function secrets',
-      hasUrl: Boolean(SUPABASE_URL),
-      hasServiceRole: Boolean(SUPABASE_SERVICE_ROLE_KEY),
-      hasAnon: Boolean(SUPABASE_ANON_KEY),
-      invokeKeySource: isJwtLike(SUPABASE_ANON_KEY) ? 'runtime-env' : 'fallback-public-jwt',
-      hasOpsToken: Boolean(OPS_HEALER_TOKEN),
-    });
-  }
-
   const suppliedToken = req.headers.get('x-ops-token')?.trim()
     || req.headers.get('authorization')?.replace(/^Bearer\s+/i, '').trim()
     || '';
 
-  if (!suppliedToken || suppliedToken !== OPS_HEALER_TOKEN) {
+  if (!OPS_HEALER_TOKEN || !suppliedToken || suppliedToken !== OPS_HEALER_TOKEN) {
     return response(401, {
       ok: false,
       error: 'Unauthorized',
+    });
+  }
+
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !FUNCTION_INVOKE_KEY) {
+    console.error('[ops-content-healer] Missing required function secrets', {
+      hasUrl: Boolean(SUPABASE_URL),
+      hasServiceRole: Boolean(SUPABASE_SERVICE_ROLE_KEY),
+      hasAnon: Boolean(SUPABASE_ANON_KEY),
+      hasInternalJwt: Boolean(INTERNAL_FUNCTION_JWT),
+      hasInvokeKey: Boolean(FUNCTION_INVOKE_KEY),
+      hasOpsToken: Boolean(OPS_HEALER_TOKEN),
+    });
+
+    return response(500, {
+      ok: false,
+      error: 'Missing required function secrets',
     });
   }
 
