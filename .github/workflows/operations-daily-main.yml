@@ -16,13 +16,18 @@ jobs:
     timeout-minutes: 40
     env:
       SUPABASE_FUNCTIONS_BASE_URL: https://ruqeinfcqhgexrckonsy.supabase.co/functions/v1
-      SUPABASE_PUBLIC_JWT: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1cWVpbmZjcWhnZXhyY2tvbnN5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkyMTE4MDksImV4cCI6MjA4NDc4NzgwOX0.NJmOH_uF59nYaSmjebGMNHlBwvqx5MHIwXOoqzITsXc
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
     steps:
       - name: Run split daily briefing tasks
         shell: bash
         run: |
           set -uo pipefail
+
+          if [ -z "${SUPABASE_SERVICE_ROLE_KEY:-}" ]; then
+            echo "Missing SUPABASE_SERVICE_ROLE_KEY secret"
+            exit 1
+          fi
 
           invoke_task() {
             local task="$1"
@@ -38,8 +43,8 @@ jobs:
             if ! response=$(curl -sS -w '\n%{http_code}' \
               -X POST "${SUPABASE_FUNCTIONS_BASE_URL}/daily-briefing" \
               -H "Content-Type: application/json" \
-              -H "Authorization: Bearer ${SUPABASE_PUBLIC_JWT}" \
-              -H "apikey: ${SUPABASE_PUBLIC_JWT}" \
+              -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
+              -H "apikey: ${SUPABASE_SERVICE_ROLE_KEY}" \
               --data "{\"tasks\":\"${task}\",\"lang\":\"ko\",\"trigger_source\":\"${trigger}\"}"); then
               echo "Task ${task} failed before HTTP response"
               if [ "$optional" = "true" ]; then
