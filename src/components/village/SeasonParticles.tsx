@@ -208,21 +208,23 @@ function SingleParticle({ emoji, x, delay, fontSize, config }: SingleParticlePro
 // ============================================================================
 
 function SeasonParticles({ particleType, particleEmoji, screenWidth }: SeasonParticlesProps) {
-  // 'none' 이면 렌더링 안 함
-  if (particleType === 'none') return null;
-
-  const config = PARTICLE_CONFIGS[particleType];
-  if (!config) return null;
+  const config = particleType === 'none' ? null : PARTICLE_CONFIGS[particleType];
 
   // 파티클 10개의 랜덤 설정 메모이제이션
   const particles = useMemo(() => {
+    if (!config) return [];
+
     return Array.from({ length: PARTICLE_COUNT }, (_, i) => ({
       id: i,
       x: Math.random() * (screenWidth - 20),
       delay: Math.random() * 4000,
       fontSize: 14 + Math.random() * 10, // 14~24px 랜덤 크기
     }));
-  }, [screenWidth]);
+  }, [config, screenWidth]);
+
+  // 'none' 이면 렌더링 안 함
+  if (particleType === 'none') return null;
+  if (!config) return null;
 
   return (
     <View style={styles.container} pointerEvents="none">

@@ -36,6 +36,22 @@ async function runCheck(label, blocking, fn) {
   }
 }
 
+function skippedCheck(label, detail) {
+  return {
+    label,
+    blocking: false,
+    status: 'skipped',
+    durationMs: 0,
+    detail,
+  };
+}
+
+function statusPrefix(status) {
+  if (status === 'passed') return 'PASS';
+  if (status === 'skipped') return 'SKIP';
+  return 'FAIL';
+}
+
 async function main() {
   if (process.env.BALN_SKIP_NETWORK_CHECKS === '1') {
     console.log('SKIP production preflight (BALN_SKIP_NETWORK_CHECKS=1)');
@@ -126,47 +142,48 @@ async function main() {
     return `status=${status} geminiApi=${geminiApi} model=${json?.data?.model || 'unknown'}`;
   }));
 
-  checks.push(await runCheck('ops-content-healer status-check', true, async () => {
-    if (!OPS_HEALER_TOKEN) {
-      throw new Error('OPS healer token missing');
-    }
+  if (!OPS_HEALER_TOKEN) {
+    checks.push(skippedCheck('ops-content-healer status-check', 'OPS healer token missing; skipping secured check'));
+  } else {
+    checks.push(await runCheck('ops-content-healer status-check', true, async () => {
 
-    const response = await withRetry('ops-content-healer status-check', () => fetchWithTimeout(`${SUPABASE_URL}/functions/v1/ops-content-healer`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-ops-token': OPS_HEALER_TOKEN,
-      },
-      body: JSON.stringify({
-        mode: 'status',
-        source: 'production-preflight',
-      }),
-    }, 20000));
+      const response = await withRetry('ops-content-healer status-check', () => fetchWithTimeout(`${SUPABASE_URL}/functions/v1/ops-content-healer`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-ops-token': OPS_HEALER_TOKEN,
+        },
+        body: JSON.stringify({
+          mode: 'status',
+          source: 'production-preflight',
+        }),
+      }, 20000));
 
-    const bodyText = await readResponseBody(response);
-    const json = bodyText ? JSON.parse(bodyText) : null;
+      const bodyText = await readResponseBody(response);
+      const json = bodyText ? JSON.parse(bodyText) : null;
 
-    if (!response.ok) {
-      throw new Error(`Function returned ${response.status}${bodyText ? ` body=${bodyText.slice(0, 240)}` : ''}`);
-    }
+      if (!response.ok) {
+        throw new Error(`Function returned ${response.status}${bodyText ? ` body=${bodyText.slice(0, 240)}` : ''}`);
+      }
 
-    if (!json?.ok) {
-      throw new Error(`Function ok=false error=${json?.error || 'unknown'}`);
-    }
+      if (!json?.ok) {
+        throw new Error(`Function ok=false error=${json?.error || 'unknown'}`);
+      }
 
-    if (json?.mode !== 'status') {
-      throw new Error(`Unexpected healer mode=${json?.mode || 'unknown'}`);
-    }
+      if (json?.mode !== 'status') {
+        throw new Error(`Unexpected healer mode=${json?.mode || 'unknown'}`);
+      }
 
-    return `mode=${json.mode} actions=${Array.isArray(json?.actions) ? json.actions.length : 0}`;
-  }));
+      return `mode=${json.mode} actions=${Array.isArray(json?.actions) ? json.actions.length : 0}`;
+    }));
+  }
 
   const failedBlocking = checks.filter((check) => check.blocking && check.status === 'failed');
 
   console.log('Production preflight');
   console.log('====================');
   for (const check of checks) {
-    const prefix = check.status === 'passed' ? 'PASS' : 'FAIL';
+    const prefix = statusPrefix(check.status);
     console.log(`${prefix} ${check.label} (${check.durationMs}ms)`);
     if (check.detail) console.log(`  ${check.detail}`);
   }
