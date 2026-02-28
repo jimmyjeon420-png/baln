@@ -27,7 +27,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 // Task 함수 import
 import { analyzeMacroAndBitcoin } from './task-a-macro.ts';
 import { analyzeAllStocks } from './task-b-stocks.ts';
-import { runGuruInsightsAnalysis } from './task-c-gurus.ts';
+import { runGuruInsightsAnalysis, runGuruInsightsAnalysisSubset } from './task-c-gurus.ts';
 import { takePortfolioSnapshots } from './task-d-snapshots.ts';
 import { generatePredictionPolls } from './task-e-predictions.ts';
 import { resolvePredictionPolls } from './task-e-resolve.ts';
@@ -122,7 +122,9 @@ serve(async (req: Request) => {
     const timeSlot = url.searchParams.get('time_slot') || undefined;
 
     const runAll = !selectedTasks;
-    const shouldRun = (task: string) => runAll || selectedTasks!.has(task);
+    const hasSelectedTask = (task: string) => selectedTasks?.has(task) ?? false;
+    const shouldRun = (task: string) => runAll || hasSelectedTask(task);
+    const shouldRunSplitOnly = (task: string) => hasSelectedTask(task);
     // 선택 실행 시 Task 간 지연 단축 (전체 실행 시만 Rate Limit 방지)
     const delayMs = runAll ? 2000 : 500;
     const selectedTaskList = runAll ? ['ALL'] : [...selectedTasks!];
@@ -190,7 +192,11 @@ serve(async (req: Request) => {
     let snapshotsResult: TaskResult<any> = null;
     let macroResult: TaskResult<any> = null;
     let stocksResult: TaskResult<any> = null;
+    let stocksResultB1: TaskResult<any> = null;
+    let stocksResultB2: TaskResult<any> = null;
     let gurusResult: TaskResult<any> = null;
+    let gurusResultC1: TaskResult<any> = null;
+    let gurusResultC2: TaskResult<any> = null;
     let predictionsResult: TaskResult<any> = null;
     let resolveResult: TaskResult<any> = null;
     let contextCardResult: TaskResult<any> = null;
@@ -227,21 +233,21 @@ serve(async (req: Request) => {
       await sleep(delayMs);
     }
     // Task B 전반부만 (B1): 종목 0~17
-    if (shouldRun('B1')) {
+    if (shouldRunSplitOnly('B1')) {
       console.log('[Task B1] 시작: 종목 분석 전반부 (18개)...');
       const { analyzeStockSubset } = await import('./task-b-stocks.ts');
       const taskStartedAt = Date.now();
-      stocksResult = await safe(() => retryWithBackoff('Task B1', () => analyzeStockSubset(0, 18)));
-      await logTaskMetric('B1', taskStartedAt, stocksResult);
+      stocksResultB1 = await safe(() => retryWithBackoff('Task B1', () => analyzeStockSubset(0, 18)));
+      await logTaskMetric('B1', taskStartedAt, stocksResultB1);
       await sleep(delayMs);
     }
     // Task B 후반부만 (B2): 종목 18~34
-    if (shouldRun('B2')) {
+    if (shouldRunSplitOnly('B2')) {
       console.log('[Task B2] 시작: 종목 분석 후반부 (17개)...');
       const { analyzeStockSubset } = await import('./task-b-stocks.ts');
       const taskStartedAt = Date.now();
-      stocksResult = await safe(() => retryWithBackoff('Task B2', () => analyzeStockSubset(18, 35)));
-      await logTaskMetric('B2', taskStartedAt, stocksResult);
+      stocksResultB2 = await safe(() => retryWithBackoff('Task B2', () => analyzeStockSubset(18, 35)));
+      await logTaskMetric('B2', taskStartedAt, stocksResultB2);
       await sleep(delayMs);
     }
 
@@ -251,6 +257,20 @@ serve(async (req: Request) => {
       const taskStartedAt = Date.now();
       gurusResult = await safe(() => retryWithBackoff('Task C', () => runGuruInsightsAnalysis(lang)));
       await logTaskMetric('C', taskStartedAt, gurusResult);
+      await sleep(delayMs);
+    }
+    if (shouldRunSplitOnly('C1')) {
+      console.log('[Task C1] 시작: 투자 거장 인사이트 전반부...');
+      const taskStartedAt = Date.now();
+      gurusResultC1 = await safe(() => retryWithBackoff('Task C1', () => runGuruInsightsAnalysisSubset(0, 5, lang, true)));
+      await logTaskMetric('C1', taskStartedAt, gurusResultC1);
+      await sleep(delayMs);
+    }
+    if (shouldRunSplitOnly('C2')) {
+      console.log('[Task C2] 시작: 투자 거장 인사이트 후반부...');
+      const taskStartedAt = Date.now();
+      gurusResultC2 = await safe(() => retryWithBackoff('Task C2', () => runGuruInsightsAnalysisSubset(5, GURU_LIST.length, lang, true)));
+      await logTaskMetric('C2', taskStartedAt, gurusResultC2);
       await sleep(delayMs);
     }
 
@@ -355,9 +375,49 @@ serve(async (req: Request) => {
       else { console.error(`[${name}] 실패:`, result.reason); }
     };
 
+    const st = (r: TaskResult<any>) => !r ? 'SKIPPED' : r.status === 'fulfilled' ? 'SUCCESS' : 'FAILED';
+    const val = <T>(r: TaskResult<any>, getter: (v: any) => T, fallback: T): T =>
+      r?.status === 'fulfilled' ? getter(r.value) : fallback;
+
+    const aggregateStatus = (results: TaskResult<any>[]) => {
+      const present = results.filter((result): result is Exclude<TaskResult<any>, null> => Boolean(result));
+      if (present.length === 0) return 'SKIPPED';
+      if (present.some((result) => result.status === 'rejected')) return 'FAILED';
+      return 'SUCCESS';
+    };
+
+    const aggregateFulfilledCount = (results: TaskResult<any>[], getter: (value: any) => number) => {
+      return results.reduce((sum, result) => {
+        if (!result || result.status !== 'fulfilled') return sum;
+        const nextValue = getter(result.value);
+        return sum + (Number.isFinite(nextValue) ? nextValue : 0);
+      }, 0);
+    };
+
+    const splitStockResults = [stocksResultB1, stocksResultB2];
+    const splitGuruResults = [gurusResultC1, gurusResultC2];
+    const combinedStocksStatus = shouldRun('B')
+      ? st(stocksResult)
+      : aggregateStatus(splitStockResults);
+    const combinedStocksCount = shouldRun('B')
+      ? val(stocksResult, v => v.length, 0)
+      : aggregateFulfilledCount(splitStockResults, (v) => v.length);
+    const combinedGurusStatus = shouldRun('C')
+      ? st(gurusResult)
+      : aggregateStatus(splitGuruResults);
+    const combinedGurusCount = shouldRun('C')
+      ? val(gurusResult, v => v.count, 0)
+      : aggregateFulfilledCount(splitGuruResults, (v) => v.count);
+
     logTask('Task A', macroResult, () => '성공: 거시경제 & 비트코인 분석 완료');
     logTask('Task B', stocksResult, v => `성공: 종목 분석 ${v.length}/${STOCK_LIST.length}건 완료`);
     logTask('Task C', gurusResult, v => `성공: 투자 거장 ${v.count}/10명 분석 완료`);
+    if (!shouldRun('B') && (shouldRunSplitOnly('B1') || shouldRunSplitOnly('B2'))) {
+      console.log(`[Task B] 분할 실행 집계: ${combinedStocksStatus} (${combinedStocksCount}/${STOCK_LIST.length})`);
+    }
+    if (!shouldRun('C') && (shouldRunSplitOnly('C1') || shouldRunSplitOnly('C2'))) {
+      console.log(`[Task C] 분할 실행 집계: ${combinedGurusStatus} (${combinedGurusCount}/${GURU_LIST.length})`);
+    }
     logTask('Task D', snapshotsResult, v => `성공: 스냅샷 ${v.snapshotsCreated}/${v.totalUsers}명, 구간별 통계 ${v.bracketsUpdated}개`);
     logTask('Task E-1', predictionsResult, v => v.skipped ? '스킵 (이미 생성됨)' : `성공: 예측 질문 ${v.created}개 생성`);
     logTask('Task E-2', resolveResult, v => `성공: 예측 판정 ${v.resolved}건 해결, ${v.deferred}건 보류`);
@@ -382,15 +442,10 @@ serve(async (req: Request) => {
 
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
 
-    // null-safe 상태 헬퍼
-    const st = (r: TaskResult<any>) => !r ? 'SKIPPED' : r.status === 'fulfilled' ? 'SUCCESS' : 'FAILED';
-    const val = <T>(r: TaskResult<any>, getter: (v: any) => T, fallback: T): T =>
-      r?.status === 'fulfilled' ? getter(r.value) : fallback;
-
     const summary: Record<string, any> = {};
     if (shouldRun('A')) summary.macro = { status: st(macroResult) };
-    if (shouldRun('B') || shouldRun('B1') || shouldRun('B2')) summary.stocks = { status: st(stocksResult), count: val(stocksResult, v => v.length, 0) };
-    if (shouldRun('C')) summary.gurus = { status: st(gurusResult), count: `${val(gurusResult, v => v.count, 0)}/10` };
+    if (shouldRun('B') || shouldRunSplitOnly('B1') || shouldRunSplitOnly('B2')) summary.stocks = { status: combinedStocksStatus, count: combinedStocksCount };
+    if (shouldRun('C') || shouldRunSplitOnly('C1') || shouldRunSplitOnly('C2')) summary.gurus = { status: combinedGurusStatus, count: `${combinedGurusCount}/10` };
     if (shouldRun('D')) summary.snapshots = { status: st(snapshotsResult), count: val(snapshotsResult, v => v.snapshotsCreated, 0) };
     if (shouldRun('E') || shouldRun('E1') || shouldRun('E-1')) summary.predictions = { status: st(predictionsResult), created: val(predictionsResult, v => v.created, 0) };
     if (shouldRun('E') || shouldRun('E2') || shouldRun('E-2')) summary.resolve = { status: st(resolveResult), resolved: val(resolveResult, v => v.resolved, 0) };
@@ -427,7 +482,11 @@ serve(async (req: Request) => {
       snapshotsResult,
       macroResult,
       stocksResult,
+      stocksResultB1,
+      stocksResultB2,
       gurusResult,
+      gurusResultC1,
+      gurusResultC2,
       predictionsResult,
       resolveResult,
       contextCardResult,
