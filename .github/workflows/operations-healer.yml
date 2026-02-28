@@ -28,9 +28,6 @@ jobs:
             exit 1
           fi
 
-          echo "OPS_HEALER_TOKEN length: $(printf %s "$OPS_HEALER_TOKEN" | wc -c | tr -d ' ')"
-          echo "OPS_HEALER_TOKEN sha256: $(printf %s "$OPS_HEALER_TOKEN" | shasum -a 256 | awk '{print $1}')"
-
           response=$(curl -sS -w '\n%{http_code}' \
             -X POST "$OPS_HEALER_URL" \
             -H "Content-Type: application/json" \
