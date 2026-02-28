@@ -303,10 +303,12 @@ export function useSharedAnalysis(portfolioAssets: PortfolioAsset[]) {
     enabled: hasAssets,
     staleTime: 0,                      // 항상 최신 데이터 조회
     gcTime: 1000 * 60 * 15,
+    placeholderData: keepPreviousData, // 이전 성공 데이터를 유지해 탭 재진입 시 무한 로딩 체감 방지
     retry: 1,
     retryDelay: 3000,                  // 재시도 전 3초 대기
     refetchOnMount: true,              // [이승건: 마운트 시 항상 새로고침]
     refetchOnWindowFocus: false,       // 포커스 시 재조회 방지
+    networkMode: 'offlineFirst',       // 네트워크 순간 장애 시 마지막 성공 데이터 우선 표시
   });
 
   const refresh = () => {

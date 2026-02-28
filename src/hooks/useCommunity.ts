@@ -634,6 +634,64 @@ export const useUpdateComment = (postId: string) => {
   });
 };
 
+const waitForDeletion = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const verifyCommunityRowDeleted = async (
+  table: 'community_comments' | 'community_posts',
+  id: string,
+  entityLabel: string,
+) => {
+  const retryDelays = [150, 250, 400, 700];
+
+  for (let index = 0; index < retryDelays.length; index += 1) {
+    const { data, error } = await supabase
+      .from(table)
+      .select('id')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (error) {
+      console.warn(`[Community] ${entityLabel} 삭제 확인 중 DB 에러:`, error.message);
+      throw new Error(`${entityLabel} 삭제 상태를 확인하지 못했습니다. 잠시 후 다시 시도해주세요.`);
+    }
+
+    if (!data) return;
+
+    await waitForDeletion(retryDelays[index]);
+  }
+
+  throw new Error(`${entityLabel} 삭제가 아직 완료되지 않았습니다. 잠시 후 다시 시도해주세요.`);
+};
+
+const syncCommunityCommentCount = async (postId: string) => {
+  try {
+    const { count, error: countError } = await supabase
+      .from('community_comments')
+      .select('id', { count: 'exact', head: true })
+      .eq('post_id', postId);
+
+    if (!countError && count !== null) {
+      const { error: updateError } = await supabase
+        .from('community_posts')
+        .update({ comments_count: count })
+        .eq('id', postId);
+
+      if (updateError) {
+        console.warn('[Community] comments_count 동기화 실패 (무시):', updateError.message);
+      }
+      return;
+    }
+
+    if (countError) {
+      console.warn('[Community] 댓글 수 카운트 실패, 폴백 -1 적용:', countError.message);
+    }
+
+    await supabase.rpc('increment_comment_count', { p_post_id: postId, p_delta: -1 });
+  } catch (rpcErr) {
+    console.warn('[Community] comments_count 동기화 예외 (무시):', rpcErr);
+  }
+};
+
 /** 댓글 삭제 (본인 것만) */
 export const useDeleteComment = (postId: string) => {
   const queryClient = useQueryClient();
@@ -654,6 +712,8 @@ export const useDeleteComment = (postId: string) => {
           const reason = (rpcData as any)?.reason as string | undefined;
 
           if (success) {
+            await verifyCommunityRowDeleted('community_comments', commentId, '댓글');
+            await syncCommunityCommentCount(postId);
             return;
           }
 
@@ -690,31 +750,14 @@ export const useDeleteComment = (postId: string) => {
         throw new Error('댓글 삭제 권한 확인에 실패했습니다. 잠시 후 다시 시도해주세요.');
       }
 
-      // 폴백 경로: 댓글 수 보정 (대댓글 CASCADE 삭제분 포함)
-      // 직접 삭제 후 실제 댓글 수를 카운트하여 정확히 동기화
-      try {
-        const { count, error: countError } = await supabase
-          .from('community_comments')
-          .select('id', { count: 'exact', head: true })
-          .eq('post_id', postId);
-
-        if (!countError && count !== null) {
-          const { error: updateError } = await supabase
-            .from('community_posts')
-            .update({ comments_count: count })
-            .eq('id', postId);
-          if (updateError) {
-            console.warn('[Community] comments_count 동기화 실패 (무시):', updateError.message);
-          }
-        } else if (countError) {
-          console.warn('[Community] 댓글 수 카운트 실패, 폴백 -1 적용:', countError.message);
-          await supabase.rpc('increment_comment_count', { p_post_id: postId, p_delta: -1 });
-        }
-      } catch (rpcErr) {
-        console.warn('[Community] comments_count 동기화 예외 (무시):', rpcErr);
-      }
+      await verifyCommunityRowDeleted('community_comments', commentId, '댓글');
+      await syncCommunityCommentCount(postId);
     },
-    onSuccess: () => {
+    onSuccess: (_deletedComment, deletedCommentId) => {
+      queryClient.setQueryData<CommunityComment[]>(['communityComments', postId], (old) => {
+        if (!Array.isArray(old)) return old;
+        return old.filter((comment) => comment.id !== deletedCommentId && comment.parent_id !== deletedCommentId);
+      });
       queryClient.invalidateQueries({ queryKey: ['communityComments', postId] });
       queryClient.invalidateQueries({ queryKey: ['communityPosts'] });
       queryClient.invalidateQueries({ queryKey: ['communityPost', postId] });
@@ -731,34 +774,6 @@ export const useDeletePost = () => {
       const user = await getCurrentUser();
       if (!user) throw new Error('로그인이 필요합니다.');
 
-      const verifyDeleted = async () => {
-        // 삭제 직후 반영 지연을 감안해 짧게 1회 재확인
-        for (let attempt = 0; attempt < 2; attempt += 1) {
-          const { data, error } = await supabase
-            .from('community_posts')
-            .select('id')
-            .eq('id', postId)
-            .maybeSingle();
-
-          // DB 에러 시: 삭제 자체는 성공했을 수 있으므로 경고만 남기고 진행
-          if (error) {
-            console.warn('[Community] 삭제 확인 중 DB 에러 (무시):', error.message);
-            return;
-          }
-
-          // maybeSingle: 행 없으면 data=null, error=null → 정상 삭제 확인
-          if (!data) return;
-
-          if (attempt === 0) {
-            await new Promise((resolve) => setTimeout(resolve, 220));
-            continue;
-          }
-        }
-
-        // 2회 확인 후에도 행이 존재 → 경고만 남기고 진행 (onSuccess 캐시 정리 보장)
-        console.warn('[Community] 삭제 확인: 서버 반영 지연 감지, 캐시는 선제 정리');
-      };
-
       // 1) 우선: RLS 누락/불일치에도 안정적인 RPC 경로
       try {
         const { data: rpcData, error: rpcError } = await supabase.rpc('delete_own_community_post', {
@@ -770,7 +785,7 @@ export const useDeletePost = () => {
           const reason = (rpcData as any)?.reason as string | undefined;
 
           if (success) {
-            await verifyDeleted();
+            await verifyCommunityRowDeleted('community_posts', postId, '게시글');
             return;
           }
 
@@ -807,7 +822,7 @@ export const useDeletePost = () => {
         throw new Error('게시글 삭제 권한 확인에 실패했습니다. 잠시 후 다시 시도해주세요.');
       }
 
-      await verifyDeleted();
+      await verifyCommunityRowDeleted('community_posts', postId, '게시글');
     },
     onSuccess: async (_deletedPost, deletedPostId) => {
       queryClient.setQueriesData({ queryKey: ['communityPosts'] }, (old: unknown) => {
