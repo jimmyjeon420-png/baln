@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-disable @typescript-eslint/no-var-requires */
 
 const { execSync } = require('child_process');
 const fs = require('fs');
@@ -29,6 +30,15 @@ const REQUIRED_SUBMIT_KEYS = [
   'ascApiKeyIssuerId',
 ];
 
+function parseModeArg() {
+  const modeIndex = process.argv.findIndex((arg) => arg === '--mode');
+  if (modeIndex >= 0 && process.argv[modeIndex + 1]) {
+    return process.argv[modeIndex + 1].trim().toLowerCase();
+  }
+
+  return 'release';
+}
+
 function parseProfilesArg() {
   const profileIndex = process.argv.findIndex((arg) => arg === '--profile' || arg === '--profiles');
   if (profileIndex >= 0 && process.argv[profileIndex + 1]) {
@@ -43,26 +53,6 @@ function parseProfilesArg() {
   }
 
   return ['preview', 'production'];
-}
-
-function runCommand(command) {
-  try {
-    const stdout = execSync(command, {
-      cwd: projectRoot,
-      stdio: ['ignore', 'pipe', 'pipe'],
-      encoding: 'utf8',
-      maxBuffer: 1024 * 1024 * 10,
-    });
-    return { status: 'passed', output: stdout.trim() };
-  } catch (error) {
-    const stdout = error.stdout ? String(error.stdout) : '';
-    const stderr = error.stderr ? String(error.stderr) : '';
-    return {
-      status: 'failed',
-      output: `${stdout}\n${stderr}`.trim(),
-      code: typeof error.status === 'number' ? error.status : 1,
-    };
-  }
 }
 
 function createCheck(label, blocking, evaluator) {
@@ -170,13 +160,43 @@ function renderMarkdown(results, profiles) {
 
 function main() {
   const profiles = parseProfilesArg();
+  const mode = parseModeArg();
+
+  if (!['build', 'release'].includes(mode)) {
+    throw new Error(`Unsupported release gate mode: ${mode}`);
+  }
+
   const easConfig = JSON.parse(fs.readFileSync(easJsonPath, 'utf8'));
   const results = [];
 
+  const stabilityEnv =
+    mode === 'build'
+      ? { ...process.env, BALN_SKIP_NETWORK_CHECKS: '1' }
+      : { ...process.env };
+
   results.push({
-    label: '안정성 게이트',
+    label: mode === 'build' ? '빌드용 안정성 게이트' : '안정성 게이트',
     blocking: true,
-    ...runCommand('npm run -s qa:stability'),
+    ...(() => {
+      try {
+        const stdout = execSync('npm run -s qa:stability', {
+          cwd: projectRoot,
+          stdio: ['ignore', 'pipe', 'pipe'],
+          encoding: 'utf8',
+          maxBuffer: 1024 * 1024 * 10,
+          env: stabilityEnv,
+        });
+        return { status: 'passed', output: stdout.trim() };
+      } catch (error) {
+        const stdout = error.stdout ? String(error.stdout) : '';
+        const stderr = error.stderr ? String(error.stderr) : '';
+        return {
+          status: 'failed',
+          output: `${stdout}\n${stderr}`.trim(),
+          code: typeof error.status === 'number' ? error.status : 1,
+        };
+      }
+    })(),
   });
 
   for (const profile of profiles) {
@@ -185,7 +205,7 @@ function main() {
     );
   }
 
-  if (profiles.includes('production')) {
+  if (mode === 'release' && profiles.includes('production')) {
     results.push(
       createCheck('App Store / TestFlight 제출 설정 검증', true, () => validateProductionSubmit(easConfig)),
     );
@@ -195,6 +215,7 @@ function main() {
   const report = {
     generatedAt: new Date().toISOString(),
     profiles,
+    mode,
     overall: blockingFailures.length === 0 ? 'PASS' : 'FAIL',
     blockingFailures: blockingFailures.length,
     results,
