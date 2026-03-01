@@ -20,6 +20,16 @@ export interface GeminiProxyClient {
   };
 }
 
+function isTransientEnvelopeFailure(message: string): boolean {
+  return isTransientEdgeInvokeError(message)
+    || /temporar/i.test(message)
+    || /timeout/i.test(message)
+    || /\b(?:429|502|503|504)\b/.test(message)
+    || /rate.?limit/i.test(message)
+    || /unavailable/i.test(message)
+    || /upstream degraded/i.test(message);
+}
+
 export async function invokeGeminiProxy<T>(
   type: string,
   data: unknown,
@@ -61,8 +71,9 @@ export async function invokeGeminiProxy<T>(
     }
 
     if (!envelope?.success || !envelope.data) {
-      lastError = new Error(`gemini-proxy 응답 오류: ${envelope?.error || 'no data'}`);
-      if (attempt < maxTransientRetries && isTransientEdgeInvokeError(lastError)) {
+      const envelopeMessage = String(envelope?.error || 'no data');
+      lastError = new Error(`gemini-proxy 응답 오류: ${envelopeMessage}`);
+      if (attempt < maxTransientRetries && isTransientEnvelopeFailure(envelopeMessage)) {
         const backoffMs = (attempt + 1) * 700;
         await new Promise((resolve) => setTimeout(resolve, backoffMs));
         continue;

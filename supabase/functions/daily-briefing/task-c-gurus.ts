@@ -1,4 +1,3 @@
-// @ts-nocheck
 // ============================================================================
 // Task C: 투자 거장 인사이트 분석 (Guru Investment Insights)
 // Gemini + Google Search로 10명의 투자 거장 최근 동향 분석
@@ -35,6 +34,10 @@ import {
   getKSTDate,
   getKSTDateStr,
 } from './_shared.ts';
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
 
 // ============================================================================
 // 타입 정의
@@ -176,7 +179,7 @@ async function analyzeGuruInsight(guru: typeof GURU_LIST[0], langInstruction = '
       conviction_level: typeof parsed.conviction_level === 'number' && parsed.conviction_level >= 1 && parsed.conviction_level <= 5 ? parsed.conviction_level : undefined,
     };
   } catch (error) {
-    console.error(`[Task C] ${guru.name} 분석 실패:`, error.message);
+    console.error(`[Task C] ${guru.name} 분석 실패:`, getErrorMessage(error));
     // 실패 시 기본값 반환
     const isEn = langInstruction.includes('English');
     return {
@@ -357,7 +360,7 @@ export async function runGuruInsightsAnalysisSubset(
     };
   } catch (error) {
     const elapsed = Date.now() - startTime;
-    await logTaskResult('gurus', 'FAILED', elapsed, null, error.message);
+    await logTaskResult('gurus', 'FAILED', elapsed, null, getErrorMessage(error));
     throw error;
   }
 }

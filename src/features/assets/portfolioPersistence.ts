@@ -9,8 +9,27 @@ export interface SavePortfolioAssetInput {
   existingId?: string | null;
 }
 
+interface PortfolioFilterQuery extends PromiseLike<PortfolioMutationResult> {
+  eq: (field: string, value: string) => PortfolioFilterQuery;
+  limit: (value: number) => PortfolioFilterQuery;
+}
+
+interface PortfolioMutationQuery {
+  update: (payload: Record<string, unknown>) => {
+    eq: (field: string, value: string) => {
+      eq: (field: string, value: string) => {
+        select: (fields: string) => PortfolioFilterQuery;
+      };
+    };
+  };
+  insert: (payload: Record<string, unknown>) => {
+    select: (fields: string) => PortfolioFilterQuery;
+  };
+  select: (fields: string) => PortfolioFilterQuery;
+}
+
 export interface PortfolioPersistenceClient {
-  from: (table: 'portfolios') => any;
+  from: (table: 'portfolios') => unknown;
 }
 
 interface PortfolioRowId {
@@ -32,17 +51,32 @@ const VERIFICATION_EPSILON = 0.01;
 const SAVE_VERIFICATION_ERROR = '자산 저장 후 검증에 실패했습니다. 잠시 후 다시 시도해주세요.';
 
 export function withTimeout<T>(promise: PromiseLike<T>, ms: number, message: string): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error(message)), ms);
+  });
+
   return Promise.race([
     Promise.resolve(promise),
-    new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error(message)), ms)
-    ),
-  ]);
+    timeoutPromise,
+  ]).finally(() => {
+    if (timeoutId) clearTimeout(timeoutId);
+  });
 }
 
-function normalizePositiveNumber(value: number): number {
-  if (!Number.isFinite(value) || value < 0) return 0;
+function assertNonNegativeNumber(value: number, fieldName: string): number {
+  if (!Number.isFinite(value)) {
+    throw new Error(`${fieldName} 값이 올바르지 않습니다.`);
+  }
+  if (value < 0) {
+    throw new Error(`${fieldName} 값은 음수일 수 없습니다.`);
+  }
   return value;
+}
+
+function readStoredNumber(value: number | undefined): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : Number.NaN;
 }
 
 function isCloseEnough(a: number, b: number): boolean {
@@ -52,16 +86,20 @@ function isCloseEnough(a: number, b: number): boolean {
 function matchesExpectedRow(row: PortfolioRowId | null, input: SavePortfolioAssetInput): row is PortfolioRowId {
   if (!row?.id) return false;
 
-  const quantity = normalizePositiveNumber(row.quantity ?? 0);
-  const avgPrice = normalizePositiveNumber(row.avg_price ?? 0);
-  const currentValue = normalizePositiveNumber(row.current_value ?? 0);
+  const quantity = readStoredNumber(row.quantity);
+  const avgPrice = readStoredNumber(row.avg_price);
+  const currentValue = readStoredNumber(row.current_value);
+
+  if (!Number.isFinite(quantity) || !Number.isFinite(avgPrice) || !Number.isFinite(currentValue)) {
+    return false;
+  }
 
   return (
     (row.ticker ?? '').trim() === input.ticker.trim()
     && (row.name ?? '').trim() === input.name.trim()
-    && isCloseEnough(quantity, normalizePositiveNumber(input.quantity))
-    && isCloseEnough(avgPrice, normalizePositiveNumber(input.avgPrice))
-    && isCloseEnough(currentValue, normalizePositiveNumber(input.currentValue))
+    && isCloseEnough(quantity, input.quantity)
+    && isCloseEnough(avgPrice, input.avgPrice)
+    && isCloseEnough(currentValue, input.currentValue)
   );
 }
 
@@ -71,12 +109,12 @@ async function findSavedRow(
   timeoutMessage: string,
   options?: { id?: string | null },
 ): Promise<PortfolioRowId | null> {
+  const fromPortfolios = () => client.from('portfolios') as PortfolioMutationQuery;
   const fields = 'id, user_id, ticker, name, quantity, avg_price, current_value';
 
   if (options?.id) {
     const result = await withTimeout<PortfolioMutationResult>(
-      client
-        .from('portfolios')
+      fromPortfolios()
         .select(fields)
         .eq('id', options.id)
         .eq('user_id', input.userId)
@@ -93,8 +131,7 @@ async function findSavedRow(
   }
 
   const result = await withTimeout<PortfolioMutationResult>(
-    client
-      .from('portfolios')
+    fromPortfolios()
       .select(fields)
       .eq('user_id', input.userId)
       .eq('ticker', input.ticker.trim())
@@ -121,21 +158,25 @@ export async function savePortfolioAsset(
   input: SavePortfolioAssetInput,
   timeoutMessage: string,
 ) {
+  const fromPortfolios = () => client.from('portfolios') as PortfolioMutationQuery;
   const sanitizedInput = {
     ...input,
     ticker: input.ticker.trim(),
     name: input.name.trim(),
-    quantity: normalizePositiveNumber(input.quantity),
-    avgPrice: normalizePositiveNumber(input.avgPrice),
-    currentValue: normalizePositiveNumber(input.currentValue),
+    quantity: assertNonNegativeNumber(input.quantity, '보유 수량'),
+    avgPrice: assertNonNegativeNumber(input.avgPrice, '평균 매수가'),
+    currentValue: assertNonNegativeNumber(input.currentValue, '현재 평가금액'),
   };
+  const inferredCurrentPrice = sanitizedInput.quantity > 0 && sanitizedInput.currentValue > 0
+    ? sanitizedInput.currentValue / sanitizedInput.quantity
+    : sanitizedInput.avgPrice;
 
   const basePayload = {
     ticker: sanitizedInput.ticker,
     name: sanitizedInput.name,
     quantity: sanitizedInput.quantity,
     avg_price: sanitizedInput.avgPrice,
-    current_price: sanitizedInput.avgPrice,
+    current_price: inferredCurrentPrice,
     current_value: sanitizedInput.currentValue,
     target_allocation: 0,
     asset_type: 'liquid' as const,
@@ -144,8 +185,7 @@ export async function savePortfolioAsset(
 
   const updateById = async (id: string) => {
     const result = await withTimeout<PortfolioMutationResult>(
-      client
-        .from('portfolios')
+      fromPortfolios()
         .update(basePayload)
         .eq('id', id)
         .eq('user_id', sanitizedInput.userId)
@@ -167,8 +207,7 @@ export async function savePortfolioAsset(
   }
 
   const lookupResult = await withTimeout<PortfolioMutationResult>(
-    client
-      .from('portfolios')
+    fromPortfolios()
       .select('id, user_id, ticker, name, quantity, avg_price, current_value')
       .eq('user_id', sanitizedInput.userId)
       .eq('ticker', basePayload.ticker)
@@ -187,8 +226,7 @@ export async function savePortfolioAsset(
   }
 
   const insertResult = await withTimeout<PortfolioMutationResult>(
-    client
-      .from('portfolios')
+    fromPortfolios()
       .insert({
         user_id: sanitizedInput.userId,
         ...basePayload,

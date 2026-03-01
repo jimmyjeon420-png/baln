@@ -5,6 +5,8 @@ describe('ocrImport', () => {
     expect(parseOcrNumber('+11,267,596(24.0%)')).toBe(11267596);
     expect(parseOcrNumber('-9,539,709')).toBe(-9539709);
     expect(parseOcrNumber('229.425965주')).toBeCloseTo(229.425965);
+    expect(parseOcrNumber('5만원')).toBe(50000);
+    expect(parseOcrNumber('1.5억원')).toBe(150000000);
   });
 
   it('normalizes Korean crypto screenshot assets', () => {
@@ -85,6 +87,35 @@ describe('ocrImport', () => {
         quantity: 17.961098,
         currentValueKRW: 8395778,
         totalCostKRW: 7349460,
+      },
+    ]);
+  });
+
+  it('deduplicates duplicate OCR rows by ticker', () => {
+    const result = normalizeParsedAssets([
+      {
+        name: '비트코인',
+        ticker: 'BTC',
+        quantity: '0.1 BTC',
+        currentValueKRW: '100만원',
+        totalCostKRW: '120만원',
+      },
+      {
+        name: '비트코인',
+        ticker: 'BTC',
+        quantity: '0.2 BTC',
+        currentValueKRW: '200만원',
+        totalCostKRW: '250만원',
+      },
+    ]);
+
+    expect(result).toEqual([
+      {
+        name: '비트코인',
+        ticker: 'BTC',
+        quantity: 0.3,
+        currentValueKRW: 3000000,
+        totalCostKRW: 3700000,
       },
     ]);
   });

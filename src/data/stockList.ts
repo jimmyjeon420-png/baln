@@ -122,7 +122,6 @@ export const POPULAR_STOCKS: StockItem[] = [
   { ticker: 'TLT', name: '미국 장기국채 ETF', nameEn: 'iShares 20+ Year Treasury Bond', category: 'bond' },
   { ticker: 'SHY', name: '미국 단기국채 ETF', nameEn: 'iShares 1-3 Year Treasury Bond', category: 'bond' },
   { ticker: 'BND', name: '뱅가드 채권 ETF', nameEn: 'Vanguard Total Bond Market', category: 'bond' },
-  { ticker: 'AGG', name: '미국 종합채권 ETF', nameEn: 'iShares Core US Aggregate Bond', category: 'bond' },
   { ticker: 'IEF', name: '미국 중기국채 ETF', nameEn: 'iShares 7-10 Year Treasury Bond', category: 'bond' },
   { ticker: '148070.KS', name: 'KODEX 국채3년', nameEn: 'KODEX KTB 3Y', category: 'bond' },
   { ticker: '114820.KS', name: 'KODEX 단기채권', nameEn: 'KODEX Short-term Bond', category: 'bond' },
@@ -221,7 +220,7 @@ export function findBestStockMatch(query: string, tickerHint?: string): StockIte
   const rawCandidates = [tickerHint, query]
     .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
     .flatMap((value) => {
-      const extractedTickers = value.match(/\b[A-Z]{1,5}(?:[.-][A-Z])?\b|\b\d{6}(?:\.(?:KS|KQ))?\b/g) ?? [];
+      const extractedTickers = value.match(/\b[A-Za-z]{1,5}(?:[.-][A-Za-z])?\b|\b\d{6}(?:\.(?:KS|KQ))?\b/gi) ?? [];
       return [value, ...extractedTickers];
     });
 

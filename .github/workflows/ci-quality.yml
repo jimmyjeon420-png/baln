@@ -16,6 +16,7 @@ jobs:
     timeout-minutes: 20
     env:
       BALN_OPS_HEALER_TOKEN: ${{ secrets.BALN_OPS_HEALER_TOKEN }}
+      BALN_SKIP_NETWORK_CHECKS: ${{ github.event_name == 'pull_request' && '1' || '' }}
 
     steps:
       - name: Checkout

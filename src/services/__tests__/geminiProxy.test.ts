@@ -1,10 +1,12 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+import { invokeGeminiProxy } from '../geminiProxy';
+
 jest.mock('../../utils/promptLanguage', () => ({
   getLangParam: jest.fn(() => 'ko'),
 }));
 
-const { invokeGeminiProxy } = require('../geminiProxy');
-
-function createClient(sequence: Array<{ data: any; error: any }>) {
+function createClient(sequence: { data: any; error: any }[]) {
   const invoke = jest.fn(async () => {
     const next = sequence.shift();
     if (!next) {
@@ -51,14 +53,15 @@ describe('geminiProxy', () => {
     expect(invoke).toHaveBeenCalledTimes(2);
   });
 
-  it('throws on non-success envelopes instead of treating them as valid responses', async () => {
+  it('retries transient non-success envelopes before succeeding', async () => {
     const { client } = createClient([
       { data: { success: false, error: 'upstream degraded' }, error: null },
+      { data: { success: true, data: { report: 'retry success' } }, error: null },
     ]);
 
     await expect(
-      invokeGeminiProxy('deep-dive', { ticker: 'GOOGL' }, 1000, { client: client as any, lang: 'ko', maxTransientRetries: 0 }),
-    ).rejects.toThrow('gemini-proxy 응답 오류: upstream degraded');
+      invokeGeminiProxy('deep-dive', { ticker: 'GOOGL' }, 1000, { client: client as any, lang: 'ko', maxTransientRetries: 1 }),
+    ).resolves.toEqual({ report: 'retry success' });
   });
 
   it('throws immediately on non-transient invoke errors', async () => {

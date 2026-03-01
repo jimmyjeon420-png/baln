@@ -14,5 +14,6 @@ describe('findBestStockMatch', () => {
     expect(findBestStockMatch('', 'BRK.B')?.ticker).toBe('BRK-B');
     expect(findBestStockMatch('', '005930')?.ticker).toBe('005930.KS');
     expect(findBestStockMatch('알파벳 A (GOOGL)')?.ticker).toBe('GOOGL');
+    expect(findBestStockMatch('', 'nvda')?.ticker).toBe('NVDA');
   });
 });

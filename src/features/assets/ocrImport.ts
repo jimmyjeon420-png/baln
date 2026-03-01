@@ -36,6 +36,11 @@ export interface RawParsedAsset {
   profit?: unknown;
 }
 
+function roundToPrecision(value: number, digits: number = 12): number {
+  const factor = 10 ** digits;
+  return Math.round(value * factor) / factor;
+}
+
 export function parseOcrNumber(value: unknown): number {
   if (typeof value === 'number') {
     return Number.isFinite(value) ? value : 0;
@@ -45,11 +50,18 @@ export function parseOcrNumber(value: unknown): number {
 
   const trimmed = value.trim();
   if (!trimmed) return 0;
+  const unitMultiplier = trimmed.includes('억원')
+    ? 100_000_000
+    : trimmed.includes('만원')
+      ? 10_000
+      : trimmed.includes('천원')
+        ? 1_000
+        : 1;
 
   const normalized = trimmed
     .replace(/,/g, '')
     .replace(/[₩$€£]/g, '')
-    .replace(/원|주|shares?|share|usd|krw/gi, ' ')
+    .replace(/억원|만원|천원|원|주|shares?|share|usd|krw/gi, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 
@@ -57,7 +69,7 @@ export function parseOcrNumber(value: unknown): number {
   if (!matched) return 0;
 
   const num = Number.parseFloat(matched[0]);
-  return Number.isFinite(num) ? num : 0;
+  return Number.isFinite(num) ? num * unitMultiplier : 0;
 }
 
 export function normalizeParsedAsset(raw: RawParsedAsset): ParsedAsset | null {
@@ -105,7 +117,26 @@ export function normalizeParsedAsset(raw: RawParsedAsset): ParsedAsset | null {
 
 export function normalizeParsedAssets(rawAssets: unknown): ParsedAsset[] {
   if (!Array.isArray(rawAssets)) return [];
-  return rawAssets
+  const normalizedAssets = rawAssets
     .map((asset) => normalizeParsedAsset((asset ?? {}) as RawParsedAsset))
     .filter((asset): asset is ParsedAsset => asset !== null);
+
+  const mergedByTicker = new Map<string, ParsedAsset>();
+
+  for (const asset of normalizedAssets) {
+    const existing = mergedByTicker.get(asset.ticker);
+    if (!existing) {
+      mergedByTicker.set(asset.ticker, { ...asset });
+      continue;
+    }
+
+    existing.quantity = roundToPrecision(existing.quantity + asset.quantity);
+    existing.totalCostKRW += asset.totalCostKRW;
+    existing.currentValueKRW = (existing.currentValueKRW ?? 0) + (asset.currentValueKRW ?? 0);
+  }
+
+  return Array.from(mergedByTicker.values()).map((asset) => ({
+    ...asset,
+    currentValueKRW: asset.currentValueKRW && asset.currentValueKRW > 0 ? asset.currentValueKRW : undefined,
+  }));
 }

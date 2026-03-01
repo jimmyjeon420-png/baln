@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { savePortfolioAsset } from '../portfolioPersistence';
 
 function createQuery(response: any, calls: any[]) {
@@ -82,6 +84,7 @@ describe('portfolioPersistence', () => {
       expect.arrayContaining([
         expect.objectContaining({ type: 'update' }),
         expect.objectContaining({ type: 'eq', field: 'id', value: 'existing-row' }),
+        expect.objectContaining({ type: 'update', payload: expect.objectContaining({ current_price: 1250 }) }),
       ]),
     );
   });
@@ -213,5 +216,17 @@ describe('portfolioPersistence', () => {
     await expect(savePortfolioAsset(client as any, baseInput, 'timeout')).rejects.toThrow(
       '자산 저장 후 검증에 실패했습니다. 잠시 후 다시 시도해주세요.',
     );
+  });
+
+  it('rejects negative input values instead of silently coercing them', async () => {
+    const { client } = createClient([]);
+
+    await expect(
+      savePortfolioAsset(
+        client as any,
+        { ...baseInput, quantity: -1 },
+        'timeout',
+      ),
+    ).rejects.toThrow('보유 수량 값은 음수일 수 없습니다.');
   });
 });

@@ -24,8 +24,8 @@ import type {
  * KST 기준 날짜를 YYYY-MM-DD 형식으로 반환
  * Edge Function(centralKitchen)과 동일한 KST 기준 사용 → 날짜 불일치 방지
  */
-function getLocalDate(): string {
-  const kst = new Date(Date.now() + 9 * 60 * 60 * 1000);
+function getLocalDate(offsetDays: number = 0): string {
+  const kst = new Date(Date.now() + 9 * 60 * 60 * 1000 + offsetDays * 24 * 60 * 60 * 1000);
   return kst.toISOString().split('T')[0];
 }
 
@@ -260,10 +260,7 @@ export function getCardFreshnessLabel(cardDate: string): string | null {
   const today = getLocalDate();
   if (cardDate === today) return null;
 
-  // 어제인지 확인
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
+  const yesterdayStr = getLocalDate(-1);
 
   if (cardDate === yesterdayStr) return t('context.freshness.yesterday');
   return t('context.freshness.older');

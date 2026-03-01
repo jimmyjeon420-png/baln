@@ -5,6 +5,10 @@ on:
   schedule:
     - cron: "10 * * * *"
 
+concurrency:
+  group: operations-monitor
+  cancel-in-progress: true
+
 jobs:
   freshness-monitor:
     name: Content Freshness Monitor
