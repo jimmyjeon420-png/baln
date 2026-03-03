@@ -29,6 +29,12 @@ function resolveGateMode() {
     return { mode: 'build', reason: 'eas-local-signal' };
   }
 
+  // Detect local builds by temp working directory path pattern
+  const cwd = process.cwd();
+  if (cwd.includes('eas-build-local')) {
+    return { mode: 'build', reason: 'eas-local-cwd' };
+  }
+
   const ciSignals =
     isTruthy(process.env.CI) ||
     isTruthy(process.env.GITHUB_ACTIONS) ||
