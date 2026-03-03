@@ -18,7 +18,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.smartrebalancer.app",
-      "buildNumber": "96",
+      "buildNumber": "98",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSFaceIDUsageDescription": "생체인증으로 앱을 보호합니다",

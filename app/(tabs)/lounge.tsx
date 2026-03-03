@@ -45,7 +45,7 @@ import { LoungeSkeleton } from '../../src/components/SkeletonLoader';
 import VerifyAssetsModal from '../../src/components/lounge/VerifyAssetsModal';
 import SilverMotivationBanner from '../../src/components/lounge/SilverMotivationBanner';
 import { useVerificationStatus } from '../../src/hooks/useVerification';
-import { getTierFeatures } from '../../src/config/tierFeatures';
+import { getTierFeatures as _getTierFeatures } from '../../src/config/tierFeatures';
 import {
   CATEGORY_INFO,
   getCategoryLabel,
@@ -60,6 +60,7 @@ import { formatAssetAmount, formatCommunityDisplayTag } from '../../src/utils/co
 import { getLocaleCode } from '../../src/utils/formatters';
 import { Gathering } from '../../src/types/database';
 import { useTheme } from '../../src/hooks/useTheme';
+import type { ThemeColors } from '../../src/styles/colors';
 import supabase, { getCurrentUser } from '../../src/services/supabase';
 import { useSharedPortfolio } from '../../src/hooks/useSharedPortfolio';
 import { useLocale } from '../../src/context/LocaleContext';
@@ -76,6 +77,11 @@ import CafeTableList from '../../src/components/lounge/CafeTableList';
 import CafeRankBadge from '../../src/components/lounge/CafeRankBadge';
 import { useCafeFeatures } from '../../src/hooks/useCafeFeatures';
 import type { CafeTable } from '../../src/data/cafeConfig';
+// Apple Guideline 1.2: 차단 + EULA + 콘텐츠 필터
+import { useBlockedUserIds } from '../../src/hooks/useUserBlocks';
+import BlockUserModal from '../../src/components/community/BlockUserModal';
+import CommunityTermsModal, { hasCommunityTermsAccepted } from '../../src/components/community/CommunityTermsModal';
+import { filterContent, getFilterMessage } from '../../src/utils/contentFilter';
 
 // ══════════════════════════════════════════
 // 상수
@@ -103,6 +109,10 @@ const GATHERING_CATEGORY_FILTER_KEYS: { key: Gathering['category'] | 'all'; labe
 // 진단 함수
 // ══════════════════════════════════════════
 
+function errMsg(e: unknown): string {
+  return e instanceof Error ? e.message : String(e);
+}
+
 async function runLoungeDiagnostic(): Promise<string> {
   const results: string[] = [];
   const ts = new Date().toLocaleTimeString(getLocaleCode());
@@ -112,8 +122,8 @@ async function runLoungeDiagnostic(): Promise<string> {
   try {
     const user = await getCurrentUser();
     results.push(`1. Auth: ${user ? 'OK (' + user.id.slice(0, 8) + '...)' : 'NO SESSION'}`);
-  } catch (e: any) {
-    results.push(`1. Auth: ERROR - ${e.message}`);
+  } catch (e: unknown) {
+    results.push(`1. Auth: ERROR - ${errMsg(e)}`);
   }
 
   // 2. community_posts 테이블
@@ -127,13 +137,13 @@ async function runLoungeDiagnostic(): Promise<string> {
     } else {
       results.push(`2. community_posts: OK (${data?.length ?? 0} rows sample)`);
     }
-  } catch (e: any) {
-    results.push(`2. community_posts: EXCEPTION - ${e.message}`);
+  } catch (e: unknown) {
+    results.push(`2. community_posts: EXCEPTION - ${errMsg(e)}`);
   }
 
   // 3. community_likes 테이블
   try {
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('community_likes')
       .select('post_id')
       .limit(1);
@@ -142,8 +152,8 @@ async function runLoungeDiagnostic(): Promise<string> {
     } else {
       results.push(`3. community_likes: OK`);
     }
-  } catch (e: any) {
-    results.push(`3. community_likes: EXCEPTION - ${e.message}`);
+  } catch (e: unknown) {
+    results.push(`3. community_likes: EXCEPTION - ${errMsg(e)}`);
   }
 
   // 4. gatherings 테이블
@@ -157,8 +167,8 @@ async function runLoungeDiagnostic(): Promise<string> {
     } else {
       results.push(`4. gatherings: OK (${data?.length ?? 0} rows sample)`);
     }
-  } catch (e: any) {
-    results.push(`4. gatherings: EXCEPTION - ${e.message}`);
+  } catch (e: unknown) {
+    results.push(`4. gatherings: EXCEPTION - ${errMsg(e)}`);
   }
 
   // 5. portfolios (자격확인용)
@@ -179,8 +189,8 @@ async function runLoungeDiagnostic(): Promise<string> {
     } else {
       results.push(`5. portfolios: SKIP (no auth)`);
     }
-  } catch (e: any) {
-    results.push(`5. portfolios: EXCEPTION - ${e.message}`);
+  } catch (e: unknown) {
+    results.push(`5. portfolios: EXCEPTION - ${errMsg(e)}`);
   }
 
   // 6. profiles 테이블
@@ -200,8 +210,8 @@ async function runLoungeDiagnostic(): Promise<string> {
     } else {
       results.push(`6. profiles: SKIP (no auth)`);
     }
-  } catch (e: any) {
-    results.push(`6. profiles: EXCEPTION - ${e.message}`);
+  } catch (e: unknown) {
+    results.push(`6. profiles: EXCEPTION - ${errMsg(e)}`);
   }
 
   return results.join('\n');
@@ -254,8 +264,8 @@ class SafeLoungeWrapper extends React.Component<
               try {
                 const result = await runLoungeDiagnostic();
                 Alert.alert('VIP Lounge Diagnostic', result);
-              } catch (e: any) {
-                Alert.alert('Diagnostic Failed', e.message);
+              } catch (e: unknown) {
+                Alert.alert('Diagnostic Failed', errMsg(e));
               }
             }}
             style={{ marginTop: 12, backgroundColor: '#2196F3', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8 }}
@@ -282,10 +292,10 @@ interface LoungeErrorState {
 }
 
 class LoungeErrorBoundary extends React.Component<
-  { children: React.ReactNode; themeColors: any; insets: any },
+  { children: React.ReactNode; themeColors: ThemeColors; insets: { top: number; bottom: number; left: number; right: number } },
   LoungeErrorState
 > {
-  constructor(props: any) {
+  constructor(props: { children: React.ReactNode; themeColors: ThemeColors; insets: { top: number; bottom: number; left: number; right: number } }) {
     super(props);
     this.state = { hasError: false, error: null, diagnosticResult: null, isDiagnosing: false };
   }
@@ -313,9 +323,9 @@ class LoungeErrorBoundary extends React.Component<
       const result = await runLoungeDiagnostic();
       this.setState({ diagnosticResult: result, isDiagnosing: false });
       Alert.alert('VIP Lounge Diagnostic', result);
-    } catch (e: any) {
+    } catch (e: unknown) {
       this.setState({ isDiagnosing: false });
-      Alert.alert('Diagnostic Failed', e.message);
+      Alert.alert('Diagnostic Failed', errMsg(e));
     }
   };
 
@@ -403,6 +413,26 @@ function LoungeScreenInner() {
   const { visitingGurus, cafeRank } = useCafeFeatures();
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
 
+  // Apple 1.2: 차단 + EULA + 콘텐츠 모더레이션
+  const { data: blockedUserIds } = useBlockedUserIds();
+  const [blockModalVisible, setBlockModalVisible] = useState(false);
+  const [blockTargetUserId, setBlockTargetUserId] = useState('');
+  const [blockTargetType, setBlockTargetType] = useState<'post' | 'comment'>('post');
+  const [blockTargetId, setBlockTargetId] = useState('');
+  const [termsModalVisible, setTermsModalVisible] = useState(false);
+  const [_termsAccepted, setTermsAccepted] = useState(true); // optimistic — check on mount
+
+  // Apple 1.2: 라운지 진입 시 EULA 동의 확인 (UGC 접근 전 필수)
+  React.useEffect(() => {
+    (async () => {
+      const accepted = await hasCommunityTermsAccepted();
+      if (!accepted) {
+        setTermsAccepted(false);
+        setTermsModalVisible(true);
+      }
+    })();
+  }, []);
+
   // 모임 상태
   const [gatheringCategory, setGatheringCategory] = useState<Gathering['category'] | 'all'>('all');
 
@@ -436,14 +466,20 @@ function LoungeScreenInner() {
     gatheringCategory === 'all' ? undefined : gatheringCategory
   );
 
-  // 무한 스크롤 페이지 플래트닝 (방어적)
+  // 무한 스크롤 페이지 플래트닝 (방어적) + 차단 사용자 필터링
   const posts = useMemo(() => {
     try {
-      return postsData?.pages?.flat() ?? [];
+      const allPosts = postsData?.pages?.flat() ?? [];
+      // Apple 1.2: 차단된 사용자 게시물 즉시 피드에서 제거
+      if (blockedUserIds && blockedUserIds.length > 0) {
+        const blockedSet = new Set(blockedUserIds);
+        return allPosts.filter(p => !blockedSet.has(p.user_id));
+      }
+      return allPosts;
     } catch {
       return [];
     }
-  }, [postsData]);
+  }, [postsData, blockedUserIds]);
 
   // ── 새로고침 (세그먼트별 분기) ──
   const onRefresh = useCallback(async () => {
@@ -468,6 +504,13 @@ function LoungeScreenInner() {
     }
     if (newPostContent.length > 500) {
       Alert.alert(t('lounge.alert_title'), t('lounge.alert_content_too_long'));
+      return;
+    }
+    // Apple 1.2: 콘텐츠 필터링 (부적절 콘텐츠 사전 차단)
+    const filterResult = filterContent(newPostContent);
+    if (!filterResult.isClean) {
+      const msg = getFilterMessage(newPostContent) || '부적절한 내용이 포함되어 있습니다.';
+      Alert.alert('게시 불가', msg);
       return;
     }
     try {
@@ -505,17 +548,19 @@ function LoungeScreenInner() {
       setPostCategory('stocks');
       setIsComposing(false);
       Alert.alert(t('lounge.post_success_title'), t('lounge.post_success_message'));
-    } catch (error: any) {
-      const msg = error?.message || 'Unknown error';
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : 'Unknown error';
       Alert.alert(t('lounge.post_error_title'), `${t('lounge.post_error_prefix')}${msg}`);
     }
   };
 
   const handleLike = (postId: string) => likePost.mutate(postId);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handlePostPress = (postId: string) => router.push(`/community/${postId}` as any);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleAuthorPress = (userId: string) => router.push(`/community/author/${userId}` as any);
 
-  const handleComposePress = () => {
+  const handleComposePress = async () => {
     if (!eligibility?.canPost) {
       Alert.alert(
         t('lounge.compose_limit_title'),
@@ -524,7 +569,21 @@ function LoungeScreenInner() {
       );
       return;
     }
+    // Apple 1.2: EULA 동의 확인
+    const accepted = await hasCommunityTermsAccepted();
+    if (!accepted) {
+      setTermsModalVisible(true);
+      return;
+    }
     setIsComposing(true);
+  };
+
+  // Apple 1.2: 사용자 차단 핸들러
+  const _handleBlockUser = (userId: string, contentId: string, contentType: 'post' | 'comment' = 'post') => {
+    setBlockTargetUserId(userId);
+    setBlockTargetId(contentId);
+    setBlockTargetType(contentType);
+    setBlockModalVisible(true);
   };
 
   // ── 핸들러: 모임 ──
@@ -536,8 +595,8 @@ function LoungeScreenInner() {
     try {
       const result = await runLoungeDiagnostic();
       Alert.alert(t('lounge.pulse_diagnostic_title'), result);
-    } catch (e: any) {
-      Alert.alert(t('lounge.diagnostic_fail'), e.message);
+    } catch (e: unknown) {
+      Alert.alert(t('lounge.diagnostic_fail'), errMsg(e));
     }
   };
 
@@ -850,6 +909,7 @@ function LoungeScreenInner() {
                         onPress={() => setCommunityCategory(key)}
                       >
                         <Ionicons
+                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
                           name={(info.icon || 'apps') as any}
                           size={14}
                           color={isActive ? (info.color || '#4CAF50') : themeColors.textTertiary}
@@ -923,6 +983,7 @@ function LoungeScreenInner() {
                             ]}
                             onPress={() => setPostCategory(key)}
                           >
+                            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                             <Ionicons name={(info.icon || 'apps') as any} size={12} color={isActive ? (info.color || '#4CAF50') : themeColors.textTertiary} />
                             <Text style={[styles.composeCategoryText, { color: themeColors.textSecondary }, isActive && { color: info.color || '#4CAF50' }]}>
                               {getCategoryLabel(key)}
@@ -1253,6 +1314,27 @@ function LoungeScreenInner() {
           invalidateVerification();
           setVerifyModalVisible(false);
         }}
+      />
+
+      {/* Apple 1.2: 사용자 차단 모달 */}
+      <BlockUserModal
+        visible={blockModalVisible}
+        targetUserId={blockTargetUserId}
+        targetType={blockTargetType}
+        targetId={blockTargetId}
+        onClose={() => setBlockModalVisible(false)}
+        onSuccess={() => setBlockModalVisible(false)}
+      />
+
+      {/* Apple 1.2: 커뮤니티 이용약관 동의 모달 */}
+      <CommunityTermsModal
+        visible={termsModalVisible}
+        onAccept={() => {
+          setTermsModalVisible(false);
+          setTermsAccepted(true);
+          setIsComposing(true);
+        }}
+        onDecline={() => setTermsModalVisible(false)}
       />
     </View>
   );

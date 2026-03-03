@@ -7,6 +7,7 @@
  * - 댓글 좋아요
  * - 수정/삭제 (본인 것만)
  * - 답글 버튼 (대댓글 작성)
+ * - 신고/차단 (Apple 1.2)
  */
 
 import React, { useState } from 'react';
@@ -15,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { CommunityComment, TIER_COLORS } from '../../types/community';
 import { getTierFromAssets, getTierIcon, getRelativeTime } from '../../utils/communityUtils';
 import { useTheme } from '../../hooks/useTheme';
+import { t } from '../../locales';
 
 interface CommentItemProps {
   comment: CommunityComment;
@@ -26,6 +28,7 @@ interface CommentItemProps {
   onReply: (parentId: string) => void;
   onAuthorPress: (userId: string) => void;
   onReport?: (commentId: string) => void;
+  onBlock?: (userId: string, commentId: string) => void;
   isBestAnswer?: boolean;
   canSelectBest?: boolean;
   onSelectBest?: (commentId: string) => void;
@@ -44,6 +47,7 @@ export default function CommentItem({
   onReply,
   onAuthorPress,
   onReport,
+  onBlock,
   isBestAnswer = false,
   canSelectBest = false,
   onSelectBest,
@@ -65,7 +69,7 @@ export default function CommentItem({
   // 수정 완료
   const handleSaveEdit = () => {
     if (!editContent.trim()) {
-      Alert.alert('알림', '내용을 입력해주세요.');
+      Alert.alert(t('common.notice'), t('community.detail.comment_edit_empty'));
       return;
     }
     if (editContent.trim() === comment.content) {
@@ -85,12 +89,12 @@ export default function CommentItem({
   // 삭제 확인
   const handleDelete = () => {
     Alert.alert(
-      '댓글 삭제',
-      '정말 삭제하시겠습니까?',
+      t('community.detail.comment_delete_title'),
+      t('community.detail.comment_delete_confirm'),
       [
-        { text: '취소', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: '삭제',
+          text: t('common.delete'),
           style: 'destructive',
           onPress: () => onDelete(comment.id),
         },
@@ -127,12 +131,16 @@ export default function CommentItem({
           {isBestAnswer && (
             <View style={[styles.bestAnswerBadge, { backgroundColor: colors.primary + '18' }]}>
               <Ionicons name="ribbon" size={11} color={colors.primary} />
-              <Text style={[styles.bestAnswerText, { color: colors.primary }]}>베스트 답변</Text>
+              <Text style={[styles.bestAnswerText, { color: colors.primary }]}>
+                {t('community.detail.best_answer')}
+              </Text>
             </View>
           )}
           <Text style={[styles.time, { color: colors.textSecondary }]}>{getRelativeTime(comment.created_at)}</Text>
           {comment.updated_at && (
-            <Text style={[styles.edited, { color: colors.textSecondary }]}>(수정됨)</Text>
+            <Text style={[styles.edited, { color: colors.textSecondary }]}>
+              {t('community.detail.comment_edited')}
+            </Text>
           )}
         </View>
 
@@ -152,7 +160,9 @@ export default function CommentItem({
                 style={[styles.editButton, { backgroundColor: colors.surface }]}
                 onPress={handleCancelEdit}
               >
-                <Text style={[styles.editButtonTextCancel, { color: colors.textPrimary }]}>취소</Text>
+                <Text style={[styles.editButtonTextCancel, { color: colors.textPrimary }]}>
+                  {t('common.cancel')}
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.editButton, { backgroundColor: colors.primary }]}
@@ -162,7 +172,9 @@ export default function CommentItem({
                 {isUpdating ? (
                   <ActivityIndicator size="small" color="#000" />
                 ) : (
-                  <Text style={styles.editButtonTextSave}>저장</Text>
+                  <Text style={styles.editButtonTextSave}>
+                    {t('community.detail.comment_save')}
+                  </Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -193,7 +205,9 @@ export default function CommentItem({
                 onPress={() => onReply(comment.id)}
               >
                 <Ionicons name="chatbubble-outline" size={14} color={colors.textSecondary} />
-                <Text style={[styles.actionText, { color: colors.textSecondary }]}>답글</Text>
+                <Text style={[styles.actionText, { color: colors.textSecondary }]}>
+                  {t('community.detail.reply')}
+                </Text>
               </TouchableOpacity>
             )}
 
@@ -214,7 +228,7 @@ export default function CommentItem({
                       color={isBestAnswer ? colors.primary : colors.textSecondary}
                     />
                     <Text style={[styles.actionText, { color: isBestAnswer ? colors.primary : colors.textSecondary }]}>
-                      {isBestAnswer ? '채택됨' : '채택'}
+                      {isBestAnswer ? t('community.detail.best_answer') : t('community.detail.select_best')}
                     </Text>
                   </>
                 )}
@@ -228,7 +242,9 @@ export default function CommentItem({
                 onPress={() => setIsEditing(true)}
               >
                 <Ionicons name="create-outline" size={14} color={colors.textSecondary} />
-                <Text style={[styles.actionText, { color: colors.textSecondary }]}>수정</Text>
+                <Text style={[styles.actionText, { color: colors.textSecondary }]}>
+                  {t('community.detail.edit')}
+                </Text>
               </TouchableOpacity>
             )}
 
@@ -244,20 +260,37 @@ export default function CommentItem({
                 ) : (
                   <>
                     <Ionicons name="trash-outline" size={14} color={colors.error} />
-                    <Text style={[styles.actionText, { color: colors.error }]}>삭제</Text>
+                    <Text style={[styles.actionText, { color: colors.error }]}>
+                      {t('common.delete')}
+                    </Text>
                   </>
                 )}
               </TouchableOpacity>
             )}
 
-            {/* 신고 (다른 사람 댓글에만) */}
+            {/* 신고 (다른 사람 댓글에만) — Apple 1.2 */}
             {!isMyComment && onReport && (
               <TouchableOpacity
                 style={styles.actionButton}
                 onPress={() => onReport(comment.id)}
               >
                 <Ionicons name="flag-outline" size={14} color={colors.textSecondary} />
-                <Text style={[styles.actionText, { color: colors.textSecondary }]}>신고</Text>
+                <Text style={[styles.actionText, { color: colors.textSecondary }]}>
+                  {t('community.detail.report')}
+                </Text>
+              </TouchableOpacity>
+            )}
+
+            {/* 차단 (다른 사람 댓글에만) — Apple 1.2 */}
+            {!isMyComment && onBlock && (
+              <TouchableOpacity
+                style={styles.actionButton}
+                onPress={() => onBlock(comment.user_id, comment.id)}
+              >
+                <Ionicons name="ban-outline" size={14} color={colors.error} />
+                <Text style={[styles.actionText, { color: colors.error }]}>
+                  {t('community.detail.block_user')}
+                </Text>
               </TouchableOpacity>
             )}
           </View>
@@ -365,6 +398,7 @@ const styles = StyleSheet.create({
   actions: {
     flexDirection: 'row',
     gap: 16,
+    flexWrap: 'wrap',
   },
   actionButton: {
     flexDirection: 'row',

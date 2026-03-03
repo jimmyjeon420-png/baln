@@ -23,6 +23,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
 import { CommunityComment } from '../../types/community';
 import CommentItem from './CommentItem';
+import { t } from '../../locales';
 
 interface ReplySectionProps {
   /** 답글 목록 (parent_id가 같은 댓글들) */
@@ -43,6 +44,8 @@ interface ReplySectionProps {
   onAuthorPress: (userId: string) => void;
   /** 신고 핸들러 */
   onReport?: (commentId: string) => void;
+  /** 차단 핸들러 (Apple 1.2) */
+  onBlock?: (userId: string, commentId: string) => void;
   /** 수정 중 로딩 */
   isUpdating?: boolean;
   /** 현재 삭제 중인 댓글 ID (개별 로딩) */
@@ -59,6 +62,7 @@ export default function ReplySection({
   onReply,
   onAuthorPress,
   onReport,
+  onBlock,
   isUpdating,
   deletingCommentId,
 }: ReplySectionProps) {
@@ -91,7 +95,7 @@ export default function ReplySection({
             color={colors.primary}
           />
           <Text style={[styles.toggleText, { color: colors.primary }]}>
-            {expanded ? '답글 접기' : `답글 ${replies.length}개 보기`}
+            {expanded ? t('community.detail.replies_collapse') : t('community.detail.replies_show', { count: replies.length })}
           </Text>
         </TouchableOpacity>
 
@@ -110,6 +114,7 @@ export default function ReplySection({
                 onReply={onReply}
                 onAuthorPress={onAuthorPress}
                 onReport={onReport}
+                onBlock={onBlock}
                 isUpdating={isUpdating}
                 isDeleting={deletingCommentId === reply.id}
               />

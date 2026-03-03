@@ -52,6 +52,7 @@ import {
   BEGINNER_QUESTION_PREFIX,
 } from '../../src/utils/communityUtils';
 import { validateContent, getViolationMessage } from '../../src/services/contentFilter';
+import { hasCommunityTermsAccepted } from '../../src/components/community/CommunityTermsModal';
 import {
   pickImages,
   validateImages,
@@ -148,8 +149,8 @@ export default function CreatePostScreen() {
       }
 
       setSelectedImages([...selectedImages, ...images]);
-    } catch (error: any) {
-      Alert.alert(t('community.create.image_select_failed'), error.message || t('community.create.image_cannot_select'));
+    } catch (error: unknown) {
+      Alert.alert(t('community.create.image_select_failed'), (error instanceof Error ? error.message : '') || t('community.create.image_cannot_select'));
     }
   };
 
@@ -160,6 +161,17 @@ export default function CreatePostScreen() {
 
   // 작성 버튼 핸들러
   const handleSubmit = async () => {
+    // Apple 1.2: EULA 동의 확인 (미동의 시 라운지로 복귀)
+    const termsOk = await hasCommunityTermsAccepted();
+    if (!termsOk) {
+      Alert.alert(
+        t('community.terms.title'),
+        t('community.terms.intro'),
+        [{ text: t('common.ok'), onPress: () => router.back() }],
+      );
+      return;
+    }
+
     // 유효성 검사
     if (!category) {
       Alert.alert(t('community.create.select_category_title'), t('community.create.select_category_msg'));
@@ -384,7 +396,8 @@ export default function CreatePostScreen() {
                     onPress={() => setCategory(cat)}
                   >
                     <Ionicons
-                      name={info.icon as any}
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    name={info.icon as any}
                       size={18}
                       color={isSelected ? info.color : colors.textSecondary}
                     />

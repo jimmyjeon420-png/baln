@@ -69,6 +69,7 @@ import {
 import CommentItem from '../../src/components/community/CommentItem';
 import ReplySection from '../../src/components/community/ReplySection';
 import ReportModal from '../../src/components/community/ReportModal';
+import BlockUserModal from '../../src/components/community/BlockUserModal';
 import GuruCommentBubble from '../../src/components/community/GuruCommentBubble';
 import type { GuruComment } from '../../src/types/guruComment';
 import { useAuth } from '../../src/context/AuthContext';
@@ -77,6 +78,8 @@ import { useGuruComments } from '../../src/hooks/useGuruComments';
 import { generateGuruCommentsForPost } from '../../src/services/guruCommentService';
 import { validateContent, getViolationMessage } from '../../src/services/contentFilter';
 import { useTheme } from '../../src/hooks/useTheme';
+import { useBlockedUserIds } from '../../src/hooks/useUserBlocks';
+import CommunityTermsModal, { hasCommunityTermsAccepted } from '../../src/components/community/CommunityTermsModal';
 import { t } from '../../src/locales';
 
 export default function PostDetailScreen() {
@@ -88,6 +91,13 @@ export default function PostDetailScreen() {
   const [replyToId, setReplyToId] = useState<string | null>(null);
   const [reportModalVisible, setReportModalVisible] = useState(false);
   const [reportTarget, setReportTarget] = useState<{ type: 'post' | 'comment'; id: string } | null>(null);
+  // Apple 1.2: 사용자 차단
+  const [blockModalVisible, setBlockModalVisible] = useState(false);
+  const [blockTarget, setBlockTarget] = useState<{ userId: string; type: 'post' | 'comment'; id: string }>({ userId: '', type: 'post', id: '' });
+
+  // Apple 1.2: 차단된 사용자 댓글 필터링 + EULA 동의 확인
+  const { data: blockedUserIds } = useBlockedUserIds();
+  const [termsModalVisible, setTermsModalVisible] = useState(false);
 
   // 자격 확인 (댓글 가능 여부)
   const { eligibility } = useLoungeEligibility();
@@ -162,7 +172,9 @@ export default function PostDetailScreen() {
     | { type: 'guru_comment'; data: GuruComment };
 
   const integratedFeed = useMemo<FeedItem[]>(() => {
-    const topLevelComments = (comments?.filter(c => !c.parent_id) || [])
+    // Apple 1.2: 차단된 사용자 댓글 필터링
+    const blockedSet = new Set(blockedUserIds || []);
+    const topLevelComments = (comments?.filter(c => !c.parent_id && !blockedSet.has(c.user_id)) || [])
       .map(c => ({ type: 'user_comment' as const, data: c }));
 
     // 구루 댓글: reply_to_guru_id가 없는 것들은 독립, 있는 것들은 부모 뒤에 삽입
@@ -198,7 +210,7 @@ export default function PostDetailScreen() {
     }
 
     return result;
-  }, [comments, guruComments]);
+  }, [comments, guruComments, blockedUserIds]);
 
   // 새로고침
   const [refreshing, setRefreshing] = useState(false);
@@ -210,6 +222,7 @@ export default function PostDetailScreen() {
 
   // 작성자 프로필로 이동
   const handleAuthorPress = (userId: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     router.push(`/community/author/${userId}` as any);
   };
 
@@ -217,6 +230,12 @@ export default function PostDetailScreen() {
   const handleReport = (type: 'post' | 'comment', targetId: string) => {
     setReportTarget({ type, id: targetId });
     setReportModalVisible(true);
+  };
+
+  // Apple 1.2: 사용자 차단
+  const handleBlock = (userId: string, contentId: string, contentType: 'post' | 'comment' = 'comment') => {
+    setBlockTarget({ userId, type: contentType, id: contentId });
+    setBlockModalVisible(true);
   };
 
   // 게시글 삭제 확인
@@ -228,12 +247,12 @@ export default function PostDetailScreen() {
         style: 'destructive',
         onPress: async () => {
           try {
-            await deletePost.mutateAsync(post!.id);
+            await deletePost.mutateAsync(post?.id ?? '');
             // 삭제 성공 → 즉시 라운지로 이동 후 알림
             router.replace('/(tabs)/lounge');
             Alert.alert(t('community.detail.delete_complete'), t('community.detail.post_deleted'));
-          } catch (e: any) {
-            Alert.alert(t('common.error'), e?.message || t('community.detail.delete_failed'));
+          } catch (e: unknown) {
+            Alert.alert(t('common.error'), (e instanceof Error ? e.message : '') || t('community.detail.delete_failed'));
           }
         },
       },
@@ -244,11 +263,14 @@ export default function PostDetailScreen() {
   const handlePostMenu = () => {
     if (!post) return;
     const isOwner = post.user_id === user?.id;
-    const buttons: any[] = [];
+    const buttons: { text: string; style?: 'destructive' | 'cancel' | 'default'; onPress?: () => void }[] = [];
     if (isOwner) {
       buttons.push({ text: t('common.delete'), style: 'destructive', onPress: handleDeletePost });
     }
     buttons.push({ text: t('community.detail.report'), onPress: () => handleReport('post', post.id) });
+    if (!isOwner) {
+      buttons.push({ text: t('community.detail.block_user'), style: 'destructive', onPress: () => handleBlock(post.user_id, post.id, 'post') });
+    }
     buttons.push({ text: t('common.cancel'), style: 'cancel' });
     Alert.alert(t('community.detail.post_menu'), undefined, buttons);
   };
@@ -274,6 +296,13 @@ export default function PostDetailScreen() {
     if (!commentText.trim()) return;
     if (commentText.length > 300) {
       Alert.alert(t('common.notice'), t('community.detail.comment_max_length'));
+      return;
+    }
+
+    // Apple 1.2: EULA 동의 확인 (미동의 시 약관 모달 표시)
+    const termsOk = await hasCommunityTermsAccepted();
+    if (!termsOk) {
+      setTermsModalVisible(true);
       return;
     }
 
@@ -305,15 +334,23 @@ export default function PostDetailScreen() {
       });
       setCommentText('');
       setReplyToId(null);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.warn('[Community] 댓글 작성 실패:', error);
-      const errorMsg = error?.message || error?.code || t('common.unknown_error');
+      const errorMsg = (error instanceof Error ? error.message : '') || t('common.unknown_error');
       Alert.alert(t('common.error'), t('community.detail.comment_submit_failed', { detail: errorMsg }));
     }
   };
 
-  // 댓글 수정 핸들러
+  // 댓글 수정 핸들러 (Apple 1.2: 수정 시에도 콘텐츠 필터 적용)
   const handleUpdateComment = (commentId: string, content: string) => {
+    const filterResult = validateContent(content);
+    if (!filterResult.isValid) {
+      Alert.alert(
+        t('community.detail.inappropriate_content'),
+        getViolationMessage(filterResult),
+      );
+      return;
+    }
     updateComment.mutate({ commentId, content });
   };
 
@@ -322,8 +359,8 @@ export default function PostDetailScreen() {
     setDeletingCommentId(commentId);
     try {
       await deleteComment.mutateAsync(commentId);
-    } catch (error: any) {
-      const errorMsg = error?.message || t('community.detail.comment_delete_failed');
+    } catch (error: unknown) {
+      const errorMsg = (error instanceof Error ? error.message : '') || t('community.detail.comment_delete_failed');
       Alert.alert(t('common.error'), errorMsg);
     } finally {
       setDeletingCommentId(null);
@@ -347,7 +384,7 @@ export default function PostDetailScreen() {
           onPress: () => {
             selectBestAnswer.mutate(commentId, {
               onSuccess: () => Alert.alert(t('common.complete'), t('community.detail.best_answer_selected')),
-              onError: (err: any) => Alert.alert(t('common.error'), err?.message || t('community.detail.best_answer_failed')),
+              onError: (err: Error) => Alert.alert(t('common.error'), err?.message || t('community.detail.best_answer_failed')),
             });
           },
         },
@@ -374,7 +411,9 @@ export default function PostDetailScreen() {
 
     // 유저 댓글
     const comment = item.data as CommunityComment;
-    const replies = comments?.filter((c) => c.parent_id === comment.id) || [];
+    // Apple 1.2: 답글에서도 차단된 사용자 필터링
+    const blockedSet = new Set(blockedUserIds || []);
+    const replies = comments?.filter((c) => c.parent_id === comment.id && !blockedSet.has(c.user_id)) || [];
 
     return (
       <>
@@ -392,6 +431,7 @@ export default function PostDetailScreen() {
           onReply={handleReply}
           onAuthorPress={handleAuthorPress}
           onReport={(commentId) => handleReport('comment', commentId)}
+          onBlock={(userId, commentId) => handleBlock(userId, commentId, 'comment')}
           isUpdating={updateComment.isPending}
           isDeleting={deletingCommentId === comment.id}
         />
@@ -407,6 +447,7 @@ export default function PostDetailScreen() {
           onReply={handleReply}
           onAuthorPress={handleAuthorPress}
           onReport={(commentId) => handleReport('comment', commentId)}
+          onBlock={(userId, commentId) => handleBlock(userId, commentId, 'comment')}
           isUpdating={updateComment.isPending}
           deletingCommentId={deletingCommentId}
         />
@@ -478,6 +519,7 @@ export default function PostDetailScreen() {
                 </TouchableOpacity>
                 {categoryInfo && (
                   <View style={[styles.postCategoryBadge, { backgroundColor: categoryInfo.color + '20' }]}>
+                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                     <Ionicons name={categoryInfo.icon as any} size={10} color={categoryInfo.color} />
                     <Text style={[styles.postCategoryLabel, { color: categoryInfo.color }]}>
                       {getCategoryLabel(post.category)}
@@ -491,6 +533,7 @@ export default function PostDetailScreen() {
                   </View>
                 )}
                 {/* 자산 인증 뱃지 */}
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 {(post as any).is_author_verified && (
                   <Text style={{ fontSize: 12 }}>✅</Text>
                 )}
@@ -548,7 +591,7 @@ export default function PostDetailScreen() {
                 key={index}
                 style={styles.imageItem}
                 onPress={() => {
-                  Alert.alert(t('community.detail.image'), `${t('community.detail.image')} ${index + 1}/${post.image_urls!.length}`);
+                  Alert.alert(t('community.detail.image'), `${t('community.detail.image')} ${index + 1}/${post.image_urls?.length ?? 0}`);
                 }}
               >
                 <Image
@@ -761,6 +804,32 @@ export default function PostDetailScreen() {
           }}
         />
       )}
+
+      {/* Apple 1.2: 사용자 차단 모달 */}
+      <BlockUserModal
+        visible={blockModalVisible}
+        targetUserId={blockTarget.userId}
+        targetType={blockTarget.type}
+        targetId={blockTarget.id}
+        onClose={() => setBlockModalVisible(false)}
+        onSuccess={() => {
+          setBlockModalVisible(false);
+          router.back(); // 차단 후 이전 화면으로
+        }}
+      />
+
+      {/* Apple 1.2: 커뮤니티 이용약관 동의 모달 (댓글 작성 전 EULA 게이트) */}
+      <CommunityTermsModal
+        visible={termsModalVisible}
+        onAccept={() => {
+          setTermsModalVisible(false);
+          // 동의 후 댓글 자동 제출 (이미 입력된 텍스트가 있으면)
+          if (commentText.trim()) {
+            handleSubmitComment();
+          }
+        }}
+        onDecline={() => setTermsModalVisible(false)}
+      />
     </SafeAreaView>
   );
 }
