@@ -13,7 +13,7 @@ interface DailyProgressBannerProps {
   creditBalance?: number | null;
 }
 
-const STEP_KEYS: Array<{ key: keyof DailyProgressBannerProps['todayProgress']; labelKey: string }> = [
+const STEP_KEYS: { key: keyof DailyProgressBannerProps['todayProgress']; labelKey: string }[] = [
   { key: 'cardRead', labelKey: 'daily_progress.step_read' },
   { key: 'voted',    labelKey: 'daily_progress.step_vote' },
   { key: 'reviewed', labelKey: 'daily_progress.step_review' },
@@ -21,11 +21,11 @@ const STEP_KEYS: Array<{ key: keyof DailyProgressBannerProps['todayProgress']; l
 
 const GREEN = '#4CAF50';
 
-const DailyProgressBanner = React.memo(function DailyProgressBanner({
+const DailyProgressBanner = React.memo(({
   currentStreak,
   todayProgress,
-  creditBalance,
-}: DailyProgressBannerProps) {
+  creditBalance: _creditBalance,
+}: DailyProgressBannerProps) => {
   const { colors } = useTheme();
   const { t } = useLocale();
 

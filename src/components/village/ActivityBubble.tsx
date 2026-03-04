@@ -18,6 +18,7 @@ import { View, Text, StyleSheet, Animated } from 'react-native';
 import type { GuruActivity, GuruMood } from '../../types/village';
 import { getActivityEmoji, getActivityDescription } from '../../services/activityService';
 import { getMoodColor } from '../../services/moodEngine';
+import type { ThemeColors } from '../../styles/colors';
 
 // ============================================================================
 // 타입
@@ -29,7 +30,7 @@ interface ActivityBubbleProps {
   /** 구루의 현재 기분 (테두리 색상에 영향) */
   mood: GuruMood;
   /** 테마 색상 */
-  colors: any;
+  colors: ThemeColors;
   /** 로케일 (ko/en) */
   locale?: string;
 }

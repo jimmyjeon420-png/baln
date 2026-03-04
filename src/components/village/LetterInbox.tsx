@@ -28,6 +28,7 @@ import { CharacterAvatar } from '../character/CharacterAvatar';
 import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
 import { getGuruDisplayName } from '../../services/characterService';
 import { useLocale } from '../../context/LocaleContext';
+import type { ThemeColors } from '../../styles/colors';
 
 // ---------------------------------------------------------------------------
 // 타입 정의
@@ -38,7 +39,7 @@ interface LetterInboxProps {
   onLetterPress: (letter: GuruLetter) => void;
   onClose: () => void;
   isVisible: boolean;
-  colors: any;
+  colors: ThemeColors;
   locale?: string;
 }
 
@@ -90,20 +91,20 @@ function useTimeAgo(timestamp: string): string {
 interface LetterCardProps {
   letter: GuruLetter;
   onPress: (letter: GuruLetter) => void;
-  colors: any;
+  colors: ThemeColors;
   locale: string;
 }
 
-const LetterCard = React.memo(function LetterCard({
+const LetterCard = React.memo(({
   letter,
   onPress,
   colors,
   locale,
-}: LetterCardProps) {
+}: LetterCardProps) => {
   const { t } = useLocale();
   const isKo = locale === 'ko';
   const guruId = letter.fromGuruId || letter.guruId || '';
-  const config = GURU_CHARACTER_CONFIGS[guruId];
+  const _config = GURU_CHARACTER_CONFIGS[guruId];
   const guruName = getGuruDisplayName(guruId);
   const subject = isKo ? letter.subject : (letter.subjectEn ?? letter.subject);
   const tier = letter.friendshipRequired;
@@ -194,7 +195,7 @@ export function LetterInbox({
   locale = 'ko',
 }: LetterInboxProps) {
   const { t } = useLocale();
-  const isKo = locale === 'ko';
+  const _isKo = locale === 'ko';
 
   // 봉투 흔들기 애니메이션 (새 편지 있을 때)
   const envelopeShake = useRef(new Animated.Value(0)).current;

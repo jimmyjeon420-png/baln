@@ -46,7 +46,7 @@ export function WanderingGuru({ position, onPress, villageHeight }: WanderingGur
         useNativeDriver: true,
       }),
     ]).start();
-  }, [position.x, position.y, animX, animY]);
+  }, [position.x, position.y, animX, animY, villageHeight]);
 
   // 말풍선 표시/숨김 애니메이션
   useEffect(() => {

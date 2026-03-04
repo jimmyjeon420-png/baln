@@ -36,14 +36,28 @@ import {
 jest.mock('../supabase');
 jest.mock('../gemini');
 
+// Locales mock — Central Kitchen DB 데이터는 한국어 전용이므로 'ko' 반환 필요
+jest.mock('../../locales', () => ({
+  getCurrentLanguage: jest.fn(() => 'ko'),
+  t: jest.fn((key: string) => key),
+}));
+
+/** Mirror the KST date logic from centralKitchen.ts */
+function getLocalDate(): string {
+  const kst = new Date(Date.now() + 9 * 60 * 60 * 1000);
+  return kst.toISOString().split('T')[0];
+}
+
 describe('centralKitchen.ts 통합 테스트', () => {
-  const today = new Date().toISOString().split('T')[0];
+  // today is computed inside tests after fake timers are set
+  let today: string;
 
   beforeEach(() => {
     jest.clearAllMocks();
     // 시간 고정 (2026-02-11)
     jest.useFakeTimers();
     jest.setSystemTime(new Date('2026-02-11T10:00:00Z'));
+    today = getLocalDate(); // KST: 2026-02-11T19:00:00 → '2026-02-11'
   });
 
   afterEach(() => {

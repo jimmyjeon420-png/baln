@@ -16,6 +16,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
 import { getGuruDisplayName } from '../../services/characterService';
 import { t, getCurrentLanguage } from '../../locales';
+import type { ThemeColors } from '../../styles/colors';
 
 // =============================================================================
 // 타입 정의
@@ -25,7 +26,7 @@ interface HospitalHeaderProps {
   /** 건강 등급 (A/B/C/D/F) */
   healthGrade?: string;
   /** 테마 색상 */
-  colors: any;
+  colors: ThemeColors;
   /** @deprecated Use t() from locales instead. Kept for backward compatibility. */
   locale?: string;
 }
@@ -76,7 +77,7 @@ function HospitalHeader({
   healthGrade,
   colors,
 }: HospitalHeaderProps): React.ReactElement {
-  const isKo = getCurrentLanguage() === 'ko';
+  const _isKo = getCurrentLanguage() === 'ko';
 
   // 등급 설정 조회
   const gradeKey = healthGrade?.toUpperCase() ?? '';

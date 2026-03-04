@@ -26,6 +26,7 @@ import {
   Platform,
 } from 'react-native';
 import type { VillageEvent, VillageEventType } from '../../types/village';
+import type { ThemeColors } from '../../styles/colors';
 import { useLocale } from '../../context/LocaleContext';
 
 // ============================================================================
@@ -40,7 +41,7 @@ interface EventBannerProps {
   /** X 버튼으로 배너 닫기 콜백 */
   onDismiss: () => void;
   /** 테마 색상 */
-  colors: any;
+  colors: ThemeColors;
   /** 로케일 (ko/en) */
   locale?: string;
 }
@@ -113,13 +114,13 @@ function formatTimeRemaining(
 // 메인 컴포넌트
 // ============================================================================
 
-const EventBanner = React.memo(function EventBanner({
+const EventBanner = React.memo(({
   event,
   onPress,
   onDismiss,
   colors,
   locale = 'ko',
-}: EventBannerProps) {
+}: EventBannerProps) => {
   const { t } = useLocale();
   const isKo = locale === 'ko';
 

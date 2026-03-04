@@ -32,6 +32,7 @@ import ActivityBubble from './ActivityBubble';
 import FriendshipMeter from './FriendshipMeter';
 import GuruScheduleCard from './GuruScheduleCard';
 import { useLocale } from '../../context/LocaleContext';
+import type { ThemeColors } from '../../styles/colors';
 
 // ============================================================================
 // 타입
@@ -56,7 +57,7 @@ interface GuruDetailSheetProps {
   /** 프로필 보기 버튼 콜백 */
   onViewProfile: (guruId: string) => void;
   /** 테마 색상 */
-  colors: any;
+  colors: ThemeColors;
   /** 로케일 (ko/en) */
   locale?: string;
 }
@@ -226,7 +227,7 @@ function getMoodLabel(mood: GuruMood, isKo: boolean): string {
 // 메인 컴포넌트
 // ============================================================================
 
-const GuruDetailSheet = React.memo(function GuruDetailSheet({
+const GuruDetailSheet = React.memo(({
   guruId,
   onClose,
   mood,
@@ -238,7 +239,7 @@ const GuruDetailSheet = React.memo(function GuruDetailSheet({
   onViewProfile,
   colors,
   locale = 'ko',
-}: GuruDetailSheetProps) {
+}: GuruDetailSheetProps) => {
   const { t } = useLocale();
   const isKo = locale === 'ko';
   const isVisible = guruId !== null;

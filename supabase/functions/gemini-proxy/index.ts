@@ -1,4 +1,5 @@
 // @ts-nocheck
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-non-null-assertion, @typescript-eslint/array-type, @typescript-eslint/no-unused-vars */
 // ============================================================================
 // Gemini API Proxy Edge Function
 // 역할: 클라이언트 → Supabase Edge Function → Gemini API 프록시
@@ -6,6 +7,7 @@
 // ============================================================================
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { normalizeParsedPortfolioScreenshotPayload } from './normalizePortfolioParse.ts';
 
 // ============================================================================
 // 환경변수
@@ -951,11 +953,18 @@ async function parsePortfolioScreenshot(imageBase64: string, mimeType: string) {
 반환 형식:
 {"assets": [{"name":"삼성전자","ticker":"005930","quantity":100,"totalCostKRW":7200000,"currentValueKRW":7500000,"profitLossKRW":300000}]}
 
+주식 앱 예시:
+- 엔비디아 / 229.425965주 / 평가금액 58,094,361원 / 평가손익 +11,267,596(24.0%)
+- 알파벳 A / 71.912647주 / 평가금액 31,717,254원 / 평가손익 +4,505,194(16.5%)
+위 예시는 반드시 아래처럼 assets 배열 안의 객체로 반환하세요.
+{"assets":[{"name":"엔비디아","ticker":"NVDA","quantity":"229.425965주","currentValueKRW":"58,094,361원","profitLossKRW":"+11,267,596(24.0%)"},{"name":"알파벳 A","ticker":"GOOGL","quantity":"71.912647주","currentValueKRW":"31,717,254원","profitLossKRW":"+4,505,194(16.5%)"}]}
+
 주의:
 - 티커가 화면에 직접 보이지 않아도 일반적으로 널리 알려진 종목명/ETF명은 추론해서 채우세요
   예: 엔비디아→NVDA, 알파벳 A→GOOGL, 테슬라→TSLA, 버크셔 해서웨이 B→BRK-B, GLD→GLD, 컨스텔레이션 에너지→CEG
 - 주식 앱 화면에는 보통 종목명/보유수량/평가금액/손익만 보일 수 있습니다. 이 경우 totalCostKRW는 currentValueKRW - profitLossKRW 로 계산하세요.
 - totalCostKRW를 확실히 계산할 수 없으면 profitLossKRW라도 반드시 채우세요. 앱이 후처리로 보정합니다.
+- assets 배열 외의 키 이름(holdings, positions, stocks 등)을 쓰지 말고 항상 assets만 사용하세요.
 - 숫자 필드는 반드시 순수 숫자만 반환하세요 (쉼표, 원, 주, %, $ 제거)
 - 달러 금액이 있으면 현재 환율 약 1450으로 원화 변환
 - 인식 불가한 자산은 제외
@@ -979,7 +988,7 @@ async function parsePortfolioScreenshot(imageBase64: string, mimeType: string) {
     const json = await resp.json();
     const text = json.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!text) throw new Error('No response from Gemini Vision');
-    return cleanJsonResponse(text);
+    return normalizeParsedPortfolioScreenshotPayload(cleanJsonResponse(text));
   } finally {
     clearTimeout(timeout);
   }

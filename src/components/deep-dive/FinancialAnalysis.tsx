@@ -17,6 +17,7 @@ import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { formatKRW } from '../../utils/formatters';
 import { useTheme } from '../../hooks/useTheme';
+import type { ThemeColors } from '../../styles/colors';
 import QuarterlyChart, { type QuarterlyData } from './QuarterlyChart';
 import EarningsBreakdown, { type RevenueSegment, type CostItem, type WaterfallItem } from './EarningsBreakdown';
 
@@ -295,7 +296,7 @@ export function FinancialAnalysis({
 }
 
 /** 지표 카드 컴포넌트 */
-function MetricCard({ label, value, unit, colors }: { label: string; value: number; unit: string; colors: any }) {
+function MetricCard({ label, value, unit, colors }: { label: string; value: number; unit: string; colors: ThemeColors }) {
   return (
     <View style={[styles.metricCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
       <Text style={[styles.metricLabel, { color: colors.textTertiary }]}>{label}</Text>

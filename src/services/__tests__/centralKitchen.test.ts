@@ -23,7 +23,6 @@ import {
   getTodayRateCycleEvidence,
   type DailyMarketInsight,
   type StockQuantReport,
-  type CentralKitchenResult,
 } from '../centralKitchen';
 
 import {
@@ -52,6 +51,12 @@ jest.mock('../supabase', () => ({
 jest.mock('../gemini', () => ({
   generateMorningBriefing: jest.fn(),
   analyzePortfolioRisk: jest.fn(),
+}));
+
+// Locales mock — Central Kitchen DB 데이터는 한국어 전용이므로 'ko' 반환 필요
+jest.mock('../../locales', () => ({
+  getCurrentLanguage: jest.fn(() => 'ko'),
+  t: jest.fn((key: string) => key),
 }));
 
 // ============================================================================

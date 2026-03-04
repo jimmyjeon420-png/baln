@@ -19,7 +19,7 @@
  * - 프리즈 구매 → 크레딧 순환 경제 활성화
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,

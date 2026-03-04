@@ -27,7 +27,7 @@ interface AssetDonutCardProps {
 // 유틸: 금액 약어 (1.4억, 5,300만 등)
 // ============================================================================
 
-function formatAbbreviated(amount: number, t: (key: string, opts?: any) => string): string {
+function formatAbbreviated(amount: number, t: (key: string, opts?: Record<string, unknown>) => string): string {
   if (amount >= 1_0000_0000) {
     const eok = amount / 1_0000_0000;
     const n = eok >= 10 ? `${Math.round(eok)}` : `${eok.toFixed(1)}`;
@@ -88,7 +88,7 @@ const AssetDonutCard = ({ slices, totalAssets }: AssetDonutCardProps) => {
           />
 
           {/* 데이터 아크들 */}
-          {slices.map((slice, i) => {
+          {slices.map((slice, _i) => {
             const dashLength = (slice.percent / 100) * CIRCUMFERENCE;
             const dashGap = CIRCUMFERENCE - dashLength;
             const offset = -cumulativePercent / 100 * CIRCUMFERENCE + CIRCUMFERENCE / 4;

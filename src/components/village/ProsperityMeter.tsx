@@ -23,6 +23,7 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
 import { useLocale } from '../../context/LocaleContext';
+import type { ThemeColors } from '../../styles/colors';
 
 // ============================================================================
 // 타입
@@ -36,7 +37,7 @@ interface ProsperityMeterProps {
   /** 오늘 획득한 번영도 포인트 */
   todayPoints: number;
   /** 테마 색상 */
-  colors: any;
+  colors: ThemeColors;
   /** 로케일 (ko/en) */
   locale?: string;
 }
@@ -89,10 +90,10 @@ function getLevelEmoji(level: number): string {
 
 function LevelShield({
   level,
-  colors,
+  colors: _colors,
 }: {
   level: number;
-  colors: any;
+  colors: ThemeColors;
 }) {
   const shieldColor = getLevelShieldColor(level);
   const barColor = getLevelColor(level);

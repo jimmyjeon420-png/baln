@@ -38,7 +38,7 @@ interface GovernanceProps {
 // 메인 컴포넌트
 // ============================================================================
 
-export default function Governance({ data, onRefresh }: GovernanceProps) {
+export default function Governance({ data, onRefresh: _onRefresh }: GovernanceProps) {
   const { colors } = useTheme();
   const [expanded, setExpanded] = useState(false);
 

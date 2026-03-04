@@ -8,9 +8,8 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, {
+import {
   useAnimatedStyle,
-  withTiming,
   useSharedValue,
   withSpring,
 } from 'react-native-reanimated';
@@ -21,11 +20,11 @@ import { useLocale } from '../../context/LocaleContext';
 export type ContextLayer = 'historical' | 'macro' | 'institution' | 'portfolio';
 
 /** 레이어 색상 + 아이콘 (번역 불필요 고정값) */
-const LAYER_META: Array<{
+const LAYER_META: {
   id: ContextLayer;
   icon: keyof typeof Ionicons.glyphMap;
   color: string;
-}> = [
+}[] = [
   { id: 'historical', icon: 'time-outline',         color: '#4CAF50' }, // 초록
   { id: 'macro',      icon: 'git-network-outline',  color: '#2196F3' }, // 파랑
   { id: 'institution',icon: 'business-outline',     color: '#FF9800' }, // 주황
@@ -100,9 +99,9 @@ export function ContextLayerTabs({
       damping: 20,
       stiffness: 200,
     });
-  }, [activeIndex]);
+  }, [activeIndex, underlinePosition]);
 
-  const underlineStyle = useAnimatedStyle(() => ({
+  const _underlineStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: underlinePosition.value }],
   }));
 
@@ -114,7 +113,7 @@ export function ContextLayerTabs({
         contentContainerStyle={{ flexGrow: 1 }}
       >
         <View style={s.tabsRow}>
-          {LAYERS.map((layer, index) => {
+          {LAYERS.map((layer, _index) => {
             const isActive = layer.id === activeLayer;
             const isLocked = lockedLayers.includes(layer.id);
 

@@ -41,14 +41,14 @@ if (
 // ============================================================================
 
 export interface PredictionReviewProps {
-  reviews: Array<{
+  reviews: {
     id: string;
     question: string;
     myAnswer: string;
     correctAnswer: string;
     isCorrect: boolean;
     explanation: string;
-  }>;
+  }[];
   streak: number;
   accuracy: number;
   creditsEarned: number;
@@ -70,7 +70,7 @@ interface ReviewItemProps {
   index: number;
 }
 
-function ReviewItem({ review, index }: ReviewItemProps) {
+function ReviewItem({ review, index: _index }: ReviewItemProps) {
   const { colors } = useTheme();
   const { t } = useLocale();
   const [expanded, setExpanded] = useState(false);

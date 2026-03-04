@@ -57,12 +57,12 @@ interface InvestmentReportData {
     notes?: string;
   };
   financialAnalysis: {
-    yearlyData: Array<{
+    yearlyData: {
       year: string;
       revenue: number;
       operatingIncome: number;
       netIncome: number;
-    }>;
+    }[];
     keyMetrics: {
       roe: number;
       roic: number;
@@ -82,11 +82,11 @@ interface InvestmentReportData {
     industryAvgPbr: number;
     industryAvgPsr: number;
   };
-  risks: Array<{
+  risks: {
     category: '시장 리스크' | '경쟁 리스크' | '규제 리스크' | '경영 리스크';
     level: 'LOW' | 'MEDIUM' | 'HIGH';
     points: string[];
-  }>;
+  }[];
   governance: {
     ceoRating: number;
     ceoName: string;

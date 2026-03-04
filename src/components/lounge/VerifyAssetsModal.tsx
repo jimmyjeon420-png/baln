@@ -11,7 +11,6 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
 import { requestVerification } from '../../services/verificationService';
-import { t } from '../../locales';
 
 interface VerifyAssetsModalProps {
   visible: boolean;

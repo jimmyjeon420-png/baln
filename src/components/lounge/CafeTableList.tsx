@@ -14,6 +14,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { useTheme } from '../../hooks/useTheme';
 import { useLocale } from '../../context/LocaleContext';
+import type { ThemeColors } from '../../styles/colors';
 import { CAFE_TABLES, type CafeTable } from '../../data/cafeConfig';
 
 // =============================================================================
@@ -39,7 +40,7 @@ interface TableCardProps {
   isSelected: boolean;
   isKo: boolean;
   onPress: () => void;
-  colors: any;
+  colors: ThemeColors;
 }
 
 function TableCard({ table, participantCount, isSelected, isKo, onPress, colors }: TableCardProps) {

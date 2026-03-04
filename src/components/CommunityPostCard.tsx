@@ -17,7 +17,6 @@ import {
   TIER_COLORS,
   CATEGORY_INFO,
   getCategoryLabel,
-  TIER_THRESHOLDS,
 } from '../types/community';
 import { getTierFeatures } from '../config/tierFeatures';
 import {
@@ -34,6 +33,7 @@ import {
   formatPortfolioRatio,
 } from '../utils/communityUtils';
 import { useTheme } from '../hooks/useTheme';
+import type { ThemeColors } from '../styles/colors';
 import { useGuruComments } from '../hooks/useGuruComments';
 import { GURU_CHARACTER_CONFIGS } from '../data/guruCharacterConfig';
 import { getGuruDisplayName } from '../services/characterService';
@@ -119,7 +119,7 @@ export default function CommunityPostCard({
               {categoryInfo && (
                 <View style={[styles.categoryBadge, { backgroundColor: categoryInfo.color + '20' }]}>
                   <Ionicons
-                    name={categoryInfo.icon as any}
+                    name={categoryInfo.icon as keyof typeof Ionicons.glyphMap}
                     size={10}
                     color={categoryInfo.color}
                   />
@@ -135,7 +135,7 @@ export default function CommunityPostCard({
                 </View>
               )}
               {/* 자산 인증 뱃지 */}
-              {(post as any).is_author_verified && (
+              {(post as unknown as { is_author_verified?: boolean }).is_author_verified && (
                 <Text style={styles.verifiedBadge}>✅</Text>
               )}
               {/* 왕관 뱃지 (PLATINUM/DIAMOND) */}
@@ -234,7 +234,7 @@ export default function CommunityPostCard({
 }
 
 /** 구루 AI 댓글 미리보기 — 최대 2개 표시 */
-function GuruCommentPreview({ postId, colors }: { postId: string; colors: any }) {
+function GuruCommentPreview({ postId, colors }: { postId: string; colors: ThemeColors }) {
   const { data: guruComments } = useGuruComments(postId);
   // 독립 댓글만 (reply 제외), 최대 2개
   const previews = (guruComments || [])

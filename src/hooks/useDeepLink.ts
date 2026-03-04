@@ -27,7 +27,7 @@ import { useRouter } from 'expo-router';
  * @param url - 수신된 딥링크 URL (예: baln://context/2026-02-10)
  * @param router - Expo Router 인스턴스 (화면 이동에 사용)
  */
-function handleDeepLink(url: string, router: any) {
+function handleDeepLink(url: string, router: { replace: (path: string) => void; push: (path: string) => void }) {
   try {
     // URL 파싱: baln://context/2026-02-10 → host="context", pathname="/2026-02-10"
     const parsed = new URL(url);
@@ -38,7 +38,7 @@ function handleDeepLink(url: string, router: any) {
     const type = parsed.host || pathParts[0];
     const id = pathParts[parsed.host ? 0 : 1];
 
-    console.log(`[DeepLink] 수신: type=${type}, id=${id}`);
+    if (__DEV__) console.log(`[DeepLink] 수신: type=${type}, id=${id}`);
 
     switch (type) {
       case 'context':
@@ -69,7 +69,7 @@ function handleDeepLink(url: string, router: any) {
         break;
 
       default:
-        console.log('[DeepLink] 알 수 없는 타입:', type);
+        if (__DEV__) console.log('[DeepLink] 알 수 없는 타입:', type);
         break;
     }
   } catch (e) {

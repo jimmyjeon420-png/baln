@@ -154,8 +154,8 @@ function normalizeProps(props: ContextCardProps): NormalizedData {
       date: d.date,
       onPressPremium: props.onPressPremium,
       onClose: props.onClose,
-      updateTimeLabel: (props as any).updateTimeLabel,
-      timeSlotIcon: (props as any).timeSlotIcon,
+      updateTimeLabel: (props as unknown as { updateTimeLabel?: string }).updateTimeLabel,
+      timeSlotIcon: (props as unknown as { timeSlotIcon?: string }).timeSlotIcon,
       priceCatalysts: d.priceCatalysts,
     };
   }
@@ -225,7 +225,7 @@ export default function ContextCard(props: ContextCardProps) {
           {updateTimeLabel && (
             <View style={[s.updateBadge, { backgroundColor: colors.primary + '15' }]}>
               {timeSlotIcon && (
-                <Ionicons name={timeSlotIcon as any} size={12} color={colors.primary} />
+                <Ionicons name={timeSlotIcon as keyof typeof Ionicons.glyphMap} size={12} color={colors.primary} />
               )}
               <Text style={[s.updateBadgeText, { color: colors.primary }]}>
                 {updateTimeLabel}

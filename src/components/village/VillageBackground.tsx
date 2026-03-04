@@ -8,10 +8,7 @@
  */
 
 import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, Animated, Dimensions } from 'react-native';
-import type { TimeOfDay } from '../../hooks/useTimeOfDay';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+import { View, StyleSheet, Animated } from 'react-native';
 
 interface VillageBackgroundProps {
   skyGradient: [string, string];

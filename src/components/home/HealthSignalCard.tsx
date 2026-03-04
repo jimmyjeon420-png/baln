@@ -28,7 +28,7 @@ import { useTheme } from '../../hooks/useTheme';
 import { CharacterAvatar } from '../character/CharacterAvatar';
 import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
 import { useLocale } from '../../context/LocaleContext';
-import { formatDateWithTime, formatCompactAmount, isKoreanLocale } from '../../utils/formatters';
+import { formatDateWithTime, formatCompactAmount } from '../../utils/formatters';
 
 
 // ============================================================================

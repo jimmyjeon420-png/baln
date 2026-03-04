@@ -30,7 +30,7 @@ interface StreakDetailCardProps {
   currentStreak: number;
   longestStreak: number;
   todayCheckedIn: boolean;
-  weeklyData: Array<{ day: string; checkedIn: boolean }>;
+  weeklyData: { day: string; checkedIn: boolean }[];
   nextMilestone: { target: number; label: string };
   onCheckIn?: () => void;
 }

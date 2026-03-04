@@ -198,6 +198,11 @@ export default function ProfileScreen() {
           onPress: () => router.push('/settings/security'),
         },
         {
+          icon: 'ban-outline' as keyof typeof Ionicons.glyphMap,
+          label: '차단 목록',
+          onPress: () => router.push('/settings/blocked-users'),
+        },
+        {
           icon: 'language-outline',
           label: t('profile.menu.language') || '언어 / Language',
           onPress: () => {
@@ -214,7 +219,7 @@ export default function ProfileScreen() {
         },
       ],
     },
-  ], [router, unlockedCount, totalCount, latestGuruStyle, t]);
+  ], [router, unlockedCount, totalCount, latestGuruStyle, t, language, setAppLanguage]);
 
   // ---------------------------------------------------------------------------
   // 다크모드 토글 (헤더 우측 스위치에서 사용)

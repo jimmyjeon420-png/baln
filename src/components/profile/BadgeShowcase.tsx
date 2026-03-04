@@ -31,7 +31,7 @@ interface BadgeShowcaseProps {
 
 export function BadgeShowcase({ ownedBadgeIds, onBadgePress }: BadgeShowcaseProps) {
   const track = useTrackEvent();
-  const categories: Array<{ key: Badge['category']; title: string; icon: string }> = [
+  const categories: { key: Badge['category']; title: string; icon: string }[] = [
     { key: 'activity', title: '활동 뱃지', icon: '🏆' },
     { key: 'skill', title: '실력 뱃지', icon: '🎯' },
     { key: 'contribution', title: '기여 뱃지', icon: '📚' },

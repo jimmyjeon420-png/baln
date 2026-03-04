@@ -30,7 +30,7 @@ import {
 import type { BrandShop, BrandCategory } from '../../types/village';
 import { BRAND_SHOPS } from '../../data/brandWorldConfig';
 import { BrandShopCard } from './BrandShopCard';
-import { useLocale } from '../../context/LocaleContext';
+import type { ThemeColors } from '../../styles/colors';
 
 // ============================================================================
 // 타입
@@ -44,7 +44,7 @@ interface BrandMarketProps {
   /** 브랜드 카드 탭 콜백 */
   onBrandPress: (brand: BrandShop) => void;
   /** 테마 색상 */
-  colors: any;
+  colors: ThemeColors;
   /** 로케일 (ko/en) */
   locale?: string;
   /**
@@ -93,8 +93,8 @@ function getPopularBrands(
   const withChange = brands
     .filter((b) => b.ticker && stockChanges[b.ticker] !== undefined)
     .sort((a, b) => {
-      const absA = Math.abs(stockChanges[a.ticker!] ?? 0);
-      const absB = Math.abs(stockChanges[b.ticker!] ?? 0);
+      const absA = Math.abs(stockChanges[a.ticker ?? ''] ?? 0);
+      const absB = Math.abs(stockChanges[b.ticker ?? ''] ?? 0);
       return absB - absA;
     });
   return withChange.slice(0, 3);
@@ -124,7 +124,7 @@ interface CategoryTabButtonProps {
   tab: CategoryTab;
   isActive: boolean;
   onPress: (id: CategoryFilter) => void;
-  colors: any;
+  colors: ThemeColors;
   isKo: boolean;
 }
 
@@ -162,7 +162,7 @@ interface PopularSectionProps {
   brands: BrandShop[];
   stockChanges: Record<string, number>;
   onBrandPress: (brand: BrandShop) => void;
-  colors: any;
+  colors: ThemeColors;
   locale: string;
 }
 
@@ -199,14 +199,14 @@ function PopularSection({ brands, stockChanges, onBrandPress, colors, locale }: 
 // 메인 컴포넌트
 // ============================================================================
 
-const BrandMarket = React.memo(function BrandMarket({
+const BrandMarket = React.memo(({
   isVisible,
   onClose,
   onBrandPress,
   colors,
   locale = 'ko',
   stockChanges = {},
-}: BrandMarketProps) {
+}: BrandMarketProps) => {
   const isKo = locale === 'ko';
 
   const [activeCategory, setActiveCategory] = useState<CategoryFilter>('all');

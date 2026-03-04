@@ -12,11 +12,12 @@ import { View, Text, StyleSheet, Animated, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CharacterAvatar } from '../character/CharacterAvatar';
 import { useLocale } from '../../context/LocaleContext';
+import type { ThemeColors } from '../../styles/colors';
 
 const VILLAGE_CHECKIN_KEY = '@baln:village_checkin_shown';
 
 interface VillageCheckInRewardProps {
-  colors: any;
+  colors: ThemeColors;
   locale: string;
   /** 오늘의 스트릭 일수 */
   currentStreak?: number;
@@ -41,7 +42,7 @@ function getTodayKey(): string {
 
 export function VillageCheckInReward({
   colors,
-  locale,
+  locale: _locale,
   currentStreak = 0,
 }: VillageCheckInRewardProps) {
   const [visible, setVisible] = useState(false);

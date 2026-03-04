@@ -436,3 +436,79 @@ src/components/
 기존 타입을 수정하면 다른 Claude의 코드가 깨질 수 있습니다.
 - 기존 필드를 **삭제/변경하지 말 것**. 새 필드는 `optional(?)`로 추가.
 - 타입 수정이 필요하면 사용자에게 "이 타입은 여러 곳에서 쓰이고 있어서, 다른 작업이 끝난 후 수정하는 게 안전합니다"라고 알려주세요.
+
+---
+
+## 8. 에이전트 하네스
+
+### 세션 워크플로우
+1. `claude-progress.json` 읽기 — 현재 상태 파악
+2. pending 기능 중 다음 작업 선택
+3. 코드 작성 → tsc --noEmit 확인 → git commit
+4. `claude-progress.json` 업데이트
+5. 다음 작업 또는 종료
+
+### 에이전트 역할
+
+| 에이전트 | 담당 | 수정 가능 | 금지 |
+|---------|------|----------|------|
+| po-agent | 기획/분석/UX | docs/ | 코드 수정 |
+| frontend-agent | 화면/컴포넌트/훅 | app/, src/components/, src/hooks/ | supabase/ |
+| backend-agent | DB/Edge Function/서비스 | supabase/, src/services/ | app/, src/components/ |
+| qa-agent | 테스트/빌드 검증 | tests/ | 소스 코드 수정 |
+
+### 팀 워크플로우
+```
+PO (기획) → Frontend + Backend (병렬 실행) → QA (검증)
+                    ↓ 실패 시
+                 수정 → QA 재검증 (최대 3회)
+```
+
+### 진행 추적
+- `claude-progress.json` — JSON 기반 기능별 상태 추적
+- 매 기능 완료 시 git commit (기능 ID 포함)
+- tsc --noEmit 에러 0개 확인 후에만 커밋
+
+### Ralph Loop (자율 반복 패턴)
+
+Claude가 "됐다"고 멈추지 않고, 진짜 완성될 때까지 스스로 반복하는 패턴.
+
+**사용법:**
+```bash
+# 방법 1: 프롬프트에 완료 조건 명시
+"다음 기능을 구현해줘. 완료 조건:
+1. tsc --noEmit 에러 0개
+2. 모든 테스트 통과
+3. ESLint warning 0개
+4. 동작 확인 완료
+모든 조건 충족 시: RALPH_COMPLETE"
+
+# 방법 2: 큰 작업을 맡기고 자율 실행
+"claude-progress.json의 pending 기능을 하나씩 완료해.
+각 기능마다: 코드 작성 → 테스트 → git commit → progress 업데이트.
+모든 기능이 done이 되면 종료."
+```
+
+**핵심 원칙:**
+- 명확한 완료 기준을 프롬프트에 포함 (테스트 통과, 에러 0개 등)
+- 반복마다 이전 결과물 위에 개선 (누적 발전)
+- 3회 연속 진전 없으면 사용자에게 보고 (무한 루프 방지)
+- 매 반복 완료 시 git commit (체크포인트)
+
+### Remote Control (모바일 이어하기)
+
+터미널 세션을 폰/브라우저에서 이어서 조작. Max 플랜 필요.
+
+```bash
+# 방법 1: 새 세션 시작
+claude remote-control
+# → QR 코드 표시 → 폰으로 스캔 → 같은 세션 조작
+
+# 방법 2: 기존 세션에서 전환
+/remote-control   # 또는 /rc
+
+# 방법 3: 모든 세션 자동 활성화
+/config → "Enable Remote Control for all sessions" → true
+```
+
+**현재 환경**: tmux + Tailscale + Moshi로 대체 가능 (Mac IP: 100.66.201.31)

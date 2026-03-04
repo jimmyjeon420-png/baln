@@ -9,6 +9,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { t } from '../../locales';
+import type { ThemeColors } from '../../styles/colors';
 
 // =============================================================================
 // 타입 정의
@@ -22,7 +23,7 @@ interface CityHallHeaderProps {
   /** 사용자 연속 출석일 */
   streakDays?: number;
   /** 테마 색상 */
-  colors: any;
+  colors: ThemeColors;
   /** @deprecated Use t() from locales instead. Kept for backward compatibility. */
   locale?: string;
 }

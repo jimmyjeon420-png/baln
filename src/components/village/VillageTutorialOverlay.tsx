@@ -22,14 +22,16 @@ import {
   skipTutorial,
   getNextStep,
   TUTORIAL_STEPS,
+  type TutorialStep,
+  type TutorialState,
 } from '../../services/villageTutorialService';
-import type { TutorialStep, TutorialState } from '../../services/villageTutorialService';
 import { CharacterAvatar } from '../character/CharacterAvatar';
 import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
 import { getGuruDisplayName } from '../../services/characterService';
+import type { ThemeColors } from '../../styles/colors';
 
 interface VillageTutorialOverlayProps {
-  colors: any;
+  colors: ThemeColors;
   locale: string;
   /** 외부에서 튜토리얼 액션 완료를 알려줄 때 */
   onStepAction?: (action: string) => void;
@@ -107,7 +109,7 @@ export function VillageTutorialOverlay({
     return null;
   }
 
-  const guruConfig = GURU_CHARACTER_CONFIGS[currentStep.guruId];
+  const _guruConfig = GURU_CHARACTER_CONFIGS[currentStep.guruId];
   const stepCount = TUTORIAL_STEPS.length;
   const stepNumber = currentStep.order;
 

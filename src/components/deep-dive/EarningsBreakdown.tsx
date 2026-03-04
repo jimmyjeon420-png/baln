@@ -14,6 +14,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, LayoutAnimation, Platform, UIManager } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
+import type { ThemeColors } from '../../styles/colors';
 import { formatKRW } from '../../utils/formatters';
 
 // Android LayoutAnimation 활성화
@@ -186,7 +187,7 @@ export default function EarningsBreakdown({
         onToggle={() => toggleSection('cost')}
         colors={colors}
       >
-        {costItems.map((item, i) => (
+        {costItems.map((item, _i) => (
           <View key={item.name} style={[styles.costRow, { borderBottomColor: colors.border }]}>
             <View style={styles.costLeft}>
               <Text style={[styles.costName, { color: colors.textPrimary }]}>{item.name}</Text>
@@ -255,7 +256,7 @@ function SectionAccordion({
   iconColor: string;
   isExpanded: boolean;
   onToggle: () => void;
-  colors: any;
+  colors: ThemeColors;
   children: React.ReactNode;
 }) {
   return (
@@ -266,7 +267,7 @@ function SectionAccordion({
         activeOpacity={0.7}
       >
         <View style={styles.accordionLeft}>
-          <Ionicons name={icon as any} size={16} color={iconColor} />
+          <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={16} color={iconColor} />
           <Text style={[styles.accordionTitle, { color: colors.textPrimary }]}>{title}</Text>
         </View>
         <Ionicons
@@ -290,7 +291,7 @@ function WaterfallChart({
   colors,
 }: {
   items: WaterfallItem[];
-  colors: any;
+  colors: ThemeColors;
 }) {
   if (items.length === 0) return null;
 

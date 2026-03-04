@@ -6,8 +6,9 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, LayoutAnimation, Platform, UIManager } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import Svg, { Circle, G, Text as SvgText } from 'react-native-svg';
+import Svg, { Circle, G } from 'react-native-svg';
 import { useTheme } from '../hooks/useTheme';
+import type { ThemeColors } from '../styles/colors';
 import { PanicSubScores } from '../services/gemini';
 
 // Android 레이아웃 애니메이션 활성화
@@ -38,7 +39,7 @@ interface PanicShieldCardProps {
 }
 
 // 서브스코어 바 색상 결정 (점수가 높을수록 안전 → 초록)
-const getSubScoreColor = (score: number, colors: any): string => {
+const getSubScoreColor = (score: number, colors: ThemeColors): string => {
   if (score >= 70) return colors.success;
   if (score >= 40) return colors.warning;
   return colors.error;
@@ -197,7 +198,7 @@ export default function PanicShieldCard({
               : `평균보다 ${Math.abs(diff)}점 낮습니다`;
             return (
               <View style={[styles.peerDiffBadge, { backgroundColor: `${color}15` }]}>
-                <Ionicons name={arrow as any} size={12} color={color} />
+                <Ionicons name={arrow as keyof typeof Ionicons.glyphMap} size={12} color={color} />
                 <Text style={[styles.peerDiffText, { color }]}>{text}</Text>
               </View>
             );

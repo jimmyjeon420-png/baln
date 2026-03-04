@@ -144,7 +144,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
       // AsyncStorage에 저장
       await AsyncStorage.setItem(THEME_STORAGE_KEY, mode);
 
-      console.log('[ThemeContext] 테마 변경:', mode);
+      if (__DEV__) console.log('[ThemeContext] 테마 변경:', mode);
     } catch (error) {
       console.error('[ThemeContext] 테마 저장 실패:', error);
     }

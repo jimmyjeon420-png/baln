@@ -21,6 +21,7 @@ import { Ionicons } from '@expo/vector-icons';
 import ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { useTheme } from '../../hooks/useTheme';
+import type { ThemeColors } from '../../styles/colors';
 import { useShareReward } from '../../hooks/useRewards';
 import { CATEGORY_COLORS, type ExtremeScenario } from '../../data/whatIfScenarios';
 import { formatCredits } from '../../utils/formatters';
@@ -52,7 +53,7 @@ export interface ExtremeScenarioReportProps {
 /** 임팩트 체인 시각화 */
 const ImpactChainSection: React.FC<{
   chain: string[];
-  colors: any;
+  colors: ThemeColors;
 }> = ({ chain, colors }) => (
   <View style={[sectionStyles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
     <View style={sectionStyles.cardHeader}>
@@ -84,7 +85,7 @@ const ImpactChainSection: React.FC<{
 /** 시장 영향 섹션 */
 const MarketImpactSection: React.FC<{
   marketImpact: ExtremeScenario['marketImpact'];
-  colors: any;
+  colors: ThemeColors;
 }> = ({ marketImpact, colors }) => (
   <View style={[sectionStyles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
     <View style={sectionStyles.cardHeader}>
@@ -131,7 +132,7 @@ const MarketImpactSection: React.FC<{
 /** 역사적 선례 섹션 */
 const HistoricalSection: React.FC<{
   parallel: ExtremeScenario['historicalParallel'];
-  colors: any;
+  colors: ThemeColors;
 }> = ({ parallel, colors }) => (
   <View style={[sectionStyles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
     <View style={sectionStyles.cardHeader}>
@@ -167,7 +168,7 @@ const HistoricalSection: React.FC<{
 /** 행동 가이드 섹션 */
 const ActionGuideSection: React.FC<{
   guide: string[];
-  colors: any;
+  colors: ThemeColors;
 }> = ({ guide, colors }) => (
   <View style={[sectionStyles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
     <View style={sectionStyles.cardHeader}>
@@ -186,7 +187,7 @@ const ActionGuideSection: React.FC<{
 /** 포트폴리오 시뮬레이션 결과 */
 const SimulationResultSection: React.FC<{
   result: WhatIfResult;
-  colors: any;
+  colors: ThemeColors;
 }> = ({ result, colors }) => (
   <View style={[sectionStyles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
     <View style={sectionStyles.cardHeader}>

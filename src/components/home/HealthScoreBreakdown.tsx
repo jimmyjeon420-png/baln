@@ -24,6 +24,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
+import type { ThemeColors } from '../../styles/colors';
 import { useLocale } from '../../context/LocaleContext';
 
 // ============================================================================
@@ -53,7 +54,7 @@ interface HealthScoreBreakdownProps {
 // 유틸리티
 // ============================================================================
 
-function getGradeColor(grade: string, colors: any): string {
+function getGradeColor(grade: string, colors: ThemeColors): string {
   if (grade.startsWith('A')) return colors.primary;
   if (grade.startsWith('B')) return colors.info;
   if (grade.startsWith('C')) return colors.warning;

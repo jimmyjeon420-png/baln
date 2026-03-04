@@ -663,7 +663,7 @@ export function VillageScenery({
   height,
   timeOfDay,
   season,
-  prosperityLevel = 1,
+  prosperityLevel: _prosperityLevel = 1,
   dustOverlayOpacity = 0,
   desaturationAmount = 0,
 }: VillageSceneryProps) {

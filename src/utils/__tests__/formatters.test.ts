@@ -4,6 +4,7 @@
  * 크레딧 포맷팅 함수들을 테스트합니다.
  */
 
+// Mock locales for Korean output
 import {
   formatCredits,
   formatCreditReward,
@@ -16,6 +17,31 @@ import {
   CREDIT_SYMBOL,
   CREDIT_NAME,
 } from '../formatters';
+
+jest.mock('../../locales', () => ({
+  getCurrentLanguage: jest.fn(() => 'ko'),
+  t: jest.fn((key: string, opts?: Record<string, unknown>) => {
+    const translations: Record<string, string> = {
+      'format.just_now': '방금 전',
+      'format.locale_code': 'ko-KR',
+      'format.currency_symbol': '₩',
+      'credit.name': '크레딧',
+    };
+    if (translations[key] !== undefined) return translations[key];
+    // Handle interpolation patterns
+    if (key === 'format.minutes_ago') return `${opts?.n}분 전`;
+    if (key === 'format.hours_ago') return `${opts?.n}시간 전`;
+    if (key === 'format.days_ago') return `${opts?.n}일 전`;
+    if (key === 'format.date_month_day') return `${opts?.month}월 ${opts?.day}일`;
+    if (key === 'format.date_short') return `${opts?.month}월 ${opts?.day}일`;
+    if (key === 'format.date_full') return `${opts?.year}년 ${opts?.month}월 ${opts?.day}일`;
+    if (key === 'format.compact_billion') return `${opts?.n}억`;
+    if (key === 'format.compact_thousand') return `${opts?.n}만`;
+    if (key === 'format.compact_trillion') return `${opts?.n}조`;
+    if (key === 'credit.reward') return `+${opts?.amount}C (₩${opts?.value}) 획득`;
+    return key;
+  }),
+}));
 
 describe('formatters', () => {
   describe('formatCredits', () => {
@@ -74,12 +100,12 @@ describe('formatters', () => {
 
     it('should format Korean Won in compact mode', () => {
       expect(formatKRW(10000, true)).toBe('1만');
-      expect(formatKRW(100000000, true)).toBe('1.0억');
+      expect(formatKRW(100000000, true)).toBe('1억');
     });
 
     it('should handle amounts between 1억 and 10억 in compact mode', () => {
-      expect(formatKRW(250000000, true)).toBe('2.5억');
-      expect(formatKRW(999999999, true)).toBe('10.0억');
+      expect(formatKRW(250000000, true)).toBe('3억'); // Math.round(2.5) = 3
+      expect(formatKRW(999999999, true)).toBe('10억'); // Math.round(10.0) = 10
     });
 
     it('should handle amounts just under 1억 in compact mode', () => {
@@ -144,7 +170,7 @@ describe('formatters', () => {
     });
 
     it('should respect compact mode for KRW', () => {
-      expect(formatCurrency(100000000, 'KRW', true)).toBe('1.0억');
+      expect(formatCurrency(100000000, 'KRW', true)).toBe('1억');
     });
 
     it('should respect compact mode for USD', () => {

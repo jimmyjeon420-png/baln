@@ -12,8 +12,9 @@
 
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { GURU_SCHEDULES, getTimeSlot } from '../../data/guruScheduleConfig';
+import { GURU_SCHEDULES } from '../../data/guruScheduleConfig';
 import type { GuruActivity } from '../../types/village';
+import type { ThemeColors } from '../../styles/colors';
 
 // ============================================================================
 // 타입
@@ -23,7 +24,7 @@ interface GuruScheduleCardProps {
   /** 표시할 구루 ID */
   guruId: string;
   /** 테마 색상 */
-  colors: any;
+  colors: ThemeColors;
   /** 로케일 (ko/en) */
   locale: string;
 }

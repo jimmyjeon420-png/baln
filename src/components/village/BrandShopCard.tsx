@@ -23,6 +23,7 @@ import {
 } from 'react-native';
 import type { BrandShop, BrandCategory } from '../../types/village';
 import { useLocale } from '../../context/LocaleContext';
+import type { ThemeColors } from '../../styles/colors';
 
 // ---------------------------------------------------------------------------
 // 타입 정의
@@ -31,7 +32,7 @@ import { useLocale } from '../../context/LocaleContext';
 interface BrandShopCardProps {
   brand: BrandShop;
   onPress: (brand: BrandShop) => void;
-  colors: any;
+  colors: ThemeColors;
   locale?: string;
   /** 실시간 주가 등락률 (%) — 있으면 표시, 없으면 숨김 */
   stockChange?: number;
@@ -73,13 +74,13 @@ function formatStockChange(change: number): string {
 // 메인 컴포넌트
 // ---------------------------------------------------------------------------
 
-const BrandShopCard = React.memo(function BrandShopCard({
+const BrandShopCard = React.memo(({
   brand,
   onPress,
   colors,
   locale = 'ko',
   stockChange,
-}: BrandShopCardProps) {
+}: BrandShopCardProps) => {
   const { t } = useLocale();
   const isKo = locale === 'ko';
 

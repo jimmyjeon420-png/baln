@@ -14,7 +14,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { CharacterAvatar } from '../character/CharacterAvatar';
 import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
 import { getGuruDisplayName } from '../../services/characterService';
-import { getDailyQuote, getRandomQuote } from '../../data/guruQuoteBank';
+import { getDailyQuote } from '../../data/guruQuoteBank';
 import type { ThemeColors } from '../../styles/colors';
 
 interface GuruPredictionCommentProps {
@@ -66,7 +66,7 @@ export function GuruPredictionComment({
   if (totalCount === 0) return null;
 
   const guruId = getCommentGuru();
-  const config = GURU_CHARACTER_CONFIGS[guruId];
+  const _config = GURU_CHARACTER_CONFIGS[guruId];
   const isKo = locale === 'ko';
 
   // 적중률 기반 반응 메시지

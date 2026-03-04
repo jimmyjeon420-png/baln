@@ -92,6 +92,7 @@ const ReviewResultItem = React.memo(({
         success();
       }
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- animation should only run on mount
   }, []);
 
   const hasExplanation = !!(result.description || result.source);
@@ -230,6 +231,7 @@ function YesterdayReviewCard({
       // 보상 없으면 가벼운 햅틱
       lightTap();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- rewardScaleAnim is a ref, adding it causes unnecessary re-runs
   }, [results, totalReward]);
 
   // 결과가 없으면 Empty 상태

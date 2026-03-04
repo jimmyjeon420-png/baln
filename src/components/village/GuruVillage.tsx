@@ -15,7 +15,7 @@
  */
 
 import React from 'react';
-import { View, Text, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { VillageBackground } from './VillageBackground';
 import { WanderingGuru } from './WanderingGuru';
@@ -24,7 +24,6 @@ import { useGuruVillage } from '../../hooks/useGuruVillage';
 import { useTimeOfDay } from '../../hooks/useTimeOfDay';
 import { useLocale } from '../../context/LocaleContext';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const VILLAGE_HEIGHT = 280;
 
 interface GuruVillageProps {
@@ -91,7 +90,7 @@ function VillageTree({ x, size = 'md' }: { x: number; size?: 'sm' | 'md' }) {
   const leafSize = isSm ? 16 : 22;
 
   return (
-    <View style={[treeStyles.container, { left: `${x}%` as any }]}>
+    <View style={[treeStyles.container, { left: `${x}%` as unknown as number }]}>
       {/* 나뭇잎 (둥근 초록) */}
       <View
         style={[
@@ -134,7 +133,7 @@ function VillageFlower({ x, y, color }: { x: number; y: number; color: string })
     <View
       style={[
         flowerStyles.container,
-        { left: `${x}%` as any, bottom: `${y}%` as any },
+        { left: `${x}%` as unknown as number, bottom: `${y}%` as unknown as number },
       ]}
     >
       <Text style={flowerStyles.emoji}>{color}</Text>

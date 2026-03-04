@@ -57,7 +57,7 @@ interface BenchProps {
 }
 
 function Bench({ cx, cy, isNight = false, hasPot = false }: BenchProps) {
-  const colorMult = isNight ? 0.75 : 1;
+  const _colorMult = isNight ? 0.75 : 1;
   const wood = isNight ? WOOD_DARK : WOOD_MID;
   const woodLight = isNight ? WOOD_MID : WOOD_LIGHT;
 

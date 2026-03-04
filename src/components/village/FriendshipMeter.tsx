@@ -18,6 +18,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import type { GuruFriendship, FriendshipTier } from '../../types/village';
+import type { ThemeColors } from '../../styles/colors';
 import { CharacterAvatar } from '../character/CharacterAvatar';
 import { useLocale } from '../../context/LocaleContext';
 
@@ -31,7 +32,7 @@ interface FriendshipMeterProps {
   /** 구루 ID (CharacterAvatar에 전달) */
   guruId: string;
   /** 테마 색상 */
-  colors: any;
+  colors: ThemeColors;
   /** 로케일 (ko/en) */
   locale?: string;
   /** 컴팩트 모드 (리스트용, 티어 이모지 + 바만 표시) */
@@ -210,7 +211,7 @@ function FullFriendshipMeter({
 
 function CompactFriendshipMeter({
   friendship,
-  guruId,
+  guruId: _guruId,
   colors,
 }: Omit<FriendshipMeterProps, 'compact'>) {
   const { tier, score } = friendship;

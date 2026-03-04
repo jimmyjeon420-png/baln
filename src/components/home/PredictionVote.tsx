@@ -38,12 +38,12 @@ if (
 // ============================================================================
 
 export interface PredictionVoteProps {
-  questions: Array<{
+  questions: {
     id: string;
     text: string;
     options: string[];
     votedOption?: string;
-  }>;
+  }[];
   onVote: (questionId: string, option: string) => void;
   creditsEarned: number;
 }
@@ -224,7 +224,7 @@ function QuestionCard({ question, index, onVote }: QuestionCardProps) {
                   name={
                     hasVoted && isSelected
                       ? 'checkmark-circle'
-                      : (iconName as any)
+                      : (iconName as keyof typeof Ionicons.glyphMap)
                   }
                   size={18}
                   color={

@@ -21,6 +21,7 @@ import {
 } from 'react-native';
 import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
 import { t } from '../../locales';
+import type { ThemeColors } from '../../styles/colors';
 
 // ============================================================================
 // 타입
@@ -34,7 +35,7 @@ interface LevelUpCelebrationProps {
   /** 닫기 콜백 */
   onDismiss: () => void;
   /** 테마 색상 */
-  colors: any;
+  colors: ThemeColors;
   /** @deprecated Use t() from locales instead. Kept for backward compatibility. */
   locale?: string;
 }

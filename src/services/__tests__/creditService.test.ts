@@ -21,7 +21,7 @@ import {
 } from '../creditService';
 import supabase, { getCurrentUser } from '../supabase';
 import { isFreePeriod } from '../../config/freePeriod';
-import { FEATURE_COSTS, TIER_DISCOUNTS } from '../../types/marketplace';
+import { FEATURE_COSTS } from '../../types/marketplace';
 
 // Mock 모듈
 jest.mock('../supabase');
@@ -40,7 +40,7 @@ describe('creditService', () => {
     mockRpc.mockClear();
 
     // supabase.rpc Mock 설정
-    (supabase as any).rpc = mockRpc;
+    (supabase as unknown as { rpc: jest.Mock }).rpc = mockRpc;
   });
 
   // ============================================================================
@@ -50,7 +50,7 @@ describe('creditService', () => {
   describe('getMyCredits', () => {
     it('1. [Success] 정상적으로 크레딧 잔액을 조회한다', async () => {
       // Mock 사용자 인증
-      mockGetCurrentUser.mockResolvedValue({ id: 'test-user-123' } as any);
+      mockGetCurrentUser.mockResolvedValue({ id: 'test-user-123' } as unknown as Awaited<ReturnType<typeof getCurrentUser>>);
 
       // Mock 크레딧 데이터
       const mockCredits = {
@@ -87,7 +87,7 @@ describe('creditService', () => {
     });
 
     it('3. [Error - DB Error] DB 조회 실패 시 기본값(잔액 0)을 반환한다', async () => {
-      mockGetCurrentUser.mockResolvedValue({ id: 'test-user-123' } as any);
+      mockGetCurrentUser.mockResolvedValue({ id: 'test-user-123' } as unknown as Awaited<ReturnType<typeof getCurrentUser>>);
 
       (supabase.from as jest.Mock).mockReturnValue({
         select: jest.fn().mockReturnThis(),
@@ -121,7 +121,7 @@ describe('creditService', () => {
       // 무료 기간 아님 (유료 모드)
       (isFreePeriod as jest.Mock).mockReturnValue(false);
 
-      mockGetCurrentUser.mockResolvedValue({ id: 'test-user-123' } as any);
+      mockGetCurrentUser.mockResolvedValue({ id: 'test-user-123' } as unknown as Awaited<ReturnType<typeof getCurrentUser>>);
 
       // Mock RPC 응답
       const mockRpcResponse = {
@@ -153,33 +153,36 @@ describe('creditService', () => {
       });
     });
 
-    it('5. [Free Period] 무료 기간 중에는 크레딧을 차감하지 않는다', async () => {
-      // 무료 기간 활성화
+    it('5. [Free Period] 무료 기간 중에도 크레딧을 차감한다 (순환 경제)', async () => {
+      // 무료 기간 활성화 — 하지만 현재 구현에서는 무료 기간에도 RPC 호출함
       (isFreePeriod as jest.Mock).mockReturnValue(true);
 
-      mockGetCurrentUser.mockResolvedValue({ id: 'test-user-123' } as any);
+      mockGetCurrentUser.mockResolvedValue({ id: 'test-user-123' } as unknown as Awaited<ReturnType<typeof getCurrentUser>>);
 
-      // getMyCredits Mock (무료 기간 중에는 현재 잔액만 조회)
-      (supabase.from as jest.Mock).mockReturnValue({
-        select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockReturnThis(),
-        single: jest.fn().mockResolvedValue({
-          data: { balance: 100 },
-          error: null,
-        }),
+      // Mock RPC 응답 (무료 기간에도 크레딧 차감)
+      mockRpc.mockResolvedValue({
+        data: [
+          {
+            success: true,
+            new_balance: 90,
+            error_message: null,
+          },
+        ],
+        error: null,
       });
 
       const result = await spendCredits(10, 'deep_dive');
 
-      // 무료 기간에는 RPC 호출 없이 성공 반환
+      // 무료 기간에도 RPC 호출하여 크레딧 차감
       expect(result.success).toBe(true);
-      expect(mockRpc).not.toHaveBeenCalled();
+      expect(result.newBalance).toBe(90);
+      expect(mockRpc).toHaveBeenCalledWith('spend_credits', expect.any(Object));
     });
 
     it('6. [Error - Insufficient Balance] 잔액 부족 시 실패를 반환한다', async () => {
       (isFreePeriod as jest.Mock).mockReturnValue(false);
 
-      mockGetCurrentUser.mockResolvedValue({ id: 'test-user-123' } as any);
+      mockGetCurrentUser.mockResolvedValue({ id: 'test-user-123' } as unknown as Awaited<ReturnType<typeof getCurrentUser>>);
 
       const mockRpcResponse = {
         data: [
@@ -206,7 +209,7 @@ describe('creditService', () => {
       const result = await spendCredits(10, 'deep_dive');
 
       expect(result.success).toBe(false);
-      expect(result.errorMessage).toBe('로그인이 필요합니다.');
+      expect(result.errorMessage).toBe('Please sign in.');
     });
   });
 
@@ -216,8 +219,8 @@ describe('creditService', () => {
 
   describe('getDiscountedCost', () => {
     it('8. [Tier Discount] 티어별로 정확한 할인율을 적용한다', () => {
-      const featureType = 'deep_dive'; // 원가 5C = ₩500
-      const originalCost = FEATURE_COSTS[featureType]; // 5
+      const featureType = 'deep_dive';
+      const originalCost = FEATURE_COSTS[featureType]; // 1 (1크레딧 = 1액션 통일)
 
       // 무료 기간 아님
       (isFreePeriod as jest.Mock).mockReturnValue(false);
@@ -225,51 +228,53 @@ describe('creditService', () => {
       // SILVER: 할인 없음 (0%)
       const silverResult = getDiscountedCost(featureType, 'SILVER');
       expect(silverResult).toEqual({
-        originalCost: 5,
-        discountedCost: 5, // 할인 없음
+        originalCost,
+        discountedCost: originalCost, // 할인 없음
         discountPercent: 0,
         isFree: false,
       });
 
       // GOLD: 10% 할인
       const goldResult = getDiscountedCost(featureType, 'GOLD');
-      expect(goldResult.discountedCost).toBe(Math.round(5 * 0.9)); // 4.5 → 5 (반올림)
+      expect(goldResult.discountedCost).toBe(Math.round(originalCost * 0.9));
 
       // PLATINUM: 20% 할인
       const platinumResult = getDiscountedCost(featureType, 'PLATINUM');
-      expect(platinumResult.discountedCost).toBe(Math.round(5 * 0.8)); // 4
+      expect(platinumResult.discountedCost).toBe(Math.round(originalCost * 0.8));
 
       // DIAMOND: 30% 할인
       const diamondResult = getDiscountedCost(featureType, 'DIAMOND');
-      expect(diamondResult.discountedCost).toBe(Math.round(5 * 0.7)); // 3.5 → 4
+      expect(diamondResult.discountedCost).toBe(Math.round(originalCost * 0.7));
     });
 
-    it('9. [Free Period] 무료 기간 중에는 모든 기능이 0원이다', () => {
-      // 무료 기간 활성화
+    it('9. [Free Period] 무료 기간에도 정상 가격이 표시된다 (크레딧 순환 경제)', () => {
+      // 무료 기간 활성화 — 하지만 getDiscountedCost는 무료 기간 무관
       (isFreePeriod as jest.Mock).mockReturnValue(true);
 
       const result = getDiscountedCost('tax_report', 'SILVER');
 
-      expect(result.discountedCost).toBe(0);
-      expect(result.discountPercent).toBe(100);
-      expect(result.isFree).toBe(true);
+      // 무료 기간에도 정상 가격 (순환 경제)
+      expect(result.originalCost).toBe(FEATURE_COSTS['tax_report']);
+      expect(result.discountedCost).toBe(FEATURE_COSTS['tax_report']);
+      expect(result.discountPercent).toBe(0);
+      expect(result.isFree).toBe(false);
     });
 
     it('10. [Exchange Rate] 크레딧 환율 (1C = ₩100) 계산이 정확하다', () => {
       (isFreePeriod as jest.Mock).mockReturnValue(false);
 
       // 1C = ₩100 기준
-      // deep_dive: 5C = ₩500
+      // deep_dive: 1C = ₩100
       const deepDiveResult = getDiscountedCost('deep_dive', 'SILVER');
-      expect(deepDiveResult.originalCost).toBe(5); // ₩500
+      expect(deepDiveResult.originalCost).toBe(FEATURE_COSTS['deep_dive']); // 1
 
       // tax_report: 10C = ₩1,000
       const taxReportResult = getDiscountedCost('tax_report', 'SILVER');
-      expect(taxReportResult.originalCost).toBe(10); // ₩1,000
+      expect(taxReportResult.originalCost).toBe(FEATURE_COSTS['tax_report']); // 10
 
       // ai_cfo_chat: 1C = ₩100
       const chatResult = getDiscountedCost('ai_cfo_chat', 'SILVER');
-      expect(chatResult.originalCost).toBe(1); // ₩100
+      expect(chatResult.originalCost).toBe(FEATURE_COSTS['ai_cfo_chat']); // 1
     });
   });
 
@@ -282,7 +287,7 @@ describe('creditService', () => {
       // 유료 기간 (무료 기간 종료)
       (isFreePeriod as jest.Mock).mockReturnValue(false);
 
-      mockGetCurrentUser.mockResolvedValue({ id: 'test-user-123' } as any);
+      mockGetCurrentUser.mockResolvedValue({ id: 'test-user-123' } as unknown as Awaited<ReturnType<typeof getCurrentUser>>);
 
       const mockRpcResponse = {
         data: [
@@ -334,7 +339,7 @@ describe('creditService', () => {
 
   describe('refundCredits', () => {
     it('13. [Success] AI 실패 시 크레딧을 환불한다', async () => {
-      mockGetCurrentUser.mockResolvedValue({ id: 'test-user-123' } as any);
+      mockGetCurrentUser.mockResolvedValue({ id: 'test-user-123' } as unknown as Awaited<ReturnType<typeof getCurrentUser>>);
 
       const mockRpcResponse = {
         data: [
@@ -380,7 +385,7 @@ describe('creditService', () => {
 
   describe('getCreditHistory', () => {
     it('15. [Success] 크레딧 거래 내역을 조회한다', async () => {
-      mockGetCurrentUser.mockResolvedValue({ id: 'test-user-123' } as any);
+      mockGetCurrentUser.mockResolvedValue({ id: 'test-user-123' } as unknown as Awaited<ReturnType<typeof getCurrentUser>>);
 
       const mockTransactions = [
         {
@@ -418,7 +423,7 @@ describe('creditService', () => {
     });
 
     it('16. [Error] 조회 실패 시 빈 배열을 반환한다', async () => {
-      mockGetCurrentUser.mockResolvedValue({ id: 'test-user-123' } as any);
+      mockGetCurrentUser.mockResolvedValue({ id: 'test-user-123' } as unknown as Awaited<ReturnType<typeof getCurrentUser>>);
 
       (supabase.from as jest.Mock).mockReturnValue({
         select: jest.fn().mockReturnThis(),

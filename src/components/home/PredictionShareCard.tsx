@@ -80,7 +80,7 @@ export default function PredictionShareCard({
   category,
   onShareComplete,
 }: PredictionShareCardProps) {
-  const { colors, theme } = useTheme();
+  const { colors, theme: _theme } = useTheme();
   const { t } = useLocale();
   const viewShotRef = useRef<ViewShot>(null);
   const [isCapturing, setIsCapturing] = useState(false);
@@ -88,7 +88,7 @@ export default function PredictionShareCard({
   const isCorrect = myVote === correctAnswer;
   const voteDirection = myVote === 'YES' ? t('share.prediction_card.direction_up') : t('share.prediction_card.direction_down');
   const resultLabel = isCorrect ? t('share.prediction_card.result_hit') : t('share.prediction_card.result_miss');
-  const categoryColor = category ? CATEGORY_COLORS[category] : null;
+  const _categoryColor = category ? CATEGORY_COLORS[category] : null;
   const categoryLabel = category ? t(`prediction.card.category_${category}`) : null;
 
   // 그라데이션 색상 결정 (적중/빗나감)

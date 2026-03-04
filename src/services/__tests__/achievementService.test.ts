@@ -11,7 +11,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   ACHIEVEMENTS,
-  AchievementId,
   unlockAchievement,
   getAchievements,
   getAchievementsWithStatus,
@@ -318,28 +317,38 @@ describe('achievementService', () => {
       expect(result).toContain('streak_correct_5');
     });
 
-    it('should unlock accuracy_80 when predictionAccuracy is exactly 80%', async () => {
+    it('should unlock accuracy_80 when predictionAccuracy is exactly 80% and correctVotes >= 10', async () => {
       (AsyncStorage.getItem as jest.Mock).mockResolvedValue(null);
 
-      const result = await checkAndUnlockAchievements({ predictionAccuracy: 80 });
+      const result = await checkAndUnlockAchievements({ predictionAccuracy: 80, correctVotes: 10 });
 
       expect(result).toContain('accuracy_80');
     });
 
-    it('should unlock accuracy_80 when predictionAccuracy is 100%', async () => {
+    it('should unlock accuracy_80 when predictionAccuracy is 100% and correctVotes >= 10', async () => {
       (AsyncStorage.getItem as jest.Mock).mockResolvedValue(null);
 
-      const result = await checkAndUnlockAchievements({ predictionAccuracy: 100 });
+      const result = await checkAndUnlockAchievements({ predictionAccuracy: 100, correctVotes: 10 });
 
       expect(result).toContain('accuracy_80');
     });
 
     it('should not unlock accuracy_80 when predictionAccuracy is 79.9%', async () => {
+      (AsyncStorage.getItem as jest.Mock).mockResolvedValue(
+        JSON.stringify({ first_correct: '2026-02-01' })
+      );
+
+      const result = await checkAndUnlockAchievements({ predictionAccuracy: 79.9, correctVotes: 10 });
+
+      expect(result).not.toContain('accuracy_80');
+    });
+
+    it('should not unlock accuracy_80 when correctVotes < 10', async () => {
       (AsyncStorage.getItem as jest.Mock).mockResolvedValue(null);
 
-      const result = await checkAndUnlockAchievements({ predictionAccuracy: 79.9 });
+      const result = await checkAndUnlockAchievements({ predictionAccuracy: 80, correctVotes: 5 });
 
-      expect(result).toEqual([]);
+      expect(result).not.toContain('accuracy_80');
     });
 
     it('should unlock all prediction achievements at once', async () => {
@@ -519,8 +528,8 @@ describe('achievementService', () => {
     it('should handle boundary values for percentage (79.99% vs 80%)', async () => {
       (AsyncStorage.getItem as jest.Mock).mockResolvedValue(null);
 
-      const result79 = await checkAndUnlockAchievements({ predictionAccuracy: 79.99 });
-      const result80 = await checkAndUnlockAchievements({ predictionAccuracy: 80 });
+      const result79 = await checkAndUnlockAchievements({ predictionAccuracy: 79.99, correctVotes: 10 });
+      const result80 = await checkAndUnlockAchievements({ predictionAccuracy: 80, correctVotes: 10 });
 
       expect(result79).not.toContain('accuracy_80');
       expect(result80).toContain('accuracy_80');
@@ -590,9 +599,9 @@ describe('achievementService', () => {
       const streakResult = await checkAndUnlockAchievements({ currentStreak: 30 });
       expect(streakResult.filter((id) => ACHIEVEMENTS.find((a) => a.id === id)?.category === 'streak')).toHaveLength(3);
 
-      // Prediction category
+      // Prediction category (accuracy_80 requires correctVotes >= 10)
       const predictionResult = await checkAndUnlockAchievements({
-        correctVotes: 1,
+        correctVotes: 10,
         predictionStreak: 5,
         predictionAccuracy: 80,
       });

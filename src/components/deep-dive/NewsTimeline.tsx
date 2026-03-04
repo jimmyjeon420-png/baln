@@ -11,6 +11,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
+import type { ThemeColors } from '../../styles/colors';
 
 // ============================================================================
 // 타입 정의
@@ -19,11 +20,11 @@ import { useTheme } from '../../hooks/useTheme';
 export interface NewsTimelineProps {
   sentiment: 'VERY_POSITIVE' | 'POSITIVE' | 'NEUTRAL' | 'NEGATIVE' | 'VERY_NEGATIVE';
   highlights: string[];
-  recentNews: Array<{
+  recentNews: {
     title: string;
     impact: string;
     date: string;
-  }>;
+  }[];
 }
 
 // ============================================================================
@@ -38,7 +39,7 @@ const SENTIMENT_CONFIG = {
   VERY_NEGATIVE: { label: '매우 부정', icon: 'alert-circle' as const, colorKey: 'error' as const },
 };
 
-const getImpactColor = (impact: string, colors: any) => {
+const getImpactColor = (impact: string, colors: ThemeColors) => {
   if (impact.includes('긍정')) return colors.success;
   if (impact.includes('부정')) return colors.error;
   return colors.neutral;

@@ -29,7 +29,7 @@ import type { ThemeColors } from '../../styles/colors';
 import { CharacterAvatar } from '../character/CharacterAvatar';
 import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
 import { getGuruDisplayName } from '../../services/characterService';
-import { getMoodEmoji, moodToExpression } from '../../services/moodEngine';
+import { getMoodEmoji } from '../../services/moodEngine';
 import { useLocale } from '../../context/LocaleContext';
 
 // ============================================================================
@@ -215,7 +215,7 @@ function ArticleCard({
       {article.relatedPrediction && onPredictionPress && (
         <TouchableOpacity
           style={[articleStyles.predictionButton, { backgroundColor: colors.primary + '15' }]}
-          onPress={() => onPredictionPress(article.relatedPrediction!)}
+          onPress={() => onPredictionPress(article.relatedPrediction ?? '')}
           activeOpacity={0.7}
         >
           <Text style={[articleStyles.predictionText, { color: colors.primary }]}>
@@ -241,7 +241,7 @@ const VillageNewspaper = React.memo(({
   onGuruPress,
 }: VillageNewspaperProps) => {
   const { t } = useLocale();
-  const isKo = locale === 'ko';
+  const _isKo = locale === 'ko';
 
   return (
     <Modal

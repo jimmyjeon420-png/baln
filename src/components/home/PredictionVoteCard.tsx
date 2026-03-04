@@ -184,7 +184,7 @@ export default function PredictionVoteCard({
   const track = useTrackEvent();
   const { trackStep } = useHabitLoopTracking();
   const { t, language } = useLocale();
-  const isKo = language === 'ko';
+  const _isKo = language === 'ko';
   const styles = React.useMemo(() => createStyles(colors), [colors]);
   const scrollRef = React.useRef<ScrollView>(null);
   const [currentIndex, setCurrentIndex] = React.useState(0);

@@ -20,11 +20,11 @@ import { useLocale } from '../../context/LocaleContext';
 
 // ── Props ──
 interface StreakCalendarProps {
-  monthData: Array<{
+  monthData: {
     date: string; // "YYYY-MM-DD"
     checkedIn: boolean;
     predictionCorrect?: boolean;
-  }>;
+  }[];
   currentMonth: Date;
   onChangeMonth: (direction: 'prev' | 'next') => void;
   attendanceRate: number; // 0~100
@@ -98,12 +98,12 @@ export default function StreakCalendar({
 
   // 그리드 데이터 생성 (빈칸 포함)
   const gridCells = useMemo(() => {
-    const cells: Array<{
+    const cells: {
       day: number | null;
       dateStr: string;
       checkedIn: boolean;
       predictionCorrect?: boolean;
-    }> = [];
+    }[] = [];
 
     // 첫 주 빈칸
     for (let i = 0; i < firstDay; i++) {

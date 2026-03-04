@@ -4,6 +4,7 @@
  * 커뮤니티 공유 유틸리티 함수들을 테스트합니다.
  */
 
+// Mock locales for Korean output
 import {
   getTierFromAssets,
   getTierIcon,
@@ -13,6 +14,26 @@ import {
   getRelativeTime,
   formatAssetAmount,
 } from '../communityUtils';
+
+jest.mock('../../locales', () => ({
+  getCurrentLanguage: jest.fn(() => 'ko'),
+  t: jest.fn((key: string, opts?: Record<string, unknown>) => {
+    const translations: Record<string, string> = {
+      'format.just_now': '방금 전',
+      'format.locale_code': 'ko-KR',
+      'format.currency_symbol': '₩',
+    };
+    if (translations[key] !== undefined) return translations[key];
+    // Handle interpolation patterns
+    if (key === 'format.minutes_ago') return `${opts?.n}분 전`;
+    if (key === 'format.hours_ago') return `${opts?.n}시간 전`;
+    if (key === 'format.days_ago') return `${opts?.n}일 전`;
+    if (key === 'format.amount_eok') return `${opts?.n}억`;
+    if (key === 'format.amount_manwon') return `${opts?.n}만원`;
+    if (key === 'format.amount_won') return `${opts?.n}원`;
+    return key;
+  }),
+}));
 
 describe('communityUtils', () => {
   describe('getTierFromAssets', () => {

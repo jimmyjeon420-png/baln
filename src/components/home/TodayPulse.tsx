@@ -5,7 +5,6 @@ import { SIZES } from '../../styles/theme';
 import { useTheme } from '../../hooks/useTheme';
 import { useHaptics } from '../../hooks/useHaptics';
 import { useSharedPortfolio } from '../../hooks/useSharedPortfolio';
-import { useSharedMarketData } from '../../hooks/useSharedAnalysis';
 import { calculateHealthScore } from '../../services/rebalanceScore';
 import { formatLocalAmount } from '../../utils/formatters';
 import { useLocale } from '../../context/LocaleContext';

@@ -15,7 +15,8 @@
  */
 
 import React, { useEffect, useRef, useState, useMemo } from 'react';
-import { Text, StyleSheet, Animated } from 'react-native';
+import { StyleSheet, Animated } from 'react-native';
+import type { ThemeColors } from '../../styles/colors';
 
 // =============================================================================
 // 타입 정의
@@ -29,7 +30,7 @@ interface AmbientSoundTextProps {
   /** 계절 */
   season?: 'spring' | 'summer' | 'autumn' | 'winter';
   /** 테마 색상 */
-  colors: any;
+  colors: ThemeColors;
   /** 로케일 (ko/en) */
   locale: string;
 }

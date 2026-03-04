@@ -51,7 +51,7 @@ export default function PredictionPreview() {
         },
       );
     },
-    [submitVote, mediumTap],
+    [submitVote, mediumTap, t],
   );
 
   // 전체 보기

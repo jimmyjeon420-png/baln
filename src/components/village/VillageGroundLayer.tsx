@@ -337,7 +337,7 @@ export const VillageGroundLayer: React.FC<VillageGroundLayerProps> = ({
   height,
   timeOfDay,
   prosperityLevel = 0,
-  season,
+  season: _season,
   flowerOpacity = 1.0,
   weedCount = 0,
 }) => {

@@ -24,8 +24,7 @@ import {
   StyleSheet,
   Animated,
 } from 'react-native';
-import type { LeagueTier } from '../../data/leagueConfig';
-import { PROMOTION_ZONE, LEAGUE_PLAYER_COUNT, RELEGATION_ZONE } from '../../data/leagueConfig';
+import { PROMOTION_ZONE, LEAGUE_PLAYER_COUNT, RELEGATION_ZONE, type LeagueTier } from '../../data/leagueConfig';
 import type { SimulatedPlayer } from '../../hooks/usePredictionLeague';
 
 // ============================================================================

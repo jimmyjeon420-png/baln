@@ -2,7 +2,6 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
 import { TIER_THRESHOLDS } from '../../types/community';
-import { t } from '../../locales';
 
 interface SilverMotivationBannerProps {
   totalAssets: number;

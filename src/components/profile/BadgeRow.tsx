@@ -18,7 +18,7 @@ interface BadgeRowProps {
   isLoading?: boolean;
 }
 
-export function BadgeRow({ achievements, isLoading = false }: BadgeRowProps) {
+export function BadgeRow({ achievements, isLoading: _isLoading = false }: BadgeRowProps) {
   const router = useRouter();
 
   // 해금된 배지를 최근 순으로 정렬 후 상위 3개

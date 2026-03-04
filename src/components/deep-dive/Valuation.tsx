@@ -40,7 +40,7 @@ interface ValuationProps {
 // 메인 컴포넌트
 // ============================================================================
 
-export default function Valuation({ data, onRefresh }: ValuationProps) {
+export default function Valuation({ data, onRefresh: _onRefresh }: ValuationProps) {
   const { colors } = useTheme();
   const [expanded, setExpanded] = useState(false);
 

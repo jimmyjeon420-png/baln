@@ -22,6 +22,7 @@ import {
 import { CharacterAvatar } from '../character/CharacterAvatar';
 import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
 import { getGuruDisplayName } from '../../services/characterService';
+import type { ThemeColors } from '../../styles/colors';
 
 // ============================================================================
 // 타입
@@ -37,7 +38,7 @@ interface GuruGiftModalProps {
   /** 선물 보내기 콜백 (guruId, cost, friendshipGain) */
   onGift: (guruId: string, cost: number, friendshipGain: number) => Promise<void>;
   /** 테마 색상 */
-  colors: any;
+  colors: ThemeColors;
   /** 로케일 (ko/en) */
   locale: string;
 }

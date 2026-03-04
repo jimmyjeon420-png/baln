@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User, Provider } from '@supabase/supabase-js';
-import { Platform, Alert } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
 import * as Crypto from 'expo-crypto';
@@ -9,8 +8,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import supabase from '../services/supabase';
 import queryClient from '../services/queryClient';
 // Optional import: 패키지 미설치 시에도 앱 크래시 방지
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic optional import, type unknown at compile time
 let AppleAuthentication: any = null;
 try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- dynamic optional import to prevent crash when package is not installed
   AppleAuthentication = require('expo-apple-authentication');
 } catch {
   // expo-apple-authentication 미설치 → Apple 로그인 비활성화
@@ -64,7 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
    * 소셜 로그인 시 사용자 정보를 profiles 테이블에 저장
    * NOTE: 현재 DB 스키마에 맞게 최소한의 필드만 사용
    */
-  const syncUserProfile = async (user: User, provider: OAuthProvider | 'email') => {
+  const syncUserProfile = async (user: User, _provider: OAuthProvider | 'email') => {
     try {
       const { id, email } = user;
 
@@ -113,7 +114,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (isExpired) {
         const expiredAgo = nowInSeconds - exp;
-        console.log(`[AuthContext] 토큰 ${expiredAgo > 0 ? `${expiredAgo}초 전 만료` : '곧 만료'}`);
+        if (__DEV__) console.log(`[AuthContext] 토큰 ${expiredAgo > 0 ? `${expiredAgo}초 전 만료` : '곧 만료'}`);
       }
 
       return isExpired;
@@ -131,7 +132,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
    * → 간단한 DB 쿼리를 보내 세션이 진짜 유효한지 확인합니다.
    * → 실패하면 세션을 지우고 로그인 화면으로 보냅니다.
    */
-  const verifySessionHealth = async (sessionToCheck: Session): Promise<boolean> => {
+  const verifySessionHealth = async (_sessionToCheck: Session): Promise<boolean> => {
     try {
       const result = await Promise.race([
         supabase.from('profiles').select('id').limit(1),
@@ -140,7 +141,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         ),
       ]);
 
-      const error = (result as any)?.error;
+      const error = (result as unknown as { error?: { message: string } })?.error;
       if (error) {
         console.warn('[AuthContext] 세션 건강 체크 실패:', error.message);
 
@@ -177,7 +178,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (refreshResult && 'data' in refreshResult) {
               const { data: refreshData, error: refreshError } = refreshResult;
               if (!refreshError && refreshData.session) {
-                console.log('[AuthContext] 토큰 갱신 성공 → 세션 유지');
+                if (__DEV__) console.log('[AuthContext] 토큰 갱신 성공 → 세션 유지');
                 return true;
               }
             } else {
@@ -209,11 +210,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         // 네트워크 에러 등 비-인증 에러 → 세션은 유지 (오프라인 접속 허용)
-        console.log('[AuthContext] 비-인증 에러 (네트워크?) → 세션 유지, 오프라인 허용');
+        if (__DEV__) console.log('[AuthContext] 비-인증 에러 (네트워크?) → 세션 유지, 오프라인 허용');
         return true;
       }
 
-      console.log('[AuthContext] 세션 건강 체크 통과');
+      if (__DEV__) console.log('[AuthContext] 세션 건강 체크 통과');
       return true;
     } catch (error) {
       console.warn('[AuthContext] 세션 건강 체크 예외:', error);
@@ -243,7 +244,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           if (isTokenExpired) {
             // ★ 토큰 만료 → 즉시 갱신 (이전: 건강체크만 하고 만료된 토큰 사용)
-            console.log('[AuthContext] access_token 만료됨 → refreshSession 시도');
+            if (__DEV__) console.log('[AuthContext] access_token 만료됨 → refreshSession 시도');
             try {
               const refreshResult = await Promise.race([
                 supabase.auth.refreshSession(),
@@ -253,7 +254,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               if (refreshResult && 'data' in refreshResult) {
                 const { data: refreshData, error: refreshError } = refreshResult;
                 if (!refreshError && refreshData.session) {
-                  console.log('[AuthContext] 토큰 갱신 성공 → 새 세션 적용');
+                  if (__DEV__) console.log('[AuthContext] 토큰 갱신 성공 → 새 세션 적용');
                   setSession(refreshData.session);
                   setUser(refreshData.session.user || null);
                 } else {
@@ -313,7 +314,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, currentSession) => {
-        console.log('[AuthContext] onAuthStateChange:', event);
+        if (__DEV__) console.log('[AuthContext] onAuthStateChange:', event);
 
         setSession(currentSession);
         setUser(currentSession?.user || null);
@@ -341,7 +342,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // ★ 핵심 수정: 이전에는 로그만 찍고 캐시를 안 지워서,
         //   만료 토큰으로 조회된 빈 데이터가 5~30분간 유지되는 버그가 있었음
         if (event === 'TOKEN_REFRESHED') {
-          console.log('[AuthContext] 토큰 자동 갱신 성공 → 캐시 무효화');
+          if (__DEV__) console.log('[AuthContext] 토큰 자동 갱신 성공 → 캐시 무효화');
           queryClient.invalidateQueries();
         }
       }
@@ -533,7 +534,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (__DEV__) console.log('브라우저가 닫혔습니다');
         return;
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(`${provider} 로그인 실패:`, error);
       Sentry.captureException(error, {
         tags: { service: 'auth', provider },
@@ -601,21 +602,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (__DEV__) console.log('Apple 로그인 성공');
-    } catch (error: any) {
+    } catch (error: unknown) {
       // 사용자가 취소한 경우 (Apple 고유 에러코드)
-      if (error.code === 'ERR_REQUEST_CANCELED') {
+      const errorWithCode = error as { code?: string; message?: string };
+      if (errorWithCode.code === 'ERR_REQUEST_CANCELED') {
         if (__DEV__) console.log('사용자가 Apple 로그인을 취소했습니다');
         return;
       }
       // 네이티브 모듈 미설치 시 (안전장치)
-      if (error.code === 'ERR_UNAVAILABLE') {
+      if (errorWithCode.code === 'ERR_UNAVAILABLE') {
         console.error('Apple 인증 네이티브 모듈 없음');
         throw new Error('앱을 최신 버전으로 업데이트해주세요');
       }
       console.error('Apple 로그인 실패:', error);
       Sentry.captureException(error, {
-        tags: { service: 'auth', provider: 'apple', errorCode: error.code || 'unknown' },
-        extra: { errorMessage: error.message, errorDomain: error.domain },
+        tags: { service: 'auth', provider: 'apple', errorCode: errorWithCode.code || 'unknown' },
+        extra: { errorMessage: errorWithCode.message, errorDomain: (error as { domain?: string }).domain },
       });
       throw error;
     }

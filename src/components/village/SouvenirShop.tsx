@@ -20,8 +20,7 @@ import {
   ScrollView,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { SOUVENIR_ITEMS } from '../../data/souvenirConfig';
-import type { SouvenirItem } from '../../data/souvenirConfig';
+import { SOUVENIR_ITEMS, type SouvenirItem } from '../../data/souvenirConfig';
 
 // ============================================================================
 // Constants

@@ -12,12 +12,13 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated, Platform, TouchableOpacity } from 'react-native';
 import type { EasterEgg } from '../../data/easterEggConfig';
+import type { ThemeColors } from '../../styles/colors';
 
 interface EasterEggToastProps {
   egg: EasterEgg | null;
   visible: boolean;
   onDismiss: () => void;
-  colors: any;
+  colors: ThemeColors;
   locale: string;
 }
 

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * useSharedPortfolio Hook 테스트
  *
@@ -23,10 +24,20 @@ import { useSharedPortfolio, SHARED_PORTFOLIO_KEY } from '../useSharedPortfolio'
 import supabase from '../../services/supabase';
 import { determineTier, syncUserProfileTier } from '../useGatherings';
 import { AssetType } from '../../types/asset';
+import { useAuth } from '../../context/AuthContext';
 
 // Mock dependencies
 jest.mock('../../services/supabase');
 jest.mock('../useGatherings');
+
+jest.mock('../../context/AuthContext', () => ({
+  useAuth: jest.fn(() => ({
+    user: { id: 'user-123', email: 'test@example.com' },
+    loading: false,
+  })),
+}));
+
+const mockUseAuth = useAuth as jest.MockedFunction<typeof useAuth>;
 
 // Mock 타입 정의
 const mockSupabase = supabase as jest.Mocked<typeof supabase>;
@@ -243,32 +254,40 @@ describe('useSharedPortfolio Hook', () => {
         wrapper: createWrapper(),
       });
 
+      // Source throws on Supabase error → query enters error state after retry
+      // The hook has retry: 1 with retryDelay: 2000, wait long enough
       await waitFor(() => {
-        expect(result.current.isSuccess).toBe(true);
-      });
+        expect(result.current.isError).toBe(true);
+      }, { timeout: 10000 });
 
+      // Convenience accessors return defaults on error
       expect(result.current.assets).toEqual([]);
       expect(result.current.totalAssets).toBe(0);
       expect(result.current.userTier).toBe('SILVER');
     });
 
     it('should return empty data when user is not authenticated', async () => {
-      mockSupabase.auth.getUser = jest.fn().mockResolvedValue({
-        data: { user: null },
-        error: null,
-      });
+      // Mock useAuth to return no user (unauthenticated)
+      mockUseAuth.mockReturnValue({
+        user: null,
+        loading: false,
+      } as any);
 
       const { result } = renderHook(() => useSharedPortfolio(), {
         wrapper: createWrapper(),
       });
 
-      await waitFor(() => {
-        expect(result.current.isSuccess).toBe(true);
-      });
-
+      // query is disabled when user is null → stays in pending state
+      // But convenience accessors return defaults
       expect(result.current.assets).toEqual([]);
       expect(result.current.totalAssets).toBe(0);
       expect(result.current.userTier).toBe('SILVER');
+
+      // Reset mock for other tests
+      mockUseAuth.mockReturnValue({
+        user: { id: 'user-123', email: 'test@example.com' },
+        loading: false,
+      } as any);
     });
 
     it('should return empty data when portfolio data is empty', async () => {
@@ -454,12 +473,12 @@ describe('useSharedPortfolio Hook', () => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      // 캐시 상태 확인
-      const queryState = queryClient.getQueryState(SHARED_PORTFOLIO_KEY);
+      // 캐시 상태 확인 — queryKey에는 user.id가 포함됨
+      const queryState = queryClient.getQueryState([...SHARED_PORTFOLIO_KEY, 'user-123']);
       expect(queryState).toBeDefined();
 
       // staleTime은 쿼리 옵션에서 확인
-      const queryData = queryClient.getQueryData(SHARED_PORTFOLIO_KEY);
+      const queryData = queryClient.getQueryData([...SHARED_PORTFOLIO_KEY, 'user-123']);
       expect(queryData).toBeDefined();
     });
 

@@ -110,7 +110,7 @@ export default function DeepDiveReport({ result }: DeepDiveReportProps) {
   const scoreDisplay = formatScoreDisplay(result.overallScore);
 
   // null 안전: AI 응답이 부분적일 수 있으므로 기본값 적용
-  const sections = result.sections ?? {} as any;
+  const sections = result.sections ?? {} as Record<string, unknown>;
   const financial = sections.financial ?? { score: 0, title: '재무 분석', highlights: [], metrics: [] };
   const technical = sections.technical ?? { score: 0, title: '기술적 분석', highlights: [], signals: [] };
   const news = sections.news ?? { title: '뉴스 분석', sentiment: 'NEUTRAL', recentNews: [] };
@@ -324,7 +324,7 @@ export default function DeepDiveReport({ result }: DeepDiveReportProps) {
               <Text style={[styles.signalHeaderCell, styles.signalCol3, { color: colors.textTertiary }]}>값</Text>
             </View>
             {/* 테이블 바디 */}
-            {(technical.signals ?? []).map((sig: any, i: number) => (
+            {(technical.signals ?? []).map((sig: { indicator: string; signal: string; value: string }, i: number) => (
               <View
                 key={i}
                 style={[
@@ -382,7 +382,7 @@ export default function DeepDiveReport({ result }: DeepDiveReportProps) {
                 <Text style={[styles.signalHeaderCell, styles.signalCol2, { color: colors.textTertiary }]}>평가</Text>
                 <Text style={[styles.signalHeaderCell, styles.signalCol3, { color: colors.textTertiary }]}>상세</Text>
               </View>
-              {(quality.metrics ?? []).map((m: any, i: number) => (
+              {(quality.metrics ?? []).map((m: { label: string; value: string; status: 'good' | 'neutral' | 'bad'; detail?: string }, i: number) => (
                 <View
                   key={i}
                   style={[

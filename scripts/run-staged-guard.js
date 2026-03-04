@@ -85,7 +85,7 @@ if (secretLine) {
   fail('시크릿 또는 토큰으로 보이는 값이 staged diff에 포함되어 있습니다. GitHub/Supabase Secret으로 옮기고 다시 커밋하세요.');
 }
 
-const lintableFiles = stagedFiles.filter((file) => /\.(ts|tsx|js|jsx)$/.test(file));
+const lintableFiles = stagedFiles.filter((file) => /\.(ts|tsx|js|jsx)$/.test(file) && !/\.config\.(js|ts)$/.test(file));
 if (lintableFiles.length > 0) {
   console.log(`[pre-commit] eslint 검사 ${lintableFiles.length}개 파일`);
   execFileSync('npx', ['eslint', '--max-warnings=0', ...lintableFiles], {

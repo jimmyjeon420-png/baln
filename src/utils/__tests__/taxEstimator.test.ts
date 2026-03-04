@@ -4,7 +4,20 @@
  * 매도 시 예상 세금/수수료 계산 로직을 테스트합니다.
  */
 
-import { inferTaxAssetType, estimateTax, TaxAssetType } from '../taxEstimator';
+import { inferTaxAssetType, estimateTax } from '../taxEstimator';
+
+// Mock locales to return Korean for Korean tax rules
+jest.mock('../../locales', () => ({
+  getCurrentLanguage: jest.fn(() => 'ko'),
+  t: jest.fn((key: string, _opts?: unknown) => {
+    // Return Korean-style translations for format keys used in taxEstimator
+    const translations: Record<string, string> = {
+      'format.locale_code': 'ko-KR',
+      'format.currency_symbol': '₩',
+    };
+    return translations[key] || key;
+  }),
+}));
 
 describe('taxEstimator', () => {
   describe('inferTaxAssetType', () => {

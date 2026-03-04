@@ -31,7 +31,7 @@ interface RisksProps {
 // 메인 컴포넌트
 // ============================================================================
 
-export default function Risks({ risks, onRefresh }: RisksProps) {
+export default function Risks({ risks, onRefresh: _onRefresh }: RisksProps) {
   const { colors } = useTheme();
   const [expanded, setExpanded] = useState(false);
 

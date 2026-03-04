@@ -14,9 +14,10 @@
  */
 
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated } from 'react-native';
+import { Text, StyleSheet, Animated } from 'react-native';
 import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
 import { getGuruDisplayName } from '../../services/characterService';
+import type { ThemeColors } from '../../styles/colors';
 
 // =============================================================================
 // 타입 정의
@@ -30,7 +31,7 @@ interface GuruReactionBannerProps {
     emoji: string;
   } | null;
   /** 테마 색상 */
-  colors: any;
+  colors: ThemeColors;
   /** 로케일 (ko/en) */
   locale: string;
 }
@@ -44,7 +45,7 @@ function GuruReactionBanner({
   colors,
   locale,
 }: GuruReactionBannerProps): React.ReactElement | null {
-  const isKo = locale === 'ko';
+  const _isKo = locale === 'ko';
 
   // 슬라이드 다운 + 페이드 인 애니메이션
   const translateY = useRef(new Animated.Value(-40)).current;

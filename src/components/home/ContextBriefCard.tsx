@@ -58,7 +58,7 @@ function isFreeTrial(): boolean {
 }
 
 /** 수요일 전체 공개일 (Full Context Day) 확인 */
-function isFullContextDay(): boolean {
+function _isFullContextDay(): boolean {
   return new Date().getDay() === 3; // 0=일, 3=수
 }
 
@@ -263,9 +263,9 @@ interface LayerSectionProps {
   /** 자식 콘텐츠 */
   children: React.ReactNode;
   /** 스타일 객체 */
-  styles: any;
+  styles: ReturnType<typeof createStyles>;
   /** 색상 객체 */
-  COLORS: any;
+  COLORS: ThemeColors;
   /** 잠금 상태에 표시할 가격 라벨 (로케일 인식) */
   premiumPriceLabel?: string;
   /** 잠금 상태 블러 프리뷰 텍스트 */
@@ -380,13 +380,13 @@ function getLastNodeColor(percentChange: number | undefined | null): string {
   return '#FF5252';
 }
 
-const MacroChainVisual = React.memo(function MacroChainVisual({
+const MacroChainVisual = React.memo(({
   chain,
   portfolioPercentChange,
 }: {
   chain: string[];
   portfolioPercentChange?: number | null;
-}) {
+}) => {
   const { colors } = useTheme();
   const styles = React.useMemo(() => createStyles(colors), [colors]);
 
@@ -441,7 +441,7 @@ const MacroChainVisual = React.memo(function MacroChainVisual({
 // 포트폴리오 영향 시각화 서브 컴포넌트
 // ============================================================================
 
-const PortfolioImpactVisual = React.memo(function PortfolioImpactVisual({
+const PortfolioImpactVisual = React.memo(({
   percentChange,
   healthScoreChange,
   message,
@@ -451,7 +451,7 @@ const PortfolioImpactVisual = React.memo(function PortfolioImpactVisual({
   healthScoreChange: number;
   message: string;
   isCalculating?: boolean;
-}) {
+}) => {
   const { colors } = useTheme();
   const { t } = useLocale();
   const styles = React.useMemo(() => createStyles(colors), [colors]);
@@ -562,7 +562,7 @@ function HeadlineSection({
 }: {
   fact: string | null;
   mechanism: string | null;
-  styles: any;
+  styles: ReturnType<typeof createStyles>;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [needsExpand, setNeedsExpand] = useState(false);
@@ -572,7 +572,7 @@ function HeadlineSection({
   // onTextLayout으로 잘린 텍스트의 실제 줄 수를 측정하면 numberOfLines에 의해
   // 이미 클램프된 줄 수만 보고하므로 정확하지 않음.
   // 대신: 숨겨진 Text로 실제 줄 수를 측정한 뒤 2줄 초과 시 버튼을 표시함.
-  const handleMeasureLayout = useCallback((e: any) => {
+  const handleMeasureLayout = useCallback((e: { nativeEvent: { lines?: unknown[] } }) => {
     if (measuredRef.current) return;
     if (e.nativeEvent.lines && e.nativeEvent.lines.length > 2) {
       measuredRef.current = true;
@@ -662,7 +662,7 @@ export default React.forwardRef<View, ContextBriefCardProps>(
     const hasTrackedRead = useRef(false);
     const styles = React.useMemo(() => createStyles(colors), [colors]);
     const COLORS = colors; // 하위 호환성을 위해 COLORS 별칭 생성
-    const premiumPriceLabel = t('premium.price_monthly');
+    const _premiumPriceLabel = t('premium.price_monthly');
 
     const sentimentColor = SENTIMENT_COLORS[sentiment];
     const sentimentBg = SENTIMENT_BG_COLORS[sentiment];
@@ -707,7 +707,7 @@ export default React.forwardRef<View, ContextBriefCardProps>(
     };
 
     // 4겹 데이터 존재 여부 확인
-    const has4LayerData =
+    const _has4LayerData =
       !!historicalContext || (macroChain && macroChain.length > 0);
 
     // ──────────────────────────────────────────────────────────────

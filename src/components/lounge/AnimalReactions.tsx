@@ -45,7 +45,7 @@ interface ReactionButtonProps {
 }
 
 function ReactionButton({
-  reactionId,
+  reactionId: _reactionId,
   emoji,
   count,
   isSelected,

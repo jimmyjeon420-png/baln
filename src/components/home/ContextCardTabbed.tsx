@@ -224,9 +224,9 @@ interface LayerContentProps {
 }
 
 function LayerContent({
-  icon,
-  title,
-  color,
+  icon: _icon,
+  title: _title,
+  color: _color,
   children,
   isLocked = false,
   onPressPremium,

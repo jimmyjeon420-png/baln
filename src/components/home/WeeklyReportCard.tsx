@@ -16,11 +16,12 @@ import { CharacterAvatar } from '../character/CharacterAvatar';
 import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
 import { getGuruDisplayName } from '../../services/characterService';
 import type { WeeklyReportData } from '../../hooks/useWeeklyReport';
+import type { ThemeColors } from '../../styles/colors';
 import { useLocale } from '../../context/LocaleContext';
 
 interface WeeklyReportCardProps {
   report: WeeklyReportData;
-  colors: any;
+  colors: ThemeColors;
   locale: string;
 }
 
@@ -84,10 +85,10 @@ function getWeeklyGuruComment(report: WeeklyReportData, locale: string) {
 }
 
 export function WeeklyReportCard({ report, colors, locale }: WeeklyReportCardProps) {
-  const isKo = locale === 'ko';
+  const _isKo = locale === 'ko';
   const { t } = useLocale();
   const guru = getWeeklyGuruComment(report, locale);
-  const guruConfig = GURU_CHARACTER_CONFIGS[guru.guruId];
+  const _guruConfig = GURU_CHARACTER_CONFIGS[guru.guruId];
 
   const completionRate = Math.round((report.habitCompleteDays / 7) * 100);
 

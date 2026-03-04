@@ -27,6 +27,7 @@ import type { GuruLetter } from '../../types/village';
 import { CharacterAvatar } from '../character/CharacterAvatar';
 import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
 import { getGuruDisplayName } from '../../services/characterService';
+import type { ThemeColors } from '../../styles/colors';
 import { useLocale } from '../../context/LocaleContext';
 
 // ---------------------------------------------------------------------------
@@ -37,7 +38,7 @@ interface LetterDetailProps {
   letter: GuruLetter | null;
   onClose: () => void;
   isVisible: boolean;
-  colors: any;
+  colors: ThemeColors;
   locale?: string;
 }
 
@@ -134,7 +135,7 @@ export function LetterDetail({
   if (!letter) return null;
 
   const guruId = letter.fromGuruId || letter.guruId || '';
-  const config = GURU_CHARACTER_CONFIGS[guruId];
+  const _config = GURU_CHARACTER_CONFIGS[guruId];
   const guruName = getGuruDisplayName(guruId);
   const subject = isKo ? letter.subject : (letter.subjectEn ?? letter.subject);
   const bodyText = isKo ? letter.body : (letter.bodyEn ?? letter.body);
@@ -169,7 +170,7 @@ interface InnerProps {
   bodyText: string;
   isVisible: boolean;
   onClose: () => void;
-  colors: any;
+  colors: ThemeColors;
   isKo: boolean;
   slideAnim: Animated.Value;
   fadeAnim: Animated.Value;
@@ -185,7 +186,7 @@ function LetterDetailInner({
   isVisible,
   onClose,
   colors,
-  isKo,
+  isKo: _isKo,
   slideAnim,
   fadeAnim,
   locale,

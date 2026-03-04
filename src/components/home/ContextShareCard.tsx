@@ -95,7 +95,7 @@ export default function ContextShareCard({
     } catch {
       // 보상 실패해도 공유 자체는 성공이므로 무시
     }
-  }, [claimReward]);
+  }, [claimReward, t]);
 
   const handleShare = useCallback(async () => {
     heavyTap();
@@ -134,7 +134,7 @@ export default function ContextShareCard({
     } finally {
       setSharing(false);
     }
-  }, [heavyTap, success, errorHaptic, handleRewardAfterShare, track, data.sentiment, data.date]);
+  }, [heavyTap, success, errorHaptic, handleRewardAfterShare, track, data.sentiment, data.date, t]);
 
   // 거시경제 체인 최대 5개
   const displayChain = data.macroChain.slice(0, 5);

@@ -85,7 +85,7 @@ export function GuruScorecardCard({ locale = 'ko', colors }: GuruScorecardCardPr
   const scorecards = useMemo(() => generateMonthlyAccuracies(), []);
 
   const champion = scorecards[0];
-  const championConfig = GURU_CHARACTER_CONFIGS[champion.guruId];
+  const _championConfig = GURU_CHARACTER_CONFIGS[champion.guruId];
   const championName = getGuruDisplayName(champion.guruId);
 
   return (

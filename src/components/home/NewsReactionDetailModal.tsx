@@ -21,7 +21,6 @@ import {
   TouchableOpacity,
   ScrollView,
   SafeAreaView,
-  Platform,
 } from 'react-native';
 import type { GuruNewsReaction } from '../../types/village';
 import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';

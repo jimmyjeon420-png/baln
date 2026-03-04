@@ -208,7 +208,7 @@ const FallingParticle: React.FC<FallingParticleProps> = ({ particle }) => {
       style={[
         styles.particle,
         {
-          left: `${particle.left}%` as any,
+          left: `${particle.left}%` as unknown as number,
           fontSize: particle.size,
           opacity,
           transform: [{ translateY }],
@@ -324,7 +324,7 @@ const Star: React.FC<StarProps> = ({ top, left, size, delay }) => {
 // 별 목록 (night 고정 생성)
 // ---------------------------------------------------------------------------
 
-const STARS: StarProps[] = Array.from({ length: 18 }, (_, i) => ({
+const STARS: StarProps[] = Array.from({ length: 18 }, (_, _i) => ({
   top: Math.round(Math.random() * 230),
   left: Math.round(Math.random() * 360),
   size: 7 + Math.round(Math.random() * 5),

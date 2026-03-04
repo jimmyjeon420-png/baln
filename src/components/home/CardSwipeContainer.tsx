@@ -54,11 +54,11 @@ interface CardSwipeContainerProps {
 export default function CardSwipeContainer({
   children,
   labels: labelsProp,
-  onSettingsPress,
+  onSettingsPress: _onSettingsPress,
   initialIndex = 0,
   onCardChange,
-  onRefresh,
-  refreshing,
+  onRefresh: _onRefresh,
+  refreshing: _refreshing,
 }: CardSwipeContainerProps) {
   const [currentPage, setCurrentPage] = useState(initialIndex);
   const [scrollViewHeight, setScrollViewHeight] = useState(0);

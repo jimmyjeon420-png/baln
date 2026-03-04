@@ -5,15 +5,6 @@
  */
 
 // Mock the i18n module to avoid import issues
-jest.mock('../../locales', () => ({
-  t: (key: string, params?: Record<string, any>) => {
-    if (key === 'freemium.limitReached' && params?.limit) {
-      return `무료 플랜은 ${params.limit}개까지 등록 가능합니다`;
-    }
-    return key;
-  },
-}));
-
 import {
   isProUser,
   getAssetLimit,
@@ -23,6 +14,15 @@ import {
   hasFeatureAccess,
 } from '../freemium';
 import { Asset, AssetType } from '../../types/asset';
+
+jest.mock('../../locales', () => ({
+  t: (key: string, params?: Record<string, unknown>) => {
+    if (key === 'freemium.limitReached' && params?.limit) {
+      return `무료 플랜은 ${params.limit}개까지 등록 가능합니다`;
+    }
+    return key;
+  },
+}));
 
 describe('freemium', () => {
   const createMockAsset = (id: string): Asset => ({
