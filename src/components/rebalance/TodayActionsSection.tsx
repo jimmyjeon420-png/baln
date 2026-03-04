@@ -22,11 +22,11 @@ import { ThemeColors } from '../../styles/colors';
 import type { PortfolioAction, RebalancePortfolioAsset, LivePriceData } from '../../types/rebalanceTypes';
 import type { Asset } from '../../types/asset';
 import { classifyAsset, AssetCategory, getNetAssetValue, KostolalyPhase, KOSTOLANY_PHASE_NAMES, KOSTOLANY_PHASE_NAMES_EN, KOSTOLANY_PHASE_EMOJIS, KOSTOLANY_PHASE_DESCRIPTIONS, KOSTOLANY_PHASE_DESCRIPTIONS_EN, calculateHealthScore, LIQUID_ASSET_CATEGORIES, normalizeLiquidTarget } from '../../services/rebalanceScore';
-import { getTickerProfile, getCachedTickerProfile } from '../../data/tickerProfile';
+import { getTickerProfile as _getTickerProfile, getCachedTickerProfile } from '../../data/tickerProfile';
 import { useKostolalyPhase } from '../../hooks/useKostolalyPhase';
 import { usePrescriptionResults } from '../../hooks/usePrescriptionResults';
 import TermTooltip from '../common/TermTooltip';
-import { CAT_ICONS } from '../../constants/categoryIcons';
+import { CAT_ICONS as _CAT_ICONS2 } from '../../constants/categoryIcons';
 import { useLocale } from '../../context/LocaleContext';
 
 // ── ETF 추천 맵 (없는 카테고리에 ETF 제안) ──
@@ -88,7 +88,7 @@ function CompletionBanner({ visible }: { visible: boolean }) {
         ]).start();
       }, 3000);
     }
-  }, [visible]);
+  }, [visible, opacity, scale, colors.success]);
 
   if (!visible) return null;
 
@@ -236,7 +236,7 @@ function useActionChecklist() {
  * "왜 이 액션들이 나왔는가" — locale parts 반환
  */
 interface ActionSummaryData {
-  parts: Array<{ key: string; params: Record<string, string> }>;
+  parts: { key: string; params: Record<string, string> }[];
   highCount: number;
 }
 
@@ -246,7 +246,7 @@ function buildActionsSummaryData(actions: PortfolioAction[]): ActionSummaryData 
   const watchCount = actions.filter(a => a.action === 'WATCH').length;
   const holdCount = actions.filter(a => a.action === 'HOLD').length;
   const highPriorityCount = actions.filter(a => a.priority === 'HIGH').length;
-  const parts: Array<{ key: string; params: Record<string, string> }> = [];
+  const parts: { key: string; params: Record<string, string> }[] = [];
   if (sellCount > 0) parts.push({ key: 'today_actions.summary_sell', params: { count: String(sellCount) } });
   if (buyCount > 0) parts.push({ key: 'today_actions.summary_buy', params: { count: String(buyCount) } });
   if (watchCount > 0) parts.push({ key: 'today_actions.summary_watch', params: { count: String(watchCount) } });
@@ -257,7 +257,7 @@ function buildActionsSummaryData(actions: PortfolioAction[]): ActionSummaryData 
 /**
  * "어떤 순서로 실행하면 좋은가" — locale key + params 반환
  */
-type PriorityGuidanceData = {
+type _PriorityGuidanceData = {
   key: string;
   params: Record<string, string>;
 } | null;
@@ -345,7 +345,7 @@ export default function TodayActionsSection({
   contextSentiment,
   contextHeadline,
 }: TodayActionsSectionProps) {
-  const { colors, shadows } = useTheme();
+  const { colors } = useTheme();
   const { t, language } = useLocale();
 
   // USD/KRW 환율 — USDT KRW 가격으로 추정 (미국 주식 수익률 계산용)
@@ -490,7 +490,7 @@ export default function TodayActionsSection({
 
     // 매도 먼저, 매수 나중
     return result.sort((a, b) => b.drift - a.drift);
-  }, [allAssets, normalizedTarget, totalAssets, portfolio]);
+  }, [allAssets, normalizedTarget, totalAssets, portfolio, livePrices, usdToKrw]);
 
   // ── 처방전 실행 시 예상 건강 점수 변화 (P2-B) ──
   const expectedScoreChange = useMemo(() => {
@@ -607,7 +607,7 @@ export default function TodayActionsSection({
     if (!isAllCompleted && showCompletionBanner) {
       setShowCompletionBanner(false);
     }
-  }, [isAllCompleted]);
+  }, [isAllCompleted, showCompletionBanner]);
 
   const s = createStyles(colors);
 
@@ -1367,7 +1367,7 @@ export default function TodayActionsSection({
   );
 }
 
-const createStyles = (colors: ThemeColors) => StyleSheet.create({
+const createStyles = (_colors: ThemeColors) => StyleSheet.create({
   card: {
     marginHorizontal: 16,
     marginBottom: 12,

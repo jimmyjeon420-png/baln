@@ -32,8 +32,6 @@ interface GuruReactionBannerProps {
   } | null;
   /** 테마 색상 */
   colors: ThemeColors;
-  /** 로케일 (ko/en) */
-  locale: string;
 }
 
 // =============================================================================
@@ -43,9 +41,7 @@ interface GuruReactionBannerProps {
 function GuruReactionBanner({
   reaction,
   colors,
-  locale,
 }: GuruReactionBannerProps): React.ReactElement | null {
-  const _isKo = locale === 'ko';
 
   // 슬라이드 다운 + 페이드 인 애니메이션
   const translateY = useRef(new Animated.Value(-40)).current;

@@ -23,6 +23,7 @@ import {
   Animated,
 } from 'react-native';
 import type { LeagueTier } from '../../data/leagueConfig';
+import { useLocale } from '../../context/LocaleContext';
 
 // ============================================================================
 // 타입
@@ -51,8 +52,6 @@ interface PredictionLeagueCardProps {
   isPromoted: boolean;
   /** 카드 탭 시 콜백 (순위표 열기) */
   onPress: () => void;
-  /** 로케일 */
-  locale?: string;
 }
 
 // ============================================================================
@@ -71,10 +70,9 @@ function PredictionLeagueCard({
   inRelegationZone,
   isPromoted,
   onPress,
-  locale = 'ko',
 }: PredictionLeagueCardProps) {
   const progressAnim = useRef(new Animated.Value(0)).current;
-  const isKo = locale === 'ko';
+  const { t, language } = useLocale();
 
   // 진행 바 애니메이션
   useEffect(() => {
@@ -110,7 +108,7 @@ function PredictionLeagueCard({
           <Text style={styles.tierEmoji}>{currentTier.emoji}</Text>
           <View>
             <Text style={[styles.tierName, { color: currentTier.color }]}>
-              {isKo ? currentTier.nameKo : currentTier.nameEn}
+              {language === 'ko' ? currentTier.nameKo : currentTier.nameEn}
             </Text>
             <Text style={styles.ratingText}>{rating} RP</Text>
           </View>
@@ -122,24 +120,24 @@ function PredictionLeagueCard({
             {weeklyRank}
             <Text style={styles.rankTotal}> / 30</Text>
           </Text>
-          <Text style={styles.rankLabel}>{isKo ? '순위' : 'Rank'}</Text>
+          <Text style={styles.rankLabel}>{t('predictionLeague.rank')}</Text>
         </View>
       </View>
 
       {/* 중간: 주간 기록 */}
       <View style={styles.weeklyRow}>
         <Text style={styles.weeklyLabel}>
-          {isKo ? '이번 주' : 'This Week'}
+          {t('predictionLeague.thisWeek')}
         </Text>
         <Text style={styles.weeklyRecord}>
           {weeklyTotal > 0
-            ? `${weeklyCorrect}/${weeklyTotal} ${isKo ? '적중' : 'correct'}`
-            : isKo ? '아직 예측 없음' : 'No predictions yet'}
+            ? `${weeklyCorrect}/${weeklyTotal} ${t('predictionLeague.correct')}`
+            : t('predictionLeague.noPredictions')}
         </Text>
         {isPromoted && (
           <View style={styles.promotedBadge}>
             <Text style={styles.promotedText}>
-              {isKo ? '승급!' : 'Promoted!'}
+              {t('predictionLeague.promoted')}
             </Text>
           </View>
         )}
@@ -160,7 +158,7 @@ function PredictionLeagueCard({
             />
           </View>
           <Text style={styles.progressLabel}>
-            {isKo
+            {language === 'ko'
               ? `${nextTier.nameKo}까지 ${nextTier.minRating - rating}RP`
               : `${nextTier.minRating - rating}RP to ${nextTier.nameEn}`}
           </Text>
@@ -170,7 +168,7 @@ function PredictionLeagueCard({
       {/* 최고 티어일 때 */}
       {!nextTier && (
         <Text style={styles.maxTierText}>
-          {isKo ? '최고 티어 달성!' : 'Max Tier Reached!'}
+          {t('predictionLeague.maxTier')}
         </Text>
       )}
 
@@ -189,8 +187,8 @@ function PredictionLeagueCard({
             ]}
           >
             {inPromotionZone
-              ? (isKo ? '승급 존 (상위 5위)' : 'Promotion Zone (Top 5)')
-              : (isKo ? '강등 존 (하위 5위)' : 'Relegation Zone (Bottom 5)')}
+              ? t('predictionLeague.promotionZone')
+              : t('predictionLeague.relegationZone')}
           </Text>
         </View>
       )}

@@ -28,18 +28,19 @@ import { Ionicons } from '@expo/vector-icons';
 import { useEmotionHistory } from '../../src/hooks/useEmotionHistory';
 import { useEmotionCheck, type EmotionEntry } from '../../src/hooks/useEmotionCheck';
 import { useTheme } from '../../src/hooks/useTheme';
+import { useLocale } from '../../src/context/LocaleContext';
 import { SIZES } from '../../src/styles/theme';
 
 // ============================================================================
 // 상수
 // ============================================================================
 
-const EMOTION_MAP: Record<string, { emoji: string; label: string }> = {
-  anxious:   { emoji: '😰', label: '불안' },
-  worried:   { emoji: '😟', label: '걱정' },
-  neutral:   { emoji: '😐', label: '보통' },
-  calm:      { emoji: '😊', label: '안심' },
-  confident: { emoji: '🤑', label: '확신' },
+const EMOTION_MAP: Record<string, { emoji: string; tKey: string }> = {
+  anxious:   { emoji: '😰', tKey: 'emotionHistory.emotion.anxious' },
+  worried:   { emoji: '😟', tKey: 'emotionHistory.emotion.worried' },
+  neutral:   { emoji: '😐', tKey: 'emotionHistory.emotion.neutral' },
+  calm:      { emoji: '😊', tKey: 'emotionHistory.emotion.calm' },
+  confident: { emoji: '🤑', tKey: 'emotionHistory.emotion.confident' },
 };
 
 // 감정별 컬러 (히트맵용)
@@ -51,7 +52,15 @@ const EMOTION_COLORS: Record<string, string> = {
   confident: '#2196F3',
 };
 
-const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
+const WEEKDAY_KEYS = [
+  'emotionHistory.weekday.sun',
+  'emotionHistory.weekday.mon',
+  'emotionHistory.weekday.tue',
+  'emotionHistory.weekday.wed',
+  'emotionHistory.weekday.thu',
+  'emotionHistory.weekday.fri',
+  'emotionHistory.weekday.sat',
+];
 
 // ============================================================================
 // 유틸
@@ -62,20 +71,22 @@ function getTodayString(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-function getWeekday(dateStr: string): string {
+function getWeekday(dateStr: string, t: (key: string) => string): string {
   const [year, month, day] = dateStr.split('-').map(Number);
-  return WEEKDAYS[new Date(year, month - 1, day).getDay()];
+  return t(WEEKDAY_KEYS[new Date(year, month - 1, day).getDay()]);
 }
 
-function getEmotionFeedback(key: string): string {
-  switch (key) {
-    case 'anxious':   return '불안할 땐 매매를 쉬어가는 것도 전략이에요';
-    case 'worried':   return '걱정될 때는 원칙을 다시 확인해보세요';
-    case 'neutral':   return '차분한 마음이 좋은 결정을 만들어요';
-    case 'calm':      return '안정된 마음으로 투자하고 계시네요';
-    case 'confident': return '확신이 있을 때도 분산투자는 유지하세요';
-    default: return '';
-  }
+const EMOTION_FEEDBACK_KEYS: Record<string, string> = {
+  anxious:   'emotionHistory.feedback.anxious',
+  worried:   'emotionHistory.feedback.worried',
+  neutral:   'emotionHistory.feedback.neutral',
+  calm:      'emotionHistory.feedback.calm',
+  confident: 'emotionHistory.feedback.confident',
+};
+
+function getEmotionFeedback(key: string, t: (k: string) => string): string {
+  const tKey = EMOTION_FEEDBACK_KEYS[key];
+  return tKey ? t(tKey) : '';
 }
 
 /** 월별 달력 그리드 생성. null = 빈 칸, string = 'YYYY-MM-DD' */
@@ -103,6 +114,7 @@ function getMonthGrid(year: number, month: number): (string | null)[][] {
 export default function EmotionHistoryScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { t } = useLocale();
   const { history, reminderText, refresh } = useEmotionHistory();
   const {
     todayEmotion,
@@ -204,7 +216,7 @@ export default function EmotionHistoryScreen() {
         <TouchableOpacity onPress={() => router.back()} style={s.backBtn} activeOpacity={0.7}>
           <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={[s.headerTitle, { color: colors.textPrimary }]}>투자 감정 기록</Text>
+        <Text style={[s.headerTitle, { color: colors.textPrimary }]}>{t('emotionHistory.title')}</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -227,11 +239,11 @@ export default function EmotionHistoryScreen() {
             <View style={s.cardHeader}>
               <Ionicons name="heart" size={17} color={colors.primary} />
               <Text style={[s.cardTitle, { color: colors.textPrimary }]}>
-                {isSaved ? '오늘의 투자 감정' : '오늘 감정을 기록하세요'}
+                {isSaved ? t('emotionHistory.todayEmotion') : t('emotionHistory.recordToday')}
               </Text>
               <View style={[s.badge, { backgroundColor: `${colors.primary}1F` }]}>
                 <Text style={[s.badgeText, { color: colors.primary }]}>
-                  {isSaved ? '✓ 기록됨' : '+5개'}
+                  {isSaved ? t('emotionHistory.recorded') : t('emotionHistory.rewardBadge')}
                 </Text>
               </View>
             </View>
@@ -240,7 +252,7 @@ export default function EmotionHistoryScreen() {
             {isSaved && todayEmotion ? (
               <View>
                 <View style={s.emotionRow}>
-                  {Object.entries(EMOTION_MAP).map(([key, { emoji, label }]) => (
+                  {Object.entries(EMOTION_MAP).map(([key, { emoji, tKey }]) => (
                     <View
                       key={key}
                       style={[
@@ -259,7 +271,7 @@ export default function EmotionHistoryScreen() {
                         s.emotionLabel,
                         { color: todayEmotion === key ? EMOTION_COLORS[key] : colors.textSecondary },
                         todayEmotion === key && { fontWeight: '700' as const },
-                      ]}>{label}</Text>
+                      ]}>{t(tKey)}</Text>
                     </View>
                   ))}
                 </View>
@@ -276,7 +288,7 @@ export default function EmotionHistoryScreen() {
                   <View style={[s.priceRow, { backgroundColor: colors.background, borderColor: colors.border }]}>
                     {todayEntry?.nasdaqClose ? (
                       <View style={s.priceChip}>
-                        <Text style={[s.priceChipLabel, { color: colors.textTertiary }]}>나스닥</Text>
+                        <Text style={[s.priceChipLabel, { color: colors.textTertiary }]}>{t('emotionHistory.nasdaq')}</Text>
                         <Text style={[s.priceChipValue, { color: colors.textPrimary }]}>
                           {todayEntry.nasdaqClose.toLocaleString()}
                         </Text>
@@ -295,20 +307,20 @@ export default function EmotionHistoryScreen() {
 
                 <View style={[s.feedbackBox, { backgroundColor: `${EMOTION_COLORS[todayEmotion]}10` }]}>
                   <Text style={[s.feedbackText, { color: colors.textSecondary }]}>
-                    {EMOTION_MAP[todayEmotion]?.emoji} {getEmotionFeedback(todayEmotion)}
+                    {EMOTION_MAP[todayEmotion]?.emoji} {getEmotionFeedback(todayEmotion, t)}
                   </Text>
                 </View>
 
                 <TouchableOpacity style={s.reRecordBtn} onPress={() => setIsSaved(false)} activeOpacity={0.7}>
                   <Ionicons name="refresh-outline" size={13} color={colors.textTertiary} />
-                  <Text style={[s.reRecordText, { color: colors.textTertiary }]}>다시 기록하기</Text>
+                  <Text style={[s.reRecordText, { color: colors.textTertiary }]}>{t('emotionHistory.reRecord')}</Text>
                 </TouchableOpacity>
               </View>
             ) : (
               /* ── 미기록 상태: 입력 폼 ── */
               <View>
                 <View style={s.emotionRow}>
-                  {Object.entries(EMOTION_MAP).map(([key, { emoji, label }]) => (
+                  {Object.entries(EMOTION_MAP).map(([key, { emoji, tKey }]) => (
                     <TouchableOpacity
                       key={key}
                       style={[
@@ -327,7 +339,7 @@ export default function EmotionHistoryScreen() {
                         s.emotionLabel,
                         { color: todayEmotion === key ? EMOTION_COLORS[key] : colors.textSecondary },
                         todayEmotion === key && { fontWeight: '700' as const },
-                      ]}>{label}</Text>
+                      ]}>{t(tKey)}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -337,7 +349,7 @@ export default function EmotionHistoryScreen() {
                     {/* 메모 */}
                     <TextInput
                       style={[s.memoInput, { backgroundColor: colors.background, color: colors.textPrimary, borderColor: colors.border }]}
-                      placeholder="오늘 왜 이런 감정이었나요? (30자)"
+                      placeholder={t('emotionHistory.memoPlaceholder')}
                       placeholderTextColor={colors.textTertiary}
                       maxLength={30}
                       value={todayMemo}
@@ -348,8 +360,8 @@ export default function EmotionHistoryScreen() {
                     <View style={s.priceInputRow}>
                       <View style={s.priceInputWrap}>
                         <View style={s.priceInputLabelRow}>
-                          <Text style={[s.priceInputLabel, { color: colors.textTertiary }]}>나스닥 종가</Text>
-                          <Text style={[s.priceOptional, { color: colors.textTertiary }]}>선택</Text>
+                          <Text style={[s.priceInputLabel, { color: colors.textTertiary }]}>{t('emotionHistory.nasdaqClose')}</Text>
+                          <Text style={[s.priceOptional, { color: colors.textTertiary }]}>{t('emotionHistory.optional')}</Text>
                         </View>
                         <TextInput
                           style={[s.priceInput, { backgroundColor: colors.background, color: colors.textPrimary, borderColor: colors.border }]}
@@ -366,7 +378,7 @@ export default function EmotionHistoryScreen() {
                       <View style={s.priceInputWrap}>
                         <View style={s.priceInputLabelRow}>
                           <Text style={[s.priceInputLabel, { color: '#F7931A' }]}>BTC $</Text>
-                          <Text style={[s.priceOptional, { color: colors.textTertiary }]}>선택</Text>
+                          <Text style={[s.priceOptional, { color: colors.textTertiary }]}>{t('emotionHistory.optional')}</Text>
                         </View>
                         <TextInput
                           style={[s.priceInput, { backgroundColor: colors.background, color: '#F7931A', borderColor: colors.border }]}
@@ -388,12 +400,12 @@ export default function EmotionHistoryScreen() {
                       activeOpacity={0.7}
                       disabled={isSaving}
                     >
-                      <Text style={s.saveBtnText}>{isSaving ? '저장 중...' : '기록하기 +5개'}</Text>
+                      <Text style={s.saveBtnText}>{isSaving ? t('emotionHistory.saving') : t('emotionHistory.saveBtn')}</Text>
                     </TouchableOpacity>
                   </View>
                 ) : (
                   <Text style={[s.emotionHint, { color: colors.textTertiary }]}>
-                    위 이모지를 탭해서 오늘의 감정을 선택하세요
+                    {t('emotionHistory.selectHint')}
                   </Text>
                 )}
               </View>
@@ -405,7 +417,7 @@ export default function EmotionHistoryScreen() {
             <Animated.View style={[s.rewardToast, { backgroundColor: `${colors.primary}15`, borderColor: `${colors.primary}30`, opacity: toastOpacity }]}>
               <Ionicons name="gift" size={14} color={colors.primary} />
               <Text style={[s.rewardToastText, { color: colors.primary }]}>
-                감정 기록 보상 +{rewardCredits}개 적립!
+                {t('emotionHistory.rewardToast').replace('{{credits}}', String(rewardCredits))}
               </Text>
             </Animated.View>
           )}
@@ -420,7 +432,7 @@ export default function EmotionHistoryScreen() {
                 <Ionicons name="chevron-back" size={22} color={colors.textSecondary} />
               </TouchableOpacity>
               <Text style={[s.monthLabel, { color: colors.textPrimary }]}>
-                {viewYear}년 {viewMonth}월
+                {t('emotionHistory.monthLabel').replace('{{year}}', String(viewYear)).replace('{{month}}', String(viewMonth))}
               </Text>
               <TouchableOpacity
                 onPress={goNextMonth}
@@ -434,26 +446,26 @@ export default function EmotionHistoryScreen() {
 
             {/* 감정 범례 */}
             <View style={s.legend}>
-              {Object.entries(EMOTION_MAP).map(([key, { emoji, label }]) => (
+              {Object.entries(EMOTION_MAP).map(([key, { emoji, tKey }]) => (
                 <View key={key} style={s.legendItem}>
                   <View style={[s.legendDot, { backgroundColor: EMOTION_COLORS[key] }]} />
-                  <Text style={[s.legendText, { color: colors.textTertiary }]}>{emoji} {label}</Text>
+                  <Text style={[s.legendText, { color: colors.textTertiary }]}>{emoji} {t(tKey)}</Text>
                 </View>
               ))}
             </View>
 
             {/* 요일 헤더 */}
             <View style={s.weekdayRow}>
-              {WEEKDAYS.map((d, i) => (
+              {WEEKDAY_KEYS.map((wKey, i) => (
                 <Text
-                  key={d}
+                  key={wKey}
                   style={[
                     s.weekdayText,
                     { color: colors.textTertiary },
                     i === 0 && { color: '#FF5252' },
                     i === 6 && { color: '#2196F3' },
                   ]}
-                >{d}</Text>
+                >{t(wKey)}</Text>
               ))}
             </View>
 
@@ -501,12 +513,12 @@ export default function EmotionHistoryScreen() {
             <View style={[s.monthStatBox, { backgroundColor: colors.background }]}>
               {monthEntries.length === 0 ? (
                 <Text style={[s.monthStatText, { color: colors.textTertiary }]}>
-                  이번 달 아직 기록이 없어요. 오늘부터 시작해보세요!
+                  {t('emotionHistory.noRecordsThisMonth')}
                 </Text>
               ) : (
                 <Text style={[s.monthStatText, { color: colors.textSecondary }]}>
-                  {viewMonth}월 {monthEntries.length}일 기록
-                  {topEmotion ? ` · 주된 감정: ${EMOTION_MAP[topEmotion[0]]?.emoji} ${EMOTION_MAP[topEmotion[0]]?.label} (${topEmotion[1]}일)` : ''}
+                  {t('emotionHistory.monthStat').replace('{{month}}', String(viewMonth)).replace('{{days}}', String(monthEntries.length))}
+                  {topEmotion ? ` · ${t('emotionHistory.topEmotion')}: ${EMOTION_MAP[topEmotion[0]]?.emoji} ${t(EMOTION_MAP[topEmotion[0]]?.tKey)} (${topEmotion[1]}${t('emotionHistory.daysUnit')})` : ''}
                 </Text>
               )}
             </View>
@@ -523,10 +535,10 @@ export default function EmotionHistoryScreen() {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[s.detailLabel, { color: EMOTION_COLORS[selectedDay.emotion] }]}>
-                    {EMOTION_MAP[selectedDay.emotion]?.label}
+                    {t(EMOTION_MAP[selectedDay.emotion]?.tKey)}
                   </Text>
                   <Text style={[s.detailDate, { color: colors.textSecondary }]}>
-                    {selectedDay.date} ({getWeekday(selectedDay.date)})
+                    {selectedDay.date} ({getWeekday(selectedDay.date, t)})
                   </Text>
                 </View>
                 <TouchableOpacity onPress={() => setSelectedDay(null)} style={{ padding: 6 }}>
@@ -535,7 +547,7 @@ export default function EmotionHistoryScreen() {
               </View>
 
               <Text style={[s.detailFeedback, { color: colors.textSecondary }]}>
-                {getEmotionFeedback(selectedDay.emotion)}
+                {getEmotionFeedback(selectedDay.emotion, t)}
               </Text>
 
               {selectedDay.memo ? (
@@ -550,7 +562,7 @@ export default function EmotionHistoryScreen() {
                 <View style={[s.priceRow, { backgroundColor: colors.background, borderColor: colors.border, marginTop: 10 }]}>
                   {selectedDay.nasdaqClose ? (
                     <View style={s.priceChip}>
-                      <Text style={[s.priceChipLabel, { color: colors.textTertiary }]}>나스닥 종가</Text>
+                      <Text style={[s.priceChipLabel, { color: colors.textTertiary }]}>{t('emotionHistory.nasdaqClose')}</Text>
                       <Text style={[s.priceChipValue, { color: colors.textPrimary }]}>
                         {selectedDay.nasdaqClose.toLocaleString()}
                       </Text>
@@ -558,7 +570,7 @@ export default function EmotionHistoryScreen() {
                   ) : null}
                   {selectedDay.btcClose ? (
                     <View style={s.priceChip}>
-                      <Text style={[s.priceChipLabel, { color: '#F7931A' }]}>BTC 종가</Text>
+                      <Text style={[s.priceChipLabel, { color: '#F7931A' }]}>{t('emotionHistory.btcClose')}</Text>
                       <Text style={[s.priceChipValue, { color: '#F7931A' }]}>
                         ${selectedDay.btcClose.toLocaleString()}
                       </Text>
@@ -567,7 +579,7 @@ export default function EmotionHistoryScreen() {
                 </View>
               ) : (
                 <Text style={[s.noPriceText, { color: colors.textTertiary }]}>
-                  이 날은 시장 지수가 기록되지 않았어요
+                  {t('emotionHistory.noMarketData')}
                 </Text>
               )}
             </View>
@@ -588,9 +600,9 @@ export default function EmotionHistoryScreen() {
           <View style={[s.quoteCard, { backgroundColor: colors.surface }]}>
             <Text style={[s.quoteIcon, { color: colors.primary }]}>💭</Text>
             <Text style={[s.quoteText, { color: colors.textSecondary }]}>
-              "감정 일기를 쓰면, 공포 때 판 걸 나중에 후회하게 된다. 좋은 교육이다."
+              {t('emotionHistory.quoteText')}
             </Text>
-            <Text style={[s.quoteAuthor, { color: colors.textTertiary }]}>— 워렌 버핏</Text>
+            <Text style={[s.quoteAuthor, { color: colors.textTertiary }]}>{t('emotionHistory.quoteAuthor')}</Text>
           </View>
 
         </ScrollView>

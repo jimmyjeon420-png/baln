@@ -17,6 +17,7 @@ import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { formatKRW } from '../../utils/formatters';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 import type { ThemeColors } from '../../styles/colors';
 import QuarterlyChart, { type QuarterlyData } from './QuarterlyChart';
 import EarningsBreakdown, { type RevenueSegment, type CostItem, type WaterfallItem } from './EarningsBreakdown';
@@ -78,6 +79,7 @@ export function FinancialAnalysis({
   quarterDetail,
 }: FinancialAnalysisProps) {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const [selectedQuarter, setSelectedQuarter] = useState<string | undefined>(
     quarterDetail?.quarter
   );
@@ -108,7 +110,7 @@ export function FinancialAnalysis({
       {/* 헤더 */}
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <Ionicons name="stats-chart" size={28} color="#9333EA" />
-        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>재무 분석</Text>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{t('deepDive.financial.title')}</Text>
       </View>
 
       {/* ═══ 1. 시가총액 & 밸류에이션 ═══ */}
@@ -116,12 +118,12 @@ export function FinancialAnalysis({
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.icon}>{'📊'}</Text>
-            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>시가총액 & 밸류에이션</Text>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{t('deepDive.financial.marketCapValuation')}</Text>
           </View>
 
           {marketCap != null && marketCap > 0 && (
             <View style={[styles.marketCapCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <Text style={[styles.marketCapLabel, { color: colors.textTertiary }]}>시가총액</Text>
+              <Text style={[styles.marketCapLabel, { color: colors.textTertiary }]}>{t('deepDive.financial.marketCap')}</Text>
               <Text style={[styles.marketCapValue, { color: colors.textPrimary }]}>
                 {formatKRW(marketCap, true)}
               </Text>
@@ -129,8 +131,8 @@ export function FinancialAnalysis({
           )}
 
           <View style={styles.metricsRow}>
-            {per != null && <MetricCard label="PER" value={per} unit="배" colors={colors} />}
-            {pbr != null && <MetricCard label="PBR" value={pbr} unit="배" colors={colors} />}
+            {per != null && <MetricCard label="PER" value={per} unit={t('deepDive.financial.times')} colors={colors} />}
+            {pbr != null && <MetricCard label="PBR" value={pbr} unit={t('deepDive.financial.times')} colors={colors} />}
             {(!per && !pbr) && <View style={{ flex: 1 }} />}
           </View>
         </View>
@@ -167,7 +169,7 @@ export function FinancialAnalysis({
         <View style={[styles.noDetailCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Ionicons name="information-circle-outline" size={16} color={colors.textTertiary} />
           <Text style={[styles.noDetailText, { color: colors.textTertiary }]}>
-            {quarterDetail.quarter} 분기만 상세 실적을 확인할 수 있습니다
+            {t('deepDive.financial.onlyQuarterAvailable', { quarter: quarterDetail.quarter })}
           </Text>
         </View>
       )}
@@ -176,7 +178,7 @@ export function FinancialAnalysis({
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.icon}>{'💼'}</Text>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>연간 실적 추이</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{t('deepDive.financial.yearlyPerformance')}</Text>
         </View>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -184,7 +186,7 @@ export function FinancialAnalysis({
             {/* 테이블 헤더 */}
             <View style={[styles.tableRow, { borderBottomColor: colors.border }]}>
               <View style={[styles.tableCell, styles.tableCellHeader, styles.tableCellFirst, { borderRightColor: colors.border }]}>
-                <Text style={styles.tableCellHeaderText}>항목</Text>
+                <Text style={styles.tableCellHeaderText}>{t('deepDive.financial.item')}</Text>
               </View>
               {yearlyData.map((data, index) => (
                 <View key={index} style={[styles.tableCell, styles.tableCellHeader, { borderRightColor: colors.border }]}>
@@ -196,7 +198,7 @@ export function FinancialAnalysis({
             {/* 매출액 행 */}
             <View style={[styles.tableRow, { borderBottomColor: colors.border }]}>
               <View style={[styles.tableCell, styles.tableCellFirst, { borderRightColor: colors.border }]}>
-                <Text style={[styles.tableCellText, { color: colors.textSecondary }]}>매출액</Text>
+                <Text style={[styles.tableCellText, { color: colors.textSecondary }]}>{t('deepDive.financial.revenue')}</Text>
               </View>
               {yearlyData.map((data, index) => {
                 const growth = index > 0
@@ -219,7 +221,7 @@ export function FinancialAnalysis({
             {/* 영업이익 행 */}
             <View style={[styles.tableRow, { borderBottomColor: colors.border }]}>
               <View style={[styles.tableCell, styles.tableCellFirst, { borderRightColor: colors.border }]}>
-                <Text style={[styles.tableCellText, { color: colors.textSecondary }]}>영업이익</Text>
+                <Text style={[styles.tableCellText, { color: colors.textSecondary }]}>{t('deepDive.financial.operatingIncome')}</Text>
               </View>
               {yearlyData.map((data, index) => {
                 const growth = index > 0
@@ -242,7 +244,7 @@ export function FinancialAnalysis({
             {/* 순이익 행 */}
             <View style={[styles.tableRow, { borderBottomColor: colors.border }]}>
               <View style={[styles.tableCell, styles.tableCellFirst, { borderRightColor: colors.border }]}>
-                <Text style={[styles.tableCellText, { color: colors.textSecondary }]}>순이익</Text>
+                <Text style={[styles.tableCellText, { color: colors.textSecondary }]}>{t('deepDive.financial.netIncome')}</Text>
               </View>
               {yearlyData.map((data, index) => {
                 const growth = index > 0
@@ -269,13 +271,13 @@ export function FinancialAnalysis({
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.icon}>{'🎯'}</Text>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>핵심 지표</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{t('deepDive.financial.keyMetrics')}</Text>
         </View>
 
         <View style={styles.metricsRow}>
           <MetricCard label="ROE" value={keyMetrics.roe} unit="%" colors={colors} />
           <MetricCard label="ROIC" value={keyMetrics.roic} unit="%" colors={colors} />
-          <MetricCard label="부채비율" value={keyMetrics.debtRatio} unit="%" colors={colors} />
+          <MetricCard label={t('deepDive.financial.debtRatio')} value={keyMetrics.debtRatio} unit="%" colors={colors} />
         </View>
       </View>
 
@@ -283,7 +285,7 @@ export function FinancialAnalysis({
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.icon}>{'💵'}</Text>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>현금흐름</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{t('deepDive.financial.cashFlow')}</Text>
         </View>
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text style={[styles.descriptionText, { color: colors.textSecondary }]}>{cashFlowSummary}</Text>

@@ -86,14 +86,14 @@ export default function ConnectionStatus() {
           errorMessage: null,
         });
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       const latencyMs = Date.now() - startTime;
       setInfo({
         state: 'disconnected',
         supabaseUrl: rawUrl || '(env empty, using fallback)',
         envLoaded,
         latencyMs,
-        errorMessage: err?.message || 'Connection failed',
+        errorMessage: (err instanceof Error ? err.message : null) || 'Connection failed',
       });
     }
   }, []);

@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 
 // Agent 2-4 컴포넌트
 import ExecutiveSummary from './ExecutiveSummary';
@@ -122,6 +123,7 @@ export default function InvestmentReportModal({
   ticker,
 }: InvestmentReportModalProps) {
   const { colors } = useTheme();
+  const { t } = useLocale();
 
   return (
     <Modal
@@ -136,7 +138,7 @@ export default function InvestmentReportModal({
           <View style={styles.headerContent}>
             <View>
               <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
-                📊 투자심사보고서
+                {t('deepDive.investmentReport.title')}
               </Text>
               <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
                 {ticker}
@@ -154,10 +156,10 @@ export default function InvestmentReportModal({
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color="#7C4DFF" />
               <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
-                전문 투자심사보고서 생성 중...
+                {t('deepDive.investmentReport.generating')}
               </Text>
               <Text style={[styles.loadingSubtext, { color: colors.textTertiary }]}>
-                Google Search로 최신 정보를 수집하고 있습니다 (20-30초 소요)
+                {t('deepDive.investmentReport.generatingSubtext')}
               </Text>
             </View>
           ) : data ? (
@@ -221,12 +223,12 @@ export default function InvestmentReportModal({
               {/* Debate (3인 토론) */}
               <View style={[styles.section, { backgroundColor: colors.surface }]}>
                 <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-                  💬 투자 의견 토론
+                  {t('deepDive.investmentReport.debateTitle')}
                 </Text>
 
                 {/* 워렌 버핏 */}
                 <View style={[styles.debateCard, { backgroundColor: '#E3F2FD', borderLeftColor: '#2196F3' }]}>
-                  <Text style={[styles.investorName, { color: '#1976D2' }]}>🦉 워렌 버핏</Text>
+                  <Text style={[styles.investorName, { color: '#1976D2' }]}>{t('deepDive.investmentReport.warrenBuffett')}</Text>
                   <Text style={[styles.debateText, { color: colors.textPrimary }]}>
                     {data.debate.warren}
                   </Text>
@@ -234,7 +236,7 @@ export default function InvestmentReportModal({
 
                 {/* 레이 달리오 */}
                 <View style={[styles.debateCard, { backgroundColor: '#F3E5F5', borderLeftColor: '#9C27B0' }]}>
-                  <Text style={[styles.investorName, { color: '#7B1FA2' }]}>🌊 레이 달리오</Text>
+                  <Text style={[styles.investorName, { color: '#7B1FA2' }]}>{t('deepDive.investmentReport.rayDalio')}</Text>
                   <Text style={[styles.debateText, { color: colors.textPrimary }]}>
                     {data.debate.dalio}
                   </Text>
@@ -242,7 +244,7 @@ export default function InvestmentReportModal({
 
                 {/* 캐시 우드 */}
                 <View style={[styles.debateCard, { backgroundColor: '#FCE4EC', borderLeftColor: '#E91E63' }]}>
-                  <Text style={[styles.investorName, { color: '#C2185B' }]}>🚀 캐시 우드</Text>
+                  <Text style={[styles.investorName, { color: '#C2185B' }]}>{t('deepDive.investmentReport.cathieWood')}</Text>
                   <Text style={[styles.debateText, { color: colors.textPrimary }]}>
                     {data.debate.wood}
                   </Text>
@@ -251,7 +253,7 @@ export default function InvestmentReportModal({
                 {/* 최종 정리 */}
                 <View style={[styles.summaryCard, { backgroundColor: '#FFF9C4', borderColor: '#FBC02D' }]}>
                   <Text style={[styles.summaryTitle, { color: '#F57F17' }]}>
-                    🦉 워렌의 한마디
+                    {t('deepDive.investmentReport.warrenSummary')}
                   </Text>
                   <Text style={[styles.summaryText, { color: colors.textPrimary }]}>
                     {data.debate.summary}
@@ -263,7 +265,7 @@ export default function InvestmentReportModal({
             <View style={styles.errorContainer}>
               <Ionicons name="alert-circle" size={48} color="#CF6679" />
               <Text style={[styles.errorText, { color: colors.textPrimary }]}>
-                보고서를 불러올 수 없습니다
+                {t('deepDive.investmentReport.loadError')}
               </Text>
             </View>
           )}

@@ -31,70 +31,35 @@ import supabase, { getCurrentUser } from '../../src/services/supabase';
 import { useTrackEvent } from '../../src/hooks/useAnalytics';
 import { useABExperiment } from '../../src/hooks/useABExperiment';
 import { CREDIT_TO_KRW, getLocaleCode } from '../../src/utils/formatters';
+import { useLocale } from '../../src/context/LocaleContext';
 import { SUBSCRIPTION_PRODUCTS } from '../../src/types/marketplace';
 import {
   purchaseSubscription,
   isExpoGo,
   isUserCancelledError,
   connectToStore,
-  disconnectFromStore,
   setupPurchaseListeners,
   completePurchase,
+  type Purchase,
+  type PurchaseError,
 } from '../../src/services/appleIAP';
-import type { Purchase, PurchaseError } from '../../src/services/appleIAP';
 
 // 가격 정보
 const PRICING = {
-  monthly: { price: '₩2,900', period: '/월', label: '월간 구독' },
-  yearly: { price: '₩24,900', period: '/년', label: '연간 구독', monthlyEquiv: '₩2,075/월', discount: '28%' },
+  monthly: { price: '₩2,900', periodKey: 'paywall.perMonth', tKey: 'paywall.monthlyPlan' },
+  yearly: { price: '₩24,900', periodKey: 'paywall.perYear', tKey: 'paywall.yearlyPlan', monthlyEquiv: '₩2,075', discountKey: 'paywall.yearlyDiscount' },
 };
 
-const BENEFITS = [
-  {
-    icon: 'today' as const,
-    title: '매일 AI 진단 3회 무료',
-    desc: '무료 유저 1회 → 구독자 3회. 매일 포트폴리오 체크',
-  },
-  {
-    icon: 'stats-chart' as const,
-    title: '맥락 카드 전체 4겹 분석',
-    desc: '시장 변동의 "왜"를 이해 (역사/거시경제/기관행동/내 포트폴리오)',
-  },
-  {
-    icon: 'flame' as const,
-    title: '연속 기록으로 투자 습관 형성',
-    desc: '매일 방문 스트릭 + 마일스톤 보상 + 패닉셀 방지',
-  },
-  {
-    icon: 'gift' as const,
-    title: '매월 30 도토리 보너스',
-    desc: '₩3,000 가치의 도토리 자동 지급 (Deep Dive 6회분)',
-  },
-  {
-    icon: 'flash' as const,
-    title: '실시간 리밸런싱',
-    desc: '시장 변동 시 즉각적인 포트폴리오 조정 알림',
-  },
-  {
-    icon: 'shield-checkmark' as const,
-    title: 'Panic Shield Pro',
-    desc: '개인화된 손절 가이드라인 & 자동 알림',
-  },
-  {
-    icon: 'chatbubbles' as const,
-    title: 'AI 버핏 티타임',
-    desc: '1:1 AI 재무 상담 (메시지당 ₩100)',
-  },
-  {
-    icon: 'people' as const,
-    title: 'VIP 라운지 전체',
-    desc: 'Platinum/Diamond 전용 모임 & 네트워킹',
-  },
-  {
-    icon: 'document-text' as const,
-    title: '세금 리포트',
-    desc: '양도세/종합소득세 자동 계산 (₩1,000/회)',
-  },
+const BENEFIT_KEYS = [
+  { icon: 'today' as const, titleKey: 'paywall.benefit.aiDiag.title', descKey: 'paywall.benefit.aiDiag.desc' },
+  { icon: 'stats-chart' as const, titleKey: 'paywall.benefit.contextCard.title', descKey: 'paywall.benefit.contextCard.desc' },
+  { icon: 'flame' as const, titleKey: 'paywall.benefit.streak.title', descKey: 'paywall.benefit.streak.desc' },
+  { icon: 'gift' as const, titleKey: 'paywall.benefit.bonus.title', descKey: 'paywall.benefit.bonus.desc' },
+  { icon: 'flash' as const, titleKey: 'paywall.benefit.rebalance.title', descKey: 'paywall.benefit.rebalance.desc' },
+  { icon: 'shield-checkmark' as const, titleKey: 'paywall.benefit.panicShield.title', descKey: 'paywall.benefit.panicShield.desc' },
+  { icon: 'chatbubbles' as const, titleKey: 'paywall.benefit.aiChat.title', descKey: 'paywall.benefit.aiChat.desc' },
+  { icon: 'people' as const, titleKey: 'paywall.benefit.vipLounge.title', descKey: 'paywall.benefit.vipLounge.desc' },
+  { icon: 'document-text' as const, titleKey: 'paywall.benefit.taxReport.title', descKey: 'paywall.benefit.taxReport.desc' },
 ];
 
 const MONTHLY_PRICE_KRW = 2900;
@@ -121,11 +86,11 @@ const EMPTY_VALUE_PROOF: ValueProofSummary = {
   generatedAt: new Date().toISOString(),
 };
 
-const FEATURE_LABEL_MAP: Record<string, string> = {
-  deep_dive: 'Deep Dive',
-  what_if: 'What-if',
-  tax_report: '세금 리포트',
-  ai_cfo_chat: 'AI 버핏 티타임',
+const FEATURE_LABEL_KEYS: Record<string, string> = {
+  deep_dive: 'paywall.feature.deepDive',
+  what_if: 'paywall.feature.whatIf',
+  tax_report: 'paywall.feature.taxReport',
+  ai_cfo_chat: 'paywall.feature.aiChat',
 };
 
 function formatMetaTime(iso: string): string {
@@ -140,6 +105,7 @@ function formatMetaTime(iso: string): string {
 export default function PaywallScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { t } = useLocale();
   const { mediumTap, heavyTap } = useHaptics();
   const track = useTrackEvent();
   const freePeriodActive = isFreePeriod();
@@ -216,8 +182,9 @@ export default function PaywallScreen() {
 
   const valueProofTopFeatureLabel = useMemo(() => {
     if (!valueProof.topFeature) return null;
-    return FEATURE_LABEL_MAP[valueProof.topFeature] ?? 'AI 분석';
-  }, [valueProof.topFeature]);
+    const key = FEATURE_LABEL_KEYS[valueProof.topFeature];
+    return key ? t(key) : t('paywall.feature.aiAnalysis');
+  }, [valueProof.topFeature, t]);
 
   const valueProofNetGainKrw = useMemo(() => {
     return valueProof.inferredKrwValue - MONTHLY_PRICE_KRW;
@@ -255,9 +222,9 @@ export default function PaywallScreen() {
 
         track('paywall_purchase_success', { productId: purchase.productId ?? 'unknown' });
         Alert.alert(
-          'Premium 활성화!',
-          'Premium 구독이 시작되었습니다.\n모든 프리미엄 기능을 이용하세요!',
-          [{ text: '확인', onPress: () => router.back() }]
+          t('paywall.alert.premiumActivated'),
+          t('paywall.alert.premiumActivatedMessage'),
+          [{ text: t('common.confirm'), onPress: () => router.back() }]
         );
       } catch (err) {
         console.warn('[Paywall] 구매 처리 에러:', err);
@@ -272,7 +239,7 @@ export default function PaywallScreen() {
 
     const listeners = setupPurchaseListeners(handlePurchaseSuccess, handlePurchaseError);
     return () => listeners.remove();
-  }, [freePeriodActive, track, router]);
+  }, [freePeriodActive, track, router, t]);
 
   useEffect(() => {
     if (isLoading || hasTrackedViewRef.current) return;
@@ -315,12 +282,12 @@ export default function PaywallScreen() {
       variant: variant ?? 'none',
     });
     Alert.alert(
-      '무료 체험 시작',
-      '30일간 모든 Premium 기능을 무료로 이용하시겠습니까?\n\n결제 정보가 필요하지 않습니다.',
+      t('paywall.alert.trialStartTitle'),
+      t('paywall.alert.trialStartMessage'),
       [
-        { text: '취소', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: '체험 시작',
+          text: t('paywall.alert.startTrial'),
           onPress: async () => {
             const result = await activateTrial.mutateAsync();
             if (result.success) {
@@ -329,15 +296,15 @@ export default function PaywallScreen() {
                 variant: variant ?? 'none',
               });
               Alert.alert(
-                '체험 활성화 완료!',
-                'Premium이 활성화되었습니다.\n30일간 모든 기능을 무료로 이용하세요.',
-                [{ text: '확인', onPress: () => router.back() }]
+                t('paywall.alert.trialActivated'),
+                t('paywall.alert.trialActivatedMessage'),
+                [{ text: t('common.confirm'), onPress: () => router.back() }]
               );
             } else {
               track('paywall_trial_activation_failed', {
                 error: result.error,
               });
-              Alert.alert('알림', result.error || '활성화에 실패했습니다.');
+              Alert.alert(t('paywall.alert.notice'), result.error || t('paywall.alert.activationFailed'));
             }
           },
         },
@@ -359,16 +326,16 @@ export default function PaywallScreen() {
     if (freePeriodActive) {
       track('paywall_subscribe_blocked_free_period', { period });
       Alert.alert(
-        '무료 체험 기간',
-        '현재 모든 프리미엄 기능을 무료로 체험하실 수 있습니다.\n2026년 5월 31일까지 무제한 이용 가능합니다!',
-        [{ text: '확인' }]
+        t('paywall.alert.freePeriodTitle'),
+        t('paywall.alert.freePeriodMessage'),
+        [{ text: t('common.confirm') }]
       );
       return;
     }
 
     // Expo Go 환경 → IAP 불가 안내
     if (isExpoGo()) {
-      Alert.alert('개발 모드', '인앱 결제는 실제 빌드에서만 사용 가능합니다.');
+      Alert.alert(t('paywall.alert.devMode'), t('paywall.alert.devModeMessage'));
       return;
     }
 
@@ -380,11 +347,11 @@ export default function PaywallScreen() {
       await connectToStore();
       await purchaseSubscription(product.appleProductId);
       // 구매 결과는 purchaseUpdatedListener에서 처리됨
-    } catch (err: any) {
-      track('paywall_purchase_error', { period, error: err?.message ?? 'unknown' });
+    } catch (err: unknown) {
+      track('paywall_purchase_error', { period, error: (err instanceof Error ? err.message : undefined) ?? 'unknown' });
       Alert.alert(
-        '구독 오류',
-        '결제 처리 중 문제가 발생했습니다.\n잠시 후 다시 시도해주세요.',
+        t('paywall.alert.subscribeError'),
+        t('paywall.alert.subscribeErrorMessage'),
       );
     }
   };
@@ -424,32 +391,31 @@ export default function PaywallScreen() {
               style={styles.heroGlow}
             />
             <Text style={styles.heroEmoji}>{'🎉'}</Text>
-            <Text style={styles.heroTitle}>지금 모든 기능이 무료!</Text>
+            <Text style={styles.heroTitle}>{t('paywall.freeHeroTitle')}</Text>
             <Text style={styles.heroSubtitle}>
-              D-{daysLeft} 남음 · 2026년 5월 31일까지 전 기능 무료 개방
+              {t('paywall.freeHeroSubtitle').replace('{{daysLeft}}', String(daysLeft))}
             </Text>
           </View>
 
           {/* 크레딧 적립 안내 */}
           <View style={styles.creditInfo}>
-            <Text style={styles.creditInfoTitle}>지금 도토리를 적립하세요!</Text>
+            <Text style={styles.creditInfoTitle}>{t('paywall.freeCreditTitle')}</Text>
             <Text style={styles.creditInfoDesc}>
-              매일 출석 +2 도토리 · 공유 +3 도토리{'\n'}
-              적립한 도토리는 6월 이후에도 사용 가능합니다
+              {t('paywall.freeCreditDesc')}
             </Text>
           </View>
 
           {/* 혜택 목록 (어떤 기능이 있는지 보여줌) */}
           <View style={styles.benefitsSection}>
-            <Text style={styles.sectionTitle}>이용 가능한 기능</Text>
-            {BENEFITS.map((benefit, idx) => (
+            <Text style={styles.sectionTitle}>{t('paywall.availableFeatures')}</Text>
+            {BENEFIT_KEYS.map((benefit, idx) => (
               <View key={idx} style={styles.benefitItem}>
                 <View style={styles.benefitIconWrap}>
                   <Ionicons name={benefit.icon} size={20} color="#4CAF50" />
                 </View>
                 <View style={styles.benefitText}>
-                  <Text style={styles.benefitTitle}>{benefit.title}</Text>
-                  <Text style={styles.benefitDesc}>{benefit.desc}</Text>
+                  <Text style={styles.benefitTitle}>{t(benefit.titleKey)}</Text>
+                  <Text style={styles.benefitDesc}>{t(benefit.descKey)}</Text>
                 </View>
               </View>
             ))}
@@ -470,14 +436,13 @@ export default function PaywallScreen() {
               end={{ x: 1, y: 0 }}
               style={styles.ctaGradient}
             >
-              <Text style={styles.ctaText}>무료로 이용하기</Text>
-              <Text style={styles.ctaSubtext}>모든 AI 기능이 무료로 열려있습니다</Text>
+              <Text style={styles.ctaText}>{t('paywall.freeCtaText')}</Text>
+              <Text style={styles.ctaSubtext}>{t('paywall.freeCtaSubtext')}</Text>
             </LinearGradient>
           </TouchableOpacity>
 
           <Text style={styles.legalText}>
-            2026년 5월 31일까지 무료 기간입니다.{'\n'}
-            6월부터 구독 또는 도토리로 이용 가능합니다.
+            {t('paywall.freeLegalText')}
           </Text>
         </ScrollView>
       </SafeAreaView>
@@ -507,7 +472,7 @@ export default function PaywallScreen() {
             >
               <Ionicons name="time-outline" size={18} color="#4CAF50" />
               <Text style={styles.statusBannerText}>
-                무료 체험 중 · <Text style={styles.statusBannerHighlight}>D-{trialDaysLeft}</Text> 남음
+                {t('paywall.trialBanner')} <Text style={styles.statusBannerHighlight}>D-{trialDaysLeft}</Text> {t('paywall.remaining')}
               </Text>
             </LinearGradient>
           </View>
@@ -521,7 +486,7 @@ export default function PaywallScreen() {
             >
               <Ionicons name="alert-circle-outline" size={18} color="#CF6679" />
               <Text style={[styles.statusBannerText, { color: '#CF6679' }]}>
-                무료 체험이 종료되었습니다
+                {t('paywall.trialExpiredBanner')}
               </Text>
             </LinearGradient>
           </View>
@@ -538,24 +503,24 @@ export default function PaywallScreen() {
           </Text>
           <Text style={styles.heroTitle}>
             {isTrialExpired
-              ? 'Premium 구독'
+              ? t('paywall.heroTitle.expired')
               : isValueFirstVariant
-              ? '이미 쓰고 있는 가치, 구독으로 절약'
-              : 'Premium으로 업그레이드'}
+              ? t('paywall.heroTitle.valueFirst')
+              : t('paywall.heroTitle.default')}
           </Text>
           <Text style={styles.heroSubtitle}>
             {isTrialActive
-              ? `체험 기간 D-${trialDaysLeft} · 지금 구독하면 끊김 없이 이용`
+              ? t('paywall.heroSubtitle.trial').replace('{{daysLeft}}', String(trialDaysLeft))
               : isTrialExpired
-              ? '구독하고 모든 프리미엄 기능을 이용하세요'
+              ? t('paywall.heroSubtitle.expired')
               : isValueFirstVariant
-              ? '최근 사용량 기준, 월 구독이 더 유리한지 바로 확인하세요'
-              : '1개월 무료 체험으로 시작하세요'}
+              ? t('paywall.heroSubtitle.valueFirst')
+              : t('paywall.heroSubtitle.default')}
           </Text>
           {isExperimentActive && (
             <View style={styles.experimentBadge}>
               <Text style={styles.experimentBadgeText}>
-                실험 중: {variant === 'value_first' ? '가치 우선 카피' : '기본 카피'}
+                {t('paywall.experimentBadge')}: {variant === 'value_first' ? t('paywall.experimentValueFirst') : t('paywall.experimentDefault')}
               </Text>
             </View>
           )}
@@ -563,36 +528,36 @@ export default function PaywallScreen() {
 
         {isValueFirstVariant && (
           <View style={styles.valueProofCard}>
-            <Text style={styles.valueProofTitle}>최근 30일 실제 사용 가치</Text>
+            <Text style={styles.valueProofTitle}>{t('paywall.valueProofTitle')}</Text>
 
             {valueProofLoading ? (
               <View style={styles.valueProofLoadingRow}>
                 <ActivityIndicator size="small" color="#4CAF50" />
-                <Text style={styles.valueProofSecondary}>내 사용 데이터를 계산 중입니다...</Text>
+                <Text style={styles.valueProofSecondary}>{t('paywall.valueProofLoading')}</Text>
               </View>
             ) : valueProof.spendEvents30d > 0 ? (
               <>
                 <Text style={styles.valueProofPrimary}>
-                  AI 기능 {valueProof.spendEvents30d}회 사용 · 약 ₩{valueProof.inferredKrwValue.toLocaleString()} 상당
+                  {t('paywall.valueProofUsage').replace('{{count}}', String(valueProof.spendEvents30d)).replace('{{value}}', valueProof.inferredKrwValue.toLocaleString())}
                 </Text>
                 <Text style={[styles.valueProofSecondary, valueProofNetGainKrw >= 0 ? styles.valueProofGain : styles.valueProofLoss]}>
                   {valueProofNetGainKrw >= 0
-                    ? `월 구독료 대비 +₩${valueProofNetGainKrw.toLocaleString()} 절약 가능 (추정)`
-                    : `월 구독료까지 ₩${Math.abs(valueProofNetGainKrw).toLocaleString()} 남음`}
+                    ? t('paywall.valueProofSaving').replace('{{amount}}', valueProofNetGainKrw.toLocaleString())
+                    : t('paywall.valueProofRemaining').replace('{{amount}}', Math.abs(valueProofNetGainKrw).toLocaleString())}
                 </Text>
               </>
             ) : (
               <Text style={styles.valueProofSecondary}>
-                최근 30일 결제형 AI 사용 이력이 아직 없습니다. 3회 이상 사용 시 개인화 절약액이 표시됩니다.
+                {t('paywall.valueProofNoData')}
               </Text>
             )}
 
             <View style={styles.valueProofMetaRow}>
-              <Text style={styles.valueProofMeta}>출처: credit_transactions</Text>
-              <Text style={styles.valueProofMeta}>생성: {formatMetaTime(valueProof.generatedAt)}</Text>
+              <Text style={styles.valueProofMeta}>{t('paywall.valueProofSource')}</Text>
+              <Text style={styles.valueProofMeta}>{t('paywall.valueProofGenerated')}: {formatMetaTime(valueProof.generatedAt)}</Text>
             </View>
             {valueProofTopFeatureLabel && (
-              <Text style={styles.valueProofMeta}>가장 많이 사용한 기능: {valueProofTopFeatureLabel}</Text>
+              <Text style={styles.valueProofMeta}>{t('paywall.valueProofTopFeature')}: {valueProofTopFeatureLabel}</Text>
             )}
           </View>
         )}
@@ -607,10 +572,10 @@ export default function PaywallScreen() {
           >
             <View style={styles.pricingCardInner}>
               <View>
-                <Text style={styles.pricingLabel}>{PRICING.monthly.label}</Text>
+                <Text style={styles.pricingLabel}>{t(PRICING.monthly.tKey)}</Text>
                 <View style={styles.pricingPriceRow}>
                   <Text style={styles.pricingPrice}>{PRICING.monthly.price}</Text>
-                  <Text style={styles.pricingPeriod}>{PRICING.monthly.period}</Text>
+                  <Text style={styles.pricingPeriod}>{t(PRICING.monthly.periodKey)}</Text>
                 </View>
               </View>
               <Ionicons name="chevron-forward" size={20} color="#666" />
@@ -628,13 +593,13 @@ export default function PaywallScreen() {
             </View>
             <View style={styles.pricingCardInner}>
               <View>
-                <Text style={styles.pricingLabel}>{PRICING.yearly.label}</Text>
+                <Text style={styles.pricingLabel}>{t(PRICING.yearly.tKey)}</Text>
                 <View style={styles.pricingPriceRow}>
                   <Text style={styles.pricingPrice}>{PRICING.yearly.price}</Text>
-                  <Text style={styles.pricingPeriod}>{PRICING.yearly.period}</Text>
+                  <Text style={styles.pricingPeriod}>{t(PRICING.yearly.periodKey)}</Text>
                 </View>
                 <Text style={styles.pricingDiscount}>
-                  {PRICING.yearly.monthlyEquiv} · {PRICING.yearly.discount} 할인
+                  {PRICING.yearly.monthlyEquiv}{t('paywall.perMonth')} · {t(PRICING.yearly.discountKey)}
                 </Text>
               </View>
               <Ionicons name="chevron-forward" size={20} color="#4CAF50" />
@@ -644,15 +609,15 @@ export default function PaywallScreen() {
 
         {/* 혜택 목록 */}
         <View style={styles.benefitsSection}>
-          <Text style={styles.sectionTitle}>Premium 혜택</Text>
-          {BENEFITS.map((benefit, idx) => (
+          <Text style={styles.sectionTitle}>{t('paywall.premiumBenefits')}</Text>
+          {BENEFIT_KEYS.map((benefit, idx) => (
             <View key={idx} style={styles.benefitItem}>
               <View style={styles.benefitIconWrap}>
                 <Ionicons name={benefit.icon} size={20} color="#4CAF50" />
               </View>
               <View style={styles.benefitText}>
-                <Text style={styles.benefitTitle}>{benefit.title}</Text>
-                <Text style={styles.benefitDesc}>{benefit.desc}</Text>
+                <Text style={styles.benefitTitle}>{t(benefit.titleKey)}</Text>
+                <Text style={styles.benefitDesc}>{t(benefit.descKey)}</Text>
               </View>
             </View>
           ))}
@@ -660,36 +625,36 @@ export default function PaywallScreen() {
 
         {!isValueFirstVariant && (
           <View style={styles.valueProofCard}>
-            <Text style={styles.valueProofTitle}>최근 30일 실제 사용 가치</Text>
+            <Text style={styles.valueProofTitle}>{t('paywall.valueProofTitle')}</Text>
 
             {valueProofLoading ? (
               <View style={styles.valueProofLoadingRow}>
                 <ActivityIndicator size="small" color="#4CAF50" />
-                <Text style={styles.valueProofSecondary}>내 사용 데이터를 계산 중입니다...</Text>
+                <Text style={styles.valueProofSecondary}>{t('paywall.valueProofLoading')}</Text>
               </View>
             ) : valueProof.spendEvents30d > 0 ? (
               <>
                 <Text style={styles.valueProofPrimary}>
-                  AI 기능 {valueProof.spendEvents30d}회 사용 · 약 ₩{valueProof.inferredKrwValue.toLocaleString()} 상당
+                  {t('paywall.valueProofUsage').replace('{{count}}', String(valueProof.spendEvents30d)).replace('{{value}}', valueProof.inferredKrwValue.toLocaleString())}
                 </Text>
                 <Text style={[styles.valueProofSecondary, valueProofNetGainKrw >= 0 ? styles.valueProofGain : styles.valueProofLoss]}>
                   {valueProofNetGainKrw >= 0
-                    ? `월 구독료 대비 +₩${valueProofNetGainKrw.toLocaleString()} 절약 가능 (추정)`
-                    : `월 구독료까지 ₩${Math.abs(valueProofNetGainKrw).toLocaleString()} 남음`}
+                    ? t('paywall.valueProofSaving').replace('{{amount}}', valueProofNetGainKrw.toLocaleString())
+                    : t('paywall.valueProofRemaining').replace('{{amount}}', Math.abs(valueProofNetGainKrw).toLocaleString())}
                 </Text>
               </>
             ) : (
               <Text style={styles.valueProofSecondary}>
-                최근 30일 결제형 AI 사용 이력이 아직 없습니다. 3회 이상 사용 시 개인화 절약액이 표시됩니다.
+                {t('paywall.valueProofNoData')}
               </Text>
             )}
 
             <View style={styles.valueProofMetaRow}>
-              <Text style={styles.valueProofMeta}>출처: credit_transactions</Text>
-              <Text style={styles.valueProofMeta}>생성: {formatMetaTime(valueProof.generatedAt)}</Text>
+              <Text style={styles.valueProofMeta}>{t('paywall.valueProofSource')}</Text>
+              <Text style={styles.valueProofMeta}>{t('paywall.valueProofGenerated')}: {formatMetaTime(valueProof.generatedAt)}</Text>
             </View>
             {valueProofTopFeatureLabel && (
-              <Text style={styles.valueProofMeta}>가장 많이 사용한 기능: {valueProofTopFeatureLabel}</Text>
+              <Text style={styles.valueProofMeta}>{t('paywall.valueProofTopFeature')}: {valueProofTopFeatureLabel}</Text>
             )}
           </View>
         )}
@@ -713,8 +678,8 @@ export default function PaywallScreen() {
                 <ActivityIndicator color="#FFFFFF" />
               ) : (
                 <>
-                  <Text style={styles.ctaText}>무료 체험 시작하기</Text>
-                  <Text style={styles.ctaSubtext}>30일간 모든 기능 무료 · 결제 정보 불필요</Text>
+                  <Text style={styles.ctaText}>{t('paywall.ctaTrialStart')}</Text>
+                  <Text style={styles.ctaSubtext}>{t('paywall.ctaTrialSubtext')}</Text>
                 </>
               )}
             </LinearGradient>
@@ -734,8 +699,8 @@ export default function PaywallScreen() {
               end={{ x: 1, y: 0 }}
               style={styles.ctaGradient}
             >
-              <Text style={styles.ctaText}>지금 구독하기</Text>
-              <Text style={styles.ctaSubtext}>체험 기간 중 구독하면 끊김 없이 이용</Text>
+              <Text style={styles.ctaText}>{t('paywall.ctaSubscribeNow')}</Text>
+              <Text style={styles.ctaSubtext}>{t('paywall.ctaSubscribeNowSubtext')}</Text>
             </LinearGradient>
           </TouchableOpacity>
         )}
@@ -753,18 +718,17 @@ export default function PaywallScreen() {
               end={{ x: 1, y: 0 }}
               style={styles.ctaGradient}
             >
-              <Text style={styles.ctaText}>구독하고 계속 이용하기</Text>
-              <Text style={styles.ctaSubtext}>연간 구독 시 25% 할인</Text>
+              <Text style={styles.ctaText}>{t('paywall.ctaSubscribeContinue')}</Text>
+              <Text style={styles.ctaSubtext}>{t('paywall.ctaSubscribeContinueSubtext')}</Text>
             </LinearGradient>
           </TouchableOpacity>
         )}
 
         {/* 크레딧 안내 */}
         <View style={styles.creditInfo}>
-          <Text style={styles.creditInfoTitle}>AI 기능은 도토리로 이용</Text>
+          <Text style={styles.creditInfoTitle}>{t('paywall.creditInfoTitle')}</Text>
           <Text style={styles.creditInfoDesc}>
-            AI 분석 1회 ₩300~ · 구독 없이도 도토리 구매로 이용 가능{'\n'}
-            도토리 패키지: ₩5,000 / ₩10,000 / ₩30,000
+            {t('paywall.creditInfoDesc')}
           </Text>
         </View>
 
@@ -773,19 +737,18 @@ export default function PaywallScreen() {
           <View style={styles.streakWarning}>
             <View style={styles.streakWarningHeader}>
               <Ionicons name="warning" size={18} color="#FFC107" />
-              <Text style={styles.streakWarningTitle}>해지 시 주의사항</Text>
+              <Text style={styles.streakWarningTitle}>{t('paywall.streakWarningTitle')}</Text>
             </View>
             <Text style={styles.streakWarningText}>
-              구독을 해지하면 <Text style={styles.streakWarningHighlight}>{currentStreak}일 연속 기록</Text>이
-              초기화되며, 투자 습관 형성에 지장이 생길 수 있습니다.
+              {t('paywall.streakWarningText1')} <Text style={styles.streakWarningHighlight}>{currentStreak}{t('paywall.streakWarningDays')}</Text>
+              {t('paywall.streakWarningText2')}
             </Text>
           </View>
         )}
 
         {/* 하단 안내 */}
         <Text style={styles.legalText}>
-          체험 기간 종료 후 자동 결제되지 않습니다.{'\n'}
-          유료 전환은 직접 선택해야 적용됩니다.
+          {t('paywall.legalText')}
         </Text>
       </ScrollView>
     </SafeAreaView>

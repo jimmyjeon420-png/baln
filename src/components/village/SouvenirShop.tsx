@@ -21,6 +21,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SOUVENIR_ITEMS, type SouvenirItem } from '../../data/souvenirConfig';
+import { useLocale } from '../../context/LocaleContext';
 
 // ============================================================================
 // Constants
@@ -29,40 +30,10 @@ import { SOUVENIR_ITEMS, type SouvenirItem } from '../../data/souvenirConfig';
 const OWNED_KEY = '@baln:owned_souvenirs';
 
 // ============================================================================
-// i18n
-// ============================================================================
-
-const TEXT = {
-  ko: {
-    title: '마을 기념품',
-    buy: '구매',
-    owned: '보유',
-    cost: (n: number) => `${n}개`,
-    buyConfirm: (name: string, cost: number) => `${name}을(를) ${cost} 도토리로 구매하시겠습니까?`,
-    confirm: '구매',
-    cancel: '취소',
-    purchased: '구매 완료!',
-    rarity: { common: '일반', rare: '레어', epic: '에픽' },
-  },
-  en: {
-    title: 'Village Souvenirs',
-    buy: 'Buy',
-    owned: 'Owned',
-    cost: (n: number) => `${n}개`,
-    buyConfirm: (name: string, cost: number) => `Buy ${name} for ${cost} acorns?`,
-    confirm: 'Buy',
-    cancel: 'Cancel',
-    purchased: 'Purchased!',
-    rarity: { common: 'Common', rare: 'Rare', epic: 'Epic' },
-  },
-};
-
-// ============================================================================
 // Props
 // ============================================================================
 
 interface SouvenirShopProps {
-  locale?: string;
   onPurchase?: (item: SouvenirItem) => void;
   colors: {
     surface: string;
@@ -78,9 +49,8 @@ interface SouvenirShopProps {
 // Component
 // ============================================================================
 
-export function SouvenirShop({ locale = 'ko', onPurchase, colors }: SouvenirShopProps) {
-  const isKo = locale === 'ko';
-  const t = isKo ? TEXT.ko : TEXT.en;
+export function SouvenirShop({ onPurchase, colors }: SouvenirShopProps) {
+  const { t, language } = useLocale();
 
   const [owned, setOwned] = useState<Set<string>>(new Set());
 
@@ -94,11 +64,14 @@ export function SouvenirShop({ locale = 'ko', onPurchase, colors }: SouvenirShop
 
   const handleBuy = useCallback(
     (item: SouvenirItem) => {
-      const name = isKo ? item.nameKo : item.nameEn;
-      Alert.alert('', t.buyConfirm(name, item.cost), [
-        { text: t.cancel, style: 'cancel' },
+      const name = language === 'ko' ? item.nameKo : item.nameEn;
+      const confirmMsg = language === 'ko'
+        ? `${name}을(를) ${item.cost} 도토리로 구매하시겠습니까?`
+        : `Buy ${name} for ${item.cost} acorns?`;
+      Alert.alert('', confirmMsg, [
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: t.confirm,
+          text: t('souvenirShop.buy'),
           onPress: async () => {
             const newOwned = new Set(owned);
             newOwned.add(item.id);
@@ -113,7 +86,7 @@ export function SouvenirShop({ locale = 'ko', onPurchase, colors }: SouvenirShop
         },
       ]);
     },
-    [owned, isKo, t, onPurchase],
+    [owned, language, t, onPurchase],
   );
 
   const RARITY_COLORS: Record<string, string> = {
@@ -124,14 +97,14 @@ export function SouvenirShop({ locale = 'ko', onPurchase, colors }: SouvenirShop
 
   return (
     <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-      <Text style={[styles.title, { color: colors.textPrimary }]}>{t.title}</Text>
+      <Text style={[styles.title, { color: colors.textPrimary }]}>{t('souvenirShop.title')}</Text>
 
       <ScrollView horizontal={false} showsVerticalScrollIndicator={false}>
         <View style={styles.grid}>
           {SOUVENIR_ITEMS.map(item => {
             const isOwned = owned.has(item.id);
-            const name = isKo ? item.nameKo : item.nameEn;
-            const rarityLabel = t.rarity[item.rarity];
+            const name = language === 'ko' ? item.nameKo : item.nameEn;
+            const rarityLabel = t(`souvenirShop.rarity.${item.rarity}`);
 
             return (
               <View
@@ -150,7 +123,7 @@ export function SouvenirShop({ locale = 'ko', onPurchase, colors }: SouvenirShop
                   {rarityLabel}
                 </Text>
                 {isOwned ? (
-                  <Text style={[styles.ownedBadge, { color: colors.primary }]}>{t.owned}</Text>
+                  <Text style={[styles.ownedBadge, { color: colors.primary }]}>{t('souvenirShop.owned')}</Text>
                 ) : (
                   <TouchableOpacity
                     style={[styles.buyBtn, { backgroundColor: colors.primary }]}
@@ -158,7 +131,7 @@ export function SouvenirShop({ locale = 'ko', onPurchase, colors }: SouvenirShop
                     activeOpacity={0.7}
                   >
                     <Text style={styles.buyText}>
-                      {t.buy} {t.cost(item.cost)}
+                      {t('souvenirShop.buy')} {item.cost}개
                     </Text>
                   </TouchableOpacity>
                 )}

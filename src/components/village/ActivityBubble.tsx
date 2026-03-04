@@ -19,6 +19,7 @@ import type { GuruActivity, GuruMood } from '../../types/village';
 import { getActivityEmoji, getActivityDescription } from '../../services/activityService';
 import { getMoodColor } from '../../services/moodEngine';
 import type { ThemeColors } from '../../styles/colors';
+import { useLocale } from '../../context/LocaleContext';
 
 // ============================================================================
 // 타입
@@ -31,8 +32,6 @@ interface ActivityBubbleProps {
   mood: GuruMood;
   /** 테마 색상 */
   colors: ThemeColors;
-  /** 로케일 (ko/en) */
-  locale?: string;
 }
 
 // ============================================================================
@@ -43,8 +42,8 @@ const ActivityBubble = React.memo(({
   activity,
   mood,
   colors,
-  locale = 'ko',
 }: ActivityBubbleProps) => {
+  const { language } = useLocale();
   // 둥실거리는 float 애니메이션 값
   const floatAnim = useRef(new Animated.Value(0)).current;
 
@@ -89,7 +88,7 @@ const ActivityBubble = React.memo(({
   // 활동 이모지 & 텍스트
   const emoji = getActivityEmoji(activity);
   const description = getActivityDescription(activity);
-  const label = locale === 'ko' ? description.ko : description.en;
+  const label = language === 'ko' ? description.ko : description.en;
 
   // 기분에 따른 테두리 색상 (getMoodColor에서 가져온 색상 사용)
   const moodBorderColor = getMoodColor(mood);

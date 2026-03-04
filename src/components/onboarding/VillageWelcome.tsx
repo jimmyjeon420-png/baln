@@ -27,7 +27,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
 import { getGuruDisplayName } from '../../services/characterService';
-import { t, getCurrentLanguage } from '../../locales';
+import { useLocale } from '../../context/LocaleContext';
 
 // ============================================================================
 // Constants
@@ -80,7 +80,6 @@ const STEPS = 4;
 // ============================================================================
 
 interface VillageWelcomeProps {
-  locale?: string;
   onComplete: () => void;
   colors: {
     background: string;
@@ -98,7 +97,8 @@ interface VillageWelcomeProps {
 // ============================================================================
 
 export function VillageWelcome({ onComplete, colors }: VillageWelcomeProps) {
-  const isKo = getCurrentLanguage() === 'ko';
+  const { t, language } = useLocale();
+  const isKo = language === 'ko';
 
   const [step, setStep] = useState(0);
   const [selectedAnimal, setSelectedAnimal] = useState<string | null>(null);

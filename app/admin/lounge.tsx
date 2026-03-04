@@ -36,6 +36,7 @@ import {
 } from '../../src/hooks/useAdminDashboard';
 import type { AdminLoungePost, AdminGathering } from '../../src/services/adminService';
 import { COLORS } from '../../src/styles/theme';
+import { useLocale } from '../../src/context/LocaleContext';
 
 // ─── 세그먼트 타입 ──────────────────────────────────────
 
@@ -43,26 +44,26 @@ type Segment = 'posts' | 'gatherings';
 type PostFilter = 'all' | 'reported' | 'pinned';
 type GatheringFilter = 'all' | 'open' | 'closed' | 'cancelled';
 
-// ─── 카테고리 라벨 ──────────────────────────────────────
+// ─── 카테고리 라벨 키 ──────────────────────────────────────
 
-const CATEGORY_LABELS: Record<string, string> = {
-  stocks: '주식방',
-  crypto: '코인방',
-  realestate: '부동산방',
+const CATEGORY_LABEL_KEYS: Record<string, string> = {
+  stocks: 'admin.lounge.category.stocks',
+  crypto: 'admin.lounge.category.crypto',
+  realestate: 'admin.lounge.category.realestate',
 };
 
-const GATHERING_CATEGORY_LABELS: Record<string, string> = {
-  study: '스터디',
-  meeting: '정기 모임',
-  networking: '네트워킹',
-  workshop: '워크샵',
+const GATHERING_CATEGORY_LABEL_KEYS: Record<string, string> = {
+  study: 'admin.lounge.gatheringCategory.study',
+  meeting: 'admin.lounge.gatheringCategory.meeting',
+  networking: 'admin.lounge.gatheringCategory.networking',
+  workshop: 'admin.lounge.gatheringCategory.workshop',
 };
 
-const GATHERING_STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  open: { label: '진행중', color: COLORS.primary },
-  closed: { label: '마감', color: COLORS.warning },
-  cancelled: { label: '취소됨', color: COLORS.error },
-  completed: { label: '완료', color: COLORS.textTertiary },
+const GATHERING_STATUS_KEYS: Record<string, { tKey: string; color: string }> = {
+  open: { tKey: 'admin.lounge.gatheringStatus.open', color: COLORS.primary },
+  closed: { tKey: 'admin.lounge.gatheringStatus.closed', color: COLORS.warning },
+  cancelled: { tKey: 'admin.lounge.gatheringStatus.cancelled', color: COLORS.error },
+  completed: { tKey: 'admin.lounge.gatheringStatus.completed', color: COLORS.textTertiary },
 };
 
 // ─── 헬퍼 함수 ─────────────────────────────────────────
@@ -77,16 +78,16 @@ function formatDate(dateStr: string): string {
   return `${y}.${m}.${day} ${h}:${min}`;
 }
 
-function getRelativeTime(dateStr: string): string {
+function getRelativeTime(dateStr: string, t: (key: string) => string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 1) return '방금 전';
-  if (mins < 60) return `${mins}분 전`;
+  if (mins < 1) return t('common.time.justNow');
+  if (mins < 60) return t('common.time.minutesAgo').replace('{{n}}', String(mins));
   const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}시간 전`;
+  if (hours < 24) return t('common.time.hoursAgo').replace('{{n}}', String(hours));
   const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}일 전`;
-  return `${Math.floor(days / 30)}개월 전`;
+  if (days < 30) return t('common.time.daysAgo').replace('{{n}}', String(days));
+  return t('common.time.monthsAgo').replace('{{n}}', String(Math.floor(days / 30)));
 }
 
 // ================================================================
@@ -95,6 +96,7 @@ function getRelativeTime(dateStr: string): string {
 
 export default function AdminLoungeScreen() {
   const router = useRouter();
+  const { t } = useLocale();
   const { data: isAdmin, isLoading: isAdminLoading } = useIsAdmin();
 
   // ── 상태 관리 ──
@@ -201,12 +203,12 @@ export default function AdminLoungeScreen() {
     if (count === 0) return;
 
     Alert.alert(
-      '일괄 삭제',
-      `선택한 ${count}건의 게시글을 삭제하시겠습니까?`,
+      t('admin.lounge.alert.batchDeleteTitle'),
+      t('admin.lounge.alert.batchDeleteMessage').replace('{{count}}', String(count)),
       [
-        { text: '취소', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: '삭제',
+          text: t('common.delete'),
           style: 'destructive',
           onPress: async () => {
             const ids = Array.from(selectedPostIds);
@@ -221,15 +223,15 @@ export default function AdminLoungeScreen() {
             exitSelectionMode();
 
             if (failCount > 0) {
-              Alert.alert('결과', `${successCount}건 처리됨, ${failCount}건 실패`);
+              Alert.alert(t('admin.lounge.alert.resultTitle'), t('admin.lounge.alert.partialResult').replace('{{success}}', String(successCount)).replace('{{fail}}', String(failCount)));
             } else {
-              Alert.alert('완료', `${successCount}건 처리됨`);
+              Alert.alert(t('admin.lounge.alert.doneTitle'), t('admin.lounge.alert.processedResult').replace('{{count}}', String(successCount)));
             }
           },
         },
       ]
     );
-  }, [selectedPostIds, deletePostMutation, exitSelectionMode]);
+  }, [selectedPostIds, deletePostMutation, exitSelectionMode, t]);
 
   // ================================================================
   // 일괄 고정 핸들러
@@ -240,12 +242,12 @@ export default function AdminLoungeScreen() {
     if (count === 0) return;
 
     Alert.alert(
-      '일괄 고정',
-      `선택한 ${count}건의 게시글을 고정/해제하시겠습니까?`,
+      t('admin.lounge.alert.batchPinTitle'),
+      t('admin.lounge.alert.batchPinMessage').replace('{{count}}', String(count)),
       [
-        { text: '취소', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: '고정 토글',
+          text: t('admin.lounge.pinToggle'),
           onPress: async () => {
             const ids = Array.from(selectedPostIds);
             const results = await Promise.allSettled(
@@ -259,15 +261,15 @@ export default function AdminLoungeScreen() {
             exitSelectionMode();
 
             if (failCount > 0) {
-              Alert.alert('결과', `${successCount}건 처리됨, ${failCount}건 실패`);
+              Alert.alert(t('admin.lounge.alert.resultTitle'), t('admin.lounge.alert.partialResult').replace('{{success}}', String(successCount)).replace('{{fail}}', String(failCount)));
             } else {
-              Alert.alert('완료', `${successCount}건 처리됨`);
+              Alert.alert(t('admin.lounge.alert.doneTitle'), t('admin.lounge.alert.processedResult').replace('{{count}}', String(successCount)));
             }
           },
         },
       ]
     );
-  }, [selectedPostIds, togglePinMutation, exitSelectionMode]);
+  }, [selectedPostIds, togglePinMutation, exitSelectionMode, t]);
 
   // ================================================================
   // 게시글 액션 핸들러
@@ -275,24 +277,24 @@ export default function AdminLoungeScreen() {
 
   const handleDeletePost = useCallback((post: AdminLoungePost) => {
     Alert.alert(
-      '게시글 삭제',
-      `이 게시글을 삭제하시겠습니까?\n\n"${post.content.substring(0, 50)}${post.content.length > 50 ? '...' : ''}"`,
+      t('admin.lounge.alert.deletePostTitle'),
+      `${t('admin.lounge.alert.deletePostMessage')}\n\n"${post.content.substring(0, 50)}${post.content.length > 50 ? '...' : ''}"`,
       [
-        { text: '취소', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: '삭제',
+          text: t('common.delete'),
           style: 'destructive',
           onPress: async () => {
             mutatingPostId.current = post.id;
             try {
               const result = await deletePostMutation.mutateAsync(post.id);
               if (result.success) {
-                Alert.alert('완료', '게시글이 삭제되었습니다.');
+                Alert.alert(t('admin.lounge.alert.doneTitle'), t('admin.lounge.alert.postDeleted'));
               } else {
-                Alert.alert('오류', result.error || '삭제에 실패했습니다.');
+                Alert.alert(t('common.error'), result.error || t('admin.lounge.alert.deleteFailed'));
               }
-            } catch (err: any) {
-              Alert.alert('오류', err.message || '삭제 중 오류가 발생했습니다.');
+            } catch (err: unknown) {
+              Alert.alert(t('common.error'), err instanceof Error ? err.message : t('admin.lounge.alert.deleteError'));
             } finally {
               mutatingPostId.current = null;
             }
@@ -300,7 +302,7 @@ export default function AdminLoungeScreen() {
         },
       ]
     );
-  }, [deletePostMutation]);
+  }, [deletePostMutation, t]);
 
   const handleTogglePin = useCallback(async (post: AdminLoungePost) => {
     mutatingPostId.current = post.id;
@@ -308,18 +310,18 @@ export default function AdminLoungeScreen() {
       const result = await togglePinMutation.mutateAsync(post.id);
       if (result.success) {
         Alert.alert(
-          '완료',
-          result.is_pinned ? '게시글이 고정되었습니다.' : '게시글 고정이 해제되었습니다.'
+          t('admin.lounge.alert.doneTitle'),
+          result.is_pinned ? t('admin.lounge.alert.postPinned') : t('admin.lounge.alert.postUnpinned')
         );
       } else {
-        Alert.alert('오류', result.error || '변경에 실패했습니다.');
+        Alert.alert(t('common.error'), result.error || t('admin.lounge.alert.changeFailed'));
       }
-    } catch (err: any) {
-      Alert.alert('오류', err.message || '처리 중 오류가 발생했습니다.');
+    } catch (err: unknown) {
+      Alert.alert(t('common.error'), err instanceof Error ? err.message : t('admin.lounge.alert.processError'));
     } finally {
       mutatingPostId.current = null;
     }
-  }, [togglePinMutation]);
+  }, [togglePinMutation, t]);
 
   // ================================================================
   // 모임 액션 핸들러
@@ -327,24 +329,24 @@ export default function AdminLoungeScreen() {
 
   const handleCancelGathering = useCallback((gathering: AdminGathering) => {
     Alert.alert(
-      '모임 취소',
-      `이 모임을 취소하시겠습니까?\n\n"${gathering.title}"`,
+      t('admin.lounge.alert.cancelGatheringTitle'),
+      `${t('admin.lounge.alert.cancelGatheringMessage')}\n\n"${gathering.title}"`,
       [
-        { text: '아니요', style: 'cancel' },
+        { text: t('common.no'), style: 'cancel' },
         {
-          text: '취소하기',
+          text: t('admin.lounge.cancelAction'),
           style: 'destructive',
           onPress: async () => {
             mutatingGatheringId.current = gathering.id;
             try {
               const result = await cancelGatheringMutation.mutateAsync(gathering.id);
               if (result.success) {
-                Alert.alert('완료', '모임이 취소되었습니다.');
+                Alert.alert(t('admin.lounge.alert.doneTitle'), t('admin.lounge.alert.gatheringCancelled'));
               } else {
-                Alert.alert('오류', result.error || '취소에 실패했습니다.');
+                Alert.alert(t('common.error'), result.error || t('admin.lounge.alert.cancelFailed'));
               }
-            } catch (err: any) {
-              Alert.alert('오류', err.message || '처리 중 오류가 발생했습니다.');
+            } catch (err: unknown) {
+              Alert.alert(t('common.error'), err instanceof Error ? err.message : t('admin.lounge.alert.processError'));
             } finally {
               mutatingGatheringId.current = null;
             }
@@ -352,7 +354,7 @@ export default function AdminLoungeScreen() {
         },
       ]
     );
-  }, [cancelGatheringMutation]);
+  }, [cancelGatheringMutation, t]);
 
   // ================================================================
   // 게시글 카드 렌더링
@@ -391,29 +393,29 @@ export default function AdminLoungeScreen() {
                 {item.is_pinned && (
                   <View style={[styles.badge, { backgroundColor: COLORS.primary + '20' }]}>
                     <Ionicons name="pin" size={10} color={COLORS.primary} />
-                    <Text style={[styles.badgeText, { color: COLORS.primary }]}>고정</Text>
+                    <Text style={[styles.badgeText, { color: COLORS.primary }]}>{t('admin.lounge.pinned')}</Text>
                   </View>
                 )}
                 <View style={[styles.badge, { backgroundColor: COLORS.info + '20' }]}>
                   <Text style={[styles.badgeText, { color: COLORS.info }]}>
-                    {CATEGORY_LABELS[item.category] || item.category}
+                    {CATEGORY_LABEL_KEYS[item.category] ? t(CATEGORY_LABEL_KEYS[item.category]) : item.category}
                   </Text>
                 </View>
                 {item.report_count > 0 && (
                   <View style={[styles.badge, { backgroundColor: COLORS.error + '20' }]}>
                     <Ionicons name="flag" size={10} color={COLORS.error} />
                     <Text style={[styles.badgeText, { color: COLORS.error }]}>
-                      신고 {item.report_count}건
+                      {t('admin.lounge.reported')} {item.report_count}{t('common.unitCount')}
                     </Text>
                   </View>
                 )}
               </View>
-              <Text style={styles.itemDate}>{getRelativeTime(item.created_at)}</Text>
+              <Text style={styles.itemDate}>{getRelativeTime(item.created_at, t)}</Text>
             </View>
 
             {/* 작성자 이메일 */}
             <Text style={styles.itemAuthor} numberOfLines={1}>
-              {item.email || item.display_tag || '알 수 없음'}
+              {item.email || item.display_tag || t('common.unknown')}
             </Text>
 
             {/* 본문 미리보기 (Enhancement 2: 더보기/접기) */}
@@ -429,7 +431,7 @@ export default function AdminLoungeScreen() {
                 activeOpacity={0.6}
               >
                 <Text style={styles.expandToggleText}>
-                  {isExpanded ? '접기' : '더보기'}
+                  {isExpanded ? t('common.collapse') : t('common.showMore')}
                 </Text>
               </TouchableOpacity>
             )}
@@ -464,7 +466,7 @@ export default function AdminLoungeScreen() {
                         color={COLORS.primary}
                       />
                       <Text style={[styles.actionBtnText, { color: COLORS.primary }]}>
-                        {item.is_pinned ? '고정 해제' : '고정'}
+                        {item.is_pinned ? t('admin.lounge.unpin') : t('admin.lounge.pin')}
                       </Text>
                     </>
                   )}
@@ -480,7 +482,7 @@ export default function AdminLoungeScreen() {
                   ) : (
                     <>
                       <Ionicons name="trash-outline" size={14} color={COLORS.error} />
-                      <Text style={[styles.actionBtnText, { color: COLORS.error }]}>삭제</Text>
+                      <Text style={[styles.actionBtnText, { color: COLORS.error }]}>{t('common.delete')}</Text>
                     </>
                   )}
                 </TouchableOpacity>
@@ -500,6 +502,7 @@ export default function AdminLoungeScreen() {
     selectedPostIds,
     togglePostSelection,
     toggleExpandPost,
+    t,
   ]);
 
   // ================================================================
@@ -507,8 +510,8 @@ export default function AdminLoungeScreen() {
   // ================================================================
 
   const renderGatheringItem = useCallback(({ item }: { item: AdminGathering }) => {
-    const statusInfo = GATHERING_STATUS_LABELS[item.status] || {
-      label: item.status,
+    const statusKeyInfo = GATHERING_STATUS_KEYS[item.status] || {
+      tKey: item.status,
       color: COLORS.textTertiary,
     };
     const isCancelling = cancelGatheringMutation.isPending && mutatingGatheringId.current === item.id;
@@ -518,18 +521,18 @@ export default function AdminLoungeScreen() {
         {/* 헤더: 카테고리 + 상태 뱃지 */}
         <View style={styles.itemHeader}>
           <View style={styles.itemHeaderLeft}>
-            <View style={[styles.badge, { backgroundColor: statusInfo.color + '20' }]}>
-              <Text style={[styles.badgeText, { color: statusInfo.color }]}>
-                {statusInfo.label}
+            <View style={[styles.badge, { backgroundColor: statusKeyInfo.color + '20' }]}>
+              <Text style={[styles.badgeText, { color: statusKeyInfo.color }]}>
+                {t(statusKeyInfo.tKey)}
               </Text>
             </View>
             <View style={[styles.badge, { backgroundColor: COLORS.info + '20' }]}>
               <Text style={[styles.badgeText, { color: COLORS.info }]}>
-                {GATHERING_CATEGORY_LABELS[item.category] || item.category}
+                {GATHERING_CATEGORY_LABEL_KEYS[item.category] ? t(GATHERING_CATEGORY_LABEL_KEYS[item.category]) : item.category}
               </Text>
             </View>
           </View>
-          <Text style={styles.itemDate}>{getRelativeTime(item.created_at)}</Text>
+          <Text style={styles.itemDate}>{getRelativeTime(item.created_at, t)}</Text>
         </View>
 
         {/* 모임 제목 */}
@@ -539,7 +542,7 @@ export default function AdminLoungeScreen() {
 
         {/* 호스트 정보 */}
         <Text style={styles.itemAuthor} numberOfLines={1}>
-          호스트: {item.host_email || item.host_display_name || '알 수 없음'}
+          {t('admin.lounge.host')}: {item.host_email || item.host_display_name || t('common.unknown')}
           {item.host_tier ? ` (${item.host_tier})` : ''}
         </Text>
 
@@ -552,14 +555,14 @@ export default function AdminLoungeScreen() {
           <View style={styles.detailItem}>
             <Ionicons name="people-outline" size={13} color={COLORS.textTertiary} />
             <Text style={styles.detailText}>
-              {item.current_capacity}/{item.max_capacity}명
+              {item.current_capacity}/{item.max_capacity}{t('admin.users.countUnit')}
             </Text>
           </View>
           {item.entry_fee > 0 && (
             <View style={styles.detailItem}>
               <Ionicons name="cash-outline" size={13} color={COLORS.textTertiary} />
               <Text style={styles.detailText}>
-                {item.entry_fee.toLocaleString()}원
+                {item.entry_fee.toLocaleString()}{t('common.unitWon')}
               </Text>
             </View>
           )}
@@ -588,7 +591,7 @@ export default function AdminLoungeScreen() {
               ) : (
                 <>
                   <Ionicons name="close-circle-outline" size={14} color={COLORS.error} />
-                  <Text style={[styles.actionBtnText, { color: COLORS.error }]}>모임 취소</Text>
+                  <Text style={[styles.actionBtnText, { color: COLORS.error }]}>{t('admin.lounge.cancelGathering')}</Text>
                 </>
               )}
             </TouchableOpacity>
@@ -596,23 +599,23 @@ export default function AdminLoungeScreen() {
         )}
       </View>
     );
-  }, [handleCancelGathering, cancelGatheringMutation.isPending]);
+  }, [handleCancelGathering, cancelGatheringMutation.isPending, t]);
 
   // ================================================================
   // 게시글 필터 칩 (Enhancement 4: 신고됨 카운트 뱃지)
   // ================================================================
 
   const postFilters: { key: PostFilter; label: string }[] = [
-    { key: 'all', label: '전체' },
-    { key: 'reported', label: reportedPostCount > 0 ? `신고됨 (${reportedPostCount})` : '신고됨' },
-    { key: 'pinned', label: '고정됨' },
+    { key: 'all', label: t('common.all') },
+    { key: 'reported', label: reportedPostCount > 0 ? `${t('admin.lounge.filter.reported')} (${reportedPostCount})` : t('admin.lounge.filter.reported') },
+    { key: 'pinned', label: t('admin.lounge.filter.pinned') },
   ];
 
   const gatheringFilters: { key: GatheringFilter; label: string }[] = [
-    { key: 'all', label: '전체' },
-    { key: 'open', label: '진행중' },
-    { key: 'closed', label: '마감' },
-    { key: 'cancelled', label: '취소됨' },
+    { key: 'all', label: t('common.all') },
+    { key: 'open', label: t('admin.lounge.gatheringStatus.open') },
+    { key: 'closed', label: t('admin.lounge.gatheringStatus.closed') },
+    { key: 'cancelled', label: t('admin.lounge.gatheringStatus.cancelled') },
   ];
 
   // ================================================================
@@ -626,12 +629,12 @@ export default function AdminLoungeScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Ionicons name="chevron-back" size={24} color={COLORS.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>라운지 관리</Text>
+          <Text style={styles.headerTitle}>{t('admin.lounge.title')}</Text>
           <View style={{ width: 24 }} />
         </View>
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={COLORS.primary} />
-          <Text style={styles.loadingText}>권한 확인 중...</Text>
+          <Text style={styles.loadingText}>{t('admin.lounge.checkingPermission')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -644,12 +647,12 @@ export default function AdminLoungeScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Ionicons name="chevron-back" size={24} color={COLORS.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>라운지 관리</Text>
+          <Text style={styles.headerTitle}>{t('admin.lounge.title')}</Text>
           <View style={{ width: 24 }} />
         </View>
         <View style={styles.centerContainer}>
           <Ionicons name="lock-closed" size={64} color={COLORS.textSecondary} />
-          <Text style={styles.deniedText}>접근 권한이 없습니다.</Text>
+          <Text style={styles.deniedText}>{t('admin.lounge.noPermission')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -692,17 +695,17 @@ export default function AdminLoungeScreen() {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>
           {isSelecting
-            ? `${selectedPostIds.size}건 선택됨`
-            : '라운지 관리'}
+            ? `${selectedPostIds.size}${t('admin.lounge.selectedCount')}`
+            : t('admin.lounge.title')}
         </Text>
         {/* Enhancement 3: 선택 모드 진입/취소 버튼 */}
         {isSelecting ? (
           <TouchableOpacity onPress={exitSelectionMode} style={styles.headerRightBtn}>
-            <Text style={styles.headerRightBtnText}>취소</Text>
+            <Text style={styles.headerRightBtnText}>{t('common.cancel')}</Text>
           </TouchableOpacity>
         ) : segment === 'posts' ? (
           <TouchableOpacity onPress={enterSelectionMode} style={styles.headerRightBtn}>
-            <Text style={styles.headerRightBtnText}>선택</Text>
+            <Text style={styles.headerRightBtnText}>{t('admin.lounge.select')}</Text>
           </TouchableOpacity>
         ) : (
           <View style={{ width: 40 }} />
@@ -729,7 +732,7 @@ export default function AdminLoungeScreen() {
               segment === 'posts' && styles.segmentBtnTextActive,
             ]}
           >
-            게시글 ({postsData?.total_count ?? 0})
+            {t('admin.lounge.posts')} ({postsData?.total_count ?? 0})
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -750,7 +753,7 @@ export default function AdminLoungeScreen() {
               segment === 'gatherings' && styles.segmentBtnTextActive,
             ]}
           >
-            모임 ({gatheringsData?.total_count ?? 0})
+            {t('admin.lounge.gatherings')} ({gatheringsData?.total_count ?? 0})
           </Text>
         </TouchableOpacity>
       </View>
@@ -810,7 +813,7 @@ export default function AdminLoungeScreen() {
       {/* 전체 카운트 */}
       <View style={styles.countBar}>
         <Text style={styles.countText}>
-          전체 <Text style={styles.countNumber}>{totalCount.toLocaleString()}</Text>건
+          {t('admin.lounge.totalCount')} <Text style={styles.countNumber}>{totalCount.toLocaleString()}</Text>{t('common.unitCount')}
         </Text>
       </View>
 
@@ -818,17 +821,17 @@ export default function AdminLoungeScreen() {
       {isLoading ? (
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={COLORS.primary} />
-          <Text style={styles.loadingText}>불러오는 중...</Text>
+          <Text style={styles.loadingText}>{t('common.loading')}</Text>
         </View>
       ) : hasError ? (
         <View style={styles.centerContainer}>
           <Ionicons name="alert-circle-outline" size={48} color={COLORS.error} />
-          <Text style={styles.errorText}>데이터를 불러올 수 없습니다.</Text>
+          <Text style={styles.errorText}>{t('admin.lounge.loadError')}</Text>
           <TouchableOpacity
             style={styles.retryButton}
             onPress={() => (segment === 'posts' ? refetchPosts() : refetchGatherings())}
           >
-            <Text style={styles.retryButtonText}>다시 시도</Text>
+            <Text style={styles.retryButtonText}>{t('common.retry')}</Text>
           </TouchableOpacity>
         </View>
       ) : segment === 'posts' ? (
@@ -850,7 +853,7 @@ export default function AdminLoungeScreen() {
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Ionicons name="document-text-outline" size={64} color={COLORS.textTertiary} />
-              <Text style={styles.emptyText}>게시글이 없습니다.</Text>
+              <Text style={styles.emptyText}>{t('admin.lounge.noPosts')}</Text>
             </View>
           }
           showsVerticalScrollIndicator={false}
@@ -871,7 +874,7 @@ export default function AdminLoungeScreen() {
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Ionicons name="people-outline" size={64} color={COLORS.textTertiary} />
-              <Text style={styles.emptyText}>모임이 없습니다.</Text>
+              <Text style={styles.emptyText}>{t('admin.lounge.noGatherings')}</Text>
             </View>
           }
           showsVerticalScrollIndicator={false}
@@ -886,14 +889,14 @@ export default function AdminLoungeScreen() {
             onPress={handleBatchDelete}
           >
             <Ionicons name="trash-outline" size={16} color="#FFFFFF" />
-            <Text style={styles.batchBtnText}>일괄 삭제</Text>
+            <Text style={styles.batchBtnText}>{t('admin.lounge.batchDelete')}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.batchPinBtn}
             onPress={handleBatchPin}
           >
             <Ionicons name="pin" size={16} color="#FFFFFF" />
-            <Text style={styles.batchBtnText}>일괄 고정</Text>
+            <Text style={styles.batchBtnText}>{t('admin.lounge.batchPin')}</Text>
           </TouchableOpacity>
         </View>
       )}

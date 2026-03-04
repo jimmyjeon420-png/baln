@@ -78,8 +78,8 @@ export default function StreakRecoveryModal({
   const canRecover = daysMissed >= 1 && daysMissed <= 3;
   const cost = RECOVERY_COSTS[daysMissed] ?? 0;
   const recoveryEmoji = RECOVERY_EMOJI[daysMissed] ?? '⏰';
-  const recoveryTitle = t(`streak.recovery_title_${daysMissed}` as any) || t('streak.recovery_title_1');
-  const recoverySubtitle = t(`streak.recovery_subtitle_${daysMissed}` as any) || '';
+  const recoveryTitle = t(`streak.recovery_title_${daysMissed}` as unknown as Parameters<typeof t>[0]) || t('streak.recovery_title_1');
+  const recoverySubtitle = t(`streak.recovery_subtitle_${daysMissed}` as unknown as Parameters<typeof t>[0]) || '';
 
   const handleRecover = async () => {
     if (!canRecover || isRecovering) return;

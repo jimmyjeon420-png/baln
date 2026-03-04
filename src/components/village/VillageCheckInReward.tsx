@@ -18,7 +18,6 @@ const VILLAGE_CHECKIN_KEY = '@baln:village_checkin_shown';
 
 interface VillageCheckInRewardProps {
   colors: ThemeColors;
-  locale: string;
   /** 오늘의 스트릭 일수 */
   currentStreak?: number;
 }
@@ -42,7 +41,6 @@ function getTodayKey(): string {
 
 export function VillageCheckInReward({
   colors,
-  locale: _locale,
   currentStreak = 0,
 }: VillageCheckInRewardProps) {
   const [visible, setVisible] = useState(false);

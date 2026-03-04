@@ -24,10 +24,12 @@ import supabase, { getCurrentUser } from '../../src/services/supabase';
 import type { UserTier } from '../../src/types/database';
 import type { DeepDiveInput, DeepDiveResult } from '../../src/types/marketplace';
 import { useTheme } from '../../src/hooks/useTheme';
+import { useLocale } from '../../src/context/LocaleContext';
 
 export default function DeepDiveScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { t } = useLocale();
   const { mediumTap } = useHaptics();
   const deepDiveMutation = useDeepDive();
 
@@ -36,7 +38,7 @@ export default function DeepDiveScreen() {
   const [name, setName] = useState('');
   const [showGate, setShowGate] = useState(false);
   const [result, setResult] = useState<DeepDiveResult | null>(null);
-  const [portfolio, setPortfolio] = useState<any[]>([]);
+  const [portfolio, setPortfolio] = useState<Record<string, unknown>[]>([]);
 
   // 포트폴리오 & 티어 로드 (에러 시에도 화면 렌더링 보장)
   useFocusEffect(
@@ -61,15 +63,15 @@ export default function DeepDiveScreen() {
     }, [])
   );
 
-  const handleSelectStock = (asset: any) => {
+  const handleSelectStock = (asset: Record<string, unknown>) => {
     mediumTap();
-    setTicker(asset.ticker || '');
-    setName(asset.name || asset.ticker || '');
+    setTicker((asset.ticker as string) || '');
+    setName((asset.name as string) || (asset.ticker as string) || '');
   };
 
   const handleAnalyze = () => {
     if (!ticker.trim()) {
-      Alert.alert('종목 입력', '분석할 종목 코드를 입력해주세요.');
+      Alert.alert(t('deep_dive.alert.ticker_required_title'), t('deep_dive.alert.ticker_required_message'));
       return;
     }
     mediumTap();
@@ -83,16 +85,16 @@ export default function DeepDiveScreen() {
     const input: DeepDiveInput = {
       ticker: ticker.toUpperCase(),
       name: name || ticker.toUpperCase(),
-      currentPrice: portfolio.find(p => p.ticker === ticker.toUpperCase())?.current_price,
-      avgPrice: portfolio.find(p => p.ticker === ticker.toUpperCase())?.avg_price,
-      quantity: portfolio.find(p => p.ticker === ticker.toUpperCase())?.quantity,
+      currentPrice: portfolio.find(p => p.ticker === ticker.toUpperCase())?.current_price as number | undefined,
+      avgPrice: portfolio.find(p => p.ticker === ticker.toUpperCase())?.avg_price as number | undefined,
+      quantity: portfolio.find(p => p.ticker === ticker.toUpperCase())?.quantity as number | undefined,
     };
 
     try {
       const res = await deepDiveMutation.mutateAsync({ input, userTier });
       setResult(res);
-    } catch (err: any) {
-      Alert.alert('분석 실패', err.message || 'AI 분석에 실패했습니다. 크레딧은 환불됩니다.');
+    } catch (err: unknown) {
+      Alert.alert(t('deep_dive.alert.analysis_failed_title'), (err instanceof Error ? err.message : undefined) || t('deep_dive.alert.analysis_failed_message'));
     }
   };
 
@@ -104,27 +106,27 @@ export default function DeepDiveScreen() {
           <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7}>
             <Ionicons name="arrow-back" size={22} color={colors.textPrimary} />
           </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>AI 종목 딥다이브</Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{t('deep_dive.header_title')}</Text>
           <View style={{ width: 22 }} />
         </View>
 
         {/* 종목 입력 */}
         <View style={styles.inputSection}>
-          <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>종목 코드</Text>
+          <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>{t('deep_dive.ticker_label')}</Text>
           <TextInput
             style={[styles.textInput, { backgroundColor: colors.surface, color: colors.textPrimary, borderColor: colors.borderStrong }]}
             value={ticker}
             onChangeText={setTicker}
-            placeholder="예: AAPL, TSLA, 005930"
+            placeholder={t('deep_dive.ticker_placeholder')}
             placeholderTextColor={colors.textQuaternary}
             autoCapitalize="characters"
           />
-          <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>종목명 (선택)</Text>
+          <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>{t('deep_dive.name_label')}</Text>
           <TextInput
             style={[styles.textInput, { backgroundColor: colors.surface, color: colors.textPrimary, borderColor: colors.borderStrong }]}
             value={name}
             onChangeText={setName}
-            placeholder="예: 애플, 테슬라"
+            placeholder={t('deep_dive.name_placeholder')}
             placeholderTextColor={colors.textQuaternary}
           />
         </View>
@@ -132,7 +134,7 @@ export default function DeepDiveScreen() {
         {/* 보유 종목 빠른 선택 */}
         {portfolio.length > 0 && (
           <View style={styles.quickSelect}>
-            <Text style={[styles.quickLabel, { color: colors.textSecondary }]}>내 보유 종목</Text>
+            <Text style={[styles.quickLabel, { color: colors.textSecondary }]}>{t('deep_dive.my_holdings')}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <View style={styles.chipRow}>
                 {portfolio
@@ -155,7 +157,7 @@ export default function DeepDiveScreen() {
                           ticker === p.ticker && styles.chipTextActive,
                         ]}
                       >
-                        {p.ticker}
+                        {String(p.ticker)}
                       </Text>
                     </TouchableOpacity>
                   ))}
@@ -172,7 +174,7 @@ export default function DeepDiveScreen() {
           activeOpacity={0.7}
         >
           <Ionicons name="search" size={18} color="#FFF" />
-          <Text style={styles.analyzeButtonText}>딥다이브 분석 시작</Text>
+          <Text style={styles.analyzeButtonText}>{t('deep_dive.analyze_button')}</Text>
         </TouchableOpacity>
 
         {/* 로딩 스켈레톤 */}

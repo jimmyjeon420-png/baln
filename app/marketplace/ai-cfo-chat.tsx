@@ -29,15 +29,17 @@ import supabase, { getCurrentUser } from '../../src/services/supabase';
 import type { UserTier } from '../../src/types/database';
 import type { CFOChatInput } from '../../src/types/marketplace';
 import { useTheme } from '../../src/hooks/useTheme';
+import { useLocale } from '../../src/context/LocaleContext';
 
 export default function AICFOChatScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { t } = useLocale();
   const { mediumTap } = useHaptics();
   const scrollRef = useRef<ScrollView>(null);
 
   const [userTier, setUserTier] = useState<UserTier>('SILVER');
-  const [portfolio, setPortfolio] = useState<any[]>([]);
+  const [portfolio, setPortfolio] = useState<Record<string, unknown>[]>([]);
   const [inputText, setInputText] = useState('');
 
   // 세션 ID: 날짜 기반 (하루 하나의 세션)
@@ -83,11 +85,11 @@ export default function AICFOChatScreen() {
 
     if (!hasEnoughCredits) {
       Alert.alert(
-        '크레딧 부족',
-        `메시지 전송에 ${discountedCost} 크레딧이 필요합니다.`,
+        t('cfo_chat.alert.insufficient_credits_title'),
+        t('cfo_chat.alert.insufficient_credits_message', { cost: discountedCost }),
         [
-          { text: '취소', style: 'cancel' },
-          { text: '충전하기', onPress: () => router.push('/marketplace/credits') },
+          { text: t('common.cancel'), style: 'cancel' },
+          { text: t('cfo_chat.alert.charge_button'), onPress: () => router.push('/marketplace/credits') },
         ]
       );
       return;
@@ -97,15 +99,15 @@ export default function AICFOChatScreen() {
     const text = inputText.trim();
     setInputText('');
 
-    const totalAssets = portfolio.reduce((s: number, p: any) => s + (p.current_value || 0), 0);
+    const totalAssets = portfolio.reduce((s: number, p: Record<string, unknown>) => s + (Number(p.current_value) || 0), 0);
     const topHoldings = portfolio
-      .sort((a: any, b: any) => (b.current_value || 0) - (a.current_value || 0))
+      .sort((a: Record<string, unknown>, b: Record<string, unknown>) => (Number(b.current_value) || 0) - (Number(a.current_value) || 0))
       .slice(0, 5)
-      .map((p: any) => ({
-        ticker: p.ticker || p.name,
-        name: p.name,
+      .map((p: Record<string, unknown>) => ({
+        ticker: (p.ticker as string) || (p.name as string),
+        name: p.name as string,
         allocation: totalAssets > 0
-          ? Math.round(((p.current_value || 0) / totalAssets) * 100)
+          ? Math.round((Number(p.current_value || 0) / totalAssets) * 100)
           : 0,
       }));
 
@@ -121,8 +123,8 @@ export default function AICFOChatScreen() {
 
     try {
       await sendMessage.mutateAsync({ input, userTier });
-    } catch (err: any) {
-      Alert.alert('전송 실패', err.message || 'AI 응답 생성에 실패했습니다.');
+    } catch (err: unknown) {
+      Alert.alert(t('cfo_chat.alert.send_failed_title'), (err instanceof Error ? err.message : undefined) || t('cfo_chat.alert.send_failed_message'));
     }
   };
 
@@ -136,9 +138,9 @@ export default function AICFOChatScreen() {
           <Ionicons name="arrow-back" size={22} color={colors.textPrimary} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
-          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>AI 버핏 티타임</Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{t('cfo_chat.header_title')}</Text>
           <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
-            메시지당 {discountedCost} 크레딧
+            {t('cfo_chat.header_subtitle', { cost: discountedCost })}
           </Text>
         </View>
         <CreditBadge size="small" />
@@ -159,19 +161,17 @@ export default function AICFOChatScreen() {
           {chatMessages.length === 0 && !messages.isLoading && (
             <View style={styles.welcomeContainer}>
               <Ionicons name="sparkles" size={40} color={colors.premium.purple} />
-              <Text style={[styles.welcomeTitle, { color: colors.textPrimary }]}>AI 버핏에게 물어보세요</Text>
+              <Text style={[styles.welcomeTitle, { color: colors.textPrimary }]}>{t('cfo_chat.welcome_title')}</Text>
               <Text style={[styles.welcomeDesc, { color: colors.textSecondary }]}>
-                포트폴리오 맞춤 재무 상담을 제공합니다.{'\n'}
-                투자 전략, 리스크 관리, 자산 배분 등{'\n'}
-                무엇이든 질문하세요.
+                {t('cfo_chat.welcome_desc')}
               </Text>
 
               {/* 추천 질문 */}
               <View style={styles.suggestedQuestions}>
                 {[
-                  '내 포트폴리오 리스크가 높은가요?',
-                  '지금 리밸런싱해야 할까요?',
-                  '세금 절약 방법을 알려주세요',
+                  t('cfo_chat.suggestion.risk_check'),
+                  t('cfo_chat.suggestion.rebalance_timing'),
+                  t('cfo_chat.suggestion.tax_saving'),
                 ].map((q, i) => (
                   <TouchableOpacity
                     key={i}
@@ -191,10 +191,10 @@ export default function AICFOChatScreen() {
 
           {messages.isLoading && <ChatSkeletonLoader />}
 
-          {chatMessages.map((msg: any) => (
+          {chatMessages.map((msg: { id: string; role: string; content: string; created_at: string; credits_charged?: number }) => (
             <ChatBubble
               key={msg.id}
-              role={msg.role}
+              role={msg.role as 'user' | 'assistant'}
               content={msg.content}
               timestamp={msg.created_at}
               creditsCharged={msg.credits_charged}
@@ -209,7 +209,7 @@ export default function AICFOChatScreen() {
               </View>
               <View style={[styles.typingBubble, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderStrong }]}>
                 <ActivityIndicator size="small" color={colors.premium.purple} />
-                <Text style={[styles.typingText, { color: colors.textSecondary }]}>AI 버핏이 답변 중...</Text>
+                <Text style={[styles.typingText, { color: colors.textSecondary }]}>{t('cfo_chat.typing')}</Text>
               </View>
             </View>
           )}
@@ -221,7 +221,7 @@ export default function AICFOChatScreen() {
             style={[styles.textInput, { backgroundColor: colors.surfaceElevated, color: colors.textPrimary, borderColor: colors.borderStrong }]}
             value={inputText}
             onChangeText={setInputText}
-            placeholder="재무 질문을 입력하세요..."
+            placeholder={t('cfo_chat.input_placeholder')}
             placeholderTextColor={colors.textQuaternary}
             multiline
             maxLength={500}

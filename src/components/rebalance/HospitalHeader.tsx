@@ -15,7 +15,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
 import { getGuruDisplayName } from '../../services/characterService';
-import { t, getCurrentLanguage } from '../../locales';
+import { useLocale } from '../../context/LocaleContext';
 import type { ThemeColors } from '../../styles/colors';
 
 // =============================================================================
@@ -27,8 +27,6 @@ interface HospitalHeaderProps {
   healthGrade?: string;
   /** 테마 색상 */
   colors: ThemeColors;
-  /** @deprecated Use t() from locales instead. Kept for backward compatibility. */
-  locale?: string;
 }
 
 // =============================================================================
@@ -77,7 +75,7 @@ function HospitalHeader({
   healthGrade,
   colors,
 }: HospitalHeaderProps): React.ReactElement {
-  const _isKo = getCurrentLanguage() === 'ko';
+  const { t } = useLocale();
 
   // 등급 설정 조회
   const gradeKey = healthGrade?.toUpperCase() ?? '';

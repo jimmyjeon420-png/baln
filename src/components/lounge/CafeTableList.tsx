@@ -98,14 +98,14 @@ function CafeTableList({
   selectedTableId,
 }: CafeTableListProps): React.ReactElement {
   const { colors } = useTheme();
-  const { language } = useLocale();
+  const { t, language } = useLocale();
   const isKo = language === 'ko';
 
   return (
     <View style={styles.container}>
       {/* 섹션 헤더 */}
       <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
-        {isKo ? '테이블에 앉기' : 'Pick a Table'}
+        {t('cafeTable.pickATable')}
       </Text>
 
       {/* 가로 스크롤 테이블 목록 */}

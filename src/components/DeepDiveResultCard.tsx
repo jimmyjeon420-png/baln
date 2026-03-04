@@ -7,6 +7,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { DeepDiveResult } from '../types/marketplace';
+import { useLocale } from '../context/LocaleContext';
 
 interface Props {
   result: DeepDiveResult;
@@ -61,12 +62,13 @@ function SectionCard({
 }
 
 export default function DeepDiveResultCard({ result }: Props) {
+  const { t } = useLocale();
   // null 안전 접근: AI 응답이 부분적일 수 있으므로 모든 중첩 배열/객체에 기본값 적용
-  const sections = result.sections ?? {} as any;
-  const financial = sections.financial ?? { score: 0, title: '재무 분석', highlights: [], metrics: [] };
-  const technical = sections.technical ?? { score: 0, title: '기술적 분석', highlights: [], signals: [] };
-  const news = sections.news ?? { title: '뉴스 분석', sentiment: 'NEUTRAL', recentNews: [] };
-  const aiOpinion = sections.aiOpinion ?? { title: 'AI 종합 의견', summary: '', bullCase: [], bearCase: [], targetPrice: '-', timeHorizon: '-' };
+  const sections = result.sections ?? {} as Record<string, unknown>;
+  const financial = sections.financial ?? { score: 0, title: t('deepDive.resultCard.financialAnalysis'), highlights: [], metrics: [] };
+  const technical = sections.technical ?? { score: 0, title: t('deepDive.resultCard.technicalAnalysis'), highlights: [], signals: [] };
+  const news = sections.news ?? { title: t('deepDive.resultCard.newsAnalysis'), sentiment: 'NEUTRAL', recentNews: [] };
+  const aiOpinion = sections.aiOpinion ?? { title: t('deepDive.resultCard.aiOpinion'), summary: '', bullCase: [], bearCase: [], targetPrice: '-', timeHorizon: '-' };
 
   const recColor = {
     VERY_POSITIVE: '#4CAF50',
@@ -76,13 +78,14 @@ export default function DeepDiveResultCard({ result }: Props) {
     VERY_NEGATIVE: '#CF6679',
   }[result.recommendation] ?? '#FFA726';
 
-  const recLabel = {
-    VERY_POSITIVE: '매우 긍정적',
-    POSITIVE: '긍정적',
-    NEUTRAL: '중립',
-    NEGATIVE: '부정적',
-    VERY_NEGATIVE: '매우 부정적',
-  }[result.recommendation] ?? '중립';
+  const REC_LABEL_KEYS: Record<string, string> = {
+    VERY_POSITIVE: 'deepDive.resultCard.veryPositive',
+    POSITIVE: 'deepDive.resultCard.positive',
+    NEUTRAL: 'deepDive.resultCard.neutral',
+    NEGATIVE: 'deepDive.resultCard.negative',
+    VERY_NEGATIVE: 'deepDive.resultCard.veryNegative',
+  };
+  const recLabel = t(REC_LABEL_KEYS[result.recommendation] ?? 'deepDive.resultCard.neutral');
 
   return (
     <View style={styles.container}>
@@ -94,7 +97,7 @@ export default function DeepDiveResultCard({ result }: Props) {
         </View>
         <View style={styles.scoreContainer}>
           <Text style={styles.overallScore}>{result.overallScore}</Text>
-          <Text style={styles.scoreLabel}>종합 점수</Text>
+          <Text style={styles.scoreLabel}>{t('deepDive.resultCard.overallScore')}</Text>
           <View style={[styles.recBadge, { backgroundColor: recColor }]}>
             <Text style={styles.recText}>{recLabel}</Text>
           </View>
@@ -103,16 +106,16 @@ export default function DeepDiveResultCard({ result }: Props) {
 
       {/* 점수 게이지 */}
       <View style={styles.gaugeSection}>
-        <ScoreGauge score={financial.score ?? 0} label="재무" />
-        <ScoreGauge score={technical.score ?? 0} label="기술" />
+        <ScoreGauge score={financial.score ?? 0} label={t('deepDive.resultCard.financial')} />
+        <ScoreGauge score={technical.score ?? 0} label={t('deepDive.resultCard.technical')} />
       </View>
 
       {/* 재무 분석 */}
-      <SectionCard title={financial.title || '재무 분석'} icon="bar-chart" iconColor="#4FC3F7">
+      <SectionCard title={financial.title || t('deepDive.resultCard.financialAnalysis')} icon="bar-chart" iconColor="#4FC3F7">
         {(financial.highlights ?? []).map((h: string, i: number) => (
           <Text key={i} style={styles.highlight}>- {h}</Text>
         ))}
-        {(financial.metrics ?? []).map((m: any, i: number) => (
+        {(financial.metrics ?? []).map((m: { label: string; value: string; status?: string }, i: number) => (
           <View key={i} style={styles.metricRow}>
             <Text style={styles.metricLabel}>{m.label}</Text>
             <Text style={[
@@ -126,11 +129,11 @@ export default function DeepDiveResultCard({ result }: Props) {
       </SectionCard>
 
       {/* 기술적 분석 */}
-      <SectionCard title={technical.title || '기술적 분석'} icon="trending-up" iconColor="#FFA726">
+      <SectionCard title={technical.title || t('deepDive.resultCard.technicalAnalysis')} icon="trending-up" iconColor="#FFA726">
         {(technical.highlights ?? []).map((h: string, i: number) => (
           <Text key={i} style={styles.highlight}>- {h}</Text>
         ))}
-        {(technical.signals ?? []).map((s: any, i: number) => (
+        {(technical.signals ?? []).map((s: { indicator: string; signal: string; value: string }, i: number) => (
           <View key={i} style={styles.metricRow}>
             <Text style={styles.metricLabel}>{s.indicator}</Text>
             <Text style={styles.metricValue}>{s.signal} ({s.value})</Text>
@@ -139,7 +142,7 @@ export default function DeepDiveResultCard({ result }: Props) {
       </SectionCard>
 
       {/* 뉴스 분석 */}
-      <SectionCard title={news.title || '뉴스 분석'} icon="newspaper" iconColor="#7C4DFF">
+      <SectionCard title={news.title || t('deepDive.resultCard.newsAnalysis')} icon="newspaper" iconColor="#7C4DFF">
         <View style={[
           styles.sentimentBadge,
           { backgroundColor:
@@ -154,14 +157,10 @@ export default function DeepDiveResultCard({ result }: Props) {
               : (news.sentiment === 'VERY_NEGATIVE' || news.sentiment === 'NEGATIVE') ? '#CF6679'
               : '#FFA726' },
           ]}>
-            {news.sentiment === 'VERY_POSITIVE' ? '매우 긍정적'
-              : news.sentiment === 'POSITIVE' ? '긍정적'
-              : news.sentiment === 'NEGATIVE' ? '부정적'
-              : news.sentiment === 'VERY_NEGATIVE' ? '매우 부정적'
-              : '중립'}
+            {t(REC_LABEL_KEYS[news.sentiment] ?? 'deepDive.resultCard.neutral')}
           </Text>
         </View>
-        {(news.recentNews ?? []).map((n: any, i: number) => (
+        {(news.recentNews ?? []).map((n: { title: string; impact: string; date: string }, i: number) => (
           <View key={i} style={styles.newsItem}>
             <Text style={styles.newsTitle}>{n.title}</Text>
             <Text style={styles.newsImpact}>{n.impact} | {n.date}</Text>
@@ -170,25 +169,25 @@ export default function DeepDiveResultCard({ result }: Props) {
       </SectionCard>
 
       {/* AI 종합 의견 */}
-      <SectionCard title={aiOpinion.title || 'AI 종합 의견'} icon="sparkles" iconColor="#4CAF50">
+      <SectionCard title={aiOpinion.title || t('deepDive.resultCard.aiOpinion')} icon="sparkles" iconColor="#4CAF50">
         <Text style={styles.summary}>{aiOpinion.summary || ''}</Text>
-        <Text style={styles.subHeader}>강세 시나리오</Text>
+        <Text style={styles.subHeader}>{t('deepDive.resultCard.bullCase')}</Text>
         {(aiOpinion.bullCase ?? []).map((b: string, i: number) => (
           <Text key={i} style={[styles.highlight, { color: '#4CAF50' }]}>+ {b}</Text>
         ))}
-        <Text style={styles.subHeader}>약세 시나리오</Text>
+        <Text style={styles.subHeader}>{t('deepDive.resultCard.bearCase')}</Text>
         {(aiOpinion.bearCase ?? []).map((b: string, i: number) => (
           <Text key={i} style={[styles.highlight, { color: '#CF6679' }]}>- {b}</Text>
         ))}
         <View style={styles.targetRow}>
-          <Text style={styles.targetLabel}>목표가: {aiOpinion.targetPrice ?? '-'}</Text>
-          <Text style={styles.targetLabel}>기간: {aiOpinion.timeHorizon ?? '-'}</Text>
+          <Text style={styles.targetLabel}>{t('deepDive.resultCard.targetPrice')}: {aiOpinion.targetPrice ?? '-'}</Text>
+          <Text style={styles.targetLabel}>{t('deepDive.resultCard.timeHorizon')}: {aiOpinion.timeHorizon ?? '-'}</Text>
         </View>
       </SectionCard>
 
       {/* 면책 */}
       <Text style={styles.disclaimer}>
-        본 분석은 AI가 생성한 참고 자료이며, 투자 권유가 아닙니다.
+        {t('deepDive.resultCard.disclaimer')}
       </Text>
     </View>
   );

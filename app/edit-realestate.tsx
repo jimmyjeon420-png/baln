@@ -21,6 +21,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../src/hooks/useTheme';
+import { useLocale } from '../src/context/LocaleContext';
 import { formatPrice } from '../src/services/realEstateApi';
 import { sqmToPyeong } from '../src/types/realestate';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -29,6 +30,7 @@ import { SHARED_PORTFOLIO_KEY } from '../src/hooks/useSharedPortfolio';
 
 export default function EditRealEstateScreen() {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const router = useRouter();
   const queryClient = useQueryClient();
   const params = useLocalSearchParams();
@@ -62,7 +64,7 @@ export default function EditRealEstateScreen() {
   const updateMutation = useMutation({
     mutationFn: async (input: { price: number; debt: number }) => {
       const user = await getCurrentUser();
-      if (!user) throw new Error('로그인이 필요합니다.');
+      if (!user) throw new Error('Login required');
 
       const { error } = await supabase
         .from('portfolios')
@@ -80,12 +82,12 @@ export default function EditRealEstateScreen() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: SHARED_PORTFOLIO_KEY });
-      Alert.alert('수정 완료', '부동산 정보가 업데이트되었습니다.', [
-        { text: '확인', onPress: () => router.back() },
+      Alert.alert(t('editRealestate.alert.updateSuccess'), t('editRealestate.alert.updatedMessage'), [
+        { text: t('common.confirm'), onPress: () => router.back() },
       ]);
     },
-    onError: (error: any) => {
-      Alert.alert('수정 실패', error.message || '수정 중 오류가 발생했습니다.');
+    onError: (error: unknown) => {
+      Alert.alert(t('editRealestate.alert.updateFail'), error instanceof Error ? error.message : t('editRealestate.alert.updateError'));
     },
   });
 
@@ -93,7 +95,7 @@ export default function EditRealEstateScreen() {
     // 검증
     const priceValue = parseInt(newPrice.replace(/[^0-9]/g, ''), 10) * 10000;
     if (!priceValue || priceValue <= 0) {
-      Alert.alert('입력 오류', '올바른 시세를 입력해주세요.');
+      Alert.alert(t('editRealestate.alert.inputError'), t('editRealestate.alert.invalidPrice'));
       return;
     }
 
@@ -101,17 +103,17 @@ export default function EditRealEstateScreen() {
     if (hasDebt) {
       debtValue = parseInt(newDebt.replace(/[^0-9]/g, ''), 10) * 10000;
       if (!debtValue || debtValue < 0) {
-        Alert.alert('입력 오류', '올바른 대출 금액을 입력해주세요.');
+        Alert.alert(t('editRealestate.alert.inputError'), t('editRealestate.alert.invalidDebt'));
         return;
       }
       if (debtValue >= priceValue) {
-        Alert.alert('입력 오류', '대출 금액이 시세보다 클 수 없습니다.');
+        Alert.alert(t('editRealestate.alert.inputError'), t('editRealestate.alert.debtExceedsPrice'));
         return;
       }
     }
 
     updateMutation.mutate({ price: priceValue, debt: debtValue });
-  }, [newPrice, newDebt, hasDebt, updateMutation]);
+  }, [newPrice, newDebt, hasDebt, updateMutation, t]);
 
   const unitArea = unitAreaStr ? parseFloat(unitAreaStr) : 0;
 
@@ -126,7 +128,7 @@ export default function EditRealEstateScreen() {
           <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={28} color="#4CAF50" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>부동산 정보 수정</Text>
+          <Text style={styles.headerTitle}>{t('editRealestate.title')}</Text>
           <View style={{ width: 28 }} />
         </View>
 
@@ -149,11 +151,11 @@ export default function EditRealEstateScreen() {
           </View>
 
           {/* 현재 시세 */}
-          <Text style={styles.sectionLabel}>현재 시세 *</Text>
-          <Text style={styles.sectionHint}>만원 단위로 입력하세요</Text>
+          <Text style={styles.sectionLabel}>{t('editRealestate.currentPrice')}</Text>
+          <Text style={styles.sectionHint}>{t('editRealestate.unitHint')}</Text>
           <TextInput
             style={styles.input}
-            placeholder="예: 50000 (= 5억)"
+            placeholder={t('editRealestate.pricePlaceholder')}
             placeholderTextColor="#666"
             keyboardType="numeric"
             value={newPrice}
@@ -179,16 +181,16 @@ export default function EditRealEstateScreen() {
                 size={24}
                 color={hasDebt ? '#4CAF50' : '#666'}
               />
-              <Text style={styles.debtCheckboxLabel}>대출 정보 수정</Text>
+              <Text style={styles.debtCheckboxLabel}>{t('editRealestate.editDebt')}</Text>
             </TouchableOpacity>
 
             {hasDebt && (
               <View style={styles.debtInputContainer}>
-                <Text style={styles.sectionLabel}>대출 잔액</Text>
-                <Text style={styles.sectionHint}>만원 단위로 입력하세요</Text>
+                <Text style={styles.sectionLabel}>{t('editRealestate.debtBalance')}</Text>
+                <Text style={styles.sectionHint}>{t('editRealestate.unitHint')}</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="예: 20000 (= 2억)"
+                  placeholder={t('editRealestate.debtPlaceholder')}
                   placeholderTextColor="#666"
                   keyboardType="numeric"
                   value={newDebt}
@@ -197,7 +199,7 @@ export default function EditRealEstateScreen() {
                 {newDebt && newPrice ? (
                   <View style={styles.debtPreview}>
                     <Text style={styles.debtPreviewText}>
-                      대출: {formatPrice(parseInt(newDebt.replace(/[^0-9]/g, ''), 10) * 10000 || 0)}
+                      {t('editRealestate.debtLabel')} {formatPrice(parseInt(newDebt.replace(/[^0-9]/g, ''), 10) * 10000 || 0)}
                     </Text>
                     <Text style={styles.debtPreviewLTV}>
                       LTV: {(
@@ -206,7 +208,7 @@ export default function EditRealEstateScreen() {
                       ).toFixed(0)}%
                     </Text>
                     <Text style={styles.debtPreviewNet}>
-                      순자산: {formatPrice(
+                      {t('editRealestate.netAsset')} {formatPrice(
                         (parseInt(newPrice.replace(/[^0-9]/g, ''), 10) -
                           parseInt(newDebt.replace(/[^0-9]/g, ''), 10)) * 10000
                       )}
@@ -221,7 +223,7 @@ export default function EditRealEstateScreen() {
           <View style={styles.infoBox}>
             <Ionicons name="information-circle" size={16} color="#888" />
             <Text style={styles.infoText}>
-              수정된 정보는 포트폴리오 건강 점수에 즉시 반영됩니다.
+              {t('editRealestate.infoText')}
             </Text>
           </View>
 
@@ -236,7 +238,7 @@ export default function EditRealEstateScreen() {
             ) : (
               <>
                 <Ionicons name="checkmark-circle" size={20} color="#FFF" />
-                <Text style={styles.saveButtonText}>저장</Text>
+                <Text style={styles.saveButtonText}>{t('common.save')}</Text>
               </>
             )}
           </TouchableOpacity>

@@ -33,8 +33,6 @@ interface FriendshipMeterProps {
   guruId: string;
   /** 테마 색상 */
   colors: ThemeColors;
-  /** 로케일 (ko/en) */
-  locale?: string;
   /** 컴팩트 모드 (리스트용, 티어 이모지 + 바만 표시) */
   compact?: boolean;
 }

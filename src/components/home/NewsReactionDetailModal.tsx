@@ -25,29 +25,7 @@ import {
 import type { GuruNewsReaction } from '../../types/village';
 import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
 import { getGuruDisplayName } from '../../services/characterService';
-
-// ============================================================================
-// i18n
-// ============================================================================
-
-const TEXT = {
-  ko: {
-    sentimentTitle: '구루 감정 분포',
-    reactionsTitle: '구루별 반응',
-    portfolioTitle: '내 포트폴리오 영향',
-    portfolioDesc: '이 뉴스로 인한 포트폴리오 영향을 분석 탭에서 확인하세요',
-    askGuru: '구루에게 질문하기',
-    close: '닫기',
-  },
-  en: {
-    sentimentTitle: 'Guru Sentiment Distribution',
-    reactionsTitle: 'Guru Reactions',
-    portfolioTitle: 'My Portfolio Impact',
-    portfolioDesc: 'Check the analysis tab for portfolio impact from this news',
-    askGuru: 'Ask a Guru',
-    close: 'Close',
-  },
-};
+import { useLocale } from '../../context/LocaleContext';
 
 // ============================================================================
 // Sentiment emoji mapping
@@ -85,7 +63,6 @@ interface NewsReactionDetailModalProps {
   headline: string;
   headlineEn?: string;
   reactions: GuruNewsReaction[];
-  locale?: string;
   onClose: () => void;
   onAskGuru?: (guruId: string) => void;
   colors: {
@@ -108,14 +85,12 @@ export function NewsReactionDetailModal({
   headline,
   headlineEn,
   reactions,
-  locale = 'ko',
   onClose,
   onAskGuru,
   colors,
 }: NewsReactionDetailModalProps) {
-  const isKo = locale === 'ko';
-  const t = isKo ? TEXT.ko : TEXT.en;
-  const displayHeadline = isKo ? headline : (headlineEn || headline);
+  const { t, language } = useLocale();
+  const displayHeadline = language === 'ko' ? headline : (headlineEn || headline);
 
   // Calculate sentiment distribution
   const sentimentCounts = new Map<string, number>();
@@ -147,7 +122,7 @@ export function NewsReactionDetailModal({
           {/* Sentiment Distribution */}
           <View style={[styles.section, { borderColor: colors.border }]}>
             <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
-              {t.sentimentTitle}
+              {t('newsReactionDetail.sentimentTitle')}
             </Text>
             <View style={styles.distRow}>
               {distribution.map(d => (
@@ -172,13 +147,13 @@ export function NewsReactionDetailModal({
           {/* Guru Reactions */}
           <View style={[styles.section, { borderColor: colors.border }]}>
             <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
-              {t.reactionsTitle}
+              {t('newsReactionDetail.reactionsTitle')}
             </Text>
             {reactions.map(r => {
               const config = GURU_CHARACTER_CONFIGS[r.guruId];
               if (!config) return null;
               const name = getGuruDisplayName(r.guruId);
-              const comment = isKo ? r.reaction : (r.reactionEn || r.reaction);
+              const comment = language === 'ko' ? r.reaction : (r.reactionEn || r.reaction);
               return (
                 <TouchableOpacity
                   key={r.guruId}
@@ -210,10 +185,10 @@ export function NewsReactionDetailModal({
             <Text style={styles.portfolioEmoji}>📊</Text>
             <View style={styles.portfolioText}>
               <Text style={[styles.portfolioTitle, { color: colors.textPrimary }]}>
-                {t.portfolioTitle}
+                {t('newsReactionDetail.portfolioTitle')}
               </Text>
               <Text style={[styles.portfolioDesc, { color: colors.textTertiary }]}>
-                {t.portfolioDesc}
+                {t('newsReactionDetail.portfolioDesc')}
               </Text>
             </View>
           </View>
@@ -226,7 +201,7 @@ export function NewsReactionDetailModal({
             onPress={onClose}
             activeOpacity={0.8}
           >
-            <Text style={styles.closeButtonText}>{t.close}</Text>
+            <Text style={styles.closeButtonText}>{t('common.close')}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>

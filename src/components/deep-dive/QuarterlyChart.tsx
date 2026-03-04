@@ -13,6 +13,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 import { formatKRW } from '../../utils/formatters';
 
 // ── 데이터 타입 ──
@@ -40,9 +41,9 @@ const CHART_COLORS = {
 };
 
 const LEGEND_ITEMS = [
-  { label: '매출', color: CHART_COLORS.revenue },
-  { label: '영업이익', color: CHART_COLORS.operatingIncome },
-  { label: '순이익', color: CHART_COLORS.netIncome },
+  { labelKey: 'deepDive.quarterlyChart.revenue', color: CHART_COLORS.revenue },
+  { labelKey: 'deepDive.quarterlyChart.operatingIncome', color: CHART_COLORS.operatingIncome },
+  { labelKey: 'deepDive.quarterlyChart.netIncome', color: CHART_COLORS.netIncome },
 ];
 
 // ── 바 높이 계산 ──
@@ -54,6 +55,7 @@ export default function QuarterlyChart({
   selectedQuarter,
 }: QuarterlyChartProps) {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const [selected, setSelected] = useState<string | undefined>(selectedQuarter);
 
   // 전체 데이터에서 최대값 계산 (바 높이 비율용)
@@ -85,14 +87,14 @@ export default function QuarterlyChart({
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <Ionicons name="bar-chart-outline" size={20} color="#6366F1" />
-          <Text style={[styles.title, { color: colors.textPrimary }]}>분기별 실적</Text>
+          <Text style={[styles.title, { color: colors.textPrimary }]}>{t('deepDive.quarterlyChart.title')}</Text>
         </View>
         {/* 범례 */}
         <View style={styles.legendRow}>
           {LEGEND_ITEMS.map(item => (
-            <View key={item.label} style={styles.legendItem}>
+            <View key={item.labelKey} style={styles.legendItem}>
               <View style={[styles.legendDot, { backgroundColor: item.color }]} />
-              <Text style={[styles.legendText, { color: colors.textTertiary }]}>{item.label}</Text>
+              <Text style={[styles.legendText, { color: colors.textTertiary }]}>{t(item.labelKey)}</Text>
             </View>
           ))}
         </View>
@@ -197,21 +199,21 @@ export default function QuarterlyChart({
         return (
           <View style={[styles.summaryRow, { borderTopColor: colors.border }]}>
             <SummaryItem
-              label="매출"
+              label={t('deepDive.quarterlyChart.revenue')}
               value={q.revenue}
               color={CHART_COLORS.revenue}
               textColor={colors.textPrimary}
               subColor={colors.textTertiary}
             />
             <SummaryItem
-              label="영업이익"
+              label={t('deepDive.quarterlyChart.operatingIncome')}
               value={q.operatingIncome}
               color={CHART_COLORS.operatingIncome}
               textColor={colors.textPrimary}
               subColor={colors.textTertiary}
             />
             <SummaryItem
-              label="순이익"
+              label={t('deepDive.quarterlyChart.netIncome')}
               value={q.netIncome}
               color={CHART_COLORS.netIncome}
               textColor={colors.textPrimary}
@@ -224,7 +226,7 @@ export default function QuarterlyChart({
       {/* 안내 문구 */}
       {!selected && (
         <Text style={[styles.hint, { color: colors.textQuaternary }]}>
-          분기를 터치하면 상세 실적을 확인할 수 있습니다
+          {t('deepDive.quarterlyChart.hint')}
         </Text>
       )}
     </View>

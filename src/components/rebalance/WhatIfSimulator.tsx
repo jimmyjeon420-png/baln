@@ -46,7 +46,7 @@ interface WhatIfSimulatorProps {
 
 export default function WhatIfSimulator({
   assets,
-  totalAssets,
+  totalAssets: _totalAssets,
   currentHealthScore,
   philosophyTarget,
 }: WhatIfSimulatorProps) {

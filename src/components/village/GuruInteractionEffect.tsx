@@ -12,6 +12,7 @@
 
 import React, { useEffect, useMemo, useRef } from 'react';
 import { Animated, Dimensions, StyleSheet, Text, View } from 'react-native';
+import { useLocale } from '../../context/LocaleContext';
 
 // ============================================================================
 // 타입
@@ -208,6 +209,8 @@ function GuruInteractionEffect({
   interactions,
   screenWidth,
 }: GuruInteractionEffectProps) {
+  const { language } = useLocale();
+  const isKo = language === 'ko';
   const screenHeight = Dimensions.get('window').height;
 
   // 이펙트 렌더링 목록 메모이제이션
@@ -240,7 +243,7 @@ function GuruInteractionEffect({
               key={`meeting-${idx}`}
               x={effect.pixelX}
               y={effect.pixelY}
-              isKo={true}
+              isKo={isKo}
             />
           );
         }

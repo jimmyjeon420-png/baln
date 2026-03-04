@@ -19,21 +19,7 @@ import {
 } from 'react-native';
 import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
 import { getGuruDisplayName } from '../../services/characterService';
-
-// ============================================================================
-// i18n
-// ============================================================================
-
-const TEXT = {
-  ko: {
-    title: '이번 달 구루 성적표',
-    champion: (name: string, pct: number) => `이번 달 예측왕: ${name} (${pct}%)`,
-  },
-  en: {
-    title: 'Guru Monthly Scorecard',
-    champion: (name: string, pct: number) => `Prediction King: ${name} (${pct}%)`,
-  },
-};
+import { useLocale } from '../../context/LocaleContext';
 
 const MEDALS = ['🥇', '🥈', '🥉'];
 
@@ -42,7 +28,6 @@ const MEDALS = ['🥇', '🥈', '🥉'];
 // ============================================================================
 
 interface GuruScorecardCardProps {
-  locale?: string;
   colors: {
     surface: string;
     textPrimary: string;
@@ -78,9 +63,8 @@ function generateMonthlyAccuracies(): { guruId: string; accuracy: number }[] {
 // Component
 // ============================================================================
 
-export function GuruScorecardCard({ locale = 'ko', colors }: GuruScorecardCardProps) {
-  const isKo = locale === 'ko';
-  const t = isKo ? TEXT.ko : TEXT.en;
+export function GuruScorecardCard({ colors }: GuruScorecardCardProps) {
+  const { t, language } = useLocale();
 
   const scorecards = useMemo(() => generateMonthlyAccuracies(), []);
 
@@ -90,10 +74,12 @@ export function GuruScorecardCard({ locale = 'ko', colors }: GuruScorecardCardPr
 
   return (
     <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-      <Text style={[styles.title, { color: colors.textPrimary }]}>{t.title}</Text>
+      <Text style={[styles.title, { color: colors.textPrimary }]}>{t('guruScorecard.title')}</Text>
 
       <Text style={[styles.champion, { color: colors.primary }]}>
-        {t.champion(championName, champion.accuracy)}
+        {language === 'ko'
+          ? `${t('guruScorecard.champion')}: ${championName} (${champion.accuracy}%)`
+          : `${t('guruScorecard.champion')}: ${championName} (${champion.accuracy}%)`}
       </Text>
 
       <View style={styles.list}>

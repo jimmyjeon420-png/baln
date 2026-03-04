@@ -124,7 +124,7 @@ const FACTOR_ACTION_KEYS: Record<string, string> = {
 };
 
 export default function HealthScoreSection({ healthScore, onScoreImproved, totalAssets, panicScore }: HealthScoreSectionProps) {
-  const { colors, shadows } = useTheme();
+  const { colors } = useTheme();
   const { t } = useLocale();
   const [showDetail, setShowDetail] = useState(false);
   const [tooltipVisible, setTooltipVisible] = useState(false);
@@ -221,7 +221,7 @@ export default function HealthScoreSection({ healthScore, onScoreImproved, total
     };
 
     checkScoreImprovement();
-  }, [healthScore]);
+  }, [healthScore, improveOpacity, onScoreImproved]);
 
   /** 툴팁 표시 함수 */
   const showTooltip = (factorLabel: string) => {

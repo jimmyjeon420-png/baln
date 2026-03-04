@@ -33,7 +33,6 @@ interface BrandShopCardProps {
   brand: BrandShop;
   onPress: (brand: BrandShop) => void;
   colors: ThemeColors;
-  locale?: string;
   /** 실시간 주가 등락률 (%) — 있으면 표시, 없으면 숨김 */
   stockChange?: number;
 }
@@ -78,17 +77,15 @@ const BrandShopCard = React.memo(({
   brand,
   onPress,
   colors,
-  locale = 'ko',
   stockChange,
 }: BrandShopCardProps) => {
-  const { t } = useLocale();
-  const isKo = locale === 'ko';
+  const { t, language } = useLocale();
 
   const categoryColor = CATEGORY_COLORS[brand.category] ?? '#8E9EB0';
   const categoryLabel = t(CATEGORY_I18N_KEY[brand.category]);
 
-  const shopName = isKo ? brand.villageName : brand.villageNameEn;
-  const description = isKo ? brand.description : brand.descriptionEn;
+  const shopName = language === 'ko' ? brand.villageName : brand.villageNameEn;
+  const description = language === 'ko' ? brand.description : brand.descriptionEn;
 
   // 주가 등락 색상
   const stockColor =

@@ -18,21 +18,7 @@ import {
   StyleSheet,
   Animated,
 } from 'react-native';
-
-// ============================================================================
-// i18n
-// ============================================================================
-
-const TEXT = {
-  ko: {
-    unit: '도토리',
-    wonPrefix: '₩',
-  },
-  en: {
-    unit: 'acorns',
-    wonPrefix: '₩',
-  },
-};
+import { useLocale } from '../../context/LocaleContext';
 
 // ============================================================================
 // Props
@@ -40,7 +26,6 @@ const TEXT = {
 
 interface AcornJarProps {
   credits: number;
-  locale?: string;
   colors?: {
     textPrimary?: string;
     textSecondary?: string;
@@ -61,9 +46,8 @@ const CREDIT_TO_KRW = 100;
 // Component
 // ============================================================================
 
-export function AcornJar({ credits, locale = 'ko', colors }: AcornJarProps) {
-  const isKo = locale === 'ko';
-  const t = isKo ? TEXT.ko : TEXT.en;
+export function AcornJar({ credits, colors }: AcornJarProps) {
+  const { t } = useLocale();
 
   const fillAnim = useRef(new Animated.Value(0)).current;
 
@@ -123,10 +107,10 @@ export function AcornJar({ credits, locale = 'ko', colors }: AcornJarProps) {
       {/* Text */}
       <View style={styles.textCol}>
         <Text style={[styles.creditText, { color: colors?.textPrimary || '#FFFFFF' }]}>
-          {credits} {t.unit}
+          {credits} {t('acornJar.unit')}
         </Text>
         <Text style={[styles.wonText, { color: colors?.textSecondary || '#A0AEC0' }]}>
-          ({t.wonPrefix}{wonValue})
+          ({t('acornJar.wonPrefix')}{wonValue})
         </Text>
       </View>
     </View>

@@ -31,28 +31,30 @@ import {
   useRecentActivity,
   useAdminDailyComparison,
 } from '../../src/hooks/useAdminDashboard';
+import type { AdminOverview, DailyComparisonData } from '../../src/services/adminService';
 import DeltaIndicator from '../../src/components/admin/DeltaIndicator';
 import { COLORS } from '../../src/styles/theme';
+import { useLocale } from '../../src/context/LocaleContext';
 
 // ─── 타입 정의 ─────────────────────────────────────────────
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
 interface KpiCardConfig {
-  label: string;
+  tKey: string;
   icon: IoniconsName;
   color: string;
-  getValue: (data: any) => string;
-  getSubLabel?: (data: any) => string;
+  getValue: (data: AdminOverview, t: (key: string) => string) => string;
+  getSubLabel?: (data: AdminOverview, t: (key: string) => string) => string;
   /** comparison 데이터에서 delta를 꺼내기 위한 키 */
-  comparisonKey?: string;
-  /** delta 옆에 붙는 접미사 (예: "명", "건") */
-  deltaSuffix?: string;
+  comparisonKey?: keyof DailyComparisonData;
+  /** delta 옆에 붙는 접미사 키 */
+  deltaSuffixKey?: string;
 }
 
 interface ActivityEvent {
   event_name: string;
-  properties: Record<string, any> | null;
+  properties: Record<string, unknown> | null;
   user_id: string | null;
   email: string | null;
   created_at: string;
@@ -60,14 +62,14 @@ interface ActivityEvent {
 
 // ─── 이벤트 이름 한국어 매핑 ──────────────────────────────────
 
-const EVENT_LABEL_MAP: Record<string, { label: string; icon: IoniconsName }> = {
-  screen_view: { label: '화면 조회', icon: 'eye-outline' },
-  prediction_vote: { label: '예측 투표', icon: 'help-circle-outline' },
-  context_card_read: { label: '카드 읽기', icon: 'newspaper-outline' },
-  share_card: { label: '공유', icon: 'share-social-outline' },
-  achievement_earned: { label: '업적 달성', icon: 'trophy-outline' },
-  review_completed: { label: '복기 완료', icon: 'checkmark-done-outline' },
-  crisis_banner_shown: { label: '위기 알림', icon: 'alert-circle-outline' },
+const EVENT_LABEL_MAP: Record<string, { tKey: string; icon: IoniconsName }> = {
+  screen_view: { tKey: 'admin.dashboard.event.screenView', icon: 'eye-outline' },
+  prediction_vote: { tKey: 'admin.dashboard.event.predictionVote', icon: 'help-circle-outline' },
+  context_card_read: { tKey: 'admin.dashboard.event.cardRead', icon: 'newspaper-outline' },
+  share_card: { tKey: 'admin.dashboard.event.share', icon: 'share-social-outline' },
+  achievement_earned: { tKey: 'admin.dashboard.event.achievement', icon: 'trophy-outline' },
+  review_completed: { tKey: 'admin.dashboard.event.reviewCompleted', icon: 'checkmark-done-outline' },
+  crisis_banner_shown: { tKey: 'admin.dashboard.event.crisisAlert', icon: 'alert-circle-outline' },
 };
 
 // ─── 숫자 포맷 유틸 ──────────────────────────────────────────
@@ -76,18 +78,14 @@ function formatNumber(value: number): string {
   return value.toLocaleString('ko-KR');
 }
 
-function formatCredits(value: number): string {
-  return `${formatNumber(value)}개`;
+function formatCredits(value: number, t?: (key: string) => string): string {
+  const unit = t ? t('common.unitPieces') : '개';
+  return `${formatNumber(value)}${unit}`;
 }
 
 const CREDIT_SYMBOL = '\u20A9'; // ₩
 
-function formatCreditsWithKrw(value: number): string {
-  const krw = value * 100;
-  return `${formatNumber(value)}개 (${CREDIT_SYMBOL}${formatNumber(krw)})`;
-}
-
-function getRelativeTime(dateString: string): string {
+function getRelativeTime(dateString: string, t: (key: string) => string): string {
   const now = new Date();
   const date = new Date(dateString);
   const diffMs = now.getTime() - date.getTime();
@@ -96,49 +94,50 @@ function getRelativeTime(dateString: string): string {
   const diffHours = Math.floor(diffMinutes / 60);
   const diffDays = Math.floor(diffHours / 24);
 
-  if (diffSeconds < 60) return '방금 전';
-  if (diffMinutes < 60) return `${diffMinutes}분 전`;
-  if (diffHours < 24) return `${diffHours}시간 전`;
-  if (diffDays < 7) return `${diffDays}일 전`;
-  return date.toLocaleDateString('ko-KR');
+  if (diffSeconds < 60) return t('common.time.justNow');
+  if (diffMinutes < 60) return t('common.time.minutesAgo').replace('{{n}}', String(diffMinutes));
+  if (diffHours < 24) return t('common.time.hoursAgo').replace('{{n}}', String(diffHours));
+  if (diffDays < 7) return t('common.time.daysAgo').replace('{{n}}', String(diffDays));
+  return date.toLocaleDateString();
 }
 
 // ─── 시간대 그룹 분류 유틸 ───────────────────────────────────
 
-type TimeGroup = '방금' | '1시간 이내' | '오늘' | '어제' | '이전';
+type TimeGroup = 'justNow' | 'withinHour' | 'today' | 'yesterday' | 'earlier';
+
+const TIME_GROUP_KEYS: Record<TimeGroup, string> = {
+  justNow: 'admin.dashboard.timeGroup.justNow',
+  withinHour: 'admin.dashboard.timeGroup.withinHour',
+  today: 'admin.dashboard.timeGroup.today',
+  yesterday: 'admin.dashboard.timeGroup.yesterday',
+  earlier: 'admin.dashboard.timeGroup.earlier',
+};
 
 function getTimeGroup(dateString: string): TimeGroup {
   const now = new Date();
   const date = new Date(dateString);
   const diffMs = now.getTime() - date.getTime();
   const diffMinutes = Math.floor(diffMs / (1000 * 60));
-  const diffHours = Math.floor(diffMinutes / 60);
 
-  // "방금" — 5분 미만
-  if (diffMinutes < 5) return '방금';
+  if (diffMinutes < 5) return 'justNow';
+  if (diffMinutes < 60) return 'withinHour';
 
-  // "1시간 이내" — 5분~60분
-  if (diffMinutes < 60) return '1시간 이내';
-
-  // "오늘" — 같은 날
   const nowDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const eventDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  if (nowDate.getTime() === eventDate.getTime()) return '오늘';
+  if (nowDate.getTime() === eventDate.getTime()) return 'today';
 
-  // "어제" — 하루 전
   const yesterdayDate = new Date(nowDate);
   yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-  if (yesterdayDate.getTime() === eventDate.getTime()) return '어제';
+  if (yesterdayDate.getTime() === eventDate.getTime()) return 'yesterday';
 
-  // "이전" — 그 이전
-  return '이전';
+  return 'earlier';
 }
 
 /** 시간대별로 활동 이벤트를 그룹화합니다. 그룹 순서는 고정입니다. */
 function groupActivitiesByTime(
   activities: ActivityEvent[],
 ): { group: TimeGroup; items: ActivityEvent[] }[] {
-  const ORDER: TimeGroup[] = ['방금', '1시간 이내', '오늘', '어제', '이전'];
+  const ORDER: TimeGroup[] = ['justNow', 'withinHour', 'today', 'yesterday', 'earlier'];
   const buckets = new Map<TimeGroup, ActivityEvent[]>();
 
   for (const group of ORDER) {
@@ -147,13 +146,13 @@ function groupActivitiesByTime(
 
   for (const event of activities) {
     const group = getTimeGroup(event.created_at);
-    buckets.get(group)!.push(event);
+    buckets.get(group)?.push(event);
   }
 
   // 비어있는 그룹은 제외
-  return ORDER.filter((g) => buckets.get(g)!.length > 0).map((g) => ({
+  return ORDER.filter((g) => (buckets.get(g)?.length ?? 0) > 0).map((g) => ({
     group: g,
-    items: buckets.get(g)!,
+    items: buckets.get(g) ?? [],
   }));
 }
 
@@ -191,78 +190,78 @@ function computeActivitySummary(activities: ActivityEvent[]): ActivitySummary {
 
 const PRIMARY_KPIS: KpiCardConfig[] = [
   {
-    label: '전체 유저',
+    tKey: 'admin.dashboard.kpi.totalUsers',
     icon: 'people',
     color: COLORS.info,
-    getValue: (d) => `${formatNumber(d.total_users)}명`,
+    getValue: (d, t) => `${formatNumber(d.total_users)}${t('admin.users.countUnit')}`,
   },
   {
-    label: '오늘 활성',
+    tKey: 'admin.dashboard.kpi.todayActive',
     icon: 'pulse',
     color: COLORS.primary,
-    getValue: (d) => `${formatNumber(d.dau)}명`,
-    getSubLabel: (d) => {
-      if (d.total_users === 0) return '전체의 0%';
+    getValue: (d, t) => `${formatNumber(d.dau)}${t('admin.users.countUnit')}`,
+    getSubLabel: (d, t) => {
+      if (d.total_users === 0) return `${t('admin.dashboard.ofTotal')} 0%`;
       const pct = ((d.dau / d.total_users) * 100).toFixed(1);
-      return `전체의 ${pct}%`;
+      return `${t('admin.dashboard.ofTotal')} ${pct}%`;
     },
     comparisonKey: 'dau',
-    deltaSuffix: '명',
+    deltaSuffixKey: 'admin.users.countUnit',
   },
   {
-    label: '신규 가입',
+    tKey: 'admin.dashboard.kpi.newSignups',
     icon: 'person-add',
     color: COLORS.primaryLight,
-    getValue: (d) => `${formatNumber(d.new_today)}명`,
-    getSubLabel: (d) => `이번 주 ${formatNumber(d.new_this_week)}명`,
+    getValue: (d, t) => `${formatNumber(d.new_today)}${t('admin.users.countUnit')}`,
+    getSubLabel: (d, t) => `${t('admin.dashboard.thisWeek')} ${formatNumber(d.new_this_week)}${t('admin.users.countUnit')}`,
     comparisonKey: 'signups',
-    deltaSuffix: '명',
+    deltaSuffixKey: 'admin.users.countUnit',
   },
   {
-    label: 'Premium',
+    tKey: 'admin.dashboard.kpi.premium',
     icon: 'diamond',
     color: '#FFC107',
-    getValue: (d) => `${formatNumber(d.premium_count)}명`,
-    getSubLabel: (d) => {
-      if (d.total_users === 0) return '전환율 0%';
+    getValue: (d, t) => `${formatNumber(d.premium_count)}${t('admin.users.countUnit')}`,
+    getSubLabel: (d, t) => {
+      if (d.total_users === 0) return `${t('admin.dashboard.conversionRate')} 0%`;
       const pct = ((d.premium_count / d.total_users) * 100).toFixed(1);
-      return `전환율 ${pct}%`;
+      return `${t('admin.dashboard.conversionRate')} ${pct}%`;
     },
   },
 ];
 
 const SECONDARY_KPIS: KpiCardConfig[] = [
   {
-    label: '주간 활성',
+    tKey: 'admin.dashboard.kpi.weeklyActive',
     icon: 'calendar',
     color: COLORS.info,
-    getValue: (d) => `${formatNumber(d.wau)}명`,
-    getSubLabel: (d) => 'WAU',
+    getValue: (d, t) => `${formatNumber(d.wau)}${t('admin.users.countUnit')}`,
+    getSubLabel: () => 'WAU',
   },
   {
-    label: '크레딧 발급',
+    tKey: 'admin.dashboard.kpi.creditsIssued',
     icon: 'add-circle',
     color: COLORS.primary,
-    getValue: (d) => formatCredits(d.credits_issued_today),
+    getValue: (d, t) => formatCredits(d.credits_issued_today, t),
     getSubLabel: (d) => `(${CREDIT_SYMBOL}${formatNumber(d.credits_issued_today * 100)})`,
     comparisonKey: 'credits_issued',
-    deltaSuffix: 'C',
+    deltaSuffixKey: 'C',
   },
   {
-    label: '예측 참여',
+    tKey: 'admin.dashboard.kpi.predictions',
     icon: 'help-circle',
     color: COLORS.warning,
-    getValue: (d) => `${formatNumber(d.predictions_today)}건`,
-    getSubLabel: () => '오늘',
+    getValue: (d, t) => `${formatNumber(d.predictions_today)}${t('common.unitCount')}`,
+    getSubLabel: (d, t) => t('admin.dashboard.today'),
     comparisonKey: 'votes',
-    deltaSuffix: '건',
+    deltaSuffixKey: 'common.unitCount',
   },
   {
-    label: '이탈 위험',
+    tKey: 'admin.dashboard.kpi.churnRisk',
     icon: 'warning',
     color: COLORS.error,
-    getValue: (d) => `${formatNumber(d.churn_risk_count)}명`,
-    getSubLabel: (d) => d.churn_risk_count > 0 ? '주의 필요' : '안전',
+    getValue: (d, t) => `${formatNumber(d.churn_risk_count)}${t('admin.users.countUnit')}`,
+    getSubLabel: (d, t) => d.churn_risk_count > 0 ? t('admin.dashboard.needsAttention') : t('admin.dashboard.safe'),
   },
 ];
 
@@ -274,21 +273,25 @@ function KpiCard({
   data,
   large,
   comparison,
+  t,
 }: {
   config: KpiCardConfig;
-  data: any;
+  data: AdminOverview | null | undefined;
   large?: boolean;
-  comparison?: any;
+  comparison?: DailyComparisonData | null;
+  t: (key: string) => string;
 }) {
   if (!data) return null;
-  const value = config.getValue(data);
-  const subLabel = config.getSubLabel?.(data);
+  const value = config.getValue(data, t);
+  const subLabel = config.getSubLabel?.(data, t);
 
   // comparison 데이터에서 delta 추출
   const delta =
     comparison && config.comparisonKey && comparison[config.comparisonKey]
       ? comparison[config.comparisonKey].delta
       : null;
+
+  const deltaSuffix = config.deltaSuffixKey ? t(config.deltaSuffixKey) : undefined;
 
   return (
     <View style={[styles.kpiCard, large && styles.kpiCardLarge]}>
@@ -299,16 +302,15 @@ function KpiCard({
           color={config.color}
         />
       </View>
-      <Text style={styles.kpiLabel}>{config.label}</Text>
+      <Text style={styles.kpiLabel}>{t(config.tKey)}</Text>
       <Text style={[styles.kpiValue, large && styles.kpiValueLarge, { color: config.color }]}>
         {value}
       </Text>
-      {/* 어제 대비 변화량 — comparison 데이터가 있을 때만 표시 */}
       {delta !== null && delta !== undefined && (
         <View style={styles.deltaContainer}>
           <DeltaIndicator
             delta={delta}
-            suffix={config.deltaSuffix}
+            suffix={deltaSuffix}
             compact={!large}
           />
         </View>
@@ -321,12 +323,12 @@ function KpiCard({
 }
 
 /** 최근 활동 아이템 컴포넌트 */
-function ActivityItem({ event }: { event: ActivityEvent }) {
+function ActivityItem({ event, t }: { event: ActivityEvent; t: (key: string) => string }) {
   const mapped = EVENT_LABEL_MAP[event.event_name];
-  const label = mapped?.label ?? event.event_name;
+  const label = mapped?.tKey ? t(mapped.tKey) : event.event_name;
   const icon = mapped?.icon ?? ('ellipse-outline' as IoniconsName);
-  const email = event.email || '익명';
-  const relativeTime = getRelativeTime(event.created_at);
+  const email = event.email || t('common.anonymous');
+  const relativeTime = getRelativeTime(event.created_at, t);
 
   return (
     <View style={styles.activityItem}>
@@ -349,37 +351,37 @@ function ActivityItem({ event }: { event: ActivityEvent }) {
 }
 
 /** 시간대 그룹 섹션 헤더 */
-function TimeGroupHeader({ group }: { group: TimeGroup }) {
+function TimeGroupHeader({ group, t }: { group: TimeGroup; t: (key: string) => string }) {
   return (
     <View style={styles.timeGroupHeader}>
       <View style={styles.timeGroupDot} />
-      <Text style={styles.timeGroupText}>{group}</Text>
+      <Text style={styles.timeGroupText}>{t(TIME_GROUP_KEYS[group])}</Text>
     </View>
   );
 }
 
 /** 활동 요약 바 — 투표/카드/조회 건수 한줄 요약 */
-function ActivitySummaryBar({ summary }: { summary: ActivitySummary }) {
+function ActivitySummaryBar({ summary, t }: { summary: ActivitySummary; t: (key: string) => string }) {
   return (
     <View style={styles.summaryBar}>
       <View style={styles.summaryItem}>
         <Ionicons name="help-circle-outline" size={14} color={COLORS.textSecondary} />
         <Text style={styles.summaryText}>
-          투표 <Text style={styles.summaryCount}>{summary.votes}건</Text>
+          {t('admin.dashboard.votes')} <Text style={styles.summaryCount}>{summary.votes}{t('common.unitCount')}</Text>
         </Text>
       </View>
       <View style={styles.summaryDivider} />
       <View style={styles.summaryItem}>
         <Ionicons name="newspaper-outline" size={14} color={COLORS.textSecondary} />
         <Text style={styles.summaryText}>
-          카드 <Text style={styles.summaryCount}>{summary.cards}건</Text>
+          {t('admin.dashboard.cards')} <Text style={styles.summaryCount}>{summary.cards}{t('common.unitCount')}</Text>
         </Text>
       </View>
       <View style={styles.summaryDivider} />
       <View style={styles.summaryItem}>
         <Ionicons name="eye-outline" size={14} color={COLORS.textSecondary} />
         <Text style={styles.summaryText}>
-          조회 <Text style={styles.summaryCount}>{summary.views}건</Text>
+          {t('admin.dashboard.views')} <Text style={styles.summaryCount}>{summary.views}{t('common.unitCount')}</Text>
         </Text>
       </View>
     </View>
@@ -390,6 +392,7 @@ function ActivitySummaryBar({ summary }: { summary: ActivitySummary }) {
 
 export default function AdminDashboardScreen() {
   const router = useRouter();
+  const { t } = useLocale();
   const [refreshing, setRefreshing] = useState(false);
 
   const {
@@ -442,12 +445,12 @@ export default function AdminDashboardScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Ionicons name="chevron-back" size={24} color={COLORS.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>대시보드</Text>
+          <Text style={styles.headerTitle}>{t('admin.dashboard.title')}</Text>
           <View style={{ width: 24 }} />
         </View>
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={COLORS.primary} />
-          <Text style={styles.loadingText}>데이터를 불러오는 중...</Text>
+          <Text style={styles.loadingText}>{t('admin.dashboard.loading')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -462,20 +465,20 @@ export default function AdminDashboardScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Ionicons name="chevron-back" size={24} color={COLORS.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>대시보드</Text>
+          <Text style={styles.headerTitle}>{t('admin.dashboard.title')}</Text>
           <View style={{ width: 24 }} />
         </View>
         <View style={styles.centerContainer}>
           <Ionicons name="cloud-offline-outline" size={48} color={COLORS.error} />
-          <Text style={styles.errorTitle}>데이터를 불러올 수 없습니다</Text>
+          <Text style={styles.errorTitle}>{t('admin.dashboard.loadError')}</Text>
           <Text style={styles.errorMessage}>
             {overviewError instanceof Error
               ? overviewError.message
-              : '네트워크 연결을 확인해주세요.'}
+              : t('admin.dashboard.checkNetwork')}
           </Text>
           <TouchableOpacity style={styles.retryButton} onPress={() => refetchOverview()}>
             <Ionicons name="refresh" size={18} color="#FFFFFF" />
-            <Text style={styles.retryButtonText}>다시 시도</Text>
+            <Text style={styles.retryButtonText}>{t('common.retry')}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -509,35 +512,37 @@ export default function AdminDashboardScreen() {
       >
         {/* ─── 핵심 KPI (Primary) ─── */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>핵심 지표</Text>
-          <Text style={styles.sectionSubtitle}>1분마다 자동 갱신</Text>
+          <Text style={styles.sectionTitle}>{t('admin.dashboard.section.primaryKpi')}</Text>
+          <Text style={styles.sectionSubtitle}>{t('admin.dashboard.autoRefresh')}</Text>
         </View>
 
         <View style={styles.kpiGrid}>
           {PRIMARY_KPIS.map((kpi) => (
             <KpiCard
-              key={kpi.label}
+              key={kpi.tKey}
               config={kpi}
               data={overview}
               large
               comparison={comparison}
+              t={t}
             />
           ))}
         </View>
 
         {/* ─── 운영 KPI (Secondary) ─── */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>운영 지표</Text>
-          <Text style={styles.sectionSubtitle}>오늘 기준</Text>
+          <Text style={styles.sectionTitle}>{t('admin.dashboard.section.secondaryKpi')}</Text>
+          <Text style={styles.sectionSubtitle}>{t('admin.dashboard.asOfToday')}</Text>
         </View>
 
         <View style={styles.kpiGrid}>
           {SECONDARY_KPIS.map((kpi) => (
             <KpiCard
-              key={kpi.label}
+              key={kpi.tKey}
               config={kpi}
               data={overview}
               comparison={comparison}
+              t={t}
             />
           ))}
         </View>
@@ -545,59 +550,60 @@ export default function AdminDashboardScreen() {
         {/* ─── 추가 정보 배너 ─── */}
         <View style={styles.infoBanner}>
           <View style={styles.infoBannerItem}>
-            <Text style={styles.infoBannerLabel}>게시글</Text>
+            <Text style={styles.infoBannerLabel}>{t('admin.dashboard.banner.posts')}</Text>
             <Text style={styles.infoBannerValue}>
-              {overview ? `${formatNumber(overview.posts_today)}건` : '-'}
+              {overview ? `${formatNumber(overview.posts_today)}${t('common.unitCount')}` : '-'}
             </Text>
           </View>
           <View style={styles.infoBannerDivider} />
           <View style={styles.infoBannerItem}>
-            <Text style={styles.infoBannerLabel}>미처리 신고</Text>
+            <Text style={styles.infoBannerLabel}>{t('admin.dashboard.banner.pendingReports')}</Text>
             <Text
               style={[
                 styles.infoBannerValue,
                 overview && overview.pending_reports > 0 && { color: COLORS.error },
               ]}
             >
-              {overview ? `${formatNumber(overview.pending_reports)}건` : '-'}
+              {overview ? `${formatNumber(overview.pending_reports)}${t('common.unitCount')}` : '-'}
             </Text>
           </View>
           <View style={styles.infoBannerDivider} />
           <View style={styles.infoBannerItem}>
-            <Text style={styles.infoBannerLabel}>크레딧 소비</Text>
+            <Text style={styles.infoBannerLabel}>{t('admin.dashboard.banner.creditsSpent')}</Text>
             <Text style={styles.infoBannerValue}>
-              {overview ? `${formatCredits(overview.credits_spent_today)} (${CREDIT_SYMBOL}${formatNumber(overview.credits_spent_today * 100)})` : '-'}
+              {overview ? `${formatCredits(overview.credits_spent_today, t)} (${CREDIT_SYMBOL}${formatNumber(overview.credits_spent_today * 100)})` : '-'}
             </Text>
           </View>
         </View>
 
         {/* ─── 최근 활동 피드 ─── */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>최근 활동</Text>
-          <Text style={styles.sectionSubtitle}>최근 15건</Text>
+          <Text style={styles.sectionTitle}>{t('admin.dashboard.section.recentActivity')}</Text>
+          <Text style={styles.sectionSubtitle}>{t('admin.dashboard.recent15')}</Text>
         </View>
 
         {/* 활동 요약 바 — 투표/카드/조회 건수 */}
         {activitySummary && (
-          <ActivitySummaryBar summary={activitySummary} />
+          <ActivitySummaryBar summary={activitySummary} t={t} />
         )}
 
         {activitiesLoading && !activities ? (
           <View style={styles.activityLoadingContainer}>
             <ActivityIndicator size="small" color={COLORS.primary} />
-            <Text style={styles.activityLoadingText}>활동 내역 불러오는 중...</Text>
+            <Text style={styles.activityLoadingText}>{t('admin.dashboard.loadingActivity')}</Text>
           </View>
         ) : groupedActivities.length > 0 ? (
           <View style={styles.activityList}>
             {groupedActivities.map((section) => (
               <React.Fragment key={section.group}>
                 {/* 시간대 그룹 헤더 */}
-                <TimeGroupHeader group={section.group} />
+                <TimeGroupHeader group={section.group} t={t} />
                 {/* 해당 그룹의 활동 아이템들 */}
                 {section.items.map((event, index) => (
                   <ActivityItem
                     key={`${section.group}-${event.created_at}-${index}`}
                     event={event}
+                    t={t}
                   />
                 ))}
               </React.Fragment>
@@ -606,7 +612,7 @@ export default function AdminDashboardScreen() {
         ) : (
           <View style={styles.emptyActivity}>
             <Ionicons name="file-tray-outline" size={32} color={COLORS.textSecondary} />
-            <Text style={styles.emptyActivityText}>최근 활동이 없습니다.</Text>
+            <Text style={styles.emptyActivityText}>{t('admin.dashboard.noActivity')}</Text>
           </View>
         )}
 
@@ -726,7 +732,7 @@ const styles = StyleSheet.create({
 
   // KPI 카드
   kpiCard: {
-    width: '47%' as any,
+    width: '47%' as unknown as number,
     flexGrow: 1,
     backgroundColor: COLORS.surface,
     borderRadius: 14,

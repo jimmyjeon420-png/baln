@@ -21,6 +21,7 @@ import { Ionicons } from '@expo/vector-icons';
 import ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 import type { ThemeColors } from '../../styles/colors';
 import { useShareReward } from '../../hooks/useRewards';
 import { CATEGORY_COLORS, type ExtremeScenario } from '../../data/whatIfScenarios';
@@ -54,11 +55,13 @@ export interface ExtremeScenarioReportProps {
 const ImpactChainSection: React.FC<{
   chain: string[];
   colors: ThemeColors;
-}> = ({ chain, colors }) => (
+}> = ({ chain, colors }) => {
+  const { t } = useLocale();
+  return (
   <View style={[sectionStyles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
     <View style={sectionStyles.cardHeader}>
       <Ionicons name="git-network-outline" size={18} color={colors.primary} />
-      <Text style={[sectionStyles.cardTitle, { color: colors.textPrimary }]}>임팩트 체인</Text>
+      <Text style={[sectionStyles.cardTitle, { color: colors.textPrimary }]}>{t('whatIf.extreme.impactChain')}</Text>
     </View>
     <View style={sectionStyles.chainContainer}>
       {chain.map((step, idx) => (
@@ -80,17 +83,20 @@ const ImpactChainSection: React.FC<{
       ))}
     </View>
   </View>
-);
+  );
+};
 
 /** 시장 영향 섹션 */
 const MarketImpactSection: React.FC<{
   marketImpact: ExtremeScenario['marketImpact'];
   colors: ThemeColors;
-}> = ({ marketImpact, colors }) => (
+}> = ({ marketImpact, colors }) => {
+  const { t } = useLocale();
+  return (
   <View style={[sectionStyles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
     <View style={sectionStyles.cardHeader}>
       <Ionicons name="bar-chart-outline" size={18} color={colors.primary} />
-      <Text style={[sectionStyles.cardTitle, { color: colors.textPrimary }]}>예상 시장 영향</Text>
+      <Text style={[sectionStyles.cardTitle, { color: colors.textPrimary }]}>{t('whatIf.extreme.marketImpact')}</Text>
     </View>
 
     {/* KOSPI + 원/달러 */}
@@ -102,7 +108,7 @@ const MarketImpactSection: React.FC<{
         </Text>
       </View>
       <View style={[sectionStyles.metricBox, { backgroundColor: '#F59E0B15' }]}>
-        <Text style={[sectionStyles.metricLabel, { color: colors.textTertiary }]}>원/달러</Text>
+        <Text style={[sectionStyles.metricLabel, { color: colors.textTertiary }]}>{t('whatIf.extreme.usdkrw')}</Text>
         <Text style={[sectionStyles.metricValue, { color: '#F59E0B' }]}>
           {marketImpact.usdkrw}
         </Text>
@@ -110,7 +116,7 @@ const MarketImpactSection: React.FC<{
     </View>
 
     {/* 수혜 섹터 */}
-    <Text style={[sectionStyles.subTitle, { color: '#10B981' }]}>▲ 수혜 섹터</Text>
+    <Text style={[sectionStyles.subTitle, { color: '#10B981' }]}>{t('whatIf.extreme.upSectors')}</Text>
     {(marketImpact.upSectors ?? []).map((s, i) => (
       <View key={i} style={sectionStyles.sectorRow}>
         <Text style={[sectionStyles.sectorName, { color: colors.textPrimary }]}>{s.name}</Text>
@@ -119,7 +125,7 @@ const MarketImpactSection: React.FC<{
     ))}
 
     {/* 피해 섹터 */}
-    <Text style={[sectionStyles.subTitle, { color: '#EF4444', marginTop: 12 }]}>▼ 피해 섹터</Text>
+    <Text style={[sectionStyles.subTitle, { color: '#EF4444', marginTop: 12 }]}>{t('whatIf.extreme.downSectors')}</Text>
     {(marketImpact.downSectors ?? []).map((s, i) => (
       <View key={i} style={sectionStyles.sectorRow}>
         <Text style={[sectionStyles.sectorName, { color: colors.textPrimary }]}>{s.name}</Text>
@@ -127,17 +133,20 @@ const MarketImpactSection: React.FC<{
       </View>
     ))}
   </View>
-);
+  );
+};
 
 /** 역사적 선례 섹션 */
 const HistoricalSection: React.FC<{
   parallel: ExtremeScenario['historicalParallel'];
   colors: ThemeColors;
-}> = ({ parallel, colors }) => (
+}> = ({ parallel, colors }) => {
+  const { t } = useLocale();
+  return (
   <View style={[sectionStyles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
     <View style={sectionStyles.cardHeader}>
       <Ionicons name="time-outline" size={18} color={colors.primary} />
-      <Text style={[sectionStyles.cardTitle, { color: colors.textPrimary }]}>역사적 선례</Text>
+      <Text style={[sectionStyles.cardTitle, { color: colors.textPrimary }]}>{t('whatIf.extreme.historicalPrecedent')}</Text>
     </View>
 
     <View style={[sectionStyles.parallelBox, { backgroundColor: colors.background }]}>
@@ -146,11 +155,11 @@ const HistoricalSection: React.FC<{
       </Text>
       <View style={sectionStyles.parallelMetrics}>
         <View style={sectionStyles.parallelMetric}>
-          <Text style={[sectionStyles.parallelLabel, { color: colors.textTertiary }]}>초기 하락</Text>
+          <Text style={[sectionStyles.parallelLabel, { color: colors.textTertiary }]}>{t('whatIf.extreme.initialDrop')}</Text>
           <Text style={[sectionStyles.parallelValue, { color: '#EF4444' }]}>{parallel.initialDrop}</Text>
         </View>
         <View style={sectionStyles.parallelMetric}>
-          <Text style={[sectionStyles.parallelLabel, { color: colors.textTertiary }]}>회복 기간</Text>
+          <Text style={[sectionStyles.parallelLabel, { color: colors.textTertiary }]}>{t('whatIf.extreme.recoveryTime')}</Text>
           <Text style={[sectionStyles.parallelValue, { color: '#10B981' }]}>{parallel.recoveryTime}</Text>
         </View>
       </View>
@@ -163,17 +172,20 @@ const HistoricalSection: React.FC<{
       </Text>
     </View>
   </View>
-);
+  );
+};
 
 /** 행동 가이드 섹션 */
 const ActionGuideSection: React.FC<{
   guide: string[];
   colors: ThemeColors;
-}> = ({ guide, colors }) => (
+}> = ({ guide, colors }) => {
+  const { t } = useLocale();
+  return (
   <View style={[sectionStyles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
     <View style={sectionStyles.cardHeader}>
       <Ionicons name="shield-checkmark-outline" size={18} color={colors.primary} />
-      <Text style={[sectionStyles.cardTitle, { color: colors.textPrimary }]}>행동 가이드</Text>
+      <Text style={[sectionStyles.cardTitle, { color: colors.textPrimary }]}>{t('whatIf.extreme.actionGuide')}</Text>
     </View>
     {guide.map((item, idx) => (
       <View key={idx} style={sectionStyles.guideRow}>
@@ -182,25 +194,28 @@ const ActionGuideSection: React.FC<{
       </View>
     ))}
   </View>
-);
+  );
+};
 
 /** 포트폴리오 시뮬레이션 결과 */
 const SimulationResultSection: React.FC<{
   result: WhatIfResult;
   colors: ThemeColors;
-}> = ({ result, colors }) => (
+}> = ({ result, colors }) => {
+  const { t } = useLocale();
+  return (
   <View style={[sectionStyles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
     <View style={sectionStyles.cardHeader}>
       <Ionicons name="pie-chart-outline" size={18} color={colors.primary} />
       <Text style={[sectionStyles.cardTitle, { color: colors.textPrimary }]}>
-        내 포트폴리오 시뮬레이션
+        {t('whatIf.extreme.portfolioSimulation')}
       </Text>
     </View>
 
     {/* 전체 영향 */}
     <View style={[sectionStyles.totalImpactBox, { backgroundColor: '#EF444410' }]}>
       <Text style={[sectionStyles.totalImpactLabel, { color: colors.textTertiary }]}>
-        예상 총 영향
+        {t('whatIf.extreme.estimatedTotalImpact')}
       </Text>
       <Text style={[sectionStyles.totalImpactValue, { color: '#EF4444' }]}>
         {(result.totalImpact?.changePercent ?? 0) > 0 ? '+' : ''}
@@ -249,7 +264,8 @@ const SimulationResultSection: React.FC<{
       </Text>
     </View>
   </View>
-);
+  );
+};
 
 // ============================================================================
 // 9:16 인스타그램 스토리 공유 카드 (모달)
@@ -261,6 +277,7 @@ const ShareStoryModal: React.FC<{
   scenario: ExtremeScenario;
   simulationResult: WhatIfResult | null;
 }> = ({ visible, onClose, scenario, simulationResult }) => {
+  const { t } = useLocale();
   const viewShotRef = useRef<ViewShot>(null);
   const [sharing, setSharing] = useState(false);
   const [rewardMessage, setRewardMessage] = useState<string | null>(null);
@@ -281,11 +298,11 @@ const ShareStoryModal: React.FC<{
     try {
       const isAvailable = await Sharing.isAvailableAsync();
       if (!isAvailable) {
-        Alert.alert('공유 불가', '이 기기에서는 공유 기능을 사용할 수 없습니다.');
+        Alert.alert(t('whatIf.extreme.shareUnavailableTitle'), t('whatIf.extreme.shareUnavailableMsg'));
         return;
       }
       if (!viewShotRef.current?.capture) {
-        Alert.alert('오류', '캡처 영역을 찾을 수 없습니다.');
+        Alert.alert(t('common.error'), t('whatIf.extreme.captureError'));
         return;
       }
       const uri = await viewShotRef.current.capture();
@@ -305,7 +322,7 @@ const ShareStoryModal: React.FC<{
     } finally {
       setSharing(false);
     }
-  }, [scenario.title, claimReward]);
+  }, [scenario.title, claimReward, t]);
 
   // 카드 콘텐츠 (캡처 대상 - 9:16 비율)
   const cardContent = (
@@ -321,7 +338,7 @@ const ShareStoryModal: React.FC<{
             <Text style={shareStyles.logoBaln}>bal<Text style={{ color: '#4CAF50' }}>n</Text></Text>
             <Text style={shareStyles.logoDot}>.logic</Text>
           </View>
-          <Text style={shareStyles.logoSub}>AI 위기 시뮬레이터</Text>
+          <Text style={shareStyles.logoSub}>{t('whatIf.extreme.aiCrisisSimulator')}</Text>
         </View>
         <View style={[shareStyles.catBadge, { backgroundColor: catColor + '25', borderColor: catColor + '50' }]}>
           <Text style={[shareStyles.catBadgeText, { color: catColor }]}>
@@ -332,7 +349,7 @@ const ShareStoryModal: React.FC<{
 
       {/* 바이럴 훅 */}
       <View style={shareStyles.viralHookBox}>
-        <Text style={shareStyles.viralHookText}>만약 이게 실제로 일어난다면?</Text>
+        <Text style={shareStyles.viralHookText}>{t('whatIf.extreme.viralHook')}</Text>
       </View>
 
       {/* 시나리오 헤더: 이모지 + 제목 */}
@@ -354,7 +371,7 @@ const ShareStoryModal: React.FC<{
           </Text>
         </View>
         <View style={[shareStyles.impactBox, { backgroundColor: '#F59E0B12' }]}>
-          <Text style={shareStyles.impactLabel}>원/달러</Text>
+          <Text style={shareStyles.impactLabel}>{t('whatIf.extreme.usdkrw')}</Text>
           <Text style={[shareStyles.impactValue, { color: '#F59E0B' }]}>
             {scenario.marketImpact.usdkrw}
           </Text>
@@ -364,7 +381,7 @@ const ShareStoryModal: React.FC<{
       {/* 수혜/피해 섹터 요약 */}
       <View style={shareStyles.sectorSummary}>
         <View style={shareStyles.sectorCol}>
-          <Text style={[shareStyles.sectorHeader, { color: '#10B981' }]}>수혜 섹터</Text>
+          <Text style={[shareStyles.sectorHeader, { color: '#10B981' }]}>{t('whatIf.extreme.upSectorsShort')}</Text>
           {topUp.map((s, i) => (
             <View key={i} style={shareStyles.sectorItem}>
               <Text style={shareStyles.sectorName}>{s.name}</Text>
@@ -374,7 +391,7 @@ const ShareStoryModal: React.FC<{
         </View>
         <View style={shareStyles.sectorDivider} />
         <View style={shareStyles.sectorCol}>
-          <Text style={[shareStyles.sectorHeader, { color: '#EF4444' }]}>피해 섹터</Text>
+          <Text style={[shareStyles.sectorHeader, { color: '#EF4444' }]}>{t('whatIf.extreme.downSectorsShort')}</Text>
           {topDown.map((s, i) => (
             <View key={i} style={shareStyles.sectorItem}>
               <Text style={shareStyles.sectorName}>{s.name}</Text>
@@ -387,7 +404,7 @@ const ShareStoryModal: React.FC<{
       {/* 포트폴리오 시뮬레이션 결과 (있는 경우에만) */}
       {hasSimResult && (
         <View style={shareStyles.simResultBox}>
-          <Text style={shareStyles.simResultLabel}>내 포트폴리오 예상 영향</Text>
+          <Text style={shareStyles.simResultLabel}>{t('whatIf.extreme.portfolioImpact')}</Text>
           <Text style={[shareStyles.simResultValue, { color: simChangePercent >= 0 ? '#10B981' : '#EF4444' }]}>
             {simChangePercent > 0 ? '+' : ''}{simChangePercent.toFixed(1)}%
           </Text>
@@ -402,18 +419,18 @@ const ShareStoryModal: React.FC<{
         <View style={shareStyles.histBox}>
           <View style={shareStyles.histHeader}>
             <Ionicons name="time-outline" size={14} color="#4CAF50" />
-            <Text style={shareStyles.histTitle}>역사적 선례</Text>
+            <Text style={shareStyles.histTitle}>{t('whatIf.extreme.historicalPrecedent')}</Text>
           </View>
           <Text style={shareStyles.histEvent}>{scenario.historicalParallel.event}</Text>
           <View style={shareStyles.histMetrics}>
             <View style={shareStyles.histMetric}>
-              <Text style={shareStyles.histMetricLabel}>초기 하락</Text>
+              <Text style={shareStyles.histMetricLabel}>{t('whatIf.extreme.initialDrop')}</Text>
               <Text style={[shareStyles.histMetricValue, { color: '#EF4444' }]}>
                 {scenario.historicalParallel.initialDrop}
               </Text>
             </View>
             <View style={shareStyles.histMetric}>
-              <Text style={shareStyles.histMetricLabel}>회복 기간</Text>
+              <Text style={shareStyles.histMetricLabel}>{t('whatIf.extreme.recoveryTime')}</Text>
               <Text style={[shareStyles.histMetricValue, { color: '#10B981' }]}>
                 {scenario.historicalParallel.recoveryTime}
               </Text>
@@ -425,7 +442,7 @@ const ShareStoryModal: React.FC<{
       {/* 안심 메시지 */}
       <View style={shareStyles.reassureBox}>
         <Text style={shareStyles.reassureText}>
-          위기를 미리 시뮬레이션하면, 패닉 대신 이해로 대응할 수 있습니다.
+          {t('whatIf.extreme.reassureShort')}
         </Text>
       </View>
 
@@ -459,7 +476,7 @@ const ShareStoryModal: React.FC<{
       <View style={shareStyles.modalContainer}>
         {/* 모달 헤더 */}
         <View style={shareStyles.modalHeader}>
-          <Text style={shareStyles.modalTitle}>인스타 스토리 공유</Text>
+          <Text style={shareStyles.modalTitle}>{t('whatIf.extreme.shareStoryTitle')}</Text>
           <TouchableOpacity onPress={onClose} style={shareStyles.closeButton}>
             <Ionicons name="close" size={24} color="#888888" />
           </TouchableOpacity>
@@ -496,7 +513,7 @@ const ShareStoryModal: React.FC<{
             ) : (
               <>
                 <Ionicons name="share-social" size={18} color="#FFFFFF" />
-                <Text style={shareStyles.shareButtonText}>인스타그램 공유</Text>
+                <Text style={shareStyles.shareButtonText}>{t('whatIf.extreme.shareInstagram')}</Text>
                 {!rewarded && (
                   <View style={shareStyles.rewardHint}>
                     <Text style={shareStyles.rewardHintText}>+{REWARD_AMOUNTS.shareCard}개</Text>
@@ -524,6 +541,7 @@ export const ExtremeScenarioReport: React.FC<ExtremeScenarioReportProps> = ({
   hasAssets,
 }) => {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const catColor = CATEGORY_COLORS[scenario.category];
   const [showShareModal, setShowShareModal] = useState(false);
 
@@ -531,7 +549,7 @@ export const ExtremeScenarioReport: React.FC<ExtremeScenarioReportProps> = ({
     <View style={styles.container}>
       {/* 바이럴 훅 — 드라마틱한 질문 */}
       <View style={styles.viralHook}>
-        <Text style={styles.viralHookText}>만약 이게 실제로 일어난다면?</Text>
+        <Text style={styles.viralHookText}>{t('whatIf.extreme.viralHook')}</Text>
       </View>
 
       {/* 시나리오 헤더 (바이럴 강화) */}
@@ -546,7 +564,7 @@ export const ExtremeScenarioReport: React.FC<ExtremeScenarioReportProps> = ({
           </Text>
         </View>
         <Text style={[styles.headerSub, { color: colors.textSecondary }]}>
-          AI 위기 시뮬레이터가 분석한 결과
+          {t('whatIf.extreme.analysisResult')}
         </Text>
       </View>
 
@@ -572,8 +590,8 @@ export const ExtremeScenarioReport: React.FC<ExtremeScenarioReportProps> = ({
           <Ionicons name="flash" size={20} color="#FFFFFF" />
           <Text style={styles.ctaText}>
             {hasAssets
-              ? `내 포트폴리오 시뮬레이션 (${formatCredits(2, false)})`
-              : '자산 등록 후 시뮬레이션 가능'}
+              ? t('whatIf.extreme.simulateCTA', { credits: formatCredits(2, false) })
+              : t('whatIf.extreme.registerAssetFirst')}
           </Text>
         </TouchableOpacity>
       )}
@@ -583,7 +601,7 @@ export const ExtremeScenarioReport: React.FC<ExtremeScenarioReportProps> = ({
         <View style={[styles.loadingBox, { backgroundColor: colors.surface }]}>
           <ActivityIndicator size="large" color={colors.primary} />
           <Text style={[styles.loadingText, { color: colors.textPrimary }]}>
-            AI가 포트폴리오를 분석하고 있습니다
+            {t('whatIf.extreme.analyzing')}
           </Text>
         </View>
       )}
@@ -605,8 +623,7 @@ export const ExtremeScenarioReport: React.FC<ExtremeScenarioReportProps> = ({
       {/* 안심 메시지 (버핏 철학) */}
       <View style={[styles.reassureBox, { backgroundColor: '#10B98110' }]}>
         <Text style={[styles.reassureText, { color: colors.textSecondary }]}>
-          이 시뮬레이션은 교육 목적입니다. 극단적 시나리오를 미리 생각해두면
-          실제 위기 시 패닉 대신 이해로 대응할 수 있습니다.
+          {t('whatIf.extreme.reassureFull')}
         </Text>
       </View>
 
@@ -617,7 +634,7 @@ export const ExtremeScenarioReport: React.FC<ExtremeScenarioReportProps> = ({
         activeOpacity={0.8}
       >
         <Ionicons name="share-social" size={18} color="#FFFFFF" />
-        <Text style={styles.shareButtonText}>인스타그램에 공유하기</Text>
+        <Text style={styles.shareButtonText}>{t('whatIf.extreme.shareToInstagram')}</Text>
       </TouchableOpacity>
 
       {/* 인스타 스토리 공유 모달 (9:16) */}

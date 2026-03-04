@@ -59,29 +59,29 @@ interface GuruOption {
   accentColor: string;
 }
 
-const GURU_OPTIONS: GuruOption[] = [
+const GURU_OPTIONS: (Omit<GuruOption, 'name' | 'tagline' | 'keyAlloc'> & { nameKey: string; taglineKey: string; keyAllocKey: string })[] = [
   {
     id: 'dalio',
     emoji: '🌊',
-    name: '레이 달리오',
-    tagline: '"어떤 환경에도 생존"',
-    keyAlloc: '주식30 채권40 금10 원자재8',
+    nameKey: 'onboarding.guru.dalio_name',
+    taglineKey: 'onboarding.guru.dalio_tagline',
+    keyAllocKey: 'onboarding.guru.dalio_alloc',
     accentColor: '#4CAF50',
   },
   {
     id: 'buffett',
     emoji: '🔴',
-    name: '워렌 버핏',
-    tagline: '"생산하는 자산만 투자"',
-    keyAlloc: '주식60 현금25 채권5',
+    nameKey: 'onboarding.guru.buffett_name',
+    taglineKey: 'onboarding.guru.buffett_tagline',
+    keyAllocKey: 'onboarding.guru.buffett_alloc',
     accentColor: '#FF5722',
   },
   {
     id: 'cathie_wood',
     emoji: '🚀',
-    name: '캐시 우드',
-    tagline: '"혁신이 미래다"',
-    keyAlloc: '혁신주50 BTC25 알트10 현금15',
+    nameKey: 'onboarding.guru.cathie_name',
+    taglineKey: 'onboarding.guru.cathie_tagline',
+    keyAllocKey: 'onboarding.guru.cathie_alloc',
     accentColor: '#9C27B0',
   },
 ];
@@ -103,23 +103,18 @@ interface RegisteredAsset {
 // 투자 경험 / 목표 옵션
 // ============================================================================
 
-interface SelectionOption {
-  id: string;
-  emoji: string;
-  label: string;
-  description: string;
-}
+// SelectionOption interface removed — no longer used
 
-const INVESTOR_LEVELS: SelectionOption[] = [
-  { id: 'beginner', emoji: '👶', label: '초보', description: '투자를 시작하는 단계' },
-  { id: 'intermediate', emoji: '📊', label: '중급', description: '기본 투자 경험이 있어요' },
-  { id: 'advanced', emoji: '🏆', label: '고급', description: '투자 경험이 풍부해요' },
+const INVESTOR_LEVELS: { id: string; emoji: string; labelKey: string; descKey: string }[] = [
+  { id: 'beginner', emoji: '👶', labelKey: 'onboarding.level.beginner', descKey: 'onboarding.level.beginner_desc' },
+  { id: 'intermediate', emoji: '📊', labelKey: 'onboarding.level.intermediate', descKey: 'onboarding.level.intermediate_desc' },
+  { id: 'advanced', emoji: '🏆', labelKey: 'onboarding.level.advanced', descKey: 'onboarding.level.advanced_desc' },
 ];
 
-const INVESTMENT_GOALS: SelectionOption[] = [
-  { id: 'retirement', emoji: '🏖️', label: '은퇴 준비', description: '안정적인 노후 대비' },
-  { id: 'growth', emoji: '📈', label: '자산 증식', description: '적극적인 자산 성장' },
-  { id: 'freedom', emoji: '🌟', label: '경제적 자유', description: '소득에 의존하지 않는 삶' },
+const INVESTMENT_GOALS: { id: string; emoji: string; labelKey: string; descKey: string }[] = [
+  { id: 'retirement', emoji: '🏖️', labelKey: 'onboarding.goal.retirement', descKey: 'onboarding.goal.retirement_desc' },
+  { id: 'growth', emoji: '📈', labelKey: 'onboarding.goal.growth', descKey: 'onboarding.goal.growth_desc' },
+  { id: 'freedom', emoji: '🌟', labelKey: 'onboarding.goal.freedom', descKey: 'onboarding.goal.freedom_desc' },
 ];
 
 // ============================================================================
@@ -398,16 +393,16 @@ export default function OnboardingScreen() {
       <View style={styles.stepContent}>
         <Text style={styles.welcomeEmoji}>{'👋'}</Text>
         <Text style={[styles.heading, { color: colors.textPrimary }]}>
-          {'시장이 흔들릴 때,\n당신의 기준이 됩니다'}
+          {t('onboarding.welcome.heading')}
         </Text>
         <Text style={[styles.subheading, { color: colors.textSecondary }]}>
-          {'급락에 패닉셀, 급등에 FOMO 매수...\n투자 경험 5년차도 반복하는 실수입니다.\nbaln은 매일 5분, 시장 맥락을 읽으며\n자기만의 투자 기준을 만들어갑니다.'}
+          {t('onboarding.welcome.subheading')}
         </Text>
 
         <View style={styles.featureList}>
-          <FeatureItem emoji="📊" text="왜 빠졌는지 5분 안에 이해" />
-          <FeatureItem emoji="🎯" text="매일 시장을 예측하고 복기하며 감각 키우기" />
-          <FeatureItem emoji="💊" text="내 포트폴리오 맞춤 진단과 처방" />
+          <FeatureItem emoji="📊" text={t('onboarding.welcome.feature1')} />
+          <FeatureItem emoji="🎯" text={t('onboarding.welcome.feature2')} />
+          <FeatureItem emoji="💊" text={t('onboarding.welcome.feature3')} />
         </View>
         <TouchableOpacity
           style={[styles.quickStartButton, { borderColor: colors.primary }]}
@@ -415,7 +410,7 @@ export default function OnboardingScreen() {
           activeOpacity={0.8}
         >
           <Text style={[styles.quickStartButtonText, { color: colors.primary }]}>
-            10초로 빠른 시작
+            {t('onboarding.welcome.quick_start')}
           </Text>
         </TouchableOpacity>
       </View>
@@ -432,10 +427,10 @@ export default function OnboardingScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <Text style={[styles.heading, { color: colors.textPrimary }]}>
-          {'나의 투자 스타일\n선택하기'}
+          {t('onboarding.guru.heading')}
         </Text>
         <Text style={[styles.subheading, { color: colors.textSecondary }]}>
-          어떤 거장의 철학을 따르시나요?{'\n'}선택한 철학이 기본 목표 배분이 됩니다.
+          {t('onboarding.guru.subheading')}
         </Text>
 
         <View style={styles.guruGrid}>
@@ -456,13 +451,13 @@ export default function OnboardingScreen() {
                   <Text style={styles.guruEmoji}>{guru.emoji}</Text>
                 </View>
                 <Text style={[styles.guruName, { color: isSelected ? guru.accentColor : colors.textPrimary }]}>
-                  {guru.name}
+                  {t(guru.nameKey)}
                 </Text>
                 <Text style={[styles.guruTagline, { color: colors.textTertiary }]} numberOfLines={2}>
-                  {guru.tagline}
+                  {t(guru.taglineKey)}
                 </Text>
                 <Text style={[styles.guruAlloc, { color: colors.textTertiary }]} numberOfLines={2}>
-                  {guru.keyAlloc}
+                  {t(guru.keyAllocKey)}
                 </Text>
                 {isSelected && (
                   <View style={[styles.guruSelectedDot, { backgroundColor: guru.accentColor }]}>
@@ -475,7 +470,7 @@ export default function OnboardingScreen() {
         </View>
 
         <Text style={[styles.skipHint, { color: colors.textTertiary }]}>
-          언제든지 전체 탭 → 투자 철학 변경에서 바꿀 수 있어요
+          {t('onboarding.guru.change_hint')}
         </Text>
       </ScrollView>
     );
@@ -486,10 +481,10 @@ export default function OnboardingScreen() {
     return (
       <View style={styles.stepContent}>
         <Text style={[styles.heading, { color: colors.textPrimary }]}>
-          {'투자 경험이\n어떻게 되시나요?'}
+          {t('onboarding.level.heading')}
         </Text>
         <Text style={[styles.subheading, { color: colors.textSecondary }]}>
-          맞춤 콘텐츠를 제공하기 위해 물어볼게요.
+          {t('onboarding.level.subheading')}
         </Text>
 
         <View style={styles.optionList}>
@@ -511,9 +506,9 @@ export default function OnboardingScreen() {
                   { color: colors.textPrimary },
                   investorLevel === option.id && { color: colors.primary },
                 ]}>
-                  {option.label}
+                  {t(option.labelKey)}
                 </Text>
-                <Text style={[styles.optionDesc, { color: colors.textSecondary }]}>{option.description}</Text>
+                <Text style={[styles.optionDesc, { color: colors.textSecondary }]}>{t(option.descKey)}</Text>
               </View>
               {investorLevel === option.id && (
                 <Ionicons name="checkmark-circle" size={24} color={colors.primary} />
@@ -522,7 +517,7 @@ export default function OnboardingScreen() {
           ))}
         </View>
 
-        <Text style={[styles.skipHint, { color: colors.textTertiary }]}>선택하지 않아도 넘어갈 수 있어요</Text>
+        <Text style={[styles.skipHint, { color: colors.textTertiary }]}>{t('onboarding.skip_hint')}</Text>
       </View>
     );
   }
@@ -532,10 +527,10 @@ export default function OnboardingScreen() {
     return (
       <View style={styles.stepContent}>
         <Text style={[styles.heading, { color: colors.textPrimary }]}>
-          {'투자 목표는\n무엇인가요?'}
+          {t('onboarding.goal.heading')}
         </Text>
         <Text style={[styles.subheading, { color: colors.textSecondary }]}>
-          목표에 맞는 분석을 제공해드릴게요.
+          {t('onboarding.goal.subheading')}
         </Text>
 
         <View style={styles.optionList}>
@@ -557,9 +552,9 @@ export default function OnboardingScreen() {
                   { color: colors.textPrimary },
                   investmentGoal === option.id && { color: colors.primary },
                 ]}>
-                  {option.label}
+                  {t(option.labelKey)}
                 </Text>
-                <Text style={[styles.optionDesc, { color: colors.textSecondary }]}>{option.description}</Text>
+                <Text style={[styles.optionDesc, { color: colors.textSecondary }]}>{t(option.descKey)}</Text>
               </View>
               {investmentGoal === option.id && (
                 <Ionicons name="checkmark-circle" size={24} color={colors.primary} />
@@ -568,7 +563,7 @@ export default function OnboardingScreen() {
           ))}
         </View>
 
-        <Text style={[styles.skipHint, { color: colors.textTertiary }]}>선택하지 않아도 넘어갈 수 있어요</Text>
+        <Text style={[styles.skipHint, { color: colors.textTertiary }]}>{t('onboarding.skip_hint')}</Text>
       </View>
     );
   }
@@ -590,16 +585,16 @@ export default function OnboardingScreen() {
             <View style={{ flexDirection: 'row', backgroundColor: colors.surfaceLight, borderTopWidth: 1, borderTopColor: colors.border, paddingHorizontal: 12, paddingVertical: 8 }}>
               <View style={{ flex: 1 }} />
               <TouchableOpacity onPress={() => Keyboard.dismiss()} style={{ paddingHorizontal: 16, paddingVertical: 6 }}>
-                <Text style={{ fontSize: 17, fontWeight: '600', color: colors.primary }}>완료</Text>
+                <Text style={{ fontSize: 17, fontWeight: '600', color: colors.primary }}>{t('common.done')}</Text>
               </TouchableOpacity>
             </View>
           </InputAccessoryView>
         )}
         <Text style={[styles.heading, { color: colors.textPrimary }]}>
-          {'보유 자산을\n등록해볼까요?'}
+          {t('onboarding.asset.heading')}
         </Text>
         <Text style={[styles.subheading, { color: colors.textSecondary }]}>
-          등록하면 바로 포트폴리오 건강 점수를 알려드려요
+          {t('onboarding.asset.subheading')}
         </Text>
 
         {/* 개인정보 수집 동의 */}
@@ -614,20 +609,20 @@ export default function OnboardingScreen() {
             color={privacyConsent ? colors.primary : colors.textTertiary}
           />
           <Text style={[styles.consentText, { color: colors.textPrimary }]}>
-            개인정보 수집 및 이용에 동의합니다
+            {t('onboarding.asset.consent_text')}
           </Text>
           <TouchableOpacity
             onPress={() => router.push('/settings/privacy')}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Text style={[styles.consentLink, { color: colors.primary }]}>[전문 보기]</Text>
+            <Text style={[styles.consentLink, { color: colors.primary }]}>{t('onboarding.asset.consent_link')}</Text>
           </TouchableOpacity>
         </TouchableOpacity>
 
         {/* 동의 전에는 자산 등록 폼 비활성화 안내 */}
         {!privacyConsent && (
           <Text style={[styles.consentHint, { color: colors.textTertiary }]}>
-            자산을 등록하려면 개인정보 수집에 동의해주세요
+            {t('onboarding.asset.consent_hint')}
           </Text>
         )}
 
@@ -690,7 +685,7 @@ export default function OnboardingScreen() {
 
             <View style={styles.inputRow}>
               <View style={styles.inputHalf}>
-                <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>수량</Text>
+                <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>{t('onboarding.asset.quantity_label')}</Text>
                 <TextInput
                   style={[styles.numInput, { backgroundColor: colors.surfaceLight, borderColor: colors.border, color: colors.textPrimary }]}
                   placeholder="예: 10"
@@ -702,7 +697,7 @@ export default function OnboardingScreen() {
                 />
               </View>
               <View style={styles.inputHalf}>
-                <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>총 매수금액</Text>
+                <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>{t('onboarding.asset.total_cost_label')}</Text>
                 <TextInput
                   style={[styles.numInput, { backgroundColor: colors.surfaceLight, borderColor: colors.border, color: colors.textPrimary }]}
                   placeholder="예: 1,500,000"
@@ -717,9 +712,9 @@ export default function OnboardingScreen() {
 
             {totalValue > 0 && (
               <Text style={[styles.totalPreview, { color: colors.primary }]}>
-                총 매수금액: ₩{totalValue.toLocaleString()}
+                {t('onboarding.asset.total_preview', { amount: totalValue.toLocaleString() })}
                 {parseFloat(assetQuantity) > 0
-                  ? ` (평단 ₩${Math.round(totalValue / parseFloat(assetQuantity)).toLocaleString()})`
+                  ? ` (${t('onboarding.asset.avg_price', { price: Math.round(totalValue / parseFloat(assetQuantity)).toLocaleString() })})`
                   : ''}
               </Text>
             )}
@@ -733,7 +728,7 @@ export default function OnboardingScreen() {
               {addingAsset ? (
                 <ActivityIndicator size="small" color="#FFF" />
               ) : (
-                <Text style={styles.addButtonText}>+ 등록</Text>
+                <Text style={styles.addButtonText}>{t('onboarding.asset.add_button')}</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -742,7 +737,7 @@ export default function OnboardingScreen() {
         {/* 등록된 자산 목록 */}
         {registeredAssets.length > 0 && (
           <View style={[styles.registeredList, { backgroundColor: colors.surface }]}>
-            <Text style={[styles.registeredTitle, { color: colors.textSecondary }]}>등록된 자산 ({registeredAssets.length})</Text>
+            <Text style={[styles.registeredTitle, { color: colors.textSecondary }]}>{t('onboarding.asset.registered_title', { count: registeredAssets.length })}</Text>
             {registeredAssets.map((ra) => (
               <View key={ra.ticker} style={[styles.registeredRow, { borderBottomColor: colors.border }]}>
                 <Text style={[styles.registeredName, { color: colors.textPrimary }]}>{ra.name}</Text>
@@ -755,7 +750,7 @@ export default function OnboardingScreen() {
         )}
 
         <Text style={[styles.skipHint, { color: colors.textTertiary }]}>
-          {registeredAssets.length === 0 ? '건너뛰어도 나중에 등록할 수 있어요' : '더 추가하거나 다음으로 넘어가세요'}
+          {registeredAssets.length === 0 ? t('onboarding.asset.skip_hint') : t('onboarding.asset.add_more_hint')}
         </Text>
       </View>
       </TouchableWithoutFeedback>
@@ -770,32 +765,32 @@ export default function OnboardingScreen() {
         <View style={styles.stepContent}>
           <Text style={styles.startEmoji}>{'🚀'}</Text>
           <Text style={[styles.heading, { color: colors.textPrimary }]}>
-            {'준비 완료!\n지금 시작하세요'}
+            {t('onboarding.start.heading')}
           </Text>
           <Text style={[styles.subheading, { color: colors.textSecondary }]}>
-            {'매일 5분 투자로\n당신의 투자 기준을 만들어보세요.'}
+            {t('onboarding.start.subheading')}
           </Text>
           <View style={[styles.summaryCard, { backgroundColor: colors.surface }]}>
             {investorLevel && (
               <View style={styles.summaryRow}>
-                <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>투자 경험</Text>
+                <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>{t('onboarding.start.experience_label')}</Text>
                 <Text style={[styles.summaryValue, { color: colors.textPrimary }]}>
                   {INVESTOR_LEVELS.find(l => l.id === investorLevel)?.emoji}{' '}
-                  {INVESTOR_LEVELS.find(l => l.id === investorLevel)?.label}
+                  {t(INVESTOR_LEVELS.find(l => l.id === investorLevel)?.labelKey ?? '')}
                 </Text>
               </View>
             )}
             {investmentGoal && (
               <View style={styles.summaryRow}>
-                <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>투자 목표</Text>
+                <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>{t('onboarding.start.goal_label')}</Text>
                 <Text style={[styles.summaryValue, { color: colors.textPrimary }]}>
                   {INVESTMENT_GOALS.find(g => g.id === investmentGoal)?.emoji}{' '}
-                  {INVESTMENT_GOALS.find(g => g.id === investmentGoal)?.label}
+                  {t(INVESTMENT_GOALS.find(g => g.id === investmentGoal)?.labelKey ?? '')}
                 </Text>
               </View>
             )}
             <Text style={[styles.summaryEmpty, { color: colors.textTertiary }]}>
-              자산은 나중에 등록할 수 있어요
+              {t('onboarding.start.add_later')}
             </Text>
           </View>
         </View>
@@ -808,7 +803,7 @@ export default function OnboardingScreen() {
         <View style={styles.stepContent}>
           <ActivityIndicator size="large" color={colors.primary} />
           <Text style={[styles.subheading, { marginTop: 16, color: colors.textSecondary }]}>
-            포트폴리오를 분석하고 있어요...
+            {t('onboarding.score.loading')}
           </Text>
         </View>
       );
@@ -836,11 +831,11 @@ export default function OnboardingScreen() {
         {/* 요약 카드 */}
         <View style={[styles.summaryCard, { backgroundColor: colors.surface }]}>
           <View style={styles.summaryRow}>
-            <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>등록 자산</Text>
+            <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>{t('onboarding.score.registered_assets')}</Text>
             <Text style={[styles.summaryValue, { color: colors.textPrimary }]}>{registeredAssets.length}개</Text>
           </View>
           <View style={styles.summaryRow}>
-            <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>총 평가금액</Text>
+            <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>{t('onboarding.score.total_value')}</Text>
             <Text style={[styles.summaryValue, { color: colors.textPrimary }]}>
               {registeredAssets.reduce((s, a) => s + a.quantity * a.price, 0).toLocaleString()}
             </Text>
@@ -849,7 +844,7 @@ export default function OnboardingScreen() {
             <View style={styles.weakFactorRow}>
               <Text style={styles.weakFactorIcon}>{weakest.icon}</Text>
               <View style={{ flex: 1 }}>
-                <Text style={styles.weakFactorLabel}>개선 포인트</Text>
+                <Text style={styles.weakFactorLabel}>{t('onboarding.score.improvement_point')}</Text>
                 <Text style={styles.weakFactorComment}>{weakest.comment}</Text>
               </View>
             </View>
@@ -857,7 +852,7 @@ export default function OnboardingScreen() {
         </View>
 
         <Text style={[styles.subheading, { marginTop: 16, color: colors.textSecondary }]}>
-          분석 탭에서 더 자세한 진단을 확인하세요
+          {t('onboarding.score.check_analysis')}
         </Text>
       </View>
     );
@@ -885,7 +880,7 @@ export default function OnboardingScreen() {
         {renderProgressDots()}
 
         <TouchableOpacity onPress={handleSkip} style={styles.topBarButton}>
-          <Text style={[styles.skipButtonText, { color: colors.textTertiary }]}>빠른 시작</Text>
+          <Text style={[styles.skipButtonText, { color: colors.textTertiary }]}>{t('onboarding.quick_start')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -903,7 +898,7 @@ export default function OnboardingScreen() {
             activeOpacity={0.8}
           >
             <Text style={styles.nextButtonText}>
-              다음
+              {t('common.next')}
             </Text>
             <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
           </TouchableOpacity>
@@ -913,7 +908,7 @@ export default function OnboardingScreen() {
             onPress={handleStart}
             activeOpacity={0.8}
           >
-            <Text style={styles.startButtonText}>{'시작하기 \u2192'}</Text>
+            <Text style={styles.startButtonText}>{t('onboarding.start.button')}</Text>
           </TouchableOpacity>
         )}
       </View>

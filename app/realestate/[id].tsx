@@ -32,8 +32,9 @@ import supabase from '../../src/services/supabase';
 import { SHARED_PORTFOLIO_KEY } from '../../src/hooks/useSharedPortfolio';
 import { useRealEstatePrice } from '../../src/hooks/useRealEstate';
 import { formatPrice } from '../../src/services/realEstateApi';
-import { sqmToPyeong, type AreaPriceSummary } from '../../src/types/realestate';
+import { sqmToPyeong, type RealEstateTransaction } from '../../src/types/realestate';
 import { useTheme } from '../../src/hooks/useTheme';
+import { useLocale } from '../../src/context/LocaleContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // 메모 저장용 AsyncStorage 키
@@ -44,6 +45,7 @@ export default function RealEstateDetailScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { colors } = useTheme();
+  const { t } = useLocale();
 
   // 메모 상태
   const [memo, setMemo] = useState('');
@@ -115,10 +117,10 @@ export default function RealEstateDetailScreen() {
       queryClient.invalidateQueries({ queryKey: SHARED_PORTFOLIO_KEY });
       queryClient.invalidateQueries({ queryKey: ['my-realestate'] });
       setEditMode(false);
-      Alert.alert('수정 완료', '시세가 업데이트되었습니다.');
+      Alert.alert(t('realestate.alert.updateSuccess'), t('realestate.alert.priceUpdatedMessage'));
     },
-    onError: (error: any) => {
-      Alert.alert('수정 실패', error.message || '시세 수정 중 오류가 발생했습니다.');
+    onError: (error: unknown) => {
+      Alert.alert(t('realestate.alert.updateFail'), error instanceof Error ? error.message : t('realestate.alert.updateError'));
     },
   });
 
@@ -139,8 +141,8 @@ export default function RealEstateDetailScreen() {
       AsyncStorage.removeItem(`${MEMO_KEY_PREFIX}${id}`);
       router.back();
     },
-    onError: (error: any) => {
-      Alert.alert('삭제 실패', error.message || '부동산 자산 삭제 중 오류가 발생했습니다.');
+    onError: (error: unknown) => {
+      Alert.alert(t('realestate.alert.deleteFail'), error instanceof Error ? error.message : t('realestate.alert.deleteError'));
     },
   });
 
@@ -148,27 +150,27 @@ export default function RealEstateDetailScreen() {
   const handleUpdatePrice = useCallback(() => {
     const priceNum = parseInt(editPrice.replace(/[^0-9]/g, ''), 10);
     if (!priceNum || priceNum < 1000) {
-      Alert.alert('입력 오류', '시세를 만원 단위로 입력해주세요 (예: 150000 = 15억)');
+      Alert.alert(t('realestate.alert.inputError'), t('realestate.alert.priceInputHint'));
       return;
     }
     updatePriceMutation.mutate(priceNum * 10000); // 만원 → 원 변환
-  }, [editPrice, updatePriceMutation]);
+  }, [editPrice, updatePriceMutation, t]);
 
   // 삭제 확인
   const handleDelete = useCallback(() => {
     Alert.alert(
-      '부동산 자산 삭제',
-      `${asset?.name || '이 부동산'}을 포트폴리오에서 삭제하시겠습니까?\n\n삭제 후 복구할 수 없습니다.`,
+      t('realestate.alert.deleteTitle'),
+      t('realestate.alert.deleteMessage').replace('{{name}}', asset?.name || t('realestate.thisProperty')),
       [
-        { text: '취소', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: '삭제',
+          text: t('common.delete'),
           style: 'destructive',
           onPress: () => deleteMutation.mutate(),
         },
       ],
     );
-  }, [asset, deleteMutation]);
+  }, [asset, deleteMutation, t]);
 
   // 시세 변동률 계산
   const getChangeInfo = () => {
@@ -193,7 +195,7 @@ export default function RealEstateDetailScreen() {
   const getTransactions = () => {
     if (!asset?.unit_area || !priceData?.transactions) return [];
     return priceData.transactions
-      .filter((t: any) => Math.abs(t.area - asset.unit_area) <= 2)
+      .filter((tx: RealEstateTransaction) => Math.abs(tx.area - asset.unit_area) <= 2)
       .slice(0, 5);
   };
 
@@ -216,12 +218,12 @@ export default function RealEstateDetailScreen() {
           <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={28} color={colors.primary} />
           </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>부동산 상세</Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{t('realestate.title')}</Text>
           <View style={{ width: 28 }} />
         </View>
         <View style={styles.loadingContainer}>
           <Ionicons name="alert-circle-outline" size={48} color={colors.textTertiary} />
-          <Text style={[styles.emptyText, { color: colors.textTertiary }]}>자산을 찾을 수 없습니다</Text>
+          <Text style={[styles.emptyText, { color: colors.textTertiary }]}>{t('realestate.notFound')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -238,7 +240,7 @@ export default function RealEstateDetailScreen() {
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={28} color={colors.primary} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>부동산 상세</Text>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{t('realestate.title')}</Text>
         <View style={{ width: 28 }} />
       </View>
 
@@ -252,11 +254,11 @@ export default function RealEstateDetailScreen() {
             <Ionicons name="business" size={32} color={colors.primary} />
           </View>
           <Text style={[styles.heroName, { color: colors.textPrimary }]}>
-            {asset.complex_name || asset.name || '부동산'}
+            {asset.complex_name || asset.name || t('realestate.defaultName')}
           </Text>
           {area > 0 && (
             <Text style={[styles.heroArea, { color: colors.textSecondary }]}>
-              전용 {Math.round(area)}㎡ ({Math.round(sqmToPyeong(area))}평)
+              {t('realestate.exclusiveArea')} {Math.round(area)}㎡ ({Math.round(sqmToPyeong(area))}{t('realestate.pyeong')})
             </Text>
           )}
           {asset.unit_detail && (
@@ -266,7 +268,7 @@ export default function RealEstateDetailScreen() {
 
         {/* 현재 시세 */}
         <View style={[styles.priceCard, { backgroundColor: colors.surface }]}>
-          <Text style={[styles.priceLabel, { color: colors.textSecondary }]}>현재 시세</Text>
+          <Text style={[styles.priceLabel, { color: colors.textSecondary }]}>{t('realestate.currentPrice')}</Text>
           <Text style={[styles.priceValue, { color: colors.primary }]}>
             {formatPrice(asset.current_price || asset.current_value || 0)}
           </Text>
@@ -282,7 +284,7 @@ export default function RealEstateDetailScreen() {
                 styles.changeText,
                 { color: changeInfo.isPositive ? colors.primary : colors.error },
               ]}>
-                {changeInfo.changeRate} (매입가 대비)
+                {changeInfo.changeRate} ({t('realestate.vsPurchase')})
               </Text>
             </View>
           )}
@@ -290,7 +292,7 @@ export default function RealEstateDetailScreen() {
           {/* 매입가 */}
           {(asset.avg_price || asset.purchase_price_krw) ? (
             <View style={[styles.purchaseRow, { borderTopColor: colors.surfaceLight }]}>
-              <Text style={[styles.purchaseLabel, { color: colors.textSecondary }]}>매입가</Text>
+              <Text style={[styles.purchaseLabel, { color: colors.textSecondary }]}>{t('realestate.purchasePrice')}</Text>
               <Text style={[styles.purchaseValue, { color: colors.textPrimary }]}>
                 {formatPrice(asset.avg_price || asset.purchase_price_krw || 0)}
               </Text>
@@ -300,11 +302,11 @@ export default function RealEstateDetailScreen() {
 
         {/* 실거래 히스토리 */}
         <View style={[styles.sectionCard, { backgroundColor: colors.surface }]}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>최근 실거래 내역</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{t('realestate.recentTransactions')}</Text>
           {priceLoading ? (
             <ActivityIndicator color={colors.primary} style={{ marginVertical: 16 }} />
           ) : transactions.length > 0 ? (
-            transactions.map((tx: any, idx: number) => (
+            transactions.map((tx: RealEstateTransaction, idx: number) => (
               <View
                 key={idx}
                 style={[
@@ -313,7 +315,7 @@ export default function RealEstateDetailScreen() {
                 ]}
               >
                 <Text style={[styles.txDate, { color: colors.textTertiary }]}>{tx.dealDate}</Text>
-                <Text style={[styles.txFloor, { color: colors.textSecondary }]}>{tx.floor}층</Text>
+                <Text style={[styles.txFloor, { color: colors.textSecondary }]}>{tx.floor}{t('realestate.floor')}</Text>
                 <Text style={[styles.txArea, { color: colors.textSecondary }]}>{Math.round(tx.area)}㎡</Text>
                 <Text style={[styles.txPrice, { color: colors.textPrimary }]}>
                   {formatPrice(tx.dealAmountMan * 10000)}
@@ -322,7 +324,7 @@ export default function RealEstateDetailScreen() {
             ))
           ) : (
             <Text style={[styles.noDataText, { color: colors.textTertiary }]}>
-              해당 면적의 최근 거래 내역이 없습니다
+              {t('realestate.noTransactions')}
             </Text>
           )}
         </View>
@@ -330,14 +332,14 @@ export default function RealEstateDetailScreen() {
         {/* 메모 */}
         <View style={[styles.sectionCard, { backgroundColor: colors.surface }]}>
           <View style={styles.memoHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>메모</Text>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{t('realestate.memo')}</Text>
             {memoSaved && (
-              <Text style={[styles.savedBadge, { color: colors.primary, backgroundColor: colors.primary + '20' }]}>저장됨</Text>
+              <Text style={[styles.savedBadge, { color: colors.primary, backgroundColor: colors.primary + '20' }]}>{t('realestate.saved')}</Text>
             )}
           </View>
           <TextInput
             style={[styles.memoInput, { backgroundColor: colors.surfaceLight, color: colors.textPrimary }]}
-            placeholder="메모를 입력하세요 (예: 전세 만기 2027.03, 리모델링 예정)"
+            placeholder={t('realestate.memoPlaceholder')}
             placeholderTextColor={colors.textTertiary}
             value={memo}
             onChangeText={setMemo}
@@ -350,20 +352,20 @@ export default function RealEstateDetailScreen() {
             onPress={handleSaveMemo}
           >
             <Ionicons name="save-outline" size={16} color={colors.primary} />
-            <Text style={[styles.memoSaveBtnText, { color: colors.primary }]}>메모 저장</Text>
+            <Text style={[styles.memoSaveBtnText, { color: colors.primary }]}>{t('realestate.saveMemo')}</Text>
           </TouchableOpacity>
         </View>
 
         {/* 시세 수정 모드 */}
         {editMode && (
           <View style={[styles.sectionCard, { backgroundColor: colors.surface }]}>
-            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>시세 수정</Text>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{t('realestate.editPrice')}</Text>
             <Text style={[styles.editHint, { color: colors.textTertiary }]}>
-              만원 단위로 입력하세요 (예: 150000 = 15억)
+              {t('realestate.editHint')}
             </Text>
             <TextInput
               style={[styles.editInput, { backgroundColor: colors.surfaceLight, color: colors.textPrimary, borderColor: colors.primary + '40' }]}
-              placeholder="시세 (만원)"
+              placeholder={t('realestate.pricePlaceholder')}
               placeholderTextColor={colors.textTertiary}
               keyboardType="numeric"
               value={editPrice}
@@ -375,7 +377,7 @@ export default function RealEstateDetailScreen() {
                 style={[styles.editCancelBtn, { backgroundColor: colors.surfaceLight }]}
                 onPress={() => setEditMode(false)}
               >
-                <Text style={[styles.editCancelText, { color: colors.textPrimary }]}>취소</Text>
+                <Text style={[styles.editCancelText, { color: colors.textPrimary }]}>{t('common.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.editSaveBtn, { backgroundColor: colors.primary }]}
@@ -385,7 +387,7 @@ export default function RealEstateDetailScreen() {
                 {updatePriceMutation.isPending ? (
                   <ActivityIndicator size="small" color="#000" />
                 ) : (
-                  <Text style={styles.editSaveText}>수정</Text>
+                  <Text style={styles.editSaveText}>{t('realestate.edit')}</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -402,7 +404,7 @@ export default function RealEstateDetailScreen() {
             }}
           >
             <Ionicons name="create-outline" size={20} color={colors.primary} />
-            <Text style={[styles.editBtnText, { color: colors.primary }]}>시세 수정</Text>
+            <Text style={[styles.editBtnText, { color: colors.primary }]}>{t('realestate.editPrice')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -415,7 +417,7 @@ export default function RealEstateDetailScreen() {
             ) : (
               <>
                 <Ionicons name="trash-outline" size={20} color={colors.error} />
-                <Text style={[styles.deleteBtnText, { color: colors.error }]}>삭제</Text>
+                <Text style={[styles.deleteBtnText, { color: colors.error }]}>{t('common.delete')}</Text>
               </>
             )}
           </TouchableOpacity>
@@ -425,7 +427,7 @@ export default function RealEstateDetailScreen() {
         <View style={[styles.disclaimerBox, { backgroundColor: colors.surfaceLight }]}>
           <Ionicons name="information-circle" size={14} color={colors.textTertiary} />
           <Text style={[styles.disclaimerText, { color: colors.textTertiary }]}>
-            본 시세는 국토교통부 실거래가 데이터 기반 참고 자료이며, 실제 시장가와 차이가 있을 수 있습니다.
+            {t('realestate.disclaimer')}
           </Text>
         </View>
       </ScrollView>

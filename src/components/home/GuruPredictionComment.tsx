@@ -16,6 +16,7 @@ import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
 import { getGuruDisplayName } from '../../services/characterService';
 import { getDailyQuote } from '../../data/guruQuoteBank';
 import type { ThemeColors } from '../../styles/colors';
+import { useLocale } from '../../context/LocaleContext';
 
 interface GuruPredictionCommentProps {
   /** 적중 수 */
@@ -24,8 +25,6 @@ interface GuruPredictionCommentProps {
   totalCount: number;
   /** 테마 색상 */
   colors: ThemeColors;
-  /** 언어 */
-  locale: string;
 }
 
 /** 날짜 기반 구루 선택 (매일 다른 구루가 코멘트) */
@@ -37,40 +36,31 @@ function getCommentGuru(): string {
   return COMMENT_GURUS[seed % COMMENT_GURUS.length];
 }
 
-/** 적중률에 따른 반응 메시지 */
-function getReactionMessage(correctCount: number, totalCount: number, locale: string): string {
+/** 적중률에 따른 반응 메시지 — t() 키 반환 */
+function getReactionKey(correctCount: number, totalCount: number): string {
   const rate = totalCount > 0 ? correctCount / totalCount : 0;
-  const isKo = locale === 'ko';
-
-  if (rate >= 1) {
-    return isKo ? '완벽해요! 시장을 잘 읽고 있군요.' : 'Perfect! You read the market well.';
-  }
-  if (rate >= 0.67) {
-    return isKo ? '좋은 판단이었어요. 이 감각을 유지하세요.' : 'Good calls. Keep this instinct sharp.';
-  }
-  if (rate >= 0.5) {
-    return isKo ? '반은 맞혔네요. 틀린 부분에서 배워봐요.' : 'Half right. Let\'s learn from the misses.';
-  }
-  if (rate > 0) {
-    return isKo ? '아쉽지만 괜찮아요. 복기가 실력을 만듭니다.' : 'Not great, but that\'s OK. Reviews build skill.';
-  }
-  return isKo ? '다음엔 더 잘할 수 있어요. 매일 연습이 핵심이에요.' : 'You\'ll do better next time. Daily practice is key.';
+  if (rate >= 1) return 'guruComment.perfect';
+  if (rate >= 0.67) return 'guruComment.good';
+  if (rate >= 0.5) return 'guruComment.half';
+  if (rate > 0) return 'guruComment.notGreat';
+  return 'guruComment.tryAgain';
 }
 
 export function GuruPredictionComment({
   correctCount,
   totalCount,
   colors,
-  locale,
 }: GuruPredictionCommentProps) {
+  const { t, language } = useLocale();
+
   if (totalCount === 0) return null;
 
   const guruId = getCommentGuru();
   const _config = GURU_CHARACTER_CONFIGS[guruId];
-  const isKo = locale === 'ko';
 
   // 적중률 기반 반응 메시지
-  const reaction = getReactionMessage(correctCount, totalCount, locale);
+  const reactionKey = getReactionKey(correctCount, totalCount);
+  const reaction = t(reactionKey);
 
   // 오늘의 관련 명언
   const quote = getDailyQuote();
@@ -101,7 +91,7 @@ export function GuruPredictionComment({
       {/* 명언 인용 */}
       <View style={[styles.quoteBlock, { borderLeftColor: colors.primary + '40' }]}>
         <Text style={[styles.quoteText, { color: colors.textSecondary }]}>
-          "{isKo ? quote.quote : quote.quoteEn}"
+          "{language === 'ko' ? quote.quote : quote.quoteEn}"
         </Text>
         <Text style={[styles.quoteSource, { color: colors.textTertiary }]}>
           — {getGuruDisplayName(quote.guruId)}

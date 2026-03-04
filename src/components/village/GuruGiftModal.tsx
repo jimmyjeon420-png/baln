@@ -23,6 +23,7 @@ import { CharacterAvatar } from '../character/CharacterAvatar';
 import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
 import { getGuruDisplayName } from '../../services/characterService';
 import type { ThemeColors } from '../../styles/colors';
+import { useLocale } from '../../context/LocaleContext';
 
 // ============================================================================
 // 타입
@@ -39,8 +40,6 @@ interface GuruGiftModalProps {
   onGift: (guruId: string, cost: number, friendshipGain: number) => Promise<void>;
   /** 테마 색상 */
   colors: ThemeColors;
-  /** 로케일 (ko/en) */
-  locale: string;
 }
 
 // ============================================================================
@@ -93,7 +92,6 @@ function GuruGiftModal({
   onClose,
   onGift,
   colors,
-  locale,
 }: GuruGiftModalProps) {
   const [selectedGift, setSelectedGift] = useState<GiftOption | null>(null);
   const [isSending, setIsSending] = useState(false);
@@ -101,7 +99,8 @@ function GuruGiftModal({
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const successAnim = useRef(new Animated.Value(0)).current;
 
-  const isKo = locale === 'ko';
+  const { t, language } = useLocale();
+  const isKo = language === 'ko';
 
   // 모달 열림 애니메이션
   useEffect(() => {
@@ -184,14 +183,10 @@ function GuruGiftModal({
                     {'\uD83C\uDF89'}
                   </Text>
                   <Text style={[styles.successText, { color: colors.textPrimary }]}>
-                    {isKo
-                      ? `${guruName}${guruName.endsWith('스') ? '가' : '이(가)'} 기뻐합니다!`
-                      : `${guruName} is delighted!`}
+                    {t('guruGift.delighted', { name: guruName })}
                   </Text>
                   <Text style={[styles.successSubtext, { color: colors.textSecondary }]}>
-                    {isKo
-                      ? '"고마워! 정말 고마워!"'
-                      : '"Thank you! I really appreciate it!"'}
+                    {t('guruGift.thankYou')}
                   </Text>
                 </Animated.View>
               ) : (
@@ -203,16 +198,14 @@ function GuruGiftModal({
                       {config.emoji} {guruName}
                     </Text>
                     <Text style={[styles.title, { color: colors.textSecondary }]}>
-                      {isKo ? '선물하기' : 'Send Gift'}
+                      {t('guruGift.title')}
                     </Text>
                   </View>
 
                   {/* 우정 혜택 안내 */}
                   <View style={[styles.benefitBox, { backgroundColor: colors.primary + '10', borderColor: colors.primary + '30' }]}>
                     <Text style={[styles.benefitText, { color: colors.textSecondary }]}>
-                      {isKo
-                        ? '💝 우정이 오르면: 특별 편지 · 숨겨진 대화 · 마을 번영도 증가'
-                        : '💝 Higher friendship: Special letters · Hidden dialogues · Village prosperity'}
+                      {t('guruGift.benefit')}
                     </Text>
                   </View>
 
@@ -243,7 +236,7 @@ function GuruGiftModal({
                               {isKo ? gift.nameKo : gift.nameEn}
                             </Text>
                             <Text style={[styles.giftMeta, { color: colors.textTertiary }]}>
-                              {isKo ? `우정 +${gift.friendshipGain}` : `Friendship +${gift.friendshipGain}`}
+                              {t('guruGift.friendshipGain', { amount: gift.friendshipGain })}
                             </Text>
                           </View>
                           <Text style={[styles.giftCost, { color: colors.primary }]}>
@@ -268,12 +261,10 @@ function GuruGiftModal({
                   >
                     <Text style={styles.sendButtonText}>
                       {isSending
-                        ? (isKo ? '보내는 중...' : 'Sending...')
+                        ? t('guruGift.sending')
                         : selectedGift
-                          ? (isKo
-                              ? `보내기 (${selectedGift.cost}C)`
-                              : `Send (${selectedGift.cost}C)`)
-                          : (isKo ? '선물을 선택하세요' : 'Select a gift')}
+                          ? t('guruGift.sendWithCost', { cost: selectedGift.cost })
+                          : t('guruGift.selectGift')}
                     </Text>
                   </TouchableOpacity>
 
@@ -284,7 +275,7 @@ function GuruGiftModal({
                     activeOpacity={0.7}
                   >
                     <Text style={[styles.closeButtonText, { color: colors.textSecondary }]}>
-                      {isKo ? '닫기' : 'Close'}
+                      {t('common.close')}
                     </Text>
                   </TouchableOpacity>
                 </>

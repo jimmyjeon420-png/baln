@@ -20,6 +20,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 
 // Android LayoutAnimation 활성화
 if (
@@ -69,7 +70,7 @@ export interface ExecutiveSummaryProps {
 
 const RECOMMENDATION_CONFIG = {
   BUY: {
-    label: '매수',
+    labelKey: 'deepDive.executiveSummary.buy',
     emoji: '📈',
     color: '#4CAF50',
     bgColor: 'rgba(76, 175, 80, 0.15)',
@@ -77,7 +78,7 @@ const RECOMMENDATION_CONFIG = {
     icon: 'trending-up' as const,
   },
   SELL: {
-    label: '매도',
+    labelKey: 'deepDive.executiveSummary.sell',
     emoji: '📉',
     color: '#CF6679',
     bgColor: 'rgba(207, 102, 121, 0.15)',
@@ -85,7 +86,7 @@ const RECOMMENDATION_CONFIG = {
     icon: 'trending-down' as const,
   },
   HOLD: {
-    label: '보유',
+    labelKey: 'deepDive.executiveSummary.hold',
     emoji: '⏸️',
     color: '#FFD700',
     bgColor: 'rgba(255, 215, 0, 0.15)',
@@ -109,6 +110,7 @@ export default function ExecutiveSummary({
   initiallyExpanded = true,
 }: ExecutiveSummaryProps) {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const [isExpanded, setIsExpanded] = useState(initiallyExpanded);
 
   const config = RECOMMENDATION_CONFIG[recommendation];
@@ -164,7 +166,7 @@ export default function ExecutiveSummary({
           >
             <Text style={styles.recommendationEmoji}>{config.emoji}</Text>
             <Text style={[styles.recommendationText, { color: config.color }]}>
-              {config.label}
+              {t(config.labelKey)}
             </Text>
           </View>
 
@@ -191,7 +193,7 @@ export default function ExecutiveSummary({
             <View style={styles.priceRow}>
               <View style={styles.priceItem}>
                 <Text style={[styles.priceLabel, { color: colors.textSecondary }]}>
-                  현재가
+                  {t('deepDive.executiveSummary.currentPrice')}
                 </Text>
                 <Text style={[styles.priceValue, { color: colors.textPrimary }]}>
                   ₩{currentPrice.toLocaleString()}
@@ -207,7 +209,7 @@ export default function ExecutiveSummary({
 
               <View style={styles.priceItem}>
                 <Text style={[styles.priceLabel, { color: colors.textSecondary }]}>
-                  목표가
+                  {t('deepDive.executiveSummary.targetPrice')}
                 </Text>
                 <Text style={[styles.priceValue, { color: config.color }]}>
                   ₩{targetPrice.toLocaleString()}
@@ -238,7 +240,7 @@ export default function ExecutiveSummary({
                 ]}
               >
                 {isPositiveReturn ? '+' : ''}
-                {expectedReturn.toFixed(2)}% 기대 수익률
+                {expectedReturn.toFixed(2)}% {t('deepDive.executiveSummary.expectedReturn')}
               </Text>
             </View>
           </View>
@@ -246,7 +248,7 @@ export default function ExecutiveSummary({
           {/* 핵심 근거 */}
           <View style={styles.keyPointsSection}>
             <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-              핵심 근거
+              {t('deepDive.executiveSummary.keyPoints')}
             </Text>
             {keyPoints.slice(0, 5).map((point, index) => (
               <View key={index} style={styles.keyPointItem}>

@@ -111,7 +111,7 @@ import { onCheckInComplete } from '../../src/services/streakNotificationService'
 import { useWeather } from '../../src/hooks/useWeather';
 import { useMarketSentiment } from '../../src/hooks/useMarketSentiment';
 import { getDailyQuote } from '../../src/data/guruQuoteBank';
-import WeatherBadge from '../../src/components/common/WeatherBadge';
+// WeatherBadge removed — unused in this screen
 
 function extractTaggedLine(source: string | null | undefined, tag: string): string | null {
   if (!source) return null;
@@ -168,6 +168,10 @@ function buildReviewSource(source: string | null | undefined): string | undefine
   return summaryLines.join('\n');
 }
 
+// 마일스톤 체크: 7, 30, 90, 365일 달성 시 축하 모달 표시
+const STREAK_MILESTONES: number[] = [7, 30, 90, 365];
+const MILESTONE_SHOWN_KEY = '@baln:milestone_shown';
+
 // ============================================================================
 // 메인 컴포넌트
 // ============================================================================
@@ -199,7 +203,7 @@ export default function HomeScreen() {
   const { addContribution } = useVillageProsperity();
 
   // 마을 연동: 날씨 + 시장 심리 + 오늘의 명언
-  const { weather, clothingLevel } = useWeather();
+  const { weather, clothingLevel: _clothingLevel } = useWeather();
   const { sentiment, setSentimentFromPortfolio } = useMarketSentiment();
   const dailyQuote = getDailyQuote();
   const villagePreviewHeight = Math.max(184, Math.min(220, viewportHeight * 0.235));
@@ -226,10 +230,6 @@ export default function HomeScreen() {
 
   // 마일스톤 축하 상태
   const [milestoneToShow, setMilestoneToShow] = useState<number | null>(null);
-
-  // 마일스톤 체크: 7, 30, 90, 365일 달성 시 축하 모달 표시
-  const STREAK_MILESTONES = [7, 30, 90, 365];
-  const MILESTONE_SHOWN_KEY = '@baln:milestone_shown';
 
   useEffect(() => {
     if (!isNewStreak || currentStreak === 0) return;
@@ -407,7 +407,7 @@ export default function HomeScreen() {
   // 1. 건강 신호등 카드 데이터
   // ──────────────────────────────────────────────────────────────────────
   const {
-    heartAssets,
+    heartAssets: _heartAssets,
     heartAssetsWithSignal,
     hasAssets,
     portfolioHealthScore,
@@ -456,7 +456,7 @@ export default function HomeScreen() {
       dailyChangeRate,
       selectedGuruId: guruStyle,
       onAnalysisPress: () => router.push('/(tabs)/rebalance'),
-      onAssetPress: (name: string) => router.push('/(tabs)/rebalance'),
+      onAssetPress: (_name: string) => router.push('/(tabs)/rebalance'),
     };
   }, [
     hasAssets,
@@ -591,7 +591,6 @@ export default function HomeScreen() {
     contextLoading,
     isPremium,
     router,
-    showToast,
     showGuruBanner,
     updateTimeLabel,
     isContextFallback,
@@ -625,7 +624,7 @@ export default function HomeScreen() {
 
   // 배열 → Map 변환
   const myVotesMap = React.useMemo(() => {
-    const map: Record<string, any> = {};
+    const map: Record<string, { poll_id: string; vote: 'YES' | 'NO' }> = {};
     myVotesArray.forEach(vote => {
       map[vote.poll_id] = vote;
     });
@@ -778,8 +777,8 @@ export default function HomeScreen() {
               // B-2: 번영도 기여
               addContribution('prediction_vote').catch(() => {});
             },
-            onError: (error: any) => {
-              showToast(error?.message || t('home.toast.vote_error'), 'error');
+            onError: (error: unknown) => {
+              showToast((error as Error)?.message || t('home.toast.vote_error'), 'error');
             },
           }
         );
@@ -796,8 +795,8 @@ export default function HomeScreen() {
               // B-2: 번영도 기여
               addContribution('prediction_vote').catch(() => {});
             },
-            onError: (error: any) => {
-              showToast(error?.message || t('home.toast.multi_vote_error'), 'error');
+            onError: (error: unknown) => {
+              showToast((error as Error)?.message || t('home.toast.multi_vote_error'), 'error');
             },
           }
         );
@@ -887,7 +886,6 @@ export default function HomeScreen() {
         weatherEmoji={weather?.emoji}
         temperature={weather?.temperature}
         colors={colors}
-        locale={language}
       />
 
       {/* 크로스탭 연동 배너는 일정 이상 습관이 형성된 사용자에게만 노출 */}
@@ -906,7 +904,6 @@ export default function HomeScreen() {
       <GuruReactionBanner
         reaction={guruBannerReaction}
         colors={colors}
-        locale={language}
       />
 
       {/* 🏘️ 구루 마을 — 동물의숲 × 주토피아 (구루들이 살아 움직이는 마을) */}

@@ -58,8 +58,6 @@ interface GuruDetailSheetProps {
   onViewProfile: (guruId: string) => void;
   /** 테마 색상 */
   colors: ThemeColors;
-  /** 로케일 (ko/en) */
-  locale?: string;
 }
 
 // ============================================================================
@@ -170,16 +168,16 @@ const GURU_QUOTES: Record<string, { ko: string; en: string }[]> = {
 };
 
 /** 오늘 날짜 기반으로 랜덤하지 않게 명언 선택 (매일 일관성) */
-function getDailyQuote(guruId: string, locale: string): string {
+function getDailyQuoteText(guruId: string, language: string): string {
   const quotes = GURU_QUOTES[guruId];
   if (!quotes || quotes.length === 0) {
-    return locale === 'ko'
+    return language === 'ko'
       ? '매일 꾸준히 배우는 것이 가장 확실한 투자입니다.'
       : 'Learning consistently every day is the surest investment.';
   }
   const dayIndex = Math.floor(Date.now() / (1000 * 60 * 60 * 24)) % quotes.length;
   const quote = quotes[dayIndex];
-  return locale === 'ko' ? quote.ko : quote.en;
+  return language === 'ko' ? quote.ko : quote.en;
 }
 
 // ============================================================================
@@ -238,10 +236,8 @@ const GuruDetailSheet = React.memo(({
   onGift,
   onViewProfile,
   colors,
-  locale = 'ko',
 }: GuruDetailSheetProps) => {
-  const { t } = useLocale();
-  const isKo = locale === 'ko';
+  const { t, language } = useLocale();
   const isVisible = guruId !== null;
 
   // 슬라이드업 애니메이션
@@ -286,10 +282,10 @@ const GuruDetailSheet = React.memo(({
 
   const config = GURU_CHARACTER_CONFIGS[guruId];
   const guruName = getGuruDisplayName(guruId);
-  const animalType = isKo ? (config?.characterConcept ?? '') : (config?.characterConceptEn ?? '');
+  const animalType = language === 'ko' ? (config?.characterConcept ?? '') : (config?.characterConceptEn ?? '');
   const moodEmoji = getMoodEmoji(mood);
-  const moodLabel = getMoodLabel(mood, isKo);
-  const dailyQuote = getDailyQuote(guruId, locale);
+  const moodLabel = getMoodLabel(mood, language === 'ko');
+  const dailyQuote = getDailyQuoteText(guruId, language);
   const accentColor = config?.accentColor ?? colors.primary;
 
   // FriendshipMeter에 넘길 GuruFriendship 객체 구성 (최소 필드)
@@ -368,7 +364,6 @@ const GuruDetailSheet = React.memo(({
               activity={activity}
               mood={mood}
               colors={colors}
-              locale={locale}
             />
           </View>
 
@@ -377,7 +372,6 @@ const GuruDetailSheet = React.memo(({
             friendship={friendshipData}
             guruId={guruId}
             colors={colors}
-            locale={locale}
             compact={false}
           />
 
@@ -436,7 +430,6 @@ const GuruDetailSheet = React.memo(({
           <GuruScheduleCard
             guruId={guruId}
             colors={colors}
-            locale={locale}
           />
 
           {/* ── 오늘의 명언 ── */}

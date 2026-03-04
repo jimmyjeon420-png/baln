@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, type ViewStyle } from 'react-native';
 import { COLORS, SIZES, TYPOGRAPHY } from '../../styles/theme';
 
 /**
@@ -20,7 +20,7 @@ interface StatusBadgeProps {
   /** 배지 텍스트 (예: "적중!", "주의", "Premium") */
   label: string;
   /** 추가 스타일 (선택 사항) */
-  style?: any;
+  style?: ViewStyle;
 }
 
 export const StatusBadge: React.FC<StatusBadgeProps> = ({ type, label, style }) => {

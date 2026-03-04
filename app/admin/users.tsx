@@ -35,8 +35,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAdminUserList, useGrantBonusCredits, useAdminUserDetail, useAdminBanUser } from '../../src/hooks/useAdminDashboard';
-import { AdminUser, AdminUserDetail } from '../../src/services/adminService';
+import { AdminUser } from '../../src/services/adminService';
 import { COLORS } from '../../src/styles/theme';
+import { useLocale } from '../../src/context/LocaleContext';
 
 // ─── 티어 색상 매핑 ─────────────────────────────────────────
 
@@ -59,36 +60,36 @@ const PLAN_BADGE: Record<string, { label: string; color: string }> = {
 
 type SortKey = 'created_at' | 'last_active' | 'total_assets' | 'credit_balance';
 
-const SORT_CHIPS: { key: SortKey; label: string }[] = [
-  { key: 'last_active', label: '최근활동순' },
-  { key: 'total_assets', label: '자산순' },
-  { key: 'credit_balance', label: '크레딧순' },
-  { key: 'created_at', label: '가입일순' },
+const SORT_CHIP_KEYS: { key: SortKey; tKey: string }[] = [
+  { key: 'last_active', tKey: 'admin.users.sort.lastActive' },
+  { key: 'total_assets', tKey: 'admin.users.sort.assets' },
+  { key: 'credit_balance', tKey: 'admin.users.sort.credits' },
+  { key: 'created_at', tKey: 'admin.users.sort.joinDate' },
 ];
 
 // ─── 이벤트 이름 한국어 매핑 ─────────────────────────────────
 
-const EVENT_LABEL_MAP: Record<string, string> = {
-  screen_view: '화면 조회',
-  prediction_vote: '예측 투표',
-  context_card_read: '카드 읽기',
-  share_card: '공유',
-  achievement_earned: '업적 달성',
-  review_completed: '복기 완료',
+const EVENT_LABEL_KEYS: Record<string, string> = {
+  screen_view: 'admin.users.event.screenView',
+  prediction_vote: 'admin.users.event.predictionVote',
+  context_card_read: 'admin.users.event.cardRead',
+  share_card: 'admin.users.event.share',
+  achievement_earned: 'admin.users.event.achievement',
+  review_completed: 'admin.users.event.reviewCompleted',
 };
 
 // ─── 크레딧 거래 타입 뱃지 색상 ──────────────────────────────
 
-const CREDIT_TYPE_BADGE: Record<string, { label: string; color: string }> = {
-  attendance: { label: '출석', color: COLORS.primary },
-  prediction: { label: '예측', color: COLORS.info },
-  share: { label: '공유', color: '#7C4DFF' },
-  welcome: { label: '환영', color: COLORS.warning },
-  bonus: { label: '보너스', color: COLORS.warning },
-  purchase: { label: '구매', color: COLORS.error },
-  spend: { label: '사용', color: COLORS.textTertiary },
-  premium: { label: 'Premium', color: COLORS.warning },
-  admin_grant: { label: '관리자', color: COLORS.primary },
+const CREDIT_TYPE_BADGE: Record<string, { tKey: string; color: string }> = {
+  attendance: { tKey: 'admin.users.credit.attendance', color: COLORS.primary },
+  prediction: { tKey: 'admin.users.credit.prediction', color: COLORS.info },
+  share: { tKey: 'admin.users.credit.share', color: '#7C4DFF' },
+  welcome: { tKey: 'admin.users.credit.welcome', color: COLORS.warning },
+  bonus: { tKey: 'admin.users.credit.bonus', color: COLORS.warning },
+  purchase: { tKey: 'admin.users.credit.purchase', color: COLORS.error },
+  spend: { tKey: 'admin.users.credit.spend', color: COLORS.textTertiary },
+  premium: { tKey: 'admin.users.credit.premium', color: COLORS.warning },
+  admin_grant: { tKey: 'admin.users.credit.adminGrant', color: COLORS.primary },
 };
 
 // ─── 페이지네이션 상수 ──────────────────────────────────────
@@ -97,33 +98,33 @@ const PAGE_SIZE = 30;
 
 // ─── 헬퍼 함수 ─────────────────────────────────────────────
 
-/** 자산 금액을 한국식으로 포맷 (예: 1.2억, 5,000만, 300원) */
-function formatAssets(amount: number): string {
-  if (amount >= 100000000) return `${(amount / 100000000).toFixed(1)}억`;
-  if (amount >= 10000) return `${Math.floor(amount / 10000).toLocaleString()}만`;
-  return `${amount.toLocaleString()}원`;
+/** 자산 금액을 포맷 (예: 1.2억, 5,000만, 300원) */
+function formatAssets(amount: number, t: (key: string) => string): string {
+  if (amount >= 100000000) return `${(amount / 100000000).toFixed(1)}${t('common.unitBillion')}`;
+  if (amount >= 10000) return `${Math.floor(amount / 10000).toLocaleString()}${t('common.unitTenThousand')}`;
+  return `${amount.toLocaleString()}${t('common.unitWon')}`;
 }
 
 /** 상대 시간 표시 (예: 방금 전, 3시간 전, 2일 전) */
-function getRelativeTime(dateStr: string): string {
+function getRelativeTime(dateStr: string, t: (key: string) => string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 1) return '방금 전';
-  if (mins < 60) return `${mins}분 전`;
+  if (mins < 1) return t('common.time.justNow');
+  if (mins < 60) return t('common.time.minutesAgo').replace('{{n}}', String(mins));
   const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}시간 전`;
+  if (hours < 24) return t('common.time.hoursAgo').replace('{{n}}', String(hours));
   const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}일 전`;
-  return `${Math.floor(days / 30)}개월 전`;
+  if (days < 30) return t('common.time.daysAgo').replace('{{n}}', String(days));
+  return t('common.time.monthsAgo').replace('{{n}}', String(Math.floor(days / 30)));
 }
 
 /** 날짜를 "2026.02.10 가입" 형식으로 포맷 */
-function formatJoinDate(dateStr: string): string {
+function formatJoinDate(dateStr: string, t: (key: string) => string): string {
   const d = new Date(dateStr);
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
-  return `${y}.${m}.${day} 가입`;
+  return `${y}.${m}.${day} ${t('admin.users.joined')}`;
 }
 
 /** 날짜를 짧은 형식으로 포맷 (예: "02.10 14:30") */
@@ -159,20 +160,21 @@ function getActivityDotColor(lastActive: string | null): string {
   return '#757575'; // gray: 7+ days
 }
 
-/** 이벤트 이름을 한국어로 변환 */
-function getEventLabel(eventName: string): string {
-  return EVENT_LABEL_MAP[eventName] || eventName;
+/** 이벤트 이름을 번역 키로 변환 */
+function getEventLabelKey(eventName: string): string | null {
+  return EVENT_LABEL_KEYS[eventName] || null;
 }
 
 /** 크레딧 거래 타입 뱃지 정보 */
-function getCreditTypeBadge(type: string): { label: string; color: string } {
-  return CREDIT_TYPE_BADGE[type] || { label: type, color: COLORS.textTertiary };
+function getCreditTypeBadge(type: string): { tKey: string; color: string } {
+  return CREDIT_TYPE_BADGE[type] || { tKey: type, color: COLORS.textTertiary };
 }
 
 // ─── 메인 컴포넌트 ──────────────────────────────────────────
 
 export default function AdminUsersScreen() {
   const router = useRouter();
+  const { t } = useLocale();
 
   // ── 상태 관리 ──
   const [searchText, setSearchText] = useState('');
@@ -311,15 +313,15 @@ export default function AdminUsersScreen() {
     if (!selectedUser) return;
 
     const isBanned = userDetail?.profile?.is_banned ?? false;
-    const actionLabel = isBanned ? '차단 해제' : '차단';
+    const actionLabel = isBanned ? t('admin.users.unban') : t('admin.users.ban');
 
     Alert.alert(
-      `유저 ${actionLabel} 확인`,
+      t(isBanned ? 'admin.users.alert.unbanConfirmTitle' : 'admin.users.alert.banConfirmTitle'),
       isBanned
-        ? `${selectedUser.email || selectedUser.id}\n\n차단을 해제하시겠습니까?`
-        : `${selectedUser.email || selectedUser.id}\n\n이 유저를 차단하시겠습니까?\n(관리자 사유로 기록됩니다)`,
+        ? `${selectedUser.email || selectedUser.id}\n\n${t('admin.users.alert.unbanConfirmMessage')}`
+        : `${selectedUser.email || selectedUser.id}\n\n${t('admin.users.alert.banConfirmMessage')}`,
       [
-        { text: '취소', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
           text: actionLabel,
           style: isBanned ? 'default' : 'destructive',
@@ -327,25 +329,25 @@ export default function AdminUsersScreen() {
             try {
               const result = await banMutation.mutateAsync({
                 userId: selectedUser.id,
-                reason: isBanned ? undefined : '관리자 차단',
+                reason: isBanned ? undefined : t('admin.users.banReason'),
               });
               if (result.success) {
                 await refetchDetail();
                 Alert.alert(
-                  `${actionLabel} 완료`,
-                  `유저를 ${actionLabel}했습니다.`
+                  t(isBanned ? 'admin.users.alert.unbanSuccess' : 'admin.users.alert.banSuccess'),
+                  t(isBanned ? 'admin.users.alert.unbanSuccessMessage' : 'admin.users.alert.banSuccessMessage')
                 );
               } else {
-                Alert.alert(`${actionLabel} 실패`, result.error || '알 수 없는 오류');
+                Alert.alert(t(isBanned ? 'admin.users.alert.unbanFail' : 'admin.users.alert.banFail'), result.error || t('common.unknownError'));
               }
-            } catch (err: any) {
-              Alert.alert('오류', err.message || '처리 중 오류가 발생했습니다.');
+            } catch (err: unknown) {
+              Alert.alert(t('common.error'), err instanceof Error ? err.message : t('admin.users.alert.processError'));
             }
           },
         },
       ]
     );
-  }, [selectedUser, userDetail, banMutation, refetchDetail]);
+  }, [selectedUser, userDetail, banMutation, refetchDetail, t]);
 
   // ================================================================
   // 유저 카드 렌더링
@@ -374,7 +376,7 @@ export default function AdminUsersScreen() {
         <View style={styles.userInfo}>
           <View style={styles.emailRow}>
             <Text style={styles.userEmail} numberOfLines={1}>
-              {item.email || '이메일 없음'}
+              {item.email || t('admin.users.noEmail')}
             </Text>
             <View
               style={[
@@ -389,23 +391,23 @@ export default function AdminUsersScreen() {
                 {planBadge.label}
               </Text>
             </View>
-            <Text style={styles.joinDate}>{formatJoinDate(item.created_at)}</Text>
+            <Text style={styles.joinDate}>{formatJoinDate(item.created_at, t)}</Text>
           </View>
           {item.last_active && (
             <Text style={styles.lastActive}>
-              최근: {getRelativeTime(item.last_active)}
+              {t('admin.users.recent')}: {getRelativeTime(item.last_active, t)}
             </Text>
           )}
         </View>
 
         {/* 오른쪽: 총 자산 */}
         <View style={styles.assetContainer}>
-          <Text style={styles.assetValue}>{formatAssets(item.total_assets)}</Text>
+          <Text style={styles.assetValue}>{formatAssets(item.total_assets, t)}</Text>
           <Ionicons name="chevron-forward" size={16} color={COLORS.textTertiary} />
         </View>
       </TouchableOpacity>
     );
-  }, [getTierColor, getPlanBadge]);
+  }, [getTierColor, getPlanBadge, t]);
 
   // ================================================================
   // 리스트 푸터 (로딩 인디케이터)
@@ -416,10 +418,10 @@ export default function AdminUsersScreen() {
     return (
       <View style={styles.footerLoader}>
         <ActivityIndicator size="small" color={COLORS.primary} />
-        <Text style={styles.footerText}>불러오는 중...</Text>
+        <Text style={styles.footerText}>{t('common.loading')}</Text>
       </View>
     );
-  }, [isLoading, offset]);
+  }, [isLoading, offset, t]);
 
   // ================================================================
   // 빈 상태
@@ -435,16 +437,16 @@ export default function AdminUsersScreen() {
           color={COLORS.textTertiary}
         />
         <Text style={styles.emptyText}>
-          {debouncedSearch ? '검색 결과 없음' : '유저가 없습니다.'}
+          {debouncedSearch ? t('admin.users.noSearchResults') : t('admin.users.noUsers')}
         </Text>
         {debouncedSearch && (
           <Text style={styles.emptySubtext}>
-            다른 검색어로 시도해보세요.
+            {t('admin.users.tryOtherSearch')}
           </Text>
         )}
       </View>
     );
-  }, [isLoading, offset, debouncedSearch]);
+  }, [isLoading, offset, debouncedSearch, t]);
 
   // ── 보너스 지급 핸들러 ──
   const handleOpenGrant = useCallback(() => {
@@ -457,23 +459,23 @@ export default function AdminUsersScreen() {
     if (!selectedUser) return;
     const amount = parseInt(grantAmount, 10);
     if (!amount || amount <= 0) {
-      Alert.alert('입력 오류', '1 이상의 금액을 입력해주세요.');
+      Alert.alert(t('admin.users.alert.inputError'), t('admin.users.alert.minAmountError'));
       return;
     }
     if (amount > 10000) {
-      Alert.alert('입력 오류', '최대 10,000C까지 지급 가능합니다.');
+      Alert.alert(t('admin.users.alert.inputError'), t('admin.users.alert.maxAmountError'));
       return;
     }
 
     Keyboard.dismiss();
 
     Alert.alert(
-      '보너스 지급 확인',
-      `${selectedUser.email || selectedUser.id}\n\n지급 금액: ${amount}개 (₩${(amount * 100).toLocaleString()})\n${grantMemo ? `메모: ${grantMemo}` : ''}`,
+      t('admin.users.alert.grantConfirmTitle'),
+      `${selectedUser.email || selectedUser.id}\n\n${t('admin.users.alert.grantAmount')}: ${amount}${t('admin.users.creditUnit')} (₩${(amount * 100).toLocaleString()})\n${grantMemo ? `${t('admin.users.memo')}: ${grantMemo}` : ''}`,
       [
-        { text: '취소', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: '지급',
+          text: t('admin.users.grant'),
           style: 'default',
           onPress: async () => {
             try {
@@ -498,20 +500,20 @@ export default function AdminUsersScreen() {
                   )
                 );
                 Alert.alert(
-                  '지급 완료',
-                  `${amount}개 (₩${(amount * 100).toLocaleString()})를 지급했습니다.\n새 잔액: ${result.new_balance ?? '-'}개`
+                  t('admin.users.alert.grantSuccess'),
+                  `${amount}${t('admin.users.creditUnit')} (₩${(amount * 100).toLocaleString()}) ${t('admin.users.alert.grantSuccessMessage')}\n${t('admin.users.alert.newBalance')}: ${result.new_balance ?? '-'}${t('admin.users.creditUnit')}`
                 );
               } else {
-                Alert.alert('지급 실패', result.error || '알 수 없는 오류');
+                Alert.alert(t('admin.users.alert.grantFail'), result.error || t('common.unknownError'));
               }
-            } catch (err: any) {
-              Alert.alert('오류', err.message || '크레딧 지급 중 오류가 발생했습니다.');
+            } catch (err: unknown) {
+              Alert.alert(t('common.error'), err instanceof Error ? err.message : t('admin.users.alert.grantError'));
             }
           },
         },
       ]
     );
-  }, [selectedUser, grantAmount, grantMemo, grantMutation]);
+  }, [selectedUser, grantAmount, grantMemo, grantMutation, t]);
 
   // ================================================================
   // 보너스 지급 모달
@@ -535,12 +537,12 @@ export default function AdminUsersScreen() {
             {/* 헤더 */}
             <View style={styles.grantHeader}>
               <Ionicons name="gift-outline" size={24} color={COLORS.primary} />
-              <Text style={styles.grantTitle}>보너스 크레딧 지급</Text>
+              <Text style={styles.grantTitle}>{t('admin.users.grantTitle')}</Text>
             </View>
 
             {/* 대상 유저 */}
             <View style={styles.grantTargetRow}>
-              <Text style={styles.grantLabel}>대상</Text>
+              <Text style={styles.grantLabel}>{t('admin.users.target')}</Text>
               <Text style={styles.grantTargetEmail} numberOfLines={1}>
                 {selectedUser.email || selectedUser.id.slice(0, 8) + '...'}
               </Text>
@@ -548,7 +550,7 @@ export default function AdminUsersScreen() {
 
             {/* 금액 입력 */}
             <View style={styles.grantInputGroup}>
-              <Text style={styles.grantLabel}>지급 금액</Text>
+              <Text style={styles.grantLabel}>{t('admin.users.alert.grantAmount')}</Text>
               <View style={styles.grantAmountRow}>
                 <TextInput
                   style={styles.grantAmountInput}
@@ -592,12 +594,12 @@ export default function AdminUsersScreen() {
 
             {/* 메모 입력 */}
             <View style={styles.grantInputGroup}>
-              <Text style={styles.grantLabel}>메모 (선택)</Text>
+              <Text style={styles.grantLabel}>{t('admin.users.memoOptional')}</Text>
               <TextInput
                 style={styles.grantMemoInput}
                 value={grantMemo}
                 onChangeText={setGrantMemo}
-                placeholder="예: 이벤트 보상, 오류 보상 등"
+                placeholder={t('admin.users.memoPlaceholder')}
                 placeholderTextColor={COLORS.textTertiary}
                 maxLength={100}
               />
@@ -609,7 +611,7 @@ export default function AdminUsersScreen() {
                 style={styles.grantCancelBtn}
                 onPress={() => setShowGrantModal(false)}
               >
-                <Text style={styles.grantCancelText}>취소</Text>
+                <Text style={styles.grantCancelText}>{t('common.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[
@@ -623,7 +625,7 @@ export default function AdminUsersScreen() {
                   <ActivityIndicator size="small" color="#FFFFFF" />
                 ) : (
                   <Text style={styles.grantConfirmText}>
-                    {amount > 0 ? `${amount}개 지급` : '지급'}
+                    {amount > 0 ? `${amount}${t('admin.users.creditUnit')} ${t('admin.users.grant')}` : t('admin.users.grant')}
                   </Text>
                 )}
               </TouchableOpacity>
@@ -661,7 +663,7 @@ export default function AdminUsersScreen() {
             >
               <Ionicons name="close" size={24} color={COLORS.textPrimary} />
             </TouchableOpacity>
-            <Text style={styles.modalHeaderTitle}>유저 상세</Text>
+            <Text style={styles.modalHeaderTitle}>{t('admin.users.userDetail')}</Text>
             <View style={{ width: 24 }} />
           </View>
 
@@ -672,7 +674,7 @@ export default function AdminUsersScreen() {
                 <Ionicons name="person" size={28} color={tierColor} />
               </View>
               <Text style={styles.modalUserEmail}>
-                {selectedUser.email || '이메일 없음'}
+                {selectedUser.email || t('admin.users.noEmail')}
               </Text>
               <View style={styles.modalBadgeRow}>
                 <View style={[styles.planBadge, { backgroundColor: planBadge.color + '20' }]}>
@@ -688,7 +690,7 @@ export default function AdminUsersScreen() {
                 {isBanned && (
                   <View style={[styles.planBadge, { backgroundColor: COLORS.error + '20' }]}>
                     <Text style={[styles.planBadgeText, { color: COLORS.error }]}>
-                      차단됨
+                      {t('admin.users.banned')}
                     </Text>
                   </View>
                 )}
@@ -697,43 +699,43 @@ export default function AdminUsersScreen() {
 
             {/* ── 섹션 1: 기본 정보 (기존 유지) ── */}
             <View style={styles.modalSection}>
-              <Text style={styles.modalSectionTitle}>기본 정보</Text>
+              <Text style={styles.modalSectionTitle}>{t('admin.users.section.basicInfo')}</Text>
               <View style={styles.infoCard}>
                 <InfoRow
                   icon="mail-outline"
-                  label="이메일"
-                  value={selectedUser.email || '이메일 없음'}
+                  label={t('admin.users.label.email')}
+                  value={selectedUser.email || t('admin.users.noEmail')}
                 />
                 <InfoRow
                   icon="card-outline"
-                  label="플랜"
+                  label={t('admin.users.label.plan')}
                   value={planBadge.label}
                   valueColor={planBadge.color}
                 />
                 <InfoRow
                   icon="shield-outline"
-                  label="티어"
+                  label={t('admin.users.label.tier')}
                   value={selectedUser.tier}
                   valueColor={tierColor}
                 />
                 <InfoRow
                   icon="calendar-outline"
-                  label="가입일"
-                  value={formatJoinDate(selectedUser.created_at)}
+                  label={t('admin.users.label.joinDate')}
+                  value={formatJoinDate(selectedUser.created_at, t)}
                 />
                 <InfoRow
                   icon="wallet-outline"
-                  label="총 자산"
-                  value={formatAssets(selectedUser.total_assets)}
+                  label={t('admin.users.label.totalAssets')}
+                  value={formatAssets(selectedUser.total_assets, t)}
                   valueColor={COLORS.primary}
                 />
                 <InfoRow
                   icon="time-outline"
-                  label="최근 활동"
+                  label={t('admin.users.label.lastActive')}
                   value={
                     selectedUser.last_active
-                      ? getRelativeTime(selectedUser.last_active)
-                      : '활동 기록 없음'
+                      ? getRelativeTime(selectedUser.last_active, t)
+                      : t('admin.users.noActivity')
                   }
                   isLast
                 />
@@ -742,11 +744,11 @@ export default function AdminUsersScreen() {
 
             {/* ── 섹션 2: 크레딧 (Enhanced with detail data) ── */}
             <View style={styles.modalSection}>
-              <Text style={styles.modalSectionTitle}>크레딧</Text>
+              <Text style={styles.modalSectionTitle}>{t('admin.users.section.credits')}</Text>
               <View style={styles.infoCard}>
                 <InfoRow
                   icon="diamond-outline"
-                  label="크레딧 잔액"
+                  label={t('admin.users.label.creditBalance')}
                   value={formatCredits(
                     userDetail?.credits?.balance ?? selectedUser.credit_balance
                   )}
@@ -760,14 +762,14 @@ export default function AdminUsersScreen() {
                 {isDetailLoading && (
                   <View style={styles.detailLoadingRow}>
                     <ActivityIndicator size="small" color={COLORS.primary} />
-                    <Text style={styles.detailLoadingText}>거래 내역 로딩 중...</Text>
+                    <Text style={styles.detailLoadingText}>{t('admin.users.loadingTransactions')}</Text>
                   </View>
                 )}
                 {!isDetailLoading &&
                   userDetail?.credits?.recent_transactions &&
                   userDetail.credits.recent_transactions.length > 0 && (
                     <View style={styles.transactionSection}>
-                      <Text style={styles.transactionSectionLabel}>최근 거래</Text>
+                      <Text style={styles.transactionSectionLabel}>{t('admin.users.recentTransactions')}</Text>
                       {userDetail.credits.recent_transactions.slice(0, 5).map((tx, idx) => {
                         const badge = getCreditTypeBadge(tx.type);
                         const isPositive = tx.amount > 0;
@@ -782,7 +784,7 @@ export default function AdminUsersScreen() {
                           >
                             <View style={[styles.txTypeBadge, { backgroundColor: badge.color + '20' }]}>
                               <Text style={[styles.txTypeBadgeText, { color: badge.color }]}>
-                                {badge.label}
+                                {t(badge.tKey)}
                               </Text>
                             </View>
                             <View style={styles.txInfo}>
@@ -811,11 +813,11 @@ export default function AdminUsersScreen() {
 
             {/* ── 섹션 3: 예측 (Enhanced with detail data) ── */}
             <View style={styles.modalSection}>
-              <Text style={styles.modalSectionTitle}>예측</Text>
+              <Text style={styles.modalSectionTitle}>{t('admin.users.section.predictions')}</Text>
               <View style={styles.infoCard}>
                 <InfoRow
                   icon="analytics-outline"
-                  label="예측 정확도"
+                  label={t('admin.users.label.accuracy')}
                   value={formatAccuracy(
                     userDetail?.predictions?.accuracy_rate ?? selectedUser.prediction_accuracy
                   )}
@@ -828,35 +830,35 @@ export default function AdminUsersScreen() {
                 />
                 <InfoRow
                   icon="hand-left-outline"
-                  label="총 투표"
-                  value={`${(userDetail?.predictions?.total_votes ?? selectedUser.total_votes).toLocaleString()}회`}
+                  label={t('admin.users.label.totalVotes')}
+                  value={`${(userDetail?.predictions?.total_votes ?? selectedUser.total_votes).toLocaleString()}${t('common.unitTimes')}`}
                 />
                 <InfoRow
                   icon="checkmark-circle-outline"
-                  label="적중"
+                  label={t('admin.users.label.correct')}
                   value={
                     userDetail?.predictions
-                      ? `${userDetail.predictions.correct_votes.toLocaleString()}회`
+                      ? `${userDetail.predictions.correct_votes.toLocaleString()}${t('common.unitTimes')}`
                       : '-'
                   }
                   valueColor={COLORS.primary}
                 />
                 <InfoRow
                   icon="flame-outline"
-                  label="현재 스트릭"
+                  label={t('admin.users.label.currentStreak')}
                   value={
                     userDetail?.predictions
-                      ? `${userDetail.predictions.current_streak}일`
+                      ? `${userDetail.predictions.current_streak}${t('common.unitDays')}`
                       : '-'
                   }
                   valueColor={COLORS.warning}
                 />
                 <InfoRow
                   icon="trophy-outline"
-                  label="최고 스트릭"
+                  label={t('admin.users.label.bestStreak')}
                   value={
                     userDetail?.predictions
-                      ? `${userDetail.predictions.best_streak}일`
+                      ? `${userDetail.predictions.best_streak}${t('common.unitDays')}`
                       : '-'
                   }
                   isLast
@@ -864,7 +866,7 @@ export default function AdminUsersScreen() {
                 {isDetailLoading && !userDetail && (
                   <View style={styles.detailLoadingRow}>
                     <ActivityIndicator size="small" color={COLORS.primary} />
-                    <Text style={styles.detailLoadingText}>예측 데이터 로딩 중...</Text>
+                    <Text style={styles.detailLoadingText}>{t('admin.users.loadingPredictions')}</Text>
                   </View>
                 )}
               </View>
@@ -872,12 +874,12 @@ export default function AdminUsersScreen() {
 
             {/* ── 섹션 4: 활동 로그 (New) ── */}
             <View style={styles.modalSection}>
-              <Text style={styles.modalSectionTitle}>활동 로그</Text>
+              <Text style={styles.modalSectionTitle}>{t('admin.users.section.activityLog')}</Text>
               <View style={styles.infoCard}>
                 {isDetailLoading && !userDetail && (
                   <View style={styles.detailLoadingRow}>
                     <ActivityIndicator size="small" color={COLORS.primary} />
-                    <Text style={styles.detailLoadingText}>활동 로그 로딩 중...</Text>
+                    <Text style={styles.detailLoadingText}>{t('admin.users.loadingActivity')}</Text>
                   </View>
                 )}
                 {!isDetailLoading &&
@@ -900,17 +902,17 @@ export default function AdminUsersScreen() {
                           />
                         </View>
                         <Text style={styles.activityLabel}>
-                          {getEventLabel(activity.event_name)}
+                          {getEventLabelKey(activity.event_name) ? t(getEventLabelKey(activity.event_name) ?? '') : activity.event_name}
                         </Text>
                         <Text style={styles.activityTime}>
-                          {getRelativeTime(activity.created_at)}
+                          {getRelativeTime(activity.created_at, t)}
                         </Text>
                       </View>
                     ))
                   ) : (
                     !isDetailLoading && (
                       <View style={styles.activityEmptyRow}>
-                        <Text style={styles.activityEmptyText}>활동 기록이 없습니다</Text>
+                        <Text style={styles.activityEmptyText}>{t('admin.users.noActivity')}</Text>
                       </View>
                     )
                   )}
@@ -919,7 +921,7 @@ export default function AdminUsersScreen() {
 
             {/* 유저 ID (개발자 참고용) */}
             <View style={styles.modalSection}>
-              <Text style={styles.modalSectionTitle}>시스템 정보</Text>
+              <Text style={styles.modalSectionTitle}>{t('admin.users.section.systemInfo')}</Text>
               <View style={styles.infoCard}>
                 <InfoRow
                   icon="finger-print-outline"
@@ -933,14 +935,14 @@ export default function AdminUsersScreen() {
 
             {/* 관리자 액션 */}
             <View style={styles.modalSection}>
-              <Text style={styles.modalSectionTitle}>관리자 액션</Text>
+              <Text style={styles.modalSectionTitle}>{t('admin.users.section.adminActions')}</Text>
 
               {/* 차단 상태 표시 */}
               {isBanned && userDetail?.profile?.ban_reason && (
                 <View style={styles.banStatusContainer}>
                   <Ionicons name="ban-outline" size={16} color={COLORS.error} />
                   <Text style={styles.banStatusText}>
-                    차단됨: {userDetail.profile.ban_reason}
+                    {t('admin.users.bannedReason')}: {userDetail.profile.ban_reason}
                   </Text>
                 </View>
               )}
@@ -967,7 +969,7 @@ export default function AdminUsersScreen() {
                       color="#FFFFFF"
                     />
                     <Text style={styles.banButtonText}>
-                      {isBanned ? '차단 해제' : '차단하기'}
+                      {isBanned ? t('admin.users.unban') : t('admin.users.ban')}
                     </Text>
                   </>
                 )}
@@ -980,7 +982,7 @@ export default function AdminUsersScreen() {
                 onPress={handleOpenGrant}
               >
                 <Ionicons name="gift-outline" size={20} color="#FFFFFF" />
-                <Text style={styles.grantButtonText}>보너스 크레딧 지급</Text>
+                <Text style={styles.grantButtonText}>{t('admin.users.grantBonus')}</Text>
               </TouchableOpacity>
             </View>
           </ScrollView>
@@ -1000,7 +1002,7 @@ export default function AdminUsersScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="chevron-back" size={24} color={COLORS.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>유저 관리</Text>
+        <Text style={styles.headerTitle}>{t('admin.users.title')}</Text>
         <View style={{ width: 32 }} />
       </View>
 
@@ -1010,7 +1012,7 @@ export default function AdminUsersScreen() {
           <Ionicons name="search" size={18} color={COLORS.textTertiary} />
           <TextInput
             style={styles.searchInput}
-            placeholder="이메일로 검색..."
+            placeholder={t('admin.users.searchPlaceholder')}
             placeholderTextColor={COLORS.textTertiary}
             value={searchText}
             onChangeText={setSearchText}
@@ -1037,7 +1039,7 @@ export default function AdminUsersScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.sortChipScroll}
         >
-          {SORT_CHIPS.map((chip) => {
+          {SORT_CHIP_KEYS.map((chip) => {
             const isActive = sortKey === chip.key;
             return (
               <TouchableOpacity
@@ -1055,7 +1057,7 @@ export default function AdminUsersScreen() {
                     isActive && styles.sortChipTextActive,
                   ]}
                 >
-                  {chip.label}
+                  {t(chip.tKey)}
                 </Text>
               </TouchableOpacity>
             );
@@ -1066,11 +1068,11 @@ export default function AdminUsersScreen() {
       {/* 전체 유저 수 카운터 */}
       <View style={styles.countBar}>
         <Text style={styles.countText}>
-          전체 <Text style={styles.countNumber}>{totalCount.toLocaleString()}</Text>명
+          {t('admin.users.total')} <Text style={styles.countNumber}>{totalCount.toLocaleString()}</Text>{t('admin.users.countUnit')}
         </Text>
         {debouncedSearch ? (
           <Text style={styles.searchHint}>
-            "{debouncedSearch}" 검색 결과
+            "{debouncedSearch}" {t('admin.users.searchResults')}
           </Text>
         ) : null}
       </View>
@@ -1080,11 +1082,11 @@ export default function AdminUsersScreen() {
         <View style={styles.summaryBarContainer}>
           <View style={styles.summaryBar}>
             <Text style={styles.summaryText}>
-              Premium <Text style={styles.summaryHighlight}>{summaryStats.premiumCount}</Text>명
+              Premium <Text style={styles.summaryHighlight}>{summaryStats.premiumCount}</Text>{t('admin.users.countUnit')}
               {'  |  '}
-              평균 자산 <Text style={styles.summaryHighlight}>{summaryStats.avgAssets.toLocaleString()}</Text>만
+              {t('admin.users.avgAssets')} <Text style={styles.summaryHighlight}>{summaryStats.avgAssets.toLocaleString()}</Text>{t('admin.users.tenThousandUnit')}
               {'  |  '}
-              7일 활성 <Text style={styles.summaryHighlight}>{summaryStats.activeCount}</Text>명
+              {t('admin.users.active7d')} <Text style={styles.summaryHighlight}>{summaryStats.activeCount}</Text>{t('admin.users.countUnit')}
             </Text>
           </View>
         </View>
@@ -1094,14 +1096,14 @@ export default function AdminUsersScreen() {
       {isLoading && offset === 0 && allUsers.length === 0 ? (
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={COLORS.primary} />
-          <Text style={styles.loadingText}>유저 목록을 불러오는 중...</Text>
+          <Text style={styles.loadingText}>{t('admin.users.loadingList')}</Text>
         </View>
       ) : error ? (
         <View style={styles.centerContainer}>
           <Ionicons name="alert-circle-outline" size={48} color={COLORS.error} />
-          <Text style={styles.errorText}>데이터를 불러올 수 없습니다.</Text>
+          <Text style={styles.errorText}>{t('admin.users.loadError')}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={handleRefresh}>
-            <Text style={styles.retryButtonText}>다시 시도</Text>
+            <Text style={styles.retryButtonText}>{t('common.retry')}</Text>
           </TouchableOpacity>
         </View>
       ) : (

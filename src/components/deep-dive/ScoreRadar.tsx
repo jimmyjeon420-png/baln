@@ -12,6 +12,7 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import Svg, { Polygon, Circle, Line, Text as SvgText } from 'react-native-svg';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 
 // ── 타입 정의 ──
 
@@ -34,7 +35,7 @@ const SCORE_COLORS = {
   low: '#EF4444',    // 50 미만
 };
 
-const LABELS = ['재무', '기술', '뉴스'];
+const LABEL_KEYS = ['deepDive.scoreRadar.financial', 'deepDive.scoreRadar.technical', 'deepDive.scoreRadar.news'];
 
 /** 3꼭짓점 각도: 상단(-90°), 우하단(30°), 좌하단(150°) */
 const VERTEX_ANGLES = [-Math.PI / 2, Math.PI / 6, (5 * Math.PI) / 6];
@@ -77,6 +78,7 @@ export default function ScoreRadar({
   size = 200,
 }: ScoreRadarProps) {
   const { colors } = useTheme();
+  const { t } = useLocale();
 
   const padding = 30; // 상단 라벨 잘림 방지
   const svgSize = size + padding * 2;
@@ -171,7 +173,7 @@ export default function ScoreRadar({
               fill={colors.textSecondary}
               textAnchor="middle"
             >
-              {LABELS[idx]}
+              {t(LABEL_KEYS[idx])}
             </SvgText>
             <SvgText
               x={point[0]}

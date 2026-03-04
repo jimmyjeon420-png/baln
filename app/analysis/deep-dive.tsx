@@ -18,10 +18,9 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
-  FlatList,
   Keyboard,
 } from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { HeaderBar } from '../../src/components/common/HeaderBar';
@@ -33,6 +32,8 @@ import type { DeepDiveInput, DeepDiveResult } from '../../src/types/marketplace'
 import supabase, { getCurrentUser } from '../../src/services/supabase';
 import { AIConsentModal, hasAIConsent } from '../../src/components/common/AIConsentModal';
 import { isKoreanLocale } from '../../src/utils/formatters';
+import { useLocale } from '../../src/context/LocaleContext';
+import { t } from '../../src/locales';
 
 // ============================================================================
 // 한국 주요 종목 + 글로벌 인기 종목 DB (오프라인 검색용)
@@ -147,8 +148,8 @@ async function runDeepDiveDiagnostic() {
     } else {
       results.push(`1. Supabase: TIMEOUT 5s`);
     }
-  } catch (e: any) {
-    results.push(`1. Supabase ERROR: ${e.message}`);
+  } catch (e: unknown) {
+    results.push(`1. Supabase ERROR: ${e instanceof Error ? e.message : String(e)}`);
   }
 
   // 2. Auth 세션 체크
@@ -167,8 +168,8 @@ async function runDeepDiveDiagnostic() {
       } catch { expInfo = 'parse error'; }
     }
     results.push(`2. Auth: ${hasSession ? 'YES' : 'NO'} / ${expInfo} (${Date.now() - t2}ms)`);
-  } catch (e: any) {
-    results.push(`2. Auth ERROR: ${e.message}`);
+  } catch (e: unknown) {
+    results.push(`2. Auth ERROR: ${e instanceof Error ? e.message : String(e)}`);
   }
 
   // 3. Gemini API 프록시 헬스 체크 (Edge Function)
@@ -181,11 +182,11 @@ async function runDeepDiveDiagnostic() {
       new Promise<{ data: null; error: { message: string } }>((r) =>
         setTimeout(() => r({ data: null, error: { message: 'TIMEOUT 15s' } }), 15000)
       ),
-    ]) as any;
+    ]) as { data: Record<string, unknown> | null; error: { message: string } | null };
     if (error) {
       results.push(`3. Gemini proxy: ERROR ${error.message} (${Date.now() - t3}ms)`);
     } else {
-      const hc = data?.data;
+      const hc = data?.data as Record<string, string> | undefined;
       if (hc?.geminiApi === 'OK') {
         results.push(`3. Gemini proxy: OK ✅ API실제호출 성공 (${Date.now() - t3}ms)`);
       } else if (hc?.geminiApi) {
@@ -194,8 +195,8 @@ async function runDeepDiveDiagnostic() {
         results.push(`3. Gemini proxy: OK (${Date.now() - t3}ms)`);
       }
     }
-  } catch (e: any) {
-    results.push(`3. Gemini proxy ERROR: ${e.message}`);
+  } catch (e: unknown) {
+    results.push(`3. Gemini proxy ERROR: ${e instanceof Error ? e.message : String(e)}`);
   }
 
   // 4. 클라이언트 Gemini API 키 확인 (선택)
@@ -207,8 +208,8 @@ async function runDeepDiveDiagnostic() {
     } else {
       results.push(`4. Client KEY(선택): 없음 (프록시 모드에서는 정상)`);
     }
-  } catch (e: any) {
-    results.push(`4. Client KEY(선택) ERROR: ${e.message}`);
+  } catch (e: unknown) {
+    results.push(`4. Client KEY(선택) ERROR: ${e instanceof Error ? e.message : String(e)}`);
   }
 
   // 5. getCurrentUser 체크
@@ -216,15 +217,15 @@ async function runDeepDiveDiagnostic() {
     const t5 = Date.now();
     const u = await getCurrentUser();
     results.push(`5. User: ${u ? u.id.substring(0, 8) + '...' : 'NULL'} (${Date.now() - t5}ms)`);
-  } catch (e: any) {
-    results.push(`5. User ERROR: ${e.message}`);
+  } catch (e: unknown) {
+    results.push(`5. User ERROR: ${e instanceof Error ? e.message : String(e)}`);
   }
 
   // 6. 클라이언트 Gemini API 직접 호출 테스트 (참고용)
   try {
     if (!__DEV__) {
       results.push('6. Gemini 직접호출(참고): 프로덕션은 프록시 우선 모드로 스킵');
-      Alert.alert('딥다이브 진단 결과', results.join('\n') + `\n\n총: ${Date.now() - startTotal}ms`);
+      Alert.alert(t('analysis.deepDive.diagnostic.title'), results.join('\n') + `\n\n${t('analysis.deepDive.diagnostic.total')}: ${Date.now() - startTotal}ms`);
       return;
     }
 
@@ -257,12 +258,12 @@ async function runDeepDiveDiagnostic() {
         results.push(`6. Gemini 직접호출: ERROR ${testRes.status} ${errText.substring(0, 80)} (${Date.now() - t6}ms)`);
       }
     }
-  } catch (e: any) {
-    results.push(`6. Gemini 직접호출 ERROR: ${e.message?.substring(0, 80)}`);
+  } catch (e: unknown) {
+    results.push(`6. Gemini 직접호출 ERROR: ${(e instanceof Error ? e.message : String(e))?.substring(0, 80)}`);
   }
 
   const totalMs = Date.now() - startTotal;
-  Alert.alert('딥다이브 진단 결과', results.join('\n') + `\n\n총: ${totalMs}ms`);
+  Alert.alert(t('analysis.deepDive.diagnostic.title'), results.join('\n') + `\n\n${t('analysis.deepDive.diagnostic.total')}: ${totalMs}ms`);
 }
 
 // ============================================================================
@@ -271,6 +272,7 @@ async function runDeepDiveDiagnostic() {
 
 export default function DeepDiveScreen() {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const params = useLocalSearchParams<{ ticker?: string; name?: string }>();
 
   const [query, setQuery] = useState('');
@@ -345,7 +347,7 @@ export default function DeepDiveScreen() {
     if (!consented) return;
 
     setIsLoading(true);
-    setLoadingMessage('재무 데이터 조회 중...');
+    setLoadingMessage(t('analysis.deepDive.loading.fetchingData'));
     setError(null);
     setResult(null);
 
@@ -354,19 +356,19 @@ export default function DeepDiveScreen() {
       let fundamentals: Awaited<ReturnType<typeof fetchStockFundamentals>> = null;
       try {
         fundamentals = await fetchStockFundamentals(targetTicker, targetName);
-      } catch (fundErr: any) {
-        console.warn(`[DeepDive] 재무 데이터 조회 중 예외 발생 — Gemini 단독 분석으로 fallback:`, fundErr.message);
+      } catch (fundErr: unknown) {
+        console.warn(`[DeepDive] 재무 데이터 조회 중 예외 발생 — Gemini 단독 분석으로 fallback:`, fundErr instanceof Error ? fundErr.message : fundErr);
       }
 
-      setLoadingMessage('AI 분석 중...');
+      setLoadingMessage(t('analysis.deepDive.loading.analyzing'));
       const input: DeepDiveInput = { ticker: targetTicker, name: targetName, fundamentals: fundamentals || undefined };
       const analysisResult = await generateDeepDive(input);
       setResult(analysisResult);
-    } catch (err: any) {
-      const rawMsg = err.message || '';
-      let userMsg = rawMsg.length > 0 ? rawMsg.substring(0, 120) : '알 수 없는 오류가 발생했습니다';
-      if (rawMsg.includes('시간 초과') || err.name === 'AbortError') userMsg = 'AI 분석 시간이 초과되었습니다 (60초).\n다시 시도해주세요.';
-      else if (rawMsg.includes('429') || rawMsg.includes('RESOURCE_EXHAUSTED')) userMsg = 'AI 요청 한도를 초과했습니다.\n1분 후 다시 시도해주세요.';
+    } catch (err: unknown) {
+      const rawMsg = (err instanceof Error ? err.message : '') || '';
+      let userMsg = rawMsg.length > 0 ? rawMsg.substring(0, 120) : t('common.unknown_error');
+      if (rawMsg.includes('시간 초과') || (err instanceof Error && err.name === 'AbortError')) userMsg = t('analysis.deepDive.error.timeout');
+      else if (rawMsg.includes('429') || rawMsg.includes('RESOURCE_EXHAUSTED')) userMsg = t('analysis.deepDive.error.rateLimit');
       setError(userMsg);
     } finally {
       setIsLoading(false);
@@ -385,7 +387,7 @@ export default function DeepDiveScreen() {
     if (!consented) return;
 
     setIsLoading(true);
-    setLoadingMessage('재무 데이터 조회 중...');
+    setLoadingMessage(t('analysis.deepDive.loading.fetchingData'));
     setError(null);
     setResult(null);
 
@@ -396,8 +398,8 @@ export default function DeepDiveScreen() {
       let fundamentals: Awaited<ReturnType<typeof fetchStockFundamentals>> = null;
       try {
         fundamentals = await fetchStockFundamentals(targetTicker, targetName);
-      } catch (fundErr: any) {
-        console.warn(`[DeepDive] 재무 데이터 조회 중 예외 발생 — Gemini 단독 분석으로 fallback:`, fundErr.message);
+      } catch (fundErr: unknown) {
+        console.warn(`[DeepDive] 재무 데이터 조회 중 예외 발생 — Gemini 단독 분석으로 fallback:`, fundErr instanceof Error ? fundErr.message : fundErr);
       }
 
       if (fundamentals) {
@@ -411,7 +413,7 @@ export default function DeepDiveScreen() {
       }
 
       // [Step 2] Gemini AI 분석 (팩트 데이터 주입)
-      setLoadingMessage('AI 분석 중...');
+      setLoadingMessage(t('analysis.deepDive.loading.analyzing'));
       console.log(`[DeepDive] Step 2: AI 분석 시작`);
       const input: DeepDiveInput = {
         ticker: targetTicker,
@@ -423,36 +425,37 @@ export default function DeepDiveScreen() {
       console.log(`[DeepDive] 분석 완료`);
       setResult(analysisResult);
 
-    } catch (err: any) {
-      console.warn('[DeepDive] 분석 실패:', err.name, err.message, err.code);
+    } catch (err: unknown) {
+      const errObj = err instanceof Error ? err : new Error(String(err));
+      console.warn('[DeepDive] 분석 실패:', errObj.name, errObj.message, (err as { code?: string })?.code);
 
       // 사용자 친화적 에러 메시지 생성
       let userMsg: string;
-      const rawMsg = err.message || '';
-      if (rawMsg.includes('시간 초과') || err.name === 'AbortError') {
-        userMsg = 'AI 분석 시간이 초과되었습니다 (60초).\n네트워크 상태를 확인하고 다시 시도해주세요.';
+      const rawMsg = errObj.message || '';
+      if (rawMsg.includes('시간 초과') || errObj.name === 'AbortError') {
+        userMsg = t('analysis.deepDive.error.timeoutDetail');
       } else if (rawMsg.includes('429') || rawMsg.includes('RESOURCE_EXHAUSTED') || rawMsg.includes('한도 초과')) {
-        userMsg = 'AI 요청 한도를 초과했습니다.\n1분 후 다시 시도해주세요.';
+        userMsg = t('analysis.deepDive.error.rateLimit');
       } else if (rawMsg.includes('Network') || rawMsg.includes('network') || rawMsg.includes('fetch failed')) {
-        userMsg = '네트워크 연결에 실패했습니다.\nWi-Fi 또는 모바일 데이터를 확인해주세요.';
+        userMsg = t('analysis.deepDive.error.network');
       } else if (rawMsg.includes('JSON') || rawMsg.includes('응답 형식')) {
-        userMsg = 'AI 응답을 해석하지 못했습니다.\n다시 시도하면 해결될 수 있습니다.';
+        userMsg = t('analysis.deepDive.error.parseError');
       } else if (rawMsg.includes('403') || rawMsg.includes('PERMISSION')) {
-        userMsg = 'API 접근 권한 오류입니다.\n관리자에게 문의해주세요.';
+        userMsg = t('analysis.deepDive.error.permission');
       } else if (rawMsg.includes('빈 응답')) {
-        userMsg = 'AI가 빈 응답을 반환했습니다.\n다시 시도해주세요.';
+        userMsg = t('analysis.deepDive.error.emptyResponse');
       } else {
-        userMsg = rawMsg.length > 0 ? rawMsg.substring(0, 120) : '알 수 없는 오류가 발생했습니다';
+        userMsg = rawMsg.length > 0 ? rawMsg.substring(0, 120) : t('common.unknown_error');
       }
 
       setError(userMsg);
       Alert.alert(
-        '딥다이브 분석 실패',
+        t('analysis.deepDive.alert.analysisFailed'),
         userMsg,
         [
-          { text: '확인', style: 'cancel' },
-          { text: '다시 시도', onPress: handleAnalyze },
-          { text: '진단 실행', onPress: runDeepDiveDiagnostic },
+          { text: t('common.confirm'), style: 'cancel' },
+          { text: t('common.retry'), onPress: handleAnalyze },
+          { text: t('analysis.deepDive.alert.runDiagnostic'), onPress: runDeepDiveDiagnostic },
         ]
       );
     } finally {
@@ -485,7 +488,7 @@ export default function DeepDiveScreen() {
         }}
       />
       <HeaderBar
-        title="종목 딥다이브"
+        title={t('analysis.deepDive.title')}
         rightElement={
           <TouchableOpacity onPress={runDeepDiveDiagnostic} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
             <Ionicons name="pulse-outline" size={24} color={colors.primary} />
@@ -503,7 +506,7 @@ export default function DeepDiveScreen() {
           <TextInput
             value={query}
             onChangeText={handleQueryChange}
-            placeholder="종목 검색 (삼성전자, AAPL, 테슬라...)"
+            placeholder={t('analysis.deepDive.searchPlaceholder')}
             placeholderTextColor={colors.textTertiary}
             style={[s.input, { color: colors.textPrimary }]}
             returnKeyType="search"
@@ -549,7 +552,7 @@ export default function DeepDiveScreen() {
           <View style={[s.noResultCard, { backgroundColor: colors.surface }]}>
             <Ionicons name="information-circle" size={18} color={colors.textSecondary} />
             <Text style={[s.noResultText, { color: colors.textSecondary }]}>
-              "{query}" — 목록에 없지만 분석 가능합니다. 분석 버튼을 눌러주세요.
+              {t('analysis.deepDive.noResult', { query })}
             </Text>
           </View>
         )}
@@ -567,10 +570,10 @@ export default function DeepDiveScreen() {
           {isLoading ? (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <ActivityIndicator color="#FFFFFF" />
-              <Text style={s.analyzeButtonText}>{loadingMessage || 'AI가 분석 중...'}</Text>
+              <Text style={s.analyzeButtonText}>{loadingMessage || t('analysis.deepDive.loading.analyzing')}</Text>
             </View>
           ) : (
-            <Text style={s.analyzeButtonText}>AI 분석 시작</Text>
+            <Text style={s.analyzeButtonText}>{t('analysis.deepDive.startAnalysis')}</Text>
           )}
         </TouchableOpacity>
 
@@ -590,7 +593,7 @@ export default function DeepDiveScreen() {
             <View style={s.disclaimerBanner}>
               <Ionicons name="information-circle-outline" size={14} color="#888" />
               <Text style={s.disclaimerText}>
-                본 정보는 투자 참고용이며, 투자 권유가 아닙니다. 투자 판단의 책임은 본인에게 있습니다.
+                {t('analysis.deepDive.disclaimer')}
               </Text>
             </View>
           </>
@@ -600,15 +603,14 @@ export default function DeepDiveScreen() {
         {!result && !isLoading && !error && (
           <View style={s.guideSection}>
             <Text style={[s.guideTitle, { color: colors.textSecondary }]}>
-              어떤 종목이든 분석 가능합니다
+              {t('analysis.deepDive.guide.title')}
             </Text>
             <Text style={[s.guideText, { color: colors.textTertiary }]}>
-              한국 주식, 미국 주식, ETF 등{'\n'}
-              종목명 또는 티커를 입력하면 AI가 실시간 분석합니다
+              {t('analysis.deepDive.guide.description')}
             </Text>
 
             <View style={s.exampleSection}>
-              <Text style={[s.exampleLabel, { color: colors.textTertiary }]}>예시</Text>
+              <Text style={[s.exampleLabel, { color: colors.textTertiary }]}>{t('analysis.deepDive.guide.example')}</Text>
               {['삼성전자', 'NVDA', 'SK하이닉스', 'TSLA'].map((example) => (
                 <TouchableOpacity
                   key={example}

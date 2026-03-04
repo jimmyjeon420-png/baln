@@ -13,13 +13,13 @@ import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated, Platform, TouchableOpacity } from 'react-native';
 import type { EasterEgg } from '../../data/easterEggConfig';
 import type { ThemeColors } from '../../styles/colors';
+import { useLocale } from '../../context/LocaleContext';
 
 interface EasterEggToastProps {
   egg: EasterEgg | null;
   visible: boolean;
   onDismiss: () => void;
   colors: ThemeColors;
-  locale: string;
 }
 
 export function EasterEggToast({
@@ -27,7 +27,6 @@ export function EasterEggToast({
   visible,
   onDismiss,
   colors,
-  locale,
 }: EasterEggToastProps) {
   const slideAnim = useRef(new Animated.Value(-140)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
@@ -82,12 +81,13 @@ export function EasterEggToast({
     }
   }, [visible, egg, slideAnim, opacityAnim, glowAnim]);
 
-  if (!egg) return null;
+  const { t, language } = useLocale();
+  const isKo = language === 'ko';
 
-  const isKo = locale === 'ko';
+  if (!egg) return null;
   const name = isKo ? egg.nameKo : egg.nameEn;
   const description = isKo ? egg.descriptionKo : egg.descriptionEn;
-  const headerText = isKo ? 'Easter Egg \uBC1C\uACAC!' : 'Easter Egg Found!';
+  const headerText = t('easterEgg.found');
 
   return (
     <Animated.View

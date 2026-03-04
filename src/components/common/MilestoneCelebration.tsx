@@ -85,7 +85,7 @@ const MILESTONES: Record<number, MilestoneInfo> = {
 };
 
 /** 마일스톤이 아닌 일수에 대한 기본 데이터 */
-function getDefaultMilestoneTemplate(milestone: number): MilestoneInfo {
+function getDefaultMilestoneTemplate(_milestone: number): MilestoneInfo {
   return {
     badge: '\u2728',
     badgeNameKey: 'milestone_celebration.badge_default',
@@ -161,9 +161,9 @@ export default function MilestoneCelebration({
   const template = MILESTONES[milestone] ?? getDefaultMilestoneTemplate(milestone);
   const data = {
     badge: template.badge,
-    badgeName: t(template.badgeNameKey as any, { count: milestone }),
-    title: t(template.titleKey as any, { count: milestone }),
-    subtitle: t(template.subtitleKey as any, { count: milestone }),
+    badgeName: t(template.badgeNameKey as unknown as Parameters<typeof t>[0], { count: milestone }),
+    title: t(template.titleKey as unknown as Parameters<typeof t>[0], { count: milestone }),
+    subtitle: t(template.subtitleKey as unknown as Parameters<typeof t>[0], { count: milestone }),
     confetti: template.confetti,
   };
 

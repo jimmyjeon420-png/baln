@@ -19,23 +19,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { BRAND_SHOPS } from '../../data/brandWorldConfig';
-
-// ============================================================================
-// i18n
-// ============================================================================
-
-const TEXT = {
-  ko: {
-    title: '린치의 화요 마트 순찰',
-    subtitle: '오늘 린치가 방문하는 상점들',
-    notTuesday: '', // hidden
-  },
-  en: {
-    title: "Lynch's Tuesday Mart Tour",
-    subtitle: 'Shops Lynch is visiting today',
-    notTuesday: '',
-  },
-};
+import { useLocale } from '../../context/LocaleContext';
 
 // ============================================================================
 // Comments per shop category
@@ -64,7 +48,6 @@ const COMMENTS_EN: Record<string, string[]> = {
 // ============================================================================
 
 interface LynchMartTourProps {
-  locale?: string;
   colors: {
     surface: string;
     textPrimary: string;
@@ -79,9 +62,9 @@ interface LynchMartTourProps {
 // Component
 // ============================================================================
 
-export function LynchMartTour({ locale = 'ko', colors }: LynchMartTourProps) {
-  const isKo = locale === 'ko';
-  const t = isKo ? TEXT.ko : TEXT.en;
+export function LynchMartTour({ colors }: LynchMartTourProps) {
+  const { t, language } = useLocale();
+  const isKo = language === 'ko';
   const comments = isKo ? COMMENTS_KO : COMMENTS_EN;
 
   // Only visible on Tuesdays
@@ -115,8 +98,8 @@ export function LynchMartTour({ locale = 'ko', colors }: LynchMartTourProps) {
       <View style={styles.header}>
         <Text style={styles.headerEmoji}>🐻</Text>
         <View style={styles.headerText}>
-          <Text style={[styles.title, { color: colors.textPrimary }]}>{t.title}</Text>
-          <Text style={[styles.subtitle, { color: colors.textTertiary }]}>{t.subtitle}</Text>
+          <Text style={[styles.title, { color: colors.textPrimary }]}>{t('lynchMartTour.title')}</Text>
+          <Text style={[styles.subtitle, { color: colors.textTertiary }]}>{t('lynchMartTour.subtitle')}</Text>
         </View>
       </View>
 

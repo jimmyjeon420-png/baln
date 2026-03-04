@@ -17,23 +17,7 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from 'react-native';
-
-// ============================================================================
-// i18n
-// ============================================================================
-
-const TEXT = {
-  ko: {
-    prompt: '이 뉴스를 보고 예측해보세요!',
-    subtitle: '맞추면 크레딧을 받을 수 있어요',
-    button: '투표하기',
-  },
-  en: {
-    prompt: 'Make a prediction based on this news!',
-    subtitle: 'Earn credits for correct predictions',
-    button: 'Vote Now',
-  },
-};
+import { useLocale } from '../../context/LocaleContext';
 
 // ============================================================================
 // Props
@@ -42,7 +26,6 @@ const TEXT = {
 interface NewsToPredictionBridgeProps {
   newsId: string;
   relatedPollId?: string;
-  locale?: string;
   onNavigate: (pollId?: string) => void;
   colors: {
     surface: string;
@@ -60,11 +43,10 @@ interface NewsToPredictionBridgeProps {
 export function NewsToPredictionBridge({
   newsId: _newsId,
   relatedPollId,
-  locale = 'ko',
   onNavigate,
   colors,
 }: NewsToPredictionBridgeProps) {
-  const t = locale === 'ko' ? TEXT.ko : TEXT.en;
+  const { t } = useLocale();
 
   return (
     <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -72,15 +54,15 @@ export function NewsToPredictionBridge({
         <Text style={styles.icon}>🔮</Text>
       </View>
       <View style={styles.content}>
-        <Text style={[styles.prompt, { color: colors.textPrimary }]}>{t.prompt}</Text>
-        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{t.subtitle}</Text>
+        <Text style={[styles.prompt, { color: colors.textPrimary }]}>{t('newsToPrediction.prompt')}</Text>
+        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{t('newsToPrediction.subtitle')}</Text>
       </View>
       <TouchableOpacity
         style={[styles.button, { backgroundColor: colors.primary }]}
         onPress={() => onNavigate(relatedPollId)}
         activeOpacity={0.7}
       >
-        <Text style={styles.buttonText}>{t.button}</Text>
+        <Text style={styles.buttonText}>{t('newsToPrediction.button')}</Text>
       </TouchableOpacity>
     </View>
   );

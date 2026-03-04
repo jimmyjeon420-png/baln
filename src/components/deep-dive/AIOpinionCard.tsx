@@ -11,6 +11,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 
 // ============================================================================
 // 타입 정의
@@ -36,13 +37,14 @@ const AIOpinionCard: React.FC<AIOpinionCardProps> = ({
   timeHorizon,
 }) => {
   const { colors } = useTheme();
+  const { t } = useLocale();
 
   return (
     <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
       {/* 헤더 */}
       <View style={styles.header}>
         <Ionicons name="sparkles" size={20} color={colors.primary} />
-        <Text style={[styles.title, { color: colors.textPrimary }]}>AI 종합 의견</Text>
+        <Text style={[styles.title, { color: colors.textPrimary }]}>{t('deepDive.aiOpinion.title')}</Text>
       </View>
 
       {/* 요약 */}
@@ -56,7 +58,7 @@ const AIOpinionCard: React.FC<AIOpinionCardProps> = ({
       <View style={styles.scenarioContainer}>
         {/* 강세 시나리오 */}
         <View style={[styles.scenarioBox, { backgroundColor: '#10B98115' }]}>
-          <Text style={[styles.scenarioTitle, { color: '#10B981' }]}>강세 시나리오</Text>
+          <Text style={[styles.scenarioTitle, { color: '#10B981' }]}>{t('deepDive.aiOpinion.bullCase')}</Text>
           {bullCase.map((item, idx) => (
             <View key={idx} style={styles.scenarioRow}>
               <Text style={[styles.scenarioIcon, { color: '#10B981' }]}>{'▲'}</Text>
@@ -69,7 +71,7 @@ const AIOpinionCard: React.FC<AIOpinionCardProps> = ({
 
         {/* 약세 시나리오 */}
         <View style={[styles.scenarioBox, { backgroundColor: '#EF444415' }]}>
-          <Text style={[styles.scenarioTitle, { color: '#EF4444' }]}>약세 시나리오</Text>
+          <Text style={[styles.scenarioTitle, { color: '#EF4444' }]}>{t('deepDive.aiOpinion.bearCase')}</Text>
           {bearCase.map((item, idx) => (
             <View key={idx} style={styles.scenarioRow}>
               <Text style={[styles.scenarioIcon, { color: '#EF4444' }]}>{'▼'}</Text>
@@ -85,7 +87,7 @@ const AIOpinionCard: React.FC<AIOpinionCardProps> = ({
       <View style={styles.footer}>
         {/* 목표가 */}
         <View style={styles.footerItem}>
-          <Text style={[styles.footerLabel, { color: colors.textTertiary }]}>목표 주가</Text>
+          <Text style={[styles.footerLabel, { color: colors.textTertiary }]}>{t('deepDive.aiOpinion.targetPrice')}</Text>
           <Text style={[styles.targetPrice, { color: colors.textPrimary }]}>
             {targetPrice}
           </Text>
@@ -93,7 +95,7 @@ const AIOpinionCard: React.FC<AIOpinionCardProps> = ({
 
         {/* 투자기간 뱃지 */}
         <View style={styles.footerItem}>
-          <Text style={[styles.footerLabel, { color: colors.textTertiary }]}>투자 기간</Text>
+          <Text style={[styles.footerLabel, { color: colors.textTertiary }]}>{t('deepDive.aiOpinion.timeHorizon')}</Text>
           <View style={[styles.horizonBadge, { backgroundColor: colors.primary + '20' }]}>
             <Ionicons name="time-outline" size={14} color={colors.primary} />
             <Text style={[styles.horizonText, { color: colors.primary }]}>

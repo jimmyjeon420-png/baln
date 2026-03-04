@@ -1,6 +1,8 @@
 import supabase from './supabase';
 import { getLangParam } from '../utils/promptLanguage';
 import { isTransientEdgeInvokeError } from '../utils/edgeInvokeError';
+import { isExpectedLanguage } from '../utils/languageValidator';
+import type { DisplayLanguage } from '../types/i18n';
 
 export interface GeminiProxyEnvelope<T> {
   success: boolean;
@@ -79,6 +81,21 @@ export async function invokeGeminiProxy<T>(
         continue;
       }
       throw lastError;
+    }
+
+    // 언어 검증: 응답 텍스트가 요청 언어와 일치하는지 확인
+    const responseText = typeof envelope.data === 'string'
+      ? envelope.data
+      : JSON.stringify(envelope.data);
+    if (!isExpectedLanguage(responseText, lang as DisplayLanguage)) {
+      // 언어 불일치 — 1회만 재시도 (강화된 lang 파라미터로)
+      if (attempt < maxTransientRetries) {
+        console.warn(`[geminiProxy] Language mismatch detected (expected: ${lang}), retrying...`);
+        const backoffMs = (attempt + 1) * 700;
+        await new Promise((resolve) => setTimeout(resolve, backoffMs));
+        continue;
+      }
+      // 재시도 실패해도 데이터는 반환 (언어 불일치보다 데이터 유실이 더 심각)
     }
 
     return envelope.data;

@@ -391,7 +391,7 @@ function LoungeScreenInner() {
   const welcomeBannerTitleColor = isLightTheme ? (themeColors.primaryDark || '#1F6A25') : '#4CAF50';
 
   // 구루 카페 분위기
-  const { language, t } = useLocale();
+  const { t } = useLocale();
   const { weather } = useWeather();
   const dailyQuote = getDailyQuote();
 
@@ -509,8 +509,8 @@ function LoungeScreenInner() {
     // Apple 1.2: 콘텐츠 필터링 (부적절 콘텐츠 사전 차단)
     const filterResult = filterContent(newPostContent);
     if (!filterResult.isClean) {
-      const msg = getFilterMessage(newPostContent) || '부적절한 내용이 포함되어 있습니다.';
-      Alert.alert('게시 불가', msg);
+      const msg = getFilterMessage(newPostContent) || t('lounge.filter_default_message');
+      Alert.alert(t('lounge.filter_blocked_title'), msg);
       return;
     }
     try {
@@ -869,14 +869,14 @@ function LoungeScreenInner() {
               ListHeaderComponent={
                 <>
                 {/* 카페 분위기 헤더 */}
-                <CafeAmbiance colors={themeColors} locale={language} />
+                <CafeAmbiance colors={themeColors} />
                 <GuruVisitBanner visitingGurus={visitingGurus} />
                 <View style={[styles.cafeHeader, { backgroundColor: themeColors.surface }]}>
                   <View style={styles.cafeHeaderRow}>
                     <Text style={[styles.cafeTitle, { color: themeColors.textPrimary }]}>
                       {'☕ '}{t('lounge.cafe_title')}
                     </Text>
-                    {weather && <WeatherBadge weather={weather} compact colors={themeColors} locale={language} />}
+                    {weather && <WeatherBadge weather={weather} compact colors={themeColors} />}
                   </View>
                   <View style={styles.cafeGuruRow}>
                     <CharacterAvatar guruId="buffett" size="sm" />

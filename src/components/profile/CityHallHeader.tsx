@@ -8,7 +8,7 @@
 
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { t } from '../../locales';
+import { useLocale } from '../../context/LocaleContext';
 import type { ThemeColors } from '../../styles/colors';
 
 // =============================================================================
@@ -24,8 +24,6 @@ interface CityHallHeaderProps {
   streakDays?: number;
   /** 테마 색상 */
   colors: ThemeColors;
-  /** @deprecated Use t() from locales instead. Kept for backward compatibility. */
-  locale?: string;
 }
 
 // =============================================================================
@@ -38,6 +36,8 @@ function CityHallHeader({
   streakDays = 0,
   colors,
 }: CityHallHeaderProps): React.ReactElement {
+  const { t } = useLocale();
+
   return (
     <View
       style={[

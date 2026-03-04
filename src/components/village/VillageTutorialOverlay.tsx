@@ -29,24 +29,24 @@ import { CharacterAvatar } from '../character/CharacterAvatar';
 import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
 import { getGuruDisplayName } from '../../services/characterService';
 import type { ThemeColors } from '../../styles/colors';
+import { useLocale } from '../../context/LocaleContext';
 
 interface VillageTutorialOverlayProps {
   colors: ThemeColors;
-  locale: string;
   /** 외부에서 튜토리얼 액션 완료를 알려줄 때 */
   onStepAction?: (action: string) => void;
 }
 
 export function VillageTutorialOverlay({
   colors,
-  locale,
 }: VillageTutorialOverlayProps) {
   const [tutorialState, setTutorialState] = useState<TutorialState | null>(null);
   const [currentStep, setCurrentStep] = useState<TutorialStep | null>(null);
   const [rewardText, setRewardText] = useState<string | null>(null);
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
 
-  const isKo = locale === 'ko';
+  const { t, language } = useLocale();
+  const isKo = language === 'ko';
 
   // 튜토리얼 상태 로드
   useEffect(() => {
@@ -178,7 +178,7 @@ export function VillageTutorialOverlay({
             activeOpacity={0.7}
           >
             <Text style={[styles.skipText, { color: colors.textTertiary }]}>
-              {isKo ? '건너뛰기' : 'Skip'}
+              {t('villageTutorial.skip')}
             </Text>
           </TouchableOpacity>
 
@@ -189,8 +189,8 @@ export function VillageTutorialOverlay({
           >
             <Text style={styles.nextText}>
               {stepNumber === stepCount
-                ? (isKo ? '시작하기!' : "Let's go!")
-                : (isKo ? '다음' : 'Next')}
+                ? t('villageTutorial.start')
+                : t('villageTutorial.next')}
             </Text>
           </TouchableOpacity>
         </View>

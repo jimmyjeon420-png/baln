@@ -17,6 +17,14 @@ const GEMINI_MODEL = 'gemini-3-flash-preview';
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
 
+/** 프롬프트 끝에 추가할 강제 언어 지시 (언어 혼재 방지) */
+function getLangEnforcement(langInstruction: string): string {
+  const isKorean = langInstruction.includes('한국어');
+  return isKorean
+    ? '\n\nCRITICAL: Your ENTIRE response MUST be in Korean (한국어). Never mix languages.'
+    : '\n\nCRITICAL: Your ENTIRE response MUST be in English. Never mix languages.';
+}
+
 // ============================================================================
 // 타입 정의
 // ============================================================================
@@ -392,7 +400,8 @@ async function classifyTicker(reqData: ClassifyTickerRequest['data'], langInstru
 - index: ETF로 여러 종목 분산 (예: SPY, VOO, KODEX200)
 
 JSON만 반환 (설명 없이):
-{"ticker":"${ticker}","name":"한국어 회사명","sector":"...","style":"...","geo":"..."}`;
+{"ticker":"${ticker}","name":"한국어 회사명","sector":"...","style":"...","geo":"..."}
+${getLangEnforcement(langInstruction)}`;
 
   const responseText = await callGeminiWithSearch(prompt, 15000, 1);
   return cleanJsonResponse(responseText);
@@ -504,7 +513,7 @@ ${(options?.includeRealEstate && options?.realEstateContext) ? `
     "message": "구체적 조언"
   }
 }
-`;
+${getLangEnforcement(langInstruction)}`;
 
   // Gemini API 호출
   const responseText = await callGeminiWithSearch(prompt);
@@ -571,7 +580,7 @@ ${priceInfo}
 - recommendation은 반드시 "BUY", "SELL", "HOLD" 중 하나
 - 최신 뉴스와 실적을 반영한 현실적인 분석
 - reason은 구체적이고 근거 있게 작성
-`;
+${getLangEnforcement(langInstruction)}`;
 
   // Gemini API 호출
   const responseText = await callGeminiWithSearch(prompt);
@@ -639,7 +648,7 @@ ${portfolioStr}
     "hedgingSuggestions": ["헤지 전략"]
   },
   "generatedAt": "${new Date().toISOString()}"
-}`;
+}${getLangEnforcement(langInstruction)}`;
 
   const responseText = await callGeminiWithSearch(prompt, 30000, 1);
   return cleanJsonResponse(responseText);
@@ -706,7 +715,8 @@ ${portfolioStr}
 주의:
 - ${langInstruction}
 - 숫자 필드는 숫자만
-- JSON 외 텍스트 금지`;
+- JSON 외 텍스트 금지
+${getLangEnforcement(langInstruction)}`;
 
   const responseText = await callGeminiWithSearch(prompt, 30000, 1);
   return cleanJsonResponse(responseText);
@@ -908,7 +918,7 @@ ${priceInfo}
 - 추측 금지, 근거 없는 수치 금지
 - JSON 형식 엄수 (주석, 마크다운 절대 금지)
 - ${langInstruction}
-`;
+${getLangEnforcement(langInstruction)}`;
 
   // Gemini API 호출
   const responseText = await callGeminiWithSearch(prompt);
@@ -1099,7 +1109,7 @@ async function generateCFOChat(reqData: CFOChatRequest['data'], langInstruction 
 - 구체적 숫자와 근거 필수 (예: "PER 12배", "3회 분할 매수", "포트폴리오 30% 비중")
 - 최신 뉴스/실적 반영
 - ${langInstruction}
-`;
+${getLangEnforcement(langInstruction)}`;
 
   // Gemini API 호출 (AI 버핏과 티타임 채팅은 30초 타임아웃)
   const responseText = await callGeminiWithSearch(prompt, 30000);
@@ -1265,8 +1275,8 @@ serve(async (req: Request) => {
         const genericPrompt = (body as any).prompt || '';
         const genericSystemPrompt = (body as any).systemPrompt || '';
         const fullPrompt = genericSystemPrompt
-          ? `${genericSystemPrompt}\n\n${genericPrompt}`
-          : genericPrompt;
+          ? `${genericSystemPrompt}\n\n${genericPrompt}${getLangEnforcement(langInstruction)}`
+          : `${genericPrompt}${getLangEnforcement(langInstruction)}`;
         const responseText = await callGeminiWithSearch(fullPrompt, 30000, 1);
         // 클라이언트가 data.result로 접근하므로 { result: text } 형태로 반환
         result = { result: responseText };

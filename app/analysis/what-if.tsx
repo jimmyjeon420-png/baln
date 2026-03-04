@@ -21,6 +21,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../src/hooks/useTheme';
 import { HeaderBar } from '../../src/components/common/HeaderBar';
+import { useLocale } from '../../src/context/LocaleContext';
+import { t as tStatic } from '../../src/locales';
 import { useSharedPortfolio } from '../../src/hooks/useSharedPortfolio';
 import { generateWhatIf } from '../../src/services/gemini';
 import { spendCredits, refundCredits } from '../../src/services/creditService';
@@ -45,32 +47,34 @@ import type { ExtremeScenario } from '../../src/data/whatIfScenarios';
 
 type TabMode = 'stress' | 'extreme';
 
-const SCENARIO_CONFIG: Record<
+function getScenarioConfig(): Record<
   ScenarioType,
   { scenario: WhatIfInput['scenario']; description: string; magnitude: number; label: string; maxTolerance: number }
-> = {
-  market_correction: {
-    scenario: 'market_crash',
-    description: '시장 조정 -10%: S&P 500이 10% 하락하는 시나리오',
-    magnitude: -10,
-    label: '시장 조정 -10%',
-    maxTolerance: 20,
-  },
-  bear_market: {
-    scenario: 'market_crash',
-    description: '약세장 -20%: 시장이 20% 이상 하락하는 장기 하락 국면',
-    magnitude: -20,
-    label: '약세장 -20%',
-    maxTolerance: 30,
-  },
-  rate_shock: {
-    scenario: 'interest_rate_change',
-    description: '금리 쇼크 +3%p: 기준금리가 3%p 급등하는 시나리오',
-    magnitude: 3,
-    label: '금리 쇼크 +3%p',
-    maxTolerance: 20,
-  },
-};
+> {
+  return {
+    market_correction: {
+      scenario: 'market_crash',
+      description: tStatic('analysis.whatIf.scenario.correction.description'),
+      magnitude: -10,
+      label: tStatic('analysis.whatIf.scenario.correction.label'),
+      maxTolerance: 20,
+    },
+    bear_market: {
+      scenario: 'market_crash',
+      description: tStatic('analysis.whatIf.scenario.bear.description'),
+      magnitude: -20,
+      label: tStatic('analysis.whatIf.scenario.bear.label'),
+      maxTolerance: 30,
+    },
+    rate_shock: {
+      scenario: 'interest_rate_change',
+      description: tStatic('analysis.whatIf.scenario.rateShock.description'),
+      magnitude: 3,
+      label: tStatic('analysis.whatIf.scenario.rateShock.label'),
+      maxTolerance: 20,
+    },
+  };
+}
 
 // ============================================================================
 // 메인 화면
@@ -78,6 +82,7 @@ const SCENARIO_CONFIG: Record<
 
 export default function WhatIfScreen() {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const { portfolioAssets, totalAssets, hasAssets } = useSharedPortfolio();
 
   // --- 탭 ---
@@ -102,7 +107,7 @@ export default function WhatIfScreen() {
     setError(null);
     setIsLoading(true);
 
-    const config = SCENARIO_CONFIG[type];
+    const config = getScenarioConfig()[type];
 
     try {
       const input: WhatIfInput = {
@@ -121,7 +126,7 @@ export default function WhatIfScreen() {
       setResult(whatIfResult);
     } catch (err) {
       console.error('[WhatIf] 시뮬레이션 실패:', err);
-      setError('분석에 실패했습니다. 잠시 후 다시 시도해주세요.');
+      setError(t('analysis.whatIf.error.analysisFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -148,7 +153,7 @@ export default function WhatIfScreen() {
       // 크레딧 차감 (1C/회)
       const spendResult = await spendCredits(cost, 'what_if');
       if (!spendResult.success) {
-        setExtremeError(spendResult.errorMessage || '크레딧이 부족합니다');
+        setExtremeError(spendResult.errorMessage || t('analysis.whatIf.error.insufficientCredits'));
         setIsExtremeLoading(false);
         return;
       }
@@ -175,7 +180,7 @@ export default function WhatIfScreen() {
       if (creditsCharged) {
         await refundCredits(cost, 'what_if', 'AI 분석 실패').catch(() => {});
       }
-      setExtremeError('분석에 실패했습니다. 크레딧은 환불됩니다.');
+      setExtremeError(t('analysis.whatIf.error.analysisFailedRefund'));
     } finally {
       setIsExtremeLoading(false);
     }
@@ -183,7 +188,7 @@ export default function WhatIfScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-      <HeaderBar title="위기 시뮬레이터" />
+      <HeaderBar title={t('analysis.whatIf.title')} />
       <ScrollView
         style={[s.container, { backgroundColor: colors.background }]}
         contentContainerStyle={s.content}
@@ -205,7 +210,7 @@ export default function WhatIfScreen() {
                 { color: activeTab === 'stress' ? '#FFFFFF' : colors.textTertiary },
               ]}
             >
-              스트레스 테스트
+              {t('analysis.whatIf.tab.stress')}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -222,7 +227,7 @@ export default function WhatIfScreen() {
                 { color: activeTab === 'extreme' ? '#FFFFFF' : colors.textTertiary },
               ]}
             >
-              극한 시나리오
+              {t('analysis.whatIf.tab.extreme')}
             </Text>
           </TouchableOpacity>
         </View>
@@ -237,10 +242,10 @@ export default function WhatIfScreen() {
               <View style={[s.emptyCard, { backgroundColor: colors.surface }]}>
                 <Text style={s.emptyEmoji}>📊</Text>
                 <Text style={[s.emptyTitle, { color: colors.textPrimary }]}>
-                  자산을 먼저 등록해주세요
+                  {t('analysis.whatIf.empty.title')}
                 </Text>
                 <Text style={[s.emptyDesc, { color: colors.textTertiary }]}>
-                  포트폴리오를 등록하면 시나리오별 방어력을 분석할 수 있습니다
+                  {t('analysis.whatIf.empty.description')}
                 </Text>
               </View>
             )}
@@ -259,10 +264,10 @@ export default function WhatIfScreen() {
               <View style={[s.loadingCard, { backgroundColor: colors.surface }]}>
                 <ActivityIndicator size="large" color={colors.primary} />
                 <Text style={[s.loadingTitle, { color: colors.textPrimary }]}>
-                  포트폴리오 스트레스 분석 중
+                  {t('analysis.whatIf.loading.title')}
                 </Text>
                 <Text style={[s.loadingDesc, { color: colors.textTertiary }]}>
-                  AI가 시나리오별 영향을 계산하고 있습니다
+                  {t('analysis.whatIf.loading.description')}
                 </Text>
               </View>
             )}
@@ -278,7 +283,7 @@ export default function WhatIfScreen() {
             {result && selectedScenario && !isLoading && (
               <View style={s.reportContainer}>
                 <EmpathyHeader
-                  scenarioLabel={SCENARIO_CONFIG[selectedScenario].label}
+                  scenarioLabel={getScenarioConfig()[selectedScenario].label}
                   result={result}
                 />
                 <HistoricalContext scenarioType={selectedScenario} />
@@ -286,7 +291,7 @@ export default function WhatIfScreen() {
                 <AssetImpactWaterfall result={result} />
                 <RiskBudgetGauge
                   result={result}
-                  maxTolerancePercent={SCENARIO_CONFIG[selectedScenario].maxTolerance}
+                  maxTolerancePercent={getScenarioConfig()[selectedScenario].maxTolerance}
                 />
                 <HedgingPlaybook result={result} />
                 <RecoveryOutlook scenarioType={selectedScenario} />
@@ -295,7 +300,7 @@ export default function WhatIfScreen() {
                 <View style={s.disclaimerBanner}>
                   <Ionicons name="information-circle-outline" size={14} color="#888" />
                   <Text style={s.disclaimerText}>
-                    본 정보는 투자 참고용이며, 투자 권유가 아닙니다. 투자 판단의 책임은 본인에게 있습니다.
+                    {t('analysis.whatIf.disclaimer')}
                   </Text>
                 </View>
               </View>
@@ -331,7 +336,7 @@ export default function WhatIfScreen() {
                 <View style={s.disclaimerBanner}>
                   <Ionicons name="information-circle-outline" size={14} color="#888" />
                   <Text style={s.disclaimerText}>
-                    본 정보는 투자 참고용이며, 투자 권유가 아닙니다. 투자 판단의 책임은 본인에게 있습니다.
+                    {t('analysis.whatIf.disclaimer')}
                   </Text>
                 </View>
               </>

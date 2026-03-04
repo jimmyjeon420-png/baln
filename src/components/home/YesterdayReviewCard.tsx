@@ -200,7 +200,7 @@ function YesterdayReviewCard({
   onStartPrediction,
 }: YesterdayReviewCardProps) {
   const { colors } = useTheme();
-  const { language, t } = useLocale();
+  const { t } = useLocale();
   const styles = React.useMemo(() => createStyles(colors), [colors]);
   const COLORS = colors; // 하위 호환성
 
@@ -311,7 +311,6 @@ function YesterdayReviewCard({
         correctCount={correctCount}
         totalCount={totalCount}
         colors={COLORS}
-        locale={language}
       />
 
       {/* 구분선 */}

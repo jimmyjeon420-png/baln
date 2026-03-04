@@ -15,7 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useMyCredits } from '../../hooks/useCredits';
-import { formatCredits } from '../../utils/formatters';
+import { formatCredits as _formatCredits } from '../../utils/formatters';
 import { useLocale } from '../../context/LocaleContext';
 
 /** 충전 기능 오픈일 (6월 1일부터 활성화) */

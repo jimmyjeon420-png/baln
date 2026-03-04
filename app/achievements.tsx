@@ -6,7 +6,7 @@
  * → 배지는 아래에 보조 역할
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -71,7 +71,6 @@ export default function AchievementsScreen() {
     unlockedCount,
     totalCount,
     newlyUnlocked,
-    rewardCreditsEarned,
     clearNewlyUnlocked,
     checkAchievements,
   } = useAchievements();
@@ -101,6 +100,22 @@ export default function AchievementsScreen() {
   const [toastOpacity] = useState(new Animated.Value(0));
   const [savedAnim] = useState(new Animated.Value(0));
 
+  const showToast = useCallback((message: string) => {
+    setToastMessage(message);
+    Animated.sequence([
+      Animated.timing(toastOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+      Animated.delay(2500),
+      Animated.timing(toastOpacity, { toValue: 0, duration: 500, useNativeDriver: true }),
+    ]).start(() => setToastMessage(null));
+  }, [toastOpacity]);
+
+  const triggerHaptic = useCallback(async () => {
+    try {
+      const Haptics = await import('expo-haptics');
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch { /* 무시 */ }
+  }, []);
+
   // 화면 진입 시 자동 해금 체크
   useEffect(() => {
     const autoCheck = async () => {
@@ -114,7 +129,7 @@ export default function AchievementsScreen() {
     if (currentStreak > 0 || predictionStats) {
       autoCheck();
     }
-  }, [currentStreak, predictionStats]);
+  }, [currentStreak, predictionStats, checkAchievements]);
 
   // 새로 해금 시 토스트 표시
   useEffect(() => {
@@ -122,13 +137,13 @@ export default function AchievementsScreen() {
       const newBadge = achievements.find(a => a.id === newlyUnlocked[0]);
       if (newBadge) {
         const reward = ACHIEVEMENT_REWARDS[newBadge.id] || 0;
-        const rewardText = reward > 0 ? ` +${reward}개` : '';
+        const rewardText = reward > 0 ? ` +${reward}${t('common.unitPieces')}` : '';
         showToast(`${newBadge.emoji} ${newBadge.title} ${t('achievements.badge_section_title')}!${rewardText}`);
         triggerHaptic();
       }
       clearNewlyUnlocked();
     }
-  }, [newlyUnlocked]);
+  }, [newlyUnlocked, achievements, clearNewlyUnlocked, showToast, triggerHaptic, t]);
 
   // 감정 저장 후 애니메이션
   useEffect(() => {
@@ -144,23 +159,7 @@ export default function AchievementsScreen() {
         Animated.timing(savedAnim, { toValue: 0, duration: 300, useNativeDriver: true }),
       ]).start();
     }
-  }, [rewardCredits]);
-
-  const showToast = (message: string) => {
-    setToastMessage(message);
-    Animated.sequence([
-      Animated.timing(toastOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
-      Animated.delay(2500),
-      Animated.timing(toastOpacity, { toValue: 0, duration: 500, useNativeDriver: true }),
-    ]).start(() => setToastMessage(null));
-  };
-
-  const triggerHaptic = async () => {
-    try {
-      const Haptics = require('expo-haptics');
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch { /* 무시 */ }
-  };
+  }, [rewardCredits, savedAnim, showToast, t]);
 
   const handleSave = async () => {
     if (!todayEmotion || isSaving) return;
@@ -331,7 +330,7 @@ export default function AchievementsScreen() {
                           </Text>
                           <TextInput
                             style={[styles.marketInput, { color: colors.textPrimary, borderColor: colors.surfaceLight }]}
-                            placeholder="예: 19200"
+                            placeholder={t('achievements.nasdaq_placeholder')}
                             placeholderTextColor={colors.textTertiary}
                             keyboardType="numeric"
                             value={nasdaqClose !== undefined ? String(nasdaqClose) : ''}
@@ -347,7 +346,7 @@ export default function AchievementsScreen() {
                           </Text>
                           <TextInput
                             style={[styles.marketInput, { color: colors.textPrimary, borderColor: colors.surfaceLight }]}
-                            placeholder="예: 95000"
+                            placeholder={t('achievements.btc_placeholder')}
                             placeholderTextColor={colors.textTertiary}
                             keyboardType="numeric"
                             value={btcClose !== undefined ? String(btcClose) : ''}
@@ -439,7 +438,7 @@ function BadgeCard({ badge }: { badge: AchievementWithStatus }) {
       {reward > 0 && (
         <View style={[styles.rewardBadge, isUnlocked && styles.rewardBadgeClaimed]}>
           <Text style={[styles.rewardBadgeText, isUnlocked && styles.rewardBadgeTextClaimed]}>
-            {isUnlocked ? '✓' : `+${reward}개`}
+            {isUnlocked ? '✓' : `+${reward}`}
           </Text>
         </View>
       )}

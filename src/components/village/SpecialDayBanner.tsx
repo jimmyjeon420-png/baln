@@ -21,6 +21,7 @@ import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
 import { getGuruDisplayName } from '../../services/characterService';
 import { getTodaySpecialDays } from '../../data/guruSpecialDays';
 import type { ThemeColors } from '../../styles/colors';
+import { useLocale } from '../../context/LocaleContext';
 
 // =============================================================================
 // 타입 정의
@@ -29,8 +30,6 @@ import type { ThemeColors } from '../../styles/colors';
 interface SpecialDayBannerProps {
   /** 테마 색상 */
   colors: ThemeColors;
-  /** 로케일 (ko/en) */
-  locale: string;
 }
 
 // =============================================================================
@@ -49,9 +48,9 @@ const TYPE_LABELS: Record<string, { ko: string; en: string }> = {
 
 function SpecialDayBanner({
   colors,
-  locale,
 }: SpecialDayBannerProps): React.ReactElement | null {
-  const isKo = locale === 'ko';
+  const { t, language } = useLocale();
+  const isKo = language === 'ko';
 
   // 스케일 펄스 애니메이션 (1 → 1.02 → 1 반복, 2초)
   const scaleAnim = useRef(new Animated.Value(1)).current;
@@ -116,9 +115,7 @@ function SpecialDayBanner({
           style={[styles.title, { color: colors.textPrimary }]}
           numberOfLines={1}
         >
-          {isKo
-            ? `오늘은 ${guruName}의 ${typeName}!`
-            : `Today is ${guruName}'s ${typeName}!`}
+          {t('specialDay.title', { name: guruName, type: typeName })}
         </Text>
         <Text
           style={[styles.description, { color: colors.textSecondary }]}

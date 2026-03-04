@@ -9,6 +9,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 
 // ============================================================================
 // 타입 정의
@@ -42,6 +43,7 @@ interface ValuationProps {
 
 export default function Valuation({ data, onRefresh: _onRefresh }: ValuationProps) {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const [expanded, setExpanded] = useState(false);
 
   // 저평가/고평가 판정
@@ -49,7 +51,7 @@ export default function Valuation({ data, onRefresh: _onRefresh }: ValuationProp
   const isUndervalued = upside > 10;
   const isOvervalued = upside < -10;
   const valuationColor = isUndervalued ? colors.buy : isOvervalued ? colors.sell : colors.neutral;
-  const valuationLabel = isUndervalued ? '저평가' : isOvervalued ? '고평가' : '적정가';
+  const valuationLabel = isUndervalued ? t('deepDive.valuation.undervalued') : isOvervalued ? t('deepDive.valuation.overvalued') : t('deepDive.valuation.fairValue');
 
   // 가격 포맷
   const formatPrice = (price: number) => {
@@ -101,7 +103,7 @@ export default function Valuation({ data, onRefresh: _onRefresh }: ValuationProp
       <View style={s.priceRow}>
         {/* 현재가 */}
         <View style={s.priceItem}>
-          <Text style={[s.priceLabel, { color: colors.textSecondary }]}>현재가</Text>
+          <Text style={[s.priceLabel, { color: colors.textSecondary }]}>{t('deepDive.valuation.currentPrice')}</Text>
           <Text style={[s.priceValue, { color: colors.textPrimary }]}>
             {formatPrice(data.currentPrice)}
           </Text>
@@ -112,7 +114,7 @@ export default function Valuation({ data, onRefresh: _onRefresh }: ValuationProp
 
         {/* 적정가 */}
         <View style={s.priceItem}>
-          <Text style={[s.priceLabel, { color: colors.textSecondary }]}>적정가</Text>
+          <Text style={[s.priceLabel, { color: colors.textSecondary }]}>{t('deepDive.valuation.fairValueLabel')}</Text>
           <Text style={[s.priceValue, { color: valuationColor }]}>
             {formatPrice(data.fairValue)}
           </Text>
@@ -126,7 +128,7 @@ export default function Valuation({ data, onRefresh: _onRefresh }: ValuationProp
 
         {/* 목표가 */}
         <View style={s.priceItem}>
-          <Text style={[s.priceLabel, { color: colors.textSecondary }]}>목표가 (1년)</Text>
+          <Text style={[s.priceLabel, { color: colors.textSecondary }]}>{t('deepDive.valuation.targetPrice')}</Text>
           <Text style={[s.priceValue, { color: colors.primary }]}>
             {formatPrice(data.targetPrice)}
           </Text>
@@ -138,17 +140,17 @@ export default function Valuation({ data, onRefresh: _onRefresh }: ValuationProp
         <View style={[s.detailContainer, { borderTopColor: colors.border }]}>
           {/* 멀티플 비교 테이블 */}
           <Text style={[s.sectionLabel, { color: colors.textPrimary }]}>
-            📊 멀티플 vs 업계 평균
+            {t('deepDive.valuation.multiplesVsIndustry')}
           </Text>
 
           {/* PER */}
           <View style={[s.multipleRow, { backgroundColor: colors.surfaceLight }]}>
             <View style={s.multipleLeft}>
               <Text style={[s.multipleName, { color: colors.textPrimary }]}>PER</Text>
-              <Text style={[s.multipleDesc, { color: colors.textTertiary }]}>주가수익비율</Text>
+              <Text style={[s.multipleDesc, { color: colors.textTertiary }]}>{t('deepDive.valuation.perDesc')}</Text>
             </View>
             <View style={s.multipleRight}>
-              <Text style={[s.multipleValue, { color: colors.textPrimary }]}>{data.per.toFixed(2)}배</Text>
+              <Text style={[s.multipleValue, { color: colors.textPrimary }]}>{data.per.toFixed(2)}{t('deepDive.valuation.times')}</Text>
               <Ionicons
                 name="remove-outline"
                 size={16}
@@ -156,7 +158,7 @@ export default function Valuation({ data, onRefresh: _onRefresh }: ValuationProp
                 style={{ marginHorizontal: 8 }}
               />
               <Text style={[s.multipleAvg, { color: colors.textSecondary }]}>
-                업계 {data.industryAvgPer.toFixed(2)}배
+                {t('deepDive.valuation.industry')} {data.industryAvgPer.toFixed(2)}{t('deepDive.valuation.times')}
               </Text>
               <Text style={[s.multipleDiff, { color: perComparison.color }]}>
                 {perComparison.diff > 0 ? '+' : ''}{perComparison.diff.toFixed(0)}%
@@ -168,10 +170,10 @@ export default function Valuation({ data, onRefresh: _onRefresh }: ValuationProp
           <View style={[s.multipleRow, { backgroundColor: colors.surfaceLight }]}>
             <View style={s.multipleLeft}>
               <Text style={[s.multipleName, { color: colors.textPrimary }]}>PBR</Text>
-              <Text style={[s.multipleDesc, { color: colors.textTertiary }]}>주가순자산비율</Text>
+              <Text style={[s.multipleDesc, { color: colors.textTertiary }]}>{t('deepDive.valuation.pbrDesc')}</Text>
             </View>
             <View style={s.multipleRight}>
-              <Text style={[s.multipleValue, { color: colors.textPrimary }]}>{data.pbr.toFixed(2)}배</Text>
+              <Text style={[s.multipleValue, { color: colors.textPrimary }]}>{data.pbr.toFixed(2)}{t('deepDive.valuation.times')}</Text>
               <Ionicons
                 name="remove-outline"
                 size={16}
@@ -179,7 +181,7 @@ export default function Valuation({ data, onRefresh: _onRefresh }: ValuationProp
                 style={{ marginHorizontal: 8 }}
               />
               <Text style={[s.multipleAvg, { color: colors.textSecondary }]}>
-                업계 {data.industryAvgPbr.toFixed(2)}배
+                {t('deepDive.valuation.industry')} {data.industryAvgPbr.toFixed(2)}{t('deepDive.valuation.times')}
               </Text>
               <Text style={[s.multipleDiff, { color: pbrComparison.color }]}>
                 {pbrComparison.diff > 0 ? '+' : ''}{pbrComparison.diff.toFixed(0)}%
@@ -191,10 +193,10 @@ export default function Valuation({ data, onRefresh: _onRefresh }: ValuationProp
           <View style={[s.multipleRow, { backgroundColor: colors.surfaceLight }]}>
             <View style={s.multipleLeft}>
               <Text style={[s.multipleName, { color: colors.textPrimary }]}>PSR</Text>
-              <Text style={[s.multipleDesc, { color: colors.textTertiary }]}>주가매출비율</Text>
+              <Text style={[s.multipleDesc, { color: colors.textTertiary }]}>{t('deepDive.valuation.psrDesc')}</Text>
             </View>
             <View style={s.multipleRight}>
-              <Text style={[s.multipleValue, { color: colors.textPrimary }]}>{data.psr.toFixed(2)}배</Text>
+              <Text style={[s.multipleValue, { color: colors.textPrimary }]}>{data.psr.toFixed(2)}{t('deepDive.valuation.times')}</Text>
               <Ionicons
                 name="remove-outline"
                 size={16}
@@ -202,7 +204,7 @@ export default function Valuation({ data, onRefresh: _onRefresh }: ValuationProp
                 style={{ marginHorizontal: 8 }}
               />
               <Text style={[s.multipleAvg, { color: colors.textSecondary }]}>
-                업계 {data.industryAvgPsr.toFixed(2)}배
+                {t('deepDive.valuation.industry')} {data.industryAvgPsr.toFixed(2)}{t('deepDive.valuation.times')}
               </Text>
               <Text style={[s.multipleDiff, { color: psrComparison.color }]}>
                 {psrComparison.diff > 0 ? '+' : ''}{psrComparison.diff.toFixed(0)}%
@@ -214,10 +216,10 @@ export default function Valuation({ data, onRefresh: _onRefresh }: ValuationProp
           <View style={[s.guideBox, { backgroundColor: colors.surfaceElevated }]}>
             <Text style={[s.guideText, { color: colors.textSecondary }]}>
               {isUndervalued
-                ? '✅ 업계 평균 대비 저평가 구간입니다. 단, 실적 성장성도 함께 고려하세요.'
+                ? t('deepDive.valuation.guideUndervalued')
                 : isOvervalued
-                ? '⚠️ 업계 평균 대비 고평가 구간입니다. 프리미엄이 정당한지 확인하세요.'
-                : '📌 업계 평균과 유사한 수준입니다. 다른 지표도 함께 확인하세요.'}
+                ? t('deepDive.valuation.guideOvervalued')
+                : t('deepDive.valuation.guideFair')}
             </Text>
           </View>
         </View>

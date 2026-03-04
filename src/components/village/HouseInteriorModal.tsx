@@ -24,6 +24,7 @@ import {
   Animated,
 } from 'react-native';
 import type { HouseLevel, FurnitureItem } from '../../data/houseConfig';
+import { useLocale } from '../../context/LocaleContext';
 
 // ============================================================================
 // 타입
@@ -38,7 +39,6 @@ interface HouseInteriorModalProps {
   maxSlots: number;
   onPlaceFurniture: (furnitureId: string) => Promise<boolean>;
   onRemoveFurniture: (furnitureId: string) => Promise<void>;
-  locale?: string;
 }
 
 // ============================================================================
@@ -65,12 +65,12 @@ function HouseInteriorModal({
   maxSlots,
   onPlaceFurniture,
   onRemoveFurniture,
-  locale = 'ko',
 }: HouseInteriorModalProps) {
   const [showInventory, setShowInventory] = useState(false);
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
   const slideAnim = useRef(new Animated.Value(0)).current;
-  const isKo = locale === 'ko';
+  const { language } = useLocale();
+  const isKo = language === 'ko';
 
   // 입장 애니메이션
   useEffect(() => {

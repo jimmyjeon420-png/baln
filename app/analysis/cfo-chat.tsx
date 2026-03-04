@@ -29,7 +29,6 @@ import {
   Alert,
   Modal,
 } from 'react-native';
-import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import ViewShot from 'react-native-view-shot';
@@ -37,6 +36,8 @@ import * as Sharing from 'expo-sharing';
 import { HeaderBar } from '../../src/components/common/HeaderBar';
 import { useTheme } from '../../src/hooks/useTheme';
 import { getLocaleCode } from '../../src/utils/formatters';
+import { useLocale } from '../../src/context/LocaleContext';
+import { t as tStatic } from '../../src/locales';
 import { useMyCredits, useSpendCredits } from '../../src/hooks/useCredits';
 import { useShareReward } from '../../src/hooks/useRewards';
 import { FEATURE_COSTS } from '../../src/types/marketplace';
@@ -66,17 +67,19 @@ interface Message {
 // 로컬 폴백 응답 (서버 응답 실패 시 사용)
 // ============================================================================
 
-const LOCAL_FALLBACK_DEBATE = {
-  warren: '허허, 자네. 지금 시장을 분석 중이라네. 체리콜라 한 잔 마시면서 잠시 기다려 주시게. 좋은 투자는 인내심에서 시작된다네.',
-  dalio: '원칙 제1조: 인내심을 가지십시오. 시스템이 잠시 정비 중입니다. 이런 일시적 중단은 장기 성과에 영향을 주지 않습니다.',
-  wood: 'Oh no! 기술적인 이슈가 있네요. 하지만 걱정 마세요, 곧 돌아올게요! Innovation은 멈추지 않으니까요!',
-  kostolany: 'Mon ami, 서두르지 마십시오. 시스템이 잠시 쉬고 있을 뿐입니다. 달걀 모형처럼, 모든 것은 사이클이 있습니다. 인내심 있는 자만이 살아남습니다.',
-  summary: 'AI 분석 서버가 일시적으로 응답하지 않습니다. 잠시 후 다시 시도해주세요. 크레딧은 차감되지 않았습니다.',
-};
+function getLocalFallbackDebate() {
+  return {
+    warren: tStatic('analysis.cfoChat.fallback.warren'),
+    dalio: tStatic('analysis.cfoChat.fallback.dalio'),
+    wood: tStatic('analysis.cfoChat.fallback.wood'),
+    kostolany: tStatic('analysis.cfoChat.fallback.kostolany'),
+    summary: tStatic('analysis.cfoChat.fallback.summary'),
+  };
+}
 
 /** 에러 종류를 판별하여 사용자 친화적 메시지 반환 */
-function classifyError(err: any): { type: 'network' | 'server' | 'unknown'; message: string } {
-  const msg = err?.message || '';
+function classifyError(err: unknown): { type: 'network' | 'server' | 'unknown'; message: string } {
+  const msg = (err instanceof Error ? err.message : '') || '';
 
   // 네트워크 관련 에러
   if (
@@ -90,7 +93,7 @@ function classifyError(err: any): { type: 'network' | 'server' | 'unknown'; mess
   ) {
     return {
       type: 'network',
-      message: '인터넷 연결을 확인해주세요. Wi-Fi 또는 모바일 데이터가 켜져 있는지 확인 후 다시 시도해주세요.',
+      message: tStatic('analysis.cfoChat.error.networkMessage'),
     };
   }
 
@@ -105,22 +108,24 @@ function classifyError(err: any): { type: 'network' | 'server' | 'unknown'; mess
   ) {
     return {
       type: 'server',
-      message: 'AI 서버가 일시적으로 바쁩니다. 보통 1-2분 내에 복구됩니다. 잠시 후 다시 시도해주세요.',
+      message: tStatic('analysis.cfoChat.error.serverMessage'),
     };
   }
 
   return {
     type: 'unknown',
-    message: '일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.',
+    message: tStatic('analysis.cfoChat.error.unknownMessage'),
   };
 }
 
-const QUICK_QUESTIONS = [
-  '지금 삼성전자 사도 될까요?',
-  '비트코인 투자 어떻게 생각하세요?',
-  '포트폴리오 리밸런싱이 필요한가요?',
-  '배당주 추천해주세요',
-];
+function getQuickQuestions() {
+  return [
+    tStatic('analysis.cfoChat.quickQuestion1'),
+    tStatic('analysis.cfoChat.quickQuestion2'),
+    tStatic('analysis.cfoChat.quickQuestion3'),
+    tStatic('analysis.cfoChat.quickQuestion4'),
+  ];
+}
 
 // ============================================================================
 // 9:16 인스타그램 스토리 공유 카드 모달
@@ -146,17 +151,17 @@ const CFOShareModal: React.FC<{
     try {
       const isAvailable = await Sharing.isAvailableAsync();
       if (!isAvailable) {
-        Alert.alert('공유 불가', '이 기기에서는 공유 기능을 사용할 수 없습니다.');
+        Alert.alert(tStatic('analysis.cfoChat.share.unavailableTitle'), tStatic('analysis.cfoChat.share.unavailableMsg'));
         return;
       }
       if (!viewShotRef.current?.capture) {
-        Alert.alert('오류', '캡처 영역을 찾을 수 없습니다.');
+        Alert.alert(tStatic('common.error'), tStatic('analysis.cfoChat.share.captureError'));
         return;
       }
       const uri = await viewShotRef.current.capture();
       await Sharing.shareAsync(uri, {
         mimeType: 'image/png',
-        dialogTitle: 'AI 버핏과 티타임 공유',
+        dialogTitle: tStatic('analysis.cfoChat.share.dialogTitle'),
         UTI: 'public.png',
       });
       const result = await claimReward();
@@ -183,7 +188,7 @@ const CFOShareModal: React.FC<{
             <Text style={cfoShareStyles.logoBaln}>bal<Text style={{ color: '#4CAF50' }}>n</Text></Text>
             <Text style={cfoShareStyles.logoDot}>.logic</Text>
           </View>
-          <Text style={cfoShareStyles.logoSub}>AI 버핏과 티타임</Text>
+          <Text style={cfoShareStyles.logoSub}>{tStatic('analysis.cfoChat.title')}</Text>
         </View>
       </View>
 
@@ -200,7 +205,7 @@ const CFOShareModal: React.FC<{
 
       {/* 워렌 버핏 */}
       <View style={[cfoShareStyles.investorCard, { borderLeftColor: '#2196F3' }]}>
-        <Text style={[cfoShareStyles.investorName, { color: '#64B5F6' }]}>워렌 버핏</Text>
+        <Text style={[cfoShareStyles.investorName, { color: '#64B5F6' }]}>{tStatic('analysis.cfoChat.investor.warren')}</Text>
         <Text style={cfoShareStyles.investorText} numberOfLines={2}>
           {truncate(debate.warren, 80)}
         </Text>
@@ -208,7 +213,7 @@ const CFOShareModal: React.FC<{
 
       {/* 레이 달리오 */}
       <View style={[cfoShareStyles.investorCard, { borderLeftColor: '#9C27B0' }]}>
-        <Text style={[cfoShareStyles.investorName, { color: '#CE93D8' }]}>레이 달리오</Text>
+        <Text style={[cfoShareStyles.investorName, { color: '#CE93D8' }]}>{tStatic('analysis.cfoChat.investor.dalio')}</Text>
         <Text style={cfoShareStyles.investorText} numberOfLines={2}>
           {truncate(debate.dalio, 80)}
         </Text>
@@ -216,7 +221,7 @@ const CFOShareModal: React.FC<{
 
       {/* 캐시 우드 */}
       <View style={[cfoShareStyles.investorCard, { borderLeftColor: '#E91E63' }]}>
-        <Text style={[cfoShareStyles.investorName, { color: '#F48FB1' }]}>캐시 우드</Text>
+        <Text style={[cfoShareStyles.investorName, { color: '#F48FB1' }]}>{tStatic('analysis.cfoChat.investor.wood')}</Text>
         <Text style={cfoShareStyles.investorText} numberOfLines={2}>
           {truncate(debate.wood, 80)}
         </Text>
@@ -225,7 +230,7 @@ const CFOShareModal: React.FC<{
       {/* 코스톨라니 (있을 때만) */}
       {debate.kostolany ? (
         <View style={[cfoShareStyles.investorCard, { borderLeftColor: '#FF8F00' }]}>
-          <Text style={[cfoShareStyles.investorName, { color: '#FFB74D' }]}>코스톨라니</Text>
+          <Text style={[cfoShareStyles.investorName, { color: '#FFB74D' }]}>{tStatic('analysis.cfoChat.investor.kostolany')}</Text>
           <Text style={cfoShareStyles.investorText} numberOfLines={2}>
             {truncate(debate.kostolany, 80)}
           </Text>
@@ -234,7 +239,7 @@ const CFOShareModal: React.FC<{
 
       {/* 워렌의 한마디 (핵심) */}
       <View style={cfoShareStyles.summaryBox}>
-        <Text style={cfoShareStyles.summaryLabel}>워렌의 한마디</Text>
+        <Text style={cfoShareStyles.summaryLabel}>{tStatic('analysis.cfoChat.warrenSummary')}</Text>
         <Text style={cfoShareStyles.summaryText} numberOfLines={4}>
           {truncate(debate.summary, 160)}
         </Text>
@@ -269,7 +274,7 @@ const CFOShareModal: React.FC<{
     >
       <View style={cfoShareStyles.modalContainer}>
         <View style={cfoShareStyles.modalHeader}>
-          <Text style={cfoShareStyles.modalTitle}>인스타 스토리 공유</Text>
+          <Text style={cfoShareStyles.modalTitle}>{tStatic('analysis.cfoChat.share.storyTitle')}</Text>
           <TouchableOpacity onPress={onClose} style={cfoShareStyles.closeButton}>
             <Ionicons name="close" size={24} color="#888888" />
           </TouchableOpacity>
@@ -300,7 +305,7 @@ const CFOShareModal: React.FC<{
             ) : (
               <>
                 <Ionicons name="share-social" size={18} color="#FFFFFF" />
-                <Text style={cfoShareStyles.shareButtonText}>인스타그램 공유</Text>
+                <Text style={cfoShareStyles.shareButtonText}>{tStatic('analysis.cfoChat.share.instagram')}</Text>
                 {!rewarded && (
                   <View style={cfoShareStyles.rewardHint}>
                     <Text style={cfoShareStyles.rewardHintText}>+{REWARD_AMOUNTS.shareCard}개</Text>
@@ -321,6 +326,7 @@ const CFOShareModal: React.FC<{
 
 export default function CFOChatScreen() {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -328,8 +334,8 @@ export default function CFOChatScreen() {
   const { data: credits } = useMyCredits();
   const spendCreditsMutation = useSpendCredits();
   const chatCost = FEATURE_COSTS.ai_cfo_chat; // 1크레딧
-  const { rewarded, claimReward } = useShareReward();
-  const [shareRewardMsg, setShareRewardMsg] = useState<string | null>(null);
+  const { rewarded, claimReward: _claimReward } = useShareReward();
+  const [shareRewardMsg, _setShareRewardMsg] = useState<string | null>(null);
 
   // 공유 모달 state
   const [shareModalVisible, setShareModalVisible] = useState(false);
@@ -360,11 +366,11 @@ export default function CFOChatScreen() {
     const welcomeMessage: Message = {
       id: 'welcome',
       role: 'assistant',
-      text: '안녕하세요, 자네! 워렌 버핏이라고 하네. 체리콜라 한 잔 하면서 투자 이야기 나눠보겠나? 오늘은 달리오, 캐시, 그리고 유럽의 현인 코스톨라니도 함께 있으니, 편하게 물어보시게.',
+      text: t('analysis.cfoChat.welcomeMessage'),
       timestamp: new Date(),
     };
     setMessages([welcomeMessage]);
-  }, []);
+  }, [t]);
 
   /** 다시 시도 핸들러: 에러 메시지를 제거하고 해당 질문을 재전송 */
   const handleRetry = useCallback((errorMsgId: string, question: string) => {
@@ -372,6 +378,7 @@ export default function CFOChatScreen() {
     setMessages(prev => prev.filter(m => m.id !== errorMsgId));
     // 원본 질문으로 재시도 (사용자 메시지는 이미 있으므로 직접 API만 호출)
     handleSend(question);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSend = async (text?: string) => {
@@ -382,9 +389,9 @@ export default function CFOChatScreen() {
     const balance = credits?.balance ?? 0;
     if (balance < chatCost) {
       Alert.alert(
-        '도토리 부족',
-        `질문 1회에 ${chatCost}도토리(\u20A9${chatCost * 100})이 필요합니다.\n현재 잔액: ${balance}도토리\n\n출석(+2개), 퀴즈 적중(+3개), 공유(+5개)로 모아보세요!`,
-        [{ text: '확인' }]
+        t('analysis.cfoChat.alert.insufficientCredits'),
+        t('analysis.cfoChat.alert.insufficientCreditsMsg', { cost: chatCost, price: chatCost * 100, balance }),
+        [{ text: t('common.confirm') }]
       );
       return;
     }
@@ -494,7 +501,7 @@ export default function CFOChatScreen() {
         };
         setMessages(prev => [...prev, aiMessage]);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[AI 버핏과 티타임] 에러:', err);
 
       // 에러 분류 (네트워크 vs 서버 vs 기타)
@@ -510,13 +517,13 @@ export default function CFOChatScreen() {
         isError: true,
         retryQuestion: messageText,
         debate: {
-          ...LOCAL_FALLBACK_DEBATE,
+          ...getLocalFallbackDebate(),
           // summary에 구체적 에러 유형별 안내 추가
           summary: classified.type === 'network'
-            ? `${LOCAL_FALLBACK_DEBATE.summary}\n\n[네트워크 오류] ${classified.message}`
+            ? `${getLocalFallbackDebate().summary}\n\n[${tStatic('analysis.cfoChat.error.networkLabel')}] ${classified.message}`
             : classified.type === 'server'
-              ? `${LOCAL_FALLBACK_DEBATE.summary}\n\n[서버 오류] ${classified.message}`
-              : `${LOCAL_FALLBACK_DEBATE.summary}\n\n${classified.message}`,
+              ? `${getLocalFallbackDebate().summary}\n\n[${tStatic('analysis.cfoChat.error.serverLabel')}] ${classified.message}`
+              : `${getLocalFallbackDebate().summary}\n\n${classified.message}`,
         },
       };
       setMessages(prev => [...prev, errorMessage]);
@@ -556,7 +563,7 @@ export default function CFOChatScreen() {
             <View style={s.errorBanner}>
               <Ionicons name="warning-outline" size={16} color="#FF5252" />
               <Text style={s.errorBannerText}>
-                응답 생성 실패 - 크레딧이 차감되지 않았습니다
+                {t('analysis.cfoChat.errorBanner')}
               </Text>
             </View>
           )}
@@ -564,7 +571,7 @@ export default function CFOChatScreen() {
           {/* baln 브랜딩 */}
           <View style={s.shareBrandRow}>
             <Text style={s.shareBrandText}>bal<Text style={{ color: '#4CAF50' }}>n</Text>.logic</Text>
-            <Text style={s.shareBrandSub}>AI 버핏과 티타임</Text>
+            <Text style={s.shareBrandSub}>{t('analysis.cfoChat.title')}</Text>
           </View>
 
           {/* 사용자 질문 */}
@@ -577,40 +584,40 @@ export default function CFOChatScreen() {
 
           {/* 워렌 버핏 */}
           <View style={[s.debateCard, { backgroundColor: '#E3F2FD', borderLeftColor: '#2196F3' }]}>
-            <Text style={[s.investorName, { color: '#1976D2' }]}>워렌 버핏</Text>
+            <Text style={[s.investorName, { color: '#1976D2' }]}>{t('analysis.cfoChat.investor.warren')}</Text>
             <Text style={[s.debateText, { color: '#2D2D2D' }]}>{item.debate.warren}</Text>
           </View>
 
           {/* 레이 달리오 */}
           <View style={[s.debateCard, { backgroundColor: '#F3E5F5', borderLeftColor: '#9C27B0' }]}>
-            <Text style={[s.investorName, { color: '#7B1FA2' }]}>레이 달리오</Text>
+            <Text style={[s.investorName, { color: '#7B1FA2' }]}>{t('analysis.cfoChat.investor.dalio')}</Text>
             <Text style={[s.debateText, { color: '#2D2D2D' }]}>{item.debate.dalio}</Text>
           </View>
 
           {/* 캐시 우드 */}
           <View style={[s.debateCard, { backgroundColor: '#FCE4EC', borderLeftColor: '#E91E63' }]}>
-            <Text style={[s.investorName, { color: '#C2185B' }]}>캐시 우드</Text>
+            <Text style={[s.investorName, { color: '#C2185B' }]}>{t('analysis.cfoChat.investor.wood')}</Text>
             <Text style={[s.debateText, { color: '#2D2D2D' }]}>{item.debate.wood}</Text>
           </View>
 
           {/* 코스톨라니 (있을 때만 표시) */}
           {item.debate.kostolany ? (
             <View style={[s.debateCard, { backgroundColor: '#FFF3E0', borderLeftColor: '#FF8F00' }]}>
-              <Text style={[s.investorName, { color: '#E65100' }]}>앙드레 코스톨라니</Text>
+              <Text style={[s.investorName, { color: '#E65100' }]}>{t('analysis.cfoChat.investor.kostolanyFull')}</Text>
               <Text style={[s.debateText, { color: '#2D2D2D' }]}>{item.debate.kostolany}</Text>
             </View>
           ) : null}
 
           {/* 워렌 버핏 최종 정리 */}
           <View style={[s.summaryCard, { backgroundColor: '#FFF9C4', borderColor: '#FBC02D' }]}>
-            <Text style={[s.summaryTitle, { color: '#F57F17' }]}>워렌의 한마디</Text>
+            <Text style={[s.summaryTitle, { color: '#F57F17' }]}>{t('analysis.cfoChat.warrenSummary')}</Text>
             <Text style={[s.summaryText, { color: '#2D2D2D' }]}>{item.debate.summary}</Text>
           </View>
 
           {/* 바이럴 CTA (에러가 아닐 때만) */}
           {!item.isError && (
             <View style={s.captureCTA}>
-              <Text style={s.captureCTAText}>{'나도 버핏과 대화하기 → baln.app'}</Text>
+              <Text style={s.captureCTAText}>{t('analysis.cfoChat.cta')}</Text>
             </View>
           )}
           </View>
@@ -619,11 +626,11 @@ export default function CFOChatScreen() {
           {item.isError && item.retryQuestion && (
             <TouchableOpacity
               style={s.retryButton}
-              onPress={() => handleRetry(item.id, item.retryQuestion!)}
+              onPress={() => handleRetry(item.id, item.retryQuestion as string)}
               activeOpacity={0.7}
             >
               <Ionicons name="refresh" size={16} color="#FFFFFF" />
-              <Text style={s.retryButtonText}>다시 시도</Text>
+              <Text style={s.retryButtonText}>{t('common.retry')}</Text>
             </TouchableOpacity>
           )}
 
@@ -635,7 +642,7 @@ export default function CFOChatScreen() {
               activeOpacity={0.7}
             >
               <Ionicons name="share-social" size={14} color="#4CAF50" />
-              <Text style={s.shareDebateText}>인스타 공유</Text>
+              <Text style={s.shareDebateText}>{t('analysis.cfoChat.share.instaShare')}</Text>
               {!rewarded && (
                 <View style={s.shareRewardBadge}>
                   <Text style={s.shareRewardBadgeText}>+{REWARD_AMOUNTS.shareCard}개</Text>
@@ -671,7 +678,7 @@ export default function CFOChatScreen() {
           {item.isError && (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 }}>
               <Ionicons name="warning-outline" size={14} color="#FF5252" />
-              <Text style={{ color: '#FF5252', fontSize: 13, fontWeight: '600' }}>오류 발생</Text>
+              <Text style={{ color: '#FF5252', fontSize: 13, fontWeight: '600' }}>{t('analysis.cfoChat.errorOccurred')}</Text>
             </View>
           )}
           <Text style={[s.messageText, { color: isUser ? '#FFFFFF' : colors.textPrimary }]}>
@@ -681,11 +688,11 @@ export default function CFOChatScreen() {
           {item.isError && item.retryQuestion && (
             <TouchableOpacity
               style={[s.retryButton, { marginTop: 8 }]}
-              onPress={() => handleRetry(item.id, item.retryQuestion!)}
+              onPress={() => handleRetry(item.id, item.retryQuestion as string)}
               activeOpacity={0.7}
             >
               <Ionicons name="refresh" size={14} color="#FFFFFF" />
-              <Text style={[s.retryButtonText, { fontSize: 13 }]}>다시 시도</Text>
+              <Text style={[s.retryButtonText, { fontSize: 13 }]}>{t('common.retry')}</Text>
             </TouchableOpacity>
           )}
           <Text
@@ -704,7 +711,7 @@ export default function CFOChatScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <HeaderBar
-        title="AI 버핏과 티타임"
+        title={t('analysis.cfoChat.title')}
         rightElement={
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
             <Text style={{ fontSize: 28 }}>🌰</Text>
@@ -723,7 +730,7 @@ export default function CFOChatScreen() {
         <View style={s.disclaimerBanner}>
           <Ionicons name="information-circle-outline" size={14} color="#888" />
           <Text style={s.disclaimerText}>
-            본 정보는 투자 참고용이며, 투자 권유가 아닙니다. 투자 판단의 책임은 본인에게 있습니다.
+            {t('analysis.cfoChat.disclaimer')}
           </Text>
         </View>
 
@@ -741,7 +748,7 @@ export default function CFOChatScreen() {
         {isLoading && (
           <View style={s.loadingContainer}>
             <ActivityIndicator size="small" color="#7C4DFF" />
-            <Text style={[s.loadingText, { color: colors.textSecondary }]}>AI가 생각 중...</Text>
+            <Text style={[s.loadingText, { color: colors.textSecondary }]}>{t('analysis.cfoChat.thinking')}</Text>
           </View>
         )}
 
@@ -749,10 +756,10 @@ export default function CFOChatScreen() {
         {messages.length === 1 && (
           <View style={s.quickQuestionsContainer}>
             <Text style={[s.quickQuestionsTitle, { color: colors.textSecondary }]}>
-              빠른 질문:
+              {t('analysis.cfoChat.quickQuestionsLabel')}
             </Text>
             <View style={s.quickQuestions}>
-              {QUICK_QUESTIONS.map((q, index) => (
+              {getQuickQuestions().map((q, index) => (
                 <TouchableOpacity
                   key={index}
                   onPress={() => handleQuickQuestion(q)}
@@ -779,7 +786,7 @@ export default function CFOChatScreen() {
           <TextInput
             value={inputText}
             onChangeText={setInputText}
-            placeholder="버핏에게 질문하기 (1크레딧)..."
+            placeholder={t('analysis.cfoChat.inputPlaceholder')}
             placeholderTextColor={colors.textTertiary}
             style={[s.input, { color: colors.textPrimary }]}
             multiline

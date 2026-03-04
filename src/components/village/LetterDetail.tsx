@@ -39,7 +39,6 @@ interface LetterDetailProps {
   onClose: () => void;
   isVisible: boolean;
   colors: ThemeColors;
-  locale?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -103,9 +102,8 @@ export function LetterDetail({
   onClose,
   isVisible,
   colors,
-  locale = 'ko',
 }: LetterDetailProps) {
-  const isKo = locale === 'ko';
+  const { language } = useLocale();
 
   // 카드 슬라이드-인 애니메이션
   const slideAnim = useRef(new Animated.Value(60)).current;
@@ -137,8 +135,8 @@ export function LetterDetail({
   const guruId = letter.fromGuruId || letter.guruId || '';
   const _config = GURU_CHARACTER_CONFIGS[guruId];
   const guruName = getGuruDisplayName(guruId);
-  const subject = isKo ? letter.subject : (letter.subjectEn ?? letter.subject);
-  const bodyText = isKo ? letter.body : (letter.bodyEn ?? letter.body);
+  const subject = language === 'ko' ? letter.subject : (letter.subjectEn ?? letter.subject);
+  const bodyText = language === 'ko' ? letter.body : (letter.bodyEn ?? letter.body);
 
   return (
     <LetterDetailInner
@@ -150,10 +148,8 @@ export function LetterDetail({
       isVisible={isVisible}
       onClose={onClose}
       colors={colors}
-      isKo={isKo}
       slideAnim={slideAnim}
       fadeAnim={fadeAnim}
-      locale={locale}
     />
   );
 }
@@ -171,10 +167,8 @@ interface InnerProps {
   isVisible: boolean;
   onClose: () => void;
   colors: ThemeColors;
-  isKo: boolean;
   slideAnim: Animated.Value;
   fadeAnim: Animated.Value;
-  locale: string;
 }
 
 function LetterDetailInner({
@@ -186,12 +180,10 @@ function LetterDetailInner({
   isVisible,
   onClose,
   colors,
-  isKo: _isKo,
   slideAnim,
   fadeAnim,
-  locale,
 }: InnerProps) {
-  const { t } = useLocale();
+  const { t, language } = useLocale();
   // 타이핑 애니메이션 (본문)
   const displayedBody = useTypewriter(bodyText, isVisible, 16);
 
@@ -249,7 +241,7 @@ function LetterDetailInner({
                   {guruName}
                 </Text>
                 <Text style={[styles.dateText, { color: colors.textTertiary }]}>
-                  {formatDate(letter.timestamp, locale)}
+                  {formatDate(letter.timestamp, language)}
                 </Text>
               </View>
             </View>

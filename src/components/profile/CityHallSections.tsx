@@ -14,7 +14,7 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from 'react-native';
-import { t } from '../../locales';
+import { useLocale } from '../../context/LocaleContext';
 
 // ============================================================================
 // Types
@@ -89,8 +89,6 @@ export const CITY_HALL_SECTIONS: CityHallSection[] = [
 // ============================================================================
 
 interface CityHallSectionsProps {
-  /** @deprecated Use t() from locales instead. Kept for backward compatibility. */
-  locale?: string;
   onNavigate: (route: string) => void;
   colors: {
     surface: string;
@@ -105,6 +103,8 @@ interface CityHallSectionsProps {
 // ============================================================================
 
 export function CityHallSections({ onNavigate, colors }: CityHallSectionsProps) {
+  const { t } = useLocale();
+
   return (
     <View style={styles.container}>
       {CITY_HALL_SECTIONS.map(section => (

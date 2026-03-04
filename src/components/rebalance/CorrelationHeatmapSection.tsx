@@ -267,7 +267,7 @@ export default React.memo(CorrelationHeatmapSection, (prev, next) => {
 
 const CELL_SIZE = 48;
 
-const createStyles = (colors: ThemeColors) => StyleSheet.create({
+const createStyles = (_colors: ThemeColors) => StyleSheet.create({
   card: {
     marginHorizontal: 16,
     marginBottom: 12,

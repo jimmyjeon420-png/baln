@@ -9,7 +9,7 @@
  */
 
 import React, { useEffect, useRef } from 'react';
-import { Animated } from 'react-native';
+import { Animated, type ViewStyle } from 'react-native';
 import { useTheme } from '../../hooks/useTheme';
 
 interface SkeletonProps {
@@ -23,7 +23,7 @@ interface SkeletonProps {
   borderRadius?: number;
 
   /** 추가 스타일 */
-  style?: any;
+  style?: Animated.WithAnimatedValue<ViewStyle>;
 
   /** 원형 여부 (프로필 이미지 등) */
   circle?: boolean;
@@ -61,14 +61,14 @@ export default function Skeleton({
     return () => animation.stop();
   }, [opacity]);
 
-  const skeletonStyle = circle
+  const skeletonStyle: ViewStyle = circle
     ? {
         width: typeof height === 'number' ? height : 40,
         height: height,
         borderRadius: (typeof height === 'number' ? height : 40) / 2,
       }
     : {
-        width,
+        width: width as ViewStyle['width'],
         height,
         borderRadius,
       };

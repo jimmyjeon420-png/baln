@@ -13,15 +13,13 @@ import {
   Text,
   StyleSheet,
 } from 'react-native';
-import { t } from '../../locales';
+import { useLocale } from '../../context/LocaleContext';
 
 // ============================================================================
 // Props
 // ============================================================================
 
 interface PlazaThemeHeaderProps {
-  /** @deprecated Use t() from locales instead. Kept for backward compatibility. */
-  locale?: string;
   weatherEmoji?: string;
   temperature?: number;
   colors: {
@@ -66,6 +64,7 @@ export function PlazaThemeHeader({
   temperature,
   colors,
 }: PlazaThemeHeaderProps) {
+  const { t } = useLocale();
   const timeStr = getKSTTimeString();
   const timeEmoji = getTimeOfDayEmoji();
 

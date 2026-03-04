@@ -16,6 +16,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
 import { getGuruDisplayName } from '../../services/characterService';
 import type { ThemeColors } from '../../styles/colors';
+import { useLocale } from '../../context/LocaleContext';
 
 /** 현재 시간 기반 시간대 자동 감지 (KST) */
 function detectTimeOfDay(): 'dawn' | 'morning' | 'afternoon' | 'evening' | 'night' {
@@ -34,8 +35,6 @@ function detectTimeOfDay(): 'dawn' | 'morning' | 'afternoon' | 'evening' | 'nigh
 interface CafeAmbianceProps {
   /** 테마 색상 */
   colors: ThemeColors;
-  /** 로케일 (ko/en) */
-  locale: string;
   /** 현재 시간대 (분위기 톤 결정) */
   timeOfDay?: 'dawn' | 'morning' | 'afternoon' | 'evening' | 'night';
 }
@@ -87,10 +86,10 @@ const GURU_ORDER = [
 
 function CafeAmbiance({
   colors,
-  locale,
   timeOfDay,
 }: CafeAmbianceProps): React.ReactElement {
-  const isKo = locale === 'ko';
+  const { t, language } = useLocale();
+  const isKo = language === 'ko';
 
   // 시간대 자동 감지 (prop 없으면 현재 시각 기반)
   const [autoTime, setAutoTime] = useState(detectTimeOfDay);
@@ -120,7 +119,7 @@ function CafeAmbiance({
     <View style={[styles.container, { backgroundColor: config.tintColor }]}>
       {/* 카페 간판 */}
       <Text style={[styles.signText, { color: colors.textPrimary }]}>
-        {isKo ? '☕ 구루 카페' : '☕ Guru Cafe'}
+        {t('cafeAmbiance.sign')}
       </Text>
 
       {/* 시간대별 인사 */}

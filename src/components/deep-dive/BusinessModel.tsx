@@ -20,6 +20,7 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 
 interface BusinessModelProps {
   /** 수익 구조 설명 */
@@ -42,20 +43,21 @@ export function BusinessModel({
   notes,
 }: BusinessModelProps) {
   const { colors } = useTheme();
+  const { t } = useLocale();
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
       {/* 헤더 */}
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <Ionicons name="business" size={28} color="#9333EA" />
-        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>비즈니스 모델</Text>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{t('deepDive.businessModel.title')}</Text>
       </View>
 
       {/* 1. 수익 구조 */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.icon}>💰</Text>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>수익 구조</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{t('deepDive.businessModel.revenueStructure')}</Text>
         </View>
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text style={[styles.descriptionText, { color: colors.textSecondary }]}>{revenueModel}</Text>
@@ -66,7 +68,7 @@ export function BusinessModel({
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.icon}>🏰</Text>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>핵심 경쟁력 (Moat)</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{t('deepDive.businessModel.moat')}</Text>
         </View>
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           {moat.map((item, index) => (
@@ -82,7 +84,7 @@ export function BusinessModel({
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.icon}>🌍</Text>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>시장 규모 (TAM)</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{t('deepDive.businessModel.tam')}</Text>
         </View>
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text style={[styles.descriptionText, { color: colors.textSecondary }]}>{tam}</Text>
@@ -93,7 +95,7 @@ export function BusinessModel({
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.icon}>📈</Text>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>성장 전략</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{t('deepDive.businessModel.growthStrategy')}</Text>
         </View>
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           {growthStrategy.map((item, index) => (

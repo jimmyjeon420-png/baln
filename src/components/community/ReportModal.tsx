@@ -21,8 +21,8 @@ import {
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { SIZES } from '../../styles/theme';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 import supabase, { getCurrentUser } from '../../services/supabase';
 import { getLocaleCode } from '../../utils/formatters';
 
@@ -30,11 +30,11 @@ const REPORT_SLA_HOURS = 24;
 
 type ReportReason = 'spam' | 'abuse' | 'leading' | 'other';
 
-const REPORT_REASONS: { key: ReportReason; label: string; icon: string }[] = [
-  { key: 'spam', label: '스팸 / 광고', icon: 'megaphone' },
-  { key: 'abuse', label: '욕설 / 비방', icon: 'alert-circle' },
-  { key: 'leading', label: '리딩방 / 불법 유도', icon: 'warning' },
-  { key: 'other', label: '기타', icon: 'ellipsis-horizontal' },
+const REPORT_REASONS: { key: ReportReason; labelKey: string; icon: string }[] = [
+  { key: 'spam', labelKey: 'community.report.spam', icon: 'megaphone' },
+  { key: 'abuse', labelKey: 'community.report.abuse', icon: 'alert-circle' },
+  { key: 'leading', labelKey: 'community.report.leading', icon: 'warning' },
+  { key: 'other', labelKey: 'community.report.other', icon: 'ellipsis-horizontal' },
 ];
 
 interface ReportModalProps {
@@ -53,6 +53,7 @@ export default function ReportModal({
   onSuccess,
 }: ReportModalProps) {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const [reason, setReason] = useState<ReportReason | null>(null);
   const [description, setDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -67,12 +68,12 @@ export default function ReportModal({
   // 신고 제출
   const handleSubmit = async () => {
     if (!reason) {
-      Alert.alert('알림', '신고 사유를 선택해주세요.');
+      Alert.alert(t('common.notice'), t('community.report.selectReason'));
       return;
     }
 
     if (reason === 'other' && !description.trim()) {
-      Alert.alert('알림', '기타 사유를 입력해주세요.');
+      Alert.alert(t('common.notice'), t('community.report.enterOtherReason'));
       return;
     }
 
@@ -96,8 +97,8 @@ export default function ReportModal({
         const dueAt = new Date(existing.created_at);
         dueAt.setHours(dueAt.getHours() + REPORT_SLA_HOURS);
         Alert.alert(
-          '이미 접수된 신고',
-          `이미 같은 대상에 대한 신고가 접수되어 있습니다.\n1차 검토 예정: ${dueAt.toLocaleString(getLocaleCode())}`,
+          t('community.report.alreadyReportedTitle'),
+          t('community.report.alreadyReportedMsg', { dueAt: dueAt.toLocaleString(getLocaleCode()) }),
         );
         return;
       }
@@ -116,9 +117,9 @@ export default function ReportModal({
       const dueAt = new Date();
       dueAt.setHours(dueAt.getHours() + REPORT_SLA_HOURS);
 
-      Alert.alert('신고 완료', `신고가 접수되었습니다.\n${REPORT_SLA_HOURS}시간 내 1차 검토를 목표로 처리합니다.\n예정 시각: ${dueAt.toLocaleString(getLocaleCode())}`, [
+      Alert.alert(t('community.report.completeTitle'), t('community.report.completeMsg', { hours: REPORT_SLA_HOURS, dueAt: dueAt.toLocaleString(getLocaleCode()) }), [
         {
-          text: '확인',
+          text: t('common.confirm'),
           onPress: () => {
             handleClose();
             onSuccess?.();
@@ -127,7 +128,7 @@ export default function ReportModal({
       ]);
     } catch (error) {
       console.error('Report error:', error);
-      Alert.alert('오류', '신고 접수에 실패했습니다. 다시 시도해주세요.');
+      Alert.alert(t('common.error'), t('community.report.submitError'));
     } finally {
       setIsSubmitting(false);
     }
@@ -139,7 +140,7 @@ export default function ReportModal({
         <View style={[styles.container, { backgroundColor: colors.background }]}>
           {/* 헤더 */}
           <View style={[styles.header, { borderBottomColor: colors.border }]}>
-            <Text style={[styles.title, { color: colors.textPrimary }]}>신고하기</Text>
+            <Text style={[styles.title, { color: colors.textPrimary }]}>{t('community.report.title')}</Text>
             <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
               <Ionicons name="close" size={24} color={colors.textPrimary} />
             </TouchableOpacity>
@@ -150,12 +151,12 @@ export default function ReportModal({
             <View style={[styles.infoBox, { backgroundColor: colors.primary + '15' }]}>
               <Ionicons name="information-circle" size={18} color={colors.primary} />
               <Text style={[styles.infoText, { color: colors.textPrimary }]}>
-                허위 신고 시 이용에 제한이 있을 수 있습니다. 접수된 신고는 24시간 내 1차 검토합니다.
+                {t('community.report.infoText')}
               </Text>
             </View>
 
             {/* 신고 사유 선택 */}
-            <Text style={[styles.label, { color: colors.textPrimary }]}>신고 사유</Text>
+            <Text style={[styles.label, { color: colors.textPrimary }]}>{t('community.report.reasonLabel')}</Text>
             <View style={styles.reasonGrid}>
               {REPORT_REASONS.map((item) => {
                 const isSelected = reason === item.key;
@@ -170,7 +171,7 @@ export default function ReportModal({
                     onPress={() => setReason(item.key)}
                   >
                     <Ionicons
-                      name={item.icon as any}
+                      name={item.icon as unknown as React.ComponentProps<typeof Ionicons>['name']}
                       size={22}
                       color={isSelected ? colors.primary : colors.textSecondary}
                     />
@@ -181,7 +182,7 @@ export default function ReportModal({
                         isSelected && { color: colors.primary, fontWeight: '700' },
                       ]}
                     >
-                      {item.label}
+                      {t(item.labelKey)}
                     </Text>
                   </TouchableOpacity>
                 );
@@ -190,11 +191,11 @@ export default function ReportModal({
 
             {/* 상세 설명 */}
             <Text style={[styles.label, { color: colors.textPrimary }]}>
-              상세 설명 {reason === 'other' && <Text style={{ color: colors.error }}>*</Text>}
+              {t('community.report.descriptionLabel')} {reason === 'other' && <Text style={{ color: colors.error }}>*</Text>}
             </Text>
             <TextInput
               style={[styles.descriptionInput, { backgroundColor: colors.surface, color: colors.textPrimary }]}
-              placeholder="구체적인 신고 사유를 입력해주세요 (선택사항)"
+              placeholder={t('community.report.descriptionPlaceholder')}
               placeholderTextColor={colors.textSecondary}
               multiline
               maxLength={500}
@@ -215,7 +216,7 @@ export default function ReportModal({
               {isSubmitting ? (
                 <ActivityIndicator size="small" color="#000000" />
               ) : (
-                <Text style={styles.submitButtonText}>신고하기</Text>
+                <Text style={styles.submitButtonText}>{t('community.report.submit')}</Text>
               )}
             </TouchableOpacity>
           </View>

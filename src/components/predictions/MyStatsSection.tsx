@@ -13,12 +13,14 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Svg, { Circle, Text as SvgText } from 'react-native-svg';
 import { PredictionUserStats } from '../../types/prediction';
+import { useLocale } from '../../context/LocaleContext';
 
 interface MyStatsSectionProps {
   stats: PredictionUserStats;
 }
 
 export default function MyStatsSection({ stats }: MyStatsSectionProps) {
+  const { t } = useLocale();
   const correctVotes = stats.correct_votes;
   const incorrectVotes = stats.total_votes - stats.correct_votes;
   const accuracyRate = Number(stats.accuracy_rate);
@@ -30,7 +32,7 @@ export default function MyStatsSection({ stats }: MyStatsSectionProps) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.sectionTitle}>나의 예측 기록</Text>
+      <Text style={styles.sectionTitle}>{t('predictions.myStats.title')}</Text>
 
       <View style={styles.content}>
         {/* 원형 차트 */}
@@ -75,19 +77,19 @@ export default function MyStatsSection({ stats }: MyStatsSectionProps) {
               fill="#888888"
               textAnchor="middle"
             >
-              적중률
+              {t('predictions.myStats.accuracyRate')}
             </SvgText>
           </Svg>
         </View>
 
         {/* 통계 그리드 */}
         <View style={styles.statsGrid}>
-          <StatRow label="총 투표" value={`${stats.total_votes}회`} />
-          <StatRow label="적중" value={`${correctVotes}회`} highlight />
-          <StatRow label="오답" value={`${incorrectVotes}회`} />
-          <StatRow label="현재 연속" value={`${stats.current_streak}회`} highlight={stats.current_streak >= 5} />
-          <StatRow label="최고 연속" value={`${stats.best_streak}회`} />
-          <StatRow label="획득 크레딧" value={`${stats.total_credits_earned}개`} highlight />
+          <StatRow label={t('predictions.myStats.totalVotes')} value={`${stats.total_votes}${t('predictions.myStats.countUnit')}`} />
+          <StatRow label={t('predictions.myStats.correct')} value={`${correctVotes}${t('predictions.myStats.countUnit')}`} highlight />
+          <StatRow label={t('predictions.myStats.incorrect')} value={`${incorrectVotes}${t('predictions.myStats.countUnit')}`} />
+          <StatRow label={t('predictions.myStats.currentStreak')} value={`${stats.current_streak}${t('predictions.myStats.countUnit')}`} highlight={stats.current_streak >= 5} />
+          <StatRow label={t('predictions.myStats.bestStreak')} value={`${stats.best_streak}${t('predictions.myStats.countUnit')}`} />
+          <StatRow label={t('predictions.myStats.creditsEarned')} value={`${stats.total_credits_earned}${t('predictions.myStats.creditUnit')}`} highlight />
         </View>
       </View>
     </View>

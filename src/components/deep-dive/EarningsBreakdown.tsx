@@ -14,6 +14,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, LayoutAnimation, Platform, UIManager } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 import type { ThemeColors } from '../../styles/colors';
 import { formatKRW } from '../../utils/formatters';
 
@@ -76,6 +77,7 @@ export default function EarningsBreakdown({
   keyTakeaway,
 }: EarningsBreakdownProps) {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const [expandedSection, setExpandedSection] = useState<'revenue' | 'cost' | 'waterfall' | null>('revenue');
 
   const toggleSection = (section: 'revenue' | 'cost' | 'waterfall') => {
@@ -92,7 +94,7 @@ export default function EarningsBreakdown({
         <View style={styles.headerLeft}>
           <Ionicons name="document-text-outline" size={20} color="#8B5CF6" />
           <Text style={[styles.title, { color: colors.textPrimary }]}>
-            {quarter} 상세 실적
+            {quarter} {t('deepDive.earnings.detailedEarnings')}
           </Text>
         </View>
         {/* 마진 뱃지 */}
@@ -100,14 +102,14 @@ export default function EarningsBreakdown({
           {operatingMargin != null && (
             <View style={[styles.marginBadge, { backgroundColor: '#10B98120' }]}>
               <Text style={[styles.marginText, { color: '#10B981' }]}>
-                영업이익률 {operatingMargin.toFixed(1)}%
+                {t('deepDive.earnings.operatingMargin')} {operatingMargin.toFixed(1)}%
               </Text>
             </View>
           )}
           {netMargin != null && (
             <View style={[styles.marginBadge, { backgroundColor: '#F59E0B20' }]}>
               <Text style={[styles.marginText, { color: '#F59E0B' }]}>
-                순이익률 {netMargin.toFixed(1)}%
+                {t('deepDive.earnings.netMargin')} {netMargin.toFixed(1)}%
               </Text>
             </View>
           )}
@@ -116,7 +118,7 @@ export default function EarningsBreakdown({
 
       {/* ═══ 1. 사업부별 매출 구성 ═══ */}
       <SectionAccordion
-        title="사업부별 매출 구성"
+        title={t('deepDive.earnings.revenueBySegment')}
         icon="pie-chart-outline"
         iconColor="#6366F1"
         isExpanded={expandedSection === 'revenue'}
@@ -171,7 +173,7 @@ export default function EarningsBreakdown({
 
         {/* 합계 */}
         <View style={styles.totalRow}>
-          <Text style={[styles.totalLabel, { color: colors.textSecondary }]}>합계</Text>
+          <Text style={[styles.totalLabel, { color: colors.textSecondary }]}>{t('deepDive.earnings.total')}</Text>
           <Text style={[styles.totalValue, { color: colors.textPrimary }]}>
             {formatKRW(totalRevenue, true)}
           </Text>
@@ -180,7 +182,7 @@ export default function EarningsBreakdown({
 
       {/* ═══ 2. 비용 구조 ═══ */}
       <SectionAccordion
-        title="비용 구조"
+        title={t('deepDive.earnings.costStructure')}
         icon="card-outline"
         iconColor="#EF4444"
         isExpanded={expandedSection === 'cost'}
@@ -192,7 +194,7 @@ export default function EarningsBreakdown({
             <View style={styles.costLeft}>
               <Text style={[styles.costName, { color: colors.textPrimary }]}>{item.name}</Text>
               <Text style={[styles.costPercent, { color: colors.textTertiary }]}>
-                매출의 {item.percentage.toFixed(1)}%
+                {t('deepDive.earnings.ofRevenue', { pct: item.percentage.toFixed(1) })}
               </Text>
             </View>
             <View style={styles.costRight}>
@@ -218,7 +220,7 @@ export default function EarningsBreakdown({
 
       {/* ═══ 3. 손익 워터폴 ═══ */}
       <SectionAccordion
-        title="손익 흐름 (워터폴)"
+        title={t('deepDive.earnings.waterfall')}
         icon="git-network-outline"
         iconColor="#10B981"
         isExpanded={expandedSection === 'waterfall'}

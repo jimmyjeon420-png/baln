@@ -11,6 +11,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 
 // ── 타입 정의 ──
 
@@ -103,6 +104,7 @@ export default function ScoreBreakdown({
   totalScore,
 }: ScoreBreakdownProps) {
   const { colors } = useTheme();
+  const { t } = useLocale();
 
   return (
     <View
@@ -119,10 +121,10 @@ export default function ScoreBreakdown({
       {/* ── 기본점 ── */}
       <View style={[styles.baseRow, { borderBottomColor: colors.border }]}>
         <Text style={[styles.baseLabel, { color: colors.textSecondary }]}>
-          기본점
+          {t('deepDive.scoreBreakdown.baseScore')}
         </Text>
         <Text style={[styles.baseScore, { color: colors.textPrimary }]}>
-          {baseScore}점
+          {baseScore}{t('deepDive.scoreBreakdown.points')}
         </Text>
       </View>
 
@@ -134,12 +136,12 @@ export default function ScoreBreakdown({
       {/* ── 합계 ── */}
       <View style={styles.totalRow}>
         <Text style={[styles.totalLabel, { color: colors.textPrimary }]}>
-          합계
+          {t('deepDive.scoreBreakdown.total')}
         </Text>
         <Text
           style={[styles.totalScore, { color: getScoreColor(totalScore) }]}
         >
-          {totalScore}점
+          {totalScore}{t('deepDive.scoreBreakdown.points')}
         </Text>
       </View>
     </View>

@@ -24,10 +24,12 @@ import supabase, { getCurrentUser } from '../../src/services/supabase';
 import type { UserTier } from '../../src/types/database';
 import type { TaxResidency, TaxReportInput, TaxReportResult } from '../../src/types/marketplace';
 import { useTheme } from '../../src/hooks/useTheme';
+import { useLocale } from '../../src/context/LocaleContext';
 
 export default function TaxReportScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { t } = useLocale();
   const { mediumTap } = useHaptics();
   const taxMutation = useTaxReport();
 
@@ -36,7 +38,7 @@ export default function TaxReportScreen() {
   const [annualIncome, setAnnualIncome] = useState('');
   const [showGate, setShowGate] = useState(false);
   const [result, setResult] = useState<TaxReportResult | null>(null);
-  const [portfolio, setPortfolio] = useState<any[]>([]);
+  const [portfolio, setPortfolio] = useState<Record<string, unknown>[]>([]);
 
   useFocusEffect(
     useCallback(() => {
@@ -62,7 +64,7 @@ export default function TaxReportScreen() {
 
   const handleAnalyze = () => {
     if (portfolio.length === 0) {
-      Alert.alert('포트폴리오 필요', '보유 자산이 있어야 세금 분석이 가능합니다.');
+      Alert.alert(t('tax_report.alert.portfolio_required_title'), t('tax_report.alert.portfolio_required_message'));
       return;
     }
     mediumTap();
@@ -77,20 +79,20 @@ export default function TaxReportScreen() {
       residency,
       annualIncome: annualIncome ? parseInt(annualIncome.replace(/,/g, ''), 10) : undefined,
       portfolio: portfolio.map(p => ({
-        ticker: p.ticker || p.name,
-        name: p.name,
-        currentValue: p.current_value || 0,
-        costBasis: p.cost_basis || (p.avg_price || 0) * (p.quantity || 1),
-        purchaseDate: p.purchase_date || p.created_at,
-        quantity: p.quantity || 1,
+        ticker: (p.ticker as string) || (p.name as string),
+        name: p.name as string,
+        currentValue: (p.current_value as number) || 0,
+        costBasis: (p.cost_basis as number) || ((p.avg_price as number) || 0) * ((p.quantity as number) || 1),
+        purchaseDate: (p.purchase_date as string) || (p.created_at as string),
+        quantity: (p.quantity as number) || 1,
       })),
     };
 
     try {
       const res = await taxMutation.mutateAsync({ input, userTier });
       setResult(res);
-    } catch (err: any) {
-      Alert.alert('분석 실패', err.message || '세금 분석에 실패했습니다.');
+    } catch (err: unknown) {
+      Alert.alert(t('tax_report.alert.analysis_failed_title'), (err instanceof Error ? err.message : undefined) || t('tax_report.alert.analysis_failed_message'));
     }
   };
 
@@ -102,53 +104,53 @@ export default function TaxReportScreen() {
           <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7}>
             <Ionicons name="arrow-back" size={22} color={colors.textPrimary} />
           </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>세금 최적화 리포트</Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{t('tax_report.header_title')}</Text>
           <View style={{ width: 22 }} />
         </View>
 
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-          AI가 분석하는 맞춤 절세 전략 & 매도 타이밍
+          {t('tax_report.subtitle')}
         </Text>
 
         {/* 거주지 선택 */}
-        <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>세금 거주지</Text>
+        <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>{t('tax_report.residency_label')}</Text>
         <View style={styles.residencyRow}>
           <TouchableOpacity
             style={[styles.residencyCard, { backgroundColor: colors.surface, borderColor: colors.border }, residency === 'KR' && styles.residencyActive]}
             onPress={() => { mediumTap(); setResidency('KR'); }}
             activeOpacity={0.7}
           >
-            <Text style={styles.residencyFlag}>한국</Text>
+            <Text style={styles.residencyFlag}>{t('tax_report.residency.kr_flag')}</Text>
             <Text style={[styles.residencyLabel, { color: colors.textSecondary }, residency === 'KR' && { color: colors.textPrimary }]}>
-              한국 거주자
+              {t('tax_report.residency.kr_label')}
             </Text>
-            <Text style={[styles.residencyDesc, { color: colors.textTertiary }]}>양도소득세 + 금융소득종합과세</Text>
+            <Text style={[styles.residencyDesc, { color: colors.textTertiary }]}>{t('tax_report.residency.kr_desc')}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.residencyCard, { backgroundColor: colors.surface, borderColor: colors.border }, residency === 'US' && styles.residencyActive]}
             onPress={() => { mediumTap(); setResidency('US'); }}
             activeOpacity={0.7}
           >
-            <Text style={styles.residencyFlag}>미국</Text>
+            <Text style={styles.residencyFlag}>{t('tax_report.residency.us_flag')}</Text>
             <Text style={[styles.residencyLabel, { color: colors.textSecondary }, residency === 'US' && { color: colors.textPrimary }]}>
-              미국 거주자
+              {t('tax_report.residency.us_label')}
             </Text>
-            <Text style={[styles.residencyDesc, { color: colors.textTertiary }]}>Capital Gains Tax + Tax-Loss Harvesting</Text>
+            <Text style={[styles.residencyDesc, { color: colors.textTertiary }]}>{t('tax_report.residency.us_desc')}</Text>
           </TouchableOpacity>
         </View>
 
         {/* 연 소득 입력 */}
-        <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>연 소득 (선택)</Text>
+        <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>{t('tax_report.income_label')}</Text>
         <TextInput
           style={[styles.textInput, { backgroundColor: colors.surface, color: colors.textPrimary, borderColor: colors.borderStrong }]}
           value={annualIncome}
           onChangeText={setAnnualIncome}
-          placeholder="예: 50,000,000"
+          placeholder={t('tax_report.income_placeholder')}
           placeholderTextColor={colors.textQuaternary}
           keyboardType="numeric"
         />
         <Text style={[styles.hint, { color: colors.textQuaternary }]}>
-          소득 정보를 입력하면 더 정확한 세율 계산이 가능합니다
+          {t('tax_report.income_hint')}
         </Text>
 
         {/* 포트폴리오 요약 */}
@@ -157,7 +159,7 @@ export default function TaxReportScreen() {
           <Text style={[styles.summaryText, { color: colors.textSecondary }]}>
             {portfolio.length}개 자산 | 총 ₩
             {portfolio
-              .reduce((s: number, p: any) => s + (p.current_value || 0), 0)
+              .reduce((s: number, p: Record<string, unknown>) => s + ((p.current_value as number) || 0), 0)
               .toLocaleString()}
           </Text>
         </View>
@@ -170,7 +172,7 @@ export default function TaxReportScreen() {
           activeOpacity={0.7}
         >
           <Ionicons name="receipt" size={18} color="#FFF" />
-          <Text style={styles.analyzeText}>세금 분석 시작</Text>
+          <Text style={styles.analyzeText}>{t('tax_report.analyze_button')}</Text>
         </TouchableOpacity>
 
         {/* 로딩 */}
@@ -181,14 +183,9 @@ export default function TaxReportScreen() {
 
         {/* 세금 면책 문구 */}
         <View style={styles.taxDisclaimer}>
-          <Text style={[styles.taxDisclaimerTitle, { color: colors.primaryLight }]}>세금 관련 유의사항</Text>
+          <Text style={[styles.taxDisclaimerTitle, { color: colors.primaryLight }]}>{t('tax_report.disclaimer_title')}</Text>
           <Text style={[styles.taxDisclaimerText, { color: colors.textSecondary }]}>
-            • 본 리포트는 참고용 정보이며, 법적 효력이 있는 세무 자문이 아닙니다.{'\n'}
-            • 정확한 세무 처리를 위해 반드시 세무사 또는 공인 세무 전문가와 상담하시기 바랍니다.{'\n'}
-            • 세율 및 과세 기준은 관련 법령 개정에 따라 수시로 변경될 수 있습니다.{'\n'}
-            • 가상자산 양도소득세는 2027년 1월 1일 이후 양도분부터 시행 예정이며, 시행 시점이 변경될 수 있습니다.{'\n'}
-            • 해외주식 양도소득: 연간 250만원 기본공제 적용, 22% 세율(지방소득세 포함).{'\n'}
-            • 금융소득종합과세: 연 2,000만원 초과 시 종합소득에 합산 과세됩니다.
+            {t('tax_report.disclaimer_text')}
           </Text>
         </View>
       </ScrollView>

@@ -38,13 +38,13 @@ import { DiagnosisSkeletonLoader } from '../../src/components/SkeletonLoader';
 import { useSharedPortfolio } from '../../src/hooks/useSharedPortfolio';
 import { useSharedAnalysis } from '../../src/hooks/useSharedAnalysis';
 import { usePeerPanicScore, getAssetBracket } from '../../src/hooks/usePortfolioSnapshots';
-import { calculateHealthScore, DALIO_TARGET, BUFFETT_TARGET, CATHIE_WOOD_TARGET, KOSTOLANY_TARGETS, DEFAULT_TARGET, getPhaseAdjustedTarget, type AssetCategory } from '../../src/services/rebalanceScore';
+import { calculateHealthScore, DALIO_TARGET, BUFFETT_TARGET, CATHIE_WOOD_TARGET, DEFAULT_TARGET, getPhaseAdjustedTarget, type AssetCategory } from '../../src/services/rebalanceScore';
 import FreePeriodBanner from '../../src/components/FreePeriodBanner';
 import { usePrices } from '../../src/hooks/usePrices';
 import { AssetType } from '../../src/types/asset';
 import { useScreenTracking } from '../../src/hooks/useAnalytics';
 import { useCheckupLevel } from '../../src/hooks/useCheckupLevel';
-import HospitalHeader from '../../src/components/rebalance/HospitalHeader';
+// HospitalHeader removed — unused after P2-A refactor
 import { useHoldingPeriod } from '../../src/hooks/useHoldingPeriod';
 import { useEmotionCheck } from '../../src/hooks/useEmotionCheck';
 import { useTheme } from '../../src/hooks/useTheme';
@@ -52,11 +52,11 @@ import { useQuickContextSentiment } from '../../src/hooks/useContextCard';
 import { useKostolalyPhase } from '../../src/hooks/useKostolalyPhase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DisclaimerBanner from '../../src/components/common/DisclaimerBanner';
-import { AIConsentModal, hasAIConsent } from '../../src/components/common/AIConsentModal';
+import { AIConsentModal } from '../../src/components/common/AIConsentModal';
 import supabase, { getCurrentUser } from '../../src/services/supabase';
 import { useLocale } from '../../src/context/LocaleContext';
 import { CharacterAvatar } from '../../src/components/character/CharacterAvatar';
-import { getQuotesForGuru } from '../../src/data/guruQuoteBank';
+// getQuotesForGuru removed — unused in this screen
 
 // ── 단일 통합 뷰 컴포넌트 (P2-A) ──
 import AdvancedCheckupView from '../../src/components/checkup/AdvancedCheckupView';
@@ -74,7 +74,7 @@ function RefreshToast({ visible, text }: { visible: boolean; text: string }) {
         RNAnimated.timing(opacity, { toValue: 0, duration: 300, useNativeDriver: true }),
       ]).start();
     }
-  }, [visible]);
+  }, [visible, opacity]);
 
   if (!visible) return null;
 
@@ -118,7 +118,7 @@ function getTierInfo(totalAssets: number): { label: string; color: string } {
 }
 
 // ── 날짜 포맷팅 (t 함수 파라미터로 주입) ──
-function formatTodayDate(tFn: (key: string, opts?: Record<string, any>) => string): string {
+function formatTodayDate(tFn: (key: string, opts?: Record<string, unknown>) => string): string {
   const now = new Date();
   const month = String(now.getMonth() + 1).padStart(2, '0');
   const day = String(now.getDate()).padStart(2, '0');
@@ -167,8 +167,8 @@ async function runAnalysisDiagnostic() {
       results.push(`1. Supabase fetch: TIMEOUT 5s`);
     }
     }
-  } catch (e: any) {
-    results.push(`1. Supabase fetch ERROR: ${e.message}`);
+  } catch (e: unknown) {
+    results.push(`1. Supabase fetch ERROR: ${(e as Error).message}`);
   }
 
   // 2. Auth 세션 상태
@@ -187,8 +187,8 @@ async function runAnalysisDiagnostic() {
       } catch { expInfo = 'parse error'; }
     }
     results.push(`2. Auth: ${hasSession ? 'OK' : 'NO'} / ${expInfo} (${Date.now() - t2}ms)`);
-  } catch (e: any) {
-    results.push(`2. Auth ERROR: ${e.message}`);
+  } catch (e: unknown) {
+    results.push(`2. Auth ERROR: ${(e as Error).message}`);
   }
 
   // 2.5. DB 직접 조회: daily_market_insights (이승건: 데이터가 실제로 있는지 확인)
@@ -208,13 +208,13 @@ async function runAnalysisDiagnostic() {
       const isMacroString = typeof dbData.macro_summary === 'string';
       const title = isMacroString
         ? (JSON.parse(dbData.macro_summary as string))?.title || 'NO TITLE'
-        : (dbData.macro_summary as any)?.title || 'NO TITLE';
+        : (dbData.macro_summary as Record<string, unknown>)?.title || 'NO TITLE';
       results.push(`2.5. DB 조회 (${todayKST}): ✅ ${dbData.market_sentiment} "${title}" ${isMacroString ? '(문자열)' : '(객체)'} (${Date.now() - t25}ms)`);
     } else {
       results.push(`2.5. DB 조회 (${todayKST}): 데이터 없음 (${Date.now() - t25}ms)`);
     }
-  } catch (e: any) {
-    results.push(`2.5. DB 조회 ERROR: ${e.message}`);
+  } catch (e: unknown) {
+    results.push(`2.5. DB 조회 ERROR: ${(e as Error).message}`);
   }
 
   // 3. Gemini 프록시 Edge Function 헬스 체크
@@ -246,8 +246,8 @@ async function runAnalysisDiagnostic() {
     } else {
       results.push(`3. Gemini proxy: TIMEOUT 8s`);
     }
-  } catch (e: any) {
-    results.push(`3. Gemini proxy ERROR: ${e.message}`);
+  } catch (e: unknown) {
+    results.push(`3. Gemini proxy ERROR: ${(e as Error).message}`);
   }
 
   // 4. 포트폴리오 데이터 존재 여부
@@ -266,17 +266,17 @@ async function runAnalysisDiagnostic() {
         new Promise<{ data: null; error: { message: string } }>((r) =>
           setTimeout(() => r({ data: null, error: { message: 'TIMEOUT 5s' } }), 5000)
         ),
-      ]) as any;
+      ]) as unknown as { data: { id: string; name: string }[] | null; error: { message: string } | null };
       if (error) {
         results.push(`4. Portfolio: ERROR ${error.message} (${Date.now() - t4}ms)`);
       } else {
         const count = portfolioData?.length ?? 0;
-        const names = (portfolioData || []).slice(0, 3).map((p: any) => p.name).join(', ');
+        const names = (portfolioData || []).slice(0, 3).map((p: { name: string }) => p.name).join(', ');
         results.push(`4. Portfolio: ${count}개 [${names}${count > 3 ? '...' : ''}] (${Date.now() - t4}ms)`);
       }
     }
-  } catch (e: any) {
-    results.push(`4. Portfolio ERROR: ${e.message}`);
+  } catch (e: unknown) {
+    results.push(`4. Portfolio ERROR: ${(e as Error).message}`);
   }
 
   // 4.5. loadMorningBriefing() 실제 호출 테스트 (이승건: 근본 원인 파악)
@@ -293,7 +293,7 @@ async function runAnalysisDiagnostic() {
         .eq('user_id', user.id)
         .limit(10);
 
-      const testPortfolio = (portfolioData || []).map((p: any) => ({
+      const testPortfolio = (portfolioData || []).map((p: { ticker: string; name: string; quantity: number; avg_price: number; current_price: number; current_value: number }) => ({
         ticker: p.ticker,
         name: p.name,
         quantity: p.quantity || 0,
@@ -309,8 +309,8 @@ async function runAnalysisDiagnostic() {
       const title = result.morningBriefing?.macroSummary?.title || 'NO TITLE';
       results.push(`4.5. loadMorningBriefing: ${hasBriefing ? '✅' : '❌'} title=${hasTitle ? `"${title}"` : 'MISSING'} source=${result.source} (${Date.now() - t45}ms)`);
     }
-  } catch (e: any) {
-    results.push(`4.5. loadMorningBriefing ERROR: ${e.message?.substring(0, 60)}`);
+  } catch (e: unknown) {
+    results.push(`4.5. loadMorningBriefing ERROR: ${(e as Error).message?.substring(0, 60)}`);
   }
 
   // 5. 클라이언트 Gemini SDK 직접 테스트 (딥다이브/리스크 분석에서 사용)
@@ -344,18 +344,18 @@ async function runAnalysisDiagnostic() {
         results.push(`5. Gemini SDK: ERROR ${testRes.status} ${errText.substring(0, 80)} (${Date.now() - t5}ms)`);
       }
     }
-  } catch (e: any) {
-    results.push(`5. Gemini SDK ERROR: ${e.message?.substring(0, 80)}`);
+  } catch (e: unknown) {
+    results.push(`5. Gemini SDK ERROR: ${(e as Error).message?.substring(0, 80)}`);
   }
 
   const totalMs = Date.now() - startTotal;
-  Alert.alert('분석 탭 진단', results.join('\n') + `\n\n총: ${totalMs}ms`);
+  Alert.alert('Analysis Tab Diagnostic', results.join('\n') + `\n\nTotal: ${totalMs}ms`);
 }
 
 export default function CheckupScreen() {
   useScreenTracking('checkup');
   const router = useRouter();
-  const { t, language } = useLocale();
+  const { t } = useLocale();
   const { colors } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
   const [showToast, setShowToast] = useState(false);
@@ -469,7 +469,7 @@ export default function CheckupScreen() {
   };
 
   // ── 레벨별 뷰 (초급/중급/고급) ──
-  const { level, isLoading: levelLoading, setLevel } = useCheckupLevel();
+  const { level: _level, isLoading: _levelLoading, setLevel } = useCheckupLevel();
   const { label: holdingLabel } = useHoldingPeriod();
   const {
     todayEmotion,
@@ -488,7 +488,7 @@ export default function CheckupScreen() {
 
   // ── 투자원금 대비 총 수익 (주 지표) ──
   // 평단가 × 수량 = 원금, 현재가 × 수량 = 평가금액
-  const { totalCostBasis, totalGainLoss, gainPercent } = useMemo(() => {
+  const { totalCostBasis: _totalCostBasis, totalGainLoss, gainPercent } = useMemo(() => {
     let costBasis = 0;
     let marketValue = 0;
     for (const asset of allAssets) {

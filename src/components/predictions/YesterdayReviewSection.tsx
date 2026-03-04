@@ -9,7 +9,7 @@
  */
 
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useYesterdayReview, useMyPredictionStats } from '../../hooks/usePredictions';
 import { useTrackEvent } from '../../hooks/useAnalytics';

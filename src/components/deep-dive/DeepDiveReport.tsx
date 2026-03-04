@@ -20,6 +20,7 @@ import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 import type { DeepDiveResult } from '../../types/marketplace';
 import { getLocaleCode } from '../../utils/formatters';
 
@@ -35,12 +36,12 @@ interface DeepDiveReportProps {
 }
 
 // ── 추천 뱃지 색상 매핑 ──
-const RECOMMENDATION_COLORS: Record<string, { bg: string; text: string; label: string }> = {
-  VERY_POSITIVE: { bg: 'rgba(76,175,80,0.2)', text: '#4CAF50', label: '매우 긍정적' },
-  POSITIVE: { bg: 'rgba(102,187,106,0.2)', text: '#66BB6A', label: '긍정적' },
-  NEUTRAL: { bg: 'rgba(255,183,77,0.2)', text: '#FFB74D', label: '중립' },
-  NEGATIVE: { bg: 'rgba(239,83,80,0.2)', text: '#EF5350', label: '부정적' },
-  VERY_NEGATIVE: { bg: 'rgba(207,102,121,0.2)', text: '#CF6679', label: '매우 부정적' },
+const RECOMMENDATION_COLORS: Record<string, { bg: string; text: string; labelKey: string }> = {
+  VERY_POSITIVE: { bg: 'rgba(76,175,80,0.2)', text: '#4CAF50', labelKey: 'deepDive.sentiment.veryPositive' },
+  POSITIVE: { bg: 'rgba(102,187,106,0.2)', text: '#66BB6A', labelKey: 'deepDive.sentiment.positive' },
+  NEUTRAL: { bg: 'rgba(255,183,77,0.2)', text: '#FFB74D', labelKey: 'deepDive.sentiment.neutral' },
+  NEGATIVE: { bg: 'rgba(239,83,80,0.2)', text: '#EF5350', labelKey: 'deepDive.sentiment.negative' },
+  VERY_NEGATIVE: { bg: 'rgba(207,102,121,0.2)', text: '#CF6679', labelKey: 'deepDive.sentiment.veryNegative' },
 };
 
 // ── 뉴스 sentiment → 점수 변환 (5단계) ──
@@ -77,10 +78,10 @@ function formatScoreDisplay(score: number): { circle: string; precise: string } 
   };
 }
 
-function reliabilityLabel(level: 'high' | 'medium' | 'low' | undefined): string {
-  if (level === 'high') return '검증 높음';
-  if (level === 'medium') return '검증 보통';
-  return '검증 필요';
+function reliabilityLabelKey(level: 'high' | 'medium' | 'low' | undefined): string {
+  if (level === 'high') return 'deepDive.report.verifiedHigh';
+  if (level === 'medium') return 'deepDive.report.verifiedMedium';
+  return 'deepDive.report.verifiedNeeded';
 }
 
 function reliabilityColor(level: 'high' | 'medium' | 'low' | undefined): string {
@@ -107,6 +108,7 @@ function extractMetricValue(
 // ── 메인 컴포넌트 ──
 export default function DeepDiveReport({ result }: DeepDiveReportProps) {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const scoreDisplay = formatScoreDisplay(result.overallScore);
 
   // null 안전: AI 응답이 부분적일 수 있으므로 기본값 적용
@@ -177,7 +179,7 @@ export default function DeepDiveReport({ result }: DeepDiveReportProps) {
 
           {/* 추천 뱃지 */}
           <View style={[styles.recBadge, { backgroundColor: rec.bg }]}>
-            <Text style={[styles.recText, { color: rec.text }]}>{rec.label}</Text>
+            <Text style={[styles.recText, { color: rec.text }]}>{t(rec.labelKey)}</Text>
           </View>
         </View>
 
@@ -192,20 +194,20 @@ export default function DeepDiveReport({ result }: DeepDiveReportProps) {
             >
               {scoreDisplay.circle}
             </Text>
-            <Text style={[styles.scoreUnit, { color: colors.textTertiary }]}>점</Text>
+            <Text style={[styles.scoreUnit, { color: colors.textTertiary }]}>{t('deepDive.report.points')}</Text>
           </View>
           <View style={styles.scoreLabels}>
-            <Text style={[styles.scoreLabelMain, { color: colors.textPrimary }]}>종합 점수</Text>
+            <Text style={[styles.scoreLabelMain, { color: colors.textPrimary }]}>{t('deepDive.report.overallScore')}</Text>
             <Text style={[styles.scoreLabelSub, { color: colors.textTertiary }]}>
-              재무 {financial.score ?? 0} · 품질 {quality?.score ?? '-'} · 기술 {technical.score ?? 0} · 뉴스 {newsScore}
+              {t('deepDive.report.financial')} {financial.score ?? 0} · {t('deepDive.report.quality')} {quality?.score ?? '-'} · {t('deepDive.report.technical')} {technical.score ?? 0} · {t('deepDive.report.news')} {newsScore}
             </Text>
             <Text style={[styles.scoreLabelPrecise, { color: colors.textSecondary }]}>
-              정밀 점수 {scoreDisplay.precise}점
+              {t('deepDive.report.preciseScore')} {scoreDisplay.precise}{t('deepDive.report.points')}
             </Text>
             {result.verification && (
               <View style={[styles.verificationBadge, { backgroundColor: `${reliabilityColor(result.verification.level)}22` }]}>
                 <Text style={[styles.verificationBadgeText, { color: reliabilityColor(result.verification.level) }]}>
-                  {reliabilityLabel(result.verification.level)} · {result.verification.score}점
+                  {t(reliabilityLabelKey(result.verification.level))} · {result.verification.score}{t('deepDive.report.points')}
                 </Text>
               </View>
             )}
@@ -217,7 +219,7 @@ export default function DeepDiveReport({ result }: DeepDiveReportProps) {
           <View style={[styles.metricsRow, { borderTopColor: colors.border }]}>
             {result.marketCap != null && (
               <View style={styles.metricItem}>
-                <Text style={[styles.metricLabel, { color: colors.textTertiary }]}>시가총액</Text>
+                <Text style={[styles.metricLabel, { color: colors.textTertiary }]}>{t('deepDive.report.marketCap')}</Text>
                 <Text style={[styles.metricValue, { color: colors.textPrimary }]}>
                   {formatLargeNumber(result.marketCap)}
                 </Text>
@@ -227,7 +229,7 @@ export default function DeepDiveReport({ result }: DeepDiveReportProps) {
               <View style={styles.metricItem}>
                 <Text style={[styles.metricLabel, { color: colors.textTertiary }]}>PER</Text>
                 <Text style={[styles.metricValue, { color: colors.textPrimary }]}>
-                  {result.per.toFixed(1)}배
+                  {result.per.toFixed(1)}{t('deepDive.report.times')}
                 </Text>
               </View>
             )}
@@ -235,7 +237,7 @@ export default function DeepDiveReport({ result }: DeepDiveReportProps) {
               <View style={styles.metricItem}>
                 <Text style={[styles.metricLabel, { color: colors.textTertiary }]}>PBR</Text>
                 <Text style={[styles.metricValue, { color: colors.textPrimary }]}>
-                  {result.pbr.toFixed(2)}배
+                  {result.pbr.toFixed(2)}{t('deepDive.report.times')}
                 </Text>
               </View>
             )}
@@ -248,7 +250,7 @@ export default function DeepDiveReport({ result }: DeepDiveReportProps) {
          ═══════════════════════════════════════ */}
       <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-          점수 분석
+          {t('deepDive.report.scoreAnalysis')}
         </Text>
         <View style={styles.radarCenter}>
           <ScoreRadar
@@ -264,10 +266,10 @@ export default function DeepDiveReport({ result }: DeepDiveReportProps) {
          ═══════════════════════════════════════ */}
       <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-          재무 분석
+          {t('deepDive.report.financialAnalysis')}
         </Text>
         <Text style={[styles.sectionScore, { color: colors.primary }]}>
-          {financial.score ?? 0}점
+          {financial.score ?? 0}{t('deepDive.report.points')}
         </Text>
 
         {/* 하이라이트 */}
@@ -298,10 +300,10 @@ export default function DeepDiveReport({ result }: DeepDiveReportProps) {
          ═══════════════════════════════════════ */}
       <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-          기술적 분석
+          {t('deepDive.report.technicalAnalysis')}
         </Text>
         <Text style={[styles.sectionScore, { color: colors.primary }]}>
-          {technical.score ?? 0}점
+          {technical.score ?? 0}{t('deepDive.report.points')}
         </Text>
 
         {/* 하이라이트 */}
@@ -319,9 +321,9 @@ export default function DeepDiveReport({ result }: DeepDiveReportProps) {
           <View style={[styles.signalTable, { borderColor: colors.border }]}>
             {/* 테이블 헤더 */}
             <View style={[styles.signalHeaderRow, { backgroundColor: colors.surfaceLight }]}>
-              <Text style={[styles.signalHeaderCell, styles.signalCol1, { color: colors.textTertiary }]}>지표</Text>
-              <Text style={[styles.signalHeaderCell, styles.signalCol2, { color: colors.textTertiary }]}>신호</Text>
-              <Text style={[styles.signalHeaderCell, styles.signalCol3, { color: colors.textTertiary }]}>값</Text>
+              <Text style={[styles.signalHeaderCell, styles.signalCol1, { color: colors.textTertiary }]}>{t('deepDive.report.indicator')}</Text>
+              <Text style={[styles.signalHeaderCell, styles.signalCol2, { color: colors.textTertiary }]}>{t('deepDive.report.signal')}</Text>
+              <Text style={[styles.signalHeaderCell, styles.signalCol3, { color: colors.textTertiary }]}>{t('deepDive.report.value')}</Text>
             </View>
             {/* 테이블 바디 */}
             {(technical.signals ?? []).map((sig: { indicator: string; signal: string; value: string }, i: number) => (
@@ -360,10 +362,10 @@ export default function DeepDiveReport({ result }: DeepDiveReportProps) {
       {quality && quality.highlights && (
         <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-            투자 품질
+            {t('deepDive.report.investmentQuality')}
           </Text>
           <Text style={[styles.sectionScore, { color: colors.primary }]}>
-            {quality.score ?? 0}점
+            {quality.score ?? 0}{t('deepDive.report.points')}
           </Text>
 
           <View style={styles.highlightList}>
@@ -378,9 +380,9 @@ export default function DeepDiveReport({ result }: DeepDiveReportProps) {
           {quality.metrics && (
             <View style={[styles.signalTable, { borderColor: colors.border }]}>
               <View style={[styles.signalHeaderRow, { backgroundColor: colors.surfaceLight }]}>
-                <Text style={[styles.signalHeaderCell, styles.signalCol1, { color: colors.textTertiary }]}>항목</Text>
-                <Text style={[styles.signalHeaderCell, styles.signalCol2, { color: colors.textTertiary }]}>평가</Text>
-                <Text style={[styles.signalHeaderCell, styles.signalCol3, { color: colors.textTertiary }]}>상세</Text>
+                <Text style={[styles.signalHeaderCell, styles.signalCol1, { color: colors.textTertiary }]}>{t('deepDive.report.item')}</Text>
+                <Text style={[styles.signalHeaderCell, styles.signalCol2, { color: colors.textTertiary }]}>{t('deepDive.report.evaluation')}</Text>
+                <Text style={[styles.signalHeaderCell, styles.signalCol3, { color: colors.textTertiary }]}>{t('deepDive.report.detail')}</Text>
               </View>
               {(quality.metrics ?? []).map((m: { label: string; value: string; status: 'good' | 'neutral' | 'bad'; detail?: string }, i: number) => (
                 <View
@@ -418,7 +420,7 @@ export default function DeepDiveReport({ result }: DeepDiveReportProps) {
          ═══════════════════════════════════════ */}
       <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-          뉴스 분석
+          {t('deepDive.report.newsAnalysis')}
         </Text>
         <NewsTimeline
           sentiment={news.sentiment ?? 'NEUTRAL'}
@@ -432,7 +434,7 @@ export default function DeepDiveReport({ result }: DeepDiveReportProps) {
          ═══════════════════════════════════════ */}
       <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-          AI 종합 의견
+          {t('deepDive.report.aiOpinion')}
         </Text>
         <AIOpinionCard
           summary={sections.aiOpinion?.summary ?? ''}
@@ -450,7 +452,7 @@ export default function DeepDiveReport({ result }: DeepDiveReportProps) {
         <View style={[styles.sourcesBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.sourcesHeader}>
             <Ionicons name="document-text-outline" size={16} color={colors.textTertiary} />
-            <Text style={[styles.sourcesTitle, { color: colors.textSecondary }]}>데이터 출처</Text>
+            <Text style={[styles.sourcesTitle, { color: colors.textSecondary }]}>{t('deepDive.report.dataSources')}</Text>
           </View>
           {result.dataSources.map((source, idx) => (
             <View key={idx} style={styles.sourceRow}>
@@ -473,7 +475,7 @@ export default function DeepDiveReport({ result }: DeepDiveReportProps) {
           <View style={styles.sourcesHeader}>
             <Ionicons name="shield-checkmark-outline" size={16} color={reliabilityColor(result.verification.level)} />
             <Text style={[styles.sourcesTitle, { color: colors.textSecondary }]}>
-              데이터 검증 · {reliabilityLabel(result.verification.level)}
+              {t('deepDive.report.dataVerification')} · {t(reliabilityLabelKey(result.verification.level))}
             </Text>
           </View>
           <Text style={[styles.sourceDetail, { color: colors.textSecondary, marginBottom: 8 }]}>
@@ -486,7 +488,7 @@ export default function DeepDiveReport({ result }: DeepDiveReportProps) {
             </View>
           ))}
           <Text style={[styles.sourceDetail, { color: colors.textTertiary, marginTop: 8 }]}>
-            점검 시각: {new Date(result.verification.checkedAt).toLocaleString(getLocaleCode())}
+            {t('deepDive.report.checkedAt')}: {new Date(result.verification.checkedAt).toLocaleString(getLocaleCode())}
           </Text>
         </View>
       )}
@@ -496,9 +498,8 @@ export default function DeepDiveReport({ result }: DeepDiveReportProps) {
          ═══════════════════════════════════════ */}
       <View style={[styles.disclaimerBox, { borderColor: colors.border }]}>
         <Text style={[styles.disclaimerText, { color: colors.textQuaternary }]}>
-          본 분석은 AI가 생성한 참고 자료이며, 투자 권유가 아닙니다.
-          모든 투자 결정은 본인의 판단과 책임 하에 이루어져야 합니다.
-          분석 시점: {new Date(result.generatedAt).toLocaleString(getLocaleCode())}
+          {t('deepDive.report.disclaimer')}
+          {t('deepDive.report.analysisTime')}: {new Date(result.generatedAt).toLocaleString(getLocaleCode())}
         </Text>
       </View>
     </View>

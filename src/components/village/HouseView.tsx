@@ -21,6 +21,7 @@ import {
   Animated,
 } from 'react-native';
 import type { HouseLevel } from '../../data/houseConfig';
+import { useLocale } from '../../context/LocaleContext';
 
 // ============================================================================
 // 타입
@@ -37,8 +38,6 @@ interface HouseViewProps {
   showUpgradeBadge?: boolean;
   /** 탭 시 인테리어 모달 열기 */
   onPress: () => void;
-  /** 로케일 */
-  locale?: string;
 }
 
 // ============================================================================
@@ -63,11 +62,11 @@ function HouseView({
   maxSlots,
   showUpgradeBadge = false,
   onPress,
-  locale = 'ko',
 }: HouseViewProps) {
   const bounceAnim = useRef(new Animated.Value(1)).current;
   const glowAnim = useRef(new Animated.Value(0.4)).current;
-  const isKo = locale === 'ko';
+  const { language } = useLocale();
+  const isKo = language === 'ko';
 
   const levelStyle = LEVEL_STYLES[houseLevel.level] || LEVEL_STYLES[1];
 

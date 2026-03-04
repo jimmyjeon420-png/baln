@@ -27,30 +27,36 @@ import {
   TIER_COLORS,
   getCommunityTierLabel,
   getCommunityTierDescription,
-  getAvailableMinTiers,
 } from '../../src/hooks/useGatherings';
-import { Gathering, GATHERING_CATEGORY_LABELS, UserTier } from '../../src/types/database';
+import { Gathering, UserTier } from '../../src/types/database';
 import LocationSearchInput from '../../src/components/LocationSearchInput';
 import { useTheme } from '../../src/hooks/useTheme';
+import { useLocale } from '../../src/context/LocaleContext';
+import { t as tStatic } from '../../src/locales';
 
 // 카테고리 옵션
-const CATEGORY_OPTIONS: { key: Gathering['category']; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
-  { key: 'study', label: '스터디', icon: 'book' },
-  { key: 'meeting', label: '정기 모임', icon: 'people' },
-  { key: 'networking', label: '네트워킹', icon: 'link' },
-  { key: 'workshop', label: '워크샵', icon: 'construct' },
-];
+function getCategoryOptions(): { key: Gathering['category']; label: string; icon: keyof typeof Ionicons.glyphMap }[] {
+  return [
+    { key: 'study', label: tStatic('gatherings.create.category.study'), icon: 'book' },
+    { key: 'meeting', label: tStatic('gatherings.create.category.meeting'), icon: 'people' },
+    { key: 'networking', label: tStatic('gatherings.create.category.networking'), icon: 'link' },
+    { key: 'workshop', label: tStatic('gatherings.create.category.workshop'), icon: 'construct' },
+  ];
+}
 
 // 장소 타입 옵션
-const LOCATION_TYPE_OPTIONS: { key: Gathering['location_type']; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
-  { key: 'offline', label: '오프라인', icon: 'location' },
-  { key: 'online', label: '온라인', icon: 'videocam' },
-];
+function getLocationTypeOptions(): { key: Gathering['location_type']; label: string; icon: keyof typeof Ionicons.glyphMap }[] {
+  return [
+    { key: 'offline', label: tStatic('gatherings.create.locationType.offline'), icon: 'location' },
+    { key: 'online', label: tStatic('gatherings.create.locationType.online'), icon: 'videocam' },
+  ];
+}
 
 export default function CreateGatheringScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
+  const { t } = useLocale();
 
   // 호스팅 자격 확인
   const { data: hostingEligibility, isLoading: eligibilityLoading } = useHostingEligibility();
@@ -77,7 +83,7 @@ export default function CreateGatheringScreen() {
       <View style={[styles.container, styles.loadingContainer, { backgroundColor: colors.background }]}>
         <Stack.Screen options={{ headerShown: false }} />
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={[styles.loadingText, { color: colors.textTertiary }]}>권한을 확인하는 중...</Text>
+        <Text style={[styles.loadingText, { color: colors.textTertiary }]}>{t('gatherings.create.checkingPermission')}</Text>
       </View>
     );
   }
@@ -92,7 +98,7 @@ export default function CreateGatheringScreen() {
           <TouchableOpacity style={[styles.backButton, { backgroundColor: colors.surface }]} onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
           </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>모임 만들기</Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{t('gatherings.create.title')}</Text>
           <View style={{ width: 40 }} />
         </View>
 
@@ -101,16 +107,16 @@ export default function CreateGatheringScreen() {
           <View style={[styles.lockIconContainer, { backgroundColor: colors.surface }]}>
             <Ionicons name="lock-closed" size={48} color={colors.textTertiary} />
           </View>
-          <Text style={[styles.noPermissionTitle, { color: colors.textPrimary }]}>호스트 자격이 필요합니다</Text>
+          <Text style={[styles.noPermissionTitle, { color: colors.textPrimary }]}>{t('gatherings.create.noPermission.title')}</Text>
           <Text style={[styles.noPermissionDescription, { color: colors.textSecondary }]}>
-            모임을 만들려면 1억 이상 자산이{'\n'}OCR 인증되어야 합니다.
+            {t('gatherings.create.noPermission.description')}
           </Text>
           <TouchableOpacity
             style={[styles.verifyButton, { backgroundColor: colors.primary }]}
             onPress={() => router.push('/add-asset')}
           >
             <Ionicons name="camera" size={20} color="#000000" />
-            <Text style={styles.verifyButtonText}>자산 OCR 인증하기</Text>
+            <Text style={styles.verifyButtonText}>{t('gatherings.create.noPermission.verifyButton')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -118,7 +124,7 @@ export default function CreateGatheringScreen() {
   }
 
   // 날짜 변경 핸들러
-  const handleDateChange = (event: any, selectedDate?: Date) => {
+  const handleDateChange = (_event: unknown, selectedDate?: Date) => {
     setShowDatePicker(false);
     if (selectedDate) {
       const newDate = new Date(eventDate);
@@ -130,7 +136,7 @@ export default function CreateGatheringScreen() {
   };
 
   // 시간 변경 핸들러
-  const handleTimeChange = (event: any, selectedTime?: Date) => {
+  const handleTimeChange = (_event: unknown, selectedTime?: Date) => {
     setShowTimePicker(false);
     if (selectedTime) {
       const newDate = new Date(eventDate);
@@ -144,27 +150,27 @@ export default function CreateGatheringScreen() {
   const handleSubmit = async () => {
     // 유효성 검사
     if (!title.trim()) {
-      Alert.alert('입력 오류', '모임 제목을 입력해주세요.');
+      Alert.alert(t('gatherings.create.alert.inputError'), t('gatherings.create.alert.titleRequired'));
       return;
     }
     if (!location.trim()) {
-      Alert.alert('입력 오류', locationType === 'online' ? '온라인 미팅 링크를 입력해주세요.' : '장소를 입력해주세요.');
+      Alert.alert(t('gatherings.create.alert.inputError'), locationType === 'online' ? t('gatherings.create.alert.linkRequired') : t('gatherings.create.alert.locationRequired'));
       return;
     }
     const maxCap = parseInt(maxCapacity, 10);
     if (isNaN(maxCap) || maxCap < 2 || maxCap > 100) {
-      Alert.alert('입력 오류', '정원은 2~100명 사이로 입력해주세요.');
+      Alert.alert(t('gatherings.create.alert.inputError'), t('gatherings.create.alert.capacityRange'));
       return;
     }
     const fee = parseInt(entryFee, 10) || 0;
     if (fee < 0) {
-      Alert.alert('입력 오류', '참가비는 0원 이상이어야 합니다.');
+      Alert.alert(t('gatherings.create.alert.inputError'), t('gatherings.create.alert.feeNonNegative'));
       return;
     }
 
     setSubmitting(true);
     try {
-      const gathering = await createMutation.mutateAsync({
+      await createMutation.mutateAsync({
         title: title.trim(),
         description: description.trim() || '',
         category,
@@ -176,27 +182,28 @@ export default function CreateGatheringScreen() {
         min_tier_required: minTierRequired,
       });
 
-      Alert.alert('완료', '모임이 생성되었습니다!', [
+      Alert.alert(t('common.complete'), t('gatherings.create.alert.created'), [
         {
-          text: '확인',
+          text: t('common.confirm'),
           onPress: () => router.back(),
         },
       ]);
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Supabase 에러 코드별 안내
-      const msg = error?.message || '';
-      const code = error?.code || '';
+      const errObj = error as Record<string, string> | null;
+      const msg = errObj?.message || '';
+      const code = errObj?.code || '';
 
-      let userMessage = '모임 생성에 실패했습니다.';
+      let userMessage = t('gatherings.create.alert.createFailed');
       if (code === '42501' || msg.includes('policy')) {
-        userMessage = 'DB 권한 설정이 필요합니다. Supabase 대시보드에서 gatherings 테이블의 RLS 정책을 확인해주세요.';
+        userMessage = t('gatherings.create.alert.dbPermissionError');
       } else if (code === '42P01' || msg.includes('does not exist')) {
-        userMessage = 'gatherings 테이블이 없습니다. Supabase에서 마이그레이션을 실행해주세요.';
+        userMessage = t('gatherings.create.alert.tableNotFound');
       } else if (msg) {
         userMessage = msg;
       }
 
-      Alert.alert('모임 생성 오류', userMessage);
+      Alert.alert(t('gatherings.create.alert.createError'), userMessage);
       console.error('[CreateGathering] 에러:', code, msg, error);
     } finally {
       setSubmitting(false);
@@ -208,14 +215,15 @@ export default function CreateGatheringScreen() {
     const year = date.getFullYear();
     const month = date.getMonth() + 1;
     const day = date.getDate();
-    const dayOfWeek = ['일', '월', '화', '수', '목', '금', '토'][date.getDay()];
-    return `${year}년 ${month}월 ${day}일 (${dayOfWeek})`;
+    const dayKeys = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+    const dayOfWeek = t(`gatherings.create.day.${dayKeys[date.getDay()]}`);
+    return t('gatherings.create.dateFormat', { year, month, day, dayOfWeek });
   };
 
   const formatTime = (date: Date): string => {
     const hours = date.getHours();
     const minutes = date.getMinutes().toString().padStart(2, '0');
-    const ampm = hours >= 12 ? '오후' : '오전';
+    const ampm = hours >= 12 ? t('gatherings.create.pm') : t('gatherings.create.am');
     const displayHours = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours;
     return `${ampm} ${displayHours}:${minutes}`;
   };
@@ -229,7 +237,7 @@ export default function CreateGatheringScreen() {
         <TouchableOpacity style={[styles.backButton, { backgroundColor: colors.surface }]} onPress={() => router.back()}>
           <Ionicons name="close" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>모임 만들기</Text>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{t('gatherings.create.title')}</Text>
         <TouchableOpacity
           style={[styles.submitButton, { backgroundColor: colors.primary }, (submitting || !agreedToTerms) && styles.submitButtonDisabled]}
           onPress={handleSubmit}
@@ -238,7 +246,7 @@ export default function CreateGatheringScreen() {
           {submitting ? (
             <ActivityIndicator size="small" color="#000000" />
           ) : (
-            <Text style={styles.submitButtonText}>완료</Text>
+            <Text style={styles.submitButtonText}>{t('common.complete')}</Text>
           )}
         </TouchableOpacity>
       </View>
@@ -261,17 +269,17 @@ export default function CreateGatheringScreen() {
             <View style={styles.hostInfoText}>
               <Text style={[styles.hostName, { color: colors.textPrimary }]}>{hostingEligibility.displayName}</Text>
               <Text style={[styles.hostAssets, { color: TIER_COLORS[hostingEligibility.tier as keyof typeof TIER_COLORS] }]}>
-                {formatAssetInBillion(hostingEligibility.verifiedAssets)} 인증 호스트
+                {t('gatherings.create.verifiedHost', { assets: formatAssetInBillion(hostingEligibility.verifiedAssets) })}
               </Text>
             </View>
           </View>
 
           {/* 모임 제목 */}
           <View style={styles.formGroup}>
-            <Text style={[styles.label, { color: colors.textSecondary }]}>모임 제목 *</Text>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>{t('gatherings.create.label.title')}</Text>
             <TextInput
               style={[styles.input, { backgroundColor: colors.surfaceLight, color: colors.textPrimary, borderColor: colors.border }]}
-              placeholder="예: 부동산 투자 스터디 3기"
+              placeholder={t('gatherings.create.placeholder.title')}
               placeholderTextColor={colors.textTertiary}
               value={title}
               onChangeText={setTitle}
@@ -282,9 +290,9 @@ export default function CreateGatheringScreen() {
 
           {/* 카테고리 */}
           <View style={styles.formGroup}>
-            <Text style={[styles.label, { color: colors.textSecondary }]}>카테고리 *</Text>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>{t('gatherings.create.label.category')}</Text>
             <View style={styles.optionsGrid}>
-              {CATEGORY_OPTIONS.map((option) => (
+              {getCategoryOptions().map((option) => (
                 <TouchableOpacity
                   key={option.key}
                   style={[
@@ -315,9 +323,9 @@ export default function CreateGatheringScreen() {
 
           {/* 장소 타입 */}
           <View style={styles.formGroup}>
-            <Text style={[styles.label, { color: colors.textSecondary }]}>진행 방식 *</Text>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>{t('gatherings.create.label.locationType')}</Text>
             <View style={[styles.segmentedControl, { backgroundColor: colors.surface }]}>
-              {LOCATION_TYPE_OPTIONS.map((option) => (
+              {getLocationTypeOptions().map((option) => (
                 <TouchableOpacity
                   key={option.key}
                   style={[
@@ -348,18 +356,18 @@ export default function CreateGatheringScreen() {
           {/* 장소/링크 */}
           <View style={[styles.formGroup, locationType === 'offline' && { zIndex: 10 }]}>
             <Text style={[styles.label, { color: colors.textSecondary }]}>
-              {locationType === 'online' ? '미팅 링크' : '장소'} *
+              {locationType === 'online' ? t('gatherings.create.label.meetingLink') : t('gatherings.create.label.location')} *
             </Text>
             {locationType === 'offline' ? (
               <LocationSearchInput
                 value={location}
                 onChangeText={setLocation}
-                placeholder="예: 강남역 스타벅스 리저브"
+                placeholder={t('gatherings.create.placeholder.location')}
               />
             ) : (
               <TextInput
                 style={[styles.input, { backgroundColor: colors.surfaceLight, color: colors.textPrimary, borderColor: colors.border }]}
-                placeholder="예: https://zoom.us/j/123456"
+                placeholder={t('gatherings.create.placeholder.meetingLink')}
                 placeholderTextColor={colors.textTertiary}
                 value={location}
                 onChangeText={setLocation}
@@ -370,7 +378,7 @@ export default function CreateGatheringScreen() {
 
           {/* 일시 */}
           <View style={styles.formGroup}>
-            <Text style={[styles.label, { color: colors.textSecondary }]}>일시 *</Text>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>{t('gatherings.create.label.dateTime')}</Text>
             <View style={styles.dateTimeRow}>
               <TouchableOpacity
                 style={[styles.dateTimeButton, { backgroundColor: colors.surfaceLight, borderColor: colors.border }]}
@@ -412,7 +420,7 @@ export default function CreateGatheringScreen() {
 
           {/* 정원 */}
           <View style={styles.formGroup}>
-            <Text style={[styles.label, { color: colors.textSecondary }]}>정원 *</Text>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>{t('gatherings.create.label.capacity')}</Text>
             <View style={[styles.capacityInput, { backgroundColor: colors.surfaceLight, borderColor: colors.border }]}>
               <TouchableOpacity
                 style={styles.capacityButton}
@@ -430,7 +438,7 @@ export default function CreateGatheringScreen() {
                 keyboardType="number-pad"
                 maxLength={3}
               />
-              <Text style={[styles.capacityUnit, { color: colors.textTertiary }]}>명</Text>
+              <Text style={[styles.capacityUnit, { color: colors.textTertiary }]}>{t('gatherings.create.unit.person')}</Text>
               <TouchableOpacity
                 style={styles.capacityButton}
                 onPress={() => {
@@ -445,7 +453,7 @@ export default function CreateGatheringScreen() {
 
           {/* 참가비 */}
           <View style={styles.formGroup}>
-            <Text style={[styles.label, { color: colors.textSecondary }]}>참가비</Text>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>{t('gatherings.create.label.fee')}</Text>
             <View style={[styles.feeInput, { backgroundColor: colors.surfaceLight, borderColor: colors.border }]}>
               <TextInput
                 style={[styles.feeValue, { color: colors.textPrimary }]}
@@ -455,32 +463,31 @@ export default function CreateGatheringScreen() {
                 placeholder="0"
                 placeholderTextColor={colors.textTertiary}
               />
-              <Text style={[styles.feeUnit, { color: colors.textTertiary }]}>원</Text>
+              <Text style={[styles.feeUnit, { color: colors.textTertiary }]}>{t('gatherings.create.unit.currency')}</Text>
             </View>
             {parseInt(entryFee, 10) > 0 && (
               <View style={[styles.feeBreakdown, { backgroundColor: colors.surfaceLight }]}>
                 <Text style={[styles.feeBreakdownText, { color: colors.textSecondary }]}>
-                  참가비: {parseInt(entryFee, 10).toLocaleString()}원
+                  {t('gatherings.create.feeBreakdown.fee', { amount: parseInt(entryFee, 10).toLocaleString() })}
                 </Text>
                 <Text style={[styles.feeBreakdownText, { color: colors.textSecondary }]}>
-                  + 수수료(10%): {Math.round(parseInt(entryFee, 10) * 0.1).toLocaleString()}원
+                  {t('gatherings.create.feeBreakdown.commission', { amount: Math.round(parseInt(entryFee, 10) * 0.1).toLocaleString() })}
                 </Text>
                 <Text style={[styles.feeBreakdownTotal, { color: colors.primary }]}>
-                  = 참가자 결제 금액: {Math.round(parseInt(entryFee, 10) * 1.1).toLocaleString()}원
+                  {t('gatherings.create.feeBreakdown.total', { amount: Math.round(parseInt(entryFee, 10) * 1.1).toLocaleString() })}
                 </Text>
               </View>
             )}
             <Text style={[styles.helperText, { color: colors.textTertiary }]}>
-              0원 입력 시 무료 모임으로 설정됩니다{'\n'}
-              유료 모임의 경우 참가자에게 10% 수수료가 별도 부과됩니다
+              {t('gatherings.create.feeHelper')}
             </Text>
           </View>
 
           {/* 최소 입장 티어 (TBAC) */}
           <View style={styles.formGroup}>
-            <Text style={[styles.label, { color: colors.textSecondary }]}>최소 입장 조건</Text>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>{t('gatherings.create.label.minTier')}</Text>
             <Text style={[styles.helperText, { color: colors.textTertiary }]}>
-              선택한 등급 이상의 회원만 참가할 수 있습니다
+              {t('gatherings.create.minTierHelper')}
             </Text>
             <View style={styles.tierOptionsContainer}>
               {hostingEligibility?.availableMinTiers.map((tier) => (
@@ -516,10 +523,10 @@ export default function CreateGatheringScreen() {
 
           {/* 모임 설명 */}
           <View style={styles.formGroup}>
-            <Text style={[styles.label, { color: colors.textSecondary }]}>모임 소개</Text>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>{t('gatherings.create.label.description')}</Text>
             <TextInput
               style={[styles.input, styles.textArea, { backgroundColor: colors.surfaceLight, color: colors.textPrimary, borderColor: colors.border }]}
-              placeholder="모임에 대해 소개해주세요 (선택사항)"
+              placeholder={t('gatherings.create.placeholder.description')}
               placeholderTextColor={colors.textTertiary}
               value={description}
               onChangeText={setDescription}
@@ -548,13 +555,13 @@ export default function CreateGatheringScreen() {
                 )}
               </View>
               <Text style={[styles.checkboxLabel, { color: colors.error }]}>
-                불법 리딩방 운영 시 계정 영구 정지 및 민형사상 책임에 동의합니다.
+                {t('gatherings.create.disclaimer.checkboxLabel')}
               </Text>
             </TouchableOpacity>
             <View style={styles.disclaimerWarning}>
               <Ionicons name="warning" size={14} color="#CF6679" />
               <Text style={styles.disclaimerWarningText}>
-                자본시장법에 따라 무등록 유사투자자문업(리딩방)은 형사처벌 대상입니다. 수익 보장, 종목 추천료 수취, 외부 메신저 유인 행위 적발 시 즉시 계정이 정지되며 관할 수사기관에 통보됩니다.
+                {t('gatherings.create.disclaimer.warningText')}
               </Text>
             </View>
           </View>

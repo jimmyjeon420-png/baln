@@ -12,7 +12,7 @@ import { priceService } from '../../services/PriceService';
 import { AssetClass } from '../../types/price';
 import { useTheme } from '../../hooks/useTheme';
 import { isKoreanLocale } from '../../utils/formatters';
-import type { ThemeColors } from '../../styles/colors';
+import type { ThemeColors as _ThemeColors } from '../../styles/colors';
 
 // -- 벤치마크 지수 --
 

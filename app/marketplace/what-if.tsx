@@ -24,54 +24,56 @@ import supabase, { getCurrentUser } from '../../src/services/supabase';
 import type { UserTier } from '../../src/types/database';
 import type { WhatIfScenario, WhatIfInput, WhatIfResult } from '../../src/types/marketplace';
 import { useTheme } from '../../src/hooks/useTheme';
+import { useLocale } from '../../src/context/LocaleContext';
 
 const SCENARIO_PRESETS: {
   id: WhatIfScenario;
-  label: string;
+  labelKey: string;
   icon: keyof typeof Ionicons.glyphMap;
   color: string;
-  description: string;
+  descKey: string;
 }[] = [
   {
     id: 'interest_rate_change',
-    label: '금리 변동',
+    labelKey: 'what_if.scenario.interest_rate',
     icon: 'trending-up',
     color: '#FFA726',
-    description: '기준금리가 0.5%p 인상/인하되면?',
+    descKey: 'what_if.scenario.interest_rate_desc',
   },
   {
     id: 'stock_crash',
-    label: '특정 종목 하락',
+    labelKey: 'what_if.scenario.stock_crash',
     icon: 'arrow-down',
     color: '#CF6679',
-    description: '보유 종목이 20% 급락하면?',
+    descKey: 'what_if.scenario.stock_crash_desc',
   },
   {
     id: 'market_crash',
-    label: '시장 전체 하락',
+    labelKey: 'what_if.scenario.market_crash',
     icon: 'thunderstorm',
     color: '#EF5350',
-    description: '시장이 30% 폭락하면? (코로나 급)',
+    descKey: 'what_if.scenario.market_crash_desc',
   },
   {
     id: 'currency_change',
-    label: '환율 변동',
+    labelKey: 'what_if.scenario.currency_change',
     icon: 'swap-horizontal',
     color: '#4FC3F7',
-    description: '원/달러 환율이 10% 변동하면?',
+    descKey: 'what_if.scenario.currency_change_desc',
   },
   {
     id: 'custom',
-    label: '자유 시나리오',
+    labelKey: 'what_if.scenario.custom',
     icon: 'create',
     color: '#7C4DFF',
-    description: '원하는 시나리오를 직접 입력',
+    descKey: 'what_if.scenario.custom_desc',
   },
 ];
 
 export default function WhatIfScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { t } = useLocale();
   const { mediumTap } = useHaptics();
   const whatIfMutation = useWhatIf();
 
@@ -80,7 +82,7 @@ export default function WhatIfScreen() {
   const [customDescription, setCustomDescription] = useState('');
   const [showGate, setShowGate] = useState(false);
   const [result, setResult] = useState<WhatIfResult | null>(null);
-  const [portfolio, setPortfolio] = useState<any[]>([]);
+  const [portfolio, setPortfolio] = useState<Record<string, unknown>[]>([]);
 
   useFocusEffect(
     useCallback(() => {
@@ -106,15 +108,15 @@ export default function WhatIfScreen() {
 
   const handleSimulate = () => {
     if (!selectedScenario) {
-      Alert.alert('시나리오 선택', '시뮬레이션할 시나리오를 선택해주세요.');
+      Alert.alert(t('what_if.alert.select_scenario_title'), t('what_if.alert.select_scenario_message'));
       return;
     }
     if (selectedScenario === 'custom' && !customDescription.trim()) {
-      Alert.alert('시나리오 입력', '시나리오 설명을 입력해주세요.');
+      Alert.alert(t('what_if.alert.enter_scenario_title'), t('what_if.alert.enter_scenario_message'));
       return;
     }
     if (portfolio.length === 0) {
-      Alert.alert('포트폴리오 필요', '보유 자산이 있어야 시뮬레이션할 수 있습니다.');
+      Alert.alert(t('what_if.alert.portfolio_required_title'), t('what_if.alert.portfolio_required_message'));
       return;
     }
     mediumTap();
@@ -126,19 +128,19 @@ export default function WhatIfScreen() {
     setResult(null);
 
     const preset = SCENARIO_PRESETS.find(p => p.id === selectedScenario);
-    const totalValue = portfolio.reduce((s: number, p: any) => s + (p.current_value || 0), 0);
+    const totalValue = portfolio.reduce((s: number, p: Record<string, unknown>) => s + ((p.current_value as number) || 0), 0);
 
     const input: WhatIfInput = {
-      scenario: selectedScenario!,
+      scenario: selectedScenario as WhatIfScenario,
       description: selectedScenario === 'custom'
         ? customDescription
-        : preset?.description || '',
+        : (preset ? t(preset.descKey) : ''),
       portfolio: portfolio.map(p => ({
-        ticker: p.ticker || p.name,
-        name: p.name,
-        currentValue: p.current_value || 0,
+        ticker: (p.ticker as string) || (p.name as string),
+        name: p.name as string,
+        currentValue: (p.current_value as number) || 0,
         allocation: totalValue > 0
-          ? Math.round((p.current_value / totalValue) * 100)
+          ? Math.round(((p.current_value as number) / totalValue) * 100)
           : 0,
       })),
     };
@@ -146,8 +148,8 @@ export default function WhatIfScreen() {
     try {
       const res = await whatIfMutation.mutateAsync({ input, userTier });
       setResult(res);
-    } catch (err: any) {
-      Alert.alert('시뮬레이션 실패', err.message || '분석에 실패했습니다.');
+    } catch (err: unknown) {
+      Alert.alert(t('what_if.alert.simulation_failed_title'), (err instanceof Error ? err.message : undefined) || t('what_if.alert.simulation_failed_message'));
     }
   };
 
@@ -159,16 +161,16 @@ export default function WhatIfScreen() {
           <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7}>
             <Ionicons name="arrow-back" size={22} color={colors.textPrimary} />
           </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>What-If 시뮬레이터</Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{t('what_if.header_title')}</Text>
           <View style={{ width: 22 }} />
         </View>
 
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-          "만약 ~하면?" 포트폴리오 영향을 AI가 분석합니다
+          {t('what_if.subtitle')}
         </Text>
 
         {/* 시나리오 프리셋 */}
-        <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>시나리오 선택</Text>
+        <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>{t('what_if.scenario_label')}</Text>
         <View style={styles.scenarioList}>
           {SCENARIO_PRESETS.map(preset => (
             <TouchableOpacity
@@ -188,8 +190,8 @@ export default function WhatIfScreen() {
               activeOpacity={0.7}
             >
               <Ionicons name={preset.icon} size={24} color={preset.color} />
-              <Text style={[styles.scenarioLabel, { color: colors.textPrimary }]}>{preset.label}</Text>
-              <Text style={[styles.scenarioDesc, { color: colors.textSecondary }]}>{preset.description}</Text>
+              <Text style={[styles.scenarioLabel, { color: colors.textPrimary }]}>{t(preset.labelKey)}</Text>
+              <Text style={[styles.scenarioDesc, { color: colors.textSecondary }]}>{t(preset.descKey)}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -200,7 +202,7 @@ export default function WhatIfScreen() {
             style={[styles.customInput, { backgroundColor: colors.surface, color: colors.textPrimary, borderColor: colors.borderStrong }]}
             value={customDescription}
             onChangeText={setCustomDescription}
-            placeholder="시나리오를 자유롭게 입력하세요..."
+            placeholder={t('what_if.custom_placeholder')}
             placeholderTextColor={colors.textQuaternary}
             multiline
             numberOfLines={3}
@@ -215,7 +217,7 @@ export default function WhatIfScreen() {
           activeOpacity={0.7}
         >
           <Ionicons name="flask" size={18} color="#FFF" />
-          <Text style={styles.simulateText}>시뮬레이션 실행</Text>
+          <Text style={styles.simulateText}>{t('what_if.simulate_button')}</Text>
         </TouchableOpacity>
 
         {/* 로딩 */}

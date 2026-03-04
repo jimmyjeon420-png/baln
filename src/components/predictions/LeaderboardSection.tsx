@@ -20,7 +20,6 @@ import Animated, {
   withSpring,
   withRepeat,
   withSequence,
-  Easing,
 } from 'react-native-reanimated';
 import { LeaderboardEntry } from '../../types/prediction';
 
@@ -94,7 +93,7 @@ function LeaderboardCard({ entry, index }: LeaderboardCardProps) {
     // 순차 페이드인 (각 항목 100ms 딜레이)
     opacity.value = withDelay(index * 100, withSpring(1, { damping: 15 }));
     translateY.value = withDelay(index * 100, withSpring(0, { damping: 15 }));
-  }, [index]);
+  }, [index, opacity, translateY]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
@@ -199,7 +198,7 @@ function MyRankCard({ entry, remainingToTop10 }: MyRankCardProps) {
       -1, // 무한 반복
       false
     );
-  }, []);
+  }, [scale]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],

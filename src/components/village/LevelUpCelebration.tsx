@@ -20,7 +20,7 @@ import {
   Animated,
 } from 'react-native';
 import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
-import { t } from '../../locales';
+import { useLocale } from '../../context/LocaleContext';
 import type { ThemeColors } from '../../styles/colors';
 
 // ============================================================================
@@ -36,8 +36,6 @@ interface LevelUpCelebrationProps {
   onDismiss: () => void;
   /** 테마 색상 */
   colors: ThemeColors;
-  /** @deprecated Use t() from locales instead. Kept for backward compatibility. */
-  locale?: string;
 }
 
 // ============================================================================
@@ -58,6 +56,7 @@ function LevelUpCelebration({
   onDismiss,
   colors,
 }: LevelUpCelebrationProps) {
+  const { t } = useLocale();
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const glowAnim = useRef(new Animated.Value(0)).current;
   const autoDismissRef = useRef<ReturnType<typeof setTimeout> | null>(null);

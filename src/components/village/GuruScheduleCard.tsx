@@ -15,6 +15,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { GURU_SCHEDULES } from '../../data/guruScheduleConfig';
 import type { GuruActivity } from '../../types/village';
 import type { ThemeColors } from '../../styles/colors';
+import { useLocale } from '../../context/LocaleContext';
 
 // ============================================================================
 // 타입
@@ -25,8 +26,6 @@ interface GuruScheduleCardProps {
   guruId: string;
   /** 테마 색상 */
   colors: ThemeColors;
-  /** 로케일 (ko/en) */
-  locale: string;
 }
 
 // ============================================================================
@@ -111,8 +110,9 @@ function getCurrentDisplaySlot(hour: number): 'morning' | 'afternoon' | 'evening
 // 메인 컴포넌트
 // ============================================================================
 
-function GuruScheduleCard({ guruId, colors, locale }: GuruScheduleCardProps) {
-  const isKo = locale === 'ko';
+function GuruScheduleCard({ guruId, colors }: GuruScheduleCardProps) {
+  const { t, language } = useLocale();
+  const isKo = language === 'ko';
 
   // 현재 시간대
   const currentSlot = useMemo(() => {
@@ -161,7 +161,7 @@ function GuruScheduleCard({ guruId, colors, locale }: GuruScheduleCardProps) {
     <View style={[styles.card, { backgroundColor: colors.surface }]}>
       {/* 제목 */}
       <Text style={[styles.title, { color: colors.textPrimary }]}>
-        {isKo ? '오늘의 일과' : "Today's Schedule"}
+        {t('guruSchedule.title')}
       </Text>
 
       {/* 타임라인 */}

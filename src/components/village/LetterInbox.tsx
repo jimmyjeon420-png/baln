@@ -40,7 +40,6 @@ interface LetterInboxProps {
   onClose: () => void;
   isVisible: boolean;
   colors: ThemeColors;
-  locale?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -92,21 +91,18 @@ interface LetterCardProps {
   letter: GuruLetter;
   onPress: (letter: GuruLetter) => void;
   colors: ThemeColors;
-  locale: string;
 }
 
 const LetterCard = React.memo(({
   letter,
   onPress,
   colors,
-  locale,
 }: LetterCardProps) => {
-  const { t } = useLocale();
-  const isKo = locale === 'ko';
+  const { t, language } = useLocale();
   const guruId = letter.fromGuruId || letter.guruId || '';
   const _config = GURU_CHARACTER_CONFIGS[guruId];
   const guruName = getGuruDisplayName(guruId);
-  const subject = isKo ? letter.subject : (letter.subjectEn ?? letter.subject);
+  const subject = language === 'ko' ? letter.subject : (letter.subjectEn ?? letter.subject);
   const tier = letter.friendshipRequired;
   const badgeColor = TIER_BADGE_COLOR[tier] ?? TIER_BADGE_COLOR.stranger;
   const badgeLabel = t(TIER_BADGE_I18N_KEY[tier] ?? TIER_BADGE_I18N_KEY.stranger);
@@ -192,10 +188,8 @@ export function LetterInbox({
   onClose,
   isVisible,
   colors,
-  locale = 'ko',
 }: LetterInboxProps) {
   const { t } = useLocale();
-  const _isKo = locale === 'ko';
 
   // 봉투 흔들기 애니메이션 (새 편지 있을 때)
   const envelopeShake = useRef(new Animated.Value(0)).current;
@@ -229,9 +223,8 @@ export function LetterInbox({
       letter={item}
       onPress={onLetterPress}
       colors={colors}
-      locale={locale}
     />
-  ), [onLetterPress, colors, locale]);
+  ), [onLetterPress, colors]);
 
   const keyExtractor = useCallback((item: GuruLetter) => item.id, []);
 

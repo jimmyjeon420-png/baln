@@ -41,8 +41,7 @@ function formatHour(hour: number): string {
 
 function GuruVisitBanner({ visitingGurus, onTalkToGuru }: GuruVisitBannerProps): React.ReactElement | null {
   const { colors } = useTheme();
-  const { language } = useLocale();
-  const isKo = language === 'ko';
+  const { t } = useLocale();
   const slideAnim = useRef(new Animated.Value(-80)).current;
 
   // 방문 구루가 있으면 슬라이드 다운 애니메이션
@@ -83,9 +82,7 @@ function GuruVisitBanner({ visitingGurus, onTalkToGuru }: GuruVisitBannerProps):
             <Text style={[styles.guruEmoji]}>{guru.emoji}</Text>
             <View style={styles.guruTextWrap}>
               <Text style={[styles.guruName, { color: colors.textPrimary }]}>
-                {isKo
-                  ? `${getGuruDisplayName(guru.guruId)}이 카페에 방문 중!`
-                  : `${getGuruDisplayName(guru.guruId)} is visiting the cafe!`}
+                {t('guruVisit.visiting', { name: getGuruDisplayName(guru.guruId) })}
               </Text>
               <Text style={[styles.timeText, { color: colors.textSecondary }]}>
                 {formatHour(guru.startHour)}~{formatHour(guru.endHour)}
@@ -99,7 +96,7 @@ function GuruVisitBanner({ visitingGurus, onTalkToGuru }: GuruVisitBannerProps):
               activeOpacity={0.7}
             >
               <Text style={styles.talkButtonText}>
-                {isKo ? '대화하기' : 'Talk'}
+                {t('guruVisit.talk')}
               </Text>
             </TouchableOpacity>
           )}
@@ -110,7 +107,7 @@ function GuruVisitBanner({ visitingGurus, onTalkToGuru }: GuruVisitBannerProps):
       {upcomingGurus.length > 0 && presentGurus.length === 0 && (
         <View style={styles.upcomingWrap}>
           <Text style={[styles.upcomingLabel, { color: colors.textSecondary }]}>
-            {isKo ? '오늘 방문 예정' : 'Visiting Today'}
+            {t('guruVisit.visitingToday')}
           </Text>
           {upcomingGurus.map((guru) => (
             <View key={guru.guruId} style={styles.upcomingRow}>

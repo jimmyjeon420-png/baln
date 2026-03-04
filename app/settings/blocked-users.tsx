@@ -20,28 +20,30 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../../src/hooks/useTheme';
+import { useLocale } from '../../src/context/LocaleContext';
 import { useBlockedUsers, useUnblockUser, type BlockedUser } from '../../src/hooks/useUserBlocks';
 
 export default function BlockedUsersScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { t } = useLocale();
   const { data: blockedUsers, isLoading } = useBlockedUsers();
   const unblockUser = useUnblockUser();
 
   const handleUnblock = (item: BlockedUser) => {
     Alert.alert(
-      '차단 해제',
-      '이 사용자의 차단을 해제하시겠습니까?\n해제하면 이 사용자의 게시물과 댓글이 다시 표시됩니다.',
+      t('settings.blocked.unblockTitle'),
+      t('settings.blocked.unblockMessage'),
       [
-        { text: '취소', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: '차단 해제',
+          text: t('settings.blocked.unblock'),
           style: 'destructive',
           onPress: async () => {
             try {
               await unblockUser.mutateAsync(item.blocked_user_id);
             } catch {
-              Alert.alert('오류', '차단 해제에 실패했습니다.');
+              Alert.alert(t('common.error'), t('settings.blocked.unblockFailed'));
             }
           },
         },
@@ -65,7 +67,7 @@ export default function BlockedUsersScreen() {
             {item.blocked_user_id.slice(0, 8)}...
           </Text>
           <Text style={[styles.reason, { color: colors.textSecondary }]}>
-            {item.reason || '차단됨'} {'·'} {formatDate(item.created_at)}
+            {item.reason || t('settings.blocked.blocked')} {'·'} {formatDate(item.created_at)}
           </Text>
         </View>
       </View>
@@ -77,7 +79,7 @@ export default function BlockedUsersScreen() {
         {unblockUser.isPending ? (
           <ActivityIndicator size="small" color={colors.error} />
         ) : (
-          <Text style={[styles.unblockText, { color: colors.error }]}>해제</Text>
+          <Text style={[styles.unblockText, { color: colors.error }]}>{t('settings.blocked.unblock')}</Text>
         )}
       </TouchableOpacity>
     </View>
@@ -90,7 +92,7 @@ export default function BlockedUsersScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>차단 목록</Text>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{t('settings.blocked.title')}</Text>
         <View style={styles.backButton} />
       </View>
 
@@ -98,7 +100,7 @@ export default function BlockedUsersScreen() {
       <View style={[styles.infoBar, { backgroundColor: colors.surface }]}>
         <Ionicons name="information-circle" size={16} color={colors.textSecondary} />
         <Text style={[styles.infoText, { color: colors.textSecondary }]}>
-          차단된 사용자의 게시물과 댓글은 피드에 표시되지 않습니다.
+          {t('settings.blocked.info')}
         </Text>
       </View>
 
@@ -111,7 +113,7 @@ export default function BlockedUsersScreen() {
         <View style={styles.center}>
           <Ionicons name="shield-checkmark" size={48} color={colors.textTertiary} />
           <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-            차단된 사용자가 없습니다
+            {t('settings.blocked.noBlockedUsers')}
           </Text>
         </View>
       ) : (

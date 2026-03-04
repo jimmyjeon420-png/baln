@@ -30,11 +30,13 @@ import { useRouter } from 'expo-router';
 import { useReports, useUpdateReportStatus, useDeleteReportedContent } from '../../src/hooks/useReports';
 import { ReportWithContent, ReportStatus, getReportReasonLabel } from '../../src/types/community';
 import { COLORS } from '../../src/styles/theme';
+import { useLocale } from '../../src/context/LocaleContext';
 
 type FilterStatus = 'all' | ReportStatus;
 
 export default function AdminReportsScreen() {
   const router = useRouter();
+  const { t } = useLocale();
 
   // 상태
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
@@ -76,10 +78,10 @@ export default function AdminReportsScreen() {
 
   // 필터 버튼
   const filters: { key: FilterStatus; label: string }[] = [
-    { key: 'all', label: '전체' },
-    { key: 'pending', label: '대기' },
-    { key: 'resolved', label: '승인' },
-    { key: 'rejected', label: '거부' },
+    { key: 'all', label: t('common.all') },
+    { key: 'pending', label: t('admin.reports.filter.pending') },
+    { key: 'resolved', label: t('admin.reports.filter.resolved') },
+    { key: 'rejected', label: t('admin.reports.filter.rejected') },
   ];
 
   // ================================================================
@@ -91,12 +93,12 @@ export default function AdminReportsScreen() {
     if (!selectedReport) return;
 
     Alert.alert(
-      '콘텐츠 삭제',
-      '신고된 콘텐츠를 삭제하고 신고를 승인하시겠습니까?',
+      t('admin.reports.alert.deleteContentTitle'),
+      t('admin.reports.alert.deleteContentMessage'),
       [
-        { text: '취소', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: '삭제',
+          text: t('common.delete'),
           style: 'destructive',
           onPress: async () => {
             try {
@@ -106,9 +108,9 @@ export default function AdminReportsScreen() {
                 targetId: selectedReport.target_id,
               });
               setSelectedReport(null);
-              Alert.alert('완료', '콘텐츠가 삭제되었습니다.');
+              Alert.alert(t('admin.reports.alert.doneTitle'), t('admin.reports.alert.contentDeleted'));
             } catch (err) {
-              Alert.alert('오류', '삭제 중 오류가 발생했습니다.');
+              Alert.alert(t('common.error'), t('admin.reports.alert.deleteError'));
             }
           },
         },
@@ -126,9 +128,9 @@ export default function AdminReportsScreen() {
         status: 'resolved',
       });
       setSelectedReport(null);
-      Alert.alert('완료', '신고가 승인되었습니다.');
+      Alert.alert(t('admin.reports.alert.doneTitle'), t('admin.reports.alert.reportApproved'));
     } catch (err) {
-      Alert.alert('오류', '처리 중 오류가 발생했습니다.');
+      Alert.alert(t('common.error'), t('admin.reports.alert.processError'));
     }
   };
 
@@ -142,9 +144,9 @@ export default function AdminReportsScreen() {
         status: 'rejected',
       });
       setSelectedReport(null);
-      Alert.alert('완료', '신고가 거부되었습니다.');
+      Alert.alert(t('admin.reports.alert.doneTitle'), t('admin.reports.alert.reportRejected'));
     } catch (err) {
-      Alert.alert('오류', '처리 중 오류가 발생했습니다.');
+      Alert.alert(t('common.error'), t('admin.reports.alert.processError'));
     }
   };
 
@@ -164,9 +166,9 @@ export default function AdminReportsScreen() {
   // 상태 뱃지
   const renderStatusBadge = (status: ReportStatus) => {
     const config: Record<ReportStatus, { label: string; color: string }> = {
-      pending: { label: '대기', color: COLORS.warning },
-      resolved: { label: '승인', color: COLORS.primary },
-      rejected: { label: '거부', color: COLORS.textSecondary },
+      pending: { label: t('admin.reports.filter.pending'), color: COLORS.warning },
+      resolved: { label: t('admin.reports.filter.resolved'), color: COLORS.primary },
+      rejected: { label: t('admin.reports.filter.rejected'), color: COLORS.textSecondary },
     };
     const { label, color } = config[status];
 
@@ -179,8 +181,8 @@ export default function AdminReportsScreen() {
 
   // 신고 아이템
   const renderReportItem = ({ item }: { item: ReportWithContent }) => {
-    const targetContent = item.target_content as any;
-    const contentPreview = targetContent?.content?.substring(0, 50) || '(삭제된 콘텐츠)';
+    const targetContent = item.target_content as unknown as Record<string, string> | null;
+    const contentPreview = targetContent?.content?.substring(0, 50) || t('admin.reports.deletedContent');
     const urgent = isUrgent(item);
 
     return (
@@ -209,10 +211,10 @@ export default function AdminReportsScreen() {
 
         <View style={styles.reportFooter}>
           <Text style={styles.reportFooterText}>
-            신고자: {item.reporter_display_tag}
+            {t('admin.reports.reporter')}: {item.reporter_display_tag}
           </Text>
           {item.duplicate_count && item.duplicate_count > 1 && (
-            <Text style={styles.duplicateCount}>중복 신고 {item.duplicate_count}건</Text>
+            <Text style={styles.duplicateCount}>{t('admin.reports.duplicate')} {item.duplicate_count}{t('common.unitCount')}</Text>
           )}
         </View>
 
@@ -234,7 +236,7 @@ export default function AdminReportsScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="chevron-back" size={24} color={COLORS.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>신고 관리</Text>
+        <Text style={styles.headerTitle}>{t('admin.reports.title')}</Text>
         <View style={{ width: 24 }} />
       </View>
 
@@ -289,7 +291,7 @@ export default function AdminReportsScreen() {
       {!isLoading && !error && statusCounts.all > 0 && (
         <View style={styles.summaryBanner}>
           <Text style={styles.summaryText}>
-            총 {statusCounts.all}건 | 대기 {statusCounts.pending}건 | 처리율 {summaryRate}%
+            {t('admin.reports.summaryTotal')} {statusCounts.all}{t('common.unitCount')} | {t('admin.reports.filter.pending')} {statusCounts.pending}{t('common.unitCount')} | {t('admin.reports.processRate')} {summaryRate}%
           </Text>
         </View>
       )}
@@ -301,7 +303,7 @@ export default function AdminReportsScreen() {
         </View>
       ) : error ? (
         <View style={styles.centerContainer}>
-          <Text style={styles.errorText}>데이터를 불러올 수 없습니다.</Text>
+          <Text style={styles.errorText}>{t('admin.reports.loadError')}</Text>
         </View>
       ) : (
         <FlatList
@@ -315,7 +317,7 @@ export default function AdminReportsScreen() {
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Ionicons name="checkmark-circle" size={64} color={COLORS.textSecondary} />
-              <Text style={styles.emptyText}>신고가 없습니다.</Text>
+              <Text style={styles.emptyText}>{t('admin.reports.noReports')}</Text>
             </View>
           }
         />
@@ -334,7 +336,7 @@ export default function AdminReportsScreen() {
             <TouchableOpacity onPress={() => setSelectedReport(null)}>
               <Ionicons name="close" size={24} color={COLORS.textPrimary} />
             </TouchableOpacity>
-            <Text style={styles.modalHeaderTitle}>신고 상세</Text>
+            <Text style={styles.modalHeaderTitle}>{t('admin.reports.detailTitle')}</Text>
             <View style={{ width: 24 }} />
           </View>
 
@@ -342,46 +344,46 @@ export default function AdminReportsScreen() {
             <ScrollView contentContainerStyle={styles.modalContent}>
               {/* 신고 정보 */}
               <View style={styles.modalSection}>
-                <Text style={styles.modalSectionTitle}>신고 정보</Text>
+                <Text style={styles.modalSectionTitle}>{t('admin.reports.section.reportInfo')}</Text>
                 <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>사유:</Text>
+                  <Text style={styles.infoLabel}>{t('admin.reports.label.reason')}:</Text>
                   <Text style={styles.infoValue}>{getReportReasonLabel(selectedReport.reason)}</Text>
                 </View>
                 {selectedReport.description && (
                   <View style={styles.infoRow}>
-                    <Text style={styles.infoLabel}>상세:</Text>
+                    <Text style={styles.infoLabel}>{t('admin.reports.label.detail')}:</Text>
                     <Text style={styles.infoValue}>{selectedReport.description}</Text>
                   </View>
                 )}
                 <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>신고자:</Text>
+                  <Text style={styles.infoLabel}>{t('admin.reports.reporter')}:</Text>
                   <Text style={styles.infoValue}>{selectedReport.reporter_display_tag}</Text>
                 </View>
                 <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>일시:</Text>
+                  <Text style={styles.infoLabel}>{t('admin.reports.label.datetime')}:</Text>
                   <Text style={styles.infoValue}>
                     {new Date(selectedReport.created_at).toLocaleString('ko-KR')}
                   </Text>
                 </View>
                 {selectedReport.duplicate_count && selectedReport.duplicate_count > 1 && (
                   <View style={styles.infoRow}>
-                    <Text style={styles.infoLabel}>중복:</Text>
-                    <Text style={styles.infoValue}>{selectedReport.duplicate_count}건</Text>
+                    <Text style={styles.infoLabel}>{t('admin.reports.label.duplicate')}:</Text>
+                    <Text style={styles.infoValue}>{selectedReport.duplicate_count}{t('common.unitCount')}</Text>
                   </View>
                 )}
               </View>
 
               {/* 대상 콘텐츠 */}
               <View style={styles.modalSection}>
-                <Text style={styles.modalSectionTitle}>신고 대상</Text>
+                <Text style={styles.modalSectionTitle}>{t('admin.reports.section.target')}</Text>
                 {selectedReport.target_content ? (
                   <View style={styles.contentBox}>
                     <Text style={styles.contentText}>
-                      {(selectedReport.target_content as any).content}
+                      {(selectedReport.target_content as unknown as Record<string, string> | null)?.content}
                     </Text>
                   </View>
                 ) : (
-                  <Text style={styles.infoValue}>(콘텐츠가 삭제되었습니다)</Text>
+                  <Text style={styles.infoValue}>{t('admin.reports.contentDeletedNote')}</Text>
                 )}
               </View>
 
@@ -396,7 +398,7 @@ export default function AdminReportsScreen() {
                     {deleteContentMutation.isPending ? (
                       <ActivityIndicator color="#FFF" />
                     ) : (
-                      <Text style={styles.actionButtonText}>콘텐츠 삭제</Text>
+                      <Text style={styles.actionButtonText}>{t('admin.reports.deleteContent')}</Text>
                     )}
                   </TouchableOpacity>
 
@@ -408,7 +410,7 @@ export default function AdminReportsScreen() {
                     {updateStatusMutation.isPending ? (
                       <ActivityIndicator color="#FFF" />
                     ) : (
-                      <Text style={styles.actionButtonText}>신고 거부</Text>
+                      <Text style={styles.actionButtonText}>{t('admin.reports.rejectReport')}</Text>
                     )}
                   </TouchableOpacity>
 
@@ -420,7 +422,7 @@ export default function AdminReportsScreen() {
                     {updateStatusMutation.isPending ? (
                       <ActivityIndicator color="#FFF" />
                     ) : (
-                      <Text style={styles.actionButtonText}>신고 승인</Text>
+                      <Text style={styles.actionButtonText}>{t('admin.reports.approveReport')}</Text>
                     )}
                   </TouchableOpacity>
                 </View>

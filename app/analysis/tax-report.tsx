@@ -5,19 +5,19 @@
  * 사용자 흐름: 자동 계산 → 절세 전략 확인 → 실행 가이드
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { HeaderBar } from '../../src/components/common/HeaderBar';
 import { useTheme } from '../../src/hooks/useTheme';
+import { useLocale } from '../../src/context/LocaleContext';
 import { useSharedPortfolio } from '../../src/hooks/useSharedPortfolio';
 import { AssetType } from '../../src/types/asset';
 import { estimateTax, inferTaxAssetType, type TaxAssetType } from '../../src/utils/taxEstimator';
@@ -29,27 +29,22 @@ interface TaxReport {
   potentialSavings: number;
   savingsStrategy: string;
   assumptions: string[];
-  actionItems: Array<{
+  actionItems: {
     title: string;
     description: string;
     deadline: string;
     priority: 'high' | 'medium' | 'low';
-  }>;
+  }[];
 }
 
 export default function TaxReportScreen() {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const { assets, isLoading: isPortfolioLoading } = useSharedPortfolio();
   const [taxReport, setTaxReport] = useState<TaxReport | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    if (!isPortfolioLoading) {
-      loadTaxReport();
-    }
-  }, [isPortfolioLoading, assets]);
-
-  const loadTaxReport = () => {
+  const loadTaxReport = useCallback(() => {
     setIsLoading(true);
     try {
       const liquidAssets = assets.filter((asset) => asset.assetType === AssetType.LIQUID);
@@ -197,7 +192,13 @@ export default function TaxReportScreen() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [assets]);
+
+  useEffect(() => {
+    if (!isPortfolioLoading) {
+      loadTaxReport();
+    }
+  }, [isPortfolioLoading, assets, loadTaxReport]);
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -215,11 +216,11 @@ export default function TaxReportScreen() {
   const getPriorityLabel = (priority: string) => {
     switch (priority) {
       case 'high':
-        return '긴급';
+        return t('analysis.taxReport.priority.high');
       case 'medium':
-        return '중요';
+        return t('analysis.taxReport.priority.medium');
       case 'low':
-        return '참고';
+        return t('analysis.taxReport.priority.low');
       default:
         return '';
     }
@@ -228,11 +229,11 @@ export default function TaxReportScreen() {
   if (isLoading) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-        <HeaderBar title="세금 리포트" />
+        <HeaderBar title={t('analysis.taxReport.title')} />
         <View style={[s.loadingContainer, { backgroundColor: colors.background }]}>
           <ActivityIndicator size="large" color="#7C4DFF" />
           <Text style={[s.loadingText, { color: colors.textSecondary }]}>
-            세금 리포트 생성 중...
+            {t('analysis.taxReport.loading')}
           </Text>
         </View>
       </SafeAreaView>
@@ -252,27 +253,27 @@ export default function TaxReportScreen() {
       >
         {/* 헤더 */}
         <View style={s.header}>
-          <Text style={[s.title, { color: colors.textPrimary }]}>🧾 2026년 세금 리포트</Text>
+          <Text style={[s.title, { color: colors.textPrimary }]}>{t('analysis.taxReport.headerTitle')}</Text>
           <Text style={[s.subtitle, { color: colors.textSecondary }]}>
-            현재 포트폴리오 기준 추정치(가정 포함)입니다
+            {t('analysis.taxReport.headerSubtitle')}
           </Text>
         </View>
 
         {/* 총 예상 세금 */}
         <View style={[s.card, { backgroundColor: colors.surface }]}>
-          <Text style={[s.cardLabel, { color: colors.textSecondary }]}>올해 예상 세금</Text>
+          <Text style={[s.cardLabel, { color: colors.textSecondary }]}>{t('analysis.taxReport.estimatedTax')}</Text>
           <Text style={[s.totalTax, { color: '#FF9800' }]}>
             ₩{taxReport.totalTax.toLocaleString()}
           </Text>
           <View style={s.taxBreakdown}>
             <View style={s.breakdownItem}>
-              <Text style={[s.breakdownLabel, { color: colors.textTertiary }]}>양도소득세</Text>
+              <Text style={[s.breakdownLabel, { color: colors.textTertiary }]}>{t('analysis.taxReport.capitalGainsTax')}</Text>
               <Text style={[s.breakdownValue, { color: colors.textSecondary }]}>
                 ₩{taxReport.capitalGainsTax.toLocaleString()}
               </Text>
             </View>
             <View style={s.breakdownItem}>
-              <Text style={[s.breakdownLabel, { color: colors.textTertiary }]}>배당소득세</Text>
+              <Text style={[s.breakdownLabel, { color: colors.textTertiary }]}>{t('analysis.taxReport.dividendTax')}</Text>
               <Text style={[s.breakdownValue, { color: colors.textSecondary }]}>
                 ₩{taxReport.dividendTax.toLocaleString()}
               </Text>
@@ -285,7 +286,7 @@ export default function TaxReportScreen() {
           <View style={s.savingsHeader}>
             <Ionicons name="trophy" size={24} color="#4CAF50" />
             <View style={{ flex: 1 }}>
-              <Text style={[s.savingsLabel, { color: colors.textSecondary }]}>절세 가능 금액</Text>
+              <Text style={[s.savingsLabel, { color: colors.textSecondary }]}>{t('analysis.taxReport.potentialSavings')}</Text>
               <Text style={[s.savingsAmount, { color: '#4CAF50' }]}>
                 ₩{taxReport.potentialSavings.toLocaleString()}
               </Text>
@@ -306,7 +307,7 @@ export default function TaxReportScreen() {
 
         {/* 실행 체크리스트 */}
         <View style={s.actionSection}>
-          <Text style={[s.sectionTitle, { color: colors.textPrimary }]}>📋 실행 체크리스트</Text>
+          <Text style={[s.sectionTitle, { color: colors.textPrimary }]}>{t('analysis.taxReport.actionChecklist')}</Text>
           {taxReport.actionItems.map((item, index) => (
             <View key={index} style={[s.actionCard, { backgroundColor: colors.surface }]}>
               <View style={s.actionHeader}>
@@ -328,7 +329,7 @@ export default function TaxReportScreen() {
               <View style={s.actionFooter}>
                 <Ionicons name="calendar-outline" size={14} color={colors.textTertiary} />
                 <Text style={[s.deadline, { color: colors.textTertiary }]}>
-                  마감: {item.deadline}
+                  {t('analysis.taxReport.deadline')}: {item.deadline}
                 </Text>
               </View>
             </View>
@@ -340,7 +341,7 @@ export default function TaxReportScreen() {
           <Ionicons name="information-circle-outline" size={16} color={colors.textTertiary} />
           <View style={{ flex: 1 }}>
             <Text style={[s.disclaimerText, { color: colors.textTertiary }]}>
-              본 리포트는 참고용이며, 세무 전문가 상담을 권장합니다.
+              {t('analysis.taxReport.disclaimer')}
             </Text>
             {taxReport.assumptions.map((line, idx) => (
               <Text key={idx} style={[s.disclaimerText, { color: colors.textTertiary }]}>

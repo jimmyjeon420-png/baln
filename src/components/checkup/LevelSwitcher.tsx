@@ -12,6 +12,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { InvestorLevel } from '../../hooks/useCheckupLevel';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 import type { ThemeColors } from '../../styles/colors';
 
 interface LevelSwitcherProps {
@@ -24,10 +25,10 @@ interface LevelSwitcherProps {
  * 라이트 모드에서 텍스트로 쓰이는 색은 WCAG AA 대비를 확보한 어두운 톤 사용.
  */
 function getLevelConfig(level: InvestorLevel, colors: ThemeColors) {
-  const configs: Record<InvestorLevel, { label: string; emoji: string; color: string }> = {
-    beginner: { label: '초급', emoji: '🌱', color: colors.primaryDark ?? colors.primary },
-    intermediate: { label: '중급', emoji: '📊', color: colors.info },
-    advanced: { label: '고급', emoji: '🔬', color: colors.premium.purple },
+  const configs: Record<InvestorLevel, { labelKey: string; emoji: string; color: string }> = {
+    beginner: { labelKey: 'checkup.level.beginner', emoji: '🌱', color: colors.primaryDark ?? colors.primary },
+    intermediate: { labelKey: 'checkup.level.intermediate', emoji: '📊', color: colors.info },
+    advanced: { labelKey: 'checkup.level.advanced', emoji: '🔬', color: colors.premium.purple },
   };
   return configs[level];
 }
@@ -46,6 +47,7 @@ function getSwitchColor(level: InvestorLevel, colors: ThemeColors): string {
 
 export default function LevelSwitcher({ currentLevel, onLevelChange }: LevelSwitcherProps) {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const config = getLevelConfig(currentLevel, colors);
 
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -55,15 +57,15 @@ export default function LevelSwitcher({ currentLevel, onLevelChange }: LevelSwit
       {/* 현재 레벨 표시 */}
       <View style={styles.currentLevel}>
         <Text style={styles.levelEmoji}>{config.emoji}</Text>
-        <Text style={[styles.levelLabel, { color: config.color }]}>{config.label} 모드</Text>
+        <Text style={[styles.levelLabel, { color: config.color }]}>{t(config.labelKey)} {t('checkup.level.mode')}</Text>
       </View>
 
       {/* 전환 버튼 */}
       <View style={styles.buttons}>
         {currentLevel === 'beginner' && (
           <SwitchButton
-            label="더 자세히"
-            sublabel="중급"
+            label={t('checkup.level.moreDetail')}
+            sublabel={t('checkup.level.intermediate')}
             icon="arrow-up"
             targetLevel="intermediate"
             colors={colors}
@@ -74,16 +76,16 @@ export default function LevelSwitcher({ currentLevel, onLevelChange }: LevelSwit
         {currentLevel === 'intermediate' && (
           <>
             <SwitchButton
-              label="더 간단하게"
-              sublabel="초급"
+              label={t('checkup.level.simpler')}
+              sublabel={t('checkup.level.beginner')}
               icon="arrow-down"
               targetLevel="beginner"
               colors={colors}
               onPress={() => onLevelChange('beginner')}
             />
             <SwitchButton
-              label="더 전문적으로"
-              sublabel="고급"
+              label={t('checkup.level.moreAdvanced')}
+              sublabel={t('checkup.level.advanced')}
               icon="arrow-up"
               targetLevel="advanced"
               colors={colors}
@@ -94,8 +96,8 @@ export default function LevelSwitcher({ currentLevel, onLevelChange }: LevelSwit
 
         {currentLevel === 'advanced' && (
           <SwitchButton
-            label="더 간단하게"
-            sublabel="중급"
+            label={t('checkup.level.simpler')}
+            sublabel={t('checkup.level.intermediate')}
             icon="arrow-down"
             targetLevel="intermediate"
             colors={colors}
@@ -133,7 +135,7 @@ function SwitchButton({
       onPress={onPress}
       activeOpacity={0.7}
     >
-      <Ionicons name={icon as any} size={14} color={color} />
+      <Ionicons name={icon as unknown as React.ComponentProps<typeof Ionicons>['name']} size={14} color={color} />
       <Text style={[switchStyles.switchLabel, { color }]}>{label}</Text>
       <View style={[switchStyles.sublabelBadge, { backgroundColor: `${color}20` }]}>
         <Text style={[switchStyles.sublabelText, { color }]}>{sublabel}</Text>

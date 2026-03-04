@@ -9,6 +9,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 
 // ============================================================================
 // 타입 정의
@@ -33,6 +34,7 @@ interface RisksProps {
 
 export default function Risks({ risks, onRefresh: _onRefresh }: RisksProps) {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const [expanded, setExpanded] = useState(false);
 
   // 전체 리스크 레벨 계산
@@ -51,7 +53,7 @@ export default function Risks({ risks, onRefresh: _onRefresh }: RisksProps) {
           {/* 종합 리스크 뱃지 */}
           <View style={[s.riskBadge, { backgroundColor: overallColor + '20' }]}>
             <Text style={[s.riskBadgeText, { color: overallColor }]}>
-              {overallRisk === 'HIGH' ? '높음' : overallRisk === 'MEDIUM' ? '보통' : '낮음'}
+              {overallRisk === 'HIGH' ? t('deepDive.risks.high') : overallRisk === 'MEDIUM' ? t('deepDive.risks.medium') : t('deepDive.risks.low')}
             </Text>
           </View>
           <TouchableOpacity onPress={() => setExpanded(!expanded)}>
@@ -78,7 +80,7 @@ export default function Risks({ risks, onRefresh: _onRefresh }: RisksProps) {
                 color={getRiskColor(risk.level)}
               />
               <Text style={[s.summaryLevel, { color: getRiskColor(risk.level) }]}>
-                {risk.level === 'HIGH' ? '높음' : risk.level === 'MEDIUM' ? '보통' : '낮음'}
+                {risk.level === 'HIGH' ? t('deepDive.risks.high') : risk.level === 'MEDIUM' ? t('deepDive.risks.medium') : t('deepDive.risks.low')}
               </Text>
             </View>
           </View>
@@ -115,7 +117,7 @@ export default function Risks({ risks, onRefresh: _onRefresh }: RisksProps) {
                 </Text>
                 <View style={[s.levelBadge, { backgroundColor: getRiskColor(risk.level) + '30' }]}>
                   <Text style={[s.levelText, { color: getRiskColor(risk.level) }]}>
-                    {risk.level === 'HIGH' ? '높음' : risk.level === 'MEDIUM' ? '보통' : '낮음'}
+                    {risk.level === 'HIGH' ? t('deepDive.risks.high') : risk.level === 'MEDIUM' ? t('deepDive.risks.medium') : t('deepDive.risks.low')}
                   </Text>
                 </View>
               </View>
@@ -136,10 +138,10 @@ export default function Risks({ risks, onRefresh: _onRefresh }: RisksProps) {
           <View style={[s.guideBox, { backgroundColor: colors.surfaceElevated }]}>
             <Text style={[s.guideText, { color: colors.textSecondary }]}>
               {overallRisk === 'HIGH'
-                ? '⚠️ 고위험 종목입니다. 투자 전 리스크 요인을 충분히 검토하세요.'
+                ? t('deepDive.risks.guideHigh')
                 : overallRisk === 'MEDIUM'
-                ? '📌 중위험 종목입니다. 분산 투자를 권장합니다.'
-                : '✅ 상대적으로 안정적인 종목입니다. 단, 시장 변동성은 항상 존재합니다.'}
+                ? t('deepDive.risks.guideMedium')
+                : t('deepDive.risks.guideLow')}
             </Text>
           </View>
         </View>

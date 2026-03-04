@@ -42,8 +42,6 @@ interface EventBannerProps {
   onDismiss: () => void;
   /** 테마 색상 */
   colors: ThemeColors;
-  /** 로케일 (ko/en) */
-  locale?: string;
 }
 
 // ============================================================================
@@ -119,10 +117,9 @@ const EventBanner = React.memo(({
   onPress,
   onDismiss,
   colors,
-  locale = 'ko',
 }: EventBannerProps) => {
-  const { t } = useLocale();
-  const isKo = locale === 'ko';
+  const { t, language } = useLocale();
+  const isKo = language === 'ko';
 
   // 슬라이드 다운 애니메이션 값 (-80 = 위 화면 밖)
   const slideAnim = useRef(new Animated.Value(-80)).current;

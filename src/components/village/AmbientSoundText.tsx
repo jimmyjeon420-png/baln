@@ -17,6 +17,7 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { StyleSheet, Animated } from 'react-native';
 import type { ThemeColors } from '../../styles/colors';
+import { useLocale } from '../../context/LocaleContext';
 
 // =============================================================================
 // 타입 정의
@@ -31,8 +32,6 @@ interface AmbientSoundTextProps {
   season?: 'spring' | 'summer' | 'autumn' | 'winter';
   /** 테마 색상 */
   colors: ThemeColors;
-  /** 로케일 (ko/en) */
-  locale: string;
 }
 
 // =============================================================================
@@ -125,9 +124,9 @@ function AmbientSoundText({
   timeOfDay,
   season,
   colors,
-  locale,
 }: AmbientSoundTextProps): React.ReactElement {
-  const isKo = locale === 'ko';
+  const { language } = useLocale();
+  const isKo = language === 'ko';
   const opacity = useRef(new Animated.Value(0)).current;
   const [currentIndex, setCurrentIndex] = useState(0);
 

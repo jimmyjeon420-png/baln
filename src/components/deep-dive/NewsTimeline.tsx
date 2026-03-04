@@ -11,6 +11,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 import type { ThemeColors } from '../../styles/colors';
 
 // ============================================================================
@@ -32,11 +33,11 @@ export interface NewsTimelineProps {
 // ============================================================================
 
 const SENTIMENT_CONFIG = {
-  VERY_POSITIVE: { label: '매우 긍정', icon: 'rocket' as const, colorKey: 'success' as const },
-  POSITIVE: { label: '긍정적', icon: 'trending-up' as const, colorKey: 'success' as const },
-  NEUTRAL: { label: '중립', icon: 'remove' as const, colorKey: 'neutral' as const },
-  NEGATIVE: { label: '부정적', icon: 'trending-down' as const, colorKey: 'error' as const },
-  VERY_NEGATIVE: { label: '매우 부정', icon: 'alert-circle' as const, colorKey: 'error' as const },
+  VERY_POSITIVE: { labelKey: 'deepDive.newsTimeline.veryPositive', icon: 'rocket' as const, colorKey: 'success' as const },
+  POSITIVE: { labelKey: 'deepDive.newsTimeline.positive', icon: 'trending-up' as const, colorKey: 'success' as const },
+  NEUTRAL: { labelKey: 'deepDive.newsTimeline.neutral', icon: 'remove' as const, colorKey: 'neutral' as const },
+  NEGATIVE: { labelKey: 'deepDive.newsTimeline.negative', icon: 'trending-down' as const, colorKey: 'error' as const },
+  VERY_NEGATIVE: { labelKey: 'deepDive.newsTimeline.veryNegative', icon: 'alert-circle' as const, colorKey: 'error' as const },
 };
 
 const getImpactColor = (impact: string, colors: ThemeColors) => {
@@ -64,6 +65,7 @@ const NewsTimeline: React.FC<NewsTimelineProps> = ({
   recentNews,
 }) => {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const config = SENTIMENT_CONFIG[sentiment] ?? SENTIMENT_CONFIG.NEUTRAL;
   const sentimentColor = colors[config.colorKey];
 
@@ -73,12 +75,12 @@ const NewsTimeline: React.FC<NewsTimelineProps> = ({
       <View style={styles.header}>
         <View style={styles.titleRow}>
           <Ionicons name="newspaper-outline" size={20} color={colors.textPrimary} />
-          <Text style={[styles.title, { color: colors.textPrimary }]}>뉴스 분석</Text>
+          <Text style={[styles.title, { color: colors.textPrimary }]}>{t('deepDive.newsTimeline.title')}</Text>
         </View>
         <View style={[styles.sentimentBadge, { backgroundColor: sentimentColor + '20' }]}>
           <Ionicons name={config.icon} size={14} color={sentimentColor} />
           <Text style={[styles.sentimentText, { color: sentimentColor }]}>
-            {config.label}
+            {t(config.labelKey)}
           </Text>
         </View>
       </View>

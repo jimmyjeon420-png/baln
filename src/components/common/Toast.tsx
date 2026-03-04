@@ -9,8 +9,8 @@
  * - 에러 메시지
  */
 
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Animated } from 'react-native';
+import React, { useEffect, useState, useCallback } from 'react';
+import { Text, StyleSheet, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
 
@@ -34,6 +34,16 @@ export default function Toast({
   const { colors } = useTheme();
   const [slideAnim] = useState(new Animated.Value(100));
 
+  const hideToast = useCallback(() => {
+    Animated.timing(slideAnim, {
+      toValue: 100,
+      duration: 200,
+      useNativeDriver: true,
+    }).start(() => {
+      onHide?.();
+    });
+  }, [slideAnim, onHide]);
+
   useEffect(() => {
     if (visible) {
       // 슬라이드 업
@@ -51,17 +61,7 @@ export default function Toast({
 
       return () => clearTimeout(timer);
     }
-  }, [visible, duration]);
-
-  const hideToast = () => {
-    Animated.timing(slideAnim, {
-      toValue: 100,
-      duration: 200,
-      useNativeDriver: true,
-    }).start(() => {
-      onHide?.();
-    });
-  };
+  }, [visible, duration, hideToast, slideAnim]);
 
   if (!visible) {
     return null;
@@ -91,7 +91,7 @@ export default function Toast({
         },
       ]}
     >
-      <Ionicons name={iconName as any} size={20} color="#FFFFFF" />
+      <Ionicons name={iconName as unknown as React.ComponentProps<typeof Ionicons>['name']} size={20} color="#FFFFFF" />
       <Text style={styles.message} numberOfLines={2}>
         {message}
       </Text>

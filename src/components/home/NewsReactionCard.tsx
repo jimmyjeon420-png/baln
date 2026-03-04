@@ -34,8 +34,6 @@ interface NewsReactionCardProps {
   onGuruPress: (guruId: string) => void;
   /** 테마 색상 */
   colors: ThemeColors;
-  /** 로케일 (ko/en) */
-  locale?: string;
 }
 
 // ============================================================================
@@ -63,12 +61,10 @@ const NewsReactionCard = React.memo(({
   onPress,
   onGuruPress,
   colors,
-  locale = 'ko',
 }: NewsReactionCardProps) => {
-  const isKo = locale === 'ko';
-  const { t } = useLocale();
+  const { t, language } = useLocale();
   const categoryEmoji = CATEGORY_EMOJI[article.category] || '\uD83D\uDCF0';
-  const headline = isKo ? article.headline : article.headlineEn;
+  const headline = language === 'ko' ? article.headline : article.headlineEn;
   const reactions = article.guruReactions || [];
   const visibleReactions = reactions.slice(0, MAX_VISIBLE_REACTIONS);
   const remainingCount = Math.max(0, reactions.length - MAX_VISIBLE_REACTIONS);
@@ -79,7 +75,7 @@ const NewsReactionCard = React.memo(({
       onPress={onPress}
       activeOpacity={0.7}
       accessibilityRole="button"
-      accessibilityLabel={`${isKo ? '뉴스' : 'News'}: ${headline}`}
+      accessibilityLabel={`${t('newsReaction.news')}: ${headline}`}
     >
       {/* 상단: 카테고리 + 헤드라인 */}
       <View style={styles.headerRow}>

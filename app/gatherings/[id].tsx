@@ -30,6 +30,8 @@ import {
 } from '../../src/hooks/useGatherings';
 import { GATHERING_CATEGORY_LABELS, UserTier } from '../../src/types/database';
 import { useTheme } from '../../src/hooks/useTheme';
+import { useLocale } from '../../src/context/LocaleContext';
+import { t as tStatic } from '../../src/locales';
 
 // 티어 아이콘
 const getTierIcon = (tier: UserTier): keyof typeof Ionicons.glyphMap => {
@@ -50,15 +52,16 @@ const formatEventDateFull = (dateString: string): string => {
   const day = date.getDate();
   const hours = date.getHours();
   const minutes = date.getMinutes().toString().padStart(2, '0');
-  const dayOfWeek = ['일', '월', '화', '수', '목', '금', '토'][date.getDay()];
+  const dayKeys = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+  const dayOfWeek = tStatic(`gatherings.detail.day.${dayKeys[date.getDay()]}`);
 
-  return `${year}년 ${month}월 ${day}일 (${dayOfWeek}) ${hours}:${minutes}`;
+  return tStatic('gatherings.detail.dateTimeFull', { year, month, day, dayOfWeek, hours, minutes });
 };
 
 // 금액 포맷팅
 const formatCurrency = (amount: number): string => {
-  if (amount === 0) return '무료';
-  return `${amount.toLocaleString()}원`;
+  if (amount === 0) return tStatic('gatherings.detail.free');
+  return tStatic('gatherings.detail.currencyAmount', { amount: amount.toLocaleString() });
 };
 
 export default function GatheringDetailScreen() {
@@ -66,6 +69,7 @@ export default function GatheringDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors: themeColors } = useTheme();
+  const { t } = useLocale();
   const [joining, setJoining] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [warningDismissed, setWarningDismissed] = useState(false);
@@ -93,9 +97,9 @@ export default function GatheringDetailScreen() {
     if (!canJoinByTier) {
       const requiredLabel = getCommunityTierLabel(requiredTier);
       Alert.alert(
-        '참가 불가',
-        `이 모임은 ${requiredLabel} 등급 이상만 참가할 수 있습니다.\n\n현재 회원님의 등급: ${getCommunityTierLabel(userTier)}`,
-        [{ text: '확인' }]
+        t('gatherings.detail.alert.cannotJoin'),
+        t('gatherings.detail.alert.tierRequired', { required: requiredLabel, current: getCommunityTierLabel(userTier) }),
+        [{ text: t('common.confirm') }]
       );
       return;
     }
@@ -103,19 +107,19 @@ export default function GatheringDetailScreen() {
     // 유료 모임인 경우 결제 확인
     if (gathering.entry_fee > 0) {
       Alert.alert(
-        '참가 신청',
-        `참가비 ${formatCurrency(gathering.entry_fee)}가 결제됩니다.\n(MVP: 결제 시뮬레이션)\n\n참가하시겠습니까?`,
+        t('gatherings.detail.alert.joinTitle'),
+        t('gatherings.detail.alert.joinPaidMessage', { fee: formatCurrency(gathering.entry_fee) }),
         [
-          { text: '취소', style: 'cancel' },
+          { text: t('common.cancel'), style: 'cancel' },
           {
-            text: '참가하기',
+            text: t('gatherings.detail.alert.joinConfirm'),
             onPress: async () => {
               setJoining(true);
               try {
                 await joinMutation.mutateAsync(id);
-                Alert.alert('완료', '참가 신청이 완료되었습니다.');
-              } catch (error: any) {
-                Alert.alert('오류', error.message || '참가 신청에 실패했습니다.');
+                Alert.alert(t('common.complete'), t('gatherings.detail.alert.joinSuccess'));
+              } catch (error: unknown) {
+                Alert.alert(t('common.error'), error instanceof Error ? error.message : t('gatherings.detail.alert.joinFailed'));
               } finally {
                 setJoining(false);
               }
@@ -127,9 +131,9 @@ export default function GatheringDetailScreen() {
       setJoining(true);
       try {
         await joinMutation.mutateAsync(id);
-        Alert.alert('완료', '참가 신청이 완료되었습니다.');
-      } catch (error: any) {
-        Alert.alert('오류', error.message || '참가 신청에 실패했습니다.');
+        Alert.alert(t('common.complete'), t('gatherings.detail.alert.joinSuccess'));
+      } catch (error: unknown) {
+        Alert.alert(t('common.error'), error instanceof Error ? error.message : t('gatherings.detail.alert.joinFailed'));
       } finally {
         setJoining(false);
       }
@@ -141,20 +145,20 @@ export default function GatheringDetailScreen() {
     if (!id) return;
 
     Alert.alert(
-      '참가 취소',
-      '정말 참가를 취소하시겠습니까?\n(MVP: 환불 시뮬레이션)',
+      t('gatherings.detail.alert.cancelTitle'),
+      t('gatherings.detail.alert.cancelMessage'),
       [
-        { text: '아니요', style: 'cancel' },
+        { text: t('gatherings.detail.alert.no'), style: 'cancel' },
         {
-          text: '취소하기',
+          text: t('gatherings.detail.alert.cancelConfirm'),
           style: 'destructive',
           onPress: async () => {
             setCancelling(true);
             try {
               await cancelMutation.mutateAsync(id);
-              Alert.alert('완료', '참가가 취소되었습니다.');
-            } catch (error: any) {
-              Alert.alert('오류', error.message || '참가 취소에 실패했습니다.');
+              Alert.alert(t('common.complete'), t('gatherings.detail.alert.cancelSuccess'));
+            } catch (error: unknown) {
+              Alert.alert(t('common.error'), error instanceof Error ? error.message : t('gatherings.detail.alert.cancelFailed'));
             } finally {
               setCancelling(false);
             }
@@ -169,7 +173,7 @@ export default function GatheringDetailScreen() {
       <View style={[styles.container, styles.loadingContainer, { backgroundColor: themeColors.background }]}>
         <Stack.Screen options={{ headerShown: false }} />
         <ActivityIndicator size="large" color={themeColors.primary} />
-        <Text style={[styles.loadingText, { color: themeColors.textTertiary }]}>모임 정보를 불러오는 중...</Text>
+        <Text style={[styles.loadingText, { color: themeColors.textTertiary }]}>{t('gatherings.detail.loading')}</Text>
       </View>
     );
   }
@@ -191,7 +195,7 @@ export default function GatheringDetailScreen() {
         >
           <Ionicons name="arrow-back" size={24} color={themeColors.textPrimary} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: themeColors.textPrimary }]}>모임 상세</Text>
+        <Text style={[styles.headerTitle, { color: themeColors.textPrimary }]}>{t('gatherings.detail.headerTitle')}</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -205,9 +209,9 @@ export default function GatheringDetailScreen() {
           <View style={styles.scamWarningBanner}>
             <Ionicons name="shield-half" size={18} color="#FF6B6B" style={{ marginTop: 1 }} />
             <View style={styles.scamWarningContent}>
-              <Text style={styles.scamWarningTitle}>사기 주의</Text>
+              <Text style={styles.scamWarningTitle}>{t('gatherings.detail.scamWarning.title')}</Text>
               <Text style={styles.scamWarningText}>
-                카카오톡/텔레그램으로 이동 요청은 100% 사기입니다.{'\n'}즉시 신고해주세요.
+                {t('gatherings.detail.scamWarning.text')}
               </Text>
             </View>
             <TouchableOpacity
@@ -229,13 +233,13 @@ export default function GatheringDetailScreen() {
           </View>
           {isFull && (
             <View style={styles.fullBadge}>
-              <Text style={[styles.fullBadgeText, { color: themeColors.error }]}>마감</Text>
+              <Text style={[styles.fullBadgeText, { color: themeColors.error }]}>{t('gatherings.detail.badge.full')}</Text>
             </View>
           )}
           {isParticipant && (
             <View style={[styles.participatingBadge, { backgroundColor: themeColors.primary }]}>
               <Ionicons name="checkmark-circle" size={14} color="#000000" />
-              <Text style={styles.participatingBadgeText}>참가중</Text>
+              <Text style={styles.participatingBadgeText}>{t('gatherings.detail.badge.participating')}</Text>
             </View>
           )}
         </View>
@@ -246,10 +250,10 @@ export default function GatheringDetailScreen() {
         {/* 호스트 정보 카드 */}
         <View style={[styles.hostCard, { backgroundColor: themeColors.surface }]}>
           <View style={styles.hostHeader}>
-            <Text style={[styles.sectionLabel, { color: themeColors.textTertiary }]}>호스트</Text>
+            <Text style={[styles.sectionLabel, { color: themeColors.textTertiary }]}>{t('gatherings.detail.section.host')}</Text>
             <View style={styles.verifiedBadge}>
               <Ionicons name="shield-checkmark" size={14} color={themeColors.primary} />
-              <Text style={[styles.verifiedText, { color: themeColors.primary }]}>인증된 호스트</Text>
+              <Text style={[styles.verifiedText, { color: themeColors.primary }]}>{t('gatherings.detail.verifiedHost')}</Text>
             </View>
           </View>
           <View style={styles.hostInfo}>
@@ -257,9 +261,9 @@ export default function GatheringDetailScreen() {
               <Ionicons name={getTierIcon(gathering.host_tier)} size={16} color="#000000" />
             </View>
             <View style={styles.hostDetails}>
-              <Text style={[styles.hostName, { color: themeColors.textPrimary }]}>{gathering.host_display_name || '익명'}</Text>
+              <Text style={[styles.hostName, { color: themeColors.textPrimary }]}>{gathering.host_display_name || t('gatherings.detail.anonymous')}</Text>
               <Text style={[styles.hostAssets, { color: TIER_COLORS[gathering.host_tier] }]}>
-                [자산: {formatAssetInBillion(gathering.host_verified_assets)} 인증]
+                {t('gatherings.detail.hostAssets', { assets: formatAssetInBillion(gathering.host_verified_assets) })}
               </Text>
             </View>
           </View>
@@ -267,14 +271,14 @@ export default function GatheringDetailScreen() {
 
         {/* 모임 정보 */}
         <View style={[styles.infoCard, { backgroundColor: themeColors.surface }]}>
-          <Text style={[styles.sectionLabel, { color: themeColors.textTertiary }]}>모임 정보</Text>
+          <Text style={[styles.sectionLabel, { color: themeColors.textTertiary }]}>{t('gatherings.detail.section.info')}</Text>
 
           <View style={[styles.infoRow, { borderBottomColor: themeColors.surfaceLight }]}>
             <View style={styles.infoIcon}>
               <Ionicons name="calendar" size={18} color={themeColors.primary} />
             </View>
             <View style={styles.infoContent}>
-              <Text style={[styles.infoLabel, { color: themeColors.textTertiary }]}>일시</Text>
+              <Text style={[styles.infoLabel, { color: themeColors.textTertiary }]}>{t('gatherings.detail.info.dateTime')}</Text>
               <Text style={[styles.infoValue, { color: themeColors.textPrimary }]}>{formatEventDateFull(gathering.event_date)}</Text>
             </View>
           </View>
@@ -288,9 +292,9 @@ export default function GatheringDetailScreen() {
               />
             </View>
             <View style={styles.infoContent}>
-              <Text style={[styles.infoLabel, { color: themeColors.textTertiary }]}>장소</Text>
+              <Text style={[styles.infoLabel, { color: themeColors.textTertiary }]}>{t('gatherings.detail.info.location')}</Text>
               <Text style={[styles.infoValue, { color: themeColors.textPrimary }]}>
-                {gathering.location_type === 'online' ? '온라인 (링크는 참가 후 공개)' : gathering.location}
+                {gathering.location_type === 'online' ? t('gatherings.detail.onlineLocationHidden') : gathering.location}
               </Text>
             </View>
           </View>
@@ -300,12 +304,12 @@ export default function GatheringDetailScreen() {
               <Ionicons name="people" size={18} color={themeColors.primary} />
             </View>
             <View style={styles.infoContent}>
-              <Text style={[styles.infoLabel, { color: themeColors.textTertiary }]}>참가 현황</Text>
+              <Text style={[styles.infoLabel, { color: themeColors.textTertiary }]}>{t('gatherings.detail.info.participants')}</Text>
               <Text style={[styles.infoValue, { color: themeColors.textPrimary }]}>
                 <Text style={{ color: isFull ? themeColors.error : themeColors.primary, fontWeight: '700' }}>
                   {gathering.current_capacity}
                 </Text>
-                /{gathering.max_capacity}명
+                /{t('gatherings.detail.capacityUnit', { count: gathering.max_capacity })}
               </Text>
             </View>
           </View>
@@ -315,7 +319,7 @@ export default function GatheringDetailScreen() {
               <Ionicons name="cash" size={18} color={themeColors.primary} />
             </View>
             <View style={styles.infoContent}>
-              <Text style={[styles.infoLabel, { color: themeColors.textTertiary }]}>참가비</Text>
+              <Text style={[styles.infoLabel, { color: themeColors.textTertiary }]}>{t('gatherings.detail.info.fee')}</Text>
               <Text style={[styles.infoValue, styles.feeValue, { color: themeColors.primary }]}>
                 {formatCurrency(gathering.entry_fee)}
               </Text>
@@ -328,9 +332,9 @@ export default function GatheringDetailScreen() {
               <Ionicons name={getTierIcon(requiredTier)} size={18} color={TIER_COLORS[requiredTier]} />
             </View>
             <View style={styles.infoContent}>
-              <Text style={[styles.infoLabel, { color: themeColors.textTertiary }]}>최소 입장 조건</Text>
+              <Text style={[styles.infoLabel, { color: themeColors.textTertiary }]}>{t('gatherings.detail.info.minTier')}</Text>
               <Text style={[styles.infoValue, { color: TIER_COLORS[requiredTier] }]}>
-                {getCommunityTierLabel(requiredTier)} 등급 이상
+                {t('gatherings.detail.tierAbove', { tier: getCommunityTierLabel(requiredTier) })}
               </Text>
             </View>
             {canJoinByTier ? (
@@ -350,10 +354,9 @@ export default function GatheringDetailScreen() {
           <View style={styles.tierWarningCard}>
             <Ionicons name="alert-circle" size={20} color={themeColors.warning} />
             <View style={styles.tierWarningContent}>
-              <Text style={[styles.tierWarningTitle, { color: themeColors.warning }]}>등급 제한 모임</Text>
+              <Text style={[styles.tierWarningTitle, { color: themeColors.warning }]}>{t('gatherings.detail.tierWarning.title')}</Text>
               <Text style={[styles.tierWarningText, { color: themeColors.textSecondary }]}>
-                이 모임은 {getCommunityTierLabel(requiredTier)} 등급 이상만 참가 가능합니다.{'\n'}
-                현재 회원님의 등급: {getCommunityTierLabel(userTier)}
+                {t('gatherings.detail.tierWarning.text', { required: getCommunityTierLabel(requiredTier), current: getCommunityTierLabel(userTier) })}
               </Text>
             </View>
           </View>
@@ -362,7 +365,7 @@ export default function GatheringDetailScreen() {
         {/* 모임 설명 */}
         {gathering.description && (
           <View style={[styles.descriptionCard, { backgroundColor: themeColors.surface }]}>
-            <Text style={[styles.sectionLabel, { color: themeColors.textTertiary }]}>모임 소개</Text>
+            <Text style={[styles.sectionLabel, { color: themeColors.textTertiary }]}>{t('gatherings.detail.section.description')}</Text>
             <Text style={[styles.description, { color: themeColors.textSecondary }]}>{gathering.description}</Text>
           </View>
         )}
@@ -370,7 +373,7 @@ export default function GatheringDetailScreen() {
         {/* 참가자 목록 */}
         {participants && participants.length > 0 && (
           <View style={[styles.participantsCard, { backgroundColor: themeColors.surface }]}>
-            <Text style={[styles.sectionLabel, { color: themeColors.textTertiary }]}>참가자 ({participants.length}명)</Text>
+            <Text style={[styles.sectionLabel, { color: themeColors.textTertiary }]}>{t('gatherings.detail.section.participants', { count: participants.length })}</Text>
             <View style={styles.participantsList}>
               {participants.slice(0, 5).map((participant) => (
                 <View key={participant.id} style={styles.participantItem}>
@@ -378,7 +381,7 @@ export default function GatheringDetailScreen() {
                     <Ionicons name={getTierIcon(participant.participant_tier)} size={12} color="#000000" />
                   </View>
                   <Text style={[styles.participantName, { color: themeColors.textPrimary }]}>
-                    {participant.participant_display_name || '익명'}
+                    {participant.participant_display_name || t('gatherings.detail.anonymous')}
                   </Text>
                   <Text style={[styles.participantAssets, { color: TIER_COLORS[participant.participant_tier] }]}>
                     {formatAssetInBillion(participant.participant_verified_assets)}
@@ -387,7 +390,7 @@ export default function GatheringDetailScreen() {
               ))}
               {participants.length > 5 && (
                 <Text style={[styles.moreParticipants, { color: themeColors.textTertiary }]}>
-                  +{participants.length - 5}명 더
+                  {t('gatherings.detail.moreParticipants', { count: participants.length - 5 })}
                 </Text>
               )}
             </View>
@@ -411,7 +414,7 @@ export default function GatheringDetailScreen() {
             ) : (
               <>
                 <Ionicons name="close-circle" size={20} color={themeColors.error} />
-                <Text style={[styles.cancelButtonText, { color: themeColors.error }]}>참가 취소</Text>
+                <Text style={[styles.cancelButtonText, { color: themeColors.error }]}>{t('gatherings.detail.button.cancelParticipation')}</Text>
               </>
             )}
           </TouchableOpacity>
@@ -419,7 +422,7 @@ export default function GatheringDetailScreen() {
           <View style={[styles.tierBlockedButton, { borderColor: themeColors.warning }]}>
             <Ionicons name="lock-closed" size={20} color={themeColors.warning} />
             <Text style={[styles.tierBlockedButtonText, { color: themeColors.warning }]}>
-              {getCommunityTierLabel(requiredTier)} 등급 이상만 참가 가능
+              {t('gatherings.detail.button.tierBlocked', { tier: getCommunityTierLabel(requiredTier) })}
             </Text>
           </View>
         ) : canJoin ? (
@@ -435,8 +438,8 @@ export default function GatheringDetailScreen() {
                 <Ionicons name="hand-right" size={20} color="#000000" />
                 <Text style={styles.joinButtonText}>
                   {gathering.entry_fee > 0
-                    ? `${formatCurrency(gathering.entry_fee)} 결제하고 참가`
-                    : '무료 참가 신청'}
+                    ? t('gatherings.detail.button.joinPaid', { fee: formatCurrency(gathering.entry_fee) })
+                    : t('gatherings.detail.button.joinFree')}
                 </Text>
               </>
             )}
@@ -445,7 +448,7 @@ export default function GatheringDetailScreen() {
           <View style={[styles.closedButton, { backgroundColor: themeColors.surface }]}>
             <Ionicons name="lock-closed" size={20} color={themeColors.textTertiary} />
             <Text style={[styles.closedButtonText, { color: themeColors.textTertiary }]}>
-              {isFull ? '정원이 가득 찼습니다' : '모집이 마감되었습니다'}
+              {isFull ? t('gatherings.detail.button.full') : t('gatherings.detail.button.closed')}
             </Text>
           </View>
         )}

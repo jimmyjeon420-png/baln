@@ -45,8 +45,6 @@ interface VillageNewspaperProps {
   onClose: () => void;
   /** 테마 색상 */
   colors: ThemeColors;
-  /** 로케일 (ko/en) */
-  locale?: string;
   /** 관련 예측으로 이동 */
   onPredictionPress?: (predictionId: string) => void;
   /** 구루 프로필로 이동 */
@@ -67,17 +65,17 @@ const CATEGORY_CONFIG: Record<string, { emoji: string; labelKo: string; labelEn:
 };
 
 /** 오늘 날짜 포맷 */
-function formatNewspaperDate(locale: string): string {
+function formatNewspaperDate(language: string): string {
   const now = new Date();
   const year = now.getFullYear();
   const month = now.getMonth() + 1;
   const day = now.getDate();
-  const weekdays = locale === 'ko'
+  const weekdays = language === 'ko'
     ? ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일']
     : ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const weekday = weekdays[now.getDay()];
 
-  if (locale === 'ko') {
+  if (language === 'ko') {
     return `${year}년 ${month}월 ${day}일 ${weekday}`;
   }
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -92,15 +90,13 @@ function formatNewspaperDate(locale: string): string {
 function GuruReactionRow({
   reactions,
   colors,
-  locale,
   onGuruPress,
 }: {
   reactions: GuruNewsReaction[];
   colors: ThemeColors;
-  locale: string;
   onGuruPress?: (guruId: string) => void;
 }) {
-  const { t } = useLocale();
+  const { t, language } = useLocale();
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   if (!reactions || reactions.length === 0) return null;
@@ -116,7 +112,6 @@ function GuruReactionRow({
           if (!config) return null;
 
           const isExpanded = expandedId === reaction.guruId;
-          const isKo = locale === 'ko';
           const moodEmoji = getMoodEmoji(reaction.mood ?? 'calm');
           const expression = reaction.sentiment === 'BULLISH' ? 'bullish'
             : reaction.sentiment === 'BEARISH' ? 'bearish'
@@ -153,7 +148,7 @@ function GuruReactionRow({
                     {config.emoji} {getGuruDisplayName(reaction.guruId)}
                   </Text>
                   <Text style={[reactionStyles.bubbleText, { color: colors.textPrimary }]}>
-                    {isKo ? reaction.reaction : reaction.reactionEn}
+                    {language === 'ko' ? reaction.reaction : reaction.reactionEn}
                   </Text>
                 </View>
               )}
@@ -169,19 +164,16 @@ function GuruReactionRow({
 function ArticleCard({
   article,
   colors,
-  locale,
   onPredictionPress,
   onGuruPress,
 }: {
   article: NewspaperArticle;
   colors: ThemeColors;
-  locale: string;
   onPredictionPress?: (predictionId: string) => void;
   onGuruPress?: (guruId: string) => void;
 }) {
-  const { t } = useLocale();
+  const { t, language } = useLocale();
   const category = CATEGORY_CONFIG[article.category] || CATEGORY_CONFIG.market;
-  const isKo = locale === 'ko';
 
   return (
     <View style={[articleStyles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -189,25 +181,24 @@ function ArticleCard({
       <View style={[articleStyles.categoryBadge, { backgroundColor: category.color + '20' }]}>
         <Text style={articleStyles.categoryEmoji}>{category.emoji}</Text>
         <Text style={[articleStyles.categoryLabel, { color: category.color }]}>
-          {isKo ? category.labelKo : category.labelEn}
+          {language === 'ko' ? category.labelKo : category.labelEn}
         </Text>
       </View>
 
       {/* 헤드라인 */}
       <Text style={[articleStyles.headline, { color: colors.textPrimary }]} numberOfLines={2}>
-        {isKo ? article.headline : article.headlineEn}
+        {language === 'ko' ? article.headline : article.headlineEn}
       </Text>
 
       {/* 요약 */}
       <Text style={[articleStyles.summary, { color: colors.textSecondary }]} numberOfLines={3}>
-        {isKo ? article.summary : article.summaryEn}
+        {language === 'ko' ? article.summary : article.summaryEn}
       </Text>
 
       {/* 구루 반응 */}
       <GuruReactionRow
         reactions={article.guruReactions ?? article.reactions ?? []}
         colors={colors}
-        locale={locale}
         onGuruPress={onGuruPress}
       />
 
@@ -236,12 +227,10 @@ const VillageNewspaper = React.memo(({
   isVisible,
   onClose,
   colors,
-  locale = 'ko',
   onPredictionPress,
   onGuruPress,
 }: VillageNewspaperProps) => {
-  const { t } = useLocale();
-  const _isKo = locale === 'ko';
+  const { t, language } = useLocale();
 
   return (
     <Modal
@@ -269,7 +258,7 @@ const VillageNewspaper = React.memo(({
           </View>
           <View style={[styles.dateLine, { borderTopColor: colors.border }]}>
             <Text style={[styles.dateText, { color: colors.textTertiary }]}>
-              {formatNewspaperDate(locale)}
+              {formatNewspaperDate(language)}
             </Text>
             <Text style={[styles.editionText, { color: colors.textTertiary }]}>
               {t('village_ui.newspaper.article_count', { count: articles.length })}
@@ -300,7 +289,6 @@ const VillageNewspaper = React.memo(({
                 key={article.id || `article-${index}`}
                 article={article}
                 colors={colors}
-                locale={locale}
                 onPredictionPress={onPredictionPress}
                 onGuruPress={onGuruPress}
               />

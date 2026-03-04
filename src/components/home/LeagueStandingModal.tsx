@@ -26,6 +26,7 @@ import {
 } from 'react-native';
 import { PROMOTION_ZONE, LEAGUE_PLAYER_COUNT, RELEGATION_ZONE, type LeagueTier } from '../../data/leagueConfig';
 import type { SimulatedPlayer } from '../../hooks/usePredictionLeague';
+import { useLocale } from '../../context/LocaleContext';
 
 // ============================================================================
 // 타입
@@ -38,7 +39,6 @@ interface LeagueStandingModalProps {
   rating: number;
   weeklyRank: number;
   standings: SimulatedPlayer[];
-  locale?: string;
 }
 
 // ============================================================================
@@ -52,10 +52,9 @@ function LeagueStandingModal({
   rating,
   weeklyRank,
   standings,
-  locale = 'ko',
 }: LeagueStandingModalProps) {
   const scaleAnim = useRef(new Animated.Value(0)).current;
-  const isKo = locale === 'ko';
+  const { t, language } = useLocale();
 
   useEffect(() => {
     if (visible) {
@@ -116,8 +115,8 @@ function LeagueStandingModal({
             ]}
             numberOfLines={1}
           >
-            {isKo ? item.nameKo : item.nameEn}
-            {isUser && (isKo ? ' (나)' : ' (You)')}
+            {language === 'ko' ? item.nameKo : item.nameEn}
+            {isUser && ` (${t('leagueStanding.you')})`}
           </Text>
         </View>
 
@@ -166,11 +165,11 @@ function LeagueStandingModal({
             <Text style={styles.bannerEmoji}>{currentTier.emoji}</Text>
             <View style={styles.bannerInfo}>
               <Text style={[styles.bannerTier, { color: currentTier.color }]}>
-                {isKo ? currentTier.nameKo : currentTier.nameEn}{' '}
-                {isKo ? '리그' : 'League'}
+                {language === 'ko' ? currentTier.nameKo : currentTier.nameEn}{' '}
+                {t('leagueStanding.league')}
               </Text>
               <Text style={styles.bannerRating}>
-                {rating} RP {isKo ? `| ${weeklyRank}위` : `| Rank #${weeklyRank}`}
+                {rating} RP {language === 'ko' ? `| ${weeklyRank}위` : `| Rank #${weeklyRank}`}
               </Text>
             </View>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
@@ -185,7 +184,7 @@ function LeagueStandingModal({
                 {'\u25B2'}
               </Text>
               <Text style={styles.legendText}>
-                {isKo ? '승급 존' : 'Promotion'}
+                {t('leagueStanding.promotion')}
               </Text>
             </View>
             <View style={styles.legendItem}>
@@ -193,7 +192,7 @@ function LeagueStandingModal({
                 {'\u25BC'}
               </Text>
               <Text style={styles.legendText}>
-                {isKo ? '강등 존' : 'Relegation'}
+                {t('leagueStanding.relegation')}
               </Text>
             </View>
           </View>
@@ -202,7 +201,7 @@ function LeagueStandingModal({
           <View style={styles.tableHeader}>
             <Text style={[styles.headerText, styles.rankCol]}>#</Text>
             <Text style={[styles.headerText, styles.nameCol]}>
-              {isKo ? '이름' : 'Name'}
+              {t('leagueStanding.name')}
             </Text>
             <Text style={[styles.headerText, styles.ratingCol]}>RP</Text>
             <Text style={[styles.headerText, styles.zoneCol]} />
@@ -226,9 +225,9 @@ function LeagueStandingModal({
           {/* 주간 보상 안내 */}
           <View style={styles.rewardBanner}>
             <Text style={styles.rewardText}>
-              {isKo
-                ? `주간 보상: ${currentTier.weeklyRewardCredits}개 (\u20A9${currentTier.weeklyRewardCredits * 100})`
-                : `Weekly Reward: ${currentTier.weeklyRewardCredits}개`}
+              {language === 'ko'
+                ? `${t('leagueStanding.weeklyReward')}: ${currentTier.weeklyRewardCredits}개 (\u20A9${currentTier.weeklyRewardCredits * 100})`
+                : `${t('leagueStanding.weeklyReward')}: ${currentTier.weeklyRewardCredits}C`}
             </Text>
           </View>
         </Animated.View>

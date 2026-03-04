@@ -28,7 +28,7 @@ export default function RiskDashboardSection({
   isAILoading,
   contextSentiment,
 }: RiskDashboardSectionProps) {
-  const { colors, shadows } = useTheme();
+  const { colors } = useTheme();
   const { t } = useLocale();
   const [showDetail, setShowDetail] = useState(false);
 

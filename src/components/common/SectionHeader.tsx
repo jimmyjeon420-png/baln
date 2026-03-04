@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, type ViewStyle } from 'react-native';
 import { COLORS, SIZES, TYPOGRAPHY } from '../../styles/theme';
 
 /**
@@ -25,7 +25,7 @@ interface SectionHeaderProps {
   /** 액션 버튼 클릭 핸들러 */
   onAction?: () => void;
   /** 추가 스타일 (선택 사항) */
-  style?: any;
+  style?: ViewStyle;
 }
 
 export const SectionHeader: React.FC<SectionHeaderProps> = ({

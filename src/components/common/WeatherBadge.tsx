@@ -31,8 +31,6 @@ interface WeatherBadgeProps {
   compact?: boolean;
   /** 테마 색상 */
   colors: ThemeColors;
-  /** 로케일 (ko/en) */
-  locale?: string;
 }
 
 // ============================================================================
@@ -95,9 +93,8 @@ const WeatherBadge = React.memo(({
   clothingLevel,
   compact = false,
   colors,
-  locale = 'ko',
 }: WeatherBadgeProps) => {
-  const { t } = useLocale();
+  const { t, language } = useLocale();
   // 로딩 상태
   if (!weather) {
     return (
@@ -112,7 +109,7 @@ const WeatherBadge = React.memo(({
     );
   }
 
-  const isKo = locale === 'ko';
+  const isKo = language === 'ko';
   // village.ts type uses `icon`, weatherService may return `emoji` — handle both
   const extended = weather as VillageWeather & { emoji?: string };
   const weatherEmoji = weather.icon || extended.emoji || '\u2600\uFE0F';

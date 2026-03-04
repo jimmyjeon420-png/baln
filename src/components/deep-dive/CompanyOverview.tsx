@@ -20,6 +20,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 
 // Android LayoutAnimation 활성화
 if (
@@ -95,6 +96,7 @@ export default function CompanyOverview({
   initiallyExpanded = true,
 }: CompanyOverviewProps) {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const [isExpanded, setIsExpanded] = useState(initiallyExpanded);
 
   // 시가총액 포맷 (조/억, 소수점 없음)
@@ -121,7 +123,7 @@ export default function CompanyOverview({
   if (foundedYear) {
     infoItems.push({
       icon: 'calendar',
-      label: '설립',
+      label: t('deepDive.companyOverview.founded'),
       value: `${foundedYear}년`,
       color: '#4CAF50',
     });
@@ -139,7 +141,7 @@ export default function CompanyOverview({
   if (headquarters) {
     infoItems.push({
       icon: 'location',
-      label: '본사',
+      label: t('deepDive.companyOverview.headquarters'),
       value: headquarters,
       color: '#FF9800',
     });
@@ -148,7 +150,7 @@ export default function CompanyOverview({
   if (industry) {
     infoItems.push({
       icon: 'briefcase',
-      label: '업종',
+      label: t('deepDive.companyOverview.industry'),
       value: industry,
       color: '#7C4DFF',
     });
@@ -157,7 +159,7 @@ export default function CompanyOverview({
   if (marketCap) {
     infoItems.push({
       icon: 'analytics',
-      label: '시가총액',
+      label: t('deepDive.companyOverview.marketCap'),
       value: formatMarketCap(marketCap),
       color: '#4CAF50',
     });
@@ -166,7 +168,7 @@ export default function CompanyOverview({
   if (employeeCount) {
     infoItems.push({
       icon: 'people',
-      label: '직원 수',
+      label: t('deepDive.companyOverview.employees'),
       value: formatEmployeeCount(employeeCount),
       color: '#29B6F6',
     });
@@ -175,7 +177,7 @@ export default function CompanyOverview({
   if (ipoDate) {
     infoItems.push({
       icon: 'rocket',
-      label: '상장일',
+      label: t('deepDive.companyOverview.ipoDate'),
       value: ipoDate,
       color: '#FF9800',
     });
@@ -184,7 +186,7 @@ export default function CompanyOverview({
   if (ticker) {
     infoItems.push({
       icon: 'pricetag',
-      label: '티커',
+      label: t('deepDive.companyOverview.ticker'),
       value: ticker,
       color: '#7C4DFF',
     });
@@ -216,7 +218,7 @@ export default function CompanyOverview({
           <Ionicons name="business" size={24} color="#4CAF50" />
           <View style={styles.headerText}>
             <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
-              회사 개요
+              {t('deepDive.companyOverview.title')}
             </Text>
             <Text style={[styles.companyName, { color: colors.textSecondary }]}>
               {companyName}
@@ -280,7 +282,7 @@ export default function CompanyOverview({
                 color={colors.textSecondary}
               />
               <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-                회사 정보를 불러올 수 없습니다
+                {t('deepDive.companyOverview.noInfo')}
               </Text>
             </View>
           )}

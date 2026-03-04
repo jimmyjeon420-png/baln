@@ -28,6 +28,7 @@ import { CREDIT_PACKAGES, type CreditTransaction } from '../../src/types/marketp
 import { CREDIT_TO_KRW, getLocaleCode } from '../../src/utils/formatters';
 import { getMyReferralCode, applyReferralCode } from '../../src/services/rewardService';
 import { useTheme } from '../../src/hooks/useTheme';
+import { useLocale } from '../../src/context/LocaleContext';
 import {
   connectToStore,
   disconnectFromStore,
@@ -54,6 +55,7 @@ function isChargingOpen(): boolean {
 export default function CreditsScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { t } = useLocale();
   const { mediumTap, heavyTap, success } = useHaptics();
   const { data: credits, isLoading: creditsLoading } = useMyCredits();
   const { data: history } = useCreditHistory(20);
@@ -88,7 +90,7 @@ export default function CreditsScreen() {
     mediumTap();
     try {
       await Share.share({
-        message: `baln(발른)에서 투자 습관을 만들어보세요! 내 추천 코드: ${myReferralCode}\n가입 시 10도토리(₩1,000) 보너스!`,
+        message: t('credits.referral.share_message', { code: myReferralCode }),
       });
     } catch (err) {
       // 사용자가 공유를 취소한 경우에도 에러가 발생할 수 있으므로 경고만 로그
@@ -101,15 +103,70 @@ export default function CreditsScreen() {
     setReferralLoading(true);
     try {
       const result = await applyReferralCode(friendCode.trim());
-      Alert.alert(result.success ? '성공!' : '실패', result.message);
+      Alert.alert(result.success ? t('common.success') : t('credits.referral.fail'), result.message);
       if (result.success) setFriendCode('');
     } catch (err) {
       console.warn('[크레딧] 추천 코드 적용 실패:', err);
-      Alert.alert('오류', '추천 코드 적용 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.');
+      Alert.alert(t('common.error'), t('credits.referral.apply_error'));
     } finally {
       setReferralLoading(false);
     }
   };
+
+  // ========================================================================
+  // 구매 리스너 핸들러
+  // ========================================================================
+
+  /** 구매 성공 — Apple 영수증 수신 → DB 크레딧 충전 → 트랜잭션 완료 */
+  const handlePurchaseSuccess = useCallback(async (purchase: Purchase) => {
+    try {
+      const productId = purchase.productId;
+      const packageId = appleProductIdToPackageId(productId);
+
+      if (!packageId) {
+        console.warn('[IAP] 알 수 없는 상품:', productId);
+        setPurchasing(false);
+        return;
+      }
+
+      // DB에 크레딧 충전 (트랜잭션 ID 함께 전달)
+      await purchaseMutation.mutateAsync({
+        packageId,
+        iapReceiptId: purchase.id || undefined,
+      });
+
+      // Apple에 소비 완료 전송 (Consumable 상품이므로 필수)
+      await completePurchase(purchase);
+
+      success();
+      const pkg = CREDIT_PACKAGES.find(p => p.id === packageId);
+      Alert.alert(
+        t('credits.purchase.complete_title'),
+        t('credits.purchase.complete_message', { amount: (pkg?.credits ?? 0) + (pkg?.bonus ?? 0) })
+      );
+    } catch (err: unknown) {
+      console.error('[IAP] 구매 후 처리 실패:', err);
+      Alert.alert(t('common.error'), t('credits.purchase.charge_failed'));
+    } finally {
+      setPurchasing(false);
+      purchasingPackageRef.current = null;
+    }
+  }, [purchaseMutation, success, t]);
+
+  /** 구매 에러 — 사용자 취소 or 결제 실패 */
+  const handlePurchaseError = useCallback((error: PurchaseError) => {
+    setPurchasing(false);
+    purchasingPackageRef.current = null;
+
+    // 사용자가 직접 취소한 경우
+    if (isUserCancelledError(error)) {
+      console.log('[IAP] 사용자 취소');
+      return;
+    }
+
+    console.error('[IAP] 구매 에러:', error);
+    Alert.alert(t('credits.purchase.payment_failed'), error.message || t('credits.purchase.payment_error'));
+  }, [t]);
 
   // ========================================================================
   // Apple IAP 초기화
@@ -154,68 +211,13 @@ export default function CreditsScreen() {
       listenerCleanup?.remove();
       disconnectFromStore();
     };
-  }, []);
-
-  // ========================================================================
-  // 구매 리스너 핸들러
-  // ========================================================================
-
-  /** 구매 성공 — Apple 영수증 수신 → DB 크레딧 충전 → 트랜잭션 완료 */
-  const handlePurchaseSuccess = useCallback(async (purchase: Purchase) => {
-    try {
-      const productId = purchase.productId;
-      const packageId = appleProductIdToPackageId(productId);
-
-      if (!packageId) {
-        console.warn('[IAP] 알 수 없는 상품:', productId);
-        setPurchasing(false);
-        return;
-      }
-
-      // DB에 크레딧 충전 (트랜잭션 ID 함께 전달)
-      await purchaseMutation.mutateAsync({
-        packageId,
-        iapReceiptId: purchase.id || undefined,
-      });
-
-      // Apple에 소비 완료 전송 (Consumable 상품이므로 필수)
-      await completePurchase(purchase);
-
-      success();
-      const pkg = CREDIT_PACKAGES.find(p => p.id === packageId);
-      Alert.alert(
-        '구매 완료!',
-        `${(pkg?.credits ?? 0) + (pkg?.bonus ?? 0)} 도토리가 충전되었습니다.`
-      );
-    } catch (err: any) {
-      console.error('[IAP] 구매 후 처리 실패:', err);
-      Alert.alert('오류', '결제는 완료되었으나 도토리 충전에 실패했습니다.\n고객센터에 문의해 주세요.');
-    } finally {
-      setPurchasing(false);
-      purchasingPackageRef.current = null;
-    }
-  }, [purchaseMutation, success]);
-
-  /** 구매 에러 — 사용자 취소 or 결제 실패 */
-  const handlePurchaseError = useCallback((error: PurchaseError) => {
-    setPurchasing(false);
-    purchasingPackageRef.current = null;
-
-    // 사용자가 직접 취소한 경우
-    if (isUserCancelledError(error)) {
-      console.log('[IAP] 사용자 취소');
-      return;
-    }
-
-    console.error('[IAP] 구매 에러:', error);
-    Alert.alert('결제 실패', error.message || '결제 중 오류가 발생했습니다.');
-  }, []);
+  }, [handlePurchaseSuccess, handlePurchaseError]);
 
   // ========================================================================
   // 구매 실행
   // ========================================================================
 
-  const handlePurchase = async (packageId: string) => {
+  const _handlePurchase = async (packageId: string) => {
     heavyTap();
 
     const pkg = CREDIT_PACKAGES.find(p => p.id === packageId);
@@ -224,19 +226,19 @@ export default function CreditsScreen() {
     // Expo Go 또는 비-iOS → 시뮬레이션 모드
     if (isExpoGoEnv || Platform.OS !== 'ios') {
       Alert.alert(
-        '도토리 구매',
-        `${pkg.name} 패키지 (${pkg.credits + pkg.bonus} 도토리)를\n${pkg.priceLabel}에 구매하시겠습니까?\n\n⚠️ EAS 빌드에서만 실제 결제가 진행됩니다.\n(현재: 시뮬레이션 모드)`,
+        t('credits.purchase.title'),
+        t('credits.purchase.sim_confirm', { name: pkg.name, amount: pkg.credits + pkg.bonus, price: pkg.priceLabel }),
         [
-          { text: '취소', style: 'cancel' },
+          { text: t('common.cancel'), style: 'cancel' },
           {
-            text: '시뮬레이션 구매',
+            text: t('credits.purchase.sim_buy'),
             onPress: async () => {
               try {
                 await purchaseMutation.mutateAsync({ packageId });
                 success();
-                Alert.alert('구매 완료!', `${pkg.credits + pkg.bonus} 도토리가 충전되었습니다.`);
-              } catch (err: any) {
-                Alert.alert('오류', err.message || '구매에 실패했습니다');
+                Alert.alert(t('credits.purchase.complete_title'), t('credits.purchase.complete_message', { amount: pkg.credits + pkg.bonus }));
+              } catch (err: unknown) {
+                Alert.alert(t('common.error'), (err instanceof Error ? err.message : undefined) || t('credits.purchase.buy_failed'));
               }
             },
           },
@@ -247,7 +249,7 @@ export default function CreditsScreen() {
 
     // IAP 연결 안됨
     if (!iapConnected) {
-      Alert.alert('연결 오류', '앱 스토어에 연결할 수 없습니다.\n잠시 후 다시 시도해 주세요.');
+      Alert.alert(t('credits.purchase.connection_error_title'), t('credits.purchase.connection_error_message'));
       return;
     }
 
@@ -261,12 +263,12 @@ export default function CreditsScreen() {
     try {
       await purchaseProduct(pkg.appleProductId);
       // 결과는 handlePurchaseSuccess / handlePurchaseError 리스너에서 처리됨
-    } catch (err: any) {
+    } catch (err: unknown) {
       setPurchasing(false);
       purchasingPackageRef.current = null;
       // 사용자 취소가 아닌 경우에만 에러 표시
-      if (err?.code !== ErrorCode.UserCancelled) {
-        Alert.alert('결제 오류', '결제를 시작할 수 없습니다.\n잠시 후 다시 시도해 주세요.');
+      if ((err as { code?: string })?.code !== ErrorCode.UserCancelled) {
+        Alert.alert(t('credits.purchase.payment_error_title'), t('credits.purchase.payment_error_message'));
       }
     }
   };
@@ -276,7 +278,7 @@ export default function CreditsScreen() {
   // ========================================================================
 
   /** Apple 스토어에서 받은 실제 가격 (로컬라이즈됨) */
-  const getApplePrice = (appleProductId: string): string | null => {
+  const _getApplePrice = (appleProductId: string): string | null => {
     const product = iapProducts.find(p => p.id === appleProductId);
     return product?.displayPrice ?? null;
   };
@@ -286,14 +288,9 @@ export default function CreditsScreen() {
   // ========================================================================
 
   const getTransactionLabel = (tx: CreditTransaction) => {
-    const labels: Record<string, string> = {
-      purchase: '도토리 구매',
-      spend: '도토리 사용',
-      refund: '환불',
-      bonus: '보너스',
-      subscription_bonus: '구독 보너스',
-    };
-    return labels[tx.type] || tx.type;
+    const key = `credits.tx_type.${tx.type}`;
+    const translated = t(key);
+    return translated !== key ? translated : tx.type;
   };
 
   const getTransactionIcon = (tx: CreditTransaction) => {
@@ -319,7 +316,7 @@ export default function CreditsScreen() {
           <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7}>
             <Ionicons name="close" size={24} color="#FFF" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>도토리 안내</Text>
+          <Text style={styles.headerTitle}>{t('credits.header_title')}</Text>
           <View style={{ width: 24 }} />
         </View>
 
@@ -328,8 +325,7 @@ export default function CreditsScreen() {
           <View style={styles.expoGoBanner}>
             <Ionicons name="information-circle" size={20} color="#FFB74D" />
             <Text style={styles.expoGoBannerText}>
-              Expo Go에서는 시뮬레이션 모드로 동작합니다.{'\n'}
-              실제 결제는 EAS 빌드(TestFlight)에서 가능합니다.
+              {t('credits.expo_go_banner')}
             </Text>
           </View>
         )}
@@ -337,12 +333,12 @@ export default function CreditsScreen() {
         {/* 현재 잔액 */}
         <View style={styles.balanceCard}>
           <Text style={{ fontSize: 64 }}>🌰</Text>
-          <Text style={styles.balanceLabel}>보유 도토리</Text>
+          <Text style={styles.balanceLabel}>{t('credits.balance_label')}</Text>
           <Text style={styles.balanceValue}>
-            {creditsLoading ? '...' : (credits?.balance ?? 0).toLocaleString()}개
+            {creditsLoading ? '...' : t('credits.balance_count', { count: (credits?.balance ?? 0).toLocaleString() })}
           </Text>
           <Text style={styles.balanceKRW}>
-            {creditsLoading ? '' : `₩${((credits?.balance ?? 0) * CREDIT_TO_KRW).toLocaleString()} 상당`}
+            {creditsLoading ? '' : t('credits.balance_krw', { amount: ((credits?.balance ?? 0) * CREDIT_TO_KRW).toLocaleString() })}
           </Text>
         </View>
 
@@ -351,10 +347,9 @@ export default function CreditsScreen() {
           <View style={styles.trialBanner}>
             <Ionicons name="gift" size={24} color="#4CAF50" />
             <View style={{ flex: 1, marginLeft: 12 }}>
-              <Text style={styles.trialTitle}>무료로 도토리를 모아보세요!</Text>
+              <Text style={styles.trialTitle}>{t('credits.trial_title')}</Text>
               <Text style={styles.trialDesc}>
-                아래 활동으로 도토리를 획득하면{'\n'}
-                2026년 6월 1일 이후에도 AI 분석/시뮬레이션에 사용할 수 있어요.
+                {t('credits.trial_desc')}
               </Text>
             </View>
           </View>
@@ -363,16 +358,16 @@ export default function CreditsScreen() {
         {/* 크레딧 획득 방법 카드 */}
         {!chargingOpen && (
           <View style={styles.earnSection}>
-            <Text style={styles.sectionTitle}>도토리 획득 방법</Text>
+            <Text style={styles.sectionTitle}>{t('credits.earn_title')}</Text>
             {[
-              { icon: 'calendar-outline' as const, label: '매일 출석 체크', credits: 2, desc: '앱을 열면 자동 적립', route: null },
-              { icon: 'checkmark-circle-outline' as const, label: '예측 적중', credits: 3, desc: '투표 결과가 맞으면 보상', route: '/(tabs)' as const },
-              { icon: 'heart-outline' as const, label: '투자 감정 기록', credits: 5, desc: '오늘의 감정을 기록하면 보상', route: '/(tabs)/rebalance' as const },
-              { icon: 'share-social-outline' as const, label: '인스타 공유', credits: 5, desc: '분석 결과를 캡처해서 공유', route: '/analysis/what-if' as const },
-              { icon: 'trophy-outline' as const, label: '성취 배지 해금', credits: '3~30', desc: '배지 획득 시 크레딧 보상 (총 128개)', route: '/achievements' as const },
-              { icon: 'people-outline' as const, label: '친구 추천', credits: 50, desc: '내 추천 코드로 친구가 가입', route: 'referral' as const },
-              { icon: 'wallet-outline' as const, label: '자산 3개 등록', credits: 20, desc: '자산 3종목 이상 등록 시 1회', route: '/add-asset' as const },
-              { icon: 'sparkles-outline' as const, label: '환영 보너스', credits: 10, desc: '신규 가입 시 1회 지급', route: null },
+              { icon: 'calendar-outline' as const, labelKey: 'credits.earn.daily_checkin', credits: 2, descKey: 'credits.earn.daily_checkin_desc', route: null },
+              { icon: 'checkmark-circle-outline' as const, labelKey: 'credits.earn.prediction_hit', credits: 3, descKey: 'credits.earn.prediction_hit_desc', route: '/(tabs)' as const },
+              { icon: 'heart-outline' as const, labelKey: 'credits.earn.emotion_log', credits: 5, descKey: 'credits.earn.emotion_log_desc', route: '/(tabs)/rebalance' as const },
+              { icon: 'share-social-outline' as const, labelKey: 'credits.earn.insta_share', credits: 5, descKey: 'credits.earn.insta_share_desc', route: '/analysis/what-if' as const },
+              { icon: 'trophy-outline' as const, labelKey: 'credits.earn.badge_unlock', credits: '3~30', descKey: 'credits.earn.badge_unlock_desc', route: '/achievements' as const },
+              { icon: 'people-outline' as const, labelKey: 'credits.earn.referral', credits: 50, descKey: 'credits.earn.referral_desc', route: 'referral' as const },
+              { icon: 'wallet-outline' as const, labelKey: 'credits.earn.register_3_assets', credits: 20, descKey: 'credits.earn.register_3_assets_desc', route: '/add-asset' as const },
+              { icon: 'sparkles-outline' as const, labelKey: 'credits.earn.welcome_bonus', credits: 10, descKey: 'credits.earn.welcome_bonus_desc', route: null },
             ].map((item, idx) => (
               <TouchableOpacity
                 key={idx}
@@ -386,18 +381,18 @@ export default function CreditsScreen() {
                     return;
                   }
                   mediumTap();
-                  router.push(item.route as any);
+                  router.push(item.route as never);
                 }}
               >
                 <View style={styles.earnIconWrap}>
                   <Ionicons name={item.icon} size={20} color="#4CAF50" />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.earnLabel}>{item.label}</Text>
-                  <Text style={styles.earnDesc}>{item.desc}</Text>
+                  <Text style={styles.earnLabel}>{t(item.labelKey)}</Text>
+                  <Text style={styles.earnDesc}>{t(item.descKey)}</Text>
                 </View>
                 <View style={styles.earnBadge}>
-                  <Text style={styles.earnBadgeText}>+{item.credits}개</Text>
+                  <Text style={styles.earnBadgeText}>+{item.credits}</Text>
                 </View>
                 {item.route && (
                   <Ionicons name="chevron-forward" size={16} color="#555" style={{ marginLeft: 4 }} />
@@ -410,26 +405,26 @@ export default function CreditsScreen() {
               <View style={styles.referralSection}>
                 {/* 내 추천 코드 */}
                 <View style={styles.referralMyCode}>
-                  <Text style={styles.referralLabel}>내 추천 코드</Text>
+                  <Text style={styles.referralLabel}>{t('credits.referral.my_code')}</Text>
                   <View style={styles.referralCodeRow}>
                     <Text style={styles.referralCode}>{myReferralCode || '...'}</Text>
                     <TouchableOpacity style={styles.referralShareBtn} onPress={handleShareReferral}>
                       <Ionicons name="share-outline" size={16} color="#FFF" />
-                      <Text style={styles.referralShareText}>공유하기</Text>
+                      <Text style={styles.referralShareText}>{t('common.share')}</Text>
                     </TouchableOpacity>
                   </View>
-                  <Text style={styles.referralHint}>친구가 가입하고 3일 접속하면 나에게 20개, 친구에게 즉시 10개!</Text>
+                  <Text style={styles.referralHint}>{t('credits.referral.hint')}</Text>
                 </View>
 
                 {/* 친구 코드 입력 */}
                 <View style={styles.referralInputSection}>
-                  <Text style={styles.referralLabel}>친구 추천 코드 입력</Text>
+                  <Text style={styles.referralLabel}>{t('credits.referral.enter_code')}</Text>
                   <View style={styles.referralInputRow}>
                     <TextInput
                       style={styles.referralInput}
                       value={friendCode}
                       onChangeText={setFriendCode}
-                      placeholder="6자리 코드 입력"
+                      placeholder={t('credits.referral.code_placeholder')}
                       placeholderTextColor="#555"
                       maxLength={6}
                       autoCapitalize="characters"
@@ -442,7 +437,7 @@ export default function CreditsScreen() {
                       {referralLoading ? (
                         <ActivityIndicator size="small" color="#FFF" />
                       ) : (
-                        <Text style={styles.referralApplyText}>적용</Text>
+                        <Text style={styles.referralApplyText}>{t('common.apply')}</Text>
                       )}
                     </TouchableOpacity>
                   </View>
@@ -453,7 +448,7 @@ export default function CreditsScreen() {
             <View style={styles.earnTip}>
               <Ionicons name="information-circle" size={16} color="#7C4DFF" />
               <Text style={styles.earnTipText}>
-                획득한 도토리로 딥다이브 분석, 위기 시뮬레이션, AI 버핏 티타임 등을 이용하세요!
+                {t('credits.earn_tip')}
               </Text>
             </View>
           </View>
@@ -465,7 +460,7 @@ export default function CreditsScreen() {
         {/* 거래 내역 */}
         {history && history.length > 0 && (
           <View style={styles.historySection}>
-            <Text style={styles.sectionTitle}>거래 내역</Text>
+            <Text style={styles.sectionTitle}>{t('credits.history_title')}</Text>
             {history.map((tx) => (
               <View key={tx.id} style={styles.txRow}>
                 <Ionicons
@@ -488,7 +483,7 @@ export default function CreditsScreen() {
                   >
                     {tx.amount >= 0 ? '+' : ''}{tx.amount}
                   </Text>
-                  <Text style={styles.txBalance}>잔액: {tx.balance_after}</Text>
+                  <Text style={styles.txBalance}>{t('credits.tx_balance', { amount: tx.balance_after })}</Text>
                 </View>
               </View>
             ))}
@@ -497,12 +492,9 @@ export default function CreditsScreen() {
 
         {/* 안내 */}
         <View style={styles.infoSection}>
-          <Text style={styles.infoTitle}>도토리 안내</Text>
+          <Text style={styles.infoTitle}>{t('credits.info_title')}</Text>
           <Text style={styles.infoText}>
-            - 도토리는 AI 프리미엄 기능 이용에 사용됩니다{'\n'}
-            - AI 분석 실패 시 도토리가 자동 환불됩니다{'\n'}
-            - 다양한 활동으로 무료 도토리를 획득할 수 있습니다{'\n'}
-            - 충전소는 2026년 6월 1일부터 순차 오픈됩니다
+            {t('credits.info_text')}
           </Text>
         </View>
       </ScrollView>

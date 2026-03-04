@@ -31,6 +31,7 @@ import type { BrandShop, BrandCategory } from '../../types/village';
 import { BRAND_SHOPS } from '../../data/brandWorldConfig';
 import { BrandShopCard } from './BrandShopCard';
 import type { ThemeColors } from '../../styles/colors';
+import { useLocale } from '../../context/LocaleContext';
 
 // ============================================================================
 // 타입
@@ -45,8 +46,6 @@ interface BrandMarketProps {
   onBrandPress: (brand: BrandShop) => void;
   /** 테마 색상 */
   colors: ThemeColors;
-  /** 로케일 (ko/en) */
-  locale?: string;
   /**
    * 실시간 주가 등락률 맵 (ticker → %)
    * 예: { 'AAPL': 1.23, 'TSLA': -2.5 }
@@ -163,16 +162,15 @@ interface PopularSectionProps {
   stockChanges: Record<string, number>;
   onBrandPress: (brand: BrandShop) => void;
   colors: ThemeColors;
-  locale: string;
 }
 
-function PopularSection({ brands, stockChanges, onBrandPress, colors, locale }: PopularSectionProps) {
+function PopularSection({ brands, stockChanges, onBrandPress, colors }: PopularSectionProps) {
+  const { t } = useLocale();
   if (brands.length === 0) return null;
-  const isKo = locale === 'ko';
   return (
     <View style={styles.popularSection}>
       <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-        {isKo ? '🔥 오늘의 인기 상점' : '🔥 Popular Today'}
+        {t('brandMarket.popularToday')}
       </Text>
       <ScrollView
         horizontal
@@ -185,7 +183,6 @@ function PopularSection({ brands, stockChanges, onBrandPress, colors, locale }: 
               brand={brand}
               onPress={onBrandPress}
               colors={colors}
-              locale={locale}
               stockChange={brand.ticker ? stockChanges[brand.ticker] : undefined}
             />
           </View>
@@ -204,10 +201,9 @@ const BrandMarket = React.memo(({
   onClose,
   onBrandPress,
   colors,
-  locale = 'ko',
   stockChanges = {},
 }: BrandMarketProps) => {
-  const isKo = locale === 'ko';
+  const { t, language } = useLocale();
 
   const [activeCategory, setActiveCategory] = useState<CategoryFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -218,10 +214,10 @@ const BrandMarket = React.memo(({
     return BRAND_SHOPS.filter((brand) => {
       const categoryMatch =
         activeCategory === 'all' || brand.category === activeCategory;
-      const searchMatch = matchesSearch(brand, searchQuery, isKo);
+      const searchMatch = matchesSearch(brand, searchQuery, language === 'ko');
       return categoryMatch && searchMatch;
     });
-  }, [activeCategory, searchQuery, isKo]);
+  }, [activeCategory, searchQuery, language]);
 
   // 오늘의 인기 상점 (stockChanges 있을 때만)
   const popularBrands = useMemo(() => {
@@ -257,12 +253,11 @@ const BrandMarket = React.memo(({
           brand={item}
           onPress={handleBrandPress}
           colors={colors}
-          locale={locale}
           stockChange={item.ticker ? stockChanges[item.ticker] : undefined}
         />
       </View>
     ),
-    [handleBrandPress, colors, locale, stockChanges],
+    [handleBrandPress, colors, stockChanges],
   );
 
   const keyExtractor = useCallback((item: BrandShop) => item.brandId, []);
@@ -288,7 +283,7 @@ const BrandMarket = React.memo(({
         >
           <View style={styles.headerTitleRow}>
             <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
-              {isKo ? '🏘️ 시장 거리' : '🏘️ Market Street'}
+              {t('brandMarket.title')}
             </Text>
             <TouchableOpacity
               style={[styles.closeBtn, { backgroundColor: colors.surfaceElevated }]}
@@ -299,7 +294,7 @@ const BrandMarket = React.memo(({
             </TouchableOpacity>
           </View>
           <Text style={[styles.headerSubtitle, { color: colors.textTertiary }]}>
-            {isKo
+            {language === 'ko'
               ? `총 ${BRAND_SHOPS.length}개 상점 · 피터 린치처럼 탐험하세요`
               : `${BRAND_SHOPS.length} shops · Explore like Peter Lynch`}
           </Text>
@@ -311,7 +306,7 @@ const BrandMarket = React.memo(({
           <TextInput
             ref={searchRef}
             style={[styles.searchInput, { color: colors.textPrimary }]}
-            placeholder={isKo ? '상점명, 기업명, 티커 검색...' : 'Search shops, companies, tickers...'}
+            placeholder={t('brandMarket.searchPlaceholder')}
             placeholderTextColor={colors.textTertiary}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -340,7 +335,7 @@ const BrandMarket = React.memo(({
               isActive={activeCategory === tab.id}
               onPress={handleCategoryPress}
               colors={colors}
-              isKo={isKo}
+              isKo={language === 'ko'}
             />
           ))}
         </ScrollView>
@@ -362,7 +357,6 @@ const BrandMarket = React.memo(({
                 stockChanges={stockChanges}
                 onBrandPress={handleBrandPress}
                 colors={colors}
-                locale={locale}
               />
             ) : null
           }
@@ -371,7 +365,7 @@ const BrandMarket = React.memo(({
             <View style={styles.emptyState}>
               <Text style={styles.emptyEmoji}>🔍</Text>
               <Text style={[styles.emptyText, { color: colors.textTertiary }]}>
-                {isKo
+                {language === 'ko'
                   ? `"${searchQuery}"에 해당하는 상점이 없어요`
                   : `No shops found for "${searchQuery}"`}
               </Text>

@@ -34,7 +34,7 @@ import AllocationPieChart, { PieSlice } from '../charts/AllocationPieChart';
 import { useTheme } from '../../hooks/useTheme';
 import { ThemeColors } from '../../styles/colors';
 import TermTooltip from '../common/TermTooltip';
-import { CAT_ICONS } from '../../constants/categoryIcons';
+import { CAT_ICONS as _CAT_ICONS } from '../../constants/categoryIcons';
 import { useLocale } from '../../context/LocaleContext';
 
 // ── 카테고리 설정 ──
@@ -235,7 +235,7 @@ export default function AllocationDriftSection({
   const [viewMode, setViewMode] = useState<ViewMode>('bar');
   const [philosophy, setPhilosophy] = useState<InvestmentPhilosophy>('dalio');
   const [target, setTarget] = useState<Record<AssetCategory, number>>(DEFAULT_TARGET);
-  const [editValues, setEditValues] = useState<Record<AssetCategory, string>>({} as any);
+  const [editValues, setEditValues] = useState<Record<AssetCategory, string>>({} as Record<AssetCategory, string>);
 
   // ── ⓘ 카테고리 상세 정보 모달 ──
   const [infoKey, setInfoKey] = useState<AssetCategory | null>(null);
@@ -447,10 +447,10 @@ export default function AllocationDriftSection({
   }, [assets]);
 
   // 편집 모드 시작
-  const startEditing = useCallback(() => {
+  const _startEditing = useCallback(() => {
     const vals: Record<string, string> = {};
     CATEGORIES.forEach(c => { vals[c.key] = String(target[c.key] ?? 0); });
-    setEditValues(vals as any);
+    setEditValues(vals as Record<AssetCategory, string>);
     setIsEditing(true);
   }, [target]);
 
@@ -475,7 +475,7 @@ export default function AllocationDriftSection({
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newTarget));
     await AsyncStorage.setItem(PHILOSOPHY_STORAGE_KEY, 'custom');
     setIsEditing(false);
-  }, [editValues, onTargetChange]);
+  }, [editValues, onTargetChange, t]);
 
   // 편집 합계
   const editSum = useMemo(() => {

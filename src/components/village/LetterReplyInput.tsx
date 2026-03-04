@@ -21,33 +21,7 @@ import {
   Alert,
 } from 'react-native';
 import { sendReply, getRemainingReplies } from '../../services/letterReplyService';
-
-// ============================================================================
-// i18n
-// ============================================================================
-
-const TEXT = {
-  ko: {
-    placeholder: '구루에게 답장을 작성하세요...',
-    send: '보내기',
-    hint: '답장은 다음 방문 시 도착합니다',
-    remaining: (n: number) => `이번 주 답장 ${n}회 남음`,
-    noReplies: '이번 주 무료 답장을 모두 사용했습니다',
-    premiumHint: 'Premium 회원은 무제한',
-    sent: '답장을 보냈습니다!',
-    charCount: (n: number) => `${n}/200`,
-  },
-  en: {
-    placeholder: 'Write a reply to the guru...',
-    send: 'Send',
-    hint: 'Reply will arrive on your next visit',
-    remaining: (n: number) => `${n} free replies left this week`,
-    noReplies: 'No free replies left this week',
-    premiumHint: 'Unlimited for Premium',
-    sent: 'Reply sent!',
-    charCount: (n: number) => `${n}/200`,
-  },
-};
+import { useLocale } from '../../context/LocaleContext';
 
 // ============================================================================
 // Props
@@ -55,7 +29,6 @@ const TEXT = {
 
 interface LetterReplyInputProps {
   guruId: string;
-  locale?: string;
   isPremium?: boolean;
   colors: {
     surface: string;
@@ -73,12 +46,10 @@ interface LetterReplyInputProps {
 
 export function LetterReplyInput({
   guruId,
-  locale = 'ko',
   isPremium = false,
   colors,
 }: LetterReplyInputProps) {
-  const isKo = locale === 'ko';
-  const t = isKo ? TEXT.ko : TEXT.en;
+  const { t } = useLocale();
 
   const [message, setMessage] = useState('');
   const [remaining, setRemaining] = useState<number | null>(null);
@@ -94,7 +65,7 @@ export function LetterReplyInput({
 
     const left = await getRemainingReplies(isPremium);
     if (!isPremium && left <= 0) {
-      Alert.alert('', t.noReplies);
+      Alert.alert('', t('letterReply.noReplies'));
       return;
     }
 
@@ -104,19 +75,19 @@ export function LetterReplyInput({
     setRemaining(prev => (prev !== null && !isPremium ? prev - 1 : prev));
 
     setTimeout(() => setSent(false), 3000);
-  }, [message, guruId, isPremium, t.noReplies]);
+  }, [message, guruId, isPremium, t]);
 
   const canSend = message.trim().length > 0 && (isPremium || (remaining !== null && remaining > 0));
 
   return (
     <View style={[styles.container, { backgroundColor: colors.surface, borderColor: colors.border }]}>
       {sent ? (
-        <Text style={[styles.sentText, { color: colors.primary }]}>{t.sent}</Text>
+        <Text style={[styles.sentText, { color: colors.primary }]}>{t('letterReply.sent')}</Text>
       ) : (
         <>
           <TextInput
             style={[styles.input, { color: colors.textPrimary, borderColor: colors.border }]}
-            placeholder={t.placeholder}
+            placeholder={t('letterReply.placeholder')}
             placeholderTextColor={colors.textTertiary}
             value={message}
             onChangeText={text => setMessage(text.slice(0, 200))}
@@ -126,16 +97,16 @@ export function LetterReplyInput({
           <View style={styles.bottomRow}>
             <View style={styles.infoCol}>
               <Text style={[styles.charCount, { color: colors.textTertiary }]}>
-                {t.charCount(message.length)}
+                {`${message.length}/200`}
               </Text>
               {remaining !== null && !isPremium && (
                 <Text style={[styles.remainingText, { color: colors.textTertiary }]}>
-                  {t.remaining(remaining)}
+                  {t('letterReply.remaining', { count: remaining })}
                 </Text>
               )}
               {isPremium && (
                 <Text style={[styles.remainingText, { color: colors.primary }]}>
-                  {t.premiumHint}
+                  {t('letterReply.premiumHint')}
                 </Text>
               )}
             </View>
@@ -145,10 +116,10 @@ export function LetterReplyInput({
               disabled={!canSend}
               activeOpacity={0.7}
             >
-              <Text style={styles.sendButtonText}>{t.send}</Text>
+              <Text style={styles.sendButtonText}>{t('letterReply.send')}</Text>
             </TouchableOpacity>
           </View>
-          <Text style={[styles.hint, { color: colors.textTertiary }]}>{t.hint}</Text>
+          <Text style={[styles.hint, { color: colors.textTertiary }]}>{t('letterReply.hint')}</Text>
         </>
       )}
     </View>

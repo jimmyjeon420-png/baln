@@ -53,7 +53,7 @@ export default function StreakBadge({ currentStreak, isBroken }: StreakBadgeProp
     } else {
       scale.value = withTiming(1, { duration: 300 });
     }
-  }, [streakLevel, isBroken]);
+  }, [streakLevel, isBroken, scale]);
 
   // 연속 끊김 애니메이션
   useEffect(() => {
@@ -65,7 +65,7 @@ export default function StreakBadge({ currentStreak, isBroken }: StreakBadgeProp
         withTiming(1.0, { duration: 200 }),
       );
     }
-  }, [isBroken]);
+  }, [isBroken, opacity]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],

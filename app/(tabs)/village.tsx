@@ -26,7 +26,6 @@ import {
   TextInput,
   KeyboardAvoidingView,
   FlatList,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -34,7 +33,8 @@ import { useRouter } from 'expo-router';
 // Context & Hooks
 import { useLocale } from '../../src/context/LocaleContext';
 import { useTheme } from '../../src/hooks/useTheme';
-import { useTimeOfDay } from '../../src/hooks/useTimeOfDay';
+import type { ThemeColors } from '../../src/styles/colors';
+import { useTimeOfDay, type TimeOfDay as HookTimeOfDay } from '../../src/hooks/useTimeOfDay';
 import { useMarketSentiment } from '../../src/hooks/useMarketSentiment';
 import { useVillageWorld } from '../../src/hooks/useVillageWorld';
 import { useVillageEvents } from '../../src/hooks/useVillageEvents';
@@ -43,8 +43,7 @@ import { useVillageDecay } from '../../src/hooks/useVillageDecay';
 import { useVillageSeason } from '../../src/hooks/useVillageSeason';
 
 // Village world components
-import { VillageWeatherBackground } from '../../src/components/village/VillageWeatherBackground';
-import type { TimeOfDay as WeatherTimeOfDay } from '../../src/components/village/VillageWeatherBackground';
+import { VillageWeatherBackground, type TimeOfDay as WeatherTimeOfDay } from '../../src/components/village/VillageWeatherBackground';
 import ProsperityMeter from '../../src/components/village/ProsperityMeter';
 // ActivityBubble 제거 — 텍스트 대신 캐릭터 애니메이션으로 활동 표현
 import GuruDetailSheet from '../../src/components/village/GuruDetailSheet';
@@ -88,8 +87,7 @@ import VillageNewspaper from '../../src/components/village/VillageNewspaper';
 import { getCachedReactions, getFallbackReactions } from '../../src/services/newsReactionService';
 
 // Types
-import type { GuruLetter, NewspaperArticle, BrandShop } from '../../src/types/village';
-import type { TimeOfDay as HookTimeOfDay } from '../../src/hooks/useTimeOfDay';
+import type { NewspaperArticle, BrandShop } from '../../src/types/village';
 
 // ============================================================================
 // 시간대 매핑 (useTimeOfDay → VillageWeatherBackground)
@@ -116,7 +114,7 @@ function mapTimeOfDay(hookPeriod: HookTimeOfDay): WeatherTimeOfDay {
 
 interface SpeechBubbleProps {
   text: string;
-  colors: any;
+  colors: ThemeColors;
   /** 대화 상대 이름 (있으면 "→ 상대에게" 표시) */
   replyToName?: string;
   /** 말하는 구루 이름 */
@@ -231,12 +229,12 @@ export default function VillageScreen() {
     openGuruChat,
     closeGuruChat,
     positions,
-    conversations,
+    conversations: _conversations,
     userChatGuru,
     userChatMessages,
     isUserChatLoading,
     userChatError,
-    sendMessageToGuru,
+    sendMessageToGuru: _sendMessageToGuru,
     retryLastMessage,
     addInteraction,
     prosperityLevel,
@@ -246,8 +244,8 @@ export default function VillageScreen() {
     letters,
     unreadCount,
     openLetter,
-    getTopFriends,
-    friendships,
+    getTopFriends: _getTopFriends,
+    friendships: _friendships,
     isLoading,
   } = useVillageWorld(sentiment?.overall);
 
@@ -287,7 +285,7 @@ export default function VillageScreen() {
   const [showGiftModal, setShowGiftModal] = useState(false);
   const [giftTargetGuruId, setGiftTargetGuruId] = useState<string | null>(null);
   const [showLevelUp, setShowLevelUp] = useState(false);
-  const [newLevelForCelebration, setNewLevelForCelebration] = useState(1);
+  const [newLevelForCelebration, _setNewLevelForCelebration] = useState(1);
 
   // 신문 데이터 로드: 캐시 → 폴백
   useEffect(() => {
@@ -329,7 +327,7 @@ export default function VillageScreen() {
     setSelectedGuruId(null); // 디테일 시트 닫기
   }, []);
 
-  const handleGiftSend = useCallback(async (guruId: string, cost: number, friendshipGain: number) => {
+  const handleGiftSend = useCallback(async (guruId: string, _cost: number, _friendshipGain: number) => {
     // 선물 보내기 → 우정 포인트 + 번영 포인트
     // 1. 우정 포인트 적립 (gift 타입 — 기본 5점 + 선물 크기별 추가)
     await addInteraction(guruId, 'gift').catch(() => {});
@@ -381,7 +379,7 @@ export default function VillageScreen() {
   // ── Main Render ─────────────────────────────────────────────────────────
 
   const mappedTimeOfDay = mapTimeOfDay(timeOfDayTheme.period);
-  const isKo = language === 'ko';
+  const isKo = language === 'ko'; // kept for guru name locale lookup in GURU_CHARACTER_CONFIGS
 
   return (
     <View style={styles.root}>
@@ -409,7 +407,6 @@ export default function VillageScreen() {
                 clothingLevel={clothingLevel}
                 compact
                 colors={colors}
-                locale={language}
               />
             </View>
 
@@ -447,11 +444,11 @@ export default function VillageScreen() {
 
           {/* ── P2-4: 특별한 날 배너 (구루 생일/기념일) ─────────────── */}
           <View style={styles.eventBannerContainer}>
-            <SpecialDayBanner colors={colors} locale={language} />
+            <SpecialDayBanner colors={colors} />
           </View>
 
           {/* ── 린치의 화요 마트 순찰 (화요일만 표시) ─────────────── */}
-          <LynchMartTour colors={colors} locale={language} />
+          <LynchMartTour colors={colors} />
 
           {/* ── Event Banner ──────────────────────────────────────────── */}
           <View style={styles.eventBannerContainer}>
@@ -460,7 +457,6 @@ export default function VillageScreen() {
               onPress={handleEventPress}
               onDismiss={handleEventDismiss}
               colors={colors}
-              locale={language}
             />
           </View>
 
@@ -510,7 +506,6 @@ export default function VillageScreen() {
                 acknowledgeUpgrade();
                 setShowHouseInterior(true);
               }}
-              locale={language}
             />
 
             {/* ── P1-1: 계절 파티클 (벚꽃/반딧불/낙엽/눈) ──────── */}
@@ -526,13 +521,12 @@ export default function VillageScreen() {
               timeOfDay={mappedTimeOfDay}
               season={seasonVisuals.season}
               colors={colors}
-              locale={language}
             />
 
             {/* ── P1-6: 구루 관계 상호작용 이펙트 ──────────────── */}
             <GuruInteractionEffect
               interactions={(() => {
-                const pairs: Array<{ guru1Id: string; guru2Id: string; relation: 'ally' | 'rival' | 'neutral'; midX: number; midY: number; distance: number }> = [];
+                const pairs: { guru1Id: string; guru2Id: string; relation: 'ally' | 'rival' | 'neutral'; midX: number; midY: number; distance: number }[] = [];
                 const seen = new Set<string>();
                 for (let i = 0; i < positions.length; i++) {
                   for (let j = i + 1; j < positions.length; j++) {
@@ -590,9 +584,9 @@ export default function VillageScreen() {
                   style={[
                     styles.connectionLine,
                     {
-                      left: `${midX}%` as any,
-                      top: `${midY}%` as any,
-                      width: `${length}%` as any,
+                      left: `${midX}%` as unknown as number,
+                      top: `${midY}%` as unknown as number,
+                      width: `${length}%` as unknown as number,
                       borderColor: colors.primary + '40',
                       transform: [
                         { translateX: -(length / 2) * (screenWidth / 100) / 2 },
@@ -631,7 +625,7 @@ export default function VillageScreen() {
                       key={`rel-${pairKey}`}
                       style={[
                         styles.proximityIndicator,
-                        { left: `${midX}%` as any, top: `${midY}%` as any },
+                        { left: `${midX}%` as unknown as number, top: `${midY}%` as unknown as number },
                       ]}
                     >
                       <Text style={styles.proximityEmoji}>
@@ -691,8 +685,8 @@ export default function VillageScreen() {
                     style={[
                       styles.guruContainer,
                       {
-                        left: `${Math.round(pos.x * 100)}%` as any,
-                        top: `${Math.round(pos.y * 100)}%` as any,
+                        left: `${Math.round(pos.x * 100)}%` as unknown as number,
+                        top: `${Math.round(pos.y * 100)}%` as unknown as number,
                       },
                       // ★ 말풍선 있는 구루 → 맨 앞으로 (다른 캐릭터에 안 가려지게)
                       hasBubble && { zIndex: 100 },
@@ -765,7 +759,7 @@ export default function VillageScreen() {
                         ]}
                       >
                         <SpeechBubble
-                          text={pos.bubble!}
+                          text={pos.bubble ?? ''}
                           colors={colors}
                           replyToName={replyToName}
                           speakerName={speakerName}
@@ -854,7 +848,6 @@ export default function VillageScreen() {
             progress={prosperityProgress}
             todayPoints={todayPoints}
             colors={colors}
-            locale={language}
           />
         </View>
       )}
@@ -871,19 +864,16 @@ export default function VillageScreen() {
         onGift={handleGuruGift}
         onViewProfile={handleGuruViewProfile}
         colors={colors}
-        locale={language}
       />
 
       {/* ── 마을 출석 보상 팝업 (하루 1회) ────────────────────────────────── */}
       <VillageCheckInReward
         colors={colors}
-        locale={language}
       />
 
       {/* ── 마을 첫 진입 튜토리얼 오버레이 ─────────────────────────────── */}
       <VillageTutorialOverlay
         colors={colors}
-        locale={language}
       />
 
       {/* ── Letter Inbox Modal (placeholder — future component) ───────── */}
@@ -989,7 +979,6 @@ export default function VillageScreen() {
           }
         }}
         colors={colors}
-        locale={language}
       />
 
       {/* ── Village Newspaper (full modal with articles) ────────────────── */}
@@ -998,7 +987,6 @@ export default function VillageScreen() {
         isVisible={showNewspaper}
         onClose={() => setShowNewspaper(false)}
         colors={colors}
-        locale={language}
         onGuruPress={(guruId: string) => {
           setShowNewspaper(false);
           router.push(`/settings/guru-detail/${guruId}`);
@@ -1015,7 +1003,6 @@ export default function VillageScreen() {
         maxSlots={maxSlots}
         onPlaceFurniture={placeFurniture}
         onRemoveFurniture={removeFurniture}
-        locale={language}
       />
 
       {/* ── P1-2: 구루 선물 모달 ──────────────────────────────────────── */}
@@ -1025,7 +1012,6 @@ export default function VillageScreen() {
         onClose={() => { setShowGiftModal(false); setGiftTargetGuruId(null); }}
         onGift={handleGiftSend}
         colors={colors}
-        locale={language}
       />
 
       {/* ── 구루 1:1 채팅 모달 ──────────────────────────────────────── */}
@@ -1038,7 +1024,6 @@ export default function VillageScreen() {
         onRetry={retryLastMessage}
         onClose={closeGuruChat}
         colors={colors}
-        locale={language}
       />
 
       {/* ── P1-5: 번영도 레벨업 축하 연출 ──────────────────────────────── */}
@@ -1047,7 +1032,6 @@ export default function VillageScreen() {
         newLevel={newLevelForCelebration}
         onDismiss={() => setShowLevelUp(false)}
         colors={colors}
-        locale={language}
       />
 
       {/* ── 이스터에그 토스트 ──────────────────────────────────────── */}
@@ -1056,7 +1040,6 @@ export default function VillageScreen() {
         visible={easterEggToast?.visible ?? false}
         onDismiss={dismissToast}
         colors={colors}
-        locale={language}
       />
     </View>
   );
@@ -1068,14 +1051,13 @@ export default function VillageScreen() {
 
 interface GuruChatModalInlineProps {
   guruId: string | null;
-  messages: Array<{ id: string; speaker: string; message: string; sentiment: string; replyTo?: string }>;
+  messages: { id: string; speaker: string; message: string; sentiment: string; replyTo?: string }[];
   isLoading: boolean;
   hasError: boolean;
   onSend: (guruId: string, message: string) => Promise<void>;
   onRetry: () => void;
   onClose: () => void;
-  colors: any;
-  locale: string;
+  colors: ThemeColors;
 }
 
 function GuruChatModalInline({
@@ -1087,11 +1069,11 @@ function GuruChatModalInline({
   onRetry,
   onClose,
   colors,
-  locale,
 }: GuruChatModalInlineProps) {
   const [inputText, setInputText] = useState('');
   const flatListRef = useRef<FlatList>(null);
-  const isKo = locale === 'ko';
+  const { t, language } = useLocale();
+  const isKo = language === 'ko';
 
   if (!guruId) return null;
 
@@ -1144,14 +1126,10 @@ function GuruChatModalInline({
             <View style={chatStyles.emptyChat}>
               <CharacterAvatar guruId={guruId} size="lg" animated />
               <Text style={[chatStyles.emptyChatText, { color: colors.textSecondary }]}>
-                {isKo
-                  ? `${guruName}에게 무엇이든 물어보세요!`
-                  : `Ask ${guruName} anything!`}
+                {t('village.chat.ask_anything', { name: guruName })}
               </Text>
               <Text style={[chatStyles.emptyChatHint, { color: colors.textTertiary }]}>
-                {isKo
-                  ? '투자 철학, 시장 전망, 포트폴리오 조언...'
-                  : 'Investment philosophy, market outlook, portfolio advice...'}
+                {t('village.chat.hint')}
               </Text>
             </View>
           }
@@ -1188,10 +1166,10 @@ function GuruChatModalInline({
         {hasError && (
           <View style={[chatStyles.errorBar, { backgroundColor: colors.error + '20' }]}>
             <Text style={[chatStyles.errorText, { color: colors.error }]}>
-              {isKo ? '응답 실패' : 'Response failed'}
+              {t('village.chat.response_failed')}
             </Text>
             <TouchableOpacity onPress={onRetry} style={[chatStyles.retryBtn, { backgroundColor: colors.error }]}>
-              <Text style={chatStyles.retryText}>{isKo ? '다시 시도' : 'Retry'}</Text>
+              <Text style={chatStyles.retryText}>{t('common.retry')}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -1201,7 +1179,7 @@ function GuruChatModalInline({
           <View style={[chatStyles.typingBar, { backgroundColor: colors.surface }]}>
             <Text style={chatStyles.typingEmoji}>{config?.emoji ?? '🐾'}</Text>
             <Text style={[chatStyles.typingText, { color: colors.textTertiary }]}>
-              {isKo ? `${guruName} 생각 중...` : `${guruName} is thinking...`}
+              {t('village.chat.thinking', { name: guruName })}
             </Text>
           </View>
         )}
@@ -1212,7 +1190,7 @@ function GuruChatModalInline({
             style={[chatStyles.textInput, { backgroundColor: colors.surfaceElevated, color: colors.textPrimary }]}
             value={inputText}
             onChangeText={setInputText}
-            placeholder={isKo ? '메시지를 입력하세요...' : 'Type a message...'}
+            placeholder={t('village.chat.input_placeholder')}
             placeholderTextColor={colors.textTertiary}
             multiline
             maxLength={300}
@@ -1556,14 +1534,14 @@ const styles = StyleSheet.create({
   },
   speechTailTop: {
     top: -5,
-    left: '50%' as any,
+    left: '50%' as unknown as number,
     marginLeft: -4,
     borderTopWidth: 0,
     borderBottomWidth: 5,
   },
   speechTailBottom: {
     bottom: -5,
-    left: '50%' as any,
+    left: '50%' as unknown as number,
     marginLeft: -4,
     borderTopWidth: 5,
     borderBottomWidth: 0,

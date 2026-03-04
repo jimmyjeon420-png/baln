@@ -38,8 +38,6 @@ interface ProsperityMeterProps {
   todayPoints: number;
   /** 테마 색상 */
   colors: ThemeColors;
-  /** 로케일 (ko/en) */
-  locale?: string;
 }
 
 // ============================================================================

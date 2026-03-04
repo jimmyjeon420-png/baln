@@ -9,6 +9,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 
 // ============================================================================
 // 타입 정의
@@ -40,11 +41,12 @@ interface GovernanceProps {
 
 export default function Governance({ data, onRefresh: _onRefresh }: GovernanceProps) {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const [expanded, setExpanded] = useState(false);
 
   // 종합 평가
   const overallScore = (data.ceoRating + data.shareholderFriendly + data.esgRating) / 3;
-  const overallGrade = overallScore >= 4 ? '우수' : overallScore >= 3 ? '양호' : '보통';
+  const overallGrade = overallScore >= 4 ? t('deepDive.governance.excellent') : overallScore >= 3 ? t('deepDive.governance.good') : t('deepDive.governance.average');
   const overallColor = overallScore >= 4 ? colors.primary : overallScore >= 3 ? colors.warning : colors.neutral;
 
   return (
@@ -74,7 +76,7 @@ export default function Governance({ data, onRefresh: _onRefresh }: GovernancePr
       <View style={s.summaryRow}>
         {/* CEO 평가 */}
         <View style={s.summaryItem}>
-          <Text style={[s.summaryLabel, { color: colors.textSecondary }]}>CEO 역량</Text>
+          <Text style={[s.summaryLabel, { color: colors.textSecondary }]}>{t('deepDive.governance.ceoCapability')}</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}>
             {renderStars(data.ceoRating)}
             <Text style={[s.scoreText, { color: colors.textPrimary }]}>
@@ -85,7 +87,7 @@ export default function Governance({ data, onRefresh: _onRefresh }: GovernancePr
 
         {/* 주주 친화성 */}
         <View style={s.summaryItem}>
-          <Text style={[s.summaryLabel, { color: colors.textSecondary }]}>주주 친화성</Text>
+          <Text style={[s.summaryLabel, { color: colors.textSecondary }]}>{t('deepDive.governance.shareholderFriendly')}</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}>
             {renderStars(data.shareholderFriendly)}
             <Text style={[s.scoreText, { color: colors.textPrimary }]}>
@@ -96,7 +98,7 @@ export default function Governance({ data, onRefresh: _onRefresh }: GovernancePr
 
         {/* ESG */}
         <View style={s.summaryItem}>
-          <Text style={[s.summaryLabel, { color: colors.textSecondary }]}>ESG 등급</Text>
+          <Text style={[s.summaryLabel, { color: colors.textSecondary }]}>{t('deepDive.governance.esgGrade')}</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}>
             <Text style={[s.esgGrade, { color: getEsgColor(data.esgGrade) }]}>
               {data.esgGrade}
@@ -111,17 +113,17 @@ export default function Governance({ data, onRefresh: _onRefresh }: GovernancePr
         <View style={[s.detailContainer, { borderTopColor: colors.border }]}>
           {/* CEO 상세 */}
           <View style={[s.detailSection, { backgroundColor: colors.surfaceLight }]}>
-            <Text style={[s.sectionTitle, { color: colors.textPrimary }]}>👤 CEO 평가</Text>
+            <Text style={[s.sectionTitle, { color: colors.textPrimary }]}>{t('deepDive.governance.ceoEvaluation')}</Text>
             <View style={s.detailRow}>
-              <Text style={[s.detailLabel, { color: colors.textSecondary }]}>이름</Text>
+              <Text style={[s.detailLabel, { color: colors.textSecondary }]}>{t('deepDive.governance.name')}</Text>
               <Text style={[s.detailValue, { color: colors.textPrimary }]}>{data.ceoName}</Text>
             </View>
             <View style={s.detailRow}>
-              <Text style={[s.detailLabel, { color: colors.textSecondary }]}>재임 기간</Text>
+              <Text style={[s.detailLabel, { color: colors.textSecondary }]}>{t('deepDive.governance.tenure')}</Text>
               <Text style={[s.detailValue, { color: colors.textPrimary }]}>{data.tenure}년</Text>
             </View>
             <View style={s.detailRow}>
-              <Text style={[s.detailLabel, { color: colors.textSecondary }]}>역량 평가</Text>
+              <Text style={[s.detailLabel, { color: colors.textSecondary }]}>{t('deepDive.governance.capabilityRating')}</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 {renderStars(data.ceoRating)}
                 <Text style={[s.detailValue, { color: colors.textPrimary }]}>
@@ -133,21 +135,21 @@ export default function Governance({ data, onRefresh: _onRefresh }: GovernancePr
 
           {/* 배당 정보 */}
           <View style={[s.detailSection, { backgroundColor: colors.surfaceLight }]}>
-            <Text style={[s.sectionTitle, { color: colors.textPrimary }]}>💰 배당 정보</Text>
+            <Text style={[s.sectionTitle, { color: colors.textPrimary }]}>{t('deepDive.governance.dividendInfo')}</Text>
             <View style={s.detailRow}>
-              <Text style={[s.detailLabel, { color: colors.textSecondary }]}>배당 수익률</Text>
+              <Text style={[s.detailLabel, { color: colors.textSecondary }]}>{t('deepDive.governance.dividendYield')}</Text>
               <Text style={[s.dividendValue, { color: colors.primary }]}>
                 {data.dividendYield.toFixed(2)}%
               </Text>
             </View>
             <View style={s.detailRow}>
-              <Text style={[s.detailLabel, { color: colors.textSecondary }]}>배당성향</Text>
+              <Text style={[s.detailLabel, { color: colors.textSecondary }]}>{t('deepDive.governance.payoutRatio')}</Text>
               <Text style={[s.detailValue, { color: colors.textPrimary }]}>
                 {data.payoutRatio.toFixed(0)}%
               </Text>
             </View>
             <View style={s.detailRow}>
-              <Text style={[s.detailLabel, { color: colors.textSecondary }]}>주주 친화성</Text>
+              <Text style={[s.detailLabel, { color: colors.textSecondary }]}>{t('deepDive.governance.shareholderFriendly')}</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 {renderStars(data.shareholderFriendly)}
                 <Text style={[s.detailValue, { color: colors.textPrimary }]}>
@@ -159,15 +161,15 @@ export default function Governance({ data, onRefresh: _onRefresh }: GovernancePr
 
           {/* ESG 상세 */}
           <View style={[s.detailSection, { backgroundColor: colors.surfaceLight }]}>
-            <Text style={[s.sectionTitle, { color: colors.textPrimary }]}>🌱 ESG 평가</Text>
+            <Text style={[s.sectionTitle, { color: colors.textPrimary }]}>{t('deepDive.governance.esgEvaluation')}</Text>
             <View style={s.detailRow}>
-              <Text style={[s.detailLabel, { color: colors.textSecondary }]}>등급</Text>
+              <Text style={[s.detailLabel, { color: colors.textSecondary }]}>{t('deepDive.governance.grade')}</Text>
               <Text style={[s.esgGradeLarge, { color: getEsgColor(data.esgGrade) }]}>
                 {data.esgGrade}
               </Text>
             </View>
             <View style={s.detailRow}>
-              <Text style={[s.detailLabel, { color: colors.textSecondary }]}>평가 점수</Text>
+              <Text style={[s.detailLabel, { color: colors.textSecondary }]}>{t('deepDive.governance.ratingScore')}</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 {renderStars(data.esgRating)}
                 <Text style={[s.detailValue, { color: colors.textPrimary }]}>
@@ -180,7 +182,7 @@ export default function Governance({ data, onRefresh: _onRefresh }: GovernancePr
           {/* 핵심 포인트 */}
           {data.keyPoints.length > 0 && (
             <View style={[s.pointsBox, { backgroundColor: colors.surfaceElevated }]}>
-              <Text style={[s.pointsTitle, { color: colors.textPrimary }]}>📌 핵심 포인트</Text>
+              <Text style={[s.pointsTitle, { color: colors.textPrimary }]}>{t('deepDive.governance.keyPoints')}</Text>
               {data.keyPoints.map((point, idx) => (
                 <View key={idx} style={s.pointRow}>
                   <Text style={[s.bullet, { color: colors.textTertiary }]}>•</Text>
