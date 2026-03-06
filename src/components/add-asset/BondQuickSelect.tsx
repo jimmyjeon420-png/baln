@@ -14,12 +14,12 @@ interface BondQuickSelectProps {
 }
 
 const BOND_OPTIONS = [
-  { ticker: 'TLT', name: '미국 장기국채' },
-  { ticker: 'SHY', name: '미국 단기국채' },
-  { ticker: 'BND', name: '뱅가드채권' },
-  { ticker: 'AGG', name: '미국종합채권' },
-  { ticker: '148070.KS', name: 'KODEX국채3년' },
-  { ticker: '114820.KS', name: 'KODEX단기채권' },
+  { ticker: 'TLT', nameKey: 'bond_names.TLT' },
+  { ticker: 'SHY', nameKey: 'bond_names.SHY' },
+  { ticker: 'BND', nameKey: 'bond_names.BND' },
+  { ticker: 'AGG', nameKey: 'bond_names.AGG' },
+  { ticker: '148070.KS', nameKey: 'bond_names.KODEX_3Y' },
+  { ticker: '114820.KS', nameKey: 'bond_names.KODEX_SHORT' },
 ] as const;
 
 export default function BondQuickSelect({ selectedTicker, onSelectBond }: BondQuickSelectProps) {
@@ -41,13 +41,13 @@ export default function BondQuickSelect({ selectedTicker, onSelectBond }: BondQu
             ]}
             onPress={() => onSelectBond({
               ticker: bond.ticker,
-              name: bond.name,
+              name: t(bond.nameKey),
               nameEn: bond.ticker,
               category: 'bond',
             })}
           >
             <Text style={[styles.bondChipTicker, { color: '#64B5F6' }]}>{bond.ticker}</Text>
-            <Text style={[styles.bondChipName, { color: colors.textSecondary }]}>{bond.name}</Text>
+            <Text style={[styles.bondChipName, { color: colors.textSecondary }]}>{t(bond.nameKey)}</Text>
           </TouchableOpacity>
         ))}
       </ScrollView>

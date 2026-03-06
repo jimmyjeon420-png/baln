@@ -24,6 +24,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
 import { formatCredits } from '../../utils/formatters';
+import { useLocale } from '../../context/LocaleContext';
 
 // Android LayoutAnimation 활성화
 if (
@@ -294,6 +295,7 @@ export default function PredictionVote({
   creditsEarned,
 }: PredictionVoteProps) {
   const { colors, shadows } = useTheme();
+  const { t } = useLocale();
 
   const votedCount = useMemo(
     () => questions.filter((q) => !!q.votedOption).length,
@@ -350,7 +352,7 @@ export default function PredictionVote({
                 },
               ]}
             >
-              {allVoted ? '완료' : `${votedCount}/${totalCount}`}
+              {allVoted ? t('predictionVote.completed') : `${votedCount}/${totalCount}`}
             </Text>
           </View>
         </View>

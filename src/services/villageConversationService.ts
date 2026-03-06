@@ -24,9 +24,10 @@ import {
 import { getRandomQuote } from '../data/guruQuoteBank';
 
 // guruDebateTopics는 다른 에이전트가 병렬 생성 중 — 없으면 graceful fallback
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let getRandomDebate: (() => any) | undefined;
 try {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports
   const debateModule = require('../data/guruDebateTopics');
   getRandomDebate = debateModule.getRandomDebate;
 } catch {
@@ -127,7 +128,7 @@ function stripCodeFences(text: string): string {
 
 function balanceJsonDelimiters(input: string): string {
   let output = input;
-  const stack: Array<'{' | '['> = [];
+  const stack: ('{' | '[')[] = [];
   let inString = false;
   let escaped = false;
 
@@ -174,6 +175,7 @@ function balanceJsonDelimiters(input: string): string {
   return output;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function parseModelJsonResponse<T = any>(rawText: string): T {
   const base = stripCodeFences(rawText);
   if (!base) throw new Error('빈 JSON 응답');
@@ -225,6 +227,7 @@ function parseModelJsonResponse<T = any>(rawText: string): T {
   throw lastError instanceof Error ? lastError : new Error('JSON 파싱 실패');
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function normalizeConversationsPayload(parsed: any): VillageConversation[] {
   const rawConversations = Array.isArray(parsed?.conversations)
     ? parsed.conversations
@@ -233,9 +236,11 @@ function normalizeConversationsPayload(parsed: any): VillageConversation[] {
       : [];
 
   return rawConversations
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .map((conv: any) => {
       const trigger = typeof conv?.trigger === 'string' ? conv.trigger.trim() : '';
       const messages = (Array.isArray(conv?.messages) ? conv.messages : [])
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .map((m: any, idx: number) => {
           const speaker = typeof m?.speaker === 'string' ? m.speaker.trim() : '';
           const message = typeof m?.message === 'string' ? m.message.trim() : '';
@@ -277,7 +282,7 @@ export async function generateVillageConversations(
 
   // 랜덤 명언 3~5개를 대화 씨앗으로 제공
   const seedQuotes = Array.from({ length: 5 }, () => getRandomQuote());
-  const seedText = seedQuotes.map(q => `- ${q.guruId}: "${q.quote}"`).join('\n');
+  const seedText = seedQuotes.map(q => `- ${q.guruId}: "${isKo ? q.quote : q.quoteEn}"`).join('\n');
 
   // 토론 주제 (guruDebateTopics 존재 시)
   let debateText = '';
@@ -286,7 +291,9 @@ export async function generateVillageConversations(
       const debate1 = getRandomDebate();
       const debate2 = getRandomDebate();
       if (debate1 && debate2) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const formatDebate = (d: any) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const parts = (d.participants || []).map((p: any) => `${p.guruId}(${p.stance}): "${p.line}"`);
           return `- ${d.topic}: ${parts.join(' vs ')}`;
         };
@@ -427,12 +434,20 @@ ${rulesEn}
     });
 
     if (error) throw new Error(`Gemini 호출 실패: ${error.message}`);
+    if (data?.success === false) throw new Error(`Gemini 프록시 에러: ${data?.error ?? 'unknown'}`);
 
     // Edge Function 응답: { success, data: { result: text } }
     const rawResult = data?.data?.result ?? data?.result;
-    const parsed = (typeof rawResult === 'object' && rawResult !== null)
-      ? rawResult
-      : parseModelJsonResponse(rawResult ? String(rawResult) : '');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let parsed: any;
+    try {
+      parsed = (typeof rawResult === 'object' && rawResult !== null)
+        ? rawResult
+        : parseModelJsonResponse(rawResult ? String(rawResult) : '');
+    } catch (parseErr) {
+      console.warn('[VillageConversation] JSON 파싱 실패, rawResult 앞부분:', String(rawResult).slice(0, 200));
+      throw new Error('마을 대화 생성 응답을 파싱할 수 없습니다');
+    }
     const normalizedConversations = normalizeConversationsPayload(parsed);
     if (normalizedConversations.length === 0) {
       throw new Error('생성된 대화가 비어 있습니다');
@@ -517,11 +532,19 @@ Respond in JSON only:
     });
 
     if (error) throw error;
+    if (data?.success === false) throw new Error(`Gemini 프록시 에러: ${data?.error ?? 'unknown'}`);
 
     const rawChat = data?.data?.result ?? data?.result;
-    const parsed = (typeof rawChat === 'object' && rawChat !== null)
-      ? rawChat
-      : parseModelJsonResponse(rawChat ? String(rawChat) : '');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let parsed: any;
+    try {
+      parsed = (typeof rawChat === 'object' && rawChat !== null)
+        ? rawChat
+        : parseModelJsonResponse(rawChat ? String(rawChat) : '');
+    } catch (parseErr) {
+      console.warn('[GuruChat] JSON 파싱 실패, rawChat 앞부분:', String(rawChat).slice(0, 200));
+      throw new Error('구루 답변 파싱 실패');
+    }
     const safeMessage = typeof parsed?.message === 'string' ? parsed.message.trim() : '';
     if (!safeMessage) throw new Error('빈 구루 답변');
 

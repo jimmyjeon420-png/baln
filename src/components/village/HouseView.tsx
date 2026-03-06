@@ -65,7 +65,7 @@ function HouseView({
 }: HouseViewProps) {
   const bounceAnim = useRef(new Animated.Value(1)).current;
   const glowAnim = useRef(new Animated.Value(0.4)).current;
-  const { language } = useLocale();
+  const { t, language } = useLocale();
   const isKo = language === 'ko';
 
   const levelStyle = LEVEL_STYLES[houseLevel.level] || LEVEL_STYLES[1];
@@ -151,15 +151,13 @@ function HouseView({
             Lv.{houseLevel.level}
           </Text>
           <Text style={styles.furnitureCount}>
-            {isKo
-              ? `가구 ${placedCount}/${maxSlots}`
-              : `Furniture ${placedCount}/${maxSlots}`}
+            {t('house.furniture_status', { placed: placedCount, max: maxSlots })}
           </Text>
         </View>
 
         {/* 탭 힌트 */}
         <Text style={styles.tapHint}>
-          {isKo ? '탭하여 꾸미기' : 'Tap to decorate'}
+          {t('house.tap_to_decorate')}
         </Text>
       </Animated.View>
     </TouchableOpacity>

@@ -9,6 +9,7 @@
 
 import { Asset, AssetType } from '../types/asset';
 import { getStockComposition } from '../data/tickerProfile';
+import { t } from '../locales';
 
 // ============================================================================
 // 타입 정의
@@ -407,14 +408,23 @@ export function normalizeLiquidTarget(
   return normalized;
 }
 
-/** 등급 설정 */
-const GRADE_CONFIG: Record<HealthGrade, { color: string; bgColor: string; label: string }> = {
-  S: { color: '#2E7D32', bgColor: 'rgba(46,125,50,0.15)', label: '최적' },
-  A: { color: '#3F8C42', bgColor: 'rgba(63,140,66,0.15)', label: '양호' },
-  B: { color: '#B56A00', bgColor: 'rgba(181,106,0,0.16)', label: '보통' },
-  C: { color: '#B6572A', bgColor: 'rgba(182,87,42,0.15)', label: '주의' },
-  D: { color: '#B23A48', bgColor: 'rgba(178,58,72,0.15)', label: '개선 필요' },
+/** 등급 색상 설정 (정적) */
+const GRADE_COLORS: Record<HealthGrade, { color: string; bgColor: string }> = {
+  S: { color: '#2E7D32', bgColor: 'rgba(46,125,50,0.15)' },
+  A: { color: '#3F8C42', bgColor: 'rgba(63,140,66,0.15)' },
+  B: { color: '#B56A00', bgColor: 'rgba(181,106,0,0.16)' },
+  C: { color: '#B6572A', bgColor: 'rgba(182,87,42,0.15)' },
+  D: { color: '#B23A48', bgColor: 'rgba(178,58,72,0.15)' },
 };
+
+/** 등급 설정 (라벨은 i18n 적용) */
+function getGradeConfig(grade: HealthGrade): { color: string; bgColor: string; label: string } {
+  const colors = GRADE_COLORS[grade];
+  return {
+    ...colors,
+    label: t(`health.gradeLabels.${grade}`),
+  };
+}
 
 // ============================================================================
 // 자산 분류 함수
@@ -1024,7 +1034,7 @@ export function calculateHealthScore(
 
   // 등급 판정
   const grade = getGrade(totalScore);
-  const gradeConfig = GRADE_CONFIG[grade];
+  const _gradeConfig = getGradeConfig(grade);
 
   // 가장 취약한 팩터 → summary 생성 (일반인 친화적 언어)
   const worstFactor = [...factors].sort((a, b) => b.rawPenalty - a.rawPenalty)[0];
@@ -1047,10 +1057,10 @@ export function calculateHealthScore(
 
   // driftStatus 호환 (기존 배너용)
   const driftStatus = totalScore >= 75
-    ? { label: '균형', color: '#2E7D32', bgColor: 'rgba(46,125,50,0.15)' }
+    ? { label: t('health.driftLabels.balanced'), color: '#2E7D32', bgColor: 'rgba(46,125,50,0.15)' }
     : totalScore >= 50
-    ? { label: '주의', color: '#B56A00', bgColor: 'rgba(181,106,0,0.15)' }
-    : { label: '조정 필요', color: '#B23A48', bgColor: 'rgba(178,58,72,0.15)' };
+    ? { label: t('health.driftLabels.caution'), color: '#B56A00', bgColor: 'rgba(181,106,0,0.15)' }
+    : { label: t('health.driftLabels.needsAdjustment'), color: '#B23A48', bgColor: 'rgba(178,58,72,0.15)' };
 
   // ── 부동산 분산 보너스 (달리오 All Weather 원칙) ──
   const { bonus: realEstateBonus, reason: bonusReason, avgLtv } =
@@ -1059,7 +1069,7 @@ export function calculateHealthScore(
   // 보너스 반영한 최종 점수 (최대 100점)
   const finalScore = Math.min(100, totalScore + realEstateBonus);
   const finalGrade = getGrade(finalScore);
-  const finalGradeConfig = GRADE_CONFIG[finalGrade];
+  const finalGradeConfig = getGradeConfig(finalGrade);
 
   // ── 부동산 요약 정보 ──
   const realEstateGrossValue = illiquidAssets.reduce((sum, a) => sum + getAssetValue(a), 0);

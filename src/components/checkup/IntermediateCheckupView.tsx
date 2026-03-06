@@ -11,6 +11,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 
 import ReassuranceBanner from './ReassuranceBanner';
 import MarketTemperature from './MarketTemperature';
@@ -38,6 +39,7 @@ interface IntermediateCheckupViewProps {
   analysisResult: RiskAnalysisResult | null;
   sortedActions: MorningBriefingResult['portfolioActions'];
   portfolio: PortfolioAsset[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   livePrices: Record<string, any>;
   isAILoading: boolean;
   peerPanicData?: PeerComparison | null;
@@ -84,6 +86,7 @@ export default function IntermediateCheckupView({
   onLevelChange,
 }: IntermediateCheckupViewProps) {
   const { colors, shadows } = useTheme();
+  const { t } = useLocale();
 
   // 취약 팩터 Top 3 (점수 오름차순)
   const weakestFactors = useMemo(() => {
@@ -101,12 +104,12 @@ export default function IntermediateCheckupView({
       <MarketTemperature morningBriefing={morningBriefing} isAILoading={isAILoading} />
 
       {/* 섹션 제목 */}
-      <Text style={[s.sectionTitle, { color: colors.textPrimary }]}>{'\uD83D\uDCCA'} 분석 리포트</Text>
+      <Text style={[s.sectionTitle, { color: colors.textPrimary }]}>{'\uD83D\uDCCA'} {t('checkup.intermediate.sectionTitle')}</Text>
 
       {/* 2. 6팩터 건강 점수 */}
       <HealthScoreSection
         healthScore={healthScore}
-        onScoreImproved={(improvement) => {
+        onScoreImproved={(_improvement) => {
           // 향후 크레딧 적립 로직 추가 가능 (부모에서 처리)
         }}
       />
@@ -122,7 +125,7 @@ export default function IntermediateCheckupView({
               <View style={s.factorHeader}>
                 <Text style={s.factorIcon}>{factor.icon}</Text>
                 <Text style={[s.factorLabel, { color: colors.textPrimary }]}>{factor.label}</Text>
-                <Text style={[s.factorScore, { color }]}>{factor.score}점</Text>
+                <Text style={[s.factorScore, { color }]}>{factor.score}{t('checkup.header.score_suffix')}</Text>
               </View>
               {/* 점수 바 */}
               <View style={[s.barBackground, { backgroundColor: colors.border }]}>
@@ -142,6 +145,7 @@ export default function IntermediateCheckupView({
       {/* 5. 오늘의 액션 (상위 3개만) */}
       <TodayActionsSection
         sortedActions={sortedActions.slice(0, 3)}
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         portfolio={portfolio as any}
         livePrices={livePrices}
         totalAssets={totalAssets}

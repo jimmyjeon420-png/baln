@@ -11,6 +11,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useMyLevel } from '../hooks/useInvestorLevel';
+import { useLocale } from '../context/LocaleContext';
 import {
   LEVEL_TITLES,
   LEVEL_ICONS,
@@ -22,6 +23,7 @@ import {
 
 export default function InvestorLevelCard() {
   const router = useRouter();
+  const { t } = useLocale();
   const { data: levelData, isLoading } = useMyLevel();
 
   if (isLoading || !levelData) {
@@ -43,7 +45,7 @@ export default function InvestorLevelCard() {
   const streak = levelData.current_streak || 0;
   const progress = getLevelProgress(totalXp, level);
   const xpToNext = getXPToNextLevel(totalXp, level);
-  const title = LEVEL_TITLES[level] || '새싹 투자자';
+  const title = LEVEL_TITLES[level] || t('investor.defaultLevel');
   const icon = LEVEL_ICONS[level] || '🌱';
 
   // 현재 레벨 내 진행 XP

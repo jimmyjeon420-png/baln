@@ -111,8 +111,9 @@ function CafeAmbiance({
     return {
       emoji: guruConfig?.emoji ?? '',
       name: getGuruDisplayName(guruId),
-      text: quote ? (isKo ? quote.ko : quote.en) : '',
+      text: quote ? t(`cafeAmbiance.guru_${guruId}`) : '',
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isKo]);
 
   return (
@@ -124,7 +125,7 @@ function CafeAmbiance({
 
       {/* 시간대별 인사 */}
       <Text style={[styles.greeting, { color: colors.textSecondary }]}>
-        {isKo ? config.greetingKo : config.greetingEn}
+        {t(`cafeAmbiance.${resolvedTime}`)}
       </Text>
 
       {/* 오늘의 구루 명언 */}

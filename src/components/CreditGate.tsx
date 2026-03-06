@@ -21,6 +21,7 @@ import { getDiscountedCost } from '../services/creditService';
 import { useHaptics } from '../hooks/useHaptics';
 import { FEATURE_LABELS, type AIFeatureType } from '../types/marketplace';
 import type { UserTier } from '../types/database';
+import { useLocale } from '../context/LocaleContext';
 
 interface CreditGateProps {
   visible: boolean;
@@ -40,6 +41,7 @@ export default function CreditGate({
   onCancel,
 }: CreditGateProps) {
   const router = useRouter();
+  const { t } = useLocale();
   const { data: credits } = useMyCredits();
   const { mediumTap, heavyTap } = useHaptics();
 
@@ -76,13 +78,13 @@ export default function CreditGate({
               <Ionicons name="alert-circle" size={40} color="#CF6679" />
             )}
             <Text style={styles.title}>
-              {hasEnough ? featureLabel : '도토리 부족'}
+              {hasEnough ? featureLabel : t('creditGate.insufficientAcorns')}
             </Text>
           </View>
 
           {/* 비용 정보 */}
           <View style={styles.costContainer}>
-            <Text style={styles.costLabel}>필요 도토리</Text>
+            <Text style={styles.costLabel}>{t('creditGate.requiredAcorns')}</Text>
             <View style={styles.costRow}>
               {discountPercent > 0 && (
                 <Text style={styles.originalCost}>{originalCost}</Text>
@@ -97,14 +99,14 @@ export default function CreditGate({
             </View>
             {discountPercent > 0 && (
               <Text style={styles.tierNote}>
-                {userTier} 등급 할인 적용
+                {t('creditGate.tierDiscount', { tier: userTier })}
               </Text>
             )}
           </View>
 
           {/* 잔액 */}
           <View style={styles.balanceContainer}>
-            <Text style={styles.balanceLabel}>보유 도토리</Text>
+            <Text style={styles.balanceLabel}>{t('creditGate.myAcorns')}</Text>
             <Text style={[styles.balanceValue, !hasEnough && styles.insufficientBalance]}>
               {balance.toLocaleString()}
             </Text>
@@ -112,7 +114,7 @@ export default function CreditGate({
 
           {!hasEnough && (
             <Text style={styles.shortageText}>
-              {discountedCost - balance} 도토리가 부족합니다
+              {t('creditGate.shortageMsg', { count: discountedCost - balance })}
             </Text>
           )}
 
@@ -120,7 +122,7 @@ export default function CreditGate({
           {!hasEnough && (
             <View style={styles.earnHint}>
               <Text style={styles.earnHintText}>
-                출석(+2개) · 퀴즈 적중(+3개) · 공유(+5개)로 도토리를 모아보세요!
+                {t('creditGate.earnHint')}
               </Text>
             </View>
           )}
@@ -132,7 +134,7 @@ export default function CreditGate({
               onPress={onCancel}
               activeOpacity={0.7}
             >
-              <Text style={styles.cancelButtonText}>취소</Text>
+              <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
             </TouchableOpacity>
 
             {hasEnough ? (
@@ -147,7 +149,7 @@ export default function CreditGate({
                 ) : (
                   <>
                     <Ionicons name="sparkles" size={16} color="#FFF" />
-                    <Text style={styles.confirmButtonText}>분석 시작</Text>
+                    <Text style={styles.confirmButtonText}>{t('creditGate.startAnalysis')}</Text>
                   </>
                 )}
               </TouchableOpacity>
@@ -158,7 +160,7 @@ export default function CreditGate({
                 activeOpacity={0.7}
               >
                 <Ionicons name="add-circle" size={16} color="#FFF" />
-                <Text style={styles.chargeButtonText}>충전하기</Text>
+                <Text style={styles.chargeButtonText}>{t('creditGate.recharge')}</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -174,7 +176,7 @@ export default function CreditGate({
               activeOpacity={0.7}
             >
               <Text style={styles.subscriptionHintText}>
-                구독하면 매월 30 도토리 무료!
+                {t('creditGate.subscriptionHint')}
               </Text>
               <Ionicons name="arrow-forward" size={14} color="#4CAF50" />
             </TouchableOpacity>

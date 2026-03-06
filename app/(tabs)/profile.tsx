@@ -199,7 +199,7 @@ export default function ProfileScreen() {
         },
         {
           icon: 'ban-outline' as keyof typeof Ionicons.glyphMap,
-          label: '차단 목록',
+          label: t('settings.blocked.menuLabel'),
           onPress: () => router.push('/settings/blocked-users'),
         },
         {

@@ -7,12 +7,14 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { WhatIfResult } from '../types/marketplace';
+import { useLocale } from '../context/LocaleContext';
 
 interface Props {
   result: WhatIfResult;
 }
 
 export default function WhatIfResultCard({ result }: Props) {
+  const { t } = useLocale();
   // null 안전: AI 응답이 부분적일 수 있으므로 기본값 적용
   const totalImpact = result.totalImpact ?? { changePercent: 0, currentTotal: 0, projectedTotal: 0, changeAmount: 0 };
   const riskAssessment = result.riskAssessment ?? { overallRisk: 'MEDIUM' as const, vulnerabilities: [], hedgingSuggestions: [] };
@@ -37,17 +39,17 @@ export default function WhatIfResultCard({ result }: Props) {
 
       {/* 전체 영향 */}
       <View style={styles.impactCard}>
-        <Text style={styles.sectionTitle}>전체 영향</Text>
+        <Text style={styles.sectionTitle}>{t('whatIfResult.total_impact')}</Text>
         <View style={styles.impactRow}>
           <View style={styles.impactItem}>
-            <Text style={styles.impactLabel}>현재</Text>
+            <Text style={styles.impactLabel}>{t('whatIfResult.current')}</Text>
             <Text style={styles.impactValue}>
               ₩{Math.floor(totalImpact.currentTotal ?? 0).toLocaleString()}
             </Text>
           </View>
           <Ionicons name="arrow-forward" size={20} color="#555" />
           <View style={styles.impactItem}>
-            <Text style={styles.impactLabel}>예상</Text>
+            <Text style={styles.impactLabel}>{t('whatIfResult.projected')}</Text>
             <Text style={[styles.impactValue, { color: impactColor }]}>
               ₩{Math.floor(totalImpact.projectedTotal ?? 0).toLocaleString()}
             </Text>
@@ -64,7 +66,7 @@ export default function WhatIfResultCard({ result }: Props) {
 
       {/* 자산별 영향 */}
       <View style={styles.sectionCard}>
-        <Text style={styles.sectionTitle}>자산별 영향</Text>
+        <Text style={styles.sectionTitle}>{t('whatIfResult.asset_impact')}</Text>
         {assetImpacts.map((asset, i) => {
           const assetNeg = asset.changePercent < 0;
           const assetColor = assetNeg ? '#CF6679' : '#4CAF50';
@@ -97,23 +99,23 @@ export default function WhatIfResultCard({ result }: Props) {
       {/* 리스크 평가 */}
       <View style={styles.sectionCard}>
         <View style={styles.riskHeader}>
-          <Text style={styles.sectionTitle}>리스크 평가</Text>
+          <Text style={styles.sectionTitle}>{t('whatIfResult.risk_assessment')}</Text>
           <View style={[styles.riskBadge, { backgroundColor: riskColor + '20' }]}>
             <Text style={[styles.riskBadgeText, { color: riskColor }]}>
-              {riskAssessment.overallRisk === 'HIGH' ? '고위험' :
-               riskAssessment.overallRisk === 'MEDIUM' ? '중위험' : '저위험'}
+              {riskAssessment.overallRisk === 'HIGH' ? t('whatIfResult.risk_high') :
+               riskAssessment.overallRisk === 'MEDIUM' ? t('whatIfResult.risk_medium') : t('whatIfResult.risk_low')}
             </Text>
           </View>
         </View>
 
-        <Text style={styles.subTitle}>취약점</Text>
+        <Text style={styles.subTitle}>{t('whatIfResult.vulnerabilities')}</Text>
         {(riskAssessment.vulnerabilities ?? []).map((v: string, i: number) => (
           <Text key={i} style={styles.listItem}>
             <Text style={{ color: '#CF6679' }}>!</Text> {v}
           </Text>
         ))}
 
-        <Text style={[styles.subTitle, { marginTop: 10 }]}>헤지 전략</Text>
+        <Text style={[styles.subTitle, { marginTop: 10 }]}>{t('whatIfResult.hedging')}</Text>
         {(riskAssessment.hedgingSuggestions ?? []).map((s: string, i: number) => (
           <Text key={i} style={styles.listItem}>
             <Text style={{ color: '#4CAF50' }}>+</Text> {s}
@@ -122,7 +124,7 @@ export default function WhatIfResultCard({ result }: Props) {
       </View>
 
       <Text style={styles.disclaimer}>
-        본 시뮬레이션은 AI 예측이며, 실제 결과와 다를 수 있습니다.
+        {t('whatIfResult.disclaimer')}
       </Text>
     </View>
   );

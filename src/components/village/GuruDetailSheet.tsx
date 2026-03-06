@@ -168,16 +168,13 @@ const GURU_QUOTES: Record<string, { ko: string; en: string }[]> = {
 };
 
 /** 오늘 날짜 기반으로 랜덤하지 않게 명언 선택 (매일 일관성) */
-function getDailyQuoteText(guruId: string, language: string): string {
+function getDailyQuoteKey(guruId: string): string {
   const quotes = GURU_QUOTES[guruId];
   if (!quotes || quotes.length === 0) {
-    return language === 'ko'
-      ? '매일 꾸준히 배우는 것이 가장 확실한 투자입니다.'
-      : 'Learning consistently every day is the surest investment.';
+    return 'guruQuotes.default';
   }
   const dayIndex = Math.floor(Date.now() / (1000 * 60 * 60 * 24)) % quotes.length;
-  const quote = quotes[dayIndex];
-  return language === 'ko' ? quote.ko : quote.en;
+  return `guruQuotes.${guruId}_${dayIndex}`;
 }
 
 // ============================================================================
@@ -202,23 +199,8 @@ function getMoodEmoji(mood: GuruMood): string {
   }
 }
 
-function getMoodLabel(mood: GuruMood, isKo: boolean): string {
-  const labels: Record<string, [string, string]> = {
-    joy:       ['기쁨', 'Joyful'],
-    joyful:    ['기쁨', 'Joyful'],
-    excited:   ['흥분', 'Excited'],
-    calm:      ['평온', 'Calm'],
-    thinking:  ['고민 중', 'Thinking'],
-    thoughtful:['고민 중', 'Thoughtful'],
-    worried:   ['걱정', 'Worried'],
-    angry:     ['짜증', 'Grumpy'],
-    grumpy:    ['짜증', 'Grumpy'],
-    sleepy:    ['졸림', 'Sleepy'],
-    surprised: ['놀람', 'Surprised'],
-    sad:       ['슬픔', 'Sad'],
-  };
-  const pair = labels[mood] ?? ['기분 좋음', 'Good Mood'];
-  return isKo ? pair[0] : pair[1];
+function getMoodLabelKey(mood: GuruMood): string {
+  return `guruMood.${mood in ({'joy':1,'joyful':1,'excited':1,'calm':1,'thinking':1,'thoughtful':1,'worried':1,'angry':1,'grumpy':1,'sleepy':1,'surprised':1,'sad':1}) ? mood : 'default'}`;
 }
 
 // ============================================================================
@@ -284,8 +266,8 @@ const GuruDetailSheet = React.memo(({
   const guruName = getGuruDisplayName(guruId);
   const animalType = language === 'ko' ? (config?.characterConcept ?? '') : (config?.characterConceptEn ?? '');
   const moodEmoji = getMoodEmoji(mood);
-  const moodLabel = getMoodLabel(mood, language === 'ko');
-  const dailyQuote = getDailyQuoteText(guruId, language);
+  const moodLabel = t(getMoodLabelKey(mood));
+  const dailyQuote = t(getDailyQuoteKey(guruId));
   const accentColor = config?.accentColor ?? colors.primary;
 
   // FriendshipMeter에 넘길 GuruFriendship 객체 구성 (최소 필드)

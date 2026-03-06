@@ -38,44 +38,16 @@ interface AmbientSoundTextProps {
 // 환경음 텍스트 풀 (날씨 + 시간대 + 계절 조합)
 // =============================================================================
 
-interface SoundText {
-  ko: string;
-  en: string;
-}
-
-const AMBIENT_SOUNDS: Record<string, SoundText[]> = {
-  // 날씨 기반
-  clear_morning: [
-    { ko: '...새가 지저귄다 \uD83D\uDC26', en: '...birds are singing \uD83D\uDC26' },
-    { ko: '...바람이 살랑인다 \uD83C\uDF43', en: '...a gentle breeze blows \uD83C\uDF43' },
-  ],
-  clear_night: [
-    { ko: '...귀뚜라미 소리 \uD83E\uDD97', en: '...crickets chirping \uD83E\uDD97' },
-    { ko: '...별이 반짝인다 \u2728', en: '...stars are twinkling \u2728' },
-  ],
-  rain: [
-    { ko: '...빗소리가 들린다 \uD83C\uDF27', en: '...rain is falling \uD83C\uDF27' },
-    { ko: '...빗방울이 토닥토닥 \uD83D\uDCA7', en: '...raindrops patter softly \uD83D\uDCA7' },
-  ],
-  snow: [
-    { ko: '...눈이 소복소복 \u2744\uFE0F', en: '...snow falls silently \u2744\uFE0F' },
-    { ko: '...고요한 겨울밤 \uD83C\uDF28', en: '...a quiet winter night \uD83C\uDF28' },
-  ],
-  // 계절 기반
-  spring: [
-    { ko: '...꽃향기가 난다 \uD83C\uDF38', en: '...flowers bloom fragrant \uD83C\uDF38' },
-  ],
-  summer: [
-    { ko: '...매미 소리 \uD83C\uDF3F', en: '...cicadas buzzing \uD83C\uDF3F' },
-  ],
-  autumn: [
-    { ko: '...낙엽 바스락 \uD83C\uDF42', en: '...leaves crunching \uD83C\uDF42' },
-  ],
-  // 기본
-  default: [
-    { ko: '...마을이 평화롭다', en: '...the village is peaceful' },
-    { ko: '...구루들의 속삭임', en: '...gurus whispering' },
-  ],
+/** i18n key groups per category */
+const AMBIENT_SOUND_KEYS: Record<string, string[]> = {
+  clear_morning: ['ambient.clear_morning_0', 'ambient.clear_morning_1'],
+  clear_night: ['ambient.clear_night_0', 'ambient.clear_night_1'],
+  rain: ['ambient.rain_0', 'ambient.rain_1'],
+  snow: ['ambient.snow_0', 'ambient.snow_1'],
+  spring: ['ambient.spring_0'],
+  summer: ['ambient.summer_0'],
+  autumn: ['ambient.autumn_0'],
+  default: ['ambient.default_0', 'ambient.default_1'],
 };
 
 // =============================================================================
@@ -85,32 +57,32 @@ const AMBIENT_SOUNDS: Record<string, SoundText[]> = {
 /**
  * 현재 상태에 맞는 환경음 텍스트 풀을 조합하여 반환
  */
-function getSoundPool(
+function getSoundKeyPool(
   weather?: string,
   timeOfDay?: string,
   season?: string,
-): SoundText[] {
-  const pool: SoundText[] = [];
+): string[] {
+  const pool: string[] = [];
 
   // 날씨 기반 텍스트
   if (weather === 'rain') {
-    pool.push(...AMBIENT_SOUNDS.rain);
+    pool.push(...AMBIENT_SOUND_KEYS.rain);
   } else if (weather === 'snow') {
-    pool.push(...AMBIENT_SOUNDS.snow);
+    pool.push(...AMBIENT_SOUND_KEYS.snow);
   } else {
     // clear 계열 — 시간대에 따라 분기
     const isNight = timeOfDay === 'night' || timeOfDay === 'evening';
     const key = isNight ? 'clear_night' : 'clear_morning';
-    pool.push(...AMBIENT_SOUNDS[key]);
+    pool.push(...AMBIENT_SOUND_KEYS[key]);
   }
 
   // 계절 기반 텍스트 추가
-  if (season && AMBIENT_SOUNDS[season]) {
-    pool.push(...AMBIENT_SOUNDS[season]);
+  if (season && AMBIENT_SOUND_KEYS[season]) {
+    pool.push(...AMBIENT_SOUND_KEYS[season]);
   }
 
   // 기본 텍스트 항상 포함
-  pool.push(...AMBIENT_SOUNDS.default);
+  pool.push(...AMBIENT_SOUND_KEYS.default);
 
   return pool;
 }
@@ -125,14 +97,13 @@ function AmbientSoundText({
   season,
   colors,
 }: AmbientSoundTextProps): React.ReactElement {
-  const { language } = useLocale();
-  const isKo = language === 'ko';
+  const { t } = useLocale();
   const opacity = useRef(new Animated.Value(0)).current;
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // 현재 조건에 맞는 사운드 텍스트 풀
-  const soundPool = useMemo(
-    () => getSoundPool(weather, timeOfDay, season),
+  // 현재 조건에 맞는 사운드 i18n 키 풀
+  const soundKeyPool = useMemo(
+    () => getSoundKeyPool(weather, timeOfDay, season),
     [weather, timeOfDay, season],
   );
 
@@ -166,7 +137,7 @@ function AmbientSoundText({
             // 3초 대기 후 다음 텍스트로 전환
             setTimeout(() => {
               if (!isMounted) return;
-              setCurrentIndex((prev) => (prev + 1) % soundPool.length);
+              setCurrentIndex((prev) => (prev + 1) % soundKeyPool.length);
               runCycle();
             }, 3000);
           });
@@ -179,16 +150,14 @@ function AmbientSoundText({
     return () => {
       isMounted = false;
     };
-    // soundPool.length가 바뀔 때만 사이클 재시작
+    // soundKeyPool.length가 바뀔 때만 사이클 재시작
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [soundPool.length]);
+  }, [soundKeyPool.length]);
 
   // 안전한 인덱스 계산
-  const safeIndex = currentIndex % soundPool.length;
-  const currentText = soundPool[safeIndex];
-  const displayText = currentText
-    ? (isKo ? currentText.ko : currentText.en)
-    : '';
+  const safeIndex = currentIndex % soundKeyPool.length;
+  const currentKey = soundKeyPool[safeIndex];
+  const displayText = currentKey ? t(currentKey) : '';
 
   return (
     <Animated.Text

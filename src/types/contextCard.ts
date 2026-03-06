@@ -5,6 +5,8 @@
  * 비유: 일기예보처럼 "오늘 왜 이렇게 더운지" 설명하는 정보 패키지
  */
 
+import { t } from '../locales';
+
 /** 센티먼트 타입 (시장 분위기) */
 export type ContextCardSentiment = 'calm' | 'caution' | 'alert';
 
@@ -27,6 +29,7 @@ export interface ContextCard {
   institutional_behavior: string | null; // 기관 행동 (레이어 4, Premium)
   sentiment: ContextCardSentiment;      // 심리 상태
   is_premium_only: boolean;             // 프리미엄 잠금 여부
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   market_data: Record<string, any>;     // 추가 시장 데이터
   created_at: string;
   time_slot?: string;  // 시간대 (h00~h21 3시간 간격, 또는 레거시 morning/afternoon/evening)
@@ -114,10 +117,24 @@ export const SENTIMENT_ICONS = {
 } as const;
 
 /**
- * 센티먼트별 라벨
+ * 센티먼트별 라벨 (i18n 적용)
+ * 함수로 호출해야 현재 언어가 반영됩니다.
  */
-export const SENTIMENT_LABELS = {
-  calm: '안정',
-  caution: '주의',
-  alert: '경계',
-} as const;
+export function getSentimentLabel(sentiment: ContextCardSentiment): string {
+  return t(`health.sentimentLabels.${sentiment}`);
+}
+
+/**
+ * 센티먼트별 라벨 (하위 호환용 — 런타임에 현재 언어 반영)
+ */
+export const SENTIMENT_LABELS = new Proxy(
+  { calm: '', caution: '', alert: '' } as Record<ContextCardSentiment, string>,
+  {
+    get(_target, prop: string) {
+      if (prop === 'calm' || prop === 'caution' || prop === 'alert') {
+        return t(`health.sentimentLabels.${prop}`);
+      }
+      return undefined;
+    },
+  },
+);

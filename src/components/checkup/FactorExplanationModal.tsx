@@ -16,6 +16,7 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 import { FACTOR_EXPLANATIONS, FactorType } from '../../data/factorExplanations';
 import type { ThemeColors } from '../../styles/colors';
 
@@ -31,6 +32,7 @@ export default function FactorExplanationModal({
   onClose,
 }: FactorExplanationModalProps) {
   const { colors } = useTheme();
+  const { t } = useLocale();
 
   if (!factorType) return null;
 
@@ -59,13 +61,13 @@ export default function FactorExplanationModal({
           <View style={styles.content}>
             {/* 왜 중요한가 */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>왜 중요한가요?</Text>
+              <Text style={styles.sectionTitle}>{t('checkup.factor.whyImportant')}</Text>
               <Text style={styles.sectionText}>{explanation.why}</Text>
             </View>
 
             {/* 실제 사례 */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>실제 사례</Text>
+              <Text style={styles.sectionTitle}>{t('checkup.factor.realCase')}</Text>
               <View style={styles.exampleBox}>
                 <Text style={styles.exampleText}>{explanation.example}</Text>
               </View>
@@ -73,7 +75,7 @@ export default function FactorExplanationModal({
 
             {/* 해결 방법 */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>어떻게 해결하나요?</Text>
+              <Text style={styles.sectionTitle}>{t('checkup.factor.howToSolve')}</Text>
               <View style={styles.solutionBox}>
                 <Text style={styles.solutionIcon}>💡</Text>
                 <Text style={styles.solutionText}>{explanation.solution}</Text>
@@ -82,7 +84,7 @@ export default function FactorExplanationModal({
 
             {/* 역사적 맥락 */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>역사적 맥락</Text>
+              <Text style={styles.sectionTitle}>{t('checkup.factor.historicalContext')}</Text>
               <View style={styles.contextBox}>
                 <Text style={styles.contextText}>{explanation.historicalContext}</Text>
               </View>
@@ -93,7 +95,7 @@ export default function FactorExplanationModal({
         {/* 닫기 버튼 */}
         <View style={styles.footer}>
           <TouchableOpacity style={styles.footerButton} onPress={onClose}>
-            <Text style={styles.footerButtonText}>닫기</Text>
+            <Text style={styles.footerButtonText}>{t('common.close')}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>

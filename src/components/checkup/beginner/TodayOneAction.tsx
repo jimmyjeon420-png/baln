@@ -8,7 +8,10 @@
 import React, { useEffect, useRef, useMemo } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
 import { useTheme } from '../../../hooks/useTheme';
+import { useLocale } from '../../../context/LocaleContext';
 import type { ThemeColors } from '../../../styles/colors';
+
+type TFunc = (key: string, params?: Record<string, unknown>) => string;
 
 type ActionType = 'BUY' | 'HOLD' | 'SELL' | 'WATCH';
 
@@ -28,12 +31,12 @@ interface TodayOneActionProps {
 /**
  * 액션 배지 설정: 배경색에 액션 색상 사용, 텍스트는 흰색으로 대비 확보
  */
-function getActionConfig(actionType: ActionType, colors: ThemeColors) {
+function getActionConfig(actionType: ActionType, colors: ThemeColors, t: TFunc) {
   const config: Record<ActionType, { label: string; bgColor: string; textColor: string }> = {
-    BUY: { label: '매수', bgColor: colors.buy, textColor: '#FFFFFF' },
-    HOLD: { label: '유지', bgColor: colors.hold, textColor: '#FFFFFF' },
-    SELL: { label: '매도', bgColor: colors.sell, textColor: '#FFFFFF' },
-    WATCH: { label: '관심', bgColor: colors.warning, textColor: '#FFFFFF' },
+    BUY: { label: t('checkup.action.buy'), bgColor: colors.buy, textColor: '#FFFFFF' },
+    HOLD: { label: t('checkup.action.hold'), bgColor: colors.hold, textColor: '#FFFFFF' },
+    SELL: { label: t('checkup.action.sell'), bgColor: colors.sell, textColor: '#FFFFFF' },
+    WATCH: { label: t('checkup.action.watch'), bgColor: colors.warning, textColor: '#FFFFFF' },
   };
   return config[actionType];
 }
@@ -73,10 +76,11 @@ const pulsingDotStyle = {
 
 export default function TodayOneAction({ action, isAILoading }: TodayOneActionProps) {
   const { colors } = useTheme();
+  const { t } = useLocale();
 
   const actionConfig = useMemo(
-    () => (action ? getActionConfig(action.action, colors) : null),
-    [action, colors],
+    () => (action ? getActionConfig(action.action, colors, t) : null),
+    [action, colors, t],
   );
 
   const styles = useMemo(
@@ -86,18 +90,18 @@ export default function TodayOneAction({ action, isAILoading }: TodayOneActionPr
 
   return (
     <View style={styles.card}>
-      <Text style={styles.cardTitle}>{'이번 달 처방전'}</Text>
+      <Text style={styles.cardTitle}>{t('checkup.prescription.title')}</Text>
 
       {isAILoading && (
         <View style={styles.loadingRow}>
           <PulsingDot dotColor={colors.primary} />
-          <Text style={styles.loadingText}>AI가 분석 중이에요...</Text>
+          <Text style={styles.loadingText}>{t('checkup.prescription.analyzing')}</Text>
         </View>
       )}
 
       {!isAILoading && !action && (
         <Text style={styles.emptyText}>
-          {'이번 달은 특별히 할 일이 없어요 \uD83D\uDC4D'}
+          {t('checkup.prescription.noAction')}
         </Text>
       )}
 

@@ -31,6 +31,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAdminRetention } from '../../src/hooks/useAdminDashboard';
 import { COLORS } from '../../src/styles/theme';
+import { useLocale } from '../../src/context/LocaleContext';
 
 // 등급별 색상
 const TIER_COLORS: Record<string, string> = {
@@ -46,19 +47,19 @@ const PLAN_COLORS: Record<string, string> = {
   premium: '#FFC107',
 };
 
-// 자산 구간 라벨
-const BRACKET_LABELS: Record<string, string> = {
-  B1: '1천만 미만',
-  B2: '3천만 미만',
-  B3: '5천만 미만',
-  B4: '1억 미만',
-  B5: '1억 이상',
+// 자산 구간 라벨 키 (i18n)
+const BRACKET_LABEL_KEYS: Record<string, string> = {
+  B1: 'admin.analytics.bracketB1',
+  B2: 'admin.analytics.bracketB2',
+  B3: 'admin.analytics.bracketB3',
+  B4: 'admin.analytics.bracketB4',
+  B5: 'admin.analytics.bracketB5',
 };
 
-// 플랜 라벨 (한글)
-const PLAN_LABELS: Record<string, string> = {
-  free: '무료',
-  premium: '프리미엄',
+// 플랜 라벨 키 (i18n)
+const PLAN_LABEL_KEYS: Record<string, string> = {
+  free: 'admin.analytics.free',
+  premium: 'admin.analytics.premium',
 };
 
 // ================================================================
@@ -295,6 +296,7 @@ function getDayOverDayChange(
 
 export default function AdminAnalyticsScreen() {
   const router = useRouter();
+  const { t } = useLocale();
   const { data, isLoading, error, refetch } = useAdminRetention();
 
   const [refreshing, setRefreshing] = React.useState(false);
@@ -321,12 +323,12 @@ export default function AdminAnalyticsScreen() {
           >
             <Ionicons name="chevron-back" size={24} color={COLORS.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>상세 분석</Text>
+          <Text style={styles.headerTitle}>{t('admin.analytics.headerTitle')}</Text>
           <View style={styles.headerSpacer} />
         </View>
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={COLORS.primary} />
-          <Text style={styles.loadingText}>분석 데이터 불러오는 중...</Text>
+          <Text style={styles.loadingText}>{t('admin.analytics.loadingData')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -345,7 +347,7 @@ export default function AdminAnalyticsScreen() {
           >
             <Ionicons name="chevron-back" size={24} color={COLORS.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>상세 분석</Text>
+          <Text style={styles.headerTitle}>{t('admin.analytics.headerTitle')}</Text>
           <View style={styles.headerSpacer} />
         </View>
         <View style={styles.centerContainer}>
@@ -354,13 +356,13 @@ export default function AdminAnalyticsScreen() {
             size={48}
             color={COLORS.error}
           />
-          <Text style={styles.errorTitle}>데이터 로드 실패</Text>
+          <Text style={styles.errorTitle}>{t('admin.analytics.loadFailed')}</Text>
           <Text style={styles.errorMessage}>
-            {error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.'}
+            {error instanceof Error ? error.message : t('common.unknown_error')}
           </Text>
           <TouchableOpacity style={styles.retryButton} onPress={() => refetch()}>
             <Ionicons name="refresh" size={18} color={COLORS.textPrimary} />
-            <Text style={styles.retryButtonText}>다시 시도</Text>
+            <Text style={styles.retryButtonText}>{t('admin.analytics.retryBtn')}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -380,12 +382,12 @@ export default function AdminAnalyticsScreen() {
           >
             <Ionicons name="chevron-back" size={24} color={COLORS.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>상세 분석</Text>
+          <Text style={styles.headerTitle}>{t('admin.analytics.headerTitle')}</Text>
           <View style={styles.headerSpacer} />
         </View>
         <View style={styles.centerContainer}>
           <Ionicons name="analytics-outline" size={48} color={COLORS.textTertiary} />
-          <Text style={styles.emptyText}>분석 데이터가 없습니다.</Text>
+          <Text style={styles.emptyText}>{t('admin.analytics.noData')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -463,9 +465,9 @@ export default function AdminAnalyticsScreen() {
         {/* ============================================================ */}
         {/* Section 1: 리텐션율 카드 (D1, D7, D30) + 진행 바 */}
         {/* ============================================================ */}
-        <Text style={styles.sectionTitle}>리텐션율</Text>
+        <Text style={styles.sectionTitle}>{t('admin.analytics.retentionTitle')}</Text>
         <Text style={styles.sectionSubtitle}>
-          전체 가입자 {data.total_signups.toLocaleString('ko-KR')}명 기준
+          {t('admin.analytics.retentionSubtitle', { count: data.total_signups.toLocaleString('ko-KR') })}
         </Text>
 
         <View style={styles.retentionRow}>
@@ -558,7 +560,7 @@ export default function AdminAnalyticsScreen() {
         {/* Section 2: 7일간 가입 추이 */}
         {/* ============================================================ */}
         <Text style={[styles.sectionTitle, styles.sectionMarginTop]}>
-          7일간 가입 추이
+          {t('admin.analytics.signupTrend')}
         </Text>
         <View style={styles.chartCard}>
           {data.daily_signups_7d.map((day, index) => {
@@ -579,7 +581,7 @@ export default function AdminAnalyticsScreen() {
             );
           })}
           {data.daily_signups_7d.length === 0 && (
-            <Text style={styles.noDataText}>데이터 없음</Text>
+            <Text style={styles.noDataText}>{t('admin.analytics.noDataShort')}</Text>
           )}
         </View>
         {/* 합계 / 일평균 */}
@@ -595,7 +597,7 @@ export default function AdminAnalyticsScreen() {
         {/* Section 3: 7일간 DAU 추이 */}
         {/* ============================================================ */}
         <Text style={[styles.sectionTitle, styles.sectionMarginTop]}>
-          7일간 DAU 추이
+          {t('admin.analytics.dauTrend')}
         </Text>
         <View style={styles.chartCard}>
           {data.daily_dau_7d.map((day, index) => {
@@ -616,7 +618,7 @@ export default function AdminAnalyticsScreen() {
             );
           })}
           {data.daily_dau_7d.length === 0 && (
-            <Text style={styles.noDataText}>데이터 없음</Text>
+            <Text style={styles.noDataText}>{t('admin.analytics.noDataShort')}</Text>
           )}
         </View>
         {/* 합계 / 일평균 */}
@@ -632,7 +634,7 @@ export default function AdminAnalyticsScreen() {
         {/* Section 4: 등급별 유저 분포 */}
         {/* ============================================================ */}
         <Text style={[styles.sectionTitle, styles.sectionMarginTop]}>
-          등급별 유저 분포
+          {t('admin.analytics.tierDist')}
         </Text>
         <View style={styles.chartCard}>
           {['SILVER', 'GOLD', 'PLATINUM', 'DIAMOND'].map((tier) => {
@@ -649,7 +651,7 @@ export default function AdminAnalyticsScreen() {
             );
           })}
           {tierEntries.length === 0 && (
-            <Text style={styles.noDataText}>데이터 없음</Text>
+            <Text style={styles.noDataText}>{t('admin.analytics.noDataShort')}</Text>
           )}
         </View>
 
@@ -657,7 +659,7 @@ export default function AdminAnalyticsScreen() {
         {/* Section 5: 플랜별 유저 분포 */}
         {/* ============================================================ */}
         <Text style={[styles.sectionTitle, styles.sectionMarginTop]}>
-          플랜별 유저 분포
+          {t('admin.analytics.planDist')}
         </Text>
         <View style={styles.chartCard}>
           {['free', 'premium'].map((plan) => {
@@ -665,7 +667,7 @@ export default function AdminAnalyticsScreen() {
             return (
               <DistributionBar
                 key={`plan-${plan}`}
-                label={PLAN_LABELS[plan] ?? plan}
+                label={t(PLAN_LABEL_KEYS[plan] ?? plan)}
                 value={count}
                 maxValue={maxPlanCount}
                 total={totalPlanUsers}
@@ -674,7 +676,7 @@ export default function AdminAnalyticsScreen() {
             );
           })}
           {planEntries.length === 0 && (
-            <Text style={styles.noDataText}>데이터 없음</Text>
+            <Text style={styles.noDataText}>{t('admin.analytics.noDataShort')}</Text>
           )}
         </View>
 
@@ -682,14 +684,14 @@ export default function AdminAnalyticsScreen() {
         {/* Section 6: 자산 구간별 분포 */}
         {/* ============================================================ */}
         <Text style={[styles.sectionTitle, styles.sectionMarginTop]}>
-          자산 구간별 분포
+          {t('admin.analytics.bracketDist')}
         </Text>
         <View style={styles.chartCard}>
           {['B1', 'B2', 'B3', 'B4', 'B5'].map((bracket, index) => {
             const count = data.bracket_distribution[bracket] ?? 0;
             // 점진적 투명도: B1=0.4, B2=0.55, B3=0.7, B4=0.85, B5=1.0
             const opacity = 0.4 + index * 0.15;
-            const label = `${bracket} (${BRACKET_LABELS[bracket] ?? ''})`;
+            const label = `${bracket} (${t(BRACKET_LABEL_KEYS[bracket] ?? bracket)})`;
             return (
               <DistributionBar
                 key={`bracket-${bracket}`}
@@ -702,7 +704,7 @@ export default function AdminAnalyticsScreen() {
             );
           })}
           {bracketEntries.length === 0 && (
-            <Text style={styles.noDataText}>데이터 없음</Text>
+            <Text style={styles.noDataText}>{t('admin.analytics.noDataShort')}</Text>
           )}
         </View>
 

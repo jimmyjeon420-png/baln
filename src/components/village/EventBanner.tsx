@@ -74,19 +74,19 @@ const EVENT_TYPE_STYLES: Record<VillageEventType, EventTypeStyle> = {
  */
 function formatTimeRemaining(
   duration: number,
-  startTime?: string,
-  isKo = true,
+  startTime: string | undefined,
+  t: (key: string, params?: Record<string, unknown>) => string,
 ): string {
   if (!startTime) {
     // startTime 없으면 duration만 표시
     if (duration < 60) {
-      return isKo ? `${duration}분` : `${duration}m`;
+      return t('village_ui.event_banner.minutes', { m: duration });
     }
     const h = Math.floor(duration / 60);
     const m = duration % 60;
-    return isKo
-      ? `${h}시간${m > 0 ? ` ${m}분` : ''}`
-      : `${h}h${m > 0 ? ` ${m}m` : ''}`;
+    return m > 0
+      ? t('village_ui.event_banner.hours_minutes', { h, m })
+      : t('village_ui.event_banner.hours', { h });
   }
 
   const startMs = new Date(startTime).getTime();
@@ -94,18 +94,18 @@ function formatTimeRemaining(
   const remainMs = endMs - Date.now();
 
   if (remainMs <= 0) {
-    return isKo ? '종료' : 'Ended';
+    return t('village_ui.event_banner.ended');
   }
 
   const remainMin = Math.ceil(remainMs / 60_000);
   if (remainMin < 60) {
-    return isKo ? `${remainMin}분 남음` : `${remainMin}m left`;
+    return t('village_ui.event_banner.minutes_left', { m: remainMin });
   }
   const h = Math.floor(remainMin / 60);
   const m = remainMin % 60;
-  return isKo
-    ? `${h}시간${m > 0 ? ` ${m}분` : ''} 남음`
-    : `${h}h${m > 0 ? ` ${m}m` : ''} left`;
+  return m > 0
+    ? t('village_ui.event_banner.hours_minutes_left', { h, m })
+    : t('village_ui.event_banner.hours_left', { h });
 }
 
 // ============================================================================
@@ -183,7 +183,7 @@ const EventBanner = React.memo(({
 
   const typeStyle = EVENT_TYPE_STYLES[event.type] ?? EVENT_TYPE_STYLES.festival;
   const title = isKo ? event.title : event.titleEn;
-  const timeLeft = formatTimeRemaining(event.duration, event.startTime, isKo);
+  const timeLeft = formatTimeRemaining(event.duration, event.startTime, t);
   const typeEmoji = typeStyle.emoji;
   const isEmergency = event.type === 'emergency';
 

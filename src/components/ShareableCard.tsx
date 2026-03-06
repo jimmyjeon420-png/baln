@@ -19,6 +19,7 @@ import { UserTier } from '../types/database';
 import { MorningBriefingResult } from '../services/gemini';
 import { REWARD_AMOUNTS } from '../services/rewardService';
 import { formatLocalDateFull } from '../utils/formatters';
+import { useLocale } from '../context/LocaleContext';
 
 interface ShareableCardProps {
   tier: UserTier;
@@ -37,10 +38,11 @@ const TIER_GRADIENT: Record<UserTier, { bg: string; accent: string; text: string
 
 export default function ShareableCard({
   tier,
-  totalAssets,
+  totalAssets: _totalAssets,
   morningBriefing,
   panicShieldIndex,
 }: ShareableCardProps) {
+  const { t } = useLocale();
   const viewShotRef = useRef<ViewShot>(null);
   const webCaptureRef = useRef<View>(null);
   const [sharing, setSharing] = useState(false);
@@ -103,7 +105,7 @@ export default function ShareableCard({
   const handleNativeShare = useCallback(async () => {
     const isAvailable = await Sharing.isAvailableAsync();
     if (!isAvailable) {
-      Alert.alert('공유 불가', '이 기기에서는 공유 기능을 사용할 수 없습니다.');
+      Alert.alert(t('share.unavailableTitle'), t('share.unavailableMsg'));
       return;
     }
 
@@ -117,12 +119,13 @@ export default function ShareableCard({
       dialogTitle: 'baln.logic 처방전 공유',
       UTI: 'public.png',
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /** 카드 캡처 → 공유 → 보상 지급 */
   const handleShare = useCallback(async () => {
     if (!morningBriefing) {
-      Alert.alert('잠시만요', '분석이 완료된 후 공유할 수 있습니다.');
+      Alert.alert(t('share.waitTitle'), t('share.waitMsg'));
       return;
     }
 
@@ -142,10 +145,11 @@ export default function ShareableCard({
     } catch (err) {
       console.error('Share error:', err);
       errorHaptic();
-      Alert.alert('공유 실패', '카드 공유 중 오류가 발생했습니다.');
+      Alert.alert(t('share.failTitle'), t('share.failMsg'));
     } finally {
       setSharing(false);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [morningBriefing, heavyTap, success, errorHaptic, handleWebShare, handleNativeShare, handleRewardAfterShare]);
 
   // 카드 콘텐츠 (캡처 대상 영역)
@@ -169,7 +173,7 @@ export default function ShareableCard({
       <View style={styles.centerSection}>
         <Text style={styles.weatherEmoji}>{weatherEmoji}</Text>
         <Text style={[styles.statusText, { color: tierStyle.text }]}>
-          {morningBriefing?.cfoWeather?.status || '분석 중...'}
+          {morningBriefing?.cfoWeather?.status || t('share.analyzing')}
         </Text>
         <View style={[
           styles.sentimentPill,
@@ -281,10 +285,10 @@ export default function ShareableCard({
           !morningBriefing && styles.shareButtonTextDisabled,
         ]}>
           {sharing
-            ? '캡처 중...'
+            ? t('share.capturing')
             : Platform.OS === 'web'
-            ? '처방전 이미지 저장'
-            : '인스타그램 공유'}
+            ? t('share.saveImage')
+            : t('share.shareInstagram')}
         </Text>
         {/* 보상 힌트 (아직 오늘 보상 안 받았으면 표시) */}
         {morningBriefing && !rewarded && (

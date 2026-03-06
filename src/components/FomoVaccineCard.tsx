@@ -8,6 +8,7 @@ import { View, Text, StyleSheet, TouchableOpacity, LayoutAnimation, Platform, UI
 import { Ionicons } from '@expo/vector-icons';
 import { FomoSubScores } from '../services/gemini';
 import { useTheme } from '../hooks/useTheme';
+import { useLocale } from '../context/LocaleContext';
 
 // Android 레이아웃 애니메이션 활성화
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -24,10 +25,10 @@ interface FomoAlert {
 }
 
 // 서브스코어 라벨 매핑
-const FOMO_SUB_LABELS: { key: keyof FomoSubScores; label: string }[] = [
-  { key: 'valuationHeat', label: '밸류에이션 과열도' },
-  { key: 'shortTermSurge', label: '단기 급등률' },
-  { key: 'marketOverheat', label: '시장 과열 신호' },
+const FOMO_SUB_LABELS: { key: keyof FomoSubScores; labelKey: string }[] = [
+  { key: 'valuationHeat', labelKey: 'fomoVaccine.sub_valuation_heat' },
+  { key: 'shortTermSurge', labelKey: 'fomoVaccine.sub_short_term_surge' },
+  { key: 'marketOverheat', labelKey: 'fomoVaccine.sub_market_overheat' },
 ];
 
 // 점수별 색상 (높을수록 위험 → 빨강)
@@ -38,10 +39,10 @@ const getFomoBarColor = (score: number): string => {
 };
 
 // 서브스코어별 PO 설명 (비개발자용)
-const FOMO_SUB_DESCRIPTIONS: Record<keyof FomoSubScores, string> = {
-  valuationHeat: '해당 종목의 PER, PBR 등 기업가치 대비 현재 주가가 얼마나 비싼지를 측정합니다. 높을수록 고평가 상태입니다.',
-  shortTermSurge: '최근 1개월간 주가 상승폭입니다. 단기간에 급등한 종목은 조정 가능성이 높습니다.',
-  marketOverheat: 'RSI(상대강도지수), 거래량 등으로 시장 과열 여부를 판단합니다. 높을수록 과열 상태입니다.',
+const FOMO_SUB_DESC_KEYS: Record<keyof FomoSubScores, string> = {
+  valuationHeat: 'fomoVaccine.sub_desc_valuation_heat',
+  shortTermSurge: 'fomoVaccine.sub_desc_short_term_surge',
+  marketOverheat: 'fomoVaccine.sub_desc_market_overheat',
 };
 
 interface FomoVaccineCardProps {
@@ -51,6 +52,7 @@ interface FomoVaccineCardProps {
 // 가이드 섹션 컴포넌트 (경고 유무와 관계없이 동일)
 function FomoGuideSection() {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const [showGuide, setShowGuide] = useState(false);
 
   const toggleGuide = () => {
@@ -80,7 +82,7 @@ function FomoGuideSection() {
         <View style={[styles.guideContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           {/* 개념 설명 + 학술 근거 */}
           <View style={[styles.guideSection, { borderBottomColor: colors.border }]}>
-            <Text style={[styles.guideSectionTitle, { color: colors.textSecondary }]}>FOMO Vaccine이란?</Text>
+            <Text style={[styles.guideSectionTitle, { color: colors.textSecondary }]}>{t('fomoVaccine.guide_what_title')}</Text>
             <Text style={[styles.guideText, { color: colors.textTertiary }]}>
               행동재무학에서 FOMO는{' '}
               <Text style={[styles.guideSource, { color: colors.info }]}>희소성 편향(Scarcity Bias)</Text>의 일종입니다.
@@ -98,7 +100,7 @@ function FomoGuideSection() {
 
           {/* 점수 해석 */}
           <View style={[styles.guideSection, { borderBottomColor: colors.border }]}>
-            <Text style={[styles.guideSectionTitle, { color: colors.textSecondary }]}>고평가 점수 읽는 법</Text>
+            <Text style={[styles.guideSectionTitle, { color: colors.textSecondary }]}>{t('fomoVaccine.guide_score_title')}</Text>
             <Text style={[styles.guideText, { color: colors.textTertiary }]}>
               각 종목별로 0~100점의 고평가 점수가 부여됩니다.
               점수가 높을수록 현재 가격이 적정가치(PER, PBR 등) 대비 비싸다는 의미입니다.
@@ -127,19 +129,19 @@ function FomoGuideSection() {
 
           {/* 3개 하위 지표 설명 */}
           <View style={[styles.guideSection, { borderBottomColor: colors.border }]}>
-            <Text style={[styles.guideSectionTitle, { color: colors.textSecondary }]}>3가지 세부 지표</Text>
+            <Text style={[styles.guideSectionTitle, { color: colors.textSecondary }]}>{t('fomoVaccine.guide_sub_title')}</Text>
             <Text style={[styles.guideText, { marginBottom: 10, color: colors.textTertiary }]}>
               닷컴 버블(2000), 금융위기(2008)에서 FOMO에 빠진 투자자들은
               고평가 자산에 진입해 큰 손실을 입었습니다.
               다음 3가지 관점에서 과열 여부를 진단합니다:
             </Text>
-            {FOMO_SUB_LABELS.map(({ key, label }) => (
+            {FOMO_SUB_LABELS.map(({ key, labelKey }) => (
               <View key={key} style={styles.guideItemRow}>
                 <View style={[styles.guideScoreDot, { backgroundColor: colors.warning, marginTop: 5 }]} />
                 <View style={styles.guideItemContent}>
-                  <Text style={[styles.guideItemLabel, { color: colors.textSecondary }]}>{label}</Text>
+                  <Text style={[styles.guideItemLabel, { color: colors.textSecondary }]}>{t(labelKey)}</Text>
                   <Text style={[styles.guideItemDesc, { color: colors.textTertiary }]}>
-                    {FOMO_SUB_DESCRIPTIONS[key]}
+                    {t(FOMO_SUB_DESC_KEYS[key])}
                   </Text>
                 </View>
               </View>
@@ -148,7 +150,7 @@ function FomoGuideSection() {
 
           {/* 출처 표시 */}
           <View style={[styles.guideSection, { borderBottomWidth: 0, paddingBottom: 0 }]}>
-            <Text style={[styles.guideSectionTitle, { color: colors.textSecondary }]}>참고 자료</Text>
+            <Text style={[styles.guideSectionTitle, { color: colors.textSecondary }]}>{t('fomoVaccine.guide_ref_title')}</Text>
             <Text style={[styles.guideSourceItem, { color: colors.textQuaternary }]}>
               {'\u2022'} Nirun & Asgarli, "FoMO in Investment: A Critical Literature Review" (SSRN, 2025)
             </Text>
@@ -170,25 +172,26 @@ function FomoGuideSection() {
 
 export default function FomoVaccineCard({ alerts }: FomoVaccineCardProps) {
   const { colors } = useTheme();
+  const { t } = useLocale();
 
   // 심각도별 색상 설정
   const severityConfig = {
     LOW: {
       color: colors.success,
       bgColor: colors.streak.background,
-      label: '낮음',
+      label: t('fomoVaccine.severity_low'),
       icon: 'checkmark-circle' as const,
     },
     MEDIUM: {
       color: colors.warning,
       bgColor: colors.surface,
-      label: '중간',
+      label: t('fomoVaccine.severity_medium'),
       icon: 'alert-circle' as const,
     },
     HIGH: {
       color: colors.error,
       bgColor: colors.surface,
-      label: '높음',
+      label: t('fomoVaccine.severity_high'),
       icon: 'warning' as const,
     },
   };
@@ -205,9 +208,9 @@ export default function FomoVaccineCard({ alerts }: FomoVaccineCardProps) {
         </View>
         <View style={styles.emptyContainer}>
           <Ionicons name="checkmark-circle" size={48} color={colors.success} />
-          <Text style={[styles.emptyText, { color: colors.success }]}>고평가 경고 없음</Text>
+          <Text style={[styles.emptyText, { color: colors.success }]}>{t('fomoVaccine.no_alert')}</Text>
           <Text style={[styles.emptySubtext, { color: colors.textTertiary }]}>
-            현재 포트폴리오에 과열 우려 자산이 없습니다
+            {t('fomoVaccine.no_alert_sub')}
           </Text>
         </View>
         <FomoGuideSection />
@@ -246,14 +249,14 @@ export default function FomoVaccineCard({ alerts }: FomoVaccineCardProps) {
               },
             ]}
           >
-            <Text style={[styles.countText, { color: colors.textPrimary }]}>{alerts.length}개 경고</Text>
+            <Text style={[styles.countText, { color: colors.textPrimary }]}>{t('fomoVaccine.alert_count', { count: alerts.length })}</Text>
           </View>
         )}
       </View>
 
       {/* 경고 메시지 */}
       <Text style={[styles.description, { color: colors.textSecondary }]}>
-        💉 FOMO(Fear Of Missing Out)를 예방하세요
+        {t('fomoVaccine.description')}
       </Text>
 
       {/* 경고 리스트 */}
@@ -299,12 +302,12 @@ export default function FomoVaccineCard({ alerts }: FomoVaccineCardProps) {
               {/* 서브스코어 분해 (3개 지표) */}
               {alert.subScores && (
                 <View style={styles.fomoSubScoresContainer}>
-                  {FOMO_SUB_LABELS.map(({ key, label }) => {
-                    const score = alert.subScores![key] ?? 0;
+                  {FOMO_SUB_LABELS.map(({ key, labelKey }) => {
+                    const score = alert.subScores?.[key] ?? 0;
                     const barColor = getFomoBarColor(score);
                     return (
                       <View key={key} style={styles.fomoSubRow}>
-                        <Text style={[styles.fomoSubLabel, { color: colors.textTertiary }]}>{label}</Text>
+                        <Text style={[styles.fomoSubLabel, { color: colors.textTertiary }]}>{t(labelKey)}</Text>
                         <View style={[styles.fomoSubBarBg, { backgroundColor: colors.border }]}>
                           <View
                             style={[
@@ -336,7 +339,7 @@ export default function FomoVaccineCard({ alerts }: FomoVaccineCardProps) {
       <View style={[styles.tipContainer, { borderTopColor: colors.border }]}>
         <Ionicons name="bulb" size={16} color={colors.warning} />
         <Text style={[styles.tipText, { color: colors.textTertiary }]}>
-          고평가 자산은 추가 매수를 자제하고, 분할 매도를 고려하세요
+          {t('fomoVaccine.tip')}
         </Text>
       </View>
     </View>

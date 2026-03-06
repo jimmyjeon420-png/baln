@@ -84,7 +84,7 @@ interface InvestmentReportData {
     industryAvgPsr: number;
   };
   risks: {
-    category: '시장 리스크' | '경쟁 리스크' | '규제 리스크' | '경영 리스크';
+    category: 'market' | 'competition' | 'regulation' | 'management';
     level: 'LOW' | 'MEDIUM' | 'HIGH';
     points: string[];
   }[];

@@ -23,6 +23,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 
 // ============================================================================
 // Props 인터페이스
@@ -62,6 +63,7 @@ export interface PeerComparisonItem {
 
 function DetailItem({ item }: { item: PeerComparisonItem }) {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const statusColor = item.isBetter ? colors.success : colors.warning;
 
   return (
@@ -81,7 +83,7 @@ function DetailItem({ item }: { item: PeerComparisonItem }) {
             color={statusColor}
           />
           <Text style={[s.statusText, { color: statusColor }]}>
-            {item.isBetter ? '또래 이상' : '개선 여지'}
+            {item.isBetter ? t('home.peer_comparison.detail_above_peer') : t('home.peer_comparison.detail_room_to_improve')}
           </Text>
         </View>
       </View>
@@ -89,12 +91,12 @@ function DetailItem({ item }: { item: PeerComparisonItem }) {
       {/* 수치 비교 */}
       <View style={s.valuesRow}>
         <View style={s.valueBlock}>
-          <Text style={[s.valueSmallLabel, { color: colors.textTertiary }]}>나</Text>
+          <Text style={[s.valueSmallLabel, { color: colors.textTertiary }]}>{t('home.peer_comparison.detail_me')}</Text>
           <Text style={[s.valueBig, { color: statusColor }]}>{item.myValue}</Text>
         </View>
         <View style={[s.vsDivider, { backgroundColor: colors.border }]} />
         <View style={s.valueBlock}>
-          <Text style={[s.valueSmallLabel, { color: colors.textTertiary }]}>또래 평균</Text>
+          <Text style={[s.valueSmallLabel, { color: colors.textTertiary }]}>{t('home.peer_comparison.detail_peer_avg')}</Text>
           <Text style={[s.valueBig, { color: colors.textSecondary }]}>{item.peerAvgValue}</Text>
         </View>
       </View>
@@ -124,6 +126,7 @@ export default function PeerComparisonDetail({
   details,
 }: PeerComparisonDetailProps) {
   const { colors } = useTheme();
+  const { t } = useLocale();
 
   const isTopPerformer = myPercentile <= 30;
   const betterCount = details.filter((d) => d.isBetter).length;
@@ -140,10 +143,10 @@ export default function PeerComparisonDetail({
         <View style={[s.modalHeader, { borderBottomColor: colors.border }]}>
           <View>
             <Text style={[s.modalTitle, { color: colors.textPrimary }]}>
-              또래 비교 상세
+              {t('home.peer_comparison.detail_title')}
             </Text>
             <Text style={[s.modalSubtitle, { color: colors.textTertiary }]}>
-              💰 {myBracket} 구간 기준
+              {t('home.peer_comparison.detail_bracket').replace('{{bracket}}', myBracket)}
             </Text>
           </View>
           <TouchableOpacity
@@ -166,14 +169,14 @@ export default function PeerComparisonDetail({
                 <Text style={[s.rankNumber, { color: isTopPerformer ? colors.success : colors.warning }]}>
                   {myPercentile}%
                 </Text>
-                <Text style={[s.rankLabel, { color: colors.textTertiary }]}>상위</Text>
+                <Text style={[s.rankLabel, { color: colors.textTertiary }]}>{t('home.peer_comparison.detail_top_rank')}</Text>
               </View>
               <View style={s.summaryTextBlock}>
                 <Text style={[s.summaryMainText, { color: colors.textPrimary }]}>
-                  {betterCount}개 항목에서 또래 이상
+                  {t('home.peer_comparison.detail_items_above').replace('{{count}}', String(betterCount))}
                 </Text>
                 <Text style={[s.summarySubText, { color: colors.textTertiary }]}>
-                  {details.length}개 항목 중 {betterCount}개에서 또래 평균을 넘었습니다
+                  {t('home.peer_comparison.detail_items_summary').replace('{{total}}', String(details.length)).replace('{{better}}', String(betterCount))}
                 </Text>
               </View>
             </View>
@@ -186,8 +189,7 @@ export default function PeerComparisonDetail({
 
           {/* 하단 안내 */}
           <Text style={[s.footerDisclaimer, { color: colors.textQuaternary }]}>
-            모든 비교 데이터는 익명 통계를 기반으로 하며,{'\n'}
-            다른 사용자의 개인정보는 포함되지 않습니다.
+            {t('home.peer_comparison.detail_disclaimer')}
           </Text>
         </ScrollView>
       </View>

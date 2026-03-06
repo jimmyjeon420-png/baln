@@ -81,7 +81,7 @@ export default function ReportModal({
 
     try {
       const user = await getCurrentUser();
-      if (!user) throw new Error('로그인이 필요합니다.');
+      if (!user) throw new Error(t('community.report.loginRequired'));
 
       // 동일 대상 중복 신고 방지 (pending 상태)
       const { data: existing } = await supabase

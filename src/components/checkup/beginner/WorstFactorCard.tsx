@@ -13,6 +13,7 @@ import { Asset, AssetType } from '../../../types/asset';
 import FactorExplanationModal from '../FactorExplanationModal';
 import { getFactorType, FACTOR_EXPLANATIONS } from '../../../data/factorExplanations';
 import { useTheme } from '../../../hooks/useTheme';
+import { useLocale } from '../../../context/LocaleContext';
 import type { ThemeColors } from '../../../styles/colors';
 
 interface WorstFactorCardProps {
@@ -32,7 +33,7 @@ const LABEL_MAP: Record<string, string> = {
   '철학 정합도': '투자 철학과 맞지 않아요',
 };
 
-function getStoryMessage(factor: FactorResult, allAssets?: Asset[]): string | null {
+function getStoryMessage(factor: FactorResult, allAssets: Asset[] | undefined, t: (key: string, params?: Record<string, string | number>) => string): string | null {
   if (!allAssets || allAssets.length === 0) return null;
 
   // 부동산(비유동)은 리밸런싱 대상이 아님 → 유동 자산만으로 분석
@@ -46,14 +47,20 @@ function getStoryMessage(factor: FactorResult, allAssets?: Asset[]): string | nu
       const maxDrift = liquidAssets.reduce((worst, a) => {
         const actualPct = (a.currentValue / liquidTotal) * 100;
         const targetPct = a.targetAllocation || 0;
-        const signedDrift = actualPct - targetPct; // 양수 = 목표보다 많음, 음수 = 적음
+        const signedDrift = actualPct - targetPct;
         return Math.abs(signedDrift) > Math.abs(worst.signedDrift)
           ? { name: a.name, signedDrift }
           : worst;
       }, { name: '', signedDrift: 0 });
       if (maxDrift.name && Math.abs(maxDrift.signedDrift) > 1) {
-        const direction = maxDrift.signedDrift > 0 ? '많아요' : '적어요';
-        return `${maxDrift.name}이 목표보다 ${Math.round(Math.abs(maxDrift.signedDrift))}% ${direction}`;
+        const direction = maxDrift.signedDrift > 0
+          ? t('checkup.worstFactor.drift_over_dir')
+          : t('checkup.worstFactor.drift_under_dir');
+        return t('checkup.worstFactor.drift_over', {
+          name: maxDrift.name,
+          pct: Math.round(Math.abs(maxDrift.signedDrift)),
+          direction,
+        });
       }
       return null;
     }
@@ -62,22 +69,22 @@ function getStoryMessage(factor: FactorResult, allAssets?: Asset[]): string | nu
       if (total === 0) return null;
       const top = liquidAssets.reduce((max, a) => a.currentValue > max.currentValue ? a : max, liquidAssets[0]);
       const pct = Math.round((top.currentValue / total) * 100);
-      return `전체 유동자산의 ${pct}%가 ${top.name}에 몰려있어요`;
+      return t('checkup.worstFactor.concentration', { pct, name: top.name });
     }
     case '상관관계':
-      return '보유 종목들이 비슷하게 움직이고 있어요';
+      return t('checkup.worstFactor.correlation');
     case '변동성':
-      return '최근 가격 변동이 평소보다 큰 편이에요';
+      return t('checkup.worstFactor.volatility');
     case '하방 리스크': {
       const lossCount = liquidAssets.filter(a => {
         const avg = a.avgPrice ?? 0;
         const cur = a.currentPrice ?? 0;
         return avg > 0 && cur > 0 && cur < avg;
       }).length;
-      return lossCount > 0 ? `${lossCount}개 종목이 매입가 아래에 있어요` : null;
+      return lossCount > 0 ? t('checkup.worstFactor.downside', { count: lossCount }) : null;
     }
     case '철학 정합도':
-      return '현재 보유 종목 스타일과 선택 철학이 일치하지 않습니다. 분석 탭에서 구루 설정을 확인해보세요.';
+      return t('checkup.worstFactor.philosophy');
     default:
       return null;
   }
@@ -95,6 +102,7 @@ function getScoreColor(score: number, colors: ThemeColors): string {
 export default function WorstFactorCard({ factors, allAssets }: WorstFactorCardProps) {
   const [modalVisible, setModalVisible] = useState(false);
   const { colors } = useTheme();
+  const { t } = useLocale();
 
   const styles = useMemo(() => createStyles(colors), [colors]);
 
@@ -116,7 +124,7 @@ export default function WorstFactorCard({ factors, allAssets }: WorstFactorCardP
         activeOpacity={0.7}
         onPress={() => setModalVisible(true)}
       >
-      <Text style={styles.cardTitle}>주의할 점</Text>
+      <Text style={styles.cardTitle}>{t('checkup.worstFactor.caution')}</Text>
 
       <View style={styles.factorRow}>
         <Text style={styles.icon}>{worst.icon}</Text>
@@ -137,19 +145,19 @@ export default function WorstFactorCard({ factors, allAssets }: WorstFactorCardP
           </View>
 
           <Text style={[styles.scoreText, { color: barColor }]}>
-            {worst.score}점
+            {worst.score}{t('checkup.worstFactor.score_suffix')}
           </Text>
         </View>
       </View>
 
-      <Text style={styles.comment}>{getStoryMessage(worst, allAssets) ?? worst.comment}</Text>
+      <Text style={styles.comment}>{getStoryMessage(worst, allAssets, t) ?? worst.comment}</Text>
 
       {/* 조정 효과 힌트 (배분 이탈도일 때만) */}
       {worst.label === '배분 이탈도' && worst.score < 70 && (
         <View style={styles.improveHint}>
           <Text style={styles.improveIcon}>✨</Text>
           <Text style={styles.improveText}>
-            분석 탭에서 조정하면 건강 점수가 올라가요
+            {t('checkup.worstFactor.improve_hint')}
           </Text>
         </View>
       )}
@@ -164,7 +172,7 @@ export default function WorstFactorCard({ factors, allAssets }: WorstFactorCardP
 
       {/* 탭해서 자세히 보기 힌트 */}
       <View style={styles.tapHint}>
-        <Text style={styles.tapHintText}>탭해서 자세히 알아보기</Text>
+        <Text style={styles.tapHintText}>{t('checkup.worstFactor.tap_detail')}</Text>
         <Text style={styles.tapHintIcon}>→</Text>
       </View>
     </TouchableOpacity>

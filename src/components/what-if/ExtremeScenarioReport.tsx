@@ -223,7 +223,7 @@ const SimulationResultSection: React.FC<{
       </Text>
       <Text style={[sectionStyles.totalImpactAmount, { color: colors.textSecondary }]}>
         {(result.totalImpact?.changeAmount ?? 0) > 0 ? '+' : ''}
-        {Math.round(result.totalImpact?.changeAmount ?? 0).toLocaleString()}원
+        {Math.round(result.totalImpact?.changeAmount ?? 0).toLocaleString()}{t('whatIf.extreme.currencyUnit')}
       </Text>
     </View>
 
@@ -308,13 +308,13 @@ const ShareStoryModal: React.FC<{
       const uri = await viewShotRef.current.capture();
       await Sharing.shareAsync(uri, {
         mimeType: 'image/png',
-        dialogTitle: `baln 위기 시뮬레이터 — ${scenario.title}`,
+        dialogTitle: `baln Crisis Simulator — ${scenario.title}`,
         UTI: 'public.png',
       });
       // 공유 성공 -> 크레딧 보상
       const result = await claimReward();
       if (result.success) {
-        setRewardMessage(`+${result.creditsEarned} 크레딧 획득!`);
+        setRewardMessage(`+${result.creditsEarned} ${t('whatIf.extreme.creditsEarned')}`);
         setTimeout(() => setRewardMessage(null), 3000);
       }
     } catch (err) {
@@ -409,7 +409,7 @@ const ShareStoryModal: React.FC<{
             {simChangePercent > 0 ? '+' : ''}{simChangePercent.toFixed(1)}%
           </Text>
           <Text style={shareStyles.simResultAmount}>
-            {simChangeAmount > 0 ? '+' : ''}{Math.round(simChangeAmount).toLocaleString()}원
+            {simChangeAmount > 0 ? '+' : ''}{Math.round(simChangeAmount).toLocaleString()}{t('whatIf.extreme.currencyUnit')}
           </Text>
         </View>
       )}
@@ -451,7 +451,7 @@ const ShareStoryModal: React.FC<{
         <View style={shareStyles.ctaBox}>
           <Ionicons name="open-outline" size={16} color="#4CAF50" />
           <Text style={shareStyles.ctaText}>
-            bal<Text style={{ color: '#4CAF50' }}>n</Text>.app에서 무료 시뮬레이션
+            bal<Text style={{ color: '#4CAF50' }}>n</Text>.app {t('whatIf.extreme.freeSimCTA')}
           </Text>
         </View>
       </View>
@@ -516,7 +516,7 @@ const ShareStoryModal: React.FC<{
                 <Text style={shareStyles.shareButtonText}>{t('whatIf.extreme.shareInstagram')}</Text>
                 {!rewarded && (
                   <View style={shareStyles.rewardHint}>
-                    <Text style={shareStyles.rewardHintText}>+{REWARD_AMOUNTS.shareCard}개</Text>
+                    <Text style={shareStyles.rewardHintText}>+{REWARD_AMOUNTS.shareCard}{t('whatIf.extreme.creditUnit')}</Text>
                   </View>
                 )}
               </>

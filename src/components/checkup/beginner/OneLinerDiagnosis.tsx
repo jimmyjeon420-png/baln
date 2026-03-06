@@ -9,6 +9,7 @@ import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import type { HealthScoreResult } from '../../../services/rebalanceScore';
 import { useTheme } from '../../../contexts/ThemeContext';
+import { useLocale } from '../../../context/LocaleContext';
 import type { ThemeColors } from '../../../styles/colors';
 
 interface OneLinerDiagnosisProps {
@@ -25,6 +26,7 @@ const GRADE_EMOJI: Record<HealthScoreResult['grade'], string> = {
 
 export default function OneLinerDiagnosis({ healthScore }: OneLinerDiagnosisProps) {
   const { colors, shadows } = useTheme();
+  const { t } = useLocale();
   const emoji = GRADE_EMOJI[healthScore.grade];
 
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -35,7 +37,7 @@ export default function OneLinerDiagnosis({ healthScore }: OneLinerDiagnosisProp
 
       <View style={styles.textContainer}>
         <Text style={styles.title}>
-          {'투자 컨디션: '}
+          {t('checkup.oneLiner.condition')}
           <Text style={[styles.gradeLabel, { color: healthScore.gradeColor }]}>
             {healthScore.gradeLabel}
           </Text>
@@ -43,7 +45,7 @@ export default function OneLinerDiagnosis({ healthScore }: OneLinerDiagnosisProp
 
         <Text style={styles.score}>
           {healthScore.totalScore}
-          <Text style={styles.scoreUnit}>점</Text>
+          <Text style={styles.scoreUnit}>{t('checkup.oneLiner.score_unit')}</Text>
         </Text>
       </View>
 

@@ -13,6 +13,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import supabase from './supabase';
 import { t } from '../locales';
+import { getCurrentDisplayLanguage } from '../context/LocaleContext';
 import type {
   ContextCard,
   ContextCardSentiment,
@@ -86,19 +87,16 @@ export const FALLBACK_CONTEXT_CARD: ContextCardWithImpact = {
   card: {
     id: 'fallback-static',
     date: getLocalDate(),
-    headline: '시장은 늘 변동합니다',
-    historical_context:
-      '역사적으로 S&P 500은 연평균 약 10% 수익을 기록했습니다. 1987년 블랙먼데이(-22.6%), 2008년 금융위기(-38.5%), 2020년 팬데믹(-33.9%) 이후에도 시장은 매번 회복했습니다. 단기 변동에 흔들리지 않는 것이 장기 수익의 핵심입니다.',
+    headline: t('context.fallback.headline'),
+    historical_context: t('context.fallback.historical_context'),
     macro_chain: [
-      '금리, 인플레이션, 고용 — 세 가지가 시장 방향을 결정합니다',
-      '중앙은행 정책이 금리를 좌우합니다',
-      '금리 변동이 기업 가치 평가에 영향을 줍니다',
-      '매일 맥락을 읽으면 공포가 이해로 바뀝니다',
+      t('context.fallback.macro_chain_1'),
+      t('context.fallback.macro_chain_2'),
+      t('context.fallback.macro_chain_3'),
+      t('context.fallback.macro_chain_4'),
     ],
-    political_context:
-      '미국 정치 변화는 역사적으로 단기 시장 변동을 만들었지만, 장기 우량 기업의 가치는 정치 사이클을 초월했습니다. 버핏은 지난 14번의 대선 동안 매수를 유지했습니다. 당신의 분산된 포트폴리오에 미치는 영향은 제한적입니다.',
-    institutional_behavior:
-      '기관 투자자들은 패닉에 빠지지 않습니다. 그들은 정해진 규칙에 따라 리밸런싱할 뿐입니다. 우리도 자기만의 기준이 있으면 흔들리지 않습니다.',
+    political_context: t('context.fallback.political_context'),
+    institutional_behavior: t('context.fallback.institutional_behavior'),
     sentiment: 'calm' as ContextCardSentiment,
     is_premium_only: false,
     market_data: {},
@@ -208,7 +206,7 @@ export async function triggerContextCardRefreshIfNeeded(reason: 'empty' | 'stale
 
     const { error } = await supabase.functions.invoke('generate-context-card', {
       body: {
-        lang: 'ko',
+        lang: getCurrentDisplayLanguage(),
         reason: `context_card_${reason}`,
         time_slot: getCurrentContextTimeSlot(),
       },
@@ -218,7 +216,7 @@ export async function triggerContextCardRefreshIfNeeded(reason: 'empty' | 'stale
       return {
         triggered: false,
         skippedByCooldown: false,
-        error: error.message || '맥락 카드 복구 호출 실패',
+        error: error.message || t('context_card.refresh_failed'),
       };
     }
 
@@ -228,7 +226,7 @@ export async function triggerContextCardRefreshIfNeeded(reason: 'empty' | 'stale
     return {
       triggered: false,
       skippedByCooldown: false,
-      error: err instanceof Error ? err.message : '알 수 없는 오류',
+      error: err instanceof Error ? err.message : t('common.unknown_error'),
     };
   }
 }

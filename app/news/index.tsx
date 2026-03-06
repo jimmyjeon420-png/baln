@@ -31,17 +31,18 @@ import {
   type MarketNewsItem,
 } from '../../src/hooks/useMarketNews';
 import NewsCard from '../../src/components/news/NewsCard';
-import { SIZES } from '../../src/styles/theme';
+import { SIZES as _SIZES } from '../../src/styles/theme';
+import { useLocale } from '../../src/context/LocaleContext';
 
 // ============================================================================
 // 카테고리 설정
 // ============================================================================
 
-const CATEGORY_TABS: { key: NewsCategoryFilter; label: string; icon: string; color: string }[] = [
-  { key: 'all', label: '전체', icon: 'apps-outline', color: '#4CAF50' },
-  { key: 'crypto', label: '크립토', icon: 'logo-bitcoin', color: '#F7931A' },
-  { key: 'stock', label: '주식', icon: 'trending-up', color: '#4CAF50' },
-  { key: 'macro', label: '매크로', icon: 'globe-outline', color: '#29B6F6' },
+const CATEGORY_TABS: { key: NewsCategoryFilter; labelKey: string; icon: string; color: string }[] = [
+  { key: 'all', labelKey: 'news.tab.all', icon: 'apps-outline', color: '#4CAF50' },
+  { key: 'crypto', labelKey: 'news.tab.crypto', icon: 'logo-bitcoin', color: '#F7931A' },
+  { key: 'stock', labelKey: 'news.tab.stock', icon: 'trending-up', color: '#4CAF50' },
+  { key: 'macro', labelKey: 'news.tab.macro', icon: 'globe-outline', color: '#29B6F6' },
 ];
 
 // ============================================================================
@@ -51,6 +52,7 @@ const CATEGORY_TABS: { key: NewsCategoryFilter; label: string; icon: string; col
 export default function NewsScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { t } = useLocale();
   const [category, setCategory] = useState<NewsCategoryFilter>('all');
 
   // 뉴스 목록 (무한 스크롤)
@@ -102,6 +104,7 @@ export default function NewsScreen() {
             onPress={() => setCategory(tab.key)}
           >
             <Ionicons
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               name={tab.icon as any}
               size={14}
               color={isActive ? tab.color : colors.textSecondary}
@@ -113,7 +116,7 @@ export default function NewsScreen() {
                 isActive && { color: tab.color, fontWeight: '700' },
               ]}
             >
-              {tab.label}
+              {t(tab.labelKey)}
             </Text>
           </TouchableOpacity>
         );
@@ -135,7 +138,7 @@ export default function NewsScreen() {
             AI PiCK
           </Text>
           <Text style={[styles.pickSubtitle, { color: colors.textSecondary }]}>
-            오늘의 핵심 뉴스
+            {t('news.pickSubtitle')}
           </Text>
         </View>
         <ScrollView
@@ -182,7 +185,7 @@ export default function NewsScreen() {
           <Ionicons name="chevron-back" size={28} color={colors.primary} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
-          시장 뉴스
+          {t('news.headerTitle')}
         </Text>
         <View style={{ width: 28 }} />
       </View>
@@ -201,10 +204,10 @@ export default function NewsScreen() {
         <View style={styles.emptyContainer}>
           <Ionicons name="newspaper-outline" size={48} color={colors.textTertiary} />
           <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
-            뉴스가 없습니다
+            {t('news.emptyTitle')}
           </Text>
           <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
-            잠시 후 다시 확인해주세요
+            {t('news.emptySubtitle')}
           </Text>
         </View>
       ) : (

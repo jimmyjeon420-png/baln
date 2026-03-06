@@ -22,6 +22,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import supabase from '../../services/supabase';
 import { type MarketplaceItem } from '../../data/marketplaceItems';
 import { isFreePeriod } from '../../config/freePeriod';
+import { useLocale } from '../../context/LocaleContext';
 
 // 아이템 활성화 상태 저장 키
 const ITEM_ACTIVE_PREFIX = '@baln:marketplace_active_';
@@ -81,6 +82,7 @@ export function ItemPurchaseModal({
   onClose,
   onSuccess,
 }: ItemPurchaseModalProps) {
+  const { t } = useLocale();
   const [loading, setLoading] = useState(false);
   const [succeeded, setSucceeded] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -104,7 +106,7 @@ export function ItemPurchaseModal({
         // 무료 기간 이후: Supabase RPC로 실제 차감
         const { data: sessionData } = await supabase.auth.getSession();
         const userId = sessionData?.session?.user?.id;
-        if (!userId) throw new Error('로그인이 필요합니다.');
+        if (!userId) throw new Error(t('itemPurchase.loginRequired'));
 
         const { error } = await supabase.rpc('spend_credits', {
           p_user_id: userId,
@@ -123,8 +125,9 @@ export function ItemPurchaseModal({
         handleClose();
         onSuccess(item);
       }, 1200);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-      setErrorMsg(err?.message || '구매 중 오류가 발생했습니다.');
+      setErrorMsg(err?.message || t('itemPurchase.purchaseError'));
     } finally {
       setLoading(false);
     }
@@ -143,8 +146,8 @@ export function ItemPurchaseModal({
             /* ── 성공 상태 ── */
             <View style={styles.successState}>
               <Text style={styles.successIcon}>✅</Text>
-              <Text style={styles.successTitle}>구매 완료!</Text>
-              <Text style={styles.successDesc}>{item.name} 활성화됨</Text>
+              <Text style={styles.successTitle}>{t('itemPurchase.successTitle')}</Text>
+              <Text style={styles.successDesc}>{t('itemPurchase.successDesc', { name: item.name })}</Text>
             </View>
           ) : (
             /* ── 구매 확인 상태 ── */
@@ -157,16 +160,16 @@ export function ItemPurchaseModal({
               {/* 잔액 & 비용 */}
               <View style={styles.infoBox}>
                 <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>보유 도토리</Text>
+                  <Text style={styles.infoLabel}>{t('itemPurchase.myAcorns')}</Text>
                   <Text style={styles.infoValue}>
-                    {freePeriod ? '∞ (무료 기간)' : `${balance}개 (₩${(balance * 100).toLocaleString()})`}
+                    {freePeriod ? t('itemPurchase.freePeriodBalance') : `${balance} (₩${(balance * 100).toLocaleString()})`}
                   </Text>
                 </View>
                 <View style={styles.divider} />
                 <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>비용</Text>
+                  <Text style={styles.infoLabel}>{t('itemPurchase.cost')}</Text>
                   <Text style={styles.infoCost}>
-                    {freePeriod ? '무료' : `${item.price}개 (₩${item.priceKRW.toLocaleString()})`}
+                    {freePeriod ? t('itemPurchase.free') : `${item.price} (₩${item.priceKRW.toLocaleString()})`}
                   </Text>
                 </View>
               </View>
@@ -175,7 +178,7 @@ export function ItemPurchaseModal({
               {!freePeriod && !canAfford && (
                 <View style={styles.warningBox}>
                   <Text style={styles.warningText}>
-                    도토리가 부족합니다. {item.price - balance}개 더 필요해요.
+                    {t('itemPurchase.insufficientAcorns', { count: item.price - balance })}
                   </Text>
                 </View>
               )}
@@ -194,7 +197,7 @@ export function ItemPurchaseModal({
                   onPress={handleClose}
                   disabled={loading}
                 >
-                  <Text style={styles.cancelText}>취소</Text>
+                  <Text style={styles.cancelText}>{t('common.cancel')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.confirmBtn, (!canAfford || loading) && styles.confirmBtnDisabled]}
@@ -205,7 +208,7 @@ export function ItemPurchaseModal({
                     <ActivityIndicator size="small" color="#FFF" />
                   ) : (
                     <Text style={styles.confirmText}>
-                      {freePeriod ? '무료 획득' : '구매하기'}
+                      {freePeriod ? t('itemPurchase.getFree') : t('itemPurchase.purchase')}
                     </Text>
                   )}
                 </TouchableOpacity>

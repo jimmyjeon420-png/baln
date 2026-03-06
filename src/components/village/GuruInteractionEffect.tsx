@@ -155,12 +155,11 @@ function RivalSparkEffect({ x, y }: { x: number; y: number }) {
 function FactionMeetingEffect({
   x,
   y,
-  isKo,
 }: {
   x: number;
   y: number;
-  isKo: boolean;
 }) {
+  const { t } = useLocale();
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
@@ -195,7 +194,7 @@ function FactionMeetingEffect({
       pointerEvents="none"
     >
       <Text style={styles.meetingText}>
-        {isKo ? '\uD83E\uDD1D 파벌 회의 중' : '\uD83E\uDD1D Faction meeting'}
+        {'\uD83E\uDD1D'} {t('village_ui.faction_meeting_label')}
       </Text>
     </Animated.View>
   );
@@ -209,8 +208,6 @@ function GuruInteractionEffect({
   interactions,
   screenWidth,
 }: GuruInteractionEffectProps) {
-  const { language } = useLocale();
-  const isKo = language === 'ko';
   const screenHeight = Dimensions.get('window').height;
 
   // 이펙트 렌더링 목록 메모이제이션
@@ -243,7 +240,6 @@ function GuruInteractionEffect({
               key={`meeting-${idx}`}
               x={effect.pixelX}
               y={effect.pixelY}
-              isKo={isKo}
             />
           );
         }

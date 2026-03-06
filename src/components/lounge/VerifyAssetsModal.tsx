@@ -11,6 +11,7 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
 import { requestVerification } from '../../services/verificationService';
+import { useLocale } from '../../context/LocaleContext';
 
 interface VerifyAssetsModalProps {
   visible: boolean;
@@ -32,6 +33,7 @@ export default function VerifyAssetsModal({
   totalAssets,
   onVerified,
 }: VerifyAssetsModalProps) {
+  const { t } = useLocale();
   const [step, setStep] = useState<Step>(1);
   const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
   const [result, setResult] = useState<VerificationResult | null>(null);
@@ -100,19 +102,18 @@ export default function VerifyAssetsModal({
       <View style={styles.iconCircle}>
         <Text style={styles.iconText}>📸</Text>
       </View>
-      <Text style={styles.title}>자산 인증</Text>
+      <Text style={styles.title}>{t('verifyAssets.title')}</Text>
       <Text style={styles.description}>
-        증권사 앱 자산 현황 스크린샷을 찍어주세요
+        {t('verifyAssets.description')}
       </Text>
       <Text style={styles.subdescription}>
-        총 자산이 표시된 화면을 캡처해주세요.{'\n'}
-        개인정보는 AI가 분석 후 즉시 삭제됩니다.
+        {t('verifyAssets.subdescription')}
       </Text>
       <TouchableOpacity style={styles.primaryButton} onPress={handlePickImage}>
-        <Text style={styles.primaryButtonText}>사진 선택</Text>
+        <Text style={styles.primaryButtonText}>{t('verifyAssets.pickPhoto')}</Text>
       </TouchableOpacity>
       <TouchableOpacity style={styles.secondaryButton} onPress={handleClose}>
-        <Text style={styles.secondaryButtonText}>닫기</Text>
+        <Text style={styles.secondaryButtonText}>{t('common.close')}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -122,12 +123,12 @@ export default function VerifyAssetsModal({
       {selectedImageUri && (
         <Image source={{ uri: selectedImageUri }} style={styles.previewImage} resizeMode="contain" />
       )}
-      <Text style={styles.title}>이 스크린샷으로 인증할까요?</Text>
+      <Text style={styles.title}>{t('verifyAssets.confirmTitle')}</Text>
       <Text style={styles.subdescription}>
-        총 자산 금액이 잘 보이는지 확인해주세요.
+        {t('verifyAssets.confirmDesc')}
       </Text>
       <TouchableOpacity style={styles.primaryButton} onPress={handleVerify}>
-        <Text style={styles.primaryButtonText}>인증하기</Text>
+        <Text style={styles.primaryButtonText}>{t('verifyAssets.verify')}</Text>
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.secondaryButton}
@@ -136,7 +137,7 @@ export default function VerifyAssetsModal({
           setStep(1);
         }}
       >
-        <Text style={styles.secondaryButtonText}>다시 선택</Text>
+        <Text style={styles.secondaryButtonText}>{t('verifyAssets.reselect')}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -144,10 +145,9 @@ export default function VerifyAssetsModal({
   const renderStep3 = () => (
     <View style={styles.stepContainer}>
       <ActivityIndicator size="large" color="#4CAF50" style={styles.spinner} />
-      <Text style={styles.title}>분석 중...</Text>
+      <Text style={styles.title}>{t('verifyAssets.analyzing')}</Text>
       <Text style={styles.subdescription}>
-        AI가 스크린샷을 분석하고 있습니다.{'\n'}
-        잠시만 기다려주세요.
+        {t('verifyAssets.analyzingDesc')}
       </Text>
     </View>
   );
@@ -159,9 +159,9 @@ export default function VerifyAssetsModal({
           <View style={styles.resultIconCircle}>
             <Text style={styles.resultIcon}>✅</Text>
           </View>
-          <Text style={[styles.title, { color: '#4CAF50' }]}>인증 완료!</Text>
+          <Text style={[styles.title, { color: '#4CAF50' }]}>{t('verifyAssets.successTitle')}</Text>
           <Text style={styles.subdescription}>
-            자산이 성공적으로 인증되었습니다.
+            {t('verifyAssets.successDesc')}
           </Text>
         </>
       ) : (
@@ -169,22 +169,20 @@ export default function VerifyAssetsModal({
           <View style={styles.resultIconCircle}>
             <Text style={styles.resultIcon}>❌</Text>
           </View>
-          <Text style={[styles.title, { color: '#F44336' }]}>인증 실패</Text>
+          <Text style={[styles.title, { color: '#F44336' }]}>{t('verifyAssets.failTitle')}</Text>
           {result?.diffPercent !== undefined ? (
             <Text style={styles.subdescription}>
-              등록된 자산과 {result.diffPercent.toFixed(1)}% 차이가 있습니다.{'\n'}
-              자산 정보를 업데이트해주세요.
+              {t('verifyAssets.failDiffDesc', { percent: result.diffPercent.toFixed(1) })}
             </Text>
           ) : (
             <Text style={styles.subdescription}>
-              스크린샷 분석에 실패했습니다.{'\n'}
-              다시 시도해주세요.
+              {t('verifyAssets.failGenericDesc')}
             </Text>
           )}
         </>
       )}
       <TouchableOpacity style={styles.primaryButton} onPress={handleClose}>
-        <Text style={styles.primaryButtonText}>확인</Text>
+        <Text style={styles.primaryButtonText}>{t('common.confirm')}</Text>
       </TouchableOpacity>
     </View>
   );

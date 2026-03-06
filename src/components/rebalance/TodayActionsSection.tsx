@@ -22,7 +22,7 @@ import { ThemeColors } from '../../styles/colors';
 import type { PortfolioAction, RebalancePortfolioAsset, LivePriceData } from '../../types/rebalanceTypes';
 import type { Asset } from '../../types/asset';
 import { classifyAsset, AssetCategory, getNetAssetValue, KostolalyPhase, KOSTOLANY_PHASE_NAMES, KOSTOLANY_PHASE_NAMES_EN, KOSTOLANY_PHASE_EMOJIS, KOSTOLANY_PHASE_DESCRIPTIONS, KOSTOLANY_PHASE_DESCRIPTIONS_EN, calculateHealthScore, LIQUID_ASSET_CATEGORIES, normalizeLiquidTarget } from '../../services/rebalanceScore';
-import { getTickerProfile as _getTickerProfile, getCachedTickerProfile } from '../../data/tickerProfile';
+import { getTickerProfile as _getTickerProfile, getCachedTickerProfile, getTickerNameByLang } from '../../data/tickerProfile';
 import { useKostolalyPhase } from '../../hooks/useKostolalyPhase';
 import { usePrescriptionResults } from '../../hooks/usePrescriptionResults';
 import TermTooltip from '../common/TermTooltip';
@@ -1157,7 +1157,7 @@ export default function TodayActionsSection({
                   <Text style={s.mismatchBadgeText}>{t('today_actions.mismatch_badge')}</Text>
                 </View>
               )}
-              <Text style={[s.actionName, { color: colors.textTertiary }]} numberOfLines={1}>{action.name}</Text>
+              <Text style={[s.actionName, { color: colors.textTertiary }]} numberOfLines={1}>{getTickerNameByLang(action.ticker, language, action.name)}</Text>
               {isHighPriority && !isDone && (
                 <View style={[s.urgentDot, { backgroundColor: colors.error }]}>
                   <Text style={[s.urgentDotText, { color: colors.inverseText }]}>!</Text>

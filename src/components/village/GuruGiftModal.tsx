@@ -100,7 +100,7 @@ function GuruGiftModal({
   const successAnim = useRef(new Animated.Value(0)).current;
 
   const { t, language } = useLocale();
-  const isKo = language === 'ko';
+  const _isKo = language === 'ko';
 
   // 모달 열림 애니메이션
   useEffect(() => {
@@ -233,7 +233,7 @@ function GuruGiftModal({
                           <Text style={styles.giftEmoji}>{gift.emoji}</Text>
                           <View style={styles.giftInfo}>
                             <Text style={[styles.giftName, { color: colors.textPrimary }]}>
-                              {isKo ? gift.nameKo : gift.nameEn}
+                              {t(`guruGift.gift_${gift.id}`)}
                             </Text>
                             <Text style={[styles.giftMeta, { color: colors.textTertiary }]}>
                               {t('guruGift.friendshipGain', { amount: gift.friendshipGain })}

@@ -8,6 +8,8 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Gathering, GATHERING_CATEGORY_LABELS, UserTier } from '../types/database';
 import { formatAssetInBillion, TIER_COLORS, canAccessTier, getCommunityTierLabel } from '../hooks/useGatherings';
+import { useLocale } from '../context/LocaleContext';
+import { t as tStatic } from '../locales';
 
 interface GatheringCardProps {
   gathering: Gathering;
@@ -44,18 +46,19 @@ const formatEventDate = (dateString: string): string => {
   const day = date.getDate();
   const hours = date.getHours();
   const minutes = date.getMinutes().toString().padStart(2, '0');
-  const dayOfWeek = ['일', '월', '화', '수', '목', '금', '토'][date.getDay()];
+  const daysKey = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
+  const dayOfWeek = tStatic(`gathering.days.${daysKey[date.getDay()]}`);
 
   return `${month}/${day}(${dayOfWeek}) ${hours}:${minutes}`;
 };
 
 // 금액 포맷팅
 const formatCurrency = (amount: number): string => {
-  if (amount === 0) return '무료';
+  if (amount === 0) return tStatic('gathering.free');
   if (amount >= 10000) {
-    return `${(amount / 10000).toLocaleString()}만원`;
+    return tStatic('gathering.priceMan', { amount: (amount / 10000).toLocaleString() });
   }
-  return `${amount.toLocaleString()}원`;
+  return tStatic('gathering.priceWon', { amount: amount.toLocaleString() });
 };
 
 // 플랫폼 수수료율 (10%)
@@ -69,6 +72,7 @@ const calculateFee = (amount: number): { fee: number; total: number } => {
 };
 
 export default function GatheringCard({ gathering, onPress, userTier }: GatheringCardProps) {
+  const { t } = useLocale();
   const tierColor = TIER_COLORS[gathering.host_tier];
   const tierIcon = getTierIcon(gathering.host_tier);
   const categoryIcon = getCategoryIcon(gathering.category);
@@ -124,12 +128,12 @@ export default function GatheringCard({ gathering, onPress, userTier }: Gatherin
         </View>
         {isFull && (
           <View style={styles.fullBadge}>
-            <Text style={styles.fullBadgeText}>마감</Text>
+            <Text style={styles.fullBadgeText}>{t('gathering.full')}</Text>
           </View>
         )}
         {gathering.status === 'cancelled' && (
           <View style={styles.cancelledBadge}>
-            <Text style={styles.cancelledBadgeText}>취소됨</Text>
+            <Text style={styles.cancelledBadgeText}>{t('gathering.cancelled')}</Text>
           </View>
         )}
       </View>
@@ -146,10 +150,10 @@ export default function GatheringCard({ gathering, onPress, userTier }: Gatherin
         </View>
         <View style={styles.hostInfo}>
           <View style={styles.hostNameRow}>
-            <Text style={styles.hostName}>{gathering.host_display_name || '익명'}</Text>
+            <Text style={styles.hostName}>{gathering.host_display_name || t('gathering.anonymous')}</Text>
             <View style={styles.verifiedBadge}>
               <Ionicons name="checkmark-circle" size={14} color="#4CAF50" />
-              <Text style={styles.verifiedText}>인증됨</Text>
+              <Text style={styles.verifiedText}>{t('gathering.verified')}</Text>
             </View>
           </View>
           <Text style={[styles.hostAssets, { color: tierColor }]}>
@@ -174,7 +178,7 @@ export default function GatheringCard({ gathering, onPress, userTier }: Gatherin
             color="#888888"
           />
           <Text style={styles.infoText} numberOfLines={1}>
-            {gathering.location_type === 'online' ? '온라인' : gathering.location}
+            {gathering.location_type === 'online' ? t('gathering.online') : gathering.location}
           </Text>
         </View>
       </View>
@@ -183,14 +187,14 @@ export default function GatheringCard({ gathering, onPress, userTier }: Gatherin
       <View style={styles.bottomRow}>
         <View style={styles.feeContainer}>
           <View style={styles.feeMainRow}>
-            <Text style={styles.feeLabel}>참가비</Text>
+            <Text style={styles.feeLabel}>{t('gathering.entryFee')}</Text>
             <Text style={[styles.feeValue, gathering.entry_fee === 0 && styles.freeFee]}>
               {formatCurrency(gathering.entry_fee)}
             </Text>
           </View>
           {gathering.entry_fee > 0 && (
             <Text style={styles.feeDetail}>
-              (수수료 {formatCurrency(calculateFee(gathering.entry_fee).fee)} 별도)
+              {t('gathering.feeSeparate', { fee: formatCurrency(calculateFee(gathering.entry_fee).fee) })}
             </Text>
           )}
         </View>
@@ -201,7 +205,7 @@ export default function GatheringCard({ gathering, onPress, userTier }: Gatherin
             <Text style={isFull ? styles.capacityFull : styles.capacityCurrent}>
               {gathering.current_capacity}
             </Text>
-            /{gathering.max_capacity}명
+            /{gathering.max_capacity}
           </Text>
         </View>
       </View>

@@ -21,6 +21,7 @@ import Animated, {
   withRepeat,
   withSequence,
 } from 'react-native-reanimated';
+import { useLocale } from '../../context/LocaleContext';
 import { LeaderboardEntry } from '../../types/prediction';
 
 interface LeaderboardSectionProps {
@@ -29,6 +30,7 @@ interface LeaderboardSectionProps {
 }
 
 export default function LeaderboardSection({ leaderboard, isLoading }: LeaderboardSectionProps) {
+  const { t } = useLocale();
   // 내 순위가 TOP 10 밖인지 확인
   const myEntry = leaderboard?.find(entry => entry.isMe);
   const isMyRankOutsideTop10 = myEntry && myEntry.rank > 10;
@@ -37,17 +39,17 @@ export default function LeaderboardSection({ leaderboard, isLoading }: Leaderboa
 
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>🏆 주간 리더보드</Text>
+      <Text style={styles.sectionTitle}>{'🏆 '}{t('leaderboard.title')}</Text>
       {isLoading ? (
         <View style={styles.loadingState}>
-          <Text style={styles.loadingText}>리더보드를 불러오는 중...</Text>
+          <Text style={styles.loadingText}>{t('leaderboard.loading')}</Text>
         </View>
       ) : !leaderboard || leaderboard.length === 0 ? (
         <View style={styles.emptyState}>
           <Text style={styles.emptyEmoji}>🏅</Text>
-          <Text style={styles.emptyTitle}>아직 리더보드가 비어있습니다</Text>
+          <Text style={styles.emptyTitle}>{t('leaderboard.empty_title')}</Text>
           <Text style={styles.emptyDescription}>
-            최소 5회 투표한 유저만 리더보드에 표시됩니다.
+            {t('leaderboard.empty_desc')}
           </Text>
         </View>
       ) : (
@@ -86,6 +88,7 @@ interface LeaderboardCardProps {
 }
 
 function LeaderboardCard({ entry, index }: LeaderboardCardProps) {
+  const { t } = useLocale();
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(20);
 
@@ -139,17 +142,17 @@ function LeaderboardCard({ entry, index }: LeaderboardCardProps) {
         {/* 프로필 아바타 */}
         <View style={[styles.avatar, { backgroundColor: getAvatarColor(entry.user_id) }]}>
           <Text style={styles.avatarText}>
-            {(entry.isMe ? '나' : entry.display_name).charAt(0).toUpperCase()}
+            {(entry.isMe ? t('leaderboard.me_label') : entry.display_name).charAt(0).toUpperCase()}
           </Text>
         </View>
 
         {/* 유저 정보 */}
         <View style={styles.userInfo}>
           <Text style={[styles.userName, isTop3 && styles.userNameTop]}>
-            {entry.isMe ? '나' : entry.display_name}
+            {entry.isMe ? t('leaderboard.me_label') : entry.display_name}
           </Text>
           <Text style={[styles.userVotes, isTop3 && styles.userVotesTop]}>
-            {entry.total_votes}회 투표
+            {t('leaderboard.votes_count', { count: String(entry.total_votes) })}
           </Text>
         </View>
 
@@ -159,7 +162,7 @@ function LeaderboardCard({ entry, index }: LeaderboardCardProps) {
             {Number(entry.accuracy_rate).toFixed(1)}%
           </Text>
           <Text style={[styles.accuracyLabel, isTop3 && styles.accuracyLabelTop]}>
-            적중률
+            {t('leaderboard.accuracy_label')}
           </Text>
         </View>
 
@@ -186,6 +189,7 @@ interface MyRankCardProps {
 }
 
 function MyRankCard({ entry, remainingToTop10 }: MyRankCardProps) {
+  const { t } = useLocale();
   const scale = useSharedValue(1);
 
   useEffect(() => {
@@ -207,9 +211,9 @@ function MyRankCard({ entry, remainingToTop10 }: MyRankCardProps) {
   return (
     <Animated.View style={[styles.myRankContainer, animatedStyle]}>
       <View style={styles.myRankHeader}>
-        <Text style={styles.myRankTitle}>내 순위</Text>
+        <Text style={styles.myRankTitle}>{t('leaderboard.my_rank_title')}</Text>
         <Text style={styles.myRankSubtitle}>
-          TOP 10 진입까지 {remainingToTop10}명 남음
+          {t('leaderboard.my_rank_remaining', { count: String(remainingToTop10) })}
         </Text>
       </View>
 
@@ -221,13 +225,13 @@ function MyRankCard({ entry, remainingToTop10 }: MyRankCardProps) {
 
         {/* 프로필 아바타 */}
         <View style={[styles.avatar, { backgroundColor: getAvatarColor(entry.user_id) }]}>
-          <Text style={styles.avatarText}>나</Text>
+          <Text style={styles.avatarText}>{t('leaderboard.me_label')}</Text>
         </View>
 
         {/* 유저 정보 */}
         <View style={styles.userInfo}>
-          <Text style={[styles.userName, styles.userNameMe]}>나</Text>
-          <Text style={styles.userVotes}>{entry.total_votes}회 투표</Text>
+          <Text style={[styles.userName, styles.userNameMe]}>{t('leaderboard.me_label')}</Text>
+          <Text style={styles.userVotes}>{t('leaderboard.votes_count', { count: String(entry.total_votes) })}</Text>
         </View>
 
         {/* 적중률 */}
@@ -235,7 +239,7 @@ function MyRankCard({ entry, remainingToTop10 }: MyRankCardProps) {
           <Text style={styles.accuracyValue}>
             {Number(entry.accuracy_rate).toFixed(1)}%
           </Text>
-          <Text style={styles.accuracyLabel}>적중률</Text>
+          <Text style={styles.accuracyLabel}>{t('leaderboard.accuracy_label')}</Text>
         </View>
 
         {/* 연속 스트릭 */}

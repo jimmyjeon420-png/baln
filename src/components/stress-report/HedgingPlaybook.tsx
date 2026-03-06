@@ -9,9 +9,10 @@
  */
 
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 import type { WhatIfResult } from '../../types/marketplace';
 
 const FREE_HEDGE_LIMIT = 2;
@@ -24,6 +25,7 @@ export const HedgingPlaybook: React.FC<HedgingPlaybookProps> = ({
   result,
 }) => {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const risk = result.riskAssessment;
 
   if (!risk) return null;
@@ -34,7 +36,7 @@ export const HedgingPlaybook: React.FC<HedgingPlaybookProps> = ({
   return (
     <View style={[s.container, { backgroundColor: colors.surface }]}>
       <Text style={[s.sectionTitle, { color: colors.textPrimary }]}>
-        대응 전략
+        {t('stressReport.hedging.sectionTitle')}
       </Text>
 
       {/* 취약점 (무료) */}
@@ -43,7 +45,7 @@ export const HedgingPlaybook: React.FC<HedgingPlaybookProps> = ({
           <View style={s.blockHeader}>
             <Ionicons name="alert-circle-outline" size={18} color={colors.warning} />
             <Text style={[s.blockTitle, { color: colors.textPrimary }]}>
-              지금 확인할 점
+              {t('stressReport.hedging.vulnerabilities')}
             </Text>
           </View>
           {vulnerabilities.map((item, i) => (
@@ -63,7 +65,7 @@ export const HedgingPlaybook: React.FC<HedgingPlaybookProps> = ({
           <View style={s.blockHeader}>
             <Ionicons name="shield-checkmark-outline" size={18} color={colors.success} />
             <Text style={[s.blockTitle, { color: colors.textPrimary }]}>
-              실행 가능한 대응
+              {t('stressReport.hedging.actions')}
             </Text>
           </View>
           {hedgingSuggestions.map((item, i) => {
@@ -104,10 +106,10 @@ export const HedgingPlaybook: React.FC<HedgingPlaybookProps> = ({
       {/* 리스크 수준 요약 */}
       <View style={[s.riskSummary, { backgroundColor: `${getRiskColor(risk.overallRisk)}10` }]}>
         <Text style={[s.riskLabel, { color: colors.textSecondary }]}>
-          전체 리스크 수준
+          {t('stressReport.hedging.overallRisk')}
         </Text>
         <Text style={[s.riskLevel, { color: getRiskColor(risk.overallRisk) }]}>
-          {getRiskLabel(risk.overallRisk)}
+          {getRiskLabel(risk.overallRisk, t)}
         </Text>
       </View>
     </View>
@@ -130,14 +132,14 @@ function getRiskColor(level: string): string {
   }
 }
 
-function getRiskLabel(level: string): string {
+function getRiskLabel(level: string, t: (key: string) => string): string {
   switch (level) {
     case 'HIGH':
-      return '높음 — 방어 전략 실행 권장';
+      return t('stressReport.hedging.high');
     case 'MEDIUM':
-      return '보통 — 모니터링 필요';
+      return t('stressReport.hedging.moderate');
     default:
-      return '낮음 — 현재 배분 유지';
+      return t('stressReport.hedging.low');
   }
 }
 

@@ -21,6 +21,7 @@ import {
   getBadgesByCategory,
   type Badge,
 } from '../../data/badgeDefinitions';
+import { useLocale } from '../../context/LocaleContext';
 
 interface BadgeShowcaseProps {
   /** 사용자가 획득한 뱃지 ID 목록 */
@@ -31,20 +32,21 @@ interface BadgeShowcaseProps {
 
 export function BadgeShowcase({ ownedBadgeIds, onBadgePress }: BadgeShowcaseProps) {
   const track = useTrackEvent();
+  const { t } = useLocale();
   const categories: { key: Badge['category']; title: string; icon: string }[] = [
-    { key: 'activity', title: '활동 뱃지', icon: '🏆' },
-    { key: 'skill', title: '실력 뱃지', icon: '🎯' },
-    { key: 'contribution', title: '기여 뱃지', icon: '📚' },
-    { key: 'special', title: '특수 뱃지', icon: '⭐' },
+    { key: 'activity', title: t('badge.category_activity'), icon: '🏆' },
+    { key: 'skill', title: t('badge.category_skill'), icon: '🎯' },
+    { key: 'contribution', title: t('badge.category_contribution'), icon: '📚' },
+    { key: 'special', title: t('badge.category_special'), icon: '⭐' },
   ];
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* 헤더 */}
       <View style={styles.header}>
-        <Text style={styles.title}>내 뱃지</Text>
+        <Text style={styles.title}>{t('badge.my_badges')}</Text>
         <Text style={styles.subtitle}>
-          {ownedBadgeIds.length}개 획득 / {BADGE_DEFINITIONS.filter((b) => b.enabled).length}개
+          {t('badge.earned_count', { earned: ownedBadgeIds.length, total: BADGE_DEFINITIONS.filter((b) => b.enabled).length })}
         </Text>
       </View>
 
@@ -103,6 +105,7 @@ function BadgeItem({
   isOwned: boolean;
   onPress: () => void;
 }) {
+  const { t } = useLocale();
   // 희귀도별 테두리 색상
   const rarityColor = {
     common: '#6B7280',
@@ -151,10 +154,10 @@ function BadgeItem({
       {isOwned && (
         <View style={[styles.rarityBadge, { backgroundColor: rarityColor }]}>
           <Text style={styles.rarityText}>
-            {badge.rarity === 'legendary' && '전설'}
-            {badge.rarity === 'epic' && '영웅'}
-            {badge.rarity === 'rare' && '희귀'}
-            {badge.rarity === 'common' && '일반'}
+            {badge.rarity === 'legendary' && t('badge.rarity_legendary')}
+            {badge.rarity === 'epic' && t('badge.rarity_epic')}
+            {badge.rarity === 'rare' && t('badge.rarity_rare')}
+            {badge.rarity === 'common' && t('badge.rarity_common')}
           </Text>
         </View>
       )}
@@ -162,7 +165,7 @@ function BadgeItem({
       {/* 미획득 시 조건 표시 */}
       {!isOwned && badge.condition.threshold && (
         <Text style={styles.conditionText} numberOfLines={1}>
-          {badge.condition.type === 'streak' && `${badge.condition.threshold}일`}
+          {badge.condition.type === 'streak' && t('badge.condition_days', { count: badge.condition.threshold })}
           {badge.condition.type === 'prediction' && `${badge.condition.threshold}%`}
         </Text>
       )}

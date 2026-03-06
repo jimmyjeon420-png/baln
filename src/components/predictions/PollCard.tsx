@@ -19,6 +19,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useHaptics } from '../../hooks/useHaptics';
 import { useTrackEvent } from '../../hooks/useAnalytics';
+import { useLocale } from '../../context/LocaleContext';
 import {
   PollWithMyVote,
   POLL_CATEGORY_INFO,
@@ -34,6 +35,7 @@ interface PollCardProps {
 export default function PollCard({ poll, onVote, isVoting }: PollCardProps) {
   const { mediumTap } = useHaptics();
   const track = useTrackEvent();
+  const { t } = useLocale();
   const [countdown, setCountdown] = useState('');
 
   // 마감 카운트다운 계산
@@ -44,7 +46,7 @@ export default function PollCard({ poll, onVote, isVoting }: PollCardProps) {
       const diff = deadline - now;
 
       if (diff <= 0) {
-        setCountdown('마감');
+        setCountdown(t('predictions.poll.closed'));
         return;
       }
 
@@ -53,17 +55,18 @@ export default function PollCard({ poll, onVote, isVoting }: PollCardProps) {
 
       if (hours >= 24) {
         const days = Math.floor(hours / 24);
-        setCountdown(`${days}일 남음`);
+        setCountdown(t('predictions.poll.daysLeft', { days }));
       } else if (hours > 0) {
-        setCountdown(`${hours}시간 ${minutes}분 남음`);
+        setCountdown(t('predictions.poll.hoursLeft', { hours, minutes }));
       } else {
-        setCountdown(`${minutes}분 남음`);
+        setCountdown(t('predictions.poll.minutesLeft', { minutes }));
       }
     };
 
     updateCountdown();
     const timer = setInterval(updateCountdown, 60000); // 1분마다 갱신
     return () => clearInterval(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [poll.deadline]);
 
   const totalVotes = poll.yes_count + poll.no_count;
@@ -107,7 +110,7 @@ export default function PollCard({ poll, onVote, isVoting }: PollCardProps) {
               styles.resultBadgeText,
               { color: poll.myIsCorrect ? '#4CAF50' : '#CF6679' },
             ]}>
-              {poll.myIsCorrect === null ? '미참여' : poll.myIsCorrect ? '적중!' : '빗나감'}
+              {poll.myIsCorrect === null ? t('predictions.poll.notParticipated') : poll.myIsCorrect ? t('predictions.poll.correct') : t('predictions.poll.incorrect')}
             </Text>
           </View>
         )}
@@ -169,8 +172,8 @@ export default function PollCard({ poll, onVote, isVoting }: PollCardProps) {
                 poll.myVote === 'YES' && styles.barLabelHighlight,
               ]}>
                 {poll.yes_label}
-                {poll.myVote === 'YES' && ' ← 내 선택'}
-                {isResolved && poll.correct_answer === 'YES' && ' ✓ 정답'}
+                {poll.myVote === 'YES' && ` ${t('predictions.poll.myChoice')}`}
+                {isResolved && poll.correct_answer === 'YES' && ` ${t('predictions.poll.correctAnswer')}`}
               </Text>
               <Text style={styles.barPercent}>{yesPercent}%</Text>
             </View>
@@ -197,8 +200,8 @@ export default function PollCard({ poll, onVote, isVoting }: PollCardProps) {
                 poll.myVote === 'NO' && styles.barLabelHighlight,
               ]}>
                 {poll.no_label}
-                {poll.myVote === 'NO' && ' ← 내 선택'}
-                {isResolved && poll.correct_answer === 'NO' && ' ✓ 정답'}
+                {poll.myVote === 'NO' && ` ${t('predictions.poll.myChoice')}`}
+                {isResolved && poll.correct_answer === 'NO' && ` ${t('predictions.poll.correctAnswer')}`}
               </Text>
               <Text style={styles.barPercent}>{noPercent}%</Text>
             </View>
@@ -223,27 +226,27 @@ export default function PollCard({ poll, onVote, isVoting }: PollCardProps) {
       <View style={styles.footer}>
         <View style={styles.footerLeft}>
           <Ionicons name="people-outline" size={14} color="#666666" />
-          <Text style={styles.footerText}>{totalVotes.toLocaleString()}명 참여</Text>
+          <Text style={styles.footerText}>{t('predictions.poll.participants', { count: totalVotes.toLocaleString() })}</Text>
         </View>
 
         {isResolved && poll.myIsCorrect && poll.myCreditsEarned > 0 && (
           <View style={styles.creditBadge}>
-            <Text style={styles.creditBadgeText}>+{poll.myCreditsEarned} 도토리</Text>
+            <Text style={styles.creditBadgeText}>{t('predictions.poll.acornEarned', { count: poll.myCreditsEarned })}</Text>
           </View>
         )}
 
         {isResolved && poll.myIsCorrect === false && (
-          <Text style={styles.missText}>아쉽게 빗나갔어요</Text>
+          <Text style={styles.missText}>{t('predictions.poll.missed')}</Text>
         )}
 
         {!isResolved && (
-          <Text style={styles.rewardHint}>적중 시 +{poll.reward_credits} 도토리</Text>
+          <Text style={styles.rewardHint}>{t('predictions.poll.rewardHint', { count: poll.reward_credits })}</Text>
         )}
       </View>
 
       {/* 정답 출처 (종료 후) */}
       {isResolved && poll.source && (
-        <Text style={styles.sourceText}>출처: {poll.source}</Text>
+        <Text style={styles.sourceText}>{t('predictions.poll.source', { source: poll.source })}</Text>
       )}
     </View>
   );

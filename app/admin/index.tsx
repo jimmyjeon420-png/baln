@@ -25,6 +25,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter, type Href } from 'expo-router';
 import { useIsAdmin, useAdminOverview } from '../../src/hooks/useAdminDashboard';
 import { COLORS } from '../../src/styles/theme';
+import { useLocale } from '../../src/context/LocaleContext';
 
 // ================================================================
 // 내비게이션 카드 정의
@@ -33,8 +34,8 @@ import { COLORS } from '../../src/styles/theme';
 type AdminCard = {
   key: string;
   icon: keyof typeof Ionicons.glyphMap;
-  title: string;
-  subtitle: string;
+  titleKey: string;
+  subtitleKey: string;
   route: Href;
 };
 
@@ -50,36 +51,36 @@ const ADMIN_CARDS: AdminCard[] = [
   {
     key: 'dashboard',
     icon: 'bar-chart',
-    title: '핵심 지표',
-    subtitle: 'DAU, 매출, 리텐션',
+    titleKey: 'admin.menu.dashboard',
+    subtitleKey: 'admin.menu.dashboardSub',
     route: '/admin/dashboard',
   },
   {
     key: 'users',
     icon: 'people',
-    title: '유저 관리',
-    subtitle: '검색, 상세, 활동',
+    titleKey: 'admin.menu.users',
+    subtitleKey: 'admin.menu.usersSub',
     route: '/admin/users',
   },
   {
     key: 'reports',
     icon: 'flag',
-    title: '신고 관리',
-    subtitle: '커뮤니티 신고 처리',
+    titleKey: 'admin.menu.reports',
+    subtitleKey: 'admin.menu.reportsSub',
     route: '/admin/reports',
   },
   {
     key: 'analytics',
     icon: 'trending-up',
-    title: '상세 분석',
-    subtitle: '리텐션, 분포, 추이',
+    titleKey: 'admin.menu.analytics',
+    subtitleKey: 'admin.menu.analyticsSub',
     route: '/admin/analytics',
   },
   {
     key: 'lounge',
     icon: 'chatbubbles',
-    title: '라운지 관리',
-    subtitle: '게시글, 모임 관리',
+    titleKey: 'admin.menu.lounge',
+    subtitleKey: 'admin.menu.loungeSub',
     route: '/admin/lounge',
   },
 ];
@@ -125,6 +126,7 @@ function getBadgeValue(
 
 export default function AdminHubScreen() {
   const router = useRouter();
+  const { t } = useLocale();
   const { data: isAdmin, isLoading, error } = useIsAdmin();
 
   // 관리자 확인 후에만 overview 데이터를 가져옵니다.
@@ -141,12 +143,12 @@ export default function AdminHubScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Ionicons name="chevron-back" size={24} color={COLORS.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>관리자</Text>
+          <Text style={styles.headerTitle}>{t('admin.headerTitle')}</Text>
           <View style={styles.headerSpacer} />
         </View>
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={COLORS.primary} />
-          <Text style={styles.loadingText}>권한 확인 중...</Text>
+          <Text style={styles.loadingText}>{t('admin.loadingPermission')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -162,17 +164,17 @@ export default function AdminHubScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Ionicons name="chevron-back" size={24} color={COLORS.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>관리자</Text>
+          <Text style={styles.headerTitle}>{t('admin.headerTitle')}</Text>
           <View style={styles.headerSpacer} />
         </View>
         <View style={styles.centerContainer}>
           <Ionicons name="lock-closed" size={64} color={COLORS.textSecondary} />
-          <Text style={styles.deniedTitle}>접근 권한 없음</Text>
+          <Text style={styles.deniedTitle}>{t('admin.accessDenied')}</Text>
           <Text style={styles.deniedSubtitle}>
-            관리자 계정으로 로그인해주세요.
+            {t('admin.loginAsAdmin')}
           </Text>
           <TouchableOpacity style={styles.goBackButton} onPress={() => router.back()}>
-            <Text style={styles.goBackButtonText}>돌아가기</Text>
+            <Text style={styles.goBackButtonText}>{t('common.go_back')}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -230,8 +232,8 @@ export default function AdminHubScreen() {
                     <View style={styles.iconContainer}>
                       <Ionicons name={card.icon} size={28} color={COLORS.primary} />
                     </View>
-                    <Text style={styles.cardTitle}>{card.title}</Text>
-                    <Text style={styles.cardSubtitle}>{card.subtitle}</Text>
+                    <Text style={styles.cardTitle}>{t(card.titleKey)}</Text>
+                    <Text style={styles.cardSubtitle}>{t(card.subtitleKey)}</Text>
                   </TouchableOpacity>
                 );
               })}

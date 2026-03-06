@@ -28,6 +28,7 @@ export type TickerGeo = 'us' | 'kr' | 'global' | 'em';
 export interface TickerProfile {
   ticker: string;
   name: string;
+  nameEn?: string;
   sector: TickerSector;
   style: TickerStyle;
   geo: TickerGeo;
@@ -39,89 +40,89 @@ export interface TickerProfile {
 
 export const TICKER_PROFILES: Record<string, TickerProfile> = {
   // ── 미국 성장주 (기술) ──
-  'NVDA':  { ticker: 'NVDA',  name: '엔비디아',       sector: 'tech',      style: 'growth',      geo: 'us' },
-  'TSLA':  { ticker: 'TSLA',  name: '테슬라',         sector: 'consumer',  style: 'growth',      geo: 'us' },
-  'AAPL':  { ticker: 'AAPL',  name: '애플',           sector: 'tech',      style: 'value',       geo: 'us' },
-  'MSFT':  { ticker: 'MSFT',  name: '마이크로소프트',  sector: 'tech',      style: 'value',       geo: 'us' },
-  'AMZN':  { ticker: 'AMZN',  name: '아마존',         sector: 'consumer',  style: 'growth',      geo: 'us' },
-  'GOOGL': { ticker: 'GOOGL', name: '알파벳',         sector: 'tech',      style: 'value',       geo: 'us' },
-  'GOOG':  { ticker: 'GOOG',  name: '알파벳 C',       sector: 'tech',      style: 'value',       geo: 'us' },
-  'META':  { ticker: 'META',  name: '메타',           sector: 'tech',      style: 'growth',      geo: 'us' },
-  'AMD':   { ticker: 'AMD',   name: 'AMD',            sector: 'tech',      style: 'growth',      geo: 'us' },
-  'PLTR':  { ticker: 'PLTR',  name: '팔란티어',       sector: 'tech',      style: 'speculative', geo: 'us' },
-  'COIN':  { ticker: 'COIN',  name: '코인베이스',     sector: 'finance',   style: 'speculative', geo: 'us' },
-  'MSTR':  { ticker: 'MSTR',  name: '마이크로스트래티지', sector: 'tech',  style: 'speculative', geo: 'us' },
-  'SNOW':  { ticker: 'SNOW',  name: '스노우플레이크', sector: 'tech',      style: 'growth',      geo: 'us' },
-  'NET':   { ticker: 'NET',   name: '클라우드플레어', sector: 'tech',      style: 'growth',      geo: 'us' },
-  'CRWD':  { ticker: 'CRWD',  name: '크라우드스트라이크', sector: 'tech',  style: 'growth',      geo: 'us' },
-  'SHOP':  { ticker: 'SHOP',  name: '쇼피파이',       sector: 'consumer',  style: 'growth',      geo: 'us' },
-  'UBER':  { ticker: 'UBER',  name: '우버',           sector: 'consumer',  style: 'growth',      geo: 'us' },
-  'ABNB':  { ticker: 'ABNB',  name: '에어비앤비',     sector: 'consumer',  style: 'growth',      geo: 'us' },
+  'NVDA':  { ticker: 'NVDA',  name: '엔비디아',       nameEn: 'NVIDIA',              sector: 'tech',      style: 'growth',      geo: 'us' },
+  'TSLA':  { ticker: 'TSLA',  name: '테슬라',         nameEn: 'Tesla',               sector: 'consumer',  style: 'growth',      geo: 'us' },
+  'AAPL':  { ticker: 'AAPL',  name: '애플',           nameEn: 'Apple',               sector: 'tech',      style: 'value',       geo: 'us' },
+  'MSFT':  { ticker: 'MSFT',  name: '마이크로소프트',  nameEn: 'Microsoft',           sector: 'tech',      style: 'value',       geo: 'us' },
+  'AMZN':  { ticker: 'AMZN',  name: '아마존',         nameEn: 'Amazon',              sector: 'consumer',  style: 'growth',      geo: 'us' },
+  'GOOGL': { ticker: 'GOOGL', name: '알파벳',         nameEn: 'Alphabet',            sector: 'tech',      style: 'value',       geo: 'us' },
+  'GOOG':  { ticker: 'GOOG',  name: '알파벳 C',       nameEn: 'Alphabet C',          sector: 'tech',      style: 'value',       geo: 'us' },
+  'META':  { ticker: 'META',  name: '메타',           nameEn: 'Meta Platforms',      sector: 'tech',      style: 'growth',      geo: 'us' },
+  'AMD':   { ticker: 'AMD',   name: 'AMD',            nameEn: 'AMD',                 sector: 'tech',      style: 'growth',      geo: 'us' },
+  'PLTR':  { ticker: 'PLTR',  name: '팔란티어',       nameEn: 'Palantir',            sector: 'tech',      style: 'speculative', geo: 'us' },
+  'COIN':  { ticker: 'COIN',  name: '코인베이스',     nameEn: 'Coinbase',            sector: 'finance',   style: 'speculative', geo: 'us' },
+  'MSTR':  { ticker: 'MSTR',  name: '마이크로스트래티지', nameEn: 'MicroStrategy',   sector: 'tech',      style: 'speculative', geo: 'us' },
+  'SNOW':  { ticker: 'SNOW',  name: '스노우플레이크', nameEn: 'Snowflake',           sector: 'tech',      style: 'growth',      geo: 'us' },
+  'NET':   { ticker: 'NET',   name: '클라우드플레어', nameEn: 'Cloudflare',          sector: 'tech',      style: 'growth',      geo: 'us' },
+  'CRWD':  { ticker: 'CRWD',  name: '크라우드스트라이크', nameEn: 'CrowdStrike',     sector: 'tech',      style: 'growth',      geo: 'us' },
+  'SHOP':  { ticker: 'SHOP',  name: '쇼피파이',       nameEn: 'Shopify',             sector: 'consumer',  style: 'growth',      geo: 'us' },
+  'UBER':  { ticker: 'UBER',  name: '우버',           nameEn: 'Uber',                sector: 'consumer',  style: 'growth',      geo: 'us' },
+  'ABNB':  { ticker: 'ABNB',  name: '에어비앤비',     nameEn: 'Airbnb',              sector: 'consumer',  style: 'growth',      geo: 'us' },
 
   // ── 미국 가치주 ──
-  'BRK.B': { ticker: 'BRK.B', name: '버크셔B',        sector: 'finance',   style: 'value',       geo: 'us' },
-  'BRK.A': { ticker: 'BRK.A', name: '버크셔A',        sector: 'finance',   style: 'value',       geo: 'us' },
-  'JPM':   { ticker: 'JPM',   name: 'JP모건',         sector: 'finance',   style: 'value',       geo: 'us' },
-  'BAC':   { ticker: 'BAC',   name: '뱅크오브아메리카', sector: 'finance', style: 'value',       geo: 'us' },
-  'WFC':   { ticker: 'WFC',   name: '웰스파고',       sector: 'finance',   style: 'value',       geo: 'us' },
-  'GS':    { ticker: 'GS',    name: '골드만삭스',     sector: 'finance',   style: 'value',       geo: 'us' },
+  'BRK.B': { ticker: 'BRK.B', name: '버크셔B',        nameEn: 'Berkshire B',         sector: 'finance',   style: 'value',       geo: 'us' },
+  'BRK.A': { ticker: 'BRK.A', name: '버크셔A',        nameEn: 'Berkshire A',         sector: 'finance',   style: 'value',       geo: 'us' },
+  'JPM':   { ticker: 'JPM',   name: 'JP모건',         nameEn: 'JPMorgan Chase',      sector: 'finance',   style: 'value',       geo: 'us' },
+  'BAC':   { ticker: 'BAC',   name: '뱅크오브아메리카', nameEn: 'Bank of America',   sector: 'finance',   style: 'value',       geo: 'us' },
+  'WFC':   { ticker: 'WFC',   name: '웰스파고',       nameEn: 'Wells Fargo',         sector: 'finance',   style: 'value',       geo: 'us' },
+  'GS':    { ticker: 'GS',    name: '골드만삭스',     nameEn: 'Goldman Sachs',       sector: 'finance',   style: 'value',       geo: 'us' },
 
   // ── 미국 배당주 ──
-  'JNJ':   { ticker: 'JNJ',   name: '존슨앤존슨',     sector: 'healthcare', style: 'dividend',   geo: 'us' },
-  'PG':    { ticker: 'PG',    name: 'P&G',            sector: 'consumer',  style: 'dividend',    geo: 'us' },
-  'KO':    { ticker: 'KO',    name: '코카콜라',       sector: 'consumer',  style: 'dividend',    geo: 'us' },
-  'PEP':   { ticker: 'PEP',   name: '펩시코',         sector: 'consumer',  style: 'dividend',    geo: 'us' },
-  'XOM':   { ticker: 'XOM',   name: '엑슨모빌',       sector: 'energy',    style: 'dividend',    geo: 'us' },
-  'CVX':   { ticker: 'CVX',   name: '쉐브론',         sector: 'energy',    style: 'dividend',    geo: 'us' },
-  'MCD':   { ticker: 'MCD',   name: '맥도날드',       sector: 'consumer',  style: 'dividend',    geo: 'us' },
-  'T':     { ticker: 'T',     name: 'AT&T',           sector: 'telecom',   style: 'dividend',    geo: 'us' },
-  'VZ':    { ticker: 'VZ',    name: '버라이즌',       sector: 'telecom',   style: 'dividend',    geo: 'us' },
+  'JNJ':   { ticker: 'JNJ',   name: '존슨앤존슨',     nameEn: 'Johnson & Johnson',   sector: 'healthcare', style: 'dividend',   geo: 'us' },
+  'PG':    { ticker: 'PG',    name: 'P&G',            nameEn: 'Procter & Gamble',    sector: 'consumer',  style: 'dividend',    geo: 'us' },
+  'KO':    { ticker: 'KO',    name: '코카콜라',       nameEn: 'Coca-Cola',           sector: 'consumer',  style: 'dividend',    geo: 'us' },
+  'PEP':   { ticker: 'PEP',   name: '펩시코',         nameEn: 'PepsiCo',             sector: 'consumer',  style: 'dividend',    geo: 'us' },
+  'XOM':   { ticker: 'XOM',   name: '엑슨모빌',       nameEn: 'Exxon Mobil',         sector: 'energy',    style: 'dividend',    geo: 'us' },
+  'CVX':   { ticker: 'CVX',   name: '쉐브론',         nameEn: 'Chevron',             sector: 'energy',    style: 'dividend',    geo: 'us' },
+  'MCD':   { ticker: 'MCD',   name: '맥도날드',       nameEn: "McDonald's",          sector: 'consumer',  style: 'dividend',    geo: 'us' },
+  'T':     { ticker: 'T',     name: 'AT&T',           nameEn: 'AT&T',                sector: 'telecom',   style: 'dividend',    geo: 'us' },
+  'VZ':    { ticker: 'VZ',    name: '버라이즌',       nameEn: 'Verizon',             sector: 'telecom',   style: 'dividend',    geo: 'us' },
 
   // ── 미국 인덱스/블렌드 ETF ──
-  'VTI':   { ticker: 'VTI',   name: '뱅가드 전체시장',  sector: 'etf_blend', style: 'index',     geo: 'us' },
-  'VOO':   { ticker: 'VOO',   name: 'S&P500 ETF',    sector: 'etf_blend', style: 'index',       geo: 'us' },
-  'SPY':   { ticker: 'SPY',   name: 'S&P500 ETF',    sector: 'etf_blend', style: 'index',       geo: 'us' },
-  'IVV':   { ticker: 'IVV',   name: 'iShares S&P500', sector: 'etf_blend', style: 'index',      geo: 'us' },
-  'QQQ':   { ticker: 'QQQ',   name: '나스닥100',      sector: 'etf_blend', style: 'growth',      geo: 'us' },
-  'VEA':   { ticker: 'VEA',   name: '선진국 ETF',     sector: 'etf_blend', style: 'index',       geo: 'global' },
-  'VWO':   { ticker: 'VWO',   name: '신흥국 ETF',     sector: 'etf_blend', style: 'index',       geo: 'em' },
+  'VTI':   { ticker: 'VTI',   name: '뱅가드 전체시장',  nameEn: 'Vanguard Total Market', sector: 'etf_blend', style: 'index',   geo: 'us' },
+  'VOO':   { ticker: 'VOO',   name: 'S&P500 ETF',    nameEn: 'S&P 500 ETF',        sector: 'etf_blend', style: 'index',       geo: 'us' },
+  'SPY':   { ticker: 'SPY',   name: 'S&P500 ETF',    nameEn: 'S&P 500 ETF',        sector: 'etf_blend', style: 'index',       geo: 'us' },
+  'IVV':   { ticker: 'IVV',   name: 'iShares S&P500', nameEn: 'iShares S&P 500',   sector: 'etf_blend', style: 'index',       geo: 'us' },
+  'QQQ':   { ticker: 'QQQ',   name: '나스닥100',      nameEn: 'Nasdaq 100',          sector: 'etf_blend', style: 'growth',      geo: 'us' },
+  'VEA':   { ticker: 'VEA',   name: '선진국 ETF',     nameEn: 'Developed Markets ETF', sector: 'etf_blend', style: 'index',    geo: 'global' },
+  'VWO':   { ticker: 'VWO',   name: '신흥국 ETF',     nameEn: 'Emerging Markets ETF', sector: 'etf_blend', style: 'index',     geo: 'em' },
 
   // ── ARK 혁신 ETF (캐시우드) ──
-  'ARKK':  { ticker: 'ARKK',  name: 'ARK Innovation', sector: 'etf_blend', style: 'growth',     geo: 'us' },
-  'ARKG':  { ticker: 'ARKG',  name: 'ARK Genomic',   sector: 'healthcare', style: 'speculative', geo: 'us' },
-  'ARKW':  { ticker: 'ARKW',  name: 'ARK Next Gen',  sector: 'tech',       style: 'speculative', geo: 'us' },
+  'ARKK':  { ticker: 'ARKK',  name: 'ARK Innovation', nameEn: 'ARK Innovation',     sector: 'etf_blend', style: 'growth',      geo: 'us' },
+  'ARKG':  { ticker: 'ARKG',  name: 'ARK Genomic',   nameEn: 'ARK Genomic',         sector: 'healthcare', style: 'speculative', geo: 'us' },
+  'ARKW':  { ticker: 'ARKW',  name: 'ARK Next Gen',  nameEn: 'ARK Next Gen',        sector: 'tech',       style: 'speculative', geo: 'us' },
 
   // ── 한국 주식 ──
-  '005930':     { ticker: '005930',    name: '삼성전자',   sector: 'tech',      style: 'value',    geo: 'kr' },
-  '005930.KS':  { ticker: '005930.KS', name: '삼성전자',   sector: 'tech',      style: 'value',    geo: 'kr' },
-  '000660':     { ticker: '000660',    name: 'SK하이닉스', sector: 'tech',      style: 'growth',   geo: 'kr' },
-  '000660.KS':  { ticker: '000660.KS', name: 'SK하이닉스', sector: 'tech',      style: 'growth',   geo: 'kr' },
-  '035720':     { ticker: '035720',    name: '카카오',     sector: 'tech',      style: 'growth',   geo: 'kr' },
-  '035720.KQ':  { ticker: '035720.KQ', name: '카카오',     sector: 'tech',      style: 'growth',   geo: 'kr' },
-  '035420':     { ticker: '035420',    name: '네이버',     sector: 'tech',      style: 'growth',   geo: 'kr' },
-  '035420.KS':  { ticker: '035420.KS', name: '네이버',     sector: 'tech',      style: 'growth',   geo: 'kr' },
-  '068270':     { ticker: '068270',    name: '셀트리온',   sector: 'healthcare', style: 'growth',  geo: 'kr' },
-  '068270.KS':  { ticker: '068270.KS', name: '셀트리온',   sector: 'healthcare', style: 'growth',  geo: 'kr' },
-  '207940':     { ticker: '207940',    name: '삼성바이오', sector: 'healthcare', style: 'growth',  geo: 'kr' },
-  '207940.KS':  { ticker: '207940.KS', name: '삼성바이오', sector: 'healthcare', style: 'growth',  geo: 'kr' },
-  '006400':     { ticker: '006400',    name: '삼성SDI',    sector: 'materials', style: 'growth',   geo: 'kr' },
-  '006400.KS':  { ticker: '006400.KS', name: '삼성SDI',    sector: 'materials', style: 'growth',   geo: 'kr' },
-  '051910':     { ticker: '051910',    name: 'LG화학',     sector: 'materials', style: 'value',    geo: 'kr' },
-  '051910.KS':  { ticker: '051910.KS', name: 'LG화학',     sector: 'materials', style: 'value',    geo: 'kr' },
-  '000270':     { ticker: '000270',    name: '기아차',     sector: 'consumer',  style: 'value',    geo: 'kr' },
-  '000270.KS':  { ticker: '000270.KS', name: '기아차',     sector: 'consumer',  style: 'value',    geo: 'kr' },
-  '005380':     { ticker: '005380',    name: '현대차',     sector: 'consumer',  style: 'value',    geo: 'kr' },
-  '005380.KS':  { ticker: '005380.KS', name: '현대차',     sector: 'consumer',  style: 'value',    geo: 'kr' },
-  '055550':     { ticker: '055550',    name: '신한지주',   sector: 'finance',   style: 'dividend', geo: 'kr' },
-  '055550.KS':  { ticker: '055550.KS', name: '신한지주',   sector: 'finance',   style: 'dividend', geo: 'kr' },
-  '105560':     { ticker: '105560',    name: 'KB금융',     sector: 'finance',   style: 'dividend', geo: 'kr' },
-  '105560.KS':  { ticker: '105560.KS', name: 'KB금융',     sector: 'finance',   style: 'dividend', geo: 'kr' },
+  '005930':     { ticker: '005930',    name: '삼성전자',   nameEn: 'Samsung Electronics', sector: 'tech',      style: 'value',    geo: 'kr' },
+  '005930.KS':  { ticker: '005930.KS', name: '삼성전자',   nameEn: 'Samsung Electronics', sector: 'tech',      style: 'value',    geo: 'kr' },
+  '000660':     { ticker: '000660',    name: 'SK하이닉스', nameEn: 'SK Hynix',            sector: 'tech',      style: 'growth',   geo: 'kr' },
+  '000660.KS':  { ticker: '000660.KS', name: 'SK하이닉스', nameEn: 'SK Hynix',            sector: 'tech',      style: 'growth',   geo: 'kr' },
+  '035720':     { ticker: '035720',    name: '카카오',     nameEn: 'Kakao Corp',          sector: 'tech',      style: 'growth',   geo: 'kr' },
+  '035720.KQ':  { ticker: '035720.KQ', name: '카카오',     nameEn: 'Kakao Corp',          sector: 'tech',      style: 'growth',   geo: 'kr' },
+  '035420':     { ticker: '035420',    name: '네이버',     nameEn: 'Naver Corp',          sector: 'tech',      style: 'growth',   geo: 'kr' },
+  '035420.KS':  { ticker: '035420.KS', name: '네이버',     nameEn: 'Naver Corp',          sector: 'tech',      style: 'growth',   geo: 'kr' },
+  '068270':     { ticker: '068270',    name: '셀트리온',   nameEn: 'Celltrion',           sector: 'healthcare', style: 'growth',  geo: 'kr' },
+  '068270.KS':  { ticker: '068270.KS', name: '셀트리온',   nameEn: 'Celltrion',           sector: 'healthcare', style: 'growth',  geo: 'kr' },
+  '207940':     { ticker: '207940',    name: '삼성바이오', nameEn: 'Samsung Biologics',   sector: 'healthcare', style: 'growth',  geo: 'kr' },
+  '207940.KS':  { ticker: '207940.KS', name: '삼성바이오', nameEn: 'Samsung Biologics',   sector: 'healthcare', style: 'growth',  geo: 'kr' },
+  '006400':     { ticker: '006400',    name: '삼성SDI',    nameEn: 'Samsung SDI',         sector: 'materials', style: 'growth',   geo: 'kr' },
+  '006400.KS':  { ticker: '006400.KS', name: '삼성SDI',    nameEn: 'Samsung SDI',         sector: 'materials', style: 'growth',   geo: 'kr' },
+  '051910':     { ticker: '051910',    name: 'LG화학',     nameEn: 'LG Chem',             sector: 'materials', style: 'value',    geo: 'kr' },
+  '051910.KS':  { ticker: '051910.KS', name: 'LG화학',     nameEn: 'LG Chem',             sector: 'materials', style: 'value',    geo: 'kr' },
+  '000270':     { ticker: '000270',    name: '기아차',     nameEn: 'Kia Corp',            sector: 'consumer',  style: 'value',    geo: 'kr' },
+  '000270.KS':  { ticker: '000270.KS', name: '기아차',     nameEn: 'Kia Corp',            sector: 'consumer',  style: 'value',    geo: 'kr' },
+  '005380':     { ticker: '005380',    name: '현대차',     nameEn: 'Hyundai Motor',       sector: 'consumer',  style: 'value',    geo: 'kr' },
+  '005380.KS':  { ticker: '005380.KS', name: '현대차',     nameEn: 'Hyundai Motor',       sector: 'consumer',  style: 'value',    geo: 'kr' },
+  '055550':     { ticker: '055550',    name: '신한지주',   nameEn: 'Shinhan Financial',   sector: 'finance',   style: 'dividend', geo: 'kr' },
+  '055550.KS':  { ticker: '055550.KS', name: '신한지주',   nameEn: 'Shinhan Financial',   sector: 'finance',   style: 'dividend', geo: 'kr' },
+  '105560':     { ticker: '105560',    name: 'KB금융',     nameEn: 'KB Financial Group',  sector: 'finance',   style: 'dividend', geo: 'kr' },
+  '105560.KS':  { ticker: '105560.KS', name: 'KB금융',     nameEn: 'KB Financial Group',  sector: 'finance',   style: 'dividend', geo: 'kr' },
 
   // ── 글로벌/신흥국 ──
-  'BABA':  { ticker: 'BABA',  name: '알리바바',       sector: 'consumer',  style: 'value',       geo: 'em' },
-  'TSM':   { ticker: 'TSM',   name: 'TSMC',           sector: 'tech',      style: 'value',       geo: 'em' },
-  'ASML':  { ticker: 'ASML',  name: 'ASML',           sector: 'tech',      style: 'growth',      geo: 'global' },
-  'SAP':   { ticker: 'SAP',   name: 'SAP',            sector: 'tech',      style: 'value',       geo: 'global' },
+  'BABA':  { ticker: 'BABA',  name: '알리바바',       nameEn: 'Alibaba',             sector: 'consumer',  style: 'value',       geo: 'em' },
+  'TSM':   { ticker: 'TSM',   name: 'TSMC',           nameEn: 'Taiwan Semiconductor', sector: 'tech',     style: 'value',       geo: 'em' },
+  'ASML':  { ticker: 'ASML',  name: 'ASML',           nameEn: 'ASML',                sector: 'tech',      style: 'growth',      geo: 'global' },
+  'SAP':   { ticker: 'SAP',   name: 'SAP',            nameEn: 'SAP',                 sector: 'tech',      style: 'value',       geo: 'global' },
 };
 
 // ============================================================================
@@ -135,6 +136,43 @@ export const TICKER_PROFILES: Record<string, TickerProfile> = {
 export function getTickerProfile(ticker: string): TickerProfile | null {
   if (!ticker) return null;
   return TICKER_PROFILES[ticker] ?? TICKER_PROFILES[ticker.toUpperCase()] ?? null;
+}
+
+/**
+ * 티커의 표시 이름을 현재 로케일에 맞게 반환
+ * - 한국어 → name (한글명)
+ * - 영어 → nameEn (영문명), 없으면 name 폴백
+ * - 프로파일 없으면 ticker 자체 반환
+ *
+ * React 외부(서비스/유틸)에서 사용 가능.
+ * 컴포넌트에서는 useLocale().language와 함께 getTickerNameByLang() 권장.
+ */
+export function getTickerName(ticker: string): string {
+  if (!ticker) return '';
+  // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
+  const { getCurrentDisplayLanguage } = require('../context/LocaleContext');
+  const lang = getCurrentDisplayLanguage();
+  const profile = getCachedTickerProfile(ticker);
+  if (!profile) return ticker;
+  if (lang === 'en') return profile.nameEn || profile.name;
+  return profile.name;
+}
+
+/**
+ * 언어를 직접 전달하여 티커 표시 이름 반환 (React 컴포넌트에서 사용 권장)
+ * - getCachedTickerProfile로 정적 DB + 동적 캐시 모두 탐색
+ * - 프로파일 없으면 fallbackName → ticker 순서로 폴백
+ */
+export function getTickerNameByLang(
+  ticker: string,
+  lang: 'ko' | 'en',
+  fallbackName?: string,
+): string {
+  if (!ticker) return fallbackName || '';
+  const profile = getCachedTickerProfile(ticker);
+  if (!profile) return fallbackName || ticker;
+  if (lang === 'en') return profile.nameEn || fallbackName || profile.name;
+  return profile.name;
 }
 
 /**

@@ -12,6 +12,7 @@ import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 import { useNewsPortfolioMatch } from '../../hooks/useNewsPortfolioMatch';
 import { useSharedPortfolio } from '../../hooks/useSharedPortfolio';
 import type { ImpactDetail } from '../../hooks/usePredictionFeed';
@@ -61,12 +62,12 @@ function getDirectionConfig(direction: 'up' | 'down' | 'neutral') {
 // 금액 포맷 (KRW)
 // ============================================================================
 
-function formatKRW(amount: number): string {
+function formatKRW(amount: number, t: (key: string) => string): string {
   const abs = Math.abs(amount);
   const sign = amount >= 0 ? '+' : '-';
-  if (abs >= 100_000_000) return `${sign}${(abs / 100_000_000).toFixed(1)}억원`;
-  if (abs >= 10_000) return `${sign}${Math.round(abs / 10_000)}만원`;
-  return `${sign}${Math.round(abs).toLocaleString()}원`;
+  if (abs >= 100_000_000) return `${sign}${(abs / 100_000_000).toFixed(1)}${t('portfolio_impact_badge.unit_billion')}`;
+  if (abs >= 10_000) return `${sign}${Math.round(abs / 10_000)}${t('portfolio_impact_badge.unit_ten_thousand')}`;
+  return `${sign}${Math.round(abs).toLocaleString()}${t('portfolio_impact_badge.unit_won')}`;
 }
 
 // ============================================================================
@@ -78,6 +79,7 @@ export default function PortfolioImpactBadge({
   impactAnalysis,
 }: PortfolioImpactBadgeProps) {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const { matchedAssets, hasMatch } = useNewsPortfolioMatch(relatedTickers);
   const { liquidTotal } = useSharedPortfolio();
 
@@ -100,7 +102,7 @@ export default function PortfolioImpactBadge({
       <View style={[styles.noMatchContainer, { backgroundColor: colors.surfaceLight }]}>
         <Ionicons name="wallet-outline" size={13} color={colors.textTertiary} />
         <Text style={[styles.noMatchText, { color: colors.textTertiary }]}>
-          내 보유 자산과 직접 관련 없음
+          {t('portfolio_impact_badge.no_match')}
         </Text>
       </View>
     );
@@ -111,7 +113,7 @@ export default function PortfolioImpactBadge({
       {/* 섹션 타이틀 */}
       <View style={styles.titleRow}>
         <Ionicons name="wallet-outline" size={13} color={colors.textSecondary} />
-        <Text style={[styles.title, { color: colors.textSecondary }]}>내 포트폴리오 영향</Text>
+        <Text style={[styles.title, { color: colors.textSecondary }]}>{t('portfolio_impact_badge.section_title')}</Text>
       </View>
 
       {/* 관련 종목 칩 + 이유 */}
@@ -156,7 +158,7 @@ export default function PortfolioImpactBadge({
           styles.estimatedChange,
           { color: estimatedChange >= 0 ? '#4CAF50' : '#F44336' },
         ]}>
-          예상 변동: {formatKRW(estimatedChange)}
+          {t('portfolio_impact_badge.estimated_change', { amount: formatKRW(estimatedChange, t) })}
         </Text>
       )}
     </View>

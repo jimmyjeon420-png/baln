@@ -127,7 +127,8 @@ interface CategoryTabButtonProps {
   isKo: boolean;
 }
 
-function CategoryTabButton({ tab, isActive, onPress, colors, isKo }: CategoryTabButtonProps) {
+function CategoryTabButton({ tab, isActive, onPress, colors, isKo: _isKo }: CategoryTabButtonProps) {
+  const { t } = useLocale();
   const handlePress = useCallback(() => onPress(tab.id), [tab.id, onPress]);
   return (
     <TouchableOpacity
@@ -147,7 +148,7 @@ function CategoryTabButton({ tab, isActive, onPress, colors, isKo }: CategoryTab
           { color: isActive ? tab.color : colors.textSecondary },
         ]}
       >
-        {isKo ? tab.labelKo : tab.labelEn}
+        {t(`brandMarket.category_${tab.id}`)}
       </Text>
     </TouchableOpacity>
   );
@@ -294,9 +295,7 @@ const BrandMarket = React.memo(({
             </TouchableOpacity>
           </View>
           <Text style={[styles.headerSubtitle, { color: colors.textTertiary }]}>
-            {language === 'ko'
-              ? `총 ${BRAND_SHOPS.length}개 상점 · 피터 린치처럼 탐험하세요`
-              : `${BRAND_SHOPS.length} shops · Explore like Peter Lynch`}
+            {t('brandMarket.subtitle', { count: BRAND_SHOPS.length })}
           </Text>
         </View>
 
@@ -365,9 +364,7 @@ const BrandMarket = React.memo(({
             <View style={styles.emptyState}>
               <Text style={styles.emptyEmoji}>🔍</Text>
               <Text style={[styles.emptyText, { color: colors.textTertiary }]}>
-                {language === 'ko'
-                  ? `"${searchQuery}"에 해당하는 상점이 없어요`
-                  : `No shops found for "${searchQuery}"`}
+                {t('brandMarket.noResults', { query: searchQuery })}
               </Text>
             </View>
           }

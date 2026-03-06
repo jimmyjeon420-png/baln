@@ -9,6 +9,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '../../../hooks/useTheme';
+import { useLocale } from '../../../context/LocaleContext';
 import type { ThemeColors } from '../../../styles/colors';
 
 interface CfoWeather {
@@ -22,26 +23,27 @@ interface ReassuranceCardProps {
   cfoWeather: CfoWeather | null;
 }
 
-function getDailyMessage(totalGainLoss: number): { text: string; emoji: string } {
+function getDailyMessage(totalGainLoss: number, t: (key: string) => string): { text: string; emoji: string } {
   if (totalGainLoss >= 0) {
-    return { text: '오늘 자산은 안정적이에요', emoji: '\u2728' };
+    return { text: t('checkup.reassuranceCard.stable'), emoji: '\u2728' };
   }
   if (totalGainLoss > -1) {
-    return { text: '소폭 변동은 자연스러운 거예요', emoji: '\uD83C\uDF43' };
+    return { text: t('checkup.reassuranceCard.minor_dip'), emoji: '\uD83C\uDF43' };
   }
-  return { text: '일시적 하락이에요. 장기적으로 봐주세요', emoji: '\uD83C\uDF08' };
+  return { text: t('checkup.reassuranceCard.major_dip'), emoji: '\uD83C\uDF08' };
 }
 
 export default function ReassuranceCard({ totalGainLoss, cfoWeather }: ReassuranceCardProps) {
   const { colors } = useTheme();
-  const daily = getDailyMessage(totalGainLoss);
+  const { t } = useLocale();
+  const daily = getDailyMessage(totalGainLoss, t);
 
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   return (
     <View style={styles.card}>
       <Text style={styles.cardTitle}>
-        {'\uD83D\uDCAC 안심 한마디'}
+        {'\uD83D\uDCAC ' + t('checkup.reassuranceCard.title')}
       </Text>
 
       {cfoWeather && (

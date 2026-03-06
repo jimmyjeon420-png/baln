@@ -17,8 +17,10 @@ import { useLocale } from '../../context/LocaleContext';
 
 export type RiskLevel = 'LOW' | 'MEDIUM' | 'HIGH';
 
+export type RiskCategory = 'market' | 'competition' | 'regulation' | 'management';
+
 export interface RiskItem {
-  category: '시장 리스크' | '경쟁 리스크' | '규제 리스크' | '경영 리스크';
+  category: RiskCategory;
   level: RiskLevel;
   points: string[];  // bullet points
 }
@@ -31,6 +33,28 @@ interface RisksProps {
 // ============================================================================
 // 메인 컴포넌트
 // ============================================================================
+
+/** Translate risk category key to display label */
+function getRiskCategoryLabel(category: RiskCategory, t: (key: string) => string): string {
+  const map: Record<RiskCategory, string> = {
+    market: t('deepDive.risks.categoryMarket'),
+    competition: t('deepDive.risks.categoryCompetition'),
+    regulation: t('deepDive.risks.categoryRegulation'),
+    management: t('deepDive.risks.categoryManagement'),
+  };
+  return map[category] ?? category;
+}
+
+/** Short label (without "Risk" suffix) for summary row */
+function getRiskCategoryShort(category: RiskCategory, t: (key: string) => string): string {
+  const map: Record<RiskCategory, string> = {
+    market: t('deepDive.risks.categoryMarketShort'),
+    competition: t('deepDive.risks.categoryCompetitionShort'),
+    regulation: t('deepDive.risks.categoryRegulationShort'),
+    management: t('deepDive.risks.categoryManagementShort'),
+  };
+  return map[category] ?? category;
+}
 
 export default function Risks({ risks, onRefresh: _onRefresh }: RisksProps) {
   const { colors } = useTheme();
@@ -46,8 +70,8 @@ export default function Risks({ risks, onRefresh: _onRefresh }: RisksProps) {
       {/* 헤더 */}
       <View style={s.headerRow}>
         <View>
-          <Text style={[s.cardTitle, { color: colors.textPrimary }]}>⚠️ 리스크 분석</Text>
-          <Text style={[s.cardSubtitle, { color: colors.textTertiary }]}>Risk Assessment</Text>
+          <Text style={[s.cardTitle, { color: colors.textPrimary }]}>{t('deepDive.risks.title')}</Text>
+          <Text style={[s.cardSubtitle, { color: colors.textTertiary }]}>{t('deepDive.risks.subtitle')}</Text>
         </View>
         <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
           {/* 종합 리스크 뱃지 */}
@@ -71,7 +95,7 @@ export default function Risks({ risks, onRefresh: _onRefresh }: RisksProps) {
         {risks.map((risk, index) => (
           <View key={index} style={s.summaryItem}>
             <Text style={[s.summaryCategory, { color: colors.textSecondary }]}>
-              {risk.category.replace(' 리스크', '')}
+              {getRiskCategoryShort(risk.category, t)}
             </Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
               <Ionicons
@@ -113,7 +137,7 @@ export default function Risks({ risks, onRefresh: _onRefresh }: RisksProps) {
                   color={getRiskColor(risk.level)}
                 />
                 <Text style={[s.riskCategory, { color: colors.textPrimary }]}>
-                  {risk.category}
+                  {getRiskCategoryLabel(risk.category, t)}
                 </Text>
                 <View style={[s.levelBadge, { backgroundColor: getRiskColor(risk.level) + '30' }]}>
                   <Text style={[s.levelText, { color: getRiskColor(risk.level) }]}>

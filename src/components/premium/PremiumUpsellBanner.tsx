@@ -19,6 +19,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 
 // ============================================================================
 // Props 인터페이스
@@ -35,8 +36,8 @@ export interface PremiumUpsellBannerProps {
 
 interface VariantConfig {
   emoji: string;
-  message: string;
-  cta: string;
+  messageKey: string;
+  ctaKey: string;
   icon: string;
   accentKey: 'gold' | 'purple';
 }
@@ -44,29 +45,29 @@ interface VariantConfig {
 const VARIANT_CONFIG: Record<string, VariantConfig> = {
   context: {
     emoji: '🔍',
-    message: '기관 행동 분석이 궁금하신가요?',
-    cta: 'Premium으로 확인',
+    messageKey: 'premium.upsell.institutional',
+    ctaKey: 'premium.upsell.ctaContext',
     icon: 'layers-outline',
     accentKey: 'gold',
   },
   analysis: {
     emoji: '🤖',
-    message: 'AI 진단 횟수가 부족하신가요?',
-    cta: 'Premium으로 확장',
+    messageKey: 'premium.upsell.analysis',
+    ctaKey: 'premium.upsell.ctaAnalysis',
     icon: 'analytics-outline',
     accentKey: 'gold',
   },
   prediction: {
     emoji: '🎯',
-    message: '예측 해설이 궁금하신가요?',
-    cta: 'Premium으로 해설 보기',
+    messageKey: 'premium.upsell.prediction',
+    ctaKey: 'premium.upsell.ctaPrediction',
     icon: 'bulb-outline',
     accentKey: 'purple',
   },
   crisis: {
     emoji: '🚨',
-    message: '시장 급락! 지금 기관들은 뭘 하고 있을까?',
-    cta: 'Premium으로 확인',
+    messageKey: 'premium.upsell.crisis',
+    ctaKey: 'premium.upsell.ctaContext',
     icon: 'shield-checkmark-outline',
     accentKey: 'gold',
   },
@@ -81,6 +82,7 @@ export default function PremiumUpsellBanner({
   onPress,
 }: PremiumUpsellBannerProps) {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const config = VARIANT_CONFIG[variant];
   const accentColor = colors.premium[config.accentKey];
 
@@ -147,7 +149,7 @@ export default function PremiumUpsellBanner({
               style={[styles.message, { color: colors.textPrimary }]}
               numberOfLines={2}
             >
-              {config.message}
+              {t(config.messageKey)}
             </Text>
           </View>
         </View>
@@ -161,7 +163,7 @@ export default function PremiumUpsellBanner({
             },
           ]}
         >
-          <Text style={styles.ctaText}>{config.cta}</Text>
+          <Text style={styles.ctaText}>{t(config.ctaKey)}</Text>
           <Ionicons name="arrow-forward" size={12} color="#1A1A1A" />
         </View>
       </TouchableOpacity>

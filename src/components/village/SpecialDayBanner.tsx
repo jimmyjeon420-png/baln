@@ -36,7 +36,7 @@ interface SpecialDayBannerProps {
 // 특별일 유형 → 한/영 라벨
 // =============================================================================
 
-const TYPE_LABELS: Record<string, { ko: string; en: string }> = {
+const _TYPE_LABELS: Record<string, { ko: string; en: string }> = {
   birthday:    { ko: '생일', en: 'Birthday' },
   anniversary: { ko: '기념일', en: 'Anniversary' },
   memorable:   { ko: '기념일', en: 'Milestone' },
@@ -93,8 +93,7 @@ function SpecialDayBanner({
   const guruEmoji = guruConfig?.emoji ?? '';
 
   // 유형 라벨
-  const typeLabel = TYPE_LABELS[todaySpecial.type] ?? TYPE_LABELS.memorable;
-  const typeName = isKo ? typeLabel.ko : typeLabel.en;
+  const typeName = t(`specialDay.type_${todaySpecial.type}`) || t('specialDay.type_memorable');
 
   // 설명 텍스트
   const description = isKo ? todaySpecial.description : todaySpecial.descriptionEn;

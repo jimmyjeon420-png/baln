@@ -21,6 +21,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Rect, Line, Text as SvgText } from 'react-native-svg';
 import type { HealthScoreResult } from '../services/rebalanceScore';
+import { useLocale } from '../context/LocaleContext';
 
 // Android 레이아웃 애니메이션 활성화
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -42,6 +43,7 @@ const getBarColor = (score: number): string => {
 const formatWeight = (weight: number): string => `${Math.round(weight * 100)}%`;
 
 export default function HealthScoreDetail({ result }: HealthScoreDetailProps) {
+  const { t } = useLocale();
   const [showGuide, setShowGuide] = useState(false);
 
   const toggleGuide = () => {
@@ -58,7 +60,7 @@ export default function HealthScoreDetail({ result }: HealthScoreDetailProps) {
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <Text style={styles.headerIcon}>🏥</Text>
-          <Text style={styles.title}>건강 점수</Text>
+          <Text style={styles.title}>{t('healthScore.title')}</Text>
           <View style={[styles.gradeBadge, { backgroundColor: result.gradeColor }]}>
             <Text style={styles.gradeText}>{result.grade}</Text>
           </View>
@@ -98,7 +100,7 @@ export default function HealthScoreDetail({ result }: HealthScoreDetailProps) {
               fontSize="10"
               fill="#888"
             >
-              70점 (기준)
+              {t('healthScore.baseline', { score: 70 })}
             </SvgText>
 
             {/* 8개 막대 (barWidth=32, spacing=8 → 8×(32+8)+10=330px) */}
@@ -184,7 +186,7 @@ export default function HealthScoreDetail({ result }: HealthScoreDetailProps) {
       >
         <Ionicons name="help-circle-outline" size={16} color="#888888" />
         <Text style={styles.guideToggleText}>
-          이 점수는 무엇인가요?
+          {t('healthScore.whatIsThis')}
         </Text>
         <Ionicons
           name={showGuide ? 'chevron-up' : 'chevron-down'}
@@ -197,8 +199,7 @@ export default function HealthScoreDetail({ result }: HealthScoreDetailProps) {
       {showGuide && (
         <View style={styles.guideContainer}>
           <Text style={styles.guideIntro}>
-            8가지 관점에서 포트폴리오 건강 상태를 진단합니다.
-            브릿지워터 Risk Parity + 투자 철학 정합도를 기반으로 설계되었습니다.
+            {t('healthScore.description')}
           </Text>
           {result.factors.map((factor, idx) => (
             <View key={idx} style={styles.guideItem}>
@@ -206,7 +207,7 @@ export default function HealthScoreDetail({ result }: HealthScoreDetailProps) {
                 <Text style={styles.guideItemIcon}>{factor.icon}</Text>
                 <Text style={styles.guideItemLabel}>{factor.label}</Text>
                 <Text style={styles.guideItemWeight}>
-                  가중치 {formatWeight(factor.weight)}
+                  {t('healthScore.weight', { pct: formatWeight(factor.weight) })}
                 </Text>
               </View>
               <Text style={styles.guideItemComment}>{factor.comment}</Text>
@@ -214,9 +215,7 @@ export default function HealthScoreDetail({ result }: HealthScoreDetailProps) {
           ))}
           <View style={styles.guideFooter}>
             <Text style={styles.guideFooterText}>
-              {'\u2022'} Bridgewater All Weather 전략 — Ray Dalio (1996){'\n'}
-              {'\u2022'} HHI 집중도 — 미 DOJ/FTC 기업결합 심사 기준{'\n'}
-              {'\u2022'} Tax-Loss Harvesting — Wealthfront/Betterment 실무
+              {t('healthScore.references')}
             </Text>
           </View>
         </View>

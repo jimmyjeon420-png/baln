@@ -18,6 +18,7 @@ import { Country } from '../types/tax';
 import { COUNTRY_TAX_PROFILES } from '../constants/taxProfiles';
 import { SIZES, TYPOGRAPHY } from '../styles/theme';
 import { useTheme } from '../hooks/useTheme';
+import { useLocale } from '../context/LocaleContext';
 
 interface Props {
   visible: boolean;
@@ -35,6 +36,7 @@ export const CountrySelectModal: React.FC<Props> = ({
   const [showCustom, setShowCustom] = useState(false);
   const [customRate, setCustomRate] = useState('');
   const { colors } = useTheme();
+  const { t } = useLocale();
 
   const handleCountrySelect = (country: Country) => {
     onSelect(country);
@@ -46,7 +48,7 @@ export const CountrySelectModal: React.FC<Props> = ({
   const handleCustomRateSubmit = () => {
     const rate = parseFloat(customRate);
     if (isNaN(rate) || rate < 0 || rate > 100) {
-      Alert.alert('입력 오류', '세율은 0에서 100 사이의 숫자로 입력해주세요.');
+      Alert.alert(t('countrySelect.inputErrorTitle'), t('countrySelect.inputErrorMsg'));
       return;
     }
     onSelect(currentCountry, rate);

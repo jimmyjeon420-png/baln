@@ -15,6 +15,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { HealthScoreResult } from '../../services/rebalanceScore';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 import type { ThemeColors } from '../../styles/colors';
 
 interface CheckupHeaderProps {
@@ -42,32 +43,27 @@ const GRADE_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
 /**
  * 건강 등급별 한 줄 요약 생성
  */
-function generateSummary(healthScore: HealthScoreResult): string {
-  // summary가 이미 있으면 그대로 사용 (rebalanceScore에서 계산됨)
+function generateSummary(healthScore: HealthScoreResult, t: (key: string, params?: Record<string, string | number>) => string): string {
   if (healthScore.summary) return healthScore.summary;
 
   const { grade } = healthScore;
-
-  // 주의가 필요한 팩터 (60점 미만)
   const warnings = healthScore.factors
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .filter((f: any) => f.score < 60)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .map((f: any) => f.label);
 
   if (warnings.length === 0) {
-    return `포트폴리오 건강 ${grade}등급, 모든 지표 양호`;
+    return t('checkup.header.summary_all_good', { grade });
   } else if (warnings.length === 1) {
-    return `포트폴리오 건강 ${grade}등급, ${warnings[0]} 주의`;
+    return t('checkup.header.summary_one_warn', { grade, warning: warnings[0] });
   } else if (warnings.length === 2) {
-    return `포트폴리오 건강 ${grade}등급, ${warnings[0]}·${warnings[1]} 개선 필요`;
+    return t('checkup.header.summary_two_warn', { grade, w1: warnings[0], w2: warnings[1] });
   } else {
-    return `포트폴리오 건강 ${grade}등급, ${warnings.length}개 지표 개선 필요`;
+    return t('checkup.header.summary_multi_warn', { grade, count: warnings.length });
   }
 }
 
-/**
- * 등급 색상을 테마에 맞게 반환
- * 라이트 모드에서 텍스트로 쓰일 때 WCAG AA 대비 확보를 위해 primaryDark 사용
- */
 function getGradeColor(grade: string, colors: ThemeColors): string {
   const gradeColors: Record<string, string> = {
     S: colors.primaryDark ?? colors.primary,
@@ -86,79 +82,65 @@ export default function CheckupHeader({
   totalAssets,
 }: CheckupHeaderProps) {
   const { colors, shadows } = useTheme();
+  const { t } = useLocale();
   const gradeColor = healthScore.gradeColor || getGradeColor(healthScore.grade, colors);
   const gradeIcon = GRADE_ICONS[healthScore.grade];
-  const summary = generateSummary(healthScore);
+  const summary = generateSummary(healthScore, t);
 
   const styles = useMemo(() => createStyles(colors), [colors]);
 
-  // Panic Shield 이유 생성 (없으면 점수 기반 기본 메시지)
   const getPanicReason = (): string => {
     if (panicReason) return panicReason;
     if (!panicScore) return '';
-
-    if (panicScore >= 70) {
-      return '시장이 급락해도 버틸 수 있는 안정적인 구조예요';
-    } else if (panicScore >= 50) {
-      return '괜찮은 편이지만, 현금이나 채권을 조금 더 늘리면 안심이 돼요';
-    } else {
-      return '급락 시 불안해질 수 있어요. 현금이나 채권 비중을 늘려보세요';
-    }
+    if (panicScore >= 70) return t('checkup.header.panic_reason_high');
+    if (panicScore >= 50) return t('checkup.header.panic_reason_mid');
+    return t('checkup.header.panic_reason_low');
   };
 
-  // 총자산 포맷 (억/만 단위)
   const formatAssets = (amount: number): string => {
     if (amount >= 100_000_000) {
       const eok = Math.floor(amount / 100_000_000);
       const man = Math.floor((amount % 100_000_000) / 10_000);
-      return man > 0 ? `${eok}억 ${man}만원` : `${eok}억원`;
+      return man > 0
+        ? t('checkup.header.eok_man', { eok, man })
+        : t('checkup.header.eok_only', { eok });
     } else if (amount >= 10_000) {
-      return `${Math.floor(amount / 10_000)}만원`;
+      return t('checkup.header.man_only', { man: Math.floor(amount / 10_000) });
     } else {
-      return `${Math.floor(amount).toLocaleString()}원`;
+      return t('checkup.header.won_only', { amount: Math.floor(amount).toLocaleString() });
     }
   };
 
   return (
     <View style={[styles.container, shadows.md]}>
-      {/* 상단: 건강 등급 뱃지 */}
       <View style={styles.gradeSection}>
         <View style={[styles.gradeBadge, { backgroundColor: `${gradeColor}20` }]}>
           <Ionicons name={gradeIcon} size={28} color={gradeColor} />
-          <Text style={[styles.gradeText, { color: gradeColor }]}>
-            {healthScore.grade}
-          </Text>
+          <Text style={[styles.gradeText, { color: gradeColor }]}>{healthScore.grade}</Text>
         </View>
         <View style={styles.gradeInfo}>
-          <Text style={styles.scoreText}>{Math.round(healthScore.totalScore)}점</Text>
+          <Text style={styles.scoreText}>{Math.round(healthScore.totalScore)}{t('checkup.header.score_suffix')}</Text>
           <Text style={styles.totalAssetsText}>{formatAssets(totalAssets)}</Text>
         </View>
       </View>
-
-      {/* 중간: 한 줄 요약 */}
       <View style={styles.summarySection}>
         <Text style={styles.summaryText}>{summary}</Text>
       </View>
-
-      {/* 하단: Panic Shield 간단 표시 (있을 때만) */}
       {panicScore !== undefined && (
         <View style={styles.panicSection}>
           <View style={styles.panicRow}>
             <Ionicons name="shield-checkmark-outline" size={16} color={colors.primaryDark ?? colors.primary} />
-            <Text style={styles.panicLabel}>시장 위기 대비력</Text>
+            <Text style={styles.panicLabel}>{t('checkup.header.panic_label')}</Text>
             <Text style={[styles.panicScore, { color: colors.primaryDark ?? colors.primary }]}>
-              {Math.round(panicScore)}점
+              {Math.round(panicScore)}{t('checkup.header.score_suffix')}
             </Text>
             <Text style={[styles.panicDesc, {
               color: panicScore >= 70 ? '#4CAF50' : panicScore >= 50 ? '#FFB74D' : '#CF6679'
             }]}>
-              {panicScore >= 70 ? '안정' : panicScore >= 50 ? '보통' : '주의'}
+              {panicScore >= 70 ? t('checkup.header.panic_stable') : panicScore >= 50 ? t('checkup.header.panic_moderate') : t('checkup.header.panic_caution')}
             </Text>
           </View>
-          {/* 점수 이유 — 일반인 언어로 설명 */}
-          <Text style={styles.panicReason}>
-            {getPanicReason()}
-          </Text>
+          <Text style={styles.panicReason}>{getPanicReason()}</Text>
         </View>
       )}
     </View>
@@ -166,87 +148,19 @@ export default function CheckupHeader({
 }
 
 const createStyles = (colors: ThemeColors) => StyleSheet.create({
-  container: {
-    marginHorizontal: 16,
-    marginVertical: 12,
-    padding: 20,
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  gradeSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  gradeBadge: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  gradeText: {
-    fontSize: 19,
-    fontWeight: '800',
-    marginTop: 2,
-  },
-  gradeInfo: {
-    flex: 1,
-  },
-  scoreText: {
-    fontSize: 29,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: 4,
-  },
-  totalAssetsText: {
-    fontSize: 15,
-    color: colors.textSecondary,
-  },
-  summarySection: {
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
-  summaryText: {
-    fontSize: 16,
-    color: colors.textPrimary,
-    lineHeight: 24,
-  },
-  panicSection: {
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
-  panicRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  panicLabel: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginLeft: 6,
-  },
-  panicScore: {
-    fontSize: 15,
-    fontWeight: '600',
-    marginLeft: 8,
-  },
-  panicDesc: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginLeft: 4,
-  },
-  panicReason: {
-    fontSize: 14,
-    color: colors.textTertiary,
-    marginLeft: 22,
-    fontStyle: 'italic',
-    lineHeight: 20,
-  },
+  container: { marginHorizontal: 16, marginVertical: 12, padding: 20, backgroundColor: colors.surface, borderRadius: 16, borderWidth: 1, borderColor: colors.border },
+  gradeSection: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
+  gradeBadge: { width: 72, height: 72, borderRadius: 36, justifyContent: 'center', alignItems: 'center', marginRight: 16 },
+  gradeText: { fontSize: 19, fontWeight: '800', marginTop: 2 },
+  gradeInfo: { flex: 1 },
+  scoreText: { fontSize: 29, fontWeight: '700', color: colors.textPrimary, marginBottom: 4 },
+  totalAssetsText: { fontSize: 15, color: colors.textSecondary },
+  summarySection: { paddingTop: 16, borderTopWidth: 1, borderTopColor: colors.border },
+  summaryText: { fontSize: 16, color: colors.textPrimary, lineHeight: 24 },
+  panicSection: { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.border },
+  panicRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
+  panicLabel: { fontSize: 14, color: colors.textSecondary, marginLeft: 6 },
+  panicScore: { fontSize: 15, fontWeight: '600', marginLeft: 8 },
+  panicDesc: { fontSize: 14, color: colors.textSecondary, marginLeft: 4 },
+  panicReason: { fontSize: 14, color: colors.textTertiary, marginLeft: 22, fontStyle: 'italic', lineHeight: 20 },
 });

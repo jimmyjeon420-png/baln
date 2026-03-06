@@ -248,59 +248,63 @@ const MiniEggDiagram: React.FC<{ currentPhase: EggPhase }> = ({ currentPhase }) 
 // ══════════════════════════════════════════
 
 /** 스탠스(매파/비둘기파) 배지 색상 */
-const STANCE_COLORS: Record<string, { bg: string; text: string; label: string }> = {
-  hawkish: { bg: 'rgba(207,102,121,0.15)', text: '#CF6679', label: '매파' },
-  dovish:  { bg: 'rgba(76,175,80,0.15)',  text: '#4CAF50', label: '비둘기파' },
-  neutral: { bg: 'rgba(136,136,136,0.15)', text: '#888',    label: '중립' },
+const STANCE_COLORS: Record<string, { bg: string; text: string; labelKey: string }> = {
+  hawkish: { bg: 'rgba(207,102,121,0.15)', text: '#CF6679', labelKey: 'kostolany.stance_hawkish' },
+  dovish:  { bg: 'rgba(76,175,80,0.15)',  text: '#4CAF50', labelKey: 'kostolany.stance_dovish' },
+  neutral: { bg: 'rgba(136,136,136,0.15)', text: '#888',    labelKey: 'kostolany.stance_neutral' },
 };
 
 /** 영향도 배지 */
-const IMPACT_LABELS: Record<string, string> = {
-  high: '높음',
-  medium: '보통',
-  low: '낮음',
+const IMPACT_LABEL_KEYS: Record<string, string> = {
+  high: 'kostolany.impact_high',
+  medium: 'kostolany.impact_medium',
+  low: 'kostolany.impact_low',
 };
 
 /** A. 핵심 뉴스 증거 섹션 */
-const EvidenceSection: React.FC<{ items: EvidenceItem[] }> = ({ items }) => (
-  <View style={evidStyles.section}>
-    <View style={evidStyles.sectionHeader}>
-      <Ionicons name="newspaper-outline" size={14} color="#FFC107" />
-      <Text style={evidStyles.sectionTitle}>핵심 뉴스 증거</Text>
-    </View>
-    {items.map((item, idx) => {
-      const stanceStyle = STANCE_COLORS[item.stance] || STANCE_COLORS.neutral;
-      return (
-        <View key={idx} style={evidStyles.evidenceItem}>
-          <View style={evidStyles.evidenceRow}>
-            <Text style={evidStyles.evidenceHeadline} numberOfLines={2}>
-              {item.headline}
-            </Text>
-          </View>
-          <View style={evidStyles.evidenceMetaRow}>
-            <Text style={evidStyles.evidenceSource}>{item.source}</Text>
-            <View style={[evidStyles.stanceBadge, { backgroundColor: stanceStyle.bg }]}>
-              <Text style={[evidStyles.stanceBadgeText, { color: stanceStyle.text }]}>
-                {stanceStyle.label}
+const EvidenceSection: React.FC<{ items: EvidenceItem[] }> = ({ items }) => {
+  const { t } = useLocale();
+  return (
+    <View style={evidStyles.section}>
+      <View style={evidStyles.sectionHeader}>
+        <Ionicons name="newspaper-outline" size={14} color="#FFC107" />
+        <Text style={evidStyles.sectionTitle}>{t('kostolany.evidence_news_title')}</Text>
+      </View>
+      {items.map((item, idx) => {
+        const stanceStyle = STANCE_COLORS[item.stance] || STANCE_COLORS.neutral;
+        return (
+          <View key={idx} style={evidStyles.evidenceItem}>
+            <View style={evidStyles.evidenceRow}>
+              <Text style={evidStyles.evidenceHeadline} numberOfLines={2}>
+                {item.headline}
               </Text>
             </View>
-            {item.impact && (
-              <Text style={evidStyles.impactText}>
-                영향: {IMPACT_LABELS[item.impact] || item.impact}
-              </Text>
-            )}
+            <View style={evidStyles.evidenceMetaRow}>
+              <Text style={evidStyles.evidenceSource}>{item.source}</Text>
+              <View style={[evidStyles.stanceBadge, { backgroundColor: stanceStyle.bg }]}>
+                <Text style={[evidStyles.stanceBadgeText, { color: stanceStyle.text }]}>
+                  {t(stanceStyle.labelKey)}
+                </Text>
+              </View>
+              {item.impact && (
+                <Text style={evidStyles.impactText}>
+                  {t('kostolany.impact_label').replace('{{level}}', t(IMPACT_LABEL_KEYS[item.impact] || 'kostolany.impact_medium'))}
+                </Text>
+              )}
+            </View>
           </View>
-        </View>
-      );
-    })}
-  </View>
-);
+        );
+      })}
+    </View>
+  );
+};
 
 /** B. 경제 지표 대시보드 섹션 */
 const IndicatorCard: React.FC<{ indicator: EconIndicator; fullWidth?: boolean }> = ({
   indicator,
   fullWidth,
 }) => {
+  const { t } = useLocale();
   const trendIcon = indicator.trend === 'rising' ? 'trending-up' :
                     indicator.trend === 'falling' ? 'trending-down' : 'remove';
   const trendColor = indicator.trend === 'rising' ? '#CF6679' :
@@ -311,11 +315,12 @@ const IndicatorCard: React.FC<{ indicator: EconIndicator; fullWidth?: boolean }>
       <Text style={evidStyles.indicatorName}>{indicator.name}</Text>
       <View style={evidStyles.indicatorValueRow}>
         <Text style={evidStyles.indicatorValue}>{indicator.value}</Text>
+        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
         <Ionicons name={trendIcon as any} size={12} color={trendColor} />
       </View>
-      <Text style={evidStyles.indicatorPrev}>이전: {indicator.previous}</Text>
+      <Text style={evidStyles.indicatorPrev}>{t('kostolany.evidence_prev').replace('{{value}}', indicator.previous)}</Text>
       {indicator.nextRelease && (
-        <Text style={evidStyles.indicatorNext}>다음: {indicator.nextRelease}</Text>
+        <Text style={evidStyles.indicatorNext}>{t('kostolany.evidence_next').replace('{{value}}', indicator.nextRelease)}</Text>
       )}
     </View>
   );
@@ -323,11 +328,13 @@ const IndicatorCard: React.FC<{ indicator: EconIndicator; fullWidth?: boolean }>
 
 const IndicatorsSection: React.FC<{ indicators: RateCycleEvidence['economicIndicators'] }> = ({
   indicators,
-}) => (
+}) => {
+  const { t } = useLocale();
+  return (
   <View style={evidStyles.section}>
     <View style={evidStyles.sectionHeader}>
       <Ionicons name="stats-chart-outline" size={14} color="#64B5F6" />
-      <Text style={evidStyles.sectionTitle}>경제 지표 대시보드</Text>
+      <Text style={evidStyles.sectionTitle}>{t('kostolany.evidence_indicators_title')}</Text>
     </View>
     {/* Fed 기준금리 — 풀와이드 */}
     <IndicatorCard indicator={indicators.fedRate} fullWidth />
@@ -339,12 +346,14 @@ const IndicatorsSection: React.FC<{ indicators: RateCycleEvidence['economicIndic
       <IndicatorCard indicator={indicators.pceCore} />
     </View>
   </View>
-);
+  );
+};
 
 /** C. 매파 vs 비둘기파 섹션 */
 const ExpertSection: React.FC<{ perspectives: RateCycleEvidence['expertPerspectives'] }> = ({
   perspectives,
 }) => {
+  const { t } = useLocale();
   const hawkishRatio = perspectives.ratio;
   const dovishRatio = 100 - hawkishRatio;
 
@@ -352,19 +361,19 @@ const ExpertSection: React.FC<{ perspectives: RateCycleEvidence['expertPerspecti
     <View style={evidStyles.section}>
       <View style={evidStyles.sectionHeader}>
         <Ionicons name="people-outline" size={14} color="#CE93D8" />
-        <Text style={evidStyles.sectionTitle}>매파 vs 비둘기파</Text>
+        <Text style={evidStyles.sectionTitle}>{t('kostolany.evidence_hawks_vs_doves')}</Text>
       </View>
 
       {/* 비율 바 */}
       <View style={evidStyles.ratioBar}>
         <View style={[evidStyles.ratioFill, { width: `${hawkishRatio}%`, backgroundColor: '#CF6679' }]}>
           {hawkishRatio >= 20 && (
-            <Text style={evidStyles.ratioText}>매파 {hawkishRatio}%</Text>
+            <Text style={evidStyles.ratioText}>{t('kostolany.hawks_ratio').replace('{{value}}', String(hawkishRatio))}</Text>
           )}
         </View>
         <View style={[evidStyles.ratioFill, { width: `${dovishRatio}%`, backgroundColor: '#4CAF50' }]}>
           {dovishRatio >= 20 && (
-            <Text style={evidStyles.ratioText}>비둘기파 {dovishRatio}%</Text>
+            <Text style={evidStyles.ratioText}>{t('kostolany.doves_ratio').replace('{{value}}', String(dovishRatio))}</Text>
           )}
         </View>
       </View>
@@ -373,7 +382,7 @@ const ExpertSection: React.FC<{ perspectives: RateCycleEvidence['expertPerspecti
       <View style={evidStyles.campBox}>
         <View style={evidStyles.campHeader}>
           <Ionicons name="arrow-up-circle" size={12} color="#CF6679" />
-          <Text style={[evidStyles.campTitle, { color: '#CF6679' }]}>매파 (긴축 선호)</Text>
+          <Text style={[evidStyles.campTitle, { color: '#CF6679' }]}>{t('kostolany.hawks_label')}</Text>
         </View>
         {(perspectives.hawkishArgs ?? []).map((arg, i) => (
           <View key={i} style={evidStyles.argRow}>
@@ -383,7 +392,7 @@ const ExpertSection: React.FC<{ perspectives: RateCycleEvidence['expertPerspecti
         ))}
         {(perspectives.hawkishFigures ?? []).length > 0 && (
           <Text style={evidStyles.figuresText}>
-            대표: {(perspectives.hawkishFigures ?? []).join(', ')}
+            {t('kostolany.representatives').replace('{{names}}', (perspectives.hawkishFigures ?? []).join(', '))}
           </Text>
         )}
       </View>
@@ -392,7 +401,7 @@ const ExpertSection: React.FC<{ perspectives: RateCycleEvidence['expertPerspecti
       <View style={[evidStyles.campBox, { marginTop: 8 }]}>
         <View style={evidStyles.campHeader}>
           <Ionicons name="arrow-down-circle" size={12} color="#4CAF50" />
-          <Text style={[evidStyles.campTitle, { color: '#4CAF50' }]}>비둘기파 (완화 선호)</Text>
+          <Text style={[evidStyles.campTitle, { color: '#4CAF50' }]}>{t('kostolany.doves_label')}</Text>
         </View>
         {(perspectives.dovishArgs ?? []).map((arg, i) => (
           <View key={i} style={evidStyles.argRow}>
@@ -402,7 +411,7 @@ const ExpertSection: React.FC<{ perspectives: RateCycleEvidence['expertPerspecti
         ))}
         {(perspectives.dovishFigures ?? []).length > 0 && (
           <Text style={evidStyles.figuresText}>
-            대표: {(perspectives.dovishFigures ?? []).join(', ')}
+            {t('kostolany.representatives').replace('{{names}}', (perspectives.dovishFigures ?? []).join(', '))}
           </Text>
         )}
       </View>
@@ -415,14 +424,15 @@ const ConfidenceSection: React.FC<{
   overall: number;
   factors: ConfidenceFactor[];
 }> = ({ overall, factors }) => {
+  const { t } = useLocale();
   const barColor = overall >= 70 ? '#4CAF50' : overall >= 40 ? '#FFC107' : '#CF6679';
-  const WEIGHT_LABELS: Record<string, string> = { strong: '강', medium: '중', weak: '약' };
+  const WEIGHT_LABEL_KEYS: Record<string, string> = { strong: 'kostolany.weight_strong', medium: 'kostolany.weight_medium', weak: 'kostolany.weight_weak' };
 
   return (
     <View style={evidStyles.section}>
       <View style={evidStyles.sectionHeader}>
         <Ionicons name="shield-checkmark-outline" size={14} color="#4CAF50" />
-        <Text style={evidStyles.sectionTitle}>판단 신뢰도</Text>
+        <Text style={evidStyles.sectionTitle}>{t('kostolany.confidence_title')}</Text>
       </View>
 
       {/* 프로그레스 바 */}
@@ -447,7 +457,7 @@ const ConfidenceSection: React.FC<{
             { backgroundColor: f.weight === 'strong' ? 'rgba(255,255,255,0.12)' :
                                f.weight === 'medium' ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.03)' }
           ]}>
-            <Text style={evidStyles.weightText}>{WEIGHT_LABELS[f.weight] || f.weight}</Text>
+            <Text style={evidStyles.weightText}>{t(WEIGHT_LABEL_KEYS[f.weight] || 'kostolany.weight_medium')}</Text>
           </View>
         </View>
       ))}
@@ -478,11 +488,11 @@ const KostolanyEggCard: React.FC<KostolanyEggCardProps> = ({
   const actionStyle = ACTION_STYLE[analysis.action];
   const fundManagerView = FUND_MANAGER_VIEWS[analysis.currentPhase];
   const nextPhaseInfo = EGG_CYCLE_PHASES[analysis.nextPhase];
-  const transition = PHASE_TRANSITIONS[analysis.currentPhase];
+  const _transition = PHASE_TRANSITIONS[analysis.currentPhase];
 
   // A단계(상승장) vs B단계(하락장) 레이블
   const isAPhase = analysis.currentPhase.startsWith('A');
-  const cycleLabel = isAPhase ? '상승 사이클' : '하락 사이클';
+  const cycleLabel = isAPhase ? t('kostolany.cycle_bull') : t('kostolany.cycle_bear');
   const cycleBg = isAPhase ? 'rgba(76,175,80,0.12)' : 'rgba(207,102,121,0.12)';
   const cycleColor = isAPhase ? '#4CAF50' : '#CF6679';
 
@@ -496,8 +506,8 @@ const KostolanyEggCard: React.FC<KostolanyEggCardProps> = ({
       >
         <View style={styles.headerLeft}>
           <View>
-            <Text style={styles.cardLabel}>금리 사이클 나침반</Text>
-            <Text style={styles.cardLabelEn}>MARKET CYCLE</Text>
+            <Text style={styles.cardLabel}>{t('kostolany.card_label')}</Text>
+            <Text style={styles.cardLabelEn}>{t('kostolany.card_label_en')}</Text>
           </View>
         </View>
         <View style={styles.headerRight}>
@@ -527,7 +537,7 @@ const KostolanyEggCard: React.FC<KostolanyEggCardProps> = ({
               const pos = PHASE_POSITIONS[phase];
               const isActive = phase === analysis.currentPhase;
               if (isActive) return null; // 활성 단계는 별도 표시
-              const pi = EGG_CYCLE_PHASES[phase];
+              const _pi = EGG_CYCLE_PHASES[phase];
               return (
                 <Text
                   key={phase}
@@ -585,7 +595,7 @@ const KostolanyEggCard: React.FC<KostolanyEggCardProps> = ({
                 {t(actionStyle.labelKey)}
               </Text>
               <Text style={styles.confidenceText}>
-                신뢰도 {analysis.confidence}%
+                {t('kostolany.confidence').replace('{{value}}', String(analysis.confidence))}
               </Text>
             </View>
           </View>
@@ -599,7 +609,7 @@ const KostolanyEggCard: React.FC<KostolanyEggCardProps> = ({
         activeOpacity={0.7}
       >
         <Ionicons name="help-circle-outline" size={14} color="#666" />
-        <Text style={styles.guideToggleText}>코스톨라니 달걀이란?</Text>
+        <Text style={styles.guideToggleText}>{t('kostolany.guide_toggle')}</Text>
         <Ionicons
           name={guideExpanded ? 'chevron-up' : 'chevron-down'}
           size={12}
@@ -610,42 +620,41 @@ const KostolanyEggCard: React.FC<KostolanyEggCardProps> = ({
       {guideExpanded && (
         <View style={styles.guideBody}>
           <Text style={styles.guideIntro}>
-            앙드레 코스톨라니(1906-1999)는 유럽의 전설적 투자자로,{'\n'}
-            금리와 주식시장의 관계를 <Text style={styles.guideBold}>달걀 형태의 순환 모형</Text>으로 설명했습니다.
+            {t('kostolany.guide_intro')}<Text style={styles.guideBold}>{t('kostolany.guide_intro_bold')}</Text>{t('kostolany.guide_intro_suffix')}
           </Text>
 
           {/* 핵심 원리 */}
           <View style={styles.guideSection}>
-            <Text style={styles.guideSectionTitle}>핵심 원리</Text>
+            <Text style={styles.guideSectionTitle}>{t('kostolany.guide_core_title')}</Text>
             <Text style={styles.guideText}>
-              금리가 오르면 주식이 하락하고, 금리가 내리면 주식이 상승하는 사이클이 달걀(타원) 위를 시계방향으로 돌며 반복됩니다.
+              {t('kostolany.guide_core_text')}
             </Text>
           </View>
 
           {/* 6단계 설명 */}
           <View style={styles.guideSection}>
-            <Text style={styles.guideSectionTitle}>6단계 순환</Text>
+            <Text style={styles.guideSectionTitle}>{t('kostolany.guide_cycle_title')}</Text>
             <View style={styles.guideCycleRow}>
               <View style={[styles.guideCycleBadge, { backgroundColor: 'rgba(76,175,80,0.12)' }]}>
-                <Text style={[styles.guideCycleBadgeText, { color: '#4CAF50' }]}>A 상승장</Text>
+                <Text style={[styles.guideCycleBadgeText, { color: '#4CAF50' }]}>{t('kostolany.guide_bull_label')}</Text>
               </View>
-              <Text style={styles.guideCycleDesc}>금리 하락 → 주식 상승</Text>
+              <Text style={styles.guideCycleDesc}>{t('kostolany.guide_bull_desc')}</Text>
             </View>
             <View style={styles.guideSteps}>
               <Text style={styles.guideStepText}>
-                <Text style={{ color: '#4CAF50' }}>A1</Text> 조정(매수 기회) → <Text style={{ color: '#66BB6A' }}>A2</Text> 파도타기(보유) → <Text style={{ color: '#FFC107' }}>A3</Text> 과열(매도 신호)
+                {t('kostolany.guide_bull_steps')}
               </Text>
             </View>
 
             <View style={[styles.guideCycleRow, { marginTop: 8 }]}>
               <View style={[styles.guideCycleBadge, { backgroundColor: 'rgba(207,102,121,0.12)' }]}>
-                <Text style={[styles.guideCycleBadgeText, { color: '#CF6679' }]}>B 하락장</Text>
+                <Text style={[styles.guideCycleBadgeText, { color: '#CF6679' }]}>{t('kostolany.guide_bear_label')}</Text>
               </View>
-              <Text style={styles.guideCycleDesc}>금리 상승 → 주식 하락</Text>
+              <Text style={styles.guideCycleDesc}>{t('kostolany.guide_bear_desc')}</Text>
             </View>
             <View style={styles.guideSteps}>
               <Text style={styles.guideStepText}>
-                <Text style={{ color: '#CF6679' }}>B1</Text> 조정(익절) → <Text style={{ color: '#EF5350' }}>B2</Text> 하강(방어) → <Text style={{ color: '#C62828' }}>B3</Text> 과도하락(바닥)
+                {t('kostolany.guide_bear_steps')}
               </Text>
             </View>
           </View>
@@ -653,9 +662,9 @@ const KostolanyEggCard: React.FC<KostolanyEggCardProps> = ({
           {/* 한줄 명언 */}
           <View style={styles.guideQuote}>
             <Text style={styles.guideQuoteText}>
-              "모두가 팔 때 사고, 모두가 살 때 팔아라"
+              {t('kostolany.guide_quote')}
             </Text>
-            <Text style={styles.guideQuoteAuthor}>— 앙드레 코스톨라니</Text>
+            <Text style={styles.guideQuoteAuthor}>{t('kostolany.guide_quote_author')}</Text>
           </View>
         </View>
       )}
@@ -685,13 +694,13 @@ const KostolanyEggCard: React.FC<KostolanyEggCardProps> = ({
 
           {/* ─── 펀드매니저의 시각 ─── */}
           <View style={styles.fundManagerSection}>
-            <Text style={styles.fundManagerTitle}>펀드매니저의 시각</Text>
+            <Text style={styles.fundManagerTitle}>{t('kostolany.fund_manager_title')}</Text>
 
             {/* Bull Case (초록) */}
             <View style={styles.caseBox}>
               <View style={styles.caseHeader}>
                 <Ionicons name="arrow-up-circle" size={14} color="#4CAF50" />
-                <Text style={[styles.caseHeaderText, { color: '#4CAF50' }]}>상승 근거</Text>
+                <Text style={[styles.caseHeaderText, { color: '#4CAF50' }]}>{t('kostolany.bull_case_title')}</Text>
               </View>
               {(fundManagerView.bullCase ?? []).map((item, idx) => (
                 <View key={idx} style={styles.caseItem}>
@@ -705,7 +714,7 @@ const KostolanyEggCard: React.FC<KostolanyEggCardProps> = ({
             <View style={[styles.caseBox, { marginTop: 10 }]}>
               <View style={styles.caseHeader}>
                 <Ionicons name="arrow-down-circle" size={14} color="#CF6679" />
-                <Text style={[styles.caseHeaderText, { color: '#CF6679' }]}>반론 / 위험 요인</Text>
+                <Text style={[styles.caseHeaderText, { color: '#CF6679' }]}>{t('kostolany.bear_case_title')}</Text>
               </View>
               {(fundManagerView.bearCase ?? []).map((item, idx) => (
                 <View key={idx} style={styles.caseItem}>
@@ -721,7 +730,7 @@ const KostolanyEggCard: React.FC<KostolanyEggCardProps> = ({
             <Ionicons name="arrow-forward-circle" size={14} color="#FFC107" />
             <View style={styles.nextScenarioContent}>
               <Text style={styles.nextScenarioLabel}>
-                다음 시나리오: {nextPhaseInfo.emoji} {nextPhaseInfo.titleKorean}
+                {t('kostolany.next_scenario', { emoji: nextPhaseInfo.emoji, title: nextPhaseInfo.titleKorean })}
               </Text>
               <Text style={styles.nextScenarioText}>
                 {fundManagerView.nextTrigger}
@@ -736,7 +745,7 @@ const KostolanyEggCard: React.FC<KostolanyEggCardProps> = ({
             activeOpacity={0.7}
           >
             <Ionicons name="search-outline" size={14} color="#64B5F6" />
-            <Text style={styles.evidenceToggleText}>왜 이 판단인가?</Text>
+            <Text style={styles.evidenceToggleText}>{t('kostolany.evidence_toggle')}</Text>
             <Ionicons
               name={evidenceExpanded ? 'chevron-up' : 'chevron-down'}
               size={12}
@@ -750,7 +759,7 @@ const KostolanyEggCard: React.FC<KostolanyEggCardProps> = ({
               {evidenceLoading ? (
                 <View style={styles.evidenceLoading}>
                   <ActivityIndicator size="small" color="#64B5F6" />
-                  <Text style={styles.evidenceLoadingText}>증거 데이터 로딩 중...</Text>
+                  <Text style={styles.evidenceLoadingText}>{t('kostolany.evidence_loading')}</Text>
                 </View>
               ) : evidence ? (
                 <>
@@ -780,7 +789,7 @@ const KostolanyEggCard: React.FC<KostolanyEggCardProps> = ({
                   {/* 생성 시각 */}
                   {evidence.generatedAt && (
                     <Text style={styles.evidenceTimestamp}>
-                      데이터 기준: {new Date(evidence.generatedAt).toLocaleString(getLocaleCode())}
+                      {t('kostolany.evidence_data_time', { time: new Date(evidence.generatedAt).toLocaleString(getLocaleCode()) })}
                     </Text>
                   )}
                 </>
@@ -788,7 +797,7 @@ const KostolanyEggCard: React.FC<KostolanyEggCardProps> = ({
                 <View style={styles.evidenceEmpty}>
                   <Ionicons name="time-outline" size={20} color="#555" />
                   <Text style={styles.evidenceEmptyText}>
-                    데이터 준비 중{'\n'}매일 오전 7시에 업데이트됩니다
+                    {t('kostolany.evidence_empty')}
                   </Text>
                 </View>
               )}
@@ -797,8 +806,7 @@ const KostolanyEggCard: React.FC<KostolanyEggCardProps> = ({
 
           {/* ─── 면책 ─── */}
           <Text style={styles.disclaimer}>
-            코스톨라니 모형은 참고 지표이며 투자 결정의 근거가 아닙니다.
-            실제 투자는 전문가 상담 후 결정하세요.
+            {t('kostolany.disclaimer')}
           </Text>
         </View>
       )}

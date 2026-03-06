@@ -78,6 +78,7 @@ export const POPULAR_STOCKS: StockItem[] = [
   { ticker: 'ARM', name: 'ARM홀딩스', nameEn: 'Arm Holdings', category: 'us_stock' },
   { ticker: 'AVGO', name: '브로드컴', nameEn: 'Broadcom', category: 'us_stock' },
   { ticker: 'CEG', name: '컨스텔레이션 에너지', nameEn: 'Constellation Energy', category: 'us_stock' },
+  { ticker: 'GLW', name: '코닝', nameEn: 'Corning', category: 'us_stock' },
 
   // ─── 인기 ETF (15개) ───
   { ticker: 'SPY', name: 'S&P 500 ETF', nameEn: 'SPDR S&P 500', category: 'etf' },
@@ -179,6 +180,10 @@ const OCR_ALIAS_TO_TICKER: Record<string, string> = {
   [normalizeLookupText('컨스털레이션 에너지')]: 'CEG',
   [normalizeLookupText('Constellation Energy Corp')]: 'CEG',
   [normalizeLookupText('Constellation Energy')]: 'CEG',
+  [normalizeLookupText('코닝')]: 'GLW',
+  [normalizeLookupText('Corning')]: 'GLW',
+  [normalizeLookupText('Corning Inc')]: 'GLW',
+  [normalizeLookupText('Corning Incorporated')]: 'GLW',
 };
 
 const STOCK_LOOKUP_INDEX = (() => {

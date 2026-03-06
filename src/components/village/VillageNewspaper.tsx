@@ -67,19 +67,13 @@ const CATEGORY_CONFIG: Record<string, { emoji: string; labelKo: string; labelEn:
 /** 오늘 날짜 포맷 */
 function formatNewspaperDate(language: string): string {
   const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth() + 1;
-  const day = now.getDate();
-  const weekdays = language === 'ko'
-    ? ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일']
-    : ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  const weekday = weekdays[now.getDay()];
-
-  if (language === 'ko') {
-    return `${year}년 ${month}월 ${day}일 ${weekday}`;
-  }
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  return `${weekday}, ${months[month - 1]} ${day}, ${year}`;
+  const locale = language === 'ko' ? 'ko-KR' : 'en-US';
+  return now.toLocaleDateString(locale, {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    weekday: 'long',
+  });
 }
 
 // ============================================================================
@@ -181,7 +175,7 @@ function ArticleCard({
       <View style={[articleStyles.categoryBadge, { backgroundColor: category.color + '20' }]}>
         <Text style={articleStyles.categoryEmoji}>{category.emoji}</Text>
         <Text style={[articleStyles.categoryLabel, { color: category.color }]}>
-          {language === 'ko' ? category.labelKo : category.labelEn}
+          {t(`newspaper.category_${article.category}`)}
         </Text>
       </View>
 

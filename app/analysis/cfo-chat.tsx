@@ -166,7 +166,7 @@ const CFOShareModal: React.FC<{
       });
       const result = await claimReward();
       if (result.success) {
-        setRewardMessage(`+${result.creditsEarned} 도토리 획득!`);
+        setRewardMessage(tStatic('analysis.cfoChat.share.acornEarned', { count: result.creditsEarned }));
         setTimeout(() => setRewardMessage(null), 3000);
       }
     } catch (err) {
@@ -250,7 +250,7 @@ const CFOShareModal: React.FC<{
         <View style={cfoShareStyles.ctaBox}>
           <Ionicons name="open-outline" size={14} color="#7C4DFF" />
           <Text style={cfoShareStyles.ctaText}>
-            bal<Text style={{ color: '#4CAF50' }}>n</Text>.app에서 버핏과 대화하기
+            bal<Text style={{ color: '#4CAF50' }}>n</Text>{tStatic('analysis.cfoChat.share.ctaText')}
           </Text>
         </View>
       </View>
@@ -308,7 +308,7 @@ const CFOShareModal: React.FC<{
                 <Text style={cfoShareStyles.shareButtonText}>{tStatic('analysis.cfoChat.share.instagram')}</Text>
                 {!rewarded && (
                   <View style={cfoShareStyles.rewardHint}>
-                    <Text style={cfoShareStyles.rewardHintText}>+{REWARD_AMOUNTS.shareCard}개</Text>
+                    <Text style={cfoShareStyles.rewardHintText}>{tStatic('analysis.cfoChat.share.rewardHint', { count: REWARD_AMOUNTS.shareCard })}</Text>
                   </View>
                 )}
               </>
@@ -492,7 +492,7 @@ export default function CFOChatScreen() {
         setMessages(prev => [...prev, aiMessage]);
       } else {
         // 폴백: 단일 답변 (warren만 있는 경우 등)
-        const fallbackText = debateData?.answer || debateData?.warren || '응답을 처리하는 중 문제가 발생했습니다.';
+        const fallbackText = debateData?.answer || debateData?.warren || tStatic('analysis.cfoChat.error.processingFailed');
         const aiMessage: Message = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
@@ -645,7 +645,7 @@ export default function CFOChatScreen() {
               <Text style={s.shareDebateText}>{t('analysis.cfoChat.share.instaShare')}</Text>
               {!rewarded && (
                 <View style={s.shareRewardBadge}>
-                  <Text style={s.shareRewardBadgeText}>+{REWARD_AMOUNTS.shareCard}개</Text>
+                  <Text style={s.shareRewardBadgeText}>{t('analysis.cfoChat.share.rewardHint', { count: REWARD_AMOUNTS.shareCard })}</Text>
                 </View>
               )}
             </TouchableOpacity>

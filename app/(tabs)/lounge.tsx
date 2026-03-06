@@ -516,18 +516,19 @@ function LoungeScreenInner() {
     try {
       // 자산 믹스 동적 계산
       const totalAssets = eligibility?.totalAssets ?? 0;
-      const ASSET_TYPE_KR_LOUNGE: Record<string, string> = {
-        liquid: '금융자산', LIQUID: '금융자산',
-        illiquid: '부동산', ILLIQUID: '부동산',
-        other: '기타',
+      const ASSET_TYPE_LOUNGE: Record<string, string> = {
+        liquid: t('lounge.assetType.liquid'), LIQUID: t('lounge.assetType.liquid'),
+        illiquid: t('lounge.assetType.illiquid'), ILLIQUID: t('lounge.assetType.illiquid'),
+        other: t('lounge.assetType.other'),
       };
+      const illiquidLabel = t('lounge.assetType.illiquid');
       const byCat: Record<string, number> = {};
       assets.forEach((a) => {
         const raw = (a.assetType as string) || 'other';
-        const cat = ASSET_TYPE_KR_LOUNGE[raw] ?? raw;
+        const cat = ASSET_TYPE_LOUNGE[raw] ?? raw;
         const rawValue = Number(a.currentValue) || 0;
         const debtAmount = Number(a.debtAmount) || 0;
-        const normalizedValue = cat === '부동산'
+        const normalizedValue = cat === illiquidLabel
           ? Math.max(0, rawValue - debtAmount)
           : Math.max(0, rawValue);
         byCat[cat] = (byCat[cat] || 0) + normalizedValue;
@@ -535,7 +536,7 @@ function LoungeScreenInner() {
       const mixCategories = Object.entries(byCat)
         .filter(([, v]) => v > 0)
         .map(([cat, v]) => ({ category: cat, percentage: Math.round((v / Math.max(totalAssets, 1)) * 100) }));
-      const computedAssetMix = generateAssetMix(mixCategories) || '다양한 자산';
+      const computedAssetMix = generateAssetMix(mixCategories) || t('lounge.assetType.diverse');
 
       await createPost.mutateAsync({
         content: newPostContent.trim(),

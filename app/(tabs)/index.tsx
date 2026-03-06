@@ -22,6 +22,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useLocale } from '../../src/context/LocaleContext';
 import { t as rawT } from '../../src/locales';
 import { getLocaleCode } from '../../src/utils/formatters';
+import { getTickerNameByLang } from '../../src/data/tickerProfile';
 
 // 3카드 시스템
 import CardSwipeContainer from '../../src/components/home/CardSwipeContainer';
@@ -435,12 +436,12 @@ export default function HomeScreen() {
       };
     }
 
-    // 데이터 상태 (null 안전 필터링)
+    // 데이터 상태 (null 안전 필터링) — 로케일에 맞는 자산명 표시
     const assetSignals = (heartAssetsWithSignal || [])
       .filter(a => a?.name)
       .slice(0, 5)
       .map(a => ({
-        name: a.name ?? 'Unknown',
+        name: getTickerNameByLang(a.ticker, language, a.name ?? 'Unknown'),
         signal: a.signal ?? 'neutral',
       }));
 
@@ -469,6 +470,7 @@ export default function HomeScreen() {
     totalAssets,
     dailyChangeRate,
     guruStyle,
+    language,
   ]);
 
   // ──────────────────────────────────────────────────────────────────────

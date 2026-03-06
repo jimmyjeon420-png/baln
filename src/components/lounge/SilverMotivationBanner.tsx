@@ -2,27 +2,38 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
 import { TIER_THRESHOLDS } from '../../types/community';
+import { useLocale } from '../../context/LocaleContext';
 
 interface SilverMotivationBannerProps {
   totalAssets: number;
 }
 
-function formatManWon(amount: number): string {
-  const manWon = Math.floor(amount / 10000);
-  if (manWon >= 10000) {
-    const eok = Math.floor(manWon / 10000);
-    const remainder = manWon % 10000;
-    if (remainder === 0) {
-      return `${eok.toLocaleString()}억`;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function formatAmount(amount: number, t: (key: string, opts?: any) => string, isKo: boolean): string {
+  if (isKo) {
+    const manWon = Math.floor(amount / 10000);
+    if (manWon >= 10000) {
+      const eok = Math.floor(manWon / 10000);
+      const remainder = manWon % 10000;
+      if (remainder === 0) {
+        return t('silverBanner.format_eok', { eok: eok.toLocaleString() });
+      }
+      return t('silverBanner.format_eok_man', { eok: eok.toLocaleString(), man: remainder.toLocaleString() });
     }
-    return `${eok.toLocaleString()}억 ${remainder.toLocaleString()}만`;
+    return t('silverBanner.format_man', { man: manWon.toLocaleString() });
+  } else {
+    if (amount >= 1_000_000_000) return `₩${(amount / 1_000_000_000).toFixed(1)}B`;
+    if (amount >= 1_000_000) return `₩${(amount / 1_000_000).toFixed(1)}M`;
+    if (amount >= 1_000) return `₩${(amount / 1_000).toFixed(0)}K`;
+    return `₩${amount.toLocaleString()}`;
   }
-  return `${manWon.toLocaleString()}만`;
 }
 
 export default function SilverMotivationBanner({
   totalAssets,
 }: SilverMotivationBannerProps) {
+  const { t, language } = useLocale();
+  const isKo = language === 'ko';
   const goldThreshold = TIER_THRESHOLDS?.GOLD ?? 100_000_000;
   const progress = Math.min(totalAssets / goldThreshold, 1);
   const progressPercent = Math.round(progress * 100);
@@ -37,7 +48,7 @@ export default function SilverMotivationBanner({
       {/* Header */}
       <View style={styles.headerRow}>
         <Text style={styles.crownEmoji}>👑</Text>
-        <Text style={styles.title}>골드까지 얼마 남았어요!</Text>
+        <Text style={styles.title}>{t('silverBanner.title')}</Text>
       </View>
 
       {/* Progress bar */}
@@ -56,17 +67,17 @@ export default function SilverMotivationBanner({
       {/* Remaining amount */}
       {remaining > 0 ? (
         <Text style={styles.remainingText}>
-          {formatManWon(remaining)}원 더 모으면 골드!
+          {t('silverBanner.remaining', { amount: formatAmount(remaining, t, isKo) })}
         </Text>
       ) : (
         <Text style={[styles.remainingText, { color: '#4CAF50' }]}>
-          골드 승급 조건을 달성했어요!
+          {t('silverBanner.achieved')}
         </Text>
       )}
 
       {/* CTA button */}
       <TouchableOpacity style={styles.ctaButton} onPress={handleAddAsset}>
-        <Text style={styles.ctaButtonText}>자산 등록하기</Text>
+        <Text style={styles.ctaButtonText}>{t('silverBanner.cta')}</Text>
       </TouchableOpacity>
     </View>
   );

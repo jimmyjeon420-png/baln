@@ -45,7 +45,7 @@ interface HouseInteriorModalProps {
 // 카테고리 라벨
 // ============================================================================
 
-const CATEGORY_LABELS: Record<string, { ko: string; en: string }> = {
+const _CATEGORY_LABELS: Record<string, { ko: string; en: string }> = {
   wall: { ko: '벽 장식', en: 'Wall' },
   floor: { ko: '바닥 장식', en: 'Floor' },
   table: { ko: '탁상 장식', en: 'Table' },
@@ -69,7 +69,7 @@ function HouseInteriorModal({
   const [showInventory, setShowInventory] = useState(false);
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
   const slideAnim = useRef(new Animated.Value(0)).current;
-  const { language } = useLocale();
+  const { t, language } = useLocale();
   const isKo = language === 'ko';
 
   // 입장 애니메이션
@@ -131,7 +131,7 @@ function HouseInteriorModal({
                 {isKo ? houseLevel.nameKo : houseLevel.nameEn}
               </Text>
               <Text style={styles.headerSubtitle}>
-                Lv.{houseLevel.level} {isKo ? '인테리어' : 'Interior'}
+                Lv.{houseLevel.level} {t('house.interior')}
               </Text>
             </View>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
@@ -142,9 +142,7 @@ function HouseInteriorModal({
           {/* 슬롯 카운터 */}
           <View style={styles.slotCounter}>
             <Text style={styles.slotText}>
-              {isKo
-                ? `가구 ${placedFurniture.length} / ${maxSlots}칸`
-                : `Furniture ${placedFurniture.length} / ${maxSlots} slots`}
+              {t('house.furniture_count', { placed: placedFurniture.length, max: maxSlots })}
             </Text>
           </View>
 
@@ -174,7 +172,7 @@ function HouseInteriorModal({
                   </Text>
                   {confirmRemoveId === item.id && (
                     <Text style={styles.removeHint}>
-                      {isKo ? '탭하여 제거' : 'Tap to remove'}
+                      {t('house.tap_to_remove')}
                     </Text>
                   )}
                 </TouchableOpacity>
@@ -199,7 +197,7 @@ function HouseInteriorModal({
             {showInventory && inventoryFurniture.length > 0 && (
               <View style={styles.inventorySection}>
                 <Text style={styles.inventoryTitle}>
-                  {isKo ? '배치 가능한 가구' : 'Available Furniture'}
+                  {t('house.available_furniture')}
                 </Text>
                 {inventoryFurniture.map(item => (
                   <TouchableOpacity
@@ -214,13 +212,11 @@ function HouseInteriorModal({
                         {isKo ? item.nameKo : item.nameEn}
                       </Text>
                       <Text style={styles.inventoryCategory}>
-                        {isKo
-                          ? (CATEGORY_LABELS[item.category]?.ko || item.category)
-                          : (CATEGORY_LABELS[item.category]?.en || item.category)}
+                        {t(`house.category_${item.category}`) || item.category}
                       </Text>
                     </View>
                     <Text style={styles.placeButton}>
-                      {isKo ? '배치' : 'Place'}
+                      {t('house.place')}
                     </Text>
                   </TouchableOpacity>
                 ))}
@@ -235,7 +231,7 @@ function HouseInteriorModal({
                 activeOpacity={0.7}
               >
                 <Text style={styles.addButtonText}>
-                  {isKo ? '+ 가구 추가하기' : '+ Add Furniture'}
+                  {t('house.add_furniture')}
                 </Text>
               </TouchableOpacity>
             )}
@@ -243,9 +239,7 @@ function HouseInteriorModal({
             {/* 인벤토리가 비어있을 때 */}
             {inventoryFurniture.length === 0 && hasEmptySlot && (
               <Text style={styles.emptyInventoryText}>
-                {isKo
-                  ? '마을 번영도를 올리면 새 가구가 해금됩니다!'
-                  : 'Raise village prosperity to unlock new furniture!'}
+                {t('house.unlock_hint')}
               </Text>
             )}
           </ScrollView>

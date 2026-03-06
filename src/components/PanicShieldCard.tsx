@@ -8,6 +8,7 @@ import { View, Text, StyleSheet, TouchableOpacity, LayoutAnimation, Platform, UI
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Circle, G } from 'react-native-svg';
 import { useTheme } from '../hooks/useTheme';
+import { useLocale } from '../context/LocaleContext';
 import type { ThemeColors } from '../styles/colors';
 import { PanicSubScores } from '../services/gemini';
 
@@ -45,23 +46,14 @@ const getSubScoreColor = (score: number, colors: ThemeColors): string => {
   return colors.error;
 };
 
-// 서브스코어 라벨 매핑
-const SUB_SCORE_LABELS: { key: keyof PanicSubScores; label: string; icon: string }[] = [
-  { key: 'portfolioLoss', label: '포트폴리오 손실률', icon: '📉' },
-  { key: 'concentrationRisk', label: '자산 집중도', icon: '🎯' },
-  { key: 'volatilityExposure', label: '변동성 노출', icon: '📊' },
-  { key: 'stopLossProximity', label: '손절선 근접도', icon: '🚨' },
-  { key: 'marketSentiment', label: '시장 심리', icon: '🧠' },
+// 서브스코어 키/아이콘 매핑 (라벨은 t() 사용)
+const SUB_SCORE_KEYS: { key: keyof PanicSubScores; labelKey: string; descKey: string; icon: string }[] = [
+  { key: 'portfolioLoss', labelKey: 'panicShield.sub_portfolio_loss', descKey: 'panicShield.sub_desc_portfolio_loss', icon: '📉' },
+  { key: 'concentrationRisk', labelKey: 'panicShield.sub_concentration_risk', descKey: 'panicShield.sub_desc_concentration_risk', icon: '🎯' },
+  { key: 'volatilityExposure', labelKey: 'panicShield.sub_volatility', descKey: 'panicShield.sub_desc_volatility', icon: '📊' },
+  { key: 'stopLossProximity', labelKey: 'panicShield.sub_stop_loss', descKey: 'panicShield.sub_desc_stop_loss', icon: '🚨' },
+  { key: 'marketSentiment', labelKey: 'panicShield.sub_market_sentiment', descKey: 'panicShield.sub_desc_market_sentiment', icon: '🧠' },
 ];
-
-// 서브스코어별 PO 설명 (비개발자용)
-const SUB_SCORE_DESCRIPTIONS: Record<keyof PanicSubScores, string> = {
-  portfolioLoss: '현재 보유 종목들의 평균 손실률입니다. 점수가 높을수록 손실이 적어 안전합니다.',
-  concentrationRisk: '특정 종목에 자산이 몰려있는 정도입니다. 분산이 잘 되어있으면 점수가 높습니다.',
-  volatilityExposure: '보유 종목들의 가격 변동폭입니다. 안정적인 종목이 많을수록 점수가 높습니다.',
-  stopLossProximity: '손절 기준선까지 얼마나 여유가 있는지입니다. 여유가 많을수록 높은 점수입니다.',
-  marketSentiment: '현재 시장 전체의 투자 심리입니다. 시장이 안정적일수록 점수가 높습니다.',
-};
 
 export default function PanicShieldCard({
   index,
@@ -71,6 +63,7 @@ export default function PanicShieldCard({
   peerComparison,
 }: PanicShieldCardProps) {
   const { colors } = useTheme();
+  const { t } = useLocale();
 
   // 가이드 섹션 펼침/접힘 상태
   const [showGuide, setShowGuide] = useState(false);
@@ -85,22 +78,22 @@ export default function PanicShieldCard({
     SAFE: {
       color: colors.success,
       bgColor: colors.streak.background,
-      label: '안전',
-      message: '포트폴리오가 안정적입니다',
+      label: t('panicShield.level_safe'),
+      message: t('panicShield.msg_safe'),
       icon: 'shield-checkmark' as const,
     },
     CAUTION: {
       color: colors.warning,
       bgColor: colors.surfaceElevated,
-      label: '주의',
-      message: '일부 자산 모니터링 필요',
+      label: t('panicShield.level_caution'),
+      message: t('panicShield.msg_caution'),
       icon: 'alert-circle' as const,
     },
     DANGER: {
       color: colors.error,
       bgColor: colors.surfaceElevated,
-      label: '위험',
-      message: '포트폴리오 점검이 필요합니다',
+      label: t('panicShield.level_danger'),
+      message: t('panicShield.msg_danger'),
       icon: 'warning' as const,
     },
   };
@@ -181,10 +174,10 @@ export default function PanicShieldCard({
           <View style={[styles.peerBadge, { backgroundColor: colors.surfaceElevated }]}>
             <Ionicons name="people" size={14} color={colors.textTertiary} />
             <Text style={[styles.peerLabel, { color: colors.textSecondary }]}>
-              {peerComparison.bracketLabel} 투자자 평균
+              {t('panicShield.peer_avg').replace('{{bracket}}', peerComparison.bracketLabel)}
             </Text>
             <Text style={[styles.peerAvgScore, { color: colors.textPrimary }]}>
-              {peerComparison.avgScore}점
+              {t('panicShield.peer_score').replace('{{score}}', String(peerComparison.avgScore))}
             </Text>
           </View>
           {(() => {
@@ -194,8 +187,8 @@ export default function PanicShieldCard({
             const color = isAbove ? colors.success : colors.error;
             const arrow = isAbove ? 'arrow-up' : 'arrow-down';
             const text = isAbove
-              ? `평균보다 ${diff}점 높습니다`
-              : `평균보다 ${Math.abs(diff)}점 낮습니다`;
+              ? t('panicShield.peer_above').replace('{{diff}}', String(diff))
+              : t('panicShield.peer_below').replace('{{diff}}', String(Math.abs(diff)));
             return (
               <View style={[styles.peerDiffBadge, { backgroundColor: `${color}15` }]}>
                 <Ionicons name={arrow as keyof typeof Ionicons.glyphMap} size={12} color={color} />
@@ -204,7 +197,7 @@ export default function PanicShieldCard({
             );
           })()}
           <Text style={[styles.peerSampleText, { color: colors.textTertiary }]}>
-            {peerComparison.sampleCount}명 기준
+            {t('panicShield.peer_sample').replace('{{count}}', String(peerComparison.sampleCount))}
           </Text>
         </View>
       )}
@@ -217,7 +210,7 @@ export default function PanicShieldCard({
       >
         <Ionicons name="help-circle-outline" size={16} color={colors.textTertiary} />
         <Text style={[styles.guideToggleText, { color: colors.textTertiary }]}>
-          이 점수는 무엇인가요?
+          {t('panicShield.guide_toggle')}
         </Text>
         <Ionicons
           name={showGuide ? 'chevron-up' : 'chevron-down'}
@@ -233,61 +226,61 @@ export default function PanicShieldCard({
         }]}>
           {/* 개념 설명 + 학술 근거 */}
           <View style={[styles.guideSection, { borderBottomColor: colors.border }]}>
-            <Text style={[styles.guideSectionTitle, { color: colors.textSecondary }]}>Panic Shield란?</Text>
+            <Text style={[styles.guideSectionTitle, { color: colors.textSecondary }]}>{t('panicShield.guide_what_title')}</Text>
             <Text style={[styles.guideText, { color: colors.textTertiary }]}>
-              노벨경제학상 수상자 <Text style={[styles.guideBold, { color: colors.textSecondary }]}>대니얼 카너먼</Text>의
-              {' '}<Text style={[styles.guideSource, { color: colors.info }]}>전망이론(Prospect Theory, 1979)</Text>에 따르면,
-              사람은 동일한 금액이라도 <Text style={[styles.guideBold, { color: colors.textSecondary }]}>이익보다 손실을 2배 이상 크게</Text>{' '}
-              느낍니다. 이런 심리가 시장 급락 시 "패닉 셀링"을 유발합니다.
+              {t('panicShield.guide_what_text1_pre')}<Text style={[styles.guideBold, { color: colors.textSecondary }]}>{t('panicShield.guide_what_text1_name')}</Text>
+              {' '}<Text style={[styles.guideSource, { color: colors.info }]}>{t('panicShield.guide_what_text1_theory')}</Text>
+              {' '}{t('panicShield.guide_what_text1_key').split('').length > 0 && (
+                <Text style={[styles.guideBold, { color: colors.textSecondary }]}>{t('panicShield.guide_what_text1_key')}</Text>
+              )}
+              {t('panicShield.guide_what_text1_post')}
             </Text>
             <Text style={[styles.guideText, { marginTop: 8, color: colors.textTertiary }]}>
-              Panic Shield는 CNN의{' '}
-              <Text style={[styles.guideSource, { color: colors.info }]}>Fear & Greed Index</Text> 방법론을
-              개인 포트폴리오에 맞게 재설계한 <Text style={[styles.guideBold, { color: colors.textSecondary }]}>방어력 점수</Text>입니다.
-              CNN 지수가 시장 전체 심리를 7가지 지표로 측정하듯, Panic Shield는
-              내 포트폴리오의 취약점을 5가지 관점에서 진단합니다.
+              {t('panicShield.guide_what_text2_pre')}
+              <Text style={[styles.guideSource, { color: colors.info }]}>{t('panicShield.guide_what_text2_index')}</Text>
+              {' '}<Text style={[styles.guideBold, { color: colors.textSecondary }]}>{t('panicShield.guide_what_text2_key')}</Text>
+              {t('panicShield.guide_what_text2_post')}
             </Text>
           </View>
 
           {/* 점수 해석 */}
           <View style={[styles.guideSection, { borderBottomColor: colors.border }]}>
-            <Text style={[styles.guideSectionTitle, { color: colors.textSecondary }]}>점수 읽는 법</Text>
+            <Text style={[styles.guideSectionTitle, { color: colors.textSecondary }]}>{t('panicShield.guide_score_title')}</Text>
             <View style={styles.guideScoreRow}>
               <View style={[styles.guideScoreDot, { backgroundColor: colors.success }]} />
               <Text style={[styles.guideScoreText, { color: colors.textTertiary }]}>
-                <Text style={[styles.guideBold, { color: colors.success }]}>70~100 안전</Text> — 분산이 잘 되어있고, 급락에도 견딜 수 있는 구조
+                <Text style={[styles.guideBold, { color: colors.success }]}>{t('panicShield.guide_score_safe')}</Text>{t('panicShield.guide_score_safe_desc')}
               </Text>
             </View>
             <View style={styles.guideScoreRow}>
               <View style={[styles.guideScoreDot, { backgroundColor: colors.warning }]} />
               <Text style={[styles.guideScoreText, { color: colors.textTertiary }]}>
-                <Text style={[styles.guideBold, { color: colors.warning }]}>40~69 주의</Text> — 일부 종목이 위험 신호를 보이고 있어 모니터링 필요
+                <Text style={[styles.guideBold, { color: colors.warning }]}>{t('panicShield.guide_score_caution')}</Text>{t('panicShield.guide_score_caution_desc')}
               </Text>
             </View>
             <View style={styles.guideScoreRow}>
               <View style={[styles.guideScoreDot, { backgroundColor: colors.error }]} />
               <Text style={[styles.guideScoreText, { color: colors.textTertiary }]}>
-                <Text style={[styles.guideBold, { color: colors.error }]}>0~39 위험</Text> — 손실이 크거나 특정 종목에 과도하게 집중되어 있음
+                <Text style={[styles.guideBold, { color: colors.error }]}>{t('panicShield.guide_score_danger')}</Text>{t('panicShield.guide_score_danger_desc')}
               </Text>
             </View>
           </View>
 
           {/* 5개 하위 지표 설명 (CNN 대비) */}
           <View style={[styles.guideSection, { borderBottomColor: colors.border }]}>
-            <Text style={[styles.guideSectionTitle, { color: colors.textSecondary }]}>5가지 세부 지표</Text>
+            <Text style={[styles.guideSectionTitle, { color: colors.textSecondary }]}>{t('panicShield.guide_sub_title')}</Text>
             <Text style={[styles.guideText, { marginBottom: 10, color: colors.textTertiary }]}>
-              CNN Fear & Greed Index는 VIX(변동성), 풋/콜 비율, 정크본드 수요 등
-              7개 <Text style={[styles.guideBold, { color: colors.textSecondary }]}>시장 전체</Text> 지표를 봅니다.
-              Panic Shield는 이를 <Text style={[styles.guideBold, { color: colors.textSecondary }]}>내 포트폴리오</Text>에
-              맞게 5가지로 재구성했습니다:
+              {t('panicShield.guide_sub_text_pre')}<Text style={[styles.guideBold, { color: colors.textSecondary }]}>{t('panicShield.guide_sub_text_market')}</Text>
+              {t('panicShield.guide_sub_text_mid')}<Text style={[styles.guideBold, { color: colors.textSecondary }]}>{t('panicShield.guide_sub_text_portfolio')}</Text>
+              {t('panicShield.guide_sub_text_post')}
             </Text>
-            {SUB_SCORE_LABELS.map(({ key, label, icon }) => (
+            {SUB_SCORE_KEYS.map(({ key, labelKey, descKey, icon }) => (
               <View key={key} style={styles.guideItemRow}>
                 <Text style={styles.guideItemIcon}>{icon}</Text>
                 <View style={styles.guideItemContent}>
-                  <Text style={[styles.guideItemLabel, { color: colors.textSecondary }]}>{label}</Text>
+                  <Text style={[styles.guideItemLabel, { color: colors.textSecondary }]}>{t(labelKey)}</Text>
                   <Text style={[styles.guideItemDesc, { color: colors.textTertiary }]}>
-                    {SUB_SCORE_DESCRIPTIONS[key]}
+                    {t(descKey)}
                   </Text>
                 </View>
               </View>
@@ -296,17 +289,15 @@ export default function PanicShieldCard({
 
           {/* 점수 산출 방식 + 토스 PO 넛지 */}
           <View style={[styles.guideSection, { borderBottomColor: colors.border }]}>
-            <Text style={[styles.guideSectionTitle, { color: colors.textSecondary }]}>점수 산출 방식</Text>
+            <Text style={[styles.guideSectionTitle, { color: colors.textSecondary }]}>{t('panicShield.guide_calc_title')}</Text>
             <Text style={[styles.guideText, { color: colors.textTertiary }]}>
-              Google Gemini AI가 보유 종목의 수익률, 분산도, 시장 변동성, 뉴스 심리를
-              실시간으로 종합 분석합니다. CNN의 7개 지표가 동일 가중치로 합산되듯,
-              5개 하위 지표를 가중 평균하여 0~100점을 산출합니다.
+              {t('panicShield.guide_calc_text')}
             </Text>
           </View>
 
           {/* 출처 표시 */}
           <View style={[styles.guideSection, { borderBottomWidth: 0, paddingBottom: 0 }]}>
-            <Text style={[styles.guideSectionTitle, { color: colors.textSecondary }]}>참고 자료</Text>
+            <Text style={[styles.guideSectionTitle, { color: colors.textSecondary }]}>{t('panicShield.guide_ref_title')}</Text>
             <Text style={[styles.guideSourceItem, { color: colors.textTertiary }]}>
               {'\u2022'} Kahneman & Tversky, "Prospect Theory" (Econometrica, 1979)
             </Text>
@@ -326,15 +317,15 @@ export default function PanicShieldCard({
       {/* 서브스코어 분해 (CNN Fear & Greed 스타일) */}
       {subScores && (
         <View style={[styles.subScoresContainer, { borderTopColor: colors.border }]}>
-          <Text style={[styles.subScoresTitle, { color: colors.textSecondary }]}>📋 점수 분해</Text>
-          {SUB_SCORE_LABELS.map(({ key, label, icon }) => {
+          <Text style={[styles.subScoresTitle, { color: colors.textSecondary }]}>{t('panicShield.score_breakdown')}</Text>
+          {SUB_SCORE_KEYS.map(({ key, labelKey, icon }) => {
             const score = subScores[key] ?? 0;
             const barColor = getSubScoreColor(score, colors);
             return (
               <View key={key} style={styles.subScoreRow}>
                 <View style={styles.subScoreLabelRow}>
                   <Text style={styles.subScoreIcon}>{icon}</Text>
-                  <Text style={[styles.subScoreLabel, { color: colors.textSecondary }]}>{label}</Text>
+                  <Text style={[styles.subScoreLabel, { color: colors.textSecondary }]}>{t(labelKey)}</Text>
                   <Text style={[styles.subScoreValue, { color: barColor }]}>
                     {score}
                   </Text>
@@ -356,7 +347,7 @@ export default function PanicShieldCard({
       {/* 손절 가이드라인 */}
       {alertItems.length > 0 && (
         <View style={[styles.guidelinesContainer, { borderTopColor: colors.border }]}>
-          <Text style={[styles.guidelinesTitle, { color: colors.textSecondary }]}>📉 손절 가이드라인</Text>
+          <Text style={[styles.guidelinesTitle, { color: colors.textSecondary }]}>{t('panicShield.stop_loss_guidelines')}</Text>
           {alertItems.slice(0, 3).map((item, idx) => (
             <View key={idx} style={[styles.guidelineItem, { borderBottomColor: colors.borderLight }]}>
               <View style={styles.guidelineLeft}>
@@ -382,7 +373,7 @@ export default function PanicShieldCard({
                   ]}
                 >
                   <Text style={[styles.actionText, { color: colors.background }]}>
-                    {item.action === 'WATCH' ? '주시' : '점검 필요'}
+                    {item.action === 'WATCH' ? t('panicShield.action_watch') : t('panicShield.action_review')}
                   </Text>
                 </View>
               </View>

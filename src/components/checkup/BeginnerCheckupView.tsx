@@ -17,6 +17,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 
 import ReassuranceBanner from './ReassuranceBanner';
 import OneLinerDiagnosis from './beginner/OneLinerDiagnosis';
@@ -83,6 +84,7 @@ export default function BeginnerCheckupView({
   onLevelChange,
 }: BeginnerCheckupViewProps) {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const topAction = getTopAction(morningBriefing);
 
   return (
@@ -92,7 +94,7 @@ export default function BeginnerCheckupView({
 
       {/* Section title */}
       <Text style={[s.sectionTitle, { color: colors.textPrimary }]}>
-        {'\uD83C\uDF31 분석 리포트'}
+        {'\uD83C\uDF31 ' + t('checkup.beginner.sectionTitle')}
       </Text>
 
       {/* 1. 한 줄 진단 */}
@@ -121,7 +123,7 @@ export default function BeginnerCheckupView({
       <View style={s.disclaimerBanner}>
         <Ionicons name="information-circle-outline" size={14} color="#888" />
         <Text style={s.disclaimerText}>
-          본 정보는 투자 참고용이며, 투자 권유가 아닙니다. 투자 판단의 책임은 본인에게 있습니다.
+          {t('checkup.beginner.disclaimer')}
         </Text>
       </View>
 

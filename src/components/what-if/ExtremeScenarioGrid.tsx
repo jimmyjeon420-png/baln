@@ -9,8 +9,9 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 import {
-  EXTREME_SCENARIOS,
+  getExtremeScenarios,
   CATEGORY_COLORS,
   type ExtremeScenario,
 } from '../../data/whatIfScenarios';
@@ -35,18 +36,20 @@ export const ExtremeScenarioGrid: React.FC<ExtremeScenarioGridProps> = ({
   disabled,
 }) => {
   const { colors } = useTheme();
+  const { t } = useLocale();
+  const scenarios = getExtremeScenarios(t);
 
   return (
     <View style={styles.container}>
       <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-        시나리오를 선택하세요
+        {t('whatIf.extreme.selectScenario')}
       </Text>
       <Text style={[styles.sectionDesc, { color: colors.textTertiary }]}>
-        시나리오 열람은 무료, 내 포트폴리오 시뮬레이션은 2개
+        {t('whatIf.extreme.selectScenarioDesc')}
       </Text>
 
       <View style={styles.grid}>
-        {EXTREME_SCENARIOS.map((scenario) => {
+        {scenarios.map((scenario) => {
           const isSelected = selectedId === scenario.id;
           const catColor = CATEGORY_COLORS[scenario.category];
 

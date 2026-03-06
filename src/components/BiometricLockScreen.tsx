@@ -9,6 +9,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { authenticateWithBiometric, getBiometricTypeName } from '../services/biometric';
 import { useTheme } from '../hooks/useTheme';
+import { useLocale } from '../context/LocaleContext';
 
 interface BiometricLockScreenProps {
   onUnlock: () => void;
@@ -16,7 +17,8 @@ interface BiometricLockScreenProps {
 
 export default function BiometricLockScreen({ onUnlock }: BiometricLockScreenProps) {
   const { colors } = useTheme();
-  const [biometricName, setBiometricName] = useState('생체 인증');
+  const { t } = useLocale();
+  const [biometricName, setBiometricName] = useState(t('biometric.title'));
   const [authFailed, setAuthFailed] = useState(false);
   const isAuthenticating = useRef(false); // 중복 인증 방지 가드
 
@@ -24,6 +26,7 @@ export default function BiometricLockScreen({ onUnlock }: BiometricLockScreenPro
     getBiometricTypeName().then(setBiometricName);
     // 마운트 시 자동으로 인증 시도 (1회만)
     handleAuthenticate();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleAuthenticate = useCallback(async () => {
@@ -50,13 +53,13 @@ export default function BiometricLockScreen({ onUnlock }: BiometricLockScreenPro
           <Ionicons name="lock-closed" size={48} color={colors.primary} />
         </View>
         <Text style={[styles.appName, { color: colors.textPrimary }]}>bal<Text style={{ color: colors.primary }}>n</Text></Text>
-        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>앱이 잠겨 있습니다</Text>
+        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{t('biometric.locked')}</Text>
       </View>
 
       {/* 인증 버튼 */}
       <View style={styles.actionArea}>
         {authFailed && (
-          <Text style={[styles.errorText, { color: colors.error }]}>인증에 실패했습니다</Text>
+          <Text style={[styles.errorText, { color: colors.error }]}>{t('biometric.authFailed')}</Text>
         )}
         <TouchableOpacity style={[styles.unlockButton, { backgroundColor: colors.primary }]} onPress={handleAuthenticate}>
           <Ionicons
@@ -65,7 +68,7 @@ export default function BiometricLockScreen({ onUnlock }: BiometricLockScreenPro
             color="#FFFFFF"
           />
           <Text style={styles.unlockText}>
-            {authFailed ? '다시 시도' : `${biometricName}(으)로 잠금 해제`}
+            {authFailed ? t('biometric.retry') : t('biometric.unlock', { method: biometricName })}
           </Text>
         </TouchableOpacity>
       </View>

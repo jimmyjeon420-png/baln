@@ -16,12 +16,14 @@ import { useTrackEvent } from '../../hooks/useAnalytics';
 import { useHabitLoopTracking } from '../../hooks/useHabitLoopTracking';
 import ReviewCard from './ReviewCard';
 import { AccuracyBadge } from './AccuracyBadge';
+import { useLocale } from '../../context/LocaleContext';
 
 export default function YesterdayReviewSection() {
   const { data: yesterdayPolls, summary, isLoading } = useYesterdayReview();
   const { data: myStats } = useMyPredictionStats();
   const track = useTrackEvent();
   const { trackStep } = useHabitLoopTracking();
+  const { t } = useLocale();
   const hasTrackedView = useRef(false);
 
   // 복기 데이터가 로드되고 어제 투표가 있으면 review_completed 이벤트 기록
@@ -41,9 +43,9 @@ export default function YesterdayReviewSection() {
   if (isLoading) {
     return (
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>📊 어제 복기</Text>
+        <Text style={styles.sectionTitle}>{'📊 '}{t('yesterdayReview.section_title')}</Text>
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>복기 데이터를 불러오는 중...</Text>
+          <Text style={styles.loadingText}>{t('yesterdayReview.loading')}</Text>
         </View>
       </View>
     );
@@ -53,12 +55,12 @@ export default function YesterdayReviewSection() {
   if (!yesterdayPolls || yesterdayPolls.length === 0) {
     return (
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>📊 어제 복기</Text>
+        <Text style={styles.sectionTitle}>{'📊 '}{t('yesterdayReview.section_title')}</Text>
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyEmoji}>🗓️</Text>
-          <Text style={styles.emptyTitle}>어제 투표한 예측이 없습니다</Text>
+          <Text style={styles.emptyTitle}>{t('yesterdayReview.empty_title')}</Text>
           <Text style={styles.emptyDescription}>
-            매일 예측에 참여하면 복기를 통해 시장 감각을 키울 수 있어요.
+            {t('yesterdayReview.empty_desc')}
           </Text>
         </View>
       </View>
@@ -69,7 +71,7 @@ export default function YesterdayReviewSection() {
     <View style={styles.section}>
       {/* 헤더 */}
       <View style={styles.header}>
-        <Text style={styles.sectionTitle}>📊 어제 복기</Text>
+        <Text style={styles.sectionTitle}>{'📊 '}{t('yesterdayReview.section_title')}</Text>
         {myStats && (
           <AccuracyBadge accuracyRate={Number(myStats.accuracy_rate)} minVotes={myStats.total_votes} />
         )}
@@ -83,7 +85,7 @@ export default function YesterdayReviewSection() {
           </View>
           <View style={styles.statContent}>
             <Text style={styles.statValue}>{summary.totalVoted}</Text>
-            <Text style={styles.statLabel}>투표</Text>
+            <Text style={styles.statLabel}>{t('yesterdayReview.stat_votes')}</Text>
           </View>
         </View>
 
@@ -97,7 +99,7 @@ export default function YesterdayReviewSection() {
             <Text style={[styles.statValue, { color: '#4CAF50' }]}>
               {summary.totalCorrect}
             </Text>
-            <Text style={styles.statLabel}>적중</Text>
+            <Text style={styles.statLabel}>{t('yesterdayReview.stat_hits')}</Text>
           </View>
         </View>
 
@@ -111,7 +113,7 @@ export default function YesterdayReviewSection() {
             <Text style={[styles.statValue, { color: '#FF9800' }]}>
               {summary.accuracyRate}%
             </Text>
-            <Text style={styles.statLabel}>적중률</Text>
+            <Text style={styles.statLabel}>{t('yesterdayReview.stat_accuracy')}</Text>
           </View>
         </View>
       </View>
@@ -122,8 +124,8 @@ export default function YesterdayReviewSection() {
           <Text style={styles.encouragementEmoji}>🎉</Text>
           <Text style={styles.encouragementText}>
             {summary.accuracyRate >= 80
-              ? '놀라운 적중률이에요! 시장 흐름을 정확히 파악하고 계시네요.'
-              : '좋은 성적이에요! 꾸준히 예측하면 더 나아질 거예요.'}
+              ? t('yesterdayReview.encourage_high')
+              : t('yesterdayReview.encourage_good')}
           </Text>
         </View>
       )}
@@ -132,14 +134,14 @@ export default function YesterdayReviewSection() {
         <View style={styles.encouragementBanner}>
           <Text style={styles.encouragementEmoji}>💪</Text>
           <Text style={styles.encouragementText}>
-            시장은 예측하기 어려워요. 매일 복기하며 패턴을 익혀보세요.
+            {t('yesterdayReview.encourage_low')}
           </Text>
         </View>
       )}
 
       {/* 복기 카드 목록 */}
       <View style={styles.reviewList}>
-        <Text style={styles.reviewListTitle}>어제 투표 내역</Text>
+        <Text style={styles.reviewListTitle}>{t('yesterdayReview.review_list_title')}</Text>
         {yesterdayPolls.map((poll) => (
           <ReviewCard
             key={poll.id}
@@ -154,7 +156,7 @@ export default function YesterdayReviewSection() {
       <View style={styles.tipContainer}>
         <Ionicons name="bulb-outline" size={16} color="#888888" />
         <Text style={styles.tipText}>
-          💡 매일 복기하면 투자 기준이 생겨요. 3개월 후에는 패닉셀 방지!
+          {'💡 '}{t('yesterdayReview.tip')}
         </Text>
       </View>
     </View>

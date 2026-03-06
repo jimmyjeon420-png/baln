@@ -34,7 +34,7 @@ export default function ExistingAssetsList({
       <View style={styles.existingHeader}>
         <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{t('add_asset.asset_list_title')}</Text>
         {existingAssets.length > 0 && (
-          <Text style={[styles.assetCount, { color: colors.textSecondary }]}>{existingAssets.length}개</Text>
+          <Text style={[styles.assetCount, { color: colors.textSecondary }]}>{t('add_asset_count', { count: String(existingAssets.length) })}</Text>
         )}
       </View>
 

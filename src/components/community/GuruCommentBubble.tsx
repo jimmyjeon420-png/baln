@@ -30,7 +30,7 @@ function formatRelativeTime(dateStr: string): string {
   const then = new Date(dateStr).getTime();
   const diffMin = Math.floor((now - then) / 60000);
 
-  if (diffMin < 1) return t('common.justNow') ?? '방금';
+  if (diffMin < 1) return t('common.time.justNow');
   if (diffMin < 60) return `${diffMin}m`;
   const diffHr = Math.floor(diffMin / 60);
   if (diffHr < 24) return `${diffHr}h`;
@@ -73,7 +73,7 @@ export default function GuruCommentBubble({
         {/* 답글 대상 표시 */}
         {replyToConfig && (
           <Text style={styles.replyToLabel}>
-            {'\u2192'} {replyToConfig.emoji} {getGuruDisplayName(replyToGuruId!)}
+            {'\u2192'} {replyToConfig.emoji} {getGuruDisplayName(replyToGuruId ?? '')}
           </Text>
         )}
 

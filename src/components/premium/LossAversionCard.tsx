@@ -20,6 +20,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 import { formatCredits } from '../../utils/formatters';
 
 // ============================================================================
@@ -51,6 +52,7 @@ function LossItem({ icon, iconColor, title, description, bgColor }: LossItemProp
 
   return (
     <View style={[styles.lossItem, { backgroundColor: bgColor }]}>
+      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
       <Ionicons name={icon as any} size={22} color={iconColor} />
       <View style={styles.lossItemContent}>
         <Text style={[styles.lossItemTitle, { color: colors.textPrimary }]}>
@@ -76,6 +78,7 @@ export default function LossAversionCard({
   onCancel,
 }: LossAversionCardProps) {
   const { colors, shadows } = useTheme();
+  const { t } = useLocale();
 
   // "계속 유지하기" 버튼 스케일 애니메이션
   const keepScale = useRef(new Animated.Value(1)).current;
@@ -103,11 +106,11 @@ export default function LossAversionCard({
     lossItems.push({
       icon: 'flame',
       iconColor: colors.warning,
-      title: `${streakDays}일 연속 기록이 사라집니다`,
+      title: t('lossAversion.streak_title', { days: streakDays }),
       description:
         streakDays >= 30
-          ? '한 달 이상 쌓아온 기록이에요'
-          : '꾸준히 쌓아온 소중한 기록이에요',
+          ? t('lossAversion.streak_desc_long')
+          : t('lossAversion.streak_desc_short'),
       bgColor: colors.warning + '08',
     });
   }
@@ -116,8 +119,8 @@ export default function LossAversionCard({
     lossItems.push({
       icon: 'star',
       iconColor: colors.premium.gold,
-      title: `누적 도토리 ${formatCredits(totalCredits)} 소멸`,
-      description: '지금까지 모은 도토리가 사라져요',
+      title: t('lossAversion.credits_title', { credits: formatCredits(totalCredits) }),
+      description: t('lossAversion.credits_desc'),
       bgColor: colors.premium.gold + '08',
     });
   }
@@ -126,8 +129,8 @@ export default function LossAversionCard({
     lossItems.push({
       icon: 'shield-checkmark',
       iconColor: colors.premium.purple,
-      title: 'VIP 라운지 접근 불가',
-      description: '프리미엄 전용 커뮤니티를 이용할 수 없어요',
+      title: t('lossAversion.vip_title'),
+      description: t('lossAversion.vip_desc'),
       bgColor: colors.premium.purple + '08',
     });
   }
@@ -140,10 +143,10 @@ export default function LossAversionCard({
       <View style={styles.emotionSection}>
         <Text style={styles.emotionEmoji}>😢</Text>
         <Text style={[styles.emotionTitle, { color: colors.textPrimary }]}>
-          이렇게 좋은 기록을{'\n'}포기하시겠어요?
+          {t('lossAversion.emotion_title')}
         </Text>
         <Text style={[styles.emotionSubtext, { color: colors.textSecondary }]}>
-          해지하면 아래 혜택을 모두 잃게 됩니다
+          {t('lossAversion.emotion_subtitle')}
         </Text>
       </View>
 
@@ -164,15 +167,15 @@ export default function LossAversionCard({
         <LossItem
           icon="analytics"
           iconColor={colors.primary}
-          title="AI 진단 3회 → 1회로 축소"
-          description="매일 받던 상세 분석이 제한돼요"
+          title={t('lossAversion.ai_downgrade_title')}
+          description={t('lossAversion.ai_downgrade_desc')}
           bgColor={colors.primary + '08'}
         />
         <LossItem
           icon="layers"
           iconColor={colors.info}
-          title="맥락 카드 기관행동 잠금"
-          description="기관 매매 분석을 볼 수 없어요"
+          title={t('lossAversion.context_lock_title')}
+          description={t('lossAversion.context_lock_desc')}
           bgColor={colors.info + '08'}
         />
       </View>
@@ -189,7 +192,7 @@ export default function LossAversionCard({
             activeOpacity={0.8}
           >
             <Ionicons name="heart" size={18} color="#FFFFFF" />
-            <Text style={styles.keepButtonText}>계속 유지하기</Text>
+            <Text style={styles.keepButtonText}>{t('lossAversion.keep_button')}</Text>
           </TouchableOpacity>
         </Animated.View>
 
@@ -200,7 +203,7 @@ export default function LossAversionCard({
           activeOpacity={0.5}
         >
           <Text style={[styles.cancelButtonText, { color: colors.textQuaternary }]}>
-            그래도 해지할게요
+            {t('lossAversion.cancel_button')}
           </Text>
         </TouchableOpacity>
       </View>

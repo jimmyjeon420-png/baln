@@ -117,7 +117,7 @@ export function VillageCheckInReward({
         </Text>
         <View style={styles.rewardRow}>
           <Text style={[styles.creditText, { color: colors.primary }]}>
-            +2개
+            {t('village_ui.checkin.credit_reward')}
           </Text>
           {currentStreak > 1 && (
             <Text style={[styles.streakText, { color: colors.textTertiary }]}>

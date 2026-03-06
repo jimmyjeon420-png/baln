@@ -42,6 +42,7 @@ import type { UserTier } from '../../src/types/database';
 import { FEATURE_LABELS, TIER_DISCOUNTS, type AIFeatureType } from '../../src/types/marketplace';
 import { getDiscountedCost } from '../../src/services/creditService';
 import { useTheme } from '../../src/hooks/useTheme';
+import { useLocale } from '../../src/context/LocaleContext';
 import { getLocaleCode } from '../../src/utils/formatters';
 import { ItemPurchaseModal } from '../../src/components/marketplace/ItemPurchaseModal';
 import { type MarketplaceItem, getItemsByTier } from '../../src/data/marketplaceItems';
@@ -54,48 +55,50 @@ const CARD_WIDTH = (SCREEN_WIDTH - 40 - CARD_GAP) / 2;
 // AI 도구 정의 — 토스 스타일 카피 (기능 설명 X, 감정 터치 O)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-const AI_TOOLS: {
+interface AIToolDef {
   type: AIFeatureType;
-  title: string;
-  tagline: string;
+  titleKey: string;
+  taglineKey: string;
   icon: keyof typeof Ionicons.glyphMap;
   color: string;
   route: string;
-  badge?: string;
-}[] = [
+  badgeKey?: string;
+}
+
+const AI_TOOLS: AIToolDef[] = [
   {
     type: 'deep_dive',
-    title: '종목 딥다이브',
-    tagline: '이 종목,\n살까 말까?',
+    titleKey: 'marketplacePage.tool_deep_dive',
+    taglineKey: 'marketplacePage.tool_deep_dive_tagline',
     icon: 'search',
     color: '#4FC3F7',
     route: 'deep-dive',
-    badge: '인기',
+    badgeKey: 'marketplacePage.tool_deep_dive_badge',
   },
   {
     type: 'what_if',
-    title: 'What-If',
-    tagline: '만약에...\n그때 어떡하지?',
+    titleKey: 'marketplacePage.tool_what_if',
+    taglineKey: 'marketplacePage.tool_what_if_tagline',
     icon: 'flask',
     color: '#FFA726',
     route: 'what-if',
   },
   {
     type: 'tax_report',
-    title: '절세 리포트',
-    tagline: '세금,\n더 아낄 수 있어요',
+    titleKey: 'marketplacePage.tool_tax_report',
+    taglineKey: 'marketplacePage.tool_tax_report_tagline',
     icon: 'receipt',
     color: '#66BB6A',
     route: 'tax-report',
   },
   {
     type: 'ai_cfo_chat',
-    title: 'AI 버핏 티타임',
-    tagline: '뭐든지\n물어보세요',
+    titleKey: 'marketplacePage.tool_ai_cfo_chat',
+    taglineKey: 'marketplacePage.tool_ai_cfo_chat_tagline',
     icon: 'chatbubbles',
     color: '#7C4DFF',
     route: 'ai-cfo-chat',
-    badge: 'NEW',
+    badgeKey: 'NEW',
   },
 ];
 
@@ -105,37 +108,42 @@ const AI_TOOLS: {
 
 interface Recommendation {
   type: AIFeatureType;
-  headline: string;
-  description: string;
-  cta: string;
+  headlineKey: string;
+  headlineParams?: Record<string, string>;
+  descriptionKey: string;
+  ctaKey: string;
   accentColor: string;
   icon: keyof typeof Ionicons.glyphMap;
-  sourceLabel: string;
+  sourceLabelKey: string;
   confidenceScore: number; // 추천 신뢰도(클라이언트 추정)
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getRecommendation(portfolio: any[]): Recommendation {
   // 포트폴리오 없으면 → 범용 추천
   if (portfolio.length === 0) {
     return {
       type: 'deep_dive',
-      headline: '관심 종목을\nAI로 분석해보세요',
-      description: '재무·기술·뉴스를 한눈에 360° 종합 분석',
-      cta: '첫 분석 시작하기',
+      headlineKey: 'marketplacePage.rec_empty_headline',
+      descriptionKey: 'marketplacePage.rec_empty_description',
+      ctaKey: 'marketplacePage.rec_empty_cta',
       accentColor: '#4FC3F7',
       icon: 'sparkles',
-      sourceLabel: '기본 추천 규칙',
+      sourceLabelKey: 'marketplacePage.rec_empty_source',
       confidenceScore: 52,
     };
   }
 
   // 가장 많이 하락한 종목 찾기
   const withChange = portfolio
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .filter((p: any) => p.current_price > 0 && p.avg_price > 0)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .map((p: any) => ({
       ...p,
       changePercent: ((p.current_price - p.avg_price) / p.avg_price) * 100,
     }))
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .sort((a: any, b: any) => a.changePercent - b.changePercent);
 
   // -5% 이상 하락 종목 있으면 → 딥다이브 추천
@@ -144,12 +152,13 @@ function getRecommendation(portfolio: any[]): Recommendation {
     const ticker = loser.ticker || loser.name;
     return {
       type: 'deep_dive',
-      headline: `${ticker}이(가)\n${Math.abs(loser.changePercent).toFixed(1)}% 하락 중이에요`,
-      description: '지금이 매수 타이밍인지 AI가 분석해드릴게요',
-      cta: '딥다이브 시작',
+      headlineKey: 'marketplacePage.rec_loser_headline',
+      headlineParams: { ticker, percent: Math.abs(loser.changePercent).toFixed(1) },
+      descriptionKey: 'marketplacePage.rec_loser_description',
+      ctaKey: 'marketplacePage.rec_loser_cta',
       accentColor: '#4FC3F7',
       icon: 'trending-down',
-      sourceLabel: '내 포트폴리오 + 평균단가',
+      sourceLabelKey: 'marketplacePage.rec_loser_source',
       confidenceScore: 84,
     };
   }
@@ -158,12 +167,13 @@ function getRecommendation(portfolio: any[]): Recommendation {
   if (portfolio.length >= 5) {
     return {
       type: 'what_if',
-      headline: `${portfolio.length}개 자산,\n시장 폭락에 안전할까요?`,
-      description: '위기 시나리오를 미리 테스트해보세요',
-      cta: '시뮬레이션 시작',
+      headlineKey: 'marketplacePage.rec_many_headline',
+      headlineParams: { count: String(portfolio.length) },
+      descriptionKey: 'marketplacePage.rec_many_description',
+      ctaKey: 'marketplacePage.rec_many_cta',
       accentColor: '#FFA726',
       icon: 'shield-checkmark',
-      sourceLabel: '포트폴리오 구성',
+      sourceLabelKey: 'marketplacePage.rec_many_source',
       confidenceScore: 74,
     };
   }
@@ -171,12 +181,12 @@ function getRecommendation(portfolio: any[]): Recommendation {
   // 기본 → 세금 리포트
   return {
     type: 'tax_report',
-    headline: '올해 세금,\n더 아낄 수 있어요',
-    description: 'AI가 맞춤 절세 전략을 알려드릴게요',
-    cta: '절세 리포트 받기',
+    headlineKey: 'marketplacePage.rec_tax_headline',
+    descriptionKey: 'marketplacePage.rec_tax_description',
+    ctaKey: 'marketplacePage.rec_tax_cta',
     accentColor: '#66BB6A',
     icon: 'cash',
-    sourceLabel: '포트폴리오 규모/구성',
+    sourceLabelKey: 'marketplacePage.rec_tax_source',
     confidenceScore: 70,
   };
 }
@@ -188,11 +198,13 @@ function getRecommendation(portfolio: any[]): Recommendation {
 export default function MarketplaceScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { t } = useLocale();
   const { mediumTap } = useHaptics();
   const { data: credits, refetch: refetchCredits } = useMyCredits();
   const { data: history } = useFeatureHistory(undefined, 5);
 
   const [userTier, setUserTier] = useState<UserTier>('SILVER');
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [portfolio, setPortfolio] = useState<any[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [initialLoaded, setInitialLoaded] = useState(false);
@@ -234,6 +246,7 @@ export default function MarketplaceScreen() {
 
   const navigateToFeature = (route: string) => {
     mediumTap();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     router.push(`/marketplace/${route}` as any);
   };
 
@@ -269,7 +282,7 @@ export default function MarketplaceScreen() {
           <TouchableOpacity onPress={() => router.back()} style={s.backBtn} activeOpacity={0.7}>
             <Ionicons name="arrow-back" size={22} color="#FFF" />
           </TouchableOpacity>
-          <Text style={s.headerTitle}>AI 프리미엄</Text>
+          <Text style={s.headerTitle}>{t('marketplacePage.header_title')}</Text>
           <CreditBadge size="medium" />
         </View>
 
@@ -277,7 +290,7 @@ export default function MarketplaceScreen() {
         <TouchableOpacity
           style={[s.heroCard, { borderColor: recommendation.accentColor + '30' }]}
           onPress={() => navigateToFeature(
-            AI_TOOLS.find(t => t.type === recommendation.type)?.route || 'deep-dive'
+            AI_TOOLS.find(tool => tool.type === recommendation.type)?.route || 'deep-dive'
           )}
           activeOpacity={0.85}
         >
@@ -287,28 +300,28 @@ export default function MarketplaceScreen() {
             </View>
             <View style={[s.heroBadge, { backgroundColor: recommendation.accentColor + '20' }]}>
               <Text style={[s.heroBadgeText, { color: recommendation.accentColor }]}>
-                맞춤 추천
+                {t('marketplacePage.hero_badge')}
               </Text>
             </View>
           </View>
 
-          <Text style={s.heroHeadline}>{recommendation.headline}</Text>
-          <Text style={s.heroDesc}>{recommendation.description}</Text>
+          <Text style={s.heroHeadline}>{t(recommendation.headlineKey, recommendation.headlineParams)}</Text>
+          <Text style={s.heroDesc}>{t(recommendation.descriptionKey)}</Text>
 
           <View style={s.heroTrustRow}>
-            <Text style={s.heroTrustChip}>출처: {recommendation.sourceLabel}</Text>
-            <Text style={s.heroTrustChip}>생성: {new Date(recommendationGeneratedAt).toLocaleString(getLocaleCode())}</Text>
-            <Text style={s.heroTrustChip}>신뢰도: {recommendation.confidenceScore}점(추정)</Text>
+            <Text style={s.heroTrustChip}>{t('marketplacePage.trust_source', { label: t(recommendation.sourceLabelKey) })}</Text>
+            <Text style={s.heroTrustChip}>{t('marketplacePage.trust_generated', { time: new Date(recommendationGeneratedAt).toLocaleString(getLocaleCode()) })}</Text>
+            <Text style={s.heroTrustChip}>{t('marketplacePage.trust_confidence', { score: String(recommendation.confidenceScore) })}</Text>
           </View>
 
           <View style={[s.heroCta, { backgroundColor: recommendation.accentColor }]}>
-            <Text style={s.heroCtaText}>{recommendation.cta}</Text>
+            <Text style={s.heroCtaText}>{t(recommendation.ctaKey)}</Text>
             <Ionicons name="arrow-forward" size={16} color="#FFF" />
           </View>
         </TouchableOpacity>
 
         {/* ── 3. AI 분석 도구 2x2 그리드 ── */}
-        <Text style={s.sectionTitle}>AI 분석 도구</Text>
+        <Text style={s.sectionTitle}>{t('marketplacePage.section_ai_tools')}</Text>
         <View style={s.toolGrid}>
           {AI_TOOLS.map(tool => {
             const { discountedCost, originalCost } = getDiscountedCost(tool.type, userTier);
@@ -322,9 +335,9 @@ export default function MarketplaceScreen() {
                 activeOpacity={0.8}
               >
                 {/* 뱃지 (인기 / NEW) */}
-                {tool.badge && (
+                {tool.badgeKey && (
                   <View style={[s.toolBadge, { backgroundColor: tool.color }]}>
-                    <Text style={s.toolBadgeText}>{tool.badge}</Text>
+                    <Text style={s.toolBadgeText}>{tool.badgeKey === 'NEW' ? 'NEW' : t(tool.badgeKey)}</Text>
                   </View>
                 )}
 
@@ -334,10 +347,10 @@ export default function MarketplaceScreen() {
                 </View>
 
                 {/* 기능명 (작게) */}
-                <Text style={s.toolTitle}>{tool.title}</Text>
+                <Text style={s.toolTitle}>{t(tool.titleKey)}</Text>
 
                 {/* 감정 터치 카피 (크게, 핵심) */}
-                <Text style={s.toolTagline}>{tool.tagline}</Text>
+                <Text style={s.toolTagline}>{t(tool.taglineKey)}</Text>
 
                 {/* 크레딧 비용 */}
                 <View style={s.toolCostRow}>
@@ -347,7 +360,7 @@ export default function MarketplaceScreen() {
                   )}
                   <Text style={s.toolCost}>{discountedCost}</Text>
                   {tool.type === 'ai_cfo_chat' && (
-                    <Text style={s.toolCostUnit}>/회</Text>
+                    <Text style={s.toolCostUnit}>{t('marketplacePage.per_use')}</Text>
                   )}
                 </View>
               </TouchableOpacity>
@@ -361,7 +374,7 @@ export default function MarketplaceScreen() {
             <Ionicons name="people" size={14} color="#4CAF50" />
           </View>
           <Text style={s.socialText}>
-            투자자 <Text style={s.socialHighlight}>1,000+</Text>명이 사용 중
+            {t('marketplacePage.social_proof_prefix')}<Text style={s.socialHighlight}>{t('marketplacePage.social_proof_count')}</Text>{t('marketplacePage.social_proof_suffix')}
           </Text>
         </View>
 
@@ -379,12 +392,12 @@ export default function MarketplaceScreen() {
               <Text style={{ fontSize: 44 }}>🌰</Text>
             </View>
             <View>
-              <Text style={s.creditLabel}>보유 도토리</Text>
+              <Text style={s.creditLabel}>{t('marketplacePage.credit_label')}</Text>
               <Text style={s.creditBalance}>{balance.toLocaleString()}</Text>
             </View>
           </View>
           <View style={s.creditCta}>
-            <Text style={s.creditCtaText}>도토리 모으기</Text>
+            <Text style={s.creditCtaText}>{t('marketplacePage.credit_cta')}</Text>
             <Ionicons name="arrow-forward" size={14} color="#7C4DFF" />
           </View>
         </TouchableOpacity>
@@ -394,8 +407,7 @@ export default function MarketplaceScreen() {
           <View style={s.tierBanner}>
             <Ionicons name="star" size={14} color="#FFD700" />
             <Text style={s.tierText}>
-              {userTier} 등급{' '}
-              <Text style={s.tierHighlight}>-{discountPercent}% 할인</Text> 적용 중
+              {t('marketplacePage.tier_discount', { tier: userTier, discount: String(discountPercent) })}
             </Text>
           </View>
         )}
@@ -403,9 +415,10 @@ export default function MarketplaceScreen() {
         {/* ── 7. 최근 분석 내역 ── */}
         {history && history.length > 0 && (
           <View style={s.historySection}>
-            <Text style={s.sectionTitle}>최근 분석 내역</Text>
+            <Text style={s.sectionTitle}>{t('marketplacePage.section_history')}</Text>
+            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
             {history.map((item: any) => {
-              const toolInfo = AI_TOOLS.find(t => t.type === item.feature_type);
+              const toolInfo = AI_TOOLS.find(tool => tool.type === item.feature_type);
               return (
                 <View key={item.id} style={s.historyItem}>
                   <View style={[s.historyIcon, { backgroundColor: (toolInfo?.color || '#888') + '15' }]}>
@@ -435,7 +448,7 @@ export default function MarketplaceScreen() {
 
         {/* ── 7.5. 크레딧 상점 (Tier 1/2 아이템) ── */}
         <View style={s.shopSection}>
-          <Text style={s.sectionTitle}>도토리 상점</Text>
+          <Text style={s.sectionTitle}>{t('marketplacePage.section_shop')}</Text>
           {[...getItemsByTier('instant'), ...getItemsByTier('experience')].map((item) => (
             <TouchableOpacity
               key={item.id}
@@ -454,7 +467,7 @@ export default function MarketplaceScreen() {
               </View>
               <View style={s.shopItemPrice}>
                 <Text style={{ fontSize: 22 }}>🌰</Text>
-                <Text style={s.shopItemPriceText}>{item.price}개</Text>
+                <Text style={s.shopItemPriceText}>{t('marketplacePage.acorn_count', { count: String(item.price) })}</Text>
               </View>
             </TouchableOpacity>
           ))}
@@ -463,7 +476,7 @@ export default function MarketplaceScreen() {
         {/* ── 8. 면책 문구 ── */}
         <View style={s.footerBox}>
           <Text style={s.footerNote}>
-            본 서비스는 「자본시장과 금융투자업에 관한 법률」에 따른 투자자문업·투자일임업이 아니며, 금융위원회에 등록되지 않았습니다. AI 분석 결과는 일반적인 정보 제공 목적이며, 특정 금융상품의 매수·매도 권유가 아닙니다. 투자 원금의 일부 또는 전부를 잃을 수 있으며, 예금자보호법에 따른 보호 대상이 아닙니다. 크레딧 환불은 전자상거래법에 따라 구매 7일 이내 미사용분에 한해 가능합니다.
+            {t('marketplacePage.disclaimer')}
           </Text>
         </View>
 

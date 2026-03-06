@@ -1,5 +1,5 @@
 /**
- * FactorAttribution — Beat 3a: 하락폭 요인 분해 (블랙록 핵심)
+ * FactorAttribution — Beat 3a: {t('factorAttribution.title')} (블랙록 핵심)
  *
  * 역할: "하락폭의 78%는 시장 전체 영향이지, 당신 선택이 아닙니다"
  * 수평 막대 차트: 시장 전체 / 업종 집중도 / 개별 종목 / 환율 노출
@@ -10,6 +10,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 import type { WhatIfResult } from '../../types/marketplace';
 
 interface FactorAttributionProps {
@@ -17,22 +18,23 @@ interface FactorAttributionProps {
 }
 
 interface Factor {
-  label: string;
+  labelKey: string;
   percent: number;
-  description: string;
+  descKey: string;
 }
 
 export const FactorAttribution: React.FC<FactorAttributionProps> = ({
   result,
 }) => {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const factors = computeFactors(result);
   const maxPercent = Math.max(...factors.map(f => f.percent));
 
   return (
     <View style={[s.container, { backgroundColor: colors.surface }]}>
       <Text style={[s.sectionTitle, { color: colors.textPrimary }]}>
-        하락폭 요인 분해
+        {t('factorAttribution.title')}
       </Text>
 
       <View style={s.factorList}>
@@ -40,7 +42,7 @@ export const FactorAttribution: React.FC<FactorAttributionProps> = ({
           <View key={i} style={s.factorItem}>
             <View style={s.factorHeader}>
               <Text style={[s.factorLabel, { color: colors.textPrimary }]}>
-                {factor.label}
+                {t(factor.labelKey)}
               </Text>
               <Text style={[s.factorPercent, { color: colors.warning }]}>
                 {factor.percent}%
@@ -60,7 +62,7 @@ export const FactorAttribution: React.FC<FactorAttributionProps> = ({
             </View>
 
             <Text style={[s.factorDesc, { color: colors.textTertiary }]}>
-              {factor.description}
+              {t(factor.descKey)}
             </Text>
           </View>
         ))}
@@ -68,8 +70,7 @@ export const FactorAttribution: React.FC<FactorAttributionProps> = ({
 
       <View style={[s.reassuranceBox, { backgroundColor: `${colors.success}10` }]}>
         <Text style={[s.reassuranceText, { color: colors.success }]}>
-          하락폭의 {factors[0]?.percent ?? 0}%는 시장 전체 영향입니다.{'\n'}
-          당신의 투자 선택이 아닌, 거시적 환경 변화에 의한 것입니다.
+          {t('factorAttribution.reassurance', { percent: factors[0]?.percent ?? 0 })}
         </Text>
       </View>
     </View>
@@ -83,7 +84,7 @@ function computeFactors(result: WhatIfResult): Factor[] {
     return getDefaultFactors();
   }
 
-  const totalChange = Math.abs(result.totalImpact.changePercent);
+  const _totalChange = Math.abs(result.totalImpact.changePercent);
   const highImpactCount = impacts.filter(a => a.impactLevel === 'HIGH').length;
   const totalCount = impacts.length;
   const concentration = totalCount > 0 ? highImpactCount / totalCount : 0;
@@ -99,24 +100,24 @@ function computeFactors(result: WhatIfResult): Factor[] {
 
   return [
     {
-      label: '시장 전체',
+      labelKey: 'factorAttribution.factor_market',
       percent: marketFactor,
-      description: '글로벌 매크로 환경에 따른 전반적 영향',
+      descKey: 'factorAttribution.factor_market_desc',
     },
     {
-      label: '업종 집중도',
+      labelKey: 'factorAttribution.factor_sector',
       percent: sectorFactor,
-      description: '특정 업종 쏠림으로 인한 추가 영향',
+      descKey: 'factorAttribution.factor_sector_desc',
     },
     {
-      label: '개별 종목',
+      labelKey: 'factorAttribution.factor_stock',
       percent: stockFactor,
-      description: '보유 종목 고유의 변동성',
+      descKey: 'factorAttribution.factor_stock_desc',
     },
     {
-      label: '환율 노출',
+      labelKey: 'factorAttribution.factor_fx',
       percent: Math.max(2, fxFactor),
-      description: '원/달러 환율 변동 영향',
+      descKey: 'factorAttribution.factor_fx_desc',
     },
   ];
 }
@@ -124,24 +125,24 @@ function computeFactors(result: WhatIfResult): Factor[] {
 function getDefaultFactors(): Factor[] {
   return [
     {
-      label: '시장 전체',
+      labelKey: 'factorAttribution.factor_market',
       percent: 78,
-      description: '글로벌 매크로 환경에 따른 전반적 영향',
+      descKey: 'factorAttribution.factor_market_desc',
     },
     {
-      label: '업종 집중도',
+      labelKey: 'factorAttribution.factor_sector',
       percent: 12,
-      description: '특정 업종 쏠림으로 인한 추가 영향',
+      descKey: 'factorAttribution.factor_sector_desc',
     },
     {
-      label: '개별 종목',
+      labelKey: 'factorAttribution.factor_stock',
       percent: 7,
-      description: '보유 종목 고유의 변동성',
+      descKey: 'factorAttribution.factor_stock_desc',
     },
     {
-      label: '환율 노출',
+      labelKey: 'factorAttribution.factor_fx',
       percent: 3,
-      description: '원/달러 환율 변동 영향',
+      descKey: 'factorAttribution.factor_fx_desc',
     },
   ];
 }

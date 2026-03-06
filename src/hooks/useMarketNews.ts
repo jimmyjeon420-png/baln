@@ -13,6 +13,7 @@ import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import supabase from '../services/supabase';
 import { getCurrentLanguage } from '../locales';
+import { getCurrentDisplayLanguage } from '../context/LocaleContext';
 import { isBlockedNews } from '../data/newsFilterConfig';
 
 // ============================================================================
@@ -599,7 +600,7 @@ export async function triggerNewsCollectionIfNeeded(reason: 'empty' | 'stale'): 
       body: {
         tasks: 'J',
         reason: `news_tab_${reason}`,
-        lang: 'ko',
+        lang: getCurrentDisplayLanguage(),
       },
     });
 

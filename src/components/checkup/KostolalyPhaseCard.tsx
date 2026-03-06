@@ -106,10 +106,16 @@ const PHASE_HISTORICAL_PERF: Record<KostolalyPhase, PhaseHistoricalPerf> = {
   },
 };
 
-// 자산 카테고리 한국어 라벨
-const CAT_LABEL: Record<AssetCategory, string> = {
-  large_cap: '주식', bond: '채권', bitcoin: 'BTC',
-  gold: '금', commodity: '원자재', altcoin: '알트', cash: '현금', realestate: '부동산',
+// 자산 카테고리 라벨 — i18n 대응 (short labels for compact UI)
+const CAT_LABEL_KEYS: Record<AssetCategory, string> = {
+  large_cap: 'allocation_drift.cat_labels.large_cap',
+  bond: 'allocation_drift.cat_labels.bond',
+  bitcoin: 'allocation_drift.cat_labels.bitcoin',
+  gold: 'allocation_drift.cat_labels.gold',
+  commodity: 'allocation_drift.cat_labels.commodity',
+  altcoin: 'allocation_drift.cat_labels.altcoin',
+  cash: 'allocation_drift.cat_labels.cash',
+  realestate: 'allocation_drift.cat_labels.realestate',
 };
 
 interface KostolalyPhaseCardProps {
@@ -302,7 +308,7 @@ export default function KostolalyPhaseCard({ onApplyPhase }: KostolalyPhaseCardP
               .sort(([, a], [, b]) => b - a)
               .map(([cat, pct]) => (
                 <View key={cat} style={s.targetItem}>
-                  <Text style={[s.targetCat, { color: colors.textTertiary }]}>{CAT_LABEL[cat]}</Text>
+                  <Text style={[s.targetCat, { color: colors.textTertiary }]}>{t(CAT_LABEL_KEYS[cat])}</Text>
                   <Text style={[s.targetPct, { color: colors.textPrimary }]}>{pct}%</Text>
                 </View>
               ))

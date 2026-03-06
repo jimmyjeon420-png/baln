@@ -15,6 +15,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 import {
   type PredictionItem,
   formatVolume,
@@ -27,29 +28,29 @@ import PortfolioImpactBadge from './PortfolioImpactBadge';
 // 카테고리 설정
 // ============================================================================
 
-const CATEGORY_CONFIG: Record<string, { icon: keyof typeof Ionicons.glyphMap; color: string; label: string }> = {
-  stock: { icon: 'trending-up-outline', color: '#2196F3', label: '주식' },
-  crypto: { icon: 'logo-bitcoin', color: '#FF9800', label: '암호화폐' },
-  macro: { icon: 'stats-chart-outline', color: '#9C27B0', label: '거시경제' },
+const CATEGORY_CONFIG: Record<string, { icon: keyof typeof Ionicons.glyphMap; color: string; labelKey: string }> = {
+  stock: { icon: 'trending-up-outline', color: '#2196F3', labelKey: 'predictionCard.category_stock' },
+  crypto: { icon: 'logo-bitcoin', color: '#FF9800', labelKey: 'predictionCard.category_crypto' },
+  macro: { icon: 'stats-chart-outline', color: '#9C27B0', labelKey: 'predictionCard.category_macro' },
 };
 
 // ============================================================================
 // 고래 시그널 설정
 // ============================================================================
 
-function getWhaleConfig(signal: PredictionItem['whale_signal']): {
+function getWhaleConfig(signal: PredictionItem['whale_signal'], t: (key: string) => string): {
   label: string;
   color: string;
   icon: keyof typeof Ionicons.glyphMap;
 } | null {
   if (!signal) return null;
   if (signal.score >= 60 && signal.direction === 'YES') {
-    return { label: '고래 매수 중', color: '#4CAF50', icon: 'fish-outline' };
+    return { label: t('predictionCard.whale_buying'), color: '#4CAF50', icon: 'fish-outline' };
   }
   if (signal.score >= 60 && signal.direction === 'NO') {
-    return { label: '고래 매도 중', color: '#F44336', icon: 'fish-outline' };
+    return { label: t('predictionCard.whale_selling'), color: '#F44336', icon: 'fish-outline' };
   }
-  return { label: '고래 활동 보통', color: '#9E9E9E', icon: 'fish-outline' };
+  return { label: t('predictionCard.whale_normal'), color: '#9E9E9E', icon: 'fish-outline' };
 }
 
 // ============================================================================
@@ -67,11 +68,12 @@ interface PredictionCardProps {
 
 export default function PredictionCard({ item, onPress }: PredictionCardProps) {
   const { colors } = useTheme();
+  const { t } = useLocale();
 
   const catConfig = CATEGORY_CONFIG[item.category] || CATEGORY_CONFIG.macro;
   const timeUntilEnd = getTimeUntilEnd(item.end_date);
   const volumeText = formatVolume(item.volume_usd);
-  const whaleConfig = getWhaleConfig(item.whale_signal);
+  const whaleConfig = getWhaleConfig(item.whale_signal, t);
 
   const handlePress = () => {
     onPress?.(item);
@@ -88,7 +90,7 @@ export default function PredictionCard({ item, onPress }: PredictionCardProps) {
         <View style={[styles.categoryChip, { backgroundColor: catConfig.color + '20' }]}>
           <Ionicons name={catConfig.icon} size={12} color={catConfig.color} />
           <Text style={[styles.categoryLabel, { color: catConfig.color }]}>
-            {catConfig.label}
+            {t(catConfig.labelKey)}
           </Text>
         </View>
         {timeUntilEnd.length > 0 && (
@@ -139,7 +141,7 @@ export default function PredictionCard({ item, onPress }: PredictionCardProps) {
       {item.ai_consensus && (
         <View style={[styles.aiConsensusBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.aiConsensusHeader}>
-            <Text style={[styles.aiLabel, { color: colors.textSecondary }]}>🤖 AI 의견</Text>
+            <Text style={[styles.aiLabel, { color: colors.textSecondary }]}>{'🤖 '}{t('predictionCard.ai_opinion')}</Text>
             <View style={[
               styles.directionBadge,
               { backgroundColor: item.ai_consensus.direction === 'YES' ? '#4CAF5020' : '#CF667920' },
@@ -152,7 +154,7 @@ export default function PredictionCard({ item, onPress }: PredictionCardProps) {
               </Text>
             </View>
             <Text style={[styles.confidenceText, { color: colors.textTertiary }]}>
-              확신도 {item.ai_consensus.confidence}%
+              {t('predictionCard.confidence', { rate: String(item.ai_consensus.confidence) })}
             </Text>
           </View>
           <Text style={[styles.reasoningText, { color: colors.textSecondary }]}>

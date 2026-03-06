@@ -20,7 +20,7 @@ import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
-import { useLocale } from '../../context/LocaleContext';
+import { useLocale, getCurrentDisplayLanguage } from '../../context/LocaleContext';
 import type { DeepDiveResult } from '../../types/marketplace';
 import { getLocaleCode } from '../../utils/formatters';
 
@@ -506,11 +506,32 @@ export default function DeepDiveReport({ result }: DeepDiveReportProps) {
   );
 }
 
-// ── 유틸: 큰 숫자 포맷 (원화 단위: 조원/억원/만원) ──
+// ── 유틸: 큰 숫자 포맷 (로케일 인식) ──
+// Korean: "약 1624.0조원", "약 3.2억원"
+// English: "~₩1,624.0T", "~₩3.2B", "~₩50.0M"
 function formatLargeNumber(value: number): string {
   const abs = Math.abs(value);
   const sign = value < 0 ? '-' : '';
+  const lang = getCurrentDisplayLanguage();
 
+  if (lang === 'en') {
+    // English: use trillion / billion / million with ₩ prefix
+    if (abs >= 1_000_000_000_000) {
+      return `${sign}~₩${(abs / 1_000_000_000_000).toFixed(1)}T`;
+    }
+    if (abs >= 1_000_000_000) {
+      return `${sign}~₩${(abs / 1_000_000_000).toFixed(1)}B`;
+    }
+    if (abs >= 1_000_000) {
+      return `${sign}~₩${(abs / 1_000_000).toFixed(1)}M`;
+    }
+    if (abs >= 1_000) {
+      return `${sign}~₩${(abs / 1_000).toFixed(1)}K`;
+    }
+    return `${sign}₩${abs.toLocaleString('en-US')}`;
+  }
+
+  // Korean: 조원 / 억원 / 만원
   if (abs >= 1_0000_0000_0000) {
     return `${sign}약 ${(abs / 1_0000_0000_0000).toFixed(1)}조원`;
   }

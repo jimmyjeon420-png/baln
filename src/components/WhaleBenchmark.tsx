@@ -10,6 +10,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { WhaleAllocation, AllocationComparison, DEFAULT_TARGET_PERSONA } from '../services/whaleApi';
 import { getLocaleCode } from '../utils/formatters';
+import { useLocale } from '../context/LocaleContext';
 
 interface WhaleBenchmarkProps {
   userAllocation: WhaleAllocation | undefined;
@@ -44,6 +45,8 @@ export default function WhaleBenchmark({
   isLoading,
   onRefresh,
 }: WhaleBenchmarkProps) {
+  const { t } = useLocale();
+
   // 로딩 상태
   if (isLoading) {
     return (
@@ -55,7 +58,7 @@ export default function WhaleBenchmark({
           </View>
         </View>
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>목표 배분 데이터 로딩 중...</Text>
+          <Text style={styles.loadingText}>{t('whaleBenchmark.loading')}</Text>
         </View>
       </View>
     );
@@ -72,7 +75,7 @@ export default function WhaleBenchmark({
           </View>
         </View>
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>자산을 추가하면 목표 배분과 비교할 수 있습니다</Text>
+          <Text style={styles.emptyText}>{t('whaleBenchmark.empty')}</Text>
         </View>
       </View>
     );
@@ -96,10 +99,10 @@ export default function WhaleBenchmark({
       {/* 목표 페르소나 설명 */}
       <View style={styles.personaBox}>
         <Text style={styles.personaTitle}>
-          {DEFAULT_TARGET_PERSONA.tierName} 구간 상위 {DEFAULT_TARGET_PERSONA.targetPercentile}%
+          {t('whaleBenchmark.personaTitle', { tier: DEFAULT_TARGET_PERSONA.tierName, percentile: DEFAULT_TARGET_PERSONA.targetPercentile })}
         </Text>
         <Text style={styles.personaSubtitle}>
-          {DEFAULT_TARGET_PERSONA.timeframeYears}년 내 목표 달성을 위한 추천 배분
+          {t('whaleBenchmark.personaSubtitle', { years: DEFAULT_TARGET_PERSONA.timeframeYears })}
         </Text>
       </View>
 
@@ -129,7 +132,7 @@ export default function WhaleBenchmark({
               <View style={styles.barsContainer}>
                 {/* 사용자 바 */}
                 <View style={styles.barRow}>
-                  <Text style={styles.barLabel}>나</Text>
+                  <Text style={styles.barLabel}>{t('whaleBenchmark.me')}</Text>
                   <View style={styles.barBackground}>
                     <View
                       style={[
@@ -195,11 +198,11 @@ export default function WhaleBenchmark({
       <View style={styles.legendContainer}>
         <View style={styles.legendItem}>
           <View style={[styles.legendDot, { backgroundColor: '#4CAF50' }]} />
-          <Text style={styles.legendText}>내 포트폴리오</Text>
+          <Text style={styles.legendText}>{t('whaleBenchmark.myPortfolio')}</Text>
         </View>
         <View style={styles.legendItem}>
           <View style={[styles.legendDot, { backgroundColor: '#555555' }]} />
-          <Text style={styles.legendText}>상위 20% 목표</Text>
+          <Text style={styles.legendText}>{t('whaleBenchmark.top20Target')}</Text>
         </View>
       </View>
 
@@ -207,13 +210,13 @@ export default function WhaleBenchmark({
       <View style={styles.adviceBox}>
         <Ionicons name="bulb" size={16} color="#FFC107" />
         <Text style={styles.adviceText}>
-          {DEFAULT_TARGET_PERSONA.timeframeYears}년 내 {DEFAULT_TARGET_PERSONA.tierName} 상위 {DEFAULT_TARGET_PERSONA.targetPercentile}%에 도달하려면, Tech 주식 비중을 높이세요.
+          {t('whaleBenchmark.advice', { years: DEFAULT_TARGET_PERSONA.timeframeYears, tier: DEFAULT_TARGET_PERSONA.tierName, percentile: DEFAULT_TARGET_PERSONA.targetPercentile })}
         </Text>
       </View>
 
       {/* 업데이트 시간 */}
       <Text style={styles.updateTime}>
-        마지막 업데이트: {new Date(whaleAllocation.updatedAt).toLocaleDateString(getLocaleCode())}
+        {t('whaleBenchmark.lastUpdated', { date: new Date(whaleAllocation.updatedAt).toLocaleDateString(getLocaleCode()) })}
       </Text>
     </View>
   );

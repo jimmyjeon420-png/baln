@@ -146,7 +146,7 @@ const ReviewResultItem = React.memo(({
           </Text>
           {result.isCorrect && result.reward > 0 && (
             <View style={styles.rewardBadge}>
-              <Text style={styles.rewardText}>+{result.reward}개</Text>
+              <Text style={styles.rewardText}>{t('yesterday_review_reward').replace('{{count}}', String(result.reward))}</Text>
             </View>
           )}
         </View>

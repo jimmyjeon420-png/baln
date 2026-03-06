@@ -47,10 +47,11 @@ interface LetterDetailProps {
 
 function formatDate(timestamp: string, locale: string): string {
   const d = new Date(timestamp);
-  if (locale === 'ko') {
-    return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일`;
-  }
-  return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  return d.toLocaleDateString(locale === 'ko' ? 'ko-KR' : 'en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
 }
 
 // ---------------------------------------------------------------------------

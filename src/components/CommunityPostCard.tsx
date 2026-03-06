@@ -33,6 +33,7 @@ import {
   formatPortfolioRatio,
 } from '../utils/communityUtils';
 import { useTheme } from '../hooks/useTheme';
+import { useLocale } from '../context/LocaleContext';
 import type { ThemeColors } from '../styles/colors';
 import { useGuruComments } from '../hooks/useGuruComments';
 import { GURU_CHARACTER_CONFIGS } from '../data/guruCharacterConfig';
@@ -54,6 +55,7 @@ export default function CommunityPostCard({
   onAuthorPress,
 }: CommunityPostCardProps) {
   const { theme, colors } = useTheme();
+  const { t } = useLocale();
   const isLightTheme = theme === 'light';
   const tier = getTierFromAssets(post.total_assets_at_post);
   const tierColor = TIER_COLORS[tier] || '#C0C0C0';
@@ -131,7 +133,7 @@ export default function CommunityPostCard({
               {beginnerQuestion && (
                 <View style={[styles.beginnerBadge, { backgroundColor: `${colors.success}20` }]}>
                   <Ionicons name="help-circle" size={10} color={colors.primaryDark ?? colors.success} />
-                  <Text style={[styles.beginnerBadgeLabel, { color: colors.primaryDark ?? colors.success }]}>초보 질문</Text>
+                  <Text style={[styles.beginnerBadgeLabel, { color: colors.primaryDark ?? colors.success }]}>{t('community_post.beginner_question')}</Text>
                 </View>
               )}
               {/* 자산 인증 뱃지 */}

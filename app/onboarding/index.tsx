@@ -187,7 +187,7 @@ export default function OnboardingScreen() {
     setAddingAsset(true);
     try {
       const user = await getCurrentUser();
-      if (!user) throw new Error('로그인 필요');
+      if (!user) throw new Error(t('common.login_required'));
 
       const ticker = selectedStock.ticker.trim();
       const name = selectedStock.name.trim();
@@ -221,6 +221,7 @@ export default function OnboardingScreen() {
     } finally {
       setAddingAsset(false);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedStock, assetQuantity, assetPrice]);
 
   // 건강 점수 계산 (Step 4 진입 시)
@@ -664,7 +665,7 @@ export default function OnboardingScreen() {
               >
                 <View style={[styles.catBadge, { backgroundColor: getCategoryColor(item.category) + '20' }]}>
                   <Text style={[styles.catBadgeText, { color: getCategoryColor(item.category) }]}>
-                    {item.category === 'crypto' ? '코인' : item.category === 'us_stock' ? 'US' : item.category === 'etf' ? 'ETF' : 'KR'}
+                    {item.category === 'crypto' ? t('onboarding.asset.category_crypto') : item.category === 'us_stock' ? 'US' : item.category === 'etf' ? 'ETF' : 'KR'}
                   </Text>
                 </View>
                 <View style={{ flex: 1 }}>
@@ -688,7 +689,7 @@ export default function OnboardingScreen() {
                 <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>{t('onboarding.asset.quantity_label')}</Text>
                 <TextInput
                   style={[styles.numInput, { backgroundColor: colors.surfaceLight, borderColor: colors.border, color: colors.textPrimary }]}
-                  placeholder="예: 10"
+                  placeholder={t('onboarding.asset.quantity_placeholder')}
                   placeholderTextColor={colors.textTertiary}
                   value={assetQuantity}
                   onChangeText={(t) => setAssetQuantity(t.replace(/[^0-9.]/g, ''))}
@@ -700,7 +701,7 @@ export default function OnboardingScreen() {
                 <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>{t('onboarding.asset.total_cost_label')}</Text>
                 <TextInput
                   style={[styles.numInput, { backgroundColor: colors.surfaceLight, borderColor: colors.border, color: colors.textPrimary }]}
-                  placeholder="예: 1,500,000"
+                  placeholder={t('onboarding.asset.cost_placeholder')}
                   placeholderTextColor={colors.textTertiary}
                   value={assetPrice}
                   onChangeText={(t) => setAssetPrice(t.replace(/[^0-9.]/g, ''))}
@@ -742,7 +743,7 @@ export default function OnboardingScreen() {
               <View key={ra.ticker} style={[styles.registeredRow, { borderBottomColor: colors.border }]}>
                 <Text style={[styles.registeredName, { color: colors.textPrimary }]}>{ra.name}</Text>
                 <Text style={[styles.registeredValue, { color: colors.textSecondary }]}>
-                  {ra.quantity}{ra.category === 'crypto' ? '개' : '주'} / {(ra.quantity * ra.price).toLocaleString()}
+                  {ra.quantity}{ra.category === 'crypto' ? t('onboarding.asset.unit_coin') : t('onboarding.asset.unit_share')} / {(ra.quantity * ra.price).toLocaleString()}
                 </Text>
               </View>
             ))}
@@ -822,17 +823,17 @@ export default function OnboardingScreen() {
         </View>
 
         <Text style={[styles.heading, { color: colors.textPrimary }]}>
-          {score?.gradeLabel || '양호'}
+          {score?.gradeLabel || t('onboarding.score.default_grade')}
         </Text>
         <Text style={[styles.scoreNumber, { color: colors.textSecondary }]}>
-          {score?.totalScore ?? 70}점
+          {t('onboarding.score.score_display', { score: score?.totalScore ?? 70 })}
         </Text>
 
         {/* 요약 카드 */}
         <View style={[styles.summaryCard, { backgroundColor: colors.surface }]}>
           <View style={styles.summaryRow}>
             <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>{t('onboarding.score.registered_assets')}</Text>
-            <Text style={[styles.summaryValue, { color: colors.textPrimary }]}>{registeredAssets.length}개</Text>
+            <Text style={[styles.summaryValue, { color: colors.textPrimary }]}>{t('onboarding.score.asset_count', { count: registeredAssets.length })}</Text>
           </View>
           <View style={styles.summaryRow}>
             <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>{t('onboarding.score.total_value')}</Text>

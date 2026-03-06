@@ -26,8 +26,7 @@ interface WeeklyReportCardProps {
 }
 
 /** 주간 성적에 따른 구루 선택 + 코멘트 */
-function getWeeklyGuruComment(report: WeeklyReportData, locale: string) {
-  const isKo = locale === 'ko';
+function getWeeklyGuruComment(report: WeeklyReportData, t: (key: string) => string) {
   const completionRate = report.habitCompleteDays / 7;
 
   // 완벽 (7/7)
@@ -35,9 +34,7 @@ function getWeeklyGuruComment(report: WeeklyReportData, locale: string) {
     return {
       guruId: 'buffett',
       expression: 'bullish' as const,
-      comment: isKo
-        ? '완벽한 한 주! 지식의 복리가 쌓이고 있습니다.'
-        : 'Perfect week! Your knowledge compounds beautifully.',
+      comment: t('weeklyReport.comment_perfect'),
     };
   }
 
@@ -46,9 +43,7 @@ function getWeeklyGuruComment(report: WeeklyReportData, locale: string) {
     return {
       guruId: 'dalio',
       expression: 'bullish' as const,
-      comment: isKo
-        ? '꾸준한 한 주였어요. 원칙을 지키는 모습이 인상적입니다.'
-        : 'Steady week. Your consistency with principles is impressive.',
+      comment: t('weeklyReport.comment_excellent'),
     };
   }
 
@@ -57,9 +52,7 @@ function getWeeklyGuruComment(report: WeeklyReportData, locale: string) {
     return {
       guruId: 'lynch',
       expression: 'neutral' as const,
-      comment: isKo
-        ? '괜찮은 한 주! 조금만 더 자주 들러주세요.'
-        : 'Not bad! Try to visit a bit more often.',
+      comment: t('weeklyReport.comment_good'),
     };
   }
 
@@ -68,9 +61,7 @@ function getWeeklyGuruComment(report: WeeklyReportData, locale: string) {
     return {
       guruId: 'marks',
       expression: 'cautious' as const,
-      comment: isKo
-        ? '이번 주는 좀 바빴나 봐요. 다음 주엔 더 자주 만나요.'
-        : 'Busy week? Let\'s meet more often next week.',
+      comment: t('weeklyReport.comment_low'),
     };
   }
 
@@ -78,16 +69,14 @@ function getWeeklyGuruComment(report: WeeklyReportData, locale: string) {
   return {
     guruId: 'cathie_wood',
     expression: 'cautious' as const,
-    comment: isKo
-      ? '한 주 동안 못 만났네요. 마을에서 기다리고 있을게요!'
-      : 'We missed you this week. I\'ll be waiting in the village!',
+    comment: t('weeklyReport.comment_none'),
   };
 }
 
 export function WeeklyReportCard({ report, colors, locale }: WeeklyReportCardProps) {
   const _isKo = locale === 'ko';
   const { t } = useLocale();
-  const guru = getWeeklyGuruComment(report, locale);
+  const guru = getWeeklyGuruComment(report, t);
   const _guruConfig = GURU_CHARACTER_CONFIGS[guru.guruId];
 
   const completionRate = Math.round((report.habitCompleteDays / 7) * 100);

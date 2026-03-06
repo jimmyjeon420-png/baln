@@ -39,7 +39,7 @@ export default function DeepDiveSimulator() {
   // 2. Risks 샘플 데이터
   const risksData: RiskItem[] = [
     {
-      category: '시장 리스크',
+      category: 'market',
       level: 'MEDIUM',
       points: [
         '반도체 시장 사이클 변동성 존재',
@@ -48,7 +48,7 @@ export default function DeepDiveSimulator() {
       ],
     },
     {
-      category: '경쟁 리스크',
+      category: 'competition',
       level: 'HIGH',
       points: [
         'TSMC의 파운드리 점유율 압도적',
@@ -57,7 +57,7 @@ export default function DeepDiveSimulator() {
       ],
     },
     {
-      category: '규제 리스크',
+      category: 'regulation',
       level: 'LOW',
       points: [
         '한국 정부의 반도체 지원 정책 확대',
@@ -66,7 +66,7 @@ export default function DeepDiveSimulator() {
       ],
     },
     {
-      category: '경영 리스크',
+      category: 'management',
       level: 'MEDIUM',
       points: [
         '이재용 회장 사면 후 경영 정상화',

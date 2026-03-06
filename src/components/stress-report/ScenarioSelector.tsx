@@ -11,9 +11,9 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Animated,
 } from 'react-native';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 
 export type ScenarioType = 'market_correction' | 'bear_market' | 'rate_shock';
 
@@ -25,29 +25,33 @@ interface ScenarioOption {
   magnitude: string;
 }
 
-const SCENARIOS: ScenarioOption[] = [
-  {
-    type: 'market_correction',
-    emoji: '📉',
-    title: '시장 조정',
-    subtitle: 'S&P 500 기준',
-    magnitude: '-10%',
-  },
-  {
-    type: 'bear_market',
-    emoji: '🐻',
-    title: '약세장',
-    subtitle: '장기 하락 국면',
-    magnitude: '-20%',
-  },
-  {
-    type: 'rate_shock',
-    emoji: '🏦',
-    title: '금리 쇼크',
-    subtitle: '기준금리 급등',
-    magnitude: '+3%p',
-  },
-];
+type TFunc = (key: string, params?: Record<string, unknown>) => string;
+
+function getScenarios(t: TFunc): ScenarioOption[] {
+  return [
+    {
+      type: 'market_correction',
+      emoji: '📉',
+      title: t('scenarioSelector.marketCorrection'),
+      subtitle: t('scenarioSelector.marketCorrectionSub'),
+      magnitude: '-10%',
+    },
+    {
+      type: 'bear_market',
+      emoji: '🐻',
+      title: t('scenarioSelector.bearMarket'),
+      subtitle: t('scenarioSelector.bearMarketSub'),
+      magnitude: '-20%',
+    },
+    {
+      type: 'rate_shock',
+      emoji: '🏦',
+      title: t('scenarioSelector.rateShock'),
+      subtitle: t('scenarioSelector.rateShockSub'),
+      magnitude: '+3%p',
+    },
+  ];
+}
 
 interface ScenarioSelectorProps {
   selected: ScenarioType | null;
@@ -61,18 +65,20 @@ export const ScenarioSelector: React.FC<ScenarioSelectorProps> = ({
   disabled,
 }) => {
   const { colors } = useTheme();
+  const { t } = useLocale();
+  const scenarios = getScenarios(t);
 
   return (
     <View style={s.container}>
       <Text style={[s.sectionTitle, { color: colors.textPrimary }]}>
-        시나리오 선택
+        {t('scenarioSelector.title')}
       </Text>
       <Text style={[s.sectionSubtitle, { color: colors.textTertiary }]}>
-        포트폴리오의 방어력을 테스트하세요
+        {t('scenarioSelector.subtitle')}
       </Text>
 
       <View style={s.row}>
-        {SCENARIOS.map(scenario => {
+        {scenarios.map(scenario => {
           const isSelected = selected === scenario.type;
           return (
             <TouchableOpacity

@@ -58,12 +58,12 @@ export default function TaxReportScreen() {
           capitalGainsTax: 0,
           dividendTax: 0,
           potentialSavings: 0,
-          savingsStrategy: '보유한 유동자산이 없어 세금 분석 대상이 없습니다. 자산 등록 후 다시 확인해주세요.',
-          assumptions: ['유동자산 기준으로만 계산합니다.', '부동산은 현금화 시점이 달라 본 계산에서 제외됩니다.'],
+          savingsStrategy: t('analysis.taxReport.noLiquidAssets'),
+          assumptions: [t('analysis.taxReport.assumptions.liquidOnly'), t('analysis.taxReport.assumptions.realEstateExcluded')],
           actionItems: [
             {
-              title: '유동자산 등록',
-              description: '주식/ETF/암호화폐를 등록하면 종목별 절세 타이밍을 계산할 수 있습니다.',
+              title: t('analysis.taxReport.action.registerAssets'),
+              description: t('analysis.taxReport.action.registerAssetsDesc'),
               deadline: nextYearStart,
               priority: 'medium',
             },
@@ -145,8 +145,8 @@ export default function TaxReportScreen() {
 
       if (biggestLoss && potentialSavings > 0) {
         actionItems.push({
-          title: '손실 종목 손익상계',
-          description: `${biggestLoss.name}은(는) 현재 ${biggestLoss.gainRate.toFixed(1)}% 손실 구간입니다. 연말 전 일부 매도로 과세 대상 이익을 상쇄하면 추정 ₩${potentialSavings.toLocaleString()} 절세 여지가 있습니다.`,
+          title: t('analysis.taxReport.action.lossOffset'),
+          description: t('analysis.taxReport.action.lossOffsetDesc', { name: biggestLoss.name, rate: biggestLoss.gainRate.toFixed(1), savings: potentialSavings.toLocaleString() }),
           deadline: yearEnd,
           priority: 'high',
         });
@@ -154,16 +154,16 @@ export default function TaxReportScreen() {
 
       if (biggestGain) {
         actionItems.push({
-          title: '수익 종목 분할 매도 계획',
-          description: `${biggestGain.name}의 평가이익이 큽니다. 한 번에 전량 매도보다 분할 매도로 연도별 과세표준을 분산하면 세금 급증을 줄일 수 있습니다.`,
+          title: t('analysis.taxReport.action.splitSell'),
+          description: t('analysis.taxReport.action.splitSellDesc', { name: biggestGain.name }),
           deadline: yearEnd,
           priority: 'medium',
         });
       }
 
       actionItems.push({
-        title: '배당 내역 연동 점검',
-        description: '현재 배당소득세는 보유자산 유형별 평균 배당수익률 가정치로 추정됩니다. 실제 배당 내역 연동 시 정확도가 높아집니다.',
+        title: t('analysis.taxReport.action.dividendCheck'),
+        description: t('analysis.taxReport.action.dividendCheckDesc'),
         deadline: nextYearStart,
         priority: 'low',
       });
@@ -171,8 +171,8 @@ export default function TaxReportScreen() {
       const totalTax = capitalGainsTax + estimatedDividendTax;
       const summary =
         potentialSavings > 0
-          ? `해외주식 손익상계 기준으로 최대 ₩${potentialSavings.toLocaleString()} 절세 여지가 있습니다.`
-          : '현재 데이터 기준 손익상계 절세 여지는 제한적입니다. 분할매도와 과세연도 분산 전략을 우선 검토하세요.';
+          ? t('analysis.taxReport.summaryWithSavings', { amount: potentialSavings.toLocaleString() })
+          : t('analysis.taxReport.summaryNoSavings');
 
       setTaxReport({
         totalTax,
@@ -181,9 +181,9 @@ export default function TaxReportScreen() {
         potentialSavings,
         savingsStrategy: summary,
         assumptions: [
-          '유동자산(주식/ETF/코인) 기준 추정치이며, 부동산은 제외됩니다.',
-          '배당소득세는 종목별 실제 배당내역이 없어 평균 배당수익률 가정치(국내 1.5%, 해외 1.8%)로 계산합니다.',
-          '세법/공제한도/개인 공제항목에 따라 실제 신고세액은 달라질 수 있습니다.',
+          t('analysis.taxReport.assumptions.liquidOnly'),
+          t('analysis.taxReport.assumptions.dividendEstimate'),
+          t('analysis.taxReport.assumptions.disclaimer'),
         ],
         actionItems: actionItems.slice(0, 3),
       });
@@ -192,6 +192,7 @@ export default function TaxReportScreen() {
     } finally {
       setIsLoading(false);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [assets]);
 
   useEffect(() => {
@@ -246,7 +247,7 @@ export default function TaxReportScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-      <HeaderBar title="세금 리포트" />
+      <HeaderBar title={t('analysis.taxReport.title')} />
       <ScrollView
         style={[s.container, { backgroundColor: colors.background }]}
         contentContainerStyle={s.content}
@@ -298,7 +299,7 @@ export default function TaxReportScreen() {
         <View style={[s.card, { backgroundColor: colors.surface }]}>
           <View style={s.cardHeader}>
             <Ionicons name="bulb" size={18} color="#7C4DFF" />
-            <Text style={[s.cardTitle, { color: colors.textPrimary }]}>💡 AI 절세 전략</Text>
+            <Text style={[s.cardTitle, { color: colors.textPrimary }]}>{t('analysis.taxReport.aiStrategy')}</Text>
           </View>
           <Text style={[s.strategyText, { color: colors.textSecondary }]}>
             {taxReport.savingsStrategy}

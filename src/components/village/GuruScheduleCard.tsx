@@ -126,7 +126,7 @@ function GuruScheduleCard({ guruId, colors }: GuruScheduleCardProps) {
     return TIME_SLOTS.map((slot) => {
       // 해당 시간대의 첫 번째 매칭되는 스케줄 항목 사용
       let activityKey: GuruActivity = 'walking';
-      let locationText = isKo ? '마을' : 'Village';
+      let locationText = t('guruSchedule.default_location');
 
       if (guruSchedule) {
         for (const key of slot.scheduleKeys) {
@@ -150,11 +150,12 @@ function GuruScheduleCard({ guruId, colors }: GuruScheduleCardProps) {
       return {
         slot,
         activityEmoji: display.emoji,
-        activityName: isKo ? display.ko : display.en,
+        activityName: t(`guruActivity.${activityKey}`) || (isKo ? display.ko : display.en),
         location: locationText,
         isActive: slot.id === currentSlot,
       };
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [guruId, isKo, currentSlot]);
 
   return (
@@ -184,7 +185,7 @@ function GuruScheduleCard({ guruId, colors }: GuruScheduleCardProps) {
             <View style={styles.timeSection}>
               <Text style={styles.slotEmoji}>{item.slot.emoji}</Text>
               <Text style={[styles.slotLabel, { color: colors.textSecondary }]}>
-                {isKo ? item.slot.labelKo : item.slot.labelEn}
+                {t(`guruSchedule.${item.slot.id}`)}
               </Text>
               <Text style={[styles.slotHours, { color: colors.textTertiary }]}>
                 {item.slot.hourRange}

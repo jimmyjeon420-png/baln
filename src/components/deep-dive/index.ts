@@ -24,7 +24,7 @@ export { default as DeepDiveReport } from './DeepDiveReport';
 export type { ExecutiveSummaryProps, InvestmentRecommendation } from './ExecutiveSummary';
 export type { CompanyOverviewProps } from './CompanyOverview';
 export type { ValuationMetrics } from './Valuation';
-export type { RiskItem, RiskLevel } from './Risks';
+export type { RiskItem, RiskLevel, RiskCategory } from './Risks';
 export type { GovernanceData } from './Governance';
 export type { QuarterlyData } from './QuarterlyChart';
 export type { RevenueSegment, CostItem, WaterfallItem, EarningsBreakdownProps } from './EarningsBreakdown';

@@ -1,3 +1,4 @@
+/* eslint-disable */
 // @ts-nocheck
 // ============================================================================
 // Task G: 맥락 카드 생성 (Context Card Generation)
@@ -66,17 +67,29 @@ export interface ContextCardResult {
  *
  * @returns { contextCardId, cardData }
  */
-async function generateContextCard(timeSlot: string = 'morning'): Promise<{
+async function generateContextCard(timeSlot: string = 'morning', lang: string = 'ko'): Promise<{
   contextCardId: string;
   cardData: ContextCardData;
   realData: RealMarketData | null;
 }> {
   const dateStr = getKSTDateStr();
   const todayDate = getKSTDate();
+  const isEn = lang !== 'ko';
 
   // 시간대별 프롬프트 컨텍스트 (3시간 간격, KST 기준)
-  const timeSlotContextMap: Record<string, string> = {
-    // 3시간 간격 슬롯 (신규)
+  const timeSlotContextMap: Record<string, string> = isEn ? {
+    h00: '[Time: 12AM KST] US markets are in session. Analyze current US market trends and key issues.',
+    h03: '[Time: 3AM KST] US markets just closed. Summarize the US closing results and after-hours activity.',
+    h06: '[Time: 6AM KST] Morning market preview. Analyze overnight US market results + Asia market outlook.',
+    h09: '[Time: 9AM KST] Korean markets just opened. Analyze KOSPI/KOSDAQ opening prices and early foreign/institutional flow.',
+    h12: '[Time: 12PM KST] Mid-session update. Summarize morning session + afternoon outlook + any economic data releases.',
+    h15: '[Time: 3PM KST] Korean markets closed. Summarize KOSPI/KOSDAQ close + final institutional flows + key events.',
+    h18: '[Time: 6PM KST] Evening briefing. Cover Korean close + European market trends + US pre-market.',
+    h21: '[Time: 9PM KST] US markets opening. Analyze major US data releases + early session trends.',
+    morning: '[Time: 6AM KST] Morning market preview. Analyze overnight US close and upcoming Asia session.',
+    afternoon: '[Time: 3PM KST] Mid-day update. Cover KOSPI/KOSDAQ session and major intraday events.',
+    evening: '[Time: 7PM KST] Evening wrap-up. Cover Korean close and US pre-market trends.',
+  } : {
     h00: '[시간대: 자정 0시] 미국 장이 진행 중입니다. 현재 미국 시장 실시간 흐름과 주요 이슈를 분석하세요.',
     h03: '[시간대: 새벽 3시] 미국 장이 막 마감했습니다. 미국 장 마감 결과와 애프터마켓 흐름을 정리하세요.',
     h06: '[시간대: 아침 6시] 오늘 하루 시장을 미리 전망합니다. 간밤 미국 지수 마감 결과 + 오늘 아시아 장 전망을 분석하세요.',
@@ -85,7 +98,6 @@ async function generateContextCard(timeSlot: string = 'morning'): Promise<{
     h15: '[시간대: 오후 3시] 한국 장이 마감했습니다. 코스피/코스닥 종가 + 외국인/기관 최종 수급 + 당일 핵심 이벤트를 정리하세요.',
     h18: '[시간대: 저녁 6시] 저녁 종합 브리핑입니다. 한국 장 마감 결과 + 유럽 장 흐름 + 미국 프리마켓을 반영하세요.',
     h21: '[시간대: 밤 9시] 미국 장 개장 직전/직후입니다. 미국 주요 지표 발표 + 개장 초반 흐름을 분석하세요.',
-    // 레거시 호환
     morning: '[시간대: 아침 6시] 오늘 하루 시장을 미리 전망합니다. 아시아 장 개장 전, 미국 장 마감 후 상황을 중심으로 분석하세요.',
     afternoon: '[시간대: 오후 3시] 장중 흐름을 업데이트합니다. 코스피/코스닥 장중 흐름과 오늘 발생한 주요 이벤트를 반영하세요.',
     evening: '[시간대: 저녁 7시] 오늘 시장 마감을 정리합니다. 한국 장 마감 결과와 미국 프리마켓 흐름을 반영하세요.',
@@ -141,7 +153,53 @@ async function generateContextCard(timeSlot: string = 'morning'): Promise<{
     console.log('[Task G-1] Task A 결과 참조 실패 (무시) — Google Search로 직접 검색');
   }
 
-  const prompt = `당신은 baln(발른) 앱의 맥락 카드 AI입니다.
+  const langInstruction = isEn
+    ? 'CRITICAL: Your ENTIRE response MUST be in English. Never use Korean.'
+    : '반드시 한국어로 작성하세요.';
+
+  const prompt = isEn
+    ? `You are the context card AI for baln (a portfolio insights app).
+${timeSlotContext}
+Analyze today's (${dateStr}) market from 5 perspectives so investors can understand "why my assets moved this way today" in 5 minutes.
+${realDataContext}
+${macroContext}
+[Core Principles]
+- "Sell reassurance, not anxiety" — Provide context, not fear, even in downturns.
+- Always cite real data from Yahoo Finance above. Do not fabricate numbers.
+- Cite sources in parentheses: "(Yahoo Finance)", "(Bloomberg)", "(FRB)", etc.
+- Historical cases MUST include "In YYYY-MM, X% drop/rise, recovered in Y months" format.
+- Institutional behavior MUST include direction (net buying/selling) and amount or trading days.
+- If no political context exists, state "No significant political risks at this time."
+
+[Google Search — only for items not covered by real data]
+- "foreign institutional buying selling KOSPI today"
+- "US economic data release today"
+- "market moving news today"
+
+[5-Layer Analysis + Price Catalysts]
+1. Historical Context: Similar past pattern + recovery period (include year/percentage, 2-3 sentences)
+2. Macro Chain: Cause-and-effect chain moving markets today (array of 4-6 steps, with figures)
+3. Political Context: Tariffs/elections/geopolitics impact (2-3 sentences, or "No significant political risks" if none)
+4. Institutional Behavior: Foreign/institutional direction, scale, meaning (2-3 sentences)
+5. Market Sentiment: Based on VIX: calm(<15) / caution(15-25) / alert(>25)
+6. Price Catalysts: 3-5 notable stocks with price change causes. Each: {ticker: "TICKER", change_percent: number, catalyst: "one-line English explanation", source: "news source"}
+
+[Response format — JSON only. No markdown, no code blocks, no explanation text.]
+{
+  "headline": "One-line market summary (under 20 words, include figures)",
+  "historical_context": "In January 2022, the Nasdaq fell -33% from highs on Fed tightening fears, but rebounded from January 2023, recovering in 13 months. Current conditions are similar. (Source: Yahoo Finance)",
+  "macro_chain": ["US CPI at 2.4% (below expectations)", "Inflation easing confirmed (FRB)", "Rate cut expectations maintained", "Tech buying momentum (Yahoo Finance)", "KOSPI follows higher"],
+  "political_context": "Trump administration's 25% China tariff announcement increased short-term uncertainty, but historically trade disputes show 1-2 quarters of volatility before stabilization. (Source: Bloomberg)",
+  "institutional_behavior": "Foreign investors recorded net buying on KOSPI for 3 consecutive days (+230B KRW est.). This aligns with dollar weakness and EM fund inflows — strategic buying, not panic.",
+  "sentiment": "caution",
+  "price_catalysts": [
+    {"ticker": "005930", "change_percent": 2.3, "catalyst": "Foreign buying concentrated on HBM3 order expansion news", "source": "Korea Economic Daily"},
+    {"ticker": "000660", "change_percent": -1.5, "catalyst": "Profit-taking on DRAM price decline concerns", "source": "Maeil Business"}
+  ]
+}
+
+${langInstruction}`
+    : `당신은 baln(발른) 앱의 맥락 카드 AI입니다.
 ${timeSlotContext}
 오늘(${dateStr}) 시장 상황을 5가지 관점으로 분석하여, 한국 개인투자자가 "오늘 내 자산이 왜 이렇게 움직였는지" 5분 안에 이해할 수 있도록 설명하세요.
 ${realDataContext}
@@ -180,7 +238,8 @@ ${macroContext}
     {"ticker": "000660", "change_percent": -1.5, "catalyst": "D램 가격 하락 우려로 차익실현 매물 출회", "source": "매일경제"}
   ]
 }
-`;
+
+${langInstruction}`;
 
   console.log('[Task G-1] 맥락 카드 생성 시작...');
   let parsed: ContextCardData;
@@ -190,7 +249,13 @@ ${macroContext}
     parsed = JSON.parse(cleanJson);
   } catch (parseErr) {
     console.error('[Task G-1] Gemini 응답 파싱 실패 — 기본값 사용:', parseErr);
-    parsed = {
+    parsed = isEn ? {
+      headline: 'Market analysis updating',
+      historical_context: 'Market data is being loaded. Please check again shortly. Temporary data delays do not affect long-term investment decisions.',
+      macro_chain: ['Data collection in progress'],
+      institutional_behavior: 'Institutional investor trend data is being collected.',
+      sentiment: 'calm' as const,
+    } : {
       headline: '시장 분석 업데이트 중',
       historical_context: '시장 데이터를 불러오는 중입니다. 잠시 후 다시 확인해주세요. 장기적 관점에서 일시적 데이터 지연은 투자 판단에 영향을 주지 않습니다.',
       macro_chain: ['데이터 수집 중'],
@@ -201,10 +266,10 @@ ${macroContext}
 
   // 필수 필드 검증 및 기본값 보장
   if (!parsed.headline || typeof parsed.headline !== 'string') {
-    parsed.headline = '오늘의 시장 분석';
+    parsed.headline = isEn ? "Today's Market Analysis" : '오늘의 시장 분석';
   }
   if (!Array.isArray(parsed.macro_chain) || parsed.macro_chain.length === 0) {
-    parsed.macro_chain = ['시장 데이터 수집 중'];
+    parsed.macro_chain = [isEn ? 'Collecting market data' : '시장 데이터 수집 중'];
   }
   if (!['calm', 'caution', 'alert'].includes(parsed.sentiment)) {
     parsed.sentiment = 'calm';
@@ -220,7 +285,7 @@ ${macroContext}
       {
         date: todayDate,
         time_slot: slot,
-        headline: parsed.headline || '오늘의 시장 분석',
+        headline: parsed.headline || (isEn ? "Today's Market Analysis" : '오늘의 시장 분석'),
         historical_context: parsed.historical_context || '',
         macro_chain: parsed.macro_chain || [],
         political_context: parsed.political_context || '',
@@ -445,18 +510,18 @@ function autoDetectTimeSlot(): string {
   return `h${String(slotHour).padStart(2, '0')}`;
 }
 
-export async function runContextCardGeneration(timeSlot?: string): Promise<ContextCardResult> {
+export async function runContextCardGeneration(timeSlot?: string, lang: string = 'ko'): Promise<ContextCardResult> {
   const startTime = Date.now();
 
   // time_slot이 없으면 현재 KST 시간으로 자동 결정
   const effectiveSlot = timeSlot || autoDetectTimeSlot();
-  console.log(`[Task G] time_slot: ${effectiveSlot} (입력: ${timeSlot || 'auto'})`);
+  console.log(`[Task G] time_slot: ${effectiveSlot} (입력: ${timeSlot || 'auto'}), lang: ${lang}`);
 
   try {
     console.log('[Task G] 맥락 카드 생성 배치 시작...');
 
     // G-1: 맥락 카드 생성
-    const cardResult = await generateContextCard(effectiveSlot);
+    const cardResult = await generateContextCard(effectiveSlot, lang);
 
     // G-2: 사용자별 영향도 계산 (실데이터 + sentiment 전달)
     const impactResult = await calculateUserImpacts(

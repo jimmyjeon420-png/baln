@@ -27,6 +27,7 @@ import {
 import Svg, { Line, Rect, Circle, Path, Text as SvgText } from 'react-native-svg';
 import { SIZES, TYPOGRAPHY, SHADOWS } from '../../styles/theme';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 import {
   useMyPredictionStats,
   useResolvedPollsWithMyVotes,
@@ -62,6 +63,7 @@ interface CategoryData {
 export default function StatsChart() {
   const [activeTab, setActiveTab] = useState<ChartTab>('accuracy');
   const { colors } = useTheme();
+  const { t } = useLocale();
 
   // 데이터 로딩
   const { data: stats, isLoading: statsLoading } = useMyPredictionStats();
@@ -92,9 +94,9 @@ export default function StatsChart() {
 
   // 탭 전환
   const tabs: { key: ChartTab; label: string; emoji: string }[] = [
-    { key: 'accuracy', label: '적중률', emoji: '📊' },
-    { key: 'category', label: '카테고리', emoji: '🎯' },
-    { key: 'credits', label: '도토리', emoji: '🌰' },
+    { key: 'accuracy', label: t('statsChart.tab_accuracy'), emoji: '📊' },
+    { key: 'category', label: t('statsChart.tab_category'), emoji: '🎯' },
+    { key: 'credits', label: t('statsChart.tab_acorns'), emoji: '🌰' },
   ];
 
   // 로딩 상태
@@ -102,7 +104,7 @@ export default function StatsChart() {
     return (
       <View style={[styles.container, { backgroundColor: colors.surface }]}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={[styles.loadingText, { color: colors.textSecondary }]}>차트 데이터 로딩 중...</Text>
+        <Text style={[styles.loadingText, { color: colors.textSecondary }]}>{t('statsChart.loading')}</Text>
       </View>
     );
   }
@@ -111,9 +113,9 @@ export default function StatsChart() {
   if (!stats || stats.total_votes === 0) {
     return (
       <View style={[styles.container, { backgroundColor: colors.surface }]}>
-        <Text style={[styles.emptyText, { color: colors.textPrimary }]}>아직 투표 기록이 없습니다</Text>
+        <Text style={[styles.emptyText, { color: colors.textPrimary }]}>{t('statsChart.empty_title')}</Text>
         <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>
-          첫 예측에 참여하고{'\n'}통계 차트를 확인해보세요!
+          {t('statsChart.empty_subtitle')}
         </Text>
       </View>
     );
@@ -173,6 +175,7 @@ interface AccuracyChartProps {
 
 function AccuracyChart({ data }: AccuracyChartProps) {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const width = Dimensions.get('window').width - 64; // padding 32 * 2
   const height = 200;
   const padding = 40;
@@ -180,8 +183,8 @@ function AccuracyChart({ data }: AccuracyChartProps) {
   if (data.length === 0) {
     return (
       <View style={[styles.emptyChart, { backgroundColor: colors.background, borderColor: colors.border }]}>
-        <Text style={[styles.emptyChartText, { color: colors.textSecondary }]}>아직 데이터가 부족합니다</Text>
-        <Text style={[styles.emptyChartSubtext, { color: colors.textTertiary }]}>더 많은 예측에 참여해주세요</Text>
+        <Text style={[styles.emptyChartText, { color: colors.textSecondary }]}>{t('statsChart.accuracy_empty')}</Text>
+        <Text style={[styles.emptyChartSubtext, { color: colors.textTertiary }]}>{t('statsChart.accuracy_empty_sub')}</Text>
       </View>
     );
   }
@@ -206,8 +209,8 @@ function AccuracyChart({ data }: AccuracyChartProps) {
 
   return (
     <View>
-      <Text style={[styles.chartTitle, { color: colors.textPrimary }]}>최근 적중률 추이</Text>
-      <Text style={[styles.chartSubtitle, { color: colors.textSecondary }]}>평균: {avgAccuracy.toFixed(1)}%</Text>
+      <Text style={[styles.chartTitle, { color: colors.textPrimary }]}>{t('statsChart.accuracy_title')}</Text>
+      <Text style={[styles.chartSubtitle, { color: colors.textSecondary }]}>{t('statsChart.accuracy_avg', { rate: avgAccuracy.toFixed(1) })}</Text>
 
       <Svg width={width} height={height}>
         {/* Y축 그리드 라인 (0, 25, 50, 75, 100%) */}
@@ -303,6 +306,7 @@ interface CategoryChartProps {
 
 function CategoryChart({ data }: CategoryChartProps) {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const width = Dimensions.get('window').width - 64;
   const height = 200;
   const padding = 40;
@@ -310,8 +314,8 @@ function CategoryChart({ data }: CategoryChartProps) {
   if (data.length === 0) {
     return (
       <View style={[styles.emptyChart, { backgroundColor: colors.background, borderColor: colors.border }]}>
-        <Text style={[styles.emptyChartText, { color: colors.textSecondary }]}>카테고리별 데이터 부족</Text>
-        <Text style={[styles.emptyChartSubtext, { color: colors.textTertiary }]}>다양한 주제에 참여해보세요</Text>
+        <Text style={[styles.emptyChartText, { color: colors.textSecondary }]}>{t('statsChart.category_empty')}</Text>
+        <Text style={[styles.emptyChartSubtext, { color: colors.textTertiary }]}>{t('statsChart.category_empty_sub')}</Text>
       </View>
     );
   }
@@ -321,8 +325,8 @@ function CategoryChart({ data }: CategoryChartProps) {
 
   return (
     <View>
-      <Text style={[styles.chartTitle, { color: colors.textPrimary }]}>카테고리별 정확도</Text>
-      <Text style={[styles.chartSubtitle, { color: colors.textSecondary }]}>각 분야별 적중률</Text>
+      <Text style={[styles.chartTitle, { color: colors.textPrimary }]}>{t('statsChart.category_title')}</Text>
+      <Text style={[styles.chartSubtitle, { color: colors.textSecondary }]}>{t('statsChart.category_subtitle')}</Text>
 
       <Svg width={width} height={height}>
         {/* Y축 그리드 */}
@@ -418,6 +422,7 @@ interface CreditsChartProps {
 
 function CreditsChart({ data }: CreditsChartProps) {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const width = Dimensions.get('window').width - 64;
   const height = 200;
   const padding = 40;
@@ -425,8 +430,8 @@ function CreditsChart({ data }: CreditsChartProps) {
   if (data.length === 0) {
     return (
       <View style={[styles.emptyChart, { backgroundColor: colors.background, borderColor: colors.border }]}>
-        <Text style={[styles.emptyChartText, { color: colors.textSecondary }]}>도토리 획득 기록 없음</Text>
-        <Text style={[styles.emptyChartSubtext, { color: colors.textTertiary }]}>첫 정답을 맞춰보세요!</Text>
+        <Text style={[styles.emptyChartText, { color: colors.textSecondary }]}>{t('statsChart.acorns_empty')}</Text>
+        <Text style={[styles.emptyChartSubtext, { color: colors.textTertiary }]}>{t('statsChart.acorns_empty_sub')}</Text>
       </View>
     );
   }
@@ -454,9 +459,9 @@ function CreditsChart({ data }: CreditsChartProps) {
 
   return (
     <View>
-      <Text style={[styles.chartTitle, { color: colors.textPrimary }]}>도토리 누적 그래프</Text>
+      <Text style={[styles.chartTitle, { color: colors.textPrimary }]}>{t('statsChart.acorns_title')}</Text>
       <Text style={[styles.chartSubtitle, { color: colors.textSecondary }]}>
-        총 획득: {data[data.length - 1]?.value || 0}C
+        {t('statsChart.acorns_total', { count: String(data[data.length - 1]?.value || 0) })}
       </Text>
 
       <Svg width={width} height={height}>

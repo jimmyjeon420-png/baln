@@ -65,9 +65,7 @@ export function SouvenirShop({ onPurchase, colors }: SouvenirShopProps) {
   const handleBuy = useCallback(
     (item: SouvenirItem) => {
       const name = language === 'ko' ? item.nameKo : item.nameEn;
-      const confirmMsg = language === 'ko'
-        ? `${name}을(를) ${item.cost} 도토리로 구매하시겠습니까?`
-        : `Buy ${name} for ${item.cost} acorns?`;
+      const confirmMsg = t('souvenirShop.buyConfirm', { name, cost: item.cost });
       Alert.alert('', confirmMsg, [
         { text: t('common.cancel'), style: 'cancel' },
         {
@@ -131,7 +129,7 @@ export function SouvenirShop({ onPurchase, colors }: SouvenirShopProps) {
                     activeOpacity={0.7}
                   >
                     <Text style={styles.buyText}>
-                      {t('souvenirShop.buy')} {item.cost}개
+                      {t('souvenirShop.buyWithCost', { cost: item.cost })}
                     </Text>
                   </TouchableOpacity>
                 )}

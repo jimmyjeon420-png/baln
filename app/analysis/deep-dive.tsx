@@ -272,7 +272,7 @@ async function runDeepDiveDiagnostic() {
 
 export default function DeepDiveScreen() {
   const { colors } = useTheme();
-  const { t } = useLocale();
+  const { t, language } = useLocale();
   const params = useLocalSearchParams<{ ticker?: string; name?: string }>();
 
   const [query, setQuery] = useState('');
@@ -320,12 +320,18 @@ export default function DeepDiveScreen() {
       }).slice(0, 8)
     : [];
 
+  /** 현재 로케일에 맞는 종목 표시명 반환 */
+  const getStockDisplayName = useCallback((stock: StockItem): string => {
+    if (language === 'en' && stock.nameEn) return stock.nameEn;
+    return stock.name;
+  }, [language]);
+
   const handleSelectStock = useCallback((stock: StockItem) => {
     setSelectedStock(stock);
-    setQuery(`${stock.name} (${stock.ticker})`);
+    setQuery(`${getStockDisplayName(stock)} (${stock.ticker})`);
     setShowSuggestions(false);
     Keyboard.dismiss();
-  }, []);
+  }, [getStockDisplayName]);
 
   // AI 동의 확인 래퍼 — 동의 없으면 모달 표시 후 콜백 대기
   const ensureAIConsent = async (onConsented: () => void): Promise<boolean> => {
@@ -338,7 +344,7 @@ export default function DeepDiveScreen() {
 
   // stock 인자를 직접 받는 버전 (자동 분석용 — state가 아직 반영 안 됐을 때 사용)
   const handleAnalyzeWithStock = async (stock: StockItem) => {
-    const targetName = stock.name;
+    const targetName = getStockDisplayName(stock);
     const targetTicker = stock.ticker;
     if (!targetName) return;
 
@@ -377,7 +383,7 @@ export default function DeepDiveScreen() {
 
   const handleAnalyze = async () => {
     // 선택된 종목이 없으면 직접 입력된 텍스트를 종목명으로 사용
-    const targetName = selectedStock?.name || query.trim();
+    const targetName = (selectedStock ? getStockDisplayName(selectedStock) : null) || query.trim();
     const targetTicker = selectedStock?.ticker || query.trim().toUpperCase();
 
     if (!targetName) return;
@@ -536,7 +542,7 @@ export default function DeepDiveScreen() {
                 activeOpacity={0.7}
               >
                 <View style={{ flex: 1 }}>
-                  <Text style={[s.suggestionName, { color: colors.textPrimary }]}>{stock.name}</Text>
+                  <Text style={[s.suggestionName, { color: colors.textPrimary }]}>{getStockDisplayName(stock)}</Text>
                   <Text style={[s.suggestionTicker, { color: colors.textTertiary }]}>
                     {stock.ticker} · {stock.market}
                   </Text>
@@ -611,7 +617,12 @@ export default function DeepDiveScreen() {
 
             <View style={s.exampleSection}>
               <Text style={[s.exampleLabel, { color: colors.textTertiary }]}>{t('analysis.deepDive.guide.example')}</Text>
-              {['삼성전자', 'NVDA', 'SK하이닉스', 'TSLA'].map((example) => (
+              {[
+              t('analysis.deepDive.guide.exampleTicker1'),
+              t('analysis.deepDive.guide.exampleTicker2'),
+              t('analysis.deepDive.guide.exampleTicker3'),
+              t('analysis.deepDive.guide.exampleTicker4'),
+            ].map((example) => (
                 <TouchableOpacity
                   key={example}
                   onPress={() => handleQueryChange(example)}

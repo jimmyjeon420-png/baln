@@ -12,5 +12,5 @@ export type { ExtremeScenarioGridProps } from './ExtremeScenarioGrid';
 export type { ExtremeScenarioReportProps } from './ExtremeScenarioReport';
 
 // 데이터 re-export
-export { EXTREME_SCENARIOS, CATEGORY_COLORS } from '../../data/whatIfScenarios';
+export { getExtremeScenarios, CATEGORY_COLORS } from '../../data/whatIfScenarios';
 export type { ExtremeScenario, SectorImpact, HistoricalParallel } from '../../data/whatIfScenarios';

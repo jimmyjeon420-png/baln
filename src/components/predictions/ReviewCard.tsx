@@ -18,6 +18,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTrackEvent } from '../../hooks/useAnalytics';
+import { useLocale } from '../../context/LocaleContext';
 import { PollWithMyVote } from '../../types/prediction';
 
 interface ReviewCardProps {
@@ -36,6 +37,7 @@ function extractTaggedLine(source: string | null | undefined, tag: string): stri
 export default function ReviewCard({ poll, isCorrect, currentStreak }: ReviewCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const track = useTrackEvent();
+  const { t } = useLocale();
   const hasTrackedReview = useRef(false);
 
   // 상태별 스타일
@@ -43,7 +45,7 @@ export default function ReviewCard({ poll, isCorrect, currentStreak }: ReviewCar
   const borderColor = isCorrect ? '#4CAF50' : '#CF6679';
   const iconName = isCorrect ? 'checkmark-circle' : 'close-circle';
   const iconColor = isCorrect ? '#4CAF50' : '#CF6679';
-  const resultText = isCorrect ? '적중!' : '아쉽게 빗나갔어요';
+  const resultText = isCorrect ? t('reviewCard.result_correct') : t('reviewCard.result_wrong');
 
   const observed = extractTaggedLine(poll.source, '관측데이터');
   const thresholdCheck = extractTaggedLine(poll.source, '조건검증');
@@ -70,7 +72,7 @@ export default function ReviewCard({ poll, isCorrect, currentStreak }: ReviewCar
 
         {isCorrect && poll.myCreditsEarned > 0 && (
           <View style={styles.creditBadge}>
-            <Text style={styles.creditText}>+{poll.myCreditsEarned} 크레딧</Text>
+            <Text style={styles.creditText}>{t('reviewCard.credit_earned', { amount: String(poll.myCreditsEarned) })}</Text>
           </View>
         )}
       </View>
@@ -80,10 +82,10 @@ export default function ReviewCard({ poll, isCorrect, currentStreak }: ReviewCar
         <View style={styles.streakBanner}>
           <Text style={styles.streakEmoji}>🔥</Text>
           <Text style={styles.streakText}>
-            {currentStreak}연속 적중 중!
+            {t('reviewCard.streak_ongoing', { count: String(currentStreak) })}
             {currentStreak < 10
-              ? ' 10연속 시 +10 보너스 획득!'
-              : ' 🏆 대단해요!'}
+              ? t('reviewCard.streak_bonus_10')
+              : t('reviewCard.streak_congrats')}
           </Text>
         </View>
       )}
@@ -94,7 +96,7 @@ export default function ReviewCard({ poll, isCorrect, currentStreak }: ReviewCar
       {/* 내 선택 vs 정답 */}
       <View style={styles.answerSection}>
         <View style={styles.answerRow}>
-          <Text style={styles.answerLabel}>내 선택:</Text>
+          <Text style={styles.answerLabel}>{t('reviewCard.my_choice')}</Text>
           <Text style={[
             styles.answerValue,
             { color: isCorrect ? '#4CAF50' : '#CF6679' },
@@ -103,7 +105,7 @@ export default function ReviewCard({ poll, isCorrect, currentStreak }: ReviewCar
           </Text>
         </View>
         <View style={styles.answerRow}>
-          <Text style={styles.answerLabel}>정답:</Text>
+          <Text style={styles.answerLabel}>{t('reviewCard.correct_answer')}</Text>
           <Text style={[styles.answerValue, { color: '#4CAF50' }]}>
             {poll.correct_answer === 'YES' ? poll.yes_label : poll.no_label}
           </Text>
@@ -123,7 +125,7 @@ export default function ReviewCard({ poll, isCorrect, currentStreak }: ReviewCar
         activeOpacity={0.7}
       >
         <Text style={styles.toggleButtonText}>
-          {isExpanded ? '해설 닫기' : '해설 보기'}
+          {isExpanded ? t('reviewCard.toggle_hide') : t('reviewCard.toggle_show')}
         </Text>
         <Ionicons
           name={isExpanded ? 'chevron-up' : 'chevron-down'}
@@ -140,35 +142,35 @@ export default function ReviewCard({ poll, isCorrect, currentStreak }: ReviewCar
           ) : (
             <Text style={styles.explanationText}>
               {isCorrect
-                ? '예측이 적중했습니다! 시장 흐름을 잘 파악하셨네요.'
-                : '이번에는 시장이 예상과 다르게 움직였습니다. 다음 기회에 도전해보세요.'}
+                ? t('reviewCard.explanation_correct')
+                : t('reviewCard.explanation_wrong')}
             </Text>
           )}
 
           {myScenario && (
             <Text style={styles.explanationText}>
-              {isCorrect ? '성공 이유' : '실패 이유'}: {myScenario}
+              {isCorrect ? t('reviewCard.success_reason') : t('reviewCard.fail_reason')}: {myScenario}
             </Text>
           )}
 
           {learningPoint && (
             <Text style={styles.explanationText}>
-              학습 포인트: {learningPoint}
+              {t('reviewCard.learning_point')}: {learningPoint}
             </Text>
           )}
 
           {(observed || thresholdCheck || reasoning) && (
             <View style={styles.explanationMetaBox}>
-              {observed && <Text style={styles.metaText}>관측값: {observed}</Text>}
-              {thresholdCheck && <Text style={styles.metaText}>조건: {thresholdCheck}</Text>}
-              {reasoning && <Text style={styles.metaText}>핵심 근거: {reasoning}</Text>}
+              {observed && <Text style={styles.metaText}>{t('reviewCard.observed')}: {observed}</Text>}
+              {thresholdCheck && <Text style={styles.metaText}>{t('reviewCard.condition')}: {thresholdCheck}</Text>}
+              {reasoning && <Text style={styles.metaText}>{t('reviewCard.reasoning')}: {reasoning}</Text>}
             </View>
           )}
 
           {sourceRef && (
             <View style={styles.sourceRow}>
               <Ionicons name="link-outline" size={14} color="#555555" />
-              <Text style={styles.sourceText}>출처: {sourceRef}</Text>
+              <Text style={styles.sourceText}>{t('reviewCard.source')}: {sourceRef}</Text>
             </View>
           )}
 
@@ -176,7 +178,7 @@ export default function ReviewCard({ poll, isCorrect, currentStreak }: ReviewCar
           {!hasStructuredSource && poll.source && (
             <View style={styles.sourceRow}>
               <Ionicons name="link-outline" size={14} color="#555555" />
-              <Text style={styles.sourceText}>출처: {poll.source}</Text>
+              <Text style={styles.sourceText}>{t('reviewCard.source')}: {poll.source}</Text>
             </View>
           )}
         </View>

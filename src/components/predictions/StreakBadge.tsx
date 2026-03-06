@@ -11,6 +11,7 @@
 
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useLocale } from '../../context/LocaleContext';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -28,12 +29,13 @@ interface StreakBadgeProps {
 export default function StreakBadge({ currentStreak, isBroken }: StreakBadgeProps) {
   const scale = useSharedValue(1);
   const opacity = useSharedValue(1);
+  const { t } = useLocale();
 
   // 연속 단계 결정
   const getStreakLevel = () => {
-    if (currentStreak >= 10) return { level: 3, emoji: '🔥🔥🔥', bonus: 10, label: '10연속 달성!' };
-    if (currentStreak >= 5) return { level: 2, emoji: '🔥🔥', bonus: 3, label: '5연속 달성!' };
-    if (currentStreak >= 3) return { level: 1, emoji: '🔥', bonus: 0, label: '3연속 적중 중' };
+    if (currentStreak >= 10) return { level: 3, emoji: '🔥🔥🔥', bonus: 10, label: t('streakBadge.level3_label') };
+    if (currentStreak >= 5) return { level: 2, emoji: '🔥🔥', bonus: 3, label: t('streakBadge.level2_label') };
+    if (currentStreak >= 3) return { level: 1, emoji: '🔥', bonus: 0, label: t('streakBadge.level1_label') };
     return null;
   };
 
@@ -89,16 +91,16 @@ export default function StreakBadge({ currentStreak, isBroken }: StreakBadgeProp
       {/* 연속 정보 */}
       <View style={styles.textContainer}>
         <Text style={[styles.streakText, isBroken && styles.streakTextBroken]}>
-          {isBroken ? `${currentStreak}연속 끊김...` : streakLevel.label}
+          {isBroken ? t('streakBadge.broken_label', { count: String(currentStreak) }) : streakLevel.label}
         </Text>
         {!isBroken && streakLevel.bonus > 0 && (
-          <Text style={styles.bonusText}>+{streakLevel.bonus} 도토리 보너스 획득!</Text>
+          <Text style={styles.bonusText}>{t('streakBadge.bonus_earned', { amount: String(streakLevel.bonus) })}</Text>
         )}
         {!isBroken && currentStreak >= 3 && currentStreak < 5 && (
-          <Text style={styles.nextGoalText}>5연속 시 +3 보너스!</Text>
+          <Text style={styles.nextGoalText}>{t('streakBadge.next_goal_5')}</Text>
         )}
         {!isBroken && currentStreak >= 5 && currentStreak < 10 && (
-          <Text style={styles.nextGoalText}>10연속 시 +10 보너스!</Text>
+          <Text style={styles.nextGoalText}>{t('streakBadge.next_goal_10')}</Text>
         )}
       </View>
 

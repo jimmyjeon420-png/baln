@@ -43,6 +43,7 @@ import {
   PREDICTION_REWARDS,
 } from '../../src/types/prediction';
 import { useTheme } from '../../src/hooks/useTheme';
+import { useLocale } from '../../src/context/LocaleContext';
 import { getLocaleCode } from '../../src/utils/formatters';
 
 // 3탭: 투표하기 / 내 기록 / 리더보드
@@ -60,6 +61,7 @@ export default function PredictionsScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { colors } = useTheme();
+  const { t } = useLocale();
   const [activeTab, setActiveTab] = useState<TabType>('vote');
   const [categoryFilter, setCategoryFilter] = useState<PollCategoryFilter>('all');
 
@@ -83,10 +85,11 @@ export default function PredictionsScreen() {
       {
         onError: (error: Error) => {
           console.warn('[예측] 투표 실패:', error.message);
-          Alert.alert('투표 실패', '투표를 처리할 수 없습니다. 잠시 후 다시 시도해주세요.');
+          Alert.alert(t('predictionsPage.vote_failed_title'), t('predictionsPage.vote_failed_msg'));
         },
       },
     );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [submitVote]);
 
   // 투표하기 탭: 모두 투표 완료 여부 확인
@@ -133,7 +136,7 @@ export default function PredictionsScreen() {
         {/* 어제의 결과 복기 (습관 루프 강화) */}
         {yesterdayPolls && yesterdayPolls.length > 0 && (
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{'📝 어제의 결과'}</Text>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{'📝 '}{t('predictionsPage.section_yesterday')}</Text>
 
             {/* 요약 배너 */}
             <View style={[styles.yesterdaySummary, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -143,17 +146,17 @@ export default function PredictionsScreen() {
                 </Text>
                 <View>
                   <Text style={[styles.summaryTitle, { color: colors.textPrimary }]}>
-                    {yesterdaySummary.totalVoted}개 중 {yesterdaySummary.totalCorrect}개 적중
+                    {t('predictionsPage.summary_hit', { total: String(yesterdaySummary.totalVoted), correct: String(yesterdaySummary.totalCorrect) })}
                   </Text>
                   <Text style={[styles.summarySubtitle, { color: colors.textTertiary }]}>
-                    적중률 {yesterdaySummary.accuracyRate}%
+                    {t('predictionsPage.summary_accuracy', { rate: String(yesterdaySummary.accuracyRate) })}
                   </Text>
                 </View>
               </View>
               {myStats && myStats.current_streak >= 3 && (
                 <View style={styles.summaryStreak}>
                   <Text style={styles.summaryStreakText}>
-                    {'🔥'} {myStats.current_streak}연속
+                    {'🔥'} {t('predictionsPage.streak_consecutive', { count: String(myStats.current_streak) })}
                   </Text>
                 </View>
               )}
@@ -208,17 +211,17 @@ export default function PredictionsScreen() {
 
         {/* 오늘의 투표 카드 */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{'🎯 오늘의 예측'}</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{'🎯 '}{t('predictionsPage.section_today')}</Text>
           {activeLoading ? (
             <View style={styles.loadingState}>
-              <Text style={[styles.loadingText, { color: colors.textTertiary }]}>투표를 불러오는 중...</Text>
+              <Text style={[styles.loadingText, { color: colors.textTertiary }]}>{t('predictionsPage.loading_votes')}</Text>
             </View>
           ) : filteredActive.length === 0 ? (
             <View style={styles.emptyState}>
               <Text style={styles.emptyEmoji}>{'🔮'}</Text>
-              <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>아직 예측 질문이 없습니다</Text>
+              <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>{t('predictionsPage.empty_predictions_title')}</Text>
               <Text style={[styles.emptyDescription, { color: colors.textTertiary }]}>
-                {'매일 아침 7시에 새로운 투자 예측 질문이\n자동으로 생성됩니다.'}
+                {t('predictionsPage.empty_predictions_desc')}
               </Text>
             </View>
           ) : (
@@ -250,9 +253,9 @@ export default function PredictionsScreen() {
               {allVoted && (
                 <View style={[styles.allVotedBanner, { backgroundColor: colors.primary + '15', borderColor: colors.primary + '40' }]}>
                   <Text style={styles.allVotedEmoji}>{'🎯'}</Text>
-                  <Text style={[styles.allVotedTitle, { color: colors.primary }]}>모든 투표 완료!</Text>
+                  <Text style={[styles.allVotedTitle, { color: colors.primary }]}>{t('predictionsPage.all_voted_title')}</Text>
                   <Text style={[styles.allVotedDesc, { color: colors.textSecondary }]}>
-                    내일 아침 결과를 확인하세요.{'\n'}적중하면 크레딧 보상이 지급됩니다!
+                    {t('predictionsPage.all_voted_desc')}
                   </Text>
                 </View>
               )}
@@ -286,16 +289,16 @@ export default function PredictionsScreen() {
 
         {/* 이번 달 적중률 요약 카드 */}
         <View style={[styles.monthSummaryCard, { backgroundColor: colors.surface }]}>
-          <Text style={[styles.monthSummaryTitle, { color: colors.textPrimary }]}>{'📅 이번 달 기록'}</Text>
+          <Text style={[styles.monthSummaryTitle, { color: colors.textPrimary }]}>{'📅 '}{t('predictionsPage.section_month')}</Text>
           <View style={styles.monthStatsRow}>
             <View style={styles.monthStatItem}>
               <Text style={[styles.monthStatValue, { color: colors.textPrimary }]}>{monthAccuracy}%</Text>
-              <Text style={[styles.monthStatLabel, { color: colors.textTertiary }]}>적중률</Text>
+              <Text style={[styles.monthStatLabel, { color: colors.textTertiary }]}>{t('predictionsPage.month_accuracy')}</Text>
             </View>
             <View style={[styles.monthStatDivider, { backgroundColor: colors.border }]} />
             <View style={styles.monthStatItem}>
               <Text style={[styles.monthStatValue, { color: colors.textPrimary }]}>{monthCorrect}/{monthTotal}</Text>
-              <Text style={[styles.monthStatLabel, { color: colors.textTertiary }]}>적중/투표</Text>
+              <Text style={[styles.monthStatLabel, { color: colors.textTertiary }]}>{t('predictionsPage.month_hit_ratio')}</Text>
             </View>
             <View style={[styles.monthStatDivider, { backgroundColor: colors.border }]} />
             <View style={styles.monthStatItem}>
@@ -303,9 +306,9 @@ export default function PredictionsScreen() {
                 styles.monthStatValue,
                 { color: myStats?.current_streak && myStats.current_streak >= 3 ? '#FF9800' : colors.textPrimary },
               ]}>
-                {myStats?.current_streak || 0}회
+                {t('predictionsPage.month_times', { count: String(myStats?.current_streak || 0) })}
               </Text>
-              <Text style={[styles.monthStatLabel, { color: colors.textTertiary }]}>연속 적중</Text>
+              <Text style={[styles.monthStatLabel, { color: colors.textTertiary }]}>{t('predictionsPage.month_consecutive')}</Text>
             </View>
           </View>
         </View>
@@ -331,17 +334,17 @@ export default function PredictionsScreen() {
 
         {/* 최근 기록 리스트 */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{'📊 최근 기록'}</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{'📊 '}{t('predictionsPage.section_recent')}</Text>
           {resolvedLoading ? (
             <View style={styles.loadingState}>
-              <Text style={[styles.loadingText, { color: colors.textTertiary }]}>기록을 불러오는 중...</Text>
+              <Text style={[styles.loadingText, { color: colors.textTertiary }]}>{t('predictionsPage.loading_records')}</Text>
             </View>
           ) : !resolvedPolls || resolvedPolls.length === 0 ? (
             <View style={styles.emptyState}>
               <Text style={styles.emptyEmoji}>{'📋'}</Text>
-              <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>아직 기록이 없습니다</Text>
+              <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>{t('predictionsPage.empty_records_title')}</Text>
               <Text style={[styles.emptyDescription, { color: colors.textTertiary }]}>
-                예측에 참여하면 여기에 기록이 쌓입니다.
+                {t('predictionsPage.empty_records_desc')}
               </Text>
             </View>
           ) : (
@@ -373,15 +376,15 @@ export default function PredictionsScreen() {
                   <View style={styles.historyRight}>
                     {poll.myIsCorrect === true ? (
                       <View style={styles.historyCorrectBadge}>
-                        <Text style={styles.historyCorrectText}>{'🎯'} 적중</Text>
+                        <Text style={styles.historyCorrectText}>{'🎯'} {t('predictionsPage.history_hit')}</Text>
                       </View>
                     ) : (
                       <View style={styles.historyWrongBadge}>
-                        <Text style={styles.historyWrongText}>오답</Text>
+                        <Text style={styles.historyWrongText}>{t('predictionsPage.history_wrong')}</Text>
                       </View>
                     )}
                     {poll.myCreditsEarned > 0 && (
-                      <Text style={styles.historyCreditText}>+{poll.myCreditsEarned}개</Text>
+                      <Text style={styles.historyCreditText}>{t('predictionsPage.history_credit', { count: String(poll.myCreditsEarned) })}</Text>
                     )}
                   </View>
                 </View>
@@ -403,24 +406,24 @@ export default function PredictionsScreen() {
 
         {/* 보상 안내 */}
         <View style={styles.rewardInfo}>
-          <Text style={styles.rewardInfoTitle}>보상 안내</Text>
+          <Text style={styles.rewardInfoTitle}>{t('predictionsPage.reward_title')}</Text>
           <View style={styles.rewardRow}>
-            <Text style={[styles.rewardLabel]}>적중 시</Text>
+            <Text style={[styles.rewardLabel]}>{t('predictionsPage.reward_on_correct')}</Text>
             <Text style={[styles.rewardValue, { color: colors.textPrimary }]}>
-              +{PREDICTION_REWARDS.correct} 크레딧 (구독자 {PREDICTION_REWARDS.correct * PREDICTION_REWARDS.subscriberMultiplier})
+              {t('predictionsPage.reward_correct_value', { amount: String(PREDICTION_REWARDS.correct), subAmount: String(PREDICTION_REWARDS.correct * PREDICTION_REWARDS.subscriberMultiplier) })}
             </Text>
           </View>
           <View style={styles.rewardRow}>
-            <Text style={[styles.rewardLabel]}>5연속 적중</Text>
-            <Text style={[styles.rewardValue, { color: colors.textPrimary }]}>+{PREDICTION_REWARDS.streak5Bonus} 보너스 크레딧</Text>
+            <Text style={[styles.rewardLabel]}>{t('predictionsPage.reward_streak5')}</Text>
+            <Text style={[styles.rewardValue, { color: colors.textPrimary }]}>{t('predictionsPage.reward_streak5_value', { amount: String(PREDICTION_REWARDS.streak5Bonus) })}</Text>
           </View>
           <View style={styles.rewardRow}>
-            <Text style={[styles.rewardLabel]}>10연속 적중</Text>
-            <Text style={[styles.rewardValue, { color: colors.textPrimary }]}>+{PREDICTION_REWARDS.streak10Bonus} 보너스 크레딧</Text>
+            <Text style={[styles.rewardLabel]}>{t('predictionsPage.reward_streak10')}</Text>
+            <Text style={[styles.rewardValue, { color: colors.textPrimary }]}>{t('predictionsPage.reward_streak10_value', { amount: String(PREDICTION_REWARDS.streak10Bonus) })}</Text>
           </View>
           <View style={styles.rewardRow}>
-            <Text style={styles.rewardLabel}>참여 비용</Text>
-            <Text style={[styles.rewardValue, { color: colors.primary }]}>무료</Text>
+            <Text style={styles.rewardLabel}>{t('predictionsPage.reward_cost')}</Text>
+            <Text style={[styles.rewardValue, { color: colors.primary }]}>{t('predictionsPage.reward_free')}</Text>
           </View>
         </View>
       </>
@@ -437,11 +440,11 @@ export default function PredictionsScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={[styles.title, { color: colors.textPrimary }]}>투자 예측</Text>
+        <Text style={[styles.title, { color: colors.textPrimary }]}>{t('predictionsPage.title')}</Text>
         {myStats && myStats.total_votes >= 5 && (
           <View style={styles.accuracyBadge}>
             <Text style={styles.accuracyBadgeText}>
-              적중률 {Number(myStats.accuracy_rate).toFixed(0)}%
+              {t('predictionsPage.accuracy_badge', { rate: Number(myStats.accuracy_rate).toFixed(0) })}
             </Text>
           </View>
         )}
@@ -459,7 +462,7 @@ export default function PredictionsScreen() {
             color={activeTab === 'vote' ? colors.primary : colors.textTertiary}
           />
           <Text style={[styles.tabText, { color: colors.textTertiary }, activeTab === 'vote' && { color: colors.primary, fontWeight: '700' }]}>
-            투표하기
+            {t('predictionsPage.tab_vote')}
           </Text>
           {activePolls && activePolls.length > 0 && (
             <View style={styles.tabBadge}>
@@ -478,7 +481,7 @@ export default function PredictionsScreen() {
             color={activeTab === 'history' ? colors.primary : colors.textTertiary}
           />
           <Text style={[styles.tabText, { color: colors.textTertiary }, activeTab === 'history' && { color: colors.primary, fontWeight: '700' }]}>
-            내 기록
+            {t('predictionsPage.tab_history')}
           </Text>
         </TouchableOpacity>
 
@@ -492,7 +495,7 @@ export default function PredictionsScreen() {
             color={activeTab === 'leaderboard' ? colors.primary : colors.textTertiary}
           />
           <Text style={[styles.tabText, { color: colors.textTertiary }, activeTab === 'leaderboard' && { color: colors.primary, fontWeight: '700' }]}>
-            리더보드
+            {t('predictionsPage.tab_leaderboard')}
           </Text>
         </TouchableOpacity>
       </View>

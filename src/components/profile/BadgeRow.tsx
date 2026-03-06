@@ -11,6 +11,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { type AchievementWithStatus } from '../../services/achievementService';
+import { useLocale } from '../../context/LocaleContext';
 
 interface BadgeRowProps {
   /** useAchievements()의 achievements 배열 */
@@ -20,6 +21,7 @@ interface BadgeRowProps {
 
 export function BadgeRow({ achievements, isLoading: _isLoading = false }: BadgeRowProps) {
   const router = useRouter();
+  const { t } = useLocale();
 
   // 해금된 배지를 최근 순으로 정렬 후 상위 3개
   const unlockedBadges = achievements
@@ -45,7 +47,7 @@ export function BadgeRow({ achievements, isLoading: _isLoading = false }: BadgeR
       style={styles.container}
       onPress={() => router.push('/achievements')}
       accessibilityRole="button"
-      accessibilityLabel="내 뱃지 보기"
+      accessibilityLabel={t('badge.view_badges')}
     >
       <View style={styles.row}>
         {slots.map((badge, index) =>
@@ -58,8 +60,8 @@ export function BadgeRow({ achievements, isLoading: _isLoading = false }: BadgeR
       </View>
       <Text style={styles.hint}>
         {totalUnlocked > 0
-          ? `${totalUnlocked}개 획득 · 전체 보기 →`
-          : '첫 뱃지를 획득해보세요 →'}
+          ? t('badge.unlocked_count', { count: totalUnlocked })
+          : t('badge.earn_first')}
       </Text>
     </Pressable>
   );
@@ -79,12 +81,13 @@ function UnlockedSlot({ badge }: { badge: AchievementWithStatus }) {
 }
 
 function LockedSlot() {
+  const { t } = useLocale();
   return (
     <View style={styles.slotWrapper}>
       <View style={[styles.circle, styles.circleLocked]}>
         <Text style={styles.questionMark}>?</Text>
       </View>
-      <Text style={[styles.badgeLabel, styles.badgeLabelLocked]}>미획득</Text>
+      <Text style={[styles.badgeLabel, styles.badgeLabelLocked]}>{t('badge.not_earned')}</Text>
     </View>
   );
 }
