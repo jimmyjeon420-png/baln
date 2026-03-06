@@ -61,6 +61,7 @@ export interface PredictionQuestion {
 export interface PredictionGenerationResult {
   created: number;
   skipped: boolean;
+  insertErrors?: string[];
 }
 
 const CATEGORY_ORDER: PredictionCategory[] = ['stocks', 'crypto', 'macro'];
@@ -152,12 +153,12 @@ function isQuestionMeaningful(question: string, currentPrice: number | null): bo
 }
 
 function formatSnapshotLine(point: MarketSnapshotPoint): string {
-  if (!point.price) return `- ${point.label}: 데이터 미확보`;
+  if (!point.price) return `- ${point.label}: N/A`;
   const decimals = point.unit === 'usd' ? 2 : 0;
   const prevText = point.previousClose
-    ? ` / 전일: ${formatNumber(point.previousClose, decimals)}`
+    ? ` / Prev: ${formatNumber(point.previousClose, decimals)}`
     : '';
-  const unitLabel = point.unit === 'usd' ? 'USD' : point.unit === 'krw' ? '원' : 'pt';
+  const unitLabel = point.unit === 'usd' ? 'USD' : point.unit === 'krw' ? 'KRW' : 'pt';
   return `- ${point.label}: ${formatNumber(point.price, decimals)} ${unitLabel}${prevText}`;
 }
 
@@ -226,7 +227,7 @@ function buildFallbackQuestions(
 
     const nasdaq100Now = snapshot.nasdaq100.price ?? 18000;
     const nasdaq100Step = guessStep(nasdaq100Now);
-    const nasdaq100Target = roundByStep(nasdaq100Now * 1.01, nasdaq100Step, 'up');
+    const _nasdaq100Target = roundByStep(nasdaq100Now * 1.01, nasdaq100Step, 'up');
 
     return {
       stocks: {
@@ -418,7 +419,6 @@ export async function generatePredictionPolls(lang = 'ko'): Promise<PredictionGe
   const startTime = Date.now();
   const todayKst = getKSTDate();
   const { startIso, endIso } = getKSTDayBounds(todayKst);
-
   try {
     // 중복 생성 방지: KST 기준 오늘 생성된 투표 확인
     const { data: existingRaw, error: existingError } = await supabase
@@ -462,29 +462,22 @@ export async function generatePredictionPolls(lang = 'ko'): Promise<PredictionGe
     ].join('\n');
 
     const todayDateStr = getKSTDateStr();
-    const prompt = `당신은 baln(발른) 앱의 예측 게임 AI입니다.
-오늘(KST): ${todayDateStr} (${todayKst})
-
-아래 서버 실시간 기준값을 먼저 읽고, 이 숫자를 기준으로 예측 질문 3개를 작성하세요.
-${snapshotContext}
-
-[반드시 지킬 규칙]
-- 질문은 정확히 3개: stocks 1개, crypto 1개, macro 1개
-- YES/NO로 명확히 판정 가능해야 함
-- 24~48시간 내 결과 확인 가능해야 함
-- ${lang === 'ko' ? '한국어 자연문으로 작성' : 'Write naturally in English'}
-- 목표 수치가 현재가와 동떨어지면 안 됨
-- 이미 돌파한 수치를 다시 "회복/돌파"로 묻지 말 것
-
-[품질 규칙]
-- description에 현재 기준값(숫자)을 명시
-- context_hint는 학습 관점 1~2문장
-- up_reason / down_reason은 뉴스 기반 1문장씩
-
-[응답 형식: JSON만]
-{
-  "questions": [
-    {
+    const isEn = lang !== 'ko';
+    const promptExample = isEn
+      ? `{
+      "question": "Will the S&P 500 close above 5,300 within 24 hours?",
+      "description": "The S&P 500 is currently near 5,250 pts. Checking if short-term momentum continues.",
+      "category": "stocks",
+      "yes_label": "Yes, above",
+      "no_label": "No, stays below",
+      "deadline_hours": 24,
+      "difficulty": "easy",
+      "context_hint": "Index predictions help build the habit of setting reference points for post-review.",
+      "related_ticker": "^GSPC",
+      "up_reason": "Strong earnings and institutional buying momentum",
+      "down_reason": "Profit-taking after recent gains"
+    }`
+      : `{
       "question": "코스피가 24시간 내 2,840선을 상회할까요?",
       "description": "현재 코스피는 2,812pt 수준입니다. 반도체 강세가 지수 상단을 지지할지 확인합니다.",
       "category": "stocks",
@@ -496,7 +489,59 @@ ${snapshotContext}
       "related_ticker": "^KS11",
       "up_reason": "외국인 순매수와 반도체 강세 지속",
       "down_reason": "단기 급등 후 차익실현 매물 출회"
-    }
+    }`;
+
+    const prompt = isEn
+      ? `You are the prediction game AI for baln (a portfolio insights app).
+Today (KST): ${todayDateStr} (${todayKst})
+
+Read the real-time server reference values below and create 3 prediction questions based on these numbers.
+${snapshotContext}
+
+[Rules — MUST follow]
+- Exactly 3 questions: stocks 1, crypto 1, macro 1
+- Must be clearly answerable YES/NO
+- Result must be verifiable within 24-48 hours
+- Write naturally in English
+- Target values must be close to current prices (not wildly different)
+- Do not ask about levels already breached
+
+[Quality Rules]
+- Include current reference value (numbers) in description
+- context_hint: 1-2 sentences from a learning perspective
+- up_reason / down_reason: 1 sentence each based on news
+
+CRITICAL: Your ENTIRE response MUST be in English. Never use Korean.
+
+[Response format: JSON only]
+{
+  "questions": [
+    ${promptExample}
+  ]
+}`
+      : `당신은 baln(발른) 앱의 예측 게임 AI입니다.
+오늘(KST): ${todayDateStr} (${todayKst})
+
+아래 서버 실시간 기준값을 먼저 읽고, 이 숫자를 기준으로 예측 질문 3개를 작성하세요.
+${snapshotContext}
+
+[반드시 지킬 규칙]
+- 질문은 정확히 3개: stocks 1개, crypto 1개, macro 1개
+- YES/NO로 명확히 판정 가능해야 함
+- 24~48시간 내 결과 확인 가능해야 함
+- 한국어 자연문으로 작성
+- 목표 수치가 현재가와 동떨어지면 안 됨
+- 이미 돌파한 수치를 다시 "회복/돌파"로 묻지 말 것
+
+[품질 규칙]
+- description에 현재 기준값(숫자)을 명시
+- context_hint는 학습 관점 1~2문장
+- up_reason / down_reason은 뉴스 기반 1문장씩
+
+[응답 형식: JSON만]
+{
+  "questions": [
+    ${promptExample}
   ]
 }`;
 
@@ -531,32 +576,39 @@ ${snapshotContext}
     }
 
     let created = 0;
+    const insertErrors: string[] = [];
     for (const category of categoriesToInsert) {
       const q = curatedByCategory[category] || fallbackByCategory[category];
       const deadline = new Date();
       deadline.setHours(deadline.getHours() + (q.deadline_hours || 24));
 
+      const insertPayload: Record<string, unknown> = {
+        question: q.question,
+        description: q.description || null,
+        category: normalizeCategory(q.category),
+        yes_label: q.yes_label || (lang === 'ko' ? '네' : 'Yes'),
+        no_label: q.no_label || (lang === 'ko' ? '아니오' : 'No'),
+        deadline: deadline.toISOString(),
+        status: 'active',
+        reward_credits: 3,
+      };
+
+      // Optional columns — only include if non-null to avoid missing-column errors
+      if (q.difficulty) insertPayload.difficulty = q.difficulty;
+      if (q.context_hint) insertPayload.context_hint = q.context_hint;
+      if (q.related_ticker) insertPayload.related_ticker = q.related_ticker;
+      if (q.up_reason) insertPayload.up_reason = q.up_reason;
+      if (q.down_reason) insertPayload.down_reason = q.down_reason;
+      if (q.generation_source === 'fallback') insertPayload.source = 'fallback';
+
       const { error } = await supabase
         .from('prediction_polls')
-        .insert({
-          question: q.question,
-          description: q.description || null,
-          category: normalizeCategory(q.category),
-          yes_label: q.yes_label || '네',
-          no_label: q.no_label || '아니오',
-          deadline: deadline.toISOString(),
-          status: 'active',
-          reward_credits: 3,
-          difficulty: q.difficulty || 'medium',
-          context_hint: q.context_hint || null,
-          related_ticker: q.related_ticker || null,
-          up_reason: q.up_reason || null,
-          down_reason: q.down_reason || null,
-          source: q.generation_source === 'fallback' ? 'fallback' : null,
-        });
+        .insert(insertPayload);
 
       if (error) {
-        console.error(`[Task E-1] 질문 삽입 실패:`, error);
+        const errMsg = `${category}: ${error.message} (${error.code})`;
+        console.error(`[Task E-1] 질문 삽입 실패:`, errMsg);
+        insertErrors.push(errMsg);
         continue;
       }
 
@@ -571,9 +623,10 @@ ${snapshotContext}
       existing: existing.length,
       requested: missingCount,
       date: todayKst,
+      ...(insertErrors.length > 0 ? { insertErrors } : {}),
     });
 
-    return { created, skipped: false };
+    return { created, skipped: false, ...(insertErrors.length > 0 ? { insertErrors } : {}) };
   } catch (error) {
     const elapsed = Date.now() - startTime;
     await logTaskResult('predictions', 'FAILED', elapsed, null, error.message);

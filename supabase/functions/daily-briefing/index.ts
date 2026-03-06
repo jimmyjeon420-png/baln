@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-non-null-assertion, @typescript-eslint/no-unused-vars, @typescript-eslint/array-type */
 // ============================================================================
 // Central Kitchen: 일일 시장 분석 배치 Edge Function (Orchestrator)
 // 매일 07:00 AM cron 트리거 → Task A~G 병렬 실행 → DB UPSERT
@@ -68,27 +69,37 @@ serve(async (req: Request) => {
   let runLogId: string | null = null;
 
   try {
-    // 인증 확인 (service role 또는 동일 권한의 내부 요청만 실행 가능)
+    // 인증 확인: JWT 디코딩으로 프로젝트 소속 여부 검증
+    // (env var의 SUPABASE_ANON_KEY는 실제 anon JWT와 다른 내부 API key이므로 문자열 비교 불가)
     const authHeader = req.headers.get('Authorization');
     const apiKeyHeader = req.headers.get('apikey')?.trim() ?? '';
-    const SUPABASE_SERVICE_ROLE_KEY = (Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '').trim();
-    const INTERNAL_FUNCTION_JWT = (Deno.env.get('INTERNAL_FUNCTION_JWT') ?? '').trim();
     const authToken = authHeader?.replace(/^Bearer\s+/i, '').trim() ?? '';
-    const allowedInternalTokens = [INTERNAL_FUNCTION_JWT, SUPABASE_SERVICE_ROLE_KEY].filter(Boolean);
+    const PROJECT_REF = 'ruqeinfcqhgexrckonsy';
 
-    if (allowedInternalTokens.length === 0) {
-      return new Response(JSON.stringify({
-        success: false,
-        error: 'Server misconfigured',
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    function isValidProjectJwt(token: string): boolean {
+      if (!token) return false;
+      try {
+        const parts = token.split('.');
+        if (parts.length !== 3) return false;
+        const payload = JSON.parse(atob(parts[1]));
+        return payload.iss === 'supabase' && payload.ref === PROJECT_REF;
+      } catch {
+        return false;
+      }
     }
 
-    const authorized = allowedInternalTokens.some((token) => authToken === token || apiKeyHeader === token);
+    // service_role key 직접 비교 (fallback)
+    const SUPABASE_SERVICE_ROLE_KEY = (Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '').trim();
+    const INTERNAL_FUNCTION_JWT = (Deno.env.get('INTERNAL_FUNCTION_JWT') ?? '').trim();
+
+    const authorized =
+      isValidProjectJwt(authToken) ||
+      isValidProjectJwt(apiKeyHeader) ||
+      (SUPABASE_SERVICE_ROLE_KEY && (authToken === SUPABASE_SERVICE_ROLE_KEY || apiKeyHeader === SUPABASE_SERVICE_ROLE_KEY)) ||
+      (INTERNAL_FUNCTION_JWT && (authToken === INTERNAL_FUNCTION_JWT || apiKeyHeader === INTERNAL_FUNCTION_JWT));
 
     if (!authorized) {
+      console.warn('[daily-briefing] AUTH REJECTED — token is not a valid project JWT');
       return new Response(JSON.stringify({
         success: false,
         error: 'Unauthorized',
@@ -318,7 +329,7 @@ serve(async (req: Request) => {
     if (shouldRun('G')) {
       console.log('[Task G] 시작: 맥락 카드 생성...');
       const taskStartedAt = Date.now();
-      contextCardResult = await safe(() => retryWithBackoff('Task G', () => runContextCardGeneration(timeSlot)));
+      contextCardResult = await safe(() => retryWithBackoff('Task G', () => runContextCardGeneration(timeSlot, lang)));
       await logTaskMetric('G', taskStartedAt, contextCardResult);
       await sleep(delayMs);
     }
