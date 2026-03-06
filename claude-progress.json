@@ -13,23 +13,23 @@
     {"id": "F11", "name": "에이전트 하네스 적용", "status": "done", "phase": "하네스"},
     {"id": "F12", "name": "i18n 번역키 407개 완성 (en+ko)", "status": "done", "phase": "글로벌"},
 
-    {"id": "G1", "name": "Gemini AI 다국어 프롬프트 (gemini-proxy 7함수 + daily-briefing 7태스크)", "status": "pending", "phase": "글로벌-P0"},
-    {"id": "G2", "name": "통화/단위 로케일 자동 전환 (formatters.ts + realEstateApi + centralKitchen)", "status": "pending", "phase": "글로벌-P0"},
-    {"id": "G3", "name": "하드코딩 한국어 → t() 전환 (사용자 노출 우선: stockList, predictions, coaching, valueLogic)", "status": "pending", "phase": "글로벌-P0"},
-    {"id": "G4", "name": "글로벌 주식 데이터 강화 (S&P500/NASDAQ 맥락카드 + 검색 개선)", "status": "pending", "phase": "글로벌-P1"},
-    {"id": "G5", "name": "콘텐츠 다국어 (guruQuoteBank, guruDebateTopics, factorExplanations, quizService)", "status": "pending", "phase": "글로벌-P1"},
-    {"id": "G6", "name": "마을 대화/편지 다국어 (villageConversationService, villageLetterService)", "status": "pending", "phase": "글로벌-P1"},
-    {"id": "G7", "name": "whatIfScenarios 글로벌 시나리오 추가 + KOSPI→S&P 분기", "status": "pending", "phase": "글로벌-P1"},
-    {"id": "G8", "name": "일본어 ja.json 자동 생성 + 검수", "status": "pending", "phase": "글로벌-P2"},
-    {"id": "G9", "name": "App Store 영어 메타데이터 + 스크린샷", "status": "pending", "phase": "글로벌-P2"},
-    {"id": "G10", "name": "랜딩 페이지(baln.app) 영어 버전", "status": "pending", "phase": "글로벌-P2"}
+    {"id": "G1", "name": "Gemini AI 다국어 프롬프트 (gemini-proxy + daily-briefing)", "status": "done", "phase": "글로벌-P0"},
+    {"id": "G2", "name": "통화/단위 로케일 자동 전환", "status": "done", "phase": "글로벌-P0"},
+    {"id": "G3", "name": "하드코딩 한국어 → 이중언어 전환", "status": "done", "phase": "글로벌-P0"},
+    {"id": "G4", "name": "글로벌 주식 데이터 강화 (19종목 추가)", "status": "done", "phase": "글로벌-P1"},
+    {"id": "G5", "name": "콘텐츠 다국어 (퀴즈 영어 번역)", "status": "done", "phase": "글로벌-P1"},
+    {"id": "G6", "name": "마을 대화/편지 다국어 (이미 완비)", "status": "done", "phase": "글로벌-P1"},
+    {"id": "G7", "name": "What-If 글로벌 시나리오 8개 추가 (총 25개)", "status": "done", "phase": "글로벌-P1"},
+    {"id": "G8", "name": "일본어 ja.json 5,581키 생성", "status": "done", "phase": "글로벌-P2"},
+    {"id": "G9", "name": "App Store 메타데이터 3개국 (en/ja/ko)", "status": "done", "phase": "글로벌-P2"},
+    {"id": "G10", "name": "baln.app 랜딩 영어+일어 (baln-web 리포)", "status": "done", "phase": "글로벌-P2"}
   ],
   "last_session": "2026-03-06",
   "notes": [
     "F1~F12: Phase 1~8 개발 + i18n 완료",
-    "G1~G10: 글로벌화 스프린트 (80억 인구 대응)",
-    "G1~G3: P0 (즉시) — AI+통화+하드코딩, 글로벌 유저 이탈 방지 핵심",
-    "G4~G7: P1 (1주) — 콘텐츠+데이터 다국어",
-    "G8~G10: P2 (2주) — 일본어+메타데이터+랜딩"
+    "G1~G10: 글로벌화 스프린트 전체 완료 (2026-03-06)",
+    "총 변경: ~60파일, +13,000줄, 3개 리포 커밋",
+    "검증: tsc 0, ESLint 0, 464 tests, en.json 한국어 누출 0",
+    "배포: baln-web main 푸시 → GitHub Pages 자동 배포"
   ]
 }
