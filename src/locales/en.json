@@ -42,7 +42,26 @@
     "complete": "Complete",
     "go_back": "Go Back",
     "unknown_error": "An unknown error occurred",
-    "login_required": "Please sign in first"
+    "login_required": "Please sign in first",
+    "anonymous": "Anonymous",
+    "collapse": "Collapse",
+    "showMore": "Show more",
+    "time": {
+      "daysAgo": "d ago",
+      "hoursAgo": "h ago",
+      "justNow": "Just now",
+      "minutesAgo": "m ago",
+      "monthsAgo": "mo ago"
+    },
+    "unitBillion": "B",
+    "unitCount": "",
+    "unitDays": "d",
+    "unitPieces": "",
+    "unitTenThousand": "0K",
+    "unitTimes": "x",
+    "unitWon": "KRW",
+    "unknown": "Unknown",
+    "unknownError": "Unknown error"
   },
   "tab": {
     "today": "Today",
@@ -245,6 +264,9 @@
       "subtitle": "Market dropped {{percent}}% — here's the context",
       "view_context": "View Full Context",
       "stay_calm": "Historical data shows recovery is common"
+    },
+    "health": {
+      "loading": "Calculating health score..."
     }
   },
   "hero": {
@@ -790,7 +812,8 @@
   "credit": {
     "my_credits": "My Acorns",
     "charge": "Top Up",
-    "free_trial": "Free trial until {{date}}"
+    "free_trial": "Free trial until {{date}}",
+    "name": "Credits"
   },
   "guru": {
     "style": {
@@ -1901,7 +1924,15 @@
       "delete_account_hint": "Your account and all data will be permanently deleted"
     },
     "blocked": {
-      "menuLabel": "Block List"
+      "menuLabel": "Block List",
+      "blocked": "Blocked",
+      "info": "Posts and comments from blocked users will be hidden",
+      "noBlockedUsers": "No blocked users",
+      "title": "Blocked Users",
+      "unblock": "Unblock",
+      "unblockFailed": "Unblock failed",
+      "unblockMessage": "Unblock this user?",
+      "unblockTitle": "Unblock"
     }
   },
   "onboarding": {
@@ -2108,7 +2139,9 @@
     "alert_done_view_prescription": "View Prescription",
     "alert_done_add_more": "Add More",
     "alert_done_reward": "\n\n🎉 3-asset bonus +{{amount}} acorns (₩{{krw}}) earned!",
-    "diagnostic_title": "Diagnostic Result"
+    "diagnostic_title": "Diagnostic Result",
+    "alert_done_unit_crypto": "",
+    "alert_done_unit_stock": ""
   },
   "subscription": {
     "title": "Premium",
@@ -2879,7 +2912,9 @@
     "weekday_wed": "Wed",
     "weekday_thu": "Thu",
     "weekday_fri": "Fri",
-    "weekday_sat": "Sat"
+    "weekday_sat": "Sat",
+    "btc_placeholder": "BTC",
+    "nasdaq_placeholder": "NASDAQ"
   },
   "add_realestate": {
     "title": "Add Real Estate",
@@ -5019,6 +5054,15 @@
     },
     "intermediate": {
       "sectionTitle": "Analysis Report"
+    },
+    "level": {
+      "advanced": "Advanced",
+      "beginner": "Beginner",
+      "intermediate": "Intermediate",
+      "mode": "Analysis level",
+      "moreAdvanced": "More advanced",
+      "moreDetail": "More detail",
+      "simpler": "Simpler"
     }
   },
   "whatIf": {
@@ -6053,6 +6097,451 @@
       "bracketB3": "Under 50M",
       "bracketB4": "Under 100M",
       "bracketB5": "100M+"
+    },
+    "dashboard": {
+      "asOfToday": "As of today",
+      "autoRefresh": "Auto refresh",
+      "banner": {
+        "creditsSpent": "Credits spent",
+        "pendingReports": "Pending reports",
+        "posts": "Posts"
+      },
+      "cards": "Context cards",
+      "checkNetwork": "Please check your network",
+      "conversionRate": "Conversion rate",
+      "loadError": "Failed to load",
+      "loading": "Loading...",
+      "loadingActivity": "Loading activity...",
+      "needsAttention": "Needs attention",
+      "noActivity": "No activity",
+      "ofTotal": "of total",
+      "recent15": "Recent 15",
+      "safe": "Safe",
+      "section": {
+        "primaryKpi": "Primary KPIs",
+        "recentActivity": "Recent activity",
+        "secondaryKpi": "Secondary KPIs"
+      },
+      "thisWeek": "This week",
+      "title": "Dashboard",
+      "today": "Today",
+      "views": "Views",
+      "votes": "Votes"
+    },
+    "lounge": {
+      "alert": {
+        "batchDeleteMessage": "Delete selected posts?",
+        "batchDeleteTitle": "Batch delete",
+        "batchPinMessage": "Pin selected posts?",
+        "batchPinTitle": "Batch pin",
+        "cancelFailed": "Cancel failed",
+        "cancelGatheringMessage": "Cancel this gathering?",
+        "cancelGatheringTitle": "Cancel gathering",
+        "changeFailed": "Change failed",
+        "deleteError": "Error during deletion",
+        "deleteFailed": "Delete failed",
+        "deletePostMessage": "Delete this post?",
+        "deletePostTitle": "Delete post",
+        "doneTitle": "Done",
+        "gatheringCancelled": "Gathering cancelled",
+        "partialResult": "Partially processed",
+        "postDeleted": "Post deleted",
+        "postPinned": "Post pinned",
+        "postUnpinned": "Post unpinned",
+        "processedResult": "Processing result",
+        "processError": "Error during processing",
+        "resultTitle": "Result"
+      },
+      "batchDelete": "Batch delete",
+      "batchPin": "Batch pin",
+      "cancelAction": "Cancel",
+      "cancelGathering": "Cancel gathering",
+      "checkingPermission": "Checking permission...",
+      "filter": {
+        "pinned": "Pinned",
+        "reported": "Reported"
+      },
+      "gatherings": "Gatherings",
+      "gatheringStatus": {
+        "cancelled": "Cancelled",
+        "closed": "Closed",
+        "open": "Open"
+      },
+      "host": "Host",
+      "loadError": "Failed to load",
+      "noGatherings": "No gatherings",
+      "noPermission": "No permission",
+      "noPosts": "No posts",
+      "pin": "Pin",
+      "pinned": "Pinned",
+      "pinToggle": "Toggle pin",
+      "posts": "Posts",
+      "reported": "Reported",
+      "select": "Select",
+      "selectedCount": "selected",
+      "title": "Lounge management",
+      "totalCount": "Total",
+      "unpin": "Unpin"
+    },
+    "reports": {
+      "alert": {
+        "contentDeleted": "Content deleted",
+        "deleteContentMessage": "Delete this content?",
+        "deleteContentTitle": "Delete content",
+        "deleteError": "Error during deletion",
+        "doneTitle": "Done",
+        "processError": "Error during processing",
+        "reportApproved": "Report approved",
+        "reportRejected": "Report rejected"
+      },
+      "approveReport": "Approve",
+      "contentDeletedNote": "Deleted content",
+      "deleteContent": "Delete content",
+      "deletedContent": "Deleted content",
+      "detailTitle": "Report detail",
+      "duplicate": "Duplicate",
+      "filter": {
+        "pending": "Pending",
+        "rejected": "Rejected",
+        "resolved": "Resolved"
+      },
+      "label": {
+        "datetime": "Date",
+        "detail": "Detail",
+        "duplicate": "Duplicate",
+        "reason": "Reason"
+      },
+      "loadError": "Failed to load",
+      "noReports": "No reports",
+      "processRate": "Processing rate",
+      "rejectReport": "Reject",
+      "reporter": "Reporter",
+      "section": {
+        "reportInfo": "Report info",
+        "target": "Target"
+      },
+      "summaryTotal": "Total reports",
+      "title": "Report management"
+    },
+    "users": {
+      "active7d": "Active 7d",
+      "alert": {
+        "banConfirmMessage": "Ban this user?",
+        "grantAmount": "Credits to grant",
+        "grantConfirmTitle": "Grant credits",
+        "grantError": "Error during grant",
+        "grantFail": "Grant failed",
+        "grantSuccess": "Grant complete",
+        "grantSuccessMessage": "Credits granted",
+        "inputError": "Input error",
+        "maxAmountError": "Exceeds maximum amount",
+        "minAmountError": "Enter at least 1",
+        "newBalance": "New balance",
+        "processError": "Error during processing",
+        "unbanConfirmMessage": "Unban this user?"
+      },
+      "avgAssets": "Avg. assets",
+      "ban": "Ban",
+      "banned": "Banned",
+      "bannedReason": "Ban reason",
+      "banReason": "Ban reason",
+      "countUnit": "",
+      "creditUnit": "C",
+      "grant": "Grant",
+      "grantBonus": "Grant bonus",
+      "grantTitle": "Grant credits",
+      "joined": "Joined",
+      "label": {
+        "accuracy": "Accuracy",
+        "bestStreak": "Best streak",
+        "correct": "Correct",
+        "creditBalance": "Credit balance",
+        "currentStreak": "Current streak",
+        "email": "Email",
+        "joinDate": "Join date",
+        "lastActive": "Last active",
+        "plan": "Plan",
+        "tier": "Tier",
+        "totalAssets": "Total assets",
+        "totalVotes": "Total votes"
+      },
+      "loadError": "Failed to load",
+      "loadingActivity": "Loading activity...",
+      "loadingList": "Loading list...",
+      "loadingPredictions": "Loading predictions...",
+      "loadingTransactions": "Loading transactions...",
+      "memo": "Memo",
+      "memoOptional": "Memo (optional)",
+      "memoPlaceholder": "Enter memo",
+      "noActivity": "No activity",
+      "noEmail": "No email",
+      "noSearchResults": "No results",
+      "noUsers": "No users",
+      "recent": "Recent",
+      "recentTransactions": "Recent transactions",
+      "searchPlaceholder": "Search by email or nickname",
+      "searchResults": "Search results",
+      "section": {
+        "activityLog": "Activity log",
+        "adminActions": "Admin actions",
+        "basicInfo": "Basic info",
+        "credits": "Credits",
+        "predictions": "Predictions",
+        "systemInfo": "System info"
+      },
+      "target": "Target",
+      "tenThousandUnit": "0K",
+      "title": "User management",
+      "total": "Total",
+      "tryOtherSearch": "Try a different search",
+      "unban": "Unban",
+      "userDetail": "User detail"
     }
+  },
+  "acornJar": {
+    "unit": "C",
+    "wonPrefix": "\\u2248\\u20A9"
+  },
+  "crisis_banner": {
+    "institutional_action_cta": "View institutional trends",
+    "institutional_action_label": "Institutional action analysis",
+    "reassurance": "Don't worry. Let's check the context.",
+    "view_context": "View context card"
+  },
+  "editRealestate": {
+    "alert": {
+      "debtExceedsPrice": "Debt exceeds current price",
+      "inputError": "Input error",
+      "invalidDebt": "Enter a valid debt amount",
+      "invalidPrice": "Enter a valid price",
+      "updatedMessage": "Information updated",
+      "updateError": "Error during update",
+      "updateFail": "Update failed",
+      "updateSuccess": "Update complete"
+    },
+    "currentPrice": "Current price",
+    "debtBalance": "Debt balance",
+    "debtLabel": "Debt",
+    "debtPlaceholder": "Enter debt balance",
+    "editDebt": "Edit debt",
+    "infoText": "Update price and debt to latest info",
+    "netAsset": "Net asset",
+    "pricePlaceholder": "Enter amount",
+    "title": "Edit property",
+    "unitHint": "in 10K KRW"
+  },
+  "emotionHistory": {
+    "btcClose": "BTC Close",
+    "daysUnit": "d",
+    "memoPlaceholder": "Leave a note about today",
+    "monthLabel": "",
+    "monthStat": "This month",
+    "nasdaq": "NASDAQ",
+    "nasdaqClose": "NASDAQ Close",
+    "noMarketData": "No market data",
+    "noRecordsThisMonth": "No records this month",
+    "optional": "Optional",
+    "quoteAuthor": "- Warren Buffett",
+    "quoteText": "Those who record their emotions are not ruled by them",
+    "recorded": "Recorded",
+    "recordToday": "Record today's emotion",
+    "reRecord": "Re-record",
+    "rewardBadge": "+2C earned",
+    "rewardToast": "Emotion recorded! +2C",
+    "saveBtn": "Save",
+    "saving": "Saving...",
+    "selectHint": "How are you feeling about investing today?",
+    "title": "Emotion History",
+    "todayEmotion": "Today's emotion",
+    "topEmotion": "Most frequent emotion"
+  },
+  "guruScorecard": {
+    "champion": "Champion",
+    "title": "Guru Scorecard"
+  },
+  "leagueStanding": {
+    "league": "League",
+    "name": "Name",
+    "promotion": "Promotion",
+    "relegation": "Relegation",
+    "weeklyReward": "Weekly reward",
+    "you": "You"
+  },
+  "letterReply": {
+    "hint": "Send a reply to the guru",
+    "noReplies": "No replies yet",
+    "placeholder": "Type your reply...",
+    "premiumHint": "Premium members only",
+    "send": "Send",
+    "sent": "Sent"
+  },
+  "newsReaction": {
+    "news": "News"
+  },
+  "newsReactionDetail": {
+    "portfolioDesc": "How this news affects your portfolio",
+    "portfolioTitle": "Portfolio impact",
+    "reactionsTitle": "Guru reactions",
+    "sentimentTitle": "Market sentiment"
+  },
+  "newsToPrediction": {
+    "button": "Create prediction",
+    "prompt": "Make a prediction based on this news",
+    "subtitle": "News-based prediction"
+  },
+  "paywall": {
+    "alert": {
+      "activationFailed": "Activation failed",
+      "devMode": "Dev Mode",
+      "devModeMessage": "Payments are not available in Expo Go. Please test in a production build.",
+      "freePeriodMessage": "You're in the free period. All premium features are available for free.",
+      "freePeriodTitle": "Free Period",
+      "notice": "Notice",
+      "premiumActivated": "Premium Activated",
+      "premiumActivatedMessage": "Premium is now active! Enjoy all features.",
+      "startTrial": "Start trial",
+      "subscribeError": "Subscription Error",
+      "subscribeErrorMessage": "There was an issue processing your subscription. Please try again.",
+      "trialActivated": "Trial Activated!",
+      "trialActivatedMessage": "Your 1-month free trial has started. Enjoy all premium features!",
+      "trialStartMessage": "Start your 1-month free trial? You'll have access to all premium features during the trial.",
+      "trialStartTitle": "Start Free Trial"
+    },
+    "availableFeatures": "Available Features",
+    "creditInfoDesc": "Premium members receive 30C bonus credits monthly. Use for AI analysis, deep dives, tax reports, and more.",
+    "creditInfoTitle": "Credit Bonus",
+    "ctaSubscribeContinue": "Subscribe & Continue",
+    "ctaSubscribeContinueSubtext": "Don't miss out on premium features",
+    "ctaSubscribeNow": "Subscribe Now",
+    "ctaSubscribeNowSubtext": "Subscribe before trial ends to keep your data",
+    "ctaTrialStart": "Start 1-Month Free Trial",
+    "ctaTrialSubtext": "No auto-charge after trial · Cancel anytime",
+    "experimentBadge": "Experiment group",
+    "experimentDefault": "Default",
+    "experimentValueFirst": "Value-first",
+    "feature": {
+      "aiAnalysis": "AI Analysis"
+    },
+    "freeCreditDesc": "All credits are free during the free period! Use AI analysis as much as you want.",
+    "freeCreditTitle": "Free Credits",
+    "freeCtaSubtext": "No payment info needed · Auto-expires",
+    "freeCtaText": "Use for Free",
+    "freeHeroSubtitle": "Enjoy all premium features free for {{daysLeft}} days!",
+    "freeHeroTitle": "Congratulations!",
+    "freeLegalText": "No auto-charge after the free period. Subscribe to continue using premium features.",
+    "heroSubtitle": {
+      "default": "Build your investing habit in just 5 minutes a day",
+      "expired": "Your trial has ended. Subscribe to keep growing!",
+      "trial": "D-{{daysLeft}} left in your trial",
+      "valueFirst": "See your usage over the last 30 days"
+    },
+    "heroTitle": {
+      "default": "Grow with Premium",
+      "expired": "Trial Expired",
+      "valueFirst": "You've Already Seen the Value"
+    },
+    "legalText": "Subscription is billed to your iTunes account. Auto-renews 24 hours before the current period ends. Cancel anytime in Settings > Apple ID.",
+    "perMonth": "/mo",
+    "premiumBenefits": "Premium Benefits",
+    "remaining": "remaining",
+    "streakWarningDays": " days",
+    "streakWarningText1": "You have a ",
+    "streakWarningText2": " visit streak that will reset if you cancel",
+    "streakWarningTitle": "Streak Warning",
+    "trialBanner": "Free trial",
+    "trialExpiredBanner": "Free trial ended. Upgrade to Premium.",
+    "valueProofGenerated": "Generated",
+    "valueProofLoading": "Analyzing usage...",
+    "valueProofNoData": "No credit usage yet. Try out the features!",
+    "valueProofRemaining": "Save an additional \\u20A9{{amount}} with subscription",
+    "valueProofSaving": "Saving \\u20A9{{amount}} vs subscription!",
+    "valueProofSource": "Based on last 30 days credit usage",
+    "valueProofTitle": "Your Value Analysis",
+    "valueProofTopFeature": "Most used feature",
+    "valueProofUsage": "{{count}} uses in 30 days, approx. \\u20A9{{value}} value"
+  },
+  "peer_comparison": {
+    "bracket_label": "Asset bracket",
+    "days_suffix": "d",
+    "disclaimer": "Anonymous average of users in the same asset bracket",
+    "grade_suffix": "grade",
+    "health_score": "Health score",
+    "me": "Me",
+    "peers": "Peers",
+    "prediction_accuracy": "Prediction accuracy",
+    "streak": "Streak",
+    "title": "Peer Comparison"
+  },
+  "predictionLeague": {
+    "correct": "Correct",
+    "maxTier": "Max tier reached!",
+    "noPredictions": "No predictions this week",
+    "promoted": "Promoted!",
+    "promotionZone": "Promotion zone",
+    "rank": "Rank",
+    "relegationZone": "Relegation zone",
+    "thisWeek": "This week"
+  },
+  "realestate": {
+    "alert": {
+      "deleteError": "Error during deletion",
+      "deleteFail": "Delete failed",
+      "deleteMessage": "Delete this property?",
+      "deleteTitle": "Delete property",
+      "inputError": "Input error",
+      "priceInputHint": "Enter amount in 10K KRW",
+      "priceUpdatedMessage": "Price updated",
+      "updateError": "Error during update",
+      "updateFail": "Update failed",
+      "updateSuccess": "Update complete"
+    },
+    "currentPrice": "Current price",
+    "defaultName": "My property",
+    "disclaimer": "Prices are estimates and may differ from actual market value",
+    "edit": "Edit",
+    "editHint": "Update the price",
+    "editPrice": "Edit price",
+    "exclusiveArea": "Exclusive area",
+    "floor": "Floor",
+    "memo": "Memo",
+    "memoPlaceholder": "Enter memo",
+    "notFound": "Property not found",
+    "noTransactions": "No transactions",
+    "pricePlaceholder": "Enter amount",
+    "purchasePrice": "Purchase price",
+    "pyeong": "pyeong",
+    "recentTransactions": "Recent transactions",
+    "saved": "Saved",
+    "saveMemo": "Save memo",
+    "thisProperty": "This property",
+    "title": "Real Estate",
+    "vsPurchase": "vs. purchase"
+  },
+  "streak_banner": {
+    "consecutive_visits": "Day streak",
+    "error_body": "Error recording attendance",
+    "error_title": "Error",
+    "freeze_desc": "Protects one day when your streak is at risk (3C)",
+    "freeze_purchase_button": "Buy Streak Freeze (3C)",
+    "freeze_title": "Streak Freeze",
+    "freeze_used_toast": "Streak freeze was used!",
+    "info_text": "Visit daily to earn credits",
+    "longest_hint_breaking": "Breaking your record!",
+    "longest_record": "Best record",
+    "milestone_first_visit": "First visit",
+    "milestone_habit_start": "Habit started",
+    "milestone_one_month": "1 month",
+    "milestone_one_week": "1 week",
+    "milestone_true_investor": "True investor",
+    "milestones_title": "Milestones",
+    "modal_title": "Attendance",
+    "purchase_fail_body": "Not enough credits",
+    "purchase_fail_title": "Purchase failed",
+    "purchase_success_title": "Purchased!"
+  },
+  "villageTutorial": {
+    "next": "Next",
+    "skip": "Skip",
+    "start": "Get Started"
   }
 }

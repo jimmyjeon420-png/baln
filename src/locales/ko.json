@@ -42,7 +42,26 @@
     "complete": "완료",
     "go_back": "돌아가기",
     "unknown_error": "알 수 없는 오류가 발생했습니다",
-    "login_required": "먼저 로그인해주세요"
+    "login_required": "먼저 로그인해주세요",
+    "anonymous": "익명",
+    "collapse": "접기",
+    "showMore": "더 보기",
+    "time": {
+      "daysAgo": "일 전",
+      "hoursAgo": "시간 전",
+      "justNow": "방금 전",
+      "minutesAgo": "분 전",
+      "monthsAgo": "개월 전"
+    },
+    "unitBillion": "억",
+    "unitCount": "회",
+    "unitDays": "일",
+    "unitPieces": "개",
+    "unitTenThousand": "만",
+    "unitTimes": "회",
+    "unitWon": "원",
+    "unknown": "알 수 없음",
+    "unknownError": "알 수 없는 오류"
   },
   "tab": {
     "today": "오늘",
@@ -245,6 +264,9 @@
       "subtitle": "시장이 {{percent}}% 하락했습니다 — 맥락을 확인하세요",
       "view_context": "전체 맥락 보기",
       "stay_calm": "역사적으로 회복은 흔한 일입니다"
+    },
+    "health": {
+      "loading": "건강 점수 계산 중..."
     }
   },
   "hero": {
@@ -790,7 +812,8 @@
   "credit": {
     "my_credits": "내 도토리",
     "charge": "충전하기",
-    "free_trial": "{{date}}까지 무료 체험 중"
+    "free_trial": "{{date}}까지 무료 체험 중",
+    "name": "크레딧"
   },
   "guru": {
     "style": {
@@ -1901,7 +1924,15 @@
       "delete_account_hint": "계정과 모든 데이터가 영구적으로 삭제됩니다"
     },
     "blocked": {
-      "menuLabel": "차단 목록"
+      "menuLabel": "차단 목록",
+      "blocked": "차단됨",
+      "info": "차단한 사용자의 게시글과 댓글이 숨겨집니다",
+      "noBlockedUsers": "차단한 사용자가 없습니다",
+      "title": "차단 관리",
+      "unblock": "차단 해제",
+      "unblockFailed": "차단 해제 실패",
+      "unblockMessage": "이 사용자의 차단을 해제하시겠습니까?",
+      "unblockTitle": "차단 해제"
     }
   },
   "onboarding": {
@@ -2108,7 +2139,9 @@
     "alert_done_view_prescription": "처방전 보기",
     "alert_done_add_more": "더 추가하기",
     "alert_done_reward": "\n\n🎉 자산 3개 등록 보상 +{{amount}}개 (₩{{krw}}) 적립!",
-    "diagnostic_title": "진단 결과"
+    "diagnostic_title": "진단 결과",
+    "alert_done_unit_crypto": "개",
+    "alert_done_unit_stock": "종"
   },
   "subscription": {
     "title": "Premium",
@@ -2751,7 +2784,9 @@
     "weekday_wed": "수",
     "weekday_thu": "목",
     "weekday_fri": "금",
-    "weekday_sat": "토"
+    "weekday_sat": "토",
+    "btc_placeholder": "BTC",
+    "nasdaq_placeholder": "NASDAQ"
   },
   "add_realestate": {
     "title": "부동산 자산 추가",
@@ -5012,6 +5047,15 @@
     },
     "intermediate": {
       "sectionTitle": "분석 리포트"
+    },
+    "level": {
+      "advanced": "고급",
+      "beginner": "초급",
+      "intermediate": "중급",
+      "mode": "분석 레벨",
+      "moreAdvanced": "더 전문적으로",
+      "moreDetail": "더 자세히",
+      "simpler": "더 간단히"
     }
   },
   "whatIf": {
@@ -6046,6 +6090,451 @@
       "bracketB3": "5천만 미만",
       "bracketB4": "1억 미만",
       "bracketB5": "1억 이상"
+    },
+    "dashboard": {
+      "asOfToday": "오늘 기준",
+      "autoRefresh": "자동 새로고침",
+      "banner": {
+        "creditsSpent": "크레딧 사용",
+        "pendingReports": "대기 신고",
+        "posts": "게시글"
+      },
+      "cards": "맥락 카드",
+      "checkNetwork": "네트워크를 확인해주세요",
+      "conversionRate": "전환율",
+      "loadError": "로드 실패",
+      "loading": "로딩 중...",
+      "loadingActivity": "활동 로딩 중...",
+      "needsAttention": "주의 필요",
+      "noActivity": "활동 없음",
+      "ofTotal": "전체 중",
+      "recent15": "최근 15건",
+      "safe": "안전",
+      "section": {
+        "primaryKpi": "주요 지표",
+        "recentActivity": "최근 활동",
+        "secondaryKpi": "보조 지표"
+      },
+      "thisWeek": "이번 주",
+      "title": "대시보드",
+      "today": "오늘",
+      "views": "조회수",
+      "votes": "투표"
+    },
+    "lounge": {
+      "alert": {
+        "batchDeleteMessage": "선택한 게시글을 삭제하시겠습니까?",
+        "batchDeleteTitle": "일괄 삭제",
+        "batchPinMessage": "선택한 게시글을 고정하시겠습니까?",
+        "batchPinTitle": "일괄 고정",
+        "cancelFailed": "취소 실패",
+        "cancelGatheringMessage": "이 모임을 취소하시겠습니까?",
+        "cancelGatheringTitle": "모임 취소",
+        "changeFailed": "변경 실패",
+        "deleteError": "삭제 중 오류 발생",
+        "deleteFailed": "삭제 실패",
+        "deletePostMessage": "이 게시글을 삭제하시겠습니까?",
+        "deletePostTitle": "게시글 삭제",
+        "doneTitle": "완료",
+        "gatheringCancelled": "모임이 취소되었습니다",
+        "partialResult": "일부만 처리됨",
+        "postDeleted": "게시글이 삭제되었습니다",
+        "postPinned": "게시글이 고정되었습니다",
+        "postUnpinned": "게시글 고정이 해제되었습니다",
+        "processedResult": "처리 결과",
+        "processError": "처리 중 오류 발생",
+        "resultTitle": "결과"
+      },
+      "batchDelete": "일괄 삭제",
+      "batchPin": "일괄 고정",
+      "cancelAction": "취소",
+      "cancelGathering": "모임 취소",
+      "checkingPermission": "권한 확인 중...",
+      "filter": {
+        "pinned": "고정됨",
+        "reported": "신고됨"
+      },
+      "gatherings": "모임",
+      "gatheringStatus": {
+        "cancelled": "취소됨",
+        "closed": "마감",
+        "open": "모집 중"
+      },
+      "host": "주최자",
+      "loadError": "로드 실패",
+      "noGatherings": "모임이 없습니다",
+      "noPermission": "권한이 없습니다",
+      "noPosts": "게시글이 없습니다",
+      "pin": "고정",
+      "pinned": "고정됨",
+      "pinToggle": "고정 전환",
+      "posts": "게시글",
+      "reported": "신고됨",
+      "select": "선택",
+      "selectedCount": "선택됨",
+      "title": "라운지 관리",
+      "totalCount": "전체",
+      "unpin": "고정 해제"
+    },
+    "reports": {
+      "alert": {
+        "contentDeleted": "콘텐츠가 삭제되었습니다",
+        "deleteContentMessage": "이 콘텐츠를 삭제하시겠습니까?",
+        "deleteContentTitle": "콘텐츠 삭제",
+        "deleteError": "삭제 중 오류 발생",
+        "doneTitle": "완료",
+        "processError": "처리 중 오류 발생",
+        "reportApproved": "신고가 승인되었습니다",
+        "reportRejected": "신고가 반려되었습니다"
+      },
+      "approveReport": "승인",
+      "contentDeletedNote": "삭제된 콘텐츠",
+      "deleteContent": "콘텐츠 삭제",
+      "deletedContent": "삭제된 콘텐츠",
+      "detailTitle": "신고 상세",
+      "duplicate": "중복",
+      "filter": {
+        "pending": "대기",
+        "rejected": "반려",
+        "resolved": "처리 완료"
+      },
+      "label": {
+        "datetime": "일시",
+        "detail": "상세",
+        "duplicate": "중복 여부",
+        "reason": "사유"
+      },
+      "loadError": "로드 실패",
+      "noReports": "신고가 없습니다",
+      "processRate": "처리율",
+      "rejectReport": "반려",
+      "reporter": "신고자",
+      "section": {
+        "reportInfo": "신고 정보",
+        "target": "대상"
+      },
+      "summaryTotal": "총 신고",
+      "title": "신고 관리"
+    },
+    "users": {
+      "active7d": "7일 활성",
+      "alert": {
+        "banConfirmMessage": "이 사용자를 차단하시겠습니까?",
+        "grantAmount": "지급할 크레딧",
+        "grantConfirmTitle": "크레딧 지급",
+        "grantError": "지급 중 오류 발생",
+        "grantFail": "지급 실패",
+        "grantSuccess": "지급 완료",
+        "grantSuccessMessage": "크레딧이 지급되었습니다",
+        "inputError": "입력 오류",
+        "maxAmountError": "최대 금액을 초과했습니다",
+        "minAmountError": "최소 1 이상 입력하세요",
+        "newBalance": "새 잔액",
+        "processError": "처리 중 오류 발생",
+        "unbanConfirmMessage": "이 사용자의 차단을 해제하시겠습니까?"
+      },
+      "avgAssets": "평균 자산",
+      "ban": "차단",
+      "banned": "차단됨",
+      "bannedReason": "차단 사유",
+      "banReason": "차단 사유",
+      "countUnit": "명",
+      "creditUnit": "C",
+      "grant": "지급",
+      "grantBonus": "보너스 지급",
+      "grantTitle": "크레딧 지급",
+      "joined": "가입일",
+      "label": {
+        "accuracy": "적중률",
+        "bestStreak": "최고 연속",
+        "correct": "정답",
+        "creditBalance": "크레딧 잔액",
+        "currentStreak": "현재 연속",
+        "email": "이메일",
+        "joinDate": "가입일",
+        "lastActive": "최근 활동",
+        "plan": "요금제",
+        "tier": "등급",
+        "totalAssets": "총 자산",
+        "totalVotes": "총 투표"
+      },
+      "loadError": "로드 실패",
+      "loadingActivity": "활동 로딩 중...",
+      "loadingList": "목록 로딩 중...",
+      "loadingPredictions": "예측 로딩 중...",
+      "loadingTransactions": "거래 로딩 중...",
+      "memo": "메모",
+      "memoOptional": "메모 (선택)",
+      "memoPlaceholder": "메모를 입력하세요",
+      "noActivity": "활동 없음",
+      "noEmail": "이메일 없음",
+      "noSearchResults": "검색 결과 없음",
+      "noUsers": "사용자 없음",
+      "recent": "최근",
+      "recentTransactions": "최근 거래",
+      "searchPlaceholder": "이메일 또는 닉네임 검색",
+      "searchResults": "검색 결과",
+      "section": {
+        "activityLog": "활동 로그",
+        "adminActions": "관리자 작업",
+        "basicInfo": "기본 정보",
+        "credits": "크레딧",
+        "predictions": "예측",
+        "systemInfo": "시스템 정보"
+      },
+      "target": "대상",
+      "tenThousandUnit": "만",
+      "title": "사용자 관리",
+      "total": "전체",
+      "tryOtherSearch": "다른 검색어를 시도하세요",
+      "unban": "차단 해제",
+      "userDetail": "사용자 상세"
     }
+  },
+  "acornJar": {
+    "unit": "C",
+    "wonPrefix": "\\u2248\\u20A9"
+  },
+  "crisis_banner": {
+    "institutional_action_cta": "기관 동향 보기",
+    "institutional_action_label": "기관 행동 분석",
+    "reassurance": "걱정하지 마세요. 맥락을 확인해보세요.",
+    "view_context": "맥락 카드 보기"
+  },
+  "editRealestate": {
+    "alert": {
+      "debtExceedsPrice": "대출 잔액이 시세를 초과합니다",
+      "inputError": "입력 오류",
+      "invalidDebt": "유효한 대출 금액을 입력하세요",
+      "invalidPrice": "유효한 금액을 입력하세요",
+      "updatedMessage": "정보가 업데이트되었습니다",
+      "updateError": "업데이트 중 오류 발생",
+      "updateFail": "업데이트 실패",
+      "updateSuccess": "업데이트 완료"
+    },
+    "currentPrice": "현재 시세",
+    "debtBalance": "대출 잔액",
+    "debtLabel": "대출",
+    "debtPlaceholder": "대출 잔액 입력",
+    "editDebt": "대출 수정",
+    "infoText": "시세와 대출을 최신 정보로 업데이트하세요",
+    "netAsset": "순자산",
+    "pricePlaceholder": "금액 입력 (만원)",
+    "title": "부동산 수정",
+    "unitHint": "만원 단위"
+  },
+  "emotionHistory": {
+    "btcClose": "BTC 종가",
+    "daysUnit": "일",
+    "memoPlaceholder": "오늘의 메모를 남겨보세요",
+    "monthLabel": "월",
+    "monthStat": "이번 달 통계",
+    "nasdaq": "나스닥",
+    "nasdaqClose": "나스닥 종가",
+    "noMarketData": "시장 데이터 없음",
+    "noRecordsThisMonth": "이번 달 기록이 없습니다",
+    "optional": "선택",
+    "quoteAuthor": "- 워렌 버핏",
+    "quoteText": "감정을 기록하는 사람이 감정에 지배당하지 않는다",
+    "recorded": "기록 완료",
+    "recordToday": "오늘의 감정 기록",
+    "reRecord": "다시 기록",
+    "rewardBadge": "+2C 적립",
+    "rewardToast": "감정 기록 완료! +2C",
+    "saveBtn": "저장",
+    "saving": "저장 중...",
+    "selectHint": "오늘 투자 감정은 어떠신가요?",
+    "title": "감정 기록",
+    "todayEmotion": "오늘의 감정",
+    "topEmotion": "가장 많은 감정"
+  },
+  "guruScorecard": {
+    "champion": "챔피언",
+    "title": "구루 스코어카드"
+  },
+  "leagueStanding": {
+    "league": "리그",
+    "name": "이름",
+    "promotion": "승격",
+    "relegation": "강등",
+    "weeklyReward": "주간 보상",
+    "you": "나"
+  },
+  "letterReply": {
+    "hint": "구루에게 답장을 보내보세요",
+    "noReplies": "아직 답장이 없습니다",
+    "placeholder": "답장을 입력하세요...",
+    "premiumHint": "프리미엄 회원만 답장할 수 있습니다",
+    "send": "보내기",
+    "sent": "전송됨"
+  },
+  "newsReaction": {
+    "news": "뉴스"
+  },
+  "newsReactionDetail": {
+    "portfolioDesc": "이 뉴스가 포트폴리오에 미치는 영향",
+    "portfolioTitle": "포트폴리오 영향",
+    "reactionsTitle": "구루 반응",
+    "sentimentTitle": "시장 심리"
+  },
+  "newsToPrediction": {
+    "button": "예측 만들기",
+    "prompt": "이 뉴스를 바탕으로 예측해보세요",
+    "subtitle": "뉴스 기반 예측"
+  },
+  "paywall": {
+    "alert": {
+      "activationFailed": "활성화에 실패했습니다",
+      "devMode": "개발 모드",
+      "devModeMessage": "Expo Go에서는 결제가 불가능합니다. 실제 빌드에서 테스트하세요.",
+      "freePeriodMessage": "현재 무료 기간입니다. 모든 프리미엄 기능을 무료로 이용하실 수 있습니다.",
+      "freePeriodTitle": "무료 기간 안내",
+      "notice": "안내",
+      "premiumActivated": "프리미엄 활성화",
+      "premiumActivatedMessage": "프리미엄이 활성화되었습니다! 모든 기능을 이용하세요.",
+      "startTrial": "체험 시작",
+      "subscribeError": "구독 오류",
+      "subscribeErrorMessage": "구독 처리 중 문제가 발생했습니다. 다시 시도해주세요.",
+      "trialActivated": "체험 시작!",
+      "trialActivatedMessage": "1개월 무료 체험이 시작되었습니다. 모든 프리미엄 기능을 이용해보세요!",
+      "trialStartMessage": "1개월 무료 체험을 시작하시겠습니까? 체험 기간 동안 모든 프리미엄 기능을 이용할 수 있습니다.",
+      "trialStartTitle": "무료 체험 시작"
+    },
+    "availableFeatures": "이용 가능한 기능",
+    "creditInfoDesc": "프리미엄 회원은 매월 30C 보너스 크레딧을 받습니다. AI 분석, 딥다이브, 세금 보고서 등에 사용하세요.",
+    "creditInfoTitle": "크레딧 보너스",
+    "ctaSubscribeContinue": "구독하고 계속 이용하기",
+    "ctaSubscribeContinueSubtext": "프리미엄 기능을 놓치지 마세요",
+    "ctaSubscribeNow": "지금 구독하기",
+    "ctaSubscribeNowSubtext": "체험 종료 전 구독하면 데이터가 유지됩니다",
+    "ctaTrialStart": "1개월 무료 체험 시작",
+    "ctaTrialSubtext": "체험 후 자동 결제 없음 · 언제든 취소 가능",
+    "experimentBadge": "실험 그룹",
+    "experimentDefault": "기본",
+    "experimentValueFirst": "가치 우선",
+    "feature": {
+      "aiAnalysis": "AI 분석"
+    },
+    "freeCreditDesc": "무료 기간 동안 크레딧이 모두 무료! 마음껏 AI 분석을 이용하세요.",
+    "freeCreditTitle": "크레딧 무료 지급",
+    "freeCtaSubtext": "결제 정보 불필요 · 자동 만료",
+    "freeCtaText": "무료로 이용하기",
+    "freeHeroSubtitle": "{{daysLeft}}일 동안 모든 프리미엄 기능을 무료로 이용하세요!",
+    "freeHeroTitle": "축하합니다!",
+    "freeLegalText": "무료 기간 종료 후 자동 결제되지 않습니다. 계속 이용하시려면 구독을 시작하세요.",
+    "heroSubtitle": {
+      "default": "매일 5분으로 투자 습관을 만들어보세요",
+      "expired": "체험이 종료되었습니다. 구독하고 계속 성장하세요!",
+      "trial": "체험 기간 D-{{daysLeft}} 남았습니다",
+      "valueFirst": "지난 30일간 사용 내역을 확인하세요"
+    },
+    "heroTitle": {
+      "default": "프리미엄으로 성장하세요",
+      "expired": "체험이 종료되었습니다",
+      "valueFirst": "이미 가치를 경험했습니다"
+    },
+    "legalText": "구독은 iTunes 계정에서 청구됩니다. 현재 기간 종료 24시간 전 자동 갱신됩니다. 설정 > Apple ID에서 언제든 해지할 수 있습니다.",
+    "perMonth": "/월",
+    "premiumBenefits": "프리미엄 혜택",
+    "remaining": "남음",
+    "streakWarningDays": "일",
+    "streakWarningText1": "현재",
+    "streakWarningText2": " 연속 방문 기록이 해지 시 초기화됩니다",
+    "streakWarningTitle": "연속 기록 경고",
+    "trialBanner": "무료 체험 중",
+    "trialExpiredBanner": "무료 체험이 종료되었습니다. 프리미엄으로 업그레이드하세요.",
+    "valueProofGenerated": "생성 시점",
+    "valueProofLoading": "사용 내역 분석 중...",
+    "valueProofNoData": "아직 크레딧 사용 내역이 없습니다. 기능을 이용해보세요!",
+    "valueProofRemaining": "구독 시 \\u20A9{{amount}} 추가 절약 가능",
+    "valueProofSaving": "구독 대비 \\u20A9{{amount}} 절약 중!",
+    "valueProofSource": "최근 30일 크레딧 사용 기반",
+    "valueProofTitle": "내 사용 가치 분석",
+    "valueProofTopFeature": "가장 많이 사용한 기능",
+    "valueProofUsage": "지난 30일간 {{count}}회 사용, 약 \\u20A9{{value}} 가치"
+  },
+  "peer_comparison": {
+    "bracket_label": "자산 구간",
+    "days_suffix": "일",
+    "disclaimer": "같은 자산 구간의 익명 사용자 평균입니다",
+    "grade_suffix": "등급",
+    "health_score": "건강 점수",
+    "me": "나",
+    "peers": "또래",
+    "prediction_accuracy": "예측 적중률",
+    "streak": "연속 출석",
+    "title": "또래 비교"
+  },
+  "predictionLeague": {
+    "correct": "적중",
+    "maxTier": "최고 등급 달성!",
+    "noPredictions": "이번 주 예측이 없습니다",
+    "promoted": "승격!",
+    "promotionZone": "승격권",
+    "rank": "순위",
+    "relegationZone": "강등권",
+    "thisWeek": "이번 주"
+  },
+  "realestate": {
+    "alert": {
+      "deleteError": "삭제 중 오류 발생",
+      "deleteFail": "삭제 실패",
+      "deleteMessage": "이 부동산을 삭제하시겠습니까?",
+      "deleteTitle": "부동산 삭제",
+      "inputError": "입력 오류",
+      "priceInputHint": "만원 단위로 입력하세요",
+      "priceUpdatedMessage": "시세가 업데이트되었습니다",
+      "updateError": "업데이트 중 오류 발생",
+      "updateFail": "업데이트 실패",
+      "updateSuccess": "업데이트 완료"
+    },
+    "currentPrice": "현재 시세",
+    "defaultName": "내 부동산",
+    "disclaimer": "시세는 참고용이며 실제 거래가와 다를 수 있습니다",
+    "edit": "수정",
+    "editHint": "시세를 업데이트하세요",
+    "editPrice": "시세 수정",
+    "exclusiveArea": "전용면적",
+    "floor": "층",
+    "memo": "메모",
+    "memoPlaceholder": "메모를 입력하세요",
+    "notFound": "부동산을 찾을 수 없습니다",
+    "noTransactions": "거래 내역이 없습니다",
+    "pricePlaceholder": "금액 입력 (만원)",
+    "purchasePrice": "매입가",
+    "pyeong": "평",
+    "recentTransactions": "최근 거래 내역",
+    "saved": "저장됨",
+    "saveMemo": "메모 저장",
+    "thisProperty": "이 부동산",
+    "title": "부동산",
+    "vsPurchase": "매입가 대비"
+  },
+  "streak_banner": {
+    "consecutive_visits": "연속 출석",
+    "error_body": "출석 기록 중 오류가 발생했습니다",
+    "error_title": "오류",
+    "freeze_desc": "연속 기록이 위험할 때 하루를 보호합니다 (3C)",
+    "freeze_purchase_button": "스트릭 프리즈 구매 (3C)",
+    "freeze_title": "스트릭 프리즈",
+    "freeze_used_toast": "스트릭 프리즈가 사용되었습니다!",
+    "info_text": "매일 방문하면 크레딧을 적립할 수 있어요",
+    "longest_hint_breaking": "최고 기록을 경신 중!",
+    "longest_record": "최고 기록",
+    "milestone_first_visit": "첫 방문",
+    "milestone_habit_start": "습관 시작",
+    "milestone_one_month": "1개월 달성",
+    "milestone_one_week": "1주일 달성",
+    "milestone_true_investor": "진정한 투자자",
+    "milestones_title": "마일스톤",
+    "modal_title": "출석 현황",
+    "purchase_fail_body": "크레딧이 부족합니다",
+    "purchase_fail_title": "구매 실패",
+    "purchase_success_title": "구매 완료!"
+  },
+  "villageTutorial": {
+    "next": "다음",
+    "skip": "건너뛰기",
+    "start": "시작하기"
   }
 }
