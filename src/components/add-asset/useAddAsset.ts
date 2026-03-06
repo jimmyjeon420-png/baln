@@ -215,7 +215,8 @@ export function useAddAsset() {
 
   const matchingExisting = useMemo(() => {
     if (!selectedStock) return null;
-    return existingAssets.find(a => a.ticker === selectedStock.ticker || a.name === selectedStock.name) ?? null;
+    const normT = (t: string) => t.replace(/[.\-/]/g, '').toUpperCase();
+    return existingAssets.find(a => normT(a.ticker) === normT(selectedStock.ticker) || a.name === selectedStock.name) ?? null;
   }, [selectedStock, existingAssets]);
 
   const doSavePortfolioAsset = useCallback(
@@ -298,7 +299,8 @@ export function useAddAsset() {
       if (!user) throw new Error(t('add_asset.alert_login_required'));
       const ticker = selectedStock.ticker.trim();
       const name = selectedStock.name.trim();
-      const existing = existingAssets.find(a => a.ticker === ticker || a.name === name);
+      const normT = (t: string) => t.replace(/[.\-/]/g, '').toUpperCase();
+      const existing = existingAssets.find(a => normT(a.ticker) === normT(ticker) || a.name === name);
       let finalQuantity = q;
       let finalAvgPrice = totalCost > 0 && q > 0 ? Math.round(totalCost / q) : 0;
       if (existing && totalCost > 0 && existing.avg_price > 0) {
@@ -401,11 +403,14 @@ export function useAddAsset() {
     }
     let successCount = 0;
     const normalizedAssets = normalizeParsedAssets(assets);
+    const normTicker = (t: string) => t.replace(/[.\-/]/g, '').toUpperCase();
     for (const asset of normalizedAssets) {
       try {
         const avgPrice = asset.totalCostKRW > 0 && asset.quantity > 0
           ? Math.round(asset.totalCostKRW / asset.quantity) : 0;
-        const existing = existingAssets.find((row) => row.ticker === asset.ticker || row.name === asset.name);
+        const existing = existingAssets.find((row) =>
+          normTicker(row.ticker) === normTicker(asset.ticker) || row.name === asset.name
+        );
         const currentValue = asset.currentValueKRW ?? asset.totalCostKRW;
         await doSavePortfolioAsset({
           userId: user.id, ticker: asset.ticker, name: asset.name, quantity: asset.quantity,
