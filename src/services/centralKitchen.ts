@@ -317,9 +317,10 @@ function buildSources(
   stockReports: StockQuantReport[]
 ): string[] {
   const sources: string[] = [];
+  const isKo = getCurrentLanguage() === 'ko';
 
   // 1) 거시경제 핵심 지표 (항상 포함)
-  sources.push('한국은행 / Fed 금리 데이터');
+  sources.push(isKo ? '한국은행 / Fed 금리 데이터' : 'BOK / Fed Rate Data');
 
   // 2) VIX (시장 변동성 지수)
   if (insight.vix_level != null) {
@@ -328,18 +329,19 @@ function buildSources(
 
   // 3) 글로벌 유동성 언급 여부
   if (insight.global_liquidity) {
-    sources.push('글로벌 유동성 지표');
+    sources.push(isKo ? '글로벌 유동성 지표' : 'Global Liquidity Index');
   }
 
   // 4) 종목 퀀트 리포트 섹터 (중복 제거)
   const sectors = [...new Set(stockReports.map(r => r.sector).filter(Boolean))];
   if (sectors.length > 0) {
-    sources.push(`${sectors.slice(0, 2).join(' / ')} 퀀트 분석`);
+    const sectorLabel = sectors.slice(0, 2).join(' / ');
+    sources.push(isKo ? `${sectorLabel} 퀀트 분석` : `${sectorLabel} Quant Analysis`);
   }
 
   // 5) 비트코인 분석 포함 여부
   if (insight.bitcoin_analysis?.score != null) {
-    sources.push('BTC 온체인 데이터');
+    sources.push(isKo ? 'BTC 온체인 데이터' : 'BTC On-chain Data');
   }
 
   // 최대 5개로 제한

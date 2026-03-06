@@ -71,9 +71,12 @@ const ACTION_STYLE: Record<InvestmentAction, { bg: string; text: string; labelKe
 // ══════════════════════════════════════════
 
 interface FundManagerView {
-  bullCase: string[];    // 상승 근거 (초록)
-  bearCase: string[];    // 하락 위험 (빨강)
-  nextTrigger: string;   // 다음 단계 전환 조건
+  bullCase: string[];    // 상승 근거 (초록) — 한국어
+  bullCaseEn?: string[]; // 상승 근거 — 영어
+  bearCase: string[];    // 하락 위험 (빨강) — 한국어
+  bearCaseEn?: string[]; // 하락 위험 — 영어
+  nextTrigger: string;   // 다음 단계 전환 조건 — 한국어
+  nextTriggerEn?: string; // 다음 단계 전환 조건 — 영어
 }
 
 const FUND_MANAGER_VIEWS: Record<EggPhase, FundManagerView> = {
@@ -83,12 +86,23 @@ const FUND_MANAGER_VIEWS: Record<EggPhase, FundManagerView> = {
       '극도의 비관론 = 역사적 최고의 매수 타이밍',
       '기업 실적 바닥 통과 신호 포착',
     ],
+    bullCaseEn: [
+      'Rates near peak → rate cut cycle imminent',
+      'Extreme pessimism = historically best buying opportunity',
+      'Signs of corporate earnings bottoming out',
+    ],
     bearCase: [
       '경기 침체 장기화 가능성 잔존',
       '추가 신용 경색 리스크 모니터링 필요',
       '투자자 심리 회복까지 시간 소요',
     ],
+    bearCaseEn: [
+      'Risk of prolonged recession remains',
+      'Need to monitor additional credit crunch risk',
+      'Investor sentiment recovery takes time',
+    ],
     nextTrigger: 'Fed 금리 인하 시작 시 A2(파도타기)로 전환',
+    nextTriggerEn: 'Transitions to A2 (Accompaniment) when Fed starts cutting rates',
   },
   [EggPhase.A2_ACCOMPANIMENT]: {
     bullCase: [
@@ -96,12 +110,23 @@ const FUND_MANAGER_VIEWS: Record<EggPhase, FundManagerView> = {
       '금리 하락 모멘텀 → 기업 이익 개선 사이클',
       '실질 금리 하락 → 자산 가격 리레이팅 진행 중',
     ],
+    bullCaseEn: [
+      'AI productivity revolution → deflationary pressure → more rate cuts',
+      'Rate decline momentum → corporate earnings improvement cycle',
+      'Real rate decline → asset price re-rating in progress',
+    ],
     bearCase: [
       '핵심 인플레이션 목표 2% 미달성 → 인하 근거 약화',
       '관세 정책 → 수입 물가 상승 → 인플레 재발 리스크',
       'S&P P/E 30배 = 닷컴 이후 최고 → 밸류에이션 부담',
     ],
+    bearCaseEn: [
+      'Core inflation below 2% target → weakens case for cuts',
+      'Tariff policy → import price rise → inflation resurgence risk',
+      'S&P P/E at 30x = highest since dot-com → valuation pressure',
+    ],
     nextTrigger: '금리가 저점에 도달하고 시장 과열 신호 출현 시 A3(과열)로 전환',
+    nextTriggerEn: 'Transitions to A3 (Exaggeration) when rates bottom and market overheating signals appear',
   },
   [EggPhase.A3_EXAGGERATION]: {
     bullCase: [
@@ -109,12 +134,23 @@ const FUND_MANAGER_VIEWS: Record<EggPhase, FundManagerView> = {
       '유동성 풍부 → 추가 랠리 가능',
       '경기 확장 사이클 지속 가능성',
     ],
+    bullCaseEn: [
+      'Low rate environment favors innovative companies',
+      'Abundant liquidity → further rally possible',
+      'Economic expansion cycle may continue',
+    ],
     bearCase: [
       '자산 가격이 내재 가치 초과 → 거품 영역',
       '투자자 과신 → FOMO 매수 급증 = 위험 신호',
       '금리 인상 시작 시 급격한 조정 불가피',
     ],
+    bearCaseEn: [
+      'Asset prices exceed intrinsic value → bubble territory',
+      'Investor overconfidence → FOMO buying surge = danger signal',
+      'Sharp correction inevitable when rate hikes begin',
+    ],
     nextTrigger: 'Fed 금리 인상 전환 시 B1(조정)으로 전환',
+    nextTriggerEn: 'Transitions to B1 (Correction) when Fed pivots to rate hikes',
   },
   [EggPhase.B1_CORRECTION]: {
     bullCase: [
@@ -122,12 +158,23 @@ const FUND_MANAGER_VIEWS: Record<EggPhase, FundManagerView> = {
       '우량 종목 저가 매수 기회 형성',
       '기업 펀더멘털은 아직 건재',
     ],
+    bullCaseEn: [
+      'Correction is a natural part of a healthy market',
+      'Quality stock buying opportunities forming',
+      'Corporate fundamentals still intact',
+    ],
     bearCase: [
       '금리 상승 초기 → 추가 긴축 가능성',
       '시장 심리 급격한 악화 → 투매 위험',
       '레버리지 청산 도미노 주의',
     ],
+    bearCaseEn: [
+      'Early rate hikes → further tightening possible',
+      'Rapid sentiment deterioration → fire-sale risk',
+      'Watch for leverage liquidation domino effect',
+    ],
     nextTrigger: '금리 상승 지속 + 기업 실적 둔화 시 B2(하강)로 전환',
+    nextTriggerEn: 'Transitions to B2 (Accompaniment) when rate hikes continue + corporate earnings slow',
   },
   [EggPhase.B2_ACCOMPANIMENT]: {
     bullCase: [
@@ -135,12 +182,23 @@ const FUND_MANAGER_VIEWS: Record<EggPhase, FundManagerView> = {
       '배당주/방어주 상대적 강세',
       '인플레이션 피크아웃 신호 출현 가능',
     ],
+    bullCaseEn: [
+      'Dollar-cost averaging maximized in bear markets',
+      'Dividend/defensive stocks relatively strong',
+      'Inflation peak-out signals may emerge',
+    ],
     bearCase: [
       '금리 상승 지속 → 경기 둔화 가속',
       '기업 실적 하향 조정 본격화',
       '신용 시장 긴축 → 유동성 위기 가능성',
     ],
+    bearCaseEn: [
+      'Continued rate hikes → accelerating economic slowdown',
+      'Corporate earnings downgrades in full swing',
+      'Credit market tightening → liquidity crisis possible',
+    ],
     nextTrigger: '시장 극도의 공포 + 투매 완료 시 B3(과도하락)로 전환',
+    nextTriggerEn: 'Transitions to B3 (Exaggeration) when extreme fear + capitulation selling completes',
   },
   [EggPhase.B3_EXAGGERATION]: {
     bullCase: [
@@ -148,12 +206,23 @@ const FUND_MANAGER_VIEWS: Record<EggPhase, FundManagerView> = {
       '자산 가격 내재가치 이하 → 매수 기회',
       '금리 인하 전환 기대감 형성',
     ],
+    bullCaseEn: [
+      'Extreme fear = precursor to next bull market',
+      'Asset prices below intrinsic value → buying opportunity',
+      'Rate cut pivot expectations forming',
+    ],
     bearCase: [
       '추가 하락 가능성 — 바닥 확인 어려움',
       '경기 침체 현실화 → 실업률 상승',
       '투자자 심리 회복까지 수개월 소요',
     ],
+    bearCaseEn: [
+      'Further decline possible — hard to confirm bottom',
+      'Recession materializing → unemployment rising',
+      'Investor sentiment recovery takes months',
+    ],
     nextTrigger: '금리 고점 확인 + 인하 전환 시 A1(조정/매수)로 전환',
+    nextTriggerEn: 'Transitions to A1 (Correction/Buy) when rate peak confirmed + pivot to cuts',
   },
 };
 
@@ -473,7 +542,7 @@ const KostolanyEggCard: React.FC<KostolanyEggCardProps> = ({
   analysis,
   interestRateText,
 }) => {
-  const { t } = useLocale();
+  const { t, language } = useLocale();
   const [expanded, setExpanded] = useState(false);
   const [guideExpanded, setGuideExpanded] = useState(false);
   const [evidenceExpanded, setEvidenceExpanded] = useState(false);
@@ -702,7 +771,7 @@ const KostolanyEggCard: React.FC<KostolanyEggCardProps> = ({
                 <Ionicons name="arrow-up-circle" size={14} color="#4CAF50" />
                 <Text style={[styles.caseHeaderText, { color: '#4CAF50' }]}>{t('kostolany.bull_case_title')}</Text>
               </View>
-              {(fundManagerView.bullCase ?? []).map((item, idx) => (
+              {((language === 'en' ? fundManagerView.bullCaseEn : null) ?? fundManagerView.bullCase ?? []).map((item, idx) => (
                 <View key={idx} style={styles.caseItem}>
                   <View style={[styles.caseBullet, { backgroundColor: '#4CAF50' }]} />
                   <Text style={styles.caseItemText}>{item}</Text>
@@ -716,7 +785,7 @@ const KostolanyEggCard: React.FC<KostolanyEggCardProps> = ({
                 <Ionicons name="arrow-down-circle" size={14} color="#CF6679" />
                 <Text style={[styles.caseHeaderText, { color: '#CF6679' }]}>{t('kostolany.bear_case_title')}</Text>
               </View>
-              {(fundManagerView.bearCase ?? []).map((item, idx) => (
+              {((language === 'en' ? fundManagerView.bearCaseEn : null) ?? fundManagerView.bearCase ?? []).map((item, idx) => (
                 <View key={idx} style={styles.caseItem}>
                   <View style={[styles.caseBullet, { backgroundColor: '#CF6679' }]} />
                   <Text style={styles.caseItemText}>{item}</Text>
@@ -733,7 +802,7 @@ const KostolanyEggCard: React.FC<KostolanyEggCardProps> = ({
                 {t('kostolany.next_scenario', { emoji: nextPhaseInfo.emoji, title: nextPhaseInfo.titleKorean })}
               </Text>
               <Text style={styles.nextScenarioText}>
-                {fundManagerView.nextTrigger}
+                {(language === 'en' ? fundManagerView.nextTriggerEn : null) ?? fundManagerView.nextTrigger}
               </Text>
             </View>
           </View>

@@ -232,7 +232,8 @@ export const calculateOffenseDefenseRatio = (
  */
 export const calculateSafetyMargin = (
   assets: Asset[],
-  userRiskTolerance: 'CONSERVATIVE' | 'MODERATE' | 'AGGRESSIVE' = 'MODERATE'
+  userRiskTolerance: 'CONSERVATIVE' | 'MODERATE' | 'AGGRESSIVE' = 'MODERATE',
+  lang: string = 'ko'
 ): {
   safetyMarginScore: number; // -50 ~ +50
   isHealthy: boolean;
@@ -255,19 +256,19 @@ export const calculateSafetyMargin = (
   let emoji = '';
 
   if (marginScore >= 20) {
-    recommendation = '매우 안전함. 현재 포지션 유지 권장';
+    recommendation = lang === 'en' ? 'Very safe. Recommend maintaining current position' : '매우 안전함. 현재 포지션 유지 권장';
     emoji = '🛡️';
   } else if (marginScore >= 10) {
-    recommendation = '안전함. 필요시 점진적 조정 가능';
+    recommendation = lang === 'en' ? 'Safe. Gradual adjustment possible if needed' : '안전함. 필요시 점진적 조정 가능';
     emoji = '✅';
   } else if (marginScore >= 0) {
-    recommendation = '적절함. 목표 유지';
+    recommendation = lang === 'en' ? 'Adequate. Maintain target' : '적절함. 목표 유지';
     emoji = '📊';
   } else if (marginScore >= -10) {
-    recommendation = '주의. 점진적으로 방어 자산 증가 권장';
+    recommendation = lang === 'en' ? 'Caution. Gradually increase defensive assets' : '주의. 점진적으로 방어 자산 증가 권장';
     emoji = '⚠️';
   } else {
-    recommendation = '위험. 즉시 리밸런싱 필요';
+    recommendation = lang === 'en' ? 'Risk. Immediate rebalancing needed' : '위험. 즉시 리밸런싱 필요';
     emoji = '🚨';
   }
 
@@ -396,7 +397,8 @@ export const generateHybridSignal = (
   timingAction: 'BUY' | 'HOLD' | 'SELL',
   valueSafetyScore: number,
   offensePercent: number,
-  isConservativeUser: boolean
+  isConservativeUser: boolean,
+  lang: string = 'ko'
 ): HybridInvestmentSignal => {
   // 케이스 1: 타이밍 "매도" 신호
   if (timingAction === 'SELL') {
@@ -406,8 +408,9 @@ export const generateHybridSignal = (
         timingAction: 'SELL',
         valueCaution: 'UNDERVALUED',
         finalAction: 'HOLD_GOOD_ASSETS',
-        explanation:
-          '시장이 과열되었지만, 현재 보유 자산은 좋은 가치를 제공합니다. 우량 자산은 보유하세요.',
+        explanation: lang === 'en'
+          ? 'Market is overheating, but your current assets provide good value. Hold quality assets.'
+          : '시장이 과열되었지만, 현재 보유 자산은 좋은 가치를 제공합니다. 우량 자산은 보유하세요.',
         emoji: '🟡',
         priority: 'MEDIUM',
       };
@@ -419,8 +422,9 @@ export const generateHybridSignal = (
         timingAction: 'SELL',
         valueCaution: 'OVERVALUED',
         finalAction: 'SELL_URGENT',
-        explanation:
-          '시장 과열 + 포트폴리오 고위험. 즉시 방어 자산 확보 필요합니다.',
+        explanation: lang === 'en'
+          ? 'Market overheating + high-risk portfolio. Need to secure defensive assets immediately.'
+          : '시장 과열 + 포트폴리오 고위험. 즉시 방어 자산 확보 필요합니다.',
         emoji: '🚨',
         priority: 'CRITICAL',
       };
@@ -431,7 +435,7 @@ export const generateHybridSignal = (
       timingAction: 'SELL',
       valueCaution: 'NORMAL',
       finalAction: 'SELL_GRADUALLY',
-      explanation: '시장이 과열되었습니다. 점진적으로 이익을 실현하세요.',
+      explanation: lang === 'en' ? 'Market is overheating. Take profits gradually.' : '시장이 과열되었습니다. 점진적으로 이익을 실현하세요.',
       emoji: '📉',
       priority: 'HIGH',
     };
@@ -445,8 +449,9 @@ export const generateHybridSignal = (
         timingAction: 'BUY',
         valueCaution: 'RISKY',
         finalAction: 'BUY_CAREFULLY',
-        explanation:
-          '시장이 저평가되었지만, 포트폴리오 위험도가 높습니다. 신중하게 매수하세요.',
+        explanation: lang === 'en'
+          ? 'Market is undervalued, but your portfolio risk is high. Buy carefully.'
+          : '시장이 저평가되었지만, 포트폴리오 위험도가 높습니다. 신중하게 매수하세요.',
         emoji: '🟡',
         priority: 'MEDIUM',
       };
@@ -458,8 +463,9 @@ export const generateHybridSignal = (
         timingAction: 'BUY',
         valueCaution: 'UNDERVALUED',
         finalAction: 'BUY_AGGRESSIVE',
-        explanation:
-          '금리 고점 + 좋은 자산 = 최고의 기회. 과감하게 매수하세요.',
+        explanation: lang === 'en'
+          ? 'Peak rates + good assets = best opportunity. Buy aggressively.'
+          : '금리 고점 + 좋은 자산 = 최고의 기회. 과감하게 매수하세요.',
         emoji: '💰',
         priority: 'HIGH',
       };
@@ -470,7 +476,7 @@ export const generateHybridSignal = (
       timingAction: 'BUY',
       valueCaution: 'NORMAL',
       finalAction: 'BUY_NORMAL',
-      explanation: '시장이 저평가되었습니다. 적립식으로 매수하세요.',
+      explanation: lang === 'en' ? 'Market is undervalued. Buy through dollar-cost averaging.' : '시장이 저평가되었습니다. 적립식으로 매수하세요.',
       emoji: '📈',
       priority: 'MEDIUM',
     };
@@ -484,8 +490,9 @@ export const generateHybridSignal = (
         timingAction: 'HOLD',
         valueCaution: 'RISKY',
         finalAction: 'REBALANCE_NOW',
-        explanation:
-          '시장은 중립이지만, 포트폴리오가 위험합니다. 점진적으로 리밸런싱하세요.',
+        explanation: lang === 'en'
+          ? 'Market is neutral, but your portfolio is risky. Rebalance gradually.'
+          : '시장은 중립이지만, 포트폴리오가 위험합니다. 점진적으로 리밸런싱하세요.',
         emoji: '⚠️',
         priority: 'HIGH',
       };
@@ -496,8 +503,9 @@ export const generateHybridSignal = (
       timingAction: 'HOLD',
       valueCaution: 'NORMAL',
       finalAction: 'HOLD_STEADY',
-      explanation:
-        '현재 시장 신호는 중립입니다. 포트폴리오를 유지하세요.',
+      explanation: lang === 'en'
+        ? 'Current market signals are neutral. Maintain your portfolio.'
+        : '현재 시장 신호는 중립입니다. 포트폴리오를 유지하세요.',
       emoji: '📊',
       priority: 'LOW',
     };
@@ -508,7 +516,7 @@ export const generateHybridSignal = (
     timingAction: 'HOLD',
     valueCaution: 'UNKNOWN',
     finalAction: 'ANALYZE_MORE',
-    explanation: '더 많은 정보가 필요합니다.',
+    explanation: lang === 'en' ? 'More information needed.' : '더 많은 정보가 필요합니다.',
     emoji: '❓',
     priority: 'LOW',
   };
@@ -545,14 +553,16 @@ export class ValueLogic {
   public hybrid(
     timingAction: 'BUY' | 'HOLD' | 'SELL',
     assets: Asset[],
-    isConservativeUser: boolean = false
+    isConservativeUser: boolean = false,
+    lang: string = 'ko'
   ): HybridInvestmentSignal {
     const analysis = this.analyze(assets);
     return generateHybridSignal(
       timingAction,
       analysis.safetyScore,
       analysis.offenseDefenseRatio.offensePercent,
-      isConservativeUser
+      isConservativeUser,
+      lang
     );
   }
 }

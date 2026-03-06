@@ -79,16 +79,18 @@ export async function analyzeMacroAndBitcoin(lang = 'ko'): Promise<MacroAnalysis
     ? '시장 상황을 한국 개인투자자에게 설명합니다. KOSPI와 코스닥 동향을 우선 언급하세요.'
     : 'Explain the market situation to a US retail investor. Prioritize S&P 500 and NASDAQ commentary.';
 
-  const prompt = `당신은 baln(발른) 앱의 글로벌 매크로 전략 AI입니다.
-오늘(${dateStr}) ${audienceContext}
+  const isEn = lang !== 'ko';
+
+  const prompt = `${isEn ? 'You are the global macro strategy AI for the baln app.' : '당신은 baln(발른) 앱의 글로벌 매크로 전략 AI입니다.'}
+${isEn ? `Today (${dateStr})` : `오늘(${dateStr})`} ${audienceContext}
 ${realDataContext}
 
-[핵심 원칙]
-- "안심을 판다, 불안을 팔지 않는다" — 공포 표현 대신 맥락으로 이해를 돕는다.
-- 수치와 출처를 반드시 포함한다. 감정적 표현(급락, 폭등, 공포, 패닉)을 지양하고 사실 기반으로 서술한다.
+[${isEn ? 'Core Principles' : '핵심 원칙'}]
+- "${isEn ? 'Sell reassurance, not anxiety' : '안심을 판다, 불안을 팔지 않는다'}" — ${isEn ? 'Provide context instead of fear.' : '공포 표현 대신 맥락으로 이해를 돕는다.'}
+- ${isEn ? 'Always include data and sources. Avoid emotional language (crash, surge, panic). Use fact-based descriptions.' : '수치와 출처를 반드시 포함한다. 감정적 표현(급락, 폭등, 공포, 패닉)을 지양하고 사실 기반으로 서술한다.'}
 - ${langInstruction}
 
-[Google Search 검색 키워드]
+[Google Search ${isEn ? 'Keywords' : '검색 키워드'}]
 1. "S&P 500 today", "NASDAQ today", "Dow Jones today"
 2. "VIX index today", "CME FedWatch tool"
 3. "Bitcoin price today", "Bitcoin ETF inflows", "Bitcoin hash rate"
@@ -96,25 +98,25 @@ ${realDataContext}
 5. "Treasury yield curve 10Y-2Y spread", "unemployment rate US latest"
 6. "Global M2 money supply"
 
-[응답 형식 — 반드시 아래 JSON 구조만 출력하세요. 설명문, 마크다운, 코드블록 금지.]
+[${isEn ? 'Response format — output ONLY the JSON structure below. No text, markdown, or code blocks.' : '응답 형식 — 반드시 아래 JSON 구조만 출력하세요. 설명문, 마크다운, 코드블록 금지.'}]
 {
   "macroSummary": {
-    "title": "오늘의 시장 핵심 한 줄 (15자 이내)",
+    "title": "${isEn ? 'Market headline in one line (under 15 words)' : '오늘의 시장 핵심 한 줄 (15자 이내)'}",
     "highlights": [
-      "구체적 이슈 1 — 수치와 출처 포함",
-      "구체적 이슈 2 — 수치와 출처 포함",
-      "구체적 이슈 3 — 수치와 출처 포함"
+      "${isEn ? 'Specific issue 1 — include data and source' : '구체적 이슈 1 — 수치와 출처 포함'}",
+      "${isEn ? 'Specific issue 2 — include data and source' : '구체적 이슈 2 — 수치와 출처 포함'}",
+      "${isEn ? 'Specific issue 3 — include data and source' : '구체적 이슈 3 — 수치와 출처 포함'}"
     ],
-    "interestRateProbability": "동결 ??% / 인하 ??% / 인상 ??%",
-    "marketSentiment": "BULLISH 또는 BEARISH 또는 NEUTRAL 중 하나"
+    "interestRateProbability": "${isEn ? 'Hold ??% / Cut ??% / Hike ??%' : '동결 ??% / 인하 ??% / 인상 ??%'}",
+    "marketSentiment": "${isEn ? 'One of BULLISH, BEARISH, or NEUTRAL' : 'BULLISH 또는 BEARISH 또는 NEUTRAL 중 하나'}"
   },
   "bitcoinAnalysis": {
     "score": 50,
-    "whaleAlerts": ["고래 동향 요약 1", "고래 동향 요약 2"],
-    "etfInflows": "BTC ETF 순유입/유출 요약",
-    "politicsImpact": "규제/정치 뉴스 요약",
-    "priceTarget": "단기 예상 가격대",
-    "hashRate": "해시레이트 현황",
+    "whaleAlerts": ["${isEn ? 'Whale activity summary 1' : '고래 동향 요약 1'}", "${isEn ? 'Whale activity summary 2' : '고래 동향 요약 2'}"],
+    "etfInflows": "${isEn ? 'BTC ETF net inflow/outflow summary' : 'BTC ETF 순유입/유출 요약'}",
+    "politicsImpact": "${isEn ? 'Regulation/political news summary' : '규제/정치 뉴스 요약'}",
+    "priceTarget": "${isEn ? 'Short-term price target range' : '단기 예상 가격대'}",
+    "hashRate": "${isEn ? 'Hash rate status' : '해시레이트 현황'}",
     "subScores": {
       "vixFear": 50,
       "hashRateHealth": 50,
@@ -124,45 +126,49 @@ ${realDataContext}
     }
   },
   "cfoWeather": {
-    "emoji": "☀️ 또는 ⛅ 또는 🌧️ 또는 ⛈️ 중 하나",
-    "status": "맑음: 시장 안정 등 간결한 상태",
-    "message": "투자자에게 전하는 한 마디 (안심 톤)"
+    "emoji": "${isEn ? 'One of ☀️, ⛅, 🌧️, or ⛈️' : '☀️ 또는 ⛅ 또는 🌧️ 또는 ⛈️ 중 하나'}",
+    "status": "${isEn ? 'Sunny: Market stable — brief status' : '맑음: 시장 안정 등 간결한 상태'}",
+    "message": "${isEn ? 'One reassuring message for investors' : '투자자에게 전하는 한 마디 (안심 톤)'}"
   },
   "vixLevel": 15.5,
-  "globalLiquidity": "글로벌 M2 유동성 현황 요약 (한국어 1~2문장)",
+  "globalLiquidity": "${isEn ? 'Global M2 liquidity status summary (1-2 sentences)' : '글로벌 M2 유동성 현황 요약 (한국어 1~2문장)'}",
   "rateCycleEvidence": {
     "keyEvidence": [
-      {"headline": "뉴스 제목", "source": "출처", "date": "${dateStr}", "stance": "hawkish 또는 dovish 또는 neutral", "impact": "high 또는 medium 또는 low"},
-      {"headline": "뉴스 제목", "source": "출처", "date": "${dateStr}", "stance": "dovish", "impact": "medium"}
+      {"headline": "${isEn ? 'News headline' : '뉴스 제목'}", "source": "${isEn ? 'Source' : '출처'}", "date": "${dateStr}", "stance": "hawkish/dovish/neutral", "impact": "high/medium/low"},
+      {"headline": "${isEn ? 'News headline' : '뉴스 제목'}", "source": "${isEn ? 'Source' : '출처'}", "date": "${dateStr}", "stance": "dovish", "impact": "medium"}
     ],
     "economicIndicators": {
-      "fedRate": {"name": "Fed 기준금리", "value": "현재값", "previous": "이전값", "trend": "stable 또는 rising 또는 falling", "nextRelease": "다음 FOMC 날짜"},
-      "cpi": {"name": "CPI (전년 대비)", "value": "현재값", "previous": "이전값", "trend": "stable"},
-      "unemployment": {"name": "실업률", "value": "현재값", "previous": "이전값", "trend": "stable"},
-      "yieldCurveSpread": {"name": "10Y-2Y 스프레드", "value": "현재값(bp)", "previous": "이전값", "trend": "stable"},
-      "pceCore": {"name": "PCE 코어", "value": "현재값", "previous": "이전값", "trend": "stable"}
+      "fedRate": {"name": "Fed ${isEn ? 'Funds Rate' : '기준금리'}", "value": "${isEn ? 'current' : '현재값'}", "previous": "${isEn ? 'previous' : '이전값'}", "trend": "stable/rising/falling", "nextRelease": "${isEn ? 'Next FOMC date' : '다음 FOMC 날짜'}"},
+      "cpi": {"name": "CPI (${isEn ? 'YoY' : '전년 대비'})", "value": "${isEn ? 'current' : '현재값'}", "previous": "${isEn ? 'previous' : '이전값'}", "trend": "stable"},
+      "unemployment": {"name": "${isEn ? 'Unemployment Rate' : '실업률'}", "value": "${isEn ? 'current' : '현재값'}", "previous": "${isEn ? 'previous' : '이전값'}", "trend": "stable"},
+      "yieldCurveSpread": {"name": "10Y-2Y ${isEn ? 'Spread' : '스프레드'}", "value": "${isEn ? 'current (bp)' : '현재값(bp)'}", "previous": "${isEn ? 'previous' : '이전값'}", "trend": "stable"},
+      "pceCore": {"name": "PCE ${isEn ? 'Core' : '코어'}", "value": "${isEn ? 'current' : '현재값'}", "previous": "${isEn ? 'previous' : '이전값'}", "trend": "stable"}
     },
     "expertPerspectives": {
       "ratio": 55,
-      "hawkishArgs": ["매파적 근거 1", "매파적 근거 2"],
-      "dovishArgs": ["비둘기파 근거 1", "비둘기파 근거 2"],
-      "hawkishFigures": ["인물명 (직함)"],
-      "dovishFigures": ["인물명 (직함)"]
+      "hawkishArgs": ["${isEn ? 'Hawkish argument 1' : '매파적 근거 1'}", "${isEn ? 'Hawkish argument 2' : '매파적 근거 2'}"],
+      "dovishArgs": ["${isEn ? 'Dovish argument 1' : '비둘기파 근거 1'}", "${isEn ? 'Dovish argument 2' : '비둘기파 근거 2'}"],
+      "hawkishFigures": ["${isEn ? 'Name (Title)' : '인물명 (직함)'}"],
+      "dovishFigures": ["${isEn ? 'Name (Title)' : '인물명 (직함)'}"]
     },
     "confidenceFactors": {
       "overall": 70,
       "factors": [
-        {"factor": "근거 설명", "type": "supporting 또는 opposing", "weight": "strong 또는 medium 또는 weak"}
+        {"factor": "${isEn ? 'Evidence description' : '근거 설명'}", "type": "supporting/opposing", "weight": "strong/medium/weak"}
       ]
     },
     "generatedAt": "${new Date().toISOString()}"
   }
 }
 
-[예시 — highlights 작성법]
-- "S&P 500 +0.3% 마감(5,230pt) — 고용지표 호조에 매수세 유입 (Bloomberg)"
+[${isEn ? 'Example — how to write highlights' : '예시 — highlights 작성법'}]
+${isEn
+  ? `- "S&P 500 closed +0.3% (5,230pt) — buying momentum on strong jobs data (Bloomberg)"
+- "VIX at 14.2, staying in calm zone — investor sentiment continues to improve (CBOE)"
+- "BTC ETF net inflow $120M — institutional buying continues for second day (CoinDesk)"`
+  : `- "S&P 500 +0.3% 마감(5,230pt) — 고용지표 호조에 매수세 유입 (Bloomberg)"
 - "VIX 14.2로 안정권 유지 — 투자자 심리 개선 지속 (CBOE)"
-- "BTC ETF 순유입 $120M — 기관 매수세 이틀째 지속 (CoinDesk)"
+- "BTC ETF 순유입 $120M — 기관 매수세 이틀째 지속 (CoinDesk)"`}
 `;
 
   try {
@@ -199,7 +205,7 @@ ${realDataContext}
     }
 
     // 2회 모두 실패 시 기본값
-    if (!parsed! || !parsed.macroSummary?.title || parsed.macroSummary.title === '시장 데이터 수집 중') {
+    if (!parsed || !parsed.macroSummary?.title || parsed.macroSummary.title === '시장 데이터 수집 중') {
       console.error('[Task A] 2회 시도 모두 실패 — 기본값 사용');
       parsed = {
         macroSummary: {

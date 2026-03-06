@@ -113,13 +113,13 @@ export function formatCompactAmount(amount: number): string {
     if (amount >= 1_000_000_000_000) return t('format.compact_trillion', { n: Math.round(amount / 1_000_000_000_000).toLocaleString() });
     if (amount >= 100_000_000) return t('format.compact_billion', { n: (amount / 100_000_000).toFixed(1) });
     if (amount >= 10_000) return t('format.compact_thousand', { n: Math.floor(amount / 10_000).toLocaleString() });
-    return `₩${amount.toLocaleString()}`;
+    return `${getCurrencySymbol()}${amount.toLocaleString()}`;
   }
   if (amount >= 1_000_000_000_000) return t('format.compact_trillion', { n: (amount / 1_000_000_000_000).toFixed(1) });
   if (amount >= 1_000_000_000) return t('format.compact_billion', { n: (amount / 1_000_000_000).toFixed(1) });
   if (amount >= 1_000_000) return t('format.compact_million', { n: (amount / 1_000_000).toFixed(1) });
   if (amount >= 1_000) return t('format.compact_thousand', { n: (amount / 1_000).toFixed(1) });
-  return `$${amount.toLocaleString()}`;
+  return `${getCurrencySymbol()}${amount.toLocaleString()}`;
 }
 
 /**

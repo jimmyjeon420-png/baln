@@ -25,6 +25,17 @@ export interface HistoricalParallel {
   lesson: string;
 }
 
+export interface MarketImpactMetrics {
+  kospi: string;
+  usdkrw: string;
+  /** Global index fields (optional, used by global/en scenarios) */
+  sp500?: string;
+  nasdaq?: string;
+  btc?: string;
+  gold?: string;
+  dxy?: string;
+}
+
 export interface ExtremeScenario {
   id: string;
   emoji: string;
@@ -34,14 +45,15 @@ export interface ExtremeScenario {
   categoryLabel: string;
   shareTitle: string;
   impactChain: string[];
-  marketImpact: {
-    kospi: string;
-    usdkrw: string;
+  /** ko scenarios use kospi/usdkrw; global/en scenarios add sp500/nasdaq etc. */
+  marketImpact: MarketImpactMetrics & {
     upSectors: SectorImpact[];
     downSectors: SectorImpact[];
   };
   historicalParallel: HistoricalParallel;
   actionGuide: string[];
+  /** 'ko' = Korea-only, 'en' = English-only, 'global' = everyone. undefined = everyone */
+  locale?: 'ko' | 'en' | 'global';
   /** Input for generateWhatIf */
   whatIfInput: {
     scenario: WhatIfScenario;
@@ -61,9 +73,10 @@ export function getExtremeScenarios(t: TFunc): ExtremeScenario[] {
   const s = (key: string) => t(`whatIf.scenarios.${key}`);
 
   return [
-    // 1. Baekdu Eruption
+    // 1. Baekdu Eruption (Korea-only)
     {
       id: 'baekdu_eruption',
+      locale: 'ko',
       emoji: '\u{1F30B}',
       title: s('baekdu.title'),
       subtitle: s('baekdu.subtitle'),
@@ -112,9 +125,10 @@ export function getExtremeScenarios(t: TFunc): ExtremeScenario[] {
       },
     },
 
-    // 2. NK Invasion
+    // 2. NK Invasion (Korea-only)
     {
       id: 'nk_invasion',
+      locale: 'ko',
       emoji: '\u{2694}\u{FE0F}',
       title: s('nkInvasion.title'),
       subtitle: s('nkInvasion.subtitle'),
@@ -163,9 +177,10 @@ export function getExtremeScenarios(t: TFunc): ExtremeScenario[] {
       },
     },
 
-    // 3. Taiwan Blockade
+    // 3. Taiwan Blockade (global)
     {
       id: 'taiwan_blockade',
+      locale: 'global',
       emoji: '\u{1F6A2}',
       title: s('taiwan.title'),
       subtitle: s('taiwan.subtitle'),
@@ -214,9 +229,10 @@ export function getExtremeScenarios(t: TFunc): ExtremeScenario[] {
       },
     },
 
-    // 4. AI Bubble Burst
+    // 4. AI Bubble Burst (global)
     {
       id: 'ai_bubble_burst',
+      locale: 'global',
       emoji: '\u{1F916}',
       title: s('aiBubble.title'),
       subtitle: s('aiBubble.subtitle'),
@@ -265,9 +281,10 @@ export function getExtremeScenarios(t: TFunc): ExtremeScenario[] {
       },
     },
 
-    // 5. AGI Arrival
+    // 5. AGI Arrival (global)
     {
       id: 'agi_mass_unemployment',
+      locale: 'global',
       emoji: '\u{1F9E0}',
       title: s('agi.title'),
       subtitle: s('agi.subtitle'),
@@ -317,9 +334,10 @@ export function getExtremeScenarios(t: TFunc): ExtremeScenario[] {
       },
     },
 
-    // 6. Seoul Earthquake
+    // 6. Seoul Earthquake (Korea-only)
     {
       id: 'seoul_earthquake',
+      locale: 'ko',
       emoji: '\u{1F3DA}\u{FE0F}',
       title: s('seoulQuake.title'),
       subtitle: s('seoulQuake.subtitle'),
@@ -368,9 +386,10 @@ export function getExtremeScenarios(t: TFunc): ExtremeScenario[] {
       },
     },
 
-    // 7. Trump Tariff War 2.0
+    // 7. Trump Tariff War 2.0 (global)
     {
       id: 'trump_tariff_war',
+      locale: 'global',
       emoji: '\u{1F1FA}\u{1F1F8}',
       title: s('tariffWar.title'),
       subtitle: s('tariffWar.subtitle'),
@@ -419,9 +438,10 @@ export function getExtremeScenarios(t: TFunc): ExtremeScenario[] {
       },
     },
 
-    // 8. BOJ Rate Shock
+    // 8. BOJ Rate Shock (global)
     {
       id: 'boj_rate_shock',
+      locale: 'global',
       emoji: '\u{1F1EF}\u{1F1F5}',
       title: s('bojShock.title'),
       subtitle: s('bojShock.subtitle'),
@@ -470,9 +490,10 @@ export function getExtremeScenarios(t: TFunc): ExtremeScenario[] {
       },
     },
 
-    // 9. Fed Emergency Hike
+    // 9. Fed Emergency Hike (global)
     {
       id: 'fed_emergency_hike',
+      locale: 'global',
       emoji: '\u{1F3E6}',
       title: s('fedHike.title'),
       subtitle: s('fedHike.subtitle'),
@@ -521,9 +542,10 @@ export function getExtremeScenarios(t: TFunc): ExtremeScenario[] {
       },
     },
 
-    // 10. Samsung Scandal
+    // 10. Samsung Scandal (Korea-only)
     {
       id: 'samsung_scandal',
+      locale: 'ko',
       emoji: '\u{1F4F1}',
       title: s('samsungScandal.title'),
       subtitle: s('samsungScandal.subtitle'),
@@ -572,9 +594,10 @@ export function getExtremeScenarios(t: TFunc): ExtremeScenario[] {
       },
     },
 
-    // 11. China Property Collapse
+    // 11. China Property Collapse (global)
     {
       id: 'china_property_collapse',
+      locale: 'global',
       emoji: '\u{1F1E8}\u{1F1F3}',
       title: s('chinaCollapse.title'),
       subtitle: s('chinaCollapse.subtitle'),
@@ -623,9 +646,10 @@ export function getExtremeScenarios(t: TFunc): ExtremeScenario[] {
       },
     },
 
-    // 12. CEO Sudden Exit
+    // 12. CEO Sudden Exit (global)
     {
       id: 'ceo_sudden_exit',
+      locale: 'global',
       emoji: '\u{1F454}',
       title: s('ceoExit.title'),
       subtitle: s('ceoExit.subtitle'),
@@ -674,9 +698,10 @@ export function getExtremeScenarios(t: TFunc): ExtremeScenario[] {
       },
     },
 
-    // 13. Crypto Global Ban
+    // 13. Crypto Global Ban (global)
     {
       id: 'crypto_global_ban',
+      locale: 'global',
       emoji: '\u{20BF}',
       title: s('cryptoBan.title'),
       subtitle: s('cryptoBan.subtitle'),
@@ -725,9 +750,10 @@ export function getExtremeScenarios(t: TFunc): ExtremeScenario[] {
       },
     },
 
-    // 14. Korea FX Crisis
+    // 14. Korea FX Crisis (Korea-only)
     {
       id: 'korea_fx_crisis',
+      locale: 'ko',
       emoji: '\u{1F1F0}\u{1F1F7}',
       title: s('koreaFx.title'),
       subtitle: s('koreaFx.subtitle'),
@@ -776,9 +802,10 @@ export function getExtremeScenarios(t: TFunc): ExtremeScenario[] {
       },
     },
 
-    // 15. Pandemic 2.0
+    // 15. Pandemic 2.0 (global)
     {
       id: 'pandemic_2',
+      locale: 'global',
       emoji: '\u{1F9A0}',
       title: s('pandemic.title'),
       subtitle: s('pandemic.subtitle'),
@@ -827,9 +854,10 @@ export function getExtremeScenarios(t: TFunc): ExtremeScenario[] {
       },
     },
 
-    // 16. Trump Impeachment
+    // 16. Trump Impeachment (global)
     {
       id: 'trump_impeachment',
+      locale: 'global',
       emoji: '\u{1F3DB}\u{FE0F}',
       title: s('trumpImpeach.title'),
       subtitle: s('trumpImpeach.subtitle'),
@@ -879,9 +907,10 @@ export function getExtremeScenarios(t: TFunc): ExtremeScenario[] {
       },
     },
 
-    // 17. EU Energy Crisis
+    // 17. EU Energy Crisis (global)
     {
       id: 'eu_energy_crisis',
+      locale: 'global',
       emoji: '\u{26FD}',
       title: s('euEnergy.title'),
       subtitle: s('euEnergy.subtitle'),
@@ -929,7 +958,476 @@ export function getExtremeScenarios(t: TFunc): ExtremeScenario[] {
         magnitude: -18,
       },
     },
+    // ========================================================================
+    // 18~25: English-only global scenarios (locale: 'en')
+    // These replace Korea-specific scenarios for non-Korean users.
+    // ========================================================================
+
+    // 18. US Debt Ceiling Crisis (English-only)
+    {
+      id: 'us_debt_ceiling',
+      locale: 'en',
+      emoji: '\u{1F4B8}',
+      title: s('usDebtCeiling.title'),
+      subtitle: s('usDebtCeiling.subtitle'),
+      category: 'economic',
+      categoryLabel: s('category.financialCrisis'),
+      shareTitle: s('usDebtCeiling.shareTitle'),
+      impactChain: [
+        s('usDebtCeiling.chain1'),
+        s('usDebtCeiling.chain2'),
+        s('usDebtCeiling.chain3'),
+        s('usDebtCeiling.chain4'),
+        s('usDebtCeiling.chain5'),
+        s('usDebtCeiling.chain6'),
+      ],
+      marketImpact: {
+        kospi: '-8~15%',
+        usdkrw: '+150~250\u{20A9}',
+        sp500: '-15~20%',
+        nasdaq: '-18~25%',
+        btc: '-10~20%',
+        gold: '+10~20%',
+        upSectors: [
+          { name: s('usDebtCeiling.upSector1'), change: '+15~25%' },
+          { name: s('usDebtCeiling.upSector2'), change: '+10~20%' },
+          { name: s('usDebtCeiling.upSector3'), change: '+20~35%' },
+        ],
+        downSectors: [
+          { name: s('usDebtCeiling.downSector1'), change: '-15~25%' },
+          { name: s('usDebtCeiling.downSector2'), change: '-20~30%' },
+          { name: s('usDebtCeiling.downSector3'), change: '-10~18%' },
+        ],
+      },
+      historicalParallel: {
+        event: s('usDebtCeiling.histEvent'),
+        year: '2011',
+        initialDrop: 'S&P 500 -17%',
+        recoveryTime: s('usDebtCeiling.histRecovery'),
+        lesson: s('usDebtCeiling.histLesson'),
+      },
+      actionGuide: [
+        s('usDebtCeiling.action1'),
+        s('usDebtCeiling.action2'),
+        s('usDebtCeiling.action3'),
+        s('usDebtCeiling.action4'),
+      ],
+      whatIfInput: {
+        scenario: 'custom',
+        description: s('usDebtCeiling.aiPrompt'),
+        magnitude: -18,
+      },
+    },
+
+    // 19. Dollar Collapse (English-only)
+    {
+      id: 'dollar_collapse',
+      locale: 'en',
+      emoji: '\u{1F4B5}',
+      title: s('dollarCollapse.title'),
+      subtitle: s('dollarCollapse.subtitle'),
+      category: 'economic',
+      categoryLabel: s('category.financialCrisis'),
+      shareTitle: s('dollarCollapse.shareTitle'),
+      impactChain: [
+        s('dollarCollapse.chain1'),
+        s('dollarCollapse.chain2'),
+        s('dollarCollapse.chain3'),
+        s('dollarCollapse.chain4'),
+        s('dollarCollapse.chain5'),
+        s('dollarCollapse.chain6'),
+      ],
+      marketImpact: {
+        kospi: '+5~15%',
+        usdkrw: '-300~500\u{20A9}',
+        sp500: '-10~20%',
+        nasdaq: '-15~25%',
+        btc: '+25~40%',
+        gold: '+40~60%',
+        dxy: '-25~35%',
+        upSectors: [
+          { name: s('dollarCollapse.upSector1'), change: '+40~60%' },
+          { name: s('dollarCollapse.upSector2'), change: '+25~40%' },
+          { name: s('dollarCollapse.upSector3'), change: '+20~35%' },
+        ],
+        downSectors: [
+          { name: s('dollarCollapse.downSector1'), change: '-15~25%' },
+          { name: s('dollarCollapse.downSector2'), change: '-20~30%' },
+          { name: s('dollarCollapse.downSector3'), change: '-10~20%' },
+        ],
+      },
+      historicalParallel: {
+        event: s('dollarCollapse.histEvent'),
+        year: '1971',
+        initialDrop: s('dollarCollapse.histDrop'),
+        recoveryTime: s('dollarCollapse.histRecovery'),
+        lesson: s('dollarCollapse.histLesson'),
+      },
+      actionGuide: [
+        s('dollarCollapse.action1'),
+        s('dollarCollapse.action2'),
+        s('dollarCollapse.action3'),
+        s('dollarCollapse.action4'),
+      ],
+      whatIfInput: {
+        scenario: 'currency_change',
+        description: s('dollarCollapse.aiPrompt'),
+        magnitude: -25,
+      },
+    },
+
+    // 20. Oil Price Shock (English-only)
+    {
+      id: 'oil_price_shock',
+      locale: 'en',
+      emoji: '\u{1F6E2}\u{FE0F}',
+      title: s('oilShock.title'),
+      subtitle: s('oilShock.subtitle'),
+      category: 'geopolitical',
+      categoryLabel: s('category.energy'),
+      shareTitle: s('oilShock.shareTitle'),
+      impactChain: [
+        s('oilShock.chain1'),
+        s('oilShock.chain2'),
+        s('oilShock.chain3'),
+        s('oilShock.chain4'),
+        s('oilShock.chain5'),
+        s('oilShock.chain6'),
+      ],
+      marketImpact: {
+        kospi: '-10~18%',
+        usdkrw: '+100~200\u{20A9}',
+        sp500: '-12~18%',
+        nasdaq: '-15~22%',
+        gold: '+10~20%',
+        upSectors: [
+          { name: s('oilShock.upSector1'), change: '+40~80%' },
+          { name: s('oilShock.upSector2'), change: '+25~45%' },
+          { name: s('oilShock.upSector3'), change: '+20~35%' },
+        ],
+        downSectors: [
+          { name: s('oilShock.downSector1'), change: '-35~50%' },
+          { name: s('oilShock.downSector2'), change: '-20~35%' },
+          { name: s('oilShock.downSector3'), change: '-15~25%' },
+        ],
+      },
+      historicalParallel: {
+        event: s('oilShock.histEvent'),
+        year: '1973',
+        initialDrop: s('oilShock.histDrop'),
+        recoveryTime: s('oilShock.histRecovery'),
+        lesson: s('oilShock.histLesson'),
+      },
+      actionGuide: [
+        s('oilShock.action1'),
+        s('oilShock.action2'),
+        s('oilShock.action3'),
+        s('oilShock.action4'),
+      ],
+      whatIfInput: {
+        scenario: 'custom',
+        description: s('oilShock.aiPrompt'),
+        magnitude: -18,
+      },
+    },
+
+    // 21. Global Supply Chain Collapse (English-only)
+    {
+      id: 'supply_chain_collapse',
+      locale: 'en',
+      emoji: '\u{1F4E6}',
+      title: s('supplyChain.title'),
+      subtitle: s('supplyChain.subtitle'),
+      category: 'economic',
+      categoryLabel: s('category.financialCrisis'),
+      shareTitle: s('supplyChain.shareTitle'),
+      impactChain: [
+        s('supplyChain.chain1'),
+        s('supplyChain.chain2'),
+        s('supplyChain.chain3'),
+        s('supplyChain.chain4'),
+        s('supplyChain.chain5'),
+        s('supplyChain.chain6'),
+      ],
+      marketImpact: {
+        kospi: '-10~20%',
+        usdkrw: '+100~180\u{20A9}',
+        sp500: '-12~20%',
+        nasdaq: '-15~25%',
+        gold: '+8~15%',
+        upSectors: [
+          { name: s('supplyChain.upSector1'), change: '+20~35%' },
+          { name: s('supplyChain.upSector2'), change: '+15~25%' },
+          { name: s('supplyChain.upSector3'), change: '+10~20%' },
+        ],
+        downSectors: [
+          { name: s('supplyChain.downSector1'), change: '-20~35%' },
+          { name: s('supplyChain.downSector2'), change: '-25~40%' },
+          { name: s('supplyChain.downSector3'), change: '-15~30%' },
+        ],
+      },
+      historicalParallel: {
+        event: s('supplyChain.histEvent'),
+        year: '2021',
+        initialDrop: s('supplyChain.histDrop'),
+        recoveryTime: s('supplyChain.histRecovery'),
+        lesson: s('supplyChain.histLesson'),
+      },
+      actionGuide: [
+        s('supplyChain.action1'),
+        s('supplyChain.action2'),
+        s('supplyChain.action3'),
+        s('supplyChain.action4'),
+      ],
+      whatIfInput: {
+        scenario: 'custom',
+        description: s('supplyChain.aiPrompt'),
+        magnitude: -18,
+      },
+    },
+
+    // 22. US Regional Bank Crisis (English-only)
+    {
+      id: 'us_bank_crisis',
+      locale: 'en',
+      emoji: '\u{1F3E6}',
+      title: s('usBankCrisis.title'),
+      subtitle: s('usBankCrisis.subtitle'),
+      category: 'economic',
+      categoryLabel: s('category.financialCrisis'),
+      shareTitle: s('usBankCrisis.shareTitle'),
+      impactChain: [
+        s('usBankCrisis.chain1'),
+        s('usBankCrisis.chain2'),
+        s('usBankCrisis.chain3'),
+        s('usBankCrisis.chain4'),
+        s('usBankCrisis.chain5'),
+        s('usBankCrisis.chain6'),
+      ],
+      marketImpact: {
+        kospi: '-8~15%',
+        usdkrw: '+80~150\u{20A9}',
+        sp500: '-15~25%',
+        nasdaq: '-18~28%',
+        btc: '+10~25%',
+        gold: '+12~20%',
+        upSectors: [
+          { name: s('usBankCrisis.upSector1'), change: '+15~25%' },
+          { name: s('usBankCrisis.upSector2'), change: '+10~18%' },
+          { name: s('usBankCrisis.upSector3'), change: '+8~15%' },
+        ],
+        downSectors: [
+          { name: s('usBankCrisis.downSector1'), change: '-30~50%' },
+          { name: s('usBankCrisis.downSector2'), change: '-20~35%' },
+          { name: s('usBankCrisis.downSector3'), change: '-15~25%' },
+        ],
+      },
+      historicalParallel: {
+        event: s('usBankCrisis.histEvent'),
+        year: '2023',
+        initialDrop: s('usBankCrisis.histDrop'),
+        recoveryTime: s('usBankCrisis.histRecovery'),
+        lesson: s('usBankCrisis.histLesson'),
+      },
+      actionGuide: [
+        s('usBankCrisis.action1'),
+        s('usBankCrisis.action2'),
+        s('usBankCrisis.action3'),
+        s('usBankCrisis.action4'),
+      ],
+      whatIfInput: {
+        scenario: 'market_crash',
+        description: s('usBankCrisis.aiPrompt'),
+        magnitude: -22,
+      },
+    },
+
+    // 23. Japan Debt Bomb (English-only)
+    {
+      id: 'japan_debt_bomb',
+      locale: 'en',
+      emoji: '\u{1F1EF}\u{1F1F5}',
+      title: s('japanDebt.title'),
+      subtitle: s('japanDebt.subtitle'),
+      category: 'economic',
+      categoryLabel: s('category.financialCrisis'),
+      shareTitle: s('japanDebt.shareTitle'),
+      impactChain: [
+        s('japanDebt.chain1'),
+        s('japanDebt.chain2'),
+        s('japanDebt.chain3'),
+        s('japanDebt.chain4'),
+        s('japanDebt.chain5'),
+        s('japanDebt.chain6'),
+      ],
+      marketImpact: {
+        kospi: '-12~20%',
+        usdkrw: '+100~200\u{20A9}',
+        sp500: '-10~18%',
+        nasdaq: '-12~20%',
+        btc: '+5~15%',
+        gold: '+15~25%',
+        upSectors: [
+          { name: s('japanDebt.upSector1'), change: '+15~25%' },
+          { name: s('japanDebt.upSector2'), change: '+10~18%' },
+          { name: s('japanDebt.upSector3'), change: '+8~12%' },
+        ],
+        downSectors: [
+          { name: s('japanDebt.downSector1'), change: '-25~40%' },
+          { name: s('japanDebt.downSector2'), change: '-15~25%' },
+          { name: s('japanDebt.downSector3'), change: '-20~30%' },
+        ],
+      },
+      historicalParallel: {
+        event: s('japanDebt.histEvent'),
+        year: '2012',
+        initialDrop: s('japanDebt.histDrop'),
+        recoveryTime: s('japanDebt.histRecovery'),
+        lesson: s('japanDebt.histLesson'),
+      },
+      actionGuide: [
+        s('japanDebt.action1'),
+        s('japanDebt.action2'),
+        s('japanDebt.action3'),
+        s('japanDebt.action4'),
+      ],
+      whatIfInput: {
+        scenario: 'custom',
+        description: s('japanDebt.aiPrompt'),
+        magnitude: -18,
+      },
+    },
+
+    // 24. India-Pakistan Nuclear Escalation (English-only)
+    {
+      id: 'india_pakistan_nuclear',
+      locale: 'en',
+      emoji: '\u{2622}\u{FE0F}',
+      title: s('indiaPakistan.title'),
+      subtitle: s('indiaPakistan.subtitle'),
+      category: 'geopolitical',
+      categoryLabel: s('category.geopolitical'),
+      shareTitle: s('indiaPakistan.shareTitle'),
+      impactChain: [
+        s('indiaPakistan.chain1'),
+        s('indiaPakistan.chain2'),
+        s('indiaPakistan.chain3'),
+        s('indiaPakistan.chain4'),
+        s('indiaPakistan.chain5'),
+        s('indiaPakistan.chain6'),
+      ],
+      marketImpact: {
+        kospi: '-10~18%',
+        usdkrw: '+150~250\u{20A9}',
+        sp500: '-12~20%',
+        nasdaq: '-15~22%',
+        btc: '-5~15%',
+        gold: '+25~40%',
+        upSectors: [
+          { name: s('indiaPakistan.upSector1'), change: '+25~40%' },
+          { name: s('indiaPakistan.upSector2'), change: '+15~30%' },
+          { name: s('indiaPakistan.upSector3'), change: '+20~35%' },
+        ],
+        downSectors: [
+          { name: s('indiaPakistan.downSector1'), change: '-40~60%' },
+          { name: s('indiaPakistan.downSector2'), change: '-30~50%' },
+          { name: s('indiaPakistan.downSector3'), change: '-20~35%' },
+        ],
+      },
+      historicalParallel: {
+        event: s('indiaPakistan.histEvent'),
+        year: '2019',
+        initialDrop: s('indiaPakistan.histDrop'),
+        recoveryTime: s('indiaPakistan.histRecovery'),
+        lesson: s('indiaPakistan.histLesson'),
+      },
+      actionGuide: [
+        s('indiaPakistan.action1'),
+        s('indiaPakistan.action2'),
+        s('indiaPakistan.action3'),
+        s('indiaPakistan.action4'),
+      ],
+      whatIfInput: {
+        scenario: 'custom',
+        description: s('indiaPakistan.aiPrompt'),
+        magnitude: -20,
+      },
+    },
+
+    // 25. Global Sovereign Debt Crisis (English-only)
+    {
+      id: 'sovereign_debt_crisis',
+      locale: 'en',
+      emoji: '\u{1F30D}',
+      title: s('sovereignDebt.title'),
+      subtitle: s('sovereignDebt.subtitle'),
+      category: 'economic',
+      categoryLabel: s('category.financialCrisis'),
+      shareTitle: s('sovereignDebt.shareTitle'),
+      impactChain: [
+        s('sovereignDebt.chain1'),
+        s('sovereignDebt.chain2'),
+        s('sovereignDebt.chain3'),
+        s('sovereignDebt.chain4'),
+        s('sovereignDebt.chain5'),
+        s('sovereignDebt.chain6'),
+      ],
+      marketImpact: {
+        kospi: '-15~25%',
+        usdkrw: '+200~350\u{20A9}',
+        sp500: '-20~30%',
+        nasdaq: '-25~35%',
+        btc: '+15~30%',
+        gold: '+30~50%',
+        upSectors: [
+          { name: s('sovereignDebt.upSector1'), change: '+30~50%' },
+          { name: s('sovereignDebt.upSector2'), change: '+15~30%' },
+          { name: s('sovereignDebt.upSector3'), change: '+10~20%' },
+        ],
+        downSectors: [
+          { name: s('sovereignDebt.downSector1'), change: '-25~40%' },
+          { name: s('sovereignDebt.downSector2'), change: '-30~50%' },
+          { name: s('sovereignDebt.downSector3'), change: '-20~35%' },
+        ],
+      },
+      historicalParallel: {
+        event: s('sovereignDebt.histEvent'),
+        year: '2010-2012',
+        initialDrop: s('sovereignDebt.histDrop'),
+        recoveryTime: s('sovereignDebt.histRecovery'),
+        lesson: s('sovereignDebt.histLesson'),
+      },
+      actionGuide: [
+        s('sovereignDebt.action1'),
+        s('sovereignDebt.action2'),
+        s('sovereignDebt.action3'),
+        s('sovereignDebt.action4'),
+      ],
+      whatIfInput: {
+        scenario: 'market_crash',
+        description: s('sovereignDebt.aiPrompt'),
+        magnitude: -25,
+      },
+    },
   ];
+}
+
+// ============================================================================
+// Locale-based filtering
+// ============================================================================
+
+/**
+ * Returns scenarios filtered by user locale.
+ * - 'ko' users see: locale=ko + locale=global + locale=undefined
+ * - 'en' (or other) users see: locale=en + locale=global + locale=undefined
+ */
+export function getScenariosByLocale(t: TFunc, lang: string = 'ko'): ExtremeScenario[] {
+  const all = getExtremeScenarios(t);
+  return all.filter((s) => {
+    if (!s.locale) return true;           // no locale = show to everyone
+    if (s.locale === 'global') return true; // global = show to everyone
+    return s.locale === lang;              // ko or en = show only to matching
+  });
 }
 
 /** Legacy export for backward compatibility */

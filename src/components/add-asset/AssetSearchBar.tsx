@@ -31,7 +31,7 @@ export default function AssetSearchBar({
   onClearSelection,
 }: AssetSearchBarProps) {
   const { colors } = useTheme();
-  const { t } = useLocale();
+  const { t, language } = useLocale();
 
   return (
     <View style={styles.inputGroup}>
@@ -78,7 +78,7 @@ export default function AssetSearchBar({
             >
               <View style={[styles.categoryBadge, { backgroundColor: getCategoryColor(item.category) + '20' }]}>
                 <Text style={[styles.categoryBadgeText, { color: getCategoryColor(item.category) }]}>
-                  {getCategoryLabel(item.category)}
+                  {getCategoryLabel(item.category, language)}
                 </Text>
               </View>
               <View style={{ flex: 1 }}>

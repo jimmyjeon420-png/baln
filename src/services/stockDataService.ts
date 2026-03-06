@@ -13,13 +13,14 @@
  */
 
 import axios from 'axios';
+import { isKoreanLocale } from '../utils/formatters';
 
 // ============================================================================
 // 타입 정의 (marketplace.ts와 동일 — re-export)
 // ============================================================================
 
-export type { StockFundamentals } from '../types/marketplace';
 import type { StockFundamentals } from '../types/marketplace';
+export type { StockFundamentals } from '../types/marketplace';
 
 // ============================================================================
 // Yahoo Finance 심볼 변환 (YahooFinanceProvider.ts와 동일 로직)
@@ -126,8 +127,8 @@ export async function fetchExchangeRate(): Promise<number> {
         console.log(`[ExchangeRate] USD/KRW = ${rate.toFixed(2)} (${name})`);
       }
       return rate;
-    } catch (err: any) {
-      if (__DEV__) console.warn(`[ExchangeRate] ${name} 실패:`, err.message);
+    } catch (err: unknown) {
+      if (__DEV__) console.warn(`[ExchangeRate] ${name} 실패:`, (err as Error).message);
     }
   }
 
@@ -205,6 +206,7 @@ export async function fetchStockFundamentals(
     const incomeQuarterly = result.incomeStatementHistoryQuarterly?.incomeStatementHistory || [];
 
     // Yahoo Finance는 값을 { raw: number, fmt: string } 형태로 반환
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const raw = (obj: any): number | undefined => {
       if (obj == null) return undefined;
       if (typeof obj === 'number') return obj;
@@ -221,6 +223,7 @@ export async function fetchStockFundamentals(
     const toKRW = currencyVal === 'KRW' ? 1 : exchangeRate;
 
     // 분기별 실적 파싱 + KRW 환산
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const quarterlyEarnings = incomeQuarterly.slice(0, 4).map((q: any) => {
       const endDate = q.endDate?.fmt || '';
       const dateObj = new Date(endDate);
@@ -290,6 +293,7 @@ export async function fetchStockFundamentals(
     }
 
     return fundamentals;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     if (error.code === 'ECONNABORTED') {
       console.warn(`[StockData] TIMEOUT: ${symbol}`);
@@ -309,26 +313,40 @@ export async function fetchStockFundamentals(
 // 헬퍼: 금액 포맷 (조/억/만원 단위)
 // ============================================================================
 
-function formatKRW(value: number): string {
+function formatAmountLocal(value: number): string {
   const abs = Math.abs(value);
   const sign = value < 0 ? '-' : '';
 
+  if (isKoreanLocale()) {
+    if (abs >= 1_000_000_000_000) {
+      const jo = abs / 1_000_000_000_000;
+      return `${sign}약 ${jo.toFixed(1)}조원`;
+    }
+    if (abs >= 100_000_000) {
+      const eok = abs / 100_000_000;
+      return `${sign}약 ${eok.toFixed(0)}억원`;
+    }
+    if (abs >= 10_000) {
+      const man = abs / 10_000;
+      return `${sign}약 ${man.toFixed(0)}만원`;
+    }
+    return `${sign}₩${abs.toLocaleString()}`;
+  }
+
+  // English: USD-style compact
   if (abs >= 1_000_000_000_000) {
-    // 조 단위
-    const jo = abs / 1_000_000_000_000;
-    return `${sign}약 ${jo.toFixed(1)}조원`;
+    return `${sign}~$${(abs / 1_000_000_000_000).toFixed(1)}T`;
   }
-  if (abs >= 100_000_000) {
-    // 억 단위
-    const eok = abs / 100_000_000;
-    return `${sign}약 ${eok.toFixed(0)}억원`;
+  if (abs >= 1_000_000_000) {
+    return `${sign}~$${(abs / 1_000_000_000).toFixed(1)}B`;
   }
-  if (abs >= 10_000) {
-    // 만 단위
-    const man = abs / 10_000;
-    return `${sign}약 ${man.toFixed(0)}만원`;
+  if (abs >= 1_000_000) {
+    return `${sign}~$${(abs / 1_000_000).toFixed(1)}M`;
   }
-  return `${sign}₩${abs.toLocaleString()}`;
+  if (abs >= 1_000) {
+    return `${sign}~$${(abs / 1_000).toFixed(1)}K`;
+  }
+  return `${sign}$${abs.toLocaleString()}`;
 }
 
 // ============================================================================
@@ -344,28 +362,30 @@ export function fundamentalsToPromptText(data: StockFundamentals): string {
   const isUSD = data.currency !== 'KRW';
   const rate = data.exchangeRate;
 
-  lines.push(`=== ${data.name} (${data.ticker}) 실제 재무 데이터 ===`);
-  lines.push(`[데이터 출처: Yahoo Finance API, 조회 시각: ${data.fetchedAt}]`);
+  const ko = isKoreanLocale();
+  lines.push(`=== ${data.name} (${data.ticker}) ${ko ? '실제 재무 데이터' : 'Fundamentals'} ===`);
+  lines.push(`[${ko ? '데이터 출처' : 'Source'}: Yahoo Finance API, ${ko ? '조회 시각' : 'fetched'}: ${data.fetchedAt}]`);
   if (isUSD && rate) {
-    lines.push(`[적용 환율: 1 USD = ${rate.toFixed(2)} KRW (실시간)]`);
+    lines.push(`[${ko ? '적용 환율' : 'FX Rate'}: 1 USD = ${rate.toFixed(2)} KRW (${ko ? '실시간' : 'live'})]`);
   }
   lines.push('');
 
   // 시가총액
   if (data.marketCapKRW != null) {
-    lines.push(`시가총액: ${formatKRW(data.marketCapKRW)}`);
+    lines.push(`${isKoreanLocale() ? '시가총액' : 'Market Cap'}: ${formatAmountLocal(data.marketCapKRW)}`);
     if (isUSD && data.marketCap != null) {
-      lines.push(`  (원래 $${(data.marketCap / 1e9).toFixed(1)}B USD)`);
+      lines.push(`  (${isKoreanLocale() ? '원래' : 'orig.'} $${(data.marketCap / 1e9).toFixed(1)}B USD)`);
     }
   }
 
   // 현재가
   if (data.currentPrice != null) {
+    const priceLabel = ko ? '현재 주가' : 'Current Price';
     if (isUSD && rate) {
       const priceKRW = Math.round(data.currentPrice * rate);
-      lines.push(`현재 주가: ₩${priceKRW.toLocaleString()} ($${data.currentPrice.toLocaleString()})`);
+      lines.push(`${priceLabel}: ₩${priceKRW.toLocaleString()} ($${data.currentPrice.toLocaleString()})`);
     } else {
-      lines.push(`현재 주가: ₩${data.currentPrice.toLocaleString()}`);
+      lines.push(`${priceLabel}: ₩${data.currentPrice.toLocaleString()}`);
     }
   }
 
@@ -376,24 +396,28 @@ export function fundamentalsToPromptText(data: StockFundamentals): string {
 
   // 수익성 (비율이므로 환산 불필요)
   if (data.returnOnEquity != null) lines.push(`ROE: ${(data.returnOnEquity * 100).toFixed(2)}%`);
-  if (data.operatingMargins != null) lines.push(`영업이익률: ${(data.operatingMargins * 100).toFixed(2)}%`);
-  if (data.profitMargins != null) lines.push(`순이익률: ${(data.profitMargins * 100).toFixed(2)}%`);
+  if (data.operatingMargins != null) lines.push(`${ko ? '영업이익률' : 'Operating Margin'}: ${(data.operatingMargins * 100).toFixed(2)}%`);
+  if (data.profitMargins != null) lines.push(`${ko ? '순이익률' : 'Net Margin'}: ${(data.profitMargins * 100).toFixed(2)}%`);
 
   // 성장성
-  if (data.revenueGrowth != null) lines.push(`매출성장률(YoY): ${(data.revenueGrowth * 100).toFixed(2)}%`);
-  if (data.earningsGrowth != null) lines.push(`이익성장률: ${(data.earningsGrowth * 100).toFixed(2)}%`);
+  if (data.revenueGrowth != null) lines.push(`${ko ? '매출성장률(YoY)' : 'Revenue Growth (YoY)'}: ${(data.revenueGrowth * 100).toFixed(2)}%`);
+  if (data.earningsGrowth != null) lines.push(`${ko ? '이익성장률' : 'Earnings Growth'}: ${(data.earningsGrowth * 100).toFixed(2)}%`);
 
   // 재무 안정성
-  if (data.debtToEquity != null) lines.push(`부채비율: ${data.debtToEquity.toFixed(2)}%`);
+  if (data.debtToEquity != null) lines.push(`${ko ? '부채비율' : 'Debt/Equity'}: ${data.debtToEquity.toFixed(2)}%`);
 
-  // 분기별 실적 — 원화 표기
+  // 분기별 실적
   if (data.quarterlyEarnings && data.quarterlyEarnings.length > 0) {
     lines.push('');
-    lines.push('--- 분기별 실적 (최근 4분기, 원화 환산) ---');
+    lines.push(ko
+      ? '--- 분기별 실적 (최근 4분기, 원화 환산) ---'
+      : '--- Quarterly Earnings (Last 4Q) ---');
     for (const q of data.quarterlyEarnings) {
-      const revKRW = q.revenueKRW != null ? formatKRW(q.revenueKRW) : 'N/A';
-      const earnKRW = q.earningsKRW != null ? formatKRW(q.earningsKRW) : 'N/A';
-      lines.push(`${q.quarter} (${q.date}): 매출 ${revKRW}, 순이익 ${earnKRW}`);
+      const revKRW = q.revenueKRW != null ? formatAmountLocal(q.revenueKRW) : 'N/A';
+      const earnKRW = q.earningsKRW != null ? formatAmountLocal(q.earningsKRW) : 'N/A';
+      lines.push(ko
+        ? `${q.quarter} (${q.date}): 매출 ${revKRW}, 순이익 ${earnKRW}`
+        : `${q.quarter} (${q.date}): Revenue ${revKRW}, Net Income ${earnKRW}`);
     }
   }
 

@@ -112,42 +112,44 @@ async function analyzeGuruInsight(guru: typeof GURU_LIST[0], langInstruction = '
     ? 'Help retail investors understand the market through this guru\'s moves. Use "~is estimated" for speculation.'
     : '한국 개인투자자가 거장의 행보를 통해 시장을 이해하도록 돕는다. 추측은 "~로 추정됩니다"로 표현한다.';
 
-  const prompt = `당신은 baln(발른) 앱의 투자 거장 분석 AI입니다.
-오늘(${dateStr}) ${guru.nameEn}(${guru.name})의 최근 투자 동향을 분석하세요.
+  const isEn = langInstruction.includes('English');
 
-[핵심 원칙]
+  const prompt = `${isEn ? 'You are the investment guru analysis AI for the baln app.' : '당신은 baln(발른) 앱의 투자 거장 분석 AI입니다.'}
+${isEn ? `Today (${dateStr})` : `오늘(${dateStr})`} ${isEn ? `Analyze the recent investment activity of ${guru.nameEn}.` : `${guru.nameEn}(${guru.name})의 최근 투자 동향을 분석하세요.`}
+
+[${isEn ? 'Core Principles' : '핵심 원칙'}]
 - ${audienceContext}
-- 확인된 사실만 서술한다.
+- ${isEn ? 'Only state confirmed facts.' : '확인된 사실만 서술한다.'}
 - ${langInstruction}
 
-[Google Search 검색]
+[Google Search]
 - "${guru.nameEn} portfolio 2026", "${guru.nameEn} latest news"
 
-[분석 항목]
-1. recentAction: 최근 포트폴리오 변동이나 주목할 행동 (구체적 수치 포함, 한국어)
-2. quote: 최근 공개 발언 또는 대표 명언 (한국어 번역)
-3. sentiment: BULLISH / BEARISH / NEUTRAL / CAUTIOUS 중 하나
-4. reasoning: 왜 이런 입장인지 2~3문장으로 설명 (한국어)
-5. relevantAssets: 관련 티커 최대 5개 (문자열 배열)
-6. source: 뉴스 출처명
-7. action: 이 거장의 현재 투자 행동. "BUY", "SELL", "HOLD" 중 하나.
-8. target_tickers: 이 거장이 주목하는 종목 코드 최대 3개. 예: ["AAPL", "005930", "TSLA"]
-9. sector: 이 거장이 주목하는 섹터. "기술", "금융", "에너지", "헬스케어", "소비재", "산업재" 중 하나.
-10. conviction_level: 확신도 1~5 (1=매우 낮음, 5=매우 확신).
+[${isEn ? 'Analysis Items' : '분석 항목'}]
+1. recentAction: ${isEn ? 'Recent portfolio changes or notable actions (include specific figures)' : '최근 포트폴리오 변동이나 주목할 행동 (구체적 수치 포함, 한국어)'}
+2. quote: ${isEn ? 'Recent public statement or notable quote' : '최근 공개 발언 또는 대표 명언 (한국어 번역)'}
+3. sentiment: BULLISH / BEARISH / NEUTRAL / CAUTIOUS
+4. reasoning: ${isEn ? '2-3 sentences explaining the stance' : '왜 이런 입장인지 2~3문장으로 설명 (한국어)'}
+5. relevantAssets: ${isEn ? 'Up to 5 related tickers (string array)' : '관련 티커 최대 5개 (문자열 배열)'}
+6. source: ${isEn ? 'News source name' : '뉴스 출처명'}
+7. action: "BUY", "SELL", "HOLD"
+8. target_tickers: ${isEn ? 'Up to 3 tickers this guru is watching. e.g., ["AAPL", "TSLA"]' : '이 거장이 주목하는 종목 코드 최대 3개. 예: ["AAPL", "005930", "TSLA"]'}
+9. sector: ${isEn ? 'One of "Technology", "Finance", "Energy", "Healthcare", "Consumer", "Industrial"' : '이 거장이 주목하는 섹터. "기술", "금융", "에너지", "헬스케어", "소비재", "산업재" 중 하나.'}
+10. conviction_level: ${isEn ? '1-5 (1=very low, 5=very high)' : '확신도 1~5 (1=매우 낮음, 5=매우 확신)'}.
 
-[응답 형식 — 아래 JSON만 출력. 설명문, 마크다운 금지.]
+[${isEn ? 'Response format — JSON only. No text, no markdown.' : '응답 형식 — 아래 JSON만 출력. 설명문, 마크다운 금지.'}]
 {
   "guruName": "${guru.name}",
   "guruNameEn": "${guru.nameEn}",
-  "recentAction": "애플 주식 25% 매도, 현금 보유 $334B 도달",
-  "quote": "좋은 거래를 찾기 어려운 시기입니다",
+  "recentAction": "${isEn ? 'Sold 25% of Apple holdings, cash reserves reached $334B' : '애플 주식 25% 매도, 현금 보유 $334B 도달'}",
+  "quote": "${isEn ? 'It is a difficult time to find good deals' : '좋은 거래를 찾기 어려운 시기입니다'}",
   "sentiment": "CAUTIOUS",
-  "reasoning": "현재 시장 밸류에이션이 역사적 평균을 크게 상회하고 있어, 새로운 대형 매수보다 현금 확보에 집중하는 모습입니다. 다만 이는 위기 대비가 아니라 더 좋은 기회를 기다리는 전략으로 해석됩니다.",
+  "reasoning": "${isEn ? 'Current market valuations significantly exceed historical averages, so the focus is on building cash rather than new large purchases. This is not crisis preparation but a strategy of waiting for better opportunities.' : '현재 시장 밸류에이션이 역사적 평균을 크게 상회하고 있어, 새로운 대형 매수보다 현금 확보에 집중하는 모습입니다. 다만 이는 위기 대비가 아니라 더 좋은 기회를 기다리는 전략으로 해석됩니다.'}",
   "relevantAssets": ["AAPL", "BRK.B", "OXY"],
   "source": "Bloomberg",
   "action": "HOLD",
   "target_tickers": ["AAPL", "OXY"],
-  "sector": "기술",
+  "sector": "${isEn ? 'Technology' : '기술'}",
   "conviction_level": 3
 }
 `;

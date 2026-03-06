@@ -64,7 +64,7 @@ export async function getTodayQuiz(): Promise<DailyQuiz | null> {
 
   // 3단계: DB 저장 시도 (실패해도 퀴즈는 반환)
   try {
-    const { data: insertResult } = await supabase.rpc('insert_daily_quiz', {
+    const { data: _insertResult } = await supabase.rpc('insert_daily_quiz', {
       p_quiz_date: today,
       p_category: generated.category,
       p_question: generated.question,
@@ -110,11 +110,11 @@ function getRandomCategory(): QuizCategory {
   return categories[Math.floor(Math.random() * categories.length)];
 }
 
-const CATEGORY_LABEL: Record<QuizCategory, string> = {
-  stock_basics: '주식 기초',
-  market_news: '시장/경제 뉴스',
-  investing_terms: '투자 용어',
-  risk_management: '리스크 관리',
+const CATEGORY_LABEL: Record<QuizCategory, { ko: string; en: string }> = {
+  stock_basics: { ko: '주식 기초', en: 'Stock Basics' },
+  market_news: { ko: '시장/경제 뉴스', en: 'Market/Economy News' },
+  investing_terms: { ko: '투자 용어', en: 'Investment Terms' },
+  risk_management: { ko: '리스크 관리', en: 'Risk Management' },
 };
 
 /** Gemini로 퀴즈 1개 생성 */
@@ -132,7 +132,7 @@ async function generateQuizWithGemini(): Promise<{
   }
 
   const category = getRandomCategory();
-  const categoryLabel = CATEGORY_LABEL[category];
+  const categoryLabel = CATEGORY_LABEL[category].ko;
 
   try {
     const genAI = new GoogleGenerativeAI(API_KEY);
@@ -244,79 +244,127 @@ const FALLBACK_QUIZZES = [
   {
     category: 'stock_basics' as QuizCategory,
     question: 'PER(주가수익비율)이 낮을수록 의미하는 것은?',
+    questionEn: 'What does a lower PER (Price-to-Earnings Ratio) indicate?',
     options: [
       { id: 'A', text: '주가가 이익 대비 저평가되어 있다' },
       { id: 'B', text: '회사의 부채비율이 높다' },
       { id: 'C', text: '배당수익률이 높다' },
       { id: 'D', text: '매출 성장률이 빠르다' },
     ],
+    optionsEn: [
+      { id: 'A', text: 'The stock is undervalued relative to earnings' },
+      { id: 'B', text: 'The company has a high debt ratio' },
+      { id: 'C', text: 'The dividend yield is high' },
+      { id: 'D', text: 'Revenue growth is fast' },
+    ],
     correct_option: 'A',
     explanation: 'PER(Price-to-Earnings Ratio)은 주가를 주당순이익(EPS)으로 나눈 것입니다. PER이 낮으면 이익 대비 주가가 싸다는 의미로, 상대적 저평가 상태를 나타냅니다.',
+    explanationEn: 'PER (Price-to-Earnings Ratio) is calculated by dividing stock price by earnings per share (EPS). A lower PER means the stock is cheap relative to earnings, indicating relative undervaluation.',
     difficulty: 1,
   },
   {
     category: 'investing_terms' as QuizCategory,
     question: '분산투자의 주된 목적은?',
+    questionEn: 'What is the main purpose of diversification?',
     options: [
       { id: 'A', text: '수익률을 극대화하기 위해' },
       { id: 'B', text: '포트폴리오 위험을 줄이기 위해' },
       { id: 'C', text: '세금을 절감하기 위해' },
       { id: 'D', text: '거래 수수료를 절약하기 위해' },
     ],
+    optionsEn: [
+      { id: 'A', text: 'To maximize returns' },
+      { id: 'B', text: 'To reduce portfolio risk' },
+      { id: 'C', text: 'To save on taxes' },
+      { id: 'D', text: 'To save on trading fees' },
+    ],
     correct_option: 'B',
     explanation: '분산투자는 여러 자산에 나눠 투자하여 특정 자산의 하락이 전체 포트폴리오에 미치는 영향을 줄이는 것이 주된 목적입니다. "달걀을 한 바구니에 담지 마라"는 투자 격언과 같은 맥락입니다.',
+    explanationEn: 'Diversification spreads investments across multiple assets to reduce the impact of any single asset\'s decline on your portfolio. It follows the classic investing principle: "Don\'t put all your eggs in one basket."',
     difficulty: 1,
   },
   {
     category: 'risk_management' as QuizCategory,
     question: '주식시장에서 "손절매"란?',
+    questionEn: 'What is a "stop-loss" in the stock market?',
     options: [
       { id: 'A', text: '이익이 난 주식을 파는 것' },
       { id: 'B', text: '손실이 커지기 전에 주식을 파는 것' },
       { id: 'C', text: '주식을 추가로 매수하는 것' },
       { id: 'D', text: '배당금을 재투자하는 것' },
     ],
+    optionsEn: [
+      { id: 'A', text: 'Selling profitable stocks' },
+      { id: 'B', text: 'Selling stocks before losses grow larger' },
+      { id: 'C', text: 'Buying more stocks' },
+      { id: 'D', text: 'Reinvesting dividends' },
+    ],
     correct_option: 'B',
     explanation: '손절매(Stop-Loss)는 주가가 일정 수준 이하로 하락했을 때 더 큰 손실을 방지하기 위해 보유 주식을 매도하는 것입니다. 리스크 관리의 핵심 전략 중 하나입니다.',
+    explanationEn: 'A stop-loss is selling your stocks when the price falls below a certain level to prevent larger losses. It\'s one of the core risk management strategies.',
     difficulty: 1,
   },
   {
     category: 'stock_basics' as QuizCategory,
     question: '시가총액이란?',
+    questionEn: 'What is market capitalization?',
     options: [
       { id: 'A', text: '회사의 총 부채 금액' },
       { id: 'B', text: '주가 x 발행주식 총수' },
       { id: 'C', text: '연간 매출액의 합계' },
       { id: 'D', text: '회사의 순자산 가치' },
     ],
+    optionsEn: [
+      { id: 'A', text: 'Total debt of the company' },
+      { id: 'B', text: 'Stock price x total shares outstanding' },
+      { id: 'C', text: 'Sum of annual revenue' },
+      { id: 'D', text: 'Net asset value of the company' },
+    ],
     correct_option: 'B',
     explanation: '시가총액(Market Capitalization)은 현재 주가에 발행주식 총수를 곱한 값으로, 시장이 평가하는 기업의 전체 가치를 나타냅니다.',
+    explanationEn: 'Market Capitalization is calculated by multiplying the current stock price by total shares outstanding, representing the total market value of a company.',
     difficulty: 1,
   },
   {
     category: 'investing_terms' as QuizCategory,
     question: 'ETF(상장지수펀드)의 장점이 아닌 것은?',
+    questionEn: 'Which is NOT an advantage of ETFs?',
     options: [
       { id: 'A', text: '분산투자가 쉽다' },
       { id: 'B', text: '실시간 매매가 가능하다' },
       { id: 'C', text: '원금이 보장된다' },
       { id: 'D', text: '운용보수가 비교적 낮다' },
     ],
+    optionsEn: [
+      { id: 'A', text: 'Easy diversification' },
+      { id: 'B', text: 'Real-time trading' },
+      { id: 'C', text: 'Principal is guaranteed' },
+      { id: 'D', text: 'Relatively low management fees' },
+    ],
     correct_option: 'C',
     explanation: 'ETF는 분산투자, 실시간 거래, 낮은 보수 등 장점이 있지만, 주식처럼 가격이 변동하므로 원금이 보장되지 않습니다. 모든 투자 상품에는 원금 손실 위험이 있습니다.',
+    explanationEn: 'ETFs offer diversification, real-time trading, and low fees, but like stocks, their prices fluctuate so principal is NOT guaranteed. All investments carry risk of loss.',
     difficulty: 1,
   },
   {
     category: 'market_news' as QuizCategory,
     question: '기준금리를 인하하면 일반적으로 주식시장에 어떤 영향을 미칠까요?',
+    questionEn: 'What effect does a rate cut generally have on the stock market?',
     options: [
       { id: 'A', text: '주식시장에 긍정적 (상승 요인)' },
       { id: 'B', text: '주식시장에 부정적 (하락 요인)' },
       { id: 'C', text: '주식시장과 무관하다' },
       { id: 'D', text: '채권시장에만 영향을 미친다' },
     ],
+    optionsEn: [
+      { id: 'A', text: 'Positive for stocks (bullish factor)' },
+      { id: 'B', text: 'Negative for stocks (bearish factor)' },
+      { id: 'C', text: 'No impact on stocks' },
+      { id: 'D', text: 'Only affects the bond market' },
+    ],
     correct_option: 'A',
     explanation: '기준금리 인하는 기업의 차입 비용을 줄이고, 은행 예금 대비 주식의 상대적 매력도를 높여 일반적으로 주식시장에 긍정적인 영향을 미칩니다.',
+    explanationEn: 'Rate cuts reduce borrowing costs for companies and increase the relative attractiveness of stocks vs bank deposits, generally having a positive impact on the stock market.',
     difficulty: 1,
   },
 
@@ -326,79 +374,127 @@ const FALLBACK_QUIZZES = [
   {
     category: 'risk_management' as QuizCategory,
     question: '다음 중 "체계적 위험(시장 위험)"에 해당하는 것은?',
+    questionEn: 'Which of the following is an example of "systematic risk (market risk)"?',
     options: [
       { id: 'A', text: '특정 기업의 CEO 사임' },
       { id: 'B', text: '글로벌 금융 위기' },
       { id: 'C', text: '제품 리콜 사태' },
       { id: 'D', text: '회계 부정 스캔들' },
     ],
+    optionsEn: [
+      { id: 'A', text: 'A specific company\'s CEO resignation' },
+      { id: 'B', text: 'A global financial crisis' },
+      { id: 'C', text: 'A product recall incident' },
+      { id: 'D', text: 'An accounting fraud scandal' },
+    ],
     correct_option: 'B',
     explanation: '체계적 위험은 시장 전체에 영향을 미치는 위험으로, 분산투자로도 제거할 수 없습니다. 금융 위기, 전쟁, 팬데믹 등이 해당합니다. 나머지는 개별 기업의 비체계적 위험입니다.',
+    explanationEn: 'Systematic risk affects the entire market and cannot be eliminated through diversification. Financial crises, wars, and pandemics are examples. The other options are unsystematic risks specific to individual companies.',
     difficulty: 2,
   },
   {
     category: 'stock_basics' as QuizCategory,
     question: 'PBR(주가순자산비율)이 1 미만이면 의미하는 것은?',
+    questionEn: 'What does a PBR (Price-to-Book Ratio) below 1 indicate?',
     options: [
       { id: 'A', text: '주가가 순자산 가치보다 낮게 거래되고 있다' },
       { id: 'B', text: '회사의 부채가 자본보다 많다' },
       { id: 'C', text: '배당금을 지급하지 않는 기업이다' },
       { id: 'D', text: '매출이 감소하고 있다' },
     ],
+    optionsEn: [
+      { id: 'A', text: 'The stock is trading below its net asset value' },
+      { id: 'B', text: 'The company\'s debt exceeds its equity' },
+      { id: 'C', text: 'The company does not pay dividends' },
+      { id: 'D', text: 'Revenue is declining' },
+    ],
     correct_option: 'A',
     explanation: 'PBR(Price-to-Book Ratio)은 주가를 주당 순자산가치(BPS)로 나눈 비율입니다. PBR < 1이면 시장이 기업을 청산 가치보다 낮게 평가한다는 의미로, 저평가 또는 시장의 비관적 전망을 나타낼 수 있습니다.',
+    explanationEn: 'PBR (Price-to-Book Ratio) is the stock price divided by book value per share (BPS). PBR < 1 means the market values the company below its liquidation value, indicating undervaluation or a pessimistic market outlook.',
     difficulty: 2,
   },
   {
     category: 'investing_terms' as QuizCategory,
     question: '샤프 비율(Sharpe Ratio)이 높을수록 의미하는 것은?',
+    questionEn: 'What does a higher Sharpe Ratio indicate?',
     options: [
       { id: 'A', text: '위험 대비 초과 수익이 크다' },
       { id: 'B', text: '변동성이 크다' },
       { id: 'C', text: '절대 수익률이 높다' },
       { id: 'D', text: '거래량이 많다' },
     ],
+    optionsEn: [
+      { id: 'A', text: 'Greater excess returns relative to risk' },
+      { id: 'B', text: 'Higher volatility' },
+      { id: 'C', text: 'Higher absolute returns' },
+      { id: 'D', text: 'Higher trading volume' },
+    ],
     correct_option: 'A',
     explanation: '샤프 비율은 (포트폴리오 수익률 - 무위험 수익률) / 표준편차로 계산합니다. 같은 위험을 감수하면서 더 높은 초과 수익을 내는 투자가 효율적이라는 뜻이며, 펀드 성과 비교의 핵심 지표입니다.',
+    explanationEn: 'The Sharpe Ratio is calculated as (portfolio return - risk-free rate) / standard deviation. A higher ratio means greater excess returns per unit of risk, making it a key metric for comparing fund performance.',
     difficulty: 2,
   },
   {
     category: 'market_news' as QuizCategory,
     question: '미국 고용보고서에서 비농업 고용(Non-Farm Payrolls)이 예상보다 강하면 일반적으로?',
+    questionEn: 'If US Non-Farm Payrolls come in stronger than expected, what generally happens?',
     options: [
       { id: 'A', text: '금리 인하 기대가 후퇴하여 주식에 부정적' },
       { id: 'B', text: '경기 호조로 주식에 무조건 긍정적' },
       { id: 'C', text: '달러가 약세로 전환된다' },
       { id: 'D', text: '채권 가격이 상승한다' },
     ],
+    optionsEn: [
+      { id: 'A', text: 'Rate cut expectations retreat, negative for stocks' },
+      { id: 'B', text: 'Always positive for stocks due to strong economy' },
+      { id: 'C', text: 'The dollar weakens' },
+      { id: 'D', text: 'Bond prices rise' },
+    ],
     correct_option: 'A',
     explanation: '강한 고용은 경기 과열 → 인플레이션 지속 → 연준 금리 인하 지연으로 해석됩니다. "좋은 뉴스가 나쁜 뉴스"인 역설적 상황이 현재 시장의 특징입니다. 달러는 강세, 채권은 하락 압력을 받습니다.',
+    explanationEn: 'Strong employment signals overheating -> persistent inflation -> delayed Fed rate cuts. This "good news is bad news" paradox is a feature of the current market. The dollar strengthens while bonds face downward pressure.',
     difficulty: 2,
   },
   {
     category: 'risk_management' as QuizCategory,
     question: '리밸런싱(Rebalancing)의 가장 중요한 목적은?',
+    questionEn: 'What is the most important purpose of rebalancing?',
     options: [
       { id: 'A', text: '수익률이 높은 자산에 더 집중 투자하기 위해' },
       { id: 'B', text: '원래 설정한 자산 배분 비율을 유지하기 위해' },
       { id: 'C', text: '세금을 줄이기 위해' },
       { id: 'D', text: '거래 비용을 줄이기 위해' },
     ],
+    optionsEn: [
+      { id: 'A', text: 'To concentrate more on high-return assets' },
+      { id: 'B', text: 'To maintain the original target asset allocation' },
+      { id: 'C', text: 'To reduce taxes' },
+      { id: 'D', text: 'To reduce transaction costs' },
+    ],
     correct_option: 'B',
     explanation: '리밸런싱은 시장 변동으로 변한 자산 비율을 원래 목표 비율로 되돌리는 것입니다. 자연스럽게 "고평가 자산 매도, 저평가 자산 매수" 효과가 있어 장기적으로 위험 대비 수익률을 개선합니다.',
+    explanationEn: 'Rebalancing restores asset ratios that have shifted due to market movements back to original targets. It naturally creates a "sell high, buy low" effect, improving risk-adjusted returns over the long term.',
     difficulty: 2,
   },
   {
     category: 'investing_terms' as QuizCategory,
     question: '"밸류 트랩(Value Trap)"이란?',
+    questionEn: 'What is a "Value Trap"?',
     options: [
       { id: 'A', text: '가치주가 시장 대비 초과 수익을 내는 현상' },
       { id: 'B', text: '저평가로 보이지만 실제로는 합당한 이유가 있어 회복하지 못하는 종목' },
       { id: 'C', text: '고평가 성장주가 계속 상승하는 현상' },
       { id: 'D', text: '배당수익률이 높아 매력적으로 보이는 우량주' },
     ],
+    optionsEn: [
+      { id: 'A', text: 'When value stocks outperform the market' },
+      { id: 'B', text: 'A stock that looks undervalued but never recovers due to fundamental issues' },
+      { id: 'C', text: 'When overvalued growth stocks keep rising' },
+      { id: 'D', text: 'Blue-chip stocks that look attractive due to high dividends' },
+    ],
     correct_option: 'B',
     explanation: '밸류 트랩은 PER, PBR 등이 낮아 저평가처럼 보이지만, 구조적 문제(사양 산업, 경영 리스크)로 주가가 회복되지 않는 종목입니다. 저평가 지표만 보고 투자하면 빠지기 쉬운 함정입니다.',
+    explanationEn: 'A value trap is a stock with low PER/PBR that appears undervalued but never recovers due to structural problems (declining industry, management risk). Investing based solely on valuation metrics can lead to this trap.',
     difficulty: 2,
   },
 
@@ -408,59 +504,98 @@ const FALLBACK_QUIZZES = [
   {
     category: 'risk_management' as QuizCategory,
     question: '듀레이션(Duration)이 긴 채권의 금리 상승 시 특성은?',
+    questionEn: 'What happens to long-duration bonds when interest rates rise?',
     options: [
       { id: 'A', text: '가격 하락폭이 크다' },
       { id: 'B', text: '가격 변동이 거의 없다' },
       { id: 'C', text: '이자 수익이 증가한다' },
       { id: 'D', text: '만기가 짧아진다' },
     ],
+    optionsEn: [
+      { id: 'A', text: 'Prices drop significantly' },
+      { id: 'B', text: 'Prices barely change' },
+      { id: 'C', text: 'Interest income increases' },
+      { id: 'D', text: 'Maturity shortens' },
+    ],
     correct_option: 'A',
     explanation: '듀레이션은 금리 변동에 대한 채권 가격 민감도를 나타냅니다. 듀레이션이 10년이면 금리 1%p 상승 시 채권 가격은 약 10% 하락합니다. 장기채일수록 듀레이션이 길어 금리 리스크가 큽니다.',
+    explanationEn: 'Duration measures a bond\'s price sensitivity to interest rate changes. A 10-year duration means a 1%p rate increase causes roughly a 10% price decline. Longer-term bonds have higher duration and greater interest rate risk.',
     difficulty: 3,
   },
   {
     category: 'market_news' as QuizCategory,
     question: 'VIX 지수가 30을 넘을 때 역사적으로 가장 효과적이었던 전략은?',
+    questionEn: 'Historically, what has been the most effective strategy when the VIX exceeds 30?',
     options: [
       { id: 'A', text: '전량 매도 후 현금 보유' },
       { id: 'B', text: '변동성이 높을 때 분할 매수 (공포에 매수)' },
       { id: 'C', text: '레버리지 ETF로 추세 추종' },
       { id: 'D', text: '금만 매수' },
     ],
+    optionsEn: [
+      { id: 'A', text: 'Sell everything and hold cash' },
+      { id: 'B', text: 'Dollar-cost average during high volatility (buy the fear)' },
+      { id: 'C', text: 'Trend-follow with leveraged ETFs' },
+      { id: 'D', text: 'Buy only gold' },
+    ],
     correct_option: 'B',
     explanation: 'VIX 30 이상은 극도의 공포 구간입니다. 역사적으로 VIX 30+ 시점에 S&P 500을 매수하면 12개월 후 평균 +20% 이상 수익을 기록했습니다. "남들이 두려워할 때 탐욕적이 되라"는 워렌 버핏의 원칙이 데이터로 증명됩니다.',
+    explanationEn: 'VIX above 30 signals extreme fear. Historically, buying the S&P 500 when VIX exceeds 30 has averaged 20%+ returns over 12 months. Warren Buffett\'s principle of "being greedy when others are fearful" is proven by the data.',
     difficulty: 3,
   },
   {
     category: 'market_news' as QuizCategory,
     question: '역이율드커브(Inverted Yield Curve)가 발생한 후 평균적으로 경기침체까지 걸리는 기간은?',
+    questionEn: 'On average, how long after a yield curve inversion does a recession begin?',
     options: [
       { id: 'A', text: '약 1~3개월' },
       { id: 'B', text: '약 6~18개월' },
       { id: 'C', text: '약 3~5년' },
       { id: 'D', text: '경기침체와 무관하다' },
     ],
+    optionsEn: [
+      { id: 'A', text: 'About 1-3 months' },
+      { id: 'B', text: 'About 6-18 months' },
+      { id: 'C', text: 'About 3-5 years' },
+      { id: 'D', text: 'Unrelated to recessions' },
+    ],
     correct_option: 'B',
     explanation: '역이율드커브(장단기 금리 역전)는 경기침체의 가장 신뢰도 높은 선행지표입니다. 1960년 이후 8번의 경기침체 중 7번을 사전에 예고했으며, 역전 후 평균 12~18개월 뒤 침체가 시작되었습니다. 단, 타이밍이 부정확할 수 있어 즉각적 매도 신호는 아닙니다.',
+    explanationEn: 'An inverted yield curve is the most reliable leading indicator of recession. Since 1960, it has preceded 7 out of 8 recessions, with an average lead time of 12-18 months. However, timing can be imprecise, so it is not an immediate sell signal.',
     difficulty: 3,
   },
   {
     category: 'investing_terms' as QuizCategory,
     question: '옵션에서 "내재변동성(Implied Volatility)"이 급등하면 의미하는 것은?',
+    questionEn: 'What does a spike in "Implied Volatility" in options mean?',
     options: [
       { id: 'A', text: '시장 참여자들이 향후 큰 가격 변동을 예상한다' },
       { id: 'B', text: '기초자산 가격이 반드시 하락한다' },
       { id: 'C', text: '옵션 매도가 유리하다' },
       { id: 'D', text: '거래량이 감소한다' },
     ],
+    optionsEn: [
+      { id: 'A', text: 'Market participants expect large future price swings' },
+      { id: 'B', text: 'The underlying asset price will definitely fall' },
+      { id: 'C', text: 'Selling options is favorable' },
+      { id: 'D', text: 'Trading volume decreases' },
+    ],
     correct_option: 'A',
     explanation: '내재변동성은 옵션 가격에 반영된 시장의 미래 변동성 기대치입니다. IV 급등은 불확실성 증가를 의미하며, 옵션 프리미엄이 비싸집니다. VIX도 S&P 500 옵션의 내재변동성으로 계산되며, 공포지수로 불립니다.',
+    explanationEn: 'Implied volatility reflects the market\'s expectation of future price fluctuations as priced into options. A spike in IV signals increased uncertainty and makes option premiums expensive. The VIX is also calculated from S&P 500 option implied volatility, known as the "fear index."',
     difficulty: 3,
   },
   {
     category: 'stock_basics' as QuizCategory,
     question: 'ROE(자기자본이익률)가 15%이고 배당성향이 40%일 때, 지속가능 성장률(Sustainable Growth Rate)은?',
+    questionEn: 'If ROE is 15% and the payout ratio is 40%, what is the Sustainable Growth Rate?',
     options: [
+      { id: 'A', text: '6%' },
+      { id: 'B', text: '9%' },
+      { id: 'C', text: '15%' },
+      { id: 'D', text: '21%' },
+    ],
+    optionsEn: [
       { id: 'A', text: '6%' },
       { id: 'B', text: '9%' },
       { id: 'C', text: '15%' },
@@ -468,19 +603,28 @@ const FALLBACK_QUIZZES = [
     ],
     correct_option: 'B',
     explanation: '지속가능 성장률 = ROE x (1 - 배당성향) = 15% x (1 - 0.4) = 15% x 0.6 = 9%. 기업이 외부 자금 조달 없이 내부 유보금만으로 달성 가능한 성장률입니다. 이 수치를 초과하는 성장은 부채 증가나 유상증자가 필요합니다.',
+    explanationEn: 'Sustainable Growth Rate = ROE x (1 - payout ratio) = 15% x (1 - 0.4) = 15% x 0.6 = 9%. This is the growth rate a company can achieve using only retained earnings without external financing. Growth beyond this requires additional debt or equity issuance.',
     difficulty: 3,
   },
   {
     category: 'risk_management' as QuizCategory,
     question: '포트폴리오의 99% VaR(Value at Risk)가 -5%라면 의미하는 것은?',
+    questionEn: 'If a portfolio\'s 99% VaR (Value at Risk) is -5%, what does it mean?',
     options: [
       { id: 'A', text: '99%의 확률로 최대 손실이 5%를 넘지 않는다' },
       { id: 'B', text: '매일 5%씩 손실이 발생한다' },
       { id: 'C', text: '1년에 5% 이상 하락할 확률이 99%다' },
       { id: 'D', text: '최대 손실이 5%로 제한된다' },
     ],
+    optionsEn: [
+      { id: 'A', text: 'With 99% probability, the maximum loss won\'t exceed 5%' },
+      { id: 'B', text: 'A 5% loss occurs every day' },
+      { id: 'C', text: 'There is a 99% chance of losing more than 5% per year' },
+      { id: 'D', text: 'The maximum possible loss is capped at 5%' },
+    ],
     correct_option: 'A',
     explanation: 'VaR는 주어진 신뢰수준(여기서 99%)에서 특정 기간 동안 발생할 수 있는 최대 예상 손실입니다. 99% VaR -5%는 "100거래일 중 99일은 손실이 5% 이내"라는 뜻입니다. 다만 나머지 1%의 꼬리 위험(Tail Risk)은 훨씬 클 수 있어 CVaR로 보완합니다.',
+    explanationEn: 'VaR is the maximum expected loss over a given period at a specified confidence level (here 99%). A 99% VaR of -5% means "99 out of 100 trading days, the loss stays within 5%." However, the remaining 1% tail risk can be much larger, which is why CVaR (Conditional VaR) is used as a supplement.',
     difficulty: 3,
   },
 ];

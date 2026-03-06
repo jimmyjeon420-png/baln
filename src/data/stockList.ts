@@ -208,17 +208,35 @@ const STOCK_LOOKUP_INDEX = (() => {
 /**
  * 종목 검색 함수 — 한글명, 영문명, 티커 모두 매칭
  * @param query 검색어 (2글자 이상 추천)
+ * @param lang  사용자 언어 — 'en'이면 미국/글로벌 종목 우선, 'ko'면 한국 종목 우선
  * @returns 최대 10개의 매칭 결과
  */
-export function searchStocks(query: string): StockItem[] {
+export function searchStocks(query: string, lang: string = 'ko'): StockItem[] {
   const q = query.toLowerCase().trim();
   if (q.length === 0) return [];
 
-  return POPULAR_STOCKS.filter(s =>
+  const matches = POPULAR_STOCKS.filter(s =>
     s.name.toLowerCase().includes(q) ||
     s.nameEn.toLowerCase().includes(q) ||
     s.ticker.toLowerCase().includes(q)
-  ).slice(0, 10);
+  );
+
+  // 로케일 기반 정렬: 영어 유저는 미국/글로벌 종목 우선, 한국어 유저는 한국 종목 우선
+  if (lang === 'en') {
+    matches.sort((a, b) => {
+      const aIsKr = a.category === 'kr_stock' ? 1 : 0;
+      const bIsKr = b.category === 'kr_stock' ? 1 : 0;
+      return aIsKr - bIsKr;
+    });
+  } else {
+    matches.sort((a, b) => {
+      const aIsKr = a.category === 'kr_stock' ? 0 : 1;
+      const bIsKr = b.category === 'kr_stock' ? 0 : 1;
+      return aIsKr - bIsKr;
+    });
+  }
+
+  return matches.slice(0, 10);
 }
 
 export function findBestStockMatch(query: string, tickerHint?: string): StockItem | null {
@@ -265,7 +283,18 @@ export function findBestStockMatch(query: string, tickerHint?: string): StockIte
 /**
  * 카테고리별 한국어 라벨
  */
-export function getCategoryLabel(category: StockItem['category']): string {
+export function getCategoryLabel(category: StockItem['category'], lang: string = 'ko'): string {
+  if (lang === 'en') {
+    switch (category) {
+      case 'kr_stock': return 'Korean Stocks';
+      case 'us_stock': return 'US Stocks';
+      case 'etf': return 'ETF';
+      case 'crypto': return 'Crypto';
+      case 'bond': return 'Bonds';
+      case 'cash': return 'Cash';
+      default: return 'Other';
+    }
+  }
   switch (category) {
     case 'kr_stock': return '한국주식';
     case 'us_stock': return '미국주식';

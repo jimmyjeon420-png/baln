@@ -16,6 +16,7 @@ import {
   type AreaPriceSummary,
 } from '../types/realestate';
 import { extractLawdCd } from './lawdCodeMap';
+import { isKoreanLocale } from '../utils/formatters';
 
 // ============================================================================
 // API 키 설정 — 환경변수에서 로드 (.env 파일에 설정)
@@ -227,7 +228,7 @@ function parseMolitXml(xml: string, filterComplexName?: string): RealEstateTrans
     const month = getValue('월');
     const day = getValue('일');
     const dong = getValue('법정동');
-    const lawdCd = getValue('지역코드');
+    const _lawdCd = getValue('지역코드');
 
     // 단지명 필터 (지정된 경우)
     if (filterComplexName && !aptName.includes(filterComplexName)) continue;
@@ -507,7 +508,7 @@ export function calculateEstimatedPrice(
     if (!areaGroups.has(key)) {
       areaGroups.set(key, []);
     }
-    areaGroups.get(key)!.push(tx);
+    areaGroups.get(key)?.push(tx);
   }
 
   const summaries: AreaPriceSummary[] = [];
@@ -533,7 +534,9 @@ export function calculateEstimatedPrice(
 
     summaries.push({
       area,
-      pyeongLabel: `${Math.round(pyeong)}평`,
+      pyeongLabel: isKoreanLocale()
+        ? `${Math.round(pyeong)}평`
+        : `${Math.round(area)}㎡`,
       avgPrice,
       latestPrice,
       changeRate,
@@ -545,9 +548,18 @@ export function calculateEstimatedPrice(
 }
 
 /**
- * 금액 포맷 (억/만원 단위)
+ * 금액 포맷 (억/만원 단위 / $XXM 단위)
+ * 로케일에 따라 한국식(억/만) 또는 영어식($M/$K) 자동 전환
  */
 export function formatPrice(amount: number): string {
+  if (!isKoreanLocale()) {
+    // 영어: USD 기준 표시 (한국 부동산이지만 표시 단위만 변환)
+    // 1억원 ≈ $70K (환율 ~1,400원 기준 근사)
+    const usd = amount / 1400;
+    if (usd >= 1_000_000) return `$${(usd / 1_000_000).toFixed(1)}M`;
+    if (usd >= 1_000) return `$${Math.round(usd / 1_000)}K`;
+    return `$${Math.round(usd).toLocaleString()}`;
+  }
   const man = Math.round(amount / 10000);
   if (man >= 10000) {
     const eok = Math.floor(man / 10000);

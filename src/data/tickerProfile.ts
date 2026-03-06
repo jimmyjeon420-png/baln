@@ -59,6 +59,27 @@ export const TICKER_PROFILES: Record<string, TickerProfile> = {
   'UBER':  { ticker: 'UBER',  name: '우버',           nameEn: 'Uber',                sector: 'consumer',  style: 'growth',      geo: 'us' },
   'ABNB':  { ticker: 'ABNB',  name: '에어비앤비',     nameEn: 'Airbnb',              sector: 'consumer',  style: 'growth',      geo: 'us' },
 
+  // ── 미국 대형주 (stockList.ts 보완) ──
+  'NFLX':  { ticker: 'NFLX',  name: '넷플릭스',       nameEn: 'Netflix',             sector: 'consumer',  style: 'growth',      geo: 'us' },
+  'AVGO':  { ticker: 'AVGO',  name: '브로드컴',       nameEn: 'Broadcom',            sector: 'tech',      style: 'growth',      geo: 'us' },
+  'ARM':   { ticker: 'ARM',   name: 'ARM홀딩스',      nameEn: 'Arm Holdings',        sector: 'tech',      style: 'growth',      geo: 'us' },
+  'CEG':   { ticker: 'CEG',   name: '컨스텔레이션 에너지', nameEn: 'Constellation Energy', sector: 'energy', style: 'growth',    geo: 'us' },
+  'GLW':   { ticker: 'GLW',   name: '코닝',           nameEn: 'Corning',             sector: 'materials', style: 'value',       geo: 'us' },
+  'SOFI':  { ticker: 'SOFI',  name: '소파이',         nameEn: 'SoFi Technologies',   sector: 'finance',   style: 'speculative', geo: 'us' },
+  'V':     { ticker: 'V',     name: '비자',           nameEn: 'Visa',                sector: 'finance',   style: 'value',       geo: 'us' },
+  'MA':    { ticker: 'MA',    name: '마스터카드',     nameEn: 'Mastercard',          sector: 'finance',   style: 'value',       geo: 'us' },
+  'UNH':   { ticker: 'UNH',   name: '유나이티드헬스', nameEn: 'UnitedHealth',        sector: 'healthcare', style: 'value',      geo: 'us' },
+  'HD':    { ticker: 'HD',    name: '홈디포',         nameEn: 'Home Depot',          sector: 'consumer',  style: 'value',       geo: 'us' },
+  'COST':  { ticker: 'COST',  name: '코스트코',       nameEn: 'Costco',              sector: 'consumer',  style: 'value',       geo: 'us' },
+  'CRM':   { ticker: 'CRM',   name: '세일즈포스',     nameEn: 'Salesforce',          sector: 'tech',      style: 'growth',      geo: 'us' },
+  'DIS':   { ticker: 'DIS',   name: '디즈니',         nameEn: 'Walt Disney',         sector: 'consumer',  style: 'value',       geo: 'us' },
+  'INTC':  { ticker: 'INTC',  name: '인텔',           nameEn: 'Intel',               sector: 'tech',      style: 'value',       geo: 'us' },
+  'BA':    { ticker: 'BA',    name: '보잉',           nameEn: 'Boeing',              sector: 'industrial', style: 'value',      geo: 'us' },
+  'NKE':   { ticker: 'NKE',   name: '나이키',         nameEn: 'Nike',                sector: 'consumer',  style: 'value',       geo: 'us' },
+  'LLY':   { ticker: 'LLY',   name: '일라이릴리',     nameEn: 'Eli Lilly',           sector: 'healthcare', style: 'growth',     geo: 'us' },
+  'WMT':   { ticker: 'WMT',   name: '월마트',         nameEn: 'Walmart',             sector: 'consumer',  style: 'dividend',    geo: 'us' },
+  'ORCL':  { ticker: 'ORCL',  name: '오라클',         nameEn: 'Oracle',              sector: 'tech',      style: 'value',       geo: 'us' },
+
   // ── 미국 가치주 ──
   'BRK.B': { ticker: 'BRK.B', name: '버크셔B',        nameEn: 'Berkshire B',         sector: 'finance',   style: 'value',       geo: 'us' },
   'BRK.A': { ticker: 'BRK.A', name: '버크셔A',        nameEn: 'Berkshire A',         sector: 'finance',   style: 'value',       geo: 'us' },

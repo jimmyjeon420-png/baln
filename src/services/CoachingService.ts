@@ -42,7 +42,8 @@ export class CoachingService {
    */
   public generateCoachingMessage(
     eggAnalysis: EggCycleAnalysis,
-    assets: Asset[]
+    assets: Asset[],
+    lang: string = 'ko'
   ): CoachingMessage {
     // 1. 포트폴리오 분석
     const portfolioAnalysis = this.analyzePortfolio(assets);
@@ -57,13 +58,16 @@ export class CoachingService {
     if (coachingState.isExtremeCrypto && eggAnalysis.action === InvestmentAction.SELL) {
       return {
         severity: CoachingSeverity.DANGER,
-        message: '⚠️ 위험! 시장이 과열되고 있습니다 (Egg Phase 3). 포트폴리오의 대부분이 암호화폐인데 이익 실현을 강력히 권장합니다.',
-        detailedMessage:
-          '금리가 저점에 도달하고 투자자 심리가 극도로 낙관적입니다. 역사적으로 이 시점에서 자산 가격은 내재 가치를 크게 초과합니다. 일부 이익을 실현하고 리스크를 낮추세요.',
+        message: lang === 'en'
+          ? '⚠️ Danger! Market is overheating (Egg Phase 3). Most of your portfolio is crypto — strongly recommend taking profits.'
+          : '⚠️ 위험! 시장이 과열되고 있습니다 (Egg Phase 3). 포트폴리오의 대부분이 암호화폐인데 이익 실현을 강력히 권장합니다.',
+        detailedMessage: lang === 'en'
+          ? 'Rates have bottomed and investor sentiment is extremely optimistic. Historically, asset prices far exceed intrinsic value at this point. Realize some profits and reduce risk.'
+          : '금리가 저점에 도달하고 투자자 심리가 극도로 낙관적입니다. 역사적으로 이 시점에서 자산 가격은 내재 가치를 크게 초과합니다. 일부 이익을 실현하고 리스크를 낮추세요.',
         icon: '🚨',
         backgroundColor: COLORS.error + '30',
         textColor: COLORS.error,
-        recommendedAction: '즉시 일부 매도 고려',
+        recommendedAction: lang === 'en' ? 'Consider partial sell immediately' : '즉시 일부 매도 고려',
       };
     }
 
@@ -71,13 +75,16 @@ export class CoachingService {
     if (coachingState.isExtremeCash && eggAnalysis.action === InvestmentAction.BUY) {
       return {
         severity: CoachingSeverity.SUCCESS,
-        message: '💰 기회! 남들이 두려워할 때가 매수의 최고 시점입니다. 금리 고점에 충분한 현금을 보유 중입니다.',
-        detailedMessage:
-          '이제가 바로 가치 투자의 기회입니다. 금리가 고점이므로 앞으로 하락할 가능성이 높습니다. 역사적으로 이 시점부터의 매수가 최고의 수익률을 기록했습니다.',
+        message: lang === 'en'
+          ? '💰 Opportunity! The best time to buy is when others are fearful. You have sufficient cash at rate peak.'
+          : '💰 기회! 남들이 두려워할 때가 매수의 최고 시점입니다. 금리 고점에 충분한 현금을 보유 중입니다.',
+        detailedMessage: lang === 'en'
+          ? 'This is a value investing opportunity. Rates are at peak, likely to decline. Historically, buying at this point yields the best returns.'
+          : '이제가 바로 가치 투자의 기회입니다. 금리가 고점이므로 앞으로 하락할 가능성이 높습니다. 역사적으로 이 시점부터의 매수가 최고의 수익률을 기록했습니다.',
         icon: '💎',
         backgroundColor: COLORS.success + '30',
         textColor: COLORS.success,
-        recommendedAction: '단계적 매수 진행',
+        recommendedAction: lang === 'en' ? 'Proceed with staged buying' : '단계적 매수 진행',
       };
     }
 
@@ -85,12 +92,16 @@ export class CoachingService {
     if (portfolioAnalysis.cashAllocation > 30 && eggAnalysis.action === InvestmentAction.BUY) {
       return {
         severity: CoachingSeverity.SUCCESS,
-        message: '📊 좋은 타이밍! 금리 고점입니다. 준비된 현금으로 진입하세요.',
-        detailedMessage: `현재 현금 비중이 ${portfolioAnalysis.cashAllocation.toFixed(1)}%입니다. 이 환경은 매수에 최적입니다.`,
+        message: lang === 'en'
+          ? '📊 Good timing! Rates are at peak. Enter with your prepared cash.'
+          : '📊 좋은 타이밍! 금리 고점입니다. 준비된 현금으로 진입하세요.',
+        detailedMessage: lang === 'en'
+          ? `Current cash allocation is ${portfolioAnalysis.cashAllocation.toFixed(1)}%. This environment is optimal for buying.`
+          : `현재 현금 비중이 ${portfolioAnalysis.cashAllocation.toFixed(1)}%입니다. 이 환경은 매수에 최적입니다.`,
         icon: '🌱',
         backgroundColor: COLORS.success + '30',
         textColor: COLORS.success,
-        recommendedAction: '점진적 매수',
+        recommendedAction: lang === 'en' ? 'Gradual buying' : '점진적 매수',
       };
     }
 
@@ -98,24 +109,34 @@ export class CoachingService {
     if (portfolioAnalysis.cashAllocation > 70 && eggAnalysis.action === InvestmentAction.SELL) {
       return {
         severity: CoachingSeverity.WARNING,
-        message: '⏳ 현금 많은 상태에서 매도 신호는 재평가 신호입니다. 다음 조정장을 준비하세요.',
-        detailedMessage: '시장이 과열되었으나, 포트폴리오 현금 비중이 높습니다. 이는 당신이 이미 충분히 방어적임을 의미합니다.',
+        message: lang === 'en'
+          ? '⏳ Sell signal with high cash is a re-evaluation signal. Prepare for the next correction.'
+          : '⏳ 현금 많은 상태에서 매도 신호는 재평가 신호입니다. 다음 조정장을 준비하세요.',
+        detailedMessage: lang === 'en'
+          ? 'Market is overheating, but your cash allocation is high. This means you are already sufficiently defensive.'
+          : '시장이 과열되었으나, 포트폴리오 현금 비중이 높습니다. 이는 당신이 이미 충분히 방어적임을 의미합니다.',
         icon: '🛡️',
         backgroundColor: COLORS.warning + '30',
         textColor: COLORS.warning,
-        recommendedAction: '현 상태 유지, 조정장 준비',
+        recommendedAction: lang === 'en' ? 'Maintain position, prepare for correction' : '현 상태 유지, 조정장 준비',
       };
     }
 
     // 일반: 중립적 상황
     return {
       severity: CoachingSeverity.INFO,
-      message: `📈 현재 ${eggAnalysis.actionKorean} 구간입니다. ${eggAnalysis.description}`,
-      detailedMessage: `분산도: ${portfolioAnalysis.assetCount}개 자산, 암호화폐 ${portfolioAnalysis.cryptoAllocation.toFixed(1)}% | 현금 ${portfolioAnalysis.cashAllocation.toFixed(1)}%`,
+      message: lang === 'en'
+        ? `📈 Currently in ${eggAnalysis.actionKorean} zone. ${eggAnalysis.description}`
+        : `📈 현재 ${eggAnalysis.actionKorean} 구간입니다. ${eggAnalysis.description}`,
+      detailedMessage: lang === 'en'
+        ? `Diversification: ${portfolioAnalysis.assetCount} assets, Crypto ${portfolioAnalysis.cryptoAllocation.toFixed(1)}% | Cash ${portfolioAnalysis.cashAllocation.toFixed(1)}%`
+        : `분산도: ${portfolioAnalysis.assetCount}개 자산, 암호화폐 ${portfolioAnalysis.cryptoAllocation.toFixed(1)}% | 현금 ${portfolioAnalysis.cashAllocation.toFixed(1)}%`,
       icon: '📊',
       backgroundColor: COLORS.info + '30',
       textColor: COLORS.info,
-      recommendedAction: `${eggAnalysis.actionKorean}을 유지하세요`,
+      recommendedAction: lang === 'en'
+        ? `Maintain ${eggAnalysis.actionKorean} stance`
+        : `${eggAnalysis.actionKorean}을 유지하세요`,
     };
   }
 
@@ -133,7 +154,7 @@ export class CoachingService {
         assetCount: 0,
         totalValue: 0,
         isAnalyzable: false,
-        analysisNote: '포트폴리오가 비어있습니다',
+        analysisNote: 'Portfolio is empty',
       };
     }
 
@@ -267,26 +288,34 @@ export class CoachingService {
   /**
    * 포트폴리오 특성 기반 추가 팁
    */
-  public getPortfolioTip(assets: Asset[]): string {
+  public getPortfolioTip(assets: Asset[], lang: string = 'ko'): string {
     const portfolio = this.analyzePortfolio(assets);
 
     if (!portfolio.isAnalyzable) {
-      return '포트폴리오에 자산을 추가하여 분석을 시작하세요.';
+      return lang === 'en' ? 'Add assets to your portfolio to start analysis.' : '포트폴리오에 자산을 추가하여 분석을 시작하세요.';
     }
 
     if (portfolio.assetCount < 3) {
-      return `현재 ${portfolio.assetCount}개 자산만 있습니다. 더 많은 자산 클래스로 분산하면 위험을 줄일 수 있습니다.`;
+      return lang === 'en'
+        ? `You only have ${portfolio.assetCount} assets. Diversifying into more asset classes can reduce risk.`
+        : `현재 ${portfolio.assetCount}개 자산만 있습니다. 더 많은 자산 클래스로 분산하면 위험을 줄일 수 있습니다.`;
     }
 
     if (portfolio.cryptoAllocation > 80) {
-      return '암호화폐 비중이 매우 높습니다. 안정성을 위해 현금이나 채권 비중을 높이는 것을 검토하세요.';
+      return lang === 'en'
+        ? 'Crypto allocation is very high. Consider increasing cash or bond allocation for stability.'
+        : '암호화폐 비중이 매우 높습니다. 안정성을 위해 현금이나 채권 비중을 높이는 것을 검토하세요.';
     }
 
     if (portfolio.cashAllocation > 60) {
-      return '현금 비중이 높습니다. 시장에 진입할 기회를 노리고 있거나, 방어적 포지션을 취하고 계신 것으로 보입니다.';
+      return lang === 'en'
+        ? 'Cash allocation is high. It seems you\'re waiting for market entry or taking a defensive position.'
+        : '현금 비중이 높습니다. 시장에 진입할 기회를 노리고 있거나, 방어적 포지션을 취하고 계신 것으로 보입니다.';
     }
 
-    return `포트폴리오 분산도: ${portfolio.assetCount}개 자산으로 ${portfolio.cryptoAllocation.toFixed(1)}% 암호화폐, ${portfolio.cashAllocation.toFixed(1)}% 현금을 보유 중입니다.`;
+    return lang === 'en'
+      ? `Diversification: ${portfolio.assetCount} assets with ${portfolio.cryptoAllocation.toFixed(1)}% crypto, ${portfolio.cashAllocation.toFixed(1)}% cash.`
+      : `포트폴리오 분산도: ${portfolio.assetCount}개 자산으로 ${portfolio.cryptoAllocation.toFixed(1)}% 암호화폐, ${portfolio.cashAllocation.toFixed(1)}% 현금을 보유 중입니다.`;
   }
 }
 

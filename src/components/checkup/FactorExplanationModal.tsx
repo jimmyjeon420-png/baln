@@ -17,7 +17,7 @@ import {
 } from 'react-native';
 import { useTheme } from '../../hooks/useTheme';
 import { useLocale } from '../../context/LocaleContext';
-import { FACTOR_EXPLANATIONS, FactorType } from '../../data/factorExplanations';
+import { FACTOR_EXPLANATIONS, FactorType, getLocalizedFactor } from '../../data/factorExplanations';
 import type { ThemeColors } from '../../styles/colors';
 
 interface FactorExplanationModalProps {
@@ -32,11 +32,12 @@ export default function FactorExplanationModal({
   onClose,
 }: FactorExplanationModalProps) {
   const { colors } = useTheme();
-  const { t } = useLocale();
+  const { t, language } = useLocale();
 
   if (!factorType) return null;
 
   const explanation = FACTOR_EXPLANATIONS[factorType];
+  const localized = getLocalizedFactor(explanation, language);
   const styles = createStyles(colors);
 
   return (
@@ -50,7 +51,7 @@ export default function FactorExplanationModal({
         <View style={styles.header}>
           <View style={styles.headerContent}>
             <Text style={styles.headerIcon}>{explanation.icon}</Text>
-            <Text style={styles.headerTitle}>{explanation.title}</Text>
+            <Text style={styles.headerTitle}>{localized.title}</Text>
           </View>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
             <Text style={styles.closeButtonText}>✕</Text>
@@ -62,14 +63,14 @@ export default function FactorExplanationModal({
             {/* 왜 중요한가 */}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>{t('checkup.factor.whyImportant')}</Text>
-              <Text style={styles.sectionText}>{explanation.why}</Text>
+              <Text style={styles.sectionText}>{localized.why}</Text>
             </View>
 
             {/* 실제 사례 */}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>{t('checkup.factor.realCase')}</Text>
               <View style={styles.exampleBox}>
-                <Text style={styles.exampleText}>{explanation.example}</Text>
+                <Text style={styles.exampleText}>{localized.example}</Text>
               </View>
             </View>
 
@@ -78,7 +79,7 @@ export default function FactorExplanationModal({
               <Text style={styles.sectionTitle}>{t('checkup.factor.howToSolve')}</Text>
               <View style={styles.solutionBox}>
                 <Text style={styles.solutionIcon}>💡</Text>
-                <Text style={styles.solutionText}>{explanation.solution}</Text>
+                <Text style={styles.solutionText}>{localized.solution}</Text>
               </View>
             </View>
 
@@ -86,7 +87,7 @@ export default function FactorExplanationModal({
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>{t('checkup.factor.historicalContext')}</Text>
               <View style={styles.contextBox}>
-                <Text style={styles.contextText}>{explanation.historicalContext}</Text>
+                <Text style={styles.contextText}>{localized.historicalContext}</Text>
               </View>
             </View>
           </View>

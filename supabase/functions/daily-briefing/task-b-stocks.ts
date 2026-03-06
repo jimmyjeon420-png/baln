@@ -66,33 +66,35 @@ async function analyzeStockBatch(
 
   const tickerList = stocks.map(s => `${s.ticker}(${s.name})`).join(', ');
 
-  const prompt = `당신은 baln(발른) 앱의 퀀트 분석 AI입니다.
-오늘(${dateStr}) 아래 종목들의 퀀트 리포트를 작성하세요.
+  const isEn = langInstruction.includes('English');
 
-[분석 대상] ${tickerList}
+  const prompt = `${isEn ? 'You are the quantitative analysis AI for the baln app.' : '당신은 baln(발른) 앱의 퀀트 분석 AI입니다.'}
+${isEn ? `Today (${dateStr})` : `오늘(${dateStr})`} ${isEn ? 'Write a quant report for the stocks below.' : '아래 종목들의 퀀트 리포트를 작성하세요.'}
 
-[핵심 원칙]
+[${isEn ? 'Stocks' : '분석 대상'}] ${tickerList}
+
+[${isEn ? 'Core Principles' : '핵심 원칙'}]
 - ${langInstruction}
-- "안심을 판다, 불안을 팔지 않는다" — 하락 종목도 맥락과 함께 설명한다.
-- 분석은 데이터 기반으로 하되, 결론을 단정짓지 않는다.
+- "${isEn ? 'Sell reassurance, not anxiety' : '안심을 판다, 불안을 팔지 않는다'}" — ${isEn ? 'Explain declining stocks with context.' : '하락 종목도 맥락과 함께 설명한다.'}
+- ${isEn ? 'Data-driven analysis without definitive conclusions.' : '분석은 데이터 기반으로 하되, 결론을 단정짓지 않는다.'}
 
-[Google Search 검색]
-- 각 종목의 현재 주가, 최근 실적, 주요 뉴스를 검색하세요.
+[Google Search]
+- ${isEn ? 'Search for each stock: current price, recent earnings, major news.' : '각 종목의 현재 주가, 최근 실적, 주요 뉴스를 검색하세요.'}
 
-[각 종목 분석 항목]
-1. valuation_score (0~100 정수): 높을수록 저평가. PEG, P/E, P/S 종합 판단
-2. signal: STRONG_BUY / BUY / HOLD / SELL / STRONG_SELL 중 하나
-3. analysis: 한국어 2~3문장. 최근 뉴스나 실적을 반영한 구체적 분석
-4. metrics: pegRatio(숫자), rsi(정수), earningsRevision(문자열), priceToFairValue(숫자), shortInterest(문자열)
+[${isEn ? 'Analysis items per stock' : '각 종목 분석 항목'}]
+1. valuation_score (0~100 ${isEn ? 'integer' : '정수'}): ${isEn ? 'Higher = more undervalued. PEG, P/E, P/S combined.' : '높을수록 저평가. PEG, P/E, P/S 종합 판단'}
+2. signal: STRONG_BUY / BUY / HOLD / SELL / STRONG_SELL
+3. analysis: ${isEn ? '2-3 sentences in English. Concrete analysis reflecting recent news/earnings.' : '한국어 2~3문장. 최근 뉴스나 실적을 반영한 구체적 분석'}
+4. metrics: pegRatio(${isEn ? 'number' : '숫자'}), rsi(${isEn ? 'integer' : '정수'}), earningsRevision(${isEn ? 'string' : '문자열'}), priceToFairValue(${isEn ? 'number' : '숫자'}), shortInterest(${isEn ? 'string' : '문자열'})
 
-[응답 형식 — 아래 JSON만 출력. 설명문, 마크다운, 코드블록 절대 금지.]
+[${isEn ? 'Response format — JSON only. No text, markdown, or code blocks.' : '응답 형식 — 아래 JSON만 출력. 설명문, 마크다운, 코드블록 절대 금지.'}]
 {
   "reports": [
     {
       "ticker": "NVDA",
       "valuation_score": 45,
       "signal": "HOLD",
-      "analysis": "엔비디아는 AI 반도체 수요 호조로 매출이 전년 대비 122% 증가했으나, 현 주가는 이미 실적 기대를 상당 부분 반영한 상태입니다. 단기 과열 신호(RSI 68)가 나타나 관망이 적절합니다.",
+      "analysis": "${isEn ? 'NVIDIA saw 122% YoY revenue growth on AI semiconductor demand, but the current price largely reflects these expectations. Short-term overheating signal (RSI 68) suggests a wait-and-see approach.' : '엔비디아는 AI 반도체 수요 호조로 매출이 전년 대비 122% 증가했으나, 현 주가는 이미 실적 기대를 상당 부분 반영한 상태입니다. 단기 과열 신호(RSI 68)가 나타나 관망이 적절합니다.'}",
       "metrics": {"pegRatio": 1.8, "rsi": 62, "earningsRevision": "+5%", "priceToFairValue": 0.95, "shortInterest": "2.1%"}
     }
   ]

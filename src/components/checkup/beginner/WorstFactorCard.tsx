@@ -11,7 +11,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import type { FactorResult } from '../../../services/rebalanceScore';
 import { Asset, AssetType } from '../../../types/asset';
 import FactorExplanationModal from '../FactorExplanationModal';
-import { getFactorType, FACTOR_EXPLANATIONS } from '../../../data/factorExplanations';
+import { getFactorType, FACTOR_EXPLANATIONS, getLocalizedFactor } from '../../../data/factorExplanations';
 import { useTheme } from '../../../hooks/useTheme';
 import { useLocale } from '../../../context/LocaleContext';
 import type { ThemeColors } from '../../../styles/colors';
@@ -21,16 +21,16 @@ interface WorstFactorCardProps {
   allAssets?: Asset[];
 }
 
-const LABEL_MAP: Record<string, string> = {
-  '배분 이탈도': '비중이 달라졌어요',
-  '자산 집중도': '한 곳에 몰려있어요',
-  '위험 집중도': '위험이 집중돼 있어요',
-  '상관관계': '자산들이 같이 움직여요',
-  '변동성': '가격 변동이 큰 편이에요',
-  '하방 리스크': '손실 중인 자산이 있어요',
-  '세금 효율': '절세 기회가 있어요',
-  '레버리지 건전성': '대출 부담이 있어요',
-  '철학 정합도': '투자 철학과 맞지 않아요',
+const LABEL_MAP: Record<string, { ko: string; en: string }> = {
+  '배분 이탈도': { ko: '비중이 달라졌어요', en: 'Allocation has drifted' },
+  '자산 집중도': { ko: '한 곳에 몰려있어요', en: 'Too concentrated in one area' },
+  '위험 집중도': { ko: '위험이 집중돼 있어요', en: 'Risk is concentrated' },
+  '상관관계': { ko: '자산들이 같이 움직여요', en: 'Assets move together' },
+  '변동성': { ko: '가격 변동이 큰 편이에요', en: 'Price swings are high' },
+  '하방 리스크': { ko: '손실 중인 자산이 있어요', en: 'Some assets are at a loss' },
+  '세금 효율': { ko: '절세 기회가 있어요', en: 'Tax saving opportunity' },
+  '레버리지 건전성': { ko: '대출 부담이 있어요', en: 'Loan burden exists' },
+  '철학 정합도': { ko: '투자 철학과 맞지 않아요', en: 'Doesn\'t match your philosophy' },
 };
 
 function getStoryMessage(factor: FactorResult, allAssets: Asset[] | undefined, t: (key: string, params?: Record<string, string | number>) => string): string | null {
@@ -102,7 +102,7 @@ function getScoreColor(score: number, colors: ThemeColors): string {
 export default function WorstFactorCard({ factors, allAssets }: WorstFactorCardProps) {
   const [modalVisible, setModalVisible] = useState(false);
   const { colors } = useTheme();
-  const { t } = useLocale();
+  const { t, language } = useLocale();
 
   const styles = useMemo(() => createStyles(colors), [colors]);
 
@@ -112,10 +112,12 @@ export default function WorstFactorCard({ factors, allAssets }: WorstFactorCardP
     curr.score < prev.score ? curr : prev,
   );
 
-  const simplifiedLabel = LABEL_MAP[worst.label] || worst.label;
+  const labelEntry = LABEL_MAP[worst.label];
+  const simplifiedLabel = labelEntry ? labelEntry[language] || labelEntry.ko : worst.label;
   const barColor = getScoreColor(worst.score, colors);
   const factorType = getFactorType(worst.label);
-  const historicalContext = factorType ? FACTOR_EXPLANATIONS[factorType].historicalContext : null;
+  const localizedExplanation = factorType ? getLocalizedFactor(FACTOR_EXPLANATIONS[factorType], language) : null;
+  const historicalContext = localizedExplanation ? localizedExplanation.historicalContext : null;
 
   return (
     <>

@@ -14,15 +14,17 @@ export type QuizCategory = 'stock_basics' | 'market_news' | 'investing_terms' | 
 
 export interface QuizCategoryInfo {
   label: string;
+  labelEn?: string;
   icon: string;
   description: string;
+  descriptionEn?: string;
 }
 
 export const QUIZ_CATEGORIES: Record<QuizCategory, QuizCategoryInfo> = {
-  stock_basics:     { label: '주식 기초',   icon: '📊', description: '주식 투자의 기본 개념' },
-  market_news:      { label: '시장 뉴스',   icon: '📰', description: '최신 경제/시장 이슈' },
-  investing_terms:  { label: '투자 용어',   icon: '📖', description: '꼭 알아야 할 투자 용어' },
-  risk_management:  { label: '리스크 관리', icon: '🛡️', description: '위험 관리와 분산 투자' },
+  stock_basics:     { label: '주식 기초',   labelEn: 'Stock Basics',     icon: '📊', description: '주식 투자의 기본 개념', descriptionEn: 'Fundamental concepts of stock investing' },
+  market_news:      { label: '시장 뉴스',   labelEn: 'Market News',      icon: '📰', description: '최신 경제/시장 이슈', descriptionEn: 'Latest economic and market issues' },
+  investing_terms:  { label: '투자 용어',   labelEn: 'Investing Terms',  icon: '📖', description: '꼭 알아야 할 투자 용어', descriptionEn: 'Essential investment terminology' },
+  risk_management:  { label: '리스크 관리', labelEn: 'Risk Management',  icon: '🛡️', description: '위험 관리와 분산 투자', descriptionEn: 'Risk management and diversification' },
 };
 
 // ============================================================================
@@ -32,6 +34,7 @@ export const QUIZ_CATEGORIES: Record<QuizCategory, QuizCategoryInfo> = {
 export interface QuizOption {
   id: string;  // 'A', 'B', 'C', 'D'
   text: string;
+  textEn?: string;
 }
 
 // ============================================================================
@@ -43,9 +46,12 @@ export interface DailyQuiz {
   quiz_date: string;
   category: QuizCategory;
   question: string;
+  questionEn?: string;
   options: QuizOption[];
+  optionsEn?: QuizOption[];
   correct_option: string;
   explanation: string;
+  explanationEn?: string;
   difficulty: number;
   created_at: string;
 }
