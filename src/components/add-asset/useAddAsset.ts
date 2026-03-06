@@ -373,8 +373,15 @@ export function useAddAsset() {
       const { data, error } = await supabase.functions.invoke('gemini-proxy', {
         body: { type: 'parse-screenshot', data: { imageBase64: result.assets[0].base64, mimeType: result.assets[0].mimeType || 'image/jpeg' } },
       });
-      const normalizedAssets = normalizeParsedAssets(data?.data?.assets);
-      if (error || !data?.success || normalizedAssets.length === 0) {
+      // 서버 응답이 어떤 래퍼 구조로 오든 자산 배열만 추출하면 성공 처리
+      const payload = data?.data ?? data;
+      let normalizedAssets = normalizeParsedAssets(payload);
+      // 구조화 파싱 실패 시, 서버가 보낸 rawText로 클라이언트 측 재파싱 시도
+      if (normalizedAssets.length === 0 && payload?.rawText) {
+        normalizedAssets = normalizeParsedAssets({ text: payload.rawText });
+      }
+      if (normalizedAssets.length === 0) {
+        console.warn('[AddAsset] OCR 파싱 실패 — error:', error, 'data:', JSON.stringify(data)?.slice(0, 500));
         Alert.alert(t('add_asset.alert_ocr_fail_title'), t('add_asset.alert_ocr_fail_msg'));
         return;
       }

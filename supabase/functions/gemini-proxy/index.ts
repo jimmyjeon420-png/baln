@@ -974,6 +974,8 @@ async function parsePortfolioScreenshot(imageBase64: string, mimeType: string) {
   예: 엔비디아→NVDA, 알파벳 A→GOOGL, 테슬라→TSLA, 버크셔 해서웨이 B→BRK-B, GLD→GLD, 컨스텔레이션 에너지→CEG
 - 주식 앱 화면에는 보통 종목명/보유수량/평가금액/손익만 보일 수 있습니다. 이 경우 totalCostKRW는 currentValueKRW - profitLossKRW 로 계산하세요.
 - totalCostKRW를 확실히 계산할 수 없으면 profitLossKRW라도 반드시 채우세요. 앱이 후처리로 보정합니다.
+- 종목명만 있고 티커를 확실히 모르겠으면 종목명과 수량/평가금액/손익만이라도 assets 배열에 넣으세요.
+- 응답 형식이 애매하면 최소한 name, quantity, currentValueKRW, profitLossKRW 를 가진 assets 배열을 우선적으로 만드세요.
 - assets 배열 외의 키 이름(holdings, positions, stocks 등)을 쓰지 말고 항상 assets만 사용하세요.
 - 숫자 필드는 반드시 순수 숫자만 반환하세요 (쉼표, 원, 주, %, $ 제거)
 - 달러 금액이 있으면 현재 환율 약 1450으로 원화 변환
@@ -982,7 +984,7 @@ async function parsePortfolioScreenshot(imageBase64: string, mimeType: string) {
         }
       ]
     }],
-    generationConfig: { temperature: 0.1, maxOutputTokens: 2048 },
+    generationConfig: { temperature: 0.1, maxOutputTokens: 2048, responseMimeType: 'application/json' },
   };
 
   const controller = new AbortController();
@@ -996,9 +998,29 @@ async function parsePortfolioScreenshot(imageBase64: string, mimeType: string) {
     });
     if (!resp.ok) throw new Error(`Gemini Vision Error: ${resp.status}`);
     const json = await resp.json();
-    const text = json.candidates?.[0]?.content?.parts?.[0]?.text;
+    const text = (json.candidates?.[0]?.content?.parts ?? [])
+      .map((part: any) => (typeof part?.text === 'string' ? part.text : ''))
+      .filter(Boolean)
+      .join('\n')
+      .trim();
+
     if (!text) throw new Error('No response from Gemini Vision');
-    return normalizeParsedPortfolioScreenshotPayload(cleanJsonResponse(text));
+
+    try {
+      const parsed = cleanJsonResponse(text);
+      const normalized = normalizeParsedPortfolioScreenshotPayload(parsed);
+      if (normalized.assets.length > 0) return normalized;
+      console.warn('[Gemini Proxy] parse-screenshot returned empty structured assets, falling back to raw text');
+    } catch (parseError) {
+      console.warn('[Gemini Proxy] parse-screenshot JSON parsing failed, falling back to raw text:', parseError);
+    }
+
+    const fallback = normalizeParsedPortfolioScreenshotPayload(text);
+    if (fallback.assets.length > 0) return fallback;
+
+    // throw 대신 원문 텍스트를 포함해서 반환 → 클라이언트 측 파서가 재시도 가능
+    console.warn('[Gemini Proxy] parse-screenshot: no assets extracted, returning raw text for client fallback');
+    return { assets: [], rawText: text };
   } finally {
     clearTimeout(timeout);
   }
