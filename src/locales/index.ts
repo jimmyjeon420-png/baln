@@ -9,6 +9,7 @@ import { Language } from '../types/i18n';
 // 모든 번역 파일 임포트
 import enTranslations from './en.json';
 import koTranslations from './ko.json';
+import jaTranslations from './ja.json';
 
 /**
  * Create i18n instance
@@ -17,12 +18,11 @@ const i18n = new I18n();
 
 /**
  * i18n 설정
- * 현재 구현된 언어: English, Korean
+ * 현재 구현된 언어: English, Korean, Japanese
  * 기타 언어는 영어로 자동 폴백됨
  *
  * TODO: 프로덕션을 위해 다음 언어 번역 파일 추가:
  * - zh.json (Chinese)
- * - ja.json (Japanese)
  * - de.json (German)
  * - fr.json (French)
  * - it.json (Italian)
@@ -38,7 +38,7 @@ i18n.translations = {
   // Temporary: Use English translations for unsupported languages
   // This ensures app doesn't crash when user selects these languages
   [Language.CHINESE]: enTranslations,
-  [Language.JAPANESE]: enTranslations,
+  [Language.JAPANESE]: jaTranslations,
   [Language.GERMAN]: enTranslations,
   [Language.FRENCH]: enTranslations,
   [Language.ITALIAN]: enTranslations,
@@ -69,7 +69,7 @@ export const initializeLocalization = (language: Language): void => {
  * @param options - Optional parameters for interpolation
  * @returns Translated string
  */
-export const t = (key: string, options?: any): string => {
+export const t = (key: string, options?: Record<string, unknown>): string => {
   return i18n.t(key, options);
 };
 
@@ -108,7 +108,7 @@ export const tBatch = (keys: string[]): Record<string, string> => {
  * @param options - Additional options
  * @returns Translated string
  */
-export const tPlural = (key: string, count: number, options?: any): string => {
+export const tPlural = (key: string, count: number, options?: Record<string, unknown>): string => {
   return t(key, { count, ...options });
 };
 
