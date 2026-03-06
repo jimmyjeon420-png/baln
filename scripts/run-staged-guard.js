@@ -68,9 +68,22 @@ if (manualOnlyStagedFiles.length > 0) {
 }
 
 const diff = run('git', ['diff', '--cached', '--unified=0', '--no-color']);
+
+// SQL 마이그레이션의 anon JWT는 공개 키이므로 시크릿 검사에서 제외
+const sqlFiles = new Set(stagedFiles.filter((f) => f.endsWith('.sql')));
+const sqlDiffPrefixes = [...sqlFiles].map((f) => `+++ b/${f}`);
+let inSqlFile = false;
+
 const addedLines = diff
   .split('\n')
-  .filter((line) => line.startsWith('+') && !line.startsWith('+++'))
+  .filter((line) => {
+    if (line.startsWith('+++')) {
+      inSqlFile = sqlDiffPrefixes.some((prefix) => line.startsWith(prefix));
+      return false;
+    }
+    if (inSqlFile) return false;
+    return line.startsWith('+');
+  })
   .map((line) => line.slice(1));
 
 const secretPatterns = [

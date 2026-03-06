@@ -1,5 +1,2 @@
 # Paths that must never be included by shared auto-commit/push flows.
 .claude/settings.local.json
-
-# Supabase migrations with hardcoded anon JWT (public key, safe to commit)
-supabase/migrations/20260228104000_repair_edge_function_cron_auth_and_routing.sql
