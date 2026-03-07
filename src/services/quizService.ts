@@ -13,6 +13,7 @@
  */
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { t } from '../locales';
 import supabase, { getCurrentUser } from './supabase';
 import type { DailyQuiz, QuizAttempt, SubmitQuizResult, QuizCategory } from '../types/quiz';
 import { getPromptLanguageInstruction } from '../utils/promptLanguage';
@@ -217,7 +218,7 @@ async function generateQuizWithGemini(): Promise<{
       question: parsed.question,
       options: parsed.options,
       correct_option: parsed.correct_option,
-      explanation: parsed.explanation || '해설을 불러오지 못했습니다.',
+      explanation: parsed.explanation || t('quiz.explanationFailed'),
       difficulty: [1, 2, 3].includes(parsed.difficulty) ? parsed.difficulty : 1,
     };
   } catch (err) {

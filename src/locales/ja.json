@@ -61,7 +61,10 @@
     "unitTimes": "回",
     "unitWon": "円",
     "unknown": "不明",
-    "unknownError": "不明なエラーが発生しました。"
+    "unknownError": "不明なエラーが発生しました。",
+    "viewAll": "View All",
+    "getStarted": "Get Started",
+    "noData": "No data"
   },
   "tab": {
     "today": "今日",
@@ -477,7 +480,12 @@
     "headerTitle": "マーケットニュース",
     "pickSubtitle": "Today's Key News",
     "emptyTitle": "ニュースなし",
-    "emptySubtitle": "後ほどもう一度ご確認ください。"
+    "emptySubtitle": "後ほどもう一度ご確認ください。",
+    "marketNews": "Market News",
+    "sentimentAlert": "alert",
+    "sentimentCaution": "caution",
+    "sentimentCalm": "stable",
+    "sentimentLabel": "Market sentiment: {{sentiment}} · Check context card"
   },
   "lounge": {
     "title": "VIPラウンジ",
@@ -770,7 +778,10 @@
     "estimatedTax": "推定税負担",
     "includeInCalculations": "計算に税金を含める",
     "rebalancingActions": "リバランシング Actions",
-    "yourAssets": "Your 資産"
+    "yourAssets": "Your 資産",
+    "totalAssets": "Total Assets",
+    "assetAllocation": "Asset Allocation",
+    "noAssetsToShow": "No assets to display"
   },
   "freemium": {
     "limitReached": "You've reached the free limit of {{limit}} 資産. Upgrade to Pro to add unlimited 資産.",
@@ -807,7 +818,10 @@
     "impactHigh": "高",
     "impactMedium": "中",
     "impactLow": "低",
-    "disclaimer": "This information is educational mock data. Make 投資 decisions carefully."
+    "disclaimer": "This information is educational mock data. Make 投資 decisions carefully.",
+    "selectInterestRate": "Please select an interest rate trend",
+    "failed": "Diagnosis Failed",
+    "errorMessage": "An error occurred during investment diagnosis. Please try again later."
   },
   "credit": {
     "my_credits": "My Acorns",
@@ -1487,7 +1501,8 @@
       "hint": "投資 philosophy, 市場 outlook, ポートフォリオ advice...",
       "response_failed": "応答に失敗しました",
       "thinking": "{{name}}が考え中...",
-      "input_placeholder": "Type a message..."
+      "input_placeholder": "Type a message...",
+      "aiBuffett": "AI Buffett"
     }
   },
   "roundtable": {
@@ -1788,7 +1803,11 @@
       "weekly_cap_unit": "{{n}}/週",
       "info_permission": "通知 require permission to be enabled. Check that baln 通知 are turned on in your device 設定.",
       "info_timing": "通知 times are based on your device's local time. Price alert 7:30 → Morning briefing 8:00 → リバランス check 9:00 (Monday).",
-      "info_current_settings": "Current settings: Price threshold ±{{threshold}}% · 毎週 limit {{cap}} times"
+      "info_current_settings": "Current settings: Price threshold ±{{threshold}}% · 毎週 limit {{cap}} times",
+      "dailyPredictionTitle": "🎯 Today's Investment Prediction",
+      "dailyPredictionBody": "New prediction questions have arrived! Vote now and earn credits.",
+      "predictionResultTitle": "📊 Yesterday's Prediction Results",
+      "predictionResultBody": "Results are in for yesterday's predictions! Check if you got it right."
     },
     "security": {
       "title": "セキュリティ",
@@ -2371,7 +2390,8 @@
     "shareInstagram": "Instagramにシェア"
   },
   "quiz": {
-    "timezone_note": "クイズは毎日深夜（現地時間）に更新されます"
+    "timezone_note": "クイズは毎日深夜（現地時間）に更新されます",
+    "explanationFailed": "Failed to load explanation."
   },
   "security": {
     "biometric_auth_fail_title": "Authentication Failed",
@@ -3739,7 +3759,11 @@
       "submitError": "Failed to submit レポート. もう一度お試しください.",
       "submit": "レポート",
       "loginRequired": "ログインが必要です."
-    }
+    },
+    "vipLounge": "VIP Lounge",
+    "noPosts": "No posts yet",
+    "tagline": "Meet fellow investors sharing the same concerns in our community",
+    "eligibilityHint": "Available for portfolios over ₩1,000,000"
   },
   "community_category": {
     "all": "すべて",
@@ -6549,5 +6573,20 @@
     "half": "半分正解",
     "notGreat": "もう少し",
     "tryAgain": "もう一度試す"
+  },
+  "welcome": {
+    "title": "Welcome!",
+    "subtitle": "Build your investment principles with baln",
+    "bonus": "Welcome Bonus",
+    "creditsHint": "Credits can be used for AI analysis, premium trials, and more",
+    "start": "Get Started"
+  },
+  "badges": {
+    "beginner": "Beginner",
+    "analyst": "Analyst",
+    "sniper": "Sniper"
+  },
+  "market": {
+    "preparingData": "Preparing market data"
   }
 }

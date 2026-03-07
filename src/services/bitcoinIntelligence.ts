@@ -193,7 +193,7 @@ const _btcModel = _genAI
       model: MODEL_NAME,
       tools: [
         {
-          // @ts-ignore - Gemini 2.0 Google Search Tool
+          // @ts-expect-error - Gemini 2.0 Google Search Tool
           google_search: {},
         },
       ],
@@ -247,9 +247,9 @@ async function analyzeBitcoinWithGemini(): Promise<GeminiInsight> {
     return {
       score: Math.max(0, Math.min(100, parsed.score ?? 50)),
       hashrateScore: Math.max(0, Math.min(100, parsed.hashrateScore ?? 50)),
-      hashrateTrend: parsed.hashrateTrend || '데이터 없음',
-      politicsImpact: parsed.politicsImpact || '데이터 없음',
-      macroOutlook: parsed.macroOutlook || '데이터 없음',
+      hashrateTrend: parsed.hashrateTrend || rawT('common.noData'),
+      politicsImpact: parsed.politicsImpact || rawT('common.noData'),
+      macroOutlook: parsed.macroOutlook || rawT('common.noData'),
       keyEvents: Array.isArray(parsed.keyEvents) ? parsed.keyEvents.slice(0, 3) : [],
     };
   } catch (err) {

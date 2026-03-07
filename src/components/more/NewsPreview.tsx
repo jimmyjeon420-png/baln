@@ -14,6 +14,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'rea
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 import { useMarketNews } from '../../hooks/useMarketNews';
 import { useQuickContextSentiment } from '../../hooks/useContextCard';
 import NewsCard from '../news/NewsCard';
@@ -21,6 +22,7 @@ import NewsCard from '../news/NewsCard';
 export default function NewsPreview() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { t } = useLocale();
   const { data, isLoading } = useMarketNews('all');
   const { data: sentimentData } = useQuickContextSentiment();
   const sentiment = sentimentData?.sentiment ?? null;
@@ -35,6 +37,7 @@ export default function NewsPreview() {
   const topNews = data?.pages?.[0]?.slice(0, 3) ?? [];
 
   const handleViewAll = () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     router.push('/news' as any);
   };
 
@@ -46,7 +49,7 @@ export default function NewsPreview() {
           <View style={styles.headerLeft}>
             <Ionicons name="newspaper" size={20} color={colors.primary} />
             <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
-              시장 뉴스
+              {t('news.marketNews')}
             </Text>
           </View>
         </View>
@@ -67,14 +70,14 @@ export default function NewsPreview() {
         <View style={styles.headerLeft}>
           <Ionicons name="newspaper" size={20} color={colors.primary} />
           <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
-            시장 뉴스
+            {t('news.marketNews')}
           </Text>
           <View style={[styles.liveBadge, { backgroundColor: colors.primary }]}>
             <Text style={styles.liveBadgeText}>LIVE</Text>
           </View>
         </View>
         <TouchableOpacity onPress={handleViewAll} style={styles.viewAllBtn}>
-          <Text style={[styles.viewAllText, { color: colors.primary }]}>더보기</Text>
+          <Text style={[styles.viewAllText, { color: colors.primary }]}>{t('common.more')}</Text>
           <Ionicons name="chevron-forward" size={16} color={colors.primary} />
         </TouchableOpacity>
       </View>
@@ -105,7 +108,7 @@ export default function NewsPreview() {
             }
           />
           <Text style={[styles.contextLinkText, { color: colors.textSecondary }]}>
-            시장 분위기: {sentiment === 'alert' ? '경고' : sentiment === 'caution' ? '주의' : '안정'} · 맥락 카드에서 확인
+            {t('news.sentimentLabel', { sentiment: sentiment === 'alert' ? t('news.sentimentAlert') : sentiment === 'caution' ? t('news.sentimentCaution') : t('news.sentimentCalm') })}
           </Text>
           <Ionicons name="chevron-forward" size={12} color={colors.textTertiary} />
         </TouchableOpacity>

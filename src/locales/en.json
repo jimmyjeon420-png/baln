@@ -61,7 +61,10 @@
     "unitTimes": "x",
     "unitWon": "KRW",
     "unknown": "Unknown",
-    "unknownError": "Unknown error"
+    "unknownError": "Unknown error",
+    "viewAll": "View All",
+    "getStarted": "Get Started",
+    "noData": "No data"
   },
   "tab": {
     "today": "Today",
@@ -477,7 +480,12 @@
     "headerTitle": "Market News",
     "pickSubtitle": "Today's Key News",
     "emptyTitle": "No News",
-    "emptySubtitle": "Please check again later."
+    "emptySubtitle": "Please check again later.",
+    "marketNews": "Market News",
+    "sentimentAlert": "alert",
+    "sentimentCaution": "caution",
+    "sentimentCalm": "stable",
+    "sentimentLabel": "Market sentiment: {{sentiment}} · Check context card"
   },
   "lounge": {
     "title": "VIP Lounge",
@@ -770,7 +778,10 @@
     "estimatedTax": "Est. Tax Impact",
     "includeInCalculations": "Include Tax in Calculations",
     "rebalancingActions": "Rebalancing Actions",
-    "yourAssets": "Your Assets"
+    "yourAssets": "Your Assets",
+    "totalAssets": "Total Assets",
+    "assetAllocation": "Asset Allocation",
+    "noAssetsToShow": "No assets to display"
   },
   "freemium": {
     "limitReached": "You've reached the free limit of {{limit}} assets. Upgrade to Pro to add unlimited assets.",
@@ -807,7 +818,10 @@
     "impactHigh": "High",
     "impactMedium": "Medium",
     "impactLow": "Low",
-    "disclaimer": "This information is educational mock data. Make investment decisions carefully."
+    "disclaimer": "This information is educational mock data. Make investment decisions carefully.",
+    "selectInterestRate": "Please select an interest rate trend",
+    "failed": "Diagnosis Failed",
+    "errorMessage": "An error occurred during investment diagnosis. Please try again later."
   },
   "credit": {
     "my_credits": "My Acorns",
@@ -1488,7 +1502,8 @@
       "hint": "Investment philosophy, market outlook, portfolio advice...",
       "response_failed": "Response failed",
       "thinking": "{{name}} is thinking...",
-      "input_placeholder": "Type a message..."
+      "input_placeholder": "Type a message...",
+      "aiBuffett": "AI Buffett"
     }
   },
   "roundtable": {
@@ -1789,7 +1804,11 @@
       "weekly_cap_unit": "{{n}}/week",
       "info_permission": "Notifications require permission to be enabled. Check that baln notifications are turned on in your device settings.",
       "info_timing": "Notification times are based on your device's local time. Price alert 7:30 → Morning briefing 8:00 → Rebalancing check 9:00 (Monday).",
-      "info_current_settings": "Current settings: Price threshold ±{{threshold}}% · Weekly limit {{cap}} times"
+      "info_current_settings": "Current settings: Price threshold ±{{threshold}}% · Weekly limit {{cap}} times",
+      "dailyPredictionTitle": "🎯 Today's Investment Prediction",
+      "dailyPredictionBody": "New prediction questions have arrived! Vote now and earn credits.",
+      "predictionResultTitle": "📊 Yesterday's Prediction Results",
+      "predictionResultBody": "Results are in for yesterday's predictions! Check if you got it right."
     },
     "security": {
       "title": "Security",
@@ -2372,7 +2391,8 @@
     "shareInstagram": "Share to Instagram"
   },
   "quiz": {
-    "timezone_note": "Quiz refreshes daily at midnight (local time)"
+    "timezone_note": "Quiz refreshes daily at midnight (local time)",
+    "explanationFailed": "Failed to load explanation."
   },
   "security": {
     "biometric_auth_fail_title": "Authentication Failed",
@@ -3740,7 +3760,11 @@
       "submitError": "Failed to submit report. Please try again.",
       "submit": "Report",
       "loginRequired": "Login is required."
-    }
+    },
+    "vipLounge": "VIP Lounge",
+    "noPosts": "No posts yet",
+    "tagline": "Meet fellow investors sharing the same concerns in our community",
+    "eligibilityHint": "Available for portfolios over ₩1,000,000"
   },
   "community_category": {
     "all": "All",
@@ -6790,5 +6814,20 @@
     "next": "Next",
     "skip": "Skip",
     "start": "Get Started"
+  },
+  "welcome": {
+    "title": "Welcome!",
+    "subtitle": "Build your investment principles with baln",
+    "bonus": "Welcome Bonus",
+    "creditsHint": "Credits can be used for AI analysis, premium trials, and more",
+    "start": "Get Started"
+  },
+  "badges": {
+    "beginner": "Beginner",
+    "analyst": "Analyst",
+    "sniper": "Sniper"
+  },
+  "market": {
+    "preparingData": "Preparing market data"
   }
 }

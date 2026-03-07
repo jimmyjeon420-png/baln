@@ -12,7 +12,8 @@
  * - 보험 BM: 색상은 무료, "왜 이 색인지"는 프리미엄
  */
 
-import type { HealthScoreResult, FactorResult } from './rebalanceScore';
+import type { HealthScoreResult } from './rebalanceScore';
+import { t } from '../locales';
 
 // ============================================================================
 // 타입 정의
@@ -233,10 +234,10 @@ export function convertContextToBriefing(contextData: {
   sentiment?: 'calm' | 'caution' | 'alert';
 }): ContextBriefing {
   // FACT: 헤드라인
-  const fact = contextData.headline || '시장 데이터 준비 중';
+  const fact = contextData.headline || t('market.preparingData');
 
   // MECHANISM: 거시경제 체인 (첫 3개만)
-  let mechanism = '분석 중...';
+  let mechanism = t('common.loading');
   if (contextData.macroChain && contextData.macroChain.length > 0) {
     mechanism = contextData.macroChain.slice(0, 3).join(' → ');
   }

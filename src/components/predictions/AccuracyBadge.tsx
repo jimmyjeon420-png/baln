@@ -11,6 +11,7 @@
 
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useLocale } from '../../context/LocaleContext';
 
 interface AccuracyBadgeProps {
   accuracyRate: number;    // 0 ~ 100
@@ -18,12 +19,14 @@ interface AccuracyBadgeProps {
 }
 
 export function AccuracyBadge({ accuracyRate, minVotes = 10 }: AccuracyBadgeProps) {
+  const { t } = useLocale();
+
   // 최소 투표 횟수 미달
   if (minVotes < 10) {
     return (
       <View style={[styles.badge, styles.badgeRookie]}>
         <Text style={styles.badgeEmoji}>🌱</Text>
-        <Text style={[styles.badgeText, { color: '#888888' }]}>초보</Text>
+        <Text style={[styles.badgeText, { color: '#888888' }]}>{t('badges.beginner')}</Text>
       </View>
     );
   }
@@ -33,7 +36,7 @@ export function AccuracyBadge({ accuracyRate, minVotes = 10 }: AccuracyBadgeProp
     return (
       <View style={[styles.badge, styles.badgeGold]}>
         <Text style={styles.badgeEmoji}>📊</Text>
-        <Text style={[styles.badgeText, { color: '#FFD700' }]}>분석가</Text>
+        <Text style={[styles.badgeText, { color: '#FFD700' }]}>{t('badges.analyst')}</Text>
       </View>
     );
   }
@@ -42,7 +45,7 @@ export function AccuracyBadge({ accuracyRate, minVotes = 10 }: AccuracyBadgeProp
     return (
       <View style={[styles.badge, styles.badgeSilver]}>
         <Text style={styles.badgeEmoji}>🎯</Text>
-        <Text style={[styles.badgeText, { color: '#C0C0C0' }]}>스나이퍼</Text>
+        <Text style={[styles.badgeText, { color: '#C0C0C0' }]}>{t('badges.sniper')}</Text>
       </View>
     );
   }

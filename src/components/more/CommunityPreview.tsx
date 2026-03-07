@@ -5,13 +5,14 @@ import { useRouter } from 'expo-router';
 import { SIZES } from '../../styles/theme';
 import { useCommunityPosts } from '../../hooks/useCommunity';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 import { formatCommunityDisplayTag } from '../../utils/communityUtils';
 
 /**
  * 커뮤니티 미리보기 (전체 탭 상단)
  *
  * 역할: 뉴스 속보판처럼 라운지 인기글 미리보기 부서
- * - VIP 라운지의 인기글 2개를 상단에 표시 (모든 사용자에게 공개)
+ * - {t('community.vipLounge')}의 인기글 2개를 상단에 표시 (모든 사용자에게 공개)
  * - "전체 보기 →" 버튼으로 community/index.tsx로 이동
  *   (전체 커뮤니티 페이지에서 자산 자격 확인은 그대로 유지)
  * - 제목 + 좋아요 수만 표시 (간결한 프리뷰)
@@ -22,7 +23,7 @@ import { formatCommunityDisplayTag } from '../../utils/communityUtils';
 
 interface CommunityPreviewProps {
   /**
-   * 사용자가 VIP 라운지 열람 자격을 갖추었는지 여부.
+   * 사용자가 {t('community.vipLounge')} 열람 자격을 갖추었는지 여부.
    * - true: "전체 보기" 버튼 → /community 로 바로 이동
    * - false: "전체 보기" 버튼 → /community 로 이동하되, 해당 페이지에서 자체 잠금 화면 표시
    * 미리보기(post 2개)는 자격과 무관하게 항상 표시됩니다.
@@ -33,6 +34,7 @@ interface CommunityPreviewProps {
 export default function CommunityPreview({ isEligible = true }: CommunityPreviewProps) {
   const router = useRouter();
   const { colors } = useTheme();
+  const { t } = useLocale();
 
   // 인기순으로 최신 게시물 가져오기 (좋아요 많은 순)
   const { data, isLoading } = useCommunityPosts('all', 'popular');
@@ -54,11 +56,11 @@ export default function CommunityPreview({ isEligible = true }: CommunityPreview
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <Ionicons name="people" size={20} color={colors.primary} />
-            <Text style={styles.headerTitle}>VIP 라운지</Text>
+            <Text style={styles.headerTitle}>{t('community.vipLounge')}</Text>
           </View>
         </View>
         <View style={styles.loadingBox}>
-          <Text style={[styles.loadingText, { color: colors.textSecondary }]}>불러오는 중...</Text>
+          <Text style={[styles.loadingText, { color: colors.textSecondary }]}>{t('common.loading')}</Text>
         </View>
       </View>
     );
@@ -70,20 +72,20 @@ export default function CommunityPreview({ isEligible = true }: CommunityPreview
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <Ionicons name="people" size={20} color={colors.primary} />
-          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>VIP 라운지</Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{t('community.vipLounge')}</Text>
           <View style={styles.newBadge}>
             <Text style={styles.newBadgeText}>HOT</Text>
           </View>
         </View>
         <TouchableOpacity onPress={handleViewAll} style={styles.viewAllBtn}>
-          <Text style={[styles.viewAllText, { color: colors.primary }]}>전체 보기</Text>
+          <Text style={[styles.viewAllText, { color: colors.primary }]}>{t('common.viewAll')}</Text>
           <Ionicons name="chevron-forward" size={16} color={colors.primary} />
         </TouchableOpacity>
       </View>
 
       {/* 소셜 프루프 문구 — 자격 여부와 무관하게 항상 표시 */}
       <Text style={[styles.tagline, { color: colors.textSecondary }]}>
-        투자 커뮤니티에서 같은 고민을 나누는 투자자들을 만나보세요
+        {t('community.tagline')}
       </Text>
 
       {/* 인기글 미리보기 (최대 2개) — 읽기 전용, 개별 상세 이동 없음 */}
@@ -126,7 +128,7 @@ export default function CommunityPreview({ isEligible = true }: CommunityPreview
         </View>
       ) : (
         <View style={styles.emptyBox}>
-          <Text style={[styles.emptyText, { color: colors.textSecondary }]}>아직 게시물이 없습니다</Text>
+          <Text style={[styles.emptyText, { color: colors.textSecondary }]}>{t('community.noPosts')}</Text>
         </View>
       )}
 
@@ -135,7 +137,7 @@ export default function CommunityPreview({ isEligible = true }: CommunityPreview
         <TouchableOpacity style={styles.unlockRow} onPress={handleViewAll} activeOpacity={0.7}>
           <Ionicons name="lock-open-outline" size={14} color={colors.primary} />
           <Text style={[styles.unlockText, { color: colors.primary }]}>
-            자산 100만원 이상이면 참여할 수 있어요
+            {t('community.eligibilityHint')}
           </Text>
         </TouchableOpacity>
       )}

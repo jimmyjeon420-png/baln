@@ -14,11 +14,10 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
+import { useLocale } from '../context/LocaleContext';
 import { Asset } from '../types/asset';
 import {
   InterestRateTrend,
-  MarketInputs,
-  EggCycleAnalysis,
 } from '../types/kostolany';
 import { DiagnosisResult } from '../types/coaching';
 import { useDiagnosis } from '../hooks/useDiagnosis';
@@ -49,6 +48,7 @@ const InvestmentDiagnosisScreen: React.FC<InvestmentDiagnosisScreenProps> = ({
     canRunDiagnosis,
     clearAnswers,
   } = useDiagnosis();
+  const { t } = useLocale();
 
   // 화면 단계
   const [step, setStep] = useState<DiagnosisStep>('SURVEY');
@@ -59,7 +59,7 @@ const InvestmentDiagnosisScreen: React.FC<InvestmentDiagnosisScreenProps> = ({
    */
   const handleRunDiagnosis = async () => {
     if (!canRunDiagnosis) {
-      Alert.alert('오류', '금리 추세를 선택해주세요');
+      Alert.alert(t('common.error'), t('diagnosis.selectInterestRate'));
       return;
     }
 
@@ -68,7 +68,7 @@ const InvestmentDiagnosisScreen: React.FC<InvestmentDiagnosisScreenProps> = ({
       setResult(diagnosisResult);
       setStep('RESULTS');
     } catch (error) {
-      Alert.alert('진단 실패', '투자 진단 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+      Alert.alert(t('diagnosis.failed'), t('diagnosis.errorMessage'));
     }
   };
 

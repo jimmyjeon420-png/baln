@@ -5,6 +5,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useLocale } from '../context/LocaleContext';
 import { getLocaleCode } from '../utils/formatters';
 
 interface ChatBubbleProps {
@@ -20,6 +21,7 @@ export default function ChatBubble({
   timestamp,
   creditsCharged,
 }: ChatBubbleProps) {
+  const { t } = useLocale();
   const isUser = role === 'user';
 
   return (
@@ -33,7 +35,7 @@ export default function ChatBubble({
 
       <View style={[styles.bubble, isUser ? styles.userBubble : styles.assistantBubble]}>
         {!isUser && (
-          <Text style={styles.aiLabel}>AI 버핏</Text>
+          <Text style={styles.aiLabel}>{t('chat.aiBuffett')}</Text>
         )}
         <Text style={[styles.content, isUser ? styles.userContent : styles.assistantContent]}>
           {content}

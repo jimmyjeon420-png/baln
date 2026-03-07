@@ -16,6 +16,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { useTheme } from '../hooks/useTheme';
+import { useLocale } from '../context/LocaleContext';
 import { formatCredits } from '../utils/formatters';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -32,6 +33,7 @@ export default function WelcomeBonusModal({
   onDismiss,
 }: WelcomeBonusModalProps) {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
 
@@ -59,6 +61,7 @@ export default function WelcomeBonusModal({
       scaleAnim.setValue(0);
       opacityAnim.setValue(0);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
 
   if (!visible) return null;
@@ -67,20 +70,20 @@ export default function WelcomeBonusModal({
     <Animated.View style={[s.overlay, { opacity: opacityAnim }]}>
       <Animated.View style={[s.card, { backgroundColor: colors.surfaceLight, transform: [{ scale: scaleAnim }] }]}>
         <Text style={s.emoji}>{'🎉'}</Text>
-        <Text style={[s.title, { color: colors.textPrimary }]}>환영합니다!</Text>
-        <Text style={[s.subtitle, { color: colors.textSecondary }]}>bal<Text style={{ color: colors.primary }}>n</Text>과 함께 투자 기준을 만들어보세요</Text>
+        <Text style={[s.title, { color: colors.textPrimary }]}>{t('welcome.title')}</Text>
+        <Text style={[s.subtitle, { color: colors.textSecondary }]}>{t('welcome.subtitle')}</Text>
 
         <View style={s.bonusRow}>
-          <Text style={[s.bonusLabel, { color: colors.textSecondary }]}>환영 보너스</Text>
+          <Text style={[s.bonusLabel, { color: colors.textSecondary }]}>{t('welcome.bonus')}</Text>
           <Text style={[s.bonusAmount, { color: colors.primary }]}>+{formatCredits(creditsEarned)}</Text>
         </View>
 
         <Text style={[s.hint, { color: colors.textTertiary }]}>
-          크레딧은 AI 분석, 프리미엄 체험 등에 사용할 수 있어요
+          {t('welcome.creditsHint')}
         </Text>
 
         <TouchableOpacity style={[s.button, { backgroundColor: colors.primary }]} onPress={onDismiss} activeOpacity={0.8}>
-          <Text style={s.buttonText}>시작하기</Text>
+          <Text style={s.buttonText}>{t('welcome.start')}</Text>
         </TouchableOpacity>
       </Animated.View>
     </Animated.View>

@@ -10,6 +10,7 @@
 
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
+import { t } from '../locales';
 
 // ============================================================================
 // 알림 채널 설정 (Android)
@@ -84,8 +85,8 @@ export async function scheduleDailyPredictionNotification(): Promise<void> {
     await Notifications.scheduleNotificationAsync({
       identifier: 'daily_prediction',
       content: {
-        title: '🎯 오늘의 투자 예측',
-        body: '새로운 예측 질문이 도착했습니다! 지금 투표하고 크레딧을 받아보세요.',
+        title: t('notifications.dailyPredictionTitle'),
+        body: t('notifications.dailyPredictionBody'),
         data: { type: 'daily_prediction', route: '/games/predictions' },
         sound: true,
         ...Platform.select({
@@ -123,8 +124,8 @@ export async function scheduleResultNotification(): Promise<void> {
     await Notifications.scheduleNotificationAsync({
       identifier: 'prediction_result',
       content: {
-        title: '📊 어제 예측 결과 발표',
-        body: '어제 투표한 예측의 정답이 나왔습니다! 적중했는지 확인해보세요.',
+        title: t('notifications.predictionResultTitle'),
+        body: t('notifications.predictionResultBody'),
         data: { type: 'prediction_result', route: '/games/predictions' },
         sound: true,
         ...Platform.select({

@@ -7,6 +7,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import { PieChart } from 'react-native-chart-kit';
 import { Ionicons } from '@expo/vector-icons';
+import { useLocale } from '../context/LocaleContext';
 
 interface AssetData {
   name: string;
@@ -31,7 +32,7 @@ export const ASSET_COLORS = {
 };
 
 // 자산 유형 아이콘
-const ASSET_ICONS: { [key: string]: keyof typeof Ionicons.glyphMap } = {
+const _ASSET_ICONS: { [key: string]: keyof typeof Ionicons.glyphMap } = {
   stock: 'trending-up',
   bond: 'document-text',
   realEstate: 'home',
@@ -41,6 +42,7 @@ const ASSET_ICONS: { [key: string]: keyof typeof Ionicons.glyphMap } = {
 };
 
 export default function AssetPieChart({ data, totalValue }: AssetPieChartProps) {
+  const { t } = useLocale();
   const screenWidth = Dimensions.get('window').width;
   const chartWidth = screenWidth - 64; // 좌우 패딩 고려
 
@@ -50,11 +52,11 @@ export default function AssetPieChart({ data, totalValue }: AssetPieChartProps) 
       <View style={styles.container}>
         <View style={styles.header}>
           <Ionicons name="pie-chart" size={22} color="#4CAF50" />
-          <Text style={styles.title}>자산 배분</Text>
+          <Text style={styles.title}>{t('portfolio.assetAllocation')}</Text>
         </View>
         <View style={styles.emptyContainer}>
           <Ionicons name="analytics-outline" size={48} color="#444444" />
-          <Text style={styles.emptyText}>표시할 자산이 없습니다</Text>
+          <Text style={styles.emptyText}>{t('portfolio.noAssetsToShow')}</Text>
         </View>
       </View>
     );

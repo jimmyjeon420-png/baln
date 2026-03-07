@@ -12,8 +12,9 @@
 
 import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import Svg, { Path, Circle, G } from 'react-native-svg';
+import Svg, { Path, Circle } from 'react-native-svg';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 
 // ── 타입 정의 ──
 
@@ -105,6 +106,7 @@ export default function AllocationPieChart({
   formatCurrency = defaultFormatCurrency,
 }: AllocationPieChartProps) {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
   // 0 이상인 슬라이스만 필터링
@@ -195,7 +197,7 @@ export default function AllocationPieChart({
           ) : (
             // 기본: 총 자산
             <>
-              <Text style={[styles.centerSmallLabel, { color: colors.textTertiary }]}>총 자산</Text>
+              <Text style={[styles.centerSmallLabel, { color: colors.textTertiary }]}>{t('portfolio.totalAssets')}</Text>
               <Text style={[styles.centerTotalValue, { color: colors.textPrimary }]}>
                 {formatCurrency(totalValue)}
               </Text>
