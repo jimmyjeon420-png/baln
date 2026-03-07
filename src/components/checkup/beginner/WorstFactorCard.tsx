@@ -21,17 +21,27 @@ interface WorstFactorCardProps {
   allAssets?: Asset[];
 }
 
-const LABEL_MAP: Record<string, Record<string, string>> = {
-  '배분 이탈도': { ko: '비중이 달라졌어요', en: 'Allocation has drifted', ja: '配分が変わりました' },
-  '자산 집중도': { ko: '한 곳에 몰려있어요', en: 'Too concentrated in one area', ja: '一箇所に集中しています' },
-  '위험 집중도': { ko: '위험이 집중돼 있어요', en: 'Risk is concentrated', ja: 'リスクが集中しています' },
-  '상관관계': { ko: '자산들이 같이 움직여요', en: 'Assets move together', ja: '資産が同じ動きをしています' },
-  '변동성': { ko: '가격 변동이 큰 편이에요', en: 'Price swings are high', ja: '価格変動が大きめです' },
-  '하방 리스크': { ko: '손실 중인 자산이 있어요', en: 'Some assets are at a loss', ja: '損失中の資産があります' },
-  '세금 효율': { ko: '절세 기회가 있어요', en: 'Tax saving opportunity', ja: '節税の機会があります' },
-  '레버리지 건전성': { ko: '대출 부담이 있어요', en: 'Loan burden exists', ja: 'ローン負担があります' },
-  '철학 정합도': { ko: '투자 철학과 맞지 않아요', en: 'Doesn\'t match your philosophy', ja: '投資哲学と合いません' },
+// Factor label key → simplified label locale key
+// Maps the factor_labels key suffix to a user-friendly simplified message
+const SIMPLIFIED_LABEL_KEYS: Record<string, string> = {
+  drift: 'checkup.worstFactor.simplified_drift',
+  concentration: 'checkup.worstFactor.simplified_concentration',
+  correlation: 'checkup.worstFactor.simplified_correlation',
+  volatility: 'checkup.worstFactor.simplified_volatility',
+  downside: 'checkup.worstFactor.simplified_downside',
+  tax: 'checkup.worstFactor.simplified_tax',
+  leverage: 'checkup.worstFactor.simplified_leverage',
+  philosophy: 'checkup.worstFactor.simplified_philosophy',
 };
+
+// Reverse lookup: translated factor label → factor key suffix
+function getFactorKeySuffix(label: string, t: (key: string) => string): string | null {
+  const suffixes = ['drift', 'concentration', 'correlation', 'volatility', 'downside', 'tax', 'leverage', 'philosophy'];
+  for (const suffix of suffixes) {
+    if (label === t(`checkup.factor_labels.${suffix}`)) return suffix;
+  }
+  return null;
+}
 
 function getStoryMessage(factor: FactorResult, allAssets: Asset[] | undefined, t: (key: string, params?: Record<string, string | number>) => string): string | null {
   if (!allAssets || allAssets.length === 0) return null;
@@ -40,8 +50,15 @@ function getStoryMessage(factor: FactorResult, allAssets: Asset[] | undefined, t
   const liquidAssets = allAssets.filter(a => a.assetType !== AssetType.ILLIQUID);
   if (liquidAssets.length === 0) return null;
 
+  const driftLabel = t('checkup.factor_labels.drift');
+  const concLabel = t('checkup.factor_labels.concentration');
+  const corrLabel = t('checkup.factor_labels.correlation');
+  const volLabel = t('checkup.factor_labels.volatility');
+  const downLabel = t('checkup.factor_labels.downside');
+  const philLabel = t('checkup.factor_labels.philosophy');
+
   switch (factor.label) {
-    case '배분 이탈도': {
+    case driftLabel: {
       const liquidTotal = liquidAssets.reduce((s, x) => s + x.currentValue, 0);
       if (liquidTotal === 0) return null;
       const maxDrift = liquidAssets.reduce((worst, a) => {
@@ -64,18 +81,18 @@ function getStoryMessage(factor: FactorResult, allAssets: Asset[] | undefined, t
       }
       return null;
     }
-    case '자산 집중도': {
+    case concLabel: {
       const total = liquidAssets.reduce((s, a) => s + a.currentValue, 0);
       if (total === 0) return null;
       const top = liquidAssets.reduce((max, a) => a.currentValue > max.currentValue ? a : max, liquidAssets[0]);
       const pct = Math.round((top.currentValue / total) * 100);
       return t('checkup.worstFactor.concentration', { pct, name: top.name });
     }
-    case '상관관계':
+    case corrLabel:
       return t('checkup.worstFactor.correlation');
-    case '변동성':
+    case volLabel:
       return t('checkup.worstFactor.volatility');
-    case '하방 리스크': {
+    case downLabel: {
       const lossCount = liquidAssets.filter(a => {
         const avg = a.avgPrice ?? 0;
         const cur = a.currentPrice ?? 0;
@@ -83,7 +100,7 @@ function getStoryMessage(factor: FactorResult, allAssets: Asset[] | undefined, t
       }).length;
       return lossCount > 0 ? t('checkup.worstFactor.downside', { count: lossCount }) : null;
     }
-    case '철학 정합도':
+    case philLabel:
       return t('checkup.worstFactor.philosophy');
     default:
       return null;
@@ -112,10 +129,11 @@ export default function WorstFactorCard({ factors, allAssets }: WorstFactorCardP
     curr.score < prev.score ? curr : prev,
   );
 
-  const labelEntry = LABEL_MAP[worst.label];
-  const simplifiedLabel = labelEntry ? labelEntry[language] || labelEntry.ko : worst.label;
+  const factorKeySuffix = getFactorKeySuffix(worst.label, t);
+  const simplifiedLabelKey = factorKeySuffix ? SIMPLIFIED_LABEL_KEYS[factorKeySuffix] : null;
+  const simplifiedLabel = simplifiedLabelKey ? t(simplifiedLabelKey) : worst.label;
   const barColor = getScoreColor(worst.score, colors);
-  const factorType = getFactorType(worst.label);
+  const factorType = getFactorType(worst.label, worst.icon);
   const localizedExplanation = factorType ? getLocalizedFactor(FACTOR_EXPLANATIONS[factorType], language) : null;
   const historicalContext = localizedExplanation ? localizedExplanation.historicalContext : null;
 
@@ -155,7 +173,7 @@ export default function WorstFactorCard({ factors, allAssets }: WorstFactorCardP
       <Text style={styles.comment}>{getStoryMessage(worst, allAssets, t) ?? worst.comment}</Text>
 
       {/* 조정 효과 힌트 (배분 이탈도일 때만) */}
-      {worst.label === '배분 이탈도' && worst.score < 70 && (
+      {worst.label === t('checkup.factor_labels.drift') && worst.score < 70 && (
         <View style={styles.improveHint}>
           <Text style={styles.improveIcon}>✨</Text>
           <Text style={styles.improveText}>

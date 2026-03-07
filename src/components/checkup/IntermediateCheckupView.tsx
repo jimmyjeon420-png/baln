@@ -86,18 +86,7 @@ export default function IntermediateCheckupView({
   onLevelChange,
 }: IntermediateCheckupViewProps) {
   const { colors, shadows } = useTheme();
-  const { t, language } = useLocale();
-
-  const FACTOR_LABEL_I18N: Record<string, Record<string, string>> = {
-    '배분 이탈도': { ko: '배분 이탈도', en: 'Allocation Drift', ja: '配分乖離度' },
-    '위험 집중도': { ko: '위험 집중도', en: 'Risk Concentration', ja: 'リスク集中度' },
-    '상관관계': { ko: '상관관계', en: 'Correlation', ja: '相関関係' },
-    '변동성': { ko: '변동성', en: 'Volatility', ja: 'ボラティリティ' },
-    '하방 리스크': { ko: '하방 리스크', en: 'Downside Risk', ja: '下方リスク' },
-    '세금 효율': { ko: '세금 효율', en: 'Tax Efficiency', ja: '税効率' },
-    '레버리지 건전성': { ko: '레버리지 건전성', en: 'Leverage Health', ja: 'レバレッジ健全性' },
-    '철학 정합도': { ko: '철학 정합도', en: 'Philosophy Alignment', ja: '哲学適合度' },
-  };
+  const { t } = useLocale();
 
   // 취약 팩터 Top 3 (점수 오름차순)
   const weakestFactors = useMemo(() => {
@@ -136,7 +125,7 @@ export default function IntermediateCheckupView({
               <View style={s.factorHeader}>
                 <Text style={s.factorIcon}>{factor.icon}</Text>
                 <Text style={[s.factorLabel, { color: colors.textPrimary }]} numberOfLines={1} adjustsFontSizeToFit>
-                  {FACTOR_LABEL_I18N[factor.label]?.[language] || factor.label}
+                  {factor.label}
                 </Text>
                 <Text style={[s.factorScore, { color }]}>{factor.score}{t('checkup.header.score_suffix')}</Text>
               </View>

@@ -113,10 +113,10 @@ export default function DeepDiveReport({ result }: DeepDiveReportProps) {
 
   // null 안전: AI 응답이 부분적일 수 있으므로 기본값 적용
   const sections = result.sections ?? {} as Record<string, unknown>;
-  const financial = sections.financial ?? { score: 0, title: '재무 분석', highlights: [], metrics: [] };
-  const technical = sections.technical ?? { score: 0, title: '기술적 분석', highlights: [], signals: [] };
-  const news = sections.news ?? { title: '뉴스 분석', sentiment: 'NEUTRAL', recentNews: [] };
-  const quality = (sections.quality ?? { title: '퀄리티 분석', score: 0, highlights: [], metrics: [] }) as { title: string; score: number; highlights: string[]; metrics?: { label: string; value: string; status: 'good' | 'neutral' | 'bad'; detail?: string }[] };
+  const financial = sections.financial ?? { score: 0, title: t('deepDive.report.financialTitle'), highlights: [], metrics: [] };
+  const technical = sections.technical ?? { score: 0, title: t('deepDive.report.technicalTitle'), highlights: [], signals: [] };
+  const news = sections.news ?? { title: t('deepDive.report.newsTitle'), sentiment: 'NEUTRAL', recentNews: [] };
+  const quality = (sections.quality ?? { title: t('deepDive.report.qualityTitle'), score: 0, highlights: [], metrics: [] }) as { title: string; score: number; highlights: string[]; metrics?: { label: string; value: string; status: 'good' | 'neutral' | 'bad'; detail?: string }[] };
   const rec = RECOMMENDATION_COLORS[result.recommendation] ?? RECOMMENDATION_COLORS.NEUTRAL;
 
   // ── 뉴스 점수 (ScoreRadar용) ──
@@ -145,18 +145,18 @@ export default function DeepDiveReport({ result }: DeepDiveReportProps) {
     })();
 
     // keyMetrics: financial.metrics에서 ROE, 부채비율 추출
-    const roe = extractMetricValue(financial.metrics ?? [], ['roe', '자기자본이익률']);
-    const debtRatio = extractMetricValue(financial.metrics ?? [], ['부채비율', 'debt']);
+    const roe = extractMetricValue(financial.metrics ?? [], ['roe', '자기자본이익률', 'return on equity']);
+    const debtRatio = extractMetricValue(financial.metrics ?? [], ['부채비율', 'debt', 'debt ratio', 'debt-to-equity']);
     const keyMetrics = { roe, roic: 0, debtRatio };
 
     // cashFlowSummary: financial.highlights에서 현금흐름 관련 추출
     const cashFlowHighlight = (financial.highlights ?? []).find((h: string) =>
-      h.includes('현금') || h.includes('cash') || h.includes('영업활동'),
+      h.includes('현금') || h.includes('cash') || h.includes('영업활동') || h.includes('operating') || h.includes('cash flow'),
     );
-    const cashFlowSummary = cashFlowHighlight ?? '상세 정보는 실적 발표 후 제공됩니다';
+    const cashFlowSummary = cashFlowHighlight ?? t('deepDive.report.cashFlowFallback');
 
     return { yearlyData, keyMetrics, cashFlowSummary };
-  }, [result.quarterlyData, financial.metrics, financial.highlights]);
+  }, [result.quarterlyData, financial.metrics, financial.highlights, t]);
 
   return (
     <View style={styles.wrapper}>
@@ -531,17 +531,34 @@ function formatLargeNumber(value: number): string {
     return `${sign}₩${abs.toLocaleString('en-US')}`;
   }
 
-  // Korean: 조원 / 억원 / 만원
-  if (abs >= 1_0000_0000_0000) {
-    return `${sign}약 ${(abs / 1_0000_0000_0000).toFixed(1)}조원`;
+  // Non-English (ko, ja, etc.): 조원 / 억원 / 만원
+  if (lang === 'ko') {
+    if (abs >= 1_0000_0000_0000) {
+      return `${sign}약 ${(abs / 1_0000_0000_0000).toFixed(1)}조원`;
+    }
+    if (abs >= 1_0000_0000) {
+      return `${sign}약 ${(abs / 1_0000_0000).toFixed(0)}억원`;
+    }
+    if (abs >= 1_0000) {
+      return `${sign}약 ${(abs / 1_0000).toFixed(0)}만원`;
+    }
+    return `${sign}${abs.toLocaleString(getLocaleCode())}원`;
   }
-  if (abs >= 1_0000_0000) {
-    return `${sign}약 ${(abs / 1_0000_0000).toFixed(0)}억원`;
+
+  // Fallback (ja, etc.): use English-style formatting
+  if (abs >= 1_000_000_000_000) {
+    return `${sign}~₩${(abs / 1_000_000_000_000).toFixed(1)}T`;
   }
-  if (abs >= 1_0000) {
-    return `${sign}약 ${(abs / 1_0000).toFixed(0)}만원`;
+  if (abs >= 1_000_000_000) {
+    return `${sign}~₩${(abs / 1_000_000_000).toFixed(1)}B`;
   }
-  return `${sign}${abs.toLocaleString(getLocaleCode())}원`;
+  if (abs >= 1_000_000) {
+    return `${sign}~₩${(abs / 1_000_000).toFixed(1)}M`;
+  }
+  if (abs >= 1_000) {
+    return `${sign}~₩${(abs / 1_000).toFixed(1)}K`;
+  }
+  return `${sign}₩${abs.toLocaleString('en-US')}`;
 }
 
 // ── 유틸: 시그널 색상 ──

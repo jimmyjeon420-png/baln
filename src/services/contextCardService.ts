@@ -327,12 +327,14 @@ export async function getTodayContextCard(
   const today = getLocalDate();
 
   try {
-    // 1단계: 오늘의 맥락 카드 조회 (최신 time_slot 우선)
+    // 1단계: 오늘의 맥락 카드 조회 (사용자 언어 우선, 최신 time_slot 우선)
+    const userLang = getCurrentDisplayLanguage();
     const { data: cardData, error: cardError } = await withTimeout(
       supabase
         .from('context_cards')
         .select('id, date, headline, historical_context, macro_chain, political_context, institutional_behavior, sentiment, is_premium_only, market_data, created_at')
         .eq('date', today)
+        .eq('lang', userLang)
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle(),
@@ -343,10 +345,11 @@ export async function getTodayContextCard(
     if (cardError || !cardData) {
       if (__DEV__) console.log('[맥락 카드] 오늘의 카드 없음 -> 최근 카드로 폴백');
 
-      // 폴백: 가장 최근 맥락 카드 조회 (어제 또는 그 이전)
+      // 폴백: 가장 최근 맥락 카드 조회 (어제 또는 그 이전, 같은 언어)
       const { data: latestCard, error: latestError } = await supabase
         .from('context_cards')
         .select('id, date, headline, historical_context, macro_chain, political_context, institutional_behavior, sentiment, is_premium_only, market_data, created_at')
+        .eq('lang', userLang)
         .lt('date', today)
         .order('date', { ascending: false })
         .limit(1)
@@ -506,11 +509,13 @@ export async function getRecentContextCards(
   const endDateStr = fmt(endDate);
 
   try {
-    // 1단계: 최근 N일 맥락 카드 목록 (최신 time_slot 우선)
+    // 1단계: 최근 N일 맥락 카드 목록 (사용자 언어, 최신 time_slot 우선)
+    const recentLang = getCurrentDisplayLanguage();
     const { data: cardsData, error: cardsError } = await withTimeout(
       supabase
         .from('context_cards')
         .select('id, date, headline, historical_context, macro_chain, political_context, institutional_behavior, sentiment, is_premium_only, market_data, created_at')
+        .eq('lang', recentLang)
         .gte('date', startDateStr)
         .lte('date', endDateStr)
         .order('date', { ascending: false })
@@ -604,10 +609,12 @@ export async function getQuickContextSentiment(): Promise<{
   try {
     const today = getLocalDate();
 
+    const sentimentLang = getCurrentDisplayLanguage();
     const { data, error } = await supabase
       .from('context_cards')
       .select('sentiment, headline, created_at')
       .eq('date', today)
+      .eq('lang', sentimentLang)
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();

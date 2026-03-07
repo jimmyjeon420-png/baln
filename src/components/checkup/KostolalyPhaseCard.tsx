@@ -248,7 +248,7 @@ export default function KostolalyPhaseCard({ onApplyPhase }: KostolalyPhaseCardP
         ))}
         {/* 달걀 사이클 화살표 */}
         <Text style={[s.eggCycle, { color: colors.textTertiary }]}>
-          A → B → C → D → E → F → A (순환)
+          {t('rebalance.kostolany_phase.cycle_arrow')}
         </Text>
       </View>
     );
@@ -311,13 +311,13 @@ export default function KostolalyPhaseCard({ onApplyPhase }: KostolalyPhaseCardP
         <View style={s.expertsRow}>
           {data.dalio_view && (
             <View style={[s.expertCard, { backgroundColor: '#4CAF5012', borderColor: '#4CAF5030' }]}>
-              <Text style={[s.expertLabel, { color: '#4CAF50' }]}>🌊 달리오</Text>
+              <Text style={[s.expertLabel, { color: '#4CAF50' }]}>🌊 {t('rebalance.kostolany_phase.expert_dalio')}</Text>
               <Text style={[s.expertText, { color: colors.textSecondary }]}>{data.dalio_view}</Text>
             </View>
           )}
           {data.buffett_view && (
             <View style={[s.expertCard, { backgroundColor: '#FFB74D12', borderColor: '#FFB74D30' }]}>
-              <Text style={[s.expertLabel, { color: '#FFB74D' }]}>🔴 버핏</Text>
+              <Text style={[s.expertLabel, { color: '#FFB74D' }]}>🔴 {t('rebalance.kostolany_phase.expert_buffett')}</Text>
               <Text style={[s.expertText, { color: colors.textSecondary }]}>{data.buffett_view}</Text>
             </View>
           )}

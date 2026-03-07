@@ -59,13 +59,13 @@ export default function ShareableCard({
     try {
       const result = await claimReward();
       if (result.success) {
-        setRewardMessage(`+${result.creditsEarned} 크레딧 획득!`);
+        setRewardMessage(`+${result.creditsEarned} ${t('share.creditEarned')}`);
         setTimeout(() => setRewardMessage(null), 3000);
       }
     } catch {
       // 보상 실패해도 공유 자체는 성공이므로 무시
     }
-  }, [claimReward]);
+  }, [claimReward, t]);
 
   /** 웹 전용: html-to-image로 캡처 → Web Share API 또는 다운로드 */
   const handleWebShare = useCallback(async () => {
@@ -86,7 +86,7 @@ export default function ShareableCard({
     if (typeof navigator !== 'undefined' && navigator.share && navigator.canShare) {
       const file = new File([blob], fileName, { type: 'image/png' });
       if (navigator.canShare({ files: [file] })) {
-        await navigator.share({ title: 'baln.logic AI 처방전', files: [file] });
+        await navigator.share({ title: 'baln.logic AI Prescription', files: [file] });
         return;
       }
     }
@@ -116,7 +116,7 @@ export default function ShareableCard({
     const uri = await viewShotRef.current.capture();
     await Sharing.shareAsync(uri, {
       mimeType: 'image/png',
-      dialogTitle: 'baln.logic 처방전 공유',
+      dialogTitle: t('share.dialogTitle'),
       UTI: 'public.png',
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps

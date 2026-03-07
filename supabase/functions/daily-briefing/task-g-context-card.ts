@@ -74,10 +74,12 @@ async function generateContextCard(timeSlot: string = 'morning', lang: string = 
 }> {
   const dateStr = getKSTDateStr();
   const todayDate = getKSTDate();
-  const isEn = lang !== 'ko';
+  const isJa = lang === 'ja';
+  const isEn = lang === 'en';
+  const isNonKo = lang !== 'ko';
 
   // 시간대별 프롬프트 컨텍스트 (3시간 간격, KST 기준)
-  const timeSlotContextMap: Record<string, string> = isEn ? {
+  const timeSlotContextMap: Record<string, string> = isNonKo ? {
     h00: '[Time: 12AM KST] US markets are in session. Analyze current US market trends and key issues.',
     h03: '[Time: 3AM KST] US markets just closed. Summarize the US closing results and after-hours activity.',
     h06: '[Time: 6AM KST] Morning market preview. Analyze overnight US market results + Asia market outlook.',
@@ -153,11 +155,13 @@ async function generateContextCard(timeSlot: string = 'morning', lang: string = 
     console.log('[Task G-1] Task A 결과 참조 실패 (무시) — Google Search로 직접 검색');
   }
 
-  const langInstruction = isEn
+  const langInstruction = isJa
+    ? 'CRITICAL: Your ENTIRE response MUST be in Japanese (日本語). Never use Korean or English for content text. Ticker symbols stay in English.'
+    : isEn
     ? 'CRITICAL: Your ENTIRE response MUST be in English. Never use Korean.'
     : '반드시 한국어로 작성하세요.';
 
-  const prompt = isEn
+  const prompt = isNonKo
     ? `You are the context card AI for baln (a portfolio insights app).
 ${timeSlotContext}
 Analyze today's (${dateStr}) market from 5 perspectives so investors can understand "why my assets moved this way today" in 5 minutes.
@@ -285,7 +289,8 @@ ${langInstruction}`;
       {
         date: todayDate,
         time_slot: slot,
-        headline: parsed.headline || (isEn ? "Today's Market Analysis" : '오늘의 시장 분석'),
+        lang: lang || 'ko',
+        headline: parsed.headline || (isNonKo ? "Today's Market Analysis" : '오늘의 시장 분석'),
         historical_context: parsed.historical_context || '',
         macro_chain: parsed.macro_chain || [],
         political_context: parsed.political_context || '',
@@ -296,7 +301,7 @@ ${langInstruction}`;
         },
         updated_at: new Date().toISOString(),
       },
-      { onConflict: 'date,time_slot' }
+      { onConflict: 'date,time_slot,lang' }
     )
     .select('id')
     .single();

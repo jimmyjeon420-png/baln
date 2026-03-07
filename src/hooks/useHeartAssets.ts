@@ -76,17 +76,10 @@ interface UseHeartAssetsReturn {
 // ============================================================================
 
 /**
- * 등급 → 한국어 라벨 변환
+ * 등급 → 로케일 기반 라벨 변환
  */
 function getGradeLabel(grade: HealthGrade): string {
-  const labels: Record<HealthGrade, string> = {
-    S: '최적',
-    A: '양호',
-    B: '보통',
-    C: '주의',
-    D: '개선필요',
-  };
-  return labels[grade] || '미측정';
+  return t(`health.gradeLabels.${grade}`) || grade;
 }
 
 /**

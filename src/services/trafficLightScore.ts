@@ -80,26 +80,23 @@ export interface ContextBriefing {
 // 색상 상수
 // ============================================================================
 
-export const TRAFFIC_COLORS = {
-  green: {
-    main: '#4CAF50',
-    bg: 'rgba(76, 175, 80, 0.1)',
-    emoji: '🟢',
-    label: '양호'
-  },
-  yellow: {
-    main: '#FFB74D',
-    bg: 'rgba(255, 183, 77, 0.1)',
-    emoji: '🟡',
-    label: '주의'
-  },
-  red: {
-    main: '#CF6679',
-    bg: 'rgba(207, 102, 121, 0.1)',
-    emoji: '🔴',
-    label: '위험'
-  },
+const TRAFFIC_COLORS_STATIC = {
+  green: { main: '#4CAF50', bg: 'rgba(76, 175, 80, 0.1)', emoji: '🟢' },
+  yellow: { main: '#FFB74D', bg: 'rgba(255, 183, 77, 0.1)', emoji: '🟡' },
+  red: { main: '#CF6679', bg: 'rgba(207, 102, 121, 0.1)', emoji: '🔴' },
 } as const;
+
+export function getTrafficColor(color: 'green' | 'yellow' | 'red') {
+  const labelKeys = { green: 'health.traffic.good', yellow: 'health.traffic.caution', red: 'health.traffic.danger' };
+  return { ...TRAFFIC_COLORS_STATIC[color], label: t(labelKeys[color]) };
+}
+
+/** @deprecated Use getTrafficColor() for locale support */
+export const TRAFFIC_COLORS = {
+  get green() { return getTrafficColor('green'); },
+  get yellow() { return getTrafficColor('yellow'); },
+  get red() { return getTrafficColor('red'); },
+};
 
 // ============================================================================
 // 1. 건강 점수 → 신호등 변환
@@ -243,7 +240,7 @@ export function convertContextToBriefing(contextData: {
   }
 
   // IMPACT: 포트폴리오 영향 (가격 텍스트 제거)
-  let impact = '오늘의 시장이 내 포트폴리오에 미치는 영향을 확인하세요';
+  let impact = t('health.context.default_impact');
   if (contextData.portfolioImpact?.message) {
     const sanitizedImpact = contextData.portfolioImpact.message
       // 가격 관련 문자 제거
@@ -258,8 +255,7 @@ export function convertContextToBriefing(contextData: {
 
   // SENTIMENT
   const sentiment = contextData.sentiment || 'calm';
-  const sentimentLabels = { calm: '안정', caution: '주의', alert: '경계' };
-  const sentimentLabel = sentimentLabels[sentiment];
+  const sentimentLabel = t(`health.sentimentLabels.${sentiment}`);
 
   return {
     fact,
@@ -289,10 +285,10 @@ export function getEmptyTrafficLight(): TrafficLightResult {
     light: 'green',
     color: TRAFFIC_COLORS.green.main,
     bgColor: TRAFFIC_COLORS.green.bg,
-    label: '시작하기',
+    label: t('health.traffic.get_started'),
     emoji: '🟢',
     score: 0,
     grade: '-',
-    summary: '관심 자산을 하트하면 건강 점수를 알려드려요',
+    summary: t('health.traffic.empty_summary'),
   };
 }

@@ -81,8 +81,7 @@ export default function Valuation({ data, onRefresh: _onRefresh }: ValuationProp
       {/* 헤더 */}
       <View style={s.headerRow}>
         <View>
-          <Text style={[s.cardTitle, { color: colors.textPrimary }]}>💰 밸류에이션</Text>
-          <Text style={[s.cardSubtitle, { color: colors.textTertiary }]}>Valuation Analysis</Text>
+          <Text style={[s.cardTitle, { color: colors.textPrimary }]}>💰 {t('deepDive.valuation.title')}</Text>
         </View>
         <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
           {/* 저평가/고평가 뱃지 */}

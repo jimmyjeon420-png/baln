@@ -519,7 +519,7 @@ function calcDriftPenalty(
   customTarget?: Record<AssetCategory, number>,
 ): FactorResult {
   if (total === 0) {
-    return { label: '배분 이탈도', icon: '🎯', rawPenalty: 0, weight: 0.225, weightedPenalty: 0, score: 100, comment: t('checkup.factor_comments.add_assets') };
+    return { label: t('checkup.factor_labels.drift'), icon: '🎯', rawPenalty: 0, weight: 0.225, weightedPenalty: 0, score: 100, comment: t('checkup.factor_comments.add_assets') };
   }
 
   const target = normalizeLiquidTarget(customTarget);
@@ -562,7 +562,7 @@ function calcDriftPenalty(
     ? t('checkup.factor_comments.drift_mod', { cat: catName })
     : t('checkup.factor_comments.drift_bad');
 
-  return { label: '배분 이탈도', icon: '🎯', rawPenalty: penalty, weight: 0.225, weightedPenalty: penalty * 0.225, score, comment };
+  return { label: t('checkup.factor_labels.drift'), icon: '🎯', rawPenalty: penalty, weight: 0.225, weightedPenalty: penalty * 0.225, score, comment };
 }
 
 /**
@@ -572,7 +572,7 @@ function calcDriftPenalty(
  */
 function calcRiskWeightedConcentration(assets: Asset[], total: number): FactorResult {
   if (total === 0 || assets.length === 0) {
-    return { label: '위험 집중도', icon: '⚖️', rawPenalty: 0, weight: 0.180, weightedPenalty: 0, score: 100, comment: t('checkup.factor_comments.add_assets') };
+    return { label: t('checkup.factor_labels.concentration'), icon: '⚖️', rawPenalty: 0, weight: 0.180, weightedPenalty: 0, score: 100, comment: t('checkup.factor_comments.add_assets') };
   }
 
   // 1. 각 자산의 위험 기여도 계산
@@ -588,7 +588,7 @@ function calcRiskWeightedConcentration(assets: Asset[], total: number): FactorRe
   }
 
   if (totalRisk === 0) {
-    return { label: '위험 집중도', icon: '⚖️', rawPenalty: 0, weight: 0.180, weightedPenalty: 0, score: 100, comment: t('checkup.factor_comments.risk_unmeasurable') };
+    return { label: t('checkup.factor_labels.concentration'), icon: '⚖️', rawPenalty: 0, weight: 0.180, weightedPenalty: 0, score: 100, comment: t('checkup.factor_comments.risk_unmeasurable') };
   }
 
   // 2. 위험 가중 HHI 계산
@@ -619,7 +619,7 @@ function calcRiskWeightedConcentration(assets: Asset[], total: number): FactorRe
     ? t('checkup.factor_comments.risk_good')
     : t('checkup.factor_comments.risk_concentrated', { name: maxRiskAsset.ticker || maxRiskAsset.name, pct: maxRiskPct.toFixed(0) });
 
-  return { label: '위험 집중도', icon: '⚖️', rawPenalty: penalty, weight: 0.180, weightedPenalty: penalty * 0.180, score, comment };
+  return { label: t('checkup.factor_labels.concentration'), icon: '⚖️', rawPenalty: penalty, weight: 0.180, weightedPenalty: penalty * 0.180, score, comment };
 }
 
 /**
@@ -628,7 +628,7 @@ function calcRiskWeightedConcentration(assets: Asset[], total: number): FactorRe
  */
 function calcCorrelationPenalty(assets: Asset[], total: number): FactorResult {
   if (total === 0) {
-    return { label: '상관관계', icon: '🔗', rawPenalty: 0, weight: 0.135, weightedPenalty: 0, score: 100, comment: t('checkup.factor_comments.add_assets') };
+    return { label: t('checkup.factor_labels.correlation'), icon: '🔗', rawPenalty: 0, weight: 0.135, weightedPenalty: 0, score: 100, comment: t('checkup.factor_comments.add_assets') };
   }
 
   // 카테고리별 비중 계산 (순자산 기준)
@@ -673,7 +673,7 @@ function calcCorrelationPenalty(assets: Asset[], total: number): FactorResult {
     ? t('checkup.factor_comments.corr_good')
     : t('checkup.factor_comments.corr_optimal');
 
-  return { label: '상관관계', icon: '🔗', rawPenalty: penalty, weight: 0.135, weightedPenalty: penalty * 0.135, score, comment };
+  return { label: t('checkup.factor_labels.correlation'), icon: '🔗', rawPenalty: penalty, weight: 0.135, weightedPenalty: penalty * 0.135, score, comment };
 }
 
 /**
@@ -682,7 +682,7 @@ function calcCorrelationPenalty(assets: Asset[], total: number): FactorResult {
  */
 function calcVolatilityPenalty(assets: Asset[], total: number): FactorResult {
   if (total === 0) {
-    return { label: '변동성', icon: '📈', rawPenalty: 0, weight: 0.135, weightedPenalty: 0, score: 100, comment: t('checkup.factor_comments.add_assets') };
+    return { label: t('checkup.factor_labels.volatility'), icon: '📈', rawPenalty: 0, weight: 0.135, weightedPenalty: 0, score: 100, comment: t('checkup.factor_comments.add_assets') };
   }
 
   // 가중평균 변동성 계산 (순자산 기준)
@@ -706,7 +706,7 @@ function calcVolatilityPenalty(assets: Asset[], total: number): FactorResult {
     ? t('checkup.factor_comments.vol_ok', { pct: weightedVol.toFixed(0) })
     : t('checkup.factor_comments.vol_high', { pct: weightedVol.toFixed(0) });
 
-  return { label: '변동성', icon: '📈', rawPenalty: penalty, weight: 0.135, weightedPenalty: penalty * 0.135, score, comment };
+  return { label: t('checkup.factor_labels.volatility'), icon: '📈', rawPenalty: penalty, weight: 0.135, weightedPenalty: penalty * 0.135, score, comment };
 }
 
 /**
@@ -715,7 +715,7 @@ function calcVolatilityPenalty(assets: Asset[], total: number): FactorResult {
  */
 function calcDownsidePenalty(assets: Asset[], total: number): FactorResult {
   if (total === 0) {
-    return { label: '하방 리스크', icon: '🛡️', rawPenalty: 0, weight: 0.090, weightedPenalty: 0, score: 100, comment: t('checkup.factor_comments.add_assets') };
+    return { label: t('checkup.factor_labels.downside'), icon: '🛡️', rawPenalty: 0, weight: 0.090, weightedPenalty: 0, score: 100, comment: t('checkup.factor_comments.add_assets') };
   }
 
   let lossCount = 0;
@@ -739,7 +739,7 @@ function calcDownsidePenalty(assets: Asset[], total: number): FactorResult {
     ? t('checkup.factor_comments.loss_none')
     : t('checkup.factor_comments.loss_count', { count: lossCount });
 
-  return { label: '하방 리스크', icon: '🛡️', rawPenalty: penalty, weight: 0.090, weightedPenalty: penalty * 0.090, score, comment };
+  return { label: t('checkup.factor_labels.downside'), icon: '🛡️', rawPenalty: penalty, weight: 0.090, weightedPenalty: penalty * 0.090, score, comment };
 }
 
 /**
@@ -748,7 +748,7 @@ function calcDownsidePenalty(assets: Asset[], total: number): FactorResult {
  */
 function calcTaxEfficiencyPenalty(assets: Asset[], total: number): FactorResult {
   if (total === 0) {
-    return { label: '세금 효율', icon: '💰', rawPenalty: 0, weight: 0.045, weightedPenalty: 0, score: 100, comment: t('checkup.factor_comments.add_assets') };
+    return { label: t('checkup.factor_labels.tax'), icon: '💰', rawPenalty: 0, weight: 0.045, weightedPenalty: 0, score: 100, comment: t('checkup.factor_comments.add_assets') };
   }
 
   let tlhCount = 0;
@@ -776,7 +776,7 @@ function calcTaxEfficiencyPenalty(assets: Asset[], total: number): FactorResult 
     ? t('checkup.factor_comments.tax_none')
     : t('checkup.factor_comments.tax_opportunity', { count: tlhCount });
 
-  return { label: '세금 효율', icon: '💰', rawPenalty: penalty, weight: 0.045, weightedPenalty: penalty * 0.045, score, comment };
+  return { label: t('checkup.factor_labels.tax'), icon: '💰', rawPenalty: penalty, weight: 0.045, weightedPenalty: penalty * 0.045, score, comment };
 }
 
 /**
@@ -786,7 +786,7 @@ function calcTaxEfficiencyPenalty(assets: Asset[], total: number): FactorResult 
  */
 function calcLeveragePenalty(assets: Asset[], total: number): FactorResult {
   if (total === 0) {
-    return { label: '레버리지 건전성', icon: '💳', rawPenalty: 0, weight: 0.090, weightedPenalty: 0, score: 100, comment: t('checkup.factor_comments.add_assets') };
+    return { label: t('checkup.factor_labels.leverage'), icon: '💳', rawPenalty: 0, weight: 0.090, weightedPenalty: 0, score: 100, comment: t('checkup.factor_comments.add_assets') };
   }
 
   let totalLeverageRisk = 0;
@@ -810,7 +810,7 @@ function calcLeveragePenalty(assets: Asset[], total: number): FactorResult {
   }
 
   if (debtCount === 0) {
-    return { label: '레버리지 건전성', icon: '💳', rawPenalty: 0, weight: 0.090, weightedPenalty: 0, score: 100, comment: t('checkup.factor_comments.leverage_none') };
+    return { label: t('checkup.factor_labels.leverage'), icon: '💳', rawPenalty: 0, weight: 0.090, weightedPenalty: 0, score: 100, comment: t('checkup.factor_comments.leverage_none') };
   }
 
   // 포트폴리오 전체 대비 레버리지 위험 비율
@@ -829,7 +829,7 @@ function calcLeveragePenalty(assets: Asset[], total: number): FactorResult {
     ? t('checkup.factor_comments.leverage_mod', { pct: leverageRiskRatio.toFixed(1) })
     : t('checkup.factor_comments.leverage_high', { pct: leverageRiskRatio.toFixed(1) });
 
-  return { label: '레버리지 건전성', icon: '💳', rawPenalty: penalty, weight: 0.090, weightedPenalty: penalty * 0.090, score, comment };
+  return { label: t('checkup.factor_labels.leverage'), icon: '💳', rawPenalty: penalty, weight: 0.090, weightedPenalty: penalty * 0.090, score, comment };
 }
 
 /**
@@ -850,7 +850,7 @@ function calcPhilosophyAlignment(
   // 주식 미보유 → 중립 (100점, 해당 없음)
   if (stockAssets.length === 0) {
     return {
-      label: '철학 정합도',
+      label: t('checkup.factor_labels.philosophy'),
       icon: '🧭',
       rawPenalty: 0,
       weight: 0.10,
@@ -881,7 +881,7 @@ function calcPhilosophyAlignment(
   const rawPenalty = 100 - score;
 
   return {
-    label: '철학 정합도',
+    label: t('checkup.factor_labels.philosophy'),
     icon: '🧭',
     rawPenalty,
     weight: 0.10,
@@ -1035,17 +1035,17 @@ export function calculateHealthScore(
 
   // 가장 취약한 팩터 → summary 생성 (일반인 친화적 언어)
   const worstFactor = [...factors].sort((a, b) => b.rawPenalty - a.rawPenalty)[0];
-  const FACTOR_FRIENDLY_KEY: Record<string, string> = {
-    '배분 이탈도': 'checkup.friendly_labels.drift',
-    '위험 집중도': 'checkup.friendly_labels.concentration',
-    '상관관계': 'checkup.friendly_labels.correlation',
-    '변동성': 'checkup.friendly_labels.volatility',
-    '하방 리스크': 'checkup.friendly_labels.downside',
-    '세금 효율': 'checkup.friendly_labels.tax',
-  };
-  const friendlyLabel = FACTOR_FRIENDLY_KEY[worstFactor.label]
-    ? t(FACTOR_FRIENDLY_KEY[worstFactor.label])
-    : worstFactor.label;
+  // factor labels are now localized via t(), so use the friendly label directly
+  const friendlyLabel = t('checkup.friendly_labels.' + (
+    worstFactor.icon === '🎯' ? 'drift' :
+    worstFactor.icon === '⚖️' ? 'concentration' :
+    worstFactor.icon === '🔗' ? 'correlation' :
+    worstFactor.icon === '📈' ? 'volatility' :
+    worstFactor.icon === '🛡️' ? 'downside' :
+    worstFactor.icon === '💰' ? 'tax' :
+    worstFactor.icon === '💳' ? 'leverage' :
+    'philosophy'
+  ));
   const summary = totalScore >= 85
     ? t('checkup.summary.excellent')
     : totalScore >= 70

@@ -334,11 +334,19 @@ serve(async (req: Request) => {
       await sleep(delayMs);
     }
 
-    // Task G: 맥락 카드 생성 (Gemini) — ★ 재시도 적용
+    // Task G: 맥락 카드 생성 (Gemini) — ★ 각 언어 = 독립 서버
     if (shouldRun('G')) {
-      console.log('[Task G] 시작: 맥락 카드 생성...');
+      console.log('[Task G] 시작: 맥락 카드 생성 (모든 언어)...');
       const taskStartedAt = Date.now();
-      contextCardResult = await safe(() => retryWithBackoff('Task G', () => runContextCardGeneration(timeSlot, lang)));
+      const contextLangs = ['ko', 'en', 'ja'];
+      const contextResults = [];
+      for (const ctxLang of contextLangs) {
+        console.log(`[Task G] ${ctxLang} 서버 맥락 카드 생성...`);
+        const result = await safe(() => retryWithBackoff(`Task G (${ctxLang})`, () => runContextCardGeneration(timeSlot, ctxLang)));
+        contextResults.push({ lang: ctxLang, result });
+        await sleep(1000); // Gemini rate limit 방지
+      }
+      contextCardResult = contextResults[0]?.result; // 메트릭용 (ko 결과)
       await logTaskMetric('G', taskStartedAt, contextCardResult);
       await sleep(delayMs);
     }

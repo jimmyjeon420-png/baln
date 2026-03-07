@@ -10,6 +10,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { QUIZ_CATEGORIES, type DailyQuiz, type QuizAttempt, type SubmitQuizResult } from '../types/quiz';
+import { useLocale } from '../context/LocaleContext';
 
 interface QuizCardProps {
   quiz: DailyQuiz;
@@ -19,6 +20,7 @@ interface QuizCardProps {
 }
 
 export default function QuizCard({ quiz, attempt, onSubmit, isSubmitting }: QuizCardProps) {
+  const { t } = useLocale();
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [result, setResult] = useState<SubmitQuizResult | null>(null);
 
@@ -106,7 +108,7 @@ export default function QuizCard({ quiz, attempt, onSubmit, isSubmitting }: Quiz
           {isSubmitting ? (
             <ActivityIndicator color="#000000" size="small" />
           ) : (
-            <Text style={styles.submitButtonText}>정답 제출하기</Text>
+            <Text style={styles.submitButtonText}>{t('quiz.submit')}</Text>
           )}
         </TouchableOpacity>
       )}
@@ -118,12 +120,12 @@ export default function QuizCard({ quiz, attempt, onSubmit, isSubmitting }: Quiz
           <View style={[styles.resultBanner, isCorrect ? styles.resultCorrect : styles.resultWrong]}>
             <Text style={styles.resultEmoji}>{isCorrect ? '✅' : '❌'}</Text>
             <Text style={styles.resultText}>
-              {isCorrect ? '정답입니다!' : '아쉽네요!'}
+              {isCorrect ? t('quiz.correct') : t('quiz.wrong')}
             </Text>
             <View style={styles.rewardRow}>
               {creditsEarned > 0 && (
                 <View style={styles.rewardBadge}>
-                  <Text style={styles.rewardText}>+{creditsEarned} 크레딧</Text>
+                  <Text style={styles.rewardText}>{t('quiz.reward_credits', { n: String(creditsEarned) })}</Text>
                 </View>
               )}
               {xpEarned > 0 && (

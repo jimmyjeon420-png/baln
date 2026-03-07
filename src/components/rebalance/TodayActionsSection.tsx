@@ -30,13 +30,37 @@ import TermTooltip from '../common/TermTooltip';
 import { CAT_ICONS as _CAT_ICONS2 } from '../../constants/categoryIcons';
 import { useLocale } from '../../context/LocaleContext';
 
+/**
+ * Locale-aware compact KRW amount formatter.
+ * ko: "3387만원", "1.2억"
+ * en: "₩33.87M", "₩120M"
+ * ja: "3387万ウォン", "1.2億"
+ */
+function formatCompactKRW(amount: number, lang: string): string {
+  const abs = Math.abs(amount);
+  if (lang === 'ko') {
+    if (abs >= 100000000) return `${(abs / 100000000).toFixed(1)}억`;
+    return `${Math.round(abs / 10000)}만원`;
+  }
+  if (lang === 'ja') {
+    if (abs >= 100000000) return `${(abs / 100000000).toFixed(1)}億`;
+    return `${Math.round(abs / 10000)}万ウォン`;
+  }
+  // en / default
+  if (abs >= 100000000) return `₩${(abs / 100000000).toFixed(1)}B`;
+  if (abs >= 10000) return `₩${(abs / 10000000).toFixed(2)}M`;
+  return `₩${abs.toLocaleString()}`;
+}
+
 // ── ETF 추천 맵 (없는 카테고리에 ETF 제안) ──
-const ETF_RECOMMENDATIONS: Partial<Record<AssetCategory, { tickers: string[]; note: string }>> = {
-  bond:      { tickers: ['TLT', 'AGG'],                     note: '미국 국채/종합채권 ETF' },
-  gold:      { tickers: ['GLD', 'IAU', 'KODEX골드선물'],    note: '금 현물 ETF (한국: KODEX 골드선물)' },
-  commodity: { tickers: ['DJP', 'PDBC'],                    note: '광범위 원자재 ETF' },
-  large_cap: { tickers: ['SPY', 'QQQ', 'KODEX200'],        note: 'S&P500 / 나스닥100 / 코스피200' },
-};
+function getEtfRecommendations(tFn: (k: string) => string): Partial<Record<AssetCategory, { tickers: string[]; note: string }>> {
+  return {
+    bond:      { tickers: ['TLT', 'AGG'],                     note: tFn('today_actions.etf_notes.bond') },
+    gold:      { tickers: ['GLD', 'IAU', 'KODEX골드선물'],    note: tFn('today_actions.etf_notes.gold') },
+    commodity: { tickers: ['DJP', 'PDBC'],                    note: tFn('today_actions.etf_notes.commodity') },
+    large_cap: { tickers: ['SPY', 'QQQ', 'KODEX200'],        note: tFn('today_actions.etf_notes.large_cap') },
+  };
+}
 
 // ── 카테고리 라벨 키 ──
 const CAT_LABEL_KEYS: Record<AssetCategory, string> = {
@@ -354,6 +378,7 @@ export default function TodayActionsSection({
 }: TodayActionsSectionProps) {
   const { colors } = useTheme();
   const { t, language } = useLocale();
+  const ETF_RECOMMENDATIONS = getEtfRecommendations(t);
 
   // USD/KRW 환율 — USDT KRW 가격으로 추정 (미국 주식 수익률 계산용)
   // rebalance.tsx에서 priceTargets에 USDT를 항상 포함시켜 이 값을 보장함
@@ -804,9 +829,7 @@ export default function TodayActionsSection({
               {categoryRebalancePlan
                 .filter(a => a.drift > 0)
                 .map(item => {
-                  const amtStr = Math.abs(item.driftAmount) >= 100000000
-                    ? `${(Math.abs(item.driftAmount) / 100000000).toFixed(1)}억`
-                    : `${Math.round(Math.abs(item.driftAmount) / 10000)}만원`;
+                  const amtStr = formatCompactKRW(Math.abs(item.driftAmount), language);
                   return (
                     <View key={item.category} style={[s.planCatItem, { borderColor: `${colors.error}20` }]}>
                       <View style={s.planCatHeader}>
@@ -859,9 +882,7 @@ export default function TodayActionsSection({
               {categoryRebalancePlan
                 .filter(a => a.drift < 0)
                 .map(item => {
-                  const amtStr = Math.abs(item.driftAmount) >= 100000000
-                    ? `${(Math.abs(item.driftAmount) / 100000000).toFixed(1)}억`
-                    : `${Math.round(Math.abs(item.driftAmount) / 10000)}만원`;
+                  const amtStr = formatCompactKRW(Math.abs(item.driftAmount), language);
                   const etfRec = ETF_RECOMMENDATIONS[item.category];
                   const hasHolding = item.assets.length > 0;
                   return (
@@ -949,7 +970,7 @@ export default function TodayActionsSection({
               <Text style={[s.scorePreviewBadgeText, {
                 color: expectedScoreChange.change > 0 ? colors.success : colors.warning,
               }]}>
-                {expectedScoreChange.change > 0 ? '+' : ''}{expectedScoreChange.change}점
+                {expectedScoreChange.change > 0 ? '+' : ''}{expectedScoreChange.change}{t('today_actions.score_unit')}
               </Text>
             </View>
           </View>

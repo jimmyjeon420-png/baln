@@ -10,6 +10,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Svg, { Circle, G } from 'react-native-svg';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 import type { WhatIfResult } from '../../types/marketplace';
 
 interface RiskBudgetGaugeProps {
@@ -27,17 +28,18 @@ export const RiskBudgetGauge: React.FC<RiskBudgetGaugeProps> = ({
   maxTolerancePercent = 20,
 }) => {
   const { colors } = useTheme();
+  const { t } = useLocale();
 
   const absChange = Math.abs(result.totalImpact.changePercent);
   const usagePercent = Math.min(100, (absChange / maxTolerancePercent) * 100);
   const progress = (usagePercent / 100) * CIRCUMFERENCE;
   const gaugeColor = getGaugeColor(usagePercent);
-  const statusLabel = getStatusLabel(usagePercent);
+  const statusLabel = getStatusLabel(usagePercent, t);
 
   return (
     <View style={[s.container, { backgroundColor: colors.surface }]}>
       <Text style={[s.sectionTitle, { color: colors.textPrimary }]}>
-        리스크 예산 사용률
+        {t('stress_report.risk_budget.title')}
       </Text>
 
       <View style={s.gaugeContainer}>
@@ -72,7 +74,7 @@ export const RiskBudgetGauge: React.FC<RiskBudgetGaugeProps> = ({
             {Math.round(usagePercent)}%
           </Text>
           <Text style={[s.gaugeLabel, { color: colors.textTertiary }]}>
-            사용
+            {t('stress_report.risk_budget.used')}
           </Text>
         </View>
       </View>
@@ -83,7 +85,7 @@ export const RiskBudgetGauge: React.FC<RiskBudgetGaugeProps> = ({
             -{maxTolerancePercent}%
           </Text>
           <Text style={[s.detailLabel, { color: colors.textTertiary }]}>
-            최대 수용 하락폭
+            {t('stress_report.risk_budget.max_tolerance')}
           </Text>
         </View>
         <View style={[s.detailDivider, { backgroundColor: colors.border }]} />
@@ -92,7 +94,7 @@ export const RiskBudgetGauge: React.FC<RiskBudgetGaugeProps> = ({
             -{absChange.toFixed(1)}%
           </Text>
           <Text style={[s.detailLabel, { color: colors.textTertiary }]}>
-            현재 시나리오 영향
+            {t('stress_report.risk_budget.current_impact')}
           </Text>
         </View>
       </View>
@@ -112,11 +114,11 @@ function getGaugeColor(usagePercent: number): string {
   return '#CF6679';
 }
 
-function getStatusLabel(usagePercent: number): string {
-  if (usagePercent <= 30) return '여유 있는 수준 — 추가 하락에도 대응 가능';
-  if (usagePercent <= 50) return '적정 수준 — 방어선이 충분합니다';
-  if (usagePercent <= 80) return '주의 필요 — 리밸런싱을 고려하세요';
-  return '방어선 소진 임박 — 자산 배분 재검토 권장';
+function getStatusLabel(usagePercent: number, t: (key: string) => string): string {
+  if (usagePercent <= 30) return t('stress_report.risk_budget.status_plenty');
+  if (usagePercent <= 50) return t('stress_report.risk_budget.status_adequate');
+  if (usagePercent <= 80) return t('stress_report.risk_budget.status_caution');
+  return t('stress_report.risk_budget.status_critical');
 }
 
 const s = StyleSheet.create({

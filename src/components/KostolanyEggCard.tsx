@@ -59,6 +59,16 @@ const PHASE_POSITIONS: Record<EggPhase, { x: number; y: number }> = {
   [EggPhase.B3_EXAGGERATION]:  { x: 20,  y: 42 },   // 10시 (좌상단)
 };
 
+// EggPhase → locale subtitle key
+const PHASE_SUBTITLE_KEYS: Record<EggPhase, string> = {
+  [EggPhase.A1_CORRECTION]:    'kostolany.phase_subtitle_A1',
+  [EggPhase.A2_ACCOMPANIMENT]: 'kostolany.phase_subtitle_A2',
+  [EggPhase.A3_EXAGGERATION]:  'kostolany.phase_subtitle_A3',
+  [EggPhase.B1_CORRECTION]:    'kostolany.phase_subtitle_B1',
+  [EggPhase.B2_ACCOMPANIMENT]: 'kostolany.phase_subtitle_B2',
+  [EggPhase.B3_EXAGGERATION]:  'kostolany.phase_subtitle_B3',
+};
+
 // 액션 색상
 const ACTION_STYLE: Record<InvestmentAction, { bg: string; text: string; labelKey: string }> = {
   [InvestmentAction.BUY]:  { bg: 'rgba(76,175,80,0.15)',  text: '#4CAF50', labelKey: 'kostolany.action_buy' },
@@ -583,7 +593,7 @@ const KostolanyEggCard: React.FC<KostolanyEggCardProps> = ({
           {/* 현재 단계 배지 */}
           <View style={[styles.phaseBadge, { backgroundColor: phaseInfo.color + '20' }]}>
             <Text style={[styles.phaseBadgeText, { color: phaseInfo.color }]}>
-              {phaseInfo.emoji} {phaseInfo.titleKorean}
+              {phaseInfo.emoji} {language === 'ko' ? phaseInfo.titleKorean : phaseInfo.title}
             </Text>
           </View>
           <Ionicons
@@ -655,7 +665,7 @@ const KostolanyEggCard: React.FC<KostolanyEggCardProps> = ({
 
             {/* 한줄 설명 */}
             <Text style={styles.summaryText} numberOfLines={2}>
-              {phaseInfo.subtitle}
+              {t(PHASE_SUBTITLE_KEYS[analysis.currentPhase])}
             </Text>
 
             {/* 추천 액션 배지 */}

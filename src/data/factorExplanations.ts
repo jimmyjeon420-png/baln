@@ -28,33 +28,41 @@ export type FactorType =
   | 'tax_efficiency'      // 세금 효율
   | 'philosophy_alignment'; // 철학 정합도 (신규)
 
+/** 아이콘 → 팩터 타입 매핑 (언어 독립적, 최우선 사용) */
+const ICON_TO_FACTOR_TYPE: Record<string, FactorType> = {
+  '🎯': 'allocation_drift',
+  '⚖️': 'concentration',
+  '🔗': 'correlation',
+  '📈': 'volatility',
+  '🛡️': 'downside_risk',
+  '💰': 'tax_efficiency',
+  '💳': 'concentration', // 레버리지는 집중도 설명으로 대응
+  '🧭': 'philosophy_alignment',
+};
+
 /**
- * 팩터 이름 → 팩터 타입 매핑
- * WorstFactorCard의 label을 FactorType으로 변환
+ * 팩터 → 팩터 타입 매핑
+ * icon 기반 조회 우선, label fallback
  */
-export function getFactorType(label: string): FactorType | null {
-  const map: Record<string, FactorType> = {
-    '배분 이탈도': 'allocation_drift',
-    '자산 집중도': 'concentration',
-    '상관관계': 'correlation',
-    '변동성': 'volatility',
-    '하방 리스크': 'downside_risk',
-    '세금 효율': 'tax_efficiency',
-    '위험 집중도': 'concentration',
-    '레버리지 건전성': 'concentration', // 레버리지는 집중도 설명으로 대응
+export function getFactorType(labelOrIcon: string, icon?: string): FactorType | null {
+  // icon이 명시적으로 전달되면 우선 사용
+  if (icon && ICON_TO_FACTOR_TYPE[icon]) return ICON_TO_FACTOR_TYPE[icon];
+  // labelOrIcon이 이모지인 경우
+  if (ICON_TO_FACTOR_TYPE[labelOrIcon]) return ICON_TO_FACTOR_TYPE[labelOrIcon];
+  // label fallback (모든 언어 지원)
+  const labelMap: Record<string, FactorType> = {
+    '배분 이탈도': 'allocation_drift', '자산 집중도': 'concentration',
+    '상관관계': 'correlation', '변동성': 'volatility',
+    '하방 리스크': 'downside_risk', '세금 효율': 'tax_efficiency',
+    '위험 집중도': 'concentration', '레버리지 건전성': 'concentration',
     '철학 정합도': 'philosophy_alignment',
-    // English keys
-    'Allocation Drift': 'allocation_drift',
-    'Concentration': 'concentration',
-    'Correlation': 'correlation',
-    'Volatility': 'volatility',
-    'Downside Risk': 'downside_risk',
-    'Tax Efficiency': 'tax_efficiency',
-    'Risk Concentration': 'concentration',
-    'Leverage Health': 'concentration',
+    'Allocation Drift': 'allocation_drift', 'Concentration': 'concentration',
+    'Correlation': 'correlation', 'Volatility': 'volatility',
+    'Downside Risk': 'downside_risk', 'Tax Efficiency': 'tax_efficiency',
+    'Risk Concentration': 'concentration', 'Leverage Health': 'concentration',
     'Philosophy Alignment': 'philosophy_alignment',
   };
-  return map[label] || null;
+  return labelMap[labelOrIcon] || null;
 }
 
 /**

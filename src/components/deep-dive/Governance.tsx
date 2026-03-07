@@ -54,8 +54,7 @@ export default function Governance({ data, onRefresh: _onRefresh }: GovernancePr
       {/* 헤더 */}
       <View style={s.headerRow}>
         <View>
-          <Text style={[s.cardTitle, { color: colors.textPrimary }]}>👔 지배구조 & ESG</Text>
-          <Text style={[s.cardSubtitle, { color: colors.textTertiary }]}>Governance & ESG</Text>
+          <Text style={[s.cardTitle, { color: colors.textPrimary }]}>👔 {t('deepDive.governance.title')}</Text>
         </View>
         <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
           {/* 종합 평가 뱃지 */}

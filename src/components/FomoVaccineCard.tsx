@@ -69,7 +69,7 @@ function FomoGuideSection() {
       >
         <Ionicons name="help-circle-outline" size={16} color={colors.textTertiary} />
         <Text style={[styles.guideToggleText, { color: colors.textTertiary }]}>
-          이 점수는 무엇인가요?
+          {t('fomoVaccine.guide_toggle')}
         </Text>
         <Ionicons
           name={showGuide ? 'chevron-up' : 'chevron-down'}
@@ -84,17 +84,12 @@ function FomoGuideSection() {
           <View style={[styles.guideSection, { borderBottomColor: colors.border }]}>
             <Text style={[styles.guideSectionTitle, { color: colors.textSecondary }]}>{t('fomoVaccine.guide_what_title')}</Text>
             <Text style={[styles.guideText, { color: colors.textTertiary }]}>
-              행동재무학에서 FOMO는{' '}
-              <Text style={[styles.guideSource, { color: colors.info }]}>희소성 편향(Scarcity Bias)</Text>의 일종입니다.
-              "남들은 다 벌고 있는데 나만 빠지면 어쩌지?"라는 불안감이
-              이미 고점인 종목을 추격 매수하게 만듭니다.
+              {t('fomoVaccine.guide_what_text1_pre')}
+              <Text style={[styles.guideSource, { color: colors.info }]}>{t('fomoVaccine.guide_what_text1_bias')}</Text>{t('fomoVaccine.guide_what_text1_post')}
             </Text>
             <Text style={[styles.guideText, { marginTop: 8, color: colors.textTertiary }]}>
-              <Text style={[styles.guideSource, { color: colors.info }]}>Morningstar(2024)</Text> 연구에 따르면,
-              FOMO에 휩쓸린 투자자는 그렇지 않은 투자자 대비{' '}
-              <Text style={[styles.guideBold, { color: colors.textSecondary }]}>위험조정 수익률(Sharpe Ratio)이 평균 4% 낮았습니다</Text>.
-              FOMO Vaccine은 이런 충동적 매수를 예방하기 위해
-              보유 종목의 고평가 위험도를 실시간으로 분석합니다.
+              <Text style={[styles.guideSource, { color: colors.info }]}>{t('fomoVaccine.guide_what_text2_source')}</Text>{' '}
+              <Text style={[styles.guideBold, { color: colors.textSecondary }]}>{t('fomoVaccine.guide_what_text2_key')}</Text>{t('fomoVaccine.guide_what_text2_post')}
             </Text>
           </View>
 
@@ -102,26 +97,25 @@ function FomoGuideSection() {
           <View style={[styles.guideSection, { borderBottomColor: colors.border }]}>
             <Text style={[styles.guideSectionTitle, { color: colors.textSecondary }]}>{t('fomoVaccine.guide_score_title')}</Text>
             <Text style={[styles.guideText, { color: colors.textTertiary }]}>
-              각 종목별로 0~100점의 고평가 점수가 부여됩니다.
-              점수가 높을수록 현재 가격이 적정가치(PER, PBR 등) 대비 비싸다는 의미입니다.
+              {t('fomoVaccine.guide_score_text')}
             </Text>
             <View style={{ marginTop: 8 }}>
               <View style={styles.guideScoreRow}>
                 <View style={[styles.guideScoreDot, { backgroundColor: colors.success }]} />
                 <Text style={[styles.guideScoreText, { color: colors.textTertiary }]}>
-                  <Text style={[styles.guideBold, { color: colors.success }]}>0~30 낮음</Text> — 적정 가격 수준, 추가 매수 가능
+                  <Text style={[styles.guideBold, { color: colors.success }]}>{t('fomoVaccine.guide_score_low')}</Text>{t('fomoVaccine.guide_score_low_desc')}
                 </Text>
               </View>
               <View style={styles.guideScoreRow}>
                 <View style={[styles.guideScoreDot, { backgroundColor: colors.warning }]} />
                 <Text style={[styles.guideScoreText, { color: colors.textTertiary }]}>
-                  <Text style={[styles.guideBold, { color: colors.warning }]}>31~60 중간</Text> — 추가 매수 자제, 관망 권장
+                  <Text style={[styles.guideBold, { color: colors.warning }]}>{t('fomoVaccine.guide_score_medium')}</Text>{t('fomoVaccine.guide_score_medium_desc')}
                 </Text>
               </View>
               <View style={styles.guideScoreRow}>
                 <View style={[styles.guideScoreDot, { backgroundColor: colors.error }]} />
                 <Text style={[styles.guideScoreText, { color: colors.textTertiary }]}>
-                  <Text style={[styles.guideBold, { color: colors.error }]}>61~100 높음</Text> — 고평가 상태, 분할 매도 검토
+                  <Text style={[styles.guideBold, { color: colors.error }]}>{t('fomoVaccine.guide_score_high')}</Text>{t('fomoVaccine.guide_score_high_desc')}
                 </Text>
               </View>
             </View>
@@ -131,9 +125,7 @@ function FomoGuideSection() {
           <View style={[styles.guideSection, { borderBottomColor: colors.border }]}>
             <Text style={[styles.guideSectionTitle, { color: colors.textSecondary }]}>{t('fomoVaccine.guide_sub_title')}</Text>
             <Text style={[styles.guideText, { marginBottom: 10, color: colors.textTertiary }]}>
-              닷컴 버블(2000), 금융위기(2008)에서 FOMO에 빠진 투자자들은
-              고평가 자산에 진입해 큰 손실을 입었습니다.
-              다음 3가지 관점에서 과열 여부를 진단합니다:
+              {t('fomoVaccine.guide_sub_text')}
             </Text>
             {FOMO_SUB_LABELS.map(({ key, labelKey }) => (
               <View key={key} style={styles.guideItemRow}>

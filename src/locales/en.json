@@ -325,6 +325,16 @@
       "balanced": "Balanced",
       "caution": "Caution",
       "needsAdjustment": "Needs Adjustment"
+    },
+    "traffic": {
+      "good": "Good",
+      "caution": "Caution",
+      "danger": "Risk",
+      "get_started": "Get Started",
+      "empty_summary": "Heart your favorite assets to see your health score"
+    },
+    "context": {
+      "default_impact": "See how today's market affects your portfolio"
     }
   },
   "daily_progress": {
@@ -418,7 +428,10 @@
       "annual_return_label": "Expected Annual Return",
       "max_drawdown_label": "Max Drawdown Benchmark",
       "disclaimer": "* Past performance does not guarantee future results. Historical data for reference only.",
-      "confidence_label": "Confidence {{pct}}%"
+      "confidence_label": "Confidence {{pct}}%",
+      "cycle_arrow": "A → B → C → D → E → F → A (Cycle)",
+      "expert_dalio": "Dalio",
+      "expert_buffett": "Buffett"
     },
     "hospital": {
       "sign": "📊 Portfolio Diagnosis",
@@ -1145,7 +1158,13 @@
     "stance_neutral": "Neutral",
     "weight_strong": "Strong",
     "weight_medium": "Med",
-    "weight_weak": "Weak"
+    "weight_weak": "Weak",
+    "phase_subtitle_A1": "Rates at peak — Buy signal",
+    "phase_subtitle_A2": "Rates falling — Upward momentum",
+    "phase_subtitle_A3": "Rates at low — Bubble warning",
+    "phase_subtitle_B1": "Market correction — Take profit",
+    "phase_subtitle_B2": "Rates rising — Defensive phase",
+    "phase_subtitle_B3": "Rates re-peaking — Sell signal"
   },
   "panicShield": {
     "level_safe": "Safe",
@@ -2388,7 +2407,9 @@
     "analyzing": "Analyzing...",
     "capturing": "Capturing...",
     "saveImage": "Save Prescription Image",
-    "shareInstagram": "Share to Instagram"
+    "shareInstagram": "Share to Instagram",
+    "creditEarned": "credits earned!",
+    "dialogTitle": "baln.logic Prescription Share"
   },
   "quiz": {
     "timezone_note": "Quiz refreshes daily at midnight (local time)",
@@ -3112,7 +3133,8 @@
       "volatility": "Price Stability",
       "downside": "Loss Protection",
       "tax": "Tax Efficiency",
-      "leverage": "Debt Health"
+      "leverage": "Debt Health",
+      "philosophy": "Philosophy Fit"
     },
     "factor_suggestions": {
       "drift": "Some holdings have drifted significantly from their targets.\n\nCheck 'Today's Actions' below to see what adjustments are recommended.",
@@ -3365,6 +3387,7 @@
     "score_preview_label": "Projected change if all prescriptions are executed",
     "score_current": "Current {{score}} pts",
     "score_projected": "{{score}} pts projected",
+    "score_unit": "pts",
     "ai_toggle_label": "AI Custom Recommendations ({{count}})",
     "why_label": "Why these actions?",
     "execution_order_label": "Execution Order Guide",
@@ -3429,6 +3452,12 @@
       "altcoin": "Altcoins",
       "cash": "Cash",
       "realestate": "Real Estate"
+    },
+    "etf_notes": {
+      "bond": "US Treasury / Aggregate Bond ETF",
+      "gold": "Gold Spot ETF",
+      "commodity": "Broad Commodity ETF",
+      "large_cap": "S&P 500 / Nasdaq 100"
     }
   },
   "licenses": {
@@ -4843,7 +4872,12 @@
       "verifiedHigh": "High Reliability",
       "verifiedMedium": "Medium Reliability",
       "verifiedNeeded": "Verification Needed",
-      "disclaimer": "This analysis is AI-generated reference material, not investment advice."
+      "disclaimer": "This analysis is AI-generated reference material, not investment advice.",
+      "financialTitle": "Financial Analysis",
+      "technicalTitle": "Technical Analysis",
+      "newsTitle": "News Analysis",
+      "qualityTitle": "Quality Analysis",
+      "cashFlowFallback": "Detailed information will be available after earnings release"
     },
     "companyOverview": {
       "title": "Company Overview",
@@ -4878,6 +4912,7 @@
       "onlyQuarterAvailable": "Only quarterly data available"
     },
     "governance": {
+      "title": "Governance & ESG",
       "ceoEvaluation": "CEO Evaluation",
       "name": "Name",
       "tenure": "Tenure",
@@ -4907,6 +4942,7 @@
       "title": "News Timeline"
     },
     "valuation": {
+      "title": "Valuation",
       "currentPrice": "Current Price",
       "fairValue": "Fair Value",
       "fairValueLabel": "Estimated Fair Value",
@@ -5071,6 +5107,14 @@
       "philosophy": "Doesn't fully align with your investment philosophy",
       "improve_hint": "Rebalancing could improve this score significantly",
       "tap_detail": "Tap for details",
+      "simplified_drift": "Allocation has drifted",
+      "simplified_concentration": "Too concentrated in one area",
+      "simplified_correlation": "Assets move together",
+      "simplified_volatility": "Price swings are high",
+      "simplified_downside": "Some assets are at a loss",
+      "simplified_tax": "Tax saving opportunity",
+      "simplified_leverage": "Loan burden exists",
+      "simplified_philosophy": "Doesn't match your philosophy",
       "labelMap": {
         "allocation_drift": "Allocation has drifted",
         "asset_concentration": "Too concentrated",
@@ -5144,7 +5188,9 @@
       "correlation": "diversification",
       "volatility": "price volatility",
       "downside": "loss risk",
-      "tax": "tax efficiency"
+      "tax": "tax efficiency",
+      "leverage": "debt health",
+      "philosophy": "investment philosophy"
     },
     "summary": {
       "excellent": "Your portfolio is in excellent health!",
@@ -6902,5 +6948,33 @@
   },
   "market": {
     "preparingData": "Preparing market data"
+  },
+  "quiz": {
+    "submit": "Submit Answer",
+    "correct": "Correct!",
+    "wrong": "Not quite!",
+    "reward_credits": "+{{n}} credits"
+  },
+  "stress_report": {
+    "empathy": {
+      "scenario_if": "If this scenario occurs",
+      "expected_impact": "Expected portfolio impact",
+      "defense_score": "Defense Score",
+      "score_suffix": "pts",
+      "reassurance_very_strong": "Very robust portfolio",
+      "reassurance_good": "Good defense",
+      "reassurance_room": "Room for improvement",
+      "reassurance_check": "Review defense strategy"
+    },
+    "risk_budget": {
+      "title": "Risk Budget Usage",
+      "used": "used",
+      "max_tolerance": "Max tolerable decline",
+      "current_impact": "Current scenario impact",
+      "status_plenty": "Comfortable — can absorb further declines",
+      "status_adequate": "Adequate — defense line is sufficient",
+      "status_caution": "Caution — consider rebalancing",
+      "status_critical": "Near depletion — review asset allocation"
+    }
   }
 }

@@ -14,7 +14,7 @@ import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { useTheme } from '../../hooks/useTheme';
-import { useLocale } from '../../context/LocaleContext';
+import { useLocale, getCurrentDisplayLanguage } from '../../context/LocaleContext';
 
 // ── 타입 정의 ──
 
@@ -86,13 +86,29 @@ function createArcPath(
 
 function defaultFormatCurrency(value: number): string {
   const abs = Math.abs(value);
-  if (abs >= 100000000) {
-    return `${Math.round(value / 100000000).toLocaleString()}억원`;
+  const lang = getCurrentDisplayLanguage();
+
+  if (lang === 'ko') {
+    if (abs >= 100000000) {
+      return `${Math.round(value / 100000000).toLocaleString()}억원`;
+    }
+    if (abs >= 10000) {
+      return `${Math.round(value / 10000).toLocaleString()}만원`;
+    }
+    return `${Math.round(value).toLocaleString()}원`;
   }
-  if (abs >= 10000) {
-    return `${Math.round(value / 10000).toLocaleString()}만원`;
+
+  // English / other languages
+  if (abs >= 1_000_000_000) {
+    return `₩${(value / 1_000_000_000).toFixed(1)}B`;
   }
-  return `${Math.round(value).toLocaleString()}원`;
+  if (abs >= 1_000_000) {
+    return `₩${(value / 1_000_000).toFixed(1)}M`;
+  }
+  if (abs >= 1_000) {
+    return `₩${(value / 1_000).toFixed(1)}K`;
+  }
+  return `₩${Math.round(value).toLocaleString('en-US')}`;
 }
 
 // ── 컴포넌트 ──

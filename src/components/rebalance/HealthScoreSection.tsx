@@ -37,17 +37,22 @@ interface HealthScoreSectionProps {
   panicScore?: number;
 }
 
-/** 팩터별 직관적 라벨 키 매핑 (locale key → factor_labels.X) */
-const FACTOR_LABEL_KEYS: Record<string, string> = {
-  '배분 이탈도': 'drift',
-  '자산 집중도': 'concentration',
-  '위험 집중도': 'concentration',
-  '상관관계': 'correlation',
-  '변동성': 'volatility',
-  '하방 리스크': 'downside',
-  '세금 효율': 'tax',
-  '레버리지 건전성': 'leverage',
+/** 팩터 아이콘 → locale key 매핑 (언어 독립적) */
+const ICON_TO_FACTOR_KEY: Record<string, string> = {
+  '🎯': 'drift',
+  '⚖️': 'concentration',
+  '🔗': 'correlation',
+  '📈': 'volatility',
+  '🛡️': 'downside',
+  '💰': 'tax',
+  '💳': 'leverage',
+  '🧭': 'philosophy',
 };
+
+/** 팩터의 locale key를 아이콘으로 조회 */
+function getFactorKey(factor: { icon: string }): string {
+  return ICON_TO_FACTOR_KEY[factor.icon] || 'drift';
+}
 
 /** 팩터 점수 → 상태 라벨 키 */
 function getFactorStatusKey(score: number): { key: string; color: string } {
@@ -56,28 +61,7 @@ function getFactorStatusKey(score: number): { key: string; color: string } {
   return { key: 'factor_status_improve', color: '#B23A48' };
 }
 
-/** 팩터 상세 설명 키 매핑 (ⓘ 툴팁용) — locale factor_details.X 경로에서 조회 */
-const FACTOR_DETAIL_KEYS: Record<string, string> = {
-  '배분 이탈도': 'drift',
-  '자산 집중도': 'concentration',
-  '위험 집중도': 'concentration',
-  '상관관계': 'correlation',
-  '변동성': 'volatility',
-  '하방 리스크': 'downside',
-  '세금 효율': 'tax',
-  '레버리지 건전성': 'leverage',
-};
-
-/** 팩터별 개선 제안 locale key 매핑 (40점 미만 시) */
-const FACTOR_SUGGESTION_KEYS: Record<string, string> = {
-  '배분 이탈도': 'drift',
-  '자산 집중도': 'concentration',
-  '위험 집중도': 'concentration',
-  '상관관계': 'correlation',
-  '변동성': 'volatility',
-  '하방 리스크': 'downside',
-  '세금 효율': 'tax',
-};
+/* FACTOR_DETAIL_KEYS and FACTOR_SUGGESTION_KEYS now use getFactorKey(factor) via ICON_TO_FACTOR_KEY */
 
 /** 등급별 상세 해석 — locale keys */
 const GRADE_INTERPRETATION_KEYS: Record<string, string> = {
@@ -112,23 +96,14 @@ function getConditionLabelKey(score: number): string {
  * 예: "자산 집중도와 변동성이 낮아서 전체 점수가 내려갔어요."
  * 예: "모든 팩터가 양호합니다. 현재 전략을 유지하세요."
  */
-// 팩터 이름 → locale key 매핑 (action_map keys)
-const FACTOR_ACTION_KEYS: Record<string, string> = {
-  '배분 이탈도': 'drift',
-  '자산 집중도': 'concentration',
-  '위험 집중도': 'concentration',
-  '상관관계': 'correlation',
-  '변동성': 'volatility',
-  '하방 리스크': 'downside',
-  '세금 효율': 'tax',
-};
+/* FACTOR_ACTION_KEYS removed — uses getFactorKey(factor) via ICON_TO_FACTOR_KEY */
 
 export default function HealthScoreSection({ healthScore, onScoreImproved, totalAssets, panicScore }: HealthScoreSectionProps) {
   const { colors } = useTheme();
   const { t } = useLocale();
   const [showDetail, setShowDetail] = useState(false);
   const [tooltipVisible, setTooltipVisible] = useState(false);
-  const [tooltipFactorKey, setTooltipFactorKey] = useState<string>('');
+  const [tooltipFactorIcon, setTooltipFactorIcon] = useState<string>('');
   const [improveToast, setImproveToast] = useState<{ show: boolean; improvement: number; credits: number }>({ show: false, improvement: 0, credits: 0 });
   const improveOpacity = useRef(new Animated.Value(0)).current;
   const scoreLoadedRef = useRef(false);
@@ -151,13 +126,13 @@ export default function HealthScoreSection({ healthScore, onScoreImproved, total
     }
     const sorted = [...weakFactors].sort((a, b) => a.score - b.score);
     const worst = sorted[0];
-    const worstKey = FACTOR_LABEL_KEYS[worst.label] || 'drift';
+    const worstKey = getFactorKey(worst);
     const worstName = t(`health_section.factor_labels.${worstKey}`);
     if (sorted.length === 1) {
       return t('health_section.why_one_factor', { factor: worstName });
     }
     const secondWorst = sorted[1];
-    const secondKey = FACTOR_LABEL_KEYS[secondWorst.label] || 'drift';
+    const secondKey = getFactorKey(secondWorst);
     const secondName = t(`health_section.factor_labels.${secondKey}`);
     if (sorted.length === 2) {
       return t('health_section.why_two_factors', { factor1: worstName, factor2: secondName });
@@ -174,7 +149,7 @@ export default function HealthScoreSection({ healthScore, onScoreImproved, total
     if (grade === 'S') return null;
     const sorted = [...factors].sort((a, b) => a.score - b.score);
     const worst = sorted[0];
-    const actionKey = FACTOR_ACTION_KEYS[worst.label];
+    const actionKey = getFactorKey(worst);
     if (actionKey) {
       return t(`health_section.action_map.${actionKey}`);
     }
@@ -224,20 +199,20 @@ export default function HealthScoreSection({ healthScore, onScoreImproved, total
   }, [healthScore, improveOpacity, onScoreImproved]);
 
   /** 툴팁 표시 함수 */
-  const showTooltip = (factorLabel: string) => {
+  const showTooltip = (factorIcon: string) => {
     try {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (e) {
       // 햅틱 미지원 디바이스 무시
     }
-    setTooltipFactorKey(factorLabel);
+    setTooltipFactorIcon(factorIcon);
     setTooltipVisible(true);
   };
 
   /** 팩터별 개선 제안 렌더링 (40점 미만 시) */
-  const renderSuggestion = (factor: { label: string; score: number }) => {
+  const renderSuggestion = (factor: { label: string; score: number; icon: string }) => {
     if (factor.score >= 40) return null;
-    const suggKey = FACTOR_SUGGESTION_KEYS[factor.label];
+    const suggKey = ICON_TO_FACTOR_KEY[factor.icon];
     const suggText = suggKey ? t(`health_section.factor_suggestions.${suggKey}`) : '';
     return (
       <Text style={[s.suggestion, { color: colors.error, backgroundColor: colors.error + '1A', borderLeftColor: colors.error }]}>
@@ -464,7 +439,7 @@ export default function HealthScoreSection({ healthScore, onScoreImproved, total
           {healthScore.factors.map((factor, idx) => {
             const barColor = factor.score >= 70 ? colors.success : factor.score >= 40 ? colors.warning : colors.error;
             const statusInfo = getFactorStatusKey(factor.score);
-            const labelKey = FACTOR_LABEL_KEYS[factor.label] || 'drift';
+            const labelKey = getFactorKey(factor);
             const friendlyLabel = t(`health_section.factor_labels.${labelKey}`);
             return (
               <View key={idx} style={s.miniFactor}>
@@ -480,7 +455,7 @@ export default function HealthScoreSection({ healthScore, onScoreImproved, total
 
                 {/* 툴팁 아이콘 */}
                 <TouchableOpacity
-                  onPress={() => showTooltip(factor.label)}
+                  onPress={() => showTooltip(factor.icon)}
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                   style={s.infoIcon}
                 >
@@ -525,11 +500,9 @@ export default function HealthScoreSection({ healthScore, onScoreImproved, total
         >
           <TouchableOpacity activeOpacity={1} style={[s.tooltipModal, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             {(() => {
-              const labelKey = FACTOR_LABEL_KEYS[tooltipFactorKey] || 'drift';
-              const detailKey = FACTOR_DETAIL_KEYS[tooltipFactorKey];
-              const friendlyLabel = t(`health_section.factor_labels.${labelKey}`);
-              if (!detailKey) return null;
-              const dk = `health_section.factor_details.${detailKey}`;
+              const factorKeyFromIcon = ICON_TO_FACTOR_KEY[tooltipFactorIcon] || 'drift';
+              const friendlyLabel = t(`health_section.factor_labels.${factorKeyFromIcon}`);
+              const dk = `health_section.factor_details.${factorKeyFromIcon}`;
               return (
                 <>
                   {/* 헤더 */}
