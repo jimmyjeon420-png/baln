@@ -3763,7 +3763,24 @@
     "vipLounge": "VIPラウンジ",
     "noPosts": "まだ投稿がありません",
     "tagline": "同じ悩みを持つ投資家仲間とコミュニティで出会いましょう",
-    "eligibilityHint": "100万円以上のポートフォリオで利用可能"
+    "eligibilityHint": "100万円以上のポートフォリオで利用可能",
+    "fetch_error": "投稿の読み込みに失敗しました。",
+    "post_threshold_error": "投稿には3,000万ウォン以上のポートフォリオが必要です。",
+    "comment_threshold_error": "コメントには300万ウォン以上のポートフォリオが必要です。",
+    "like_notification_title": "いいね",
+    "like_notification_message": "あなたの投稿にいいねが付きました",
+    "only_own_comment_edit": "自分のコメントのみ編集できます。",
+    "only_own_comment_delete": "自分のコメントのみ削除できます。",
+    "already_deleted_comment": "既に削除されたコメントです。",
+    "delete_comment_failed": "コメントの削除に失敗しました。しばらくしてからお試しください。",
+    "only_own_post_delete": "自分の投稿のみ削除できます。",
+    "already_deleted_post": "既に削除された投稿です。",
+    "delete_post_failed": "投稿の削除に失敗しました。しばらくしてからお試しください。",
+    "delete_verify_error": "削除状態を確認できませんでした。しばらくしてからお試しください。",
+    "delete_pending_error": "削除がまだ完了していません。しばらくしてからお試しください。",
+    "post_not_found": "投稿情報がありません。",
+    "only_author_best_answer": "投稿者のみベストアンサーを選択できます。",
+    "best_answer_not_ready": "ベストアンサー機能は準備中です。"
   },
   "community_category": {
     "all": "すべて",
@@ -4766,6 +4783,62 @@
       "moreAdvanced": "より高度に",
       "moreDetail": "より詳しく",
       "simpler": "よりシンプルに"
+    },
+    "factor_comments": {
+      "add_assets": "資産を追加してみましょう",
+      "drift_good": "目標配分とよく一致しています",
+      "drift_mild": "{{cat}}の比率が目標より{{pct}}%p異なります",
+      "drift_mod": "{{cat}}など配分の調整が必要です",
+      "drift_bad": "複数の資産クラスのリバランスが必要です",
+      "risk_unmeasurable": "リスク測定不可",
+      "risk_good": "リスクは十分に分散されています",
+      "risk_concentrated": "{{name}}にリスク{{pct}}%集中！",
+      "corr_single": "1種類の資産のみ保有中です",
+      "corr_high": "似た動きをする資産が多いです",
+      "corr_good": "資産間の分散が良好です",
+      "corr_optimal": "相関関係が適切です",
+      "vol_low": "変動性が低く安定しています",
+      "vol_ok": "変動性{{pct}}%で適正水準です",
+      "vol_high": "変動性{{pct}}%でやや高めです",
+      "loss_none": "全銘柄が利益中です",
+      "loss_count": "{{count}}銘柄が損失中です",
+      "tax_none": "節税の機会はありません（良い兆候！）",
+      "tax_opportunity": "{{count}}銘柄で節税の機会があります",
+      "leverage_none": "ローンなし（安全！）",
+      "leverage_safe": "ローンは安全に管理されています",
+      "leverage_mod": "レバレッジリスク{{pct}}%",
+      "leverage_high": "レバレッジリスク高（{{pct}}%）",
+      "philosophy_na": "株式未保有 — 該当なし",
+      "philosophy_good": "ポートフォリオが投資哲学とよく合っています",
+      "philosophy_mod": "投資哲学に合わせて銘柄比率を少し調整してみましょう",
+      "philosophy_bad": "投資哲学と保有銘柄が大きく異なります"
+    },
+    "friendly_labels": {
+      "drift": "一部銘柄の比率",
+      "concentration": "集中リスク",
+      "correlation": "分散効果",
+      "volatility": "価格変動",
+      "downside": "損失リスク",
+      "tax": "節税機会"
+    },
+    "summary": {
+      "excellent": "ポートフォリオはとても健全です！",
+      "good": "全体的に良好です。{{factor}}を調整するとさらに良くなります",
+      "fair": "{{factor}}が変わりました。分析タブで調整するとスコアが上がります",
+      "poor": "ポートフォリオの点検が必要です。分析タブで確認してください"
+    },
+    "realestate_bonus": {
+      "ltv_over100": "LTVが100%以上です。ローン負担が大きいのでご注意ください。",
+      "ltv_over80": "ローン比率が高く分散ボーナスがありません（LTV 80%以上）",
+      "ratio_high": "不動産比率90%超過 — 流動性リスクがあります",
+      "high": "実物資産が金融危機時に緩衝役を果たします",
+      "medium": "不動産がインフレヘッジと分散効果を提供します",
+      "low": "不動産がポートフォリオの変動性をわずかに下げます"
+    },
+    "realestate_msg": {
+      "strong": "ポートフォリオの分散を強化（+{{pts}}点貢献）",
+      "moderate": "安定基盤として健全性スコアに貢献（+{{pts}}点）",
+      "review": "不動産比率またはローン条件を確認してください"
     }
   },
   "whatIf": {

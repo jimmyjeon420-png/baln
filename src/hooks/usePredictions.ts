@@ -475,11 +475,12 @@ function getFallbackPolls(): PredictionPoll[] {
 // 쿼리 키 상수
 // ============================================================================
 
+/** 현재 언어 기준 쿼리 키 (언어 전환 시 자동 리페치) */
 export const PREDICTION_KEYS = {
-  activePolls: ['prediction', 'active'] as const,
-  resolvedPolls: (limit: number) => ['prediction', 'resolved', limit] as const,
+  activePolls: (lang?: string) => ['prediction', 'active', lang || getCurrentDisplayLanguage()] as const,
+  resolvedPolls: (limit: number, lang?: string) => ['prediction', 'resolved', limit, lang || getCurrentDisplayLanguage()] as const,
   myVotes: (pollIds: string[]) => ['prediction', 'myVotes', pollIds] as const,
-  leaderboard: ['prediction', 'leaderboard'] as const,
+  leaderboard: (lang?: string) => ['prediction', 'leaderboard', lang || getCurrentDisplayLanguage()] as const,
   myStats: ['prediction', 'myStats'] as const,
 };
 
@@ -587,18 +588,24 @@ export function sortPollsByPortfolioRelevance(
 // ============================================================================
 
 export const useActivePolls = () => {
+  const lang = getCurrentDisplayLanguage();
   return useQuery({
-    queryKey: PREDICTION_KEYS.activePolls,
+    queryKey: PREDICTION_KEYS.activePolls(lang),
     queryFn: async () => {
       try {
         const nowIso = new Date().toISOString();
-        const { data, error } = await supabase
+        let query = supabase
           .from('prediction_polls')
           .select('*')
           .eq('status', 'active')
           .gte('deadline', nowIso)
           .order('created_at', { ascending: false })
           .order('deadline', { ascending: true });
+
+        // 언어별 독립 서버: 해당 언어의 폴만 조회
+        query = query.eq('language', lang);
+
+        const { data, error } = await query;
 
         if (error) throw error;
 
@@ -676,14 +683,16 @@ export const usePersonalizedPolls = (assets: PortfolioAssetForSort[]) => {
 // ============================================================================
 
 export const useResolvedPolls = (limit: number = 10) => {
+  const lang = getCurrentDisplayLanguage();
   return useQuery({
-    queryKey: PREDICTION_KEYS.resolvedPolls(limit),
+    queryKey: PREDICTION_KEYS.resolvedPolls(limit, lang),
     queryFn: async () => {
       try {
         const { data, error } = await supabase
           .from('prediction_polls')
           .select('*')
           .eq('status', 'resolved')
+          .eq('language', lang)
           .order('resolved_at', { ascending: false })
           .limit(limit);
 
@@ -787,8 +796,9 @@ export const useSubmitVote = () => {
 // ============================================================================
 
 export const useLeaderboard = () => {
+  const lang = getCurrentDisplayLanguage();
   return useQuery({
-    queryKey: PREDICTION_KEYS.leaderboard,
+    queryKey: PREDICTION_KEYS.leaderboard(lang),
     queryFn: async () => {
       try {
         const user = await getCurrentUser();

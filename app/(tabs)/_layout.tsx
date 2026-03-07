@@ -9,13 +9,14 @@ import { useLocale } from '../../src/context/LocaleContext';
 // 표시할 탭 목록 (5탭 구조: 오늘/분석/뉴스/라운지/전체)
 const VISIBLE_TABS = ['index', 'rebalance', 'news', 'lounge', 'profile'];
 
-// 커스텀 탭 바 컴포넌트 - 플로팅 스캔 버튼 포함
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function CustomTabBar({ state, navigation }: any) {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const { t } = useLocale();
 
   // 표시할 탭만 필터링
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const visibleRoutes = state.routes.filter((route: any) =>
     VISIBLE_TABS.includes(route.name)
   );
@@ -23,7 +24,9 @@ function CustomTabBar({ state, navigation }: any) {
   return (
     <View style={[styles.tabBarContainer, { paddingBottom: insets.bottom, backgroundColor: colors.surface }]}>
       <View style={styles.tabBar}>
+        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
         {visibleRoutes.map((route: any) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const routeIndex = state.routes.findIndex((r: any) => r.key === route.key);
           const isFocused = state.index === routeIndex;
 
@@ -56,7 +59,7 @@ function CustomTabBar({ state, navigation }: any) {
               style={styles.tabItem}
               onPress={onPress}
               activeOpacity={0.7}
-              accessibilityLabel={`${label} 탭`}
+              accessibilityLabel={label}
               accessibilityRole="tab"
               accessibilityState={{ selected: isFocused }}
             >
@@ -70,6 +73,9 @@ function CustomTabBar({ state, navigation }: any) {
                   styles.tabLabelText,
                   { color: isFocused ? colors.textPrimary : colors.textTertiary },
                 ]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.7}
               >
                 {label}
               </Text>

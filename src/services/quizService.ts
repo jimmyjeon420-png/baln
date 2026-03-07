@@ -16,7 +16,8 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { t } from '../locales';
 import supabase, { getCurrentUser } from './supabase';
 import type { DailyQuiz, QuizAttempt, SubmitQuizResult, QuizCategory } from '../types/quiz';
-import { getPromptLanguageInstruction } from '../utils/promptLanguage';
+import { getPromptLanguageInstruction, getResponseLanguage } from '../utils/promptLanguage';
+import { getCurrentDisplayLanguage } from '../context/LocaleContext';
 
 // ⚠️ 보안: EXPO_PUBLIC_ 키는 클라이언트 번들에 포함됩니다. 프로덕션에서는 서버 프록시 권장.
 const API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY || '';
@@ -111,11 +112,11 @@ function getRandomCategory(): QuizCategory {
   return categories[Math.floor(Math.random() * categories.length)];
 }
 
-const CATEGORY_LABEL: Record<QuizCategory, { ko: string; en: string }> = {
-  stock_basics: { ko: '주식 기초', en: 'Stock Basics' },
-  market_news: { ko: '시장/경제 뉴스', en: 'Market/Economy News' },
-  investing_terms: { ko: '투자 용어', en: 'Investment Terms' },
-  risk_management: { ko: '리스크 관리', en: 'Risk Management' },
+const CATEGORY_LABEL: Record<QuizCategory, Record<string, string>> = {
+  stock_basics: { ko: '주식 기초', en: 'Stock Basics', ja: '株式の基礎' },
+  market_news: { ko: '시장/경제 뉴스', en: 'Market/Economy News', ja: '市場・経済ニュース' },
+  investing_terms: { ko: '투자 용어', en: 'Investment Terms', ja: '投資用語' },
+  risk_management: { ko: '리스크 관리', en: 'Risk Management', ja: 'リスク管理' },
 };
 
 /** Gemini로 퀴즈 1개 생성 */
@@ -133,56 +134,47 @@ async function generateQuizWithGemini(): Promise<{
   }
 
   const category = getRandomCategory();
-  const categoryLabel = CATEGORY_LABEL[category].ko;
+  const lang = getCurrentDisplayLanguage();
+  const categoryLabel = CATEGORY_LABEL[category][lang] || CATEGORY_LABEL[category].en;
 
   try {
     const genAI = new GoogleGenerativeAI(API_KEY);
     const model = genAI.getGenerativeModel({ model: MODEL_NAME });
 
-    const prompt = `당신은 baln(발른) 앱의 투자 퀴즈 AI입니다.
-"${categoryLabel}" 카테고리의 4지선다 퀴즈를 1개 만들어주세요.
+    const responseLang = getResponseLanguage(lang);
+    const prompt = `You are the investment quiz AI for the baln app.
+Create 1 multiple-choice quiz (4 options) in the "${categoryLabel}" category.
+${getPromptLanguageInstruction(lang)}
 
-[퀴즈 설계 원칙]
-- 초보 투자자(20~30대, 투자 경험 1년 미만)도 풀 수 있는 수준으로 작성한다.
-- 실생활에서 바로 쓸 수 있는 실용적 지식을 묻는다.
-- 정답이 아닌 보기도 그럴듯해야 한다 (너무 뻔한 오답 금지).
-- 하지만 보기끼리 너무 비슷하면 안 된다 (명확한 구분 필요).
-- 해설은 "왜 정답인지"와 "왜 오답인지"를 모두 설명한다.
-- ${getPromptLanguageInstruction()}
-- 오늘 날짜: ${getTodayDate()}
+[Quiz Design Principles]
+- Suitable for beginner investors (20-30s, less than 1 year of experience).
+- Practical knowledge applicable to real life.
+- Wrong options should be plausible (no obviously wrong answers).
+- But options should be clearly distinguishable.
+- Explanation should cover why the answer is correct AND why others are wrong.
+- Response language: ${responseLang}
+- Today's date: ${getTodayDate()}
 
-[난이도 기준]
-- difficulty 1 (쉬움): 기본 용어, 상식 수준. 투자 입문자도 맞힐 수 있음.
-- difficulty 2 (보통): 약간의 배경지식 필요. 뉴스를 가끔 보는 사람이 맞힐 수 있음.
-- difficulty 3 (어려움): 전문 지식 필요. 투자 경험자도 고민이 필요한 수준.
+[Difficulty Levels]
+- difficulty 1 (Easy): Basic terms, common sense.
+- difficulty 2 (Medium): Some background knowledge needed.
+- difficulty 3 (Hard): Expert knowledge required.
 
-[응답 형식 — 아래 JSON만 출력. 설명문, 마크다운, 코드블록 금지.]
+[Response Format — Output ONLY the JSON below. No text, markdown, or code blocks.]
 {
-  "question": "질문 내용 (한 줄, 명확하게)",
+  "question": "Question text (one line, clear)",
   "options": [
-    {"id": "A", "text": "선택지 A"},
-    {"id": "B", "text": "선택지 B"},
-    {"id": "C", "text": "선택지 C"},
-    {"id": "D", "text": "선택지 D"}
+    {"id": "A", "text": "Option A"},
+    {"id": "B", "text": "Option B"},
+    {"id": "C", "text": "Option C"},
+    {"id": "D", "text": "Option D"}
   ],
   "correct_option": "A",
-  "explanation": "정답 해설 2~3문장. 정답인 이유와 오답인 이유를 모두 간단히 설명.",
+  "explanation": "2-3 sentence explanation covering correct and incorrect answers.",
   "difficulty": 1
 }
 
-[좋은 퀴즈 예시]
-{
-  "question": "주식시장에서 '시가총액'이란 무엇인가요?",
-  "options": [
-    {"id": "A", "text": "회사의 총 매출액"},
-    {"id": "B", "text": "주가 x 발행주식 총수"},
-    {"id": "C", "text": "회사가 보유한 현금"},
-    {"id": "D", "text": "회사의 순이익 합계"}
-  ],
-  "correct_option": "B",
-  "explanation": "시가총액은 현재 주가에 발행주식 총수를 곱한 값으로, 시장이 평가하는 기업의 전체 가치입니다. 매출액(A)이나 순이익(D)은 손익계산서 항목이고, 보유 현금(C)은 재무상태표 항목이므로 시가총액과 다릅니다.",
-  "difficulty": 1
-}`;
+IMPORTANT: All question, options, and explanation text MUST be in ${responseLang}.`;
 
     // ★ 30초 타임아웃 — Gemini 무한 대기 방지
     const controller = new AbortController();
@@ -638,22 +630,31 @@ const FALLBACK_QUIZZES = [
  */
 function getFallbackQuiz() {
   const today = new Date();
-  const dayOfMonth = today.getDate(); // 1~31
+  const dayOfMonth = today.getDate();
+  const lang = getCurrentDisplayLanguage();
 
-  // 난이도 순환: 1일→Easy, 2일→Medium, 3일→Hard, 4일→Easy, ...
   const difficulties = [1, 2, 3];
   const todayDifficulty = difficulties[(dayOfMonth - 1) % 3];
 
-  // 해당 난이도 퀴즈 필터링
   const filtered = FALLBACK_QUIZZES.filter(q => q.difficulty === todayDifficulty);
 
-  // 날짜 기반으로 퀴즈 선택 (연중 일수를 시드로 활용)
   const dayOfYear = Math.floor(
     (Date.now() - new Date(today.getFullYear(), 0, 0).getTime()) / 86400000
   );
   const index = dayOfYear % filtered.length;
+  const quiz = filtered[index];
 
-  return filtered[index];
+  // Return localized version (English/Japanese use En fields, Korean uses default)
+  if (lang !== 'ko' && quiz.questionEn) {
+    return {
+      ...quiz,
+      question: quiz.questionEn,
+      options: quiz.optionsEn || quiz.options,
+      explanation: quiz.explanationEn || quiz.explanation,
+    };
+  }
+
+  return quiz;
 }
 
 // ============================================================================

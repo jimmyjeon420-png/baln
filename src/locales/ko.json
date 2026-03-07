@@ -3757,7 +3757,24 @@
     "vipLounge": "VIP 라운지",
     "noPosts": "아직 게시물이 없습니다",
     "tagline": "투자 커뮤니티에서 같은 고민을 나누는 투자자들을 만나보세요",
-    "eligibilityHint": "자산 100만원 이상이면 참여할 수 있어요"
+    "eligibilityHint": "자산 100만원 이상이면 참여할 수 있어요",
+    "fetch_error": "게시물 조회에 실패했습니다.",
+    "post_threshold_error": "글 작성은 자산 3,000만원 이상 회원만 가능합니다.",
+    "comment_threshold_error": "댓글 작성은 자산 300만원 이상 회원만 가능합니다.",
+    "like_notification_title": "좋아요",
+    "like_notification_message": "회원님의 글에 좋아요가 달렸습니다",
+    "only_own_comment_edit": "본인의 댓글만 수정할 수 있습니다.",
+    "only_own_comment_delete": "본인 댓글만 삭제할 수 있습니다.",
+    "already_deleted_comment": "이미 삭제된 댓글입니다.",
+    "delete_comment_failed": "댓글 삭제에 실패했습니다. 잠시 후 다시 시도해주세요.",
+    "only_own_post_delete": "본인의 게시글만 삭제할 수 있습니다.",
+    "already_deleted_post": "이미 삭제된 게시글입니다.",
+    "delete_post_failed": "게시글 삭제에 실패했습니다. 잠시 후 다시 시도해주세요.",
+    "delete_verify_error": "삭제 상태를 확인하지 못했습니다. 잠시 후 다시 시도해주세요.",
+    "delete_pending_error": "삭제가 아직 완료되지 않았습니다. 잠시 후 다시 시도해주세요.",
+    "post_not_found": "게시글 정보가 없습니다.",
+    "only_author_best_answer": "게시글 작성자만 베스트 답변을 채택할 수 있습니다.",
+    "best_answer_not_ready": "베스트 답변 기능 준비 중입니다."
   },
   "community_category": {
     "all": "전체",
@@ -5084,6 +5101,62 @@
       "moreAdvanced": "더 전문적으로",
       "moreDetail": "더 자세히",
       "simpler": "더 간단히"
+    },
+    "factor_comments": {
+      "add_assets": "자산을 추가해보세요",
+      "drift_good": "목표 배분과 잘 맞아요",
+      "drift_mild": "{{cat}} 비중이 목표 대비 {{pct}}%p 차이나요",
+      "drift_mod": "{{cat}} 등 배분 조정이 필요해요",
+      "drift_bad": "여러 자산군 비중 재조정이 필요해요",
+      "risk_unmeasurable": "위험 측정 불가",
+      "risk_good": "위험이 잘 분산되어 있어요",
+      "risk_concentrated": "{{name}}에 위험 {{pct}}% 집중!",
+      "corr_single": "한 종류의 자산만 보유 중이에요",
+      "corr_high": "비슷하게 움직이는 자산이 많아요",
+      "corr_good": "자산 간 분산이 잘 되어 있어요",
+      "corr_optimal": "상관관계가 적절해요",
+      "vol_low": "변동성이 낮아 안정적이에요",
+      "vol_ok": "변동성 {{pct}}%로 적정 수준이에요",
+      "vol_high": "변동성 {{pct}}%로 다소 높아요",
+      "loss_none": "모든 종목이 수익 중이에요",
+      "loss_count": "{{count}}개 종목이 손실 중이에요",
+      "tax_none": "절세 기회가 없어요 (좋은 신호!)",
+      "tax_opportunity": "{{count}}개 종목에서 절세 기회가 있어요",
+      "leverage_none": "대출이 없어요 (안전!)",
+      "leverage_safe": "대출이 안전하게 관리되고 있어요",
+      "leverage_mod": "레버리지 위험도 {{pct}}%",
+      "leverage_high": "레버리지 위험 높음 ({{pct}}%)",
+      "philosophy_na": "주식 미보유 — 해당 없음",
+      "philosophy_good": "포트폴리오가 투자 철학과 잘 맞습니다",
+      "philosophy_mod": "투자 철학에 맞는 종목 비중을 조금 조정해보세요",
+      "philosophy_bad": "투자 철학과 보유 종목이 많이 다릅니다"
+    },
+    "friendly_labels": {
+      "drift": "일부 종목 비중",
+      "concentration": "집중 위험",
+      "correlation": "분산 효과",
+      "volatility": "가격 변동",
+      "downside": "손실 위험",
+      "tax": "절세 기회"
+    },
+    "summary": {
+      "excellent": "포트폴리오가 매우 건강해요!",
+      "good": "전반적으로 양호해요. {{factor}}만 조정하면 더 좋아져요",
+      "fair": "{{factor}}이 달라졌어요. 분석 탭에서 조정하면 점수가 올라가요",
+      "poor": "포트폴리오 점검이 필요해요. 분석 탭에서 확인해보세요"
+    },
+    "realestate_bonus": {
+      "ltv_over100": "LTV가 100% 이상이에요. 대출 부담이 크니 주의하세요.",
+      "ltv_over80": "대출 비중이 높아 분산 보너스가 없어요 (LTV 80% 이상)",
+      "ratio_high": "부동산 비중이 90% 초과 — 유동성 위험이 있어요",
+      "high": "실물 자산이 금융 자산 위기 시 완충 역할을 해요",
+      "medium": "부동산이 인플레이션 헤지 & 분산 효과를 제공해요",
+      "low": "부동산이 포트폴리오의 변동성을 소폭 낮춰줘요"
+    },
+    "realestate_msg": {
+      "strong": "포트폴리오 분산을 강화해요 (+{{pts}}점 기여)",
+      "moderate": "안정 기반으로 건강 점수에 기여해요 (+{{pts}}점)",
+      "review": "부동산 비중 또는 대출 조건을 점검해보세요"
     }
   },
   "whatIf": {

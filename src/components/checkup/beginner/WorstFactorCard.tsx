@@ -22,15 +22,15 @@ interface WorstFactorCardProps {
 }
 
 const LABEL_MAP: Record<string, Record<string, string>> = {
-  '배분 이탈도': { ko: '비중이 달라졌어요', en: 'Allocation has drifted' },
-  '자산 집중도': { ko: '한 곳에 몰려있어요', en: 'Too concentrated in one area' },
-  '위험 집중도': { ko: '위험이 집중돼 있어요', en: 'Risk is concentrated' },
-  '상관관계': { ko: '자산들이 같이 움직여요', en: 'Assets move together' },
-  '변동성': { ko: '가격 변동이 큰 편이에요', en: 'Price swings are high' },
-  '하방 리스크': { ko: '손실 중인 자산이 있어요', en: 'Some assets are at a loss' },
-  '세금 효율': { ko: '절세 기회가 있어요', en: 'Tax saving opportunity' },
-  '레버리지 건전성': { ko: '대출 부담이 있어요', en: 'Loan burden exists' },
-  '철학 정합도': { ko: '투자 철학과 맞지 않아요', en: 'Doesn\'t match your philosophy' },
+  '배분 이탈도': { ko: '비중이 달라졌어요', en: 'Allocation has drifted', ja: '配分が変わりました' },
+  '자산 집중도': { ko: '한 곳에 몰려있어요', en: 'Too concentrated in one area', ja: '一箇所に集中しています' },
+  '위험 집중도': { ko: '위험이 집중돼 있어요', en: 'Risk is concentrated', ja: 'リスクが集中しています' },
+  '상관관계': { ko: '자산들이 같이 움직여요', en: 'Assets move together', ja: '資産が同じ動きをしています' },
+  '변동성': { ko: '가격 변동이 큰 편이에요', en: 'Price swings are high', ja: '価格変動が大きめです' },
+  '하방 리스크': { ko: '손실 중인 자산이 있어요', en: 'Some assets are at a loss', ja: '損失中の資産があります' },
+  '세금 효율': { ko: '절세 기회가 있어요', en: 'Tax saving opportunity', ja: '節税の機会があります' },
+  '레버리지 건전성': { ko: '대출 부담이 있어요', en: 'Loan burden exists', ja: 'ローン負担があります' },
+  '철학 정합도': { ko: '투자 철학과 맞지 않아요', en: 'Doesn\'t match your philosophy', ja: '投資哲学と合いません' },
 };
 
 function getStoryMessage(factor: FactorResult, allAssets: Asset[] | undefined, t: (key: string, params?: Record<string, string | number>) => string): string | null {

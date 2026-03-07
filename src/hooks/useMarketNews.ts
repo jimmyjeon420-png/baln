@@ -107,6 +107,7 @@ const FALLBACK_FEEDS_KO: Record<NewsCategoryFilter, FallbackFeedSource[]> = {
     { name: '한국경제', url: 'https://www.hankyung.com/feed/all-news' },
     { name: '연합뉴스', url: 'https://www.yna.co.kr/rss/economy.xml' },
     { name: '매일경제', url: 'https://www.mk.co.kr/rss/30100041/' },
+    { name: 'Reuters', url: 'https://feeds.reuters.com/reuters/businessNews' },
   ],
   crypto: [
     { name: '코인데스크', url: 'https://www.coindeskkorea.com/rss' },
@@ -116,11 +117,13 @@ const FALLBACK_FEEDS_KO: Record<NewsCategoryFilter, FallbackFeedSource[]> = {
     { name: '한국경제', url: 'https://www.hankyung.com/feed/all-news' },
     { name: '연합뉴스', url: 'https://www.yna.co.kr/rss/economy.xml' },
     { name: '매일경제', url: 'https://www.mk.co.kr/rss/30100041/' },
+    { name: 'CNBC', url: 'https://www.cnbc.com/id/10000664/device/rss/rss.html' },
   ],
   macro: [
     { name: '연합뉴스', url: 'https://www.yna.co.kr/rss/economy.xml' },
     { name: '매일경제', url: 'https://www.mk.co.kr/rss/30100041/' },
     { name: '한국경제', url: 'https://www.hankyung.com/feed/all-news' },
+    { name: 'Reuters', url: 'https://feeds.reuters.com/reuters/businessNews' },
   ],
 };
 
@@ -146,8 +149,33 @@ const FALLBACK_FEEDS_EN: Record<NewsCategoryFilter, FallbackFeedSource[]> = {
   ],
 };
 
+const FALLBACK_FEEDS_JA: Record<NewsCategoryFilter, FallbackFeedSource[]> = {
+  all: [
+    { name: '日経新聞', url: 'https://assets.wor.jp/rss/rdf/nikkei/news.rdf' },
+    { name: 'ロイター', url: 'https://assets.wor.jp/rss/rdf/reuters/top.rdf' },
+    { name: 'Reuters', url: 'https://feeds.reuters.com/reuters/businessNews' },
+  ],
+  crypto: [
+    { name: 'CoinDesk', url: 'https://www.coindesk.com/arc/outboundfeeds/rss/' },
+    { name: 'Bitcoin Magazine', url: 'https://bitcoinmagazine.com/.rss/full/' },
+  ],
+  stock: [
+    { name: '日経新聞', url: 'https://assets.wor.jp/rss/rdf/nikkei/news.rdf' },
+    { name: 'Reuters', url: 'https://feeds.reuters.com/reuters/businessNews' },
+    { name: 'CNBC', url: 'https://www.cnbc.com/id/10000664/device/rss/rss.html' },
+  ],
+  macro: [
+    { name: 'ロイター', url: 'https://assets.wor.jp/rss/rdf/reuters/top.rdf' },
+    { name: 'Reuters', url: 'https://feeds.reuters.com/reuters/businessNews' },
+    { name: '日経新聞', url: 'https://assets.wor.jp/rss/rdf/nikkei/news.rdf' },
+  ],
+};
+
 function getFallbackFeeds(): Record<NewsCategoryFilter, FallbackFeedSource[]> {
-  return getCurrentLanguage() === 'ko' ? FALLBACK_FEEDS_KO : FALLBACK_FEEDS_EN;
+  const lang = getCurrentLanguage();
+  if (lang === 'ko') return FALLBACK_FEEDS_KO;
+  if (lang === 'ja') return FALLBACK_FEEDS_JA;
+  return FALLBACK_FEEDS_EN;
 }
 
 function safeDateISO(value?: string): string {

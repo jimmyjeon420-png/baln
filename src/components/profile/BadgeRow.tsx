@@ -73,7 +73,7 @@ function UnlockedSlot({ badge }: { badge: AchievementWithStatus }) {
       <View style={[styles.circle, styles.circleUnlocked]}>
         <Text style={styles.emoji}>{badge.emoji}</Text>
       </View>
-      <Text style={styles.badgeLabel} numberOfLines={1}>
+      <Text style={styles.badgeLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
         {badge.title}
       </Text>
     </View>
@@ -87,7 +87,7 @@ function LockedSlot() {
       <View style={[styles.circle, styles.circleLocked]}>
         <Text style={styles.questionMark}>?</Text>
       </View>
-      <Text style={[styles.badgeLabel, styles.badgeLabelLocked]}>{t('badge.not_earned')}</Text>
+      <Text style={[styles.badgeLabel, styles.badgeLabelLocked]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{t('badge.not_earned')}</Text>
     </View>
   );
 }
@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
   },
   slotWrapper: {
     alignItems: 'center',
-    width: 72,
+    width: 80,
   },
   circle: {
     width: 56,
@@ -145,6 +145,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FFFFFF',
     textAlign: 'center',
+    width: '100%',
   },
   badgeLabelLocked: {
     color: '#3a3a5a',

@@ -22,16 +22,19 @@ import { getCurrentDisplayLanguage } from '../context/LocaleContext';
  */
 export function getPromptLanguageInstruction(lang?: DisplayLanguage): string {
   const current = lang || getCurrentDisplayLanguage();
-  return current === 'ko'
-    ? '한국어로 자연스럽게 작성한다.'
-    : 'Write naturally in English.';
+  if (current === 'ko') return '한국어로 자연스럽게 작성한다.';
+  if (current === 'ja') return '日本語で自然に書いてください。';
+  return 'Write naturally in English.';
 }
 
 /**
  * 응답 언어 이름 (프롬프트 내에서 "응답 언어: 한국어" 형태로 사용)
  */
 export function getResponseLanguage(lang?: DisplayLanguage): string {
-  return (lang || getCurrentDisplayLanguage()) === 'ko' ? '한국어' : 'English';
+  const current = lang || getCurrentDisplayLanguage();
+  if (current === 'ko') return '한국어';
+  if (current === 'ja') return '日本語';
+  return 'English';
 }
 
 /**
@@ -53,6 +56,17 @@ export function getLangParam(lang?: DisplayLanguage): string {
 export function getFinanceTermGuide(lang?: DisplayLanguage): string {
   const current = lang || getCurrentDisplayLanguage();
   if (current === 'ko') return '';
+  if (current === 'ja') return `
+金融用語ガイド:
+- リバランス (Rebalancing)
+- ヘルススコア (Health Score)
+- 配分乖離度 (Allocation Drift)
+- 処方箋 (Prescription)
+- コンテキストカード (Context Card)
+- ダウンサイドリスク (Downside Risk)
+- 相関関係 (Correlation)
+- ボラティリティ (Volatility)
+`;
   return `
 Use standard financial terminology:
 - 리밸런싱 → Rebalancing

@@ -13,6 +13,7 @@ import supabase, { getCurrentUser } from '../services/supabase';
 import { isFreePeriod } from '../config/freePeriod';
 import { showErrorToast } from '../utils/toast';
 import { t } from '../locales';
+import { getCurrentDisplayLanguage } from '../context/LocaleContext';
 import { useSharedPortfolio } from './useSharedPortfolio';
 import {
   CommunityPost,
@@ -36,7 +37,7 @@ import { useVillageProsperity } from './useVillageProsperity';
 /**
  * 자산을 "X.X억" 또는 "X만" 형식으로 변환
  */
-const formatAssetInBillion = (amount: number): string => {
+const _formatAssetInBillion = (amount: number): string => {
   const billion = amount / 100000000;
   if (billion >= 1) {
     return `${billion.toFixed(1)}억`;
@@ -162,12 +163,14 @@ export const useCommunityPosts = (
   category: CommunityCategoryFilter = 'all',
   sortBy: PostSortBy = 'latest',
 ) => {
+  const lang = getCurrentDisplayLanguage();
   return useInfiniteQuery({
-    queryKey: ['communityPosts', category, sortBy],
+    queryKey: ['communityPosts', category, sortBy, lang],
     queryFn: async ({ pageParam = 0 }) => {
       let query = supabase
         .from('community_posts')
-        .select('*');
+        .select('*')
+        .eq('language', lang);
 
       if (category !== 'all') {
         query = query.eq('category', category);
@@ -187,7 +190,7 @@ export const useCommunityPosts = (
 
       const { data, error } = await query;
       if (error) {
-        throw new Error(error.message || '게시물 조회에 실패했습니다.');
+        throw new Error(error.message || t('community.fetch_error'));
       }
 
       return (data || []).map(post => ({
@@ -216,11 +219,11 @@ export const useCreatePost = () => {
   return useMutation({
     mutationFn: async (input: CreatePostInput & { displayTag: string; assetMix: string; totalAssets: number; imageUrls?: string[] }) => {
       const user = await getCurrentUser();
-      if (!user) throw new Error('로그인이 필요합니다.');
+      if (!user) throw new Error(t('common.login_required'));
 
       // 자산 기준 미달이면 차단 (무료 기간에는 스킵)
       if (!isFreePeriod() && input.totalAssets < LOUNGE_POST_THRESHOLD) {
-        throw new Error(`글 작성은 자산 ${formatAssetInBillion(LOUNGE_POST_THRESHOLD)} 이상 회원만 가능합니다.`);
+        throw new Error(t('community.post_threshold_error'));
       }
 
       // 보유종목 스냅샷 가져오기 (상위 10개)
@@ -243,7 +246,7 @@ export const useCreatePost = () => {
 
           return {
             ticker: item.ticker,
-            name: type === 'realestate' ? '부동산' : (item.name || item.ticker),
+            name: type === 'realestate' ? t('checkup.cat_labels.realestate') : (item.name || item.ticker),
             type,
             value,
           };
@@ -273,6 +276,7 @@ export const useCreatePost = () => {
           top_holdings: topHoldings,
           image_urls: input.imageUrls || null,
           is_author_verified: isAuthorVerified,
+          language: getCurrentDisplayLanguage(),
         })
         .select()
         .single();
@@ -355,7 +359,7 @@ export const useLikePost = () => {
 
         // RPC 함수 미존재 시 폴백: community_likes 직접 조작
         const user = await getCurrentUser();
-        if (!user) throw new Error('로그인이 필요합니다.');
+        if (!user) throw new Error(t('common.login_required'));
 
         // 기존 좋아요 확인
         const { data: existing } = await supabase
@@ -503,8 +507,8 @@ export const useLikePost = () => {
             supabase.from('notifications').insert({
               user_id: post.user_id,
               type: 'like',
-              title: '좋아요',
-              message: '회원님의 글에 좋아요가 달렸습니다',
+              title: t('community.like_notification_title'),
+              message: t('community.like_notification_message'),
               data: { post_id: postId },
             })
           ).catch(() => {});
@@ -550,11 +554,11 @@ export const useCreateComment = (postId: string) => {
   return useMutation({
     mutationFn: async (input: { content: string; displayTag: string; totalAssets: number; parentId?: string }) => {
       const user = await getCurrentUser();
-      if (!user) throw new Error('로그인이 필요합니다.');
+      if (!user) throw new Error(t('common.login_required'));
 
       // 자산 기준 미달이면 차단 (무료 기간 제외)
       if (!isFreePeriod() && input.totalAssets < LOUNGE_COMMENT_THRESHOLD) {
-        throw new Error(`댓글 작성은 자산 ${formatAssetInBillion(LOUNGE_COMMENT_THRESHOLD)} 이상 회원만 가능합니다.`);
+        throw new Error(t('community.comment_threshold_error'));
       }
 
       // 댓글 저장 (parent_id 포함 = 대댓글)
@@ -608,7 +612,7 @@ export const useUpdateComment = (postId: string) => {
   return useMutation({
     mutationFn: async ({ commentId, content }: { commentId: string; content: string }) => {
       const user = await getCurrentUser();
-      if (!user) throw new Error('로그인이 필요합니다.');
+      if (!user) throw new Error(t('common.login_required'));
 
       // 본인 댓글인지 확인
       const { data: comment } = await supabase
@@ -618,7 +622,7 @@ export const useUpdateComment = (postId: string) => {
         .single();
 
       if (comment?.user_id !== user.id) {
-        throw new Error('본인의 댓글만 수정할 수 있습니다.');
+        throw new Error(t('community.only_own_comment_edit'));
       }
 
       // 수정
@@ -660,7 +664,7 @@ const verifyCommunityRowDeleted = async (
 
     if (error) {
       console.warn(`[Community] ${entityLabel} 삭제 확인 중 DB 에러:`, error.message);
-      throw new Error(`${entityLabel} 삭제 상태를 확인하지 못했습니다. 잠시 후 다시 시도해주세요.`);
+      throw new Error(t('community.delete_verify_error'));
     }
 
     if (!data) return;
@@ -668,7 +672,7 @@ const verifyCommunityRowDeleted = async (
     await waitForDeletion(retryDelays[index]);
   }
 
-  throw new Error(`${entityLabel} 삭제가 아직 완료되지 않았습니다. 잠시 후 다시 시도해주세요.`);
+  throw new Error(t('community.delete_pending_error'));
 };
 
 const syncCommunityCommentCount = async (postId: string) => {
@@ -707,7 +711,7 @@ export const useDeleteComment = (postId: string) => {
   return useMutation({
     mutationFn: async (commentId: string) => {
       const user = await getCurrentUser();
-      if (!user) throw new Error('로그인이 필요합니다.');
+      if (!user) throw new Error(t('common.login_required'));
 
       // 1) 우선: RLS 누락/불일치에도 안전한 RPC 경로
       try {
@@ -727,16 +731,16 @@ export const useDeleteComment = (postId: string) => {
           }
 
           if (reason === 'forbidden') {
-            throw new Error('본인 댓글만 삭제할 수 있습니다.');
+            throw new Error(t('community.only_own_comment_delete'));
           }
           if (reason === 'not_found') {
-            throw new Error('이미 삭제된 댓글입니다.');
+            throw new Error(t('community.already_deleted_comment'));
           }
           if (reason === 'not_authenticated') {
             throw new Error('로그인이 필요합니다.');
           }
           if (reason === 'delete_failed') {
-            throw new Error('댓글 삭제에 실패했습니다. 잠시 후 다시 시도해주세요.');
+            throw new Error(t('community.delete_comment_failed'));
           }
         } else if (rpcError) {
           // 함수 미배포(PGRST202) 등은 직접 삭제 경로로 폴백
@@ -756,7 +760,7 @@ export const useDeleteComment = (postId: string) => {
 
       if (error) throw error;
       if (!data || data.length === 0) {
-        throw new Error('댓글 삭제 권한 확인에 실패했습니다. 잠시 후 다시 시도해주세요.');
+        throw new Error(t('community.delete_comment_failed'));
       }
 
       await verifyCommunityRowDeleted('community_comments', commentId, '댓글');
@@ -785,7 +789,7 @@ export const useDeletePost = () => {
   return useMutation({
     mutationFn: async (postId: string) => {
       const user = await getCurrentUser();
-      if (!user) throw new Error('로그인이 필요합니다.');
+      if (!user) throw new Error(t('common.login_required'));
 
       // 1) 우선: RLS 누락/불일치에도 안정적인 RPC 경로
       try {
@@ -804,16 +808,16 @@ export const useDeletePost = () => {
           }
 
           if (reason === 'forbidden') {
-            throw new Error('본인의 게시글만 삭제할 수 있습니다.');
+            throw new Error(t('community.only_own_post_delete'));
           }
           if (reason === 'not_found') {
-            throw new Error('이미 삭제된 게시글입니다.');
+            throw new Error(t('community.already_deleted_post'));
           }
           if (reason === 'not_authenticated') {
             throw new Error('로그인이 필요합니다.');
           }
           if (reason === 'delete_failed') {
-            throw new Error('게시글 삭제에 실패했습니다. 잠시 후 다시 시도해주세요.');
+            throw new Error(t('community.delete_post_failed'));
           }
         } else if (rpcError) {
           // 함수 미배포(PGRST202) 등은 직접 삭제 경로로 폴백
@@ -833,7 +837,7 @@ export const useDeletePost = () => {
 
       if (error) throw error;
       if (!data || data.length === 0) {
-        throw new Error('게시글 삭제 권한 확인에 실패했습니다. 잠시 후 다시 시도해주세요.');
+        throw new Error(t('community.delete_post_failed'));
       }
 
       await verifyCommunityRowDeleted('community_posts', postId, '게시글');
@@ -907,7 +911,7 @@ export const useLikeComment = (postId: string) => {
   return useMutation({
     mutationFn: async (commentId: string) => {
       const user = await getCurrentUser();
-      if (!user) throw new Error('로그인이 필요합니다.');
+      if (!user) throw new Error(t('common.login_required'));
 
       // 기존 좋아요 확인 (maybeSingle: 없으면 null, 에러 없음)
       const { data: existing, error: checkError } = await supabase
@@ -1092,8 +1096,8 @@ export const useSelectBestAnswer = (postId: string) => {
   return useMutation({
     mutationFn: async (commentId: string) => {
       const user = await getCurrentUser();
-      if (!user) throw new Error('로그인이 필요합니다.');
-      if (!postId) throw new Error('게시글 정보가 없습니다.');
+      if (!user) throw new Error(t('common.login_required'));
+      if (!postId) throw new Error(t('community.post_not_found'));
 
       // 게시글 작성자 권한 확인
       const { data: post, error: postErr } = await supabase
@@ -1104,7 +1108,7 @@ export const useSelectBestAnswer = (postId: string) => {
 
       if (postErr) throw postErr;
       if (post?.user_id !== user.id) {
-        throw new Error('게시글 작성자만 베스트 답변을 채택할 수 있습니다.');
+        throw new Error(t('community.only_author_best_answer'));
       }
 
       const { error } = await supabase
@@ -1121,7 +1125,7 @@ export const useSelectBestAnswer = (postId: string) => {
 
       if (error) {
         if (error.code === '42P01') {
-          throw new Error('베스트 답변 기능 준비 중입니다. DB 마이그레이션을 먼저 적용해주세요.');
+          throw new Error(t('community.best_answer_not_ready'));
         }
         throw error;
       }

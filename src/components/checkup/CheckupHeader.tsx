@@ -158,9 +158,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   summarySection: { paddingTop: 16, borderTopWidth: 1, borderTopColor: colors.border },
   summaryText: { fontSize: 16, color: colors.textPrimary, lineHeight: 24 },
   panicSection: { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.border },
-  panicRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
+  panicRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4, flexWrap: 'wrap' },
   panicLabel: { fontSize: 14, color: colors.textSecondary, marginLeft: 6 },
   panicScore: { fontSize: 15, fontWeight: '600', marginLeft: 8 },
-  panicDesc: { fontSize: 14, color: colors.textSecondary, marginLeft: 4 },
+  panicDesc: { fontSize: 14, color: colors.textSecondary, marginLeft: 4, flexShrink: 1 },
   panicReason: { fontSize: 14, color: colors.textTertiary, marginLeft: 22, fontStyle: 'italic', lineHeight: 20 },
 });

@@ -90,7 +90,7 @@ export default function StreakBadge({ currentStreak, isBroken }: StreakBadgeProp
 
       {/* 연속 정보 */}
       <View style={styles.textContainer}>
-        <Text style={[styles.streakText, isBroken && styles.streakTextBroken]}>
+        <Text style={[styles.streakText, isBroken && styles.streakTextBroken]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
           {isBroken ? t('streakBadge.broken_label', { count: String(currentStreak) }) : streakLevel.label}
         </Text>
         {!isBroken && streakLevel.bonus > 0 && (

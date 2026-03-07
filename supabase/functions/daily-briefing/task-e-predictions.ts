@@ -420,10 +420,11 @@ export async function generatePredictionPolls(lang = 'ko'): Promise<PredictionGe
   const todayKst = getKSTDate();
   const { startIso, endIso } = getKSTDayBounds(todayKst);
   try {
-    // 중복 생성 방지: KST 기준 오늘 생성된 투표 확인
+    // 중복 생성 방지: KST 기준 오늘 + 같은 언어의 투표 확인
     const { data: existingRaw, error: existingError } = await supabase
       .from('prediction_polls')
       .select('id, category, question')
+      .eq('language', lang)
       .gte('created_at', startIso)
       .lt('created_at', endIso)
       .order('created_at', { ascending: true });
@@ -462,8 +463,9 @@ export async function generatePredictionPolls(lang = 'ko'): Promise<PredictionGe
     ].join('\n');
 
     const todayDateStr = getKSTDateStr();
-    const isEn = lang !== 'ko';
-    const promptExample = isEn
+    const isJa = lang === 'ja';
+    const isEn = lang !== 'ko' && !isJa;
+    const promptExample = (isEn || isJa)
       ? `{
       "question": "Will the S&P 500 close above 5,300 within 24 hours?",
       "description": "The S&P 500 is currently near 5,250 pts. Checking if short-term momentum continues.",
@@ -491,7 +493,14 @@ export async function generatePredictionPolls(lang = 'ko'): Promise<PredictionGe
       "down_reason": "단기 급등 후 차익실현 매물 출회"
     }`;
 
-    const prompt = isEn
+    const langInstruction = isJa
+      ? 'CRITICAL: Your ENTIRE response MUST be in Japanese (日本語). Never use Korean or English for user-facing text.'
+      : isEn
+      ? 'CRITICAL: Your ENTIRE response MUST be in English. Never use Korean.'
+      : '';
+    const writeLang = isJa ? 'Japanese' : isEn ? 'English' : '';
+
+    const prompt = (isEn || isJa)
       ? `You are the prediction game AI for baln (a portfolio insights app).
 Today (KST): ${todayDateStr} (${todayKst})
 
@@ -502,7 +511,7 @@ ${snapshotContext}
 - Exactly 3 questions: stocks 1, crypto 1, macro 1
 - Must be clearly answerable YES/NO
 - Result must be verifiable within 24-48 hours
-- Write naturally in English
+- Write naturally in ${writeLang}
 - Target values must be close to current prices (not wildly different)
 - Do not ask about levels already breached
 
@@ -511,7 +520,7 @@ ${snapshotContext}
 - context_hint: 1-2 sentences from a learning perspective
 - up_reason / down_reason: 1 sentence each based on news
 
-CRITICAL: Your ENTIRE response MUST be in English. Never use Korean.
+${langInstruction}
 
 [Response format: JSON only]
 {
@@ -591,6 +600,7 @@ ${snapshotContext}
         deadline: deadline.toISOString(),
         status: 'active',
         reward_credits: 3,
+        language: lang,
       };
 
       // Optional columns — only include if non-null to avoid missing-column errors

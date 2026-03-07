@@ -519,7 +519,7 @@ function calcDriftPenalty(
   customTarget?: Record<AssetCategory, number>,
 ): FactorResult {
   if (total === 0) {
-    return { label: '배분 이탈도', icon: '🎯', rawPenalty: 0, weight: 0.225, weightedPenalty: 0, score: 100, comment: '자산을 추가해보세요' };
+    return { label: '배분 이탈도', icon: '🎯', rawPenalty: 0, weight: 0.225, weightedPenalty: 0, score: 100, comment: t('checkup.factor_comments.add_assets') };
   }
 
   const target = normalizeLiquidTarget(customTarget);
@@ -551,18 +551,16 @@ function calcDriftPenalty(
     if (d > maxDrift) { maxDrift = d; maxDriftCat = cat; }
   }
 
-  const CAT_LABEL: Record<string, string> = {
-    large_cap: '주식', bond: '채권', bitcoin: '비트코인',
-    altcoin: '알트코인', gold: '금', commodity: '원자재', cash: '현금',
-  };
+  const catKey = `checkup.cat_labels.${maxDriftCat}`;
+  const catName = t(catKey);
 
   const comment = drift < 5
-    ? '목표 배분과 잘 맞아요 (달리오/버핏 기준)'
+    ? t('checkup.factor_comments.drift_good')
     : drift < 15
-    ? `${CAT_LABEL[maxDriftCat] || maxDriftCat} 비중이 목표 대비 ${maxDrift.toFixed(0)}%p 차이나요`
+    ? t('checkup.factor_comments.drift_mild', { cat: catName, pct: maxDrift.toFixed(0) })
     : drift < 25
-    ? `${CAT_LABEL[maxDriftCat] || maxDriftCat} 등 배분 조정이 필요해요`
-    : '여러 자산군 비중 재조정이 필요해요';
+    ? t('checkup.factor_comments.drift_mod', { cat: catName })
+    : t('checkup.factor_comments.drift_bad');
 
   return { label: '배분 이탈도', icon: '🎯', rawPenalty: penalty, weight: 0.225, weightedPenalty: penalty * 0.225, score, comment };
 }
@@ -574,7 +572,7 @@ function calcDriftPenalty(
  */
 function calcRiskWeightedConcentration(assets: Asset[], total: number): FactorResult {
   if (total === 0 || assets.length === 0) {
-    return { label: '위험 집중도', icon: '⚖️', rawPenalty: 0, weight: 0.180, weightedPenalty: 0, score: 100, comment: '자산을 추가해보세요' };
+    return { label: '위험 집중도', icon: '⚖️', rawPenalty: 0, weight: 0.180, weightedPenalty: 0, score: 100, comment: t('checkup.factor_comments.add_assets') };
   }
 
   // 1. 각 자산의 위험 기여도 계산
@@ -590,7 +588,7 @@ function calcRiskWeightedConcentration(assets: Asset[], total: number): FactorRe
   }
 
   if (totalRisk === 0) {
-    return { label: '위험 집중도', icon: '⚖️', rawPenalty: 0, weight: 0.180, weightedPenalty: 0, score: 100, comment: '위험 측정 불가' };
+    return { label: '위험 집중도', icon: '⚖️', rawPenalty: 0, weight: 0.180, weightedPenalty: 0, score: 100, comment: t('checkup.factor_comments.risk_unmeasurable') };
   }
 
   // 2. 위험 가중 HHI 계산
@@ -618,8 +616,8 @@ function calcRiskWeightedConcentration(assets: Asset[], total: number): FactorRe
   const maxRiskPct = (maxRisk / totalRisk) * 100;
 
   const comment = penalty < 20
-    ? '위험이 잘 분산되어 있어요'
-    : `${maxRiskAsset.ticker || maxRiskAsset.name}에 위험 ${maxRiskPct.toFixed(0)}% 집중!`;
+    ? t('checkup.factor_comments.risk_good')
+    : t('checkup.factor_comments.risk_concentrated', { name: maxRiskAsset.ticker || maxRiskAsset.name, pct: maxRiskPct.toFixed(0) });
 
   return { label: '위험 집중도', icon: '⚖️', rawPenalty: penalty, weight: 0.180, weightedPenalty: penalty * 0.180, score, comment };
 }
@@ -630,7 +628,7 @@ function calcRiskWeightedConcentration(assets: Asset[], total: number): FactorRe
  */
 function calcCorrelationPenalty(assets: Asset[], total: number): FactorResult {
   if (total === 0) {
-    return { label: '상관관계', icon: '🔗', rawPenalty: 0, weight: 0.135, weightedPenalty: 0, score: 100, comment: '자산을 추가해보세요' };
+    return { label: '상관관계', icon: '🔗', rawPenalty: 0, weight: 0.135, weightedPenalty: 0, score: 100, comment: t('checkup.factor_comments.add_assets') };
   }
 
   // 카테고리별 비중 계산 (순자산 기준)
@@ -668,12 +666,12 @@ function calcCorrelationPenalty(assets: Asset[], total: number): FactorResult {
 
   const usedCategories = categories.filter(c => categoryWeights[c] > 0.01);
   const comment = usedCategories.length <= 1
-    ? '한 종류의 자산만 보유 중이에요'
+    ? t('checkup.factor_comments.corr_single')
     : avgCorr > 0.4
-    ? '비슷하게 움직이는 자산이 많아요'
+    ? t('checkup.factor_comments.corr_high')
     : avgCorr < 0.1
-    ? '자산 간 분산이 잘 되어 있어요'
-    : '상관관계가 적절해요';
+    ? t('checkup.factor_comments.corr_good')
+    : t('checkup.factor_comments.corr_optimal');
 
   return { label: '상관관계', icon: '🔗', rawPenalty: penalty, weight: 0.135, weightedPenalty: penalty * 0.135, score, comment };
 }
@@ -684,7 +682,7 @@ function calcCorrelationPenalty(assets: Asset[], total: number): FactorResult {
  */
 function calcVolatilityPenalty(assets: Asset[], total: number): FactorResult {
   if (total === 0) {
-    return { label: '변동성', icon: '📈', rawPenalty: 0, weight: 0.135, weightedPenalty: 0, score: 100, comment: '자산을 추가해보세요' };
+    return { label: '변동성', icon: '📈', rawPenalty: 0, weight: 0.135, weightedPenalty: 0, score: 100, comment: t('checkup.factor_comments.add_assets') };
   }
 
   // 가중평균 변동성 계산 (순자산 기준)
@@ -703,10 +701,10 @@ function calcVolatilityPenalty(assets: Asset[], total: number): FactorResult {
   const score = Math.round(100 - penalty);
 
   const comment = weightedVol < 15
-    ? '변동성이 낮아 안정적이에요'
+    ? t('checkup.factor_comments.vol_low')
     : weightedVol <= 25
-    ? `변동성 ${weightedVol.toFixed(0)}%로 적정 수준이에요`
-    : `변동성 ${weightedVol.toFixed(0)}%로 다소 높아요`;
+    ? t('checkup.factor_comments.vol_ok', { pct: weightedVol.toFixed(0) })
+    : t('checkup.factor_comments.vol_high', { pct: weightedVol.toFixed(0) });
 
   return { label: '변동성', icon: '📈', rawPenalty: penalty, weight: 0.135, weightedPenalty: penalty * 0.135, score, comment };
 }
@@ -717,7 +715,7 @@ function calcVolatilityPenalty(assets: Asset[], total: number): FactorResult {
  */
 function calcDownsidePenalty(assets: Asset[], total: number): FactorResult {
   if (total === 0) {
-    return { label: '하방 리스크', icon: '🛡️', rawPenalty: 0, weight: 0.090, weightedPenalty: 0, score: 100, comment: '자산을 추가해보세요' };
+    return { label: '하방 리스크', icon: '🛡️', rawPenalty: 0, weight: 0.090, weightedPenalty: 0, score: 100, comment: t('checkup.factor_comments.add_assets') };
   }
 
   let lossCount = 0;
@@ -738,8 +736,8 @@ function calcDownsidePenalty(assets: Asset[], total: number): FactorResult {
   const score = Math.round(100 - penalty);
 
   const comment = lossCount === 0
-    ? '모든 종목이 수익 중이에요'
-    : `${lossCount}개 종목이 손실 중이에요`;
+    ? t('checkup.factor_comments.loss_none')
+    : t('checkup.factor_comments.loss_count', { count: lossCount });
 
   return { label: '하방 리스크', icon: '🛡️', rawPenalty: penalty, weight: 0.090, weightedPenalty: penalty * 0.090, score, comment };
 }
@@ -750,7 +748,7 @@ function calcDownsidePenalty(assets: Asset[], total: number): FactorResult {
  */
 function calcTaxEfficiencyPenalty(assets: Asset[], total: number): FactorResult {
   if (total === 0) {
-    return { label: '세금 효율', icon: '💰', rawPenalty: 0, weight: 0.045, weightedPenalty: 0, score: 100, comment: '자산을 추가해보세요' };
+    return { label: '세금 효율', icon: '💰', rawPenalty: 0, weight: 0.045, weightedPenalty: 0, score: 100, comment: t('checkup.factor_comments.add_assets') };
   }
 
   let tlhCount = 0;
@@ -775,8 +773,8 @@ function calcTaxEfficiencyPenalty(assets: Asset[], total: number): FactorResult 
   const score = Math.round(100 - penalty);
 
   const comment = tlhCount === 0
-    ? '절세 기회가 없어요 (좋은 신호!)'
-    : `${tlhCount}개 종목에서 절세 기회가 있어요`;
+    ? t('checkup.factor_comments.tax_none')
+    : t('checkup.factor_comments.tax_opportunity', { count: tlhCount });
 
   return { label: '세금 효율', icon: '💰', rawPenalty: penalty, weight: 0.045, weightedPenalty: penalty * 0.045, score, comment };
 }
@@ -788,7 +786,7 @@ function calcTaxEfficiencyPenalty(assets: Asset[], total: number): FactorResult 
  */
 function calcLeveragePenalty(assets: Asset[], total: number): FactorResult {
   if (total === 0) {
-    return { label: '레버리지 건전성', icon: '💳', rawPenalty: 0, weight: 0.090, weightedPenalty: 0, score: 100, comment: '자산을 추가해보세요' };
+    return { label: '레버리지 건전성', icon: '💳', rawPenalty: 0, weight: 0.090, weightedPenalty: 0, score: 100, comment: t('checkup.factor_comments.add_assets') };
   }
 
   let totalLeverageRisk = 0;
@@ -812,7 +810,7 @@ function calcLeveragePenalty(assets: Asset[], total: number): FactorResult {
   }
 
   if (debtCount === 0) {
-    return { label: '레버리지 건전성', icon: '💳', rawPenalty: 0, weight: 0.090, weightedPenalty: 0, score: 100, comment: '대출이 없어요 (안전!)' };
+    return { label: '레버리지 건전성', icon: '💳', rawPenalty: 0, weight: 0.090, weightedPenalty: 0, score: 100, comment: t('checkup.factor_comments.leverage_none') };
   }
 
   // 포트폴리오 전체 대비 레버리지 위험 비율
@@ -826,10 +824,10 @@ function calcLeveragePenalty(assets: Asset[], total: number): FactorResult {
   const score = Math.round(100 - penalty);
 
   const comment = penalty < 20
-    ? '대출이 안전하게 관리되고 있어요'
+    ? t('checkup.factor_comments.leverage_safe')
     : penalty < 50
-    ? `레버리지 위험도 ${leverageRiskRatio.toFixed(1)}%`
-    : `⚠️ 레버리지 위험 높음 (${leverageRiskRatio.toFixed(1)}%)`;
+    ? t('checkup.factor_comments.leverage_mod', { pct: leverageRiskRatio.toFixed(1) })
+    : t('checkup.factor_comments.leverage_high', { pct: leverageRiskRatio.toFixed(1) });
 
   return { label: '레버리지 건전성', icon: '💳', rawPenalty: penalty, weight: 0.090, weightedPenalty: penalty * 0.090, score, comment };
 }
@@ -858,7 +856,7 @@ function calcPhilosophyAlignment(
       weight: 0.10,
       weightedPenalty: 0,
       score: 100,
-      comment: '주식 미보유 — 해당 없음',
+      comment: t('checkup.factor_comments.philosophy_na'),
     };
   }
 
@@ -890,10 +888,10 @@ function calcPhilosophyAlignment(
     weightedPenalty: rawPenalty * 0.10,
     score,
     comment: score >= 70
-      ? '포트폴리오가 투자 철학과 잘 맞습니다'
+      ? t('checkup.factor_comments.philosophy_good')
       : score >= 40
-      ? '투자 철학에 맞는 종목 비중을 조금 조정해보세요'
-      : '투자 철학과 보유 종목이 많이 다릅니다. 분석 탭에서 구루를 확인해보세요',
+      ? t('checkup.factor_comments.philosophy_mod')
+      : t('checkup.factor_comments.philosophy_bad'),
   };
 }
 
@@ -940,19 +938,18 @@ export function calcRealEstateDiversificationBonus(
   const avgLtv = grossValue > 0 ? (totalDebt / grossValue) * 100 : 0;
 
   if (netValue <= 0) {
-    return { bonus: 0, reason: 'LTV가 100% 이상이에요. 대출 부담이 크니 주의하세요.', avgLtv };
+    return { bonus: 0, reason: t('checkup.realestate_bonus.ltv_over100'), avgLtv };
   }
 
-  // LTV 80% 이상이면 위험 레버리지 → 보너스 없음
   if (avgLtv >= 80) {
-    return { bonus: 0, reason: '대출 비중이 높아 분산 보너스가 없어요 (LTV 80% 이상)', avgLtv };
+    return { bonus: 0, reason: t('checkup.realestate_bonus.ltv_over80'), avgLtv };
   }
 
   const ratio = netValue / totalNetAssets;
 
   // 비율이 너무 낮거나 너무 높으면 보너스 없음
   if (ratio < 0.1) return { bonus: 0, reason: '', avgLtv };
-  if (ratio > 0.9) return { bonus: 0, reason: '부동산 비중이 90% 초과 — 유동성 위험이 있어요', avgLtv };
+  if (ratio > 0.9) return { bonus: 0, reason: t('checkup.realestate_bonus.ratio_high'), avgLtv };
 
   // 비율 점수: 20~60% 구간 최대 (한국 실정 반영), 그 외 선형 감소
   // 한국 40~50대는 부동산 비중이 50~70%인 경우가 흔하므로 구간 확대
@@ -976,11 +973,11 @@ export function calcRealEstateDiversificationBonus(
 
   let reason: string;
   if (bonus >= 8) {
-    reason = `실물 자산이 금융 자산 위기 시 완충 역할을 해요 (달리오: All Weather)`;
+    reason = t('checkup.realestate_bonus.high');
   } else if (bonus >= 5) {
-    reason = `부동산이 인플레이션 헤지 & 분산 효과를 제공해요`;
+    reason = t('checkup.realestate_bonus.medium');
   } else {
-    reason = `부동산이 포트폴리오의 변동성을 소폭 낮춰줘요`;
+    reason = t('checkup.realestate_bonus.low');
   }
 
   return { bonus, reason, avgLtv };
@@ -1038,22 +1035,24 @@ export function calculateHealthScore(
 
   // 가장 취약한 팩터 → summary 생성 (일반인 친화적 언어)
   const worstFactor = [...factors].sort((a, b) => b.rawPenalty - a.rawPenalty)[0];
-  const FACTOR_FRIENDLY_LABEL: Record<string, string> = {
-    '배분 이탈도': '일부 종목 비중',
-    '위험 집중도': '집중 위험',
-    '상관관계': '분산 효과',
-    '변동성': '가격 변동',
-    '하방 리스크': '손실 위험',
-    '세금 효율': '절세 기회',
+  const FACTOR_FRIENDLY_KEY: Record<string, string> = {
+    '배분 이탈도': 'checkup.friendly_labels.drift',
+    '위험 집중도': 'checkup.friendly_labels.concentration',
+    '상관관계': 'checkup.friendly_labels.correlation',
+    '변동성': 'checkup.friendly_labels.volatility',
+    '하방 리스크': 'checkup.friendly_labels.downside',
+    '세금 효율': 'checkup.friendly_labels.tax',
   };
-  const friendlyLabel = FACTOR_FRIENDLY_LABEL[worstFactor.label] || worstFactor.label;
+  const friendlyLabel = FACTOR_FRIENDLY_KEY[worstFactor.label]
+    ? t(FACTOR_FRIENDLY_KEY[worstFactor.label])
+    : worstFactor.label;
   const summary = totalScore >= 85
-    ? '포트폴리오가 매우 건강해요!'
+    ? t('checkup.summary.excellent')
     : totalScore >= 70
-    ? `전반적으로 양호해요. ${friendlyLabel}만 조정하면 더 좋아져요`
+    ? t('checkup.summary.good', { factor: friendlyLabel })
     : totalScore >= 55
-    ? `${friendlyLabel}이 달라졌어요. 분석 탭에서 조정하면 점수가 올라가요`
-    : `포트폴리오 점검이 필요해요. 분석 탭에서 확인해보세요`;
+    ? t('checkup.summary.fair', { factor: friendlyLabel })
+    : t('checkup.summary.poor');
 
   // driftStatus 호환 (기존 배너용)
   const driftStatus = totalScore >= 75
@@ -1087,10 +1086,10 @@ export function calculateHealthScore(
         diversificationBonus: realEstateBonus,
         bonusReason,
         message: realEstateBonus >= 5
-          ? `포트폴리오 분산을 강화해요 (+${realEstateBonus}점 기여)`
+          ? t('checkup.realestate_msg.strong', { pts: realEstateBonus })
           : realEstateBonus >= 1
-          ? `안정 기반으로 건강 점수에 기여해요 (+${realEstateBonus}점)`
-          : '부동산 비중 또는 대출 조건을 점검해보세요',
+          ? t('checkup.realestate_msg.moderate', { pts: realEstateBonus })
+          : t('checkup.realestate_msg.review'),
       }
     : undefined;
 

@@ -3764,7 +3764,24 @@
     "vipLounge": "VIP Lounge",
     "noPosts": "No posts yet",
     "tagline": "Meet fellow investors sharing the same concerns in our community",
-    "eligibilityHint": "Available for portfolios over ₩1,000,000"
+    "eligibilityHint": "Available for portfolios over ₩1,000,000",
+    "fetch_error": "Failed to load posts.",
+    "post_threshold_error": "Posting requires portfolio of ₩30,000,000 or more.",
+    "comment_threshold_error": "Commenting requires portfolio of ₩3,000,000 or more.",
+    "like_notification_title": "Like",
+    "like_notification_message": "Someone liked your post",
+    "only_own_comment_edit": "You can only edit your own comments.",
+    "only_own_comment_delete": "You can only delete your own comments.",
+    "already_deleted_comment": "This comment has already been deleted.",
+    "delete_comment_failed": "Failed to delete comment. Please try again.",
+    "only_own_post_delete": "You can only delete your own posts.",
+    "already_deleted_post": "This post has already been deleted.",
+    "delete_post_failed": "Failed to delete post. Please try again.",
+    "delete_verify_error": "Could not verify deletion. Please try again.",
+    "delete_pending_error": "Deletion is still in progress. Please try again.",
+    "post_not_found": "Post not found.",
+    "only_author_best_answer": "Only the post author can select best answer.",
+    "best_answer_not_ready": "Best answer feature is being prepared."
   },
   "community_category": {
     "all": "All",
@@ -5091,6 +5108,62 @@
       "moreAdvanced": "More advanced",
       "moreDetail": "More detail",
       "simpler": "Simpler"
+    },
+    "factor_comments": {
+      "add_assets": "Add some assets to get started",
+      "drift_good": "Allocation matches your target well",
+      "drift_mild": "{{cat}} allocation differs by {{pct}}%p from target",
+      "drift_mod": "{{cat}} and other allocations need adjustment",
+      "drift_bad": "Multiple asset classes need rebalancing",
+      "risk_unmeasurable": "Risk cannot be measured",
+      "risk_good": "Risk is well diversified",
+      "risk_concentrated": "{{pct}}% risk concentrated in {{name}}!",
+      "corr_single": "Only one type of asset held",
+      "corr_high": "Many assets move similarly",
+      "corr_good": "Assets are well diversified",
+      "corr_optimal": "Correlation is at an optimal level",
+      "vol_low": "Low volatility - very stable",
+      "vol_ok": "Volatility at {{pct}}% - within normal range",
+      "vol_high": "Volatility at {{pct}}% - somewhat high",
+      "loss_none": "All holdings are in profit",
+      "loss_count": "{{count}} holdings are at a loss",
+      "tax_none": "No tax-saving opportunities (good sign!)",
+      "tax_opportunity": "{{count}} holdings have tax-saving opportunities",
+      "leverage_none": "No loans (safe!)",
+      "leverage_safe": "Loans are safely managed",
+      "leverage_mod": "Leverage risk at {{pct}}%",
+      "leverage_high": "High leverage risk ({{pct}}%)",
+      "philosophy_na": "No stocks held - N/A",
+      "philosophy_good": "Portfolio aligns well with your investment philosophy",
+      "philosophy_mod": "Consider adjusting some holdings to match your philosophy",
+      "philosophy_bad": "Holdings differ significantly from your philosophy"
+    },
+    "friendly_labels": {
+      "drift": "allocation weights",
+      "concentration": "concentration risk",
+      "correlation": "diversification",
+      "volatility": "price volatility",
+      "downside": "loss risk",
+      "tax": "tax efficiency"
+    },
+    "summary": {
+      "excellent": "Your portfolio is in excellent health!",
+      "good": "Overall good. Adjusting {{factor}} will make it even better",
+      "fair": "{{factor}} has changed. Adjust in the Analysis tab to improve your score",
+      "poor": "Your portfolio needs review. Check the Analysis tab"
+    },
+    "realestate_bonus": {
+      "ltv_over100": "LTV is over 100%. Be careful with your loan burden.",
+      "ltv_over80": "No diversification bonus due to high LTV (80%+)",
+      "ratio_high": "Real estate exceeds 90% - liquidity risk",
+      "high": "Real assets provide a buffer during financial crises",
+      "medium": "Real estate provides inflation hedge & diversification",
+      "low": "Real estate slightly reduces portfolio volatility"
+    },
+    "realestate_msg": {
+      "strong": "Strengthens portfolio diversification (+{{pts}} points)",
+      "moderate": "Contributes to health score as a stable base (+{{pts}} pts)",
+      "review": "Review your real estate ratio or loan terms"
     }
   },
   "whatIf": {

@@ -170,7 +170,7 @@ export default function PollCard({ poll, onVote, isVoting }: PollCardProps) {
               <Text style={[
                 styles.barLabel,
                 poll.myVote === 'YES' && styles.barLabelHighlight,
-              ]}>
+              ]} numberOfLines={1}>
                 {poll.yes_label}
                 {poll.myVote === 'YES' && ` ${t('predictions.poll.myChoice')}`}
                 {isResolved && poll.correct_answer === 'YES' && ` ${t('predictions.poll.correctAnswer')}`}
@@ -198,7 +198,7 @@ export default function PollCard({ poll, onVote, isVoting }: PollCardProps) {
               <Text style={[
                 styles.barLabel,
                 poll.myVote === 'NO' && styles.barLabelHighlight,
-              ]}>
+              ]} numberOfLines={1}>
                 {poll.no_label}
                 {poll.myVote === 'NO' && ` ${t('predictions.poll.myChoice')}`}
                 {isResolved && poll.correct_answer === 'NO' && ` ${t('predictions.poll.correctAnswer')}`}
@@ -376,6 +376,7 @@ const styles = StyleSheet.create({
   barLabel: {
     fontSize: 13,
     color: '#AAAAAA',
+    flex: 1,
   },
   barLabelHighlight: {
     color: '#FFFFFF',

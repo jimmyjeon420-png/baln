@@ -307,11 +307,20 @@ serve(async (req: Request) => {
       await sleep(delayMs);
     }
 
-    // Task E-1: 예측 질문 생성 (Gemini) — ★ 재시도 적용
+    // Task E-1: 예측 질문 생성 (Gemini) — ★ 각 언어 = 독립 서버
     if (shouldRun('E') || shouldRun('E1') || shouldRun('E-1')) {
-      console.log('[Task E-1] 시작: 예측 질문 생성...');
+      console.log('[Task E-1] 시작: 예측 질문 생성 (모든 언어)...');
       const taskStartedAt = Date.now();
-      predictionsResult = await safe(() => retryWithBackoff('Task E-1', () => generatePredictionPolls(lang)));
+      // 각 언어 서버에 독립적으로 폴 생성 (ko, en, ja)
+      const predictionLangs = ['ko', 'en', 'ja'];
+      const predictionResults = [];
+      for (const predLang of predictionLangs) {
+        console.log(`[Task E-1] ${predLang} 서버 질문 생성...`);
+        const result = await safe(() => retryWithBackoff(`Task E-1 (${predLang})`, () => generatePredictionPolls(predLang)));
+        predictionResults.push({ lang: predLang, result });
+        await sleep(1000); // Gemini rate limit 방지
+      }
+      predictionsResult = predictionResults[0]?.result; // 메트릭용 (ko 결과)
       await logTaskMetric('E-1', taskStartedAt, predictionsResult);
       await sleep(delayMs);
     }

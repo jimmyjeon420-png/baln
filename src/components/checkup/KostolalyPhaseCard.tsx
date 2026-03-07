@@ -35,8 +35,10 @@ import { useLocale } from '../../context/LocaleContext';
 import {
   KostolalyPhase,
   KOSTOLANY_PHASE_NAMES,
+  KOSTOLANY_PHASE_NAMES_EN,
   KOSTOLANY_PHASE_EMOJIS,
   KOSTOLANY_PHASE_DESCRIPTIONS,
+  KOSTOLANY_PHASE_DESCRIPTIONS_EN,
   KOSTOLANY_TARGETS,
   AssetCategory,
 } from '../../services/rebalanceScore';
@@ -70,39 +72,63 @@ const PHASE_COLORS: Record<KostolalyPhase, string> = {
 interface PhaseHistoricalPerf {
   annualReturn: string;    // 연간 기대 수익률 범위
   maxDrawdown: string;     // 최대 낙폭 기준
-  note: string;            // 역사적 사례 한 줄
+  note: Record<string, string>;  // 역사적 사례 한 줄 (i18n)
 }
 
 const PHASE_HISTORICAL_PERF: Record<KostolalyPhase, PhaseHistoricalPerf> = {
   A: {
     annualReturn: '+12~18%',
     maxDrawdown: '-8%',
-    note: '2009년 3월, 2020년 3월 이후 1년 — S&P500 +68%, +75%',
+    note: {
+      ko: '2009년 3월, 2020년 3월 이후 1년 — S&P500 +68%, +75%',
+      en: 'Mar 2009, Mar 2020 — S&P500 +68%, +75% within 1 year',
+      ja: '2009年3月、2020年3月以降1年 — S&P500 +68%、+75%',
+    },
   },
   B: {
     annualReturn: '+8~15%',
     maxDrawdown: '-12%',
-    note: '2009~2010년, 2020~2021년 상승기 — 달리오 All-Weather 연 +10.5%',
+    note: {
+      ko: '2009~2010년, 2020~2021년 상승기 — 달리오 All-Weather 연 +10.5%',
+      en: '2009–2010, 2020–2021 bull run — Dalio All-Weather +10.5%/yr',
+      ja: '2009～2010年、2020～2021年上昇期 — ダリオAll-Weather年+10.5%',
+    },
   },
   C: {
     annualReturn: '+3~7%',
     maxDrawdown: '-20%',
-    note: '2000년 초, 2021년 말 — 방어 포지션이 MDD 절반으로 줄임',
+    note: {
+      ko: '2000년 초, 2021년 말 — 방어 포지션이 MDD 절반으로 줄임',
+      en: 'Early 2000, late 2021 — defensive positions cut MDD in half',
+      ja: '2000年初、2021年末 — 防御ポジションがMDDを半減',
+    },
   },
   D: {
     annualReturn: '-3~+4%',
     maxDrawdown: '-25%',
-    note: '2001~2002년, 2022년 금리 인상기 — 채권·금 비중이 손실 방어',
+    note: {
+      ko: '2001~2002년, 2022년 금리 인상기 — 채권·금 비중이 손실 방어',
+      en: '2001–2002, 2022 rate hike era — bonds & gold hedged losses',
+      ja: '2001～2002年、2022年利上げ期 — 債券・金比率が損失を防御',
+    },
   },
   E: {
     annualReturn: '-5~+2%',
     maxDrawdown: '-35%',
-    note: '2008년 9~12월, 2020년 3월 — 현금 비중이 생명선',
+    note: {
+      ko: '2008년 9~12월, 2020년 3월 — 현금 비중이 생명선',
+      en: 'Sep–Dec 2008, Mar 2020 — cash allocation was the lifeline',
+      ja: '2008年9～12月、2020年3月 — 現金比率が生命線',
+    },
   },
   F: {
     annualReturn: '+5~12%',
     maxDrawdown: '-10%',
-    note: '2009년 초, 2022년 말 — 바닥 매수 시 12개월 내 반등 패턴',
+    note: {
+      ko: '2009년 초, 2022년 말 — 바닥 매수 시 12개월 내 반등 패턴',
+      en: 'Early 2009, late 2022 — buying the bottom led to recovery within 12 months',
+      ja: '2009年初、2022年末 — 底値買いで12ヶ月以内に反発パターン',
+    },
   },
 };
 
@@ -125,7 +151,7 @@ interface KostolalyPhaseCardProps {
 
 export default function KostolalyPhaseCard({ onApplyPhase }: KostolalyPhaseCardProps) {
   const { colors } = useTheme();
-  const { t } = useLocale();
+  const { t, language } = useLocale();
   const { data, phase, target, isLoading, isError } = useKostolalyPhase();
   const [showDetail, setShowDetail] = useState(false);
   const s = createStyles(colors);
@@ -159,9 +185,9 @@ export default function KostolalyPhaseCard({ onApplyPhase }: KostolalyPhaseCardP
   }
 
   const phaseColor = PHASE_COLORS[phase];
-  const phaseName = KOSTOLANY_PHASE_NAMES[phase];
+  const phaseName = language === 'ko' ? KOSTOLANY_PHASE_NAMES[phase] : KOSTOLANY_PHASE_NAMES_EN[phase];
   const phaseEmoji = KOSTOLANY_PHASE_EMOJIS[phase];
-  const phaseDesc = KOSTOLANY_PHASE_DESCRIPTIONS[phase];
+  const phaseDesc = language === 'ko' ? KOSTOLANY_PHASE_DESCRIPTIONS[phase] : KOSTOLANY_PHASE_DESCRIPTIONS_EN[phase];
   const phaseTarget = target ?? KOSTOLANY_TARGETS[phase];
 
   // 달걀 모형 렌더링 (3열 그리드)
@@ -211,7 +237,9 @@ export default function KostolalyPhaseCard({ onApplyPhase }: KostolalyPhaseCardP
                     s.eggCellName,
                     { color: isActive ? 'rgba(255,255,255,0.9)' : cellColor + 'AA' },
                   ]} numberOfLines={1}>
-                    {KOSTOLANY_PHASE_NAMES[cellPhase].replace(' 국면', '').replace(' 초기', '초')}
+                    {language === 'ko'
+                      ? KOSTOLANY_PHASE_NAMES[cellPhase].replace(' 국면', '').replace(' 초기', '초')
+                      : KOSTOLANY_PHASE_NAMES_EN[cellPhase]}
                   </Text>
                 </View>
               );
@@ -341,7 +369,7 @@ export default function KostolalyPhaseCard({ onApplyPhase }: KostolalyPhaseCardP
             </View>
             <View style={[s.histPerfNote, { backgroundColor: colors.surfaceElevated }]}>
               <Ionicons name="time-outline" size={10} color={colors.textTertiary} />
-              <Text style={[s.histPerfNoteText, { color: colors.textTertiary }]}>{perf.note}</Text>
+              <Text style={[s.histPerfNoteText, { color: colors.textTertiary }]}>{perf.note[language] || perf.note.ko}</Text>
             </View>
             <Text style={[s.histPerfDisclaimer, { color: colors.textTertiary }]}>
               {t('rebalance.kostolany_phase.disclaimer')}
