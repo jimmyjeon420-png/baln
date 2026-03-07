@@ -64,7 +64,7 @@ let pendingRefresh: Promise<unknown> | null = null;
  *   그 빈 결과가 React Query에 "성공"으로 캐시되어 30분간 데이터가 안 보이는 버그가 있었음.
  *   이제 만료 토큰이면 refreshSession()을 먼저 호출한 후 user를 반환함.
  */
-export async function getCurrentUser() {
+export async function getCurrentUser(): Promise<{ id: string; email?: string; [key: string]: unknown } | null> {
   try {
     // 1차: 로컬 세션 조회 (AsyncStorage, 빠름)
     // 시뮬레이터 콜드스타트 시 AsyncStorage가 느릴 수 있어 10초로 여유 확보
@@ -76,7 +76,8 @@ export async function getCurrentUser() {
     if (!result) {
       if (__DEV__) console.warn('[Supabase] getSession 10초 타임아웃 — refreshSession 시도');
     } else {
-      const session = (result as { data?: { session?: { user?: unknown; access_token?: string } } })?.data?.session;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const session = (result as any)?.data?.session as { user?: { id: string; email?: string; [key: string]: unknown }; access_token?: string } | undefined;
       if (session?.user) {
         // ★ 토큰 만료 검증: 만료됐으면 user를 바로 반환하지 않고 갱신 시도
         if (session.access_token && !isTokenExpired(session.access_token)) {
@@ -103,7 +104,7 @@ export async function getCurrentUser() {
       return null;
     }
 
-    const refreshedUser = (refreshResult as { data?: { session?: { user?: unknown } } })?.data?.session?.user ?? null;
+    const refreshedUser = (refreshResult as { data?: { session?: { user?: { id: string; email?: string; [key: string]: unknown } } } })?.data?.session?.user ?? null;
     if (refreshedUser) {
       if (__DEV__) console.log('[Supabase] refreshSession 성공 — 유효한 세션 복구됨');
     }
