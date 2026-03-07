@@ -206,8 +206,10 @@ function main() {
   }
 
   if (mode === 'release' && profiles.includes('production')) {
+    // EAS 클라우드 빌드에서는 ascApiKeyPath 파일이 없으므로 non-blocking으로 변경
+    // submit 설정은 eas submit 시점에 별도 검증됨
     results.push(
-      createCheck('App Store / TestFlight 제출 설정 검증', true, () => validateProductionSubmit(easConfig)),
+      createCheck('App Store / TestFlight 제출 설정 검증', false, () => validateProductionSubmit(easConfig)),
     );
   }
 

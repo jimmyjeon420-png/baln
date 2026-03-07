@@ -3,16 +3,18 @@
  *
  * 역할:
  *   - 현재 표시 언어를 React state로 보유
- *   - setAppLanguage() 호출 시 i18n.locale 동기화 + 모든 화면 자동 리렌더
- *   - t() 함수를 context로 제공 (언어 변경 시 자동 반영)
- *   - AsyncStorage에 선택 언어 저장 (앱 재시작 시 유지)
+ *   - 언어 변경 시 AsyncStorage에 저장 + 앱 리로드 (아이폰 설정 방식)
+ *   - t() 함수를 context로 제공
+ *   - 앱 시작 시 저장된 언어로 i18n 초기화
  *
- * 비유: 공항 안내 방송 시스템 — 언어 스위치를 누르면 모든 안내판이 동시에 바뀌는 것
+ * 비유: 아이폰 설정 앱 — 언어 바꾸면 앱이 재시작되어 모든 화면이 새 언어로 표시
  */
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Alert } from 'react-native';
 import { getLocales } from 'expo-localization';
+import * as Updates from 'expo-updates';
 import type { DisplayLanguage } from '../types/i18n';
 import i18n, { t as rawT } from '../locales';
 
@@ -29,9 +31,10 @@ const STORAGE_KEY = '@baln:display_language';
 interface LocaleContextType {
   /** 현재 표시 언어 ('ko' | 'en') */
   language: DisplayLanguage;
-  /** 언어 변경 함수 — i18n.locale 동기화 + state 업데이트 + AsyncStorage 저장 */
+  /** 언어 변경 함수 — AsyncStorage 저장 + 리로드 확인 팝업 */
   setAppLanguage: (lang: DisplayLanguage) => void;
   /** 번역 함수 — 현재 언어에 맞는 문자열 반환 */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   t: (key: string, options?: Record<string, any>) => string;
 }
 
@@ -69,16 +72,45 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
     })();
   }, []);
 
-  const setAppLanguage = useCallback((lang: DisplayLanguage) => {
-    i18n.locale = lang;
-    setLanguage(lang);
-    AsyncStorage.setItem(STORAGE_KEY, lang).catch(() => {
-      /* 저장 실패는 무시 — 다음 실행 시 기기 언어로 폴백 */
-    });
-  }, []);
+  const setAppLanguage = useCallback((newLang: DisplayLanguage) => {
+    if (newLang === language) return;
+
+    const langLabel = newLang === 'ko' ? '한국어' : 'English';
+    const title = language === 'ko'
+      ? '언어 변경'
+      : 'Change Language';
+    const message = language === 'ko'
+      ? `${langLabel}로 변경하려면 앱을 다시 시작해야 합니다.`
+      : `Changing to ${langLabel} requires an app restart.`;
+    const cancelText = language === 'ko' ? '취소' : 'Cancel';
+    const confirmText = language === 'ko' ? '재시작' : 'Restart';
+
+    Alert.alert(title, message, [
+      { text: cancelText, style: 'cancel' },
+      {
+        text: confirmText,
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await AsyncStorage.setItem(STORAGE_KEY, newLang);
+            // expo-updates reloadAsync로 앱 재시작
+            await Updates.reloadAsync();
+          } catch {
+            // Updates.reloadAsync 실패 시 (dev 환경 등) 수동 안내
+            const fallbackMsg = language === 'ko'
+              ? '앱을 완전히 종료한 후 다시 실행해주세요.'
+              : 'Please close and reopen the app.';
+            Alert.alert('', fallbackMsg);
+            // 저장은 완료했으므로 다음 실행 시 적용됨
+          }
+        },
+      },
+    ]);
+  }, [language]);
 
   // t()를 language에 의존시켜 리렌더 트리거
   const t = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (key: string, options?: Record<string, any>): string => {
       // language를 참조해야 React가 변경을 감지함
       void language;

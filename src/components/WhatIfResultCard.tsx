@@ -19,6 +19,7 @@ export default function WhatIfResultCard({ result }: Props) {
   const totalImpact = result.totalImpact ?? { changePercent: 0, currentTotal: 0, projectedTotal: 0, changeAmount: 0 };
   const riskAssessment = result.riskAssessment ?? { overallRisk: 'MEDIUM' as const, vulnerabilities: [], hedgingSuggestions: [] };
   const assetImpacts = result.assetImpacts ?? [];
+  const currSym = t('whatIfResult.currencySymbol');
 
   const isNegative = totalImpact.changePercent < 0;
   const impactColor = isNegative ? '#CF6679' : '#4CAF50';
@@ -44,14 +45,14 @@ export default function WhatIfResultCard({ result }: Props) {
           <View style={styles.impactItem}>
             <Text style={styles.impactLabel}>{t('whatIfResult.current')}</Text>
             <Text style={styles.impactValue}>
-              ₩{Math.floor(totalImpact.currentTotal ?? 0).toLocaleString()}
+              {currSym}{Math.floor(totalImpact.currentTotal ?? 0).toLocaleString()}
             </Text>
           </View>
           <Ionicons name="arrow-forward" size={20} color="#555" />
           <View style={styles.impactItem}>
             <Text style={styles.impactLabel}>{t('whatIfResult.projected')}</Text>
             <Text style={[styles.impactValue, { color: impactColor }]}>
-              ₩{Math.floor(totalImpact.projectedTotal ?? 0).toLocaleString()}
+              {currSym}{Math.floor(totalImpact.projectedTotal ?? 0).toLocaleString()}
             </Text>
           </View>
         </View>
@@ -59,7 +60,7 @@ export default function WhatIfResultCard({ result }: Props) {
           <Text style={[styles.changeText, { color: impactColor }]}>
             {isNegative ? '' : '+'}
             {(totalImpact.changePercent ?? 0).toFixed(1)}%
-            ({isNegative ? '' : '+'}₩{Math.floor(Math.abs(totalImpact.changeAmount ?? 0)).toLocaleString()})
+            ({isNegative ? '' : '+'}{currSym}{Math.floor(Math.abs(totalImpact.changeAmount ?? 0)).toLocaleString()})
           </Text>
         </View>
       </View>

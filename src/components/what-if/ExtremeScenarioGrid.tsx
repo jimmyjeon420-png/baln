@@ -11,7 +11,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useTheme } from '../../hooks/useTheme';
 import { useLocale } from '../../context/LocaleContext';
 import {
-  getExtremeScenarios,
+  getScenariosByLocale,
   CATEGORY_COLORS,
   type ExtremeScenario,
 } from '../../data/whatIfScenarios';
@@ -36,8 +36,8 @@ export const ExtremeScenarioGrid: React.FC<ExtremeScenarioGridProps> = ({
   disabled,
 }) => {
   const { colors } = useTheme();
-  const { t } = useLocale();
-  const scenarios = getExtremeScenarios(t);
+  const { t, language } = useLocale();
+  const scenarios = getScenariosByLocale(t, language);
 
   return (
     <View style={styles.container}>
