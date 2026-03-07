@@ -15,6 +15,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { useTheme } from '../../hooks/useTheme';
 import { useLocale, getCurrentDisplayLanguage } from '../../context/LocaleContext';
+import { getCurrencySymbol } from '../../utils/formatters';
 
 // ── 타입 정의 ──
 
@@ -87,6 +88,7 @@ function createArcPath(
 function defaultFormatCurrency(value: number): string {
   const abs = Math.abs(value);
   const lang = getCurrentDisplayLanguage();
+  const sym = getCurrencySymbol();
 
   if (lang === 'ko') {
     if (abs >= 100000000) {
@@ -100,25 +102,25 @@ function defaultFormatCurrency(value: number): string {
 
   if (lang === 'ja') {
     if (abs >= 100000000) {
-      return `${Math.round(value / 100000000).toLocaleString()}億ウォン`;
+      return `${Math.round(value / 100000000).toLocaleString()}億円`;
     }
     if (abs >= 10000) {
-      return `${Math.round(value / 10000).toLocaleString()}万ウォン`;
+      return `${Math.round(value / 10000).toLocaleString()}万円`;
     }
-    return `₩${Math.round(value).toLocaleString()}`;
+    return `${sym}${Math.round(value).toLocaleString()}`;
   }
 
   // English / other languages
   if (abs >= 1_000_000_000) {
-    return `₩${(value / 1_000_000_000).toFixed(1)}B`;
+    return `${sym}${(value / 1_000_000_000).toFixed(1)}B`;
   }
   if (abs >= 1_000_000) {
-    return `₩${(value / 1_000_000).toFixed(1)}M`;
+    return `${sym}${(value / 1_000_000).toFixed(1)}M`;
   }
   if (abs >= 1_000) {
-    return `₩${(value / 1_000).toFixed(1)}K`;
+    return `${sym}${(value / 1_000).toFixed(1)}K`;
   }
-  return `₩${Math.round(value).toLocaleString('en-US')}`;
+  return `${sym}${Math.round(value).toLocaleString('en-US')}`;
 }
 
 // ── 컴포넌트 ──

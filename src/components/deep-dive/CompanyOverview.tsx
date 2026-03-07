@@ -21,6 +21,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
 import { useLocale } from '../../context/LocaleContext';
+import { getCurrencySymbol } from '../../utils/formatters';
 
 // Android LayoutAnimation 활성화
 if (
@@ -109,11 +110,11 @@ export default function CompanyOverview({
     if (language === 'ja') {
       if (value >= 1_000_000_000_000) return `${Math.round(value / 1_000_000_000_000).toLocaleString()}兆`;
       if (value >= 100_000_000) return `${Math.round(value / 100_000_000).toLocaleString()}億`;
-      return `₩${value.toLocaleString()}`;
+      return `${getCurrencySymbol()}${value.toLocaleString()}`;
     }
-    if (value >= 1_000_000_000) return `₩${(value / 1_000_000_000).toFixed(1)}B`;
-    if (value >= 1_000_000) return `₩${(value / 1_000_000).toFixed(1)}M`;
-    return `₩${value.toLocaleString()}`;
+    if (value >= 1_000_000_000) return `${getCurrencySymbol()}${(value / 1_000_000_000).toFixed(1)}B`;
+    if (value >= 1_000_000) return `${getCurrencySymbol()}${(value / 1_000_000).toFixed(1)}M`;
+    return `${getCurrencySymbol()}${value.toLocaleString()}`;
   };
 
   // 직원 수 포맷

@@ -8,6 +8,7 @@ import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import { PieChart } from 'react-native-chart-kit';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocale } from '../context/LocaleContext';
+import { getCurrencySymbol } from '../utils/formatters';
 
 interface AssetData {
   name: string;
@@ -119,7 +120,7 @@ export default function AssetPieChart({ data, totalValue }: AssetPieChartProps) 
               </View>
               <View style={styles.legendRight}>
                 <Text style={styles.legendValue}>
-                  ₩{Math.floor(item.value).toLocaleString()}
+                  {getCurrencySymbol()}{Math.floor(item.value).toLocaleString()}
                 </Text>
                 <Text style={[styles.legendPercent, { color: item.color }]}>
                   {percentage}%
@@ -133,7 +134,7 @@ export default function AssetPieChart({ data, totalValue }: AssetPieChartProps) 
       {/* 총 자산 표시 */}
       <View style={styles.totalContainer}>
         <Text style={styles.totalLabel}>{t('assetPie.totalAssets')}</Text>
-        <Text style={styles.totalValue}>₩{Math.floor(totalValue).toLocaleString()}</Text>
+        <Text style={styles.totalValue}>{getCurrencySymbol()}{Math.floor(totalValue).toLocaleString()}</Text>
       </View>
     </View>
   );

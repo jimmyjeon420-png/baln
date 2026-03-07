@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
 import { useLocale } from '../../context/LocaleContext';
 import { INPUT_ACCESSORY_ID } from './types';
+import { getCurrencySymbol } from '../../utils/formatters';
 
 type CashType = 'CASH_KRW' | 'CASH_USD' | 'CASH_CMA';
 
@@ -72,7 +73,7 @@ export default function CashInputForm({
         </Text>
         <View style={[styles.priceInputRow, { backgroundColor: colors.surfaceLight, borderColor: colors.border }]}>
           <Text style={[styles.currencySymbol, { color: colors.textSecondary }]}>
-            {cashType === 'CASH_USD' ? '$' : '₩'}
+            {cashType === 'CASH_USD' ? '$' : getCurrencySymbol()}
           </Text>
           <TextInput
             style={[styles.priceInput, { color: colors.textPrimary }]}

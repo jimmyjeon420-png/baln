@@ -3,6 +3,7 @@
  */
 
 import { StockItem } from '../../data/stockList';
+import { getCurrencySymbol as getLocaleCurrencySymbol } from '../../utils/formatters';
 
 // ── Types ──
 
@@ -46,7 +47,7 @@ export function formatKRW(value: number): string {
 export function getCurrencySymbol(ticker: string): string {
   const upper = ticker.toUpperCase();
   if (/^\d{6}(\.KS|\.KQ)?$/i.test(upper) || upper.endsWith('.KS') || upper.endsWith('.KQ')) {
-    return '₩';
+    return getLocaleCurrencySymbol();
   }
   return '$';
 }

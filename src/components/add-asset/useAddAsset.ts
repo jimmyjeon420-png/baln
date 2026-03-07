@@ -12,6 +12,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import supabase, { getCurrentUser } from '../../services/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { useLocale } from '../../context/LocaleContext';
+import { getCurrencySymbol } from '../../utils/formatters';
 import { searchStocks, StockItem } from '../../data/stockList';
 import { fetchExchangeRate } from '../../services/stockDataService';
 import { SHARED_PORTFOLIO_KEY } from '../../hooks/useSharedPortfolio';
@@ -340,7 +341,7 @@ export function useAddAsset() {
       }
       const unit = selectedStock.category === 'crypto'
         ? t('add_asset.alert_done_unit_crypto') : t('add_asset.alert_done_unit_stock');
-      const valueInfo = currentValue > 0 ? ` (₩${currentValue.toLocaleString()})` : '';
+      const valueInfo = currentValue > 0 ? ` (${getCurrencySymbol()}${currentValue.toLocaleString()})` : '';
       Alert.alert(
         t('add_asset.alert_done_title'),
         `${name} ${finalQuantity}${unit}${valueInfo}이(가) 등록되었습니다.${rewardMsg}`,

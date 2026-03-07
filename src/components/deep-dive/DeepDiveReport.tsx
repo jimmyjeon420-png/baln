@@ -22,7 +22,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
 import { useLocale, getCurrentDisplayLanguage } from '../../context/LocaleContext';
 import type { DeepDiveResult } from '../../types/marketplace';
-import { getLocaleCode } from '../../utils/formatters';
+import { getLocaleCode, getCurrencySymbol } from '../../utils/formatters';
 
 // 기존 컴포넌트 import
 import ScoreRadar from './ScoreRadar';
@@ -508,30 +508,32 @@ export default function DeepDiveReport({ result }: DeepDiveReportProps) {
 
 // ── 유틸: 큰 숫자 포맷 (로케일 인식) ──
 // Korean: "약 1624.0조원", "약 3.2억원"
-// English: "~₩1,624.0T", "~₩3.2B", "~₩50.0M"
+// English: "~$1,624.0T", "~$3.2B", "~$50.0M"
+// Japanese: "約1,624.0兆円", "約3億円", "約50万円"
 function formatLargeNumber(value: number): string {
   const abs = Math.abs(value);
   const sign = value < 0 ? '-' : '';
   const lang = getCurrentDisplayLanguage();
+  const sym = getCurrencySymbol();
 
   if (lang === 'en') {
-    // English: use trillion / billion / million with ₩ prefix
+    // English: use trillion / billion / million with locale currency prefix
     if (abs >= 1_000_000_000_000) {
-      return `${sign}~₩${(abs / 1_000_000_000_000).toFixed(1)}T`;
+      return `${sign}~${sym}${(abs / 1_000_000_000_000).toFixed(1)}T`;
     }
     if (abs >= 1_000_000_000) {
-      return `${sign}~₩${(abs / 1_000_000_000).toFixed(1)}B`;
+      return `${sign}~${sym}${(abs / 1_000_000_000).toFixed(1)}B`;
     }
     if (abs >= 1_000_000) {
-      return `${sign}~₩${(abs / 1_000_000).toFixed(1)}M`;
+      return `${sign}~${sym}${(abs / 1_000_000).toFixed(1)}M`;
     }
     if (abs >= 1_000) {
-      return `${sign}~₩${(abs / 1_000).toFixed(1)}K`;
+      return `${sign}~${sym}${(abs / 1_000).toFixed(1)}K`;
     }
-    return `${sign}₩${abs.toLocaleString('en-US')}`;
+    return `${sign}${sym}${abs.toLocaleString('en-US')}`;
   }
 
-  // Non-English (ko, ja, etc.): 조원 / 억원 / 만원
+  // Korean: 조원 / 억원 / 만원
   if (lang === 'ko') {
     if (abs >= 1_0000_0000_0000) {
       return `${sign}약 ${(abs / 1_0000_0000_0000).toFixed(1)}조원`;
@@ -545,34 +547,34 @@ function formatLargeNumber(value: number): string {
     return `${sign}${abs.toLocaleString(getLocaleCode())}원`;
   }
 
-  // Japanese: 兆/億/万 units
+  // Japanese: 兆/億/万 units with ¥
   if (lang === 'ja') {
     if (abs >= 1_0000_0000_0000) {
-      return `${sign}約${(abs / 1_0000_0000_0000).toFixed(1)}兆ウォン`;
+      return `${sign}約${(abs / 1_0000_0000_0000).toFixed(1)}兆円`;
     }
     if (abs >= 1_0000_0000) {
-      return `${sign}約${(abs / 1_0000_0000).toFixed(0)}億ウォン`;
+      return `${sign}約${(abs / 1_0000_0000).toFixed(0)}億円`;
     }
     if (abs >= 1_0000) {
-      return `${sign}約${(abs / 1_0000).toFixed(0)}万ウォン`;
+      return `${sign}約${(abs / 1_0000).toFixed(0)}万円`;
     }
-    return `${sign}₩${abs.toLocaleString()}`;
+    return `${sign}${sym}${abs.toLocaleString()}`;
   }
 
-  // Fallback: use English-style formatting
+  // Fallback: use locale-aware currency symbol with English-style formatting
   if (abs >= 1_000_000_000_000) {
-    return `${sign}~₩${(abs / 1_000_000_000_000).toFixed(1)}T`;
+    return `${sign}~${sym}${(abs / 1_000_000_000_000).toFixed(1)}T`;
   }
   if (abs >= 1_000_000_000) {
-    return `${sign}~₩${(abs / 1_000_000_000).toFixed(1)}B`;
+    return `${sign}~${sym}${(abs / 1_000_000_000).toFixed(1)}B`;
   }
   if (abs >= 1_000_000) {
-    return `${sign}~₩${(abs / 1_000_000).toFixed(1)}M`;
+    return `${sign}~${sym}${(abs / 1_000_000).toFixed(1)}M`;
   }
   if (abs >= 1_000) {
-    return `${sign}~₩${(abs / 1_000).toFixed(1)}K`;
+    return `${sign}~${sym}${(abs / 1_000).toFixed(1)}K`;
   }
-  return `${sign}₩${abs.toLocaleString('en-US')}`;
+  return `${sign}${sym}${abs.toLocaleString('en-US')}`;
 }
 
 // ── 유틸: 시그널 색상 ──

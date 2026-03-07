@@ -28,6 +28,23 @@ export function isKoreanLocale(): boolean {
   return getCurrentLanguage() === 'ko';
 }
 
+/** 현재 로케일이 일본어인지 */
+export function isJapaneseLocale(): boolean {
+  return getCurrentLanguage() === 'ja';
+}
+
+/**
+ * 엔화 포맷 (¥120,000 / compact: 12万)
+ */
+export function formatJPY(amount: number, compact = false): string {
+  if (compact) {
+    if (amount >= 1_000_000_000_000) return `${Math.round(amount / 1_000_000_000_000).toLocaleString()}兆`;
+    if (amount >= 100_000_000) return `${Math.round(amount / 100_000_000).toLocaleString()}億`;
+    if (amount >= 10000) return `${Math.floor(amount / 10000).toLocaleString()}万`;
+  }
+  return `¥${amount.toLocaleString()}`;
+}
+
 /**
  * 로케일 기반 날짜 포맷 ("2월 12일" / "Feb 12")
  */
@@ -99,9 +116,8 @@ export function formatDateWithTime(date: Date, weekdayNames: string[]): string {
  * 자산 통화가 아닌 "표시 통화"를 기준으로 함
  */
 export function formatLocalAmount(amount: number, compact = false): string {
-  if (isKoreanLocale()) {
-    return formatKRW(amount, compact);
-  }
+  if (isKoreanLocale()) return formatKRW(amount, compact);
+  if (isJapaneseLocale()) return formatJPY(amount, compact);
   return formatUSD(amount, compact);
 }
 
@@ -109,7 +125,7 @@ export function formatLocalAmount(amount: number, compact = false): string {
  * 로케일 기반 컴팩트 금액 ("1.2억" / "$120M")
  */
 export function formatCompactAmount(amount: number): string {
-  if (isKoreanLocale()) {
+  if (isKoreanLocale() || isJapaneseLocale()) {
     if (amount >= 1_000_000_000_000) return t('format.compact_trillion', { n: Math.round(amount / 1_000_000_000_000).toLocaleString() });
     if (amount >= 100_000_000) return t('format.compact_billion', { n: (amount / 100_000_000).toFixed(1) });
     if (amount >= 10_000) return t('format.compact_thousand', { n: Math.floor(amount / 10_000).toLocaleString() });
@@ -126,7 +142,9 @@ export function formatCompactAmount(amount: number): string {
  * 로케일 기반 숫자 포맷 (toLocaleString 래퍼)
  */
 export function formatNumber(num: number): string {
-  return num.toLocaleString(isKoreanLocale() ? 'ko-KR' : 'en-US');
+  if (isKoreanLocale()) return num.toLocaleString('ko-KR');
+  if (isJapaneseLocale()) return num.toLocaleString('ja-JP');
+  return num.toLocaleString('en-US');
 }
 
 // ============================================================================
@@ -171,9 +189,14 @@ export function formatCredits(credits: number, showValue = true): string {
   if (!showValue) {
     return `${credits}${CREDIT_SYMBOL}`;
   }
+  const sym = getCurrencySymbol();
   if (isKoreanLocale()) {
     const krw = (credits * CREDIT_TO_KRW).toLocaleString();
-    return `${credits}${CREDIT_SYMBOL} (₩${krw})`;
+    return `${credits}${CREDIT_SYMBOL} (${sym}${krw})`;
+  }
+  if (isJapaneseLocale()) {
+    const jpy = Math.round(credits * CREDIT_TO_KRW * 0.11).toLocaleString(); // KRW→JPY 근사
+    return `${credits}${CREDIT_SYMBOL} (${sym}${jpy})`;
   }
   // English: USD display
   const usd = (credits * CREDIT_TO_USD).toFixed(2);
@@ -217,7 +240,7 @@ export function formatKRW(amount: number, compact = false): string {
       return `${Math.floor(amount / 10000).toLocaleString()}만`;
     }
   }
-  return `₩${amount.toLocaleString()}`;
+  return `₩${amount.toLocaleString()}`;  // KRW 전용 함수이므로 ₩ 고정
 }
 
 /**

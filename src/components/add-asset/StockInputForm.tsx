@@ -9,6 +9,7 @@ import { useTheme } from '../../hooks/useTheme';
 import { useLocale } from '../../context/LocaleContext';
 import { StockItem, getCategoryColor } from '../../data/stockList';
 import { ExistingAsset, INPUT_ACCESSORY_ID } from './types';
+import { getCurrencySymbol } from '../../utils/formatters';
 
 interface StockInputFormProps {
   selectedStock: StockItem | null;
@@ -76,7 +77,7 @@ export default function StockInputForm({
           </View>
         </View>
         <View style={[styles.priceInputRow, { backgroundColor: colors.surfaceLight, borderColor: colors.border }]}>
-          <Text style={[styles.currencySymbol, { color: colors.textSecondary }]}>₩</Text>
+          <Text style={[styles.currencySymbol, { color: colors.textSecondary }]}>{getCurrencySymbol()}</Text>
           <TextInput
             style={[styles.priceInput, { color: colors.textPrimary }]}
             placeholder={t('add_asset.total_cost_placeholder')}
@@ -119,11 +120,11 @@ export default function StockInputForm({
           <Text style={[styles.totalLabel, { color: colors.textSecondary }]}>{t('add_asset.total_label')}</Text>
           <View style={{ alignItems: 'flex-end' }}>
             <Text style={[styles.totalValue, { color: colors.primary }]}>
-              ₩{totalValue.toLocaleString()}
+              {getCurrencySymbol()}{totalValue.toLocaleString()}
             </Text>
             {parseFloat(quantity) > 0 && (
               <Text style={[styles.totalValueKrw, { color: colors.textSecondary }]}>
-                {`Avg ₩${Math.round(totalValue / (parseFloat(quantity) || 1)).toLocaleString()}`}
+                {`Avg ${getCurrencySymbol()}${Math.round(totalValue / (parseFloat(quantity) || 1)).toLocaleString()}`}
               </Text>
             )}
           </View>

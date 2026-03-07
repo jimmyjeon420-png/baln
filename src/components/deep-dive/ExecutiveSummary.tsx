@@ -21,6 +21,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
 import { useLocale } from '../../context/LocaleContext';
+import { getCurrencySymbol } from '../../utils/formatters';
 
 // Android LayoutAnimation 활성화
 if (
@@ -196,7 +197,7 @@ export default function ExecutiveSummary({
                   {t('deepDive.executiveSummary.currentPrice')}
                 </Text>
                 <Text style={[styles.priceValue, { color: colors.textPrimary }]}>
-                  ₩{currentPrice.toLocaleString()}
+                  {getCurrencySymbol()}{currentPrice.toLocaleString()}
                 </Text>
               </View>
 
@@ -212,7 +213,7 @@ export default function ExecutiveSummary({
                   {t('deepDive.executiveSummary.targetPrice')}
                 </Text>
                 <Text style={[styles.priceValue, { color: config.color }]}>
-                  ₩{targetPrice.toLocaleString()}
+                  {getCurrencySymbol()}{targetPrice.toLocaleString()}
                 </Text>
               </View>
             </View>

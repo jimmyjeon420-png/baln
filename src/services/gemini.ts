@@ -4,6 +4,7 @@ import supabase from './supabase';
 import { getPromptLanguageInstruction, getResponseLanguage, getLangParam, getFinanceTermGuide } from '../utils/promptLanguage';
 import { edgeInvokeErrorMessage, isTransientEdgeInvokeError } from '../utils/edgeInvokeError';
 import { getCurrentDisplayLanguage } from '../context/LocaleContext';
+import { getCurrencySymbol } from '../utils/formatters';
 import { invokeGeminiProxy } from './geminiProxy';
 
 // ============================================================================
@@ -2090,7 +2091,7 @@ export const generateDeepDive = async (
     const abs = Math.abs(v);
     if (abs >= 1e12) return `약 ${(v / 1e12).toFixed(1)}조원`;
     if (abs >= 1e8) return `약 ${(v / 1e8).toFixed(0)}억원`;
-    return `₩${v.toLocaleString()}`;
+    return `${getCurrencySymbol()}${v.toLocaleString()}`;
   };
 
   // --- 팩트 데이터 섹션 (API 조회 성공 시) ---
@@ -2103,7 +2104,7 @@ ${isUSD && exchangeRate ? `\n[적용 환율] 1 USD = ${exchangeRate.toFixed(2)} 
 ${isUSD ? '\n[★ 원화 표기 규칙] 미국 주식이므로 모든 금액(시가총액, 매출, 영업이익, 순이익 등)을 원화(₩)로 환산하여 표시하세요.' : ''}
 
 시가총액: ${fundamentals!.marketCapKRW != null ? fmtKRW(fundamentals!.marketCapKRW) : fundamentals!.marketCap!.toLocaleString() + '원'}${isUSD && fundamentals!.marketCap ? ` ($${(fundamentals!.marketCap / 1e9).toFixed(1)}B)` : ''}
-${fundamentals!.currentPrice != null ? (isUSD && exchangeRate ? `현재 주가: ₩${Math.round(fundamentals!.currentPrice * exchangeRate).toLocaleString()} ($${fundamentals!.currentPrice.toLocaleString()})` : `현재 주가: ₩${fundamentals!.currentPrice.toLocaleString()}`) : ''}
+${fundamentals!.currentPrice != null ? (isUSD && exchangeRate ? `현재 주가: ${getCurrencySymbol()}${Math.round(fundamentals!.currentPrice * exchangeRate).toLocaleString()} ($${fundamentals!.currentPrice.toLocaleString()})` : `현재 주가: ${getCurrencySymbol()}${fundamentals!.currentPrice.toLocaleString()}`) : ''}
 ${fundamentals!.trailingPE != null ? `PER (Trailing): ${fundamentals!.trailingPE.toFixed(2)}` : 'PER: 데이터 없음 — Google Search로 조회하세요'}
 ${fundamentals!.forwardPE != null ? `PER (Forward): ${fundamentals!.forwardPE.toFixed(2)}` : ''}
 ${fundamentals!.priceToBook != null ? `PBR: ${fundamentals!.priceToBook.toFixed(2)}` : 'PBR: 데이터 없음 — Google Search로 조회하세요'}
@@ -2131,7 +2132,7 @@ ${isUSD && exchangeRate ? `\n[Exchange Rate Applied] 1 USD = ${exchangeRate.toFi
 ${isUSD ? '\n[★ KRW Conversion Rule] This is a US-listed stock; convert all monetary amounts (market cap, revenue, operating income, net income, etc.) to KRW (₩).' : ''}
 
 Market Cap: ${fundamentals!.marketCapKRW != null ? fmtKRW(fundamentals!.marketCapKRW) : fundamentals!.marketCap!.toLocaleString() + ' KRW'}${isUSD && fundamentals!.marketCap ? ` ($${(fundamentals!.marketCap / 1e9).toFixed(1)}B)` : ''}
-${fundamentals!.currentPrice != null ? (isUSD && exchangeRate ? `Current Price: ₩${Math.round(fundamentals!.currentPrice * exchangeRate).toLocaleString()} ($${fundamentals!.currentPrice.toLocaleString()})` : `Current Price: ₩${fundamentals!.currentPrice.toLocaleString()}`) : ''}
+${fundamentals!.currentPrice != null ? (isUSD && exchangeRate ? `Current Price: ${getCurrencySymbol()}${Math.round(fundamentals!.currentPrice * exchangeRate).toLocaleString()} ($${fundamentals!.currentPrice.toLocaleString()})` : `Current Price: ${getCurrencySymbol()}${fundamentals!.currentPrice.toLocaleString()}`) : ''}
 ${fundamentals!.trailingPE != null ? `P/E Ratio (Trailing): ${fundamentals!.trailingPE.toFixed(2)}` : 'P/E Ratio: No data — look up via Google Search'}
 ${fundamentals!.forwardPE != null ? `P/E Ratio (Forward): ${fundamentals!.forwardPE.toFixed(2)}` : ''}
 ${fundamentals!.priceToBook != null ? `P/B Ratio: ${fundamentals!.priceToBook.toFixed(2)}` : 'P/B Ratio: No data — look up via Google Search'}
@@ -2192,8 +2193,8 @@ ${hasFundamentals
 
 [분석 대상]
 - 종목: ${input.name} (${input.ticker})
-${input.currentPrice ? `- 현재가: ₩${input.currentPrice.toLocaleString()}` : ''}
-${input.avgPrice ? `- 평균 매수가: ₩${input.avgPrice.toLocaleString()}` : ''}
+${input.currentPrice ? `- 현재가: ${getCurrencySymbol()}${input.currentPrice.toLocaleString()}` : ''}
+${input.avgPrice ? `- 평균 매수가: ${getCurrencySymbol()}${input.avgPrice.toLocaleString()}` : ''}
 ${input.quantity ? `- 보유 수량: ${input.quantity}주` : ''}` : `
 You are a senior Goldman Sachs analyst with a CFA designation.
 ${hasFundamentals
@@ -2202,8 +2203,8 @@ ${hasFundamentals
 
 [Subject of Analysis]
 - Stock: ${input.name} (${input.ticker})
-${input.currentPrice ? `- Current Price: ₩${input.currentPrice.toLocaleString()}` : ''}
-${input.avgPrice ? `- Average Buy Price: ₩${input.avgPrice.toLocaleString()}` : ''}
+${input.currentPrice ? `- Current Price: ${getCurrencySymbol()}${input.currentPrice.toLocaleString()}` : ''}
+${input.avgPrice ? `- Average Buy Price: ${getCurrencySymbol()}${input.avgPrice.toLocaleString()}` : ''}
 ${input.quantity ? `- Shares Held: ${input.quantity}` : ''}`) + `
 
 ${factDataSection}
@@ -2827,8 +2828,8 @@ export const generateWhatIf = async (
 
   const portfolioStr = input.portfolio
     .map(a => isKo
-      ? `${a.name}(${a.ticker}): ₩${a.currentValue.toLocaleString()} / 비중 ${a.allocation}%`
-      : `${a.name}(${a.ticker}): ₩${a.currentValue.toLocaleString()} / Weight ${a.allocation}%`)
+      ? `${a.name}(${a.ticker}): ${getCurrencySymbol()}${a.currentValue.toLocaleString()} / 비중 ${a.allocation}%`
+      : `${a.name}(${a.ticker}): ${getCurrencySymbol()}${a.currentValue.toLocaleString()} / Weight ${a.allocation}%`)
     .join('\n');
 
   const magnitude = input.magnitude || -20;
@@ -3056,10 +3057,10 @@ export const generateTaxReport = async (
 
   const portfolioStr = input.portfolio
     .map(a => isKo
-      ? `${a.name}(${a.ticker}): 현재 ₩${a.currentValue.toLocaleString()} / ` +
-        `매수 ₩${a.costBasis.toLocaleString()} / ${a.quantity}주 / 매수일 ${a.purchaseDate}`
-      : `${a.name}(${a.ticker}): Current ₩${a.currentValue.toLocaleString()} / ` +
-        `Cost basis ₩${a.costBasis.toLocaleString()} / ${a.quantity} shares / Purchased ${a.purchaseDate}`
+      ? `${a.name}(${a.ticker}): 현재 ${getCurrencySymbol()}${a.currentValue.toLocaleString()} / ` +
+        `매수 ${getCurrencySymbol()}${a.costBasis.toLocaleString()} / ${a.quantity}주 / 매수일 ${a.purchaseDate}`
+      : `${a.name}(${a.ticker}): Current ${getCurrencySymbol()}${a.currentValue.toLocaleString()} / ` +
+        `Cost basis ${getCurrencySymbol()}${a.costBasis.toLocaleString()} / ${a.quantity} shares / Purchased ${a.purchaseDate}`
     )
     .join('\n');
 
@@ -3072,7 +3073,7 @@ export const generateTaxReport = async (
 
 [사용자 정보]
 - 거주지: ${residencyLabel}
-${input.annualIncome ? `- 연 소득: ₩${input.annualIncome.toLocaleString()}` : '- 연 소득: 미입력'}
+${input.annualIncome ? `- 연 소득: ${getCurrencySymbol()}${input.annualIncome.toLocaleString()}` : '- 연 소득: 미입력'}
 
 [보유 포트폴리오]
 ${portfolioStr}
@@ -3129,7 +3130,7 @@ You are a certified tax professional (CPA/Tax Advisor). Provide a tax optimizati
 
 [User Information]
 - Residency: ${residencyLabel}
-${input.annualIncome ? `- Annual Income: ₩${input.annualIncome.toLocaleString()}` : '- Annual Income: Not provided'}
+${input.annualIncome ? `- Annual Income: ${getCurrencySymbol()}${input.annualIncome.toLocaleString()}` : '- Annual Income: Not provided'}
 
 [Current Portfolio]
 ${portfolioStr}
@@ -3263,12 +3264,12 @@ export const generateAICFOResponse = async (
   const portfolioContext = input.portfolioContext
     ? isKo ? `
 [사용자 포트폴리오 컨텍스트]
-- 총 자산: ₩${input.portfolioContext.totalAssets.toLocaleString()}
+- 총 자산: ${getCurrencySymbol()}${input.portfolioContext.totalAssets.toLocaleString()}
 - 투자 등급: ${input.portfolioContext.tier}
 - 주요 보유: ${input.portfolioContext.topHoldings.map(h => `${h.name}(${h.ticker}) ${h.allocation}%`).join(', ')}
 ` : `
 [User Portfolio Context]
-- Total Assets: ₩${input.portfolioContext.totalAssets.toLocaleString()}
+- Total Assets: ${getCurrencySymbol()}${input.portfolioContext.totalAssets.toLocaleString()}
 - Investment Tier: ${input.portfolioContext.tier}
 - Top Holdings: ${input.portfolioContext.topHoldings.map(h => `${h.name}(${h.ticker}) ${h.allocation}%`).join(', ')}
 `

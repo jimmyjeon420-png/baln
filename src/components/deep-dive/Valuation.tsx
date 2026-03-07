@@ -10,6 +10,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
 import { useLocale } from '../../context/LocaleContext';
+import { getCurrencySymbol } from '../../utils/formatters';
 
 // ============================================================================
 // 타입 정의
@@ -56,7 +57,7 @@ export default function Valuation({ data, onRefresh: _onRefresh }: ValuationProp
   // 가격 포맷
   const formatPrice = (price: number) => {
     if (data.currency === 'KRW') {
-      return `₩${price.toLocaleString()}`;
+      return `${getCurrencySymbol()}${price.toLocaleString()}`;
     }
     return `$${price.toFixed(2)}`;
   };

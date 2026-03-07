@@ -14,7 +14,7 @@
 
 import * as Sentry from '@sentry/react-native';
 import axios from 'axios';
-import { isKoreanLocale } from '../utils/formatters';
+import { isKoreanLocale, getCurrencySymbol } from '../utils/formatters';
 
 // ============================================================================
 // 타입 정의 (marketplace.ts와 동일 — re-export)
@@ -337,7 +337,7 @@ function formatAmountLocal(value: number): string {
       const man = abs / 10_000;
       return `${sign}약 ${man.toFixed(0)}만원`;
     }
-    return `${sign}₩${abs.toLocaleString()}`;
+    return `${sign}${getCurrencySymbol()}${abs.toLocaleString()}`;
   }
 
   // English: USD-style compact
@@ -390,9 +390,9 @@ export function fundamentalsToPromptText(data: StockFundamentals): string {
     const priceLabel = ko ? '현재 주가' : 'Current Price';
     if (isUSD && rate) {
       const priceKRW = Math.round(data.currentPrice * rate);
-      lines.push(`${priceLabel}: ₩${priceKRW.toLocaleString()} ($${data.currentPrice.toLocaleString()})`);
+      lines.push(`${priceLabel}: ${getCurrencySymbol()}${priceKRW.toLocaleString()} ($${data.currentPrice.toLocaleString()})`);
     } else {
-      lines.push(`${priceLabel}: ₩${data.currentPrice.toLocaleString()}`);
+      lines.push(`${priceLabel}: ${getCurrencySymbol()}${data.currentPrice.toLocaleString()}`);
     }
   }
 

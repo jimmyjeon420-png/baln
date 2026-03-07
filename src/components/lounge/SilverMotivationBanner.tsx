@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
 import { TIER_THRESHOLDS } from '../../types/community';
 import { useLocale } from '../../context/LocaleContext';
+import { getCurrencySymbol } from '../../utils/formatters';
 
 interface SilverMotivationBannerProps {
   totalAssets: number;
@@ -22,10 +23,10 @@ function formatAmount(amount: number, t: (key: string, opts?: any) => string, is
     }
     return t('silverBanner.format_man', { man: manWon.toLocaleString() });
   } else {
-    if (amount >= 1_000_000_000) return `₩${(amount / 1_000_000_000).toFixed(1)}B`;
-    if (amount >= 1_000_000) return `₩${(amount / 1_000_000).toFixed(1)}M`;
-    if (amount >= 1_000) return `₩${(amount / 1_000).toFixed(0)}K`;
-    return `₩${amount.toLocaleString()}`;
+    if (amount >= 1_000_000_000) return `${getCurrencySymbol()}${(amount / 1_000_000_000).toFixed(1)}B`;
+    if (amount >= 1_000_000) return `${getCurrencySymbol()}${(amount / 1_000_000).toFixed(1)}M`;
+    if (amount >= 1_000) return `${getCurrencySymbol()}${(amount / 1_000).toFixed(0)}K`;
+    return `${getCurrencySymbol()}${amount.toLocaleString()}`;
   }
 }
 
