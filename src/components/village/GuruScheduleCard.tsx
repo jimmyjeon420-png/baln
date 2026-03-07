@@ -32,27 +32,27 @@ interface GuruScheduleCardProps {
 // 활동 표시 매핑 -- 아이콘/한국어/영어
 // ============================================================================
 
-const ACTIVITY_DISPLAY: Record<string, { emoji: string; ko: string; en: string }> = {
-  reading: { emoji: '\uD83D\uDCD6', ko: '독서', en: 'Reading' },
-  meditating: { emoji: '\uD83E\uDDD8', ko: '명상', en: 'Meditating' },
-  walking: { emoji: '\uD83D\uDEB6', ko: '산책', en: 'Walking' },
-  fishing: { emoji: '\uD83C\uDFA3', ko: '낚시', en: 'Fishing' },
-  gardening: { emoji: '\uD83C\uDF31', ko: '정원 가꾸기', en: 'Gardening' },
-  cooking: { emoji: '\uD83C\uDF73', ko: '요리', en: 'Cooking' },
-  painting: { emoji: '\uD83C\uDFA8', ko: '그림 그리기', en: 'Painting' },
-  stargazing: { emoji: '\uD83C\uDF1F', ko: '별 보기', en: 'Stargazing' },
-  exercising: { emoji: '\uD83D\uDCAA', ko: '운동', en: 'Exercising' },
-  napping: { emoji: '\uD83D\uDE34', ko: '낮잠', en: 'Napping' },
-  dancing: { emoji: '\uD83D\uDC83', ko: '춤추기', en: 'Dancing' },
-  singing: { emoji: '\uD83C\uDFB5', ko: '노래 부르기', en: 'Singing' },
-  writing: { emoji: '\u270D\uFE0F', ko: '글쓰기', en: 'Writing' },
-  chess: { emoji: '\u265F\uFE0F', ko: '체스', en: 'Chess' },
-  tea_ceremony: { emoji: '\uD83C\uDF75', ko: '차 마시기', en: 'Tea Ceremony' },
-  debugging: { emoji: '\uD83D\uDD0D', ko: '데이터 분석', en: 'Data Analysis' },
-  birdwatching: { emoji: '\uD83D\uDC26', ko: '새 관찰', en: 'Birdwatching' },
-  yoga: { emoji: '\uD83E\uDDD8\u200D\u2642\uFE0F', ko: '요가', en: 'Yoga' },
-  photography: { emoji: '\uD83D\uDCF8', ko: '사진 찍기', en: 'Photography' },
-  surfing: { emoji: '\uD83C\uDFC4', ko: '서핑', en: 'Surfing' },
+const ACTIVITY_DISPLAY: Record<string, { emoji: string; ko: string; en: string; ja: string }> = {
+  reading: { emoji: '\uD83D\uDCD6', ko: '독서', en: 'Reading', ja: '読書' },
+  meditating: { emoji: '\uD83E\uDDD8', ko: '명상', en: 'Meditating', ja: '瞑想' },
+  walking: { emoji: '\uD83D\uDEB6', ko: '산책', en: 'Walking', ja: '散歩' },
+  fishing: { emoji: '\uD83C\uDFA3', ko: '낚시', en: 'Fishing', ja: '釣り' },
+  gardening: { emoji: '\uD83C\uDF31', ko: '정원 가꾸기', en: 'Gardening', ja: 'ガーデニング' },
+  cooking: { emoji: '\uD83C\uDF73', ko: '요리', en: 'Cooking', ja: '料理' },
+  painting: { emoji: '\uD83C\uDFA8', ko: '그림 그리기', en: 'Painting', ja: '絵画' },
+  stargazing: { emoji: '\uD83C\uDF1F', ko: '별 보기', en: 'Stargazing', ja: '星観察' },
+  exercising: { emoji: '\uD83D\uDCAA', ko: '운동', en: 'Exercising', ja: '運動' },
+  napping: { emoji: '\uD83D\uDE34', ko: '낮잠', en: 'Napping', ja: '昼寝' },
+  dancing: { emoji: '\uD83D\uDC83', ko: '춤추기', en: 'Dancing', ja: 'ダンス' },
+  singing: { emoji: '\uD83C\uDFB5', ko: '노래 부르기', en: 'Singing', ja: '歌' },
+  writing: { emoji: '\u270D\uFE0F', ko: '글쓰기', en: 'Writing', ja: '執筆' },
+  chess: { emoji: '\u265F\uFE0F', ko: '체스', en: 'Chess', ja: 'チェス' },
+  tea_ceremony: { emoji: '\uD83C\uDF75', ko: '차 마시기', en: 'Tea Ceremony', ja: 'お茶' },
+  debugging: { emoji: '\uD83D\uDD0D', ko: '데이터 분석', en: 'Data Analysis', ja: 'データ分析' },
+  birdwatching: { emoji: '\uD83D\uDC26', ko: '새 관찰', en: 'Birdwatching', ja: 'バードウォッチング' },
+  yoga: { emoji: '\uD83E\uDDD8\u200D\u2642\uFE0F', ko: '요가', en: 'Yoga', ja: 'ヨガ' },
+  photography: { emoji: '\uD83D\uDCF8', ko: '사진 찍기', en: 'Photography', ja: '写真' },
+  surfing: { emoji: '\uD83C\uDFC4', ko: '서핑', en: 'Surfing', ja: 'サーフィン' },
 };
 
 // ============================================================================
@@ -64,6 +64,7 @@ interface TimeSlotDisplay {
   emoji: string;
   labelKo: string;
   labelEn: string;
+  labelJa: string;
   hourRange: string;
   /** guruScheduleConfig의 TimeSlot 매핑 키들 */
   scheduleKeys: string[];
@@ -75,6 +76,7 @@ const TIME_SLOTS: TimeSlotDisplay[] = [
     emoji: '\uD83C\uDF05', // 일출
     labelKo: '아침',
     labelEn: 'Morning',
+    labelJa: '朝',
     hourRange: '06-12',
     scheduleKeys: ['morning', 'midday'],
   },
@@ -83,6 +85,7 @@ const TIME_SLOTS: TimeSlotDisplay[] = [
     emoji: '\u2600\uFE0F', // 해
     labelKo: '오후',
     labelEn: 'Afternoon',
+    labelJa: '午後',
     hourRange: '12-18',
     scheduleKeys: ['afternoon'],
   },
@@ -91,6 +94,7 @@ const TIME_SLOTS: TimeSlotDisplay[] = [
     emoji: '\uD83C\uDF19', // 달
     labelKo: '저녁',
     labelEn: 'Evening',
+    labelJa: '夕方',
     hourRange: '18-24',
     scheduleKeys: ['evening', 'night'],
   },
@@ -145,12 +149,15 @@ function GuruScheduleCard({ guruId, colors }: GuruScheduleCardProps) {
         emoji: '\uD83D\uDEB6',
         ko: activityKey,
         en: activityKey,
+        ja: activityKey,
       };
+
+      const fallbackName = language === 'ja' ? display.ja : isKo ? display.ko : display.en;
 
       return {
         slot,
         activityEmoji: display.emoji,
-        activityName: t(`guruActivity.${activityKey}`) || (isKo ? display.ko : display.en),
+        activityName: t(`guruActivity.${activityKey}`) || fallbackName,
         location: locationText,
         isActive: slot.id === currentSlot,
       };

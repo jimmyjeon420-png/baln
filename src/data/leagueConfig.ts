@@ -20,10 +20,18 @@ export interface LeagueTier {
   id: string;
   nameKo: string;
   nameEn: string;
+  nameJa: string;
   emoji: string;
   color: string;
   minRating: number;
   weeklyRewardCredits: number;
+}
+
+/** 언어별 티어 이름 */
+export function getTierName(tier: LeagueTier, lang: string): string {
+  if (lang === 'ja') return tier.nameJa;
+  if (lang === 'en') return tier.nameEn;
+  return tier.nameKo;
 }
 
 // ============================================================================
@@ -35,6 +43,7 @@ export const LEAGUE_TIERS: LeagueTier[] = [
     id: 'bronze',
     nameKo: '브론즈',
     nameEn: 'Bronze',
+    nameJa: 'ブロンズ',
     emoji: '\uD83E\uDD49',
     color: '#CD7F32',
     minRating: 0,
@@ -44,6 +53,7 @@ export const LEAGUE_TIERS: LeagueTier[] = [
     id: 'silver',
     nameKo: '실버',
     nameEn: 'Silver',
+    nameJa: 'シルバー',
     emoji: '\uD83E\uDD48',
     color: '#C0C0C0',
     minRating: 300,
@@ -53,6 +63,7 @@ export const LEAGUE_TIERS: LeagueTier[] = [
     id: 'gold',
     nameKo: '골드',
     nameEn: 'Gold',
+    nameJa: 'ゴールド',
     emoji: '\uD83E\uDD47',
     color: '#FFD700',
     minRating: 600,
@@ -62,6 +73,7 @@ export const LEAGUE_TIERS: LeagueTier[] = [
     id: 'platinum',
     nameKo: '플래티넘',
     nameEn: 'Platinum',
+    nameJa: 'プラチナ',
     emoji: '\uD83D\uDC8E',
     color: '#B9F2FF',
     minRating: 1000,
@@ -71,6 +83,7 @@ export const LEAGUE_TIERS: LeagueTier[] = [
     id: 'diamond',
     nameKo: '다이아몬드',
     nameEn: 'Diamond',
+    nameJa: 'ダイヤモンド',
     emoji: '\uD83D\uDCA0',
     color: '#00BFFF',
     minRating: 1500,
@@ -80,6 +93,7 @@ export const LEAGUE_TIERS: LeagueTier[] = [
     id: 'legend',
     nameKo: '레전드',
     nameEn: 'Legend',
+    nameJa: 'レジェンド',
     emoji: '\uD83D\uDC51',
     color: '#FF4500',
     minRating: 2000,

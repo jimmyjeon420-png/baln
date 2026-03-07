@@ -18,6 +18,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 import type { WhatIfResult } from '../../types/marketplace';
 
 // Android LayoutAnimation 활성화
@@ -38,6 +39,7 @@ export const AssetImpactWaterfall: React.FC<AssetImpactWaterfallProps> = ({
   result,
 }) => {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const [isExpanded, setIsExpanded] = useState(false);
 
   const impacts = result.assetImpacts ?? [];
@@ -67,11 +69,11 @@ export const AssetImpactWaterfall: React.FC<AssetImpactWaterfallProps> = ({
   const getImpactLabel = (level: string) => {
     switch (level) {
       case 'HIGH':
-        return '높음';
+        return t('stress_report.waterfall.impact_high');
       case 'MEDIUM':
-        return '보통';
+        return t('stress_report.waterfall.impact_medium');
       default:
-        return '낮음';
+        return t('stress_report.waterfall.impact_low');
     }
   };
 
@@ -80,7 +82,7 @@ export const AssetImpactWaterfall: React.FC<AssetImpactWaterfallProps> = ({
   return (
     <View style={[s.container, { backgroundColor: colors.surface }]}>
       <Text style={[s.sectionTitle, { color: colors.textPrimary }]}>
-        자산별 영향 분석
+        {t('stress_report.waterfall.title')}
       </Text>
 
       <View style={s.assetList}>
@@ -138,8 +140,8 @@ export const AssetImpactWaterfall: React.FC<AssetImpactWaterfallProps> = ({
         >
           <Text style={[s.expandText, { color: colors.primary }]}>
             {isExpanded
-              ? '접기'
-              : `나머지 ${hiddenCount}개 보기`}
+              ? t('stress_report.waterfall.collapse')
+              : t('stress_report.waterfall.show_more', { count: hiddenCount })}
           </Text>
           <Ionicons
             name={isExpanded ? 'chevron-up' : 'chevron-down'}

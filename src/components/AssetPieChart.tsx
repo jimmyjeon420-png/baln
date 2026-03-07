@@ -85,7 +85,7 @@ export default function AssetPieChart({ data, totalValue }: AssetPieChartProps) 
       {/* 헤더 */}
       <View style={styles.header}>
         <Ionicons name="pie-chart" size={22} color="#4CAF50" />
-        <Text style={styles.title}>자산 배분</Text>
+        <Text style={styles.title}>{t('assetPie.title')}</Text>
       </View>
 
       {/* 파이 차트 */}
@@ -132,7 +132,7 @@ export default function AssetPieChart({ data, totalValue }: AssetPieChartProps) 
 
       {/* 총 자산 표시 */}
       <View style={styles.totalContainer}>
-        <Text style={styles.totalLabel}>총 자산</Text>
+        <Text style={styles.totalLabel}>{t('assetPie.totalAssets')}</Text>
         <Text style={styles.totalValue}>₩{Math.floor(totalValue).toLocaleString()}</Text>
       </View>
     </View>

@@ -98,6 +98,16 @@ function defaultFormatCurrency(value: number): string {
     return `${Math.round(value).toLocaleString()}원`;
   }
 
+  if (lang === 'ja') {
+    if (abs >= 100000000) {
+      return `${Math.round(value / 100000000).toLocaleString()}億ウォン`;
+    }
+    if (abs >= 10000) {
+      return `${Math.round(value / 10000).toLocaleString()}万ウォン`;
+    }
+    return `₩${Math.round(value).toLocaleString()}`;
+  }
+
   // English / other languages
   if (abs >= 1_000_000_000) {
     return `₩${(value / 1_000_000_000).toFixed(1)}B`;

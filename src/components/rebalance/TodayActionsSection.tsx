@@ -756,7 +756,7 @@ export default function TodayActionsSection({
               borderColor: `${PHASE_COLORS[activePhase]}50`,
             }]}>
               <Text style={[s.phasePreviewTagText, { color: PHASE_COLORS[activePhase] }]}>
-                {KOSTOLANY_PHASE_EMOJIS[activePhase]} {language === 'ko' ? `${activePhase}단계 · ${KOSTOLANY_PHASE_NAMES[activePhase]}` : `Phase ${activePhase} · ${KOSTOLANY_PHASE_NAMES_EN[activePhase]}`}
+                {KOSTOLANY_PHASE_EMOJIS[activePhase]} {language === 'ko' ? `${activePhase}단계 · ${KOSTOLANY_PHASE_NAMES[activePhase]}` : language === 'ja' ? `${activePhase}段階 · ${KOSTOLANY_PHASE_NAMES_EN[activePhase]}` : `Phase ${activePhase} · ${KOSTOLANY_PHASE_NAMES_EN[activePhase]}`}
               </Text>
             </View>
             {phaseData?.confidence != null && (

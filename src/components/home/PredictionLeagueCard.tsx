@@ -22,7 +22,7 @@ import {
   StyleSheet,
   Animated,
 } from 'react-native';
-import type { LeagueTier } from '../../data/leagueConfig';
+import { getTierName, type LeagueTier } from '../../data/leagueConfig';
 import { useLocale } from '../../context/LocaleContext';
 
 // ============================================================================
@@ -108,7 +108,7 @@ function PredictionLeagueCard({
           <Text style={styles.tierEmoji}>{currentTier.emoji}</Text>
           <View>
             <Text style={[styles.tierName, { color: currentTier.color }]}>
-              {language === 'ko' ? currentTier.nameKo : currentTier.nameEn}
+              {getTierName(currentTier, language)}
             </Text>
             <Text style={styles.ratingText}>{rating} RP</Text>
           </View>
@@ -158,9 +158,7 @@ function PredictionLeagueCard({
             />
           </View>
           <Text style={styles.progressLabel}>
-            {language === 'ko'
-              ? `${nextTier.nameKo}까지 ${nextTier.minRating - rating}RP`
-              : `${nextTier.minRating - rating}RP to ${nextTier.nameEn}`}
+            {t('predictionLeague.rpToNext', { tier: getTierName(nextTier, language), rp: String(nextTier.minRating - rating) })}
           </Text>
         </View>
       )}

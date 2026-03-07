@@ -96,25 +96,38 @@ export default function CompanyOverview({
   initiallyExpanded = true,
 }: CompanyOverviewProps) {
   const { colors } = useTheme();
-  const { t } = useLocale();
+  const { t, language } = useLocale();
   const [isExpanded, setIsExpanded] = useState(initiallyExpanded);
 
   // 시가총액 포맷 (조/억, 소수점 없음)
   const formatMarketCap = (value: number): string => {
-    if (value >= 1_000_000_000_000) {
-      return `${Math.round(value / 1_000_000_000_000).toLocaleString()}조`;
-    } else if (value >= 100_000_000) {
-      return `${Math.round(value / 100_000_000).toLocaleString()}억`;
+    if (language === 'ko') {
+      if (value >= 1_000_000_000_000) return `${Math.round(value / 1_000_000_000_000).toLocaleString()}조`;
+      if (value >= 100_000_000) return `${Math.round(value / 100_000_000).toLocaleString()}억`;
+      return `${value.toLocaleString()}원`;
     }
-    return `${value.toLocaleString()}원`;
+    if (language === 'ja') {
+      if (value >= 1_000_000_000_000) return `${Math.round(value / 1_000_000_000_000).toLocaleString()}兆`;
+      if (value >= 100_000_000) return `${Math.round(value / 100_000_000).toLocaleString()}億`;
+      return `₩${value.toLocaleString()}`;
+    }
+    if (value >= 1_000_000_000) return `₩${(value / 1_000_000_000).toFixed(1)}B`;
+    if (value >= 1_000_000) return `₩${(value / 1_000_000).toFixed(1)}M`;
+    return `₩${value.toLocaleString()}`;
   };
 
   // 직원 수 포맷
   const formatEmployeeCount = (count: number): string => {
-    if (count >= 10000) {
-      return `${(count / 10000).toFixed(1)}만명`;
+    if (language === 'ko') {
+      if (count >= 10000) return `${(count / 10000).toFixed(1)}만명`;
+      return `${count.toLocaleString()}명`;
     }
-    return `${count.toLocaleString()}명`;
+    if (language === 'ja') {
+      if (count >= 10000) return `${(count / 10000).toFixed(1)}万人`;
+      return `${count.toLocaleString()}人`;
+    }
+    if (count >= 1000) return `${(count / 1000).toFixed(1)}K`;
+    return count.toLocaleString();
   };
 
   // 정보 항목 배열 생성
@@ -124,7 +137,7 @@ export default function CompanyOverview({
     infoItems.push({
       icon: 'calendar',
       label: t('deepDive.companyOverview.founded'),
-      value: `${foundedYear}년`,
+      value: language === 'ko' ? `${foundedYear}년` : language === 'ja' ? `${foundedYear}年` : `${foundedYear}`,
       color: '#4CAF50',
     });
   }

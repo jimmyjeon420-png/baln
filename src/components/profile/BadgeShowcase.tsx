@@ -19,6 +19,7 @@ import { useTrackEvent } from '../../hooks/useAnalytics';
 import {
   BADGE_DEFINITIONS,
   getBadgesByCategory,
+  getBadgeName,
   type Badge,
 } from '../../data/badgeDefinitions';
 import { useLocale } from '../../context/LocaleContext';
@@ -105,7 +106,7 @@ function BadgeItem({
   isOwned: boolean;
   onPress: () => void;
 }) {
-  const { t } = useLocale();
+  const { t, language } = useLocale();
   // 희귀도별 테두리 색상
   const rarityColor = {
     common: '#6B7280',
@@ -147,7 +148,7 @@ function BadgeItem({
         style={[styles.badgeName, !isOwned && styles.badgeNameLocked]}
         numberOfLines={1}
       >
-        {badge.name}
+        {getBadgeName(badge, language)}
       </Text>
 
       {/* 희귀도 표시 */}

@@ -38,7 +38,8 @@ export default function StockInputForm({
   onCancelEdit,
 }: StockInputFormProps) {
   const { colors } = useTheme();
-  const { t } = useLocale();
+  const { t, language } = useLocale();
+  const shareUnit = language === 'ko' ? '주' : language === 'ja' ? '株' : ' shares';
 
   return (
     <>
@@ -96,8 +97,8 @@ export default function StockInputForm({
           <View style={{ flex: 1 }}>
             <Text style={[styles.avgCalcTitle, { color: colors.textPrimary }]}>{t('add_asset.avg_calc_title')}</Text>
             <Text style={[styles.avgCalcDetail, { color: colors.textSecondary }]}>
-              기존 {matchingExisting.quantity}주 평단 ₩{matchingExisting.avg_price.toLocaleString()}
-              {' '}+ 이번 {parseFloat(quantity) || 0}주 총액 ₩{(parseFloat(price) || 0).toLocaleString()}
+              {t('add_asset.avg_calc_existing', { qty: String(matchingExisting.quantity), unit: shareUnit, avg: matchingExisting.avg_price.toLocaleString() })}
+              {' '}+ {t('add_asset.avg_calc_new', { qty: String(parseFloat(quantity) || 0), unit: shareUnit, total: (parseFloat(price) || 0).toLocaleString() })}
             </Text>
             <Text style={[styles.avgCalcResult, { color: colors.primary }]}>
               {(() => {
@@ -105,7 +106,7 @@ export default function StockInputForm({
                 const existingTotal = matchingExisting.quantity * matchingExisting.avg_price;
                 const newTotal = parseFloat(price) || 0;
                 const newAvg = newQty > 0 ? Math.round((existingTotal + newTotal) / newQty) : 0;
-                return `→ 새 평단 ₩${newAvg.toLocaleString()} (${newQty}주)`;
+                return t('add_asset.avg_calc_result', { avg: newAvg.toLocaleString(), qty: String(newQty), unit: shareUnit });
               })()}
             </Text>
           </View>

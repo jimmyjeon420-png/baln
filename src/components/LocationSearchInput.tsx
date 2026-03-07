@@ -7,7 +7,7 @@
  * 주소 카드만 표시하고 지도는 생략합니다.
  */
 
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -20,12 +20,16 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { searchPlaces, ParsedPlace } from '../services/naverLocalSearch';
+import { useLocale } from '../context/LocaleContext';
 
 // react-native-maps를 안전하게 로드 (Expo Go / 웹에서는 사용 불가)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let MapView: any = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let Marker: any = null;
 if (Platform.OS !== 'web') {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports
     const maps = require('react-native-maps');
     MapView = maps.default;
     Marker = maps.Marker;
@@ -56,8 +60,10 @@ interface LocationSearchInputProps {
 export default function LocationSearchInput({
   value,
   onChangeText,
-  placeholder = '예: 강남역 스타벅스 리저브',
+  placeholder,
 }: LocationSearchInputProps) {
+  const { t } = useLocale();
+  const resolvedPlaceholder = placeholder ?? t('locationSearch.defaultPlaceholder');
   // 검색 결과 드롭다운
   const [results, setResults] = useState<ParsedPlace[]>([]);
   const [showResults, setShowResults] = useState(false);
@@ -148,7 +154,7 @@ export default function LocationSearchInput({
         <Ionicons name="search" size={18} color={COLORS.textMuted} style={styles.searchIcon} />
         <TextInput
           style={styles.input}
-          placeholder={placeholder}
+          placeholder={resolvedPlaceholder}
           placeholderTextColor={COLORS.textMuted}
           value={value}
           onChangeText={handleSearch}
@@ -170,7 +176,7 @@ export default function LocationSearchInput({
         <View style={styles.apiHint}>
           <Ionicons name="information-circle-outline" size={14} color={COLORS.textMuted} />
           <Text style={styles.apiHintText}>
-            장소 자동완성이 작동하지 않습니다. Expo 개발 서버를 재시작(npx expo start --clear)하거나, 네이버 개발자 센터에서 Client ID/Secret 설정을 확인해주세요. 직접 입력도 가능합니다.
+            {t('locationSearch.apiUnavailableHint')}
           </Text>
         </View>
       )}
@@ -232,7 +238,7 @@ export default function LocationSearchInput({
             <TouchableOpacity style={styles.mapFallback} onPress={openInNaverMap}>
               <Ionicons name="map" size={32} color={COLORS.primary} />
               <Text style={styles.mapFallbackTitle}>{selectedPlace.name}</Text>
-              <Text style={styles.mapFallbackHint}>터치하면 네이버 지도에서 열립니다</Text>
+              <Text style={styles.mapFallbackHint}>{t('locationSearch.openInNaverMap')}</Text>
             </TouchableOpacity>
           )}
 

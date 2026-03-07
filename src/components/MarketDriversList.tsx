@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { MarketDriver } from '../types/kostolany';
 import { COLORS, SIZES, SHADOWS, TYPOGRAPHY } from '../styles/theme';
+import { useLocale } from '../context/LocaleContext';
 
 interface MarketDriversListProps {
   drivers: MarketDriver[];
@@ -23,6 +24,7 @@ const MarketDriversList: React.FC<MarketDriversListProps> = ({
   drivers,
   containerStyle,
 }) => {
+  const { t } = useLocale();
   /**
    * 영향도 색상 매핑
    */
@@ -44,13 +46,13 @@ const MarketDriversList: React.FC<MarketDriversListProps> = ({
   const getImpactLabel = (impact: string): string => {
     switch (impact) {
       case 'HIGH':
-        return '높음';
+        return t('impact_level.high');
       case 'MEDIUM':
-        return '중간';
+        return t('impact_level.medium');
       case 'LOW':
-        return '낮음';
+        return t('impact_level.low');
       default:
-        return '정보';
+        return t('impact_level.info');
     }
   };
 

@@ -19,10 +19,13 @@ const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
 
 /** 프롬프트 끝에 추가할 강제 언어 지시 (언어 혼재 방지) */
 function getLangEnforcement(langInstruction: string): string {
-  const isKorean = langInstruction.includes('한국어');
-  return isKorean
-    ? '\n\nCRITICAL: Your ENTIRE response MUST be in Korean (한국어). Never mix languages.'
-    : '\n\nCRITICAL: Your ENTIRE response MUST be in English. Never mix languages.';
+  if (langInstruction.includes('한국어')) {
+    return '\n\nCRITICAL: Your ENTIRE response MUST be in Korean (한국어). Never mix languages.';
+  }
+  if (langInstruction.includes('日本語')) {
+    return '\n\nCRITICAL: Your ENTIRE response MUST be in Japanese (日本語). Never use Korean or mix languages. Respond ENTIRELY in Japanese.';
+  }
+  return '\n\nCRITICAL: Your ENTIRE response MUST be in English. Never mix languages.';
 }
 
 // ============================================================================
@@ -1442,7 +1445,11 @@ serve(async (req: Request) => {
 
     // 언어 설정: 클라이언트에서 전달한 lang 값으로 프롬프트 언어 결정
     const lang = ((body as any).lang as string) || 'ko';
-    const langInstruction = lang === 'ko' ? '한국어로 자연스럽게 작성한다.' : 'Write naturally in English.';
+    const langInstruction = lang === 'ko'
+      ? '한국어로 자연스럽게 작성한다.'
+      : lang === 'ja'
+        ? '日本語で自然に書いてください。'
+        : 'Write naturally in English.';
 
     if (body.type === 'health-check') {
       return new Response(

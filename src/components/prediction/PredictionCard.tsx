@@ -15,7 +15,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
-import { useLocale } from '../../context/LocaleContext';
+import { useLocale, getCurrentDisplayLanguage } from '../../context/LocaleContext';
 import {
   type PredictionItem,
   formatVolume,
@@ -69,6 +69,10 @@ interface PredictionCardProps {
 export default function PredictionCard({ item, onPress }: PredictionCardProps) {
   const { colors } = useTheme();
   const { t } = useLocale();
+  const lang = getCurrentDisplayLanguage();
+  // Choose language-appropriate text, falling back to Korean (which always exists)
+  const questionText = (lang !== 'ko' && item.question_en) ? item.question_en : item.question_ko;
+  const aiReasoningText = item.ai_consensus?.reasoning_ko || '';
 
   const catConfig = CATEGORY_CONFIG[item.category] || CATEGORY_CONFIG.macro;
   const timeUntilEnd = getTimeUntilEnd(item.end_date);
@@ -105,7 +109,7 @@ export default function PredictionCard({ item, onPress }: PredictionCardProps) {
 
       {/* 질문 */}
       <Text style={[styles.question, { color: colors.textPrimary }]}>
-        {item.question_ko}
+        {questionText}
       </Text>
 
       {/* 확률 바 */}
@@ -158,7 +162,7 @@ export default function PredictionCard({ item, onPress }: PredictionCardProps) {
             </Text>
           </View>
           <Text style={[styles.reasoningText, { color: colors.textSecondary }]}>
-            {item.ai_consensus.reasoning_ko}
+            {aiReasoningText}
           </Text>
         </View>
       )}

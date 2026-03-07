@@ -37,10 +37,13 @@ try {
 const STORAGE_KEY_BASE = '@baln:village_conversations';
 const LEGACY_STORAGE_KEY = STORAGE_KEY_BASE;
 const CACHE_DURATION = 3 * 60 * 60 * 1000; // 3시간
-type ConversationLanguage = 'ko' | 'en';
+type ConversationLanguage = 'ko' | 'en' | 'ja';
 
 function getConversationLanguage(): ConversationLanguage {
-  return getCurrentDisplayLanguage() === 'ko' ? 'ko' : 'en';
+  const lang = getCurrentDisplayLanguage();
+  if (lang === 'ko') return 'ko';
+  if (lang === 'ja') return 'ja';
+  return 'en';
 }
 
 function getStorageKey(lang: ConversationLanguage = getConversationLanguage()): string {
@@ -502,24 +505,37 @@ export async function askGuruDirectly(
 ): Promise<VillageMessage> {
   const chatLang = getCurrentDisplayLanguage();
   const isKoChat = chatLang === 'ko';
+  const isJaChat = chatLang === 'ja';
   const persona = isKoChat ? GURU_PERSONAS[guruId] : (GURU_PERSONAS_EN[guruId] || GURU_PERSONAS[guruId]);
   const config = GURU_CHARACTER_CONFIGS[guruId];
 
+  const langInstruction = getPromptLanguageInstruction();
   const systemPrompt = isKoChat
     ? `당신은 ${config?.guruName || guruId}입니다.
 캐릭터: ${persona}
 
 사용자가 말을 걸었습니다. 캐릭터의 성격과 말투에 맞게 1-2문장으로 답변하세요.
-${getPromptLanguageInstruction()} 자연스러운 구어체로 답변하세요.
+${langInstruction} 자연스러운 구어체로 답변하세요.
 ${recentContext ? `\n최근 시장 상황: ${recentContext}` : ''}
 
 JSON으로만 응답:
 { "message": "답변", "sentiment": "NEUTRAL" }`
+    : isJaChat
+    ? `あなたは${config?.guruName || guruId}です。
+キャラクター: ${persona}
+
+ユーザーが話しかけました。キャラクターの性格と口調に合わせて1-2文で返答してください。
+CRITICAL: 必ず日本語(Japanese)のみで回答してください。韓国語や英語を絶対に混ぜないでください。
+${langInstruction} 自然な会話体で答えてください。
+${recentContext ? `\n最近の市場状況: ${recentContext}` : ''}
+
+JSONのみで応答:
+{ "message": "返答", "sentiment": "NEUTRAL" }`
     : `You are ${config?.guruName || guruId}.
 Character: ${persona}
 
 A user has spoken to you. Reply in 1-2 sentences matching the character's personality and tone.
-${getPromptLanguageInstruction()} Reply in natural conversational English.
+${langInstruction} Reply in natural conversational English.
 ${recentContext ? `\nRecent market context: ${recentContext}` : ''}
 
 Respond in JSON only:
@@ -607,8 +623,21 @@ Respond in JSON only:
       rogers: "The global network connection is a bit unstable. Please try again shortly.",
     };
 
-    const guruFallbacks = isKoChat ? guruFallbacksKo : guruFallbacksEn;
-    const fallbackMsg = guruFallbacks[guruId] || (isKoChat ? '잠시 후 다시 시도해주세요...' : 'Please try again in a moment...');
+    const guruFallbacksJa: Record<string, string> = {
+      buffett: 'ふふ、今のマーケットはちょっと複雑だね。コカ・コーラを一杯飲んでから考えよう。',
+      dalio: 'システムに一時的な異常が検出されました。データを再分析します。',
+      cathie_wood: 'あ、ちょっと技術的な問題が！すぐ戻りますね！',
+      druckenmiller: 'ちょっと待って、マーケットデータを再確認中だ。',
+      saylor: 'ネットワーク遅延...ビットコインブロックのようにすぐ確認されるよ！',
+      dimon: 'システムメンテナンス中です。すぐに準備できます。',
+      musk: 'サーバー再起動中...火星からの信号は少し遅いんです。',
+      lynch: 'スーパーマーケットのレジが混んでるみたいです。少々お待ちください！',
+      marks: 'セカンドレベルの思考のために少し時間が必要です。すぐ戻ります。',
+      rogers: 'グローバルネットワーク接続が少し不安定ですね。しばらくしてからお試しください。',
+    };
+
+    const guruFallbacks = isKoChat ? guruFallbacksKo : isJaChat ? guruFallbacksJa : guruFallbacksEn;
+    const fallbackMsg = guruFallbacks[guruId] || (isKoChat ? '잠시 후 다시 시도해주세요...' : isJaChat ? 'しばらくしてからもう一度お試しください...' : 'Please try again in a moment...');
 
     return {
       id: `vm_${Date.now()}_fallback`,
@@ -827,6 +856,7 @@ function getFallbackBatchEn(): VillageConversation[] {
 
 function getFallbackBatch(): VillageBatch {
   const fbLang = getConversationLanguage();
+  // Japanese uses English fallback (no separate JA fallback batch)
   return {
     conversations: fbLang === 'ko' ? getFallbackBatchKo() : getFallbackBatchEn(),
     generatedAt: new Date().toISOString(),

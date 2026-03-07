@@ -42,29 +42,29 @@ const STORAGE_KEYS = {
 };
 
 const AVATAR_ANIMALS = [
-  { id: 'rabbit', emoji: '🐰', nameKo: '토끼', nameEn: 'Rabbit' },
-  { id: 'cat', emoji: '🐱', nameKo: '고양이', nameEn: 'Cat' },
-  { id: 'dog', emoji: '🐶', nameKo: '강아지', nameEn: 'Dog' },
-  { id: 'bear', emoji: '🐻', nameKo: '곰', nameEn: 'Bear' },
-  { id: 'fox', emoji: '🦊', nameKo: '여우', nameEn: 'Fox' },
-  { id: 'owl', emoji: '🦉', nameKo: '올빼미', nameEn: 'Owl' },
-  { id: 'deer', emoji: '🦌', nameKo: '사슴', nameEn: 'Deer' },
-  { id: 'penguin', emoji: '🐧', nameKo: '펭귄', nameEn: 'Penguin' },
-  { id: 'koala', emoji: '🐨', nameKo: '코알라', nameEn: 'Koala' },
-  { id: 'panda', emoji: '🐼', nameKo: '판다', nameEn: 'Panda' },
-  { id: 'hamster', emoji: '🐹', nameKo: '햄스터', nameEn: 'Hamster' },
-  { id: 'raccoon', emoji: '🦝', nameKo: '너구리', nameEn: 'Raccoon' },
+  { id: 'rabbit', emoji: '🐰', nameKo: '토끼', nameEn: 'Rabbit', nameJa: 'ウサギ' },
+  { id: 'cat', emoji: '🐱', nameKo: '고양이', nameEn: 'Cat', nameJa: '猫' },
+  { id: 'dog', emoji: '🐶', nameKo: '강아지', nameEn: 'Dog', nameJa: '犬' },
+  { id: 'bear', emoji: '🐻', nameKo: '곰', nameEn: 'Bear', nameJa: 'クマ' },
+  { id: 'fox', emoji: '🦊', nameKo: '여우', nameEn: 'Fox', nameJa: 'キツネ' },
+  { id: 'owl', emoji: '🦉', nameKo: '올빼미', nameEn: 'Owl', nameJa: 'フクロウ' },
+  { id: 'deer', emoji: '🦌', nameKo: '사슴', nameEn: 'Deer', nameJa: '鹿' },
+  { id: 'penguin', emoji: '🐧', nameKo: '펭귄', nameEn: 'Penguin', nameJa: 'ペンギン' },
+  { id: 'koala', emoji: '🐨', nameKo: '코알라', nameEn: 'Koala', nameJa: 'コアラ' },
+  { id: 'panda', emoji: '🐼', nameKo: '판다', nameEn: 'Panda', nameJa: 'パンダ' },
+  { id: 'hamster', emoji: '🐹', nameKo: '햄스터', nameEn: 'Hamster', nameJa: 'ハムスター' },
+  { id: 'raccoon', emoji: '🦝', nameKo: '너구리', nameEn: 'Raccoon', nameJa: 'タヌキ' },
 ] as const;
 
 const COLOR_CHOICES = [
-  { id: 'sky', hex: '#87CEEB', nameKo: '하늘', nameEn: 'Sky' },
-  { id: 'coral', hex: '#FF7F7F', nameKo: '산호', nameEn: 'Coral' },
-  { id: 'mint', hex: '#98FF98', nameKo: '민트', nameEn: 'Mint' },
-  { id: 'lavender', hex: '#E6E6FA', nameKo: '라벤더', nameEn: 'Lavender' },
-  { id: 'gold', hex: '#FFD700', nameKo: '골드', nameEn: 'Gold' },
-  { id: 'peach', hex: '#FFDAB9', nameKo: '피치', nameEn: 'Peach' },
-  { id: 'ice', hex: '#D0F0FF', nameKo: '아이스', nameEn: 'Ice' },
-  { id: 'rose', hex: '#FFB6C1', nameKo: '로즈', nameEn: 'Rose' },
+  { id: 'sky', hex: '#87CEEB', nameKo: '하늘', nameEn: 'Sky', nameJa: '空色' },
+  { id: 'coral', hex: '#FF7F7F', nameKo: '산호', nameEn: 'Coral', nameJa: 'コーラル' },
+  { id: 'mint', hex: '#98FF98', nameKo: '민트', nameEn: 'Mint', nameJa: 'ミント' },
+  { id: 'lavender', hex: '#E6E6FA', nameKo: '라벤더', nameEn: 'Lavender', nameJa: 'ラベンダー' },
+  { id: 'gold', hex: '#FFD700', nameKo: '골드', nameEn: 'Gold', nameJa: 'ゴールド' },
+  { id: 'peach', hex: '#FFDAB9', nameKo: '피치', nameEn: 'Peach', nameJa: 'ピーチ' },
+  { id: 'ice', hex: '#D0F0FF', nameKo: '아이스', nameEn: 'Ice', nameJa: 'アイス' },
+  { id: 'rose', hex: '#FFB6C1', nameKo: '로즈', nameEn: 'Rose', nameJa: 'ローズ' },
 ] as const;
 
 const GURU_LIST = Object.values(GURU_CHARACTER_CONFIGS);

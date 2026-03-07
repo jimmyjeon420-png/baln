@@ -25,6 +25,7 @@ import {
 } from 'react-native';
 import { INVESTMENT_TERMS } from '../../data/investmentTerms';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 
 interface TermTooltipProps {
   /** 용어 키 — investmentTerms.ts의 INVESTMENT_TERMS 키와 일치해야 함 */
@@ -38,6 +39,7 @@ interface TermTooltipProps {
 export default function TermTooltip({ term, children, style }: TermTooltipProps) {
   const [visible, setVisible] = useState(false);
   const { colors } = useTheme();
+  const { t } = useLocale();
   const termData = INVESTMENT_TERMS[term];
 
   // 용어 사전에 없으면 그냥 텍스트로 렌더링
@@ -51,7 +53,7 @@ export default function TermTooltip({ term, children, style }: TermTooltipProps)
         onPress={() => setVisible(true)}
         activeOpacity={0.7}
         accessibilityRole="button"
-        accessibilityLabel={`${term} 용어 설명 보기`}
+        accessibilityLabel={t('common_ui.term_tooltip_a11y', { term })}
       >
         <Text
           style={[

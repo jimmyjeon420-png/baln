@@ -545,7 +545,21 @@ function formatLargeNumber(value: number): string {
     return `${sign}${abs.toLocaleString(getLocaleCode())}원`;
   }
 
-  // Fallback (ja, etc.): use English-style formatting
+  // Japanese: 兆/億/万 units
+  if (lang === 'ja') {
+    if (abs >= 1_0000_0000_0000) {
+      return `${sign}約${(abs / 1_0000_0000_0000).toFixed(1)}兆ウォン`;
+    }
+    if (abs >= 1_0000_0000) {
+      return `${sign}約${(abs / 1_0000_0000).toFixed(0)}億ウォン`;
+    }
+    if (abs >= 1_0000) {
+      return `${sign}約${(abs / 1_0000).toFixed(0)}万ウォン`;
+    }
+    return `${sign}₩${abs.toLocaleString()}`;
+  }
+
+  // Fallback: use English-style formatting
   if (abs >= 1_000_000_000_000) {
     return `${sign}~₩${(abs / 1_000_000_000_000).toFixed(1)}T`;
   }

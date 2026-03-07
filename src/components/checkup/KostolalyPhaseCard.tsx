@@ -271,7 +271,7 @@ export default function KostolalyPhaseCard({ onApplyPhase }: KostolalyPhaseCardP
           <View>
             <Text style={[s.phaseName, { color: colors.textPrimary }]}>{phaseName}</Text>
             <Text style={[s.phaseNameEn, { color: colors.textTertiary }]}>
-              Kostolany Egg Model · {t('rebalance.kostolany_phase.confidence_label', { pct: data.confidence })}
+              {t('rebalance.kostolany_phase.egg_model_subtitle')} · {t('rebalance.kostolany_phase.confidence_label', { pct: data.confidence })}
             </Text>
           </View>
         </View>

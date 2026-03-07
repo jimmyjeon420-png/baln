@@ -249,7 +249,7 @@ const SimulationResultSection: React.FC<{
             </Text>
             <View style={[sectionStyles.impactBadge, { backgroundColor: impactColor + '20' }]}>
               <Text style={[sectionStyles.impactBadgeText, { color: impactColor }]}>
-                {asset.impactLevel}
+                {t(`whatIf.extreme.impactLevel.${asset.impactLevel}`)}
               </Text>
             </View>
           </View>
@@ -308,7 +308,7 @@ const ShareStoryModal: React.FC<{
       const uri = await viewShotRef.current.capture();
       await Sharing.shareAsync(uri, {
         mimeType: 'image/png',
-        dialogTitle: `baln Crisis Simulator — ${scenario.title}`,
+        dialogTitle: `baln ${t('whatIf.extreme.aiCrisisSimulator')} — ${scenario.title}`,
         UTI: 'public.png',
       });
       // 공유 성공 -> 크레딧 보상

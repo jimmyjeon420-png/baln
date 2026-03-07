@@ -8,10 +8,10 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '../../hooks/useTheme';
+import { useLocale } from '../../context/LocaleContext';
 import {
   getEventsForScenario,
   RECOVERY_STATS,
-  type HistoricalEvent,
 } from './historicalData';
 
 interface HistoricalContextProps {
@@ -22,15 +22,16 @@ export const HistoricalContext: React.FC<HistoricalContextProps> = ({
   scenarioType,
 }) => {
   const { colors } = useTheme();
+  const { t } = useLocale();
   const events = getEventsForScenario(scenarioType);
 
   return (
     <View style={[s.container, { backgroundColor: colors.surface }]}>
       <Text style={[s.sectionTitle, { color: colors.textPrimary }]}>
-        역사적 선례
+        {t('stressReport.historical.title')}
       </Text>
       <Text style={[s.sectionSubtitle, { color: colors.textTertiary }]}>
-        비슷한 상황이 과거에도 있었습니다
+        {t('stressReport.historical.subtitle')}
       </Text>
 
       <View style={s.timeline}>
@@ -51,12 +52,12 @@ export const HistoricalContext: React.FC<HistoricalContextProps> = ({
                   {event.year}
                 </Text>
                 <Text style={[s.eventName, { color: colors.textPrimary }]}>
-                  {event.name}
+                  {t(event.nameKey)}
                 </Text>
               </View>
 
               <Text style={[s.eventDesc, { color: colors.textSecondary }]}>
-                {event.shortDescription}
+                {t(event.descKey)}
               </Text>
 
               <View style={s.eventStats}>
@@ -65,15 +66,15 @@ export const HistoricalContext: React.FC<HistoricalContextProps> = ({
                     {event.maxDrawdown}%
                   </Text>
                   <Text style={[s.statLabel, { color: colors.textTertiary }]}>
-                    최대 하락
+                    {t('stressReport.historical.maxDrawdown')}
                   </Text>
                 </View>
                 <View style={s.eventStat}>
                   <Text style={[s.statValue, { color: colors.textPrimary }]}>
-                    {event.recoveryMonths}개월
+                    {t('stressReport.historical.months', { count: event.recoveryMonths })}
                   </Text>
                   <Text style={[s.statLabel, { color: colors.textTertiary }]}>
-                    회복 기간
+                    {t('stressReport.historical.recoveryPeriod')}
                   </Text>
                 </View>
                 <View style={s.eventStat}>
@@ -81,7 +82,7 @@ export const HistoricalContext: React.FC<HistoricalContextProps> = ({
                     +{event.afterOneYear}%
                   </Text>
                   <Text style={[s.statLabel, { color: colors.textTertiary }]}>
-                    회복 후 1년
+                    {t('stressReport.historical.afterOneYear')}
                   </Text>
                 </View>
               </View>
@@ -93,9 +94,12 @@ export const HistoricalContext: React.FC<HistoricalContextProps> = ({
       {/* 하단 강조 필 */}
       <View style={[s.highlightPill, { backgroundColor: `${colors.success}12` }]}>
         <Text style={[s.highlightText, { color: colors.success }]}>
-          1970년 이후 -{getScenarioThreshold(scenarioType)}% 이상 조정{' '}
-          {RECOVERY_STATS.totalCorrections}회 중{' '}
-          {RECOVERY_STATS.recoveredCount}회({RECOVERY_STATS.recoveryRate}%) 회복
+          {t('stressReport.historical.recoveryStats', {
+            threshold: getScenarioThreshold(scenarioType),
+            total: RECOVERY_STATS.totalCorrections,
+            recovered: RECOVERY_STATS.recoveredCount,
+            rate: RECOVERY_STATS.recoveryRate,
+          })}
         </Text>
       </View>
     </View>

@@ -51,6 +51,7 @@ interface GiftOption {
   emoji: string;
   nameKo: string;
   nameEn: string;
+  nameJa: string;
   cost: number;
   friendshipGain: number;
 }
@@ -61,6 +62,7 @@ const GIFT_OPTIONS: GiftOption[] = [
     emoji: '\uD83C\uDF81', // 선물상자
     nameKo: '작은 선물',
     nameEn: 'Small Gift',
+    nameJa: 'ちょっとしたギフト',
     cost: 5,
     friendshipGain: 5,
   },
@@ -69,6 +71,7 @@ const GIFT_OPTIONS: GiftOption[] = [
     emoji: '\uD83C\uDF38', // 꽃다발
     nameKo: '꽃다발',
     nameEn: 'Flower Bouquet',
+    nameJa: '花束',
     cost: 10,
     friendshipGain: 10,
   },
@@ -77,6 +80,7 @@ const GIFT_OPTIONS: GiftOption[] = [
     emoji: '\u2B50', // 별
     nameKo: '특별 선물',
     nameEn: 'Special Gift',
+    nameJa: '特別なギフト',
     cost: 20,
     friendshipGain: 20,
   },

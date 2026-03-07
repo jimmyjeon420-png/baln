@@ -65,6 +65,20 @@ const WEATHER_LABEL_EN: Record<string, string> = {
   rainbow: 'Rainbow',
 };
 
+/** 날씨 조건 → 일본어 상태 */
+const WEATHER_LABEL_JA: Record<string, string> = {
+  clear: '晴れ',
+  cloudy: '曇り',
+  clouds: '曇り',
+  rain: '雨',
+  snow: '雪',
+  fog: '霧',
+  storm: '嵐',
+  thunderstorm: '嵐',
+  windy: '風',
+  rainbow: '虹',
+};
+
 /** 의상 레벨 → 힌트 텍스트 (ClothingLevel 타입 기반) */
 const CLOTHING_HINT_KO: Record<ClothingLevel, string> = {
   arctic: '완전 겨울',
@@ -82,6 +96,15 @@ const CLOTHING_HINT_EN: Record<ClothingLevel, string> = {
   normal: 'Comfortable',
   light: 'Summer',
   summer: 'Heat wave',
+};
+
+const CLOTHING_HINT_JA: Record<ClothingLevel, string> = {
+  arctic: '厳冬',
+  winter: '冬服',
+  warm: '春秋',
+  normal: '快適',
+  light: '夏',
+  summer: '猛暑注意',
 };
 
 // ============================================================================
@@ -110,12 +133,14 @@ const WeatherBadge = React.memo(({
   }
 
   const isKo = language === 'ko';
+  const isJa = language === 'ja';
   // village.ts type uses `icon`, weatherService may return `emoji` — handle both
   const extended = weather as VillageWeather & { emoji?: string };
   const weatherEmoji = weather.icon || extended.emoji || '\u2600\uFE0F';
-  const weatherLabel = isKo
-    ? WEATHER_LABEL_KO[weather.condition] || weather.description || WEATHER_LABEL_KO.clear
-    : WEATHER_LABEL_EN[weather.condition] || WEATHER_LABEL_EN.clear;
+  const weatherLabelMap = isKo ? WEATHER_LABEL_KO : isJa ? WEATHER_LABEL_JA : WEATHER_LABEL_EN;
+  const weatherLabel = weatherLabelMap[weather.condition]
+    || (isKo ? weather.description : undefined)
+    || weatherLabelMap.clear;
   const tempString = `${Math.round(weather.temperature)}\u00B0C`;
 
   // 컴팩트 모드: 이모지 + 기온만
@@ -136,8 +161,9 @@ const WeatherBadge = React.memo(({
   // 풀 모드: 이모지 + 기온 + 상태 + 의상 힌트
   const weatherExtended = weather as VillageWeather & { clothingLevel?: ClothingLevel };
   const resolvedClothingLevel = clothingLevel || weatherExtended.clothingLevel;
+  const clothingHintMap = isKo ? CLOTHING_HINT_KO : isJa ? CLOTHING_HINT_JA : CLOTHING_HINT_EN;
   const clothingHint = resolvedClothingLevel
-    ? (isKo ? CLOTHING_HINT_KO[resolvedClothingLevel] : CLOTHING_HINT_EN[resolvedClothingLevel])
+    ? clothingHintMap[resolvedClothingLevel]
     : null;
 
   return (

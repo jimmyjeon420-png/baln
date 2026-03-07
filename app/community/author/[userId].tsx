@@ -41,11 +41,13 @@ import {
   formatPortfolioRatio,
 } from '../../../src/utils/communityUtils';
 import { useTheme } from '../../../src/hooks/useTheme';
+import { useLocale } from '../../../src/context/LocaleContext';
 
 export default function AuthorProfileScreen() {
   const { userId } = useLocalSearchParams<{ userId: string }>();
   const router = useRouter();
   const { colors } = useTheme();
+  const { t } = useLocale();
 
   // 작성자 게시물 목록
   const { data: posts, isLoading, refetch } = useAuthorPosts(userId || '');
@@ -83,7 +85,7 @@ export default function AuthorProfileScreen() {
           <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={28} color="#4CAF50" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>프로필</Text>
+          <Text style={styles.headerTitle}>{t('authorProfile.headerTitle')}</Text>
           <View style={{ width: 28 }} />
         </View>
         <View style={styles.loadingContainer}>
@@ -101,12 +103,12 @@ export default function AuthorProfileScreen() {
           <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={28} color="#4CAF50" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>프로필</Text>
+          <Text style={styles.headerTitle}>{t('authorProfile.headerTitle')}</Text>
           <View style={{ width: 28 }} />
         </View>
         <View style={styles.loadingContainer}>
           <Ionicons name="person-outline" size={48} color="#444" />
-          <Text style={styles.emptyText}>게시물이 없습니다</Text>
+          <Text style={styles.emptyText}>{t('authorProfile.noPosts')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -153,21 +155,21 @@ export default function AuthorProfileScreen() {
         <View style={styles.statsRow}>
           <View style={styles.statItem}>
             <Text style={styles.statNumber}>{posts.length}</Text>
-            <Text style={styles.statLabel}>게시물</Text>
+            <Text style={styles.statLabel}>{t('authorProfile.posts')}</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
             <Text style={styles.statNumber}>
               {posts.reduce((sum, p) => sum + (p.likes_count || 0), 0)}
             </Text>
-            <Text style={styles.statLabel}>받은 좋아요</Text>
+            <Text style={styles.statLabel}>{t('authorProfile.likesReceived')}</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
             <Text style={styles.statNumber}>
               {posts.reduce((sum, p) => sum + (p.comments_count || 0), 0)}
             </Text>
-            <Text style={styles.statLabel}>받은 댓글</Text>
+            <Text style={styles.statLabel}>{t('authorProfile.commentsReceived')}</Text>
           </View>
         </View>
       </View>
@@ -175,14 +177,14 @@ export default function AuthorProfileScreen() {
       {/* 보유종목 섹션 */}
       {holdings.length > 0 && (
         <View style={styles.holdingsCard}>
-          <Text style={styles.sectionTitle}>투자 포트폴리오</Text>
+          <Text style={styles.sectionTitle}>{t('authorProfile.investmentPortfolio')}</Text>
 
           {/* 주식 */}
           {stockHoldings.length > 0 && (
             <View style={styles.holdingGroup}>
               <View style={styles.holdingGroupHeader}>
                 <View style={[styles.holdingGroupDot, { backgroundColor: '#4CAF50' }]} />
-                <Text style={styles.holdingGroupLabel}>주식</Text>
+                <Text style={styles.holdingGroupLabel}>{t('authorProfile.stocks')}</Text>
               </View>
               <View style={styles.holdingChipsRow}>
                 {stockHoldings.map((h: HoldingSnapshot, idx: number) => (
@@ -202,7 +204,7 @@ export default function AuthorProfileScreen() {
             <View style={styles.holdingGroup}>
               <View style={styles.holdingGroupHeader}>
                 <View style={[styles.holdingGroupDot, { backgroundColor: '#F7931A' }]} />
-                <Text style={styles.holdingGroupLabel}>암호화폐</Text>
+                <Text style={styles.holdingGroupLabel}>{t('authorProfile.crypto')}</Text>
               </View>
               <View style={styles.holdingChipsRow}>
                 {cryptoHoldings.map((h: HoldingSnapshot, idx: number) => (
@@ -222,7 +224,7 @@ export default function AuthorProfileScreen() {
             <View style={styles.holdingGroup}>
               <View style={styles.holdingGroupHeader}>
                 <View style={[styles.holdingGroupDot, { backgroundColor: '#888' }]} />
-                <Text style={styles.holdingGroupLabel}>기타</Text>
+                <Text style={styles.holdingGroupLabel}>{t('authorProfile.others')}</Text>
               </View>
               <View style={styles.holdingChipsRow}>
                 {otherHoldings.map((h: HoldingSnapshot, idx: number) => (
@@ -241,8 +243,8 @@ export default function AuthorProfileScreen() {
 
       {/* 게시물 타임라인 헤더 */}
       <View style={styles.timelineHeader}>
-        <Text style={styles.sectionTitle}>게시물</Text>
-        <Text style={styles.timelineCount}>{posts.length}개</Text>
+        <Text style={styles.sectionTitle}>{t('authorProfile.postTimeline')}</Text>
+        <Text style={styles.timelineCount}>{t('authorProfile.postCount', { count: posts.length })}</Text>
       </View>
     </View>
   );

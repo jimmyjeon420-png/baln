@@ -138,7 +138,7 @@ export default function QuizCard({ quiz, attempt, onSubmit, isSubmitting }: Quiz
 
           {/* 해설 */}
           <View style={styles.explanationBox}>
-            <Text style={styles.explanationTitle}>💡 해설</Text>
+            <Text style={styles.explanationTitle}>{t('quiz.explanation_title')}</Text>
             <Text style={styles.explanationText}>
               {attempt ? quiz.explanation : result?.explanation || quiz.explanation}
             </Text>

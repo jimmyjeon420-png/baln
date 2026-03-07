@@ -429,6 +429,7 @@
       "max_drawdown_label": "Max Drawdown Benchmark",
       "disclaimer": "* Past performance does not guarantee future results. Historical data for reference only.",
       "confidence_label": "Confidence {{pct}}%",
+      "egg_model_subtitle": "Kostolany Egg Model",
       "cycle_arrow": "A → B → C → D → E → F → A (Cycle)",
       "expert_dalio": "Dalio",
       "expert_buffett": "Buffett"
@@ -2124,6 +2125,9 @@
     "total_cost_optional": "Optional · Used for return calculation",
     "total_cost_placeholder": "e.g. 1,500,000 (from brokerage)",
     "avg_calc_title": "Auto Average Price Calculation",
+    "avg_calc_existing": "Existing {{qty}}{{unit}} avg ₩{{avg}}",
+    "avg_calc_new": "New {{qty}}{{unit}} total ₩{{total}}",
+    "avg_calc_result": "→ New avg ₩{{avg}} ({{qty}}{{unit}})",
     "total_label": "Total Purchase Cost",
     "register_button": "Register",
     "edit_done_button": "Save Changes",
@@ -2412,8 +2416,15 @@
     "dialogTitle": "baln.logic Prescription Share"
   },
   "quiz": {
-    "timezone_note": "Quiz refreshes daily at midnight (local time)",
-    "explanationFailed": "Failed to load explanation."
+    "submit": "Submit Answer",
+    "correct": "Correct!",
+    "wrong": "Not quite!",
+    "reward_credits": "+{{n}} credits",
+    "explanation_title": "Explanation"
+  },
+  "assetPie": {
+    "title": "Asset Allocation",
+    "totalAssets": "Total Assets"
   },
   "security": {
     "biometric_auth_fail_title": "Authentication Failed",
@@ -2776,6 +2787,7 @@
     "weather": {
       "guru_outfit": "Guru outfit: {{hint}}"
     },
+    "term_tooltip_a11y": "View definition of {{term}}",
     "ai_consent": {
       "title": "AI Analysis Data Sharing Consent",
       "title_en": "AI Data Sharing Consent",
@@ -4720,6 +4732,7 @@
   "predictionLeague.noPredictions": "No predictions yet",
   "predictionLeague.promoted": "Promoted!",
   "predictionLeague.maxTier": "Max Tier",
+  "predictionLeague.rpToNext": "{{rp}}RP to {{tier}}",
   "predictionLeague.promotionZone": "Promotion Zone",
   "predictionLeague.relegationZone": "Relegation Zone",
   "leagueStanding.you": "You",
@@ -5247,7 +5260,12 @@
       "freeSimCTA": "Free Simulation",
       "creditsEarned": "credits earned!",
       "currencyUnit": " KRW",
-      "creditUnit": "C"
+      "creditUnit": "C",
+      "impactLevel": {
+        "HIGH": "HIGH",
+        "MEDIUM": "MEDIUM",
+        "LOW": "LOW"
+      }
     },
     "scenarios": {
       "category": {
@@ -6435,6 +6453,25 @@
     "defaultLevel": "Seedling Investor"
   },
   "stressReport": {
+    "historical": {
+      "title": "Historical Precedents",
+      "subtitle": "Similar situations have occurred before",
+      "maxDrawdown": "Max Drawdown",
+      "months": "{{count}} mo",
+      "recoveryPeriod": "Recovery Period",
+      "afterOneYear": "1Y After Recovery",
+      "recoveryStats": "Since 1970, {{recovered}} of {{total}} corrections over -{{threshold}}% recovered ({{rate}}%)",
+      "event2008Name": "Global Financial Crisis",
+      "event2008Desc": "Lehman Brothers collapse → worldwide credit freeze",
+      "event2020Name": "COVID-19 Pandemic",
+      "event2020Desc": "Global lockdowns → fastest recovery in history",
+      "event2022Name": "Rate Hike Shock",
+      "event2022Desc": "Rapid Fed rate hikes → major growth stock correction",
+      "event2018Name": "US-China Trade War",
+      "event2018Desc": "Tariff conflict → heightened market uncertainty",
+      "event2011Name": "European Debt Crisis",
+      "event2011Desc": "Greek default fears → global contagion"
+    },
     "hedging": {
       "high": "High — Defensive strategy recommended",
       "moderate": "Moderate — Monitoring required",
@@ -6949,11 +6986,11 @@
   "market": {
     "preparingData": "Preparing market data"
   },
-  "quiz": {
-    "submit": "Submit Answer",
-    "correct": "Correct!",
-    "wrong": "Not quite!",
-    "reward_credits": "+{{n}} credits"
+  "impact_level": {
+    "high": "High",
+    "medium": "Medium",
+    "low": "Low",
+    "info": "Info"
   },
   "stress_report": {
     "empathy": {
@@ -6966,6 +7003,14 @@
       "reassurance_room": "Room for improvement",
       "reassurance_check": "Review defense strategy"
     },
+    "waterfall": {
+      "title": "Asset Impact Analysis",
+      "impact_high": "High",
+      "impact_medium": "Medium",
+      "impact_low": "Low",
+      "collapse": "Collapse",
+      "show_more": "Show {{count}} more"
+    },
     "risk_budget": {
       "title": "Risk Budget Usage",
       "used": "used",
@@ -6976,5 +7021,33 @@
       "status_caution": "Caution — consider rebalancing",
       "status_critical": "Near depletion — review asset allocation"
     }
+  },
+  "predictionsDetail": {
+    "headerTitle": "Prediction Stats",
+    "tabMyStats": "My Stats",
+    "tabLeaderboard": "Leaderboard",
+    "accuracyRate": "Accuracy",
+    "totalVotes": "Total Votes",
+    "correct": "Correct",
+    "streak": "Streak",
+    "voteSuffix": "votes"
+  },
+  "authorProfile": {
+    "headerTitle": "Profile",
+    "noPosts": "No posts yet",
+    "posts": "Posts",
+    "likesReceived": "Likes",
+    "commentsReceived": "Comments",
+    "investmentPortfolio": "Investment Portfolio",
+    "stocks": "Stocks",
+    "crypto": "Crypto",
+    "others": "Others",
+    "postCount": "{{count}}",
+    "postTimeline": "Posts"
+  },
+  "locationSearch": {
+    "openInNaverMap": "Tap to open in Naver Map",
+    "apiUnavailableHint": "Place autocomplete is not working. Try restarting the Expo dev server (npx expo start --clear) or check the Naver Developer Center Client ID/Secret settings. You can also type the location manually.",
+    "defaultPlaceholder": "e.g. Gangnam Station Starbucks Reserve"
   }
 }

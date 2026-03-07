@@ -12,7 +12,7 @@ import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
-import { useLocale } from '../../context/LocaleContext';
+import { useLocale, getCurrentDisplayLanguage } from '../../context/LocaleContext';
 import { useNewsPortfolioMatch } from '../../hooks/useNewsPortfolioMatch';
 import { useSharedPortfolio } from '../../hooks/useSharedPortfolio';
 import type { ImpactDetail } from '../../hooks/usePredictionFeed';
@@ -126,7 +126,8 @@ export default function PortfolioImpactBadge({
           ? getDirectionConfig(impact.direction)
           : { color: '#9E9E9E', icon: 'remove-outline' as const };
         const magnitudeLabel = impact ? impact.magnitude : '';
-        const reason = impact?.reason_ko || '';
+        // reason_ko is Korean-only DB content — only show in Korean mode
+        const reason = getCurrentDisplayLanguage() === 'ko' ? (impact?.reason_ko || '') : '';
 
         return (
           <View key={asset.ticker} style={styles.impactItem}>

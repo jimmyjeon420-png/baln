@@ -10,6 +10,7 @@
 
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import supabase from '../services/supabase';
+import { getCurrentDisplayLanguage } from '../context/LocaleContext';
 
 // ============================================================================
 // 타입 정의
@@ -156,19 +157,38 @@ export function formatVolume(volume: number | null): string {
   return `$${Math.round(volume)}`;
 }
 
-/** 마감일까지 남은 시간 표시 */
+/** 마감일까지 남은 시간 표시 (언어별 자동 대응) */
 export function getTimeUntilEnd(endDate: string | null): string {
   if (!endDate) return '';
   const now = new Date();
   const end = new Date(endDate);
   const diffMs = end.getTime() - now.getTime();
-  if (diffMs <= 0) return '마감됨';
+  const lang = getCurrentDisplayLanguage();
+
+  if (diffMs <= 0) {
+    if (lang === 'ko') return '마감됨';
+    if (lang === 'ja') return '締切';
+    return 'Closed';
+  }
 
   const hours = Math.floor(diffMs / 3600000);
   const days = Math.floor(hours / 24);
 
-  if (days > 30) return `${Math.floor(days / 30)}개월 후 마감`;
-  if (days > 0) return `${days}일 후 마감`;
-  if (hours > 0) return `${hours}시간 후 마감`;
-  return '곧 마감';
+  if (lang === 'ko') {
+    if (days > 30) return `${Math.floor(days / 30)}개월 후 마감`;
+    if (days > 0) return `${days}일 후 마감`;
+    if (hours > 0) return `${hours}시간 후 마감`;
+    return '곧 마감';
+  }
+  if (lang === 'ja') {
+    if (days > 30) return `${Math.floor(days / 30)}ヶ月後に締切`;
+    if (days > 0) return `${days}日後に締切`;
+    if (hours > 0) return `${hours}時間後に締切`;
+    return 'まもなく締切';
+  }
+  // English
+  if (days > 30) return `Closes in ${Math.floor(days / 30)}mo`;
+  if (days > 0) return `Closes in ${days}d`;
+  if (hours > 0) return `Closes in ${hours}h`;
+  return 'Closing soon';
 }

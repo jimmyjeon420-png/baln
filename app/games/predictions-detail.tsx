@@ -13,6 +13,7 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../src/hooks/useTheme';
+import { useLocale } from '../../src/context/LocaleContext';
 import {
   useMyPredictionStats,
   useLeaderboard,
@@ -21,6 +22,7 @@ import {
 export default function PredictionsDetailScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { t } = useLocale();
   const { data: myStats } = useMyPredictionStats();
   const { data: leaderboard = [] } = useLeaderboard();
   const [tab, setTab] = useState<'stats' | 'leaderboard'>('stats');
@@ -32,7 +34,7 @@ export default function PredictionsDetailScreen() {
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>예측 통계</Text>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{t('predictionsDetail.headerTitle')}</Text>
         <View style={{ width: 24 }} />
       </View>
 
@@ -43,7 +45,7 @@ export default function PredictionsDetailScreen() {
           onPress={() => setTab('stats')}
         >
           <Text style={[styles.tabText, { color: colors.textSecondary }, tab === 'stats' && { fontWeight: '600', color: colors.textPrimary }]}>
-            내 통계
+            {t('predictionsDetail.tabMyStats')}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -51,7 +53,7 @@ export default function PredictionsDetailScreen() {
           onPress={() => setTab('leaderboard')}
         >
           <Text style={[styles.tabText, { color: colors.textSecondary }, tab === 'leaderboard' && { fontWeight: '600', color: colors.textPrimary }]}>
-            리더보드
+            {t('predictionsDetail.tabLeaderboard')}
           </Text>
         </TouchableOpacity>
       </View>
@@ -61,34 +63,34 @@ export default function PredictionsDetailScreen() {
           /* 내 통계 */
           <View style={styles.statsContainer}>
             <View style={[styles.statBox, { backgroundColor: colors.surface }]}>
-              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>적중률</Text>
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>{t('predictionsDetail.accuracyRate')}</Text>
               <Text style={[styles.statValue, { color: colors.textPrimary }]}>
                 {myStats?.accuracy_rate?.toFixed(0) ?? '0'}%
               </Text>
             </View>
             <View style={[styles.statBox, { backgroundColor: colors.surface }]}>
-              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>총 투표</Text>
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>{t('predictionsDetail.totalVotes')}</Text>
               <Text style={[styles.statValue, { color: colors.textPrimary }]}>{myStats?.total_votes ?? 0}</Text>
             </View>
             <View style={[styles.statBox, { backgroundColor: colors.surface }]}>
-              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>적중</Text>
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>{t('predictionsDetail.correct')}</Text>
               <Text style={[styles.statValue, { color: colors.textPrimary }]}>{myStats?.correct_votes ?? 0}</Text>
             </View>
             <View style={[styles.statBox, { backgroundColor: colors.surface }]}>
-              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>연속 적중</Text>
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>{t('predictionsDetail.streak')}</Text>
               <Text style={[styles.statValue, { color: colors.textPrimary }]}>{myStats?.current_streak ?? 0}</Text>
             </View>
           </View>
         ) : (
           /* 리더보드 */
           <View style={styles.leaderboardContainer}>
-            {leaderboard.map((user: any, index: number) => (
+            {leaderboard.map((user: { user_id: string; accuracy_rate?: number; total_votes?: number }, index: number) => (
               <View key={user.user_id} style={[styles.leaderboardItem, { backgroundColor: colors.surface }]}>
                 <Text style={[styles.rank, { color: colors.primary }]}>#{index + 1}</Text>
                 <View style={styles.userInfo}>
                   <Text style={[styles.userName, { color: colors.textPrimary }]}>{user.user_id.slice(0, 8)}...</Text>
                   <Text style={[styles.userStats, { color: colors.textSecondary }]}>
-                    {user.accuracy_rate?.toFixed(0)}% · {user.total_votes}회
+                    {user.accuracy_rate?.toFixed(0)}% · {user.total_votes}{t('predictionsDetail.voteSuffix')}
                   </Text>
                 </View>
               </View>

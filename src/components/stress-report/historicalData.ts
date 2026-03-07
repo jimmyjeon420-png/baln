@@ -9,11 +9,13 @@
 
 export interface HistoricalEvent {
   year: number;
-  name: string;
+  nameKey: string;           // i18n key for event name
+  descKey: string;           // i18n key for short description
+  name: string;              // fallback name (Korean)
   maxDrawdown: number;       // 최대 하락폭 (%)
   recoveryMonths: number;    // 회복까지 걸린 개월 수
   afterOneYear: number;      // 회복 후 1년 수익률 (%)
-  shortDescription: string;  // 한 줄 설명
+  shortDescription: string;  // fallback description (Korean)
 }
 
 export interface RecoveryStats {
@@ -28,6 +30,8 @@ export interface RecoveryStats {
 export const HISTORICAL_EVENTS: HistoricalEvent[] = [
   {
     year: 2008,
+    nameKey: 'stressReport.historical.event2008Name',
+    descKey: 'stressReport.historical.event2008Desc',
     name: '글로벌 금융위기',
     maxDrawdown: -56.8,
     recoveryMonths: 49,
@@ -36,6 +40,8 @@ export const HISTORICAL_EVENTS: HistoricalEvent[] = [
   },
   {
     year: 2020,
+    nameKey: 'stressReport.historical.event2020Name',
+    descKey: 'stressReport.historical.event2020Desc',
     name: '코로나 팬데믹',
     maxDrawdown: -33.9,
     recoveryMonths: 5,
@@ -44,6 +50,8 @@ export const HISTORICAL_EVENTS: HistoricalEvent[] = [
   },
   {
     year: 2022,
+    nameKey: 'stressReport.historical.event2022Name',
+    descKey: 'stressReport.historical.event2022Desc',
     name: '금리 인상 충격',
     maxDrawdown: -25.4,
     recoveryMonths: 10,
@@ -52,6 +60,8 @@ export const HISTORICAL_EVENTS: HistoricalEvent[] = [
   },
   {
     year: 2018,
+    nameKey: 'stressReport.historical.event2018Name',
+    descKey: 'stressReport.historical.event2018Desc',
     name: '미중 무역전쟁',
     maxDrawdown: -19.8,
     recoveryMonths: 4,
@@ -60,6 +70,8 @@ export const HISTORICAL_EVENTS: HistoricalEvent[] = [
   },
   {
     year: 2011,
+    nameKey: 'stressReport.historical.event2011Name',
+    descKey: 'stressReport.historical.event2011Desc',
     name: '유럽 재정위기',
     maxDrawdown: -19.4,
     recoveryMonths: 6,

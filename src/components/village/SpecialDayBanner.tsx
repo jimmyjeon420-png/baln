@@ -36,10 +36,10 @@ interface SpecialDayBannerProps {
 // 특별일 유형 → 한/영 라벨
 // =============================================================================
 
-const _TYPE_LABELS: Record<string, { ko: string; en: string }> = {
-  birthday:    { ko: '생일', en: 'Birthday' },
-  anniversary: { ko: '기념일', en: 'Anniversary' },
-  memorable:   { ko: '기념일', en: 'Milestone' },
+const _TYPE_LABELS: Record<string, { ko: string; en: string; ja: string }> = {
+  birthday:    { ko: '생일', en: 'Birthday', ja: '誕生日' },
+  anniversary: { ko: '기념일', en: 'Anniversary', ja: '記念日' },
+  memorable:   { ko: '기념일', en: 'Milestone', ja: 'マイルストーン' },
 };
 
 // =============================================================================

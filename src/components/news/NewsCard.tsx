@@ -19,7 +19,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
-import { useLocale } from '../../context/LocaleContext';
+import { useLocale, getCurrentDisplayLanguage } from '../../context/LocaleContext';
 import { MarketNewsItem, getTimeAgo, isRecentNews } from '../../hooks/useMarketNews';
 import { useNewsPortfolioMatch } from '../../hooks/useNewsPortfolioMatch';
 import { getCurrentLanguage } from '../../locales';
@@ -144,7 +144,7 @@ export default function NewsCard({ item, compact = false, onPress }: NewsCardPro
       {/* 상단: 카테고리 + PiCK 배지 */}
       <View style={styles.topRow}>
         <View style={[styles.categoryChip, { backgroundColor: catConfig.color + '20' }]}>
-          <Ionicons name={catConfig.icon as any} size={12} color={catConfig.color} />
+          <Ionicons name={catConfig.icon as keyof typeof Ionicons.glyphMap} size={12} color={catConfig.color} />
           <Text style={[styles.categoryLabel, { color: catConfig.color }]}>{t(catConfig.labelKey)}</Text>
         </View>
         {item.is_pick && (
@@ -167,8 +167,8 @@ export default function NewsCard({ item, compact = false, onPress }: NewsCardPro
         </Text>
       )}
 
-      {/* AI 영향도 분석 */}
-      {item.impact_summary && (
+      {/* AI 영향도 분석 — impact_summary is Korean-only DB content, hide for other languages */}
+      {item.impact_summary && getCurrentDisplayLanguage() === 'ko' && (
         <View style={[styles.impactBox, { backgroundColor: getImpactBg(item.impact_score) }]}>
           <Ionicons name={getImpactIcon(item.impact_score)} size={14} color={getImpactColor(item.impact_score)} />
           <Text style={[styles.impactSummary, { color: getImpactColor(item.impact_score) }]} numberOfLines={2}>
