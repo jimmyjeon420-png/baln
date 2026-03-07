@@ -62,6 +62,8 @@
     "unitWon": "円",
     "unknown": "不明",
     "unknownError": "不明なエラーが発生しました。",
+    "error_title": "エラー",
+    "mutation_error": "操作中にエラーが発生しました。",
     "viewAll": "すべて見る",
     "getStarted": "始める",
     "noData": "データなし"
@@ -4448,7 +4450,7 @@
     }
   },
   "_wave": "3d",
-  "_description": "Wave 3D: locale prop → useLocale() hook refactoring — English translations",
+  "_description": "Wave 3D: locale prop → useLocale() hook refactoring — Japanese translations",
   "deepDive": {
     "aiOpinion": {
       "title": "AI見解",
@@ -5886,7 +5888,7 @@
     "noResults": "「{{query}}」に一致するショップが見つかりません"
   },
   "lynchMartTour": {
-    "title": "Lynch's Mart Tour",
+    "title": "リンチの火曜マートツアー",
     "subtitle": "毎週火曜日",
     "comment_tech_0": "半導体の需要が面白いな...",
     "comment_tech_1": "テック企業の決算を確認しないと",
@@ -6490,7 +6492,7 @@
   },
   "guruScorecard": {
     "champion": "チャンピオン",
-    "title": "Guru Scorecard"
+    "title": "グルスコアカード"
   },
   "leagueStanding": {
     "league": "リーグ",
@@ -6501,10 +6503,10 @@
     "you": "あなた"
   },
   "letterReply": {
-    "hint": "Send a reply to the guru",
+    "hint": "グルの次回訪問時に返事が届きます",
     "noReplies": "今週の返信をすべて使いました",
     "placeholder": "返事を書いてください...",
-    "premiumHint": "Premium members only",
+    "premiumHint": "プレミアム会員は無制限返信",
     "send": "送信",
     "sent": "返信を送信しました！",
     "remaining": "返信残り：{{count}}回"
@@ -6513,15 +6515,15 @@
     "news": "ニュース"
   },
   "newsReactionDetail": {
-    "portfolioDesc": "How this news affects your portfolio",
-    "portfolioTitle": "Portfolio impact",
-    "reactionsTitle": "Guru reactions",
-    "sentimentTitle": "Market sentiment"
+    "portfolioDesc": "このニュースがポートフォリオに与える影響",
+    "portfolioTitle": "ポートフォリオへの影響",
+    "reactionsTitle": "グルの反応",
+    "sentimentTitle": "市場センチメント"
   },
   "newsToPrediction": {
     "button": "予測を作成",
     "prompt": "このニュースから予測を作成しますか？",
-    "subtitle": "News-based prediction"
+    "subtitle": "的中でポイント獲得"
   },
   "paywall": {
     "alert": {
