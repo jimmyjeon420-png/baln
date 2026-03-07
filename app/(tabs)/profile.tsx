@@ -206,8 +206,20 @@ export default function ProfileScreen() {
           icon: 'language-outline',
           label: t('profile.menu.language') || '언어 / Language',
           onPress: () => {
-            const next = language === 'ko' ? 'en' : language === 'en' ? 'ja' : 'ko';
-            setAppLanguage(next);
+            const options = [
+              { lang: 'ko' as const, label: '한국어' },
+              { lang: 'en' as const, label: 'English' },
+              { lang: 'ja' as const, label: '日本語' },
+            ].filter(o => o.lang !== language);
+            const cancelLabel = language === 'ko' ? '취소' : language === 'ja' ? 'キャンセル' : 'Cancel';
+            Alert.alert(
+              t('profile.menu.language') || 'Language',
+              '',
+              [
+                ...options.map(o => ({ text: o.label, onPress: () => setAppLanguage(o.lang) })),
+                { text: cancelLabel, style: 'cancel' as const },
+              ],
+            );
           },
           badge: language === 'ko' ? '한국어' : language === 'ja' ? '日本語' : 'English',
           badgeColor: '#4CAF5033',
