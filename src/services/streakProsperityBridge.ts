@@ -86,7 +86,7 @@ export async function addStreakProsperityPoints(): Promise<void> {
     await AsyncStorage.setItem(DAILY_TRACKER_KEY, JSON.stringify(daily));
 
     if (__DEV__) {
-      console.log(`[streakProsperityBridge] +${actualPoints}pts (streak_maintained) → total ${data.score}`);
+      if (__DEV__) console.log(`[streakProsperityBridge] +${actualPoints}pts (streak_maintained) → total ${data.score}`);
     }
   } catch (err) {
     if (__DEV__) console.warn('[streakProsperityBridge] addStreakProsperityPoints 에러:', err);
@@ -115,7 +115,7 @@ export async function handleStreakBreak(daysMissed: number): Promise<void> {
     await AsyncStorage.setItem(PROSPERITY_KEY, JSON.stringify(data));
 
     if (__DEV__) {
-      console.log(`[streakProsperityBridge] -${penaltyPoints}pts (${daysMissed}일 미접속) → total ${data.score}`);
+      if (__DEV__) console.log(`[streakProsperityBridge] -${penaltyPoints}pts (${daysMissed}일 미접속) → total ${data.score}`);
     }
 
     // 구루 편지 생성 (복귀를 환영하는 편지)
@@ -192,7 +192,7 @@ async function generateReturnLetter(daysMissed: number): Promise<void> {
     await AsyncStorage.setItem(LETTERS_KEY, JSON.stringify(letters.slice(0, 20)));
 
     if (__DEV__) {
-      console.log(`[streakProsperityBridge] 복귀 편지 생성: ${template.guruId}`);
+      if (__DEV__) console.log(`[streakProsperityBridge] 복귀 편지 생성: ${template.guruId}`);
     }
   } catch (err) {
     if (__DEV__) console.warn('[streakProsperityBridge] generateReturnLetter 에러:', err);

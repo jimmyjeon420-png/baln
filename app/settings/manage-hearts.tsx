@@ -40,6 +40,7 @@ export default function ManageHeartsScreen() {
     );
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleEdit = (item: any) => {
     Alert.prompt(
       t('manage_hearts.rename_title'),
@@ -87,6 +88,9 @@ export default function ManageHeartsScreen() {
         <FlatList
           data={heartAssets}
           keyExtractor={(item) => item.ticker}
+          initialNumToRender={10}
+          maxToRenderPerBatch={10}
+          windowSize={5}
           renderItem={({ item }) => (
             <View style={[styles.item, { borderBottomColor: colors.border }]}>
               <View style={styles.itemLeft}>

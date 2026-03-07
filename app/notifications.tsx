@@ -21,12 +21,11 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import * as Sentry from '@sentry/react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { SIZES } from '../src/styles/theme';
 import { useTheme } from '../src/hooks/useTheme';
 import { useLocale } from '../src/context/LocaleContext';
 import {
@@ -38,7 +37,6 @@ import {
   markAllAsRead,
   filterByCategory,
   createSampleNotifications,
-  clearAllNotifications,
 } from '../src/services/notificationCenter';
 import { getRelativeTime } from '../src/utils/communityUtils';
 
@@ -84,7 +82,12 @@ export default function NotificationCenterScreen() {
 
     // 해당 화면으로 이동
     if (item.navigateTo) {
-      router.push(item.navigateTo as any);
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        router.push(item.navigateTo as any);
+      } catch (err) {
+        Sentry.captureException(err);
+      }
     }
   }, [router]);
 
@@ -127,6 +130,7 @@ export default function NotificationCenterScreen() {
 
         {/* 아이콘 */}
         <View style={[styles.notifIcon, { backgroundColor: item.iconColor + '20' }]}>
+          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
           <Ionicons name={item.icon as any} size={20} color={item.iconColor} />
         </View>
 
@@ -146,6 +150,7 @@ export default function NotificationCenterScreen() {
           </Text>
           {/* 카테고리 라벨 */}
           <View style={[styles.categoryTag, { backgroundColor: catInfo.color + '15' }]}>
+            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
             <Ionicons name={catInfo.icon as any} size={10} color={catInfo.color} />
             <Text style={[styles.categoryTagText, { color: catInfo.color }]}>
               {catInfo.label}
@@ -200,6 +205,7 @@ export default function NotificationCenterScreen() {
               onPress={() => setActiveFilter(cat)}
             >
               <Ionicons
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 name={info.icon as any}
                 size={14}
                 color={isActive ? '#000' : colors.textSecondary}
@@ -223,6 +229,10 @@ export default function NotificationCenterScreen() {
       <FlatList
         data={filteredNotifications}
         keyExtractor={(item) => item.id}
+        initialNumToRender={10}
+        maxToRenderPerBatch={10}
+        windowSize={5}
+        removeClippedSubviews={true}
         renderItem={renderNotification}
         contentContainerStyle={styles.listContent}
         refreshControl={

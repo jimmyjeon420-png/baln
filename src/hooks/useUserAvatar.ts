@@ -193,7 +193,7 @@ export function useUserAvatar(
       const isUnlocked = unlockedAnimals.some((a) => a.id === id);
       if (!isUnlocked) {
         if (__DEV__) {
-          console.log('[useUserAvatar] setAnimal: 잠긴 동물 id=%s', id);
+          if (__DEV__) console.log('[useUserAvatar] setAnimal: 잠긴 동물 id=%s', id);
         }
         return false;
       }
@@ -215,7 +215,7 @@ export function useUserAvatar(
       const isUnlocked = unlockedColors.some((c) => c.id === id);
       if (!isUnlocked) {
         if (__DEV__) {
-          console.log('[useUserAvatar] setColor: 잠긴 색상 id=%s', id);
+          if (__DEV__) console.log('[useUserAvatar] setColor: 잠긴 색상 id=%s', id);
         }
         return false;
       }
@@ -253,7 +253,7 @@ export function useUserAvatar(
       const isUnlocked = unlockedAccessories.some((a) => a.id === id);
       if (!isUnlocked) {
         if (__DEV__) {
-          console.log('[useUserAvatar] toggleAccessory: 잠긴 액세서리 id=%s', id);
+          if (__DEV__) console.log('[useUserAvatar] toggleAccessory: 잠긴 액세서리 id=%s', id);
         }
         return false;
       }

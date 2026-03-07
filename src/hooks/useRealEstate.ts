@@ -10,6 +10,9 @@
 
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import * as Sentry from '@sentry/react-native';
+import { showErrorToast } from '../utils/toast';
+import { t } from '../locales';
 import {
   searchApartments,
   getRecentTransactions,
@@ -171,6 +174,10 @@ export function useSaveRealEstate() {
       // 캐시 무효화: 포트폴리오 + 부동산 목록 동시 갱신
       queryClient.invalidateQueries({ queryKey: SHARED_PORTFOLIO_KEY });
       queryClient.invalidateQueries({ queryKey: ['my-realestate'] });
+    },
+    onError: (error) => {
+      showErrorToast(t('common.mutation_error'));
+      Sentry.captureException(error, { tags: { hook: 'useSaveRealEstate' } });
     },
   });
 }

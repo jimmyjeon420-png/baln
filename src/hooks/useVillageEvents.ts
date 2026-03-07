@@ -22,7 +22,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { VillageEvent } from '../types/village';
-import { VILLAGE_EVENTS, getEventsByType } from '../data/villageEvents';
+import { VILLAGE_EVENTS } from '../data/villageEvents';
 
 // ---------------------------------------------------------------------------
 // 상수
@@ -32,7 +32,7 @@ import { VILLAGE_EVENTS, getEventsByType } from '../data/villageEvents';
 const CHECK_INTERVAL_MS = 30 * 60 * 1000;
 
 /** AsyncStorage 키: 오늘 활성화된 이벤트 ID 목록 */
-const EVENTS_KEY = 'village_active_events';
+const _EVENTS_KEY = 'village_active_events';
 
 /** AsyncStorage 키: 오늘 발생한 이벤트 히스토리 */
 const EVENT_HISTORY_KEY = 'village_event_history';
@@ -203,7 +203,7 @@ export function useVillageEvents(prosperityLevel: number): UseVillageEventsRetur
           if (isMountedRef.current) {
             setActiveEvent(event);
             if (__DEV__) {
-              console.log(`[useVillageEvents] 이벤트 복원: ${event.title}`);
+              if (__DEV__) console.log(`[useVillageEvents] 이벤트 복원: ${event.title}`);
             }
           }
         } else {
@@ -243,7 +243,7 @@ export function useVillageEvents(prosperityLevel: number): UseVillageEventsRetur
 
     if (history.triggeredIds.length >= maxEvents) {
       if (__DEV__) {
-        console.log(`[useVillageEvents] 오늘 최대 이벤트 수 도달 (${maxEvents}개)`);
+        if (__DEV__) console.log(`[useVillageEvents] 오늘 최대 이벤트 수 도달 (${maxEvents}개)`);
       }
       return;
     }
@@ -285,7 +285,7 @@ export function useVillageEvents(prosperityLevel: number): UseVillageEventsRetur
     }
 
     if (__DEV__) {
-      console.log(`[useVillageEvents] 새 이벤트 발생: ${selected.title} (${selected.duration}분)`);
+      if (__DEV__) console.log(`[useVillageEvents] 새 이벤트 발생: ${selected.title} (${selected.duration}분)`);
     }
 
     // duration 후 자동 종료
@@ -350,7 +350,7 @@ export function useVillageEvents(prosperityLevel: number): UseVillageEventsRetur
     }
 
     if (__DEV__) {
-      console.log(`[useVillageEvents] 강제 이벤트 발동: ${event.title}`);
+      if (__DEV__) console.log(`[useVillageEvents] 강제 이벤트 발동: ${event.title}`);
     }
 
     // duration 후 자동 종료
@@ -377,7 +377,7 @@ export function useVillageEvents(prosperityLevel: number): UseVillageEventsRetur
     }
 
     if (__DEV__) {
-      console.log(`[useVillageEvents] 이벤트 조기 종료: ${activeEvent.title}`);
+      if (__DEV__) console.log(`[useVillageEvents] 이벤트 조기 종료: ${activeEvent.title}`);
     }
   }, [activeEvent]);
 

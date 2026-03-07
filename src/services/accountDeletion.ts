@@ -38,17 +38,17 @@ interface ExportedData {
   exportDate: string;
   userId: string;
   email: string;
-  profile: any;
-  portfolios: any[];
-  credits: any;
-  creditTransactions: any[];
-  predictionVotes: any[];
-  predictionStats: any;
-  communityPosts: any[];
-  communityComments: any[];
-  communityLikes: any[];
-  streakData: any;
-  notificationSettings: any;
+  profile: unknown;
+  portfolios: unknown;
+  credits: unknown;
+  creditTransactions: unknown;
+  predictionVotes: unknown;
+  predictionStats: unknown;
+  communityPosts: unknown;
+  communityComments: unknown;
+  communityLikes: unknown;
+  streakData: unknown;
+  notificationSettings: unknown;
 }
 
 // ============================================================================
@@ -131,7 +131,7 @@ export async function exportUserData(
   ]);
 
   // Promise.allSettled 결과에서 안전하게 데이터 추출
-  const safeGet = (result: PromiseSettledResult<any>, fallback: any = null) => {
+  const safeGet = (result: PromiseSettledResult<{ data?: unknown }>, fallback: unknown = null) => {
     if (result.status === 'fulfilled' && result.value?.data) {
       return result.value.data;
     }
@@ -319,7 +319,7 @@ export async function getUserDataSummary(userId: string): Promise<{
   ]);
 
   // count 안전 추출
-  const safeCount = (result: PromiseSettledResult<any>) => {
+  const safeCount = (result: PromiseSettledResult<{ count?: number | null }>) => {
     if (result.status === 'fulfilled' && result.value?.count != null) {
       return result.value.count;
     }

@@ -4708,6 +4708,8 @@
   "common.cancel": "취소",
   "common.more": "더보기",
   "common.ok": "확인",
+  "common.error_title": "오류",
+  "common.mutation_error": "작업 중 오류가 발생했습니다.",
   "deepDive": {
     "aiOpinion": {
       "title": "AI 종합 의견",

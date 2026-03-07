@@ -10,10 +10,13 @@
 
 import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import * as Sentry from '@sentry/react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
 import supabase, { getCurrentUser } from '../services/supabase';
 import { getCurrentDisplayLanguage } from '../context/LocaleContext';
+import { showErrorToast } from '../utils/toast';
+import { t } from '../locales';
 import type {
   PredictionPoll,
   PredictionVote,
@@ -772,6 +775,10 @@ export const useSubmitVote = () => {
       // 관련 쿼리 무효화 → 자동 리페치
       queryClient.invalidateQueries({ queryKey: ['prediction'] });
     },
+    onError: (error) => {
+      showErrorToast(t('common.mutation_error'));
+      Sentry.captureException(error, { tags: { hook: 'useSubmitVote' } });
+    },
   });
 };
 
@@ -1176,7 +1183,7 @@ export function useResolvedPollNotification(): void {
         await AsyncStorage.setItem(LAST_REVIEW_NOTIFY_KEY, today);
 
         if (__DEV__) {
-          console.log(`[PredictionNotify] 예측 결과 알림 발송 완료 (${newResults.length}개)`);
+          if (__DEV__) console.log(`[PredictionNotify] 예측 결과 알림 발송 완료 (${newResults.length}개)`);
         }
       } catch (e) {
         // 알림 실패해도 앱 동작에 영향 없음

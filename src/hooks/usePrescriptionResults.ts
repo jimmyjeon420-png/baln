@@ -14,6 +14,7 @@
 
 import { useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import * as Sentry from '@sentry/react-native';
 import supabase from '../services/supabase';
 import type { KostolalyPhase } from '../services/rebalanceScore';
 
@@ -159,12 +160,18 @@ export function usePrescriptionResults({
   const { mutate: initMonth } = useMutation({
     mutationFn: () => initCurrentMonth(currentPhase, actionsCount, currentScore),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: PRESCRIPTION_RESULTS_KEY }),
+    onError: (error) => {
+      Sentry.captureException(error, { tags: { hook: 'usePrescriptionResults', action: 'initMonth' } });
+    },
   });
 
   // 완료 수 동기화 뮤테이션
   const { mutate: syncCompleted } = useMutation({
     mutationFn: () => syncCompletedCount(completedCount),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: PRESCRIPTION_RESULTS_KEY }),
+    onError: (error) => {
+      Sentry.captureException(error, { tags: { hook: 'usePrescriptionResults', action: 'syncCompleted' } });
+    },
   });
 
   // 마운트 시 이번 달 초기화

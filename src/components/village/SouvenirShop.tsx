@@ -57,7 +57,13 @@ export function SouvenirShop({ onPurchase, colors }: SouvenirShopProps) {
   useEffect(() => {
     AsyncStorage.getItem(OWNED_KEY)
       .then(raw => {
-        if (raw) setOwned(new Set(JSON.parse(raw)));
+        if (raw) {
+          try {
+            setOwned(new Set(JSON.parse(raw)));
+          } catch {
+            // corrupted data — ignore
+          }
+        }
       })
       .catch(() => {});
   }, []);

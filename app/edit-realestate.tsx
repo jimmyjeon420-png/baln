@@ -25,6 +25,7 @@ import { useLocale } from '../src/context/LocaleContext';
 import { formatPrice } from '../src/services/realEstateApi';
 import { sqmToPyeong } from '../src/types/realestate';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import * as Sentry from '@sentry/react-native';
 import supabase, { getCurrentUser } from '../src/services/supabase';
 import { SHARED_PORTFOLIO_KEY } from '../src/hooks/useSharedPortfolio';
 
@@ -88,6 +89,7 @@ export default function EditRealEstateScreen() {
     },
     onError: (error: unknown) => {
       Alert.alert(t('editRealestate.alert.updateFail'), error instanceof Error ? error.message : t('editRealestate.alert.updateError'));
+      Sentry.captureException(error, { tags: { hook: 'editRealestate' } });
     },
   });
 

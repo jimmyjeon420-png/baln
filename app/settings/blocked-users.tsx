@@ -121,6 +121,9 @@ export default function BlockedUsersScreen() {
           data={blockedUsers}
           renderItem={renderItem}
           keyExtractor={(item) => item.id}
+          initialNumToRender={10}
+          maxToRenderPerBatch={10}
+          windowSize={5}
           contentContainerStyle={styles.list}
           ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
         />

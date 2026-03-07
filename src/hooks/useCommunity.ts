@@ -8,8 +8,11 @@
  */
 
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import * as Sentry from '@sentry/react-native';
 import supabase, { getCurrentUser } from '../services/supabase';
 import { isFreePeriod } from '../config/freePeriod';
+import { showErrorToast } from '../utils/toast';
+import { t } from '../locales';
 import { useSharedPortfolio } from './useSharedPortfolio';
 import {
   CommunityPost,
@@ -294,6 +297,10 @@ export const useCreatePost = () => {
       // 마을 번영도 기여 (fire-and-forget)
       addContribution('community_post').catch(() => {});
     },
+    onError: (error) => {
+      showErrorToast(t('common.mutation_error'));
+      Sentry.captureException(error, { tags: { hook: 'useCreatePost' } });
+    },
   });
 };
 
@@ -339,8 +346,6 @@ export const useLikePost = () => {
 
   return useMutation({
     mutationFn: async (postId: string) => {
-      console.log('[Community] 좋아요 토글 시작:', postId);
-
       const { data, error } = await supabase.rpc('toggle_post_like', {
         p_post_id: postId,
       });
@@ -434,7 +439,7 @@ export const useLikePost = () => {
       // communityPosts (useInfiniteQuery pages[][] 구조) 업데이트
       queryClient.setQueriesData(
         { queryKey: ['communityPosts'] },
-        (oldData: any) => {
+        (oldData: { pages?: CommunityPost[][] } | undefined) => {
           if (!oldData?.pages) return oldData;
           return {
             ...oldData,
@@ -452,7 +457,7 @@ export const useLikePost = () => {
       // communityPost (단일) 업데이트
       queryClient.setQueriesData(
         { queryKey: ['communityPost'] },
-        (oldData: any) => {
+        (oldData: CommunityPost | undefined) => {
           if (!oldData || oldData.id !== postId) return oldData;
           return { ...oldData, likes_count: (oldData.likes_count || 0) + (isCurrentlyLiked ? -1 : 1) };
         },
@@ -471,6 +476,7 @@ export const useLikePost = () => {
           queryClient.setQueryData(queryKey, data);
         }
       }
+      Sentry.captureException(_err, { tags: { hook: 'useToggleLike' } });
     },
 
     // 서버 진실성 확보 + 10좋아요 보상 체크
@@ -543,8 +549,6 @@ export const useCreateComment = (postId: string) => {
 
   return useMutation({
     mutationFn: async (input: { content: string; displayTag: string; totalAssets: number; parentId?: string }) => {
-      console.log('[Community] 댓글 작성 시작:', { postId, contentLength: input.content.length, totalAssets: input.totalAssets, isFreePeriod: isFreePeriod() });
-
       const user = await getCurrentUser();
       if (!user) throw new Error('로그인이 필요합니다.');
 
@@ -562,8 +566,6 @@ export const useCreateComment = (postId: string) => {
         total_assets_at_comment: input.totalAssets,
         parent_id: input.parentId || null,
       };
-      console.log('[Community] 댓글 INSERT payload:', insertPayload);
-
       const { data, error } = await supabase
         .from('community_comments')
         .insert(insertPayload)
@@ -574,8 +576,6 @@ export const useCreateComment = (postId: string) => {
         console.warn('[Community] 댓글 INSERT 실패:', error.code, error.message);
         throw error;
       }
-
-      console.log('[Community] 댓글 저장 성공:', data?.id);
 
       // 댓글 수 원자적 증가 (대댓글도 카운트) — RPC 실패 시 무시 (댓글은 이미 저장됨)
       try {
@@ -593,6 +593,10 @@ export const useCreateComment = (postId: string) => {
       queryClient.invalidateQueries({ queryKey: ['communityComments', postId] });
       queryClient.invalidateQueries({ queryKey: ['communityPosts'] });
       queryClient.invalidateQueries({ queryKey: ['communityPost', postId] });
+    },
+    onError: (error) => {
+      showErrorToast(t('common.mutation_error'));
+      Sentry.captureException(error, { tags: { hook: 'useAddComment' } });
     },
   });
 };
@@ -630,6 +634,10 @@ export const useUpdateComment = (postId: string) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['communityComments', postId] });
+    },
+    onError: (error) => {
+      showErrorToast(t('common.mutation_error'));
+      Sentry.captureException(error, { tags: { hook: 'useUpdateComment' } });
     },
   });
 };
@@ -708,8 +716,9 @@ export const useDeleteComment = (postId: string) => {
         });
 
         if (!rpcError && rpcData) {
-          const success = (rpcData as any)?.success === true;
-          const reason = (rpcData as any)?.reason as string | undefined;
+          const rpcResult = rpcData as { success?: boolean; reason?: string } | null;
+          const success = rpcResult?.success === true;
+          const reason = rpcResult?.reason;
 
           if (success) {
             await verifyCommunityRowDeleted('community_comments', commentId, '댓글');
@@ -762,6 +771,10 @@ export const useDeleteComment = (postId: string) => {
       queryClient.invalidateQueries({ queryKey: ['communityPosts'] });
       queryClient.invalidateQueries({ queryKey: ['communityPost', postId] });
     },
+    onError: (error) => {
+      showErrorToast(t('common.mutation_error'));
+      Sentry.captureException(error, { tags: { hook: 'useDeleteComment' } });
+    },
   });
 };
 
@@ -781,8 +794,9 @@ export const useDeletePost = () => {
         });
 
         if (!rpcError && rpcData) {
-          const success = (rpcData as any)?.success === true;
-          const reason = (rpcData as any)?.reason as string | undefined;
+          const rpcResult = rpcData as { success?: boolean; reason?: string } | null;
+          const success = rpcResult?.success === true;
+          const reason = rpcResult?.reason;
 
           if (success) {
             await verifyCommunityRowDeleted('community_posts', postId, '게시글');
@@ -847,6 +861,10 @@ export const useDeletePost = () => {
         queryClient.invalidateQueries({ queryKey: ['bookmarkedPosts'], refetchType: 'all' }),
       ]);
     },
+    onError: (error) => {
+      showErrorToast(t('common.mutation_error'));
+      Sentry.captureException(error, { tags: { hook: 'useDeletePost' } });
+    },
   });
 };
 
@@ -890,8 +908,6 @@ export const useLikeComment = (postId: string) => {
     mutationFn: async (commentId: string) => {
       const user = await getCurrentUser();
       if (!user) throw new Error('로그인이 필요합니다.');
-
-      console.log('[Community] 댓글 좋아요 토글:', commentId);
 
       // 기존 좋아요 확인 (maybeSingle: 없으면 null, 에러 없음)
       const { data: existing, error: checkError } = await supabase
@@ -984,6 +1000,7 @@ export const useLikeComment = (postId: string) => {
       if (context?.prevLikes) {
         queryClient.setQueryData(['myCommentLikes'], context.prevLikes);
       }
+      Sentry.captureException(_err, { tags: { hook: 'useToggleCommentLike' } });
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['communityComments', postId] });
@@ -1127,6 +1144,10 @@ export const useSelectBestAnswer = (postId: string) => {
           grantBestAnswerReward(comment.user_id).catch(() => {});
         }
       }).catch(() => {});
+    },
+    onError: (error) => {
+      showErrorToast(t('common.mutation_error'));
+      Sentry.captureException(error, { tags: { hook: 'useSelectBestAnswer' } });
     },
   });
 };

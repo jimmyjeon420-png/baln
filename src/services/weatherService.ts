@@ -13,6 +13,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Sentry from '@sentry/react-native';
 import type { VillageWeather, ClothingLevel, WeatherCondition } from '../types/village';
+import { withTimeout } from '../utils/withTimeout';
 
 // ============================================================================
 // 상수
@@ -106,7 +107,7 @@ export async function fetchWeather(city?: string): Promise<VillageWeather> {
 
   try {
     const url = `${API_BASE_URL}?q=${encodeURIComponent(targetCity)}&appid=${OPENWEATHER_API_KEY}&units=metric&lang=kr`;
-    const response = await fetch(url, { method: 'GET' });
+    const response = await withTimeout(fetch(url, { method: 'GET' }), 10000, 'OpenWeather API');
 
     if (!response.ok) {
       throw new Error(`OpenWeather API 응답 실패: ${response.status}`);

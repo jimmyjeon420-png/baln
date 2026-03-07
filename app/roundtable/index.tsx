@@ -22,6 +22,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import * as Sentry from '@sentry/react-native';
 import { useTheme } from '../../src/hooks/useTheme';
 import { useRoundtable } from '../../src/hooks/useRoundtable';
 import { CharacterAvatar } from '../../src/components/character/CharacterAvatar';
@@ -72,6 +73,7 @@ export default function RoundtableIndexScreen() {
       }
       return [...prev, guruId];
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleStart = useCallback(async () => {
@@ -84,6 +86,7 @@ export default function RoundtableIndexScreen() {
     } catch {
       // 에러는 useRoundtable에서 처리
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [topic, selectedGurus, startRoundtable]);
 
   const handleSelectTopic = useCallback((t: string) => {
@@ -229,7 +232,7 @@ export default function RoundtableIndexScreen() {
                 <TouchableOpacity
                   key={s.id}
                   style={[styles.historyCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
-                  onPress={() => router.push(`/roundtable/${s.id}`)}
+                  onPress={() => { try { router.push(`/roundtable/${s.id}`); } catch (err) { Sentry.captureException(err); } }}
                 >
                   <View style={styles.historyInfo}>
                     <Text style={[styles.historyTopic, { color: colors.textPrimary }]} numberOfLines={1}>

@@ -8,8 +8,9 @@
  * - 작성자 아바타 탭 → 프로필 페이지
  */
 
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import {
   CommunityPost,
@@ -194,12 +195,7 @@ export default function CommunityPostCard({
           contentContainerStyle={styles.imageGalleryContent}
         >
           {post.image_urls.map((url, index) => (
-            <Image
-              key={index}
-              source={{ uri: url }}
-              style={[styles.thumbnailImage, { backgroundColor: colors.surfaceElevated }]}
-              resizeMode="cover"
-            />
+            <PostThumbnail key={index} uri={url} backgroundColor={colors.surfaceElevated} />
           ))}
         </ScrollView>
       )}
@@ -232,6 +228,31 @@ export default function CommunityPostCard({
         </View>
       </View>
     </TouchableOpacity>
+  );
+}
+
+/** 게시물 썸네일 이미지 — 로드 실패 시 플레이스홀더 표시 */
+function PostThumbnail({ uri, backgroundColor }: { uri: string; backgroundColor: string }) {
+  const [failed, setFailed] = useState(false);
+  const handleError = useCallback(() => setFailed(true), []);
+
+  if (failed) {
+    return (
+      <View style={[styles.thumbnailImage, { backgroundColor, justifyContent: 'center', alignItems: 'center' }]}>
+        <Text style={{ fontSize: 24 }}>🖼️</Text>
+      </View>
+    );
+  }
+
+  return (
+    <Image
+      source={{ uri }}
+      style={[styles.thumbnailImage, { backgroundColor }]}
+      contentFit="cover"
+      transition={200}
+      cachePolicy="memory-disk"
+      onError={handleError}
+    />
   );
 }
 

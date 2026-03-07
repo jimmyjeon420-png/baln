@@ -1111,6 +1111,10 @@ export default function AdminUsersScreen() {
           data={sortedUsers}
           renderItem={renderUserCard}
           keyExtractor={(item) => item.id}
+          initialNumToRender={10}
+          maxToRenderPerBatch={10}
+          windowSize={5}
+          removeClippedSubviews={true}
           contentContainerStyle={styles.listContent}
           refreshControl={
             <RefreshControl

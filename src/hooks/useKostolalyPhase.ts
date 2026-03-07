@@ -52,11 +52,18 @@ export function useKostolalyPhase() {
       if (!data) return null;
 
       // reasoning이 string인 경우 파싱
-      const reasoning: string[] = Array.isArray(data.reasoning)
-        ? (data.reasoning as string[])
-        : (typeof data.reasoning === 'string')
-          ? JSON.parse(data.reasoning as string)
-          : [];
+      let reasoning: string[];
+      if (Array.isArray(data.reasoning)) {
+        reasoning = data.reasoning as string[];
+      } else if (typeof data.reasoning === 'string') {
+        try {
+          reasoning = JSON.parse(data.reasoning as string);
+        } catch {
+          reasoning = [];
+        }
+      } else {
+        reasoning = [];
+      }
 
       // suggested_target: DB 값 우선, 없으면 KOSTOLANY_TARGETS 기본값
       const phase = data.phase as KostolalyPhase;

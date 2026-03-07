@@ -182,7 +182,7 @@ export function useVillageAnalytics() {
       await saveAnalytics(updated);
 
       if (__DEV__) {
-        console.log(
+        if (__DEV__) console.log(
           `[useVillageAnalytics] 세션 시작 — 총 방문: ${updated.totalVisits}회, 연속: ${consecutiveVisitDays}일`,
         );
       }
@@ -210,7 +210,7 @@ export function useVillageAnalytics() {
       saveAnalytics(final).catch(() => {});
 
       if (__DEV__) {
-        console.log(
+        if (__DEV__) console.log(
           `[useVillageAnalytics] 세션 종료 — 체류 ${sessionSeconds}초, 평균 ${averageSessionLength}초`,
         );
       }
@@ -282,7 +282,7 @@ export function useVillageAnalytics() {
       saveAnalytics(updated).catch(() => {});
 
       if (__DEV__) {
-        console.log(`[useVillageAnalytics] 이벤트: ${eventName}`, data ?? '');
+        if (__DEV__) console.log(`[useVillageAnalytics] 이벤트: ${eventName}`, data ?? '');
       }
     },
     [],

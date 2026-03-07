@@ -150,10 +150,10 @@ async function loadFromSupabase(): Promise<EmotionEntry[]> {
 
     if (error || !data) return [];
 
-    return data.map((row: any) => ({
+    return data.map((row) => ({
       date: row.date as string,
       emotion: row.emotion as string,
-      memo: row.memo ?? '',
+      memo: (row.memo as string) ?? '',
       nasdaqClose: row.nasdaq_close != null ? Number(row.nasdaq_close) : undefined,
       btcClose: row.btc_close != null ? Number(row.btc_close) : undefined,
     }));

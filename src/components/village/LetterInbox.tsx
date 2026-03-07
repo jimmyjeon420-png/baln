@@ -282,6 +282,9 @@ export function LetterInbox({
             data={sortedLetters}
             renderItem={renderItem}
             keyExtractor={keyExtractor}
+            initialNumToRender={10}
+            maxToRenderPerBatch={10}
+            windowSize={5}
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
             ItemSeparatorComponent={() => <View style={{ height: 8 }} />}

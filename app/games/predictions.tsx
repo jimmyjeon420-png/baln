@@ -16,6 +16,7 @@ import {
   TouchableOpacity,
   RefreshControl,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -327,7 +328,7 @@ export default function PredictionsScreen() {
             totalVotes={myStats.total_votes}
             currentStreak={myStats.current_streak}
             onShare={() => {
-              console.log('투자 예측 적중률 공유 완료');
+              // share completed
             }}
           />
         )}
@@ -427,6 +428,17 @@ export default function PredictionsScreen() {
           </View>
         </View>
       </>
+    );
+  }
+
+  // ============================================================================
+  // 초기 로딩 상태 (데이터 fetch 전 빈 화면 방지)
+  // ============================================================================
+  if (activeLoading && resolvedLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#121212' }}>
+        <ActivityIndicator size="large" color="#4CAF50" />
+      </View>
     );
   }
 

@@ -116,19 +116,19 @@ export function usePredictionLeaderboard(): UsePredictionLeaderboardReturn {
       setTotalParticipants(total);
 
       // 프로필에서 display_name 가져오기
-      const userIds = (statsData || []).map((s: any) => s.user_id);
+      const userIds = (statsData || []).map((s) => s.user_id);
       const { data: profiles } = await supabase
         .from('profiles')
         .select('id, email')
         .in('id', userIds);
 
       const profileMap = new Map<string, string>();
-      (profiles || []).forEach((p: any) => {
+      (profiles || []).forEach((p) => {
         profileMap.set(p.id, p.email || 'Unknown');
       });
 
       // 리더보드 엔트리 구성
-      const entries: LeaderboardEntry[] = (statsData || []).map((s: any, index: number) => ({
+      const entries: LeaderboardEntry[] = (statsData || []).map((s, index: number) => ({
         rank: index + 1,
         user_id: s.user_id,
         display_name: maskEmail(profileMap.get(s.user_id) || 'User'),
@@ -176,7 +176,7 @@ export function usePredictionLeaderboard(): UsePredictionLeaderboardReturn {
           .gte('created_at', monday + 'T00:00:00+09:00');
 
         if (weekVotes && weekVotes.length > 0) {
-          const correct = weekVotes.filter((v: any) => v.is_correct === true).length;
+          const correct = weekVotes.filter((v) => v.is_correct === true).length;
           setWeeklyStats({
             totalVotes: weekVotes.length,
             correctVotes: correct,

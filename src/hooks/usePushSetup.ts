@@ -95,7 +95,7 @@ export function usePushSetup() {
         // 3. 스트릭 만료 경고 알림 예약 (매일 21:00 KST) — P2.1
         await scheduleStreakWarningNotification(user.id);
 
-        console.log('[PushSetup] 초기화 완료');
+        if (__DEV__) console.log('[PushSetup] 초기화 완료');
       } catch (error) {
         // 푸시 초기화 실패해도 앱은 정상 동작해야 함
         console.warn('[PushSetup] 초기화 실패 (앱 사용에 영향 없음):', error);
@@ -103,5 +103,6 @@ export function usePushSetup() {
     };
 
     setup();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]); // user.id가 변경될 때만 재실행
 }

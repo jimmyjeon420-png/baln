@@ -8,6 +8,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import * as Sentry from '@sentry/react-native';
 import {
   getSubscriptionStatus,
   activateFreeTrial,
@@ -15,7 +16,9 @@ import {
   useDailyFreeAnalysis as consumeDailyFree,
   SubscriptionStatus,
 } from '../services/subscriptionService';
-import supabase, { getCurrentUser } from '../services/supabase';
+import { getCurrentUser } from '../services/supabase';
+import { showErrorToast } from '../utils/toast';
+import { t } from '../locales';
 
 // 캐시 키
 const SUBSCRIPTION_KEY = 'subscription';
@@ -76,6 +79,10 @@ export function useActivateTrial() {
         queryClient.invalidateQueries({ queryKey: [SUBSCRIPTION_KEY] });
       }
     },
+    onError: (error) => {
+      showErrorToast(t('common.mutation_error'));
+      Sentry.captureException(error, { tags: { hook: 'useActivateTrial' } });
+    },
   });
 }
 
@@ -99,6 +106,9 @@ export function useDailyFreeAnalysis() {
     mutationFn: () => consumeDailyFree(isPremium),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [DAILY_FREE_KEY] });
+    },
+    onError: (error) => {
+      Sentry.captureException(error, { tags: { hook: 'useDailyFreeAnalysis' } });
     },
   });
 

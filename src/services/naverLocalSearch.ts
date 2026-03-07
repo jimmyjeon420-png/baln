@@ -78,13 +78,14 @@ export async function searchPlaces(query: string, size: number = 5): Promise<Par
       longitude: parseInt(item.mapx) / 1000000,
       category: item.category || '',
     }));
-  } catch (error: any) {
+  } catch (error: unknown) {
     // API 실패 시 원인 로깅 → 사용자는 수동 입력 가능
-    const status = error?.response?.status;
+    const axiosErr = error as { response?: { status?: number }; message?: string };
+    const status = axiosErr?.response?.status;
     if (status === 401 || status === 403) {
       if (__DEV__) console.warn('[NaverSearch] 인증 실패. 네이버 개발자 센터에서 Client ID/Secret를 확인하세요.');
     } else {
-      if (__DEV__) console.warn('[NaverSearch] API 호출 실패:', status || error?.message);
+      if (__DEV__) console.warn('[NaverSearch] API 호출 실패:', status || axiosErr?.message);
     }
     return [];
   }

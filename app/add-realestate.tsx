@@ -21,7 +21,7 @@ import {
   useMyRealEstate,
 } from '../src/hooks/useRealEstate';
 import { formatPrice } from '../src/services/realEstateApi';
-import { sqmToPyeong, type ApartmentComplex, type AreaPriceSummary } from '../src/types/realestate';
+import { sqmToPyeong, type ApartmentComplex } from '../src/types/realestate';
 import { useTheme } from '../src/hooks/useTheme';
 import { useLocale } from '../src/context/LocaleContext';
 
@@ -131,9 +131,11 @@ export default function AddRealEstateScreen() {
           },
         ],
       );
-    } catch (error: any) {
-      Alert.alert(t('add_realestate.alert_save_error'), error.message || t('add_realestate.alert_save_error_msg'));
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : t('add_realestate.alert_save_error_msg');
+      Alert.alert(t('add_realestate.alert_save_error'), msg);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedComplex, customArea, purchasePrice, hasDebt, debtAmount, saveMutation, router]);
 
 
@@ -205,6 +207,9 @@ export default function AddRealEstateScreen() {
             <FlatList
               data={searchResults || []}
               keyExtractor={(item) => `${item.lawdCd}-${item.complexName}`}
+              initialNumToRender={10}
+              maxToRenderPerBatch={10}
+              windowSize={5}
               style={styles.resultList}
               renderItem={({ item }) => (
                 <TouchableOpacity

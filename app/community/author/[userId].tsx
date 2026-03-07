@@ -19,6 +19,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import * as Sentry from '@sentry/react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
   useAuthorPosts,
@@ -66,7 +67,12 @@ export default function AuthorProfileScreen() {
   };
 
   const handlePostPress = (postId: string) => {
-    router.push(`/community/${postId}` as any);
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      router.push(`/community/${postId}` as any);
+    } catch (err) {
+      Sentry.captureException(err);
+    }
   };
 
   // 로딩
@@ -256,6 +262,10 @@ export default function AuthorProfileScreen() {
       <FlatList
         data={posts}
         keyExtractor={(item) => item.id}
+        initialNumToRender={10}
+        maxToRenderPerBatch={10}
+        windowSize={5}
+        removeClippedSubviews={true}
         renderItem={({ item }) => (
           <View style={styles.postCardWrapper}>
             <CommunityPostCard

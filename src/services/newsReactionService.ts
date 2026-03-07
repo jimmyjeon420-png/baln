@@ -173,7 +173,9 @@ ${marketContext ? `[오늘 시장 맥락]\n${marketContext}\n` : ''}
 
     const parsed = JSON.parse(cleaned);
     const now = new Date().toISOString();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const articles: NewspaperArticle[] = (parsed.articles || []).map((article: any, idx: number) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const reactions: GuruNewsReaction[] = (article.reactions || []).map((r: any) => ({
         guruId: r.guruId || r.speaker || '',
         sentiment: mapSentimentToMood(r.sentiment),

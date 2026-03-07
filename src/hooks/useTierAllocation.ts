@@ -9,11 +9,14 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import * as Sentry from '@sentry/react-native';
 import supabase from '../services/supabase';
 import { spendCredits } from '../services/creditService';
 import { FEATURE_COSTS, TIER_DISCOUNTS } from '../types/marketplace';
 import type { UserTier } from '../types/database';
 import { isFreePeriod } from '../config/freePeriod';
+import { showErrorToast } from '../utils/toast';
+import { t } from '../locales';
 
 // ============================================================================
 // 타입 정의
@@ -132,6 +135,10 @@ export const useUnlockTierInsights = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['credits', 'balance'] });
       queryClient.invalidateQueries({ queryKey: ['tierAllocation', 'all'] });
+    },
+    onError: (error) => {
+      showErrorToast(t('common.mutation_error'));
+      Sentry.captureException(error, { tags: { hook: 'useUnlockAllTiers' } });
     },
   });
 };

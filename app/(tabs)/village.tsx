@@ -29,6 +29,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import * as Sentry from '@sentry/react-native';
 
 // Context & Hooks
 import { useLocale } from '../../src/context/LocaleContext';
@@ -338,7 +339,11 @@ export default function VillageScreen() {
 
   const handleGuruViewProfile = useCallback((guruId: string) => {
     setSelectedGuruId(null);
-    router.push(`/settings/guru-detail/${guruId}`);
+    try {
+      router.push(`/settings/guru-detail/${guruId}`);
+    } catch (err) {
+      Sentry.captureException(err);
+    }
   }, [router]);
 
   const handleCloseDetailSheet = useCallback(() => {
@@ -348,7 +353,11 @@ export default function VillageScreen() {
   const handleEventPress = useCallback(() => {
     // Navigate to event detail or roundtable
     if (activeEvent?.type === 'competition') {
-      router.push('/roundtable');
+      try {
+        router.push('/roundtable');
+      } catch (err) {
+        Sentry.captureException(err);
+      }
     }
   }, [activeEvent, router]);
 
@@ -357,7 +366,11 @@ export default function VillageScreen() {
   }, [dismissEvent]);
 
   const handleRoundtablePress = useCallback(() => {
-    router.push('/roundtable');
+    try {
+      router.push('/roundtable');
+    } catch (err) {
+      Sentry.captureException(err);
+    }
   }, [router]);
 
   // ── Loading State ───────────────────────────────────────────────────────
@@ -975,7 +988,11 @@ export default function VillageScreen() {
         onBrandPress={(brand: BrandShop) => {
           setShowMarket(false);
           if (brand.ticker) {
-            router.push(`/settings/guru-detail/${brand.ticker}`);
+            try {
+              router.push(`/settings/guru-detail/${brand.ticker}`);
+            } catch (err) {
+              Sentry.captureException(err);
+            }
           }
         }}
         colors={colors}
@@ -989,7 +1006,11 @@ export default function VillageScreen() {
         colors={colors}
         onGuruPress={(guruId: string) => {
           setShowNewspaper(false);
-          router.push(`/settings/guru-detail/${guruId}`);
+          try {
+            router.push(`/settings/guru-detail/${guruId}`);
+          } catch (err) {
+            Sentry.captureException(err);
+          }
         }}
       />
 
@@ -1119,6 +1140,9 @@ function GuruChatModalInline({
           ref={flatListRef}
           data={messages}
           keyExtractor={(item) => item.id}
+          initialNumToRender={10}
+          maxToRenderPerBatch={10}
+          windowSize={5}
           style={[chatStyles.messageList, { backgroundColor: colors.background }]}
           contentContainerStyle={chatStyles.messageListContent}
           onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}

@@ -12,6 +12,7 @@
  * 기존 패턴: YahooFinanceProvider.ts의 toYahooSymbol(), rateLimit() 재사용
  */
 
+import * as Sentry from '@sentry/react-native';
 import axios from 'axios';
 import { isKoreanLocale } from '../utils/formatters';
 
@@ -124,7 +125,7 @@ export async function fetchExchangeRate(): Promise<number> {
       cachedRate = rate;
       cachedRateTime = Date.now();
       if (__DEV__) {
-        console.log(`[ExchangeRate] USD/KRW = ${rate.toFixed(2)} (${name})`);
+        if (__DEV__) console.log(`[ExchangeRate] USD/KRW = ${rate.toFixed(2)} (${name})`);
       }
       return rate;
     } catch (err: unknown) {
@@ -177,7 +178,7 @@ export async function fetchStockFundamentals(
     await rateLimit();
 
     if (__DEV__) {
-      console.log(`[StockData] Fetching fundamentals for ${symbol}...` +
+      if (__DEV__) console.log(`[StockData] Fetching fundamentals for ${symbol}...` +
         (!isKR ? ` (환율 ${exchangeRate.toFixed(2)}원 적용)` : ''));
     }
 
@@ -281,7 +282,7 @@ export async function fetchStockFundamentals(
     };
 
     if (__DEV__) {
-      console.log(`[StockData] ${symbol} fundamentals:`, {
+      if (__DEV__) console.log(`[StockData] ${symbol} fundamentals:`, {
         marketCap: fundamentals.marketCap,
         marketCapKRW: fundamentals.marketCapKRW,
         PE: fundamentals.trailingPE,
@@ -304,6 +305,12 @@ export async function fetchStockFundamentals(
     } else {
       console.warn(`[StockData] ERROR: ${symbol} -`, error.message);
     }
+    Sentry.addBreadcrumb({
+      category: 'api',
+      message: `fetchStockFundamentals failed for ${symbol}`,
+      level: 'error',
+      data: { error: String(error), symbol },
+    });
 
     return null;
   }

@@ -183,7 +183,7 @@ export const verifyAsset = async (
       isFraudSuspected: fraudCheck.isFraudSuspected,
       message,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('자산 검증 실패:', error);
     return {
       status: 'rejected',
@@ -192,7 +192,7 @@ export const verifyAsset = async (
       calculatedTotal: 0,
       discrepancyPercent: 0,
       isFraudSuspected: false,
-      message: error.message || '검증 중 오류가 발생했습니다',
+      message: (error instanceof Error ? error.message : String(error)) || '검증 중 오류가 발생했습니다',
     };
   }
 };

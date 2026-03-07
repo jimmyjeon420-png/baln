@@ -178,8 +178,8 @@ export function extractLawdCd(address: string): string | null {
     .trim();
 
   if (__DEV__) {
-    console.log('[lawdCd] 원본 주소:', address);
-    console.log('[lawdCd] 정규화 후:', normalized);
+    if (__DEV__) console.log('[lawdCd] 원본 주소:', address);
+    if (__DEV__) console.log('[lawdCd] 정규화 후:', normalized);
   }
 
   const parts = normalized.split(/\s+/);
@@ -189,7 +189,7 @@ export function extractLawdCd(address: string): string | null {
   }
 
   if (__DEV__) {
-    console.log('[lawdCd] 파트 분리:', parts);
+    if (__DEV__) console.log('[lawdCd] 파트 분리:', parts);
   }
 
   // Case 1: 3단계 시군구 (예: "경기 성남시 분당구")

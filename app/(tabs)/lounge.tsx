@@ -22,6 +22,7 @@ import {
   Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import * as Sentry from '@sentry/react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -557,9 +558,9 @@ function LoungeScreenInner() {
 
   const handleLike = (postId: string) => likePost.mutate(postId);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handlePostPress = (postId: string) => router.push(`/community/${postId}` as any);
+  const handlePostPress = (postId: string) => { try { router.push(`/community/${postId}` as any); } catch (err) { Sentry.captureException(err); } };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleAuthorPress = (userId: string) => router.push(`/community/author/${userId}` as any);
+  const handleAuthorPress = (userId: string) => { try { router.push(`/community/author/${userId}` as any); } catch (err) { Sentry.captureException(err); } };
 
   const handleComposePress = async () => {
     if (!eligibility?.canPost) {
@@ -588,8 +589,8 @@ function LoungeScreenInner() {
   };
 
   // ── 핸들러: 모임 ──
-  const handleGatheringPress = (gathering: Gathering) => router.push(`/gatherings/${gathering.id}`);
-  const handleCreateGathering = () => router.push('/gatherings/create');
+  const handleGatheringPress = (gathering: Gathering) => { try { router.push(`/gatherings/${gathering.id}`); } catch (err) { Sentry.captureException(err); } };
+  const handleCreateGathering = () => { try { router.push('/gatherings/create'); } catch (err) { Sentry.captureException(err); } };
 
   // ── 진단 ──
   const handleDiagnose = async () => {
@@ -855,6 +856,10 @@ function LoungeScreenInner() {
               style={{ flex: 1 }}
               data={posts}
               keyExtractor={(item) => item?.id || Math.random().toString()}
+              initialNumToRender={10}
+              maxToRenderPerBatch={10}
+              windowSize={5}
+              removeClippedSubviews={true}
               renderItem={({ item }) => {
                 if (!item) return null;
                 return (
@@ -1220,6 +1225,10 @@ function LoungeScreenInner() {
             <FlatList
               data={gatherings ?? []}
               keyExtractor={(item) => item?.id || Math.random().toString()}
+              initialNumToRender={10}
+              maxToRenderPerBatch={10}
+              windowSize={5}
+              removeClippedSubviews={true}
               renderItem={({ item }) => {
                 if (!item) return null;
                 return (

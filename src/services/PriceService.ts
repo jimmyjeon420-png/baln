@@ -254,7 +254,7 @@ export class PriceService {
   /**
    * Log error for debugging/monitoring
    */
-  private logError(error: any, ticker: string): void {
+  private logError(error: unknown, ticker: string): void {
     const errorMsg = error instanceof Error ? error.message : String(error);
     const code = this.extractErrorCode(errorMsg);
 

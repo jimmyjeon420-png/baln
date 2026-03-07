@@ -184,7 +184,7 @@ export function useGuruActivity(
             changed = true;
 
             if (__DEV__ && forceAll === false) {
-              console.log(
+              if (__DEV__) console.log(
                 `[useGuruActivity] ${guruId}: ${current?.activity ?? 'none'} → ${newState.activity} (${newState.description.ko})`,
               );
             }

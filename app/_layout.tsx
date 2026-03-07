@@ -76,6 +76,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   const rawSegments = useSegments();
   // useSegments()는 매 렌더마다 새 배열 참조 반환 → useEffect 무한 루프 방지
   const segmentPath = rawSegments.join('/');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const segments = useMemo(() => rawSegments, [segmentPath]);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [welcomeCredits, setWelcomeCredits] = useState(10);
@@ -104,6 +105,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
         }
       }).catch((err) => console.warn('[AuthGate] 웰컴 모달 상태 조회 실패:', err));
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [welcomeBonus.data?.granted]);
 
   useEffect(() => {
@@ -245,14 +247,14 @@ function RootLayout() {
     const checkForOTAUpdate = async () => {
       try {
         if (!Updates.isEnabled) {
-          console.log('[Updates] 개발 모드 — OTA 비활성화');
+          if (__DEV__) console.log('[Updates] 개발 모드 — OTA 비활성화');
           return;
         }
         const update = await Updates.checkForUpdateAsync();
         if (update.isAvailable) {
-          console.log('[Updates] 새 업데이트 발견 — 다운로드 시작');
+          if (__DEV__) console.log('[Updates] 새 업데이트 발견 — 다운로드 시작');
           await Updates.fetchUpdateAsync();
-          console.log('[Updates] 다운로드 완료 — 즉시 적용');
+          if (__DEV__) console.log('[Updates] 다운로드 완료 — 즉시 적용');
           await Updates.reloadAsync();
         }
       } catch (err) {
@@ -311,6 +313,7 @@ function RootLayout() {
       notificationListener.current?.remove();
       responseListener.current?.remove();
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

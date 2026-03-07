@@ -449,10 +449,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (__DEV__) {
-        console.log('=== OAuth 로그인 시작 ===');
-        console.log('Provider:', provider);
-        console.log('Supabase Redirect URI:', supabaseRedirectUri);
-        console.log('App Redirect URL:', appRedirectUrl);
+        if (__DEV__) console.log('=== OAuth 로그인 시작 ===');
+        if (__DEV__) console.log('Provider:', provider);
+        if (__DEV__) console.log('Supabase Redirect URI:', supabaseRedirectUri);
+        if (__DEV__) console.log('App Redirect URL:', appRedirectUrl);
       }
 
       // Supabase OAuth 요청

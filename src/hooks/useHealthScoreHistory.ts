@@ -12,6 +12,7 @@
 
 import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import * as Sentry from '@sentry/react-native';
 import supabase from '../services/supabase';
 
 // ── 타입 ──
@@ -95,6 +96,9 @@ export function useHealthScoreHistory(currentScore: number, currentGrade: string
     onSuccess: () => {
       // 저장 후 이력 새로고침
       queryClient.invalidateQueries({ queryKey: HEALTH_HISTORY_KEY });
+    },
+    onError: (error) => {
+      Sentry.captureException(error, { tags: { hook: 'useHealthScoreHistory' } });
     },
   });
 

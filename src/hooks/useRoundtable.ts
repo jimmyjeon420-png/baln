@@ -8,7 +8,7 @@
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react';
-import type { RoundtableSession, UserQuestion } from '../types/roundtable';
+import type { RoundtableSession } from '../types/roundtable';
 import {
   generateRoundtable,
   askFollowUp,
@@ -86,8 +86,8 @@ export function useRoundtable(): UseRoundtableReturn {
       // 첫 턴 재생 시작
       setCurrentTurnIndex(0);
       setIsPlaying(true);
-    } catch (err: any) {
-      setError(err.message || '토론 생성에 실패했습니다. 다시 시도해주세요.');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : '토론 생성에 실패했습니다. 다시 시도해주세요.');
     } finally {
       setIsGenerating(false);
     }
@@ -136,8 +136,8 @@ export function useRoundtable(): UseRoundtableReturn {
           userQuestions: [...prev.userQuestions, userQ],
         };
       });
-    } catch (err: any) {
-      setError(err.message || '질문 처리에 실패했습니다.');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : '질문 처리에 실패했습니다.');
     } finally {
       setIsAskingQuestion(false);
     }
@@ -145,8 +145,9 @@ export function useRoundtable(): UseRoundtableReturn {
 
   // cleanup
   useEffect(() => {
+    const timerRef = autoAdvanceTimer.current;
     return () => {
-      if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current);
+      if (timerRef) clearTimeout(timerRef);
     };
   }, []);
 

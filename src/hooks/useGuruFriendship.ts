@@ -245,7 +245,7 @@ export function useGuruFriendship(): UseGuruFriendshipReturn {
       saveFriendships(updated);
 
       if (__DEV__) {
-        console.log(
+        if (__DEV__) console.log(
           `[useGuruFriendship] ${guruId} +${actualPoints}pts (${type}) → total ${newScore}, tier: ${pointsToTier(newScore)}`
         );
       }

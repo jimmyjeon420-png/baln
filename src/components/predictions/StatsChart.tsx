@@ -436,7 +436,7 @@ function CreditsChart({ data }: CreditsChartProps) {
     );
   }
 
-  const maxCredits = Math.max(...data.map(d => d.value), 10);
+  const maxCredits = Math.max(...(data.length > 0 ? data.map(d => d.value) : [0]), 10);
   const xStep = (width - padding * 2) / Math.max(data.length - 1, 1);
   const yScale = (height - padding * 2) / maxCredits;
 

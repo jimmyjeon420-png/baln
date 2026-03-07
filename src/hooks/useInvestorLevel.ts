@@ -9,6 +9,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import * as Sentry from '@sentry/react-native';
 import { useAuth } from '../context/AuthContext';
 import { getMyLevel, getXPHistory, getCheckinHeatmap, performCheckIn, grantXP } from '../services/levelService';
 import type { UserInvestorLevel, XPEvent, CheckInResult, GrantXPResult } from '../types/level';
@@ -50,9 +51,11 @@ export function useMyLevel() {
     queryKey: LEVEL_KEYS.myLevel(user?.id || ''),
     queryFn: async () => {
       try {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         return await getMyLevel(user!.id);
       } catch (err) {
         console.warn('[useMyLevel] 레벨 조회 실패 (기본값 사용):', err);
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         return { ...DEFAULT_LEVEL, user_id: user!.id };
       }
     },
@@ -73,6 +76,7 @@ export function useXPHistory(limit: number = 20) {
     queryKey: [...LEVEL_KEYS.xpHistory(user?.id || ''), limit],
     queryFn: async () => {
       try {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         return await getXPHistory(user!.id, limit);
       } catch (err) {
         console.warn('[useXPHistory] XP 히스토리 조회 실패 (빈 배열 반환):', err);
@@ -95,6 +99,7 @@ export function useCheckinHeatmap() {
     queryKey: LEVEL_KEYS.heatmap(user?.id || ''),
     queryFn: async () => {
       try {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         return await getCheckinHeatmap(user!.id);
       } catch (err) {
         console.warn('[useCheckinHeatmap] 히트맵 조회 실패 (빈 배열 반환):', err);
@@ -124,6 +129,7 @@ export function useCheckIn() {
         return await performCheckIn(user.id);
       } catch (err) {
         console.warn('[useCheckIn] performCheckIn 예외 (기본값 반환):', err);
+        Sentry.captureException(err, { tags: { hook: 'useCheckIn' } });
         return { success: false, reason: 'RPC 실패' } as CheckInResult;
       }
     },
@@ -155,6 +161,7 @@ export function useGrantXP() {
         return await grantXP(user.id, amount, source);
       } catch (err) {
         console.warn('[useGrantXP] grant_xp RPC 예외 (기본값 반환):', err);
+        Sentry.captureException(err, { tags: { hook: 'useGrantXP' } });
         return { success: false, new_xp: 0, new_level: 1, level_up: false } as GrantXPResult;
       }
     },

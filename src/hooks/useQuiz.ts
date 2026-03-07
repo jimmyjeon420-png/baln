@@ -9,9 +9,12 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import * as Sentry from '@sentry/react-native';
 import { useAuth } from '../context/AuthContext';
 import { getTodayQuiz, submitQuizAnswer, getMyTodayAttempt, getMyQuizStats } from '../services/quizService';
 import type { DailyQuiz, QuizAttempt, SubmitQuizResult } from '../types/quiz';
+import { showErrorToast } from '../utils/toast';
+import { t } from '../locales';
 
 // ============================================================================
 // Query Keys
@@ -44,6 +47,7 @@ export function useTodayQuiz() {
 export function useMyQuizAttempt(quizId: number | undefined) {
   return useQuery<QuizAttempt | null>({
     queryKey: QUIZ_KEYS.myAttempt(quizId || 0),
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     queryFn: () => getMyTodayAttempt(quizId!),
     enabled: !!quizId,
     staleTime: 5 * 60 * 1000,
@@ -69,6 +73,10 @@ export function useSubmitQuiz() {
         queryClient.invalidateQueries({ queryKey: ['investor-level', user.id] });
         queryClient.invalidateQueries({ queryKey: ['xp-history', user.id] });
       }
+    },
+    onError: (error) => {
+      showErrorToast(t('common.mutation_error'));
+      Sentry.captureException(error, { tags: { hook: 'useSubmitQuiz' } });
     },
   });
 }

@@ -15,23 +15,17 @@
 import { useMemo, useCallback } from 'react';
 import { useWeather } from './useWeather';
 import { useGuruMood } from './useGuruMood';
-import { useGuruActivity } from './useGuruActivity';
+import { useGuruActivity, type GuruActivityState } from './useGuruActivity';
 import { useGuruFriendship } from './useGuruFriendship';
 import { useVillageProsperity } from './useVillageProsperity';
 import { useVillageLetters } from './useVillageLetters';
-import { useGuruVillage } from './useGuruVillage';
-import { useVillageReactions } from './useVillageReactions';
+import { useGuruVillage, type GuruPosition } from './useGuruVillage';
+import { useVillageReactions, type ActiveReaction } from './useVillageReactions';
 import { useVillageAnalytics } from './useVillageAnalytics';
-import type { ActiveReaction } from './useVillageReactions';
 import type { VillageReactionType } from '../services/villageReactionService';
-import type { GuruMood, GuruActivity, FriendshipTier } from '../types/village';
+import type { GuruMood, GuruActivity, FriendshipTier, GuruFriendship, ProsperityContribution, GuruLetter, VillageWeather, ClothingLevel } from '../types/village';
 import type { CharacterExpression } from '../types/character';
-import type { GuruFriendship } from '../types/village';
-import type { GuruActivityState } from './useGuruActivity';
-import type { GuruPosition } from './useGuruVillage';
 import type { VillageConversation, VillageMessage } from '../services/villageConversationService';
-import type { ProsperityContribution, GuruLetter } from '../types/village';
-import type { VillageWeather, ClothingLevel } from '../types/village';
 
 // ---------------------------------------------------------------------------
 // 타입 정의
@@ -163,7 +157,7 @@ export function useVillageWorld(marketSentiment?: number): UseVillageWorldReturn
     return new Map(Object.entries(moods));
   }, [moods]);
 
-  const { activities, getActivity } = useGuruActivity(moodsMap, weather);
+  const { activities: _activities, getActivity } = useGuruActivity(moodsMap, weather);
 
   const {
     friendships,
@@ -291,13 +285,14 @@ export function useVillageWorld(marketSentiment?: number): UseVillageWorldReturn
         trackEvent('guru_chat', { guruId }).catch(() => {});
 
         if (__DEV__) {
-          console.log(`[useVillageWorld] chatWithGuru: ${guruId} → "${message.slice(0, 30)}..."`);
+          if (__DEV__) console.log(`[useVillageWorld] chatWithGuru: ${guruId} → "${message.slice(0, 30)}..."`);
         }
       } catch (err) {
         if (__DEV__) console.error('[useVillageWorld] chatWithGuru 에러:', err);
         // 에러를 throw하지 않음 — UI가 조용히 처리
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [village, addInteraction, addContribution],
   );
 

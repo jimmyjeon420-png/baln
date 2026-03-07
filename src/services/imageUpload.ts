@@ -78,7 +78,8 @@ export async function pickImages(maxImages: number = MAX_IMAGES): Promise<Picked
 
     // 2. 이미지 선택
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: 'images' as any, // 'Images' 상수 대신 문자열 사용
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      mediaTypes: 'images' as any, // 'Images' 상수 대신 문자열 사용 (expo-image-picker 호환)
       allowsMultipleSelection: maxImages > 1,
       quality: 0.8, // 압축 품질 (0~1)
       exif: false,  // EXIF 데이터 제외 (개인정보 보호)
@@ -193,7 +194,7 @@ export async function uploadToSupabase(
     const blob = await response.blob();
 
     // 4. Supabase Storage 업로드
-    const { data, error } = await supabase.storage
+    const { error } = await supabase.storage
       .from(STORAGE_BUCKET)
       .upload(filePath, blob, {
         contentType: blob.type,
@@ -227,7 +228,7 @@ export async function uploadToSupabase(
       success: true,
       url: urlData.publicUrl,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.warn('Upload error:', error);
 
     // 네트워크 에러 등의 경우 Mock URL 반환 (개발용)
@@ -259,6 +260,7 @@ export async function uploadMultipleImages(
   // 성공한 URL만 반환
   return results
     .filter((result) => result.success && result.url)
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     .map((result) => result.url!);
 }
 

@@ -8,6 +8,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import * as Sentry from '@sentry/react-native';
 import {
   getDailyCheckInStatus,
   performDailyCheckIn,
@@ -45,6 +46,9 @@ export function useDailyCheckIn() {
         queryClient.invalidateQueries({ queryKey: CREDITS_KEY });
       }
     },
+    onError: (error) => {
+      Sentry.captureException(error, { tags: { hook: 'useDailyCheckIn' } });
+    },
   });
 
   return {
@@ -77,6 +81,9 @@ export function useShareReward() {
         queryClient.invalidateQueries({ queryKey: SHARE_KEY });
         queryClient.invalidateQueries({ queryKey: CREDITS_KEY });
       }
+    },
+    onError: (error) => {
+      Sentry.captureException(error, { tags: { hook: 'useShareReward' } });
     },
   });
 

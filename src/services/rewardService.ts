@@ -75,6 +75,7 @@ async function grantRewardCredits(
   userId: string,
   amount: number,
   rewardType: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   metadata: Record<string, any> = {}
 ): Promise<{ success: boolean; newBalance: number }> {
   const maxRetries = 2;
@@ -224,6 +225,7 @@ export async function performDailyCheckIn(): Promise<{
     if (!user) return { success: false, creditsEarned: 0, newStreak: 0, newBalance: 0 };
 
     // daily_checkin_v2 RPC 호출 (원자적 스트릭 + 에스컬레이팅 보상 + XP)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let data: any = null;
     let rpcFailed = false;
 
@@ -263,6 +265,7 @@ export async function performDailyCheckIn(): Promise<{
       };
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const result = data as any;
 
     if (!result?.success) {

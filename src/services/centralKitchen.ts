@@ -5,6 +5,7 @@
 // 폴백: DB 데이터 없으면 라이브 Gemini API 호출
 // ============================================================================
 
+import * as Sentry from '@sentry/react-native';
 import supabase from './supabase';
 import {
   generateMorningBriefing,
@@ -14,6 +15,7 @@ import {
   type RiskAnalysisResult,
 } from './gemini';
 import { getCurrentLanguage } from '../locales';
+import { withTimeout } from '../utils/withTimeout';
 
 /**
  * KST 기준 날짜를 YYYY-MM-DD 형식으로 반환
@@ -181,11 +183,15 @@ export interface CentralKitchenResult {
 export async function getTodayMarketInsight(): Promise<DailyMarketInsight | null> {
   const today = getLocalDate();
 
-  const { data, error } = await supabase
-    .from('daily_market_insights')
-    .select('date, macro_summary, bitcoin_analysis, market_sentiment, cfo_weather, vix_level, global_liquidity')
-    .eq('date', today)
-    .single();
+  const { data, error } = await withTimeout(
+    supabase
+      .from('daily_market_insights')
+      .select('date, macro_summary, bitcoin_analysis, market_sentiment, cfo_weather, vix_level, global_liquidity')
+      .eq('date', today)
+      .single(),
+    15000,
+    'getTodayMarketInsight'
+  );
 
   if (error || !data) {
     if (__DEV__) console.log('[Central Kitchen] 오늘의 거시경제 데이터 없음 → 폴백 필요');
@@ -208,11 +214,15 @@ export async function getTodayStockReports(
 
   const today = getLocalDate();
 
-  const { data, error } = await supabase
-    .from('stock_quant_reports')
-    .select('ticker, date, valuation_score, signal, analysis, metrics, sector')
-    .eq('date', today)
-    .in('ticker', tickers);
+  const { data, error } = await withTimeout(
+    supabase
+      .from('stock_quant_reports')
+      .select('ticker, date, valuation_score, signal, analysis, metrics, sector')
+      .eq('date', today)
+      .in('ticker', tickers),
+    15000,
+    'getTodayStockReports'
+  );
 
   if (error || !data) {
     if (__DEV__) console.log('[Central Kitchen] 종목 퀀트 데이터 없음 → 폴백 필요');
@@ -400,6 +410,12 @@ export async function loadMorningBriefing(
       }
     } catch (err) {
       console.warn('[Central Kitchen] DB 조회 실패, 라이브 폴백:', err);
+      Sentry.addBreadcrumb({
+        category: 'api',
+        message: 'Central Kitchen DB lookup failed, falling back to live Gemini',
+        level: 'error',
+        data: { error: String(err) },
+      });
     }
   } else {
     if (__DEV__) console.log('[Central Kitchen] 영어 모드 → DB 스킵, 라이브 Gemini 직행');
@@ -442,11 +458,15 @@ export async function getQuickMarketSentiment(): Promise<{
 } | null> {
   const today = getLocalDate();
 
-  const { data, error } = await supabase
-    .from('daily_market_insights')
-    .select('market_sentiment, cfo_weather')
-    .eq('date', today)
-    .single();
+  const { data, error } = await withTimeout(
+    supabase
+      .from('daily_market_insights')
+      .select('market_sentiment, cfo_weather')
+      .eq('date', today)
+      .single(),
+    10000,
+    'getQuickMarketSentiment'
+  );
 
   if (error || !data) return null;
 
@@ -469,9 +489,13 @@ export async function savePanicScoreToSnapshot(score: number): Promise<void> {
   // 점수 범위 검증 (0~100 클램프)
   const clampedScore = Math.round(Math.max(0, Math.min(100, score)));
 
-  const { error } = await supabase.rpc('save_panic_shield_score', {
-    p_score: clampedScore,
-  });
+  const { error } = await withTimeout(
+    supabase.rpc('save_panic_shield_score', {
+      p_score: clampedScore,
+    }),
+    10000,
+    'save_panic_shield_score'
+  );
 
   if (error) {
     console.warn('[Panic Score] 스냅샷 저장 실패 (기능 영향 없음):', error.message);

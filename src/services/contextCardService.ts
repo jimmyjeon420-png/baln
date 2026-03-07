@@ -10,10 +10,12 @@
 //   - 데이터 신선도(staleness) 체크
 // ============================================================================
 
+import * as Sentry from '@sentry/react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import supabase from './supabase';
 import { t } from '../locales';
 import { getCurrentDisplayLanguage } from '../context/LocaleContext';
+import { withTimeout } from '../utils/withTimeout';
 import type {
   ContextCard,
   ContextCardSentiment,
@@ -326,13 +328,17 @@ export async function getTodayContextCard(
 
   try {
     // 1단계: 오늘의 맥락 카드 조회 (최신 time_slot 우선)
-    const { data: cardData, error: cardError } = await supabase
-      .from('context_cards')
-      .select('id, date, headline, historical_context, macro_chain, political_context, institutional_behavior, sentiment, is_premium_only, market_data, created_at')
-      .eq('date', today)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    const { data: cardData, error: cardError } = await withTimeout(
+      supabase
+        .from('context_cards')
+        .select('id, date, headline, historical_context, macro_chain, political_context, institutional_behavior, sentiment, is_premium_only, market_data, created_at')
+        .eq('date', today)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      15000,
+      'getTodayContextCard'
+    );
 
     if (cardError || !cardData) {
       if (__DEV__) console.log('[맥락 카드] 오늘의 카드 없음 -> 최근 카드로 폴백');
@@ -458,6 +464,12 @@ export async function getTodayContextCard(
     return result;
   } catch (err) {
     console.error('[맥락 카드] 조회 실패:', err);
+    Sentry.addBreadcrumb({
+      category: 'api',
+      message: 'getTodayContextCard failed',
+      level: 'error',
+      data: { error: String(err) },
+    });
     // 네트워크 에러 시 캐시 fallback
     try {
       const cached = await getCachedCard();
@@ -495,13 +507,17 @@ export async function getRecentContextCards(
 
   try {
     // 1단계: 최근 N일 맥락 카드 목록 (최신 time_slot 우선)
-    const { data: cardsData, error: cardsError } = await supabase
-      .from('context_cards')
-      .select('id, date, headline, historical_context, macro_chain, political_context, institutional_behavior, sentiment, is_premium_only, market_data, created_at')
-      .gte('date', startDateStr)
-      .lte('date', endDateStr)
-      .order('date', { ascending: false })
-      .order('created_at', { ascending: false });
+    const { data: cardsData, error: cardsError } = await withTimeout(
+      supabase
+        .from('context_cards')
+        .select('id, date, headline, historical_context, macro_chain, political_context, institutional_behavior, sentiment, is_premium_only, market_data, created_at')
+        .gte('date', startDateStr)
+        .lte('date', endDateStr)
+        .order('date', { ascending: false })
+        .order('created_at', { ascending: false }),
+      15000,
+      'getRecentContextCards'
+    );
 
     if (cardsError || !cardsData) {
       if (__DEV__) console.log('[맥락 카드] 최근 카드 조회 실패 또는 데이터 없음');
@@ -563,6 +579,12 @@ export async function getRecentContextCards(
     return results;
   } catch (err) {
     console.error('[맥락 카드] 최근 카드 조회 실패:', err);
+    Sentry.addBreadcrumb({
+      category: 'api',
+      message: 'getRecentContextCards failed',
+      level: 'error',
+      data: { error: String(err) },
+    });
     return [];
   }
 }

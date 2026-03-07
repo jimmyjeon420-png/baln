@@ -12,6 +12,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, Animated as RNAnimated, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import * as Sentry from '@sentry/react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { SkeletonBlock } from '../SkeletonLoader';
@@ -81,12 +82,14 @@ function CompletionBanner({ visible }: { visible: boolean }) {
       ]).start();
 
       // 3초 후 페이드아웃
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         RNAnimated.parallel([
           RNAnimated.timing(opacity, { toValue: 0, duration: 400, useNativeDriver: true }),
           RNAnimated.timing(scale, { toValue: 0.9, duration: 400, useNativeDriver: true }),
         ]).start();
       }, 3000);
+
+      return () => clearTimeout(timer);
     }
   }, [visible, opacity, scale, colors.success]);
 
@@ -149,10 +152,11 @@ function useJournalMemo() {
   const [isSaved, setIsSaved] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
     (async () => {
       try {
         const raw = await AsyncStorage.getItem(JOURNAL_KEY);
-        if (raw) {
+        if (raw && isMounted) {
           const parsed = JSON.parse(raw);
           const key = getMonthKey();
           if (parsed[key]) {
@@ -162,6 +166,7 @@ function useJournalMemo() {
         }
       } catch { /* ignore */ }
     })();
+    return () => { isMounted = false; };
   }, []);
 
   const saveMemo = useCallback(async (text: string) => {
@@ -190,10 +195,11 @@ function useActionChecklist() {
   const [checked, setChecked] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
+    let isMounted = true;
     (async () => {
       try {
         const raw = await AsyncStorage.getItem(CHECKLIST_KEY);
-        if (raw) {
+        if (raw && isMounted) {
           const parsed = JSON.parse(raw);
           // 오늘 날짜 데이터만 로드 (하루 지나면 자동 리셋)
           if (parsed.date === getTodayKey()) {
@@ -204,6 +210,7 @@ function useActionChecklist() {
         console.warn('[오늘의 액션] 체크리스트 로드 실패:', err);
       }
     })();
+    return () => { isMounted = false; };
   }, []);
 
   const toggle = useCallback(async (ticker: string) => {
@@ -1324,19 +1331,23 @@ export default function TodayActionsSection({
                     style={[s.logExecutionBtn, { backgroundColor: `${colors.success}1A`, borderColor: `${colors.success}4D` }]}
                     activeOpacity={0.7}
                     onPress={() => {
-                      const suggestedQty = action.action === 'BUY'
-                        ? Math.floor(totalAssets * 0.02 / displayPrice)
-                        : matchedAsset?.quantity ?? 0;
-                      router.push({
-                        pathname: '/log-trade',
-                        params: {
-                          ticker: action.ticker,
-                          name: action.name,
-                          action: action.action,
-                          suggestedPrice: displayPrice.toString(),
-                          suggestedQty: suggestedQty.toString(),
-                        },
-                      });
+                      try {
+                        const suggestedQty = action.action === 'BUY'
+                          ? Math.floor(totalAssets * 0.02 / displayPrice)
+                          : matchedAsset?.quantity ?? 0;
+                        router.push({
+                          pathname: '/log-trade',
+                          params: {
+                            ticker: action.ticker,
+                            name: action.name,
+                            action: action.action,
+                            suggestedPrice: displayPrice.toString(),
+                            suggestedQty: suggestedQty.toString(),
+                          },
+                        });
+                      } catch (err) {
+                        Sentry.captureException(err);
+                      }
                     }}
                   >
                     <Ionicons name="checkbox-outline" size={14} color={colors.success} />
@@ -1349,10 +1360,7 @@ export default function TodayActionsSection({
                 <TouchableOpacity
                   style={[s.deepDiveBtn, { backgroundColor: `${colors.premium.purple}1A`, borderColor: `${colors.premium.purple}4D` }]}
                   activeOpacity={0.7}
-                  onPress={() => router.push({
-                    pathname: '/analysis/deep-dive',
-                    params: { ticker: action.ticker, name: action.name },
-                  })}
+                  onPress={() => { try { router.push({ pathname: '/analysis/deep-dive', params: { ticker: action.ticker, name: action.name } }); } catch (err) { Sentry.captureException(err); } }}
                 >
                   <Ionicons name="sparkles" size={14} color={colors.premium.purple} />
                   <Text style={[s.deepDiveText, { color: colors.premium.purple }]}>{t('today_actions.deep_dive_btn')}</Text>

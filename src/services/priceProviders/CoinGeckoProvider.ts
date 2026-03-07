@@ -7,6 +7,7 @@ import axios, { AxiosError } from 'axios';
 import { PriceData, AssetClass } from '../../types/price';
 
 interface CoinGeckoQuote {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
 }
 

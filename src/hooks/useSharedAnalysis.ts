@@ -28,10 +28,7 @@ import {
   getTodayStockReports,
   getTodayGuruInsights,
   getTodayRateCycleEvidence,
-  type CentralKitchenResult,
   type StockQuantReport,
-  type GuruInsightsData,
-  type RateCycleEvidence,
 } from '../services/centralKitchen';
 import {
   analyzePortfolioRisk,
@@ -42,10 +39,8 @@ import {
 import {
   loadBitcoinIntelligence,
   fetchBitcoinLivePrice,
-  type BitcoinIntelligenceResult,
-  type BitcoinLivePrice,
 } from '../services/bitcoinIntelligence';
-import supabase, { getCurrentUser } from '../services/supabase';
+import { getCurrentUser } from '../services/supabase';
 import { validateAndCorrectRiskAnalysis, validatePortfolioActions } from '../utils/aiResponseValidator';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { hasAIConsent } from '../components/common/AIConsentModal';
@@ -234,7 +229,7 @@ export async function fetchAIAnalysis(
 
   // [이승건: 최종 디버그] 반환값 확인
   if (__DEV__) {
-    console.log('[fetchAIAnalysis 반환]', {
+    if (__DEV__) console.log('[fetchAIAnalysis 반환]', {
       hasBriefing: !!result.morningBriefing,
       hasTitle: !!result.morningBriefing?.macroSummary?.title,
       title: result.morningBriefing?.macroSummary?.title,
@@ -263,7 +258,7 @@ export async function fetchAIAnalysis(
       queryClient.setQueryData(queryKey, result);
 
       if (__DEV__) {
-        console.log('[처방전 저장] ✅ DB + 캐시 동기화 완료');
+        if (__DEV__) console.log('[처방전 저장] ✅ DB + 캐시 동기화 완료');
       }
     } catch (err) {
       console.warn('[처방전 저장] ⚠️ 실패 (UI는 정상 동작):', err);

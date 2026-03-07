@@ -19,6 +19,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import * as Sentry from '@sentry/react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useBookmarkedPosts, useMyBookmarks, useToggleBookmark } from '../../src/hooks/useBookmarks';
 import { useMyLikes, useLikePost } from '../../src/hooks/useCommunity';
@@ -56,7 +57,8 @@ export default function BookmarksScreen() {
     return (
       <TouchableOpacity
         style={[styles.postCard, { backgroundColor: colors.surface }]}
-        onPress={() => router.push(`/community/${item.id}` as any)}
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        onPress={() => { try { router.push(`/community/${item.id}` as any); } catch (err) { Sentry.captureException(err); } }}
         activeOpacity={0.7}
       >
         {/* 헤더: 작성자 + 카테고리 + 시간 */}
@@ -154,6 +156,10 @@ export default function BookmarksScreen() {
         <FlatList
           data={posts || []}
           keyExtractor={(item) => item.id}
+          initialNumToRender={10}
+          maxToRenderPerBatch={10}
+          windowSize={5}
+          removeClippedSubviews={true}
           renderItem={renderPost}
           contentContainerStyle={styles.listContent}
           refreshControl={

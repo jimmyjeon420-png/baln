@@ -140,7 +140,7 @@ export async function filterFreshContent<T>(
   const fresh = items.filter(item => !seenSet.has(getContentId(item)));
 
   if (__DEV__) {
-    console.log(
+    if (__DEV__) console.log(
       `[Freshness] ${type}: 전체 ${items.length}개 중 신선 ${fresh.length}개`,
     );
   }
@@ -179,7 +179,7 @@ export async function cleanupHistory(): Promise<void> {
 
   if (daysSince < CLEANUP_INTERVAL_DAYS) {
     if (__DEV__) {
-      console.log(`[Freshness] cleanup 불필요 (마지막 정리 ${daysSince.toFixed(1)}일 전)`);
+      if (__DEV__) console.log(`[Freshness] cleanup 불필요 (마지막 정리 ${daysSince.toFixed(1)}일 전)`);
     }
     return;
   }
@@ -198,7 +198,7 @@ export async function cleanupHistory(): Promise<void> {
   await saveSeen(seen);
 
   if (__DEV__) {
-    console.log(`[Freshness] cleanup 완료 (정리됨: ${cleaned})`);
+    if (__DEV__) console.log(`[Freshness] cleanup 완료 (정리됨: ${cleaned})`);
   }
 }
 
@@ -231,7 +231,7 @@ export async function calculateFreshnessScore(
   const score = Math.round((1 - seenRatio) * 100);
 
   if (__DEV__) {
-    console.log(
+    if (__DEV__) console.log(
       `[Freshness] 점수: ${score} (총 ${totalAvailable}개 중 ${totalSeen}개 봄)`,
     );
   }

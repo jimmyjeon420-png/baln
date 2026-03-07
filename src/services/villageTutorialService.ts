@@ -271,7 +271,7 @@ export async function completeStep(
   await saveTutorialState(nextState);
 
   if (__DEV__) {
-    console.log(`[villageTutorial] 스텝 완료: ${stepId} (${updatedCompleted.length}/${TUTORIAL_STEPS.length})`);
+    if (__DEV__) console.log(`[villageTutorial] 스텝 완료: ${stepId} (${updatedCompleted.length}/${TUTORIAL_STEPS.length})`);
   }
 
   return {

@@ -14,7 +14,7 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Modal, ScrollView, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, Modal, ScrollView, useWindowDimensions, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
@@ -353,7 +353,7 @@ export default function HomeScreen() {
   // ──────────────────────────────────────────────────────────────────────
   // 0. 포트폴리오 데이터 (총자산 Pulse용)
   // ──────────────────────────────────────────────────────────────────────
-  const { assets: allPortfolioAssets, totalAssets } = useSharedPortfolio();
+  const { assets: allPortfolioAssets, totalAssets, isLoading: portfolioLoading, isFetched: portfolioFetched } = useSharedPortfolio();
 
   // 유동 자산만 필터링 (부동산 제외)
   const liquidAssetsForHome = React.useMemo(
@@ -838,6 +838,17 @@ export default function HomeScreen() {
     router.push('/subscription/paywall');
   }, [router]);
   const handleToastHide = React.useCallback(() => setToastVisible(false), []);
+
+  // ──────────────────────────────────────────────────────────────────────
+  // 초기 로딩 상태 (데이터 fetch 전 빈 화면 방지)
+  // ──────────────────────────────────────────────────────────────────────
+  if (!portfolioFetched && (portfolioLoading || heartLoading || contextLoading)) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
+        <ActivityIndicator size="large" color="#4CAF50" />
+      </View>
+    );
+  }
 
   // ──────────────────────────────────────────────────────────────────────
   // 렌더링

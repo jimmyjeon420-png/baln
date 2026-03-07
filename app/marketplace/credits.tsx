@@ -160,7 +160,7 @@ export default function CreditsScreen() {
 
     // 사용자가 직접 취소한 경우
     if (isUserCancelledError(error)) {
-      console.log('[IAP] 사용자 취소');
+      // silently ignore - user cancelled purchase
       return;
     }
 

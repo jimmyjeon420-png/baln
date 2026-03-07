@@ -26,6 +26,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import * as Sentry from '@sentry/react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
   useCommunityPosts,
@@ -85,12 +86,22 @@ export default function CommunityMainScreen() {
 
   // 게시물 상세 이동
   const handlePostPress = (postId: string) => {
-    router.push(`/community/${postId}` as any);
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      router.push(`/community/${postId}` as any);
+    } catch (err) {
+      Sentry.captureException(err);
+    }
   };
 
   // 작성자 프로필 이동
   const handleAuthorPress = (userId: string) => {
-    router.push(`/community/author/${userId}` as any);
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      router.push(`/community/author/${userId}` as any);
+    } catch (err) {
+      Sentry.captureException(err);
+    }
   };
 
   // 좋아요 토글
@@ -107,7 +118,12 @@ export default function CommunityMainScreen() {
       );
       return;
     }
-    router.push('/community/create' as any);
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      router.push('/community/create' as any);
+    } catch (err) {
+      Sentry.captureException(err);
+    }
   };
 
   // 카테고리 필터 칩
@@ -128,6 +144,7 @@ export default function CommunityMainScreen() {
               onPress={() => setCategory(cat)}
             >
               <Ionicons
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 name={info.icon as any}
                 size={14}
                 color={isActive ? info.color : colors.textSecondary}
@@ -329,6 +346,10 @@ export default function CommunityMainScreen() {
         <FlatList
           data={posts}
           keyExtractor={(item, index) => `${item?.id ?? index}-${index}`}
+          initialNumToRender={10}
+          maxToRenderPerBatch={10}
+          windowSize={5}
+          removeClippedSubviews={true}
           renderItem={({ item }) => (
             <View style={styles.postWrapper}>
               <CommunityPostCard

@@ -4715,6 +4715,8 @@
   "common.cancel": "Cancel",
   "common.more": "More",
   "common.ok": "OK",
+  "common.error_title": "Error",
+  "common.mutation_error": "An error occurred during the operation.",
   "deepDive": {
     "aiOpinion": {
       "title": "AI Opinion",

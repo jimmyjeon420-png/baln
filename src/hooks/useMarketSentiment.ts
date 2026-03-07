@@ -237,7 +237,7 @@ export function useMarketSentiment() {
     saveSentimentCache(newData).catch(() => {});
 
     if (__DEV__) {
-      console.log('[useMarketSentiment] 컨텍스트 주입 →', {
+      if (__DEV__) console.log('[useMarketSentiment] 컨텍스트 주입 →', {
         overall: newData.overall.toFixed(2),
         label: newData.label,
       });

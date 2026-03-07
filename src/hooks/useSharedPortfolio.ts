@@ -88,8 +88,9 @@ async function fetchSharedPortfolio(
   }
 
   // 10초 타임아웃 — 서버 응답 없으면 에러로 처리 (React Query retry가 1회 재시도)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let data: any[] | null = null;
-  let error: any = null;
+  let error: { message?: string } | null = null;
 
   try {
     const result = await withTimeout(
@@ -134,7 +135,9 @@ async function fetchSharedPortfolio(
 
   // 진단/처방전용 PortfolioAsset 배열 (부동산 제외 — Gemini에 전달하지 않음)
   const portfolioAssets: PortfolioAsset[] = data
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .filter((item: any) => !item.ticker || !item.ticker.startsWith('RE_'))
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .map((item: any) => {
     const qty = Number(item.quantity) || 0;
     const avgP = Number(item.avg_price) || 0;
@@ -173,7 +176,7 @@ async function fetchSharedPortfolio(
   // 유동 자산 티커 목록
   const liquidTickers = assets
     .filter(a => a.assetType === AssetType.LIQUID && a.ticker)
-    .map(a => a.ticker!);
+    .map(a => a.ticker as string);
 
   // 프로필 티어 동기화 (백그라운드, 실패 무시)
   syncUserProfileTier(userId).catch(() => {});
@@ -191,6 +194,7 @@ export function useSharedPortfolio() {
 
   const query = useQuery({
     queryKey: [...SHARED_PORTFOLIO_KEY, user?.id],
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     queryFn: ({ signal }) => fetchSharedPortfolio(user!.id, { signal }),
     // ★ 핵심 수정: Auth 세션이 준비된 후에만 쿼리 실행
     // 이전: 세션 없어도 즉시 실행 → 빈 데이터가 "성공"으로 캐시 → 30분간 유지

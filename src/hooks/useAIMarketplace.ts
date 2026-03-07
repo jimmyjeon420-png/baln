@@ -4,6 +4,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import * as Sentry from '@sentry/react-native';
 import {
   executeDeepDive,
   executeWhatIf,
@@ -13,6 +14,8 @@ import {
   getChatMessages,
   getChatSessions,
 } from '../services/aiMarketplace';
+import { showErrorToast } from '../utils/toast';
+import { t } from '../locales';
 import type {
   AIFeatureType,
   DeepDiveInput,
@@ -38,6 +41,10 @@ export function useDeepDive() {
       queryClient.invalidateQueries({ queryKey: CREDIT_HISTORY_KEY });
       queryClient.invalidateQueries({ queryKey: ['marketplace', 'history'] });
     },
+    onError: (error) => {
+      showErrorToast(t('common.mutation_error'));
+      Sentry.captureException(error, { tags: { hook: 'useDeepDive' } });
+    },
   });
 }
 
@@ -52,6 +59,10 @@ export function useWhatIf() {
       queryClient.invalidateQueries({ queryKey: CREDITS_KEY });
       queryClient.invalidateQueries({ queryKey: CREDIT_HISTORY_KEY });
       queryClient.invalidateQueries({ queryKey: ['marketplace', 'history'] });
+    },
+    onError: (error) => {
+      showErrorToast(t('common.mutation_error'));
+      Sentry.captureException(error, { tags: { hook: 'useWhatIf' } });
     },
   });
 }
@@ -68,6 +79,10 @@ export function useTaxReport() {
       queryClient.invalidateQueries({ queryKey: CREDIT_HISTORY_KEY });
       queryClient.invalidateQueries({ queryKey: ['marketplace', 'history'] });
     },
+    onError: (error) => {
+      showErrorToast(t('common.mutation_error'));
+      Sentry.captureException(error, { tags: { hook: 'useTaxReport' } });
+    },
   });
 }
 
@@ -82,6 +97,10 @@ export function useAICFOChat(sessionId: string) {
       queryClient.invalidateQueries({ queryKey: CREDITS_KEY });
       queryClient.invalidateQueries({ queryKey: CREDIT_HISTORY_KEY });
       queryClient.invalidateQueries({ queryKey: ['chat', 'messages', sessionId] });
+    },
+    onError: (error) => {
+      showErrorToast(t('common.mutation_error'));
+      Sentry.captureException(error, { tags: { hook: 'useAICFOChat' } });
     },
   });
 

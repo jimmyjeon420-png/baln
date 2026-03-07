@@ -4,12 +4,14 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import * as Sentry from '@sentry/react-native';
 import supabase, { getCurrentUser } from '../services/supabase';
+import { showErrorToast } from '../utils/toast';
+import { t } from '../locales';
 import {
   Gathering,
   GatheringInsert,
   GatheringParticipant,
-  GatheringParticipantInsert,
   UserTier,
 } from '../types/database';
 import { TIER_THRESHOLDS, TIER_LABELS, TIER_LEVELS, TIER_DESCRIPTIONS, getCommunityTierLabel, getCommunityTierDescription } from '../types/community';
@@ -222,6 +224,7 @@ export const useHostingEligibility = () => {
       }
 
       // 프로필에서 자산 및 티어 확인 (tier 컬럼이 없을 수 있으므로 에러 무시)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let profile: any = null;
       try {
         const { data, error } = await supabase
@@ -295,6 +298,7 @@ export const useCurrentUserInfo = () => {
       if (!user) return null;
 
       // 프로필 조회 (tier 컬럼이 없을 수 있으므로 에러 핸들링)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let profile: any = null;
       try {
         const { data, error } = await supabase
@@ -425,6 +429,10 @@ export const useCreateGathering = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['gatherings'] });
     },
+    onError: (error) => {
+      showErrorToast(t('common.mutation_error'));
+      Sentry.captureException(error, { tags: { hook: 'useCreateGathering' } });
+    },
   });
 };
 
@@ -505,9 +513,9 @@ export const useJoinGathering = () => {
         }
 
         return result.participation as GatheringParticipant;
-      } catch (rpcError: any) {
+      } catch (rpcError: unknown) {
         // Fallback: RPC 함수가 없는 경우 기존 로직 사용
-        console.warn('join_gathering_atomic RPC 사용 불가, fallback 로직 실행:', rpcError.message);
+        console.warn('join_gathering_atomic RPC 사용 불가, fallback 로직 실행:', rpcError instanceof Error ? rpcError.message : rpcError);
 
         // === FALLBACK: 기존 비원자적 로직 (마이그레이션 전 호환성) ===
 
@@ -582,6 +590,10 @@ export const useJoinGathering = () => {
       queryClient.invalidateQueries({ queryKey: ['gatheringParticipants', gatheringId] });
       queryClient.invalidateQueries({ queryKey: ['myParticipation', gatheringId] });
     },
+    onError: (error) => {
+      showErrorToast(t('common.mutation_error'));
+      Sentry.captureException(error, { tags: { hook: 'useJoinGathering' } });
+    },
   });
 };
 
@@ -644,6 +656,10 @@ export const useCancelParticipation = () => {
       queryClient.invalidateQueries({ queryKey: ['gathering', gatheringId] });
       queryClient.invalidateQueries({ queryKey: ['gatheringParticipants', gatheringId] });
       queryClient.invalidateQueries({ queryKey: ['myParticipation', gatheringId] });
+    },
+    onError: (error) => {
+      showErrorToast(t('common.mutation_error'));
+      Sentry.captureException(error, { tags: { hook: 'useCancelParticipation' } });
     },
   });
 };
@@ -786,6 +802,9 @@ export const useSyncProfileTier = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['currentUserInfo'] });
       queryClient.invalidateQueries({ queryKey: ['hostingEligibility'] });
+    },
+    onError: (error) => {
+      Sentry.captureException(error, { tags: { hook: 'useSyncProfileTier' } });
     },
   });
 };

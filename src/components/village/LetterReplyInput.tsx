@@ -11,7 +11,7 @@
  * - 답장 큐 저장 → 다음 방문 시 구루 응답 도착
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -54,10 +54,20 @@ export function LetterReplyInput({
   const [message, setMessage] = useState('');
   const [remaining, setRemaining] = useState<number | null>(null);
   const [sent, setSent] = useState(false);
+  const sentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Cleanup sent timer on unmount
+  useEffect(() => () => {
+    if (sentTimerRef.current) clearTimeout(sentTimerRef.current);
+  }, []);
 
   // Load remaining on mount
   React.useEffect(() => {
-    getRemainingReplies(isPremium).then(setRemaining).catch(() => setRemaining(2));
+    let isMounted = true;
+    getRemainingReplies(isPremium)
+      .then(val => { if (isMounted) setRemaining(val); })
+      .catch(() => { if (isMounted) setRemaining(2); });
+    return () => { isMounted = false; };
   }, [isPremium]);
 
   const handleSend = useCallback(async () => {
@@ -74,7 +84,8 @@ export function LetterReplyInput({
     setSent(true);
     setRemaining(prev => (prev !== null && !isPremium ? prev - 1 : prev));
 
-    setTimeout(() => setSent(false), 3000);
+    if (sentTimerRef.current) clearTimeout(sentTimerRef.current);
+    sentTimerRef.current = setTimeout(() => setSent(false), 3000);
   }, [message, guruId, isPremium, t]);
 
   const canSend = message.trim().length > 0 && (isPremium || (remaining !== null && remaining > 0));

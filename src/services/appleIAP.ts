@@ -14,6 +14,7 @@
  */
 
 import { Platform } from 'react-native';
+import * as Sentry from '@sentry/react-native';
 import { CREDIT_PACKAGES, SUBSCRIPTION_PRODUCTS } from '../types/marketplace';
 
 // Lazy-load react-native-iap to avoid NitroModules crash in Expo Go
@@ -69,6 +70,12 @@ export async function connectToStore(): Promise<boolean> {
     return true;
   } catch (err) {
     console.warn('[IAP] Store connection failed:', err);
+    Sentry.addBreadcrumb({
+      category: 'api',
+      message: 'IAP connectToStore failed',
+      level: 'error',
+      data: { error: String(err) },
+    });
     return false;
   }
 }
@@ -122,6 +129,12 @@ export async function purchaseProduct(appleProductId: string): Promise<void> {
     });
   } catch (err) {
     console.warn('[IAP] Purchase failed:', err);
+    Sentry.addBreadcrumb({
+      category: 'api',
+      message: `IAP purchaseProduct failed for ${appleProductId}`,
+      level: 'error',
+      data: { error: String(err), productId: appleProductId },
+    });
     throw err;
   }
 }

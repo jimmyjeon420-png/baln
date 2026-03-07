@@ -78,7 +78,7 @@ async function searchApartmentsNaver(query: string): Promise<ApartmentComplex[]>
 
     try {
       if (__DEV__) {
-        console.log('[부동산] 네이버 API 요청:', q);
+        if (__DEV__) console.log('[부동산] 네이버 API 요청:', q);
       }
 
       const response = await fetch(url, {
@@ -92,7 +92,7 @@ async function searchApartmentsNaver(query: string): Promise<ApartmentComplex[]>
       clearTimeout(timeoutId);
 
       if (__DEV__) {
-        console.log('[부동산] 네이버 API 상태:', response.status);
+        if (__DEV__) console.log('[부동산] 네이버 API 상태:', response.status);
       }
 
       if (!response.ok) {
@@ -103,7 +103,7 @@ async function searchApartmentsNaver(query: string): Promise<ApartmentComplex[]>
       const data: NaverSearchResponse = await response.json();
 
       if (__DEV__) {
-        console.log('[부동산] 네이버 API 응답:', {
+        if (__DEV__) console.log('[부동산] 네이버 API 응답:', {
           total: data.total,
           count: data.items?.length || 0,
           items: data.items?.map(item => ({

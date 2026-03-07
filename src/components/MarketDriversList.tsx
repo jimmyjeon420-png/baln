@@ -215,6 +215,9 @@ const MarketDriversList: React.FC<MarketDriversListProps> = ({
         data={drivers}
         renderItem={renderDriver}
         keyExtractor={(item) => `driver-${item.rank}`}
+        initialNumToRender={10}
+        maxToRenderPerBatch={10}
+        windowSize={5}
         scrollEnabled={false}
         nestedScrollEnabled={false}
       />

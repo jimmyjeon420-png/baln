@@ -297,7 +297,7 @@ function WaterfallChart({
 }) {
   if (items.length === 0) return null;
 
-  const maxAmount = Math.max(...items.map(i => Math.abs(i.amount)), 1);
+  const maxAmount = Math.max(...(items.length > 0 ? items.map(i => Math.abs(i.amount)) : [0]), 1);
   const barMaxWidth = 180;
 
   const getBarColor = (item: WaterfallItem) => {

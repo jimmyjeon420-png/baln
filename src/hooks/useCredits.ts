@@ -4,6 +4,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import * as Sentry from '@sentry/react-native';
 import {
   getMyCredits,
   spendCredits,
@@ -47,6 +48,9 @@ export function useSpendCredits() {
       queryClient.invalidateQueries({ queryKey: CREDITS_KEY });
       queryClient.invalidateQueries({ queryKey: CREDIT_HISTORY_KEY });
     },
+    onError: (error) => {
+      Sentry.captureException(error, { tags: { hook: 'useSpendCredits' } });
+    },
   });
 }
 
@@ -65,6 +69,9 @@ export function usePurchaseCredits() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: CREDITS_KEY });
       queryClient.invalidateQueries({ queryKey: CREDIT_HISTORY_KEY });
+    },
+    onError: (error) => {
+      Sentry.captureException(error, { tags: { hook: 'usePurchaseCredits' } });
     },
   });
 }

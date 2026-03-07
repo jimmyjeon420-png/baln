@@ -181,7 +181,7 @@ export async function unlockAchievement(id: AchievementId): Promise<boolean> {
     data[id] = new Date().toISOString().split('T')[0]; // "YYYY-MM-DD"
     await AsyncStorage.setItem(ACHIEVEMENTS_KEY, JSON.stringify(data));
 
-    console.log(`[achievementService] 배지 해금: ${id}`);
+    if (__DEV__) console.log(`[achievementService] 배지 해금: ${id}`);
     return true;
   } catch (error) {
     console.error('[achievementService] unlockAchievement 에러:', error);
@@ -324,7 +324,7 @@ export async function checkAndUnlockAchievements(
 export async function resetAllAchievements(): Promise<void> {
   try {
     await AsyncStorage.removeItem(ACHIEVEMENTS_KEY);
-    console.log('[achievementService] 모든 배지 초기화 완료');
+    if (__DEV__) console.log('[achievementService] 모든 배지 초기화 완료');
   } catch (error) {
     console.error('[achievementService] 초기화 에러:', error);
   }

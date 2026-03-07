@@ -8,7 +8,10 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import * as Sentry from '@sentry/react-native';
 import supabase, { getCurrentUser } from '../services/supabase';
+import { showErrorToast } from '../utils/toast';
+import { t } from '../locales';
 
 export interface BlockedUser {
   id: string;
@@ -143,6 +146,10 @@ export const useBlockUser = () => {
       queryClient.invalidateQueries({ queryKey: ['communityPosts'] });
       queryClient.invalidateQueries({ queryKey: ['communityComments'] });
     },
+    onError: (error) => {
+      showErrorToast(t('common.mutation_error'));
+      Sentry.captureException(error, { tags: { hook: 'useBlockUser' } });
+    },
   });
 };
 
@@ -168,6 +175,10 @@ export const useUnblockUser = () => {
       queryClient.invalidateQueries({ queryKey: ['blockedUsers'] });
       queryClient.invalidateQueries({ queryKey: ['communityPosts'] });
       queryClient.invalidateQueries({ queryKey: ['communityComments'] });
+    },
+    onError: (error) => {
+      showErrorToast(t('common.mutation_error'));
+      Sentry.captureException(error, { tags: { hook: 'useUnblockUser' } });
     },
   });
 };

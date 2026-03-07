@@ -28,6 +28,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import * as Sentry from '@sentry/react-native';
 import supabase from '../../src/services/supabase';
 import { SHARED_PORTFOLIO_KEY } from '../../src/hooks/useSharedPortfolio';
 import { useRealEstatePrice } from '../../src/hooks/useRealEstate';
@@ -121,6 +122,7 @@ export default function RealEstateDetailScreen() {
     },
     onError: (error: unknown) => {
       Alert.alert(t('realestate.alert.updateFail'), error instanceof Error ? error.message : t('realestate.alert.updateError'));
+      Sentry.captureException(error, { tags: { hook: 'updateRealEstatePrice' } });
     },
   });
 
@@ -143,6 +145,7 @@ export default function RealEstateDetailScreen() {
     },
     onError: (error: unknown) => {
       Alert.alert(t('realestate.alert.deleteFail'), error instanceof Error ? error.message : t('realestate.alert.deleteError'));
+      Sentry.captureException(error, { tags: { hook: 'deleteRealEstate' } });
     },
   });
 

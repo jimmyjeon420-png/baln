@@ -24,7 +24,10 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useQuery, useQueryClient, useMutation, type QueryClient } from '@tanstack/react-query';
+import * as Sentry from '@sentry/react-native';
 import { getCurrentUser } from '../services/supabase';
+import { showErrorToast } from '../utils/toast';
+import { t } from '../locales';
 import {
   getTodayContextCard,
   getRecentContextCards,
@@ -36,6 +39,7 @@ import {
   formatCardUpdateTime,
   triggerContextCardRefreshIfNeeded,
   getFallbackContextCard,
+  type ContextCard,
   type ContextCardWithImpact,
   type ContextCardSentiment,
 } from '../services/contextCardService';
@@ -129,7 +133,6 @@ export function useContextCard(options?: { retryCount?: number }) {
       // 1. 현재 로그인 유저 확인
       const user = await getCurrentUser();
       if (!user) {
-        console.log('[맥락 카드 훅] 로그인 필요');
         return null;
       }
 
@@ -203,9 +206,7 @@ export function useContextCard(options?: { retryCount?: number }) {
       const result = await triggerContextCardRefreshIfNeeded(recoveryReason);
       if (cancelled || !result.triggered) return;
 
-      if (recoveryTimerRef.current) {
-        clearTimeout(recoveryTimerRef.current);
-      }
+      if (recoveryTimerRef.current) clearTimeout(recoveryTimerRef.current);
 
       recoveryTimerRef.current = setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: CONTEXT_CARD_TODAY_KEY });
@@ -219,9 +220,7 @@ export function useContextCard(options?: { retryCount?: number }) {
   }, [isEmpty, isStale, query.isLoading, query.isFetching, queryClient]);
 
   useEffect(() => () => {
-    if (recoveryTimerRef.current) {
-      clearTimeout(recoveryTimerRef.current);
-    }
+    if (recoveryTimerRef.current) clearTimeout(recoveryTimerRef.current);
   }, []);
 
   return {
@@ -243,7 +242,7 @@ export function useContextCard(options?: { retryCount?: number }) {
       ? formatCardUpdateTime(effectiveData.card.created_at)
       : null,
     /** 현재 카드의 시간대 */
-    timeSlot: (effectiveData?.card as any)?.time_slot as string | undefined,
+    timeSlot: (effectiveData?.card as ContextCard & { time_slot?: string })?.time_slot,
   };
 }
 
@@ -274,7 +273,6 @@ export function useRecentContextCards(days: number = 7) {
       // 1. 현재 로그인 유저 확인
       const user = await getCurrentUser();
       if (!user) {
-        console.log('[맥락 카드 훅] 로그인 필요 (최근 카드)');
         return [];
       }
 
@@ -364,7 +362,7 @@ export function invalidateContextCardCache(queryClient: QueryClient) {
  * ```
  *
  * @returns {
- *   mutate: (params: { viewRef: any }) => void,
+ *   mutate: (params: { viewRef: React.Component | number }) => void,
  *   isLoading: boolean,
  *   isError: boolean,
  *   error: Error | null
@@ -372,7 +370,7 @@ export function invalidateContextCardCache(queryClient: QueryClient) {
  */
 export function useShareContextCard() {
   return useMutation({
-    mutationFn: async ({ viewRef }: { viewRef: any }) => {
+    mutationFn: async ({ viewRef }: { viewRef: React.Component | number }) => {
       if (!viewRef) throw new Error('뷰 참조가 없습니다');
 
       // 1. 스크린샷 캡처
@@ -393,6 +391,10 @@ export function useShareContextCard() {
       });
 
       return { success: true };
+    },
+    onError: (error) => {
+      showErrorToast(t('common.mutation_error'));
+      Sentry.captureException(error, { tags: { hook: 'useShareContextCard' } });
     },
   });
 }

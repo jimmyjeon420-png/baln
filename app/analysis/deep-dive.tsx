@@ -358,7 +358,7 @@ export default function DeepDiveScreen() {
     setResult(null);
 
     try {
-      console.log(`[DeepDive] Step 1: 재무 데이터 조회 — ${targetName} (${targetTicker})`);
+      if (__DEV__) console.log(`[DeepDive] Step 1: 재무 데이터 조회 — ${targetName} (${targetTicker})`);
       let fundamentals: Awaited<ReturnType<typeof fetchStockFundamentals>> = null;
       try {
         fundamentals = await fetchStockFundamentals(targetTicker, targetName);
@@ -400,7 +400,7 @@ export default function DeepDiveScreen() {
     try {
       // [Step 1] Yahoo Finance API로 실제 재무 데이터 조회
       // fetchStockFundamentals가 예외를 던져도 딥다이브 자체는 계속 진행
-      console.log(`[DeepDive] Step 1: 재무 데이터 조회 — ${targetName} (${targetTicker})`);
+      if (__DEV__) console.log(`[DeepDive] Step 1: 재무 데이터 조회 — ${targetName} (${targetTicker})`);
       let fundamentals: Awaited<ReturnType<typeof fetchStockFundamentals>> = null;
       try {
         fundamentals = await fetchStockFundamentals(targetTicker, targetName);
@@ -408,19 +408,8 @@ export default function DeepDiveScreen() {
         console.warn(`[DeepDive] 재무 데이터 조회 중 예외 발생 — Gemini 단독 분석으로 fallback:`, fundErr instanceof Error ? fundErr.message : fundErr);
       }
 
-      if (fundamentals) {
-        console.log(`[DeepDive] 재무 데이터 조회 성공:`, {
-          marketCap: fundamentals.marketCap,
-          PE: fundamentals.trailingPE,
-          PB: fundamentals.priceToBook,
-        });
-      } else {
-        console.log(`[DeepDive] 재무 데이터 없음 — Gemini 단독 분석으로 fallback`);
-      }
-
       // [Step 2] Gemini AI 분석 (팩트 데이터 주입)
       setLoadingMessage(t('analysis.deepDive.loading.analyzing'));
-      console.log(`[DeepDive] Step 2: AI 분석 시작`);
       const input: DeepDiveInput = {
         ticker: targetTicker,
         name: targetName,
@@ -428,7 +417,6 @@ export default function DeepDiveScreen() {
       };
 
       const analysisResult = await generateDeepDive(input);
-      console.log(`[DeepDive] 분석 완료`);
       setResult(analysisResult);
 
     } catch (err: unknown) {

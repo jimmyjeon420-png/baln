@@ -22,12 +22,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   RefreshControl,
-  Image,
   ScrollView,
   Dimensions,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import * as Sentry from '@sentry/react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
   useCommunityPost,
@@ -222,8 +223,12 @@ export default function PostDetailScreen() {
 
   // 작성자 프로필로 이동
   const handleAuthorPress = (userId: string) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    router.push(`/community/author/${userId}` as any);
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      router.push(`/community/author/${userId}` as any);
+    } catch (err) {
+      Sentry.captureException(err);
+    }
   };
 
   // 신고 버튼
@@ -597,7 +602,9 @@ export default function PostDetailScreen() {
                 <Image
                   source={{ uri: url }}
                   style={[styles.postImage, { backgroundColor: colors.surface }]}
-                  resizeMode="cover"
+                  contentFit="cover"
+                  transition={200}
+                  cachePolicy="memory-disk"
                 />
               </TouchableOpacity>
             ))}

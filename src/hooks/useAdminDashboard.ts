@@ -11,6 +11,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import * as Sentry from '@sentry/react-native';
 import {
   checkIsAdmin,
   fetchAdminOverview,
@@ -89,6 +90,9 @@ export function useGrantBonusCredits() {
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
       queryClient.invalidateQueries({ queryKey: ['admin', 'overview'] });
     },
+    onError: (error) => {
+      Sentry.captureException(error, { tags: { hook: 'useGrantBonusCredits' } });
+    },
   });
 }
 
@@ -120,6 +124,9 @@ export function useAdminDeletePost() {
       queryClient.invalidateQueries({ queryKey: ['admin', 'lounge-posts'] });
       queryClient.invalidateQueries({ queryKey: ['admin', 'overview'] });
     },
+    onError: (error) => {
+      Sentry.captureException(error, { tags: { hook: 'useAdminDeletePost' } });
+    },
   });
 }
 
@@ -131,6 +138,9 @@ export function useAdminTogglePinPost() {
     mutationFn: adminTogglePinPost,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'lounge-posts'] });
+    },
+    onError: (error) => {
+      Sentry.captureException(error, { tags: { hook: 'useAdminTogglePinPost' } });
     },
   });
 }
@@ -161,6 +171,9 @@ export function useAdminCancelGathering() {
       queryClient.invalidateQueries({ queryKey: ['admin', 'gatherings'] });
       queryClient.invalidateQueries({ queryKey: ['admin', 'overview'] });
     },
+    onError: (error) => {
+      Sentry.captureException(error, { tags: { hook: 'useAdminCancelGathering' } });
+    },
   });
 }
 
@@ -180,6 +193,7 @@ export function useAdminDailyComparison() {
 export function useAdminUserDetail(userId: string | null) {
   return useQuery({
     queryKey: ['admin', 'user-detail', userId],
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     queryFn: () => fetchAdminUserDetail(userId!),
     staleTime: 30 * 1000,
     enabled: !!userId,
@@ -196,6 +210,9 @@ export function useAdminBanUser() {
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
       queryClient.invalidateQueries({ queryKey: ['admin', 'user-detail'] });
       queryClient.invalidateQueries({ queryKey: ['admin', 'overview'] });
+    },
+    onError: (error) => {
+      Sentry.captureException(error, { tags: { hook: 'useAdminBanUser' } });
     },
   });
 }

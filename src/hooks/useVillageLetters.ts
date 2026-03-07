@@ -140,7 +140,7 @@ export function useVillageLetters(
 
         if (newLetters.length > 0 && isMountedRef.current) {
           if (__DEV__) {
-            console.log(
+            if (__DEV__) console.log(
               `[useVillageLetters] 새 편지 ${newLetters.length}통 도착: `,
               newLetters.map(l => `${l.fromGuruId}(${l.subject})`).join(', '),
             );
@@ -176,7 +176,7 @@ export function useVillageLetters(
     setUnreadCount(prev => Math.max(0, prev - 1));
 
     if (__DEV__) {
-      console.log(`[useVillageLetters] 편지 열람: ${id}`);
+      if (__DEV__) console.log(`[useVillageLetters] 편지 열람: ${id}`);
     }
   }, []);
 

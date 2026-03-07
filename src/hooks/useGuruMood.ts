@@ -120,7 +120,7 @@ export function useGuruMood(
         .slice(0, 5) // 로그 줄이기 — 상위 5명만
         .map(([id, m]) => `${id}:${m}`)
         .join(', ');
-      console.log(`[useGuruMood] 감정 업데이트 → ${moodSummary}...`);
+      if (__DEV__) console.log(`[useGuruMood] 감정 업데이트 → ${moodSummary}...`);
     }
   }, [marketSentiment, weather]);
 
@@ -137,6 +137,7 @@ export function useGuruMood(
       prevSentimentRef.current = marketSentiment;
       prevWeatherCondRef.current = weather.condition;
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [marketSentiment, weather, computeAllMoods]);
 
   // 5분 간격 자동 업데이트 (미세한 감정 변동)

@@ -31,6 +31,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
+import * as Sentry from '@sentry/react-native';
 import { Ionicons } from '@expo/vector-icons';
 import CreditBadge from '../../src/components/CreditBadge';
 import { MarketplaceMainSkeleton } from '../../src/components/MarketplaceSkeletonLoader';
@@ -246,8 +247,12 @@ export default function MarketplaceScreen() {
 
   const navigateToFeature = (route: string) => {
     mediumTap();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    router.push(`/marketplace/${route}` as any);
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      router.push(`/marketplace/${route}` as any);
+    } catch (err) {
+      Sentry.captureException(err);
+    }
   };
 
   // ── 로딩 상태 (포트폴리오/티어 로드만 대기, 크레딧은 인라인 로딩) ──

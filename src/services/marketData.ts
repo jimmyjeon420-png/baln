@@ -7,7 +7,7 @@ import axios from 'axios';
 
 // Yahoo Finance API 설정
 // ⚠️ 보안: API 키를 하드코딩하지 마세요. .env 파일에서 EXPO_PUBLIC_RAPIDAPI_KEY를 설정하세요.
-const YAHOO_FINANCE_RAPID_API = {
+const _YAHOO_FINANCE_RAPID_API = {
   host: 'yh-finance.p.rapidapi.com',
   key: process.env.EXPO_PUBLIC_RAPIDAPI_KEY || '',
 };
@@ -168,7 +168,7 @@ async function searchCrypto(query: string): Promise<TickerResult[]> {
     }
 
     // 상위 5개 결과만 반환
-    return response.data.coins.slice(0, 5).map((coin: any) => ({
+    return response.data.coins.slice(0, 5).map((coin: { symbol: string; name: string }) => ({
       ticker: coin.symbol.toUpperCase(),
       name: coin.name,
       type: 'crypto' as const,

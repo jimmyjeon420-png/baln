@@ -269,6 +269,10 @@ export default function NewsTabScreen() {
         <FlatList
           data={predictions}
           keyExtractor={(item) => item.id}
+          initialNumToRender={10}
+          maxToRenderPerBatch={10}
+          windowSize={5}
+          removeClippedSubviews={true}
           renderItem={({ item }) => (
             <PredictionCard item={item} onPress={openPrediction} />
           )}
@@ -291,6 +295,10 @@ export default function NewsTabScreen() {
         <FlatList
           data={newsItems}
           keyExtractor={(item) => item.id}
+          initialNumToRender={10}
+          maxToRenderPerBatch={10}
+          windowSize={5}
+          removeClippedSubviews={true}
           renderItem={({ item }) => (
             <NewsCard item={item} onPress={handleNewsPress} />
           )}

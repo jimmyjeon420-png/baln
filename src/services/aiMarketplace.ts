@@ -28,7 +28,7 @@ import type { UserTier } from '../types/database';
 // 유틸: 입력 해시 생성 (캐시 키)
 // ============================================================================
 
-function hashInput(input: any): string {
+function hashInput(input: unknown): string {
   const str = JSON.stringify(input);
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
@@ -75,7 +75,7 @@ async function saveResult(
   userId: string,
   featureType: AIFeatureType,
   inputHash: string,
-  result: any,
+  result: unknown,
   creditsCharged: number
 ): Promise<string> {
   const { data, error } = await supabase

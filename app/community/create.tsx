@@ -25,8 +25,8 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  Image,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -498,7 +498,7 @@ export default function CreatePostScreen() {
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imagePreviewContainer}>
                 {selectedImages.map((image, index) => (
                   <View key={index} style={styles.imagePreviewItem}>
-                    <Image source={{ uri: image.uri }} style={[styles.imagePreview, { backgroundColor: colors.surface }]} />
+                    <Image source={{ uri: image.uri }} style={[styles.imagePreview, { backgroundColor: colors.surface }]} contentFit="cover" transition={200} cachePolicy="memory-disk" />
                     <TouchableOpacity
                       style={[styles.imageRemoveButton, { backgroundColor: colors.background }]}
                       onPress={() => handleRemoveImage(index)}

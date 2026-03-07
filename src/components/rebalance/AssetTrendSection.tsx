@@ -42,8 +42,8 @@ function buildSvgPath(
 ): { path: string; min: number; max: number; lastPoint: { x: number; y: number } } {
   if (data.length < 2) return { path: '', min: 0, max: 0, lastPoint: { x: 0, y: 0 } };
 
-  const min = Math.min(...data) * 0.995; // 5% 하단 여유
-  const max = Math.max(...data) * 1.005;
+  const min = Math.min(...(data.length > 0 ? data : [0])) * 0.995; // 5% 하단 여유
+  const max = Math.max(...(data.length > 0 ? data : [0])) * 1.005;
   const range = max - min || 1;
 
   const chartW = width - padding * 2;

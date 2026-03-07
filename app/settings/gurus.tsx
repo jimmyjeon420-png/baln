@@ -16,6 +16,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import * as Sentry from '@sentry/react-native';
 import { useGuruInsights, GURU_INSIGHTS_KEY } from '../../src/hooks/useSharedAnalysis';
 import { GuruInsightsSkeleton } from '../../src/components/SkeletonLoader';
 import type { GuruInsight } from '../../src/services/centralKitchen';
@@ -210,7 +211,8 @@ export default function GuruInsightsScreen() {
               return (
                 <TouchableOpacity
                   key={`${guru.guruNameEn}-${index}`}
-                  onPress={() => guruId && router.push(`/settings/guru-detail/${guruId}` as any)}
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  onPress={() => { if (guruId) { try { router.push(`/settings/guru-detail/${guruId}` as any); } catch (err) { Sentry.captureException(err); } } }}
                   activeOpacity={guruId ? 0.75 : 1}
                 >
                   <GuruCard guru={guru} />
@@ -292,7 +294,7 @@ function GuruCard({ guru }: { guru: GuruInsight }) {
           {guru.conviction_level && (
             <View style={styles.convictionRow}>
               {[1, 2, 3, 4, 5].map((i) => (
-                <Text key={i} style={[styles.convictionDot, { color: i <= guru.conviction_level! ? '#4CAF50' : '#333333' }]}>
+                <Text key={i} style={[styles.convictionDot, { color: i <= (guru.conviction_level ?? 0) ? '#4CAF50' : '#333333' }]}>
                   ●
                 </Text>
               ))}

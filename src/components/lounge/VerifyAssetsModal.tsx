@@ -6,8 +6,8 @@ import {
   Modal,
   TouchableOpacity,
   ActivityIndicator,
-  Image,
 } from 'react-native';
+import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
 import { requestVerification } from '../../services/verificationService';
@@ -121,7 +121,7 @@ export default function VerifyAssetsModal({
   const renderStep2 = () => (
     <View style={styles.stepContainer}>
       {selectedImageUri && (
-        <Image source={{ uri: selectedImageUri }} style={styles.previewImage} resizeMode="contain" />
+        <Image source={{ uri: selectedImageUri }} style={styles.previewImage} contentFit="contain" transition={200} cachePolicy="memory-disk" />
       )}
       <Text style={styles.title}>{t('verifyAssets.confirmTitle')}</Text>
       <Text style={styles.subdescription}>

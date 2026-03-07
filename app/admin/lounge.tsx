@@ -839,6 +839,10 @@ export default function AdminLoungeScreen() {
           data={postsData?.posts ?? []}
           renderItem={renderPostItem}
           keyExtractor={(item) => item.id}
+          initialNumToRender={10}
+          maxToRenderPerBatch={10}
+          windowSize={5}
+          removeClippedSubviews={true}
           contentContainerStyle={[
             styles.listContent,
             isSelecting && { paddingBottom: 100 },
@@ -863,6 +867,10 @@ export default function AdminLoungeScreen() {
           data={gatheringsData?.gatherings ?? []}
           renderItem={renderGatheringItem}
           keyExtractor={(item) => item.id}
+          initialNumToRender={10}
+          maxToRenderPerBatch={10}
+          windowSize={5}
+          removeClippedSubviews={true}
           contentContainerStyle={styles.listContent}
           refreshControl={
             <RefreshControl

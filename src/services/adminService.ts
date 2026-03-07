@@ -71,6 +71,7 @@ export interface RetentionData {
 /** 최근 활동 아이템 */
 export interface RecentActivity {
   event_name: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   properties: Record<string, any> | null;
   user_id: string | null;
   email: string | null;
@@ -137,6 +138,7 @@ async function countRowsSince(table: string, sinceIso: string): Promise<number> 
   return 0;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function fetchRecentRows(table: string, options?: { limit?: number; userId?: string; fromIso?: string }): Promise<any[]> {
   const dateColumns = ['created_at', 'updated_at'];
   const limit = options?.limit ?? 50;
@@ -174,6 +176,7 @@ function toComparisonMetric(today: number, yesterday: number): DailyComparisonMe
   };
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function normalizeAdminUser(row: Record<string, any>): AdminUser {
   const created = normalizeIso(row.created_at ?? row.updated_at);
   const lastActiveValue = row.last_active ?? row.last_active_date ?? row.updated_at ?? null;
@@ -230,24 +233,29 @@ async function fetchAdminUserListFallback(params: {
     throw new Error(profilesResult.error.message);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const rows = (profilesResult.data || []) as Record<string, any>[];
   const userIds = rows.map((row) => row.id).filter(Boolean) as string[];
 
   const [creditRows, statRows] = await Promise.all([
     userIds.length > 0
       ? supabase.from('user_credits').select('user_id,balance').in('user_id', userIds)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       : Promise.resolve({ data: [], error: null } as any),
     userIds.length > 0
       ? supabase.from('prediction_user_stats').select('user_id,total_votes,accuracy_rate').in('user_id', userIds)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       : Promise.resolve({ data: [], error: null } as any),
   ]);
 
   const creditMap = new Map<string, number>();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (creditRows.data || []).forEach((row: Record<string, any>) => {
     creditMap.set(String(row.user_id), toNum(row.balance));
   });
 
   const statMap = new Map<string, { totalVotes: number; accuracy: number | null }>();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (statRows.data || []).forEach((row: Record<string, any>) => {
     statMap.set(String(row.user_id), {
       totalVotes: toNum(row.total_votes),
@@ -486,8 +494,10 @@ export async function fetchRecentActivity(
   const userIds = Array.from(new Set(rows.map((row) => row.user_id).filter(Boolean))) as string[];
   const { data: profileRows } = userIds.length > 0
     ? await supabase.from('profiles').select('id,email').in('id', userIds)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     : ({ data: [] } as any);
   const emailMap = new Map<string, string | null>();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (profileRows || []).forEach((row: Record<string, any>) => {
     emailMap.set(String(row.id), row.email || null);
   });
@@ -667,6 +677,7 @@ export async function fetchAdminLoungePosts(params: {
   }
   if (postsResult.error) throw new Error(postsResult.error.message);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let rows = (postsResult.data || []) as Record<string, any>[];
 
   const reportMap = new Map<string, number>();
@@ -686,8 +697,10 @@ export async function fetchAdminLoungePosts(params: {
   const userIds = Array.from(new Set(rows.map((row) => row.user_id).filter(Boolean))) as string[];
   const { data: profileRows } = userIds.length > 0
     ? await supabase.from('profiles').select('id,email,display_tag').in('id', userIds)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     : ({ data: [] } as any);
   const profileMap = new Map<string, { email: string | null; displayTag: string | null }>();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (profileRows || []).forEach((row: Record<string, any>) => {
     profileMap.set(String(row.id), {
       email: row.email || null,
@@ -815,12 +828,16 @@ export async function fetchAdminGatherings(params: {
   }
   if (rowsResult.error) throw new Error(rowsResult.error.message);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const rows = (rowsResult.data || []) as Record<string, any>[];
   const hostIds = Array.from(new Set(rows.map((row) => row.host_id).filter(Boolean))) as string[];
   const { data: hostProfiles } = hostIds.length > 0
     ? await supabase.from('profiles').select('id,email,display_name,tier').in('id', hostIds)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     : ({ data: [] } as any);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const hostMap = new Map<string, Record<string, any>>();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (hostProfiles || []).forEach((row: Record<string, any>) => hostMap.set(String(row.id), row));
 
   const gatherings: AdminGathering[] = rows.map((row) => {
@@ -938,6 +955,7 @@ export interface AdminUserDetail {
   };
   recent_activities: {
     event_name: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     properties: Record<string, any> | null;
     created_at: string;
   }[];
@@ -981,10 +999,12 @@ export async function fetchAdminDailyComparison(): Promise<DailyComparisonData> 
     fetchRecentRows('credit_transactions', { fromIso: yesterdayStart.toISOString(), limit: 5000 }),
   ]);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const inToday = (row: Record<string, any>) => {
     const date = new Date(String(row.created_at || row.updated_at || 0));
     return !Number.isNaN(date.getTime()) && date.getTime() >= todayStart.getTime();
   };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const inYesterday = (row: Record<string, any>) => {
     const date = new Date(String(row.created_at || row.updated_at || 0));
     return !Number.isNaN(date.getTime()) && date.getTime() >= yesterdayStart.getTime() && date.getTime() < todayStart.getTime();
@@ -1041,8 +1061,11 @@ export async function fetchAdminUserDetail(userId: string): Promise<AdminUserDet
     fetchRecentRows('analytics_events', { userId, limit: 20 }),
   ]);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const profile = ((profileRows as any).data?.[0] || {}) as Record<string, any>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const credits = ((creditRows as any).data?.[0] || {}) as Record<string, any>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const stats = ((statsRows as any).data?.[0] || {}) as Record<string, any>;
   const createdAt = normalizeIso(profile.created_at ?? profile.updated_at);
 

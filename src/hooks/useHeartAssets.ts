@@ -14,9 +14,12 @@
 
 import React, { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import * as Sentry from '@sentry/react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from 'expo-router';
 import type { HeartAsset, HeartAssetWithSignal, HeartAssetType } from '../types/heartAsset';
+import { showErrorToast } from '../utils/toast';
+import { t } from '../locales';
 import { useSharedPortfolio } from './useSharedPortfolio';
 import {
   calculateHealthScore,
@@ -32,6 +35,7 @@ import {
 import { useKostolalyPhase } from './useKostolalyPhase';
 import { getTickerProfile } from '../data/tickerProfile';
 import supabase, { getCurrentUser } from '../services/supabase';
+import type { PortfolioAsset } from '../services/gemini';
 
 // ============================================================================
 // 상수
@@ -133,7 +137,7 @@ function getHeartAssetCategory(asset: HeartAsset): string {
 function mapSignals(
   heartAssets: HeartAsset[],
   healthResult: HealthScoreResult | null,
-  portfolioAssets: any[],
+  portfolioAssets: PortfolioAsset[],
   totalAssets: number,
   guruStyle?: string,
   kostolalyPhase?: string | null,
@@ -309,16 +313,19 @@ export function useHeartAssets(): UseHeartAssetsReturn {
     queryFn: async () => {
       const stored = await AsyncStorage.getItem(HEART_ASSETS_KEY);
       if (!stored) return [];
-      return JSON.parse(stored) as HeartAsset[];
+      try {
+        return JSON.parse(stored) as HeartAsset[];
+      } catch {
+        return [];
+      }
     },
     staleTime: Infinity, // AsyncStorage 데이터는 변경 시에만 갱신
   });
 
-  const heartAssetsFromStorage = query.data || [];
-
   // ★ 포트폴리오 자산을 HeartAsset 형식으로 변환하여 병합
   // "자산 추가하기"로 등록한 자산도 자동으로 하트 목록에 포함
   const heartAssets = React.useMemo(() => {
+    const heartAssetsFromStorage = query.data || [];
     const merged = [...heartAssetsFromStorage];
 
     for (const asset of assets) {
@@ -341,7 +348,7 @@ export function useHeartAssets(): UseHeartAssetsReturn {
     }
 
     return merged;
-  }, [heartAssetsFromStorage, assets]);
+  }, [query.data, assets]);
 
   // 하트 추가 mutation
   const addMutation = useMutation({
@@ -387,6 +394,10 @@ export function useHeartAssets(): UseHeartAssetsReturn {
       queryClient.invalidateQueries({ queryKey: HEART_ASSETS_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: ['shared-portfolio'] }); // 포트폴리오 캐시 무효화
     },
+    onError: (error) => {
+      showErrorToast(t('common.mutation_error'));
+      Sentry.captureException(error, { tags: { hook: 'useHeartAssets', action: 'add' } });
+    },
   });
 
   // 하트 제거 mutation
@@ -415,6 +426,10 @@ export function useHeartAssets(): UseHeartAssetsReturn {
       queryClient.invalidateQueries({ queryKey: HEART_ASSETS_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: ['shared-portfolio'] }); // 포트폴리오 캐시 무효화
     },
+    onError: (error) => {
+      showErrorToast(t('common.mutation_error'));
+      Sentry.captureException(error, { tags: { hook: 'useHeartAssets', action: 'remove' } });
+    },
   });
 
   // 하트 자산 이름 변경 mutation
@@ -429,6 +444,10 @@ export function useHeartAssets(): UseHeartAssetsReturn {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: HEART_ASSETS_QUERY_KEY });
+    },
+    onError: (error) => {
+      showErrorToast(t('common.mutation_error'));
+      Sentry.captureException(error, { tags: { hook: 'useHeartAssets', action: 'update' } });
     },
   });
 

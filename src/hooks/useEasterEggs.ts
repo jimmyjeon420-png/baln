@@ -327,7 +327,12 @@ export function useEasterEggs(
   const checkBehaviorEgg = useCallback(async (behaviorId: string) => {
     // Avoid duplicate discovery
     const raw = await AsyncStorage.getItem(DISCOVERED_KEY).catch(() => null);
-    const discovered: string[] = raw ? JSON.parse(raw) : [];
+    let discovered: string[];
+    try {
+      discovered = raw ? JSON.parse(raw) : [];
+    } catch {
+      discovered = [];
+    }
     if (discovered.includes(behaviorId)) return;
 
     const egg = ALL_EASTER_EGGS.find(e => e.id === behaviorId);

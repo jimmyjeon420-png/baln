@@ -5,6 +5,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import * as Sentry from '@sentry/react-native';
 import supabase, { getCurrentUser } from '../services/supabase';
 import type { RebalanceExecution, ExecutionInput } from '../types/rebalanceExecution';
 
@@ -97,6 +98,9 @@ export function useSaveExecution() {
     onSuccess: () => {
       // 캐시 무효화 → 히스토리 화면 자동 갱신
       queryClient.invalidateQueries({ queryKey: EXECUTIONS_KEY });
+    },
+    onError: (error) => {
+      Sentry.captureException(error, { tags: { hook: 'useSaveExecution' } });
     },
   });
 }

@@ -31,8 +31,8 @@ const MODEL_NAME = process.env.EXPO_PUBLIC_GEMINI_MODEL || 'gemini-3-flash-previ
 if (!API_KEY) {
   console.warn('[Gemini] API 키가 설정되지 않았습니다. AI 기능은 제한됩니다.');
 } else if (__DEV__) {
-  console.log('[Gemini] API key configured');
-  console.log('[Gemini] model:', MODEL_NAME);
+  if (__DEV__) console.log('[Gemini] API key configured');
+  if (__DEV__) console.log('[Gemini] model:', MODEL_NAME);
 }
 
 // ============================================================================
@@ -307,8 +307,9 @@ const modelWithSearch = genAI.getGenerativeModel(
 
 /** Gemini 호출 + 타임아웃 + 재시도 래퍼 */
 async function callGeminiSafe(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   targetModel: any,
-  prompt: string | any[],
+  prompt: string | unknown[],
   options?: { timeoutMs?: number; maxRetries?: number }
 ): Promise<string> {
   const timeoutMs = options?.timeoutMs ?? 30000;
@@ -327,19 +328,20 @@ async function callGeminiSafe(
         throw new Error('빈 응답');
       }
       return text;
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errObj = err as { name?: string; message?: string };
       if (attempt < maxRetries && (
-        err.name === 'AbortError' ||
-        err.message?.includes('429') ||
-        err.message?.includes('503') ||
-        err.message?.includes('RESOURCE_EXHAUSTED')
+        errObj.name === 'AbortError' ||
+        errObj.message?.includes('429') ||
+        errObj.message?.includes('503') ||
+        errObj.message?.includes('RESOURCE_EXHAUSTED')
       )) {
         const delay = Math.pow(2, attempt) * 1000;
-        console.log(`[Gemini] 재시도 ${attempt + 1}/${maxRetries} (${delay}ms 후)`);
+        if (__DEV__) console.log(`[Gemini] 재시도 ${attempt + 1}/${maxRetries} (${delay}ms 후)`);
         await new Promise(r => setTimeout(r, delay));
         continue;
       }
-      if (err.name === 'AbortError') {
+      if (errObj.name === 'AbortError') {
         const timeoutErr = new Error(`AI 분석 시간 초과 (${timeoutMs / 1000}초). 다시 시도해주세요.`);
         Sentry.captureException(timeoutErr, { tags: { service: 'gemini', type: 'timeout' } });
         throw timeoutErr;
@@ -358,6 +360,7 @@ async function callGeminiSafe(
 }
 
 /** JSON 응답 안전 파싱 (Gemini의 markdown 코드블록 제거) */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function parseGeminiJson<T = any>(text: string): T {
   let cleaned = text.trim();
   // Remove markdown code blocks
@@ -1100,17 +1103,23 @@ function sanitizeDeepDiveResult(raw: DeepDiveResult, input: DeepDiveInput): Deep
   };
 }
 
-export const getPortfolioAdvice = async (prompt: any) => {
+export const getPortfolioAdvice = async (prompt: string | Record<string, unknown>) => {
   try {
     const msg = typeof prompt === 'string' ? prompt : JSON.stringify(prompt);
     return await callGeminiSafe(model, msg);
   } catch (error) {
     console.warn("Gemini Text Error:", error);
+    Sentry.addBreadcrumb({
+      category: 'api',
+      message: 'getPortfolioAdvice failed',
+      level: 'error',
+      data: { error: String(error) },
+    });
     return "AI 응답 오류. 잠시 후 다시 시도해주세요.";
   }
 };
 
-export const summarizeChat = async (messages: any[]) => {
+export const summarizeChat = async (messages: { user: { name: string }; text: string }[]) => {
   try {
     const conversation = messages.map(m => `${m.user.name}: ${m.text}`).join('\n');
     const result = await model.generateContent(`Summarize this logic into 3 bullet points (${getResponseLanguage()}):\n${conversation}`);
@@ -1285,10 +1294,12 @@ ETF:
     const screenTotalValue = parsedData.totalValueFromScreen || reportedTotalValue;
 
     // 2. assets 배열 추출 (새 포맷 또는 레거시 배열)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const rawAssets: any[] = parsedData.assets || (Array.isArray(parsedData) ? parsedData : []);
 
     // 3. 기본 데이터 정제 + 티커 매핑
     // CRITICAL: 안전한 숫자 파싱 (19.2조원 오류 방지)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let processedAssets: ParsedAsset[] = rawAssets.map((item: any) => {
       const rawTicker = item.ticker || `UNKNOWN_${item.name || 'ASSET'}`;
       const name = item.name || '알 수 없는 자산';
@@ -1370,6 +1381,12 @@ ETF:
 
   } catch (error) {
     console.warn("Gemini Analysis Error:", error);
+    Sentry.addBreadcrumb({
+      category: 'api',
+      message: 'analyzeScreenshot failed',
+      level: 'error',
+      data: { error: String(error) },
+    });
     const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
     return {
       error: `이미지 분석 실패: ${errorMessage}`,
@@ -1538,6 +1555,7 @@ export const classifyTicker = async (
 
     // 동적 캐시에 저장 (다음번엔 API 없이 바로 조회)
     const { saveDynamicProfile } = await import('../data/tickerProfile');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await saveDynamicProfile(profile as any);
 
     return profile;
@@ -1585,6 +1603,12 @@ export const generateMorningBriefing = async (
     } else {
       console.warn('Morning Briefing Error:', error);
     }
+    Sentry.addBreadcrumb({
+      category: 'api',
+      message: 'generateMorningBriefing failed',
+      level: 'error',
+      data: { error: String(error) },
+    });
     // 에러를 그대로 전파 — 호출자가 null로 처리하도록 함
     // (에러 폴백 데이터를 반환하면 DB 캐시에 저장되어 반복적으로 에러 상태가 됨)
     throw error;
@@ -1836,6 +1860,7 @@ ${JSON.stringify(portfolioWithAllocation.map(p => ({
       panicShieldReason: analysisResult.panicShieldReason || undefined,
       panicSubScores: analysisResult.panicSubScores || undefined,
       stopLossGuidelines: analysisResult.stopLossGuidelines || [],
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       fomoAlerts: (analysisResult.fomoAlerts || []).map((alert: any) => ({
         ...alert,
         subScores: alert.subScores || undefined,
@@ -2069,6 +2094,7 @@ export const generateDeepDive = async (
   };
 
   // --- 팩트 데이터 섹션 (API 조회 성공 시) ---
+  /* eslint-disable @typescript-eslint/no-non-null-assertion */
   const factDataSection = hasFundamentals ? (isKo ? `
 [★★★ 실제 API 조회 데이터 — 이 숫자를 그대로 사용하세요 ★★★]
 아래 데이터는 Yahoo Finance API에서 실시간 조회한 팩트 데이터입니다.
@@ -2156,6 +2182,7 @@ API data retrieval failed. Use Google Search to obtain real data.
    - Do not fabricate numbers.
    - **Convert revenue, operating income, and net income to KRW (₩)**
 `);
+  /* eslint-enable @typescript-eslint/no-non-null-assertion */
 
   const prompt = (isKo ? `
 당신은 CFA 자격을 보유한 골드만삭스 수석 애널리스트입니다.
@@ -2547,7 +2574,7 @@ ${hasFundamentals ? '12. Use API-provided data (market cap, P/E, P/B, ROE, etc.)
 
     for (let attempt = 1; attempt <= 2; attempt += 1) {
       try {
-        console.log(`[DeepDive] 프록시 강제 경로 실행 (${attempt}/2)`);
+        if (__DEV__) console.log(`[DeepDive] 프록시 강제 경로 실행 (${attempt}/2)`);
         return await generateDeepDiveViaProxy(input);
       } catch (proxyErr) {
         lastProxyError = proxyErr;
@@ -2571,25 +2598,25 @@ ${hasFundamentals ? '12. Use API-provided data (market cap, P/E, P/B, ROE, etc.)
   try {
     try {
       // 1차: Google Search 그라운딩 활성화 모델 (60초)
-      console.log('[DeepDive] 1차 시도: Google Search 모델');
+      if (__DEV__) console.log('[DeepDive] 1차 시도: Google Search 모델');
       text = await callGeminiSafe(modelWithSearch, prompt, { timeoutMs: 60000, maxRetries: 0 });
-    } catch (searchErr: any) {
-      console.warn('[DeepDive] Google Search 모델 실패:', searchErr.message?.substring(0, 100));
-      console.log('[DeepDive] 2차 시도: 일반 모델 (Google Search 없이)');
+    } catch (searchErr: unknown) {
+      console.warn('[DeepDive] Google Search 모델 실패:', (searchErr instanceof Error ? searchErr.message : String(searchErr)).substring(0, 100));
+      if (__DEV__) console.log('[DeepDive] 2차 시도: 일반 모델 (Google Search 없이)');
       // 2차: 일반 모델 폴백 (Google Search 없이, 60초)
       text = await callGeminiSafe(model, prompt, { timeoutMs: 60000, maxRetries: 1 });
     }
-  } catch (directErr: any) {
+  } catch (directErr: unknown) {
     // 직접 호출이 키 만료/권한 문제면 프록시 재시도
-    const directMessage = String(directErr?.message || directErr || '');
+    const directMessage = String(directErr instanceof Error ? directErr.message : directErr || '');
     const shouldFallbackToProxy = shouldPreferProxy || isGeminiCredentialError(directMessage) || !API_KEY;
 
     if (shouldFallbackToProxy) {
       try {
-        console.log('[DeepDive] 직접 호출 실패 → 프록시 재시도');
+        if (__DEV__) console.log('[DeepDive] 직접 호출 실패 → 프록시 재시도');
         return await generateDeepDiveViaProxy(input);
-      } catch (proxyRetryErr: any) {
-        console.warn('[DeepDive] 프록시 재시도 실패:', proxyRetryErr?.message?.substring(0, 120));
+      } catch (proxyRetryErr: unknown) {
+        console.warn('[DeepDive] 프록시 재시도 실패:', (proxyRetryErr instanceof Error ? proxyRetryErr.message : String(proxyRetryErr)).substring(0, 120));
         Sentry.captureException(proxyRetryErr, {
           tags: { service: 'gemini', type: 'proxy_retry_failed' },
           extra: {
@@ -2605,8 +2632,8 @@ ${hasFundamentals ? '12. Use API-provided data (market cap, P/E, P/B, ROE, etc.)
 
   try {
     if (__DEV__) {
-      console.log('[DeepDive] Gemini 원본 응답 길이:', text.length);
-      console.log('[DeepDive] 응답 앞 200자:', text.substring(0, 200));
+      if (__DEV__) console.log('[DeepDive] Gemini 원본 응답 길이:', text.length);
+      if (__DEV__) console.log('[DeepDive] 응답 앞 200자:', text.substring(0, 200));
     }
 
     // JSON 정제 및 파싱 + 신뢰도 검증/보정
@@ -2729,6 +2756,7 @@ function getScenarioExplanation(scenario: string, assetClass: AssetClass, beta: 
     },
   };
   const scenarioMap = explanations[scenario] || explanations.market_crash;
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   if (scenarioMap[assetClass]) return scenarioMap[assetClass]!;
   // 기본 폴백
   return beta < 0
@@ -3000,8 +3028,8 @@ Important: Return valid JSON only. Amounts as numbers. Write naturally in Englis
       // JSON 파싱 실패 시 Beta 기반 클라이언트 계산으로 폴백
       return computeWhatIfFallback(input, magnitude);
     }
-  } catch (error: any) {
-    const message = String(error?.message || error || '');
+  } catch (error: unknown) {
+    const message = String(error instanceof Error ? error.message : error || '');
     if (isGeminiCredentialError(message) || !API_KEY) {
       try {
         return await generateWhatIfViaProxy(input);
@@ -3015,7 +3043,7 @@ Important: Return valid JSON only. Amounts as numbers. Write naturally in Englis
       return computeWhatIfFallback(input, magnitude);
     } catch {
       // 폴백도 실패하면 원본 에러 메시지 전달
-      throw new Error(error.message || 'What-If 시뮬레이션에 실패했습니다');
+      throw new Error((error instanceof Error ? error.message : String(error)) || 'What-If 시뮬레이션에 실패했습니다');
     }
   }
 };
@@ -3176,8 +3204,8 @@ Important: Return valid JSON only. Amounts as numbers (KRW). Write naturally in 
       console.warn('[TaxReport] JSON 파싱 실패, 결정론 폴백 사용:', parseErr);
       return computeTaxReportFallback(input);
     }
-  } catch (error: any) {
-    const message = String(error?.message || error || '');
+  } catch (error: unknown) {
+    const message = String(error instanceof Error ? error.message : error || '');
     if (isGeminiCredentialError(message) || !API_KEY) {
       try {
         return await generateTaxReportViaProxy(input);
@@ -3289,8 +3317,8 @@ ${input.message}
 
   try {
     return await callGeminiSafe(modelWithSearch, prompt, { timeoutMs: 30000, maxRetries: 1 });
-  } catch (error: any) {
-    const message = String(error?.message || error || '');
+  } catch (error: unknown) {
+    const message = String(error instanceof Error ? error.message : error || '');
     if (isGeminiCredentialError(message) || !API_KEY) {
       try {
         const proxyResponse = await invokeGeminiProxy<ProxyCFOChatResponse>(

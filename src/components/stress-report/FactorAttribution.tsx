@@ -29,7 +29,7 @@ export const FactorAttribution: React.FC<FactorAttributionProps> = ({
   const { colors } = useTheme();
   const { t } = useLocale();
   const factors = computeFactors(result);
-  const maxPercent = Math.max(...factors.map(f => f.percent));
+  const maxPercent = Math.max(...(factors.length > 0 ? factors.map(f => f.percent) : [0]));
 
   return (
     <View style={[s.container, { backgroundColor: colors.surface }]}>

@@ -63,6 +63,12 @@ export async function getMyCredits(): Promise<UserCredits | null> {
     return data as UserCredits;
   } catch (err) {
     console.warn('[Credits] 조회 실패 (기본값 사용):', err);
+    Sentry.addBreadcrumb({
+      category: 'api',
+      message: 'getMyCredits failed',
+      level: 'error',
+      data: { error: String(err) },
+    });
     return {
       user_id: 'unknown',
       balance: 0,
@@ -224,6 +230,12 @@ export async function purchaseCredits(
     };
   } catch (err) {
     console.warn('[Credits] purchaseCredits 예외:', err);
+    Sentry.addBreadcrumb({
+      category: 'api',
+      message: 'purchaseCredits failed',
+      level: 'error',
+      data: { error: String(err) },
+    });
     return { success: false, newBalance: 0, totalCredits: 0 };
   }
 }

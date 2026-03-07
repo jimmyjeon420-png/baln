@@ -10,8 +10,11 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import * as Sentry from '@sentry/react-native';
 import supabase, { getCurrentUser } from '../services/supabase';
 import type { CommunityPost } from '../types/community';
+import { showErrorToast } from '../utils/toast';
+import { t } from '../locales';
 
 // ============================================================================
 // 1. 내 북마크 ID 목록 (빠른 토글 확인용)
@@ -116,6 +119,8 @@ export function useToggleBookmark() {
       if (context?.prevBookmarks) {
         queryClient.setQueryData(['myBookmarks'], context.prevBookmarks);
       }
+      showErrorToast(t('common.mutation_error'));
+      Sentry.captureException(_err, { tags: { hook: 'useToggleBookmark' } });
     },
 
     // 서버 진실성 확보
@@ -166,7 +171,7 @@ export function useBookmarkedPosts() {
         .filter(Boolean)
         .map(post => ({
           ...post,
-          top_holdings: Array.isArray(post!.top_holdings) ? post!.top_holdings : [],
+          top_holdings: Array.isArray(post?.top_holdings) ? post.top_holdings : [],
         })) as CommunityPost[];
     },
     staleTime: 60000,

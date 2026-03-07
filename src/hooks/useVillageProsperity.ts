@@ -187,7 +187,7 @@ export interface UseVillageProsperityReturn {
   /** 다음 레벨까지 진행률 (0~100) */
   progress: number;
   /** 전체 마일스톤 (해금 상태 포함) */
-  milestones: Array<ProsperityMilestone & { unlocked: boolean }>;
+  milestones: (ProsperityMilestone & { unlocked: boolean })[];
   /** 오늘 획득한 포인트 */
   todayPoints: number;
   /** 오늘 남은 포인트 (일일 상한 기준) */
@@ -298,7 +298,7 @@ export function useVillageProsperity(): UseVillageProsperityReturn {
       result = { pointsAdded: actualPoints, leveledUp, newLevel };
 
       if (__DEV__) {
-        console.log(
+        if (__DEV__) console.log(
           `[useVillageProsperity] +${actualPoints}pts (${source}) → total ${newScore}, Lv${newLevel}${leveledUp ? ' [LEVEL UP!]' : ''}`
         );
       }

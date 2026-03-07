@@ -17,7 +17,7 @@ interface UseLocalizationReturn {
   settings: LocalizationSettings | null;
   isLoading: boolean;
   updateLocalizationForCountry: (country: Country) => Promise<LocalizationSettings>;
-  translate: (key: string, options?: any) => string;
+  translate: (key: string, options?: Record<string, unknown>) => string;
   setLocalization: (settings: LocalizationSettings) => Promise<void>;
 }
 
@@ -199,7 +199,7 @@ export const useLocalization = (): UseLocalizationReturn => {
    * Get translation string with optional parameters
    */
   const translate = useCallback(
-    (key: string, options?: any): string => {
+    (key: string, options?: Record<string, unknown>): string => {
       return t(key, options);
     },
     []

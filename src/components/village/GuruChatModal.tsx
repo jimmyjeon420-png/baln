@@ -201,6 +201,9 @@ export function GuruChatModal({
             ref={flatListRef}
             data={messages}
             keyExtractor={(item) => item.id}
+            initialNumToRender={10}
+            maxToRenderPerBatch={10}
+            windowSize={5}
             renderItem={({ item }) => (
               <ChatBubble msg={item} isUser={item.speaker === 'user'} />
             )}

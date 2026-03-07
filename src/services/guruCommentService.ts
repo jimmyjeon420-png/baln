@@ -100,7 +100,7 @@ const GURU_RIVAL_MAP: Record<string, string[]> = {
   rogers: [],
 };
 
-function findRival(guruId: string, excluded: string[]): string | null {
+function _findRival(guruId: string, excluded: string[]): string | null {
   const rivals = GURU_RIVAL_MAP[guruId] || [];
   const available = rivals.filter(r => !excluded.includes(r));
   if (available.length === 0) return null;
@@ -250,7 +250,7 @@ ${personaText}
     }
 
     if (__DEV__) {
-      console.log(`[GuruComment] ${comments.length}개 구루 댓글 생성 완료 (post: ${postId})`);
+      if (__DEV__) console.log(`[GuruComment] ${comments.length}개 구루 댓글 생성 완료 (post: ${postId})`);
     }
   } catch (err) {
     // fire-and-forget: 어떤 에러든 무시

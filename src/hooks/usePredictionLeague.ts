@@ -29,8 +29,8 @@ import {
   getTierForRating,
   getNextTier,
   getTierProgress,
+  type LeagueTier,
 } from '../data/leagueConfig';
-import type { LeagueTier } from '../data/leagueConfig';
 
 // ============================================================================
 // 상수
@@ -258,7 +258,7 @@ export function usePredictionLeague(): UsePredictionLeagueReturn {
 
       if (__DEV__) {
         const tier = getTierForRating(newRating);
-        console.log(
+        if (__DEV__) console.log(
           `[usePredictionLeague] ${correct ? 'correct' : 'wrong'} → rating ${newRating} (${tier.nameEn})`
         );
       }

@@ -12,7 +12,6 @@ import { View, FlatList, Text, StyleSheet, ActivityIndicator } from 'react-nativ
 import { ParticipantRow } from './ParticipantRow';
 import { TurnMessage } from './TurnMessage';
 import { UserQuestionInput } from './UserQuestionInput';
-import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
 import type { RoundtableSession, RoundtableTurn, UserQuestion } from '../../types/roundtable';
 import { useLocale } from '../../context/LocaleContext';
 
@@ -140,6 +139,9 @@ export function RoundtableRoom({
         data={listData}
         renderItem={renderItem}
         keyExtractor={keyExtractor}
+        initialNumToRender={10}
+        maxToRenderPerBatch={10}
+        windowSize={5}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
       />

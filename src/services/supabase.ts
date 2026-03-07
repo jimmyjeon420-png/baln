@@ -12,8 +12,8 @@ export const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || FA
 
 // 진단 로그 (개발 환경에서만)
 if (__DEV__) {
-  console.log('[Supabase] URL:', SUPABASE_URL.substring(0, 30) + '...');
-  console.log('[Supabase] Key:', SUPABASE_ANON_KEY.substring(0, 20) + '...');
+  if (__DEV__) console.log('[Supabase] URL:', SUPABASE_URL.substring(0, 30) + '...');
+  if (__DEV__) console.log('[Supabase] Key:', SUPABASE_ANON_KEY.substring(0, 20) + '...');
 }
 
 // AsyncStorage 어댑터를 사용하여 토큰 저장
@@ -29,6 +29,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     // OAuth setSession() → 내부 getSession() 호출 시 락이 해제 안 되어
     // 모든 DB 쿼리가 무한 대기하는 버그 발생.
     // RN은 단일 JS 스레드이므로 락 없이도 안전함.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     lock: async (_name: string, _acquireTimeout: number, fn: () => Promise<any>) => {
       return fn();
     },
@@ -50,7 +51,7 @@ function isTokenExpired(accessToken: string): boolean {
 }
 
 /** refreshSession 동시 호출 방지 (싱글톤) */
-let pendingRefresh: Promise<any> | null = null;
+let pendingRefresh: Promise<unknown> | null = null;
 
 /**
  * 현재 로그인한 사용자를 반환 (5초 타임아웃 + 토큰 만료 검증)
@@ -75,7 +76,7 @@ export async function getCurrentUser() {
     if (!result) {
       if (__DEV__) console.warn('[Supabase] getSession 10초 타임아웃 — refreshSession 시도');
     } else {
-      const session = (result as any).data?.session;
+      const session = (result as { data?: { session?: { user?: unknown; access_token?: string } } })?.data?.session;
       if (session?.user) {
         // ★ 토큰 만료 검증: 만료됐으면 user를 바로 반환하지 않고 갱신 시도
         if (session.access_token && !isTokenExpired(session.access_token)) {
@@ -102,7 +103,7 @@ export async function getCurrentUser() {
       return null;
     }
 
-    const refreshedUser = (refreshResult as any).data?.session?.user ?? null;
+    const refreshedUser = (refreshResult as { data?: { session?: { user?: unknown } } })?.data?.session?.user ?? null;
     if (refreshedUser) {
       if (__DEV__) console.log('[Supabase] refreshSession 성공 — 유효한 세션 복구됨');
     }

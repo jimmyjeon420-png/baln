@@ -477,6 +477,12 @@ ${rulesEn}
         err
       );
     }
+    Sentry.addBreadcrumb({
+      category: 'api',
+      message: `generateVillageConversations failed (transient: ${isTransient})`,
+      level: 'error',
+      data: { error: String(err) },
+    });
     if (!isTransient) {
       Sentry.captureException(err, { tags: { service: 'village', action: 'generate' } });
     }
@@ -564,6 +570,12 @@ Respond in JSON only:
         err
       );
     }
+    Sentry.addBreadcrumb({
+      category: 'api',
+      message: `chatWithGuru failed for ${guruId} (transient: ${isTransient})`,
+      level: 'error',
+      data: { error: String(err) },
+    });
     if (!isTransient) {
       Sentry.captureException(err, { tags: { service: 'village', action: 'guru_chat', guruId } });
     }

@@ -214,6 +214,10 @@ export default function NewsScreen() {
         <FlatList
           data={newsList}
           keyExtractor={(item, index) => `${item.id}-${index}`}
+          initialNumToRender={10}
+          maxToRenderPerBatch={10}
+          windowSize={5}
+          removeClippedSubviews={true}
           renderItem={renderNewsItem}
           ListHeaderComponent={renderListHeader}
           contentContainerStyle={styles.listContent}

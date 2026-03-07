@@ -10,6 +10,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import * as Sentry from '@sentry/react-native';
 import supabase from '../services/supabase';
 import {
   CommunityReport,
@@ -163,6 +164,9 @@ export function useUpdateReportStatus() {
       // 신고 목록 캐시 무효화
       queryClient.invalidateQueries({ queryKey: ['reports'] });
     },
+    onError: (error) => {
+      Sentry.captureException(error, { tags: { hook: 'useUpdateReportStatus' } });
+    },
   });
 }
 
@@ -216,6 +220,9 @@ export function useDeleteReportedContent() {
       queryClient.invalidateQueries({ queryKey: ['reports'] });
       queryClient.invalidateQueries({ queryKey: ['loungePosts'] });
       queryClient.invalidateQueries({ queryKey: ['postComments'] });
+    },
+    onError: (error) => {
+      Sentry.captureException(error, { tags: { hook: 'useDeleteReportedContent' } });
     },
   });
 }
