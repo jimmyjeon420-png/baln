@@ -5,6 +5,7 @@ import {
   getTrafficLight,
 } from '../trafficLightScore';
 import type { HealthScoreResult, FactorResult } from '../rebalanceScore';
+import { t } from '../../locales';
 
 function createFactor(overrides: Partial<FactorResult> = {}): FactorResult {
   return {
@@ -45,19 +46,19 @@ describe('trafficLightScore', () => {
 
     expect(getTrafficLight(score75)).toMatchObject({
       light: 'green',
-      label: '양호',
+      label: t('health.traffic.good'),
       summary: '자산 집중도가 높습니다.',
       weakestFactor: { label: '집중도', score: 42 },
     });
 
     expect(getTrafficLight(score50)).toMatchObject({
       light: 'yellow',
-      label: '주의',
+      label: t('health.traffic.caution'),
     });
 
     expect(getTrafficLight(score49)).toMatchObject({
       light: 'red',
-      label: '위험',
+      label: t('health.traffic.danger'),
     });
   });
 
@@ -87,7 +88,7 @@ describe('trafficLightScore', () => {
       fact: '연준 완화 기대 재확산',
       mechanism: '금리 인하 기대 → 유동성 확대 → 성장주 리레이팅',
       sentiment: 'caution',
-      sentimentLabel: '주의',
+      sentimentLabel: t('health.sentimentLabels.caution'),
     });
     expect(briefing.impact).not.toContain('₩');
     expect(briefing.impact).not.toContain('%');
@@ -100,15 +101,15 @@ describe('trafficLightScore', () => {
       },
     });
 
-    expect(briefing.impact).toBe('오늘의 시장이 내 포트폴리오에 미치는 영향을 확인하세요');
+    expect(briefing.impact).toBe(t('health.context.default_impact'));
   });
 
   it('returns the expected onboarding empty state', () => {
     expect(getEmptyTrafficLight()).toMatchObject({
       light: 'green',
-      label: '시작하기',
+      label: t('health.traffic.get_started'),
       grade: '-',
-      summary: '관심 자산을 하트하면 건강 점수를 알려드려요',
+      summary: t('health.traffic.empty_summary'),
     });
   });
 });
