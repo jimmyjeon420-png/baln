@@ -62,18 +62,31 @@ interface FallbackFeedSource {
 const CRYPTO_CATEGORY_KEYWORDS = [
   'bitcoin', 'btc', '비트코인', 'ethereum', 'eth', '이더리움',
   'xrp', '리플', 'sol', '솔라나', '코인', '암호화폐', '가상자산', '블록체인',
+  // JA
+  'ビットコイン', 'イーサリアム', '仮想通貨', '暗号資産', 'ブロックチェーン',
 ];
 
 const STOCK_CATEGORY_KEYWORDS = [
   '코스피', '코스닥', 'kospi', 'kosdaq', '나스닥', 'nasdaq', 's&p', 's&p500',
   '다우', 'dow', '주식', '증시', '기업', '실적', 'ipo', '상장',
   '삼성전자', '엔비디아', '애플', '테슬라',
+  // EN
+  'stock', 'shares', 'earnings', 'revenue', 'market cap',
+  'nvidia', 'apple', 'tesla', 'amazon', 'microsoft',
+  // JA
+  '日経', '株式', '株価', '決算', '上場', '東証', 'トヨタ', 'ソニー',
 ];
 
 const MACRO_CATEGORY_KEYWORDS = [
   '금리', '기준금리', '연준', 'fed', 'fomc', 'cpi', 'pce', 'gdp', 'pmi',
   '실업률', '고용', '환율', '달러', '인플레이션', '물가', '국채', '채권',
   '무역', '관세', '재정', '통화정책', '거시경제',
+  // EN
+  'interest rate', 'inflation', 'federal reserve', 'treasury', 'employment',
+  'trade', 'tariff', 'fiscal', 'monetary',
+  // JA
+  '金利', '利上げ', '利下げ', '日銀', 'インフレ', '円安', '円高', '為替',
+  '国債', '雇用', '貿易', '関税',
 ];
 
 function includesAnyKeyword(text: string, keywords: string[]): boolean {
@@ -108,22 +121,30 @@ const FALLBACK_FEEDS_KO: Record<NewsCategoryFilter, FallbackFeedSource[]> = {
     { name: '연합뉴스', url: 'https://www.yna.co.kr/rss/economy.xml' },
     { name: '매일경제', url: 'https://www.mk.co.kr/rss/30100041/' },
     { name: 'Reuters', url: 'https://feeds.reuters.com/reuters/businessNews' },
+    { name: 'CNBC', url: 'https://www.cnbc.com/id/10000664/device/rss/rss.html' },
+    { name: 'Yahoo Finance', url: 'https://finance.yahoo.com/news/rssindex' },
   ],
   crypto: [
     { name: '코인데스크', url: 'https://www.coindeskkorea.com/rss' },
-    { name: '비트코인매거진', url: 'https://bitcoinmagazine.com/.rss/full/' },
+    { name: '블록미디어', url: 'https://www.blockmedia.co.kr/feed/' },
+    { name: 'CoinDesk', url: 'https://www.coindesk.com/arc/outboundfeeds/rss/' },
+    { name: 'Bitcoin Magazine', url: 'https://bitcoinmagazine.com/.rss/full/' },
   ],
   stock: [
     { name: '한국경제', url: 'https://www.hankyung.com/feed/all-news' },
     { name: '연합뉴스', url: 'https://www.yna.co.kr/rss/economy.xml' },
     { name: '매일경제', url: 'https://www.mk.co.kr/rss/30100041/' },
+    { name: 'Reuters', url: 'https://feeds.reuters.com/reuters/businessNews' },
     { name: 'CNBC', url: 'https://www.cnbc.com/id/10000664/device/rss/rss.html' },
+    { name: 'Yahoo Finance', url: 'https://finance.yahoo.com/news/rssindex' },
   ],
   macro: [
     { name: '연합뉴스', url: 'https://www.yna.co.kr/rss/economy.xml' },
     { name: '매일경제', url: 'https://www.mk.co.kr/rss/30100041/' },
     { name: '한국경제', url: 'https://www.hankyung.com/feed/all-news' },
     { name: 'Reuters', url: 'https://feeds.reuters.com/reuters/businessNews' },
+    { name: 'CNBC', url: 'https://www.cnbc.com/id/100003114/device/rss/rss.html' },
+    { name: 'Yahoo Finance', url: 'https://finance.yahoo.com/news/rssindex' },
   ],
 };
 
@@ -152,22 +173,22 @@ const FALLBACK_FEEDS_EN: Record<NewsCategoryFilter, FallbackFeedSource[]> = {
 const FALLBACK_FEEDS_JA: Record<NewsCategoryFilter, FallbackFeedSource[]> = {
   all: [
     { name: '日経新聞', url: 'https://assets.wor.jp/rss/rdf/nikkei/news.rdf' },
-    { name: 'ロイター', url: 'https://assets.wor.jp/rss/rdf/reuters/top.rdf' },
-    { name: 'Reuters', url: 'https://feeds.reuters.com/reuters/businessNews' },
+    { name: 'ロイター日本', url: 'https://assets.wor.jp/rss/rdf/reuters/top.rdf' },
+    { name: 'NHK経済', url: 'https://www.nhk.or.jp/rss/news/cat5.xml' },
   ],
   crypto: [
-    { name: 'CoinDesk', url: 'https://www.coindesk.com/arc/outboundfeeds/rss/' },
-    { name: 'Bitcoin Magazine', url: 'https://bitcoinmagazine.com/.rss/full/' },
+    { name: 'CoinPost', url: 'https://coinpost.jp/?feed=rss2' },
+    { name: 'CoinTelegraph日本', url: 'https://jp.cointelegraph.com/rss' },
   ],
   stock: [
     { name: '日経新聞', url: 'https://assets.wor.jp/rss/rdf/nikkei/news.rdf' },
-    { name: 'Reuters', url: 'https://feeds.reuters.com/reuters/businessNews' },
-    { name: 'CNBC', url: 'https://www.cnbc.com/id/10000664/device/rss/rss.html' },
+    { name: 'NHK経済', url: 'https://www.nhk.or.jp/rss/news/cat5.xml' },
+    { name: 'ロイター日本', url: 'https://assets.wor.jp/rss/rdf/reuters/top.rdf' },
   ],
   macro: [
-    { name: 'ロイター', url: 'https://assets.wor.jp/rss/rdf/reuters/top.rdf' },
-    { name: 'Reuters', url: 'https://feeds.reuters.com/reuters/businessNews' },
+    { name: 'ロイター日本', url: 'https://assets.wor.jp/rss/rdf/reuters/top.rdf' },
     { name: '日経新聞', url: 'https://assets.wor.jp/rss/rdf/nikkei/news.rdf' },
+    { name: 'NHK経済', url: 'https://www.nhk.or.jp/rss/news/cat5.xml' },
   ],
 };
 
@@ -504,10 +525,19 @@ export const useMarketNews = (
   options?: { enabled?: boolean }
 ) => {
   const enabled = options?.enabled ?? true;
+  const lang = getCurrentDisplayLanguage();
 
   return useInfiniteQuery({
-    queryKey: ['marketNews', category],
+    queryKey: ['marketNews', category, lang],
     queryFn: async ({ pageParam = 0 }) => {
+      // 비한국어 유저는 DB(한국어 뉴스)를 건너뛰고 바로 RSS 폴백 사용
+      if (lang !== 'ko') {
+        if (pageParam === 0) {
+          return fetchFallbackMarketNews(category);
+        }
+        return [];
+      }
+
       let query = supabase
         .from('market_news')
         .select('*')
@@ -582,9 +612,13 @@ export const useMarketNews = (
 // ============================================================================
 
 export const usePickNews = () => {
+  const lang = getCurrentDisplayLanguage();
   return useQuery({
-    queryKey: ['pickNews'],
+    queryKey: ['pickNews', lang],
     queryFn: async () => {
+      // 비한국어 유저는 DB(한국어 뉴스) AI PiCK 대신 빈 배열
+      if (lang !== 'ko') return [] as MarketNewsItem[];
+
       const { data, error } = await supabase
         .from('market_news')
         .select('*')
