@@ -186,13 +186,13 @@ export function getTickerName(ticker: string): string {
  */
 export function getTickerNameByLang(
   ticker: string,
-  lang: 'ko' | 'en',
+  lang: string,
   fallbackName?: string,
 ): string {
   if (!ticker) return fallbackName || '';
   const profile = getCachedTickerProfile(ticker);
   if (!profile) return fallbackName || ticker;
-  if (lang === 'en') return profile.nameEn || fallbackName || profile.name;
+  if (lang !== 'ko') return profile.nameEn || fallbackName || profile.name;
   return profile.name;
 }
 

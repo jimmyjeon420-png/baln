@@ -53,13 +53,13 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
     (async () => {
       try {
         const stored = await AsyncStorage.getItem(STORAGE_KEY);
-        if (stored === 'en' || stored === 'ko') {
+        if (stored === 'en' || stored === 'ko' || stored === 'ja') {
           setLanguage(stored);
           i18n.locale = stored;
         } else {
           // 기기 언어 감지
           const deviceLang = getLocales()[0]?.languageCode || 'en';
-          const detected: DisplayLanguage = deviceLang.startsWith('ko') ? 'ko' : 'en';
+          const detected: DisplayLanguage = deviceLang.startsWith('ko') ? 'ko' : deviceLang.startsWith('ja') ? 'ja' : 'en';
           setLanguage(detected);
           i18n.locale = detected;
         }
@@ -75,17 +75,21 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
   const setAppLanguage = useCallback((newLang: DisplayLanguage) => {
     if (newLang === language) return;
 
-    const langLabel = newLang === 'ko' ? '한국어' : 'English';
-    const title = language === 'ko'
-      ? '언어 변경'
-      : 'Change Language';
+    const langLabel = newLang === 'ko' ? '한국어' : newLang === 'ja' ? '日本語' : 'English';
+    const uiText = {
+      ko: { title: '언어 변경', cancel: '취소', confirm: '재시작', fallback: '앱을 완전히 종료한 후 다시 실행해주세요.' },
+      en: { title: 'Change Language', cancel: 'Cancel', confirm: 'Restart', fallback: 'Please close and reopen the app.' },
+      ja: { title: '言語変更', cancel: 'キャンセル', confirm: '再起動', fallback: 'アプリを完全に終了してから再起動してください。' },
+    }[language] ?? { title: 'Change Language', cancel: 'Cancel', confirm: 'Restart', fallback: 'Please close and reopen the app.' };
     const message = language === 'ko'
       ? `${langLabel}로 변경하려면 앱을 다시 시작해야 합니다.`
-      : `Changing to ${langLabel} requires an app restart.`;
-    const cancelText = language === 'ko' ? '취소' : 'Cancel';
-    const confirmText = language === 'ko' ? '재시작' : 'Restart';
+      : language === 'ja'
+        ? `${langLabel}に変更するにはアプリの再起動が必要です。`
+        : `Changing to ${langLabel} requires an app restart.`;
+    const cancelText = uiText.cancel;
+    const confirmText = uiText.confirm;
 
-    Alert.alert(title, message, [
+    Alert.alert(uiText.title, message, [
       { text: cancelText, style: 'cancel' },
       {
         text: confirmText,
@@ -97,9 +101,7 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
             await Updates.reloadAsync();
           } catch {
             // Updates.reloadAsync 실패 시 (dev 환경 등) 수동 안내
-            const fallbackMsg = language === 'ko'
-              ? '앱을 완전히 종료한 후 다시 실행해주세요.'
-              : 'Please close and reopen the app.';
+            const fallbackMsg = uiText.fallback;
             Alert.alert('', fallbackMsg);
             // 저장은 완료했으므로 다음 실행 시 적용됨
           }
@@ -164,5 +166,5 @@ export function useLocale() {
  * 주의: React 리렌더 트리거 안 됨. 컴포넌트에서는 useLocale() 사용 권장.
  */
 export function getCurrentDisplayLanguage(): DisplayLanguage {
-  return (i18n.locale === 'ko' ? 'ko' : 'en') as DisplayLanguage;
+  return (i18n.locale === 'ko' ? 'ko' : i18n.locale === 'ja' ? 'ja' : 'en') as DisplayLanguage;
 }

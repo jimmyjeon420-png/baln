@@ -206,10 +206,10 @@ export default function ProfileScreen() {
           icon: 'language-outline',
           label: t('profile.menu.language') || '언어 / Language',
           onPress: () => {
-            const next = language === 'ko' ? 'en' : 'ko';
+            const next = language === 'ko' ? 'en' : language === 'en' ? 'ja' : 'ko';
             setAppLanguage(next);
           },
-          badge: language === 'ko' ? '한국어' : 'English',
+          badge: language === 'ko' ? '한국어' : language === 'ja' ? '日本語' : 'English',
           badgeColor: '#4CAF5033',
         },
         {

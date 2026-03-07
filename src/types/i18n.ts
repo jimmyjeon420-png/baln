@@ -59,7 +59,7 @@ export interface CurrencyFormatOptions {
 
 export type MarketRegion = 'KR' | 'US';
 
-export type DisplayLanguage = 'ko' | 'en';
+export type DisplayLanguage = 'ko' | 'en' | 'ja';
 
 export type PrimaryCurrency = 'KRW' | 'USD';
 

@@ -21,7 +21,7 @@ interface WorstFactorCardProps {
   allAssets?: Asset[];
 }
 
-const LABEL_MAP: Record<string, { ko: string; en: string }> = {
+const LABEL_MAP: Record<string, Record<string, string>> = {
   '배분 이탈도': { ko: '비중이 달라졌어요', en: 'Allocation has drifted' },
   '자산 집중도': { ko: '한 곳에 몰려있어요', en: 'Too concentrated in one area' },
   '위험 집중도': { ko: '위험이 집중돼 있어요', en: 'Risk is concentrated' },
