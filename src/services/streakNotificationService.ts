@@ -10,6 +10,7 @@
 
 import * as Notifications from 'expo-notifications';
 import { getStreakData } from './streakService';
+import { getDailyCheckInStatus } from './rewardService';
 import { getCurrentLanguage } from '../locales';
 
 // Notification identifiers
@@ -33,10 +34,27 @@ export async function scheduleStreakWarning(): Promise<void> {
     // Only schedule if user has an active streak worth protecting
     if (streak <= 0) return;
 
+    // Skip if already checked in today — no warning needed
+    const { checkedIn } = await getDailyCheckInStatus();
+    if (checkedIn) return;
+
     const title = isKo ? '🔥 스트릭 위험!' : '🔥 Streak at risk!';
     const body = isKo
       ? `오늘 발른 마을에 아직 안 오셨어요! 연속 ${streak}일 기록이 사라질 수 있어요`
       : `You haven't visited baln village today! Your ${streak}-day streak might be lost`;
+
+    // Calculate seconds until 20:00 KST today (or skip if already past)
+    const now = new Date();
+    const kstHour = (now.getUTCHours() + 9) % 24;
+    const kstMinute = now.getUTCMinutes();
+    const currentKstMinutes = kstHour * 60 + kstMinute;
+    const targetKstMinutes = 20 * 60; // 20:00 KST
+    const diffMinutes = targetKstMinutes - currentKstMinutes;
+
+    // If already past 20:00 KST, don't schedule (user opened app in evening)
+    if (diffMinutes <= 0) return;
+
+    const secondsUntilTarget = diffMinutes * 60;
 
     await Notifications.scheduleNotificationAsync({
       identifier: STREAK_WARNING_ID,
@@ -47,9 +65,9 @@ export async function scheduleStreakWarning(): Promise<void> {
         data: { type: 'streak_warning', deepLink: 'baln://today' },
       },
       trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.DAILY,
-        hour: 11, // 20:00 KST = 11:00 UTC
-        minute: 0,
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: secondsUntilTarget,
+        repeats: false, // 1회성 — 체크인 시 cancelStreakWarning()으로 취소됨
       },
     });
   } catch (err) {
