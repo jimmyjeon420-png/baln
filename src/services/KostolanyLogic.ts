@@ -12,7 +12,7 @@ import {
   EggCycleAnalysis,
   InvestmentAction,
 } from '../types/kostolany';
-import { EGG_CYCLE_PHASES, PHASE_TRANSITIONS } from '../constants/eggCycleData';
+import { EGG_CYCLE_PHASES } from '../constants/eggCycleData';
 
 /**
  * Kostolany Egg 분석 엔진 (싱글톤)

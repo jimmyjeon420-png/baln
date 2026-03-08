@@ -22,7 +22,6 @@ import { useTheme } from '../../src/hooks/useTheme';
 import { useRoundtable } from '../../src/hooks/useRoundtable';
 import { RoundtableRoom } from '../../src/components/roundtable/RoundtableRoom';
 import { getSessionById } from '../../src/services/roundtableService';
-import type { RoundtableSession } from '../../src/types/roundtable';
 import { useLocale } from '../../src/context/LocaleContext';
 
 export default function RoundtableSessionScreen() {

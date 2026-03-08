@@ -6,9 +6,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { Asset, PortfolioSummary } from '../types/asset';
 import { TaxSettings, Country } from '../types/tax';
 import {
-  calculateRebalancing,
   generateAssetId,
-  isValidAllocation,
   getTotalAllocation,
 } from '../utils/rebalanceCalculator';
 import { calculateAfterTaxRebalancing } from '../utils/taxCalculator';

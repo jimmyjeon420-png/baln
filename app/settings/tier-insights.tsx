@@ -44,7 +44,7 @@ const ASSET_COLORS = {
 };
 
 // 자산 유형별 라벨 (fallback — actual labels provided via t() at render time)
-const ASSET_LABELS = {
+const _ASSET_LABELS = {
   stock: 'Stocks',
   crypto: 'Crypto',
   realestate: 'Real Estate',
@@ -154,7 +154,7 @@ export default function TierInsightsScreen() {
   // 내 자산/등급 정보
   const { eligibility } = useLoungeEligibility();
   const myTier = getTier(eligibility.totalAssets);
-  const myTierColor = TIER_COLORS[myTier] || '#C0C0C0';
+  const _myTierColor = TIER_COLORS[myTier] || '#C0C0C0';
 
   // 크레딧 잔액
   const { data: credits } = useMyCredits();
@@ -183,6 +183,7 @@ export default function TierInsightsScreen() {
         t('tier_insights.insufficient_credits_message', { cost: String(actualCost), balance: String(balance) }),
         [
           { text: t('common.cancel'), style: 'cancel' },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           { text: t('tier_insights.charge_credits'), onPress: () => router.push('/marketplace/credits' as any) },
         ]
       );
@@ -199,10 +200,11 @@ export default function TierInsightsScreen() {
           text: t('tier_insights.use_credits', { cost: String(actualCost) }),
           onPress: async () => {
             try {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               await unlockMutation.mutateAsync(myTier as any);
               setIsUnlocked(true);
-            } catch (error: any) {
-              Alert.alert(t('tier_insights.unlock_error_title'), error.message || t('tier_insights.unlock_error_default'));
+            } catch (error: unknown) {
+              Alert.alert(t('tier_insights.unlock_error_title'), (error as Error).message || t('tier_insights.unlock_error_default'));
             }
           },
         },

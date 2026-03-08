@@ -440,6 +440,8 @@ export default function VillageScreen() {
                 style={styles.mailboxButton}
                 onPress={() => setShowMailbox(true)}
                 activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel={t('village.letter.inbox_title')}
               >
                 <Text style={styles.mailboxIcon}>
                   {'\uD83D\uDCEC'}
@@ -713,6 +715,8 @@ export default function VillageScreen() {
                     ]}
                     onPress={() => handleGuruTap(pos.guruId)}
                     activeOpacity={0.8}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${isKo ? (config?.guruName ?? pos.guruId) : (config?.guruNameEn ?? pos.guruId)}`}
                   >
                     {/* Character avatar */}
                     <CharacterAvatar
@@ -794,6 +798,8 @@ export default function VillageScreen() {
               style={styles.actionButton}
               onPress={() => setShowMailbox(true)}
               activeOpacity={0.75}
+              accessibilityRole="button"
+              accessibilityLabel={t('village.letter.inbox_title')}
             >
               <Text style={styles.actionIcon}>
                 {'\uD83D\uDCEC'}
@@ -813,6 +819,8 @@ export default function VillageScreen() {
               style={styles.actionButton}
               onPress={() => setShowMarket(true)}
               activeOpacity={0.75}
+              accessibilityRole="button"
+              accessibilityLabel={t('village.market_street')}
             >
               <Text style={styles.actionIcon}>
                 {'\uD83C\uDFEA'}
@@ -827,6 +835,8 @@ export default function VillageScreen() {
               style={styles.actionButton}
               onPress={() => setShowNewspaper(true)}
               activeOpacity={0.75}
+              accessibilityRole="button"
+              accessibilityLabel={t('village.village_news')}
             >
               <Text style={styles.actionIcon}>
                 {'\uD83D\uDCF0'}
@@ -841,6 +851,8 @@ export default function VillageScreen() {
               style={styles.actionButton}
               onPress={handleRoundtablePress}
               activeOpacity={0.75}
+              accessibilityRole="button"
+              accessibilityLabel={t('village.roundtable')}
             >
               <Text style={styles.actionIcon}>
                 {'\uD83D\uDCAC'}
@@ -1459,7 +1471,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   prosperityProgressText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '600',
   },
   mailboxButton: {
@@ -1482,7 +1494,7 @@ const styles = StyleSheet.create({
   },
   unreadBadgeText: {
     color: '#FFFFFF',
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: '800',
   },
 
@@ -1510,7 +1522,7 @@ const styles = StyleSheet.create({
     overflow: 'visible',
   },
   guruNameLabel: {
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: '700',
     paddingHorizontal: 5,
     paddingVertical: 1,
@@ -1534,12 +1546,12 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   speechReplyTo: {
-    fontSize: 8,
+    fontSize: 11,
     fontWeight: '700',
     marginBottom: 1,
   },
   speechSpeaker: {
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: '800',
     marginBottom: 2,
   },
@@ -1622,7 +1634,7 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
   activityBadgeText: {
-    fontSize: 9,
+    fontSize: 11,
     color: '#E0E8F0',
     opacity: 0.9,
   },
@@ -1668,7 +1680,7 @@ const styles = StyleSheet.create({
     fontSize: 22,
   },
   actionLabel: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
   },
   actionBadge: {
@@ -1684,7 +1696,7 @@ const styles = StyleSheet.create({
   },
   actionBadgeText: {
     color: '#FFFFFF',
-    fontSize: 8,
+    fontSize: 11,
     fontWeight: '800',
   },
 

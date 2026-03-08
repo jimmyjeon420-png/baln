@@ -9,8 +9,7 @@
 
 import React, { useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
-import type { CharacterExpression, CharacterSize } from '../../types/character';
-import { CHARACTER_SIZE_MAP } from '../../types/character';
+import { CHARACTER_SIZE_MAP, type CharacterExpression, type CharacterSize } from '../../types/character';
 import { GURU_CHARACTER_CONFIGS } from '../../data/guruCharacterConfig';
 import { sentimentToExpression } from '../../services/characterService';
 import { useIdleAnimation } from './animations/useIdleAnimation';

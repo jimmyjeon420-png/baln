@@ -424,8 +424,8 @@ export function getTodaySpecialDays(): GuruSpecialDay[] {
  */
 export function getUpcomingSpecialDays(
   days = 7,
-): Array<GuruSpecialDay & { daysUntil: number }> {
-  const result: Array<GuruSpecialDay & { daysUntil: number }> = [];
+): (GuruSpecialDay & { daysUntil: number })[] {
+  const result: (GuruSpecialDay & { daysUntil: number })[] = [];
   const now = new Date();
 
   for (let i = 0; i < days; i++) {

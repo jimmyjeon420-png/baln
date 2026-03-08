@@ -73,6 +73,7 @@ export function useConversionTracking() {
   }, []);
 
   const trackFunnelStep = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async (step: FunnelStep, metadata?: Record<string, any>) => {
       // 아직 로딩 중이면 AsyncStorage에서 직접 확인 (안전 폴백)
       try {

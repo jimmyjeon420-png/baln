@@ -599,11 +599,11 @@ function AccessoryItem({
  *
  * 최대 2개 액세서리 동시 렌더링 (3개 이상은 첫 2개만)
  */
-export const AccessoryOverlay = React.memo(function AccessoryOverlay({
+export const AccessoryOverlay = React.memo(({
   size,
   accessories,
   accentColor,
-}: AccessoryOverlayProps) {
+}: AccessoryOverlayProps) => {
   if (!accessories || accessories.length === 0) return null;
 
   return (

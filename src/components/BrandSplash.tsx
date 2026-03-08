@@ -54,6 +54,7 @@ export default function BrandSplash({ onFinish }: BrandSplashProps) {
     ]).start(() => {
       onFinish();
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- animated refs are stable, onFinish is called once
   }, []);
 
   return (

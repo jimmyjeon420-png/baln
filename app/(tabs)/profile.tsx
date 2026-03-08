@@ -263,6 +263,8 @@ export default function ProfileScreen() {
       ]}
       onPress={item.onPress}
       activeOpacity={0.6}
+      accessibilityRole="button"
+      accessibilityLabel={item.label}
     >
       <View style={[styles.menuIconWrap, { backgroundColor: colors.surfaceLight }]}>
         <Ionicons name={item.icon} size={20} color={colors.textSecondary} />
@@ -316,6 +318,7 @@ export default function ProfileScreen() {
             trackColor={{ false: '#767577', true: '#4CAF50' }}
             thumbColor={isDarkMode ? '#FFF' : '#F4F3F4'}
             style={{ transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }] }}
+            accessibilityLabel={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
           />
         </View>
       </View>
@@ -330,6 +333,8 @@ export default function ProfileScreen() {
           style={[styles.profileCard, { backgroundColor: colors.surface }]}
           onPress={() => (user ? router.push('/settings/profile') : router.push('/login'))}
           activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel={user ? t('profile.menu.edit_profile') : t('profile.login_prompt')}
         >
           <View style={[styles.avatar, { backgroundColor: colors.surfaceLight }]}>
             <Ionicons name="person" size={28} color={colors.primary} />
@@ -361,6 +366,8 @@ export default function ProfileScreen() {
             style={[styles.adminCard, { backgroundColor: colors.surface }]}
             onPress={() => router.push('/admin')}
             activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel={t('profile.admin.title')}
           >
             <View style={[styles.adminIconWrap, { backgroundColor: colors.surfaceLight }]}>
               <Ionicons name="shield-checkmark" size={22} color={colors.primary} />
@@ -385,6 +392,8 @@ export default function ProfileScreen() {
             style={[styles.logoutButton, { backgroundColor: colors.surface }]}
             onPress={handleLogout}
             activeOpacity={0.6}
+            accessibilityRole="button"
+            accessibilityLabel={t('profile.menu.logout')}
           >
             <Ionicons name="log-out-outline" size={20} color={colors.error} />
             <Text style={[styles.logoutText, { color: colors.error }]}>{t('profile.menu.logout')}</Text>

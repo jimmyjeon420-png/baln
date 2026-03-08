@@ -104,6 +104,7 @@ export default function PrivacyScreen() {
             <View key={index} style={[styles.policyItem, { backgroundColor: colors.surface }]}>
               <View style={[styles.policyIconContainer, { backgroundColor: colors.surfaceElevated }]}>
                 <Ionicons
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   name={policy.icon as any}
                   size={24}
                   color={colors.primary}

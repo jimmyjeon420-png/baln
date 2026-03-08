@@ -679,12 +679,12 @@ export default function CheckupScreen() {
             }
           </Text>
           {isNetworkIssue ? (
-            <TouchableOpacity style={[s.emptyButton, { backgroundColor: '#FF9800' }]} onPress={() => refreshPortfolio()}>
+            <TouchableOpacity style={[s.emptyButton, { backgroundColor: '#FF9800' }]} onPress={() => refreshPortfolio()} accessibilityRole="button" accessibilityLabel={t('rebalance.empty.retry_button')}>
               <Ionicons name="refresh" size={20} color="#000" />
               <Text style={s.emptyButtonText}>{t('rebalance.empty.retry_button')}</Text>
             </TouchableOpacity>
           ) : (
-            <TouchableOpacity style={s.emptyButton} onPress={() => router.push('/add-asset')}>
+            <TouchableOpacity style={s.emptyButton} onPress={() => router.push('/add-asset')} accessibilityRole="button" accessibilityLabel={t('rebalance.empty.add_asset_button')}>
               <Ionicons name="add-circle" size={20} color="#000" />
               <Text style={s.emptyButtonText}>{t('rebalance.empty.add_asset_button')}</Text>
             </TouchableOpacity>
@@ -714,7 +714,7 @@ export default function CheckupScreen() {
       <View style={s.diagnosticHeader}>
         <View style={{ flex: 1 }} />
         {__DEV__ && (
-          <TouchableOpacity onPress={runAnalysisDiagnostic} style={s.diagnosticButton}>
+          <TouchableOpacity onPress={runAnalysisDiagnostic} style={s.diagnosticButton} accessibilityRole="button" accessibilityLabel="Run diagnostic">
             <Ionicons name="pulse-outline" size={22} color={colors.primary} />
           </TouchableOpacity>
         )}
@@ -782,7 +782,7 @@ export default function CheckupScreen() {
           <View style={s.aiErrorBanner}>
             <Ionicons name="alert-circle" size={16} color="#CF6679" />
             <Text style={s.aiErrorText}>{t('rebalance.banner.ai_failed')}</Text>
-            <TouchableOpacity onPress={() => onRefresh(true)} style={s.aiRetryButton}>
+            <TouchableOpacity onPress={() => onRefresh(true)} style={s.aiRetryButton} accessibilityRole="button" accessibilityLabel={t('common.retry')}>
               <Text style={s.aiRetryText}>{t('common.retry')}</Text>
             </TouchableOpacity>
           </View>
@@ -838,6 +838,8 @@ export default function CheckupScreen() {
             <TouchableOpacity
               onPress={() => router.push('/analysis/deep-dive')}
               style={[s.aiButton, { backgroundColor: colors.surface }]}
+              accessibilityRole="button"
+              accessibilityLabel={t('rebalance.ai_button.deep_dive_title')}
             >
               <Text style={s.aiButtonEmoji}>📈</Text>
               <View style={s.aiButtonTextWrap}>
@@ -855,6 +857,8 @@ export default function CheckupScreen() {
             <TouchableOpacity
               onPress={() => router.push('/analysis/what-if')}
               style={[s.aiButton, { backgroundColor: colors.surface }]}
+              accessibilityRole="button"
+              accessibilityLabel={t('rebalance.ai_button.what_if_title')}
             >
               <Text style={s.aiButtonEmoji}>🧪</Text>
               <View style={s.aiButtonTextWrap}>
@@ -872,6 +876,8 @@ export default function CheckupScreen() {
             <TouchableOpacity
               onPress={() => router.push('/analysis/tax-report')}
               style={[s.aiButton, { backgroundColor: colors.surface }]}
+              accessibilityRole="button"
+              accessibilityLabel={t('rebalance.ai_button.tax_report_title')}
             >
               <Text style={s.aiButtonEmoji}>🧾</Text>
               <View style={s.aiButtonTextWrap}>
@@ -889,6 +895,8 @@ export default function CheckupScreen() {
             <TouchableOpacity
               onPress={() => router.push('/analysis/cfo-chat')}
               style={[s.aiButton, { backgroundColor: colors.surface }]}
+              accessibilityRole="button"
+              accessibilityLabel={t('rebalance.ai_button.cfo_chat_title')}
             >
               <Text style={s.aiButtonEmoji}>☕</Text>
               <View style={s.aiButtonTextWrap}>

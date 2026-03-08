@@ -628,6 +628,8 @@ function LoungeScreenInner() {
           <TouchableOpacity
             onPress={() => refetchEligibility()}
             style={{ marginTop: 24, backgroundColor: '#4CAF50', paddingHorizontal: 32, paddingVertical: 14, borderRadius: 12 }}
+            accessibilityRole="button"
+            accessibilityLabel={t('lounge.try_again')}
           >
             <Text style={{ color: '#FFF', fontWeight: '700', fontSize: 17 }}>{t('lounge.try_again')}</Text>
           </TouchableOpacity>
@@ -675,7 +677,7 @@ function LoungeScreenInner() {
             </View>
           </View>
           {/* 진단 버튼 */}
-          <TouchableOpacity onPress={handleDiagnose} style={{ padding: 8 }}>
+          <TouchableOpacity onPress={handleDiagnose} style={{ padding: 8 }} accessibilityRole="button" accessibilityLabel="Run diagnostic">
             <Ionicons name="pulse" size={22} color={themeColors.textTertiary} />
           </TouchableOpacity>
         </View>
@@ -761,6 +763,8 @@ function LoungeScreenInner() {
           <TouchableOpacity
             style={styles.investButton}
             onPress={() => router.push('/add-asset')}
+            accessibilityRole="button"
+            accessibilityLabel={t('lounge.add_asset_button')}
           >
             <Ionicons name="add-circle" size={20} color="#FFFFFF" />
             <Text style={styles.investButtonText}>{t('lounge.add_asset_button')}</Text>
@@ -794,7 +798,7 @@ function LoungeScreenInner() {
             <CafeRankBadge rank={cafeRank} />
           </View>
           {/* 맥박 진단 버튼 */}
-          <TouchableOpacity onPress={handleDiagnose} style={{ padding: 8 }}>
+          <TouchableOpacity onPress={handleDiagnose} style={{ padding: 8 }} accessibilityRole="button" accessibilityLabel="Run diagnostic">
             <Ionicons name="pulse" size={22} color={themeColors.textTertiary} />
           </TouchableOpacity>
         </View>
@@ -808,6 +812,9 @@ function LoungeScreenInner() {
                 activeSegment === 'community' && { backgroundColor: themeColors.primary },
               ]}
               onPress={() => setActiveSegment('community')}
+              accessibilityRole="button"
+              accessibilityLabel={t('lounge.segment_community')}
+              accessibilityState={{ selected: activeSegment === 'community' }}
             >
               <Ionicons
                 name="chatbubbles"
@@ -830,6 +837,9 @@ function LoungeScreenInner() {
                 activeSegment === 'gatherings' && { backgroundColor: themeColors.primary },
               ]}
               onPress={() => setActiveSegment('gatherings')}
+              accessibilityRole="button"
+              accessibilityLabel={t('lounge.segment_gatherings')}
+              accessibilityState={{ selected: activeSegment === 'gatherings' }}
             >
               <Ionicons
                 name="calendar"
@@ -970,7 +980,7 @@ function LoungeScreenInner() {
                   <View style={[styles.composeContainer, { backgroundColor: themeColors.surface, borderBottomColor: themeColors.surfaceLight }]}>
                     <View style={styles.composeHeader}>
                       <Text style={[styles.composeTitle, { color: themeColors.textPrimary }]}>{t('lounge.compose_title')}</Text>
-                      <TouchableOpacity onPress={() => setIsComposing(false)}>
+                      <TouchableOpacity onPress={() => setIsComposing(false)} accessibilityRole="button" accessibilityLabel="Close compose">
                         <Ionicons name="close" size={24} color={themeColors.textTertiary} />
                       </TouchableOpacity>
                     </View>
@@ -1007,6 +1017,7 @@ function LoungeScreenInner() {
                       maxLength={500}
                       value={newPostContent}
                       onChangeText={setNewPostContent}
+                      accessibilityLabel={t('lounge.compose_placeholder')}
                     />
                     <View style={styles.composeFooter}>
                       <Text style={[styles.charCount, { color: themeColors.textTertiary }]}>{newPostContent.length}/500</Text>
@@ -1014,6 +1025,8 @@ function LoungeScreenInner() {
                         style={[styles.submitButton, { opacity: newPostContent.trim() ? 1 : 0.5 }]}
                         onPress={handleSubmitPost}
                         disabled={!newPostContent.trim() || createPost.isPending}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('lounge.compose_post_button')}
                       >
                         {createPost.isPending ? (
                           <ActivityIndicator size="small" color="#FFFFFF" />

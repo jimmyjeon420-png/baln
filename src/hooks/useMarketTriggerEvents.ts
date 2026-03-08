@@ -10,8 +10,7 @@
  */
 
 import { useMemo } from 'react';
-import { MARKET_TRIGGER_EVENTS } from '../data/marketTriggerConfig';
-import type { MarketTriggerEvent } from '../data/marketTriggerConfig';
+import { MARKET_TRIGGER_EVENTS, type MarketTriggerEvent } from '../data/marketTriggerConfig';
 
 // ============================================================================
 // Types

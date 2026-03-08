@@ -18,12 +18,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
-  HOUSE_LEVELS,
   FURNITURE_ITEMS,
   getHouseLevelForProsperity,
   getUnlockedFurniture,
+  type HouseLevel,
+  type FurnitureItem,
 } from '../data/houseConfig';
-import type { HouseLevel, FurnitureItem } from '../data/houseConfig';
 
 // ============================================================================
 // 상수

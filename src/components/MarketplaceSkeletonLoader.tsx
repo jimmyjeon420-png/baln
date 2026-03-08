@@ -29,6 +29,7 @@ function SkeletonBlock({ width, height, borderRadius = 8 }: {
     <Animated.View
       style={[
         {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           width: width as any,
           height,
           borderRadius,

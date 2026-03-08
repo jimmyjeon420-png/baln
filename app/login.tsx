@@ -74,8 +74,8 @@ export default function LoginScreen() {
         // 라우팅은 AuthGate가 단일 처리 (온보딩/메인 분기)
         queryClient.clear();
       }
-    } catch (error: any) {
-      const errorMessage = error?.message || t('login.error.auth_failed');
+    } catch (error: unknown) {
+      const errorMessage = (error as Error)?.message || t('login.error.auth_failed');
 
       let displayMessage = errorMessage;
       if (errorMessage.includes('Invalid login credentials')) {
@@ -103,8 +103,8 @@ export default function LoginScreen() {
       // 이전 세션의 캐시된 데이터 제거 후 새로 로드
       // 라우팅은 AuthGate가 단일 처리
       queryClient.clear();
-    } catch (error: any) {
-      const errorMessage = error?.message || '';
+    } catch (error: unknown) {
+      const errorMessage = (error as Error)?.message || '';
 
       if (!errorMessage.includes('cancel')) {
         console.warn(`[로그인] ${provider} OAuth 오류:`, errorMessage);
@@ -126,8 +126,8 @@ export default function LoginScreen() {
       // 이전 세션의 캐시된 데이터 제거 후 새로 로드
       // 라우팅은 AuthGate가 단일 처리
       queryClient.clear();
-    } catch (error: any) {
-      const errorMessage = error?.message || t('login.error.apple_login_failed');
+    } catch (error: unknown) {
+      const errorMessage = (error as Error)?.message || t('login.error.apple_login_failed');
 
       // 사용자 취소는 무시 (한국어/영어 모두 감지)
       if (errorMessage.includes('cancel') || errorMessage.includes('취소')) {

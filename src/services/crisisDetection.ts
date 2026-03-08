@@ -113,10 +113,13 @@ export function detectCrisis(data: MarketChangeData): CrisisDetectionResult {
   // 3-1) VIX 기반 위기 등급 (VIX 30+ = moderate, 40+ = severe, 50+ = extreme)
   if (vixCrisis) {
     let vixBaseLevel: CrisisLevel = 'none';
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     if (vixLevel! >= 50) {
       vixBaseLevel = 'extreme';
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     } else if (vixLevel! >= 40) {
       vixBaseLevel = 'severe';
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     } else if (vixLevel! >= 30) {
       vixBaseLevel = 'moderate';
     }
@@ -150,13 +153,14 @@ export function detectCrisis(data: MarketChangeData): CrisisDetectionResult {
 
   if (!primaryMarket && vixCrisis) {
     primaryMarket = 'VIX';
-    primaryChange = vixLevel!;
+    primaryChange = vixLevel!; // eslint-disable-line @typescript-eslint/no-non-null-assertion
   }
 
   // 8) 메시지 생성
   let message: string;
   if (vixCrisis && (!worst || worstChange > -3)) {
     // VIX만 트리거된 경우
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     message = rawT('crisis_detection.vix_spike', { level: vixLevel!.toFixed(0) });
   } else {
     message = getCrisisMessage(finalLevel, primaryMarket || '');

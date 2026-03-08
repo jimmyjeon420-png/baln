@@ -177,6 +177,7 @@ export const useDiagnosis = (): UseDiagnosisReturn => {
         setIsProcessing(false);
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- canRunDiagnosis depends on currentAnswers
     [currentAnswers]
   );
 

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * AI 프리미엄 마켓플레이스 타입 정의
  * 크레딧 기반 건별 과금 시스템의 전체 데이터 구조
@@ -76,14 +77,14 @@ export interface StockFundamentals {
   debtToEquity?: number;
   currentPrice?: number;
   currency?: string;
-  quarterlyEarnings?: Array<{
+  quarterlyEarnings?: {
     quarter: string;
     date: string;
     revenue?: number;
     earnings?: number;
     revenueKRW?: number;
     earningsKRW?: number;
-  }>;
+  }[];
   exchangeRate?: number;     // 적용된 실시간 환율 (USD/KRW)
   fetchedAt: string;
   dataSource: 'yahoo_finance_v10';
@@ -141,31 +142,31 @@ export interface DeepDiveResult {
   generatedAt: string;
 
   // --- 분기별 실적 데이터 (optional) ---
-  quarterlyData?: Array<{
+  quarterlyData?: {
     quarter: string;
     revenue: number;
     operatingIncome: number;
     netIncome: number;
-  }>;
+  }[];
   quarterDetail?: {
     quarter: string;
-    revenueSegments: Array<{
+    revenueSegments: {
       name: string;
       amount: number;
       percentage: number;
       color: string;
       growth?: number;
-    }>;
-    costItems: Array<{
+    }[];
+    costItems: {
       name: string;
       amount: number;
       percentage: number;
-    }>;
-    waterfall: Array<{
+    }[];
+    waterfall: {
       label: string;
       amount: number;
       type: 'revenue' | 'cost' | 'subtotal' | 'income';
-    }>;
+    }[];
     operatingMargin?: number;
     netMargin?: number;
     keyTakeaway?: string;
@@ -173,11 +174,11 @@ export interface DeepDiveResult {
   marketCap?: number;
   per?: number;
   pbr?: number;
-  dataSources?: Array<{
+  dataSources?: {
     name: string;
     detail: string;
     date: string;
-  }>;
+  }[];
   verification?: {
     level: 'high' | 'medium' | 'low';
     score: number; // 0-100 (높을수록 신뢰도 높음)

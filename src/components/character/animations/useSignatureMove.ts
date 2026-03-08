@@ -30,6 +30,7 @@ interface UseSignatureMoveOptions {
 interface UseSignatureMoveResult {
   /** 캐릭터 컨테이너에 적용할 Animated 스타일 */
   signatureStyle: {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     transform: any[];
     opacity?: Animated.Value;
   };
@@ -302,6 +303,7 @@ export function useSignatureMove(
       }
       resetValues();
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- resetValues and scheduleNext are stable refs
   }, [enabled, guruId]); // guruId 변경 시 재시작
 
   // rotate 보간 (숫자 → 문자열 각도)

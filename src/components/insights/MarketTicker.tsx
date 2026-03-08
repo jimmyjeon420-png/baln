@@ -56,7 +56,7 @@ interface TickerItemProps {
   isLast: boolean;
 }
 
-const TickerItemView = ({ item, isLast }: TickerItemProps) => {
+const TickerItemView = ({ item, isLast: _isLast }: TickerItemProps) => {
   const positive = item.changePercent >= 0;
   const changeColor = positive ? '#4CAF50' : '#CF6679';
   const arrow = positive ? '\u25B2' : '\u25BC'; // ▲ ▼

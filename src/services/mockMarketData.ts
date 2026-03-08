@@ -89,7 +89,7 @@ export const getMockMarketDrivers = (): MarketDriver[] => [
  * 교육용 Egg 단계별 Market Drivers
  * (사용자의 현재 Egg 단계에 맞는 맞춤형 정보)
  */
-export const getMarketDriversByPhase = (phase: string): MarketDriver[] => {
+export const getMarketDriversByPhase = (_phase: string): MarketDriver[] => {
   // 기본값: 위의 Top 3 사용
   return getMockMarketDrivers();
 };

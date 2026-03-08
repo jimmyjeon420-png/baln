@@ -43,8 +43,8 @@ export default function ProfileSettingsScreen() {
       });
       if (error) throw error;
       Alert.alert(t('settings.profile.success_title'), t('settings.profile.success_message'));
-    } catch (error: any) {
-      console.warn('[Profile] 저장 실패:', error?.message);
+    } catch (error: unknown) {
+      console.warn('[Profile] 저장 실패:', (error as Error)?.message);
       Alert.alert(t('settings.profile.error_title'), t('settings.profile.error_save_failed'));
     } finally {
       setLoading(false);

@@ -11,6 +11,7 @@ export default function LoungeRedirect() {
 
   useEffect(() => {
     router.replace('/(tabs)/lounge');
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount
   }, []);
 
   return null;

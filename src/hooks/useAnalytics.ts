@@ -55,10 +55,12 @@ export function useScreenTracking(screenName: string): void {
  */
 export function useTrackEvent(): (
   event: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   properties?: Record<string, any>
 ) => void {
   const { user } = useAuth();
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (event: string, properties?: Record<string, any>) => {
     trackEvent(event, properties, user?.id);
   };

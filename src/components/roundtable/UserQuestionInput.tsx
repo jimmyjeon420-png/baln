@@ -10,7 +10,6 @@ import {
   View,
   TextInput,
   TouchableOpacity,
-  Text,
   StyleSheet,
   ActivityIndicator,
   KeyboardAvoidingView,

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Supabase 데이터베이스 타입 정의
  * Web과 App 간 공유하는 데이터 스키마

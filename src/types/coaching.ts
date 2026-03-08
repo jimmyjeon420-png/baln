@@ -3,7 +3,7 @@
  */
 
 import { EggCycleAnalysis, DiagnosisAnswers, MarketDriver, InvestmentAction } from './kostolany';
-import { Asset } from './asset';
+// Asset type reserved for future coaching context
 
 /**
  * 코칭 메시지의 심각도 수준

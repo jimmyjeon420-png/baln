@@ -23,7 +23,7 @@ import {
   type AutoCheckParams,
   ACHIEVEMENTS,
 } from '../services/achievementService';
-import { grantAchievementReward, ACHIEVEMENT_REWARDS } from '../services/rewardService';
+import { grantAchievementReward } from '../services/rewardService';
 import supabase from '../services/supabase';
 
 // ============================================================================

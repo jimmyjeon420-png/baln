@@ -214,6 +214,7 @@ export default function PremiumBenefitCard({
             {/* 기능 이름 */}
             <View style={[styles.featureCell, styles.featureCellContent]}>
               <Ionicons
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 name={row.icon as any}
                 size={16}
                 color={colors.textSecondary}

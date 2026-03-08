@@ -83,6 +83,7 @@ export default function AboutScreen() {
                   borderBottomWidth: index === navLinks.length - 1 ? 0 : StyleSheet.hairlineWidth,
                 },
               ]}
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               onPress={() => router.push(item.route as any)}
               activeOpacity={0.6}
             >

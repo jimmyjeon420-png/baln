@@ -29,6 +29,7 @@ export function localized(ko: string, en?: string): string {
  * @param koField 한국어 필드 키
  * @param enField 영어 필드 키
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function localizedField<T extends Record<string, any>>(
   item: T,
   koField: keyof T,

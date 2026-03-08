@@ -37,6 +37,7 @@ export interface NotificationItem {
   /** 탭 시 이동할 경로 (선택) */
   navigateTo?: string;
   /** 추가 데이터 */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   metadata?: Record<string, any>;
 }
 

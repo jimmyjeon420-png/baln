@@ -53,6 +53,7 @@ export default function HelpScreen() {
         <View style={[styles.section, { backgroundColor: colors.surface }]}>
           {supportItems.map((item, index) => (
             <TouchableOpacity key={index} style={[styles.supportItem, { borderBottomColor: colors.border }]} onPress={item.action}>
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
               <Ionicons name={item.icon as any} size={22} color={colors.primary} />
               <View style={{ flex: 1 }}>
                 <Text style={[styles.supportLabel, { color: colors.textPrimary }]}>{item.label}</Text>

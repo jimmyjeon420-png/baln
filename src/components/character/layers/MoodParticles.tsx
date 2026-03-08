@@ -48,7 +48,7 @@ function Sparkle({ x, y, size: s = 4, color = '#FFD54F', opacity = 0.8 }: {
 }
 
 /** 작은 하트 */
-function HeartParticle({ x, y, color = '#FF4081', opacity = 0.75 }: {
+function _HeartParticle({ x, y, color = '#FF4081', opacity = 0.75 }: {
   x: number; y: number; color?: string; opacity?: number;
 }) {
   return (
@@ -502,11 +502,11 @@ function ActivityParticleRenderer({ activity }: { activity: GuruActivity }) {
  * 우선순위: activity 파티클 > mood 파티클
  * activity가 null이거나 파티클 없는 활동이면 mood 파티클 표시
  */
-export const MoodParticles = React.memo(function MoodParticles({
+export const MoodParticles = React.memo(({
   size,
   mood,
   activity,
-}: MoodParticlesProps) {
+}: MoodParticlesProps) => {
   // 활동 파티클이 있으면 활동 우선, 없으면 기분 파티클 렌더링
   const hasActivityParticles =
     activity !== undefined &&

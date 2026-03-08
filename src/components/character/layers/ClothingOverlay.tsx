@@ -479,12 +479,12 @@ function ArcticClothing({ accentColor }: { accentColor: string }) {
  *
  * summer / normal → null (렌더링 없음, 기본 캐릭터 의상으로 충분)
  */
-export const ClothingOverlay = React.memo(function ClothingOverlay({
+export const ClothingOverlay = React.memo(({
   size,
   clothingLevel,
   guruId: _guruId,  // 현재는 사용 안 함 — 향후 캐릭터별 커스터마이징 확장 예정
   accentColor,
-}: ClothingOverlayProps) {
+}: ClothingOverlayProps) => {
   // summer / normal은 추가 오버레이 없음
   if (clothingLevel === 'summer' || clothingLevel === 'normal') {
     return null;

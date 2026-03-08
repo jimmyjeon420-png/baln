@@ -10,8 +10,7 @@
  */
 
 import { useMemo } from 'react';
-import { CALENDAR_EVENTS } from '../data/calendarEventsConfig';
-import type { CalendarEvent } from '../data/calendarEventsConfig';
+import { CALENDAR_EVENTS, type CalendarEvent } from '../data/calendarEventsConfig';
 
 // ============================================================================
 // Hook

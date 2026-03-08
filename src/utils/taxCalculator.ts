@@ -4,7 +4,7 @@
  */
 
 import { Asset, TaxImpact, PortfolioSummary, RebalanceAction } from '../types/asset';
-import { CountryTaxProfile, TaxSettings, Country } from '../types/tax';
+import { TaxSettings } from '../types/tax';
 import { getTaxProfile } from '../constants/taxProfiles';
 
 const DEFAULT_TRADE_FEE_PERCENT = 0.1; // 0.1% default
@@ -120,7 +120,7 @@ export const calculateAfterTaxRebalancing = (
 
   if (totalLiquidValue > 0) {
     liquidAssets.forEach(asset => {
-      const currentAllocation = (asset.currentValue / totalLiquidValue) * 100;
+      const _currentAllocation = (asset.currentValue / totalLiquidValue) * 100;
       const targetValue = (asset.targetAllocation / 100) * totalLiquidValue;
       const difference = targetValue - asset.currentValue;
       const differencePercent = (difference / asset.currentValue) * 100;

@@ -709,7 +709,7 @@ export function getGuruScheduleAt(guruId: string, kstHour: number): GuruSchedule
 }
 
 /** 현재 시간에 모든 구루의 일과 조회 */
-export function getAllGuruSchedulesAt(kstHour: number): Array<{ guruId: string; entry: GuruScheduleEntry }> {
+export function getAllGuruSchedulesAt(kstHour: number): { guruId: string; entry: GuruScheduleEntry }[] {
   const slot = getTimeSlot(kstHour);
   return Object.values(GURU_SCHEDULES).map((daily) => ({
     guruId: daily.guruId,

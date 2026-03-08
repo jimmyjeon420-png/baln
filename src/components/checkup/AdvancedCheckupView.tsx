@@ -21,7 +21,7 @@ import WhatIfSimulator from '../rebalance/WhatIfSimulator';
 import CorrelationHeatmapSection from '../rebalance/CorrelationHeatmapSection';
 import TodayActionsSection from '../rebalance/TodayActionsSection';
 import RiskDashboardSection from '../rebalance/RiskDashboardSection';
-import AIAnalysisCTA from './AIAnalysisCTA';
+// AIAnalysisCTA removed — AI analysis integrated into DB auto-load
 // KostolalyPhaseCard 제거 — 코스톨라니 배분은 DB 자동 로드로 적용
 
 interface AdvancedCheckupViewProps {
@@ -33,6 +33,7 @@ interface AdvancedCheckupViewProps {
   analysisResult: RiskAnalysisResult | null;
   sortedActions: MorningBriefingResult['portfolioActions'];
   portfolio: PortfolioAsset[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   livePrices: Record<string, any>;
   isAILoading: boolean;
   peerPanicData?: PeerComparison | null;
@@ -87,7 +88,7 @@ export default function AdvancedCheckupView({
   onMemoChange,
   onEmotionSave,
   emotionRewardCredits,
-  onLevelChange,
+  onLevelChange: _onLevelChange,
   onTargetUpdate,
   guruStyle,
   contextSentiment,
@@ -153,7 +154,7 @@ export default function AdvancedCheckupView({
         healthScore={healthScore}
         totalAssets={totalAssets}
         panicScore={panicScore}
-        onScoreImproved={(improvement) => {
+        onScoreImproved={(_improvement) => {
           // 향후 크레딧 적립 로직 추가 가능 (부모에서 처리)
         }}
       />

@@ -8,7 +8,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { grantEmotionReward, REWARD_AMOUNTS } from '../services/rewardService';
+import { grantEmotionReward } from '../services/rewardService';
 import supabase from '../services/supabase';
 
 const STORAGE_KEY = '@baln:emotion_history';

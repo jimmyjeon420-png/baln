@@ -81,7 +81,7 @@ export async function requestVerification(
 
     // 2. 파싱 결과에서 자산 합산
     const result = data?.data?.result ?? data?.result;
-    let parsed: { assets?: Array<{ currentValueKRW?: number; totalCostKRW?: number }> };
+    let parsed: { assets?: { currentValueKRW?: number; totalCostKRW?: number }[] };
 
     if (typeof result === 'string') {
       const cleaned = result.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();

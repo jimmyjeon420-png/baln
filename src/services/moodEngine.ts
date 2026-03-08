@@ -308,9 +308,9 @@ export function applyEmotionalContagion(
   const weights = GURU_MOOD_WEIGHTS[guruId] || DEFAULT_WEIGHTS;
   const relations = GURU_RELATIONS[guruId] || {};
 
-  let baseScore = moodToScore(baseMood);
+  const baseScore = moodToScore(baseMood);
   let totalInfluence = 0;
-  let totalWeight = 0;
+  let _totalWeight = 0;
 
   for (const nearby of nearbyGurus) {
     if (nearby.guruId === guruId) continue;
@@ -335,7 +335,7 @@ export function applyEmotionalContagion(
     }
 
     totalInfluence += influence;
-    totalWeight += distanceFactor;
+    _totalWeight += distanceFactor;
   }
 
   // socialInfluence 가중치 적용

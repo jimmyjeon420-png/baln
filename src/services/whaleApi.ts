@@ -159,7 +159,7 @@ const saveToCache = async (data: WhaleAllocation): Promise<void> => {
  * SEC 13F 파일링에서 평균 배분 계산 (Simulated)
  * 실제 구현 시 SEC EDGAR API 사용
  */
-const fetchSEC13FData = async (): Promise<WhaleAllocation | null> => {
+const _fetchSEC13FData = async (): Promise<WhaleAllocation | null> => {
   try {
     // SEC EDGAR API 엔드포인트 (실제 사용 시)
     // const response = await fetch('https://data.sec.gov/submissions/...');
@@ -273,7 +273,7 @@ const getActionableRecommendation = (
   key: string,
   label: string,
   diff: number,
-  targetVal: number
+  _targetVal: number
 ): string => {
   const absDiff = Math.abs(diff);
 

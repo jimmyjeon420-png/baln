@@ -49,6 +49,7 @@ export function validateAndCorrectRiskAnalysis(
 
   // 2. panicShieldLevel 유효성
   const validLevels = ['SAFE', 'CAUTION', 'DANGER'] as const;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   if (!validLevels.includes(result.panicShieldLevel as any)) {
     // 점수 기반으로 레벨 재산정
     const idx = corrected.panicShieldIndex;
@@ -144,6 +145,7 @@ export function validatePortfolioActions(
     if (!validActions.includes(a.action)) return false;
     // 우선순위 보정
     if (!validPriorities.includes(a.priority)) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (a as any).priority = 'LOW';
     }
     return true;

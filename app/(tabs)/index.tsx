@@ -877,7 +877,7 @@ export default function HomeScreen() {
       {/* 감정 배지 + 도토리 잔액 */}
       <View style={styles.weatherRow}>
         {sentiment && (
-          <View style={[styles.sentimentBadge, { backgroundColor: colors.surfaceLight }]}>
+          <View style={[styles.sentimentBadge, { backgroundColor: colors.surfaceLight }]} accessibilityRole="text" accessibilityLabel={`${language === 'ko' ? sentiment.label : sentiment.labelEn}`}>
             <Text style={styles.sentimentEmoji}>{sentiment.emoji}</Text>
             <Text style={[styles.sentimentLabel, { color: colors.textSecondary }]}>
               {language === 'ko' ? sentiment.label : sentiment.labelEn}
@@ -885,7 +885,7 @@ export default function HomeScreen() {
           </View>
         )}
         {creditBalance && creditBalance.balance > 0 && (
-          <View style={[styles.sentimentBadge, { backgroundColor: colors.surfaceLight }]}>
+          <View style={[styles.sentimentBadge, { backgroundColor: colors.surfaceLight }]} accessibilityRole="text" accessibilityLabel={`Credits: ${creditBalance.balance.toLocaleString()}`}>
             <Text style={{ fontSize: 14 }}>🌰</Text>
             <Text style={{ fontSize: 13, fontWeight: '600', color: '#FFC107' }}>
               {creditBalance.balance.toLocaleString()}개

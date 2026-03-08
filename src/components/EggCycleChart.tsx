@@ -8,7 +8,6 @@ import {
   View,
   Text,
   StyleSheet,
-  Dimensions,
   ViewStyle,
 } from 'react-native';
 import { EggPhase, EggCycleAnalysis } from '../types/kostolany';

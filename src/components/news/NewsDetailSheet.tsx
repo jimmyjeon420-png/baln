@@ -97,6 +97,7 @@ export default function NewsDetailSheet({ item, visible, onClose }: NewsDetailSh
             {/* 카테고리 + 시간 */}
             <View style={styles.topMeta}>
               <View style={[styles.categoryChip, { backgroundColor: catConfig.color + '20' }]}>
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 <Ionicons name={catConfig.icon as any} size={12} color={catConfig.color} />
                 <Text style={[styles.categoryLabel, { color: catConfig.color }]}>{t(catConfig.labelKey)}</Text>
               </View>

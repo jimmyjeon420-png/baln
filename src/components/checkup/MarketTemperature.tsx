@@ -68,7 +68,7 @@ export default function MarketTemperature({ morningBriefing, isAILoading }: Mark
   }
 
   const sentiment = morningBriefing.macroSummary.marketSentiment;
-  const config = SENTIMENT_CONFIG[sentiment] || SENTIMENT_CONFIG.NEUTRAL;
+  const _config = SENTIMENT_CONFIG[sentiment] || SENTIMENT_CONFIG.NEUTRAL;
   const title = morningBriefing.macroSummary.title;
   const highlight = morningBriefing.macroSummary.highlights?.[0] ?? '';
 

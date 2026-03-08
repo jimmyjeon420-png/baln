@@ -17,7 +17,6 @@ import {
   ScrollView,
   Share,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -97,7 +96,7 @@ export default function ReferralScreen() {
     } catch (err) {
       console.warn('[Referral] 공유 실패:', err);
     }
-  }, [referralCode]);
+  }, [referralCode, t]);
 
   // ---------------------------------------------------------------------------
   // 보상 안내 데이터

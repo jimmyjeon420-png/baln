@@ -10,7 +10,7 @@
 
 import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useSharedPortfolio, SHARED_PORTFOLIO_KEY } from './useSharedPortfolio';
+import { useSharedPortfolio } from './useSharedPortfolio';
 import { AI_ANALYSIS_KEY, fetchAIAnalysis } from './useSharedAnalysis';
 import { computePortfolioHash } from '../services/centralKitchen';
 
@@ -33,5 +33,6 @@ export function usePrefetchCheckup() {
       queryFn: () => fetchAIAnalysis(portfolioAssets, queryClient),
       staleTime: 1000 * 60 * 5,
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- portfolioAssets and queryClient are stable refs
   }, [hasAssets, portfolioHash]);
 }

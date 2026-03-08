@@ -33,6 +33,7 @@ function SkeletonBlock({ width = '100%', height = 20, borderRadius = 8, style }:
       -1,
       true
     );
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- animated value refs are stable
   }, []);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -43,6 +44,7 @@ function SkeletonBlock({ width = '100%', height = 20, borderRadius = 8, style }:
     <Animated.View
       style={[
         {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           width: width as any,
           height,
           borderRadius,

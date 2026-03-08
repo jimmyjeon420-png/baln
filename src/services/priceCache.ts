@@ -3,7 +3,7 @@
  * In-memory caching for price data with TTL support
  */
 
-import { PriceData, PriceCache as ICacheEntry } from '../types/price';
+import { PriceData } from '../types/price';
 
 interface CacheEntry<T> {
   data: T;

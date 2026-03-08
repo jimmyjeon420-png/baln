@@ -56,7 +56,7 @@ const inferAssetClass = (ticker: string): AssetClass => {
 // ── 시장 개장 시간 판별 ──
 
 /** UTC 기준 분(minutes) 반환 — KST/EST 오프셋 계산에 사용 */
-function getUTCMinutes(): number {
+function _getUTCMinutes(): number {
   const now = new Date();
   return now.getUTCDay() * 24 * 60 + now.getUTCHours() * 60 + now.getUTCMinutes();
 }
@@ -179,12 +179,14 @@ export const usePrices = (
 
   // 티커 목록을 안정적 키로 변환 (배열 참조 변경에 무관하게 동작)
   const tickers = useMemo(() =>
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     assets.filter(a => a.ticker).map(a => a.ticker!).sort(),
   [assets]);
 
   const tickerKey = tickers.join(',');
 
   // 시장 시간 기반 갱신 주기
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- tickerKey is the stable representation of tickers
   const refetchInterval = useMemo(() => getRefreshInterval(tickers), [tickerKey]);
 
   const query = useQuery({

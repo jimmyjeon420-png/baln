@@ -18,7 +18,7 @@ import {
   type VillageConversation,
   type VillageMessage,
 } from '../services/villageConversationService';
-import { VILLAGE_ZONES, getZonesForGuru } from '../data/villageZoneConfig';
+// villageZoneConfig imported for future zone-based positioning
 import { getRandomQuote } from '../data/guruQuoteBank';
 import { spendCredits } from '../services/creditService';
 import { FEATURE_COSTS } from '../types/marketplace';
@@ -102,7 +102,7 @@ function trimQuoteForBubble(text: string, maxLen = 30): string {
 }
 
 /** 말풍선 최대 유지 시간 (ms) — 한 명만 말하므로 다음 발화 전까지 유지 */
-const BUBBLE_LIFETIME_MS = 5000;
+const _BUBBLE_LIFETIME_MS = 5000;
 
 /** 리액션 이모지 자동 소멸 시간 (ms) */
 const REACTION_LIFETIME_MS = 3000;
@@ -136,7 +136,7 @@ const LAYOUT_BOUNDS: Record<'full' | 'compact', { minX: number; maxX: number; mi
   },
 };
 
-const LAYOUT_KEEP_OUT_ZONES: Record<'full' | 'compact', Array<{ x: number; y: number; r: number }>> = {
+const LAYOUT_KEEP_OUT_ZONES: Record<'full' | 'compact', { x: number; y: number; r: number }[]> = {
   full: [
     { x: 0.5, y: 0.2, r: 0.18 },  // 집/메인 오브젝트(텐트) 주변
     { x: 0.5, y: 0.96, r: 0.08 }, // 탭바 바로 위 과밀 방지

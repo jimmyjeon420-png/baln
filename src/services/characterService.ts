@@ -5,9 +5,8 @@
  * 비유: 감정 번역기 — AI 분석 결과(BULLISH/BEARISH)를 캐릭터 얼굴 표정으로 바꿔줌
  */
 
-import type { CharacterExpression } from '../types/character';
+import type { CharacterExpression, GuruCharacterConfig } from '../types/character';
 import { GURU_CHARACTER_CONFIGS, findCharacterConfigByName } from '../data/guruCharacterConfig';
-import type { GuruCharacterConfig } from '../types/character';
 import { getCurrentLanguage } from '../locales';
 
 /**

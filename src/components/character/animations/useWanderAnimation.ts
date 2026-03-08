@@ -10,8 +10,7 @@
 
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { Animated, Easing } from 'react-native';
-import { getGuruProfile } from '../../../data/guruMovementProfile';
-import type { GuruMovementProfile } from '../../../data/guruMovementProfile';
+import { getGuruProfile, type GuruMovementProfile } from '../../../data/guruMovementProfile';
 
 // ─────────────────────────────────────────────
 // 타입 정의
