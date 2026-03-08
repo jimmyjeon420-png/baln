@@ -111,8 +111,8 @@ export function ItemPurchaseModal({
         const { error } = await supabase.rpc('spend_credits', {
           p_user_id: userId,
           p_amount: item.price,
-          p_feature_type: 'marketplace_item',
-          p_feature_ref_id: item.id,
+          p_feature_type: `marketplace_${item.id}`,
+          p_feature_ref_id: null,
         });
         if (error) throw new Error(error.message);
       }

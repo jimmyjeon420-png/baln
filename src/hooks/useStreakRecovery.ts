@@ -205,8 +205,8 @@ export function useStreakRecovery(): UseStreakRecoveryReturn {
       const { data: rpcData, error: rpcError } = await supabase.rpc('spend_credits', {
         p_user_id: user.id,
         p_amount: recoveryCost,
-        p_feature_type: 'deep_dive', // 범용 타입 사용 (useStreakFreeze.ts 패턴 준용)
-        p_feature_ref_id: `streak_recovery_${getTodayKST()}_${daysMissed}d`,
+        p_feature_type: 'streak_recovery',
+        p_feature_ref_id: null,
       });
 
       if (rpcError) {
@@ -251,7 +251,7 @@ export function useStreakRecovery(): UseStreakRecoveryReturn {
       setIsRecovering(false);
       recoverInProgress.current = false;
     }
-  }, [canRecover, recoveryCost, daysMissed, previousStreak]);
+  }, [canRecover, recoveryCost, previousStreak]);
 
   // ─── 복구 모달 해제 ───
   const dismissRecoveryModal = useCallback(async () => {

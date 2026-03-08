@@ -225,8 +225,8 @@ export function useStreakFreeze(): UseStreakFreezeReturn {
       const { data: rpcData, error: rpcError } = await supabase.rpc('spend_credits', {
         p_user_id: user.id,
         p_amount: FREEZE_COST,
-        p_feature_type: 'deep_dive', // 기존 AIFeatureType 중 가장 범용적 타입 사용
-        p_feature_ref_id: `streak_freeze_${getTodayString()}`,
+        p_feature_type: 'streak_freeze',
+        p_feature_ref_id: null,
       });
 
       if (rpcError) {
