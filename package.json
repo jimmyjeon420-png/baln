@@ -25,6 +25,7 @@
     "qa:content-freshness": "node scripts/run-content-freshness-check.js",
     "qa:stability": "node scripts/run-stability-suite.js",
     "qa:release": "node scripts/run-release-gate.js",
+    "verify:full": "node scripts/verify-full.js",
     "eas-build-post-install": "node scripts/run-eas-build-release-gate.js",
     "analyze:bundle": "npx expo export --dump-sourcemap",
     "analyze:size": "npm list --depth=0 --parseable | xargs du -sh | sort -hr"
