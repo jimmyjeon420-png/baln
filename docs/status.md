@@ -7,6 +7,20 @@
 
 ## 2026-03-08
 
+### M6: 종합 QA — 하드코딩 통화/색상/크래시 수정 -- IN PROGRESS
+- **하드코딩 ₩ 제거**: 15개 파일 29건 → getCurrencySymbol()/formatLocalAmount() 전환 완료
+  - 컴포넌트: TaxReportCard, HeroSection, AssetTrendSection, HoldingsSection, TodayActionsSection, MarketplaceGrid/Card, ItemPurchaseModal, CreditDisplay, AssetImpactWaterfall
+  - 화면: tax-report, tier-strategy, rebalance-history, log-trade, paywall
+- **JSON.parse 크래시 방지**: 4개 서비스 파일 (guruCommentService, quizService, roundtableService, gemini.ts) — 진행 중
+- **레거시 배경색 #121212 → colors.background**: 7파일 — 진행 중
+- **검증**: tsc 0 errors, 27 suites 493 tests pass, verify:full PASS
+
+### QA 발견 사항 (보류)
+- **P0 서피스 색상 #1E1E1E/#2A2A2A → colors.surface**: 32파일 53건 (별도 작업)
+- **P1 lounge.tsx 에러 바운더리 i18n**: 6 문자열
+- **P1 village.tsx 채팅 에러 토스트**: 없음
+- **P2 #2196F3 Material Blue → colors.info**: 6건
+
 ### M3: spend_credits RPC UUID 타입 에러 수정 -- DONE
 - **Commit**: 2f48858
 - **변경**: useStreakFreeze, useStreakRecovery, ItemPurchaseModal
@@ -35,7 +49,7 @@
 - **Latest build**: #122 (v1.1.0) on TestFlight
 - **tsc errors**: 0
 - **ESLint warnings**: 0
-- **Test suites**: 5 passed, 29 tests
+- **Test suites**: 27 passed, 493 tests
 - **i18n coverage**: EN 516 keys, KO 516, JA user-facing 0 missing
 
 ## Known Issues
@@ -59,3 +73,7 @@
 | 2026-03-08 | p_feature_ref_id → null | DB 스키마 변경 대신 클라이언트에서 null 전달 |
 | 2026-03-08 | Admin i18n 후순위 | 일본 사용자가 admin 접근 안 함 |
 | 2026-03-08 | Gemini AI 프롬프트의 Won 표기 유지 | AI에게 KRW 환산 지시하는 텍스트는 locale 무관 |
+| 2026-03-08 | en.json/ja.json의 ₩ 유지 | KRW 금액 맥락이라 로케일 무관하게 원화 표시 의도적 |
+| 2026-03-08 | guruSpecialDays/brandWorldConfig 한국어 유지 | 이미 Ko/En 쌍 구조, 컴포넌트에서 isKo 분기 |
+| 2026-03-08 | DeepDiveSimulator 한국어 유지 | 개발 전용 테스트 화면, 사용자 미노출 |
+| 2026-03-08 | 서피스 색상 53건은 별도 작업 분리 | 변경 범위 크고 시각적 테스트 필요 |

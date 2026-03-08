@@ -17,7 +17,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { SkeletonBlock } from '../SkeletonLoader';
 import { estimateTax } from '../../utils/taxEstimator';
-import { formatCurrency, getLocaleCode } from '../../utils/formatters';
+import { formatCurrency, getLocaleCode, getCurrencySymbol } from '../../utils/formatters';
 import { useTheme } from '../../hooks/useTheme';
 import { ThemeColors } from '../../styles/colors';
 import type { PortfolioAction, RebalancePortfolioAsset, LivePriceData } from '../../types/rebalanceTypes';
@@ -47,9 +47,10 @@ function formatCompactKRW(amount: number, lang: string): string {
     return `${Math.round(abs / 10000)}万ウォン`;
   }
   // en / default
-  if (abs >= 100000000) return `₩${(abs / 100000000).toFixed(1)}B`;
-  if (abs >= 10000) return `₩${(abs / 10000000).toFixed(2)}M`;
-  return `₩${abs.toLocaleString()}`;
+  const sym = getCurrencySymbol();
+  if (abs >= 100000000) return `${sym}${(abs / 100000000).toFixed(1)}B`;
+  if (abs >= 10000) return `${sym}${(abs / 10000000).toFixed(2)}M`;
+  return `${sym}${abs.toLocaleString()}`;
 }
 
 // ── ETF 추천 맵 (없는 카테고리에 ETF 제안) ──

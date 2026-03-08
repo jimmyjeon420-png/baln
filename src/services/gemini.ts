@@ -393,7 +393,11 @@ function parseGeminiJson<T = any>(text: string): T {
   cleaned = cleaned.replace(/,\s*([\]}])/g, '$1');
   // Fix ₩ symbols before numbers in JSON number fields
   cleaned = cleaned.replace(/:\s*₩\s*([0-9])/g, ': $1');
-  return JSON.parse(cleaned) as T;
+  try {
+    return JSON.parse(cleaned) as T;
+  } catch (err) {
+    throw new Error(`[Gemini] JSON 파싱 실패: ${err instanceof Error ? err.message : String(err)} — 원본: ${cleaned.slice(0, 200)}`);
+  }
 }
 
 type DeepDiveRecommendation = DeepDiveResult['recommendation'];
@@ -2095,7 +2099,6 @@ export const generateDeepDive = async (
   };
 
   // --- 팩트 데이터 섹션 (API 조회 성공 시) ---
-  /* eslint-disable @typescript-eslint/no-non-null-assertion */
   const factDataSection = hasFundamentals ? (isKo ? `
 [★★★ 실제 API 조회 데이터 — 이 숫자를 그대로 사용하세요 ★★★]
 아래 데이터는 Yahoo Finance API에서 실시간 조회한 팩트 데이터입니다.
@@ -2103,18 +2106,18 @@ export const generateDeepDive = async (
 ${isUSD && exchangeRate ? `\n[적용 환율] 1 USD = ${exchangeRate.toFixed(2)} KRW (실시간 조회)` : ''}
 ${isUSD ? '\n[★ 원화 표기 규칙] 미국 주식이므로 모든 금액(시가총액, 매출, 영업이익, 순이익 등)을 원화(₩)로 환산하여 표시하세요.' : ''}
 
-시가총액: ${fundamentals!.marketCapKRW != null ? fmtKRW(fundamentals!.marketCapKRW) : fundamentals!.marketCap!.toLocaleString() + '원'}${isUSD && fundamentals!.marketCap ? ` ($${(fundamentals!.marketCap / 1e9).toFixed(1)}B)` : ''}
-${fundamentals!.currentPrice != null ? (isUSD && exchangeRate ? `현재 주가: ${getCurrencySymbol()}${Math.round(fundamentals!.currentPrice * exchangeRate).toLocaleString()} ($${fundamentals!.currentPrice.toLocaleString()})` : `현재 주가: ${getCurrencySymbol()}${fundamentals!.currentPrice.toLocaleString()}`) : ''}
-${fundamentals!.trailingPE != null ? `PER (Trailing): ${fundamentals!.trailingPE.toFixed(2)}` : 'PER: 데이터 없음 — Google Search로 조회하세요'}
-${fundamentals!.forwardPE != null ? `PER (Forward): ${fundamentals!.forwardPE.toFixed(2)}` : ''}
-${fundamentals!.priceToBook != null ? `PBR: ${fundamentals!.priceToBook.toFixed(2)}` : 'PBR: 데이터 없음 — Google Search로 조회하세요'}
-${fundamentals!.returnOnEquity != null ? `ROE: ${(fundamentals!.returnOnEquity * 100).toFixed(2)}%` : ''}
-${fundamentals!.operatingMargins != null ? `영업이익률: ${(fundamentals!.operatingMargins * 100).toFixed(2)}%` : ''}
-${fundamentals!.profitMargins != null ? `순이익률: ${(fundamentals!.profitMargins * 100).toFixed(2)}%` : ''}
-${fundamentals!.revenueGrowth != null ? `매출성장률(YoY): ${(fundamentals!.revenueGrowth * 100).toFixed(2)}%` : ''}
-${fundamentals!.debtToEquity != null ? `부채비율: ${fundamentals!.debtToEquity.toFixed(2)}%` : ''}
-${fundamentals!.quarterlyEarnings && fundamentals!.quarterlyEarnings.length > 0
-    ? '\n분기별 실적 (API 조회, 원화 환산):\n' + fundamentals!.quarterlyEarnings.map(q => {
+시가총액: ${fundamentals?.marketCapKRW != null ? fmtKRW(fundamentals?.marketCapKRW) : fundamentals?.marketCap?.toLocaleString() ?? '' + '원'}${isUSD && fundamentals?.marketCap ? ` ($${(fundamentals?.marketCap / 1e9).toFixed(1)}B)` : ''}
+${fundamentals?.currentPrice != null ? (isUSD && exchangeRate ? `현재 주가: ${getCurrencySymbol()}${Math.round(fundamentals?.currentPrice * exchangeRate).toLocaleString()} ($${fundamentals?.currentPrice.toLocaleString()})` : `현재 주가: ${getCurrencySymbol()}${fundamentals?.currentPrice.toLocaleString()}`) : ''}
+${fundamentals?.trailingPE != null ? `PER (Trailing): ${fundamentals?.trailingPE.toFixed(2)}` : 'PER: 데이터 없음 — Google Search로 조회하세요'}
+${fundamentals?.forwardPE != null ? `PER (Forward): ${fundamentals?.forwardPE.toFixed(2)}` : ''}
+${fundamentals?.priceToBook != null ? `PBR: ${fundamentals?.priceToBook.toFixed(2)}` : 'PBR: 데이터 없음 — Google Search로 조회하세요'}
+${fundamentals?.returnOnEquity != null ? `ROE: ${(fundamentals?.returnOnEquity * 100).toFixed(2)}%` : ''}
+${fundamentals?.operatingMargins != null ? `영업이익률: ${(fundamentals?.operatingMargins * 100).toFixed(2)}%` : ''}
+${fundamentals?.profitMargins != null ? `순이익률: ${(fundamentals?.profitMargins * 100).toFixed(2)}%` : ''}
+${fundamentals?.revenueGrowth != null ? `매출성장률(YoY): ${(fundamentals?.revenueGrowth * 100).toFixed(2)}%` : ''}
+${fundamentals?.debtToEquity != null ? `부채비율: ${fundamentals?.debtToEquity.toFixed(2)}%` : ''}
+${fundamentals?.quarterlyEarnings && fundamentals?.quarterlyEarnings.length > 0
+    ? '\n분기별 실적 (API 조회, 원화 환산):\n' + fundamentals?.quarterlyEarnings.map(q => {
         const revDisplay = q.revenueKRW != null ? fmtKRW(q.revenueKRW) : (q.revenue != null ? `$${q.revenue.toLocaleString()}` : 'N/A');
         const earnDisplay = q.earningsKRW != null ? fmtKRW(q.earningsKRW) : (q.earnings != null ? `$${q.earnings.toLocaleString()}` : 'N/A');
         return `- ${q.quarter}: 매출 ${revDisplay}, 순이익 ${earnDisplay}`;
@@ -2131,18 +2134,18 @@ Do not modify or estimate these numbers. Use them directly in the metrics fields
 ${isUSD && exchangeRate ? `\n[Exchange Rate Applied] 1 USD = ${exchangeRate.toFixed(2)} KRW (real-time)` : ''}
 ${isUSD ? '\n[★ KRW Conversion Rule] This is a US-listed stock; convert all monetary amounts (market cap, revenue, operating income, net income, etc.) to KRW (₩).' : ''}
 
-Market Cap: ${fundamentals!.marketCapKRW != null ? fmtKRW(fundamentals!.marketCapKRW) : fundamentals!.marketCap!.toLocaleString() + ' KRW'}${isUSD && fundamentals!.marketCap ? ` ($${(fundamentals!.marketCap / 1e9).toFixed(1)}B)` : ''}
-${fundamentals!.currentPrice != null ? (isUSD && exchangeRate ? `Current Price: ${getCurrencySymbol()}${Math.round(fundamentals!.currentPrice * exchangeRate).toLocaleString()} ($${fundamentals!.currentPrice.toLocaleString()})` : `Current Price: ${getCurrencySymbol()}${fundamentals!.currentPrice.toLocaleString()}`) : ''}
-${fundamentals!.trailingPE != null ? `P/E Ratio (Trailing): ${fundamentals!.trailingPE.toFixed(2)}` : 'P/E Ratio: No data — look up via Google Search'}
-${fundamentals!.forwardPE != null ? `P/E Ratio (Forward): ${fundamentals!.forwardPE.toFixed(2)}` : ''}
-${fundamentals!.priceToBook != null ? `P/B Ratio: ${fundamentals!.priceToBook.toFixed(2)}` : 'P/B Ratio: No data — look up via Google Search'}
-${fundamentals!.returnOnEquity != null ? `ROE: ${(fundamentals!.returnOnEquity * 100).toFixed(2)}%` : ''}
-${fundamentals!.operatingMargins != null ? `Operating Margin: ${(fundamentals!.operatingMargins * 100).toFixed(2)}%` : ''}
-${fundamentals!.profitMargins != null ? `Net Profit Margin: ${(fundamentals!.profitMargins * 100).toFixed(2)}%` : ''}
-${fundamentals!.revenueGrowth != null ? `Revenue Growth (YoY): ${(fundamentals!.revenueGrowth * 100).toFixed(2)}%` : ''}
-${fundamentals!.debtToEquity != null ? `Debt-to-Equity Ratio: ${fundamentals!.debtToEquity.toFixed(2)}%` : ''}
-${fundamentals!.quarterlyEarnings && fundamentals!.quarterlyEarnings.length > 0
-    ? '\nQuarterly Earnings (API data, KRW-converted):\n' + fundamentals!.quarterlyEarnings.map(q => {
+Market Cap: ${fundamentals?.marketCapKRW != null ? fmtKRW(fundamentals?.marketCapKRW) : fundamentals?.marketCap?.toLocaleString() ?? '' + ' KRW'}${isUSD && fundamentals?.marketCap ? ` ($${(fundamentals?.marketCap / 1e9).toFixed(1)}B)` : ''}
+${fundamentals?.currentPrice != null ? (isUSD && exchangeRate ? `Current Price: ${getCurrencySymbol()}${Math.round(fundamentals?.currentPrice * exchangeRate).toLocaleString()} ($${fundamentals?.currentPrice.toLocaleString()})` : `Current Price: ${getCurrencySymbol()}${fundamentals?.currentPrice.toLocaleString()}`) : ''}
+${fundamentals?.trailingPE != null ? `P/E Ratio (Trailing): ${fundamentals?.trailingPE.toFixed(2)}` : 'P/E Ratio: No data — look up via Google Search'}
+${fundamentals?.forwardPE != null ? `P/E Ratio (Forward): ${fundamentals?.forwardPE.toFixed(2)}` : ''}
+${fundamentals?.priceToBook != null ? `P/B Ratio: ${fundamentals?.priceToBook.toFixed(2)}` : 'P/B Ratio: No data — look up via Google Search'}
+${fundamentals?.returnOnEquity != null ? `ROE: ${(fundamentals?.returnOnEquity * 100).toFixed(2)}%` : ''}
+${fundamentals?.operatingMargins != null ? `Operating Margin: ${(fundamentals?.operatingMargins * 100).toFixed(2)}%` : ''}
+${fundamentals?.profitMargins != null ? `Net Profit Margin: ${(fundamentals?.profitMargins * 100).toFixed(2)}%` : ''}
+${fundamentals?.revenueGrowth != null ? `Revenue Growth (YoY): ${(fundamentals?.revenueGrowth * 100).toFixed(2)}%` : ''}
+${fundamentals?.debtToEquity != null ? `Debt-to-Equity Ratio: ${fundamentals?.debtToEquity.toFixed(2)}%` : ''}
+${fundamentals?.quarterlyEarnings && fundamentals?.quarterlyEarnings.length > 0
+    ? '\nQuarterly Earnings (API data, KRW-converted):\n' + fundamentals?.quarterlyEarnings.map(q => {
         const revDisplay = q.revenueKRW != null ? fmtKRW(q.revenueKRW) : (q.revenue != null ? `$${q.revenue.toLocaleString()}` : 'N/A');
         const earnDisplay = q.earningsKRW != null ? fmtKRW(q.earningsKRW) : (q.earnings != null ? `$${q.earnings.toLocaleString()}` : 'N/A');
         return `- ${q.quarter}: Revenue ${revDisplay}, Net Income ${earnDisplay}`;

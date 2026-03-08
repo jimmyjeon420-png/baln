@@ -65,6 +65,7 @@ export default function InvestorLevelScreen() {
   const quizAccuracy = quizzesAttempted > 0 ? Math.round((quizzesCorrect / quizzesAttempted) * 100) : 0;
   const progress = getLevelProgress(totalXp, level);
   const xpToNext = getXPToNextLevel(totalXp, level);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const title = t(`investor_level.title_${level}` as any) || LEVEL_TITLES[level] || t('investor_level.title_1');
   const icon = LEVEL_ICONS[level] || '🌱';
   const currentLevelXp = LEVEL_XP_TABLE[level] || 0;
@@ -230,7 +231,7 @@ export default function InvestorLevelScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
+    // backgroundColor set via colors.background inline
   },
   loadingContainer: {
     flex: 1,

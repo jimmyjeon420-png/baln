@@ -24,7 +24,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { useSaveExecution } from '../src/hooks/useExecutions';
 import type { ExecutionInput } from '../src/types/rebalanceExecution';
 import { useTheme } from '../src/hooks/useTheme';
-import { getLocaleCode } from '../src/utils/formatters';
+import { getLocaleCode, getCurrencySymbol } from '../src/utils/formatters';
 import { useLocale } from '../src/context/LocaleContext';
 
 export default function LogTradeScreen() {
@@ -66,7 +66,7 @@ export default function LogTradeScreen() {
     // 확인 모달
     Alert.alert(
       t('log_trade.confirm_title'),
-      `${params.name} (${params.ticker})\n${params.action === 'BUY' ? t('log_trade.action_buy') : t('log_trade.action_sell')} ${qty} × ₩${Math.floor(price).toLocaleString()}\n\n${t('log_trade.disclaimer')}`,
+      `${params.name} (${params.ticker})\n${params.action === 'BUY' ? t('log_trade.action_buy') : t('log_trade.action_sell')} ${qty} × ${getCurrencySymbol()}${Math.floor(price).toLocaleString()}\n\n${t('log_trade.disclaimer')}`,
       [
         { text: t('log_trade.confirm_cancel'), style: 'cancel' },
         {
@@ -91,8 +91,9 @@ export default function LogTradeScreen() {
               Alert.alert(t('log_trade.saved_title'), t('log_trade.saved_msg'), [
                 { text: t('common.ok'), onPress: () => router.back() },
               ]);
-            } catch (error: any) {
-              Alert.alert(t('log_trade.save_failed_title'), error.message || t('log_trade.save_failed_msg'));
+            } catch (error: unknown) {
+              const msg = error instanceof Error ? error.message : t('log_trade.save_failed_msg');
+              Alert.alert(t('log_trade.save_failed_title'), msg);
             }
           },
         },

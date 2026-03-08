@@ -14,7 +14,6 @@ import { getPromptLanguageInstruction, getLangParam } from '../utils/promptLangu
 import { edgeInvokeErrorMessage, isTransientEdgeInvokeError } from '../utils/edgeInvokeError';
 import type {
   RoundtableSession,
-  RoundtableTurn,
   UserQuestion,
   RoundtableGeminiResponse,
   FollowUpGeminiResponse,
@@ -83,7 +82,11 @@ function parseJsonResponse<T>(text: string): T {
     .replace(/```json\s*/gi, '')
     .replace(/```\s*/g, '')
     .trim();
-  return JSON.parse(cleaned);
+  try {
+    return JSON.parse(cleaned);
+  } catch (err) {
+    throw new Error(`[Roundtable] JSON 파싱 실패: ${err instanceof Error ? err.message : String(err)} — 원본: ${cleaned.slice(0, 200)}`);
+  }
 }
 
 // ============================================================================

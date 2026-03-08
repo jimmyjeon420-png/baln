@@ -23,6 +23,7 @@ import supabase from '../../services/supabase';
 import { type MarketplaceItem } from '../../data/marketplaceItems';
 import { isFreePeriod } from '../../config/freePeriod';
 import { useLocale } from '../../context/LocaleContext';
+import { getCurrencySymbol } from '../../utils/formatters';
 
 // 아이템 활성화 상태 저장 키
 const ITEM_ACTIVE_PREFIX = '@baln:marketplace_active_';
@@ -162,14 +163,14 @@ export function ItemPurchaseModal({
                 <View style={styles.infoRow}>
                   <Text style={styles.infoLabel}>{t('itemPurchase.myAcorns')}</Text>
                   <Text style={styles.infoValue}>
-                    {freePeriod ? t('itemPurchase.freePeriodBalance') : `${balance} (₩${(balance * 100).toLocaleString()})`}
+                    {freePeriod ? t('itemPurchase.freePeriodBalance') : `${balance} (${getCurrencySymbol()}${(balance * 100).toLocaleString()})`}
                   </Text>
                 </View>
                 <View style={styles.divider} />
                 <View style={styles.infoRow}>
                   <Text style={styles.infoLabel}>{t('itemPurchase.cost')}</Text>
                   <Text style={styles.infoCost}>
-                    {freePeriod ? t('itemPurchase.free') : `${item.price} (₩${item.priceKRW.toLocaleString()})`}
+                    {freePeriod ? t('itemPurchase.free') : `${item.price} (${getCurrencySymbol()}${item.priceKRW.toLocaleString()})`}
                   </Text>
                 </View>
               </View>

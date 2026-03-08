@@ -27,6 +27,7 @@ import type { GuruInsight } from '../../../src/services/centralKitchen';
 import { CharacterAvatar } from '../../../src/components/character/CharacterAvatar';
 import { sentimentToExpression } from '../../../src/services/characterService';
 import { useLocale } from '../../../src/context/LocaleContext';
+import { useTheme } from '../../../src/hooks/useTheme';
 
 // ─────────────────────────────────────────────
 // 정적 구루 프로필 데이터 (번역 키 포함)
@@ -79,6 +80,7 @@ const GURU_PROFILES: Record<string, GuruProfile> = {
 export default function GuruDetailScreen() {
   const router = useRouter();
   const { t } = useLocale();
+  const { colors } = useTheme();
   const { guruId } = useLocalSearchParams<{ guruId: string }>();
   const { data: insightsData, isLoading: insightsLoading } = useGuruInsights();
   const { guruStyle } = useGuruStyle();
@@ -87,7 +89,7 @@ export default function GuruDetailScreen() {
 
   if (!profile) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={24} color="#FFF" />
         </TouchableOpacity>
@@ -126,7 +128,7 @@ export default function GuruDetailScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
         {/* ── 헤더 ── */}
@@ -243,8 +245,8 @@ export default function GuruDetailScreen() {
                 <Text style={styles.structuredLabel}>{t('guru.detail.conviction_label')}</Text>
                 <View style={styles.starRow}>
                   {[1, 2, 3, 4, 5].map((i) => (
-                    <Text key={i} style={[styles.starIcon, { color: i <= todayInsight.conviction_level! ? profile.accentColor : '#333333' }]}>
-                      {i <= todayInsight.conviction_level! ? '★' : '☆'}
+                    <Text key={i} style={[styles.starIcon, { color: i <= (todayInsight.conviction_level ?? 0) ? profile.accentColor : '#333333' }]}>
+                      {i <= (todayInsight.conviction_level ?? 0) ? '★' : '☆'}
                     </Text>
                   ))}
                   <Text style={styles.convictionLabel}>({todayInsight.conviction_level}/5)</Text>
@@ -343,7 +345,7 @@ export default function GuruDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
+    // backgroundColor set via colors.background inline
   },
   scroll: {
     paddingBottom: 20,

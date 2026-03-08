@@ -21,6 +21,7 @@ import { useLocale } from '../../src/context/LocaleContext';
 import { useSharedPortfolio } from '../../src/hooks/useSharedPortfolio';
 import { AssetType } from '../../src/types/asset';
 import { estimateTax, inferTaxAssetType, type TaxAssetType } from '../../src/utils/taxEstimator';
+import { getCurrencySymbol } from '../../src/utils/formatters';
 
 interface TaxReport {
   totalTax: number;
@@ -264,19 +265,19 @@ export default function TaxReportScreen() {
         <View style={[s.card, { backgroundColor: colors.surface }]}>
           <Text style={[s.cardLabel, { color: colors.textSecondary }]}>{t('analysis.taxReport.estimatedTax')}</Text>
           <Text style={[s.totalTax, { color: '#FF9800' }]}>
-            ₩{taxReport.totalTax.toLocaleString()}
+            {getCurrencySymbol()}{taxReport.totalTax.toLocaleString()}
           </Text>
           <View style={s.taxBreakdown}>
             <View style={s.breakdownItem}>
               <Text style={[s.breakdownLabel, { color: colors.textTertiary }]}>{t('analysis.taxReport.capitalGainsTax')}</Text>
               <Text style={[s.breakdownValue, { color: colors.textSecondary }]}>
-                ₩{taxReport.capitalGainsTax.toLocaleString()}
+                {getCurrencySymbol()}{taxReport.capitalGainsTax.toLocaleString()}
               </Text>
             </View>
             <View style={s.breakdownItem}>
               <Text style={[s.breakdownLabel, { color: colors.textTertiary }]}>{t('analysis.taxReport.dividendTax')}</Text>
               <Text style={[s.breakdownValue, { color: colors.textSecondary }]}>
-                ₩{taxReport.dividendTax.toLocaleString()}
+                {getCurrencySymbol()}{taxReport.dividendTax.toLocaleString()}
               </Text>
             </View>
           </View>
@@ -289,7 +290,7 @@ export default function TaxReportScreen() {
             <View style={{ flex: 1 }}>
               <Text style={[s.savingsLabel, { color: colors.textSecondary }]}>{t('analysis.taxReport.potentialSavings')}</Text>
               <Text style={[s.savingsAmount, { color: '#4CAF50' }]}>
-                ₩{taxReport.potentialSavings.toLocaleString()}
+                {getCurrencySymbol()}{taxReport.potentialSavings.toLocaleString()}
               </Text>
             </View>
           </View>

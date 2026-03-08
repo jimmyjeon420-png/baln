@@ -76,7 +76,7 @@ export default function DailyQuizScreen() {
   };
 
   const isLoading = (quizLoading || attemptLoading) && !quizError;
-  const isAnswered = !!attempt;
+  const _isAnswered = !!attempt;
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
@@ -181,7 +181,7 @@ export default function DailyQuizScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
+    // backgroundColor set via colors.background inline
   },
   header: {
     flexDirection: 'row',

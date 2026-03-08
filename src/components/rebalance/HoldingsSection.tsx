@@ -7,6 +7,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
 import { useLocale } from '../../context/LocaleContext';
+import { formatLocalAmount } from '../../utils/formatters';
 import { ThemeColors } from '../../styles/colors';
 import type { RebalancePortfolioAsset } from '../../types/rebalanceTypes';
 
@@ -57,7 +58,7 @@ export default function HoldingsSection({
               <View style={styles.snapshotItem}>
                 <Text style={[styles.snapshotLabel, { color: colors.textTertiary }]}>{t('holdings_section.total_gain_loss')}</Text>
                 <Text style={[styles.snapshotValue, { color: isPositive ? colors.buy : colors.sell }]}>
-                  {isPositive ? '+' : ''}₩{Math.floor(Math.abs(snapshot.totalGainLoss ?? 0)).toLocaleString()}
+                  {isPositive ? '+' : ''}{formatLocalAmount(Math.floor(Math.abs(snapshot.totalGainLoss ?? 0)))}
                 </Text>
               </View>
               <View style={[styles.snapshotDivider, { backgroundColor: colors.border }]} />

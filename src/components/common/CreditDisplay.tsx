@@ -15,7 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useMyCredits } from '../../hooks/useCredits';
-import { formatCredits as _formatCredits } from '../../utils/formatters';
+import { formatCredits as _formatCredits, getCurrencySymbol } from '../../utils/formatters';
 import { useLocale } from '../../context/LocaleContext';
 
 /** 충전 기능 오픈일 (6월 1일부터 활성화) */
@@ -83,7 +83,7 @@ export function CreditDisplay({ onPress }: CreditDisplayProps) {
 
           {/* 원화 환산 */}
           <Text style={styles.balanceKRW}>
-            ₩{(balance * 100).toLocaleString()}
+            {getCurrencySymbol()}{(balance * 100).toLocaleString()}
           </Text>
 
           {/* 충전 버튼 / 무료 체험 안내 */}

@@ -295,7 +295,7 @@ export default function AuthorProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
+    // backgroundColor set via colors.background inline
   },
   header: {
     flexDirection: 'row',

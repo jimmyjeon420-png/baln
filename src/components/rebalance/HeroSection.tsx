@@ -10,6 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { CfoWeather } from '../../types/rebalanceTypes';
 import BenchmarkChip from './BenchmarkChip';
 import { useTheme } from '../../hooks/useTheme';
+import { formatLocalAmount } from '../../utils/formatters';
 
 interface HeroSectionProps {
   dateString: string;
@@ -54,7 +55,7 @@ export default function HeroSection({
         </View>
       </View>
 
-      <Text style={[s.heroAmount, { color: colors.textPrimary }]}>₩{Math.floor(totalAssets).toLocaleString()}</Text>
+      <Text style={[s.heroAmount, { color: colors.textPrimary }]}>{formatLocalAmount(Math.floor(totalAssets))}</Text>
 
       {/* 주 지표: 투자원금 대비 수익 */}
       <View style={s.heroChangeRow}>
@@ -65,7 +66,7 @@ export default function HeroSection({
             color={changeColor}
           />
           <Text style={[s.heroChangeText, { color: changeColor }]}>
-            {isPositive ? '+' : ''}₩{Math.floor(Math.abs(totalGainLoss)).toLocaleString()}
+            {isPositive ? '+' : ''}{formatLocalAmount(Math.floor(Math.abs(totalGainLoss)))}
           </Text>
           <Text style={[s.heroChangePercent, { color: changeColor }]}>
             ({isPositive ? '+' : ''}{gainPercent.toFixed(1)}%)

@@ -19,6 +19,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
 import { useLocale } from '../../context/LocaleContext';
+import { getCurrencySymbol } from '../../utils/formatters';
 import type { WhatIfResult } from '../../types/marketplace';
 
 // Android LayoutAnimation 활성화
@@ -111,7 +112,7 @@ export const AssetImpactWaterfall: React.FC<AssetImpactWaterfallProps> = ({
                   {asset.name}
                 </Text>
                 <Text style={[s.assetPrice, { color: colors.textTertiary }]}>
-                  ₩{asset.currentValue.toLocaleString()} → ₩
+                  {getCurrencySymbol()}{asset.currentValue.toLocaleString()} → {getCurrencySymbol()}
                   {asset.projectedValue.toLocaleString()}
                 </Text>
               </View>

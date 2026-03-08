@@ -8,6 +8,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { TaxReportResult } from '../types/marketplace';
 import { useLocale } from '../context/LocaleContext';
+import { formatLocalAmount } from '../utils/formatters';
 
 interface Props {
   result: TaxReportResult;
@@ -32,13 +33,13 @@ export default function TaxReportCard({ result }: Props) {
           <View style={styles.taxItem}>
             <Text style={styles.taxLabel}>{t('taxReport.capitalGainsTax')}</Text>
             <Text style={styles.taxValue}>
-              ₩{Math.floor(taxSummary.estimatedCapitalGainsTax).toLocaleString()}
+              {formatLocalAmount(Math.floor(taxSummary.estimatedCapitalGainsTax))}
             </Text>
           </View>
           <View style={styles.taxItem}>
             <Text style={styles.taxLabel}>{t('taxReport.incomeTax')}</Text>
             <Text style={styles.taxValue}>
-              ₩{Math.floor(taxSummary.estimatedIncomeTax).toLocaleString()}
+              {formatLocalAmount(Math.floor(taxSummary.estimatedIncomeTax))}
             </Text>
           </View>
         </View>
@@ -46,7 +47,7 @@ export default function TaxReportCard({ result }: Props) {
         <View style={styles.totalRow}>
           <Text style={styles.totalLabel}>{t('taxReport.totalTaxBurden')}</Text>
           <Text style={styles.totalValue}>
-            ₩{Math.floor(taxSummary.totalTaxBurden).toLocaleString()}
+            {formatLocalAmount(Math.floor(taxSummary.totalTaxBurden))}
           </Text>
         </View>
         <View style={styles.effectiveRateRow}>
@@ -81,7 +82,7 @@ export default function TaxReportCard({ result }: Props) {
               <View style={styles.savingRow}>
                 <Ionicons name="cash" size={14} color="#4CAF50" />
                 <Text style={styles.savingText}>
-                  {t('taxReport.estimatedSaving', { amount: `₩${Math.floor(strategy.potentialSaving).toLocaleString()}` })}
+                  {t('taxReport.estimatedSaving', { amount: formatLocalAmount(Math.floor(strategy.potentialSaving)) })}
                 </Text>
               </View>
               {(strategy.actionItems ?? []).map((action, j) => (

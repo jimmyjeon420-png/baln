@@ -214,7 +214,14 @@ ${personaText}
       .replace(/```\s*/g, '')
       .trim();
 
-    const parsed = JSON.parse(cleaned);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let parsed: any;
+    try {
+      parsed = JSON.parse(cleaned);
+    } catch (parseErr) {
+      console.warn('[GuruComment] JSON 파싱 실패 — 빈 댓글 반환:', parseErr);
+      return;
+    }
     const comments = parsed.comments || [];
 
     // DB 저장 (각 구루 댓글을 개별 INSERT)

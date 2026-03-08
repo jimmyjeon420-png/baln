@@ -20,7 +20,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -38,10 +37,9 @@ import {
   getCommunityTierLabel,
   TIER_ICONS,
   TIER_COLORS,
-  TIER_THRESHOLDS,
 } from '../src/types/community';
+import { getCurrencySymbol } from '../src/utils/formatters';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function TierStrategyScreen() {
   const router = useRouter();
@@ -175,6 +173,7 @@ export default function TierStrategyScreen() {
           {/* 티어 아이콘 */}
           <View style={[s.heroIconCircle, { backgroundColor: tierColor + '20' }]}>
             <Ionicons
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               name={tierIcon as any}
               size={32}
               color={tierColor}
@@ -189,7 +188,7 @@ export default function TierStrategyScreen() {
           <Text style={s.heroSubtitle}>{tierDetail.hero.subtitle}</Text>
 
           {/* 총 자산 + 손익 뱃지 */}
-          <Text style={s.heroAmount}>₩{Math.floor(totalAssets).toLocaleString()}</Text>
+          <Text style={s.heroAmount}>{getCurrencySymbol()}{Math.floor(totalAssets).toLocaleString()}</Text>
           {snapshot && (
             <View style={[s.heroBadge, {
               backgroundColor: isPositive ? 'rgba(76,175,80,0.12)' : 'rgba(207,102,121,0.12)',
@@ -200,7 +199,7 @@ export default function TierStrategyScreen() {
                 color={isPositive ? '#4CAF50' : '#CF6679'}
               />
               <Text style={[s.heroBadgeText, { color: isPositive ? '#4CAF50' : '#CF6679' }]}>
-                {isPositive ? '+' : ''}₩{Math.floor(Math.abs(totalGainLoss)).toLocaleString()}
+                {isPositive ? '+' : ''}{getCurrencySymbol()}{Math.floor(Math.abs(totalGainLoss)).toLocaleString()}
                 {' '}({isPositive ? '+' : ''}{gainPercent.toFixed(1)}%)
               </Text>
             </View>
@@ -229,6 +228,7 @@ export default function TierStrategyScreen() {
                 {/* 접힌 상태: 아이콘 + 제목 + 핵심 수치 뱃지 */}
                 <View style={s.accordionHeader}>
                   <View style={[s.accordionIcon, { backgroundColor: tierColor + '15' }]}>
+                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                     <Ionicons name={strategy.icon as any} size={20} color={tierColor} />
                   </View>
                   <View style={s.accordionHeaderText}>
@@ -330,6 +330,7 @@ export default function TierStrategyScreen() {
               <View key={idx} style={s.gaugeItem}>
                 <View style={s.gaugeHeader}>
                   <View style={s.gaugeLabelRow}>
+                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                     <Ionicons name={criterion.icon as any} size={16} color={isInRange ? '#4CAF50' : '#FFC107'} />
                     <Text style={s.gaugeLabel}>{criterion.label}</Text>
                   </View>

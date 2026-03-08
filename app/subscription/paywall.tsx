@@ -30,7 +30,7 @@ import { useTheme } from '../../src/hooks/useTheme';
 import supabase, { getCurrentUser } from '../../src/services/supabase';
 import { useTrackEvent } from '../../src/hooks/useAnalytics';
 import { useABExperiment } from '../../src/hooks/useABExperiment';
-import { CREDIT_TO_KRW, getLocaleCode } from '../../src/utils/formatters';
+import { CREDIT_TO_KRW, getLocaleCode, getCurrencySymbol } from '../../src/utils/formatters';
 import { useLocale } from '../../src/context/LocaleContext';
 import { SUBSCRIPTION_PRODUCTS } from '../../src/types/marketplace';
 import {
@@ -44,11 +44,14 @@ import {
   type PurchaseError,
 } from '../../src/services/appleIAP';
 
-// 가격 정보
-const PRICING = {
-  monthly: { price: '₩2,900', periodKey: 'paywall.perMonth', tKey: 'paywall.monthlyPlan' },
-  yearly: { price: '₩24,900', periodKey: 'paywall.perYear', tKey: 'paywall.yearlyPlan', monthlyEquiv: '₩2,075', discountKey: 'paywall.yearlyDiscount' },
-};
+// 가격 정보 — getCurrencySymbol()은 런타임 호출이므로 함수로 래핑
+function getPricing() {
+  const sym = getCurrencySymbol();
+  return {
+    monthly: { price: `${sym}2,900`, periodKey: 'paywall.perMonth', tKey: 'paywall.monthlyPlan' },
+    yearly: { price: `${sym}24,900`, periodKey: 'paywall.perYear', tKey: 'paywall.yearlyPlan', monthlyEquiv: `${sym}2,075`, discountKey: 'paywall.yearlyDiscount' },
+  };
+}
 
 const BENEFIT_KEYS = [
   { icon: 'today' as const, titleKey: 'paywall.benefit.aiDiag.title', descKey: 'paywall.benefit.aiDiag.desc' },
@@ -109,6 +112,7 @@ export default function PaywallScreen() {
   const { mediumTap, heavyTap } = useHaptics();
   const track = useTrackEvent();
   const freePeriodActive = isFreePeriod();
+  const PRICING = getPricing();
   const { experimentId, variant, isActive: isExperimentActive } = useABExperiment('subscription_paywall');
   const isValueFirstVariant = isExperimentActive && variant === 'value_first';
   const {

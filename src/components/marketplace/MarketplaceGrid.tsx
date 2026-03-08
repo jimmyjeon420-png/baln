@@ -21,6 +21,7 @@ import { MARKETPLACE_ITEMS, getItemsByTier } from '../../data/marketplaceItems';
 import { spendCredits } from '../../services/creditService';
 import queryClient from '../../services/queryClient';
 import { useLocale } from '../../context/LocaleContext';
+import { getCurrencySymbol } from '../../utils/formatters';
 
 export function MarketplaceGrid() {
   const { data: credits } = useMyCredits();
@@ -63,7 +64,7 @@ export function MarketplaceGrid() {
     // 구매 확인
     Alert.alert(
       t('marketplace.alert_confirm_title'),
-      t('marketplace.alert_confirm_msg', { name: item.name, price: item.price, krw: `₩${item.priceKRW.toLocaleString()}` }),
+      t('marketplace.alert_confirm_msg', { name: item.name, price: item.price, krw: `${getCurrencySymbol()}${item.priceKRW.toLocaleString()}` }),
       [
         { text: t('common.cancel'), style: 'cancel' },
         {

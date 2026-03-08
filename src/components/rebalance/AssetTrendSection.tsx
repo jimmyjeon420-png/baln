@@ -12,6 +12,7 @@ import Svg, { Path, Line, Circle } from 'react-native-svg';
 import { SkeletonBlock } from '../SkeletonLoader';
 import { useTheme } from '../../hooks/useTheme';
 import { useLocale } from '../../context/LocaleContext';
+import { formatLocalAmount } from '../../utils/formatters';
 import { ThemeColors } from '../../styles/colors';
 import type { PortfolioSnapshot } from '../../hooks/usePortfolioSnapshots';
 
@@ -214,16 +215,16 @@ export default function AssetTrendSection({
       <View style={styles.summaryRow}>
         <View style={styles.summaryItem}>
           <Text style={[styles.summaryLabel, { color: colors.textTertiary }]}>{t('asset_trend.days_ago', { days: String(selectedDays) })}</Text>
-          <Text style={[styles.summaryValue, { color: colors.textPrimary }]}>₩{chartValues[0] != null ? Math.floor(chartValues[0]).toLocaleString() : '0'}</Text>
+          <Text style={[styles.summaryValue, { color: colors.textPrimary }]}>{chartValues[0] != null ? formatLocalAmount(Math.floor(chartValues[0])) : formatLocalAmount(0)}</Text>
         </View>
         <View style={styles.summaryItem}>
           <Text style={[styles.summaryLabel, { color: colors.textTertiary }]}>{t('asset_trend.current')}</Text>
-          <Text style={[styles.summaryValue, { color: lineColor }]}>₩{Math.floor(currentTotal).toLocaleString()}</Text>
+          <Text style={[styles.summaryValue, { color: lineColor }]}>{formatLocalAmount(Math.floor(currentTotal))}</Text>
         </View>
         <View style={styles.summaryItem}>
           <Text style={[styles.summaryLabel, { color: colors.textTertiary }]}>{t('asset_trend.change')}</Text>
           <Text style={[styles.summaryValue, { color: lineColor }]}>
-            {isPositive ? '+' : ''}₩{Math.floor(Math.abs(periodChange.amount)).toLocaleString()}
+            {isPositive ? '+' : ''}{formatLocalAmount(Math.floor(Math.abs(periodChange.amount)))}
           </Text>
         </View>
       </View>

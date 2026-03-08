@@ -436,7 +436,7 @@ export default function PredictionsScreen() {
   // ============================================================================
   if (activeLoading && resolvedLoading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#121212' }}>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
         <ActivityIndicator size="large" color="#4CAF50" />
       </View>
     );

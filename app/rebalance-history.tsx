@@ -18,7 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRebalanceHistory, useOverallStats } from '../src/hooks/useRebalanceHistory';
 import { SkeletonBlock } from '../src/components/SkeletonLoader';
 import { useTheme } from '../src/hooks/useTheme';
-import { getLocaleCode } from '../src/utils/formatters';
+import { getLocaleCode, getCurrencySymbol } from '../src/utils/formatters';
 import { useLocale } from '../src/context/LocaleContext';
 
 export default function RebalanceHistoryScreen() {
@@ -171,7 +171,7 @@ export default function RebalanceHistoryScreen() {
                       <View style={s.executionInfo}>
                         <Text style={[s.executionTicker, { color: colors.textPrimary }]}>{exec.action_ticker}</Text>
                         <Text style={[s.executionDetail, { color: colors.textSecondary }]}>
-                          {exec.executed_qty} × ₩{Math.floor(exec.executed_price).toLocaleString()}
+                          {exec.executed_qty} × {getCurrencySymbol()}{Math.floor(exec.executed_price).toLocaleString()}
                         </Text>
                       </View>
                       {hasResult && (

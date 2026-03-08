@@ -13,6 +13,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { MarketplaceItem } from '../../data/marketplaceItems';
 import { useLocale } from '../../context/LocaleContext';
+import { getCurrencySymbol } from '../../utils/formatters';
 
 interface MarketplaceCardProps {
   /** 상품 정보 */
@@ -74,7 +75,7 @@ export function MarketplaceCard({
             </View>
           )}
         </View>
-        <Text style={styles.priceKRW}>₩{item.priceKRW.toLocaleString()}</Text>
+        <Text style={styles.priceKRW}>{getCurrencySymbol()}{item.priceKRW.toLocaleString()}</Text>
       </View>
 
       {/* 구매 버튼 */}
